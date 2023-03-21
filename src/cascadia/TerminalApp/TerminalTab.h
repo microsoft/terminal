@@ -37,6 +37,8 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> DetachPane();
         void AttachPane(std::shared_ptr<Pane> pane);
 
+        void AttachColorPicker(winrt::TerminalApp::ColorPickupFlyout& colorPicker);
+
         void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                        const float splitSize,
                        std::shared_ptr<Pane> newPane);
@@ -69,12 +71,10 @@ namespace winrt::TerminalApp::implementation
         void ResetTabText();
         void ActivateTabRenamer();
 
-        std::optional<winrt::Windows::UI::Color> GetTabColor();
-
-        void ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& color);
+        virtual std::optional<winrt::Windows::UI::Color> GetTabColor() override;
         void SetRuntimeTabColor(const winrt::Windows::UI::Color& color);
         void ResetRuntimeTabColor();
-        void ActivateColorPicker();
+        void RequestColorPicker();
 
         void UpdateZoom(std::shared_ptr<Pane> newFocus);
         void ToggleZoom();
@@ -98,13 +98,12 @@ namespace winrt::TerminalApp::implementation
         }
 
         WINRT_CALLBACK(ActivePaneChanged, winrt::delegate<>);
-        WINRT_CALLBACK(ColorSelected, winrt::delegate<winrt::Windows::UI::Color>);
-        WINRT_CALLBACK(ColorCleared, winrt::delegate<>);
         WINRT_CALLBACK(TabRaiseVisualBell, winrt::delegate<>);
         WINRT_CALLBACK(DuplicateRequested, winrt::delegate<>);
         WINRT_CALLBACK(SplitTabRequested, winrt::delegate<>);
         WINRT_CALLBACK(FindRequested, winrt::delegate<>);
         WINRT_CALLBACK(ExportTabRequested, winrt::delegate<>);
+        WINRT_CALLBACK(ColorPickerRequested, winrt::delegate<>);
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:
@@ -113,11 +112,14 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> _zoomedPane{ nullptr };
 
         winrt::hstring _lastIconPath{};
-        winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
         winrt::TerminalApp::TerminalTabStatus _tabStatus{};
-        winrt::Microsoft::Terminal::Settings::Model::ThemeColor _themeColor{ nullptr };
+
+        winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{ nullptr };
+        winrt::event_token _colorSelectedToken;
+        winrt::event_token _colorClearedToken;
+        winrt::event_token _pickerClosedToken;
 
         struct ControlEventTokens
         {
@@ -156,8 +158,6 @@ namespace winrt::TerminalApp::implementation
         void _CreateContextMenu() override;
         virtual winrt::hstring _CreateToolTipTitle() override;
 
-        void _RefreshVisualState();
-
         void _DetachEventHandlersFromControl(const uint32_t paneId, const winrt::Microsoft::Terminal::Control::TermControl& control);
         void _AttachEventHandlersToControl(const uint32_t paneId, const winrt::Microsoft::Terminal::Control::TermControl& control);
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
@@ -166,15 +166,13 @@ namespace winrt::TerminalApp::implementation
 
         winrt::hstring _GetActiveTitle() const;
 
-        void _RecalculateAndApplyTabColor();
-        void _ApplyTabColor(const winrt::Windows::UI::Color& color);
-        void _ClearTabBackgroundColor();
-
         void _RecalculateAndApplyReadOnly();
 
         void _UpdateProgressState();
 
         void _DuplicateTab();
+
+        virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() override;
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

@@ -275,8 +275,8 @@ try
 
     // Create rectangular block representing where the cursor can fill.
     D2D1_RECT_F rect;
-    rect.left = options.coordCursor.X * drawingContext.cellSize.width;
-    rect.top = options.coordCursor.Y * drawingContext.cellSize.height;
+    rect.left = options.coordCursor.x * drawingContext.cellSize.width;
+    rect.top = options.coordCursor.y * drawingContext.cellSize.height;
     rect.right = rect.left + drawingContext.cellSize.width;
     rect.bottom = rect.top + drawingContext.cellSize.height;
 
@@ -395,8 +395,8 @@ try
         if (firstPass)
         {
             // Draw a backplate behind the cursor in the *background* color so that we can invert it later.
-            // We're going to draw the exact same color as the background behind the cursor
-            const til::color color{ drawingContext.backgroundBrush->GetColor() };
+            // Make sure the cursor is always readable (see gh-3647)
+            const til::color color{ til::color{ drawingContext.backgroundBrush->GetColor() } ^ RGB(63, 63, 63) };
             RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(color.with_alpha(255),
                                                                &brush));
         }
@@ -540,7 +540,7 @@ CATCH_RETURN()
 
     // Draw the background
     // The rectangle needs to be deduced based on the origin and the BidiDirection
-    const auto advancesSpan = gsl::make_span(glyphRun->glyphAdvances, glyphRun->glyphCount);
+    const auto advancesSpan = std::span{ glyphRun->glyphAdvances, glyphRun->glyphCount };
     const auto totalSpan = std::accumulate(advancesSpan.begin(), advancesSpan.end(), 0.0f);
 
     D2D1_RECT_F rect;

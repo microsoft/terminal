@@ -13,6 +13,7 @@
 #include "WindowTheme.g.cpp"
 #include "TabRowTheme.g.cpp"
 #include "TabTheme.g.cpp"
+#include "ThemePair.g.cpp"
 #include "Theme.g.cpp"
 
 using namespace ::Microsoft::Console;
@@ -27,9 +28,40 @@ namespace winrt
 }
 
 static constexpr std::string_view NameKey{ "name" };
+static constexpr std::string_view LightNameKey{ "light" };
+static constexpr std::string_view DarkNameKey{ "dark" };
 
 static constexpr wchar_t RegKeyDwm[] = L"Software\\Microsoft\\Windows\\DWM";
 static constexpr wchar_t RegKeyAccentColor[] = L"AccentColor";
+
+#define THEME_SETTINGS_COPY(type, name, jsonKey, ...) \
+    result->_##name = _##name;
+
+#define THEME_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
+    JsonUtils::SetValueForKey(json, jsonKey, _##name);
+
+#define THEME_OBJECT(className, macro)                    \
+    winrt::com_ptr<className> className::Copy()           \
+    {                                                     \
+        auto result{ winrt::make_self<className>() };     \
+        macro(THEME_SETTINGS_COPY);                       \
+        return result;                                    \
+    }                                                     \
+                                                          \
+    Json::Value className::ToJson()                       \
+    {                                                     \
+        Json::Value json{ Json::ValueType::objectValue }; \
+        macro(THEME_SETTINGS_TO_JSON);                    \
+        return json;                                      \
+    }
+
+THEME_OBJECT(WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
+THEME_OBJECT(TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
+THEME_OBJECT(TabTheme, MTSM_THEME_TAB_SETTINGS);
+
+#undef THEME_SETTINGS_COPY
+#undef THEME_SETTINGS_TO_JSON
+#undef THEME_OBJECT
 
 winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept
 {
@@ -96,16 +128,12 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
 {
     static const auto accentColorKey{ winrt::box_value(L"SystemAccentColor") };
 
-    // NOTE: Currently, the DWM titlebar is always drawn, underneath our XAML
-    // content. If the opacity is <1.0, then you'll be able to see it, including
-    // the original caption buttons, which we don't want.
-
     switch (ColorType())
     {
     case ThemeColorType::Accent:
     {
         // NOTE: There is no canonical way to get the unfocused ACCENT titlebar
-        // color in Windows. Edge uses it's own heuristic, and in Windows 11,
+        // color in Windows. Edge uses its own heuristic, and in Windows 11,
         // much of this logic is rapidly changing. We're not gonna mess with
         // that, since it seems there's no good way to reverse engineer that.
         til::color accentColor = forTitlebar ?
@@ -119,55 +147,38 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
     }
     case ThemeColorType::Color:
     {
-        return winrt::WUX::Media::SolidColorBrush{ forTitlebar ?
-                                                       Color().with_alpha(255) :
-                                                       Color() };
+        return winrt::WUX::Media::SolidColorBrush{ Color() };
     }
     case ThemeColorType::TerminalBackground:
     {
-        // If we're evaluating this color for the tab row, there are some rules
-        // we have to follow, unfortunately. We can't allow a transparent
-        // background, so we have to make sure to fill that in with Opacity(1.0)
-        // manually.
-        //
-        // So for that case, just make a new brush with the relevant properties
-        // set.
-        if (forTitlebar)
-        {
-            if (auto acrylic = terminalBackground.try_as<winrt::WUX::Media::AcrylicBrush>())
-            {
-                winrt::WUX::Media::AcrylicBrush newBrush{};
-                newBrush.TintColor(acrylic.TintColor());
-                newBrush.FallbackColor(acrylic.FallbackColor());
-                newBrush.TintLuminosityOpacity(acrylic.TintLuminosityOpacity());
-
-                // Allow acrylic opacity, but it's gotta be HostBackdrop acrylic.
-                //
-                // For now, just always use 50% opacity for this. If we do ever
-                // figure out how to get rid of our titlebar under the XAML tab
-                // row (GH#10509), we can always get rid of the HostBackdrop
-                // thing, and all this copying, and just return the
-                // terminalBackground brush directly.
-                //
-                // Because we're wholesale copying the brush, we won't be able
-                // to adjust it's opacity with the mouse wheel. This seems like
-                // an acceptable tradeoff for now.
-                newBrush.TintOpacity(.5);
-                newBrush.BackgroundSource(winrt::WUX::Media::AcrylicBackgroundSource::HostBackdrop);
-                return newBrush;
-            }
-            else if (auto solidColor = terminalBackground.try_as<winrt::WUX::Media::SolidColorBrush>())
-            {
-                winrt::WUX::Media::SolidColorBrush newBrush{};
-                newBrush.Color(til::color{ solidColor.Color() }.with_alpha(255));
-                return newBrush;
-            }
-        }
-
         return terminalBackground;
     }
     }
     return nullptr;
+}
+
+// Method Description:
+// - This is not an actual property on a theme color setting, but rather
+//   something derived from the value itself. This is "the opacity we should use
+//   for this ThemeColor should it be used as a unfocusedTab color". Basically,
+//   terminalBackground and accent use 30% opacity when set, to match the how
+//   inactive tabs were colored before themes existed.
+// Arguments:
+// - <none>
+// Return Value:
+// - the opacity that should be used if this color is being applied to a
+//   tab.unfocusedBackground property.
+uint8_t ThemeColor::UnfocusedTabOpacity() const noexcept
+{
+    switch (ColorType())
+    {
+    case ThemeColorType::Accent:
+    case ThemeColorType::TerminalBackground:
+        return 77; // 77 = .3 * 256
+    case ThemeColorType::Color:
+        return _Color.a;
+    }
+    return 0;
 }
 
 #define THEME_SETTINGS_FROM_JSON(type, name, jsonKey, ...)                    \
@@ -177,9 +188,6 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
         if (_val)                                                             \
             result->name(*_val);                                              \
     }
-
-#define THEME_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
-    JsonUtils::SetValueForKey(json, jsonKey, val.name());
 
 #define THEME_OBJECT_CONVERTER(nameSpace, name, macro)                                         \
     template<>                                                                                 \
@@ -201,11 +209,7 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
                                                                                                \
         Json::Value ToJson(const nameSpace::name& val)                                         \
         {                                                                                      \
-            if (val == nullptr)                                                                \
-                return Json::Value::null;                                                      \
-            Json::Value json{ Json::ValueType::objectValue };                                  \
-            macro(THEME_SETTINGS_TO_JSON);                                                     \
-            return json;                                                                       \
+            return val ? winrt::get_self<name>(val)->ToJson() : Json::Value::null;             \
         }                                                                                      \
                                                                                                \
         std::string TypeDescription() const                                                    \
@@ -221,11 +225,6 @@ THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, TabTheme, MT
 #undef THEME_SETTINGS_FROM_JSON
 #undef THEME_SETTINGS_TO_JSON
 #undef THEME_OBJECT_CONVERTER
-
-Theme::Theme() noexcept :
-    Theme{ winrt::WUX::ElementTheme::Default }
-{
-}
 
 Theme::Theme(const winrt::WUX::ElementTheme& requestedTheme) noexcept
 {
@@ -324,3 +323,52 @@ winrt::WUX::ElementTheme Theme::RequestedTheme() const noexcept
 {
     return _Window ? _Window.RequestedTheme() : winrt::WUX::ElementTheme::Default;
 }
+
+winrt::com_ptr<ThemePair> ThemePair::FromJson(const Json::Value& json)
+{
+    auto result = winrt::make_self<ThemePair>(L"dark");
+
+    if (json.isString())
+    {
+        result->_DarkName = result->_LightName = JsonUtils::GetValue<winrt::hstring>(json);
+    }
+    else if (json.isObject())
+    {
+        JsonUtils::GetValueForKey(json, DarkNameKey, result->_DarkName);
+        JsonUtils::GetValueForKey(json, LightNameKey, result->_LightName);
+    }
+    return result;
+}
+
+Json::Value ThemePair::ToJson() const
+{
+    if (_DarkName == _LightName)
+    {
+        return JsonUtils::ConversionTrait<winrt::hstring>().ToJson(DarkName());
+    }
+    else
+    {
+        Json::Value json{ Json::ValueType::objectValue };
+
+        JsonUtils::SetValueForKey(json, DarkNameKey, _DarkName);
+        JsonUtils::SetValueForKey(json, LightNameKey, _LightName);
+        return json;
+    }
+}
+winrt::com_ptr<ThemePair> ThemePair::Copy() const
+{
+    auto pair{ winrt::make_self<ThemePair>() };
+    pair->_DarkName = _DarkName;
+    pair->_LightName = _LightName;
+    return pair;
+}
+
+// I'm not even joking, this is the recommended way to do this:
+// https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/apply-windows-themes#know-when-dark-mode-is-enabled
+bool Theme::IsSystemInDarkTheme()
+{
+    static auto isColorLight = [](const winrt::Windows::UI::Color& clr) -> bool {
+        return (((5 * clr.G) + (2 * clr.R) + clr.B) > (8 * 128));
+    };
+    return isColorLight(winrt::Windows::UI::ViewManagement::UISettings().GetColorValue(winrt::Windows::UI::ViewManagement::UIColorType::Foreground));
+};

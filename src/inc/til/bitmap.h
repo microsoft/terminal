@@ -264,7 +264,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 return const_iterator(_bits, til::rect{ _sz }, _sz.area());
             }
 
-            const gsl::span<const til::rect> runs() const
+            const std::span<const til::rect> runs() const
             {
                 // If we don't have cached runs, rebuild.
                 if (!_runs.has_value())

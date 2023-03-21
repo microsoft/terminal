@@ -41,13 +41,13 @@ public:
     // Lab
     struct
     {
-        double L, A, B;
+        float L, A, B;
     };
 #pragma warning(pop)
 
 private:
-    static double _GetHPrimeFn(double x, double y) noexcept;
-    static double _GetDeltaE(ColorFix x1, ColorFix x2) noexcept;
+    static float _GetHPrimeFn(float x, float y) noexcept;
+    static float _GetDeltaE(ColorFix x1, ColorFix x2) noexcept;
     void _ToLab() noexcept;
     void _ToRGB();
 };

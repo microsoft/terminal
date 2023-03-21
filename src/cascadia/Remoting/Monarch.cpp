@@ -10,6 +10,7 @@
 #include "ProposeCommandlineResult.h"
 
 #include "Monarch.g.cpp"
+#include "WindowRequestedArgs.g.cpp"
 #include "../../types/inc/utils.hpp"
 
 using namespace winrt;
@@ -38,9 +39,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
     }
 
-    Monarch::~Monarch()
-    {
-    }
+    Monarch::~Monarch() = default;
 
     uint64_t Monarch::GetPID()
     {
@@ -660,6 +659,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
+        if (targetWindow == WindowingBehaviorUseNone)
+        {
+            // In this case, the targetWindow was UseNone, which means that we
+            // want to make a message box, but otherwise not make a Terminal
+            // window.
+            return winrt::make<Remoting::implementation::ProposeCommandlineResult>(false);
+        }
         // If there's a valid ID returned, then let's try and find the peasant
         // that goes with it. Alternatively, if we were given a magic windowing
         // constant, we can use that to look up an appropriate peasant.
@@ -689,6 +695,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             case WindowingBehaviorUseName:
                 windowID = _lookupPeasantIdForName(targetWindowName);
                 break;
+            case WindowingBehaviorUseNone:
+                // This should be impossible. The if statement above should have
+                // prevented WindowingBehaviorUseNone from falling in here.
+                // Explode, because this is a programming error.
+                THROW_HR(E_UNEXPECTED);
             default:
                 windowID = ::base::saturated_cast<uint64_t>(targetWindow);
                 break;
@@ -726,6 +737,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     result->WindowName(targetWindowName);
                     result->ShouldCreateWindow(true);
 
+                    _RequestNewWindowHandlers(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
+
                     // If this fails, it'll be logged in the following
                     // TraceLoggingWrite statement, with succeeded=false
                 }
@@ -761,6 +774,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 auto result{ winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true) };
                 result->Id(windowID);
                 result->WindowName(targetWindowName);
+
+                _RequestNewWindowHandlers(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
+
                 return *result;
             }
         }
@@ -775,6 +791,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // In this case, no usable ID was provided. Return { true, nullopt }
         auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true);
         result->WindowName(targetWindowName);
+
+        _RequestNewWindowHandlers(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
+
         return *result;
     }
 

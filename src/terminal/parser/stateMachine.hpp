@@ -21,11 +21,11 @@ Abstract:
 
 namespace Microsoft::Console::VirtualTerminal
 {
-    // The DEC STD 070 reference recommends supporting up to at least 16384 for
-    // parameter values, so 32767 should be more than enough. At most we might
-    // want to increase this to 65535, since that is what XTerm and VTE support,
-    // but for now 32767 is the safest limit for our existing code base.
-    constexpr VTInt MAX_PARAMETER_VALUE = 32767;
+    // The DEC STD 070 reference recommends supporting up to at least 16384
+    // for parameter values. 65535 is what XTerm and VTE support.
+    // GH#12977: We must use 65535 to properly parse win32-input-mode
+    // sequences, which transmit the UTF-16 character value as a parameter.
+    constexpr VTInt MAX_PARAMETER_VALUE = 65535;
 
     // The DEC STD 070 reference requires that a minimum of 16 parameter values
     // are supported, but most modern terminal emulators will allow around twice
@@ -50,6 +50,7 @@ namespace Microsoft::Console::VirtualTerminal
         enum class Mode : size_t
         {
             AcceptC1,
+            AlwaysAcceptC1,
             Ansi,
         };
 
@@ -59,6 +60,8 @@ namespace Microsoft::Console::VirtualTerminal
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(const std::wstring_view string);
         bool IsProcessingLastCharacter() const noexcept;
+
+        void OnCsiComplete(const std::function<void()> callback);
 
         void ResetState() noexcept;
 
@@ -141,6 +144,8 @@ namespace Microsoft::Console::VirtualTerminal
         template<typename TLambda>
         bool _SafeExecuteWithLog(const wchar_t wch, TLambda&& lambda);
 
+        void _ExecuteCsiCompleteCallback();
+
         enum class VTStates
         {
             Ground,
@@ -201,5 +206,7 @@ namespace Microsoft::Console::VirtualTerminal
         //   can start and finish a sequence.
         bool _processingIndividually;
         bool _processingLastCharacter;
+
+        std::function<void()> _onCsiCompleteCallback;
     };
 }

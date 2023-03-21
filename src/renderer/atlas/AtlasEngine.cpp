@@ -4,10 +4,11 @@
 #include "pch.h"
 #include "AtlasEngine.h"
 
+#include <custom_shader_ps.h>
+#include <custom_shader_vs.h>
 #include <shader_ps.h>
 #include <shader_vs.h>
 
-#include "../base/FontCache.h"
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
 // #### NOTE ####
@@ -20,138 +21,11 @@
 // Disable a bunch of warnings which get in the way of writing performant code.
 #pragma warning(disable : 26429) // Symbol 'data' is never tested for nullness, it can be marked as not_null (f.23).
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
+#pragma warning(disable : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
 
 using namespace Microsoft::Console::Render;
-
-struct TextAnalyzer final : IDWriteTextAnalysisSource, IDWriteTextAnalysisSink
-{
-    constexpr TextAnalyzer(const std::vector<wchar_t>& text, std::vector<AtlasEngine::TextAnalyzerResult>& results) noexcept :
-        _text{ text }, _results{ results }
-    {
-        Ensures(_text.size() <= UINT32_MAX);
-    }
-
-    // TextAnalyzer will be allocated on the stack and reference counting is pointless because of that.
-    // The debug version will assert that we don't leak any references though.
-#ifdef NDEBUG
-    ULONG __stdcall AddRef() noexcept override
-    {
-        return 1;
-    }
-
-    ULONG __stdcall Release() noexcept override
-    {
-        return 1;
-    }
-#else
-    ULONG _refCount = 1;
-
-    ~TextAnalyzer()
-    {
-        assert(_refCount == 1);
-    }
-
-    ULONG __stdcall AddRef() noexcept override
-    {
-        return ++_refCount;
-    }
-
-    ULONG __stdcall Release() noexcept override
-    {
-        return --_refCount;
-    }
-#endif
-
-    HRESULT __stdcall QueryInterface(const IID& riid, void** ppvObject) noexcept override
-    {
-        __assume(ppvObject != nullptr);
-
-        if (IsEqualGUID(riid, __uuidof(IDWriteTextAnalysisSource)) || IsEqualGUID(riid, __uuidof(IDWriteTextAnalysisSink)))
-        {
-            *ppvObject = this;
-            return S_OK;
-        }
-
-        *ppvObject = nullptr;
-        return E_NOINTERFACE;
-    }
-
-    HRESULT __stdcall GetTextAtPosition(UINT32 textPosition, const WCHAR** textString, UINT32* textLength) noexcept override
-    {
-        // Writing to address 0 is a crash in practice. Just what we want.
-        __assume(textString != nullptr);
-        __assume(textLength != nullptr);
-
-        const auto size = gsl::narrow_cast<UINT32>(_text.size());
-        textPosition = std::min(textPosition, size);
-        *textString = _text.data() + textPosition;
-        *textLength = size - textPosition;
-        return S_OK;
-    }
-
-    HRESULT __stdcall GetTextBeforePosition(UINT32 textPosition, const WCHAR** textString, UINT32* textLength) noexcept override
-    {
-        // Writing to address 0 is a crash in practice. Just what we want.
-        __assume(textString != nullptr);
-        __assume(textLength != nullptr);
-
-        const auto size = gsl::narrow_cast<UINT32>(_text.size());
-        textPosition = std::min(textPosition, size);
-        *textString = _text.data();
-        *textLength = textPosition;
-        return S_OK;
-    }
-
-    DWRITE_READING_DIRECTION __stdcall GetParagraphReadingDirection() noexcept override
-    {
-        return DWRITE_READING_DIRECTION_LEFT_TO_RIGHT;
-    }
-
-    HRESULT __stdcall GetLocaleName(UINT32 textPosition, UINT32* textLength, const WCHAR** localeName) noexcept override
-    {
-        // Writing to address 0 is a crash in practice. Just what we want.
-        __assume(textLength != nullptr);
-        __assume(localeName != nullptr);
-
-        *textLength = gsl::narrow_cast<UINT32>(_text.size()) - textPosition;
-        *localeName = nullptr;
-        return S_OK;
-    }
-
-    HRESULT __stdcall GetNumberSubstitution(UINT32 textPosition, UINT32* textLength, IDWriteNumberSubstitution** numberSubstitution) noexcept override
-    {
-        return E_NOTIMPL;
-    }
-
-    HRESULT __stdcall SetScriptAnalysis(UINT32 textPosition, UINT32 textLength, const DWRITE_SCRIPT_ANALYSIS* scriptAnalysis) noexcept override
-    try
-    {
-        _results.emplace_back(AtlasEngine::TextAnalyzerResult{ textPosition, textLength, scriptAnalysis->script, static_cast<UINT8>(scriptAnalysis->shapes), 0 });
-        return S_OK;
-    }
-    CATCH_RETURN()
-
-    HRESULT __stdcall SetLineBreakpoints(UINT32 textPosition, UINT32 textLength, const DWRITE_LINE_BREAKPOINT* lineBreakpoints) noexcept override
-    {
-        return E_NOTIMPL;
-    }
-
-    HRESULT __stdcall SetBidiLevel(UINT32 textPosition, UINT32 textLength, UINT8 explicitLevel, UINT8 resolvedLevel) noexcept override
-    {
-        return E_NOTIMPL;
-    }
-
-    HRESULT __stdcall SetNumberSubstitution(UINT32 textPosition, UINT32 textLength, IDWriteNumberSubstitution* numberSubstitution) noexcept override
-    {
-        return E_NOTIMPL;
-    }
-
-private:
-    const std::vector<wchar_t>& _text;
-    std::vector<AtlasEngine::TextAnalyzerResult>& _results;
-};
 
 #pragma warning(suppress : 26455) // Default constructor may not throw. Declare it 'noexcept' (f.6).
 AtlasEngine::AtlasEngine()
@@ -238,6 +112,7 @@ try
         {
             _r.selectionColor = _api.selectionColor;
             WI_SetFlag(_r.invalidations, RenderInvalidations::ConstBuffer);
+            WI_ClearFlag(_api.invalidations, ApiInvalidations::Settings);
         }
 
         // Equivalent to InvalidateAll().
@@ -288,76 +163,97 @@ try
     }
 #endif
 
-    if (_api.invalidatedRows == invalidatedRowsAll)
-    {
-        // Skip all the partial updates, since we redraw everything anyways.
-        _api.invalidatedCursorArea = invalidatedAreaNone;
-        _api.invalidatedRows = { 0, _api.cellCount.y };
-        _api.scrollOffset = 0;
-    }
-    else
-    {
-        // Clamp invalidation rects into valid value ranges.
-        {
-            _api.invalidatedCursorArea.left = std::min(_api.invalidatedCursorArea.left, _api.cellCount.x);
-            _api.invalidatedCursorArea.top = std::min(_api.invalidatedCursorArea.top, _api.cellCount.y);
-            _api.invalidatedCursorArea.right = clamp(_api.invalidatedCursorArea.right, _api.invalidatedCursorArea.left, _api.cellCount.x);
-            _api.invalidatedCursorArea.bottom = clamp(_api.invalidatedCursorArea.bottom, _api.invalidatedCursorArea.top, _api.cellCount.y);
-        }
-        {
-            _api.invalidatedRows.x = std::min(_api.invalidatedRows.x, _api.cellCount.y);
-            _api.invalidatedRows.y = clamp(_api.invalidatedRows.y, _api.invalidatedRows.x, _api.cellCount.y);
-        }
-        {
-            const auto limit = gsl::narrow_cast<i16>(_api.cellCount.y & 0x7fff);
-            _api.scrollOffset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
-        }
-
-        // Scroll the buffer by the given offset and mark the newly uncovered rows as "invalid".
-        if (_api.scrollOffset != 0)
-        {
-            const auto nothingInvalid = _api.invalidatedRows.x == _api.invalidatedRows.y;
-            const auto offset = static_cast<ptrdiff_t>(_api.scrollOffset) * _api.cellCount.x;
-            const auto data = _r.cells.data();
-            auto count = _r.cells.size();
-#pragma warning(suppress : 26494) // Variable 'dst' is uninitialized. Always initialize an object (type.5).
-            Cell* dst;
-#pragma warning(suppress : 26494) // Variable 'src' is uninitialized. Always initialize an object (type.5).
-            Cell* src;
-
-            if (_api.scrollOffset < 0)
-            {
-                // Scroll up (for instance when new text is being written at the end of the buffer).
-                dst = data;
-                src = data - offset;
-                count += offset;
-
-                const u16 endRow = _api.cellCount.y + _api.scrollOffset;
-                _api.invalidatedRows.x = nothingInvalid ? endRow : std::min<u16>(_api.invalidatedRows.x, endRow);
-                _api.invalidatedRows.y = _api.cellCount.y;
-            }
-            else
-            {
-                // Scroll down.
-                dst = data + offset;
-                src = data;
-                count -= offset;
-
-                _api.invalidatedRows.x = 0;
-                _api.invalidatedRows.y = nothingInvalid ? _api.scrollOffset : std::max<u16>(_api.invalidatedRows.y, _api.scrollOffset);
-            }
-
-            memmove(dst, src, count * sizeof(Cell));
-        }
-    }
-
     if constexpr (debugGlyphGenerationPerformance)
     {
-        _api.dirtyRect = til::rect{ 0, 0, _api.cellCount.x, _api.cellCount.y };
+        _r.glyphs = {};
+        _r.tileAllocator = TileAllocator{ _api.fontMetrics.cellSize, _api.sizeInPixel };
     }
-    else
+    if constexpr (debugTextParsingPerformance)
     {
-        _api.dirtyRect = til::rect{ 0, _api.invalidatedRows.x, _api.cellCount.x, _api.invalidatedRows.y };
+        _api.invalidatedRows = invalidatedRowsAll;
+        _api.scrollOffset = 0;
+    }
+
+    // Clamp invalidation rects into valid value ranges.
+    {
+        _api.invalidatedCursorArea.left = std::min(_api.invalidatedCursorArea.left, _api.cellCount.x);
+        _api.invalidatedCursorArea.top = std::min(_api.invalidatedCursorArea.top, _api.cellCount.y);
+        _api.invalidatedCursorArea.right = clamp(_api.invalidatedCursorArea.right, _api.invalidatedCursorArea.left, _api.cellCount.x);
+        _api.invalidatedCursorArea.bottom = clamp(_api.invalidatedCursorArea.bottom, _api.invalidatedCursorArea.top, _api.cellCount.y);
+    }
+    {
+        _api.invalidatedRows.x = std::min(_api.invalidatedRows.x, _api.cellCount.y);
+        _api.invalidatedRows.y = clamp(_api.invalidatedRows.y, _api.invalidatedRows.x, _api.cellCount.y);
+    }
+    {
+        const auto limit = gsl::narrow_cast<i16>(_api.cellCount.y & 0x7fff);
+        _api.scrollOffset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
+    }
+
+    // Scroll the buffer by the given offset and mark the newly uncovered rows as "invalid".
+    if (_api.scrollOffset != 0)
+    {
+        const auto nothingInvalid = _api.invalidatedRows.x == _api.invalidatedRows.y;
+        const auto offset = static_cast<ptrdiff_t>(_api.scrollOffset) * _api.cellCount.x;
+
+        if (_api.scrollOffset < 0)
+        {
+            // Scroll up (for instance when new text is being written at the end of the buffer).
+            const u16 endRow = _api.cellCount.y + _api.scrollOffset;
+            _api.invalidatedRows.x = nothingInvalid ? endRow : std::min<u16>(_api.invalidatedRows.x, endRow);
+            _api.invalidatedRows.y = _api.cellCount.y;
+
+            // scrollOffset/offset = -1
+            // +----------+    +----------+
+            // |          |    | xxxxxxxxx|         + dst  < beg
+            // | xxxxxxxxx| -> |xxxxxxx   |  + src  |      < beg - offset
+            // |xxxxxxx   |    |          |  |      v
+            // +----------+    +----------+  v             < end
+            {
+                const auto beg = _r.cells.begin();
+                const auto end = _r.cells.end();
+                std::move(beg - offset, end, beg);
+            }
+            {
+                const auto beg = _r.cellGlyphMapping.begin();
+                const auto end = _r.cellGlyphMapping.end();
+                std::move(beg - offset, end, beg);
+            }
+        }
+        else
+        {
+            // Scroll down.
+            _api.invalidatedRows.x = 0;
+            _api.invalidatedRows.y = nothingInvalid ? _api.scrollOffset : std::max<u16>(_api.invalidatedRows.y, _api.scrollOffset);
+
+            // scrollOffset/offset = 1
+            // +----------+    +----------+
+            // | xxxxxxxxx|    |          |  + src         < beg
+            // |xxxxxxx   | -> | xxxxxxxxx|  |      ^
+            // |          |    |xxxxxxx   |  v      |      < end - offset
+            // +----------+    +----------+         + dst  < end
+            {
+                const auto beg = _r.cells.begin();
+                const auto end = _r.cells.end();
+                std::move_backward(beg, end - offset, end);
+            }
+            {
+                const auto beg = _r.cellGlyphMapping.begin();
+                const auto end = _r.cellGlyphMapping.end();
+                std::move_backward(beg, end - offset, end);
+            }
+        }
+    }
+
+    _api.dirtyRect = til::rect{ 0, _api.invalidatedRows.x, _api.cellCount.x, _api.invalidatedRows.y };
+    _r.dirtyRect = _api.dirtyRect;
+    _r.scrollOffset = _api.scrollOffset;
+
+    // Clear the previous cursor. PaintCursor() is only called if the cursor is on.
+    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
+    {
+        _setCellFlags(r, CellFlags::Cursor, CellFlags::None);
+        _r.dirtyRect |= til::rect{ r.left, r.top, r.right, r.bottom };
     }
 
     // This is an important block of code for our TileHashMap.
@@ -414,29 +310,6 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] bool AtlasEngine::RequiresContinuousRedraw() noexcept
-{
-    return debugGeneralPerformance;
-}
-
-void AtlasEngine::WaitUntilCanRender() noexcept
-{
-    if constexpr (!debugGeneralPerformance)
-    {
-        if (_r.frameLatencyWaitableObject)
-        {
-            WaitForSingleObjectEx(_r.frameLatencyWaitableObject.get(), 100, true);
-#ifndef NDEBUG
-            _r.frameLatencyWaitableObjectUsed = true;
-#endif
-        }
-        else
-        {
-            Sleep(8);
-        }
-    }
-}
-
 [[nodiscard]] HRESULT AtlasEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
@@ -459,7 +332,7 @@ void AtlasEngine::WaitUntilCanRender() noexcept
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::PrepareLineTransform(const LineRendition lineRendition, const size_t targetRow, const size_t viewportLeft) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PrepareLineTransform(const LineRendition lineRendition, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
 {
     return S_OK;
 }
@@ -469,28 +342,51 @@ void AtlasEngine::WaitUntilCanRender() noexcept
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(const gsl::span<const Cluster> clusters, const til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
 {
-    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.X, 0, _api.cellCount.x));
-    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.Y, 0, _api.cellCount.y));
+    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _api.cellCount.y));
 
     if (_api.lastPaintBufferLineCoord.y != y)
     {
         _flushBufferLine();
     }
 
-    _api.lastPaintBufferLineCoord = { x, y };
-    _api.bufferLineWasHyperlinked = false;
+    // _api.bufferLineColumn contains 1 more item than _api.bufferLine, as it represents the
+    // past-the-end index. It'll get appended again later once we built our new _api.bufferLine.
+    if (!_api.bufferLineColumn.empty())
+    {
+        _api.bufferLineColumn.pop_back();
+    }
+
+    // `TextBuffer` is buggy and allows a `Trailing` `DbcsAttribute` to be written
+    // into the first column. Since other code then blindly assumes that there's a
+    // preceding `Leading` character, we'll get called with a X coordinate of -1.
+    //
+    // This block can be removed after GH#13626 is merged.
+    if (coord.x < 0)
+    {
+        size_t offset = 0;
+        for (const auto& cluster : clusters)
+        {
+            offset++;
+            coord.x += cluster.GetColumns();
+            if (coord.x >= 0)
+            {
+                _api.bufferLine.insert(_api.bufferLine.end(), coord.x, L' ');
+                _api.bufferLineColumn.insert(_api.bufferLineColumn.end(), coord.x, 0u);
+                break;
+            }
+        }
+
+        clusters = clusters.subspan(offset);
+    }
+
+    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x, 0, _api.cellCount.x));
 
     // Due to the current IRenderEngine interface (that wasn't refactored yet) we need to assemble
     // the current buffer line first as the remaining function operates on whole lines of text.
     {
-        if (!_api.bufferLineColumn.empty())
-        {
-            _api.bufferLineColumn.pop_back();
-        }
-
         auto column = x;
         for (const auto& cluster : clusters)
         {
@@ -506,8 +402,12 @@ try
         _api.bufferLineColumn.emplace_back(column);
 
         const BufferLineMetadata metadata{ _api.currentColor, _api.flags };
+        FAIL_FAST_IF(column > _api.bufferLineMetadata.size());
         std::fill_n(_api.bufferLineMetadata.data() + x, column - x, metadata);
     }
+
+    _api.lastPaintBufferLineCoord = { x, y };
+    _api.bufferLineWasHyperlinked = false;
 
     return S_OK;
 }
@@ -545,6 +445,7 @@ try
         rect.narrow_bottom<u16>(),
     };
     _setCellFlags(u16rect, CellFlags::Selected, CellFlags::Selected);
+    _r.dirtyRect |= rect;
     return S_OK;
 }
 CATCH_RETURN()
@@ -570,23 +471,18 @@ try
         }
     }
 
-    // Clear the previous cursor
-    if (_api.invalidatedCursorArea.non_empty())
-    {
-        _setCellFlags(_api.invalidatedCursorArea, CellFlags::Cursor, CellFlags::None);
-    }
-
     if (options.isOn)
     {
         const auto point = options.coordCursor;
         // TODO: options.coordCursor can contain invalid out of bounds coordinates when
         // the window is being resized and the cursor is on the last line of the viewport.
-        const auto x = gsl::narrow_cast<uint16_t>(clamp(point.X, 0, _r.cellCount.x - 1));
-        const auto y = gsl::narrow_cast<uint16_t>(clamp(point.Y, 0, _r.cellCount.y - 1));
+        const auto x = gsl::narrow_cast<uint16_t>(clamp(point.x, 0, _r.cellCount.x - 1));
+        const auto y = gsl::narrow_cast<uint16_t>(clamp(point.y, 0, _r.cellCount.y - 1));
         const auto cursorWidth = 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
         const auto right = gsl::narrow_cast<uint16_t>(clamp(x + cursorWidth, 0, _r.cellCount.x - 0));
         const auto bottom = gsl::narrow_cast<uint16_t>(y + 1);
         _setCellFlags({ x, y, right, bottom }, CellFlags::Cursor, CellFlags::Cursor);
+        _r.dirtyRect |= til::rect{ x, y, right, bottom };
     }
 
     return S_OK;
@@ -621,7 +517,7 @@ try
         }
 
         const u32x2 newColors{ gsl::narrow_cast<u32>(fg), gsl::narrow_cast<u32>(bg) };
-        const AtlasKeyAttributes attributes{ 0, textAttributes.IsIntense(), textAttributes.IsItalic(), 0 };
+        const AtlasKeyAttributes attributes{ 0, textAttributes.IsIntense() && renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold), textAttributes.IsItalic(), 0 };
 
         if (_api.attributes != attributes)
         {
@@ -708,39 +604,50 @@ void AtlasEngine::_createResources()
     {
         wil::com_ptr<ID3D11DeviceContext> deviceContext;
 
-        // Why D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS:
-        // This flag prevents the driver from creating a large thread pool for things like shader computations
-        // that would be advantageous for games. For us this has only a minimal performance benefit,
-        // but comes with a large memory usage overhead. At the time of writing the Nvidia
-        // driver launches $cpu_thread_count more worker threads without this flag.
-        static constexpr std::array driverTypes{
-            std::pair{ D3D_DRIVER_TYPE_HARDWARE, D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS },
-            std::pair{ D3D_DRIVER_TYPE_WARP, static_cast<D3D11_CREATE_DEVICE_FLAG>(0) },
-        };
         static constexpr std::array featureLevels{
             D3D_FEATURE_LEVEL_11_1,
             D3D_FEATURE_LEVEL_11_0,
             D3D_FEATURE_LEVEL_10_1,
+            D3D_FEATURE_LEVEL_10_0,
+            D3D_FEATURE_LEVEL_9_3,
+            D3D_FEATURE_LEVEL_9_2,
+            D3D_FEATURE_LEVEL_9_1,
         };
 
-        auto hr = S_OK;
-        for (const auto& [driverType, additionalFlags] : driverTypes)
+        auto hr = E_UNEXPECTED;
+
+        if (!_api.useSoftwareRendering)
         {
+            // Why D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS:
+            // This flag prevents the driver from creating a large thread pool for things like shader computations
+            // that would be advantageous for games. For us this has only a minimal performance benefit,
+            // but comes with a large memory usage overhead. At the time of writing the Nvidia
+            // driver launches $cpu_thread_count more worker threads without this flag.
             hr = D3D11CreateDevice(
                 /* pAdapter */ nullptr,
-                /* DriverType */ driverType,
+                /* DriverType */ D3D_DRIVER_TYPE_HARDWARE,
                 /* Software */ nullptr,
-                /* Flags */ deviceFlags | additionalFlags,
+                /* Flags */ deviceFlags | D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS,
                 /* pFeatureLevels */ featureLevels.data(),
                 /* FeatureLevels */ gsl::narrow_cast<UINT>(featureLevels.size()),
                 /* SDKVersion */ D3D11_SDK_VERSION,
                 /* ppDevice */ _r.device.put(),
                 /* pFeatureLevel */ nullptr,
                 /* ppImmediateContext */ deviceContext.put());
-            if (SUCCEEDED(hr))
-            {
-                break;
-            }
+        }
+        if (FAILED(hr))
+        {
+            hr = D3D11CreateDevice(
+                /* pAdapter */ nullptr,
+                /* DriverType */ D3D_DRIVER_TYPE_WARP,
+                /* Software */ nullptr,
+                /* Flags */ deviceFlags,
+                /* pFeatureLevels */ featureLevels.data(),
+                /* FeatureLevels */ gsl::narrow_cast<UINT>(featureLevels.size()),
+                /* SDKVersion */ D3D11_SDK_VERSION,
+                /* ppDevice */ _r.device.put(),
+                /* pFeatureLevel */ nullptr,
+                /* ppImmediateContext */ deviceContext.put());
         }
         THROW_IF_FAILED(hr);
 
@@ -759,17 +666,165 @@ void AtlasEngine::_createResources()
     }
 #endif // NDEBUG
 
-    // Our constant buffer will never get resized
     {
-        D3D11_BUFFER_DESC desc{};
-        desc.ByteWidth = sizeof(ConstBuffer);
-        desc.Usage = D3D11_USAGE_DEFAULT;
-        desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-        THROW_IF_FAILED(_r.device->CreateBuffer(&desc, nullptr, _r.constantBuffer.put()));
+        wil::com_ptr<IDXGIAdapter1> dxgiAdapter;
+        THROW_IF_FAILED(_r.device.query<IDXGIObject>()->GetParent(__uuidof(dxgiAdapter), dxgiAdapter.put_void()));
+        THROW_IF_FAILED(dxgiAdapter->GetParent(__uuidof(_r.dxgiFactory), _r.dxgiFactory.put_void()));
+
+        DXGI_ADAPTER_DESC1 desc;
+        THROW_IF_FAILED(dxgiAdapter->GetDesc1(&desc));
+        _r.d2dMode = debugForceD2DMode || WI_IsAnyFlagSet(desc.Flags, DXGI_ADAPTER_FLAG_REMOTE | DXGI_ADAPTER_FLAG_SOFTWARE);
     }
 
-    THROW_IF_FAILED(_r.device->CreateVertexShader(&shader_vs[0], sizeof(shader_vs), nullptr, _r.vertexShader.put()));
-    THROW_IF_FAILED(_r.device->CreatePixelShader(&shader_ps[0], sizeof(shader_ps), nullptr, _r.pixelShader.put()));
+    const auto featureLevel = _r.device->GetFeatureLevel();
+
+    if (featureLevel < D3D_FEATURE_LEVEL_10_0)
+    {
+        _r.d2dMode = true;
+    }
+    else if (featureLevel < D3D_FEATURE_LEVEL_11_0)
+    {
+        D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS options;
+        THROW_IF_FAILED(_r.device->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &options, sizeof(options)));
+        if (!options.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x)
+        {
+            _r.d2dMode = true;
+        }
+    }
+
+    if (!_r.d2dMode)
+    {
+        // Our constant buffer will never get resized
+        {
+            D3D11_BUFFER_DESC desc{};
+            desc.ByteWidth = sizeof(ConstBuffer);
+            desc.Usage = D3D11_USAGE_DEFAULT;
+            desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+            THROW_IF_FAILED(_r.device->CreateBuffer(&desc, nullptr, _r.constantBuffer.put()));
+        }
+
+        THROW_IF_FAILED(_r.device->CreateVertexShader(&shader_vs[0], sizeof(shader_vs), nullptr, _r.vertexShader.put()));
+        THROW_IF_FAILED(_r.device->CreatePixelShader(&shader_ps[0], sizeof(shader_ps), nullptr, _r.pixelShader.put()));
+
+        if (!_api.customPixelShaderPath.empty())
+        {
+            const char* target = nullptr;
+            switch (featureLevel)
+            {
+            case D3D_FEATURE_LEVEL_10_0:
+                target = "ps_4_0";
+                break;
+            case D3D_FEATURE_LEVEL_10_1:
+                target = "ps_4_1";
+                break;
+            default:
+                target = "ps_5_0";
+                break;
+            }
+
+            static constexpr auto flags =
+                D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR
+#ifdef NDEBUG
+                | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+#else
+                // Only enable strictness and warnings in DEBUG mode
+                //  as these settings makes it very difficult to develop
+                //  shaders as windows terminal is not telling the user
+                //  what's wrong, windows terminal just fails.
+                //  Keep it in DEBUG mode to catch errors in shaders
+                //  shipped with windows terminal
+                | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+            wil::com_ptr<ID3DBlob> error;
+            wil::com_ptr<ID3DBlob> blob;
+            const auto hr = D3DCompileFromFile(
+                /* pFileName   */ _api.customPixelShaderPath.c_str(),
+                /* pDefines    */ nullptr,
+                /* pInclude    */ D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                /* pEntrypoint */ "main",
+                /* pTarget     */ target,
+                /* Flags1      */ flags,
+                /* Flags2      */ 0,
+                /* ppCode      */ blob.addressof(),
+                /* ppErrorMsgs */ error.addressof());
+
+            // Unless we can determine otherwise, assume this shader requires evaluation every frame
+            _r.requiresContinuousRedraw = true;
+
+            if (SUCCEEDED(hr))
+            {
+                THROW_IF_FAILED(_r.device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, _r.customPixelShader.put()));
+
+                // Try to determine whether the shader uses the Time variable
+                wil::com_ptr<ID3D11ShaderReflection> reflector;
+                if (SUCCEEDED_LOG(D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(reflector.put()))))
+                {
+                    if (ID3D11ShaderReflectionConstantBuffer* constantBufferReflector = reflector->GetConstantBufferByIndex(0)) // shader buffer
+                    {
+                        if (ID3D11ShaderReflectionVariable* variableReflector = constantBufferReflector->GetVariableByIndex(0)) // time
+                        {
+                            D3D11_SHADER_VARIABLE_DESC variableDescriptor;
+                            if (SUCCEEDED_LOG(variableReflector->GetDesc(&variableDescriptor)))
+                            {
+                                // only if time is used
+                                _r.requiresContinuousRedraw = WI_IsFlagSet(variableDescriptor.uFlags, D3D_SVF_USED);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (error)
+                {
+                    LOG_HR_MSG(hr, "%*hs", error->GetBufferSize(), error->GetBufferPointer());
+                }
+                else
+                {
+                    LOG_HR(hr);
+                }
+                if (_api.warningCallback)
+                {
+                    _api.warningCallback(D2DERR_SHADER_COMPILE_FAILED);
+                }
+            }
+        }
+        else if (_api.useRetroTerminalEffect)
+        {
+            THROW_IF_FAILED(_r.device->CreatePixelShader(&custom_shader_ps[0], sizeof(custom_shader_ps), nullptr, _r.customPixelShader.put()));
+            // We know the built-in retro shader doesn't require continuous redraw.
+            _r.requiresContinuousRedraw = false;
+        }
+
+        if (_r.customPixelShader)
+        {
+            THROW_IF_FAILED(_r.device->CreateVertexShader(&custom_shader_vs[0], sizeof(custom_shader_vs), nullptr, _r.customVertexShader.put()));
+
+            {
+                D3D11_BUFFER_DESC desc{};
+                desc.ByteWidth = sizeof(CustomConstBuffer);
+                desc.Usage = D3D11_USAGE_DYNAMIC;
+                desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+                desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+                THROW_IF_FAILED(_r.device->CreateBuffer(&desc, nullptr, _r.customShaderConstantBuffer.put()));
+            }
+
+            {
+                D3D11_SAMPLER_DESC desc{};
+                desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+                desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+                desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+                desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+                desc.MaxAnisotropy = 1;
+                desc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+                desc.MaxLOD = D3D11_FLOAT32_MAX;
+                THROW_IF_FAILED(_r.device->CreateSamplerState(&desc, _r.customShaderSamplerState.put()));
+            }
+
+            _r.customShaderStartTime = std::chrono::steady_clock::now();
+        }
+    }
 
     WI_ClearFlag(_api.invalidations, ApiInvalidations::Device);
     WI_SetAllFlags(_api.invalidations, ApiInvalidations::SwapChain);
@@ -784,6 +839,10 @@ void AtlasEngine::_releaseSwapChain()
     //   no views are bound to pipeline state), and then call Flush on the immediate context.
     if (_r.swapChain && _r.deviceContext)
     {
+        if (_r.d2dMode)
+        {
+            _r.d2dRenderTarget.reset();
+        }
         _r.frameLatencyWaitableObject.reset();
         _r.swapChain.reset();
         _r.renderTargetView.reset();
@@ -798,8 +857,6 @@ void AtlasEngine::_createSwapChain()
 
     // D3D swap chain setup (the thing that allows us to present frames on the screen)
     {
-        const auto supportsFrameLatencyWaitableObject = !debugGeneralPerformance && IsWindows8Point1OrGreater();
-
         // With C++20 we'll finally have designated initializers.
         DXGI_SWAP_CHAIN_DESC1 desc{};
         desc.Width = _api.sizeInPixel.x;
@@ -807,32 +864,32 @@ void AtlasEngine::_createSwapChain()
         desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         desc.SampleDesc.Count = 1;
         desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        desc.BufferCount = 2; // TODO: 3?
+        // Sometimes up to 2 buffers are locked, for instance during screen capture or when moving the window.
+        // 3 buffers seems to guarantee a stable framerate at display frequency at all times.
+        desc.BufferCount = 3;
         desc.Scaling = DXGI_SCALING_NONE;
-        desc.SwapEffect = _sr.isWindows10OrGreater ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-        // * HWND swap chains can't do alpha.
-        // * If our background is opaque we can enable "independent" flips by setting DXGI_SWAP_EFFECT_FLIP_DISCARD and DXGI_ALPHA_MODE_IGNORE.
-        //   As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
-        desc.AlphaMode = _api.hwnd || _api.backgroundOpaqueMixin ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
-        desc.Flags = supportsFrameLatencyWaitableObject ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0;
+        // DXGI_SWAP_EFFECT_FLIP_DISCARD is a mode that was created at a time were display drivers
+        // lacked support for Multiplane Overlays (MPO) and were copying buffers was expensive.
+        // This allowed DWM to quickly draw overlays (like gamebars) on top of rendered content.
+        // With faster GPU memory in general and with support for MPO in particular this isn't
+        // really an advantage anymore. Instead DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL allows for a
+        // more "intelligent" composition and display updates to occur like Panel Self Refresh
+        // (PSR) which requires dirty rectangles (Present1 API) to work correctly.
+        desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+        // If our background is opaque we can enable "independent" flips by setting DXGI_ALPHA_MODE_IGNORE.
+        // As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
+        desc.AlphaMode = _api.backgroundOpaqueMixin ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
+        desc.Flags = debugGeneralPerformance ? 0 : DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
         wil::com_ptr<IDXGIFactory2> dxgiFactory;
         THROW_IF_FAILED(CreateDXGIFactory1(IID_PPV_ARGS(dxgiFactory.addressof())));
 
         if (_api.hwnd)
         {
-            if (FAILED(dxgiFactory->CreateSwapChainForHwnd(_r.device.get(), _api.hwnd, &desc, nullptr, nullptr, _r.swapChain.put())))
-            {
-                // Platform Update for Windows 7:
-                // DXGI_SCALING_NONE is not supported on Windows 7 or Windows Server 2008 R2 with the Platform Update for
-                // Windows 7 installed and causes CreateSwapChainForHwnd to return DXGI_ERROR_INVALID_CALL when called.
-                desc.Scaling = DXGI_SCALING_STRETCH;
-                THROW_IF_FAILED(dxgiFactory->CreateSwapChainForHwnd(_r.device.get(), _api.hwnd, &desc, nullptr, nullptr, _r.swapChain.put()));
-            }
+            THROW_IF_FAILED(dxgiFactory->CreateSwapChainForHwnd(_r.device.get(), _api.hwnd, &desc, nullptr, nullptr, _r.swapChain.put()));
         }
         else
         {
-            // We can't link with dcomp.lib as dcomp.dll doesn't exist on Windows 7.
             const wil::unique_hmodule module{ LoadLibraryExW(L"dcomp.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
             THROW_LAST_ERROR_IF(!module);
             const auto DCompositionCreateSurfaceHandle = GetProcAddressByFunctionDeclaration(module.get(), DCompositionCreateSurfaceHandle);
@@ -844,10 +901,9 @@ void AtlasEngine::_createSwapChain()
             THROW_IF_FAILED(dxgiFactory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(_r.device.get(), _api.swapChainHandle.get(), &desc, nullptr, _r.swapChain.put()));
         }
 
-        if (supportsFrameLatencyWaitableObject)
+        if constexpr (!debugGeneralPerformance)
         {
             const auto swapChain2 = _r.swapChain.query<IDXGISwapChain2>();
-            THROW_IF_FAILED(swapChain2->SetMaximumFrameLatency(1)); // TODO: 2?
             _r.frameLatencyWaitableObject.reset(swapChain2->GetFrameLatencyWaitableObject());
             THROW_LAST_ERROR_IF(!_r.frameLatencyWaitableObject);
         }
@@ -856,13 +912,14 @@ void AtlasEngine::_createSwapChain()
     // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
     // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
     // > Note that this requirement includes the first frame the app renders with the swap chain.
+    _r.waitForPresentation = true;
     WaitUntilCanRender();
 
     if (_api.swapChainChangedCallback)
     {
         try
         {
-            _api.swapChainChangedCallback();
+            _api.swapChainChangedCallback(_api.swapChainHandle.get());
         }
         CATCH_LOG();
     }
@@ -876,43 +933,29 @@ void AtlasEngine::_recreateSizeDependentResources()
     // ResizeBuffer() docs:
     //   Before you call ResizeBuffers, ensure that the application releases all references [...].
     //   You can use ID3D11DeviceContext::ClearState to ensure that all [internal] references are released.
-    if (_r.renderTargetView)
+    // The _r.cells check exists simply to prevent us from calling ResizeBuffers() on startup (i.e. when `_r` is empty).
+    if (_r.cells)
     {
+        if (_r.d2dMode)
+        {
+            _r.d2dRenderTarget.reset();
+        }
         _r.renderTargetView.reset();
         _r.deviceContext->ClearState();
         _r.deviceContext->Flush();
-        THROW_IF_FAILED(_r.swapChain->ResizeBuffers(0, _api.sizeInPixel.x, _api.sizeInPixel.y, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT));
+        THROW_IF_FAILED(_r.swapChain->ResizeBuffers(0, _api.sizeInPixel.x, _api.sizeInPixel.y, DXGI_FORMAT_UNKNOWN, debugGeneralPerformance ? 0 : DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT));
     }
 
-    // The RenderTargetView is later used with OMSetRenderTargets
-    // to tell D3D where stuff is supposed to be rendered at.
-    {
-        wil::com_ptr<ID3D11Texture2D> buffer;
-        THROW_IF_FAILED(_r.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), buffer.put_void()));
-        THROW_IF_FAILED(_r.device->CreateRenderTargetView(buffer.get(), nullptr, _r.renderTargetView.put()));
-    }
+    const auto totalCellCount = static_cast<size_t>(_api.cellCount.x) * static_cast<size_t>(_api.cellCount.y);
+    const auto resize = _api.cellCount != _r.cellCount;
 
-    // Tell D3D which parts of the render target will be visible.
-    // Everything outside of the viewport will be black.
-    //
-    // In the future this should cover the entire _api.sizeInPixel.x/_api.sizeInPixel.y.
-    // The pixel shader should draw the remaining content in the configured background color.
+    if (resize)
     {
-        D3D11_VIEWPORT viewport{};
-        viewport.Width = static_cast<float>(_api.sizeInPixel.x);
-        viewport.Height = static_cast<float>(_api.sizeInPixel.y);
-        _r.deviceContext->RSSetViewports(1, &viewport);
-    }
-
-    if (_api.cellCount != _r.cellCount)
-    {
-        const auto totalCellCount = static_cast<size_t>(_api.cellCount.x) * static_cast<size_t>(_api.cellCount.y);
         // Let's guess that every cell consists of a surrogate pair.
         const auto projectedTextSize = static_cast<size_t>(_api.cellCount.x) * 2;
         // IDWriteTextAnalyzer::GetGlyphs says:
         //   The recommended estimate for the per-glyph output buffers is (3 * textLength / 2 + 16).
-        // We already set the textLength to twice the cell count.
-        const auto projectedGlyphSize = 3 * projectedTextSize + 16;
+        const auto projectedGlyphSize = 3 * projectedTextSize / 2 + 16;
 
         // This buffer is a bit larger than the others (multiple MB).
         // Prevent a memory usage spike, by first deallocating and then allocating.
@@ -941,20 +984,72 @@ void AtlasEngine::_recreateSizeDependentResources()
         _api.glyphAdvances = Buffer<f32>{ projectedGlyphSize };
         _api.glyphOffsets = Buffer<DWRITE_GLYPH_OFFSET>{ projectedGlyphSize };
 
-        D3D11_BUFFER_DESC desc;
-        desc.ByteWidth = gsl::narrow<u32>(totalCellCount * sizeof(Cell)); // totalCellCount can theoretically be UINT32_MAX!
-        desc.Usage = D3D11_USAGE_DYNAMIC;
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-        desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-        desc.StructureByteStride = sizeof(Cell);
-        THROW_IF_FAILED(_r.device->CreateBuffer(&desc, nullptr, _r.cellBuffer.put()));
-        THROW_IF_FAILED(_r.device->CreateShaderResourceView(_r.cellBuffer.get(), nullptr, _r.cellView.put()));
+        // Initialize cellGlyphMapping with valid data (whitespace), so that it can be
+        // safely used by the TileHashMap refresh logic via makeNewest() in StartPaint().
+        {
+            u16x2* coords{};
+            AtlasKey key{ { .cellCount = 1 }, 1, L" " };
+            AtlasValue value{ CellFlags::None, 1, &coords };
+
+            coords[0] = _r.tileAllocator.allocate(_r.glyphs);
+
+            const auto it = _r.glyphs.insert(std::move(key), std::move(value));
+            _r.glyphQueue.emplace_back(it);
+
+            std::fill(_r.cellGlyphMapping.begin(), _r.cellGlyphMapping.end(), it);
+        }
     }
 
-    // We have called _r.deviceContext->ClearState() in the beginning and lost all D3D state.
-    // This forces us to set up everything up from scratch again.
-    _setShaderResources();
+    if (!_r.d2dMode)
+    {
+        // The RenderTargetView is later used with OMSetRenderTargets
+        // to tell D3D where stuff is supposed to be rendered at.
+        {
+            wil::com_ptr<ID3D11Texture2D> buffer;
+            THROW_IF_FAILED(_r.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), buffer.put_void()));
+            THROW_IF_FAILED(_r.device->CreateRenderTargetView(buffer.get(), nullptr, _r.renderTargetView.put()));
+        }
+        if (_r.customPixelShader)
+        {
+            D3D11_TEXTURE2D_DESC desc{};
+            desc.Width = _api.sizeInPixel.x;
+            desc.Height = _api.sizeInPixel.y;
+            desc.MipLevels = 1;
+            desc.ArraySize = 1;
+            desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+            desc.SampleDesc = { 1, 0 };
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+            THROW_IF_FAILED(_r.device->CreateTexture2D(&desc, nullptr, _r.customOffscreenTexture.addressof()));
+            THROW_IF_FAILED(_r.device->CreateShaderResourceView(_r.customOffscreenTexture.get(), nullptr, _r.customOffscreenTextureView.addressof()));
+            THROW_IF_FAILED(_r.device->CreateRenderTargetView(_r.customOffscreenTexture.get(), nullptr, _r.customOffscreenTextureTargetView.addressof()));
+        }
+
+        // Tell D3D which parts of the render target will be visible.
+        // Everything outside of the viewport will be black.
+        {
+            D3D11_VIEWPORT viewport{};
+            viewport.Width = static_cast<float>(_api.sizeInPixel.x);
+            viewport.Height = static_cast<float>(_api.sizeInPixel.y);
+            _r.deviceContext->RSSetViewports(1, &viewport);
+        }
+
+        if (resize)
+        {
+            D3D11_BUFFER_DESC desc;
+            desc.ByteWidth = gsl::narrow<u32>(totalCellCount * sizeof(Cell)); // totalCellCount can theoretically be UINT32_MAX!
+            desc.Usage = D3D11_USAGE_DYNAMIC;
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+            desc.StructureByteStride = sizeof(Cell);
+            THROW_IF_FAILED(_r.device->CreateBuffer(&desc, nullptr, _r.cellBuffer.put()));
+            THROW_IF_FAILED(_r.device->CreateShaderResourceView(_r.cellBuffer.get(), nullptr, _r.cellView.put()));
+        }
+
+        // We have called _r.deviceContext->ClearState() in the beginning and lost all D3D state.
+        // This forces us to set up everything up from scratch again.
+        _setShaderResources();
+    }
 
     WI_ClearFlag(_api.invalidations, ApiInvalidations::Size);
     WI_SetAllFlags(_r.invalidations, RenderInvalidations::ConstBuffer);
@@ -976,10 +1071,13 @@ void AtlasEngine::_recreateFontDependentResources()
 
         _r.cellSizeDIP.x = static_cast<float>(_api.fontMetrics.cellSize.x) / scaling;
         _r.cellSizeDIP.y = static_cast<float>(_api.fontMetrics.cellSize.y) / scaling;
-        _r.cellSize = _api.fontMetrics.cellSize;
         _r.cellCount = _api.cellCount;
+        _r.dpi = _api.dpi;
+        _r.fontMetrics = _api.fontMetrics;
+        _r.dipPerPixel = static_cast<float>(USER_DEFAULT_SCREEN_DPI) / static_cast<float>(_r.dpi);
+        _r.pixelPerDIP = static_cast<float>(_r.dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         _r.atlasSizeInPixel = { 0, 0 };
-        _r.tileAllocator = TileAllocator{ _r.cellSize, _api.sizeInPixel };
+        _r.tileAllocator = TileAllocator{ _api.fontMetrics.cellSize, _api.sizeInPixel };
 
         _r.glyphs = {};
         _r.glyphQueue = {};
@@ -1000,12 +1098,6 @@ void AtlasEngine::_recreateFontDependentResources()
     }
 
     // D2D
-    {
-        _r.underlinePos = _api.fontMetrics.underlinePos;
-        _r.strikethroughPos = _api.fontMetrics.strikethroughPos;
-        _r.lineThickness = _api.fontMetrics.lineThickness;
-        _r.dpi = _api.dpi;
-    }
     {
         // See AtlasEngine::UpdateFont.
         // It hardcodes indices 0/1/2 in fontAxisValues to the weight/italic/slant axes.
@@ -1036,15 +1128,33 @@ void AtlasEngine::_recreateFontDependentResources()
                 const auto fontStyle = italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
                 auto& textFormat = _r.textFormats[italic][bold];
 
-                THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontMetrics.fontName.get(), _api.fontMetrics.fontCollection.get(), fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontMetrics.fontSizeInDIP, L"", textFormat.put()));
-                textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-                textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+                wil::com_ptr<IDWriteFont> font;
+                THROW_IF_FAILED(_r.fontMetrics.fontFamily->GetFirstMatchingFont(fontWeight, DWRITE_FONT_STRETCH_NORMAL, fontStyle, font.addressof()));
+                THROW_IF_FAILED(font->CreateFontFace(_r.fontFaces[italic << 1 | bold].put()));
+
+                THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontMetrics.fontName.c_str(), _api.fontMetrics.fontCollection.get(), fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontMetrics.fontSizeInDIP, L"", textFormat.put()));
+                THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 
                 // DWRITE_LINE_SPACING_METHOD_UNIFORM:
                 // > Lines are explicitly set to uniform spacing, regardless of contained font sizes.
                 // > This can be useful to avoid the uneven appearance that can occur from font fallback.
                 // We want that. Otherwise fallback fonts might be rendered with an incorrect baseline and get cut off vertically.
                 THROW_IF_FAILED(textFormat->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, _r.cellSizeDIP.y, _api.fontMetrics.baselineInDIP));
+
+                // NOTE: SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER) breaks certain
+                // bitmap fonts which expect glyphs to be laid out left-aligned.
+
+                // NOTE: SetAutomaticFontAxes(DWRITE_AUTOMATIC_FONT_AXES_OPTICAL_SIZE) breaks certain
+                // fonts making them look fairly unslightly. With no option to easily disable this
+                // feature in Windows Terminal, it's better left disabled by default.
+
+                const DWRITE_LINE_SPACING lineSpacing{
+                    .method = DWRITE_LINE_SPACING_METHOD_UNIFORM,
+                    .height = _r.cellSizeDIP.y,
+                    .baseline = _api.fontMetrics.baselineInDIP,
+                    .fontLineGapUsage = DWRITE_FONT_LINE_GAP_USAGE_ENABLED,
+                };
+                THROW_IF_FAILED(textFormat.query<IDWriteTextFormat2>()->SetLineSpacing(&lineSpacing));
 
                 if (!_api.fontAxisValues.empty())
                 {
@@ -1145,6 +1255,15 @@ void AtlasEngine::_flushBufferLine()
     // This would seriously blow us up otherwise.
     Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
 
+    // GH#13962: With the lack of proper LineRendition support, just fill
+    // the remaining columns with whitespace to prevent any weird artifacts.
+    for (auto lastColumn = _api.bufferLineColumn.back(); lastColumn < _api.cellCount.x;)
+    {
+        ++lastColumn;
+        _api.bufferLine.emplace_back(L' ');
+        _api.bufferLineColumn.emplace_back(lastColumn);
+    }
+
     // NOTE:
     // This entire function is one huge hack to see if it works.
 
@@ -1181,7 +1300,8 @@ void AtlasEngine::_flushBufferLine()
     const auto textFormat = _getTextFormat(_api.attributes.bold, _api.attributes.italic);
     const auto& textFormatAxis = _getTextFormatAxis(_api.attributes.bold, _api.attributes.italic);
 
-    TextAnalyzer atlasAnalyzer{ _api.bufferLine, _api.analysisResults };
+    TextAnalysisSource analysisSource{ _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
+    TextAnalysisSink analysisSink{ _api.analysisResults };
 
     wil::com_ptr<IDWriteFontCollection> fontCollection;
     THROW_IF_FAILED(textFormat->GetFontCollection(fontCollection.addressof()));
@@ -1200,11 +1320,11 @@ void AtlasEngine::_flushBufferLine()
             {
                 wil::com_ptr<IDWriteFontFace5> fontFace5;
                 THROW_IF_FAILED(_sr.systemFontFallback.query<IDWriteFontFallback1>()->MapCharacters(
-                    /* analysisSource */ &atlasAnalyzer,
+                    /* analysisSource */ &analysisSource,
                     /* textPosition */ idx,
                     /* textLength */ gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx,
                     /* baseFontCollection */ fontCollection.get(),
-                    /* baseFamilyName */ _api.fontMetrics.fontName.get(),
+                    /* baseFamilyName */ _api.fontMetrics.fontName.c_str(),
                     /* fontAxisValues */ textFormatAxis.data(),
                     /* fontAxisValueCount */ gsl::narrow_cast<u32>(textFormatAxis.size()),
                     /* mappedLength */ &mappedLength,
@@ -1219,11 +1339,11 @@ void AtlasEngine::_flushBufferLine()
                 wil::com_ptr<IDWriteFont> font;
 
                 THROW_IF_FAILED(_sr.systemFontFallback->MapCharacters(
-                    /* analysisSource     */ &atlasAnalyzer,
+                    /* analysisSource     */ &analysisSource,
                     /* textPosition       */ idx,
                     /* textLength         */ gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx,
                     /* baseFontCollection */ fontCollection.get(),
-                    /* baseFamilyName     */ _api.fontMetrics.fontName.get(),
+                    /* baseFamilyName     */ _api.fontMetrics.fontName.c_str(),
                     /* baseWeight         */ baseWeight,
                     /* baseStyle          */ baseStyle,
                     /* baseStretch        */ DWRITE_FONT_STRETCH_NORMAL,
@@ -1305,7 +1425,7 @@ void AtlasEngine::_flushBufferLine()
             else
             {
                 _api.analysisResults.clear();
-                THROW_IF_FAILED(_sr.textAnalyzer->AnalyzeScript(&atlasAnalyzer, idx, complexityLength, &atlasAnalyzer));
+                THROW_IF_FAILED(_sr.textAnalyzer->AnalyzeScript(&analysisSource, idx, complexityLength, &analysisSink));
                 //_sr.textAnalyzer->AnalyzeBidi(&atlasAnalyzer, idx, complexityLength, &atlasAnalyzer);
 
                 for (const auto& a : _api.analysisResults)
@@ -1509,7 +1629,7 @@ bool AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, si
         }
 
         it = _r.glyphs.insert(std::move(key), std::move(value));
-        _r.glyphQueue.emplace_back(&it->first, &it->second);
+        _r.glyphQueue.emplace_back(it);
     }
 
     const auto valueData = it->second.data();

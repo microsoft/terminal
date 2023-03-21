@@ -14,29 +14,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     struct inclusive_rect
     {
-        // **** TRANSITIONAL ****
-        // The old SMALL_RECT type uses uppercase member names.
-        // We'll migrate to lowercase ones in the future.
-        union
-        {
-            CoordType left = 0;
-            CoordType Left;
-        };
-        union
-        {
-            CoordType top = 0;
-            CoordType Top;
-        };
-        union
-        {
-            CoordType right = 0;
-            CoordType Right;
-        };
-        union
-        {
-            CoordType bottom = 0;
-            CoordType Bottom;
-        };
+        CoordType left = 0;
+        CoordType top = 0;
+        CoordType right = 0;
+        CoordType bottom = 0;
 
         constexpr bool operator==(const inclusive_rect& rhs) const noexcept
         {
@@ -164,29 +145,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     {
         using const_iterator = details::_rectangle_const_iterator;
 
-        // **** TRANSITIONAL ****
-        // The old SMALL_RECT type uses uppercase member names.
-        // We'll migrate to lowercase ones in the future.
-        union
-        {
-            CoordType left = 0;
-            CoordType Left;
-        };
-        union
-        {
-            CoordType top = 0;
-            CoordType Top;
-        };
-        union
-        {
-            CoordType right = 0;
-            CoordType Right;
-        };
-        union
-        {
-            CoordType bottom = 0;
-            CoordType Bottom;
-        };
+        CoordType left = 0;
+        CoordType top = 0;
+        CoordType right = 0;
+        CoordType bottom = 0;
 
         constexpr rect() noexcept = default;
 
@@ -651,8 +613,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #ifdef _WINCONTYPES_
         // NOTE: This will convert from INCLUSIVE on the way in because
         // that is generally how SMALL_RECTs are handled in console code and via the APIs.
-        explicit constexpr rect(const inclusive_rect other) noexcept :
-            rect{ other.Left, other.Top, other.Right + 1, other.Bottom + 1 }
+        explicit constexpr rect(const inclusive_rect& other) noexcept :
+            rect{ other.left, other.top, other.right + 1, other.bottom + 1 }
         {
         }
 

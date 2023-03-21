@@ -6,13 +6,7 @@
 #include "ConptyConnection.g.h"
 #include "ConnectionStateHolder.h"
 
-#include <conpty-static.h>
-
-namespace wil
-{
-    // These belong in WIL upstream, so when we reingest the change that has them we'll get rid of ours.
-    using unique_static_pseudoconsole_handle = wil::unique_any<HPCON, decltype(&::ConptyClosePseudoConsole), ::ConptyClosePseudoConsole>;
-}
+#include "ITerminalHandoff.h"
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
@@ -23,7 +17,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                          const HANDLE hOut,
                          const HANDLE hRef,
                          const HANDLE hServerProcess,
-                         const HANDLE hClientProcess);
+                         const HANDLE hClientProcess,
+                         TERMINAL_STARTUP_INFO startupInfo);
 
         ConptyConnection() noexcept = default;
         void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
@@ -42,6 +37,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         winrt::guid Guid() const noexcept;
         winrt::hstring Commandline() const;
+        winrt::hstring StartingTitle() const;
+        WORD ShowWindow() const noexcept;
 
         static void StartInboundListener();
         static void StopInboundListener();
@@ -60,15 +57,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
     private:
-        static HRESULT NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client) noexcept;
+        static void closePseudoConsoleAsync(HPCON hPC) noexcept;
+        static HRESULT NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo) noexcept;
         static winrt::hstring _commandlineFromProcess(HANDLE process);
 
         HRESULT _LaunchAttachedClient() noexcept;
         void _indicateExitWithStatus(unsigned int status) noexcept;
-        void _ClientTerminated() noexcept;
+        void _LastConPtyClientDisconnected() noexcept;
 
-        til::CoordType _initialRows{};
-        til::CoordType _initialCols{};
+        til::CoordType _rows{};
+        til::CoordType _cols{};
         uint64_t _initialParentHwnd{ 0 };
         hstring _commandline{};
         hstring _startingDirectory{};
@@ -85,13 +83,22 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_hfile _outPipe; // The pipe for reading output from
         wil::unique_handle _hOutputThread;
         wil::unique_process_information _piClient;
-        wil::unique_static_pseudoconsole_handle _hPC;
-        wil::unique_threadpool_wait _clientExitWait;
+        wil::unique_any<HPCON, decltype(closePseudoConsoleAsync), closePseudoConsoleAsync> _hPC;
 
         til::u8state _u8State{};
         std::wstring _u16Str{};
         std::array<char, 4096> _buffer{};
         bool _passthroughMode{};
+        bool _reloadEnvironmentVariables{};
+
+        struct StartupInfoFromDefTerm
+        {
+            winrt::hstring title{};
+            winrt::hstring iconPath{};
+            int32_t iconIndex{};
+            WORD showWindow{};
+
+        } _startupInfo{};
 
         DWORD _OutputThread();
     };

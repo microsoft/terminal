@@ -30,7 +30,7 @@ HRESULT GdiEngine::InvalidateSystem(const til::rect* const prcDirtyClient) noexc
 // - HRESULT S_OK, GDI-based error code, or safemath error
 HRESULT GdiEngine::InvalidateScroll(const til::point* const pcoordDelta) noexcept
 {
-    if (pcoordDelta->X != 0 || pcoordDelta->Y != 0)
+    if (pcoordDelta->x != 0 || pcoordDelta->y != 0)
     {
         const auto ptDelta = *pcoordDelta * _GetFontSize();
         RETURN_IF_FAILED(_InvalidOffset(&ptDelta));
@@ -180,8 +180,8 @@ HRESULT GdiEngine::_InvalidRestrict() noexcept
     // Do restriction only if retrieving the client rect was successful.
     RETURN_HR_IF(E_FAIL, !(GetClientRect(_hwndTargetWindow, rcClient.as_win32_rect())));
 
-    _rcInvalid.left = std::clamp(_rcInvalid.left, rcClient.left, rcClient.right);
-    _rcInvalid.right = std::clamp(_rcInvalid.right, rcClient.left, rcClient.right);
+    _rcInvalid.left = rcClient.left;
+    _rcInvalid.right = rcClient.right;
     _rcInvalid.top = std::clamp(_rcInvalid.top, rcClient.top, rcClient.bottom);
     _rcInvalid.bottom = std::clamp(_rcInvalid.bottom, rcClient.top, rcClient.bottom);
 

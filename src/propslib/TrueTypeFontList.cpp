@@ -46,7 +46,7 @@ WORD ConvertStringToDec(
     auto Status = RegistrySerialization::s_OpenKey(HKEY_LOCAL_MACHINE,
                                                    MACHINE_REGISTRY_CONSOLE_TTFONT_WIN32_PATH,
                                                    &hkRegistry);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         LPTTFONTLIST pTTFontList;
 
@@ -65,7 +65,7 @@ WORD ConvertStringToDec(
                 break;
             }
 
-            if (!NT_SUCCESS(Status))
+            if (FAILED_NTSTATUS(Status))
             {
                 break;
             }

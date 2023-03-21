@@ -16,7 +16,7 @@
     X(winrt::Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode::Never)
 
 // --------------------------- Control Appearance ---------------------------
-//  All of these settings are defined in IControlSettings.
+//  All of these settings are defined in IControlAppearance.
 #define CONTROL_APPEARANCE_SETTINGS(X)                                                                                                          \
     X(til::color, SelectionBackground, DEFAULT_FOREGROUND)                                                                                      \
     X(double, Opacity, 1.0)                                                                                                                     \
@@ -57,10 +57,12 @@
     X(bool, UseAcrylic, false)                                                                                                                           \
     X(winrt::hstring, Padding, DEFAULT_PADDING)                                                                                                          \
     X(winrt::hstring, FontFace, L"Consolas")                                                                                                             \
-    X(int32_t, FontSize, DEFAULT_FONT_SIZE)                                                                                                              \
+    X(float, FontSize, DEFAULT_FONT_SIZE)                                                                                                                \
     X(winrt::Windows::UI::Text::FontWeight, FontWeight)                                                                                                  \
     X(IFontFeatureMap, FontFeatures)                                                                                                                     \
     X(IFontAxesMap, FontAxes)                                                                                                                            \
+    X(winrt::hstring, CellWidth)                                                                                                                         \
+    X(winrt::hstring, CellHeight)                                                                                                                        \
     X(winrt::Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr)                                                                           \
     X(winrt::hstring, Commandline)                                                                                                                       \
     X(winrt::hstring, StartingDirectory)                                                                                                                 \
@@ -71,4 +73,5 @@
     X(bool, SoftwareRendering, false)                                                                                                                    \
     X(bool, UseAtlasEngine, false)                                                                                                                       \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
-    X(bool, ShowMarks, false)
+    X(bool, ShowMarks, false)                                                                                                                            \
+    X(bool, RightClickContextMenu, false)

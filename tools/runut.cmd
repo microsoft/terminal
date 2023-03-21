@@ -4,7 +4,7 @@ rem Run the console unit tests.
 rem Keep this file in sync with tests.xml
 
 rem The TerminalApp.LocalTests are actually run from the TestHostApp path.
-rem That's a cppwinrt project, that doesn't use %PLATFORM% in it's path when the
+rem That's a cppwinrt project, that doesn't use %PLATFORM% in its path when the
 rem platform is Win32/x86.
 rem set a helper for us to find that test
 

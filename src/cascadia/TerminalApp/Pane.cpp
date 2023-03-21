@@ -5,6 +5,8 @@
 #include "Pane.h"
 #include "AppLogic.h"
 
+#include "Utils.h"
+
 #include <Mmsystem.h>
 
 using namespace winrt::Windows::Foundation;
@@ -31,9 +33,6 @@ static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 static const int AnimationDurationInMilliseconds = 200;
 static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(AnimationDurationInMilliseconds)));
 
-winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
-winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
-
 Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
     _lastActive{ lastFocused },
@@ -44,14 +43,7 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
 
     _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
     _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
-
-    // On the first Pane's creation, lookup resources we'll use to theme the
-    // Pane, including the brushed to use for the focused/unfocused border
-    // color.
-    if (s_focusedBorderBrush == nullptr || s_unfocusedBorderBrush == nullptr)
-    {
-        _SetupResources();
-    }
+    _closeTerminalRequestedToken = _control.CloseTerminalRequested({ this, &Pane::_CloseTerminalRequestedHandler });
 
     // Register an event with the control to have it inform us when it gains focus.
     _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
@@ -88,7 +80,7 @@ Pane::Pane(std::shared_ptr<Pane> first,
 
     // Use the unfocused border color as the pane background, so an actual color
     // appears behind panes as we animate them sliding in.
-    _root.Background(s_unfocusedBorderBrush);
+    _root.Background(_themeResources.unfocusedBorderBrush);
 
     _root.Children().Append(_borderFirst);
     _root.Children().Append(_borderSecond);
@@ -153,7 +145,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
             c = til::color(controlSettings.TabColor().Value());
         }
 
-        args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>(c));
+        args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>{ static_cast<winrt::Windows::UI::Color>(c) });
     }
 
     // TODO:GH#9800 - we used to be able to persist the color scheme that a
@@ -993,7 +985,7 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
     // actually no longer _our_ control, and instead could be a descendant.
     //
     // When the control's new Pane takes ownership of the control, the new
-    // parent will register it's own event handler. That event handler will get
+    // parent will register its own event handler. That event handler will get
     // fired after this handler returns, and will properly cleanup state.
     if (!_IsLeaf())
     {
@@ -1019,13 +1011,41 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
 
     if (_profile)
     {
+        if (_isDefTermSession && _profile.CloseOnExit() == CloseOnExitMode::Automatic)
+        {
+            // For 'automatic', we only care about the connection state if we were launched by Terminal
+            // Since we were launched via defterm, ignore the connection state (i.e. we treat the
+            // close on exit mode as 'always', see GH #13325 for discussion)
+            Close();
+        }
+
         const auto mode = _profile.CloseOnExit();
         if ((mode == CloseOnExitMode::Always) ||
-            (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
+            ((mode == CloseOnExitMode::Graceful || mode == CloseOnExitMode::Automatic) && newConnectionState == ConnectionState::Closed))
         {
             Close();
         }
     }
+}
+
+void Pane::_CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    std::unique_lock lock{ _createCloseLock };
+
+    // It's possible that this event handler started being executed, then before
+    // we got the lock, another thread created another child. So our control is
+    // actually no longer _our_ control, and instead could be a descendant.
+    //
+    // When the control's new Pane takes ownership of the control, the new
+    // parent will register its own event handler. That event handler will get
+    // fired after this handler returns, and will properly cleanup state.
+    if (!_IsLeaf())
+    {
+        return;
+    }
+
+    Close();
 }
 
 winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
@@ -1273,7 +1293,7 @@ TermControl Pane::GetTerminalControl()
 }
 
 // Method Description:
-// - Recursively remove the "Active" state from this Pane and all it's children.
+// - Recursively remove the "Active" state from this Pane and all its children.
 // - Updates our visuals to match our new state, including highlighting our borders.
 // Arguments:
 // - <none>
@@ -1373,8 +1393,8 @@ void Pane::UpdateVisuals()
     {
         _UpdateBorders();
     }
-    _borderFirst.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
-    _borderSecond.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
+    _borderFirst.BorderBrush(_lastActive ? _themeResources.focusedBorderBrush : _themeResources.unfocusedBorderBrush);
+    _borderSecond.BorderBrush(_lastActive ? _themeResources.focusedBorderBrush : _themeResources.unfocusedBorderBrush);
 }
 
 // Method Description:
@@ -1568,15 +1588,17 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         // Find what borders need to persist after we close the child
         _borders = _GetCommonBorders();
 
-        // take the control, profile and id of the pane that _wasn't_ closed.
+        // take the control, profile, id and isDefTermSession of the pane that _wasn't_ closed.
         _control = remainingChild->_control;
         _connectionState = remainingChild->_connectionState;
         _profile = remainingChild->_profile;
         _id = remainingChild->Id();
+        _isDefTermSession = remainingChild->_isDefTermSession;
 
         // Add our new event handler before revoking the old one.
         _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
         _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+        _closeTerminalRequestedToken = _control.CloseTerminalRequested({ this, &Pane::_CloseTerminalRequestedHandler });
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
@@ -1592,6 +1614,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                 {
                     p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
                     p->_control.WarningBell(p->_warningBellToken);
+                    p->_control.CloseTerminalRequested(p->_closeTerminalRequestedToken);
                 }
             });
         }
@@ -1600,6 +1623,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         remainingChild->Closed(remainingChildClosedToken);
         remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
         remainingChild->_control.WarningBell(remainingChild->_warningBellToken);
+        remainingChild->_control.CloseTerminalRequested(remainingChild->_closeTerminalRequestedToken);
 
         // If we or either of our children was focused, we want to take that
         // focus from them.
@@ -1681,6 +1705,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                 {
                     p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
                     p->_control.WarningBell(p->_warningBellToken);
+                    p->_control.CloseTerminalRequested(p->_closeTerminalRequestedToken);
                 }
             });
         }
@@ -1755,6 +1780,9 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         remainingChild->_firstChild = nullptr;
         remainingChild->_secondChild = nullptr;
     }
+
+    // Notify the discarded child that it was closed by its parent
+    closedChild->_ClosedByParentHandlers();
 }
 
 winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
@@ -1818,7 +1846,7 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
         Controls::Grid dummyGrid;
         // GH#603 - we can safely add a BG here, as the control is gone right
         // away, to fill the space as the rest of the pane expands.
-        dummyGrid.Background(s_unfocusedBorderBrush);
+        dummyGrid.Background(_themeResources.unfocusedBorderBrush);
         // It should be the size of the closed pane.
         dummyGrid.Width(removedOriginalSize.Width);
         dummyGrid.Height(removedOriginalSize.Height);
@@ -2096,7 +2124,7 @@ void Pane::_SetupEntranceAnimation()
     // * If we give the parent (us) root BG a color, then a transparent pane
     //   will flash opaque during the animation, then back to transparent, which
     //   looks bad.
-    _secondChild->_root.Background(s_unfocusedBorderBrush);
+    _secondChild->_root.Background(_themeResources.unfocusedBorderBrush);
 
     const auto [firstSize, secondSize] = _CalcChildrenSizes(::base::saturated_cast<float>(totalSize));
 
@@ -2436,6 +2464,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
         _connectionStateChangedToken.value = 0;
         _control.WarningBell(_warningBellToken);
         _warningBellToken.value = 0;
+        _control.CloseTerminalRequested(_closeTerminalRequestedToken);
+        _closeTerminalRequestedToken.value = 0;
 
         // Remove our old GotFocus handler from the control. We don't want the
         // control telling us that it's now focused, we want it telling its new
@@ -2464,11 +2494,12 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     }
     else
     {
-        //   Move our control, guid into the first one.
+        //   Move our control, guid, isDefTermSession into the first one.
         _firstChild = std::make_shared<Pane>(_profile, _control);
         _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
         _profile = nullptr;
         _control = { nullptr };
+        _firstChild->_isDefTermSession = _isDefTermSession;
     }
 
     _splitState = actualSplitType;
@@ -2538,7 +2569,7 @@ void Pane::Maximize(std::shared_ptr<Pane> zoomedPane)
         }
 
         // Always recurse into both children. If the (un)zoomed pane was one of
-        // our direct children, we'll still want to update it's borders.
+        // our direct children, we'll still want to update its borders.
         _firstChild->Maximize(zoomedPane);
         _secondChild->Maximize(zoomedPane);
     }
@@ -2575,7 +2606,7 @@ void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
         }
 
         // Always recurse into both children. If the (un)zoomed pane was one of
-        // our direct children, we'll still want to update it's borders.
+        // our direct children, we'll still want to update its borders.
         _firstChild->Restore(zoomedPane);
         _secondChild->Restore(zoomedPane);
     }
@@ -3058,54 +3089,35 @@ float Pane::_ClampSplitPosition(const bool widthOrHeight, const float requestedV
     return std::clamp(requestedValue, minSplitPosition, maxSplitPosition);
 }
 
-// Function Description:
-// - Attempts to load some XAML resources that the Pane will need. This includes:
-//   * The Color we'll use for active Panes's borders - SystemAccentColor
-//   * The Brush we'll use for inactive Panes - TabViewBackground (to match the
-//     color of the titlebar)
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Pane::_SetupResources()
+// Method Description:
+// - Update our stored brushes for the current theme. This will also recursively
+//   update all our children.
+// - TerminalPage creates these brushes and ultimately owns them. Effectively,
+//   we're just storing a smart pointer to the page's brushes.
+void Pane::UpdateResources(const PaneResources& resources)
 {
-    const auto res = Application::Current().Resources();
-    const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
-    if (res.HasKey(accentColorKey))
-    {
-        const auto colorFromResources = res.Lookup(accentColorKey);
-        // If SystemAccentColor is _not_ a Color for some reason, use
-        // Transparent as the color, so we don't do this process again on
-        // the next pane (by leaving s_focusedBorderBrush nullptr)
-        auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
-        s_focusedBorderBrush = SolidColorBrush(actualColor);
-    }
-    else
-    {
-        // DON'T use Transparent here - if it's "Transparent", then it won't
-        // be able to hittest for clicks, and then clicking on the border
-        // will eat focus.
-        s_focusedBorderBrush = SolidColorBrush{ Colors::Black() };
-    }
+    _themeResources = resources;
+    UpdateVisuals();
 
-    const auto unfocusedBorderBrushKey = winrt::box_value(L"UnfocusedBorderBrush");
-    if (res.HasKey(unfocusedBorderBrushKey))
+    if (!_IsLeaf())
     {
-        auto obj = res.Lookup(unfocusedBorderBrushKey);
-        s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
-    }
-    else
-    {
-        // DON'T use Transparent here - if it's "Transparent", then it won't
-        // be able to hittest for clicks, and then clicking on the border
-        // will eat focus.
-        s_unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
+        _firstChild->UpdateResources(resources);
+        _secondChild->UpdateResources(resources);
     }
 }
 
 int Pane::GetLeafPaneCount() const noexcept
 {
     return _IsLeaf() ? 1 : (_firstChild->GetLeafPaneCount() + _secondChild->GetLeafPaneCount());
+}
+
+// Method Description:
+// - Should be called when this pane is created via a default terminal handoff
+// - Finalizes our configuration given the information that we have been
+//   created via default handoff
+void Pane::FinalizeConfigurationGivenDefault()
+{
+    _isDefTermSession = true;
 }
 
 // Method Description:

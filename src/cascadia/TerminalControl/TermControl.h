@@ -41,12 +41,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ToggleBlockSelection();
         void ToggleMarkMode();
         bool SwitchSelectionEndpoint();
+        bool ExpandSelectionToWord();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
         Windows::Foundation::Size MinimumSize();
         float SnapDimensionToGrid(const bool widthOrHeight, const float dimension);
 
         void WindowVisibilityChanged(const bool showOrHide);
+
+        void ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Core::MatchMode matchMode);
 
 #pragma region ICoreState
         const uint64_t TaskbarState() const noexcept;
@@ -79,7 +82,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void ScrollViewport(int viewTop);
 
-        void AdjustFontSize(int fontSizeDelta);
+        void AdjustFontSize(float fontSizeDelta);
         void ResetFontSize();
         til::point GetFontSize() const;
 
@@ -111,7 +114,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
         const Windows::UI::Xaml::Thickness GetPadding();
 
-        static Windows::Foundation::Size GetProposedDimensions(const IControlSettings& settings, const uint32_t dpi);
+        static Windows::Foundation::Size GetProposedDimensions(const IControlSettings& settings,
+                                                               const uint32_t dpi,
+                                                               int32_t commandlineCols,
+                                                               int32_t commandlineRows);
         static Windows::Foundation::Size GetProposedDimensions(const IControlSettings& settings, const uint32_t dpi, const winrt::Windows::Foundation::Size& initialSizeInChars);
 
         void BellLightOn();
@@ -142,6 +148,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         PROJECTED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable, _core, TaskbarProgressChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs, _core, ShowWindowChanged);
+        PROJECTED_FORWARDED_TYPED_EVENT(CloseTerminalRequested, IInspectable, IInspectable, _core, CloseTerminalRequested);
 
         PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
 
@@ -153,6 +160,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
         TYPED_EVENT(Initialized,               Control::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(WarningBell,               IInspectable, IInspectable);
+
         // clang-format on
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, BackgroundBrush, _PropertyChangedHandlers, nullptr);
@@ -201,6 +209,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _pointerPressedInBounds{ false };
 
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
+        winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellDarkAnimation{ nullptr };
         Windows::UI::Xaml::DispatcherTimer _bellLightTimer{ nullptr };
 
         std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
@@ -208,6 +217,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         bool _showMarksInScrollbar{ false };
+
+        bool _isBackgroundLight{ false };
+
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalPrimaryElements{ nullptr };
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSecondaryElements{ nullptr };
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedPrimaryElements{ nullptr };
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedSecondaryElements{ nullptr };
 
         inline bool _IsClosing() const noexcept
         {
@@ -230,6 +246,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _coreBackgroundColorChanged(const IInspectable& sender, const IInspectable& args);
         void _changeBackgroundColor(til::color bg);
+        static bool _isColorLight(til::color bg) noexcept;
         void _changeBackgroundOpacity();
 
         bool _InitializeTerminal();
@@ -304,6 +321,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
+
+        void _contextMenuHandler(IInspectable sender, Control::ContextMenuRequestedEventArgs args);
+
+        void _PasteCommandHandler(const IInspectable& sender, const IInspectable& args);
+        void _CopyCommandHandler(const IInspectable& sender, const IInspectable& args);
+        void _SearchCommandHandler(const IInspectable& sender, const IInspectable& args);
     };
 }
 

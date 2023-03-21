@@ -41,7 +41,7 @@ class IInputEvent
 {
 public:
     static std::unique_ptr<IInputEvent> Create(const INPUT_RECORD& record);
-    static std::deque<std::unique_ptr<IInputEvent>> Create(gsl::span<const INPUT_RECORD> records);
+    static std::deque<std::unique_ptr<IInputEvent>> Create(std::span<const INPUT_RECORD> records);
     static std::deque<std::unique_ptr<IInputEvent>> Create(const std::deque<INPUT_RECORD>& records);
 
     static std::vector<INPUT_RECORD> ToInputRecords(const std::deque<std::unique_ptr<IInputEvent>>& events);
@@ -62,9 +62,9 @@ public:
 #endif
 };
 
-inline IInputEvent::~IInputEvent()
-{
-}
+inline IInputEvent::~IInputEvent() = default;
+
+using InputEventQueue = std::deque<std::unique_ptr<IInputEvent>>;
 
 #ifdef UNIT_TESTING
 std::wostream& operator<<(std::wostream& stream, const IInputEvent* pEvent);
@@ -292,6 +292,7 @@ public:
     void SetRepeatCount(const WORD repeatCount) noexcept;
     void SetVirtualKeyCode(const WORD virtualKeyCode) noexcept;
     void SetVirtualScanCode(const WORD virtualScanCode) noexcept;
+    void SetCharData(const char character) noexcept;
     void SetCharData(const wchar_t character) noexcept;
 
     void SetActiveModifierKeys(const DWORD activeModifierKeys) noexcept;

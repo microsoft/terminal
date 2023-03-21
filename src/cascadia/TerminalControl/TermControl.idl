@@ -21,7 +21,10 @@ namespace Microsoft.Terminal.Control
                     IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings, UInt32 dpi);
+        static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings,
+                                                             UInt32 dpi,
+                                                             Int32 commandlineCols,
+                                                             Int32 commandlineRows);
 
         void UpdateControlSettings(IControlSettings settings);
         void UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance);
@@ -42,6 +45,9 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
 
+        Microsoft.UI.Xaml.Controls.CommandBarFlyout ContextMenu { get; };
+        Microsoft.UI.Xaml.Controls.CommandBarFlyout SelectionContextMenu { get; };
+
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
         // We expose this and ConnectionState here so that it might eventually be data bound.
@@ -49,12 +55,15 @@ namespace Microsoft.Terminal.Control
 
         event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
 
+        event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
+
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
         void SelectAll();
         Boolean ToggleBlockSelection();
         void ToggleMarkMode();
         Boolean SwitchSelectionEndpoint();
+        Boolean ExpandSelectionToWord();
         void ClearBuffer(ClearBufferType clearType);
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
@@ -70,7 +79,7 @@ namespace Microsoft.Terminal.Control
 
         void SearchMatch(Boolean goForward);
 
-        void AdjustFontSize(Int32 fontSizeDelta);
+        void AdjustFontSize(Single fontSizeDelta);
         void ResetFontSize();
 
         void ToggleShaderEffects();
@@ -92,5 +101,7 @@ namespace Microsoft.Terminal.Control
         Double BackgroundOpacity { get; };
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
+
+        void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
     }
 }

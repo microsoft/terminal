@@ -16,7 +16,7 @@ using namespace Microsoft::Console::Render;
 //      This is an Inclusive rect.
 // Return Value:
 // - S_OK or math failure
-[[nodiscard]] HRESULT GdiEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
+[[nodiscard]] HRESULT GdiEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 {
     _invalidCharacters = til::rect{ _psInvalidData.rcPaint }.scale_down(_GetFontSize());
 
@@ -47,7 +47,7 @@ using namespace Microsoft::Console::Render;
             {
                 const int totalWidth = abc.abcA + abc.abcB + abc.abcC;
 
-                isFullWidth = totalWidth > _GetFontSize().X;
+                isFullWidth = totalWidth > _GetFontSize().width;
             }
         }
         else
@@ -55,7 +55,7 @@ using namespace Microsoft::Console::Render;
             auto cpxWidth = 0;
             if (GetCharWidth32W(_hdcMemoryContext, wch, wch, &cpxWidth))
             {
-                isFullWidth = cpxWidth > _GetFontSize().X;
+                isFullWidth = cpxWidth > _GetFontSize().width;
             }
         }
     }
@@ -129,8 +129,8 @@ til::size GdiEngine::_GetInvalidRectSize() const
 til::size GdiEngine::_GetRectSize(const RECT* const pRect) const
 {
     til::size sz;
-    sz.cx = pRect->right - pRect->left;
-    sz.cy = pRect->bottom - pRect->top;
+    sz.width = pRect->right - pRect->left;
+    sz.height = pRect->bottom - pRect->top;
 
     return sz;
 }

@@ -725,7 +725,7 @@ int FontListCreate(
     /*
      * This only enumerates face names and font sizes if necessary.
      */
-    if (!NT_SUCCESS(EnumerateFonts(bLB ? EF_OEMFONT : EF_TTFONT)))
+    if (FAILED_NTSTATUS(EnumerateFonts(bLB ? EF_OEMFONT : EF_TTFONT)))
     {
         return LB_ERR;
     }
@@ -1196,8 +1196,8 @@ int FindCreateFont(
     {
         // retrieve default font face name for this codepage, and then set it as our current face
         WCHAR szDefaultCodepageTTFont[LF_FACESIZE] = { 0 };
-        if (NT_SUCCESS(GetTTFontFaceForCodePage(CodePage, szDefaultCodepageTTFont, ARRAYSIZE(szDefaultCodepageTTFont))) &&
-            NT_SUCCESS(StringCchCopyW(DefaultTTFaceName, ARRAYSIZE(DefaultTTFaceName), szDefaultCodepageTTFont)))
+        if (SUCCEEDED_NTSTATUS(GetTTFontFaceForCodePage(CodePage, szDefaultCodepageTTFont, ARRAYSIZE(szDefaultCodepageTTFont))) &&
+            SUCCEEDED_NTSTATUS(StringCchCopyW(DefaultTTFaceName, ARRAYSIZE(DefaultTTFaceName), szDefaultCodepageTTFont)))
         {
             pwszFace = DefaultTTFaceName;
             Size.X = 0;

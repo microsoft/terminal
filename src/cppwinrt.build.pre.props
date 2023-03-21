@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
     <!-- this will trigger the use of a project-specific out dir -->
@@ -13,7 +13,7 @@
     <CppWinRTEnabled>true</CppWinRTEnabled>
     <CppWinRTOptimized>true</CppWinRTOptimized>
     <DefaultLanguage>en-US</DefaultLanguage>
-    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <MinimumVisualStudioVersion>17.0</MinimumVisualStudioVersion>
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
   </PropertyGroup>
 
@@ -28,6 +28,7 @@
     <AppContainerApplication>true</AppContainerApplication>
     <WindowsStoreApp>true</WindowsStoreApp>
     <ApplicationType>Windows Store</ApplicationType>
+    <UseCrtSDKReference Condition="'$(EnableHybridCRT)'=='true'">false</UseCrtSDKReference> <!-- The SDK reference breaks the Hybrid CRT -->
   </PropertyGroup>
   <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'!='true'">
     <!-- Some of our projects include the cppwinrt build options to
@@ -62,7 +63,7 @@
   <!-- Overrides for common build settings -->
   <ItemDefinitionGroup>
     <ClCompile>
-      <!-- C++/WinRT hardcodes pch.h -->
+      <!-- C++/WinRT hard-codes pch.h -->
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>

@@ -39,6 +39,7 @@
 #include <regex>
 #include <set>
 #include <shared_mutex>
+#include <span>
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
@@ -66,7 +67,6 @@
 // and uses the C-namespaced "max" which conflicts with Windows definitions.
 #define GSL_MULTI_SPAN_H
 #include <gsl/gsl>
-#include <gsl/span_ext>
 
 // CppCoreCheck
 #include <CppCoreCheck/Warnings.h>
@@ -76,9 +76,6 @@
 #pragma warning(disable:4100) // unreferenced parameter
 #include <base/numerics/safe_math.h>
 #pragma warning(pop)
-
-// Boost
-#include "boost/container/small_vector.hpp"
 
 // IntSafe
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS

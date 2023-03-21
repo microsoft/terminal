@@ -17,10 +17,11 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         None = 0,
         Profile_Appearance,
-        Profile_Advanced
+        Profile_Advanced,
+        ColorSchemes_Edit
     };
 
-    runtimeclass Breadcrumb
+    runtimeclass Breadcrumb : Windows.Foundation.IStringable
     {
         IInspectable Tag;
         String Label;

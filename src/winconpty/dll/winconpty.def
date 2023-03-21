@@ -4,9 +4,11 @@ EXPORTS
     ConptyCreatePseudoConsoleAsUser
     ConptyResizePseudoConsole
     ConptyClosePseudoConsole
+    ConptyClosePseudoConsoleTimeout
     ConptyClearPseudoConsole
     ConptyShowHidePseudoConsole
     ConptyReparentPseudoConsole
+    ConptyReleasePseudoConsole
     ConptyPackPseudoConsole
 
     ; Compatibility aliases for P/Invoke; only required for compatibility

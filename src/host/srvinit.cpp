@@ -18,6 +18,7 @@
 #include "../server/Entrypoints.h"
 #include "../server/IoSorter.h"
 
+#include "../interactivity/inc/ISystemConfigurationProvider.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../interactivity/base/ApiDetector.hpp"
 #include "../interactivity/base/RemoteConsoleControl.hpp"
@@ -115,7 +116,7 @@ static bool s_IsOnDesktop()
         const auto status = Microsoft::Console::Interactivity::ApiDetector::DetectNtUserWindow(&level);
         LOG_IF_NTSTATUS_FAILED(status);
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             switch (level)
             {
@@ -150,7 +151,7 @@ static bool s_IsOnDesktop()
     // 4. Hardcoded default settings
     // To establish this hierarchy, we will need to load the settings and apply them in reverse order.
 
-    // 4. Initializing Settings will establish hardcoded defaults.
+    // 4. Initializing Settings will establish hard-coded defaults.
     // Set to reference of global console information since that's the only place we need to hold the settings.
     auto& settings = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& launchArgs = ServiceLocator::LocateGlobals().launchArgs;
@@ -179,7 +180,7 @@ static bool s_IsOnDesktop()
 
         // We need to see if we were spawned from a link. If we were, we need to
         // call back into the shell to try to get all the console information from the link.
-        ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName);
+        ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName, nullptr);
 
         // If we weren't started from a link, this will already be set.
         // If LoadLinkInfo couldn't find anything, it will remove the flag so we can dig in the registry.
@@ -197,7 +198,23 @@ static bool s_IsOnDesktop()
         // We want everyone to be using VT by default anyways, so this is a
         // strong nudge in that direction. If an application _doesn't_ want VT
         // processing, it's free to disable this setting, even in conpty mode.
-        settings.SetVirtTermLevel(1);
+        settings.SetDefaultVirtTermLevel(1);
+
+        // GH#9458 - In the case of a DefTerm handoff, the OriginalTitle might
+        // be stashed in the lnk. We want to crack that lnk open, so we can get
+        // that title from it, but we want to discard everything else. So build
+        // a dummy Settings object here, and read the link settings into it.
+        // `Title` will get filled with the title from the lnk, which we'll use
+        // below.
+
+        Settings temp;
+        // We're not gonna copy over StartupFlags to the main gci settings,
+        // because we generally don't think those are valuable in ConPTY mode.
+        // However, we do need to apply them to the temp we've created, so that
+        // GetSettingsFromLink will actually look for the link settings (it will
+        // skip that if STARTF_TITLEISLINKNAME is not set).
+        temp.SetStartupFlags(pStartupSettings->GetStartupFlags());
+        ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&temp, Title, &TitleLength, CurDir, AppName, nullptr);
     }
 
     // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
@@ -238,7 +255,7 @@ static bool s_IsOnDesktop()
     // Allocate console will read the global ServiceLocator::LocateGlobals().getConsoleInformation
     // for the settings we just set.
     auto Status = CONSOLE_INFORMATION::AllocateConsole({ Title, TitleLength / sizeof(wchar_t) });
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return Status;
     }
@@ -280,7 +297,7 @@ void ConsoleCheckDebug()
     wil::unique_hkey hConsole;
     auto status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUser, &hConsole);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         DWORD dwData = 0;
         status = RegistrySerialization::s_QueryValue(hConsole.get(),
@@ -290,7 +307,7 @@ void ConsoleCheckDebug()
                                                      (BYTE*)&dwData,
                                                      nullptr);
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             if (dwData != 0)
             {
@@ -494,7 +511,7 @@ try
 
     const auto serverProcess = GetCurrentProcess();
 
-    ::Microsoft::WRL::ComPtr<ITerminalHandoff> handoff;
+    ::Microsoft::WRL::ComPtr<ITerminalHandoff2> handoff;
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_PrepareToCreateDelegationTerminal",
@@ -509,12 +526,73 @@ try
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
+    // As a part of defterm handoff, we're gonna try to pull a lot of
+    // information out of the link and startup info, so we can let the terminal
+    // know these things as well.
+    //
+    // To let the terminal know these things, we have to look them up now,
+    // before we normally would.
+    //
+    // Typically, we'll just go into `ConsoleCreateIoThread` below, which will
+    // pull out the CONSOLE_API_CONNECTINFO from this connect message, and then
+    // get the link properties out of the title later. Below are elements of
+    // ConsoleAllocateConsole and SetUpConsole that get the bits of STARTUP_INFO
+    // we care about for defterm handoffs.
+
+    // A placeholder that we'll read icon information into, instead of setting
+    // the globals icon state.
+    Microsoft::Console::Interactivity::IconInfo icon;
+
+    // To be able to actually process this connect message into a
+    // CONSOLE_API_CONNECTINFO, we need to hook up the ConDrvDeviceComm to the
+    // message. Usually, we'd create the ConDrvDeviceComm later, in
+    // ConsoleServerInitialization, but we can set it up early here.
+    // ConsoleServerInitialization will safely no-op if it already finds one.
+    g.pDeviceComm = new ConDrvDeviceComm(Server);
+    // load bearing: if you don't set this, the ConsoleInitializeConnectInfo will fail.
+    connectMessage->_pDeviceComm = g.pDeviceComm;
+    CONSOLE_API_CONNECTINFO Cac;
+    RETURN_IF_NTSTATUS_FAILED(ConsoleInitializeConnectInfo(connectMessage, &Cac));
+
+    // BEGIN code from SetUpConsole
+    // Create a temporary Settings object to parse the settings into, rather
+    // than parsing them into the global settings object (gci).
+    Settings settings{};
+    // We need to see if we were spawned from a link. If we were, we need to
+    // call back into the OS shell to try to get all the console information from the link.
+    //
+    // load bearing: if you don't pass the StartupFlags, then
+    // GetSettingsFromLink might not even bother attempting to check the lnk.
+    settings.SetStartupFlags(Cac.ConsoleInfo.GetStartupFlags());
+    ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings,
+                                                                             Cac.Title,
+                                                                             &Cac.TitleLength,
+                                                                             Cac.CurDir,
+                                                                             Cac.AppName,
+                                                                             &icon);
+
+    // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
+    settings.ApplyStartupInfo(&Cac.ConsoleInfo);
+    // END code from SetUpConsole
+
+    // Take what we've collected, and bundle it up for handoff.
+    auto title = wil::make_bstr(Cac.Title);
+    auto iconPath = wil::make_bstr(icon.path.data());
+    TERMINAL_STARTUP_INFO myStartupInfo{
+        title.get(),
+        iconPath.get(),
+        icon.index
+    };
+
+    myStartupInfo.wShowWindow = settings.GetShowWindow();
+
     RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
                                                   outPipeTheirSide.get(),
                                                   signalPipeTheirSide.get(),
                                                   refHandle.get(),
                                                   serverProcess,
-                                                  clientProcess.get()));
+                                                  clientProcess.get(),
+                                                  myStartupInfo));
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_DelegateToTerminalSucceeded",
@@ -732,7 +810,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     CONSOLE_SERVER_MSG Data = { 0 };
     // Try to receive the data sent by the client.
     auto Status = NTSTATUS_FROM_HRESULT(Message->ReadMessageInput(0, &Data, sizeof(Data)));
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return Status;
     }
@@ -826,7 +904,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // CreateInstance method), and the TextBuffer needs to be constructed with
     // a reference to the renderer, so the renderer must be created first.
     auto Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return Status;
     }
@@ -834,7 +912,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // Allow the renderer to paint once the rest of the console is hooked up.
     g.pRender->EnablePainting();
 
-    if (NT_SUCCESS(Status) && ConsoleConnectionDeservesVisibleWindow(p))
+    if (SUCCEEDED_NTSTATUS(Status) && ConsoleConnectionDeservesVisibleWindow(p))
     {
         HANDLE Thread = nullptr;
 
@@ -862,7 +940,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
             CloseHandle(Thread); // This doesn't stop the thread from running.
 
-            if (!NT_SUCCESS(g.ntstatusConsoleInputInitStatus))
+            if (FAILED_NTSTATUS(g.ntstatusConsoleInputInitStatus))
             {
                 Status = g.ntstatusConsoleInputInitStatus;
             }
@@ -895,7 +973,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // Potentially start the VT IO (if needed)
     // Make sure to do this after the i/o buffers have been created.
     // We'll need the size of the screen buffer in the vt i/o initialization
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         auto hr = gci.GetVtIo()->CreateIoHandlers();
         if (hr == S_FALSE)

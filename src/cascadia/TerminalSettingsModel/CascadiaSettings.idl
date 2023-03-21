@@ -20,11 +20,13 @@ namespace Microsoft.Terminal.Settings.Model
         static String ApplicationVersion { get; };
 
         static void ExportFile(String path, String content);
-        
+
         CascadiaSettings(String userJSON, String inboxJSON);
 
         CascadiaSettings Copy();
         void WriteSettingsToDisk();
+
+        String Hash { get; };
 
         GlobalAppSettings GlobalSettings { get; };
 
@@ -43,7 +45,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         Profile CreateNewProfile();
         Profile FindProfile(Guid profileGuid);
-        ColorScheme GetColorSchemeForProfile(Profile profile);
         void UpdateColorSchemeReferences(String oldName, String newName);
 
         Profile GetProfileForArgs(NewTerminalArgs newTerminalArgs);
@@ -52,5 +53,7 @@ namespace Microsoft.Terminal.Settings.Model
         static Boolean IsDefaultTerminalSet { get; };
         IObservableVector<DefaultTerminal> DefaultTerminals { get; };
         DefaultTerminal CurrentDefaultTerminal;
+
+        void ExpandCommands();
     }
 }

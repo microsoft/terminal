@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{18D09A24-8240-42D6-8CB6-236EEE820263}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -30,7 +30,6 @@
     <ClCompile Include="..\UiaTracing.cpp" />
     <ClCompile Include="..\TermControlUiaTextRange.cpp" />
     <ClCompile Include="..\TermControlUiaProvider.cpp" />
-    <ClCompile Include="..\Utf16Parser.cpp" />
     <ClCompile Include="..\Viewport.cpp" />
     <ClCompile Include="..\WindowBufferSizeEvent.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -39,7 +38,6 @@
     <ClCompile Include="..\utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\IBaseData.h" />
     <ClInclude Include="..\IControlAccessibilityInfo.h" />
     <ClInclude Include="..\inc\CodepointWidthDetector.hpp" />
     <ClInclude Include="..\inc\ColorFix.hpp" />
@@ -52,8 +50,6 @@
     <ClInclude Include="..\inc\ThemeUtils.h" />
     <ClInclude Include="..\inc\utils.hpp" />
     <ClInclude Include="..\inc\Viewport.hpp" />
-    <ClInclude Include="..\inc\Utf16Parser.hpp" />
-    <ClInclude Include="..\IUiaData.h" />
     <ClInclude Include="..\IUiaEventDispatcher.h" />
     <ClInclude Include="..\IUiaTraceable.h" />
     <ClInclude Include="..\TermControlUiaTextRange.hpp" />

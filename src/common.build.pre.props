@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- By default, binplace our output under the bin/ directory in the root of
        the project. -->
   <PropertyGroup>
@@ -75,19 +75,32 @@
   </ItemGroup>
 
   <PropertyGroup Label="Globals">
-    <WindowsTargetPlatformVersion Condition="'$(WindowsTargetPlatformVersion)' == ''">10.0.22000.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion Condition="'$(WindowsTargetPlatformVersion)' == ''">10.0.22621.0</WindowsTargetPlatformVersion>
     <WindowsTargetPlatformMinVersion Condition="'$(WindowsTargetPlatformMinVersion)' == ''">10.0.18362.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
 
+  <PropertyGroup>
+    <!--
+      We don't need to use HybridCRT for Fuzzing, so just skip it entirely.
+      Fuzzing requires the address sanitizer runtime library plus the fuzzing
+      harness. They're probably not compatible.
+
+      Audit, however, *does* require linking components built in Release mode...
+    -->
+    <ConfigurationSupportsHybridCRT Condition="'$(Configuration)'=='Fuzzing'">false</ConfigurationSupportsHybridCRT>
+    <ConfigurationSupportsHybridCRT Condition="'$(ConfigurationSupportsHybridCRT)'==''">true</ConfigurationSupportsHybridCRT>
+  </PropertyGroup>
+
   <!-- For ALL build types-->
   <PropertyGroup Label="Configuration">
-    <PlatformToolset Condition="$(MSBuildVersion) &lt; '17.0.0'">v142</PlatformToolset>
-    <PlatformToolset Condition="$(MSBuildVersion) &gt;= '17.0.0'">v143</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+    <EnableHybridCRT Condition="'$(EnableHybridCRT)'=='' and '$(ConfigurationSupportsHybridCRT)'=='true'">true</EnableHybridCRT>
+    <UseCrtSDKReferenceStaticWarning Condition="'$(EnableHybridCRT)'=='true'">false</UseCrtSDKReferenceStaticWarning>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
@@ -104,7 +117,7 @@
           Conhost code converts DWORDs to HANDLEs for instance.
         C4467: usage of ATL attributes is deprecated
           Conhost code still uses ATL.
-        C26445: Do not assign gsl::span or std::string_view to a reference. They are cheap to construct and are not owners of the underlying data. (gsl.view).
+        C26445: Do not assign std::span or std::string_view to a reference. They are cheap to construct and are not owners of the underlying data. (gsl.view).
           Even for MSVC v19.32 this is actually far from true. Copying (as opposed to referencing) larger
           than register-sized structures is fairly expensive. Example: https://godbolt.org/z/oPco88PaP
         C26813: Use 'bitwise and' to check if a flag is set.
@@ -116,7 +129,7 @@
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\gsl\include;$(SolutionDir)\dep\Win32K;$(SolutionDir)\oss\boost\boost_1_73_0;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\dynamic_bitset;$(SolutionDir)\oss\fmt\include;$(SolutionDir)\oss\interval_tree;$(SolutionDir)\oss\libpopcnt;$(SolutionDir)\oss\pcg\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\gsl\include;$(SolutionDir)\dep\Win32K;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\dynamic_bitset;$(SolutionDir)\oss\fmt\include;$(SolutionDir)\oss\interval_tree;$(SolutionDir)\oss\libpopcnt;$(SolutionDir)\oss\pcg\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
@@ -124,9 +137,9 @@
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:externConstexpr /Zc:lambda /Zc:throwingNew</AdditionalOptions>
+      <!-- /fp:contract used to default to on before VS 17.0. If enabled it allows FMA for floats. -->
+      <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:externConstexpr /Zc:lambda /Zc:throwingNew /fp:contract</AdditionalOptions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
-      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>EXTERNAL_BUILD;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>

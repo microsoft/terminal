@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{AF0A096A-8B3A-4949-81EF-7DF8F0FEE91F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -11,6 +11,7 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
+    <ClCompile Include="..\CSSLengthPercentage.cpp" />
     <ClCompile Include="..\FontInfo.cpp" />
     <ClCompile Include="..\FontInfoBase.cpp" />
     <ClCompile Include="..\FontInfoDesired.cpp" />
@@ -25,6 +26,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\Cluster.hpp" />
+    <ClInclude Include="..\..\inc\CSSLengthPercentage.h" />
     <ClInclude Include="..\..\inc\FontInfo.hpp" />
     <ClInclude Include="..\..\inc\FontInfoBase.hpp" />
     <ClInclude Include="..\..\inc\FontInfoDesired.hpp" />
