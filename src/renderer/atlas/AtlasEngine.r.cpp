@@ -82,6 +82,10 @@ void AtlasEngine::WaitUntilCanRender() noexcept
     {
         _b->WaitUntilCanRender();
     }
+    if constexpr (ATLAS_DEBUG_RENDER_DELAY)
+    {
+        Sleep(ATLAS_DEBUG_RENDER_DELAY);
+    }
 }
 
 #pragma endregion

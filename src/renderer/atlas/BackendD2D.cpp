@@ -4,6 +4,10 @@
 #include "pch.h"
 #include "BackendD2D.h"
 
+#if ATLAS_DEBUG_SHOW_DIRTY
+#include "colorbrewer.h"
+#endif
+
 TIL_FAST_MATH_BEGIN
 
 // Disable a bunch of warnings which get in the way of writing performant code.
@@ -34,6 +38,9 @@ void BackendD2D::Render(RenderingPayload& p)
     _drawGridlines(p);
     _drawCursor(p);
     _drawSelection(p);
+#if ATLAS_DEBUG_SHOW_DIRTY
+    _debugShowDirty(p);
+#endif
     THROW_IF_FAILED(_renderTarget->EndDraw());
 
     _swapChainManager.Present(p);
@@ -208,7 +215,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
                 }
             } while (it != end);
         }
-        
+
         if (y >= p.invalidatedRows.x && y < p.invalidatedRows.y)
         {
             dirtyTop = std::min(dirtyTop, row->top);
@@ -483,6 +490,27 @@ void BackendD2D::_drawSelection(const RenderingPayload& p)
         }
 
         y++;
+    }
+}
+
+void BackendD2D::_debugShowDirty(RenderingPayload& p)
+{
+    _presentRects[_presentRectsPos] = p.dirtyRectInPx;
+    _presentRectsPos = (_presentRectsPos + 1) % std::size(_presentRects);
+
+    for (size_t i = 0; i < std::size(_presentRects); ++i)
+    {
+        if (const auto& rect = _presentRects[i])
+        {
+            const D2D1_RECT_F rectF{
+                static_cast<f32>(rect.left),
+                static_cast<f32>(rect.top),
+                static_cast<f32>(rect.right),
+                static_cast<f32>(rect.bottom),
+            };
+            const auto color = 0x1f000000 | colorbrewer::pastel1[i];
+            _fillRectangle(rectF, color);
+        }
     }
 }
 

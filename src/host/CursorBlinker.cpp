@@ -55,7 +55,7 @@ void CursorBlinker::SettingsChanged() noexcept
     {
         KillCaretTimer();
         _uCaretBlinkTime = dwCaretBlinkTime;
-        //SetCaretTimer();
+        SetCaretTimer();
     }
 }
 
@@ -66,7 +66,7 @@ void CursorBlinker::FocusEnd() const noexcept
 
 void CursorBlinker::FocusStart() const noexcept
 {
-    //SetCaretTimer();
+    SetCaretTimer();
 }
 
 // Routine Description:

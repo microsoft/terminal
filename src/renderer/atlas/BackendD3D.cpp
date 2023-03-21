@@ -13,7 +13,13 @@
 
 #include "dwrite.h"
 
+#if ATLAS_DEBUG_SHOW_DIRTY
 #include "colorbrewer.h"
+#endif
+
+#if ATLAS_DEBUG_DUMP_RENDER_TARGET
+#include "wic.h"
+#endif
 
 TIL_FAST_MATH_BEGIN
 
@@ -290,37 +296,23 @@ void BackendD3D::Render(RenderingPayload& p)
     // After a Present() the render target becomes unbound.
     _deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
 
+    // Invalidating the render target helps with spotting invalid quad instances and Present1() bugs.
+#if ATLAS_DEBUG_SHOW_DIRTY || ATLAS_DEBUG_DUMP_RENDER_TARGET
+    {
+        static constexpr f32 clearColor[4]{};
+        _deviceContext->ClearView(_renderTargetView.get(), &clearColor[0], nullptr, 0);
+    }
+#endif
+
     _drawBackground(p);
     _drawCursorPart1(p);
     _drawText(p);
     _drawGridlines(p);
     _drawCursorPart2(p);
     _drawSelection(p);
-
 #if ATLAS_DEBUG_SHOW_DIRTY
-    {
-        _presentRects[_presentRectsPos] = p.dirtyRectInPx;
-        _presentRectsPos = (_presentRectsPos + 1) % std::size(_presentRects);
-
-        for (size_t i = 0; i < std::size(_presentRects); ++i)
-        {
-            if (const auto& rect = _presentRects[i])
-            {
-                const i16x2 position{
-                    static_cast<i16>(rect.left),
-                    static_cast<i16>(rect.top),
-                };
-                const u16x2 size{
-                    static_cast<u16>(rect.right - rect.left),
-                    static_cast<u16>(rect.bottom - rect.top),
-                };
-                const auto color = 0x3f000000 | colorbrewer::pastel1[i];
-                _appendQuad(position, size, color, ShadingType::SolidFill);
-            }
-        }
-    }
+    _debugShowDirty(p);
 #endif
-
     _flushQuads(p);
 
     if (_customPixelShader)
@@ -328,6 +320,9 @@ void BackendD3D::Render(RenderingPayload& p)
         _executeCustomShader(p);
     }
 
+#if ATLAS_DEBUG_DUMP_RENDER_TARGET
+    _debugDumpRenderTarget(p);
+#endif
     _swapChainManager.Present(p);
 }
 
@@ -403,11 +398,6 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     _miscGeneration = p.s->misc.generation();
     _targetSize = p.s->targetSize;
     _cellCount = p.s->cellCount;
-
-#if ATLAS_DEBUG_SHOW_DIRTY
-    std::ranges::fill(_presentRects, til::rect{});
-    _presentRectsPos = 0;
-#endif
 }
 
 void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
@@ -747,7 +737,7 @@ void BackendD3D::_d2dEndDrawing()
     }
 }
 
-void BackendD3D::_handleFontChangedResetGlyphAtlas(RenderingPayload& p)
+void BackendD3D::_handleFontChangedResetGlyphAtlas(const RenderingPayload& p)
 {
     _fontChangedResetGlyphAtlas = false;
     _resetGlyphAtlasAndBeginDraw(p);
@@ -860,7 +850,13 @@ void BackendD3D::_appendQuad(i16x2 position, u16x2 size, u16x2 texcoord, u32 col
 
 void BackendD3D::_bumpInstancesSize()
 {
-    _instances = Buffer<QuadInstance>{ std::max<size_t>(1024, _instances.size() << 1) };
+    const auto newSize = std::max<size_t>(256, _instances.size() * 2);
+    Expects(newSize > _instances.size());
+
+    auto newInstances = Buffer<QuadInstance>{ newSize };
+    std::copy_n(_instances.data(), _instances.size(), newInstances.data());
+
+    _instances = std::move(newInstances);
 }
 
 void BackendD3D::_flushQuads(const RenderingPayload& p)
@@ -1382,6 +1378,48 @@ void BackendD3D::_drawSelection(const RenderingPayload& p)
         y++;
     }
 }
+
+#if ATLAS_DEBUG_SHOW_DIRTY
+void BackendD3D::_debugShowDirty(RenderingPayload& p)
+{
+    _presentRects[_presentRectsPos] = p.dirtyRectInPx;
+    _presentRectsPos = (_presentRectsPos + 1) % std::size(_presentRects);
+
+    for (size_t i = 0; i < std::size(_presentRects); ++i)
+    {
+        if (const auto& rect = _presentRects[i])
+        {
+            const i16x2 position{
+                static_cast<i16>(rect.left),
+                static_cast<i16>(rect.top),
+            };
+            const u16x2 size{
+                static_cast<u16>(rect.right - rect.left),
+                static_cast<u16>(rect.bottom - rect.top),
+            };
+            const auto color = 0x1f000000 | colorbrewer::pastel1[i];
+            _appendQuad(position, size, color, ShadingType::SolidFill);
+        }
+    }
+}
+#endif
+
+#if ATLAS_DEBUG_DUMP_RENDER_TARGET
+void BackendD3D::_debugDumpRenderTarget(RenderingPayload& p)
+{
+    const auto n = _dumpRenderTargetCounter.fetch_add(1, std::memory_order_relaxed);
+
+    if (n == 0)
+    {
+        ExpandEnvironmentStringsW(ATLAS_DEBUG_DUMP_RENDER_TARGET_PATH, &_dumpRenderTargetBasePath[0], std::size(_dumpRenderTargetBasePath));
+        std::filesystem::create_directories(_dumpRenderTargetBasePath);
+    }
+
+    wchar_t path[MAX_PATH];
+    swprintf_s(path, L"%s\\%u_%08u.png", &_dumpRenderTargetBasePath[0], GetCurrentProcessId(), n);
+    SaveTextureToPNG(_deviceContext.get(), _swapChainManager.GetBuffer().get(), p.s->font->dpi, &path[0]);
+}
+#endif
 
 void BackendD3D::_executeCustomShader(RenderingPayload& p)
 {

@@ -24,6 +24,7 @@ namespace Microsoft::Console::Render::Atlas
         void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
         void _drawCursor(const RenderingPayload& p);
         void _drawSelection(const RenderingPayload& p);
+        void _debugShowDirty(RenderingPayload& p);
         ID2D1Brush* _brushWithColor(u32 color);
         void _fillRectangle(const D2D1_RECT_F& rect, u32 color);
 
@@ -46,5 +47,10 @@ namespace Microsoft::Console::Render::Atlas
         til::generation_t _generation;
         til::generation_t _fontGeneration;
         u16x2 _cellCount;
+
+#if ATLAS_DEBUG_SHOW_DIRTY
+        til::rect _presentRects[9]{};
+        size_t _presentRectsPos = 0;
+#endif
     };
 }

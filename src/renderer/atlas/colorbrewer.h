@@ -3,7 +3,8 @@
 
 #pragma once
 
-namespace Microsoft::Console::Render::Atlas::colorbrewer {
+namespace Microsoft::Console::Render::Atlas::colorbrewer
+{
     // The following list of colors is only used as a debug aid and not part of the final product.
     // They're licensed under:
     //

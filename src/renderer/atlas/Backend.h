@@ -7,11 +7,30 @@
 
 namespace Microsoft::Console::Render::Atlas
 {
-#define ATLAS_DEBUG_CONTINUOUS_REDRAW 0
-#define ATLAS_DEBUG_DISABLE_FRAME_LATENCY_WAITABLE_OBJECT 0
+    // If set to 1, this will cause the entire viewport to be invalidated at all times.
+    // Helpful for benchmarking our text shaping code based on DirectWrite.
 #define ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION 0
+
+    // Redraw at display refresh rate at all times. This helps with shader debugging.
+#define ATLAS_DEBUG_CONTINUOUS_REDRAW 0
+
+    // Disables the use of DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT.
+    // This helps with benchmarking the application as it'll run beyond display refresh rate.
+#define ATLAS_DEBUG_DISABLE_FRAME_LATENCY_WAITABLE_OBJECT 0
+
+    // Forces the use of Direct2D for text rendering (= BackendD2D).
 #define ATLAS_DEBUG_FORCE_D2D_MODE 0
+
+    // Adds an artificial delay before every render pass. In milliseconds.
+#define ATLAS_DEBUG_RENDER_DELAY 0
+
+    // Shows the dirty rects as given to IDXGISwapChain2::Present1() during each frame.
 #define ATLAS_DEBUG_SHOW_DIRTY 0
+
+    // Dumps the contents of the swap chain on each render pass into the given directory as PNG.
+    // I highly recommend setting ATLAS_DEBUG_RENDER_DELAY to 250 or similar if this is used.
+#define ATLAS_DEBUG_DUMP_RENDER_TARGET 0
+#define ATLAS_DEBUG_DUMP_RENDER_TARGET_PATH LR"(%USERPROFILE%\Downloads\AtlasEngine)"
 
     struct SwapChainManager
     {

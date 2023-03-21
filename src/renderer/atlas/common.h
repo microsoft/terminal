@@ -173,6 +173,7 @@ namespace Microsoft::Console::Render::Atlas
         {
         }
 
+#pragma warning(suppress : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
         Buffer& operator=(Buffer&& other) noexcept
         {
             destroy();
@@ -180,40 +181,6 @@ namespace Microsoft::Console::Render::Atlas
             _size = std::exchange(other._size, 0);
             return *this;
         }
-
-#if 0
-        Buffer(const Buffer& other) noexcept :
-            _data{ allocate(other._size) },
-            _size{ other._size }
-        {
-#pragma warning(suppress : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
-            std::uninitialized_copy_n(other._data, other._size, _data);
-        }
-
-        Buffer& operator=(const Buffer& other) noexcept
-        {
-            destroy();
-            _data = nullptr;
-            _size = 0;
-
-            _data = allocate(other._size);
-            _size = other._size;
-
-#pragma warning(suppress : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
-            std::uninitialized_copy_n(other._data, other._size, _data);
-            return *this;
-        }
-
-        bool operator==(const Buffer& other) const
-        {
-            return memcmp(_data, other._data, _size * sizeof(T)) == 0;
-        }
-
-        bool operator!=(const Buffer& other) const
-        {
-            return memcmp(_data, other._data, _size * sizeof(T)) != 0;
-        }
-#endif
 
         explicit operator bool() const noexcept
         {

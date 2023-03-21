@@ -127,9 +127,11 @@ namespace Microsoft::Console::Render::Atlas
         void _recreateConstBuffer(const RenderingPayload& p);
         void _setupDeviceContextState(const RenderingPayload& p);
         void _debugUpdateShaders(const RenderingPayload& p) noexcept;
+        void _debugShowDirty(RenderingPayload& p);
+        void _debugDumpRenderTarget(RenderingPayload& p);
         void _d2dBeginDrawing() noexcept;
         void _d2dEndDrawing();
-        void _handleFontChangedResetGlyphAtlas(RenderingPayload& p);
+        void _handleFontChangedResetGlyphAtlas(const RenderingPayload& p);
         void _resetGlyphAtlasAndBeginDraw(const RenderingPayload& p);
         void _markStateChange(ID3D11BlendState* blendState);
         QuadInstance& _getLastQuad() noexcept;
@@ -226,10 +228,15 @@ namespace Microsoft::Console::Render::Atlas
         til::small_vector<CursorRect, 6> _cursorRects;
 
         bool _requiresContinuousRedraw = false;
-        
+
 #if ATLAS_DEBUG_SHOW_DIRTY
         til::rect _presentRects[9]{};
         size_t _presentRectsPos = 0;
+#endif
+
+#if ATLAS_DEBUG_DUMP_RENDER_TARGET
+        std::atomic<uint32_t> _dumpRenderTargetCounter;
+        wchar_t _dumpRenderTargetBasePath[MAX_PATH];
 #endif
 
 #ifndef NDEBUG
