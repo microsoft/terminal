@@ -1110,6 +1110,8 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _resolveDefaultProfile();
     _resolveNewTabMenuProfiles();
     _validateSettings();
+
+    ExpandCommands();
 }
 
 // Method Description:

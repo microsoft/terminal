@@ -99,7 +99,7 @@ bool DefaultTerminal::HasCurrent()
 
 void DefaultTerminal::Current(const Model::DefaultTerminal& term)
 {
-    THROW_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(winrt::get_self<DefaultTerminal>(term)->_pkg, true));
+    THROW_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(winrt::get_self<DefaultTerminal>(term)->_pkg));
 
     TraceLoggingWrite(g_hSettingsModelProvider,
                       "DefaultTerminalChanged",

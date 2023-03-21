@@ -143,6 +143,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::DefaultTerminal CurrentDefaultTerminal() noexcept;
         void CurrentDefaultTerminal(const Model::DefaultTerminal& terminal);
 
+        void ExpandCommands();
+
     private:
         static const std::filesystem::path& _settingsPath();
         static const std::filesystem::path& _releaseSettingsPath();

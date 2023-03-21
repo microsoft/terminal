@@ -53,5 +53,7 @@ namespace Microsoft.Terminal.Settings.Model
         static Boolean IsDefaultTerminalSet { get; };
         IObservableVector<DefaultTerminal> DefaultTerminals { get; };
         DefaultTerminal CurrentDefaultTerminal;
+
+        void ExpandCommands();
     }
 }

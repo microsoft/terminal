@@ -417,7 +417,7 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     };
 
     // extracts the next/previous hyperlink from the list of hyperlink ranges provided
-    auto extractResultFromList = [&](std::vector<interval_tree::Interval<til::point, size_t>>& list) {
+    auto extractResultFromList = [&](std::vector<interval_tree::Interval<til::point, size_t>>& list) noexcept {
         const auto selectionStartInSearchArea = convertToSearchArea(_selection->start);
 
         std::optional<std::pair<til::point, til::point>> resultFromList;
@@ -533,7 +533,7 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     _ScrollToPoint(_selection->end);
 }
 
-Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const
+Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const noexcept
 {
     if ((_selectionMode == SelectionInteractionMode::Mark || mods.IsShiftPressed()) && !mods.IsAltPressed())
     {
