@@ -154,8 +154,8 @@ void SwapChainManager::_updateMatrixTransform(const RenderingPayload& p) const
     if (_fontGeneration != p.s->font.generation() && !p.s->target->hwnd)
     {
         const DXGI_MATRIX_3X2_F matrix{
-            ._11 = p.d.font.dipPerPixel,
-            ._22 = p.d.font.dipPerPixel,
+            ._11 = static_cast<f32>(USER_DEFAULT_SCREEN_DPI) / static_cast<f32>(p.s->font->dpi),
+            ._22 = static_cast<f32>(USER_DEFAULT_SCREEN_DPI) / static_cast<f32>(p.s->font->dpi),
         };
         THROW_IF_FAILED(_swapChain->SetMatrixTransform(&matrix));
     }

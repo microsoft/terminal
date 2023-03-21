@@ -278,7 +278,7 @@ CATCH_RETURN()
         /* fontWeight     */ static_cast<DWRITE_FONT_WEIGHT>(_api.s->font->fontWeight),
         /* fontStyle      */ DWRITE_FONT_STYLE_NORMAL,
         /* fontStretch    */ DWRITE_FONT_STRETCH_NORMAL,
-        /* fontSize       */ _api.s->font->fontSizeInDIP,
+        /* fontSize       */ _api.s->font->fontSize,
         /* localeName     */ L"",
         /* textFormat     */ textFormat.put()));
 
@@ -289,8 +289,7 @@ CATCH_RETURN()
     RETURN_IF_FAILED(textLayout->GetMetrics(&metrics));
 
     const auto minWidth = (_api.s->font->cellSize.x * 1.2f);
-    const auto width = metrics.width * GetScaling();
-    *pResult = width > minWidth;
+    *pResult = metrics.width > minWidth;
     return S_OK;
 }
 
@@ -629,7 +628,6 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     // (including by OpenType), whereas DirectWrite uses 96 DPI.
     // Since we want the height in px we multiply by the display's DPI.
     const auto dpi = static_cast<f32>(_api.s->font->dpi);
-    const auto fontSizeInDIP = fontSize / 72.0f * 96.0f;
     const auto fontSizeInPx = fontSize / 72.0f * dpi;
 
     const auto designUnitsPerPx = fontSizeInPx / static_cast<f32>(metrics.designUnitsPerEm);
@@ -703,6 +701,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     {
         std::wstring fontName{ requestedFaceName };
         const auto fontWeightU16 = gsl::narrow_cast<u16>(requestedWeight);
+        const auto baselineU16 = gsl::narrow_cast<u16>(baseline);
         const auto underlinePosU16 = gsl::narrow_cast<u16>(underlinePos);
         const auto underlineWidthU16 = gsl::narrow_cast<u16>(underlineWidth);
         const auto strikethroughPosU16 = gsl::narrow_cast<u16>(strikethroughPos);
@@ -717,11 +716,11 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         fontMetrics->fontCollection = std::move(fontCollection);
         fontMetrics->fontFamily = std::move(fontFamily);
         fontMetrics->fontName = std::move(fontName);
-        fontMetrics->baselineInDIP = baseline / dpi * 96.0f;
-        fontMetrics->fontSizeInDIP = fontSizeInDIP;
+        fontMetrics->fontSize = fontSizeInPx;
         fontMetrics->advanceScale = cellWidth / advanceWidth;
         fontMetrics->cellSize = { cellWidth, cellHeight };
         fontMetrics->fontWeight = fontWeightU16;
+        fontMetrics->baseline = baselineU16;
         fontMetrics->underlinePos = underlinePosU16;
         fontMetrics->underlineWidth = underlineWidthU16;
         fontMetrics->strikethroughPos = strikethroughPosU16;

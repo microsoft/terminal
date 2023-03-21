@@ -122,13 +122,13 @@ namespace Microsoft::Console::Render::Atlas
         __declspec(noinline) void _handleSettingsUpdate(const RenderingPayload& p);
         void _recreateCustomShader(const RenderingPayload& p);
         void _recreateCustomRenderTargetView(u16x2 targetSize);
-        void _d2dRenderTargetUpdateFontSettings(const FontSettings& font) noexcept;
+        void _d2dRenderTargetUpdateFontSettings(const FontSettings& font) const noexcept;
         void _recreateBackgroundColorBitmap(u16x2 cellCount);
-        void _recreateConstBuffer(const RenderingPayload& p);
+        void _recreateConstBuffer(const RenderingPayload& p) const;
         void _setupDeviceContextState(const RenderingPayload& p);
         void _debugUpdateShaders(const RenderingPayload& p) noexcept;
-        void _debugShowDirty(RenderingPayload& p);
-        void _debugDumpRenderTarget(RenderingPayload& p);
+        void _debugShowDirty(const RenderingPayload& p);
+        void _debugDumpRenderTarget(const RenderingPayload& p);
         void _d2dBeginDrawing() noexcept;
         void _d2dEndDrawing();
         void _handleFontChangedResetGlyphAtlas(const RenderingPayload& p);
@@ -235,8 +235,12 @@ namespace Microsoft::Console::Render::Atlas
 #endif
 
 #if ATLAS_DEBUG_DUMP_RENDER_TARGET
-        std::atomic<uint32_t> _dumpRenderTargetCounter;
-        wchar_t _dumpRenderTargetBasePath[MAX_PATH];
+        wchar_t _dumpRenderTargetBasePath[MAX_PATH]{};
+        size_t _dumpRenderTargetCounter = 0;
+#endif
+
+#if ATLAS_DEBUG_COLORIZE_GLYPH_ATLAS
+        size_t _colorizeGlyphAtlasCounter = 0;
 #endif
 
 #ifndef NDEBUG

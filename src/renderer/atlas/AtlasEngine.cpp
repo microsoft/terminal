@@ -363,7 +363,7 @@ try
         const CursorSettings cachedOptions{
             .cursorColor = gsl::narrow_cast<u32>(options.fUseColor ? options.cursorColor | 0xff000000 : INVALID_COLOR),
             .cursorType = gsl::narrow_cast<u16>(options.cursorType),
-            .heightPercentage = gsl::narrow_cast<u8>(options.ulCursorHeightPercent),
+            .heightPercentage = gsl::narrow_cast<u16>(options.ulCursorHeightPercent),
         };
         if (*_api.s->cursor != cachedOptions)
         {
@@ -470,11 +470,6 @@ void AtlasEngine::_handleSettingsUpdate()
 
 void AtlasEngine::_recreateFontDependentResources()
 {
-    _p.d.font.dipPerPixel = static_cast<f32>(USER_DEFAULT_SCREEN_DPI) / static_cast<f32>(_p.s->font->dpi);
-    _p.d.font.pixelPerDIP = static_cast<f32>(_p.s->font->dpi) / static_cast<f32>(USER_DEFAULT_SCREEN_DPI);
-    _p.d.font.cellSizeDIP.x = static_cast<f32>(_p.s->font->cellSize.x) * _p.d.font.dipPerPixel;
-    _p.d.font.cellSizeDIP.y = static_cast<f32>(_p.s->font->cellSize.y) * _p.d.font.dipPerPixel;
-
     if (!_p.s->font->fontAxisValues.empty())
     {
         // See AtlasEngine::UpdateFont.
@@ -597,9 +592,9 @@ void AtlasEngine::_flushBufferLine()
                     const auto col1 = _api.bufferLineColumn[idx + i + 0];
                     const auto fg = _api.colorsForeground[col1];
                     const auto col2 = _api.bufferLineColumn[idx + i + 1];
-                    const auto glyphAdvance = (col2 - col1) * _p.d.font.cellSizeDIP.x;
+                    const auto glyphAdvance = (col2 - col1) * _p.s->font->cellSize.x;
                     row.glyphIndices.emplace_back(_api.glyphIndices[i]);
-                    row.glyphAdvances.emplace_back(glyphAdvance);
+                    row.glyphAdvances.emplace_back(static_cast<f32>(glyphAdvance));
                     row.glyphOffsets.emplace_back();
                     row.colors.emplace_back(fg);
                 }
@@ -613,7 +608,7 @@ void AtlasEngine::_flushBufferLine()
         const auto indicesCount = row.glyphIndices.size();
         if (indicesCount > initialIndicesCount)
         {
-            row.mappings.emplace_back(std::move(mappedFontFace), _p.s->font->fontSizeInDIP * scale, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
+            row.mappings.emplace_back(std::move(mappedFontFace), _p.s->font->fontSize * scale, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
         }
     }
 }
@@ -761,7 +756,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 leng
             /* glyphProps          */ _api.glyphProps.data(),
             /* glyphCount          */ actualGlyphCount,
             /* fontFace            */ mappedFontFace,
-            /* fontEmSize          */ _p.s->font->fontSizeInDIP,
+            /* fontEmSize          */ _p.s->font->fontSize,
             /* isSideways          */ false,
             /* isRightToLeft       */ a.bidiLevel & 1,
             /* scriptAnalysis      */ &scriptAnalysis,
@@ -789,7 +784,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 leng
             const auto col2 = _api.bufferLineColumn[a.textPosition + i];
             const auto fg = _api.colorsForeground[col1];
 
-            const auto expectedAdvance = (col2 - col1) * _p.d.font.cellSizeDIP.x;
+            const auto expectedAdvance = (col2 - col1) * _p.s->font->cellSize.x;
             f32 actualAdvance = 0;
             for (auto j = prevCluster; j < nextCluster; ++j)
             {
@@ -841,9 +836,9 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
         const auto col1 = _api.bufferLineColumn[to];
         const auto cols = gsl::narrow_cast<size_t>(col1 - col0);
         row.glyphIndices.insert(row.glyphIndices.end(), cols, _api.replacementCharacterGlyphIndex);
-        row.glyphAdvances.insert(row.glyphAdvances.end(), cols, _p.d.font.cellSizeDIP.x);
+        row.glyphAdvances.insert(row.glyphAdvances.end(), cols, _p.s->font->cellSize.x);
         row.glyphOffsets.insert(row.glyphOffsets.end(), cols, DWRITE_GLYPH_OFFSET{});
         row.colors.insert(row.colors.end(), _api.colorsForeground.begin() + col0, _api.colorsForeground.begin() + col1);
-        row.mappings.emplace_back(_api.replacementCharacterFontFace, _p.s->font->fontSizeInDIP * 0.5f, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(row.glyphIndices.size()));
+        row.mappings.emplace_back(_api.replacementCharacterFontFace, _p.s->font->fontSize, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(row.glyphIndices.size()));
     }
 }

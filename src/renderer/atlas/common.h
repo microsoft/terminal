@@ -299,11 +299,11 @@ namespace Microsoft::Console::Render::Atlas
         std::wstring fontName;
         std::vector<DWRITE_FONT_FEATURE> fontFeatures;
         std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues;
-        f32 baselineInDIP = 0.0f;
-        f32 fontSizeInDIP = 0.0f;
+        f32 fontSize = 0;
         f32 advanceScale = 0;
         u16x2 cellSize;
         u16 fontWeight = 0;
+        u16 baseline = 0;
         u16 underlinePos = 0;
         u16 underlineWidth = 0;
         u16 strikethroughPos = 0;
@@ -320,8 +320,7 @@ namespace Microsoft::Console::Render::Atlas
 
         u32 cursorColor = 0xffffffff;
         u16 cursorType = 0;
-        u8 heightPercentage = 20;
-        u8 _padding = 0;
+        u16 heightPercentage = 20;
     };
 
     struct MiscellaneousSettings
@@ -345,9 +344,6 @@ namespace Microsoft::Console::Render::Atlas
     struct FontDependents
     {
         Buffer<DWRITE_FONT_AXIS_VALUE> textFormatAxes[2][2];
-        f32 dipPerPixel = 1.0f; // caches USER_DEFAULT_SCREEN_DPI / dpi
-        f32 pixelPerDIP = 1.0f; // caches dpi / USER_DEFAULT_SCREEN_DPI
-        f32x2 cellSizeDIP; // caches cellSize in DIP
     };
 
     struct Dependents

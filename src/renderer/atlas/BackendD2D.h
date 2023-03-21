@@ -24,8 +24,10 @@ namespace Microsoft::Console::Render::Atlas
         void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
         void _drawCursor(const RenderingPayload& p);
         void _drawSelection(const RenderingPayload& p);
-        void _debugShowDirty(RenderingPayload& p);
+        void _debugShowDirty(const RenderingPayload& p);
+        void _debugDumpRenderTarget(const RenderingPayload& p);
         ID2D1Brush* _brushWithColor(u32 color);
+        void _fillRectangle(const til::rect& rect, u32 color);
         void _fillRectangle(const D2D1_RECT_F& rect, u32 color);
 
         SwapChainManager _swapChainManager;
@@ -51,6 +53,11 @@ namespace Microsoft::Console::Render::Atlas
 #if ATLAS_DEBUG_SHOW_DIRTY
         til::rect _presentRects[9]{};
         size_t _presentRectsPos = 0;
+#endif
+
+#if ATLAS_DEBUG_DUMP_RENDER_TARGET
+        wchar_t _dumpRenderTargetBasePath[MAX_PATH]{};
+        size_t _dumpRenderTargetCounter = 0;
 #endif
     };
 }

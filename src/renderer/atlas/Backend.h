@@ -32,6 +32,10 @@ namespace Microsoft::Console::Render::Atlas
 #define ATLAS_DEBUG_DUMP_RENDER_TARGET 0
 #define ATLAS_DEBUG_DUMP_RENDER_TARGET_PATH LR"(%USERPROFILE%\Downloads\AtlasEngine)"
 
+    // Draws a background behind each glyph placed into the BackendD3D glyph atlas.
+    // This can be helpful when debugging bugs in the algorithm that measures the size of glyph.
+#define ATLAS_DEBUG_COLORIZE_GLYPH_ATLAS 0
+
     struct SwapChainManager
     {
         void UpdateSwapChainSettings(const RenderingPayload& p, IUnknown* device, auto&& prepareRecreate, auto&& prepareResize)

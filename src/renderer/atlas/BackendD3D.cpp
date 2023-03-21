@@ -13,7 +13,7 @@
 
 #include "dwrite.h"
 
-#if ATLAS_DEBUG_SHOW_DIRTY
+#if ATLAS_DEBUG_SHOW_DIRTY || ATLAS_DEBUG_COLORIZE_GLYPH_ATLAS
 #include "colorbrewer.h"
 #endif
 
@@ -507,23 +507,25 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
         THROW_IF_FAILED(_device->CreateVertexShader(&custom_shader_vs[0], sizeof(custom_shader_vs), nullptr, _customVertexShader.put()));
 
         {
-            D3D11_BUFFER_DESC desc{};
-            desc.ByteWidth = sizeof(CustomConstBuffer);
-            desc.Usage = D3D11_USAGE_DYNAMIC;
-            desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            static constexpr D3D11_BUFFER_DESC desc{
+                .ByteWidth = sizeof(CustomConstBuffer),
+                .Usage = D3D11_USAGE_DYNAMIC,
+                .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+                .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+            };
             THROW_IF_FAILED(_device->CreateBuffer(&desc, nullptr, _customShaderConstantBuffer.put()));
         }
 
         {
-            D3D11_SAMPLER_DESC desc{};
-            desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-            desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
-            desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
-            desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
-            desc.MaxAnisotropy = 1;
-            desc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-            desc.MaxLOD = D3D11_FLOAT32_MAX;
+            static constexpr D3D11_SAMPLER_DESC desc{
+                .Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+                .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
+                .AddressV = D3D11_TEXTURE_ADDRESS_BORDER,
+                .AddressW = D3D11_TEXTURE_ADDRESS_BORDER,
+                .MaxAnisotropy = 1,
+                .ComparisonFunc = D3D11_COMPARISON_ALWAYS,
+                .MaxLOD = D3D11_FLOAT32_MAX,
+            };
             THROW_IF_FAILED(_device->CreateSamplerState(&desc, _customShaderSamplerState.put()));
         }
 
@@ -541,14 +543,15 @@ void BackendD3D::_recreateCustomRenderTargetView(u16x2 targetSize)
     // `_customRenderTargetView` to render into the swap chain using the custom (user provided) shader.
     _customRenderTargetView = std::move(_renderTargetView);
 
-    D3D11_TEXTURE2D_DESC desc{};
-    desc.Width = targetSize.x;
-    desc.Height = targetSize.y;
-    desc.MipLevels = 1;
-    desc.ArraySize = 1;
-    desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    desc.SampleDesc = { 1, 0 };
-    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+    const D3D11_TEXTURE2D_DESC desc{
+        .Width = targetSize.x,
+        .Height = targetSize.y,
+        .MipLevels = 1,
+        .ArraySize = 1,
+        .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
+        .SampleDesc = { 1, 0 },
+        .BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET,
+    };
     THROW_IF_FAILED(_device->CreateTexture2D(&desc, nullptr, _customOffscreenTexture.addressof()));
     THROW_IF_FAILED(_device->CreateShaderResourceView(_customOffscreenTexture.get(), nullptr, _customOffscreenTextureView.addressof()));
     THROW_IF_FAILED(_device->CreateRenderTargetView(_customOffscreenTexture.get(), nullptr, _renderTargetView.addressof()));
@@ -560,28 +563,29 @@ void BackendD3D::_recreateBackgroundColorBitmap(u16x2 cellCount)
     _backgroundBitmap.reset();
     _backgroundBitmapView.reset();
 
-    D3D11_TEXTURE2D_DESC desc{};
-    desc.Width = cellCount.x;
-    desc.Height = cellCount.y;
-    desc.MipLevels = 1;
-    desc.ArraySize = 1;
-    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    desc.SampleDesc = { 1, 0 };
-    desc.Usage = D3D11_USAGE_DYNAMIC;
-    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    const D3D11_TEXTURE2D_DESC desc{
+        .Width = cellCount.x,
+        .Height = cellCount.y,
+        .MipLevels = 1,
+        .ArraySize = 1,
+        .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+        .SampleDesc = { 1, 0 },
+        .Usage = D3D11_USAGE_DYNAMIC,
+        .BindFlags = D3D11_BIND_SHADER_RESOURCE,
+        .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+    };
     THROW_IF_FAILED(_device->CreateTexture2D(&desc, nullptr, _backgroundBitmap.addressof()));
     THROW_IF_FAILED(_device->CreateShaderResourceView(_backgroundBitmap.get(), nullptr, _backgroundBitmapView.addressof()));
     _backgroundBitmapGeneration = {};
 }
 
-void BackendD3D::_d2dRenderTargetUpdateFontSettings(const FontSettings& font) noexcept
+void BackendD3D::_d2dRenderTargetUpdateFontSettings(const FontSettings& font) const noexcept
 {
     _d2dRenderTarget->SetDpi(font.dpi, font.dpi);
     _d2dRenderTarget->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(font.antialiasingMode));
 }
 
-void BackendD3D::_recreateConstBuffer(const RenderingPayload& p)
+void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
 {
     {
         VSConstBuffer data;
@@ -769,14 +773,15 @@ void BackendD3D::_resetGlyphAtlasAndBeginDraw(const RenderingPayload& p)
         _glyphAtlasView.reset();
 
         {
-            D3D11_TEXTURE2D_DESC desc{};
-            desc.Width = u;
-            desc.Height = v;
-            desc.MipLevels = 1;
-            desc.ArraySize = 1;
-            desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-            desc.SampleDesc = { 1, 0 };
-            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+            const D3D11_TEXTURE2D_DESC desc{
+                .Width = u,
+                .Height = v,
+                .MipLevels = 1,
+                .ArraySize = 1,
+                .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
+                .SampleDesc = { 1, 0 },
+                .BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET,
+            };
             THROW_IF_FAILED(_device->CreateTexture2D(&desc, nullptr, _glyphAtlas.addressof()));
             THROW_IF_FAILED(_device->CreateShaderResourceView(_glyphAtlas.get(), nullptr, _glyphAtlasView.addressof()));
         }
@@ -784,7 +789,7 @@ void BackendD3D::_resetGlyphAtlasAndBeginDraw(const RenderingPayload& p)
         {
             const auto surface = _glyphAtlas.query<IDXGISurface>();
 
-            const D2D1_RENDER_TARGET_PROPERTIES props{
+            static constexpr D2D1_RENDER_TARGET_PROPERTIES props{
                 .type = D2D1_RENDER_TARGET_TYPE_DEFAULT,
                 .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
             };
@@ -793,6 +798,7 @@ void BackendD3D::_resetGlyphAtlasAndBeginDraw(const RenderingPayload& p)
             _d2dRenderTarget = renderTarget.query<ID2D1DeviceContext>();
             _d2dRenderTarget4 = renderTarget.try_query<ID2D1DeviceContext4>();
 
+            _d2dRenderTarget->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
             // We don't really use D2D for anything except DWrite, but it
             // can't hurt to ensure that everything it does is pixel aligned.
             _d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
@@ -933,12 +939,13 @@ void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
     _instanceBuffer.reset();
 
     {
-        D3D11_BUFFER_DESC desc{};
-        desc.ByteWidth = gsl::narrow<UINT>(newSize);
-        desc.Usage = D3D11_USAGE_DYNAMIC;
-        desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-        desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        desc.StructureByteStride = sizeof(QuadInstance);
+        const D3D11_BUFFER_DESC desc{
+            .ByteWidth = gsl::narrow<UINT>(newSize),
+            .Usage = D3D11_USAGE_DYNAMIC,
+            .BindFlags = D3D11_BIND_VERTEX_BUFFER,
+            .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+            .StructureByteStride = sizeof(QuadInstance),
+        };
         THROW_IF_FAILED(_device->CreateBuffer(&desc, nullptr, _instanceBuffer.addressof()));
     }
 
@@ -985,7 +992,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
     u16 y = 0;
     for (const auto row : p.rows)
     {
-        const auto baselineY = y * p.d.font.cellSizeDIP.y + p.s->font->baselineInDIP;
+        const auto baselineY = y * p.s->font->cellSize.y + p.s->font->baseline;
         f32 cumulativeAdvance = 0;
 
         for (const auto& m : row->mappings)
@@ -1001,8 +1008,8 @@ void BackendD3D::_drawText(RenderingPayload& p)
 
                 if (entry.shadingType)
                 {
-                    const auto l = static_cast<i32>((cumulativeAdvance + row->glyphOffsets[x].advanceOffset) * p.d.font.pixelPerDIP + 0.5f) + entry.offset.x;
-                    const auto t = static_cast<i32>((baselineY - row->glyphOffsets[x].ascenderOffset) * p.d.font.pixelPerDIP + 0.5f) + entry.offset.y;
+                    const auto l = static_cast<i32>(cumulativeAdvance + row->glyphOffsets[x].advanceOffset + 0.5f) + entry.offset.x;
+                    const auto t = static_cast<i32>(baselineY - row->glyphOffsets[x].ascenderOffset + 0.5f) + entry.offset.y;
                     row->top = std::min(row->top, t);
                     row->bottom = std::max(row->bottom, t + entry.size.y);
                     _appendQuad({ static_cast<i16>(l), static_cast<i16>(t) }, entry.size, entry.texcoord, row->colors[x], static_cast<ShadingType>(entry.shadingType));
@@ -1051,7 +1058,7 @@ void BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
     // by 3px to the left and would thus overlap it's neighbor to the left by 3px. `.bottom` is the same but for the descender.
     // `.right` and `.top` are not overlaps per se, but rather the distance to the right/top edge relative to the baseline origin.
     // The width of the glyph for instance is thus `.right - .left`.
-    const f32 fontScale = p.d.font.pixelPerDIP * glyphRun.fontEmSize / fontMetrics.designUnitsPerEm;
+    const f32 fontScale = glyphRun.fontEmSize / fontMetrics.designUnitsPerEm;
     const f32r box{
         static_cast<f32>(glyphMetrics.leftSideBearing) * fontScale,
         static_cast<f32>(glyphMetrics.topSideBearing - glyphMetrics.verticalOriginY) * fontScale,
@@ -1081,14 +1088,33 @@ void BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
         const auto r = lround(box.right) + 1;
         const auto b = lround(box.bottom) + 1;
 
-        stbrp_rect rect{};
-        rect.w = r - l;
-        rect.h = b - t;
+        stbrp_rect rect{
+            .w = r - l,
+            .h = b - t,
+        };
         if (stbrp_pack_rects(&_rectPacker, &rect, 1))
         {
             _d2dBeginDrawing();
 
-            const D2D1_POINT_2F baseline{ (rect.x - l) * p.d.font.dipPerPixel, (rect.y - t) * p.d.font.dipPerPixel };
+#if ATLAS_DEBUG_COLORIZE_GLYPH_ATLAS
+            {
+                const auto d2dColor = colorFromU32(colorbrewer::pastel1[_colorizeGlyphAtlasCounter] | 0x3f000000);
+                _colorizeGlyphAtlasCounter = (_colorizeGlyphAtlasCounter + 1) % std::size(colorbrewer::pastel1);
+
+                wil::com_ptr<ID2D1SolidColorBrush> brush;
+                THROW_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(&d2dColor, nullptr, brush.addressof()));
+
+                const D2D1_RECT_F rectF{
+                    static_cast<f32>(rect.x),
+                    static_cast<f32>(rect.y),
+                    static_cast<f32>(rect.x + rect.w),
+                    static_cast<f32>(rect.y + rect.h),
+                };
+                _d2dRenderTarget->FillRectangle(&rectF, brush.get());
+            }
+#endif
+
+            const D2D1_POINT_2F baseline{ static_cast<f32>(rect.x - l), static_cast<f32>(rect.y - t) };
             const auto colorGlyph = DrawGlyphRun(_d2dRenderTarget.get(), _d2dRenderTarget4.get(), p.dwriteFactory4.get(), baseline, &glyphRun, _brush.get());
             const auto shadingType = colorGlyph ? ShadingType::Passthrough : (p.s->font->antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE ? ShadingType::TextClearType : ShadingType::TextGrayscale);
 
@@ -1380,7 +1406,7 @@ void BackendD3D::_drawSelection(const RenderingPayload& p)
 }
 
 #if ATLAS_DEBUG_SHOW_DIRTY
-void BackendD3D::_debugShowDirty(RenderingPayload& p)
+void BackendD3D::_debugShowDirty(const RenderingPayload& p)
 {
     _presentRects[_presentRectsPos] = p.dirtyRectInPx;
     _presentRectsPos = (_presentRectsPos + 1) % std::size(_presentRects);
@@ -1397,7 +1423,7 @@ void BackendD3D::_debugShowDirty(RenderingPayload& p)
                 static_cast<u16>(rect.right - rect.left),
                 static_cast<u16>(rect.bottom - rect.top),
             };
-            const auto color = 0x1f000000 | colorbrewer::pastel1[i];
+            const auto color = colorbrewer::pastel1[i] | 0x1f000000;
             _appendQuad(position, size, color, ShadingType::SolidFill);
         }
     }
@@ -1405,31 +1431,33 @@ void BackendD3D::_debugShowDirty(RenderingPayload& p)
 #endif
 
 #if ATLAS_DEBUG_DUMP_RENDER_TARGET
-void BackendD3D::_debugDumpRenderTarget(RenderingPayload& p)
+void BackendD3D::_debugDumpRenderTarget(const RenderingPayload& p)
 {
-    const auto n = _dumpRenderTargetCounter.fetch_add(1, std::memory_order_relaxed);
-
-    if (n == 0)
+    if (_dumpRenderTargetCounter == 0)
     {
-        ExpandEnvironmentStringsW(ATLAS_DEBUG_DUMP_RENDER_TARGET_PATH, &_dumpRenderTargetBasePath[0], std::size(_dumpRenderTargetBasePath));
+        ExpandEnvironmentStringsW(ATLAS_DEBUG_DUMP_RENDER_TARGET_PATH, &_dumpRenderTargetBasePath[0], gsl::narrow_cast<DWORD>(std::size(_dumpRenderTargetBasePath)));
         std::filesystem::create_directories(_dumpRenderTargetBasePath);
     }
 
     wchar_t path[MAX_PATH];
-    swprintf_s(path, L"%s\\%u_%08u.png", &_dumpRenderTargetBasePath[0], GetCurrentProcessId(), n);
+    swprintf_s(path, L"%s\\%u_%08zu.png", &_dumpRenderTargetBasePath[0], GetCurrentProcessId(), _dumpRenderTargetCounter);
     SaveTextureToPNG(_deviceContext.get(), _swapChainManager.GetBuffer().get(), p.s->font->dpi, &path[0]);
+    _dumpRenderTargetCounter++;
 }
 #endif
 
 void BackendD3D::_executeCustomShader(RenderingPayload& p)
 {
     {
-        CustomConstBuffer data;
-        data.time = std::chrono::duration<f32>(std::chrono::steady_clock::now() - _customShaderStartTime).count();
-        data.scale = p.d.font.pixelPerDIP;
-        data.resolution.x = static_cast<f32>(_cellCount.x * p.s->font->cellSize.x);
-        data.resolution.y = static_cast<f32>(_cellCount.y * p.s->font->cellSize.y);
-        data.background = colorFromU32<f32x4>(p.s->misc->backgroundColor);
+        const CustomConstBuffer data{
+            .time = std::chrono::duration<f32>(std::chrono::steady_clock::now() - _customShaderStartTime).count(),
+            .scale = static_cast<f32>(p.s->font->dpi) / static_cast<f32>(USER_DEFAULT_SCREEN_DPI),
+            .resolution = {
+                static_cast<f32>(_cellCount.x * p.s->font->cellSize.x),
+                static_cast<f32>(_cellCount.y * p.s->font->cellSize.y),
+            },
+            .background = colorFromU32<f32x4>(p.s->misc->backgroundColor),
+        };
 
         D3D11_MAPPED_SUBRESOURCE mapped{};
         THROW_IF_FAILED(_deviceContext->Map(_customShaderConstantBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
