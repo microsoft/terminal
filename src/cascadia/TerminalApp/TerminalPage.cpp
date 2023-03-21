@@ -4374,8 +4374,8 @@ namespace winrt::TerminalApp::implementation
         const auto& sxnUi{ SuggestionsUI() };
 
         sxnUi.Mode(mode);
-        sxnUi.SetCommands(commandsCollection);
         sxnUi.FilterText(filterText);
+        sxnUi.SetCommands(commandsCollection);
         sxnUi.Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
 
         const auto characterSize{ control.CharacterDimensions() };
