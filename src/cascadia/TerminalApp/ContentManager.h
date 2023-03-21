@@ -36,9 +36,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Control::ControlInteractivity LookupCore(winrt::guid id);
 
     private:
-        Windows::Foundation::Collections::IMap<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity> _content{
-            winrt::multi_threaded_map<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity>()
-        };
+        std::unordered_map<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity> _content;
 
         void _closedHandler(winrt::Windows::Foundation::IInspectable sender,
                             winrt::Windows::Foundation::IInspectable e);
