@@ -36,17 +36,15 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Control::ControlInteractivity CreateCore(Microsoft::Terminal::Control::IControlSettings settings,
                                                                       Microsoft::Terminal::Control::IControlAppearance unfocusedAppearance,
                                                                       Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
-        Microsoft::Terminal::Control::ControlInteractivity LookupCore(winrt::guid id);
+        Microsoft::Terminal::Control::ControlInteractivity LookupCore(uint64_t id);
 
         void Detach(const Microsoft::Terminal::Control::TermControl& control);
 
     private:
-        Windows::Foundation::Collections::IMap<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity> _content{
-            winrt::multi_threaded_map<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity>()
-        };
+        std::unordered_map<uint64_t, Microsoft::Terminal::Control::ControlInteractivity> _content;
 
-        Windows::Foundation::Collections::IMap<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity> _recentlyDetachedContent{
-            winrt::multi_threaded_map<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity>()
+        Windows::Foundation::Collections::IMap<uint64_t, Microsoft::Terminal::Control::ControlInteractivity> _recentlyDetachedContent{
+            winrt::multi_threaded_map<uint64_t, Microsoft::Terminal::Control::ControlInteractivity>()
         };
 
         void _finalizeDetach(winrt::Windows::Foundation::IInspectable sender,

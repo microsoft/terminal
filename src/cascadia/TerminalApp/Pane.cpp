@@ -161,7 +161,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
     // Only fill in the ContentGuid if absolutely needed.
     if (asContent)
     {
-        args.ContentGuid(_control.ContentGuid());
+        args.ContentId(_control.ContentId());
     }
 
     return args;

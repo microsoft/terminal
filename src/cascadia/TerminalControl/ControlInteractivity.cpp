@@ -27,6 +27,8 @@ static constexpr unsigned int MAX_CLICK_COUNT = 3;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    std::atomic<uint64_t> ControlInteractivity::_nextId{ 1 };
+
     static constexpr TerminalInput::MouseButtonState toInternalMouseState(const Control::MouseButtonState& state)
     {
         return TerminalInput::MouseButtonState{
@@ -44,7 +46,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastMouseClickPos{},
         _selectionNeedsToBeCopied{ false }
     {
-        _guid = ::Microsoft::Console::Utils::CreateGuid();
+        _id = ControlInteractivity::_nextId++;
 
         _core = winrt::make_self<ControlCore>(settings, unfocusedAppearance, connection);
 
@@ -56,9 +58,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         });
     }
 
-    winrt::guid ControlInteractivity::Id()
+    uint64_t ControlInteractivity::Id()
     {
-        return _guid;
+        return _id;
     }
 
     void ControlInteractivity::Detach()

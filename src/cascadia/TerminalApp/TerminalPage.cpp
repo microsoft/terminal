@@ -2749,9 +2749,9 @@ namespace winrt::TerminalApp::implementation
         return _InitControl(TermControl{ content });
     }
 
-    TermControl TerminalPage::_InitControlFromContent(const winrt::guid& contentGuid)
+    TermControl TerminalPage::_InitControlFromContent(const uint64_t& contentId)
     {
-        if (const auto& content{ _manager.LookupCore(contentGuid) })
+        if (const auto& content{ _manager.LookupCore(contentId) })
         {
             // We have to pass in our current keybindings, because that's an
             // object that belongs to this TerminalPage, on this thread. If we
@@ -2802,13 +2802,13 @@ namespace winrt::TerminalApp::implementation
     {
         // First things first - Check for making a pane from content GUID.
         if (newTerminalArgs &&
-            newTerminalArgs.ContentGuid() != winrt::guid{})
+            newTerminalArgs.ContentId() != 0)
         {
             // Don't need to worry about duplicating or anything - we'll
             // serialize the actual profile's GUID along with the content guid.
             const auto& profile = _settings.GetProfileForArgs(newTerminalArgs);
 
-            const auto control = _InitControlFromContent(newTerminalArgs.ContentGuid());
+            const auto control = _InitControlFromContent(newTerminalArgs.ContentId());
             _RegisterTerminalEvents(control);
             return std::make_shared<Pane>(profile, control);
         }

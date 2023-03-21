@@ -409,7 +409,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                                                                       const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
         winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Control::TermControl& term);
-        winrt::Microsoft::Terminal::Control::TermControl _InitControlFromContent(const winrt::guid& contentGuid);
+        winrt::Microsoft::Terminal::Control::TermControl _InitControlFromContent(const uint64_t& contentGuid);
 
         std::shared_ptr<Pane> _MakePane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
                                         const winrt::TerminalApp::TabBase& sourceTab = nullptr,
