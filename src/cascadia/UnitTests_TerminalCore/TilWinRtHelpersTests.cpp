@@ -37,6 +37,7 @@ class TerminalCoreUnitTests::TilWinRtHelpersTests final
     TEST_CLASS(TilWinRtHelpersTests);
     TEST_METHOD(TestPropertySimple);
     TEST_METHOD(TestPropertyHString);
+    TEST_METHOD(TestTruthiness);
 
     TEST_METHOD(TestEvent);
     TEST_METHOD(TestForwardedEvent);
@@ -69,6 +70,34 @@ void TilWinRtHelpersTests::TestPropertyHString()
 
     Foo = L"bar";
     VERIFY_ARE_EQUAL(L"bar", Foo());
+}
+
+void TilWinRtHelpersTests::TestTruthiness()
+{
+    til::property<bool> Foo{ false };
+    til::property<int> Bar(0);
+    til::property<winrt::hstring> EmptyString;
+    til::property<winrt::hstring> FullString{ L"Full" };
+
+    VERIFY_IS_FALSE(Foo());
+    VERIFY_IS_FALSE(Foo);
+
+    VERIFY_IS_FALSE(Bar());
+    VERIFY_IS_FALSE(Bar);
+
+    VERIFY_IS_FALSE(EmptyString);
+    VERIFY_IS_FALSE(!EmptyString().empty());
+
+    Foo = true;
+    VERIFY_IS_TRUE(Foo());
+    VERIFY_IS_TRUE(Foo);
+
+    Bar = 11;
+    VERIFY_IS_TRUE(Bar());
+    VERIFY_IS_TRUE(Bar);
+
+    VERIFY_IS_TRUE(FullString);
+    VERIFY_IS_TRUE(!FullString().empty());
 }
 
 void TilWinRtHelpersTests::TestEvent()

@@ -34,6 +34,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _value = newValue;
             return *this;
         }
+        operator bool() const requires std::is_same_v<T, winrt::hstring>
+        {
+            return !_value.empty();
+        }
+        operator bool() const requires std::convertible_to<T, bool>
+        {
+            return _value;
+        }
 
     private:
         T _value;
