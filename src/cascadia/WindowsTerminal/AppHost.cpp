@@ -299,7 +299,6 @@ void AppHost::Initialize()
         withWindow->Initialize(_window->GetHandle());
     }
 
-
     if (_useNonClientArea)
     {
         // Register our callback for when the app's non-client content changes.
