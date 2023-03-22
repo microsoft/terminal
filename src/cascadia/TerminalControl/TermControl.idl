@@ -92,6 +92,7 @@ namespace Microsoft.Terminal.Control
 
         Boolean ReadOnly { get; };
         void ToggleReadOnly();
+        void SetReadOnly(Boolean readOnlyState);
 
         String ReadEntireBuffer();
 
