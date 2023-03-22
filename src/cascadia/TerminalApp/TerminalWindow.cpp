@@ -118,8 +118,10 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalWindow::TerminalWindow(const TerminalApp::SettingsLoadEventArgs& settingsLoadedResult) :
+    TerminalWindow::TerminalWindow(const TerminalApp::SettingsLoadEventArgs& settingsLoadedResult,
+                                   const TerminalApp::ContentManager& manager) :
         _settings{ settingsLoadedResult.NewSettings() },
+        _manager{ manager },
         _initialLoadResult{ settingsLoadedResult },
         _WindowProperties{ winrt::make_self<TerminalApp::implementation::WindowProperties>() }
     {
@@ -138,7 +140,7 @@ namespace winrt::TerminalApp::implementation
     HRESULT TerminalWindow::Initialize(HWND hwnd)
     {
         // Now that we know we can do XAML, build our page.
-        _root = winrt::make_self<TerminalPage>(*_WindowProperties);
+        _root = winrt::make_self<TerminalPage>(*_WindowProperties, _manager);
         _dialog = ContentDialog{};
 
         // Pass commandline args into the TerminalPage. If we were supposed to

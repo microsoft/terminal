@@ -721,7 +721,7 @@ namespace winrt::TerminalApp::implementation
                                                           warnings,
                                                           _settings);
 
-        auto window = winrt::make_self<implementation::TerminalWindow>(*ev);
+        auto window = winrt::make_self<implementation::TerminalWindow>(*ev, _contentManager);
 
         this->SettingsChanged({ window->get_weak(), &implementation::TerminalWindow::UpdateSettingsHandler });
         if (_hasSettingsStartupActions)
@@ -729,6 +729,11 @@ namespace winrt::TerminalApp::implementation
             window->SetSettingsStartupArgs(_settingsAppArgs.GetStartupActions());
         }
         return *window;
+    }
+
+    winrt::TerminalApp::ContentManager AppLogic::ContentManager()
+    {
+        return _contentManager;
     }
 
     bool AppLogic::ShouldUsePersistedLayout() const
