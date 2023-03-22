@@ -562,6 +562,7 @@ EDITTEXT
 EDITUPDATE
 edputil
 Efast
+efg
 EHsc
 EINS
 EJO
@@ -2272,8 +2273,6 @@ xunit
 xutr
 XVIRTUALSCREEN
 XWalk
-xwwyzz
-xxyyzz
 yact
 YCast
 YCENTER
