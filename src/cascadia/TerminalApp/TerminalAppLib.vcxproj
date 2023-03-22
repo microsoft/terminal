@@ -138,6 +138,9 @@
     <ClInclude Include="AppLogic.h">
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ContentManager.h">
+      <DependentUpon>TerminalPage.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TerminalWindow.h">
       <DependentUpon>TerminalWindow.idl</DependentUpon>
     </ClInclude>
@@ -236,6 +239,9 @@
     </ClCompile>
     <ClCompile Include="AppLogic.cpp">
       <DependentUpon>AppLogic.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ContentManager.cpp">
+      <DependentUpon>TerminalPage.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TerminalWindow.cpp">
       <DependentUpon>TerminalWindow.idl</DependentUpon>
