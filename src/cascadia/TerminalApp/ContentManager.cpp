@@ -42,7 +42,7 @@ namespace winrt::TerminalApp::implementation
     void ContentManager::Detach(const Microsoft::Terminal::Control::TermControl& control)
     {
         const auto contentId{ control.ContentId() };
-        if (const auto& content{ LookupCore(contentId) })
+        if (const auto& content{ TryLookupCore(contentId) })
         {
             control.Detach();
             content.Attached({ get_weak(), &ContentManager::_finalizeDetach });

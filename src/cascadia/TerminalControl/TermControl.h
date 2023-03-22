@@ -143,7 +143,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Detach();
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);

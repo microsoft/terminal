@@ -2751,7 +2751,7 @@ namespace winrt::TerminalApp::implementation
 
     TermControl TerminalPage::_InitControlFromContent(const uint64_t& contentId)
     {
-        if (const auto& content{ _manager.LookupCore(contentId) })
+        if (const auto& content{ _manager.TryLookupCore(contentId) })
         {
             // We have to pass in our current keybindings, because that's an
             // object that belongs to this TerminalPage, on this thread. If we

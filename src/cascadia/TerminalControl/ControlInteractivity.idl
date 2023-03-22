@@ -24,8 +24,8 @@ namespace Microsoft.Terminal.Control
         void LostFocus();
 
         UInt64 Id { get; };
-        void Reparent(Microsoft.Terminal.Control.IKeyBindings keyBindings);
 
+        void Reparent(Microsoft.Terminal.Control.IKeyBindings keyBindings);
         void Detach();
 
         void Close();
