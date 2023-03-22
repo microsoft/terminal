@@ -280,12 +280,11 @@ jobs:
     - pwsh: |-
         $XamlAppxPath = (Get-Item "src\cascadia\CascadiaPackage\AppPackages\*\Dependencies\$(BuildPlatform)\Microsoft.UI.Xaml*.appx").FullName
         & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 -TerminalAppX $(WindowsTerminalPackagePath) -XamlAppX $XamlAppxPath -Destination "$(Build.ArtifactStagingDirectory)/unpackaged"
+      displayName: Build Unpackaged Distribution
 
-    - task: PublishPipelineArtifact@1
+    - publish: $(Build.ArtifactStagingDirectory)/unpackaged
+      artifact: unpackaged-$(BuildPlatform)-$(BuildConfiguration)
       displayName: Publish Artifact (unpackaged)
-      inputs:
-        targetPath: $(Build.ArtifactStagingDirectory)/unpackaged
-        artifactName: unpackaged-$(BuildPlatform)-$(BuildConfiguration)
 
   - ${{ if eq(parameters.buildConPTY, true) }}:
     - task: CopyFiles@2
