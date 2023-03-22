@@ -1153,11 +1153,12 @@ bool AdaptDispatch::CopyRectangularArea(const VTInt top, const VTInt left, const
         do
         {
             const auto current = next;
+            const auto currentSrcPos = srcPos;
             srcView.WalkInBounds(srcPos, walkDirection);
             next = OutputCell(*textBuffer.GetCellDataAt(srcPos));
             // If the source position is offscreen (which can occur on double
             // width lines), then we shouldn't copy anything to the destination.
-            if (srcPos.x < textBuffer.GetLineWidth(srcPos.y))
+            if (currentSrcPos.x < textBuffer.GetLineWidth(currentSrcPos.y))
             {
                 textBuffer.WriteLine(OutputCellIterator({ &current, 1 }), dstPos);
             }

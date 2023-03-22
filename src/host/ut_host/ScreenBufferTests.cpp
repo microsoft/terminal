@@ -252,6 +252,7 @@ class ScreenBufferTests
     TEST_METHOD(TestDeferredMainBufferResize);
 
     TEST_METHOD(RectangularAreaOperations);
+    TEST_METHOD(CopyDoubleWidthRectangularArea);
 
     TEST_METHOD(DelayedWrapReset);
 };
@@ -7546,6 +7547,57 @@ void ScreenBufferTests::RectangularAreaOperations()
     const auto bufferChars = std::wstring(targetArea.left, bufferChar);
     VERIFY_IS_TRUE(_ValidateLinesContain(targetArea.top, targetArea.bottom, bufferChars, bufferAttr));
     VERIFY_IS_TRUE(_ValidateLinesContain(targetArea.right, targetArea.top, targetArea.bottom, bufferChar, bufferAttr));
+}
+
+void ScreenBufferTests::CopyDoubleWidthRectangularArea()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& textBuffer = si.GetTextBuffer();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    // Fill the entire buffer with Zs. Blue on Green and Underlined.
+    const auto bufferChar = L'Z';
+    const auto bufferHeight = si.GetBufferSize().Height();
+    auto bufferAttr = TextAttribute{ FOREGROUND_BLUE | BACKGROUND_GREEN };
+    bufferAttr.SetUnderlined(true);
+    _FillLines(0, bufferHeight, bufferChar, bufferAttr);
+
+    // Fill the first three lines with Cs. Green on Red and Intense.
+    const auto copyChar = L'C';
+    auto copyAttr = TextAttribute{ FOREGROUND_GREEN | BACKGROUND_RED };
+    copyAttr.SetIntense(true);
+    _FillLines(0, 3, copyChar, copyAttr);
+
+    // Set the active attributes to Red on Blue;
+    auto activeAttr = TextAttribute{ FOREGROUND_RED | BACKGROUND_BLUE };
+    si.SetAttributes(activeAttr);
+
+    // Make the second line (offset 1) double width.
+    textBuffer.GetCursor().SetPosition({ 0, 1 });
+    textBuffer.SetCurrentLineRendition(LineRendition::DoubleWidth);
+
+    // Copy a segment of the top three lines with DECCRA.
+    stateMachine.ProcessString(L"\033[1;31;3;50;1;4;31;1$v");
+
+    Log::Comment(L"The first 30 columns of the target area should remain unchanged");
+    const auto thirtyBufferChars = std::wstring(30, bufferChar);
+    VERIFY_IS_TRUE(_ValidateLinesContain(3, 6, thirtyBufferChars, bufferAttr));
+
+    Log::Comment(L"The next 20 columns should contain the copied content");
+    const auto twentyCopyChars = std::wstring(20, copyChar);
+    VERIFY_IS_TRUE(_ValidateLineContains({ 30, 3 }, twentyCopyChars, copyAttr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 30, 5 }, twentyCopyChars, copyAttr));
+
+    Log::Comment(L"But the second target row ends after 10, because of the double-width source");
+    const auto tenCopyChars = std::wstring(10, copyChar);
+    VERIFY_IS_TRUE(_ValidateLineContains({ 30, 4 }, tenCopyChars, copyAttr));
+
+    Log::Comment(L"The subsequent columns in each row should remain unchanged");
+    VERIFY_IS_TRUE(_ValidateLineContains({ 50, 3 }, bufferChar, bufferAttr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 40, 4 }, bufferChar, bufferAttr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 50, 5 }, bufferChar, bufferAttr));
 }
 
 void ScreenBufferTests::DelayedWrapReset()
