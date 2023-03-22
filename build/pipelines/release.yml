@@ -257,13 +257,13 @@ jobs:
         & "$(MakeAppxPath)" unpack /p $PackageFilename /d "$(Build.SourcesDirectory)\UnpackedTerminalPackage"
       displayName: Unpack the new Terminal package for signing
 
-    - task: EsrpCodeSigning@1
-      displayName: Submit Terminal's binaries for signing
-      inputs:
-        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: '$(Build.SourcesDirectory)\UnpackedTerminalPackage'
-        signType: batchSigning
-        batchSignPolicyFile: '$(Build.SourcesDirectory)\build\config\ESRPSigning_Terminal.json'
+   #- task: EsrpCodeSigning@1
+   #  displayName: Submit Terminal's binaries for signing
+   #  inputs:
+   #    ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
+   #    FolderPath: '$(Build.SourcesDirectory)\UnpackedTerminalPackage'
+   #    signType: batchSigning
+   #    batchSignPolicyFile: '$(Build.SourcesDirectory)\build\config\ESRPSigning_Terminal.json'
 
     - pwsh: |-
         $PackageFilename = "$(WindowsTerminalPackagePath)"
@@ -320,16 +320,16 @@ jobs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/wpf
         ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)
 
-  - task: PublishSymbols@2
-    displayName: Publish symbols path
-    continueOnError: True
-    inputs:
-      SearchPattern: |
-        $(Build.SourcesDirectory)/bin/**/*.pdb
-        $(Build.SourcesDirectory)/bin/**/*.exe
-        $(Build.SourcesDirectory)/bin/**/*.dll
-      IndexSources: false
-      SymbolServerType: TeamServices
+ #- task: PublishSymbols@2
+ #  displayName: Publish symbols path
+ #  continueOnError: True
+ #  inputs:
+ #    SearchPattern: |
+ #      $(Build.SourcesDirectory)/bin/**/*.pdb
+ #      $(Build.SourcesDirectory)/bin/**/*.exe
+ #      $(Build.SourcesDirectory)/bin/**/*.dll
+ #    IndexSources: false
+ #    SymbolServerType: TeamServices
 
 - ${{ if eq(parameters.runCompliance, true) }}:
   - template: ./templates/build-console-compliance-job.yml
@@ -371,40 +371,40 @@ jobs:
         New-Item -Type Directory "$(System.ArtifactsDirectory)\bundle"
         .\build\scripts\Create-AppxBundle.ps1 -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\bundle\$(BundleStemName)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
       displayName: Create WindowsTerminal*.msixbundle
-    - task: EsrpCodeSigning@1
-      displayName: Submit *.msixbundle to ESRP for code signing
-      inputs:
-        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: $(System.ArtifactsDirectory)\bundle
-        Pattern: $(BundleStemName)*.msixbundle
-        UseMinimatch: true
-        signConfigType: inlineSignParams
-        inlineOperation: >-
-          [
-              {
-                  "KeyCode": "Dynamic",
-                  "CertTemplateName": "WINMSAPP1ST",
-                  "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
-                  "OperationCode": "SigntoolSign",
-                  "Parameters": {
-                      "OpusName": "Microsoft",
-                      "OpusInfo": "http://www.microsoft.com",
-                      "FileDigest": "/fd \"SHA256\"",
-                      "TimeStamp": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
-                  },
-                  "ToolName": "sign",
-                  "ToolVersion": "1.0"
-              },
-              {
-                  "KeyCode": "Dynamic",
-                  "CertTemplateName": "WINMSAPP1ST",
-                  "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
-                  "OperationCode": "SigntoolVerify",
-                  "Parameters": {},
-                  "ToolName": "sign",
-                  "ToolVersion": "1.0"
-              }
-          ]
+   #- task: EsrpCodeSigning@1
+   #  displayName: Submit *.msixbundle to ESRP for code signing
+   #  inputs:
+   #    ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
+   #    FolderPath: $(System.ArtifactsDirectory)\bundle
+   #    Pattern: $(BundleStemName)*.msixbundle
+   #    UseMinimatch: true
+   #    signConfigType: inlineSignParams
+   #    inlineOperation: >-
+   #      [
+   #          {
+   #              "KeyCode": "Dynamic",
+   #              "CertTemplateName": "WINMSAPP1ST",
+   #              "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+   #              "OperationCode": "SigntoolSign",
+   #              "Parameters": {
+   #                  "OpusName": "Microsoft",
+   #                  "OpusInfo": "http://www.microsoft.com",
+   #                  "FileDigest": "/fd \"SHA256\"",
+   #                  "TimeStamp": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+   #              },
+   #              "ToolName": "sign",
+   #              "ToolVersion": "1.0"
+   #          },
+   #          {
+   #              "KeyCode": "Dynamic",
+   #              "CertTemplateName": "WINMSAPP1ST",
+   #              "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+   #              "OperationCode": "SigntoolVerify",
+   #              "Parameters": {},
+   #              "ToolName": "sign",
+   #              "ToolVersion": "1.0"
+   #          }
+   #      ]
 
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifact: appxbundle-signed'
@@ -451,13 +451,13 @@ jobs:
           }
           Move-Item bin\x86 bin\Win32
 
-    - task: EsrpCodeSigning@1
-      displayName: Submit ConPTY libraries and OpenConsole for code signing
-      inputs:
-        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: '$(Build.SourcesDirectory)/bin'
-        signType: batchSigning
-        batchSignPolicyFile: '$(Build.SourcesDirectory)\build\config\ESRPSigning_ConPTY.json'
+   #- task: EsrpCodeSigning@1
+   #  displayName: Submit ConPTY libraries and OpenConsole for code signing
+   #  inputs:
+   #    ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
+   #    FolderPath: '$(Build.SourcesDirectory)/bin'
+   #    signType: batchSigning
+   #    batchSignPolicyFile: '$(Build.SourcesDirectory)\build\config\ESRPSigning_ConPTY.json'
 
     - task: NuGetToolInstaller@1
       displayName: Use NuGet 5.10.0
@@ -471,31 +471,31 @@ jobs:
         packDestination: '$(Build.ArtifactStagingDirectory)/nupkg'
         versioningScheme: byEnvVar
         versionEnvVar: XES_PACKAGEVERSIONNUMBER
-    - task: EsrpCodeSigning@1
-      displayName: Submit *.nupkg to ESRP for code signing
-      inputs:
-        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: $(Build.ArtifactStagingDirectory)/nupkg
-        Pattern: '*.nupkg'
-        UseMinimatch: true
-        signConfigType: inlineSignParams
-        inlineOperation: >-
-          [
-              {
-                  "KeyCode": "CP-401405",
-                  "OperationCode": "NuGetSign",
-                  "Parameters": {},
-                  "ToolName": "sign",
-                  "ToolVersion": "1.0"
-              },
-              {
-                  "KeyCode": "CP-401405",
-                  "OperationCode": "NuGetVerify",
-                  "Parameters": {},
-                  "ToolName": "sign",
-                  "ToolVersion": "1.0"
-              }
-          ]
+   #- task: EsrpCodeSigning@1
+   #  displayName: Submit *.nupkg to ESRP for code signing
+   #  inputs:
+   #    ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
+   #    FolderPath: $(Build.ArtifactStagingDirectory)/nupkg
+   #    Pattern: '*.nupkg'
+   #    UseMinimatch: true
+   #    signConfigType: inlineSignParams
+   #    inlineOperation: >-
+   #      [
+   #          {
+   #              "KeyCode": "CP-401405",
+   #              "OperationCode": "NuGetSign",
+   #              "Parameters": {},
+   #              "ToolName": "sign",
+   #              "ToolVersion": "1.0"
+   #          },
+   #          {
+   #              "KeyCode": "CP-401405",
+   #              "OperationCode": "NuGetVerify",
+   #              "Parameters": {},
+   #              "ToolName": "sign",
+   #              "ToolVersion": "1.0"
+   #          }
+   #      ]
     - task: PublishBuildArtifacts@1
       displayName: Publish Artifact (nupkg)
       inputs:
@@ -559,17 +559,17 @@ jobs:
         platform: Any CPU
         configuration: $(BuildConfiguration)
         maximumCpuCount: true
-    - task: PublishSymbols@2
-      displayName: Publish symbols path
-      continueOnError: True
-      inputs:
-        SearchPattern: |
-          $(Build.SourcesDirectory)/bin/**/*.pdb
-          $(Build.SourcesDirectory)/bin/**/*.exe
-          $(Build.SourcesDirectory)/bin/**/*.dll
-        IndexSources: false
-        SymbolServerType: TeamServices
-        SymbolsArtifactName: Symbols_WPF_$(BuildConfiguration)
+   #- task: PublishSymbols@2
+   #  displayName: Publish symbols path
+   #  continueOnError: True
+   #  inputs:
+   #    SearchPattern: |
+   #      $(Build.SourcesDirectory)/bin/**/*.pdb
+   #      $(Build.SourcesDirectory)/bin/**/*.exe
+   #      $(Build.SourcesDirectory)/bin/**/*.dll
+   #    IndexSources: false
+   #    SymbolServerType: TeamServices
+   #    SymbolsArtifactName: Symbols_WPF_$(BuildConfiguration)
     - task: CopyFiles@2
       displayName: Copy *.nupkg to Artifacts
       inputs:
@@ -577,31 +577,31 @@ jobs:
         TargetFolder: $(Build.ArtifactStagingDirectory)/nupkg
         OverWrite: true
         flattenFolders: true
-    - task: EsrpCodeSigning@1
-      displayName: Submit *.nupkg to ESRP for code signing
-      inputs:
-        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: $(Build.ArtifactStagingDirectory)/nupkg
-        Pattern: '*.nupkg'
-        UseMinimatch: true
-        signConfigType: inlineSignParams
-        inlineOperation: >-
-          [
-              {
-                  "KeyCode": "CP-401405",
-                  "OperationCode": "NuGetSign",
-                  "Parameters": {},
-                  "ToolName": "sign",
-                  "ToolVersion": "1.0"
-              },
-              {
-                  "KeyCode": "CP-401405",
-                  "OperationCode": "NuGetVerify",
-                  "Parameters": {},
-                  "ToolName": "sign",
-                  "ToolVersion": "1.0"
-              }
-          ]
+   #- task: EsrpCodeSigning@1
+   #  displayName: Submit *.nupkg to ESRP for code signing
+   #  inputs:
+   #    ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
+   #    FolderPath: $(Build.ArtifactStagingDirectory)/nupkg
+   #    Pattern: '*.nupkg'
+   #    UseMinimatch: true
+   #    signConfigType: inlineSignParams
+   #    inlineOperation: >-
+   #      [
+   #          {
+   #              "KeyCode": "CP-401405",
+   #              "OperationCode": "NuGetSign",
+   #              "Parameters": {},
+   #              "ToolName": "sign",
+   #              "ToolVersion": "1.0"
+   #          },
+   #          {
+   #              "KeyCode": "CP-401405",
+   #              "OperationCode": "NuGetVerify",
+   #              "Parameters": {},
+   #              "ToolName": "sign",
+   #              "ToolVersion": "1.0"
+   #          }
+   #      ]
     - task: PublishBuildArtifacts@1
       displayName: Publish Artifact (nupkg)
       inputs:
