@@ -82,6 +82,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 
     RowWriteState state{
         .text = string,
+        .columnLimit = textBuffer.GetLineWidth(cursorPosition.y),
     };
 
     while (!state.text.empty())
@@ -96,6 +97,8 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             {
                 _api.LineFeed(true, true);
                 cursorPosition = cursor.GetPosition();
+                // We need to recalculate the width when moving to a new line.
+                state.columnLimit = textBuffer.GetLineWidth(cursorPosition.y);
             }
         }
 
@@ -104,22 +107,21 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             // If insert-replace mode is enabled, we first measure how many cells
             // the string will occupy, and scroll the target area right by that
             // amount to make space for the incoming text.
-            const auto lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
             const OutputCellIterator it(state.text, attributes);
             auto measureIt = it;
-            while (measureIt && measureIt.GetCellDistance(it) < lineWidth)
+            while (measureIt && measureIt.GetCellDistance(it) < state.columnLimit)
             {
                 ++measureIt;
             }
             const auto row = cursorPosition.y;
             const auto cellCount = measureIt.GetCellDistance(it);
-            _ScrollRectHorizontally(textBuffer, { cursorPosition.x, row, lineWidth, row + 1 }, cellCount);
+            _ScrollRectHorizontally(textBuffer, { cursorPosition.x, row, state.columnLimit, row + 1 }, cellCount);
         }
 
         state.columnBegin = cursorPosition.x;
 
         const auto textPositionBefore = state.text.data();
-        const auto wrapped = textBuffer.WriteLine(cursorPosition.y, wrapAtEOL, attributes, state);
+        textBuffer.WriteLine(cursorPosition.y, wrapAtEOL, attributes, state);
         const auto textPositionAfter = state.text.data();
 
         if (state.columnBeginDirty != state.columnEndDirty)
@@ -131,10 +133,11 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
         // If we're past the end of the line, we need to clamp the cursor
         // back into range, and if wrapping is enabled, set the delayed wrap
         // flag. The wrapping only occurs once another character is output.
-        cursorPosition.x = wrapped ? state.columnLimit - 1 : state.columnEnd;
+        const auto isWrapping = state.columnEnd >= state.columnLimit;
+        cursorPosition.x = isWrapping ? state.columnLimit - 1 : state.columnEnd;
         cursor.SetPosition(cursorPosition);
 
-        if (wrapped)
+        if (isWrapping)
         {
             if (wrapAtEOL)
             {

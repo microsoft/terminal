@@ -68,63 +68,6 @@ constexpr OutIt copy_n_small(InIt first, Diff count, OutIt dest)
     return dest;
 }
 
-RowTextIterator::RowTextIterator(std::span<const wchar_t> chars, std::span<const uint16_t> charOffsets, uint16_t offset) noexcept :
-    _chars{ chars },
-    _charOffsets{ charOffsets },
-    _beg{ offset },
-    _end{ offset }
-{
-    operator++();
-}
-
-bool RowTextIterator::operator==(const RowTextIterator& other) const noexcept
-{
-    return _beg == other._beg;
-}
-
-RowTextIterator& RowTextIterator::operator++() noexcept
-{
-    _beg = _end;
-    while (++_end < _charOffsets.size() && _uncheckedIsTrailer(_end))
-    {
-    }
-    return *this;
-}
-
-const RowTextIterator& RowTextIterator::operator*() const noexcept
-{
-    return *this;
-}
-
-std::wstring_view RowTextIterator::Text() const noexcept
-{
-    const size_t beg = _uncheckedCharOffset(_beg);
-    const size_t end = _uncheckedCharOffset(_end);
-    // We _are_ using span. But C++ decided that string_view and span aren't convertible.
-    assert(end <= _chars.size() && end > beg);
-#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
-    return { _chars.data() + beg, end - beg };
-}
-
-til::CoordType RowTextIterator::Cols() const noexcept
-{
-    return _end - _beg;
-}
-
-// Safety: col must be [0, _columnCount].
-uint16_t RowTextIterator::_uncheckedCharOffset(size_t col) const noexcept
-{
-    assert(col < _charOffsets.size());
-    return til::at(_charOffsets, col) & CharOffsetsMask;
-}
-
-// Safety: col must be [0, _columnCount].
-bool RowTextIterator::_uncheckedIsTrailer(size_t col) const noexcept
-{
-    assert(col < _charOffsets.size());
-    return WI_IsFlagSet(til::at(_charOffsets, col), CharOffsetsTrailer);
-}
-
 // Routine Description:
 // - constructor
 // Arguments:
@@ -186,16 +129,6 @@ void ROW::SetLineRendition(const LineRendition lineRendition) noexcept
 LineRendition ROW::GetLineRendition() const noexcept
 {
     return _lineRendition;
-}
-
-RowTextIterator ROW::Begin() const noexcept
-{
-    return { _chars, _charOffsets, 0 };
-}
-
-RowTextIterator ROW::End() const noexcept
-{
-    return { _chars, _charOffsets, _columnCount };
 }
 
 // Routine Description:
@@ -483,7 +416,8 @@ void ROW::ReplaceAttributes(const til::CoordType beginIndex, const til::CoordTyp
     colLimit = row._clampedColumnInclusive(columnLimit);
     chBegDirty = row._uncheckedCharOffset(colBeg);
     colBegDirty = row._adjustBackward(colBeg);
-    chBeg = chBegDirty + colBeg - colBegDirty;
+    leadingSpaces = colBeg - colBegDirty;
+    chBeg = chBegDirty + leadingSpaces;
     colEnd = colBeg;
     colEndDirty = 0;
     charsConsumed = 0;
@@ -549,6 +483,12 @@ try
     h.Finish();
 
     state.text = state.text.substr(h.charsConsumed);
+    // Here's why we set `state.columnEnd` to `colLimit` if there's remaining text:
+    // Callers should be able to use `state.columnEnd` as the next cursor position, as well as the parameter for a
+    // follow-up call to ReplaceAttributes(). But if we fail to insert a wide glyph into the last column of a row,
+    // that last cell (which now contains padding whitespace) should get the same attributes as the rest of the
+    // string so that the row looks consistent. This requires us to return `colLimit` instead of `colLimit - 1`.
+    // Additionally, this has the benefit that callers can detect line wrapping by checking `columnEnd >= columnLimit`.
     state.columnEnd = state.text.empty() ? h.colEnd : h.colLimit;
     state.columnBeginDirty = h.colBegDirty;
     state.columnEndDirty = h.colEndDirty;
@@ -669,7 +609,6 @@ catch (...)
 {
     colEndDirty = row._adjustForward(colEndDirty);
 
-    const uint16_t leadingSpaces = chBeg - chBegDirty;
     const uint16_t trailingSpaces = colEndDirty - colEnd;
     const auto chEndDirtyOld = row._uncheckedCharOffset(colEndDirty);
     const auto chEndDirty = chBegDirty + charsConsumed + leadingSpaces + trailingSpaces;

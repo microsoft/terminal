@@ -2049,52 +2049,81 @@ void TextBufferTests::TestOverwriteChars()
 
 void TextBufferTests::TestRowReplaceText()
 {
-    til::size bufferSize{ 10, 3 };
-    UINT cursorSize = 12;
-    TextAttribute attr{ 0x7f };
+    static constexpr til::size bufferSize{ 10, 3 };
+    static constexpr UINT cursorSize = 12;
+    const TextAttribute attr{ 0x7f };
     TextBuffer buffer{ bufferSize, attr, cursorSize, false, _renderer };
     auto& row = buffer.GetRowByOffset(0);
-    RowWriteState state;
 
 #define complex L"\U0001F41B"
 
-    // Not enough space -> early exit
-    state.text = complex;
-    state.columnBegin = 2;
-    state.columnLimit = 2;
-    row.ReplaceText(state);
-    VERIFY_ARE_EQUAL(2, state.columnEndDirty);
-    VERIFY_ARE_EQUAL(complex, state.text);
-    VERIFY_ARE_EQUAL(L"          ", row.GetText());
+    struct Test
+    {
+        const wchar_t* description;
+        struct
+        {
+            std::wstring_view text;
+            til::CoordType columnBegin = 0;
+            til::CoordType columnLimit = 0;
+        } input;
+        struct
+        {
+            std::wstring_view text;
+            til::CoordType columnEnd = 0;
+            til::CoordType columnBeginDirty = 0;
+            til::CoordType columnEndDirty = 0;
+        } expected;
+        std::wstring_view expectedRow;
+    };
 
-    // Writing with the exact right amount of space
-    state.text = complex;
-    state.columnBegin = 2;
-    state.columnLimit = 4;
-    row.ReplaceText(state);
-    VERIFY_ARE_EQUAL(4, state.columnEndDirty);
-    VERIFY_ARE_EQUAL(L"", state.text);
-    VERIFY_ARE_EQUAL(L"  " complex L"      ", row.GetText());
+    static constexpr std::array tests{
+        Test{
+            L"Not enough space -> early exit",
+            { complex, 2, 2 },
+            { complex, 2, 2, 2 },
+            L"          ",
+        },
+        Test{
+            L"Exact right amount of space",
+            { complex, 2, 4 },
+            { L"", 4, 2, 4 },
+            L"  " complex L"      ",
+        },
+        Test{
+            L"Not enough space -> columnEnd = columnLimit",
+            { complex complex, 0, 3 },
+            { complex, 3, 0, 4 },
+            complex L"        ",
+        },
+        Test{
+            L"Too much to fit into the row",
+            { complex L"b" complex L"c" complex L"abcd", 0, til::CoordTypeMax },
+            { L"cd", 10, 0, 10 },
+            complex L"b" complex L"c" complex L"ab",
+        },
+        Test{
+            L"Overwriting wide glyphs dirties both cells, but leaves columnEnd at the end of the text",
+            { L"efg", 1, til::CoordTypeMax },
+            { L"", 4, 0, 5 },
+            L" efg c" complex L"ab",
+        },
+    };
 
-    // Overwrite a wide character, but with not enough space left
-    state.text = complex complex;
-    state.columnBegin = 0;
-    state.columnLimit = 3;
-    row.ReplaceText(state);
-    // It's not quite clear what Write() should return in that case,
-    // so this simply asserts on what it happens to return right now.
-    VERIFY_ARE_EQUAL(4, state.columnEndDirty);
-    VERIFY_ARE_EQUAL(complex, state.text);
-    VERIFY_ARE_EQUAL(complex L"        ", row.GetText());
-
-    // Various text, too much to fit into the row
-    state.text = L"a" complex L"b" complex L"c" complex L"foo";
-    state.columnBegin = 1;
-    state.columnLimit = til::CoordTypeMax;
-    row.ReplaceText(state);
-    VERIFY_ARE_EQUAL(10, state.columnEndDirty);
-    VERIFY_ARE_EQUAL(L"foo", state.text);
-    VERIFY_ARE_EQUAL(L" a" complex L"b" complex L"c" complex, row.GetText());
+    for (const auto& t : tests)
+    {
+        Log::Comment(t.description);
+        RowWriteState actual{
+            .text = t.input.text,
+            .columnBegin = t.input.columnBegin,
+            .columnLimit = t.input.columnLimit,
+        };
+        row.ReplaceText(actual);
+        VERIFY_ARE_EQUAL(t.expected.text, actual.text);
+        VERIFY_ARE_EQUAL(t.expected.columnEnd, actual.columnEnd);
+        VERIFY_ARE_EQUAL(t.expected.columnBeginDirty, actual.columnBeginDirty);
+        VERIFY_ARE_EQUAL(t.expected.columnEndDirty, actual.columnEndDirty);
+        VERIFY_ARE_EQUAL(t.expectedRow, row.GetText());
+    }
 
 #undef complex
 }

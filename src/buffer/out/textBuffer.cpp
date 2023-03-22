@@ -387,19 +387,19 @@ void TextBuffer::ConsumeGrapheme(std::wstring_view& chars) noexcept
 // fields are being used, whereas `state.columnLimit` is automatically overwritten by the line width of the given row.
 // This allows this function to automatically set the wrap-forced field of the row, which is also the return value.
 // The return value indicates to the caller whether the cursor should be moved to the next line.
-bool TextBuffer::WriteLine(til::CoordType row, bool wrapAtEOL, const TextAttribute& attributes, RowWriteState& state)
+void TextBuffer::WriteLine(til::CoordType row, bool wrapAtEOL, const TextAttribute& attributes, RowWriteState& state)
 {
     auto& r = GetRowByOffset(row);
 
-    state.columnLimit = r.LineRenditionColumns();
-
     r.ReplaceText(state);
     r.ReplaceAttributes(state.columnBegin, state.columnEnd, attributes);
-    r.SetWrapForced(wrapAtEOL && state.columnEnd >= state.columnLimit && !state.text.empty());
+
+    if (state.columnEnd >= state.columnLimit)
+    {
+        r.SetWrapForced(wrapAtEOL);
+    }
 
     TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, state.columnEndDirty, row + 1 }));
-
-    return r.WasWrapForced();
 }
 
 // Routine Description:
@@ -2514,7 +2514,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             // Only do so if we were not forced to wrap. If we did
             // force a word wrap, then the existing line break was
             // only because we ran out of space.
-            if (!row.WasWrapForced())
+            if (iRight < cOldColsTotal && !row.WasWrapForced())
             {
                 if (!fFoundCursorPos && (iRight == cOldCursorPos.x && iOldRow == cOldCursorPos.y))
                 {
