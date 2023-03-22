@@ -32,9 +32,13 @@ $terminalDump = Join-Path $tempDir "terminal.pri.xml"
 Write-Verbose "Removing Microsoft.UI.Xaml node from Terminal to prevent a collision with XAML"
 $terminalXMLDocument = [xml](Get-Content $terminalDump)
 $resourceMap = $terminalXMLDocument.PriInfo.ResourceMap
-$subtrees = $resourceMap.ResourceMapSubtree
-$null = $resourceMap.RemoveChild(($subtrees | Where-Object { $_.Name -eq "Microsoft.UI.Xaml" }))
-$terminalXMLDocument.Save($terminalDump)
+$fileSubtree = $resourceMap.ResourceMapSubtree | Where-Object { $_.Name -eq "Files" }
+$subtrees = $fileSubtree.ResourceMapSubtree
+$xamlSubtreeChild = ($subtrees | Where-Object { $_.Name -eq "Microsoft.UI.Xaml" })
+if ($Null -Ne $xamlSubtreeChild) {
+    $null = $fileSubtree.RemoveChild($xamlSubtreeChild)
+    $terminalXMLDocument.Save($terminalDump)
+}
 
 $indexName = $terminalXMLDocument.PriInfo.ResourceMap.name
 
