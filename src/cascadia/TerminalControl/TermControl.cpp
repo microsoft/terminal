@@ -234,7 +234,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return *term;
     }
 
-    winrt::guid TermControl::ContentGuid() const
+    uint64_t TermControl::ContentId() const
     {
         return _interactivity.Id();
     }
