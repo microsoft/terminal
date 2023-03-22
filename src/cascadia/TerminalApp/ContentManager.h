@@ -33,10 +33,10 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         ContentManager() = default;
-        Microsoft::Terminal::Control::ControlInteractivity CreateCore(Microsoft::Terminal::Control::IControlSettings settings,
-                                                                      Microsoft::Terminal::Control::IControlAppearance unfocusedAppearance,
-                                                                      Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
-        Microsoft::Terminal::Control::ControlInteractivity LookupCore(uint64_t id);
+        Microsoft::Terminal::Control::ControlInteractivity CreateCore(const Microsoft::Terminal::Control::IControlSettings& settings,
+                                                                      const Microsoft::Terminal::Control::IControlAppearance& unfocusedAppearance,
+                                                                      const Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
+        Microsoft::Terminal::Control::ControlInteractivity TryLookupCore(uint64_t id);
 
         void Detach(const Microsoft::Terminal::Control::TermControl& control);
 

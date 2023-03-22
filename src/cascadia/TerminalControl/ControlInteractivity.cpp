@@ -46,7 +46,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastMouseClickPos{},
         _selectionNeedsToBeCopied{ false }
     {
-        _id = ControlInteractivity::_nextId++;
+        _id = _nextId.fetch_add(1, std::memory_order_relaxed);
 
         _core = winrt::make_self<ControlCore>(settings, unfocusedAppearance, connection);
 

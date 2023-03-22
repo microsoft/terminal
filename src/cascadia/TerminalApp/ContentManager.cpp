@@ -19,18 +19,13 @@ using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-namespace winrt
-{
-    namespace MUX = Microsoft::UI::Xaml;
-    using IInspectable = Windows::Foundation::IInspectable;
-}
 namespace winrt::TerminalApp::implementation
 {
-    ControlInteractivity ContentManager::CreateCore(Microsoft::Terminal::Control::IControlSettings settings,
-                                                    IControlAppearance unfocusedAppearance,
-                                                    TerminalConnection::ITerminalConnection connection)
+    ControlInteractivity ContentManager::CreateCore(const Microsoft::Terminal::Control::IControlSettings& settings,
+                                                    const IControlAppearance& unfocusedAppearance,
+                                                    const TerminalConnection::ITerminalConnection& connection)
     {
-        auto content = ControlInteractivity{ settings, unfocusedAppearance, connection };
+        ControlInteractivity content{ settings, unfocusedAppearance, connection };
         content.Closed({ get_weak(), &ContentManager::_closedHandler });
 
         _content.emplace(content.Id(), content);
@@ -38,7 +33,7 @@ namespace winrt::TerminalApp::implementation
         return content;
     }
 
-    ControlInteractivity ContentManager::LookupCore(uint64_t id)
+    ControlInteractivity ContentManager::TryLookupCore(uint64_t id)
     {
         const auto it = _content.find(id);
         return it != _content.end() ? it->second : ControlInteractivity{ nullptr };
