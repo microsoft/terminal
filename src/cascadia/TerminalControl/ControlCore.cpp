@@ -1667,6 +1667,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _isReadOnly = !_isReadOnly;
     }
 
+    void ControlCore::SetReadOnlyMode(const bool readOnlyState)
+    {
+        _isReadOnly = readOnlyState;
+    }
+
     void ControlCore::_raiseReadOnlyWarning()
     {
         auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));

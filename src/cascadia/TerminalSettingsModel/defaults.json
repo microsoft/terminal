@@ -438,6 +438,8 @@
         { "command": "togglePaneZoom" },
         { "command": "toggleSplitOrientation" },
         { "command": "toggleReadOnlyMode" },
+        { "command": "enableReadOnlyMode" },
+        { "command": "disableReadOnlyMode" },
         { "command": { "action": "movePane", "index": 0 } },
         { "command": { "action": "movePane", "index": 1 } },
         { "command": { "action": "movePane", "index": 2 } },
