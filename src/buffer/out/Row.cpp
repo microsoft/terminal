@@ -634,8 +634,8 @@ std::wstring_view ROW::GetText(til::CoordType columnBegin, til::CoordType column
     // That way we can safely calculate `chEnd - chBeg`.
     columnEnd = std::max(columnBegin, columnEnd);
 
-    const size_t chBeg = _uncheckedChar(_clampedColumnInclusive(columnBegin));
-    const size_t chEnd = _uncheckedChar(_clampedColumnInclusive(columnEnd));
+    const size_t chBeg = _uncheckedCharOffset(_clampedColumnInclusive(columnBegin));
+    const size_t chEnd = _uncheckedCharOffset(_clampedColumnInclusive(columnEnd));
 #pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
     return { _chars.data() + chBeg, chEnd - chBeg };
 }
