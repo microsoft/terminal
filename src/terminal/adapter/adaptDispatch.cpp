@@ -3762,28 +3762,23 @@ void AdaptDispatch::_ReportCursorInformation()
     const auto charset2 = _termOutput.GetCharsetId(2);
     const auto charset3 = _termOutput.GetCharsetId(3);
 
-    using namespace std::string_view_literals;
-
-    // A valid response always starts with DCS 1 $ u.
-    std::wstringstream response;
-    response << L"\033P1$u"sv
-             << cursorPosition.y << ';'
-             << cursorPosition.x << ';'
-             << pageNumber << ';'
-             << renditionAttributes << ';'
-             << characterAttributes << ';'
-             << flags << ';'
-             << leftSetNumber << ';'
-             << rightSetNumber << ';'
-             << charsetSizes << ';'
-             << charset0.c_str()
-             << charset1.c_str()
-             << charset2.c_str()
-             << charset3.c_str()
-             << L"\033\\"sv; // An ST ends the sequence.
-
-    const auto response_string = response.str();
-    _api.ReturnResponse({ response_string.data(), response_string.size() });
+    // A valid response always starts with DCS 1 $ u and ends with ST.
+    const auto response = fmt::format(
+        FMT_COMPILE(L"\033P1$u{};{};{};{};{};{};{};{};{};{}{}{}{}\033\\"),
+        cursorPosition.y,
+        cursorPosition.x,
+        pageNumber,
+        renditionAttributes,
+        characterAttributes,
+        flags,
+        leftSetNumber,
+        rightSetNumber,
+        charsetSizes,
+        charset0.ToString(),
+        charset1.ToString(),
+        charset2.ToString(),
+        charset3.ToString());
+    _api.ReturnResponse({ response.data(), response.size() });
 }
 
 // Method Description:
@@ -3943,25 +3938,23 @@ void AdaptDispatch::_ReportTabStops()
     using namespace std::string_view_literals;
 
     // A valid response always starts with DCS 2 $ u.
-    std::wstringstream response;
-    response << L"\033P2$u"sv;
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P2$u"sv);
 
     auto need_separator = false;
     for (auto column = 0; column < width; column++)
     {
         if (til::at(_tabStopColumns, column))
         {
-            response << (need_separator ? L"/" : L"");
-            response << (column + 1);
+            response.append(need_separator ? L"/"sv : L""sv);
+            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{}"), column + 1);
             need_separator = true;
         }
     }
 
     // An ST ends the sequence.
-    response << L"\033\\"sv;
-
-    const auto response_string = response.str();
-    _api.ReturnResponse({ response_string.data(), response_string.size() });
+    response.append(L"\033\\"sv);
+    _api.ReturnResponse({ response.data(), response.size() });
 }
 
 // Method Description:
