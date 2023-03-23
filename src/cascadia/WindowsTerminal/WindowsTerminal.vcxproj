@@ -79,8 +79,6 @@
   <ItemGroup>
     <Manifest Include="WindowsTerminal.manifest" />
   </ItemGroup>
-  <ItemGroup>
-  </ItemGroup>
   <!-- Dependencies -->
   <ItemGroup>
     <!-- Even though we do have proper recursive dependencies, we want to keep some of these here
