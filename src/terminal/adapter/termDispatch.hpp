@@ -143,6 +143,9 @@ public:
 
     StringHandler RequestSetting() override { return nullptr; }; // DECRQSS
 
+    bool RequestPresentationStateReport(const DispatchTypes::PresentationReportFormat /*format*/) override { return false; } // DECRQPSR
+    StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat /*format*/) override { return nullptr; } // DECRSPS
+
     bool PlaySounds(const VTParameters /*parameters*/) override { return false; }; // DECPS
 };
 
