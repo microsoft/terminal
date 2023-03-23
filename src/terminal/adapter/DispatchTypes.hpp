@@ -30,7 +30,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         constexpr const std::string_view ToString() const
         {
-            return _string;
+            return &_string[0];
         }
 
         constexpr char operator[](const size_t offset) const
