@@ -3842,6 +3842,10 @@ ITermDispatch::StringHandler AdaptDispatch::_RestoreCursorInformation()
         }
         else if (flags.test(state.field))
         {
+            // Note that there could potentially be multiple characters in a
+            // flag field, so we process the flags as soon as they're received.
+            // But for now we're only interested in the first one, so once the
+            // state.value is set, we ignore everything else until the `;`.
             if (ch >= L'@' && ch <= '~' && !state.value)
             {
                 state.value = ch;
