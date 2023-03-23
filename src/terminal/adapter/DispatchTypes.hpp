@@ -7,9 +7,11 @@ namespace Microsoft::Console::VirtualTerminal
 {
     using VTInt = int32_t;
 
-    class VTID
+    union VTID
     {
     public:
+        VTID() = default;
+
         template<size_t Length>
         constexpr VTID(const char (&s)[Length]) :
             _value{ _FromString(s) }
@@ -17,18 +19,18 @@ namespace Microsoft::Console::VirtualTerminal
         }
 
         constexpr VTID(const uint64_t value) :
-            _value{ value }
-        {
-        }
-
-        constexpr VTID() noexcept :
-            _value{ 0 }
+            _value{ value & 0x00FFFFFFFFFFFFFF }
         {
         }
 
         constexpr operator uint64_t() const
         {
             return _value;
+        }
+
+        constexpr const std::string_view ToString() const
+        {
+            return _string;
         }
 
         constexpr char operator[](const size_t offset) const
@@ -45,7 +47,7 @@ namespace Microsoft::Console::VirtualTerminal
         template<size_t Length>
         static constexpr uint64_t _FromString(const char (&s)[Length])
         {
-            static_assert(Length - 1 <= sizeof(_value));
+            static_assert(Length <= sizeof(_value));
             uint64_t value = 0;
             for (auto i = Length - 1; i-- > 0;)
             {
@@ -54,19 +56,13 @@ namespace Microsoft::Console::VirtualTerminal
             return value;
         }
 
-        uint64_t _value;
-    };
+        // In order for the _string to hold the correct representation of the
+        // ID stored in _value, we must be on a little endian architecture.
+        static_assert(std::endian::native == std::endian::little);
 
-    inline std::wostream& operator<<(std::wostream& out, const VTID& id)
-    {
-        uint64_t value = id;
-        do
-        {
-            out << gsl::narrow_cast<char>(value & 0xFF);
-            value >>= CHAR_BIT;
-        } while (value);
-        return out;
-    }
+        uint64_t _value = 0;
+        char _string[sizeof(_value)];
+    };
 
     class VTIDBuilder
     {
@@ -79,13 +75,13 @@ namespace Microsoft::Console::VirtualTerminal
 
         void AddIntermediate(const wchar_t intermediateChar) noexcept
         {
-            if (_idShift + CHAR_BIT >= sizeof(_idAccumulator) * CHAR_BIT)
+            if (_idShift + CHAR_BIT * 2 >= sizeof(_idAccumulator) * CHAR_BIT)
             {
                 // If there is not enough space in the accumulator to add
-                // the intermediate and still have room left for the final,
-                // then we reset the accumulator to zero. This will result
-                // in an id with all zero intermediates, which shouldn't
-                // match anything.
+                // the intermediate and still have room left for the final
+                // and null terminator, then we reset the accumulator to zero.
+                // This will result in an id with all zero intermediates,
+                // which shouldn't match anything.
                 _idAccumulator = 0;
             }
             else

@@ -3776,7 +3776,10 @@ void AdaptDispatch::_ReportCursorInformation()
              << leftSetNumber << ';'
              << rightSetNumber << ';'
              << charsetSizes << ';'
-             << charset0 << charset1 << charset2 << charset3
+             << charset0.c_str()
+             << charset1.c_str()
+             << charset2.c_str()
+             << charset3.c_str()
              << L"\033\\"sv; // An ST ends the sequence.
 
     const auto response_string = response.str();
