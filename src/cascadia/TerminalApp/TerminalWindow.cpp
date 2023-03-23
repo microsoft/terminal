@@ -737,7 +737,7 @@ namespace winrt::TerminalApp::implementation
     {
         // If
         // * the position has been specified on the commandline,
-        // * We're opening the window as a part of tearout (and _contentBounds were set)
+        // * We're opening the window as a part of tear out (and _contentBounds were set)
         // then don't center on launch
         return !_contentBounds && _settings.GlobalSettings().CenterOnLaunch() && !_appArgs.GetPosition().has_value();
     }

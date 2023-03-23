@@ -157,8 +157,6 @@ void AppHost::s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResu
 //   the WindowManager, to ask if we should become a window process.
 // - If we should create a window, then pass the arguments to the app logic for
 //   processing.
-// - If we shouldn't become a window, set _shouldCreateWindow to false and exit
-//   immediately.
 // - If the logic determined there's an error while processing that commandline,
 //   display a message box to the user with the text of the error, and exit.
 //    * We display a message box because we're a Win32 application (not a
@@ -182,7 +180,6 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
         if (!windowArgs.Content().empty())
         {
             _windowLogic.SetStartupContent(windowArgs.Content(), windowArgs.InitialBounds());
-            _shouldCreateWindow = true; // TODO! I don't think we actually use this anymore
         }
         else if (args)
         {
@@ -208,7 +205,6 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
         // then we're going to exit immediately.
         if (_windowLogic.ShouldImmediatelyHandoffToElevated())
         {
-            _shouldCreateWindow = false;
             _windowLogic.HandoffToElevated();
             return;
         }
@@ -802,11 +798,6 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
     }
 }
 
-bool AppHost::HasWindow()
-{
-    return _shouldCreateWindow;
-}
-
 // Method Description:
 // - Event handler for the Peasant::ExecuteCommandlineRequested event. Take the
 //   provided commandline args, and attempt to parse them and perform the
@@ -1229,7 +1220,7 @@ winrt::TerminalApp::TerminalWindow AppHost::Logic()
 
 // Method Description:
 // - Raised from Page -> us -> manager -> monarch
-// - Called when the user attemtpts to move a tab or pane to another window.
+// - Called when the user attempts to move a tab or pane to another window.
 //   `args` will contain info about the structure of the content being moved,
 //   and where it should go.
 // - If the WindowPosition is filled in, then the user was dragging a tab out of
@@ -1265,7 +1256,7 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
         // of AppHost::_HandleCreateWindow.
         if (IsZoomed(_window->GetHandle()))
         {
-            auto initialSize = _windowLogic.GetLaunchDimensions(dpi);
+            const auto initialSize = _windowLogic.GetLaunchDimensions(dpi);
 
             const auto islandWidth = Utils::ClampToShortMax(static_cast<long>(ceil(initialSize.Width)), 1);
             const auto islandHeight = Utils::ClampToShortMax(static_cast<long>(ceil(initialSize.Height)), 1);
@@ -1274,8 +1265,8 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
             // add the titlebar space.
             const til::size nonClientSize{ _window->GetTotalNonClientExclusiveSize(dpi) };
 
-            auto adjustedWidth = islandWidth + nonClientSize.width;
-            auto adjustedHeight = islandHeight + nonClientSize.height;
+            const auto adjustedWidth = islandWidth + nonClientSize.width;
+            const auto adjustedHeight = islandHeight + nonClientSize.height;
 
             windowSize = til::size{ Utils::ClampToShortMax(adjustedWidth, 1),
                                     Utils::ClampToShortMax(adjustedHeight, 1) };

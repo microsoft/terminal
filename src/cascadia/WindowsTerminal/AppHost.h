@@ -21,7 +21,6 @@ public:
     bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
     void SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
 
-    bool HasWindow();
     winrt::TerminalApp::TerminalWindow Logic();
 
     static void s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResult& message);
@@ -39,7 +38,6 @@ private:
 
     winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
 
-    bool _shouldCreateWindow{ false };
     bool _useNonClientArea{ false };
 
     std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;

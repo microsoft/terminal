@@ -4787,9 +4787,8 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_onTabDroppedOutside(winrt::Windows::Foundation::IInspectable sender,
                                                               winrt::Microsoft::UI::Xaml::Controls::TabViewTabDroppedOutsideEventArgs e)
     {
-        // Get the curremt pointer point from the corewindow
-        auto pointerPoint{ CoreWindow::GetForCurrentThread().PointerPosition() };
-        pointerPoint;
+        // Get the current pointer point from the CoreWindow
+        const auto& pointerPoint{ CoreWindow::GetForCurrentThread().PointerPosition() };
 
         // This is called when a tab FROM OUR WINDOW was dropped outside the
         // tabview. We already know which tab was being dragged. We'll just
@@ -4814,7 +4813,7 @@ namespace winrt::TerminalApp::implementation
             // to position the new window. We'll use the drag offset from before
             // so that the tab in the new window is positioned so that it's
             // basically still directly under the cursor.
-            til::point adjusted = til::point{ til::math::rounding, pointerPoint } - _dragOffset;
+            const til::point adjusted = til::point{ til::math::rounding, pointerPoint } - _dragOffset;
 
             // -1 is the magic number for "new window"
             // 0 as the tab index, because we don't care. It's making a new window. It'll be the only tab.
