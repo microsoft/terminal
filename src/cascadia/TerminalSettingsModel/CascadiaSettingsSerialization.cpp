@@ -822,7 +822,7 @@ try
     // read settings.json from the Release stable file path if it exists.
     // Otherwise use default settings file provided from original settings file
     bool releaseSettingExists = false;
-    if (firstTimeSetup)
+    if (firstTimeSetup && !IsPortableMode())
     {
 #if defined(WT_BRANDING_PREVIEW)
         {
