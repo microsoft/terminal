@@ -128,6 +128,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool ReadOnly() const noexcept;
         void ToggleReadOnly();
+        void SetReadOnly(const bool readOnlyState);
 
         static Control::MouseButtonState GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
         static unsigned int GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point);
@@ -143,7 +144,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Detach();
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);

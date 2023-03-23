@@ -101,7 +101,7 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<LanguageProfileNotifier> _languageProfileNotifier;
         wil::unique_folder_change_reader_nothrow _reader;
 
-        TerminalApp::ContentManager _contentManager{ *winrt::make_self<implementation::ContentManager>() };
+        TerminalApp::ContentManager _contentManager{ winrt::make<implementation::ContentManager>() };
 
         static TerminalApp::FindTargetWindowResult _doFindTargetWindow(winrt::array_view<const hstring> args,
                                                                        const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);

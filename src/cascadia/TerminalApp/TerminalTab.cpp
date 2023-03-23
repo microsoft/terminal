@@ -909,7 +909,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
@@ -1114,7 +1114,7 @@ namespace winrt::TerminalApp::implementation
         // Add a Closed event handler to the Pane. If the pane closes out from
         // underneath us, and it's zoomed, we want to be able to make sure to
         // update our state accordingly to un-zoom that pane. See GH#7252.
-        auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
+        auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto&& /*e*/) -> winrt::fire_and_forget {
             if (auto tab{ weakThis.get() })
             {
                 if (tab->_zoomedPane)
@@ -1567,14 +1567,14 @@ namespace winrt::TerminalApp::implementation
     {
         auto hasReadOnly = false;
         auto allReadOnly = true;
-        _activePane->WalkTree([&](auto p) {
+        _activePane->WalkTree([&](const auto& p) {
             if (const auto& control{ p->GetTerminalControl() })
             {
                 hasReadOnly |= control.ReadOnly();
                 allReadOnly &= control.ReadOnly();
             }
         });
-        _activePane->WalkTree([&](auto p) {
+        _activePane->WalkTree([&](const auto& p) {
             if (const auto& control{ p->GetTerminalControl() })
             {
                 // If all controls have the same read only state then just toggle
@@ -1586,6 +1586,38 @@ namespace winrt::TerminalApp::implementation
                 else if (!control.ReadOnly())
                 {
                     control.ToggleReadOnly();
+                }
+            }
+        });
+    }
+
+    // Method Description:
+    // - Set read-only mode on the active pane
+    // - If a parent pane is selected, this will ensure that all children have
+    //   the same read-only status.
+    void TerminalTab::SetPaneReadOnly(const bool readOnlyState)
+    {
+        auto hasReadOnly = false;
+        auto allReadOnly = true;
+        _activePane->WalkTree([&](const auto& p) {
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                hasReadOnly |= control.ReadOnly();
+                allReadOnly &= control.ReadOnly();
+            }
+        });
+        _activePane->WalkTree([&](const auto& p) {
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                // If all controls have the same read only state then just disable
+                if (allReadOnly || !hasReadOnly)
+                {
+                    control.SetReadOnly(readOnlyState);
+                }
+                // otherwise set to all read only.
+                else if (!control.ReadOnly())
+                {
+                    control.SetReadOnly(readOnlyState);
                 }
             }
         });

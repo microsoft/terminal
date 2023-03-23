@@ -11,17 +11,14 @@ jobs:
   publish:
     runs-on: windows-latest # Action can only run on Windows
     steps:
-      - name: Extract version from release asset
-        id: extract-version
+      - name: Publish Windows Terminal ${{ github.event.release.prerelease && 'Preview' || 'Stable' }}
         run: |
-          $version = '${{ toJSON(github.event.release.assets.*.name) }}' | ConvertFrom-Json | Select-String -Pattern $env:REGEX | ForEach-Object { $_.Matches.Groups[1].Value }
-          Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+          $assets = '${{ toJSON(github.event.release.assets) }}' | ConvertFrom-Json
+          $wingetRelevantAsset = $assets | Where-Object { $_.name -like '*Win10*' } | Select-Object -First 1
+          $regex = [Regex]::New($env:REGEX)
+          $version = $regex.Match($wingetRelevantAsset.name).Groups[1].Value
 
-      - name: Publish ${{ github.event.release.prerelease && 'Preview' || 'Stable' }}
-        uses: vedantmgoyal2009/winget-releaser@v2
-        with:
-          identifier: Microsoft.WindowsTerminal${{ github.event.release.prerelease && '.Preview' || '' }}
-          version: ${{ steps.extract-version.outputs.version }}
-          installers-regex: ${{ env.REGEX }}
-          token: ${{ secrets.WINGET_TOKEN }}
-          fork-user: DHowett
+          $wingetPackage = "Microsoft.WindowsTerminal${{ github.event.release.prerelease && '.Preview' || '' }}"
+
+          & curl.exe -JLO https://aka.ms/wingetcreate/latest
+          & .\wingetcreate.exe update $wingetPackage -s -v $version -u $wingetRelevantAsset.browser_download_url -t "${{ secrets.WINGET_TOKEN }}"

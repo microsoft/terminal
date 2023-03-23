@@ -285,6 +285,28 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleEnablePaneReadOnly(const IInspectable& /*sender*/,
+                                                 const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            activeTab->SetPaneReadOnly(true);
+        }
+
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleDisablePaneReadOnly(const IInspectable& /*sender*/,
+                                                  const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            activeTab->SetPaneReadOnly(false);
+        }
+
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleScrollUpPage(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
