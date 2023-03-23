@@ -1627,10 +1627,7 @@ std::wstring_view Terminal::CurrentCommand() const
 
     const auto line = start.y;
     const auto& row = _activeBuffer().GetRowByOffset(line);
-    const auto rowText = row.GetText();
-    const auto commandText = rowText.substr(start.x, end.x-start.x);
-
-    return commandText;
+    return row.GetText(start.x, end.x);
 }
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
