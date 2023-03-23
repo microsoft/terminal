@@ -4,8 +4,6 @@
 #include "pch.h"
 #include "BackendD2D.h"
 
-#include "wic.h"
-
 #if ATLAS_DEBUG_SHOW_DIRTY
 #include "colorbrewer.h"
 #endif
@@ -86,7 +84,11 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
             _deviceContext->ClearState();
         });
 
-    if (!_renderTarget)
+    const auto renderTargetChanged = !_renderTarget;
+    const auto fontChanged = _fontGeneration != p.s->font.generation();
+    const auto cellCountChanged = _cellCount != p.s->cellCount;
+
+    if (renderTargetChanged)
     {
         {
             const auto surface = _swapChainManager.GetBuffer().query<IDXGISurface>();
@@ -119,17 +121,14 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
         THROW_IF_FAILED(p.d2dFactory->CreateStrokeStyle(&props, &dashes[0], 2, _dottedStrokeStyle.addressof()));
     }
 
-    const auto fontChanged = _fontGeneration != p.s->font.generation();
-    const auto cellCountChanged = _cellCount != p.s->cellCount;
-
-    if (fontChanged)
+    if (renderTargetChanged || fontChanged)
     {
         const auto dpi = static_cast<f32>(p.s->font->dpi);
         _renderTarget->SetDpi(dpi, dpi);
         _renderTarget->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(p.s->font->antialiasingMode));
     }
 
-    if (fontChanged || cellCountChanged)
+    if (renderTargetChanged || fontChanged || cellCountChanged)
     {
         const D2D1_BITMAP_PROPERTIES props{
             .pixelFormat = { DXGI_FORMAT_R8G8B8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
@@ -189,7 +188,47 @@ void BackendD2D::_drawText(RenderingPayload& p)
     u16 y = 0;
     for (const auto row : p.rows)
     {
-        f32 baselineX = 0.0f;
+        auto baselineX = 0.0f;
+        auto baselineY = static_cast<f32>(p.s->font->cellSize.y * y + p.s->font->baseline);
+
+        for (const auto& m : row->mappings)
+        {
+            const DWRITE_GLYPH_RUN glyphRun{
+                .fontFace = m.fontFace.get(),
+                .fontEmSize = m.fontEmSize,
+                .glyphCount = gsl::narrow_cast<UINT32>(m.glyphsTo - m.glyphsFrom),
+                .glyphIndices = &row->glyphIndices[m.glyphsFrom],
+                .glyphAdvances = &row->glyphAdvances[m.glyphsFrom],
+                .glyphOffsets = &row->glyphOffsets[m.glyphsFrom],
+            };
+
+            // _getGlyphRunBlackBox returns a rectangle based on the design metrics of the
+            // glyphs, which doesn't take antialiasing nor font hinting into consideration.
+            // Especially the latter can technically move the rasterized result around
+            // however it pleases. A padding of 5px should hopefully avoid most issues.
+            const auto blackBox = _getGlyphRunBlackBox(glyphRun, baselineX, baselineY);
+            if (row->lineRendition != LineRendition::DoubleHeightTop)
+            {
+                row->dirtyBottom = std::max(row->dirtyBottom, static_cast<i32>(lround(blackBox.bottom) + 5));
+            }
+            if (row->lineRendition != LineRendition::DoubleHeightBottom)
+            {
+                row->dirtyTop = std::min(row->dirtyTop, static_cast<i32>(lround(blackBox.top) - 5));
+            }
+        }
+
+        const D2D1_RECT_F clipRect{
+            0,
+            static_cast<f32>(row->dirtyTop),
+            static_cast<f32>(p.s->targetSize.x),
+            static_cast<f32>(row->dirtyBottom),
+        };
+        _renderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
+
+        if (row->lineRendition != LineRendition::SingleWidth)
+        {
+            baselineY = _drawTextPrepareLineRendition(p, baselineY, row->lineRendition);
+        }
 
         for (const auto& m : row->mappings)
         {
@@ -197,7 +236,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
             auto it = colorsBegin + m.glyphsFrom;
             const auto end = colorsBegin + m.glyphsTo;
 
-            do
+            while (it != end)
             {
                 const auto beg = it;
                 const auto off = it - colorsBegin;
@@ -209,7 +248,6 @@ void BackendD2D::_drawText(RenderingPayload& p)
 
                 const auto count = it - beg;
                 const auto brush = _brushWithColor(fg);
-                const auto baselineY = static_cast<f32>(p.s->font->cellSize.y * y + p.s->font->baseline);
                 const DWRITE_GLYPH_RUN glyphRun{
                     .fontFace = m.fontFace.get(),
                     .fontEmSize = m.fontEmSize,
@@ -221,23 +259,24 @@ void BackendD2D::_drawText(RenderingPayload& p)
 
                 DrawGlyphRun(_renderTarget.get(), _renderTarget4.get(), p.dwriteFactory4.get(), { baselineX, baselineY }, &glyphRun, brush);
 
-                const auto blackBox = _getGlyphRunBlackBox(glyphRun, baselineX, baselineY);
-                // Add a 1px padding to avoid inaccuracies with the blackbox measurement.
-                // It's only an estimate based on the design size after all.
-                row->top = std::min(row->top, static_cast<i32>(lround(blackBox.top) - 1));
-                row->bottom = std::max(row->bottom, static_cast<i32>(lround(blackBox.bottom) + 1));
-
                 for (UINT32 i = 0; i < glyphRun.glyphCount; ++i)
                 {
                     baselineX += glyphRun.glyphAdvances[i];
                 }
-            } while (it != end);
+            }
         }
+
+        if (row->lineRendition != LineRendition::SingleWidth)
+        {
+            _drawTextResetLineRendition();
+        }
+
+        _renderTarget->PopAxisAlignedClip();
 
         if (y >= p.invalidatedRows.x && y < p.invalidatedRows.y)
         {
-            dirtyTop = std::min(dirtyTop, row->top);
-            dirtyBottom = std::max(dirtyBottom, row->bottom);
+            dirtyTop = std::min(dirtyTop, row->dirtyTop);
+            dirtyBottom = std::max(dirtyBottom, row->dirtyBottom);
         }
 
         ++y;
@@ -248,6 +287,37 @@ void BackendD2D::_drawText(RenderingPayload& p)
         p.dirtyRectInPx.top = std::min(p.dirtyRectInPx.top, dirtyTop);
         p.dirtyRectInPx.bottom = std::max(p.dirtyRectInPx.bottom, dirtyBottom);
     }
+}
+
+f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, f32 baselineY, LineRendition lineRendition) const
+{
+    const auto descender = static_cast<f32>(p.s->font->cellSize.y - p.s->font->baseline);
+    D2D1_MATRIX_3X2_F transform{
+        .m11 = 2.0f,
+        .m22 = 1.0f,
+    };
+
+    if (lineRendition >= LineRendition::DoubleHeightTop)
+    {
+        transform.m22 = 2.0f;
+        transform.dy = -1.0f * (baselineY + descender);
+
+        if (lineRendition == LineRendition::DoubleHeightTop)
+        {
+            const auto delta = static_cast<f32>(p.s->font->cellSize.y);
+            baselineY += delta;
+            transform.dy -= delta;
+        }
+    }
+
+    _renderTarget->SetTransform(&transform);
+    return baselineY;
+}
+
+void BackendD2D::_drawTextResetLineRendition() const
+{
+    static constexpr D2D1_MATRIX_3X2_F identity{ .m11 = 1.f, .m22 = 1.f };
+    _renderTarget->SetTransform(&identity);
 }
 
 // Returns the theoretical/design design size of the given `DWRITE_GLYPH_RUN`, relative the the given baseline origin.

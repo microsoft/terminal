@@ -142,6 +142,8 @@ namespace Microsoft::Console::Render::Atlas
             u16 replacementCharacterGlyphIndex = 0;
             bool replacementCharacterLookedUp = false;
 
+            // PrepareLineTransform()
+            LineRendition lineRendition = LineRendition::SingleWidth;
             // UpdateDrawingBrushes()
             u32 backgroundOpaqueMixin = 0xff000000;
             u32x2 currentColor;

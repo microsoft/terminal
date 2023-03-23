@@ -377,24 +377,11 @@ namespace Microsoft::Console::Render::Atlas
             glyphOffsets.clear();
             colors.clear();
             gridLineRanges.clear();
+            lineRendition = LineRendition::SingleWidth;
             selectionFrom = 0;
             selectionTo = 0;
-            top = y * cellHeight;
-            bottom = top + cellHeight;
-        }
-
-        friend void swap(ShapedRow& lhs, ShapedRow& rhs) noexcept
-        {
-            std::swap(lhs.mappings, rhs.mappings);
-            std::swap(lhs.glyphIndices, rhs.glyphIndices);
-            std::swap(lhs.glyphAdvances, rhs.glyphAdvances);
-            std::swap(lhs.glyphOffsets, rhs.glyphOffsets);
-            std::swap(lhs.colors, rhs.colors);
-            std::swap(lhs.gridLineRanges, rhs.gridLineRanges);
-            std::swap(lhs.selectionFrom, rhs.selectionFrom);
-            std::swap(lhs.selectionTo, rhs.selectionTo);
-            std::swap(lhs.top, rhs.top);
-            std::swap(lhs.bottom, rhs.bottom);
+            dirtyTop = y * cellHeight;
+            dirtyBottom = dirtyTop + cellHeight;
         }
 
         std::vector<FontMapping> mappings;
@@ -403,10 +390,11 @@ namespace Microsoft::Console::Render::Atlas
         std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets; // same size as glyphIndices
         std::vector<u32> colors; // same size as glyphIndices
         std::vector<GridLineRange> gridLineRanges;
+        LineRendition lineRendition = LineRendition::SingleWidth;
         u16 selectionFrom = 0;
         u16 selectionTo = 0;
-        til::CoordType top = 0;
-        til::CoordType bottom = 0;
+        til::CoordType dirtyTop = 0;
+        til::CoordType dirtyBottom = 0;
     };
 
     struct RenderingPayload
@@ -436,8 +424,8 @@ namespace Microsoft::Console::Render::Atlas
         Buffer<ShapedRow*> rowsScratch;
         Buffer<ShapedRow*> rows;
         Buffer<u32> backgroundBitmap;
-        // 1 ensures that the backends redraw the background, even if the background
-        // is entirely black, just like `backgroundBitmap` after it gets created.
+        // 1 ensures that the backends redraw the background, even if the background is
+        // entirely black, just like `backgroundBitmap` is all back after it gets created.
         til::generation_t backgroundBitmapGeneration{ 1 };
         til::rect dirtyRectInPx;
         u16x2 invalidatedRows;

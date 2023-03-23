@@ -175,13 +175,13 @@ try
 
         for (const auto r : _p.rows)
         {
-            r->top += deltaPx;
-            r->bottom += deltaPx;
+            r->dirtyTop += deltaPx;
+            r->dirtyBottom += deltaPx;
 
             if (y >= _api.invalidatedRows.x && y < _api.invalidatedRows.y)
             {
-                const auto clampedTop = clamp(r->top, 0, targetSizeY);
-                const auto clampedBottom = clamp(r->bottom, 0, targetSizeY);
+                const auto clampedTop = clamp(r->dirtyTop, 0, targetSizeY);
+                const auto clampedBottom = clamp(r->dirtyBottom, 0, targetSizeY);
                 if (clampedTop != clampedBottom)
                 {
                     _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, clampedTop);
@@ -244,6 +244,9 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PrepareLineTransform(const LineRendition lineRendition, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
 {
+    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(targetRow, 0, _p.s->cellCount.y));
+    _p.rows[y]->lineRendition = lineRendition;
+    _api.lineRendition = lineRendition;
     return S_OK;
 }
 
@@ -294,9 +297,10 @@ try
     }
 
     {
+        const auto shift = _api.lineRendition >= LineRendition::DoubleWidth ? 1 : 0;
         const auto backgroundRow = _p.backgroundBitmap.begin() + static_cast<size_t>(y) * _p.s->cellCount.x;
         auto it = backgroundRow + x;
-        const auto end = backgroundRow + column;
+        const auto end = backgroundRow + (column << shift);
         const auto bg = _api.currentColor.y;
 
         for (; it != end; ++it)
@@ -318,9 +322,10 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const til::point coordTarget) noexcept
 try
 {
+    const auto shift = _api.lineRendition >= LineRendition::DoubleWidth ? 1 : 0;
     const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.y, 0, _p.s->cellCount.y));
-    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.x, 0, _p.s->cellCount.x - 1));
-    const auto to = gsl::narrow_cast<u16>(clamp<size_t>(coordTarget.x + cchLine, from, _p.s->cellCount.x));
+    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.x << shift, 0, _p.s->cellCount.x - 1));
+    const auto to = gsl::narrow_cast<u16>(clamp<size_t>((coordTarget.x + cchLine) << shift, from, _p.s->cellCount.x));
     const auto fg = gsl::narrow_cast<u32>(color) | 0xff000000;
     _p.rows[y]->gridLineRanges.emplace_back(lines, fg, from, to);
     return S_OK;

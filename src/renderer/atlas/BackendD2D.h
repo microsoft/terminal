@@ -19,6 +19,8 @@ namespace Microsoft::Console::Render::Atlas
         __declspec(noinline) void _handleSettingsUpdate(const RenderingPayload& p);
         void _drawBackground(const RenderingPayload& p) noexcept;
         void _drawText(RenderingPayload& p);
+        f32 _drawTextPrepareLineRendition(const RenderingPayload& p, f32 baselineY, LineRendition lineRendition) const;
+        void _drawTextResetLineRendition() const;
         f32r _getGlyphRunBlackBox(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY);
         void _drawGridlines(const RenderingPayload& p);
         void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
@@ -37,14 +39,15 @@ namespace Microsoft::Console::Render::Atlas
 
         wil::com_ptr<ID2D1DeviceContext> _renderTarget;
         wil::com_ptr<ID2D1DeviceContext4> _renderTarget4; // Optional. Supported since Windows 10 14393.
-        wil::com_ptr<ID2D1SolidColorBrush> _brush;
         wil::com_ptr<ID2D1StrokeStyle> _dottedStrokeStyle;
         wil::com_ptr<ID2D1Bitmap> _backgroundBitmap;
         wil::com_ptr<ID2D1BitmapBrush> _backgroundBrush;
         til::generation_t _backgroundBitmapGeneration;
 
-        Buffer<DWRITE_GLYPH_METRICS> _glyphMetrics;
+        wil::com_ptr<ID2D1SolidColorBrush> _brush;
         u32 _brushColor = 0;
+
+        Buffer<DWRITE_GLYPH_METRICS> _glyphMetrics;
 
         til::generation_t _generation;
         til::generation_t _fontGeneration;

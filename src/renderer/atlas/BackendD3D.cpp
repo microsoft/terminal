@@ -1010,8 +1010,8 @@ void BackendD3D::_drawText(RenderingPayload& p)
                 {
                     const auto l = static_cast<i32>(cumulativeAdvance + row->glyphOffsets[x].advanceOffset + 0.5f) + entry.offset.x;
                     const auto t = static_cast<i32>(baselineY - row->glyphOffsets[x].ascenderOffset + 0.5f) + entry.offset.y;
-                    row->top = std::min(row->top, t);
-                    row->bottom = std::max(row->bottom, t + entry.size.y);
+                    row->dirtyTop = std::min(row->dirtyTop, t);
+                    row->dirtyBottom = std::max(row->dirtyBottom, t + entry.size.y);
                     _appendQuad({ static_cast<i16>(l), static_cast<i16>(t) }, entry.size, entry.texcoord, row->colors[x], static_cast<ShadingType>(entry.shadingType));
                 }
             }
@@ -1019,8 +1019,8 @@ void BackendD3D::_drawText(RenderingPayload& p)
 
         if (y >= p.invalidatedRows.x && y < p.invalidatedRows.y)
         {
-            dirtyTop = std::min(dirtyTop, row->top);
-            dirtyBottom = std::max(dirtyBottom, row->bottom);
+            dirtyTop = std::min(dirtyTop, row->dirtyTop);
+            dirtyBottom = std::max(dirtyBottom, row->dirtyBottom);
         }
 
         ++y;

@@ -130,7 +130,7 @@ void AtlasEngine::_recreateBackend()
     auto d2dMode = ATLAS_DEBUG_FORCE_D2D_MODE;
     auto deviceFlags = D3D11_CREATE_DEVICE_SINGLETHREADED
 #ifndef NDEBUG
-    //| D3D11_CREATE_DEVICE_DEBUG
+                       | D3D11_CREATE_DEVICE_DEBUG
 #endif
                        // This flag prevents the driver from creating a large thread pool for things like shader computations
                        // that would be advantageous for games. For us this has only a minimal performance benefit,
