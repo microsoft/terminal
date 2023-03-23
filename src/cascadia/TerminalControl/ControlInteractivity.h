@@ -88,12 +88,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetEndSelectionPoint(const Core::Point pixelPosition);
         bool ManglePathsForWsl();
 
-        winrt::guid Id();
+        uint64_t Id();
         void Reparent(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
         TYPED_EVENT(ScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
+        TYPED_EVENT(ContextMenuRequested, IInspectable, Control::ContextMenuRequestedEventArgs);
 
         TYPED_EVENT(Attached, IInspectable, IInspectable);
         TYPED_EVENT(Closed, IInspectable, IInspectable);
@@ -138,7 +139,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval{ std::nullopt };
 
-        winrt::guid _guid;
+        uint64_t _id;
+        static std::atomic<uint64_t> _nextId;
 
         unsigned int _numberOfClicks(Core::Point clickPos, Timestamp clickTime);
         void _updateSystemParameterSettings() noexcept;

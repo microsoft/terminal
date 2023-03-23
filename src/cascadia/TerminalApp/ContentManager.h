@@ -33,21 +33,16 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         ContentManager() = default;
-        Microsoft::Terminal::Control::ControlInteractivity CreateCore(Microsoft::Terminal::Control::IControlSettings settings,
-                                                                      Microsoft::Terminal::Control::IControlAppearance unfocusedAppearance,
-                                                                      Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
-        Microsoft::Terminal::Control::ControlInteractivity LookupCore(winrt::guid id);
+        Microsoft::Terminal::Control::ControlInteractivity CreateCore(const Microsoft::Terminal::Control::IControlSettings& settings,
+                                                                      const Microsoft::Terminal::Control::IControlAppearance& unfocusedAppearance,
+                                                                      const Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
+        Microsoft::Terminal::Control::ControlInteractivity TryLookupCore(uint64_t id);
 
         void Detach(const Microsoft::Terminal::Control::TermControl& control);
 
     private:
-        Windows::Foundation::Collections::IMap<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity> _content{
-            winrt::multi_threaded_map<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity>()
-        };
-
-        Windows::Foundation::Collections::IMap<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity> _recentlyDetachedContent{
-            winrt::multi_threaded_map<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity>()
-        };
+        std::unordered_map<uint64_t, Microsoft::Terminal::Control::ControlInteractivity> _content;
+        std::unordered_map<uint64_t, Microsoft::Terminal::Control::ControlInteractivity> _recentlyDetachedContent;
 
         void _finalizeDetach(winrt::Windows::Foundation::IInspectable sender,
                              winrt::Windows::Foundation::IInspectable e);

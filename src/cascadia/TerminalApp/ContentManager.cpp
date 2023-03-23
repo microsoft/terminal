@@ -19,37 +19,34 @@ using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-namespace winrt
-{
-    namespace MUX = Microsoft::UI::Xaml;
-    using IInspectable = Windows::Foundation::IInspectable;
-}
 namespace winrt::TerminalApp::implementation
 {
-    ControlInteractivity ContentManager::CreateCore(Microsoft::Terminal::Control::IControlSettings settings,
-                                                    IControlAppearance unfocusedAppearance,
-                                                    TerminalConnection::ITerminalConnection connection)
+    ControlInteractivity ContentManager::CreateCore(const Microsoft::Terminal::Control::IControlSettings& settings,
+                                                    const IControlAppearance& unfocusedAppearance,
+                                                    const TerminalConnection::ITerminalConnection& connection)
     {
-        auto content = ControlInteractivity{ settings, unfocusedAppearance, connection };
-        content.Closed({ this, &ContentManager::_closedHandler });
-        const auto& contentGuid{ content.Id() };
-        _content.Insert(contentGuid, content);
+        ControlInteractivity content{ settings, unfocusedAppearance, connection };
+        content.Closed({ get_weak(), &ContentManager::_closedHandler });
+
+        _content.emplace(content.Id(), content);
+
         return content;
     }
 
-    ControlInteractivity ContentManager::LookupCore(winrt::guid id)
+    ControlInteractivity ContentManager::TryLookupCore(uint64_t id)
     {
-        return _content.TryLookup(id);
+        const auto it = _content.find(id);
+        return it != _content.end() ? it->second : ControlInteractivity{ nullptr };
     }
 
     void ContentManager::Detach(const Microsoft::Terminal::Control::TermControl& control)
     {
-        const auto contentGuid{ control.ContentGuid() };
-        if (const auto& content{ LookupCore(contentGuid) })
+        const auto contentId{ control.ContentId() };
+        if (const auto& content{ TryLookupCore(contentId) })
         {
             control.Detach();
             content.Attached({ get_weak(), &ContentManager::_finalizeDetach });
-            _recentlyDetachedContent.Insert(contentGuid, content);
+            _recentlyDetachedContent.emplace(contentId, content);
         }
     }
 
@@ -58,7 +55,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& content{ sender.try_as<winrt::Microsoft::Terminal::Control::ControlInteractivity>() })
         {
-            _recentlyDetachedContent.TryRemove(content.Id());
+            _recentlyDetachedContent.erase(content.Id());
         }
     }
 
@@ -67,9 +64,9 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& content{ sender.try_as<winrt::Microsoft::Terminal::Control::ControlInteractivity>() })
         {
-            const auto& contentGuid{ content.Id() };
-            _content.TryRemove(contentGuid);
-            _recentlyDetachedContent.TryRemove(contentGuid);
+            const auto& contentId{ content.Id() };
+            _content.erase(contentId);
+            _recentlyDetachedContent.erase(contentId);
         }
     }
 }

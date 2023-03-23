@@ -155,7 +155,8 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::WindowProperties WindowProperties() const noexcept { return _WindowProperties; };
 
-        bool IsElevated() const noexcept;
+        bool CanDragDrop() const noexcept;
+        bool IsRunningElevated() const noexcept;
 
         void OpenSettingsUI();
         void WindowActivated(const bool activated);
@@ -428,7 +429,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                                                                       const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
         winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Control::TermControl& term);
-        winrt::Microsoft::Terminal::Control::TermControl _InitControlFromContent(const winrt::guid& contentGuid);
+        winrt::Microsoft::Terminal::Control::TermControl _InitControlFromContent(const uint64_t& contentGuid);
 
         std::shared_ptr<Pane> _MakePane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
                                         const winrt::TerminalApp::TabBase& sourceTab = nullptr,
@@ -512,6 +513,10 @@ namespace winrt::TerminalApp::implementation
                           const winrt::hstring& windowName,
                           const uint32_t tabIndex,
                           Windows::Foundation::IReference<Windows::Foundation::Point> dragPoint = nullptr);
+
+        void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
+        void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);
+        void _PopulateContextMenu(const IInspectable& sender, const bool withSelection);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
