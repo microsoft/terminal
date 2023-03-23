@@ -1776,6 +1776,7 @@ srv
 srvinit
 srvpipe
 ssa
+startdir
 STARTF
 STARTUPINFO
 STARTUPINFOEX
