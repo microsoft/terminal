@@ -21,7 +21,7 @@ Param(
     $MakeAppxPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\MakeAppx.exe"
 )
 
-$filesToRemove = @("*.xml", "*.winmd", "Appx*") # Remove from Terminal
+$filesToRemove = @("*.xml", "*.winmd", "Appx*", "Images/*Tile*", "Images/*Logo*") # Remove from Terminal
 $filesToKeep = @("Microsoft.Terminal.Remoting.winmd") # ... except for these
 $filesToCopyFromXaml = @("Microsoft.UI.Xaml.dll", "Microsoft.UI.Xaml") # We don't need the .winmd
 
@@ -94,14 +94,18 @@ $itemsToRemove | Remove-Item -Recurse
 
 $filesToCopyFromXaml | ForEach-Object {
     Get-Item (Join-Path $xamlAppPath $_)
-} | Copy-Item -Destination $terminalAppPath
+} | Copy-Item -Recurse -Destination $terminalAppPath
 
 ########
 # Resource Management
 ########
 
 $finalTerminalPriFile = Join-Path $terminalAppPath "resources.pri"
-& (Join-Path $PSScriptRoot "Merge-TerminalAndXamlResources.ps1") -TerminalRoot $terminalAppPath -XamlRoot $xamlAppPath -OutputPath $finalTerminalPriFile -Verbose:$Verbose
+& (Join-Path $PSScriptRoot "Merge-TerminalAndXamlResources.ps1") `
+    -TerminalRoot $terminalAppPath `
+    -XamlRoot $xamlAppPath `
+    -OutputPath $finalTerminalPriFile `
+    -Verbose:$Verbose
 
 ########
 # Packaging
