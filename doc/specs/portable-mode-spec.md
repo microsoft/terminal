@@ -10,7 +10,7 @@ issue id: none
 ## Abstract
 
 Since we are planning on officially supporting unpackaged execution, I propose a special mode where Terminal stores its
-settings next to `WindowsTerminal.exe`.
+settings in a `settings` folder next to `WindowsTerminal.exe`.
 
 ## Inspiration
 
@@ -20,9 +20,9 @@ settings next to `WindowsTerminal.exe`.
 ## Solution Design
 
 - _If running without package identity,_ `CascadiaSettings` will look for the presence of a file called `.portable` next
-  to `WindowsTerminal.exe`.
-- If that file is present, it will change the settings and state paths to be rooted at the directory containing
-  `WindowsTerminal.exe`.
+  to `Microsoft.Terminal.Settings.Model.dll`.
+- If that file is present, it will change the settings and state paths to be rooted in a subfolder named `settings` next
+  to `Microsoft.Terminal.Settings.Model.dll`.
 
 Right now, _the only thing_ that makes Terminal not work in a "portable" manner is that it saves settings to
 `%LOCALAPPDATA%`.
@@ -67,3 +67,6 @@ _No change is expected._
 
 - In the future, perhaps `.portable` could itself contain a directory path into which we would store settings.
 - We could consider adding an indicator in the Settings UI.
+- Because we are using the module path of the Settings Model DLL, a future unpackaged version of the shell extension
+  that supports profile loading would read the right settings file (assuming it used the settings model.)
+- If we choose to store the shell extension cache in the registry, we would need to avoid doing so in portable mode.
