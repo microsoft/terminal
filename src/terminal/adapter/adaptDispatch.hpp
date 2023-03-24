@@ -104,7 +104,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool Designate96Charset(const VTInt gsetNumber, const VTID charset) override; // SCS
         bool LockingShift(const VTInt gsetNumber) override; // LS0, LS1, LS2, LS3
         bool LockingShiftRight(const VTInt gsetNumber) override; // LS1R, LS2R, LS3R
-        bool SingleShift(const VTInt gsetNumber) override; // SS2, SS3
+        bool SingleShift(const VTInt gsetNumber) noexcept override; // SS2, SS3
         bool AcceptC1Controls(const bool enabled) override; // DECAC1
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
@@ -150,6 +150,9 @@ namespace Microsoft::Console::VirtualTerminal
         StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) override; // DECRSTS
 
         StringHandler RequestSetting() override; // DECRQSS
+
+        bool RequestPresentationStateReport(const DispatchTypes::PresentationReportFormat format) override; // DECRQPSR
+        StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat format) override; // DECRSPS
 
         bool PlaySounds(const VTParameters parameters) override; // DECPS
 
@@ -237,6 +240,11 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportDECSCASetting() const;
         void _ReportDECSACESetting() const;
         void _ReportDECACSetting(const VTInt itemNumber) const;
+
+        void _ReportCursorInformation();
+        StringHandler _RestoreCursorInformation();
+        void _ReportTabStops();
+        StringHandler _RestoreTabStops();
 
         StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize);
         StringHandler _CreatePassthroughHandler();
