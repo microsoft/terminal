@@ -114,24 +114,35 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
     auto window{ std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant) };
     std::weak_ptr<WindowEmperor> weakThis{ weak_from_this() };
 
+    _windowStartedHandlerPreXAML();
+
     std::thread t([weakThis, window]() {
-        window->CreateHost();
+        try {
+            const auto cleanup = wil::scope_exit([&]() {
+                if (auto self{ weakThis.lock() })
+                {
+                    self->_windowExitedHandler(window->Peasant().GetID());
+                }
+            });
 
-        if (auto self{ weakThis.lock() })
-        {
-            self->_windowStartedHandler(window);
-        }
+            window->CreateHost();
 
-        window->RunMessagePump();
+            if (auto self{ weakThis.lock() })
+            {
+                self->_windowStartedHandler(window);
+            }
 
-        if (auto self{ weakThis.lock() })
-        {
-            self->_windowExitedHandler(window->Peasant().GetID());
-        }
+            window->RunMessagePump();
+        } CATCH_LOG()
     });
     LOG_IF_FAILED(SetThreadDescription(t.native_handle(), L"Window Thread"));
 
     t.detach();
+}
+
+void WindowEmperor::_windowStartedHandlerPreXAML()
+{
+    _windowThreadInstances.fetch_add(1, std::memory_order_relaxed);
 }
 
 // Handler for a WindowThread's Started event, which it raises once the window
@@ -140,7 +151,7 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
 // Q: Why isn't adding these callbacks just a part of _createNewWindowThread?
 // A: Until the thread actually starts, the AppHost (and its Logic()) haven't
 // been ctor'd or initialized, so trying to add callbacks immediately will A/V
-void WindowEmperor::_windowStartedHandler(const std::shared_ptr<WindowThread>& sender)
+void WindowEmperor::_windowStartedHandlerPostXAML(const std::shared_ptr<WindowThread>& sender)
 {
     // Add a callback to the window's logic to let us know when the window's
     // quake mode state changes. We'll use this to check if we need to add
@@ -181,7 +192,7 @@ void WindowEmperor::_windowExitedHandler(uint64_t senderID)
                       return w->Peasant().GetID() == senderID;
                   });
 
-    if (lockedWindows->size() == 0)
+    if (_windowThreadInstances.fetch_sub(1, std::memory_order_relaxed) == 1)
     {
         _close();
     }
