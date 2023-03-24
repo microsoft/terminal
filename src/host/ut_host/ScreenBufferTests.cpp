@@ -5249,6 +5249,16 @@ void ScreenBufferTests::SetAutoWrapMode()
     // Content should be clamped to the line width, overwriting the last char.
     VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"abf", attributes));
     VERIFY_ARE_EQUAL(til::point(79, startLine), cursor.GetPosition());
+    // Writing a wide glyph into the last 2 columns and overwriting it with a narrow one.
+    cursor.SetPosition({ 80 - 3, startLine });
+    stateMachine.ProcessString(L"a\U0001F604b");
+    VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"a b", attributes));
+    VERIFY_ARE_EQUAL(til::point(79, startLine), cursor.GetPosition());
+    // Writing a wide glyph into the last column and overwriting it with a narrow one.
+    cursor.SetPosition({ 80 - 3, startLine });
+    stateMachine.ProcessString(L"ab\U0001F604c");
+    VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"abc", attributes));
+    VERIFY_ARE_EQUAL(til::point(79, startLine), cursor.GetPosition());
 
     Log::Comment(L"When DECAWM is set, output is wrapped again.");
     stateMachine.ProcessString(L"\x1b[?7h");
