@@ -147,6 +147,14 @@ void TilWinRtHelpersTests::TestSimpleConstProperties()
 }
 void TilWinRtHelpersTests::TestComposedConstProperties()
 {
+    // This is an intentionally obtuse test, to show a weird edge case you should avoid.
+    // In this sample, `Helper` has a `property` of a raw struct `InnerType`, which itself is composed of two `property`s.
+    // This is not something that will actually occur in practice. In practice, the things inside the `property` will be WinRT types (or primitive types), and things that contain properties will THEMSELVES be WinRT types.
+    // But if you do it like this, you can't call
+    //
+    //  changeMe.Composed().first(5);
+    //
+    // Or any variation of that.
     struct InnerType
     {
         til::property<int> first{ 3 };
@@ -177,21 +185,24 @@ void TilWinRtHelpersTests::TestComposedConstProperties()
     VERIFY_ARE_EQUAL(42, changeMe.Foo());
     // noTouching.Foo = 123; // will not compile
 
-    // THIS IS A HUGE FOOTGUN
-    changeMe.Composed().first = 5;
-    VERIFY_ARE_NOT_EQUAL(5, changeMe.Composed().first());
-    // This roughly translates to:
+    // This test was authored to work through a potential footgun.
+    // If you have property::operator() return `T`, then
+    //     changeMe.Composed().first = 5;
+    //
+    // Roughly translates to:
     //     auto copy = changeMe.Composed();
     //     copy.first(5);
-    //     VERIFY_ARE_EQUAL(5, changeMe.Composed().first);
-    // (same with changeMe.Composed().first(5))
-
-    // This is okay, because technically, Composed itself isn't const. Only noTouching is.
-    noTouching.Composed().first = 0x0f;
+    //
+    // Which rather seems like a footgun. So we made it return `T&` instead.
+    // But that means that you can't do this:
+    //   changeMe.Composed().first(5);
+    //   // or
+    //   const auto& inner{ changeMe.Composed() };
+    //   inner.first(5);
+    //
 
     changeMe.MyString = L"Foo";
     VERIFY_ARE_EQUAL(L"Foo", changeMe.MyString());
-    // noTouching.MyString = L"Bar"; // will not compile
 }
 
 void TilWinRtHelpersTests::TestEvent()
