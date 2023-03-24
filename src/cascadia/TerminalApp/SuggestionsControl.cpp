@@ -266,7 +266,14 @@ namespace winrt::TerminalApp::implementation
         // DescriptionTip().IsOpen(false);
         _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"SelectedItem" });
 
-        if (filteredCommand != nullptr)
+        // Make sure to not send the preview if we're collapsed. This can
+        // sometimes fire after we've been closed, which can trigger us to
+        // preview the action for the empty text (as we've cleared the search
+        // text as a part of closing).
+        const bool isVisible{ this->Visibility() == Visibility::Visible };
+
+        if (filteredCommand != nullptr &&
+            isVisible)
         {
             if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
@@ -1013,8 +1020,6 @@ namespace winrt::TerminalApp::implementation
         Visibility(Visibility::Collapsed);
         DescriptionTip().IsOpen(false);
 
-        _PreviewActionHandlers(*this, nullptr);
-
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _searchBox().Text(L"");
 
@@ -1022,6 +1027,8 @@ namespace winrt::TerminalApp::implementation
 
         ParentCommandName(L"");
         _currentNestedCommands.Clear();
+
+        _PreviewActionHandlers(*this, nullptr);
     }
 
     // Method Description:
