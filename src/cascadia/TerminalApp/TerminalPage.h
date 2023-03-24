@@ -63,7 +63,7 @@ namespace winrt::TerminalApp::implementation
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
     public:
-        TerminalPage(TerminalApp::WindowProperties properties);
+        TerminalPage(TerminalApp::WindowProperties properties, const TerminalApp::ContentManager& manager);
 
         // This implements shobjidl's IInitializeWithWindow, but due to a XAML Compiler bug we cannot
         // put it in our inheritance graph. https://github.com/microsoft/microsoft-ui-xaml/issues/3331
@@ -224,8 +224,9 @@ namespace winrt::TerminalApp::implementation
         bool _renamerPressedEnter{ false };
 
         TerminalApp::WindowProperties _WindowProperties{ nullptr };
-
         PaneResources _paneResources;
+
+        TerminalApp::ContentManager _manager{ nullptr };
 
         winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::NewConnection_revoker _newConnectionRevoker;
 
