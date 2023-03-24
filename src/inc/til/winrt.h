@@ -27,23 +27,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         property<T>(const T& defaultValue = details::winrt_empty_value<T>()) :
             _value{ defaultValue } {}
 
+        property<T>& operator=(const property<T>& other) = default;
+
         T operator()() const
         {
             return _value;
         }
-
         void operator()(const T& value)
         {
             _value = value;
-        }
-        void operator()(const T&& value)
-        {
-            _value = value;
-        }
-        property<T>& operator=(const property<T>& other)
-        {
-            _value = other._value;
-            return *this;
         }
         property<T>& operator=(const T& newValue)
         {
@@ -88,9 +80,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         winrt::event_token operator()(const ArgsT& handler) { return _handlers.add(handler); }
         void operator()(const winrt::event_token& token) { _handlers.remove(token); }
         template<typename... Arg>
-        void raise(Arg const&... args)
+        void raise(auto&&... args)
         {
-            _handlers(args...);
+            _handlers(std::forward<decltype(args)>(args)...);
         }
         winrt::event<ArgsT> _handlers;
     };
@@ -107,9 +99,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         winrt::event_token operator()(const ArgsT& handler) { return _origin(handler); }
         void operator()(const winrt::event_token& token) { _origin(token); }
         template<typename... Arg>
-        void raise(Arg const&... args)
+        void raise(auto&&... args)
         {
-            _origin.raise(args...);
+            _origin.raise(std::forward<decltype(args)>(args)...);
         }
         event<ArgsT>& _origin;
     };
@@ -123,7 +115,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         template<typename... Arg>
         void raise(Arg const&... args)
         {
-            _handlers(args...);
+            _handlers(std::forward<decltype(args)>(args)...);
         }
         winrt::event<winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>> _handlers;
     };
@@ -140,9 +132,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         winrt::event_token operator()(const winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>& handler) { return _origin(handler); }
         void operator()(const winrt::event_token& token) { _origin(token); }
         template<typename... Arg>
-        void raise(Arg const&... args)
+        void raise(auto&&... args)
         {
-            _origin.raise(args...);
+            _origin.raise(std::forward<decltype(args)>(args)...);
         }
         typed_event<SenderT, ArgsT>& _origin;
     };
