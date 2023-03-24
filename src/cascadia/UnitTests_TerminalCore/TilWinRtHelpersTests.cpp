@@ -147,7 +147,9 @@ void TilWinRtHelpersTests::TestSimpleConstProperties()
 void TilWinRtHelpersTests::TestComposedConstProperties()
 {
     // This is an intentionally obtuse test, to show a weird edge case you
-    // should avoid. In this sample, `Helper` has a `property` of a raw struct
+    // should avoid.
+    //
+    // In this sample, `Helper` has a `property` of a raw struct
     // `InnerType`, which itself is composed of two `property`s. This is not
     // something that will actually occur in practice. In practice, the things
     // inside the `property` will be WinRT types (or primitive types), and
@@ -155,7 +157,7 @@ void TilWinRtHelpersTests::TestComposedConstProperties()
     //
     // But if you do it like this, you can't call
     //
-    //  changeMe.Composed().first(5);
+    //    changeMe.Composed().first(5);
     //
     // Or any variation of that, without ~ unexpected ~ behavior. This demonstrates that.
     struct InnerType
@@ -188,7 +190,7 @@ void TilWinRtHelpersTests::TestComposedConstProperties()
     VERIFY_ARE_EQUAL(42, changeMe.Foo());
     // noTouching.Foo = 123; // will not compile
 
-    // This test was authored to work through a potential footgun.
+    // This test was authored to work through a potential foot gun.
     // If you have property::operator() return `T`, then
     //     changeMe.Composed().first = 5;
     //
@@ -196,7 +198,7 @@ void TilWinRtHelpersTests::TestComposedConstProperties()
     //     auto copy = changeMe.Composed();
     //     copy.first(5);
     //
-    // Which rather seems like a footgun.
+    // Which rather seems like a foot gun.
     changeMe.Composed().first = 5;
     VERIFY_ARE_EQUAL(3, changeMe.Composed().first());
 
