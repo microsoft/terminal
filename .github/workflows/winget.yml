@@ -5,7 +5,7 @@ on:
     types: [published]
 
 env:
-  REGEX: 'Microsoft\.WindowsTerminal(?:Preview)?_Win10_([\d.]+)_8wekyb3d8bbwe\.msixbundle$'
+  REGEX: 'Microsoft\.WindowsTerminal(?:Preview)?_([\d.]+)_8wekyb3d8bbwe\.msixbundle$'
 
 jobs:
   publish:
@@ -14,7 +14,7 @@ jobs:
       - name: Publish Windows Terminal ${{ github.event.release.prerelease && 'Preview' || 'Stable' }}
         run: |
           $assets = '${{ toJSON(github.event.release.assets) }}' | ConvertFrom-Json
-          $wingetRelevantAsset = $assets | Where-Object { $_.name -like '*Win10*' } | Select-Object -First 1
+          $wingetRelevantAsset = $assets | Where-Object { $_.name -like '*.msixbundle' } | Select-Object -First 1
           $regex = [Regex]::New($env:REGEX)
           $version = $regex.Match($wingetRelevantAsset.name).Groups[1].Value
 
