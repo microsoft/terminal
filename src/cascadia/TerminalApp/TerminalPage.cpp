@@ -54,10 +54,11 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalPage::TerminalPage(TerminalApp::WindowProperties properties) :
+    TerminalPage::TerminalPage(TerminalApp::WindowProperties properties, const TerminalApp::ContentManager& manager) :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
+        _manager{ manager },
         _hostingHwnd{},
         _WindowProperties{ std::move(properties) }
     {
@@ -2593,7 +2594,10 @@ namespace winrt::TerminalApp::implementation
         // Do any initialization that needs to apply to _every_ TermControl we
         // create here.
         // TermControl will copy the settings out of the settings passed to it.
-        TermControl term{ settings.DefaultSettings(), settings.UnfocusedSettings(), connection };
+
+        const auto content = _manager.CreateCore(settings.DefaultSettings(), settings.UnfocusedSettings(), connection);
+
+        TermControl term{ content };
 
         // GH#12515: ConPTY assumes it's hidden at the start. If we're not, let it know now.
         if (_visible)
