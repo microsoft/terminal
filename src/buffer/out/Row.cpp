@@ -232,11 +232,15 @@ void ROW::TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& a
     _attr.resize_trailing_extent(gsl::narrow<uint16_t>(newWidth));
 }
 
+// Returns the previous possible cursor position, preceding the given column.
+// Returns 0 if column is less than or equal to 0.
 til::CoordType ROW::NavigateToPrevious(til::CoordType column) const noexcept
 {
     return _adjustBackward(_clampedColumn(column - 1));
 }
 
+// Returns the next possible cursor position, following the given column.
+// Returns the row width if column is beyond the width of the row.
 til::CoordType ROW::NavigateToNext(til::CoordType column) const noexcept
 {
     return _adjustForward(_clampedColumn(column + 1));
