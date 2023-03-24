@@ -119,25 +119,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
         winrt::event<winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>> _handlers;
     };
-
-    template<typename SenderT, typename ArgsT>
-    struct forwarded_typed_event
-    {
-        forwarded_typed_event<SenderT, ArgsT>() = delete;
-        forwarded_typed_event<SenderT, ArgsT>(typed_event<SenderT, ArgsT>& other) :
-            _origin{ other } {}
-        forwarded_typed_event<SenderT, ArgsT>(forwarded_typed_event<SenderT, ArgsT>& other) :
-            _origin{ other._origin } {}
-
-        winrt::event_token operator()(const winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>& handler) { return _origin(handler); }
-        void operator()(const winrt::event_token& token) { _origin(token); }
-        template<typename... Arg>
-        void raise(auto&&... args)
-        {
-            _origin.raise(std::forward<decltype(args)>(args)...);
-        }
-        typed_event<SenderT, ArgsT>& _origin;
-    };
 #endif
 #ifdef WINRT_Windows_UI_Xaml_DataH
 

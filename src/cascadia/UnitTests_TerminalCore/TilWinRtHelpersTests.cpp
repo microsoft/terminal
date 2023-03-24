@@ -42,7 +42,6 @@ class TerminalCoreUnitTests::TilWinRtHelpersTests final
     TEST_METHOD(TestComposedConstProperties);
 
     TEST_METHOD(TestEvent);
-    TEST_METHOD(TestForwardedEvent);
 
     TEST_METHOD(TestTypedEvent);
 };
@@ -223,46 +222,6 @@ void TilWinRtHelpersTests::TestEvent()
     MyEvent.raise(42);
     VERIFY_ARE_EQUAL(true, handledOne);
     VERIFY_ARE_EQUAL(true, handledTwo);
-}
-
-void TilWinRtHelpersTests::TestForwardedEvent()
-{
-    using callback = winrt::delegate<void(int)>;
-
-    struct Helper
-    {
-        til::event<callback> MyEvent;
-    } helper;
-
-    int handledOne = 0;
-    int handledTwo = 0;
-
-    auto handler = [&](const int& v) -> void {
-        VERIFY_ARE_EQUAL(42, v);
-        handledOne++;
-    };
-
-    helper.MyEvent(handler);
-
-    til::forwarded_event<callback> ForwardedEvent{ helper.MyEvent };
-
-    ForwardedEvent([&](int) { handledTwo++; });
-
-    ForwardedEvent.raise(42);
-
-    VERIFY_ARE_EQUAL(1, handledOne);
-    VERIFY_ARE_EQUAL(1, handledTwo);
-
-    helper.MyEvent.raise(42);
-
-    VERIFY_ARE_EQUAL(2, handledOne);
-    VERIFY_ARE_EQUAL(2, handledTwo);
-
-    til::forwarded_event<callback> LayersOnLayers{ ForwardedEvent };
-    LayersOnLayers.raise(42);
-
-    VERIFY_ARE_EQUAL(3, handledOne);
-    VERIFY_ARE_EQUAL(3, handledTwo);
 }
 
 void TilWinRtHelpersTests::TestTypedEvent()
