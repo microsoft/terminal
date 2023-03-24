@@ -10,6 +10,7 @@
 #include "LanguageProfileNotifier.h"
 #include "AppCommandlineArgs.h"
 #include "TerminalWindow.h"
+#include "ContentManager.h"
 
 #include <inc/cppwinrt_utils.h>
 #include <ThrottledFunc.h>
@@ -70,6 +71,8 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::TerminalWindow CreateNewWindow();
 
+        winrt::TerminalApp::ContentManager ContentManager();
+
         TerminalApp::ParseCommandlineResult GetParseCommandlineMessage(array_view<const winrt::hstring> args);
 
         TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs);
@@ -97,6 +100,8 @@ namespace winrt::TerminalApp::implementation
         // (C++ destroys members in reverse-declaration-order.)
         winrt::com_ptr<LanguageProfileNotifier> _languageProfileNotifier;
         wil::unique_folder_change_reader_nothrow _reader;
+
+        TerminalApp::ContentManager _contentManager{ winrt::make<implementation::ContentManager>() };
 
         static TerminalApp::FindTargetWindowResult _doFindTargetWindow(winrt::array_view<const hstring> args,
                                                                        const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);

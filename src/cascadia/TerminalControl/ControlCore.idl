@@ -111,6 +111,7 @@ namespace Microsoft.Terminal.Control
 
         void ToggleShaderEffects();
         void ToggleReadOnlyMode();
+        void SetReadOnlyMode(Boolean readOnlyState);
 
         Microsoft.Terminal.Core.Point CursorPosition { get; };
         void ResumeRendering();
@@ -126,7 +127,6 @@ namespace Microsoft.Terminal.Control
         String HoveredUriText { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };
 
-        void Close();
         void BlinkCursor();
         Boolean IsInReadOnlyMode { get; };
         Boolean CursorOn;

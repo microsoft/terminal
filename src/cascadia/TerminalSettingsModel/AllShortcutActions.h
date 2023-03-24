@@ -77,6 +77,8 @@
     ON_ALL_ACTIONS(MoveTab)                 \
     ON_ALL_ACTIONS(BreakIntoDebugger)       \
     ON_ALL_ACTIONS(TogglePaneReadOnly)      \
+    ON_ALL_ACTIONS(EnablePaneReadOnly)      \
+    ON_ALL_ACTIONS(DisablePaneReadOnly)     \
     ON_ALL_ACTIONS(FindMatch)               \
     ON_ALL_ACTIONS(NewWindow)               \
     ON_ALL_ACTIONS(IdentifyWindow)          \

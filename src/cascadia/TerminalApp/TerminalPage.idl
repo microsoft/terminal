@@ -5,6 +5,13 @@ import "IDirectKeyListener.idl";
 
 namespace TerminalApp
 {
+    [default_interface] runtimeclass ContentManager
+    {
+        Microsoft.Terminal.Control.ControlInteractivity CreateCore(Microsoft.Terminal.Control.IControlSettings settings,
+                                                                   Microsoft.Terminal.Control.IControlAppearance unfocusedAppearance,
+                                                                   Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+        Microsoft.Terminal.Control.ControlInteractivity TryLookupCore(UInt64 id);
+    }
 
     [default_interface] runtimeclass LastTabClosedEventArgs
     {
@@ -33,7 +40,7 @@ namespace TerminalApp
 
     [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener
     {
-        TerminalPage(WindowProperties properties);
+        TerminalPage(WindowProperties properties, ContentManager manager);
 
         // XAML bound properties
         String ApplicationDisplayName { get; };

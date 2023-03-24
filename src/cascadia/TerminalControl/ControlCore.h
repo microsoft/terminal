@@ -196,6 +196,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool IsInReadOnlyMode() const;
         void ToggleReadOnlyMode();
+        void SetReadOnlyMode(const bool readOnlyState);
 
         hstring ReadEntireBuffer() const;
 
