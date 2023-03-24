@@ -65,6 +65,8 @@ static constexpr std::string_view MoveTabKey{ "moveTab" };
 static constexpr std::string_view BreakIntoDebuggerKey{ "breakIntoDebugger" };
 static constexpr std::string_view FindMatchKey{ "findMatch" };
 static constexpr std::string_view TogglePaneReadOnlyKey{ "toggleReadOnlyMode" };
+static constexpr std::string_view EnablePaneReadOnlyKey{ "enableReadOnlyMode" };
+static constexpr std::string_view DisablePaneReadOnlyKey{ "disableReadOnlyMode" };
 static constexpr std::string_view NewWindowKey{ "newWindow" };
 static constexpr std::string_view IdentifyWindowKey{ "identifyWindow" };
 static constexpr std::string_view IdentifyWindowsKey{ "identifyWindows" };
@@ -391,6 +393,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::BreakIntoDebugger, RS_(L"BreakIntoDebuggerCommandKey") },
                 { ShortcutAction::FindMatch, MustGenerate },
                 { ShortcutAction::TogglePaneReadOnly, RS_(L"TogglePaneReadOnlyCommandKey") },
+                { ShortcutAction::EnablePaneReadOnly, RS_(L"EnablePaneReadOnlyCommandKey") },
+                { ShortcutAction::DisablePaneReadOnly, RS_(L"DisablePaneReadOnlyCommandKey") },
                 { ShortcutAction::NewWindow, RS_(L"NewWindowCommandKey") },
                 { ShortcutAction::IdentifyWindow, RS_(L"IdentifyWindowCommandKey") },
                 { ShortcutAction::IdentifyWindows, RS_(L"IdentifyWindowsCommandKey") },
