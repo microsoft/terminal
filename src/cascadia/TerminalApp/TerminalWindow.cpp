@@ -1155,6 +1155,10 @@ namespace winrt::TerminalApp::implementation
     {
         const auto oldIsQuakeMode = _WindowProperties->IsQuakeWindow();
         _WindowProperties->WindowName(name);
+        if (!_root)
+        {
+            return;
+        }
         const auto newIsQuakeMode = _WindowProperties->IsQuakeWindow();
         if (newIsQuakeMode != oldIsQuakeMode)
         {
@@ -1210,8 +1214,15 @@ namespace winrt::TerminalApp::implementation
         if (_WindowName != value)
         {
             _WindowName = value;
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowName" });
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+            // If we get initialized with a window name, this will be called
+            // before XAML is stood up, and constructing a
+            // PropertyChangedEventArgs will throw.
+            try
+            {
+                _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowName" });
+                _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+            }
+            CATCH_LOG();
         }
     }
     uint64_t WindowProperties::WindowId() const noexcept
