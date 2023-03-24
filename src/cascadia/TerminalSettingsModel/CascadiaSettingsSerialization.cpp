@@ -1162,6 +1162,11 @@ winrt::hstring CascadiaSettings::SettingsPath()
     return winrt::hstring{ _settingsPath().native() };
 }
 
+bool CascadiaSettings::IsPortableMode()
+{
+    return Model::IsPortableMode();
+}
+
 winrt::hstring CascadiaSettings::DefaultSettingsPath()
 {
     // Both of these posts suggest getting the path to the exe, then removing
