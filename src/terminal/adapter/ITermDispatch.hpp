@@ -152,6 +152,9 @@ public:
 
     virtual StringHandler RequestSetting() = 0; // DECRQSS
 
+    virtual bool RequestPresentationStateReport(const DispatchTypes::PresentationReportFormat format) = 0; // DECRQPSR
+    virtual StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat format) = 0; // DECRSPS
+
     virtual bool PlaySounds(const VTParameters parameters) = 0; // DECPS
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() = default;
