@@ -27,10 +27,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         property<T>(const T& defaultValue = details::winrt_empty_value<T>()) :
             _value{ defaultValue } {}
 
-        const T& operator()() const
+        T operator()() const
         {
             return _value;
         }
+
         void operator()(const T& value)
         {
             _value = value;
