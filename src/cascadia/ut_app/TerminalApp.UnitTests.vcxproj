@@ -81,13 +81,6 @@
   <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
 
-  <PropertyGroup>
-    <!-- From Microsoft.UI.Xaml.targets -->
-    <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
-    <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
-    <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
-  </PropertyGroup>
-
   <ItemDefinitionGroup>
     <PreBuildEvent>
       <!-- Manually copy the Windows Terminal manifest to our project directory,

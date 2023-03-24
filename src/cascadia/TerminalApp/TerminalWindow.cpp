@@ -118,8 +118,10 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalWindow::TerminalWindow(const TerminalApp::SettingsLoadEventArgs& settingsLoadedResult) :
+    TerminalWindow::TerminalWindow(const TerminalApp::SettingsLoadEventArgs& settingsLoadedResult,
+                                   const TerminalApp::ContentManager& manager) :
         _settings{ settingsLoadedResult.NewSettings() },
+        _manager{ manager },
         _initialLoadResult{ settingsLoadedResult },
         _WindowProperties{ winrt::make_self<TerminalApp::implementation::WindowProperties>() }
     {
@@ -138,7 +140,7 @@ namespace winrt::TerminalApp::implementation
     HRESULT TerminalWindow::Initialize(HWND hwnd)
     {
         // Now that we know we can do XAML, build our page.
-        _root = winrt::make_self<TerminalPage>(*_WindowProperties);
+        _root = winrt::make_self<TerminalPage>(*_WindowProperties, _manager);
         _dialog = ContentDialog{};
 
         // Pass commandline args into the TerminalPage. If we were supposed to
@@ -1153,6 +1155,10 @@ namespace winrt::TerminalApp::implementation
     {
         const auto oldIsQuakeMode = _WindowProperties->IsQuakeWindow();
         _WindowProperties->WindowName(name);
+        if (!_root)
+        {
+            return;
+        }
         const auto newIsQuakeMode = _WindowProperties->IsQuakeWindow();
         if (newIsQuakeMode != oldIsQuakeMode)
         {
@@ -1208,8 +1214,15 @@ namespace winrt::TerminalApp::implementation
         if (_WindowName != value)
         {
             _WindowName = value;
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowName" });
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+            // If we get initialized with a window name, this will be called
+            // before XAML is stood up, and constructing a
+            // PropertyChangedEventArgs will throw.
+            try
+            {
+                _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowName" });
+                _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+            }
+            CATCH_LOG();
         }
     }
     uint64_t WindowProperties::WindowId() const noexcept

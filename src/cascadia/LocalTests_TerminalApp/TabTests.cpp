@@ -10,6 +10,7 @@
 #include "../TerminalApp/ShortcutActionDispatch.h"
 #include "../TerminalApp/TerminalTab.h"
 #include "../TerminalApp/CommandPalette.h"
+#include "../TerminalApp/ContentManager.h"
 #include "CppWinrtTailored.h"
 
 using namespace Microsoft::Console;
@@ -112,6 +113,7 @@ namespace TerminalAppLocalTests
                                      CascadiaSettings initialSettings);
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> _commonSetup();
         winrt::com_ptr<winrt::TerminalApp::implementation::WindowProperties> _windowProperties;
+        winrt::com_ptr<winrt::TerminalApp::implementation::ContentManager> _contentManager;
     };
 
     template<typename TFunction>
@@ -199,8 +201,11 @@ namespace TerminalAppLocalTests
         _windowProperties = winrt::make_self<winrt::TerminalApp::implementation::WindowProperties>();
         winrt::TerminalApp::WindowProperties props = *_windowProperties;
 
-        auto result = RunOnUIThread([&page, props]() {
-            page = winrt::make_self<winrt::TerminalApp::implementation::TerminalPage>(props);
+        _contentManager = winrt::make_self<winrt::TerminalApp::implementation::ContentManager>();
+        winrt::TerminalApp::ContentManager contentManager = *_contentManager;
+
+        auto result = RunOnUIThread([&page, props, contentManager]() {
+            page = winrt::make_self<winrt::TerminalApp::implementation::TerminalPage>(props, contentManager);
             VERIFY_IS_NOT_NULL(page);
         });
         VERIFY_SUCCEEDED(result);
@@ -246,9 +251,11 @@ namespace TerminalAppLocalTests
 
         _windowProperties = winrt::make_self<winrt::TerminalApp::implementation::WindowProperties>();
         winrt::TerminalApp::WindowProperties props = *_windowProperties;
+        _contentManager = winrt::make_self<winrt::TerminalApp::implementation::ContentManager>();
+        winrt::TerminalApp::ContentManager contentManager = *_contentManager;
         Log::Comment(NoThrowString().Format(L"Construct the TerminalPage"));
-        auto result = RunOnUIThread([&projectedPage, &page, initialSettings, props]() {
-            projectedPage = winrt::TerminalApp::TerminalPage(props);
+        auto result = RunOnUIThread([&projectedPage, &page, initialSettings, props, contentManager]() {
+            projectedPage = winrt::TerminalApp::TerminalPage(props, contentManager);
             page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
             page->_settings = initialSettings;
         });

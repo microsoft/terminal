@@ -146,7 +146,8 @@ namespace winrt::TerminalApp::implementation
         const auto backup = _restorePreviewFuncs.empty();
 
         _ApplyToActiveControls([&](const auto& control) {
-            control.PreviewInput(args.Input());
+            const auto& str{ args.Input() };
+            control.PreviewInput(str);
 
             if (backup)
             {
