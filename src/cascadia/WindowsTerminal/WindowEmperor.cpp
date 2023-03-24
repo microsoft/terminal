@@ -129,7 +129,7 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
 
             if (auto self{ weakThis.lock() })
             {
-                self->_windowStartedHandler(window);
+                self->_windowStartedHandlerPostXAML(window);
             }
 
             window->RunMessagePump();
