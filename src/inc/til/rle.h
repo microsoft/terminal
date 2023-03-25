@@ -479,6 +479,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _replace_unchecked(start_index, end_index, replacements);
         }
 
+        // Replace the range [start_index, end_index) with replacements.
+        // If end_index is larger than size() it's set to size().
+        // start_index must be smaller or equal to end_index.
+        void replace(size_type start_index, size_type end_index, const basic_rle& replacements)
+        {
+            _check_indices(start_index, end_index);
+            _replace_unchecked(start_index, end_index, replacements._runs);
+        }
+
         // Replaces every instance of old_value in this vector with new_value.
         void replace_values(const value_type& old_value, const value_type& new_value)
         {

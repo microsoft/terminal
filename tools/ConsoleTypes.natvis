@@ -39,10 +39,11 @@
     </Type>
 
     <Type Name="ROW">
-        <DisplayString>{{ id={_id} width={_rowWidth} }}</DisplayString>
+        <DisplayString>{_chars.data(),[_charOffsets[_columnCount]]}</DisplayString>
+        <StringView>_chars.data(),[_charOffsets[_columnCount]]</StringView>
         <Expand>
-            <Item Name="_charRow">_charRow</Item>
-            <Item Name="_attrRow">_attrRow</Item>
+            <Item Name="_chars">_chars.data(),[_charOffsets[_columnCount]]</Item>
+            <Item Name="_charOffsets">_charOffsets.data(),[_charOffsets.size()]</Item>
         </Expand>
     </Type>
 
