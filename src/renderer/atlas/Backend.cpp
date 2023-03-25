@@ -184,12 +184,6 @@ bool Microsoft::Console::Render::Atlas::DrawGlyphRun(ID2D1DeviceContext* d2dRend
 
     if (d2dRenderTarget4)
     {
-        D2D_MATRIX_3X2_F transform;
-        d2dRenderTarget4->GetTransform(&transform);
-        f32 dpiX, dpiY;
-        d2dRenderTarget4->GetDpi(&dpiX, &dpiY);
-        transform = transform * D2D1::Matrix3x2F::Scale(dpiX, dpiY);
-
         // Support for ID2D1DeviceContext4 implies support for IDWriteFactory4.
         // ID2D1DeviceContext4 is required for drawing below.
         hr = dwriteFactory4->TranslateColorGlyphRun(baselineOrigin, glyphRun, nullptr, formats, measuringMode, nullptr, 0, &enumerator);
@@ -241,6 +235,11 @@ bool Microsoft::Console::Render::Atlas::DrawGlyphRun(ID2D1DeviceContext* d2dRend
             runBrush = solidBrush.get();
         }
 
+        const D2D1_POINT_2F runOrigin{
+            colorGlyphRun->baselineOriginX,
+            colorGlyphRun->baselineOriginY,
+        };
+
         switch (colorGlyphRun->glyphImageFormat)
         {
         case DWRITE_GLYPH_IMAGE_FORMATS_NONE:
@@ -249,13 +248,13 @@ bool Microsoft::Console::Render::Atlas::DrawGlyphRun(ID2D1DeviceContext* d2dRend
         case DWRITE_GLYPH_IMAGE_FORMATS_JPEG:
         case DWRITE_GLYPH_IMAGE_FORMATS_TIFF:
         case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8:
-            d2dRenderTarget4->DrawColorBitmapGlyphRun(colorGlyphRun->glyphImageFormat, baselineOrigin, &colorGlyphRun->glyphRun, colorGlyphRun->measuringMode, D2D1_COLOR_BITMAP_GLYPH_SNAP_OPTION_DEFAULT);
+            d2dRenderTarget4->DrawColorBitmapGlyphRun(colorGlyphRun->glyphImageFormat, runOrigin, &colorGlyphRun->glyphRun, colorGlyphRun->measuringMode, D2D1_COLOR_BITMAP_GLYPH_SNAP_OPTION_DEFAULT);
             break;
         case DWRITE_GLYPH_IMAGE_FORMATS_SVG:
-            d2dRenderTarget4->DrawSvgGlyphRun(baselineOrigin, &colorGlyphRun->glyphRun, runBrush, nullptr, 0, colorGlyphRun->measuringMode);
+            d2dRenderTarget4->DrawSvgGlyphRun(runOrigin, &colorGlyphRun->glyphRun, runBrush, nullptr, 0, colorGlyphRun->measuringMode);
             break;
         default:
-            d2dRenderTarget4->DrawGlyphRun(baselineOrigin, &colorGlyphRun->glyphRun, colorGlyphRun->glyphRunDescription, runBrush, colorGlyphRun->measuringMode);
+            d2dRenderTarget4->DrawGlyphRun(runOrigin, &colorGlyphRun->glyphRun, colorGlyphRun->glyphRunDescription, runBrush, colorGlyphRun->measuringMode);
             break;
         }
     }

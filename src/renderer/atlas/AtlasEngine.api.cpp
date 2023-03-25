@@ -700,15 +700,6 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     if (fontMetrics)
     {
         std::wstring fontName{ requestedFaceName };
-        const auto fontWeightU16 = gsl::narrow_cast<u16>(requestedWeight);
-        const auto baselineU16 = gsl::narrow_cast<u16>(baseline);
-        const auto underlinePosU16 = gsl::narrow_cast<u16>(underlinePos);
-        const auto underlineWidthU16 = gsl::narrow_cast<u16>(underlineWidth);
-        const auto strikethroughPosU16 = gsl::narrow_cast<u16>(strikethroughPos);
-        const auto strikethroughWidthU16 = gsl::narrow_cast<u16>(strikethroughWidth);
-        const auto doubleUnderlinePosTopU16 = gsl::narrow_cast<u16>(doubleUnderlinePosTop);
-        const auto doubleUnderlinePosBottomU16 = gsl::narrow_cast<u16>(doubleUnderlinePosBottom);
-        const auto thinLineWidthU16 = gsl::narrow_cast<u16>(thinLineWidth);
 
         // NOTE: From this point onward no early returns or throwing code should exist,
         // as we might cause _api to be in an inconsistent state otherwise.
@@ -718,14 +709,17 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         fontMetrics->fontName = std::move(fontName);
         fontMetrics->fontSize = fontSizeInPx;
         fontMetrics->advanceScale = cellWidth / advanceWidth;
-        fontMetrics->cellSize = { cellWidth, cellHeight };
-        fontMetrics->fontWeight = fontWeightU16;
-        fontMetrics->baseline = baselineU16;
-        fontMetrics->underlinePos = underlinePosU16;
-        fontMetrics->underlineWidth = underlineWidthU16;
-        fontMetrics->strikethroughPos = strikethroughPosU16;
-        fontMetrics->strikethroughWidth = strikethroughWidthU16;
-        fontMetrics->doubleUnderlinePos = { doubleUnderlinePosTopU16, doubleUnderlinePosBottomU16 };
-        fontMetrics->thinLineWidth = thinLineWidthU16;
+        fontMetrics->cellSize.x = cellWidth;
+        fontMetrics->cellSize.y = cellHeight;
+        fontMetrics->fontWeight = gsl::narrow_cast<u16>(requestedWeight);
+        fontMetrics->baseline = static_cast<u16>(baseline);
+        fontMetrics->descender = static_cast<u16>(cellHeight - fontMetrics->baseline);
+        fontMetrics->underlinePos = static_cast<u16>(underlinePos);
+        fontMetrics->underlineWidth = static_cast<u16>(underlineWidth);
+        fontMetrics->strikethroughPos = static_cast<u16>(strikethroughPos);
+        fontMetrics->strikethroughWidth = static_cast<u16>(strikethroughWidth);
+        fontMetrics->doubleUnderlinePos.x = static_cast<u16>(doubleUnderlinePosTop);
+        fontMetrics->doubleUnderlinePos.y = static_cast<u16>(doubleUnderlinePosBottom);
+        fontMetrics->thinLineWidth = static_cast<u16>(thinLineWidth);
     }
 }

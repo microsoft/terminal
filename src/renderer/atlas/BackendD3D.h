@@ -57,12 +57,13 @@ namespace Microsoft::Console::Render::Atlas
 
         enum class ShadingType : u32
         {
+            Default = 0,
             Background = 0,
-            TextGrayscale,
-            TextClearType,
-            Passthrough,
-            DashedLine,
-            SolidFill,
+            TextGrayscale = 1,
+            TextClearType = 2,
+            Passthrough = 3,
+            DashedLine = 4,
+            SolidFill = 5,
         };
 
         struct QuadInstance
@@ -75,21 +76,42 @@ namespace Microsoft::Console::Render::Atlas
             alignas(sizeof(i16x2)) i16x2 position;
             alignas(sizeof(i16x2)) u16x2 size;
             alignas(sizeof(i16x2)) u16x2 texcoord;
-            alignas(sizeof(u32)) u32 shadingType = 0;
+            alignas(sizeof(u32)) ShadingType shadingType = ShadingType::Default;
             alignas(sizeof(u32)) u32 color = 0;
         };
 
-        struct GlyphCacheEntry
+        struct GlyphCacheKey
         {
             // BODGY: The IDWriteFontFace results from us calling IDWriteFontFallback::MapCharacters
             // which at the time of writing returns the same IDWriteFontFace as long as someone is
             // holding a reference / the reference count doesn't drop to 0 (see ActiveFaceCache).
+            // This allows us to hash the value of the pointer as if it was uniquely identifying the font face.
             IDWriteFontFace* fontFace = nullptr;
-            u16 glyphIndex = 0;
-            u16 shadingType = 0;
+            u16 glyphIndex;
+            u16 lineRendition;
+
+            constexpr bool operator==(const GlyphCacheKey& rhs) const noexcept
+            {
+                return __builtin_memcmp(this, &rhs, GlyphCacheKeyDataSize) == 0;
+            }
+        };
+
+        // Due to padding on 64-Bit systems, sizeof(GlyphCacheKey) will be 16,
+        // but the actual contents of the struct still only be 12 bytes.
+        static constexpr size_t GlyphCacheKeyDataSize = sizeof(GlyphCacheKey::fontFace) + 2 * sizeof(u16);
+
+        struct GlyphCacheData
+        {
             i16x2 offset;
             u16x2 size;
             u16x2 texcoord;
+            ShadingType shadingType = ShadingType::Default;
+        };
+
+        struct GlyphCacheEntry
+        {
+            GlyphCacheKey key;
+            GlyphCacheData data;
         };
 
         struct GlyphCacheMap
@@ -104,22 +126,20 @@ namespace Microsoft::Console::Render::Atlas
             GlyphCacheMap& operator=(GlyphCacheMap&& other) noexcept;
 
             void Clear() noexcept;
-            GlyphCacheEntry& FindOrInsert(IDWriteFontFace* fontFace, u16 glyphIndex, bool& inserted);
+            GlyphCacheEntry& FindOrInsert(const GlyphCacheKey& key, bool& inserted);
 
         private:
-            static size_t _hash(IDWriteFontFace* fontFace, u16 glyphIndex) noexcept;
-            GlyphCacheEntry& _insert(IDWriteFontFace* fontFace, u16 glyphIndex, size_t hash);
+            static size_t _hash(const GlyphCacheKey& key) noexcept;
             void _bumpSize();
 
-            static constexpr u32 initialSize = 256;
-
-            Buffer<GlyphCacheEntry> _map{ initialSize };
-            size_t _mapMask = initialSize - 1;
-            size_t _capacity = initialSize / 2;
+            Buffer<GlyphCacheEntry> _map;
+            size_t _mask = 0;
+            size_t _capacity = 0;
             size_t _size = 0;
         };
 
         __declspec(noinline) void _handleSettingsUpdate(const RenderingPayload& p);
+        void _updateFontDependents(const RenderingPayload& p);
         void _recreateCustomShader(const RenderingPayload& p);
         void _recreateCustomRenderTargetView(u16x2 targetSize);
         void _d2dRenderTargetUpdateFontSettings(const FontSettings& font) const noexcept;
@@ -143,6 +163,8 @@ namespace Microsoft::Console::Render::Atlas
         void _drawBackground(const RenderingPayload& p);
         void _drawText(RenderingPayload& p);
         __declspec(noinline) void _drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f32 fontEmSize);
+        __declspec(noinline) void _drawGlyphRetry(const RenderingPayload& p, stbrp_rect& rect);
+        void _splitDoubleHeightGlyph(const RenderingPayload& p, GlyphCacheEntry& entry);
         void _drawGridlines(const RenderingPayload& p);
         void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
         void _drawCursorPart1(const RenderingPayload& p);
@@ -216,6 +238,7 @@ namespace Microsoft::Console::Render::Atlas
         til::generation_t _miscGeneration;
         u16x2 _targetSize;
         u16x2 _cellCount;
+        ShadingType _textShadingType = ShadingType::Default;
 
         // An empty-box cursor spanning a wide glyph that has different
         // background colors on each side results in 6 lines being drawn.

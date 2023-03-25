@@ -158,6 +158,7 @@ try
         til::CoordTypeMin,
         til::CoordTypeMin,
     };
+    _p.invalidatedRows = _api.invalidatedRows;
     _p.cursorRect = {};
     _p.scrollOffset = _api.scrollOffset;
 

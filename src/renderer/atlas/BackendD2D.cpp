@@ -191,30 +191,45 @@ void BackendD2D::_drawText(RenderingPayload& p)
         auto baselineX = 0.0f;
         auto baselineY = static_cast<f32>(p.s->font->cellSize.y * y + p.s->font->baseline);
 
-        for (const auto& m : row->mappings)
+        if (y >= p.invalidatedRows.x && y < p.invalidatedRows.y)
         {
-            const DWRITE_GLYPH_RUN glyphRun{
-                .fontFace = m.fontFace.get(),
-                .fontEmSize = m.fontEmSize,
-                .glyphCount = gsl::narrow_cast<UINT32>(m.glyphsTo - m.glyphsFrom),
-                .glyphIndices = &row->glyphIndices[m.glyphsFrom],
-                .glyphAdvances = &row->glyphAdvances[m.glyphsFrom],
-                .glyphOffsets = &row->glyphOffsets[m.glyphsFrom],
-            };
+            for (const auto& m : row->mappings)
+            {
+                const DWRITE_GLYPH_RUN glyphRun{
+                    .fontFace = m.fontFace.get(),
+                    .fontEmSize = m.fontEmSize,
+                    .glyphCount = gsl::narrow_cast<UINT32>(m.glyphsTo - m.glyphsFrom),
+                    .glyphIndices = &row->glyphIndices[m.glyphsFrom],
+                    .glyphAdvances = &row->glyphAdvances[m.glyphsFrom],
+                    .glyphOffsets = &row->glyphOffsets[m.glyphsFrom],
+                };
 
-            // _getGlyphRunBlackBox returns a rectangle based on the design metrics of the
-            // glyphs, which doesn't take antialiasing nor font hinting into consideration.
-            // Especially the latter can technically move the rasterized result around
-            // however it pleases. A padding of 5px should hopefully avoid most issues.
-            const auto blackBox = _getGlyphRunBlackBox(glyphRun, baselineX, baselineY);
-            if (row->lineRendition != LineRendition::DoubleHeightTop)
-            {
-                row->dirtyBottom = std::max(row->dirtyBottom, static_cast<i32>(lround(blackBox.bottom) + 5));
+                // _getGlyphRunBlackBox returns a rectangle based on the design metrics of the
+                // glyphs, which doesn't take antialiasing nor font hinting into consideration.
+                // Especially the latter can technically move the rasterized result around
+                // however it pleases. A padding of 5px should hopefully avoid most issues.
+                //
+                // Technically ID2D1DeviceContext::GetGlyphRunWorldBounds would be the proper approach
+                // here, because it returns the exact (pixel accurate) boundaries of the glyph run.
+                // But that function is way, *way* more expensive than anything else, to the point
+                // its useless. To put numbers on it, it's about >20x more costly to call than
+                // DrawGlyphRun below, even though the function puts like half a million glyphs per
+                // second on the screen, filling hundreds of millions of pixels in the process.
+                const auto blackBox = _getGlyphRunDesignBounds(glyphRun, 0.0f, baselineY);
+                // We exclude setting the top/bottom dirty height for DECDHL double height rows,
+                // because DECDHL intentionally cuts off their bottom/top half respectively.
+                if (row->lineRendition != LineRendition::DoubleHeightTop)
+                {
+                    row->dirtyBottom = std::max(row->dirtyBottom, static_cast<i32>(lround(blackBox.bottom) + 5));
+                }
+                if (row->lineRendition != LineRendition::DoubleHeightBottom)
+                {
+                    row->dirtyTop = std::min(row->dirtyTop, static_cast<i32>(lround(blackBox.top) - 5));
+                }
             }
-            if (row->lineRendition != LineRendition::DoubleHeightBottom)
-            {
-                row->dirtyTop = std::min(row->dirtyTop, static_cast<i32>(lround(blackBox.top) - 5));
-            }
+
+            dirtyTop = std::min(dirtyTop, row->dirtyTop);
+            dirtyBottom = std::max(dirtyBottom, row->dirtyBottom);
         }
 
         const D2D1_RECT_F clipRect{
@@ -273,12 +288,6 @@ void BackendD2D::_drawText(RenderingPayload& p)
 
         _renderTarget->PopAxisAlignedClip();
 
-        if (y >= p.invalidatedRows.x && y < p.invalidatedRows.y)
-        {
-            dirtyTop = std::min(dirtyTop, row->dirtyTop);
-            dirtyBottom = std::max(dirtyBottom, row->dirtyBottom);
-        }
-
         ++y;
     }
 
@@ -316,13 +325,13 @@ f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, f32 bas
 
 void BackendD2D::_drawTextResetLineRendition() const
 {
-    static constexpr D2D1_MATRIX_3X2_F identity{ .m11 = 1.f, .m22 = 1.f };
+    static constexpr D2D1_MATRIX_3X2_F identity{ .m11 = 1, .m22 = 1 };
     _renderTarget->SetTransform(&identity);
 }
 
 // Returns the theoretical/design design size of the given `DWRITE_GLYPH_RUN`, relative the the given baseline origin.
 // This algorithm replicates what DirectWrite does internally to provide `IDWriteTextLayout::GetMetrics`.
-f32r BackendD2D::_getGlyphRunBlackBox(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY)
+f32r BackendD2D::_getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY)
 {
     DWRITE_FONT_METRICS fontMetrics;
     glyphRun.fontFace->GetMetrics(&fontMetrics);

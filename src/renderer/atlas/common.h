@@ -43,8 +43,6 @@ namespace Microsoft::Console::Render::Atlas
     }
 
 #define ATLAS_POD_OPS(type)                                           \
-    constexpr auto operator<=>(const type&) const noexcept = default; \
-                                                                      \
     constexpr bool operator==(const type& rhs) const noexcept         \
     {                                                                 \
         return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;        \
@@ -304,6 +302,7 @@ namespace Microsoft::Console::Render::Atlas
         u16x2 cellSize;
         u16 fontWeight = 0;
         u16 baseline = 0;
+        u16 descender = 0;
         u16 underlinePos = 0;
         u16 underlineWidth = 0;
         u16 strikethroughPos = 0;

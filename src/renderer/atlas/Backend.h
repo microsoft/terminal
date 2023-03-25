@@ -19,7 +19,7 @@ namespace Microsoft::Console::Render::Atlas
 #define ATLAS_DEBUG_DISABLE_FRAME_LATENCY_WAITABLE_OBJECT 0
 
     // Forces the use of Direct2D for text rendering (= BackendD2D).
-#define ATLAS_DEBUG_FORCE_D2D_MODE 1
+#define ATLAS_DEBUG_FORCE_D2D_MODE 0
 
     // Adds an artificial delay before every render pass. In milliseconds.
 #define ATLAS_DEBUG_RENDER_DELAY 0

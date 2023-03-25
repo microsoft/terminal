@@ -4,6 +4,7 @@
 #include <conio.h>
 
 #include <array>
+#include <cassert>
 
 #include <wil/resource.h>
 
@@ -54,45 +55,35 @@ namespace
 #define defer const auto _DEFER_CONCAT(_defer_, __LINE__) = ::detail::scope_guard_helper() + [&]()
 }
 
+static void printUTF16(const wchar_t* str)
+{
+    WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), str, static_cast<DWORD>(wcslen(str)), nullptr, nullptr);
+}
+
 // wprintf() in the uCRT prints every single wchar_t individually and thus breaks surrogate
 // pairs apart which Windows Terminal treats as invalid input and replaces it with U+FFFD.
 static void printfUTF16(_In_z_ _Printf_format_string_ wchar_t const* const format, ...)
 {
-    wchar_t buffer[128];
+    std::array<wchar_t, 128> buffer;
 
     va_list args;
     va_start(args, format);
-    const auto length = _vsnwprintf_s(buffer, _countof(buffer), _TRUNCATE, format, args);
+    const auto length = _vsnwprintf_s(buffer.data(), buffer.size(), _TRUNCATE, format, args);
     va_end(args);
 
-    WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), buffer, length, nullptr, nullptr);
-}
-
-static void writeAsciiWithAttribute(WORD attribute, const wchar_t* text)
-{
-    const auto outputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-    const auto length = static_cast<DWORD>(wcslen(text));
-
-    CONSOLE_SCREEN_BUFFER_INFO info{};
-    GetConsoleScreenBufferInfo(outputHandle, &info);
-
-    WORD attributes[128];
-    std::fill_n(&attributes[0], length, static_cast<WORD>(attribute | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED));
-
-    DWORD numberOfAttrsWritten;
-    WriteConsoleW(outputHandle, text, length, nullptr, nullptr);
-    WriteConsoleOutputAttribute(outputHandle, attributes, length, info.dwCursorPosition, &numberOfAttrsWritten);
+    assert(length >= 0);
+    WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), buffer.data(), length, nullptr, nullptr);
 }
 
 static void wait()
 {
-    printfUTF16(L"\r\nPress any key to continue...");
+    printUTF16(L"\x1B[9999;1HPress any key to continue...");
     _getch();
 }
 
 static void clear()
 {
-    printfUTF16(
+    printUTF16(
         L"\x1B[H" // move cursor to 0,0
         L"\x1B[2J" // clear screen
     );
@@ -109,67 +100,149 @@ int main()
         SetConsoleMode(outputHandle, consoleMode);
     };
 
-    printfUTF16(
+    printUTF16(
         L"\x1b[?1049h" // enable alternative screen buffer
-        L"\x1B[H" // move cursor to 0,0
     );
     defer
     {
-        printfUTF16(
+        printUTF16(
             L"\x1b[?1049l" // disable alternative screen buffer
         );
     };
 
     {
-        struct Test
+        struct ConsoleAttributeTest
         {
-            WORD attribute = 0;
             const wchar_t* text = nullptr;
+            WORD attribute = 0;
         };
-        static constexpr Test tests[]{
-#define MAKE_TEST_FOR_ATTRIBUTE(attr) Test{ attr, L## #attr }
+        static constexpr ConsoleAttributeTest consoleAttributeTests[]{
+            { L"Console attributes:", 0 },
+#define MAKE_TEST_FOR_ATTRIBUTE(attr) { L## #attr, attr }
             MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_GRID_HORIZONTAL),
             MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_GRID_LVERTICAL),
             MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_GRID_RVERTICAL),
             MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_REVERSE_VIDEO),
             MAKE_TEST_FOR_ATTRIBUTE(COMMON_LVB_UNDERSCORE),
 #undef MAKE_TEST_FOR_ATTRIBUTE
+            { L"all gridlines", COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_UNDERSCORE },
+            { L"all attributes", COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE },
         };
 
-        for (const auto& t : tests)
+        SHORT row = 2;
+        for (const auto& t : consoleAttributeTests)
         {
-            printfUTF16(L"\r\n    ");
-            writeAsciiWithAttribute(t.attribute, t.text);
-            printfUTF16(L"\r\n    ");
-        }
-    }
+            const auto length = static_cast<DWORD>(wcslen(t.text));
+            printfUTF16(L"\x1B[%d;5H%s", row + 1, t.text);
 
-    wait();
-    clear();
+            WORD attributes[32];
+            std::fill_n(&attributes[0], length, static_cast<WORD>(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | t.attribute));
+
+            DWORD numberOfAttrsWritten;
+            WriteConsoleOutputAttribute(outputHandle, attributes, length, { 4, row }, &numberOfAttrsWritten);
+
+            row += 2;
+        }
+
+        struct VTAttributeTest
+        {
+            const wchar_t* text = nullptr;
+            int sgr = 0;
+        };
+        static constexpr VTAttributeTest vtAttributeTests[]{
+            { L"ANSI escape SGR:", 0 },
+            { L"italic", 3 },
+            { L"underline", 4 },
+            { L"reverse", 7 },
+            { L"strikethrough", 9 },
+            { L"double underline", 21 },
+            { L"overlined", 53 },
+        };
+
+        row = 3;
+        for (const auto& t : vtAttributeTests)
+        {
+            printfUTF16(L"\x1B[%d;45H\x1b[%dm%s\x1b[m", row, t.sgr, t.text);
+            row += 2;
+        }
+
+        printfUTF16(L"\x1B[%d;45H\x1b]8;;https://example.com\x1b\\hyperlink\x1b]8;;\x1b\\", row);
+
+        wait();
+        clear();
+    }
 
     {
-        struct Test
-        {
-            WORD sgr = 0;
-            const wchar_t* name = nullptr;
-        };
-        static constexpr Test tests[]{
-            { 3, L"italic" },
-            { 4, L"underline" },
-            { 7, L"reverse" },
-            { 9, L"strikethrough" },
-            { 21, L"double underline" },
-            { 53, L"overlined" },
-        };
+        printUTF16(
+            L"\x1B[3;5HDECDWL Double Width \U0001FAE0 A\u0353\u0353 B\u036F\u036F"
+            L"\x1B[4;5H\x1b#6DECDWL Double Width         \U0001FAE0 A\u0353\u0353 B\u036F\u036F"
+            L"\x1B[8;5HDECDHL Double Height \U0001F642\U0001F6C1 A\u0353\u0353 B\u036F\u036F X\u0353\u0353 Y\u036F\u036F"
+            L"\x1B[9;5H\x1b#3DECDHL Double Height Top    \U0001F642 A\u0353\u0353 B\u036F\u036F"
+            L"\x1B[10;5H\x1b#4DECDHL Double Height Bottom \U0001F6C1 X\u0353\u0353 Y\u036F\u036F");
 
-        for (const auto& t : tests)
-        {
-            printfUTF16(L"\r\n    \x1b[%dm%s \\x1b[%dm\x1b[m\r\n    ", t.sgr, t.name, t.sgr);
-        }
-
-        printfUTF16(L"\r\n    \x1b]8;;https://example.com\x1b\\hyperlink \\x1b]8;;https://example.com\\x1b\\\\hyperlink\\x1b]8;;\\x1b\\\\\x1b]8;;\x1b\\\r\n    ");
+        wait();
+        clear();
     }
 
-    wait();
+    {
+        defer
+        {
+            // Setting an empty DRCS gets us back to the regular font.
+            printUTF16(L"\x1bP1;1;2{ @\x1b\\");
+        };
+
+        const auto glyph =
+            " W   W         "
+            " W   W         "
+            " W W W         "
+            " W W W         "
+            " W W W         "
+            " W W W TTTTTTT "
+            "  W W     T    "
+            "          T    "
+            "          T    "
+            "          T    "
+            "          T    "
+            "          T    ";
+
+        // Convert the above visual glyph to sixels
+        wchar_t rows[2][15];
+        for (int r = 0; r < 2; ++r)
+        {
+            const auto glyphData = &glyph[r * 15 * 6];
+
+            for (int x = 0; x < 15; ++x)
+            {
+                unsigned int accumulator = 0;
+                for (int y = 5; y >= 0; --y)
+                {
+                    const auto isSet = glyphData[y * 15 + x] != ' ';
+                    accumulator <<= 1;
+                    accumulator |= static_cast<unsigned int>(isSet);
+                }
+
+                rows[r][x] = static_cast<wchar_t>(L'?' + accumulator);
+            }
+        }
+
+        printfUTF16(
+            // * Pfn  | font number             | 1    |
+            // * Pcn  | starting character      | 3    | = ASCII 0x23 "#"
+            // * Pe   | erase control           | 2    | erase all
+            //   Pcmw | character matrix width  | 0    | 15 pixels
+            //   Pw   | font width              | 0    | 80 columns
+            //   Pt   | text or full cell       | 0    | text
+            //   Pcmh | character matrix height | 0    | 12 pixels
+            //   Pcss | character set size      | 0    | 94
+            // * Dscs | character set name      | " @" | unregistered soft set
+            L"\x1bP1;3;2{ @%.15s/%.15s\x1b\\",
+            rows[0],
+            rows[1]);
+
+        printUTF16(L"\x1B[3;5HDECDLD glyph \"WT\": \x1b( @#\x1b(A");
+
+        wait();
+    }
+
     return 0;
 }

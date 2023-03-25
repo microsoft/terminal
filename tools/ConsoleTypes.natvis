@@ -124,11 +124,11 @@
     </Type>
 
     <Type Name="Microsoft::Console::Render::Atlas::ShapedRow">
-        <DisplayString>{{ top={top}, bottom={bottom} }}</DisplayString>
+        <DisplayString>{{ dirtyTop={dirtyTop}, dirtyBottom={dirtyBottom} }}</DisplayString>
     </Type>
 
     <Type Name="Microsoft::Console::Render::Atlas::BackendD3D::GlyphCacheEntry">
-        <DisplayString Condition="fontFace == nullptr">(empty)</DisplayString>
-        <DisplayString Condition="fontFace != nullptr">{(void*)fontFace}, {glyphIndex}</DisplayString>
+        <DisplayString Condition="key.fontFace == nullptr">(empty)</DisplayString>
+        <DisplayString Condition="key.fontFace != nullptr">{(void*)key.fontFace}, {key.glyphIndex}</DisplayString>
     </Type>
 </AutoVisualizer>
