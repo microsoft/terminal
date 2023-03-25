@@ -976,7 +976,7 @@ catch (...)
 // Arguments:
 // - vkey: The virtual key code.
 // - scanCode: The scan code.
-void Terminal::_StoreKeyEvent(const WORD vkey, const WORD scanCode)
+void Terminal::_StoreKeyEvent(const WORD vkey, const WORD scanCode) noexcept
 {
     _lastKeyEventCodes.emplace(KeyEventCodes{ vkey, scanCode });
 }

@@ -43,7 +43,6 @@ namespace Microsoft.Terminal.Remoting
         ToMouse,
     };
 
-
     [default_interface] runtimeclass SummonWindowBehavior {
         SummonWindowBehavior();
         Boolean MoveToCurrentDesktop;

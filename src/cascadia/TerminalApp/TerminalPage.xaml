@@ -201,10 +201,10 @@
             tracked by MUX#4382
         -->
         <mux:TeachingTip x:Name="WindowIdToast"
-                         Title="{x:Bind WindowIdForDisplay}"
+                         Title="{x:Bind WindowProperties.WindowIdForDisplay}"
                          x:Load="False"
                          IsLightDismissEnabled="True"
-                         Subtitle="{x:Bind WindowNameForDisplay, Mode=OneWay}" />
+                         Subtitle="{x:Bind WindowProperties.WindowNameForDisplay, Mode=OneWay}" />
 
         <mux:TeachingTip x:Name="RenameFailedToast"
                          x:Uid="RenameFailedToast"
@@ -213,7 +213,7 @@
 
         <mux:TeachingTip x:Name="WindowRenamer"
                          x:Uid="WindowRenamer"
-                         Title="{x:Bind WindowIdForDisplay}"
+                         Title="{x:Bind WindowProperties.WindowIdForDisplay}"
                          x:Load="False"
                          ActionButtonClick="_WindowRenamerActionClick"
                          ActionButtonStyle="{ThemeResource AccentButtonStyle}"
@@ -222,7 +222,7 @@
                 <TextBox x:Name="WindowRenamerTextBox"
                          KeyDown="_WindowRenamerKeyDown"
                          KeyUp="_WindowRenamerKeyUp"
-                         Text="{x:Bind WindowName, Mode=OneWay}" />
+                         Text="{x:Bind WindowProperties.WindowName, Mode=OneWay}" />
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
     </Grid>

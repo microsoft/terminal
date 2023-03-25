@@ -154,11 +154,13 @@ namespace Microsoft::Console::VirtualTerminal
             DECCARA_ChangeAttributesRectangularArea = VTID("$r"),
             DECRARA_ReverseAttributesRectangularArea = VTID("$t"),
             DECCRA_CopyRectangularArea = VTID("$v"),
+            DECRQPSR_RequestPresentationStateReport = VTID("$w"),
             DECFRA_FillRectangularArea = VTID("$x"),
             DECERA_EraseRectangularArea = VTID("$z"),
             DECSERA_SelectiveEraseRectangularArea = VTID("${"),
             DECSCPP_SetColumnsPerPage = VTID("$|"),
             DECSACE_SelectAttributeChangeExtent = VTID("*x"),
+            DECRQCRA_RequestChecksumRectangularArea = VTID("*y"),
             DECINVM_InvokeMacro = VTID("*z"),
             DECAC_AssignColor = VTID(",|"),
             DECPS_PlaySound = VTID(",~")
@@ -169,7 +171,8 @@ namespace Microsoft::Console::VirtualTerminal
             DECDLD_DownloadDRCS = VTID("{"),
             DECDMAC_DefineMacro = VTID("!z"),
             DECRSTS_RestoreTerminalState = VTID("$p"),
-            DECRQSS_RequestSetting = VTID("$q")
+            DECRQSS_RequestSetting = VTID("$q"),
+            DECRSPS_RestorePresentationState = VTID("$t"),
         };
 
         enum Vt52ActionCodes : uint64_t

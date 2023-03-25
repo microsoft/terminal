@@ -326,6 +326,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "winconpty.Tests.Feature", "src\winconpty\ft_pty\winconpty.FeatureTests.vcxproj", "{024052DE-83FB-4653-AEA4-90790D29D5BD}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalAzBridge", "src\cascadia\TerminalAzBridge\TerminalAzBridge.vcxproj", "{067F0A06-FCB7-472C-96E9-B03B54E8E18D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B} = {CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fmt", "src\dep\fmt\fmt.vcxproj", "{6BAE5851-50D5-4934-8D5E-30361A8A40F3}"
 EndProject

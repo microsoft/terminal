@@ -1,0 +1,24 @@
+name: Publish to Winget
+
+on:
+  release:
+    types: [published]
+
+env:
+  REGEX: 'Microsoft\.WindowsTerminal(?:Preview)?_([\d.]+)_8wekyb3d8bbwe\.msixbundle$'
+
+jobs:
+  publish:
+    runs-on: windows-latest # Action can only run on Windows
+    steps:
+      - name: Publish Windows Terminal ${{ github.event.release.prerelease && 'Preview' || 'Stable' }}
+        run: |
+          $assets = '${{ toJSON(github.event.release.assets) }}' | ConvertFrom-Json
+          $wingetRelevantAsset = $assets | Where-Object { $_.name -like '*.msixbundle' } | Select-Object -First 1
+          $regex = [Regex]::New($env:REGEX)
+          $version = $regex.Match($wingetRelevantAsset.name).Groups[1].Value
+
+          $wingetPackage = "Microsoft.WindowsTerminal${{ github.event.release.prerelease && '.Preview' || '' }}"
+
+          & curl.exe -JLO https://aka.ms/wingetcreate/latest
+          & .\wingetcreate.exe update $wingetPackage -s -v $version -u $wingetRelevantAsset.browser_download_url -t "${{ secrets.WINGET_TOKEN }}"

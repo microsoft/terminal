@@ -1015,12 +1015,7 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
     {
         const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
         const auto version{ package.Id().Version() };
-        // As of about 2022, the ones digit of the Build of our version is a
-        // placeholder value to differentiate the Windows 10 build from the
-        // Windows 11 build. Let's trim that out. For additional clarity,
-        // let's omit the Revision, which _must_ be .0, and doesn't provide any
-        // value to report.
-        winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u", version.Major, version.Minor, version.Build / 10) };
+        winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
         return formatted;
     }
     CATCH_LOG();
@@ -1087,7 +1082,21 @@ bool CascadiaSettings::IsDefaultTerminalAvailable() noexcept
     DWORDLONG dwlConditionMask = 0;
     VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
 
-    return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
+    if (VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE)
+    {
+        return true;
+    }
+
+    static bool isOtherwiseAvailable = [] {
+        wil::unique_hkey key;
+        const auto lResult = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+                                           L"SOFTWARE\\Microsoft\\SystemSettings\\SettingId\\SystemSettings_Developer_Mode_Setting_DefaultTerminalApp",
+                                           0,
+                                           KEY_READ,
+                                           &key);
+        return static_cast<bool>(key) && ERROR_SUCCESS == lResult;
+    }();
+    return isOtherwiseAvailable;
 }
 
 bool CascadiaSettings::IsDefaultTerminalSet() noexcept
@@ -1213,4 +1222,9 @@ void CascadiaSettings::_validateThemeExists()
             theme.DarkName(L"dark");
         }
     }
+}
+
+void CascadiaSettings::ExpandCommands()
+{
+    _globals->ExpandCommands(ActiveProfiles().GetView(), GlobalSettings().ColorSchemes());
 }

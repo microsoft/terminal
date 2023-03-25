@@ -52,16 +52,6 @@ CSSLengthPercentage CSSLengthPercentage::FromString(const wchar_t* str)
     return obj;
 }
 
-CSSLengthPercentage::ReferenceFrame CSSLengthPercentage::GetReferenceFrame() const noexcept
-{
-    return _referenceFrame;
-}
-
-float CSSLengthPercentage::Resolve(float factor) const noexcept
-{
-    return _value * factor;
-}
-
 float CSSLengthPercentage::Resolve(float fallback, float dpi, float fontSize, float advanceWidth) const noexcept
 {
     switch (_referenceFrame)

@@ -68,6 +68,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage);
 
         void _UpdateBackgroundForMica();
+        void _MoveXamlParsedNavItemsIntoItemSource();
 
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageViewModel _colorSchemesPageVM{ nullptr };
 

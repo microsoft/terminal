@@ -1725,6 +1725,30 @@ public:
         requestSetting(L"\"q");
         _testGetSet->ValidateInputEvent(L"\033P1$r1\"q\033\\");
 
+        // Initialize the color alias indices for the DECAC tests below.
+        _testGetSet->PrepData();
+        auto& renderSettings = _testGetSet->_renderer._renderSettings;
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, 3);
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, 5);
+        renderSettings.SetColorAliasIndex(ColorAlias::FrameForeground, 4);
+        renderSettings.SetColorAliasIndex(ColorAlias::FrameBackground, 6);
+
+        Log::Comment(L"Requesting DECAC colors (default).");
+        requestSetting(L",|");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1;3;5,|\033\\");
+
+        Log::Comment(L"Requesting DECAC colors (normal text).");
+        requestSetting(L"1,|");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1;3;5,|\033\\");
+
+        Log::Comment(L"Requesting DECAC colors (window frame).");
+        requestSetting(L"2,|");
+        _testGetSet->ValidateInputEvent(L"\033P1$r2;4;6,|\033\\");
+
+        Log::Comment(L"Requesting DECAC colors (invalid item).");
+        requestSetting(L"3,|");
+        _testGetSet->ValidateInputEvent(L"\033P0$r\033\\");
+
         Log::Comment(L"Requesting an unsupported setting.");
         _testGetSet->PrepData();
         requestSetting(L"x");
@@ -1768,6 +1792,314 @@ public:
 
         swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[?%d;2$y", modeNumber);
         _testGetSet->ValidateInputEvent(expectedResponse);
+    }
+
+    TEST_METHOD(RequestChecksumReportTests)
+    {
+        const auto requestChecksumReport = [this](const auto length) {
+            wchar_t checksumQuery[30];
+            swprintf_s(checksumQuery, ARRAYSIZE(checksumQuery), L"\033[99;1;1;1;1;%zu*y", length);
+            _stateMachine->ProcessString(checksumQuery);
+        };
+
+        const auto verifyChecksumReport = [this](const auto checksum) {
+            wchar_t expectedResponse[20];
+            swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1bP99!~%s\033\\", checksum);
+            _testGetSet->ValidateInputEvent(expectedResponse);
+        };
+
+        const auto outputText = [&](const auto text) {
+            _testGetSet->PrepData();
+            _pDispatch->PrintString(text);
+            requestChecksumReport(text.length());
+        };
+
+        const auto outputTextWithAttributes = [&](const auto text, const auto& attrCallback) {
+            _testGetSet->PrepData();
+            auto attr = TextAttribute{};
+            attrCallback(attr);
+            _testGetSet->_textBuffer->SetCurrentAttributes(attr);
+            _pDispatch->PrintString(text);
+            requestChecksumReport(text.length());
+        };
+
+        using namespace std::string_view_literals;
+
+        Log::Comment(L"Test 1: ASCII characters");
+        outputText(L"A"sv);
+        verifyChecksumReport(L"FF4F");
+        outputText(L" "sv);
+        verifyChecksumReport(L"FF70");
+        outputText(L"~"sv);
+        verifyChecksumReport(L"FF12");
+        outputText(L"ABC"sv);
+        verifyChecksumReport(L"FDEA");
+
+        Log::Comment(L"Test 2: Latin-1 characters");
+        outputText(L"Á"sv);
+        verifyChecksumReport(L"FECF");
+        outputText(L"¡"sv);
+        verifyChecksumReport(L"FEEF");
+        outputText(L"ÿ"sv);
+        verifyChecksumReport(L"FE91");
+        outputText(L"ÁÂÃ"sv);
+        verifyChecksumReport(L"FC6A");
+
+        Log::Comment(L"Test 3: Rendition attributes");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIntense(true);
+        });
+        verifyChecksumReport(L"FECF");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetUnderlined(true);
+        });
+        verifyChecksumReport(L"FF3F");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetBlinking(true);
+        });
+        verifyChecksumReport(L"FF0F");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetReverseVideo(true);
+        });
+        verifyChecksumReport(L"FF2F");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetInvisible(true);
+        });
+        verifyChecksumReport(L"FF47");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIntense(true);
+            attr.SetUnderlined(true);
+            attr.SetReverseVideo(true);
+        });
+        verifyChecksumReport(L"FE9F");
+
+        Log::Comment(L"Test 4: Selective erase");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetProtected(true);
+        });
+        verifyChecksumReport(L"FF4B");
+        outputTextWithAttributes(L"B"sv, [](auto& attr) {
+            attr.SetProtected(true);
+        });
+        verifyChecksumReport(L"FF4A");
+
+        Log::Comment(L"Test 5: Color attributes");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIndexedForeground(TextColor::DARK_RED);
+        });
+        verifyChecksumReport(L"FFAF");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIndexedBackground(TextColor::DARK_GREEN);
+        });
+        verifyChecksumReport(L"FF4D");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIndexedForeground(TextColor::DARK_YELLOW);
+            attr.SetIndexedBackground(TextColor::DARK_BLUE);
+        });
+        verifyChecksumReport(L"FF8B");
+    }
+
+    TEST_METHOD(TabulationStopReportTests)
+    {
+        _testGetSet->PrepData();
+        auto& textBuffer = *_testGetSet->_textBuffer;
+        auto& stateMachine = *_testGetSet->_stateMachine;
+
+        Log::Comment(L"Default tabs stops in 80-column mode");
+        VERIFY_SUCCEEDED(textBuffer.ResizeTraditional({ 80, 600 }));
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u9/17/25/33/41/49/57/65/73\033\\");
+
+        Log::Comment(L"Default tabs stops in 132-column mode");
+        VERIFY_SUCCEEDED(textBuffer.ResizeTraditional({ 132, 600 }));
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u9/17/25/33/41/49/57/65/73/81/89/97/105/113/121/129\033\\");
+
+        Log::Comment(L"Custom tab stops in 80 columns");
+        VERIFY_SUCCEEDED(textBuffer.ResizeTraditional({ 80, 600 }));
+        _testGetSet->_stateMachine->ProcessString(L"\033P2$t30/60/120/240\033\\");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u30/60\033\\");
+
+        Log::Comment(L"After expanding width to 132 columns");
+        VERIFY_SUCCEEDED(textBuffer.ResizeTraditional({ 132, 600 }));
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u30/60/120\033\\");
+        VERIFY_SUCCEEDED(textBuffer.ResizeTraditional({ 80, 600 }));
+
+        Log::Comment(L"Out of order tab stops");
+        stateMachine.ProcessString(L"\033P2$t44/22/66\033\\");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u22/44/66\033\\");
+
+        Log::Comment(L"Empty tab stop are ignored");
+        stateMachine.ProcessString(L"\033P2$t3//7\033\\");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u3/7\033\\");
+
+        Log::Comment(L"'0' tab stops are ignored");
+        stateMachine.ProcessString(L"\033P2$t0/5/10\033\\");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u5/10\033\\");
+
+        Log::Comment(L"'1' tab stops are ignored");
+        stateMachine.ProcessString(L"\033P2$t1/8/18\033\\");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u8/18\033\\");
+
+        Log::Comment(L"Clear tab stops");
+        _pDispatch->TabClear(DispatchTypes::TabClearType::ClearAllColumns);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u\033\\");
+    }
+
+    TEST_METHOD(CursorInformationReportTests)
+    {
+        _testGetSet->PrepData();
+        auto& textBuffer = *_testGetSet->_textBuffer;
+        auto& stateMachine = *_testGetSet->_stateMachine;
+        auto& termOutput = _pDispatch->_termOutput;
+        const auto viewportTop = _testGetSet->_viewport.top;
+        auto attributes = TextAttribute{};
+
+        Log::Comment(L"Initial state");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;1;1;@;@;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Cursor position");
+        textBuffer.GetCursor().SetPosition({ 3, viewportTop + 2 });
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;@;@;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Intense rendition");
+        attributes.SetIntense(true);
+        textBuffer.SetCurrentAttributes(attributes);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;A;@;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Underlined rendition");
+        attributes.SetUnderlined(true);
+        textBuffer.SetCurrentAttributes(attributes);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;C;@;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Blinking rendition");
+        attributes.SetBlinking(true);
+        textBuffer.SetCurrentAttributes(attributes);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;G;@;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Reverse video rendition");
+        attributes.SetReverseVideo(true);
+        textBuffer.SetCurrentAttributes(attributes);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;O;@;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Invisible rendition");
+        attributes.SetInvisible(true);
+        textBuffer.SetCurrentAttributes(attributes);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;_;@;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Protected attribute");
+        attributes.SetProtected(true);
+        textBuffer.SetCurrentAttributes(attributes);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;_;A;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Origin mode");
+        _pDispatch->SetMode(DispatchTypes::DECOM_OriginMode);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;1;1;_;A;A;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Single shift 2");
+        _pDispatch->SingleShift(2);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;1;1;_;A;C;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Single shift 3");
+        _pDispatch->SingleShift(3);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;1;1;_;A;E;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Delayed EOL wrap");
+        _pDispatch->CursorForward(999);
+        _pDispatch->Print(L'*');
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;100;1;_;A;I;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Locking shifts");
+        _pDispatch->LockingShift(1);
+        _pDispatch->LockingShiftRight(3);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;100;1;_;A;I;1;3;@;BBBB\033\\");
+
+        Log::Comment(L"94 charset designations");
+        _pDispatch->Designate94Charset(0, "%5");
+        _pDispatch->Designate94Charset(1, "<");
+        _pDispatch->Designate94Charset(2, "0");
+        _pDispatch->Designate94Charset(3, "K");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;100;1;_;A;I;1;3;@;%5<0K\033\\");
+
+        Log::Comment(L"96 charset designation (G1)");
+        _pDispatch->Designate96Charset(1, "H");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;100;1;_;A;I;1;3;B;%5H0K\033\\");
+
+        Log::Comment(L"96 charset designation (G2)");
+        _pDispatch->Designate96Charset(2, "M");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;100;1;_;A;I;1;3;F;%5HMK\033\\");
+
+        Log::Comment(L"96 charset designation (G3)");
+        _pDispatch->Designate96Charset(3, "B");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;100;1;_;A;I;1;3;N;%5HMB\033\\");
+
+        Log::Comment(L"Restore cursor position");
+        stateMachine.ProcessString(L"\033P1$t3;4;1;@;@;@;0;2;@;BBBB\033\\");
+        auto expectedPosition = til::point{ 3, viewportTop + 2 };
+        VERIFY_ARE_EQUAL(expectedPosition, textBuffer.GetCursor().GetPosition());
+
+        Log::Comment(L"Restore rendition attributes");
+        stateMachine.ProcessString(L"\033P1$t1;1;1;U;@;@;0;2;@;BBBB\033\\");
+        attributes = {};
+        attributes.SetIntense(true);
+        attributes.SetBlinking(true);
+        attributes.SetInvisible(true);
+        VERIFY_ARE_EQUAL(attributes, textBuffer.GetCurrentAttributes());
+        stateMachine.ProcessString(L"\033P1$t1;1;1;J;A;@;0;2;@;BBBB\033\\");
+        attributes = {};
+        attributes.SetUnderlined(true);
+        attributes.SetReverseVideo(true);
+        attributes.SetProtected(true);
+        VERIFY_ARE_EQUAL(attributes, textBuffer.GetCurrentAttributes());
+
+        Log::Comment(L"Restore flags");
+        stateMachine.ProcessString(L"\033P1$t1;1;1;@;@;E;0;2;@;BBBB\033\\");
+        VERIFY_IS_TRUE(_pDispatch->_modes.test(AdaptDispatch::Mode::Origin));
+        VERIFY_IS_FALSE(termOutput.IsSingleShiftPending(2));
+        VERIFY_IS_TRUE(termOutput.IsSingleShiftPending(3));
+        VERIFY_IS_FALSE(textBuffer.GetCursor().IsDelayedEOLWrap());
+        stateMachine.ProcessString(L"\033P1$t1;1;1;@;@;J;0;2;@;BBBB\033\\");
+        VERIFY_IS_FALSE(_pDispatch->_modes.test(AdaptDispatch::Mode::Origin));
+        VERIFY_IS_TRUE(termOutput.IsSingleShiftPending(2));
+        VERIFY_IS_FALSE(termOutput.IsSingleShiftPending(3));
+        VERIFY_IS_TRUE(textBuffer.GetCursor().IsDelayedEOLWrap());
+
+        Log::Comment(L"Restore charset configuration");
+        stateMachine.ProcessString(L"\033P1$t1;1;1;@;@;@;3;1;H;ABCF\033\\");
+        VERIFY_ARE_EQUAL(3u, termOutput.GetLeftSetNumber());
+        VERIFY_ARE_EQUAL(1u, termOutput.GetRightSetNumber());
+        VERIFY_ARE_EQUAL(94u, termOutput.GetCharsetSize(0));
+        VERIFY_ARE_EQUAL(94u, termOutput.GetCharsetSize(1));
+        VERIFY_ARE_EQUAL(94u, termOutput.GetCharsetSize(2));
+        VERIFY_ARE_EQUAL(96u, termOutput.GetCharsetSize(3));
+        VERIFY_ARE_EQUAL(VTID("A"), termOutput.GetCharsetId(0));
+        VERIFY_ARE_EQUAL(VTID("B"), termOutput.GetCharsetId(1));
+        VERIFY_ARE_EQUAL(VTID("C"), termOutput.GetCharsetId(2));
+        VERIFY_ARE_EQUAL(VTID("F"), termOutput.GetCharsetId(3));
     }
 
     TEST_METHOD(CursorKeysModeTest)

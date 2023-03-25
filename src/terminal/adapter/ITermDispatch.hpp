@@ -81,6 +81,7 @@ public:
     virtual bool EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECERA
     virtual bool SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECSERA
     virtual bool SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) = 0; // DECSACE
+    virtual bool RequestChecksumRectangularArea(const VTInt id, const VTInt page, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECRQCRA
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
     virtual bool SetLineRendition(const LineRendition rendition) = 0; // DECSWL, DECDWL, DECDHL
@@ -148,6 +149,9 @@ public:
     virtual StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) = 0; // DECRSTS
 
     virtual StringHandler RequestSetting() = 0; // DECRQSS
+
+    virtual bool RequestPresentationStateReport(const DispatchTypes::PresentationReportFormat format) = 0; // DECRQPSR
+    virtual StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat format) = 0; // DECRSPS
 
     virtual bool PlaySounds(const VTParameters parameters) = 0; // DECPS
 };

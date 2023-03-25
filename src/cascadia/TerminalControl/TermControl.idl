@@ -3,6 +3,7 @@
 
 import "IMouseWheelListener.idl";
 import "IControlSettings.idl";
+import "ControlInteractivity.idl";
 import "IDirectKeyListener.idl";
 import "EventArgs.idl";
 import "ICoreState.idl";
@@ -17,6 +18,8 @@ namespace Microsoft.Terminal.Control
                                                    ICoreState,
                                                    Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
+        TermControl(ControlInteractivity content);
+
         TermControl(IControlSettings settings,
                     IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
@@ -44,6 +47,9 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
+
+        Microsoft.UI.Xaml.Controls.CommandBarFlyout ContextMenu { get; };
+        Microsoft.UI.Xaml.Controls.CommandBarFlyout SelectionContextMenu { get; };
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
@@ -86,6 +92,7 @@ namespace Microsoft.Terminal.Control
 
         Boolean ReadOnly { get; };
         void ToggleReadOnly();
+        void SetReadOnly(Boolean readOnlyState);
 
         String ReadEntireBuffer();
 

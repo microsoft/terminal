@@ -67,6 +67,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECERA
         bool SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECSERA
         bool SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) noexcept override; // DECSACE
+        bool RequestChecksumRectangularArea(const VTInt id, const VTInt page, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECRQCRA
         bool SetGraphicsRendition(const VTParameters options) override; // SGR
         bool SetLineRendition(const LineRendition rendition) override; // DECSWL, DECDWL, DECDHL
         bool SetCharacterProtectionAttribute(const VTParameters options) override; // DECSCA
@@ -103,7 +104,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool Designate96Charset(const VTInt gsetNumber, const VTID charset) override; // SCS
         bool LockingShift(const VTInt gsetNumber) override; // LS0, LS1, LS2, LS3
         bool LockingShiftRight(const VTInt gsetNumber) override; // LS1R, LS2R, LS3R
-        bool SingleShift(const VTInt gsetNumber) override; // SS2, SS3
+        bool SingleShift(const VTInt gsetNumber) noexcept override; // SS2, SS3
         bool AcceptC1Controls(const bool enabled) override; // DECAC1
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
@@ -150,6 +151,9 @@ namespace Microsoft::Console::VirtualTerminal
 
         StringHandler RequestSetting() override; // DECRQSS
 
+        bool RequestPresentationStateReport(const DispatchTypes::PresentationReportFormat format) override; // DECRQPSR
+        StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat format) override; // DECRSPS
+
         bool PlaySounds(const VTParameters parameters) override; // DECPS
 
     private:
@@ -170,6 +174,7 @@ namespace Microsoft::Console::VirtualTerminal
         {
             VTInt Row = 1;
             VTInt Column = 1;
+            bool IsDelayedEOLWrap = false;
             bool IsOriginModeRelative = false;
             TextAttribute Attributes = {};
             TerminalOutput TermOutput = {};
@@ -236,6 +241,12 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportDECSTBMSetting();
         void _ReportDECSCASetting() const;
         void _ReportDECSACESetting() const;
+        void _ReportDECACSetting(const VTInt itemNumber) const;
+
+        void _ReportCursorInformation();
+        StringHandler _RestoreCursorInformation();
+        void _ReportTabStops();
+        StringHandler _RestoreTabStops();
 
         StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize);
         StringHandler _CreatePassthroughHandler();

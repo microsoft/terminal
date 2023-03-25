@@ -27,6 +27,8 @@ static constexpr unsigned int MAX_CLICK_COUNT = 3;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    std::atomic<uint64_t> ControlInteractivity::_nextId{ 1 };
+
     static constexpr TerminalInput::MouseButtonState toInternalMouseState(const Control::MouseButtonState& state)
     {
         return TerminalInput::MouseButtonState{
@@ -44,7 +46,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastMouseClickPos{},
         _selectionNeedsToBeCopied{ false }
     {
+        _id = _nextId.fetch_add(1, std::memory_order_relaxed);
+
         _core = winrt::make_self<ControlCore>(settings, unfocusedAppearance, connection);
+    }
+
+    uint64_t ControlInteractivity::Id()
+    {
+        return _id;
     }
 
     // Method Description:
@@ -71,6 +80,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Control::ControlCore ControlInteractivity::Core()
     {
         return *_core;
+    }
+
+    void ControlInteractivity::Close()
+    {
+        _ClosedHandlers(*this, nullptr);
+        if (_core)
+        {
+            _core->Close();
+        }
     }
 
     // Method Description:
@@ -205,7 +223,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#9396: we prioritize hyper-link over VT mouse events
         auto hyperlink = _core->GetHyperlink(terminalPosition.to_core_point());
         if (WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown) &&
-            ctrlEnabled && !hyperlink.empty())
+            ctrlEnabled &&
+            !hyperlink.empty())
         {
             const auto clickCount = _numberOfClicks(pixelPosition, timestamp);
             // Handle hyper-link only on the first click to prevent multiple activations
@@ -255,14 +274,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (WI_IsFlagSet(buttonState, MouseButtonState::IsRightButtonDown))
         {
-            // Try to copy the text and clear the selection
-            const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, nullptr);
-            _core->ClearSelection();
-            if (_core->CopyOnSelect() || !successfulCopy)
+            if (_core->Settings().RightClickContextMenu())
             {
-                // CopyOnSelect: right click always pastes!
-                // Otherwise: no selection --> paste
-                RequestPasteTextFromClipboard();
+                auto contextArgs = winrt::make<ContextMenuRequestedEventArgs>(til::point{ pixelPosition }.to_winrt_point());
+                _ContextMenuRequestedHandlers(*this, contextArgs);
+            }
+            else
+            {
+                // Try to copy the text and clear the selection
+                const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, nullptr);
+                _core->ClearSelection();
+                if (_core->CopyOnSelect() || !successfulCopy)
+                {
+                    // CopyOnSelect: right click always pastes!
+                    // Otherwise: no selection --> paste
+                    RequestPasteTextFromClipboard();
+                }
             }
         }
     }

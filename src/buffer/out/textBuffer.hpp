@@ -89,6 +89,9 @@ public:
     TextBufferTextIterator GetTextDataAt(const til::point at, const Microsoft::Console::Types::Viewport limit) const;
 
     // Text insertion functions
+    static void ConsumeGrapheme(std::wstring_view& chars) noexcept;
+    void WriteLine(til::CoordType row, bool wrapAtEOL, const TextAttribute& attributes, RowWriteState& state);
+
     OutputCellIterator Write(const OutputCellIterator givenIt);
 
     OutputCellIterator Write(const OutputCellIterator givenIt,
