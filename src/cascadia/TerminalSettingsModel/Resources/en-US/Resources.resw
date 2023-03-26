@@ -126,6 +126,10 @@
   <data name="SplitPaneParentCommandName" xml:space="preserve">
     <value>Split Pane...</value>
   </data>
+  <data name="ApplicationDisplayNamePortable" xml:space="preserve">
+    <value>Terminal (Portable)</value>
+    <comment>This display name is used when the Terminal application is running in a "portable" mode, where settings are not stored in a shared location.</comment>
+  </data>
   <data name="ApplicationDisplayNameUnpackaged" xml:space="preserve">
     <value>Terminal (Unpackaged)</value>
     <comment>This display name is used when the application's name cannot be determined</comment>
