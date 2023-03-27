@@ -1,4 +1,4 @@
-﻿<!--
+<!--
     Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
     the MIT License. See LICENSE in the project root for license information.
 -->
@@ -10,15 +10,10 @@
                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                xmlns:mux="using:Microsoft.UI.Xaml.Controls"
                x:Uid="AboutDialog"
-               Background="Transparent"
                DefaultButton="Close"
                PrimaryButtonClick="_SendFeedbackOnClick"
+               Style="{StaticResource DefaultContentDialogStyle}"
                mc:Ignorable="d">
-
-    <ContentDialog.Resources>
-        <Style BasedOn="{StaticResource DefaultContentDialogStyle}"
-               TargetType="local:AboutDialog" />
-    </ContentDialog.Resources>
 
     <StackPanel Orientation="Vertical">
         <TextBlock IsTextSelectionEnabled="True">
