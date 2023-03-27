@@ -32,7 +32,7 @@ using namespace ABI::Windows::ApplicationModel::AppExtensions;
 #define DELEGATION_CONSOLE_EXTENSION_NAME L"com.microsoft.windows.console.host"
 #define DELEGATION_TERMINAL_EXTENSION_NAME L"com.microsoft.windows.terminal.host"
 
-static [[nodiscard]] HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<DelegationConfig::DelegationBase>& vec) noexcept
+[[nodiscard]] static HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<DelegationConfig::DelegationBase>& vec) noexcept
 {
     ComPtr<IAppExtensionCatalogStatics> catalogStatics;
     RETURN_IF_FAILED(Windows::Foundation::GetActivationFactory(HStringReference(RuntimeClass_Windows_ApplicationModel_AppExtensions_AppExtensionCatalog).Get(), &catalogStatics));
@@ -165,7 +165,7 @@ try
     packages.push_back({ ConhostDelegationPair });
 
     // Get consoles and terminals.
-    // If we fail to look up any, we should still have ONE come back to us as the hardcoded default console host.
+    // If we fail to look up any, we should still have ONE come back to us as the hard-coded default console host.
     // The errors aren't really useful except for debugging, so log only.
     std::vector<DelegationBase> consoles;
     LOG_IF_FAILED(_lookupCatalog(DELEGATION_CONSOLE_EXTENSION_NAME, consoles));
@@ -213,20 +213,20 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultConsoleById(const IID& iid, const bool useRegExe) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultConsoleById(const IID& iid) noexcept
 {
-    return s_Set(DELEGATION_CONSOLE_KEY_NAME, iid, useRegExe);
+    return s_Set(DELEGATION_CONSOLE_KEY_NAME, iid);
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultTerminalById(const IID& iid, const bool useRegExe) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultTerminalById(const IID& iid) noexcept
 {
-    return s_Set(DELEGATION_TERMINAL_KEY_NAME, iid, useRegExe);
+    return s_Set(DELEGATION_TERMINAL_KEY_NAME, iid);
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultByPackage(const DelegationPackage& package, const bool useRegExe) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultByPackage(const DelegationPackage& package) noexcept
 {
-    RETURN_IF_FAILED(s_SetDefaultConsoleById(package.pair.console, useRegExe));
-    RETURN_IF_FAILED(s_SetDefaultTerminalById(package.pair.terminal, useRegExe));
+    RETURN_IF_FAILED(s_SetDefaultConsoleById(package.pair.console));
+    RETURN_IF_FAILED(s_SetDefaultTerminalById(package.pair.terminal));
     return S_OK;
 }
 
@@ -285,64 +285,23 @@ CATCH_RETURN()
     return { DelegationPairKind::Custom, values[0], values[1] };
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_Set(PCWSTR value, const CLSID clsid, const bool useRegExe) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_Set(PCWSTR value, const CLSID clsid) noexcept
 try
 {
-    // BODGY
-    // A Centennial application is not allowed to write the system registry and is redirected
-    // to a per-package copy-on-write hive.
-    // The restricted capability "unvirtualizedResources" can be combined with
-    // desktop6:RegistryWriteVirtualization to opt-out... but...
-    // - It will no longer be possible to double-click install through the App Installer
-    // - It requires a special exception to submit to the store
-    // - There MAY be some cleanup logic where the app catalog may try to undo
-    //   whatever the package did.
-    // This works around it by shelling out to reg.exe because somehow that's just peachy.
-    if (useRegExe)
-    {
-        wil::unique_cotaskmem_string str;
-        RETURN_IF_FAILED(StringFromCLSID(clsid, &str));
+    wil::unique_hkey currentUserKey;
+    wil::unique_hkey consoleKey;
 
-        auto regExePath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\reg.exe");
+    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenConsoleKey(&currentUserKey, &consoleKey));
 
-        auto command = wil::str_printf<std::wstring>(L"%s ADD HKCU\\Console\\%%%%Startup /v %s /t REG_SZ /d %s /f", regExePath.c_str(), value, str.get());
+    // Create method for registry is a "create if not exists, otherwise open" function.
+    wil::unique_hkey startupKey;
+    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_CreateKey(consoleKey.get(), L"%%Startup", &startupKey));
 
-        wil::unique_process_information pi;
-        STARTUPINFOEX siEx{ 0 };
-        siEx.StartupInfo.cb = sizeof(siEx);
+    wil::unique_cotaskmem_string str;
+    RETURN_IF_FAILED(StringFromCLSID(clsid, &str));
 
-        RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
-            nullptr,
-            command.data(),
-            nullptr, // lpProcessAttributes
-            nullptr, // lpThreadAttributes
-            false, // bInheritHandles
-            EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW, // dwCreationFlags
-            nullptr, // lpEnvironment
-            nullptr,
-            &siEx.StartupInfo, // lpStartupInfo
-            &pi // lpProcessInformation
-            ));
+    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_SetValue(startupKey.get(), value, REG_SZ, reinterpret_cast<BYTE*>(str.get()), gsl::narrow<DWORD>(wcslen(str.get()) * sizeof(wchar_t))));
 
-        return S_OK;
-    }
-    else
-    {
-        wil::unique_hkey currentUserKey;
-        wil::unique_hkey consoleKey;
-
-        RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenConsoleKey(&currentUserKey, &consoleKey));
-
-        // Create method for registry is a "create if not exists, otherwise open" function.
-        wil::unique_hkey startupKey;
-        RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_CreateKey(consoleKey.get(), L"%%Startup", &startupKey));
-
-        wil::unique_cotaskmem_string str;
-        RETURN_IF_FAILED(StringFromCLSID(clsid, &str));
-
-        RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_SetValue(startupKey.get(), value, REG_SZ, reinterpret_cast<BYTE*>(str.get()), gsl::narrow<DWORD>(wcslen(str.get()) * sizeof(wchar_t))));
-
-        return S_OK;
-    }
+    return S_OK;
 }
 CATCH_RETURN()

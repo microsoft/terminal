@@ -63,6 +63,19 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT AtlasEngine::Present() noexcept
 try
 {
+    const til::rect fullRect{ 0, 0, _r.cellCount.x, _r.cellCount.y };
+
+    // A change in the selection or background color (etc.) forces a full redraw.
+    if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::ConstBuffer) || _r.customPixelShader)
+    {
+        _r.dirtyRect = fullRect;
+    }
+
+    if (!_r.dirtyRect)
+    {
+        return S_OK;
+    }
+
     // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
     // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
     // > Note that this requirement includes the first frame the app renders with the swap chain.
@@ -102,13 +115,59 @@ try
             _r.deviceContext->OMSetRenderTargets(1, _r.renderTargetView.addressof(), nullptr);
             _r.deviceContext->Draw(3, 0);
         }
-
-        // > IDXGISwapChain::Present: Partial Presentation (using a dirty rects or scroll) is not supported
-        // > for SwapChains created with DXGI_SWAP_EFFECT_DISCARD or DXGI_SWAP_EFFECT_FLIP_DISCARD.
-        // ---> No need to call IDXGISwapChain1::Present1.
-        THROW_IF_FAILED(_r.swapChain->Present(1, 0));
-        _r.waitForPresentation = true;
     }
+
+    // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
+    // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
+    // > Note that this requirement includes the first frame the app renders with the swap chain.
+    assert(debugGeneralPerformance || _r.frameLatencyWaitableObjectUsed);
+
+    if (_r.dirtyRect != fullRect)
+    {
+        auto dirtyRectInPx = _r.dirtyRect;
+        dirtyRectInPx.left *= _r.fontMetrics.cellSize.x;
+        dirtyRectInPx.top *= _r.fontMetrics.cellSize.y;
+        dirtyRectInPx.right *= _r.fontMetrics.cellSize.x;
+        dirtyRectInPx.bottom *= _r.fontMetrics.cellSize.y;
+
+        RECT scrollRect{};
+        POINT scrollOffset{};
+        DXGI_PRESENT_PARAMETERS params{
+            .DirtyRectsCount = 1,
+            .pDirtyRects = dirtyRectInPx.as_win32_rect(),
+        };
+
+        if (_r.scrollOffset)
+        {
+            scrollRect = {
+                0,
+                std::max<til::CoordType>(0, _r.scrollOffset),
+                _r.cellCount.x,
+                _r.cellCount.y + std::min<til::CoordType>(0, _r.scrollOffset),
+            };
+            scrollOffset = {
+                0,
+                _r.scrollOffset,
+            };
+
+            scrollRect.top *= _r.fontMetrics.cellSize.y;
+            scrollRect.right *= _r.fontMetrics.cellSize.x;
+            scrollRect.bottom *= _r.fontMetrics.cellSize.y;
+
+            scrollOffset.y *= _r.fontMetrics.cellSize.y;
+
+            params.pScrollRect = &scrollRect;
+            params.pScrollOffset = &scrollOffset;
+        }
+
+        THROW_IF_FAILED(_r.swapChain->Present1(1, 0, &params));
+    }
+    else
+    {
+        THROW_IF_FAILED(_r.swapChain->Present(1, 0));
+    }
+
+    _r.waitForPresentation = true;
 
     if (!_r.dxgiFactory->IsCurrent())
     {
@@ -307,7 +366,9 @@ void AtlasEngine::_adjustAtlasSize()
         props.pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED };
         props.dpiX = static_cast<float>(_r.dpi);
         props.dpiY = static_cast<float>(_r.dpi);
-        THROW_IF_FAILED(_sr.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, _r.d2dRenderTarget.put()));
+        wil::com_ptr<ID2D1RenderTarget> renderTarget;
+        THROW_IF_FAILED(_sr.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, renderTarget.addressof()));
+        _r.d2dRenderTarget = renderTarget.query<ID2D1DeviceContext>();
 
         // We don't really use D2D for anything except DWrite, but it
         // can't hurt to ensure that everything it does is pixel aligned.
@@ -411,10 +472,10 @@ void AtlasEngine::_drawGlyph(const TileHashMap::iterator& it) const
 AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t* chars, u16 charsLength, u16 cellCount, IDWriteTextFormat* textFormat, bool coloredGlyph) const
 {
     const f32x2 layoutBox{ cellCount * _r.cellSizeDIP.x, _r.cellSizeDIP.y };
-    const f32x2 halfSize{ layoutBox.x * 0.5f, layoutBox.y * 0.5f };
     bool scalingRequired = false;
     f32x2 offset{ 0, 0 };
     f32x2 scale{ 1, 1 };
+    f32x2 scaleCenter;
 
     // See D2DFactory::DrawText
     wil::com_ptr<IDWriteTextLayout> textLayout;
@@ -474,27 +535,44 @@ AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t*
             wil::com_ptr<IDWriteFontFace> fontFace;
             THROW_IF_FAILED(mappedFont->CreateFontFace(fontFace.addressof()));
 
-            DWRITE_FONT_METRICS metrics;
-            fontFace->GetMetrics(&metrics);
+            // Don't adjust the size of block glyphs that are part of the user's chosen font.
+            if (std::ranges::find(_r.fontFaces, fontFace) == std::end(_r.fontFaces))
+            {
+                DWRITE_FONT_METRICS metrics;
+                fontFace->GetMetrics(&metrics);
 
-            const u32 codePoint = chars[0];
-            u16 glyphIndex;
-            THROW_IF_FAILED(fontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex));
+                static constexpr u32 codePoint = L'\u2588'; // Full Block character
+                u16 glyphIndex;
+                THROW_IF_FAILED(fontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex));
 
-            DWRITE_GLYPH_METRICS glyphMetrics;
-            THROW_IF_FAILED(fontFace->GetDesignGlyphMetrics(&glyphIndex, 1, &glyphMetrics));
+                if (glyphIndex)
+                {
+                    DWRITE_GLYPH_METRICS glyphMetrics;
+                    THROW_IF_FAILED(fontFace->GetDesignGlyphMetrics(&glyphIndex, 1, &glyphMetrics));
 
-            const f32x2 boxSize{
-                static_cast<f32>(glyphMetrics.advanceWidth) / static_cast<f32>(metrics.designUnitsPerEm) * _r.fontMetrics.fontSizeInDIP,
-                static_cast<f32>(glyphMetrics.advanceHeight) / static_cast<f32>(metrics.designUnitsPerEm) * _r.fontMetrics.fontSizeInDIP,
-            };
+                    const auto fontScale = _r.fontMetrics.fontSizeInDIP / metrics.designUnitsPerEm;
 
-            // We always want box drawing glyphs to exactly match the size of a terminal cell.
-            // So for safe measure we'll always scale them to the exact size.
-            // But add 1px to the destination size, so that we don't end up with fractional pixels.
-            scalingRequired = true;
-            scale.x = layoutBox.x / boxSize.x;
-            scale.y = layoutBox.y / boxSize.y;
+                    // How-to-DWRITE_OVERHANG_METRICS given a single glyph:
+                    DWRITE_OVERHANG_METRICS overhang;
+                    overhang.left = static_cast<f32>(glyphMetrics.leftSideBearing) * fontScale;
+                    overhang.top = static_cast<f32>(glyphMetrics.verticalOriginY - glyphMetrics.topSideBearing) * fontScale - _r.fontMetrics.baselineInDIP;
+                    overhang.right = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceWidth) - glyphMetrics.rightSideBearing) * fontScale - layoutBox.x;
+                    overhang.bottom = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceHeight) - glyphMetrics.verticalOriginY - glyphMetrics.bottomSideBearing) * fontScale + _r.fontMetrics.baselineInDIP - layoutBox.y;
+
+                    scalingRequired = true;
+                    // Center glyphs.
+                    offset.x = (overhang.left - overhang.right) * 0.5f;
+                    offset.y = (overhang.top - overhang.bottom) * 0.5f;
+                    // We always want box drawing glyphs to exactly match the size of a terminal cell.
+                    // But add 1px to the destination size, so that we don't end up with fractional pixels.
+                    scale.x = (layoutBox.x + _r.pixelPerDIP) / (layoutBox.x + overhang.left + overhang.right);
+                    scale.y = (layoutBox.y + _r.pixelPerDIP) / (layoutBox.y + overhang.top + overhang.bottom);
+                    // Now that the glyph is in the center of the cell thanks
+                    // to the offset, the scaleCenter is center of the cell.
+                    scaleCenter.x = layoutBox.x * 0.5f;
+                    scaleCenter.y = layoutBox.y * 0.5f;
+                }
+            }
         }
     }
     else
@@ -502,16 +580,7 @@ AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t*
         DWRITE_OVERHANG_METRICS overhang;
         THROW_IF_FAILED(textLayout->GetOverhangMetrics(&overhang));
 
-        const DWRITE_OVERHANG_METRICS clampedOverhang{
-            std::max(0.0f, overhang.left),
-            std::max(0.0f, overhang.top),
-            std::max(0.0f, overhang.right),
-            std::max(0.0f, overhang.bottom),
-        };
-        f32x2 actualSize{
-            layoutBox.x + overhang.left + overhang.right,
-            layoutBox.y + overhang.top + overhang.bottom,
-        };
+        auto actualSizeX = layoutBox.x + overhang.left + overhang.right;
 
         // Long glyphs should be drawn with their proper design size, even if that makes them a bit blurry,
         // because otherwise we fail to support "pseudo" block characters like the "===" ligature in Cascadia Code.
@@ -524,8 +593,7 @@ AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t*
             const auto advanceScale = _r.fontMetrics.advanceScale;
             scalingRequired = true;
             scale = { advanceScale, advanceScale };
-            actualSize.x *= advanceScale;
-            actualSize.y *= advanceScale;
+            actualSizeX *= advanceScale;
         }
 
         // We need to offset glyphs that are simply outside of our layout box (layoutBox.x/.y)
@@ -566,34 +634,27 @@ AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t*
         //   --> offsetY = 0
         //   --> scale   = layoutBox.y / (layoutBox.y + left + right)
         //               = 0.69f
-        offset.x = clampedOverhang.left - clampedOverhang.right;
-        offset.y = clampedOverhang.top - clampedOverhang.bottom;
+        offset.x = std::max(0.0f, overhang.left) - std::max(0.0f, overhang.right);
+        scaleCenter.x = offset.x;
+        scaleCenter.y = _r.fontMetrics.baselineInDIP;
 
-        if ((actualSize.x - layoutBox.x) > _r.dipPerPixel)
+        if ((actualSizeX - layoutBox.x) > _r.dipPerPixel)
         {
             scalingRequired = true;
             offset.x = (overhang.left - overhang.right) * 0.5f;
-            scale.x = layoutBox.x / actualSize.x;
+            scale.x = layoutBox.x / actualSizeX;
             scale.y = scale.x;
+            scaleCenter.x = layoutBox.x * 0.5f;
         }
-        if ((actualSize.y - layoutBox.y) > _r.dipPerPixel)
+        if (overhang.top > _r.dipPerPixel || overhang.bottom > _r.dipPerPixel)
         {
+            const auto descend = _r.cellSizeDIP.y - _r.fontMetrics.baselineInDIP;
+            const auto scaleTop = _r.fontMetrics.baselineInDIP / (_r.fontMetrics.baselineInDIP + overhang.top);
+            const auto scaleBottom = descend / (descend + overhang.bottom);
             scalingRequired = true;
-            offset.y = (overhang.top - overhang.bottom) * 0.5f;
-            scale.x = std::min(scale.x, layoutBox.y / actualSize.y);
+            scale.x = std::min(scale.x, std::min(scaleTop, scaleBottom));
             scale.y = scale.x;
         }
-
-        // As explained below, we use D2D1_DRAW_TEXT_OPTIONS_NO_SNAP to prevent a weird issue with baseline snapping.
-        // But we do want it technically, so this re-implements baseline snapping... I think?
-        // It calculates the new `baseline` height after transformation by `scale.y` relative to the center point `halfSize.y`.
-        //
-        // This works even if `scale.y == 1`, because then `baseline == baselineInDIP + offset.y` and `baselineInDIP`
-        // is always measured in full pixels. So rounding it will be equivalent to just rounding `offset.y` itself.
-        const auto baseline = halfSize.y + (_r.fontMetrics.baselineInDIP + offset.y - halfSize.y) * scale.y;
-        // This rounds to the nearest multiple of _r.dipPerPixel.
-        const auto baselineFixed = roundf(baseline * _r.pixelPerDIP) * _r.dipPerPixel;
-        offset.y += (baselineFixed - baseline) / scale.y;
     }
 
     auto options = D2D1_DRAW_TEXT_OPTIONS_NONE;
@@ -611,11 +672,19 @@ AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t*
     // where every single "=" might be blatantly misaligned vertically (same for any box drawings).
     WI_SetFlagIf(options, D2D1_DRAW_TEXT_OPTIONS_NO_SNAP, scalingRequired);
 
+    // ClearType basically has a 3x higher horizontal resolution. To make our glyphs render the same everywhere,
+    // it's probably for the best to ensure we initially rasterize them on a whole pixel boundary.
+    // (https://en.wikipedia.org/wiki/ClearType#How_ClearType_works)
+    offset.x = roundf(offset.x * _r.pixelPerDIP) * _r.dipPerPixel;
+    // As explained below, we use D2D1_DRAW_TEXT_OPTIONS_NO_SNAP to prevent a weird issue with baseline snapping.
+    // But we do want it technically, so this re-implements baseline snapping... I think?
+    offset.y = roundf(offset.y * _r.pixelPerDIP) * _r.dipPerPixel;
+
     return CachedGlyphLayout{
         .textLayout = textLayout,
-        .halfSize = halfSize,
         .offset = offset,
         .scale = scale,
+        .scaleCenter = scaleCenter,
         .options = options,
         .scalingRequired = scalingRequired,
     };
@@ -729,8 +798,8 @@ void AtlasEngine::CachedGlyphLayout::applyScaling(ID2D1RenderTarget* d2dRenderTa
             0,
             0,
             scale.y,
-            (origin.x + halfSize.x) * (1.0f - scale.x),
-            (origin.y + halfSize.y) * (1.0f - scale.y),
+            (origin.x + scaleCenter.x) * (1.0f - scale.x),
+            (origin.y + scaleCenter.y) * (1.0f - scale.y),
         };
         d2dRenderTarget->SetTransform(&transform);
     }
@@ -749,102 +818,19 @@ void AtlasEngine::CachedGlyphLayout::undoScaling(ID2D1RenderTarget* d2dRenderTar
 
 void AtlasEngine::_d2dPresent()
 {
-    const til::rect fullRect{ 0, 0, _r.cellCount.x, _r.cellCount.y };
-
-    // A change in the selection or background color (etc.) forces a full redraw.
-    if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::ConstBuffer))
+    if (!_r.d2dRenderTarget)
     {
-        _r.dirtyRect = fullRect;
+        _d2dCreateRenderTarget();
     }
 
-    if (!_r.dirtyRect)
-    {
-        return;
-    }
-
-    auto dirtyRectInPx = _r.dirtyRect;
-    dirtyRectInPx.left *= _r.fontMetrics.cellSize.x;
-    dirtyRectInPx.top *= _r.fontMetrics.cellSize.y;
-    dirtyRectInPx.right *= _r.fontMetrics.cellSize.x;
-    dirtyRectInPx.bottom *= _r.fontMetrics.cellSize.y;
-
-    if (const auto intersection = _r.previousDirtyRectInPx & dirtyRectInPx)
-    {
-        wil::com_ptr<ID3D11Resource> backBuffer;
-        wil::com_ptr<ID3D11Resource> frontBuffer;
-        THROW_IF_FAILED(_r.swapChain->GetBuffer(0, __uuidof(backBuffer), backBuffer.put_void()));
-        THROW_IF_FAILED(_r.swapChain->GetBuffer(1, __uuidof(frontBuffer), frontBuffer.put_void()));
-
-        D3D11_BOX intersectBox;
-        intersectBox.left = intersection.left;
-        intersectBox.top = intersection.top;
-        intersectBox.front = 0;
-        intersectBox.right = intersection.right;
-        intersectBox.bottom = intersection.bottom;
-        intersectBox.back = 1;
-        _r.deviceContext->CopySubresourceRegion1(backBuffer.get(), 0, intersection.left, intersection.top, 0, frontBuffer.get(), 0, &intersectBox, 0);
-    }
-
-    _d2dCreateRenderTarget();
     _d2dDrawDirtyArea();
 
-    // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
-    // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
-    // > Note that this requirement includes the first frame the app renders with the swap chain.
-    assert(debugGeneralPerformance || _r.frameLatencyWaitableObjectUsed);
-
-    if (_r.dirtyRect != fullRect)
-    {
-        RECT scrollRect{};
-        POINT scrollOffset{};
-        DXGI_PRESENT_PARAMETERS params{
-            .DirtyRectsCount = 1,
-            .pDirtyRects = dirtyRectInPx.as_win32_rect(),
-        };
-
-        if (_r.scrollOffset)
-        {
-            scrollRect = {
-                0,
-                std::max<til::CoordType>(0, _r.scrollOffset),
-                _r.cellCount.x,
-                _r.cellCount.y + std::min<til::CoordType>(0, _r.scrollOffset),
-            };
-            scrollOffset = {
-                0,
-                _r.scrollOffset,
-            };
-
-            scrollRect.top *= _r.fontMetrics.cellSize.y;
-            scrollRect.right *= _r.fontMetrics.cellSize.x;
-            scrollRect.bottom *= _r.fontMetrics.cellSize.y;
-
-            scrollOffset.y *= _r.fontMetrics.cellSize.y;
-
-            params.pScrollRect = &scrollRect;
-            params.pScrollOffset = &scrollOffset;
-        }
-
-        THROW_IF_FAILED(_r.swapChain->Present1(1, 0, &params));
-    }
-    else
-    {
-        THROW_IF_FAILED(_r.swapChain->Present(1, 0));
-    }
-
     _r.glyphQueue.clear();
-    _r.previousDirtyRectInPx = dirtyRectInPx;
-    _r.waitForPresentation = true;
     WI_ClearAllFlags(_r.invalidations, RenderInvalidations::Cursor | RenderInvalidations::ConstBuffer);
 }
 
 void AtlasEngine::_d2dCreateRenderTarget()
 {
-    if (_r.d2dRenderTarget)
-    {
-        return;
-    }
-
     {
         wil::com_ptr<ID3D11Texture2D> buffer;
         THROW_IF_FAILED(_r.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), buffer.put_void()));
@@ -856,7 +842,9 @@ void AtlasEngine::_d2dCreateRenderTarget()
         props.pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED };
         props.dpiX = static_cast<float>(_r.dpi);
         props.dpiY = static_cast<float>(_r.dpi);
-        THROW_IF_FAILED(_sr.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, _r.d2dRenderTarget.put()));
+        wil::com_ptr<ID2D1RenderTarget> renderTarget;
+        THROW_IF_FAILED(_sr.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, renderTarget.addressof()));
+        _r.d2dRenderTarget = renderTarget.query<ID2D1DeviceContext>();
 
         // In case _api.realizedAntialiasingMode is D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE we'll
         // continuously adjust it in AtlasEngine::_drawGlyph. See _drawGlyph.
@@ -944,6 +932,8 @@ void AtlasEngine::_d2dDrawDirtyArea()
 
         // Draw background.
         {
+            _r.d2dRenderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_COPY);
+
             auto x1 = beg;
             auto x2 = gsl::narrow_cast<u16>(x1 + 1);
             auto currentColor = cells[x1].color.y;
@@ -965,6 +955,8 @@ void AtlasEngine::_d2dDrawDirtyArea()
                 const u16r rect{ x1, y, x2, gsl::narrow_cast<u16>(y + 1) };
                 _d2dFillRectangle(rect, currentColor);
             }
+
+            _r.d2dRenderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
         }
 
         // Draw text.

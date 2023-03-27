@@ -1,10 +1,22 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import "TaskbarState.idl";
+import "IDirectKeyListener.idl";
 
 namespace TerminalApp
 {
-    delegate void LastTabClosedEventArgs();
+    [default_interface] runtimeclass ContentManager
+    {
+        Microsoft.Terminal.Control.ControlInteractivity CreateCore(Microsoft.Terminal.Control.IControlSettings settings,
+                                                                   Microsoft.Terminal.Control.IControlAppearance unfocusedAppearance,
+                                                                   Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+        Microsoft.Terminal.Control.ControlInteractivity TryLookupCore(UInt64 id);
+    }
+
+    [default_interface] runtimeclass LastTabClosedEventArgs
+    {
+        Boolean ClearPersistedState { get; };
+    };
 
     [default_interface] runtimeclass RenameWindowRequestedArgs
     {
@@ -16,9 +28,19 @@ namespace TerminalApp
         Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
     };
 
-    [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    [default_interface] runtimeclass WindowProperties : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        TerminalPage();
+        String WindowName { get; };
+        UInt64 WindowId { get; };
+        String WindowNameForDisplay { get; };
+        String WindowIdForDisplay { get; };
+
+        Boolean IsQuakeWindow();
+    };
+
+    [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener
+    {
+        TerminalPage(WindowProperties properties, ContentManager manager);
 
         // XAML bound properties
         String ApplicationDisplayName { get; };
@@ -28,13 +50,9 @@ namespace TerminalApp
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
 
+        WindowProperties WindowProperties { get; };
         void IdentifyWindow();
-        String WindowName;
-        UInt64 WindowId;
-        String WindowNameForDisplay { get; };
-        String WindowIdForDisplay { get; };
         void RenameFailed();
-        Boolean IsQuakeWindow();
 
         // We cannot use the default XAML APIs because we want to make sure
         // that there's only one application-global dialog visible at a time,
@@ -62,7 +80,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
         event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;

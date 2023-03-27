@@ -4,9 +4,7 @@
 #include "precomp.h"
 #include "inc/IInputEvent.hpp"
 
-MenuEvent::~MenuEvent()
-{
-}
+MenuEvent::~MenuEvent() = default;
 
 INPUT_RECORD MenuEvent::ToInputRecord() const noexcept
 {

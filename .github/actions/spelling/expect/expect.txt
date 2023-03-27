@@ -2,6 +2,7 @@ aabbcc
 ABANDONFONT
 abbcc
 ABCDEFGHIJKLMNOPQRSTUVWXY
+ABCF
 abgr
 abi
 ABORTIFHUNG
@@ -61,7 +62,6 @@ argb
 ARRAYSIZE
 ARROWKEYS
 asan
-ASBRST
 ASBSET
 ASDF
 asdfghjkl
@@ -194,7 +194,6 @@ chh
 chk
 CHT
 Cic
-CLA
 Clcompile
 CLE
 cleartype
@@ -252,6 +251,7 @@ conattrs
 conbufferout
 concfg
 conclnt
+concretizations
 conddkrefs
 condrv
 conechokey
@@ -311,7 +311,6 @@ CPLINFO
 cplusplus
 CPPCORECHECK
 cppcorecheckrules
-cpprest
 cpprestsdk
 cppwinrt
 CProc
@@ -409,21 +408,26 @@ DECAUPSS
 DECAWM
 DECBKM
 DECCARA
+DECCIR
 DECCKM
+DECCKSR
 DECCOLM
 DECCRA
 DECCTR
 DECDHL
 decdld
+DECDMAC
 DECDWL
 DECEKBD
 DECERA
 DECFRA
 DECID
+DECINVM
 DECKPAM
 DECKPM
 DECKPNM
 DECLRMM
+DECMSR
 DECNKM
 DECNRCM
 DECOM
@@ -433,9 +437,13 @@ DECRARA
 DECRC
 DECREQTPARM
 DECRLM
+DECRPM
+DECRQCRA
 DECRQM
+DECRQPSR
 DECRQSS
 DECRQTSR
+DECRSPS
 decrst
 DECSACE
 DECSASD
@@ -453,8 +461,10 @@ DECSLRM
 DECSMKR
 DECSR
 DECSTBM
+DECSTGLT
 DECSTR
 DECSWL
+DECTABSR
 DECTCEM
 DECXCPR
 DEFAPP
@@ -474,7 +484,6 @@ defterm
 DELAYLOAD
 DELETEONRELEASE
 Delt
-demoable
 depersist
 deprioritized
 deserializers
@@ -531,7 +540,6 @@ DSSCL
 DSwap
 DTest
 DTTERM
-DUMMYUNIONNAME
 dup'ed
 dvi
 dwl
@@ -584,7 +592,6 @@ ETW
 EUDC
 EVENTID
 eventing
-everytime
 evflags
 evt
 execd
@@ -606,8 +613,12 @@ FACESIZE
 FAILIFTHERE
 fastlink
 fcharset
+FDEA
 fdw
+FECF
+FEEF
 fesb
+FFAF
 FFDE
 FFrom
 fgbg
@@ -792,7 +803,6 @@ HIBYTE
 hicon
 HIDEWINDOW
 hinst
-Hirots
 HISTORYBUFS
 HISTORYNODUP
 HISTORYSIZE
@@ -804,6 +814,8 @@ hkl
 HKLM
 hlocal
 hlsl
+HMB
+HMK
 hmod
 hmodule
 hmon
@@ -811,6 +823,7 @@ HORZ
 hostable
 hostlib
 HPA
+hpcon
 HPCON
 hpj
 HPR
@@ -892,7 +905,6 @@ INSERTMODE
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
 INTERNALNAME
-inthread
 intsafe
 INVALIDARG
 INVALIDATERECT
@@ -1249,14 +1261,12 @@ ntm
 nto
 ntrtl
 ntstatus
-ntsubauth
 NTSYSCALLAPI
 nttree
 nturtl
 ntuser
 NTVDM
 ntverp
-NTWIN
 nugetversions
 nullability
 nullness
@@ -1295,8 +1305,6 @@ opencode
 opencon
 openconsole
 openconsoleproxy
-OPENIF
-OPENLINK
 openps
 openvt
 ORIGINALFILENAME
@@ -1349,9 +1357,7 @@ pcg
 pch
 PCIDLIST
 PCIS
-PCLIENT
 PCLONG
-PCOBJECT
 pcon
 PCONSOLE
 PCONSOLEENDTASK
@@ -1363,7 +1369,6 @@ pcshell
 PCSHORT
 PCSR
 PCSTR
-PCUNICODE
 PCWCH
 PCWCHAR
 PCWSTR
@@ -1412,7 +1417,6 @@ PLOGICAL
 pnm
 PNMLINK
 pntm
-PNTSTATUS
 POBJECT
 Podcast
 POINTSLIST
@@ -1430,9 +1434,7 @@ PPEB
 ppf
 ppguid
 ppidl
-pplx
 PPROC
-PPROCESS
 ppropvar
 ppsi
 ppsl
@@ -1496,7 +1498,6 @@ ptrs
 ptsz
 PTYIn
 PUCHAR
-PUNICODE
 pwch
 PWDDMCONSOLECONTEXT
 pws
@@ -1558,7 +1559,6 @@ REGISTEROS
 REGISTERVDM
 regkey
 REGSTR
-reingest
 RELBINPATH
 remoting
 renamer
@@ -1570,6 +1570,7 @@ replatformed
 Replymessage
 repositorypath
 Requiresx
+rerasterize
 rescap
 Resequence
 RESETCONTENT
@@ -1770,6 +1771,7 @@ srv
 srvinit
 srvpipe
 ssa
+startdir
 STARTF
 STARTUPINFO
 STARTUPINFOEX
@@ -1818,6 +1820,7 @@ SYSCOMMAND
 SYSDEADCHAR
 SYSKEYDOWN
 SYSKEYUP
+SYSLIB
 SYSLINK
 SYSMENU
 sysparams
@@ -1851,6 +1854,7 @@ TDP
 TEAMPROJECT
 tearoff
 Teb
+Techo
 tellp
 teraflop
 terminalcore
@@ -1993,7 +1997,6 @@ unittesting
 unittests
 unk
 unknwn
-unmark
 UNORM
 unparseable
 unregistering
@@ -2106,7 +2109,6 @@ WDDMCONSOLECONTEXT
 wdm
 webpage
 websites
-websockets
 wekyb
 wex
 wextest
@@ -2183,6 +2185,7 @@ wnd
 WNDALLOC
 WNDCLASS
 WNDCLASSEX
+WNDCLASSEXW
 WNDCLASSW
 Wndproc
 WNegative
@@ -2288,6 +2291,7 @@ YOffset
 YSubstantial
 YVIRTUALSCREEN
 YWalk
+zabcd
 Zabcdefghijklmnopqrstuvwxyz
 ZCmd
 ZCtrl

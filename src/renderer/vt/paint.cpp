@@ -20,10 +20,14 @@ using namespace Microsoft::Console::Types;
 //      HRESULT error code if painting didn't start successfully.
 [[nodiscard]] HRESULT VtEngine::StartPaint() noexcept
 {
-    if (_pipeBroken)
+    if (!_hFile)
     {
         return S_FALSE;
     }
+
+    // If we're using line renditions, and this is a full screen paint, we can
+    // potentially stop using them at the end of this frame.
+    _stopUsingLineRenditions = _usingLineRenditions && _AllIsInvalid();
 
     // If there's nothing to do, quick return
     auto somethingToDo = _invalidMap.any() ||
@@ -75,6 +79,14 @@ using namespace Microsoft::Console::Types;
     }
     _circled = false;
 
+    // If _stopUsingLineRenditions is still true at the end of the frame, that
+    // means we've refreshed the entire viewport with every line being single
+    // width, so we can safely stop using them from now on.
+    if (_stopUsingLineRenditions)
+    {
+        _usingLineRenditions = false;
+    }
+
     // If we deferred a cursor movement during the frame, make sure we put the
     //      cursor in the right place before we end the frame.
     if (_deferredCursorPos != INVALID_COORDS)
@@ -98,6 +110,45 @@ using namespace Microsoft::Console::Types;
 [[nodiscard]] HRESULT VtEngine::Present() noexcept
 {
     return S_FALSE;
+}
+
+[[nodiscard]] HRESULT VtEngine::ResetLineTransform() noexcept
+{
+    return S_FALSE;
+}
+
+[[nodiscard]] HRESULT VtEngine::PrepareLineTransform(const LineRendition lineRendition,
+                                                     const til::CoordType targetRow,
+                                                     const til::CoordType /*viewportLeft*/) noexcept
+{
+    // We don't want to waste bandwidth writing out line rendition attributes
+    // until we know they're in use. But once they are in use, we have to keep
+    // applying them on every line until we know they definitely aren't being
+    // used anymore (we check that at the end of any fullscreen paint).
+    if (lineRendition != LineRendition::SingleWidth)
+    {
+        _stopUsingLineRenditions = false;
+        _usingLineRenditions = true;
+    }
+    // One simple optimization is that we can skip sending the line attributes
+    // when _quickReturn is true. That indicates that we're writing out a single
+    // character, which should preclude there being a rendition switch.
+    if (_usingLineRenditions && !_quickReturn)
+    {
+        RETURN_IF_FAILED(_MoveCursor({ _lastText.x, targetRow }));
+        switch (lineRendition)
+        {
+        case LineRendition::SingleWidth:
+            return _Write("\x1b#5");
+        case LineRendition::DoubleWidth:
+            return _Write("\x1b#6");
+        case LineRendition::DoubleHeightTop:
+            return _Write("\x1b#3");
+        case LineRendition::DoubleHeightBottom:
+            return _Write("\x1b#4");
+        }
+    }
+    return S_OK;
 }
 
 // Routine Description:
@@ -125,7 +176,7 @@ using namespace Microsoft::Console::Types;
 //   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT VtEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                 const til::point coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
@@ -205,7 +256,7 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_SetGraphicsDefault());
         _lastTextAttributes.SetDefaultBackground();
         _lastTextAttributes.SetDefaultForeground();
-        _lastTextAttributes.SetDefaultMetaAttrs();
+        _lastTextAttributes.SetDefaultRenditionAttributes();
         lastFg = {};
         lastBg = {};
     }
@@ -281,7 +332,7 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_SetGraphicsDefault());
         _lastTextAttributes.SetDefaultBackground();
         _lastTextAttributes.SetDefaultForeground();
-        _lastTextAttributes.SetDefaultMetaAttrs();
+        _lastTextAttributes.SetDefaultRenditionAttributes();
         lastFg = {};
         lastBg = {};
     }
@@ -338,7 +389,7 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(const std::span<const Cluster> clusters,
                                                       const til::point coord) noexcept
 {
     try
@@ -358,7 +409,7 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(_bufferLine));
 
         // Update our internal tracker of the cursor's position
-        _lastText.X += totalWidth;
+        _lastText.x += totalWidth;
 
         return S_OK;
     }
@@ -373,11 +424,11 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(const std::span<const Cluster> clusters,
                                                      const til::point coord,
                                                      const bool lineWrapped) noexcept
 {
-    if (coord.Y < _virtualTop)
+    if (coord.y < _virtualTop)
     {
         return S_OK;
     }
@@ -425,15 +476,15 @@ using namespace Microsoft::Console::Types;
     // and it uses xterm-ascii. This ensures that xterm and -256color consumers
     // get the enhancements, and telnet isn't broken.
     //
-    // GH#13229: ECH and EL don't fill the space with "meta" attributes like
+    // GH#13229: ECH and EL don't fill the space with visual attributes like
     // underline, reverse video, hyperlinks, etc. If these spaces had those
     // attrs, then don't try and optimize them out.
     const auto optimalToUseECH = numSpaces > ERASE_CHARACTER_STRING_LENGTH;
     const auto useEraseChar = (optimalToUseECH) &&
                               (!_newBottomLine) &&
                               (!_clearedAllThisFrame) &&
-                              (!_lastTextAttributes.HasAnyExtendedAttributes());
-    const auto printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
+                              (!_lastTextAttributes.HasAnyVisualAttributes());
+    const auto printingBottomLine = coord.y == _lastViewport.BottomInclusive();
 
     // GH#5502 - If the background color of the "new bottom line" is different
     // than when we emitted the line, we can't optimize out the spaces from it.
@@ -484,8 +535,17 @@ using namespace Microsoft::Console::Types;
     // Move the cursor to the start of this run.
     RETURN_IF_FAILED(_MoveCursor(coord));
 
-    // Write the actual text string
-    RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8({ _bufferLine.data(), cchActual }));
+    // Write the actual text string. If we're using a soft font, the character
+    // set should have already been selected, so we just need to map our internal
+    // representation back to ASCII (handled by the _WriteTerminalDrcs method).
+    if (_usingSoftFont) [[unlikely]]
+    {
+        RETURN_IF_FAILED(VtEngine::_WriteTerminalDrcs({ _bufferLine.data(), cchActual }));
+    }
+    else
+    {
+        RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8({ _bufferLine.data(), cchActual }));
+    }
 
     // GH#4415, GH#5181
     // If the renderer told us that this was a wrapped line, then mark
@@ -495,15 +555,15 @@ using namespace Microsoft::Console::Types;
     // line.
     if (lineWrapped)
     {
-        _wrappedRow = coord.Y;
-        _trace.TraceSetWrapped(coord.Y);
+        _wrappedRow = coord.y;
+        _trace.TraceSetWrapped(coord.y);
     }
 
     // Update our internal tracker of the cursor's position.
     // See MSFT:20266233 (which is also GH#357)
     // If the cursor is at the rightmost column of the terminal, and we write a
     //      space, the cursor won't actually move to the next cell (which would
-    //      be {0, _lastText.Y++}). The cursor will stay visibly in that last
+    //      be {0, _lastText.y++}). The cursor will stay visibly in that last
     //      cell until then next character is output.
     // If in that case, we increment the cursor position here (such that the X
     //      position would be one past the right of the terminal), when we come
@@ -515,9 +575,9 @@ using namespace Microsoft::Console::Types;
     // GH#1245: This needs to be RightExclusive, _not_ inclusive. Otherwise, we
     // won't update our internal cursor position tracker correctly at the last
     // character of the row.
-    if (_lastText.X < _lastViewport.RightExclusive())
+    if (_lastText.x < _lastViewport.RightExclusive())
     {
-        _lastText.X += columnsActual;
+        _lastText.x += columnsActual;
     }
     // GH#1245: If we wrote the exactly last char of the row, then we're in the
     // "delayed EOL wrap" state. Different terminals (conhost, gnome-terminal,
@@ -525,7 +585,7 @@ using namespace Microsoft::Console::Types;
     // Mark that we're in the delayed EOL wrap state - we don't want to be
     // clever about how we move the cursor in this state, since different
     // terminals will handle a backspace differently in this state.
-    if (_lastText.X >= _lastViewport.RightInclusive())
+    if (_lastText.x >= _lastViewport.RightInclusive())
     {
         _delayedEolWrap = true;
     }
@@ -538,13 +598,17 @@ using namespace Microsoft::Console::Types;
         //   cursor somewhere else before the end of the frame, we'll move the
         //   cursor to the deferred position at the end of the frame, or right
         //   before we need to print new text.
-        _deferredCursorPos = { _lastText.X + numSpaces, _lastText.Y };
+        _deferredCursorPos = { _lastText.x + numSpaces, _lastText.y };
 
-        if (_deferredCursorPos.X <= _lastViewport.RightInclusive())
+        if (_deferredCursorPos.x <= _lastViewport.RightInclusive())
         {
             RETURN_IF_FAILED(_EraseCharacter(numSpaces));
         }
-        else
+        // If we're past the end of the row (i.e. in the "delayed EOL wrap"
+        // state), then there is no need to erase the rest of line. In fact
+        // if we did output an EL sequence at this point, it could reset the
+        // "delayed EOL wrap" state, breaking subsequent output.
+        else if (_lastText.x <= _lastViewport.RightInclusive())
         {
             RETURN_IF_FAILED(_EraseLine());
         }
@@ -555,7 +619,7 @@ using namespace Microsoft::Console::Types;
         //      line is already empty.
         if (optimalToUseECH)
         {
-            _deferredCursorPos = { _lastText.X + numSpaces, _lastText.Y };
+            _deferredCursorPos = { _lastText.x + numSpaces, _lastText.y };
         }
         else if (numSpaces > 0 && removeSpaces) // if we deleted the spaces... re-add them
         {
@@ -563,7 +627,7 @@ using namespace Microsoft::Console::Types;
             auto spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
 
-            _lastText.X += numSpaces;
+            _lastText.x += numSpaces;
         }
     }
 

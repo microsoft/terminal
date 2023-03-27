@@ -213,7 +213,7 @@ CATCH_RETURN();
 
     if (State.OutputBuffer != nullptr)
     {
-        if (NT_SUCCESS(Complete.IoStatus.Status))
+        if (SUCCEEDED_NTSTATUS(Complete.IoStatus.Status))
         {
             CD_IO_OPERATION IoOperation;
             IoOperation.Identifier = Descriptor.Identifier;

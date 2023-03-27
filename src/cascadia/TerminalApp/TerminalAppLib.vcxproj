@@ -19,19 +19,11 @@
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
-    <TerminalXamlApplicationToolkit>true</TerminalXamlApplicationToolkit>
     <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <!-- For CLI11: It uses dynamic_cast to cast types around, which depends
-      on being compiled with RTTI (/GR). -->
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-    </ClCompile>
-  </ItemDefinitionGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
     <!-- HERE BE DRAGONS:
@@ -152,6 +144,15 @@
     <ClInclude Include="AppLogic.h">
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ContentManager.h">
+      <DependentUpon>TerminalPage.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TerminalWindow.h">
+      <DependentUpon>TerminalWindow.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SettingsLoadEventArgs.h">
+      <DependentUpon>TerminalWindow.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Toast.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
@@ -248,6 +249,12 @@
     <ClCompile Include="AppLogic.cpp">
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="ContentManager.cpp">
+      <DependentUpon>TerminalPage.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TerminalWindow.cpp">
+      <DependentUpon>TerminalWindow.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
   </ItemGroup>
@@ -272,6 +279,7 @@
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
     <Midl Include="AppLogic.idl" />
+    <Midl Include="TerminalWindow.idl" />
     <Midl Include="MinMaxCloseControl.idl">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -320,7 +328,6 @@
     <PRIResource Include="Resources\en-US\Resources.resw" />
     <PRIResource Include="Resources\en-US\ContextMenu.resw" />
     <OCResourceDirectory Include="Resources" />
-    <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
@@ -401,6 +408,14 @@
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
+    <Reference Include="$(WindowsSDK_MetadataPathVersioned)\Windows.UI.Xaml.Hosting.HostingContract\*\*.winmd">
+      <WinMDFile>true</WinMDFile>
+      <CopyLocal>false</CopyLocal>
+      <ReferenceGrouping>$(TargetPlatformMoniker)</ReferenceGrouping>
+      <ReferenceGroupingDisplayName>$(TargetPlatformDisplayName)</ReferenceGroupingDisplayName>
+      <ResolvedFrom>CppWinRTImplicitlyExpandTargetPlatform</ResolvedFrom>
+      <IsSystemReference>True</IsSystemReference>
+    </Reference>
   </ItemGroup>
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
@@ -423,7 +438,7 @@
   <!--
     By default, the PRI file will contain resource paths beginning with the
     project name. Since we enabled XBF embedding, this *also* includes App.xbf.
-    Well, App.xbf is hardcoded by the framework to be found at the resource ROOT.
+    Well, App.xbf is hard-coded by the framework to be found at the resource ROOT.
     To make that happen, we have to disable the prepending of the project name
     to the App xaml files.
   -->

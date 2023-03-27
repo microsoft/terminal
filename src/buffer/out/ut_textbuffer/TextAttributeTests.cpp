@@ -75,7 +75,7 @@ void TextAttributeTests::TestRoundtripMetaBits()
         auto attr = TextAttribute(expectedLegacy);
         VERIFY_IS_TRUE(attr.IsLegacy());
         VERIFY_ARE_EQUAL(expectedLegacy, attr.GetLegacyAttributes());
-        VERIFY_ARE_EQUAL(flag, attr._wAttrLegacy);
+        VERIFY_ARE_EQUAL(flag, static_cast<WORD>(attr._attrs));
     }
 }
 

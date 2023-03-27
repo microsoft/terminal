@@ -28,17 +28,15 @@
 #define PSEUDOCONSOLE_PASSTHROUGH_MODE (8u)
 
 CONPTY_EXPORT HRESULT WINAPI ConptyCreatePseudoConsole(COORD size, HANDLE hInput, HANDLE hOutput, DWORD dwFlags, HPCON* phPC);
-
 CONPTY_EXPORT HRESULT WINAPI ConptyCreatePseudoConsoleAsUser(HANDLE hToken, COORD size, HANDLE hInput, HANDLE hOutput, DWORD dwFlags, HPCON* phPC);
 
 CONPTY_EXPORT HRESULT WINAPI ConptyResizePseudoConsole(HPCON hPC, COORD size);
-
 CONPTY_EXPORT HRESULT WINAPI ConptyClearPseudoConsole(HPCON hPC);
-
 CONPTY_EXPORT HRESULT WINAPI ConptyShowHidePseudoConsole(HPCON hPC, bool show);
-
 CONPTY_EXPORT HRESULT WINAPI ConptyReparentPseudoConsole(HPCON hPC, HWND newParent);
+CONPTY_EXPORT HRESULT WINAPI ConptyReleasePseudoConsole(HPCON hPC);
 
 CONPTY_EXPORT VOID WINAPI ConptyClosePseudoConsole(HPCON hPC);
+CONPTY_EXPORT VOID WINAPI ConptyClosePseudoConsoleTimeout(HPCON hPC, DWORD dwMilliseconds);
 
 CONPTY_EXPORT HRESULT WINAPI ConptyPackPseudoConsole(HANDLE hServerProcess, HANDLE hRef, HANDLE hSignal, HPCON* phPC);

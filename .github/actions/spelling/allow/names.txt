@@ -23,6 +23,7 @@ Griese
 Hernan
 Howett
 Illhardt
+Imms
 iquilezles
 italo
 jantari
@@ -34,6 +35,7 @@ KODELIFE
 Kodelife
 Kourosh
 kowalczyk
+leonardder
 leonmsft
 Lepilleur
 lhecker
@@ -77,15 +79,18 @@ sonpham
 stakx
 talo
 thereses
+Thysell
 Walisch
 WDX
 Wellons
+Westerman
 Wirt
 Wojciech
 zadjii
 Zamor
 Zamora
 zamora
+zljubisic
 Zoey
 zorio
 Zverovich

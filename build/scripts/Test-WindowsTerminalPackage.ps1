@@ -8,7 +8,7 @@ Param(
     [Parameter(HelpMessage="Path to Windows Kit")]
     [ValidateScript({Test-Path $_ -Type Leaf})]
     [string]
-    $WindowsKitPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22000.0"
+    $WindowsKitPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0"
 )
 
 $ErrorActionPreference = "Stop"
@@ -94,11 +94,6 @@ Try {
     $AppXbf = $PRIFile.SelectSingleNode($resourceXpath)
     If ($null -eq $AppXbf) {
         Throw "Failed to find App.xbf (TerminalApp project) in resources.pri"
-    }
-
-    If (($null -eq (Get-Item "$AppxPackageRootPath\cpprest142_2_10.dll" -EA:Ignore)) -And
-        ($null -eq (Get-Item "$AppxPackageRootPath\cpprest142_2_10d.dll" -EA:Ignore))) {
-        Throw "Failed to find cpprest142_2_10.dll -- check the WAP packaging project"
     }
 
     If (($null -eq (Get-Item "$AppxPackageRootPath\wtd.exe" -EA:Ignore)) -And

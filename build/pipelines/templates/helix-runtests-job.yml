@@ -14,8 +14,8 @@ parameters:
   platform: ''
   # if 'useBuildOutputFromBuildId' is set, we will default to using a build from this pipeline:
   useBuildOutputFromPipeline: $(System.DefinitionId)
-  openHelixTargetQueues: 'windows.10.amd64.client21h1.open.xaml'
-  closedHelixTargetQueues: 'windows.10.amd64.client21h1.xaml'
+  openHelixTargetQueues: 'windows.11.amd64.client.open.reunion'
+  closedHelixTargetQueues: 'windows.11.amd64.client.reunion'
 
 jobs:
 - job: ${{ parameters.name }}
@@ -43,9 +43,9 @@ jobs:
       filename: 'set'
 
   - task: NuGetToolInstaller@0
-    displayName: 'Use NuGet 5.2.0'
+    displayName: 'Use NuGet 6.3.0'
     inputs:
-      versionSpec: 5.2.0
+      versionSpec: 6.3.0
 
   - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
     displayName: 'NuGet restore build/Helix/packages.config'

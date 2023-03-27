@@ -45,7 +45,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         Profile CreateNewProfile();
         Profile FindProfile(Guid profileGuid);
-        ColorScheme GetColorSchemeForProfile(Profile profile);
         void UpdateColorSchemeReferences(String oldName, String newName);
 
         Profile GetProfileForArgs(NewTerminalArgs newTerminalArgs);
@@ -54,5 +53,7 @@ namespace Microsoft.Terminal.Settings.Model
         static Boolean IsDefaultTerminalSet { get; };
         IObservableVector<DefaultTerminal> DefaultTerminals { get; };
         DefaultTerminal CurrentDefaultTerminal;
+
+        void ExpandCommands();
     }
 }

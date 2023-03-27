@@ -22,10 +22,3 @@ Abstract:
 #include <wincon.h>
 
 #include "../../types/inc/viewport.hpp"
-
-#ifndef _NTSTATUS_DEFINED
-#define _NTSTATUS_DEFINED
-typedef _Return_type_success_(return >= 0) long NTSTATUS;
-#endif
-
-#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)

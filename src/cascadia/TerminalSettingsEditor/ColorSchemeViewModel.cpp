@@ -52,7 +52,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool ColorSchemeViewModel::IsDefaultScheme()
     {
-        return _Name == _settings.ProfileDefaults().DefaultAppearance().ColorSchemeName();
+        const auto defaultAppearance = _settings.ProfileDefaults().DefaultAppearance();
+        return defaultAppearance.LightColorSchemeName() == defaultAppearance.DarkColorSchemeName() &&
+               _Name == defaultAppearance.LightColorSchemeName();
     }
 
     void ColorSchemeViewModel::RefreshIsDefault()
@@ -109,6 +111,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 }
             }
+        }
+    }
+
+    void ColorSchemeViewModel::DeleteConfirmation_Click(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    {
+        if (const auto parentPageVM{ _parentPageVM.get() })
+        {
+            return parentPageVM.RequestDeleteCurrentScheme();
+        }
+    }
+
+    void ColorSchemeViewModel::SetAsDefault_Click(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    {
+        if (const auto parentPageVM{ _parentPageVM.get() })
+        {
+            return parentPageVM.RequestSetSelectedSchemeAsDefault();
         }
     }
 
