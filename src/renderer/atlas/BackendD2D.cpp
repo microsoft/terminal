@@ -204,27 +204,24 @@ void BackendD2D::_drawText(RenderingPayload& p)
                     .glyphOffsets = &row->glyphOffsets[m.glyphsFrom],
                 };
 
-                // _getGlyphRunBlackBox returns a rectangle based on the design metrics of the
-                // glyphs, which doesn't take antialiasing nor font hinting into consideration.
-                // Especially the latter can technically move the rasterized result around
-                // however it pleases. A padding of 5px should hopefully avoid most issues.
-                //
-                // Technically ID2D1DeviceContext::GetGlyphRunWorldBounds would be the proper approach
-                // here, because it returns the exact (pixel accurate) boundaries of the glyph run.
-                // But that function is way, *way* more expensive than anything else, to the point
-                // its useless. To put numbers on it, it's about >20x more costly to call than
-                // DrawGlyphRun below, even though the function puts like half a million glyphs per
-                // second on the screen, filling hundreds of millions of pixels in the process.
-                const auto blackBox = _getGlyphRunDesignBounds(glyphRun, 0.0f, baselineY);
-                // We exclude setting the top/bottom dirty height for DECDHL double height rows,
-                // because DECDHL intentionally cuts off their bottom/top half respectively.
-                if (row->lineRendition != LineRendition::DoubleHeightTop)
+                D2D1_RECT_F bounds{};
+                THROW_IF_FAILED(_renderTarget->GetGlyphRunWorldBounds({ 0.0f, baselineY }, &glyphRun, DWRITE_MEASURING_MODE_NATURAL, &bounds));
+
+                if (bounds.top < bounds.bottom)
                 {
-                    row->dirtyBottom = std::max(row->dirtyBottom, static_cast<i32>(lround(blackBox.bottom) + 5));
-                }
-                if (row->lineRendition != LineRendition::DoubleHeightBottom)
-                {
-                    row->dirtyTop = std::min(row->dirtyTop, static_cast<i32>(lround(blackBox.top) - 5));
+                    // If you print the top half of a double height row (DECDHL), the expectation is that only
+                    // the top half is visible, which requires us to keep the clip rect at the bottom of the row.
+                    // (Vice versa for the bottom half of a double height row.)
+                    //
+                    // Since we used SetUnitMode(D2D1_UNIT_MODE_PIXELS), bounds.top/bottom is in pixels already and requires no conversion nor rounding.
+                    if (row->lineRendition != FontRendition::DoubleHeightBottom)
+                    {
+                        row->dirtyTop = std::min(row->dirtyTop, static_cast<i32>(lrintf(bounds.top)));
+                    }
+                    if (row->lineRendition != FontRendition::DoubleHeightTop)
+                    {
+                        row->dirtyBottom = std::max(row->dirtyBottom, static_cast<i32>(lrintf(bounds.bottom)));
+                    }
                 }
             }
 
@@ -240,7 +237,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
         };
         _renderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
 
-        if (row->lineRendition != LineRendition::SingleWidth)
+        if (row->lineRendition != FontRendition::SingleWidth)
         {
             baselineY = _drawTextPrepareLineRendition(p, baselineY, row->lineRendition);
         }
@@ -281,7 +278,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
             }
         }
 
-        if (row->lineRendition != LineRendition::SingleWidth)
+        if (row->lineRendition != FontRendition::SingleWidth)
         {
             _drawTextResetLineRendition();
         }
@@ -298,7 +295,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
     }
 }
 
-f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, f32 baselineY, LineRendition lineRendition) const
+f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, f32 baselineY, FontRendition lineRendition) const noexcept
 {
     const auto descender = static_cast<f32>(p.s->font->cellSize.y - p.s->font->baseline);
     D2D1_MATRIX_3X2_F transform{
@@ -306,12 +303,12 @@ f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, f32 bas
         .m22 = 1.0f,
     };
 
-    if (lineRendition >= LineRendition::DoubleHeightTop)
+    if (lineRendition >= FontRendition::DoubleHeightTop)
     {
         transform.m22 = 2.0f;
         transform.dy = -1.0f * (baselineY + descender);
 
-        if (lineRendition == LineRendition::DoubleHeightTop)
+        if (lineRendition == FontRendition::DoubleHeightTop)
         {
             const auto delta = static_cast<f32>(p.s->font->cellSize.y);
             baselineY += delta;
@@ -323,7 +320,7 @@ f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, f32 bas
     return baselineY;
 }
 
-void BackendD2D::_drawTextResetLineRendition() const
+void BackendD2D::_drawTextResetLineRendition() const noexcept
 {
     static constexpr D2D1_MATRIX_3X2_F identity{ .m11 = 1, .m22 = 1 };
     _renderTarget->SetTransform(&identity);

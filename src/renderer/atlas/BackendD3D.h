@@ -87,14 +87,15 @@ namespace Microsoft::Console::Render::Atlas
             // holding a reference / the reference count doesn't drop to 0 (see ActiveFaceCache).
             // This allows us to hash the value of the pointer as if it was uniquely identifying the font face.
             IDWriteFontFace* fontFace = nullptr;
-            u16 glyphIndex;
-            u16 lineRendition;
+            FontRendition fontRendition = FontRendition::None;
+            u16 glyphIndex = 0;
 
             constexpr bool operator==(const GlyphCacheKey& rhs) const noexcept
             {
                 return __builtin_memcmp(this, &rhs, GlyphCacheKeyDataSize) == 0;
             }
         };
+        static_assert(sizeof(GlyphCacheKey) == 2 * sizeof(void*));
 
         // Due to padding on 64-Bit systems, sizeof(GlyphCacheKey) will be 16,
         // but the actual contents of the struct still only be 12 bytes.

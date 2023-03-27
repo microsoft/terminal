@@ -37,7 +37,7 @@ AtlasEngine::AtlasEngine()
     _p.dwriteFactory4 = _p.dwriteFactory.try_query<IDWriteFactory4>();
 
     THROW_IF_FAILED(_p.dwriteFactory->GetSystemFontFallback(_p.systemFontFallback.addressof()));
-    _p.systemFontFallback = _p.systemFontFallback.try_query<IDWriteFontFallback1>();
+    _p.systemFontFallback1 = _p.systemFontFallback.try_query<IDWriteFontFallback1>();
 
     wil::com_ptr<IDWriteTextAnalyzer> textAnalyzer;
     THROW_IF_FAILED(_p.dwriteFactory->CreateTextAnalyzer(textAnalyzer.addressof()));
@@ -246,7 +246,7 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::PrepareLineTransform(const LineRendition lineRendition, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
 {
     const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(targetRow, 0, _p.s->cellCount.y));
-    _p.rows[y]->lineRendition = lineRendition;
+    _p.rows[y]->lineRendition = static_cast<FontRendition>(lineRendition);
     _api.lineRendition = lineRendition;
     return S_OK;
 }
@@ -301,7 +301,7 @@ try
         const auto shift = _api.lineRendition >= LineRendition::DoubleWidth ? 1 : 0;
         const auto backgroundRow = _p.backgroundBitmap.begin() + static_cast<size_t>(y) * _p.s->cellCount.x;
         auto it = backgroundRow + x;
-        const auto end = backgroundRow + (column << shift);
+        const auto end = backgroundRow + (static_cast<size_t>(column) << shift);
         const auto bg = _api.currentColor.y;
 
         for (; it != end; ++it)
@@ -418,10 +418,10 @@ try
     if (!isSettingDefaultBrushes)
     {
         const u32x2 newColors{ gsl::narrow_cast<u32>(fg), gsl::narrow_cast<u32>(bg) };
-        const AtlasKeyAttributes attributes{
-            .bold = textAttributes.IsIntense() && renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold),
-            .italic = textAttributes.IsItalic()
-        };
+
+        auto attributes = FontRelevantAttributes::None;
+        WI_SetFlagIf(attributes, FontRelevantAttributes::Bold, textAttributes.IsIntense() && renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold));
+        WI_SetFlagIf(attributes, FontRelevantAttributes::Italic, textAttributes.IsItalic());
 
         if (_api.attributes != attributes)
         {
@@ -476,7 +476,18 @@ void AtlasEngine::_handleSettingsUpdate()
 
 void AtlasEngine::_recreateFontDependentResources()
 {
-    if (!_p.s->font->fontAxisValues.empty())
+    _api.replacementCharacterFontFace.reset();
+    _api.replacementCharacterGlyphIndex = 0;
+    _api.replacementCharacterLookedUp = false;
+
+    if (_p.s->font->fontAxisValues.empty())
+    {
+        for (auto& axes : _api.textFormatAxes)
+        {
+            axes = {};
+        }
+    }
+    else
     {
         // See AtlasEngine::UpdateFont.
         // It hardcodes indices 0/1/2 in fontAxisValues to the weight/italic/slant axes.
@@ -486,24 +497,19 @@ void AtlasEngine::_recreateFontDependentResources()
         const auto& standardAxes = _p.s->font->fontAxisValues;
         auto fontAxisValues = _p.s->font->fontAxisValues;
 
-        for (auto italic = 0; italic < 2; ++italic)
+        for (size_t i = 0; i < 4; ++i)
         {
-            for (auto bold = 0; bold < 2; ++bold)
-            {
-                // The wght axis defaults to the font weight.
-                fontAxisValues[0].value = bold ? DWRITE_FONT_WEIGHT_BOLD : (isnan(standardAxes[0].value) ? static_cast<f32>(_p.s->font->fontWeight) : standardAxes[0].value);
-                // The ital axis defaults to 1 if this is italic and 0 otherwise.
-                fontAxisValues[1].value = italic ? 1.0f : (isnan(standardAxes[1].value) ? 0.0f : standardAxes[1].value);
-                // The slnt axis defaults to -12 if this is italic and 0 otherwise.
-                fontAxisValues[2].value = italic ? -12.0f : (isnan(standardAxes[2].value) ? 0.0f : standardAxes[2].value);
-                _p.d.font.textFormatAxes[italic][bold] = { fontAxisValues.data(), fontAxisValues.size() };
-            }
+            const auto bold = (i & static_cast<size_t>(FontRelevantAttributes::Bold)) != 0;
+            const auto italic = (i & static_cast<size_t>(FontRelevantAttributes::Italic)) != 0;
+            // The wght axis defaults to the font weight.
+            fontAxisValues[0].value = bold ? DWRITE_FONT_WEIGHT_BOLD : (isnan(standardAxes[0].value) ? static_cast<f32>(_p.s->font->fontWeight) : standardAxes[0].value);
+            // The ital axis defaults to 1 if this is italic and 0 otherwise.
+            fontAxisValues[1].value = italic ? 1.0f : (isnan(standardAxes[1].value) ? 0.0f : standardAxes[1].value);
+            // The slnt axis defaults to -12 if this is italic and 0 otherwise.
+            fontAxisValues[2].value = italic ? -12.0f : (isnan(standardAxes[2].value) ? 0.0f : standardAxes[2].value);
+            _api.textFormatAxes[i] = { fontAxisValues.data(), fontAxisValues.size() };
         }
     }
-
-    _api.replacementCharacterFontFace.reset();
-    _api.replacementCharacterGlyphIndex = 0;
-    _api.replacementCharacterLookedUp = false;
 }
 
 void AtlasEngine::_recreateCellCountDependentResources()
@@ -622,7 +628,7 @@ void AtlasEngine::_flushBufferLine()
 void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32* mappedLength, float* scale, IDWriteFontFace** mappedFontFace) const
 {
     TextAnalysisSource analysisSource{ text, textLength };
-    const auto& textFormatAxis = _p.d.font.textFormatAxes[_api.attributes.italic][_api.attributes.bold];
+    const auto& textFormatAxis = _api.textFormatAxes[static_cast<size_t>(_api.attributes)];
 
     if (textFormatAxis)
     {
@@ -640,8 +646,8 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
     }
     else
     {
-        const auto baseWeight = _api.attributes.bold ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_p.s->font->fontWeight);
-        const auto baseStyle = _api.attributes.italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
+        const auto baseWeight = WI_IsFlagSet(_api.attributes, FontRelevantAttributes::Bold) ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_p.s->font->fontWeight);
+        const auto baseStyle = WI_IsFlagSet(_api.attributes, FontRelevantAttributes::Italic) ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
         wil::com_ptr<IDWriteFont> font;
 
         THROW_IF_FAILED(_p.systemFontFallback->MapCharacters(
@@ -812,6 +818,23 @@ void AtlasEngine::_mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 leng
 
 void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
 {
+    // TODO soft fonts
+#if 0
+    if (!_p.s->font->softFontPattern.empty())
+    {
+        for (u32 i = from; i < to; ++i)
+        {
+            const auto ch = _api.bufferLine[from];
+            if (ch >= 0xEF20 && ch < 0xEF80)
+            {
+            }
+        }
+        
+        const auto initialIndicesCount = row.glyphIndices.size();
+        row.mappings.emplace_back(_api.replacementCharacterFontFace, _p.s->font->fontSize, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(row.glyphIndices.size()), FontRendition::SoftFont);
+    }
+#endif
+
     if (!_api.replacementCharacterLookedUp)
     {
         bool succeeded = false;

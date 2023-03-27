@@ -13,44 +13,44 @@
 namespace Microsoft::Console::Render::Atlas
 {
 #define ATLAS_FLAG_OPS(type, underlying)                                                       \
-    friend constexpr type operator~(type v) noexcept                                           \
+    constexpr type operator~(type v) noexcept                                                  \
     {                                                                                          \
         return static_cast<type>(~static_cast<underlying>(v));                                 \
     }                                                                                          \
-    friend constexpr type operator|(type lhs, type rhs) noexcept                               \
+    constexpr type operator|(type lhs, type rhs) noexcept                                      \
     {                                                                                          \
         return static_cast<type>(static_cast<underlying>(lhs) | static_cast<underlying>(rhs)); \
     }                                                                                          \
-    friend constexpr type operator&(type lhs, type rhs) noexcept                               \
+    constexpr type operator&(type lhs, type rhs) noexcept                                      \
     {                                                                                          \
         return static_cast<type>(static_cast<underlying>(lhs) & static_cast<underlying>(rhs)); \
     }                                                                                          \
-    friend constexpr type operator^(type lhs, type rhs) noexcept                               \
+    constexpr type operator^(type lhs, type rhs) noexcept                                      \
     {                                                                                          \
         return static_cast<type>(static_cast<underlying>(lhs) ^ static_cast<underlying>(rhs)); \
     }                                                                                          \
-    friend constexpr void operator|=(type& lhs, type rhs) noexcept                             \
+    constexpr void operator|=(type& lhs, type rhs) noexcept                                    \
     {                                                                                          \
         lhs = lhs | rhs;                                                                       \
     }                                                                                          \
-    friend constexpr void operator&=(type& lhs, type rhs) noexcept                             \
+    constexpr void operator&=(type& lhs, type rhs) noexcept                                    \
     {                                                                                          \
         lhs = lhs & rhs;                                                                       \
     }                                                                                          \
-    friend constexpr void operator^=(type& lhs, type rhs) noexcept                             \
+    constexpr void operator^=(type& lhs, type rhs) noexcept                                    \
     {                                                                                          \
         lhs = lhs ^ rhs;                                                                       \
     }
 
-#define ATLAS_POD_OPS(type)                                           \
-    constexpr bool operator==(const type& rhs) const noexcept         \
-    {                                                                 \
-        return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;        \
-    }                                                                 \
-                                                                      \
-    constexpr bool operator!=(const type& rhs) const noexcept         \
-    {                                                                 \
-        return !(*this == rhs);                                       \
+#define ATLAS_POD_OPS(type)                                    \
+    constexpr bool operator==(const type& rhs) const noexcept  \
+    {                                                          \
+        return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0; \
+    }                                                          \
+                                                               \
+    constexpr bool operator!=(const type& rhs) const noexcept  \
+    {                                                          \
+        return !(*this == rhs);                                \
     }
 
     template<typename T>
@@ -311,6 +311,10 @@ namespace Microsoft::Console::Render::Atlas
         u16 thinLineWidth = 0;
         u16 dpi = 96;
         u8 antialiasingMode = DefaultAntialiasingMode;
+
+        std::vector<uint16_t> softFontPattern;
+        til::size softFontCellSize;
+        size_t softFontCenteringHint = 0;
     };
 
     struct CursorSettings
@@ -340,15 +344,29 @@ namespace Microsoft::Console::Render::Atlas
         u16x2 cellCount;
     };
 
-    struct FontDependents
+    enum class FontRelevantAttributes : u8
     {
-        Buffer<DWRITE_FONT_AXIS_VALUE> textFormatAxes[2][2];
+        None = 0,
+        Bold = 0b01,
+        Italic = 0b10,
     };
+    ATLAS_FLAG_OPS(FontRelevantAttributes, u8)
 
-    struct Dependents
+    // This is u16 so that it fits right into BackendD3D's GlyphCacheKey alignment.
+    enum class FontRendition : u16
     {
-        FontDependents font;
+        None = 0,
+
+        LineRenditionMask = 0x00ff,
+        SingleWidth = LineRendition::SingleWidth,
+        DoubleWidth = LineRendition::DoubleWidth,
+        DoubleHeightTop = LineRendition::DoubleHeightTop,
+        DoubleHeightBottom = LineRendition::DoubleHeightBottom,
+
+        FontRenditionMask = 0xff00,
+        SoftFont = 0x8000,
     };
+    ATLAS_FLAG_OPS(FontRendition, u16)
 
     struct FontMapping
     {
@@ -356,6 +374,7 @@ namespace Microsoft::Console::Render::Atlas
         f32 fontEmSize = 0;
         u32 glyphsFrom = 0;
         u32 glyphsTo = 0;
+        FontRendition fontRendition = FontRendition::None;
     };
 
     struct GridLineRange
@@ -376,7 +395,7 @@ namespace Microsoft::Console::Render::Atlas
             glyphOffsets.clear();
             colors.clear();
             gridLineRanges.clear();
-            lineRendition = LineRendition::SingleWidth;
+            lineRendition = FontRendition::None;
             selectionFrom = 0;
             selectionTo = 0;
             dirtyTop = y * cellHeight;
@@ -389,7 +408,7 @@ namespace Microsoft::Console::Render::Atlas
         std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets; // same size as glyphIndices
         std::vector<u32> colors; // same size as glyphIndices
         std::vector<GridLineRange> gridLineRanges;
-        LineRendition lineRendition = LineRendition::SingleWidth;
+        FontRendition lineRendition = FontRendition::None;
         u16 selectionFrom = 0;
         u16 selectionTo = 0;
         til::CoordType dirtyTop = 0;
@@ -414,7 +433,6 @@ namespace Microsoft::Console::Render::Atlas
 
         //// Parameters which change seldom.
         til::generational<Settings> s;
-        Dependents d;
 
         //// Parameters which change every frame.
         // This is the backing buffer for `rows`.

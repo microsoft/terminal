@@ -78,14 +78,6 @@ namespace Microsoft::Console::Render::Atlas
         void UpdateHyperlinkHoveredId(uint16_t hoveredId) noexcept override;
 
     private:
-        struct AtlasKeyAttributes
-        {
-            bool bold = false;
-            bool italic = false;
-
-            ATLAS_POD_OPS(AtlasKeyAttributes)
-        };
-
         // AtlasEngine.cpp
         __declspec(noinline) void _handleSettingsUpdate();
         void _recreateFontDependentResources();
@@ -130,6 +122,7 @@ namespace Microsoft::Console::Render::Atlas
             std::vector<u16> bufferLineColumn;
             Buffer<u32> colorsForeground;
 
+            std::array<Buffer<DWRITE_FONT_AXIS_VALUE>, 4> textFormatAxes;
             std::vector<TextAnalysisSinkResult> analysisResults;
             Buffer<u16> clusterMap;
             Buffer<DWRITE_SHAPING_TEXT_PROPERTIES> textProps;
@@ -147,7 +140,7 @@ namespace Microsoft::Console::Render::Atlas
             // UpdateDrawingBrushes()
             u32 backgroundOpaqueMixin = 0xff000000;
             u32x2 currentColor;
-            AtlasKeyAttributes attributes{};
+            FontRelevantAttributes attributes = FontRelevantAttributes::None;
             u16x2 lastPaintBufferLineCoord;
             // UpdateHyperlinkHoveredId()
             u16 hyperlinkHoveredId = 0;
@@ -159,9 +152,6 @@ namespace Microsoft::Console::Render::Atlas
             u16x2 invalidatedRows = invalidatedRowsNone; // x is treated as "top" and y as "bottom"
             i16 scrollOffset = 0;
         } _api;
-
-#undef ATLAS_POD_OPS
-#undef ATLAS_FLAG_OPS
     };
 }
 

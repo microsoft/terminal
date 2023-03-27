@@ -407,17 +407,17 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     {
         _updateFontDependents(p);
     }
-
+    if (miscChanged)
+    {
+        _recreateCustomShader(p);
+    }
     if (cellCountChanged)
     {
         _recreateBackgroundColorBitmap(p.s->cellCount);
     }
 
-    if (miscChanged)
-    {
-        _recreateCustomShader(p);
-    }
-
+    // Similar to _renderTargetView above, we might have to recreate the _customRenderTargetView whenever _swapChainManager
+    // resets it. We only do it after calling _recreateCustomShader however, since that sets the _customPixelShader.
     if (_customPixelShader && !_customRenderTargetView)
     {
         _recreateCustomRenderTargetView(p.s->targetSize);
@@ -1040,12 +1040,14 @@ void BackendD3D::_drawText(RenderingPayload& p)
     {
         f32 baselineX = 0;
         const auto baselineY = y * p.s->font->cellSize.y + p.s->font->baseline;
-        GlyphCacheKey key{ .lineRendition = static_cast<u16>(row->lineRendition) };
-        const auto lineRenditionScale = static_cast<uint8_t>(row->lineRendition != LineRendition::SingleWidth);
+        const auto lineRenditionScale = static_cast<uint8_t>(row->lineRendition != FontRendition::SingleWidth);
 
         for (const auto& m : row->mappings)
         {
-            key.fontFace = m.fontFace.get();
+            GlyphCacheKey key{
+                .fontFace = m.fontFace.get(),
+                .fontRendition = row->lineRendition | m.fontRendition
+            };
 
             for (auto x = m.glyphsFrom; x < m.glyphsTo; ++x)
             {
@@ -1101,15 +1103,8 @@ void BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
         .glyphIndices = &entry.key.glyphIndex,
     };
 
-    DWRITE_FONT_METRICS fontMetrics;
-    glyphRun.fontFace->GetMetrics(&fontMetrics);
-
-    DWRITE_GLYPH_METRICS glyphMetrics;
-    glyphRun.fontFace->GetDesignGlyphMetrics(glyphRun.glyphIndices, glyphRun.glyphCount, &glyphMetrics, false);
-
-    // This calculates the black box of the glyph, or in other words, it's extents/size relative to its baseline
-    // origin (at 0,0). The algorithm below is a reverse engineered variant of `IDWriteTextLayout::GetMetrics`.
-    // The coordinates will be in pixels and the positive direction will be bottom/right.
+    // This calculates the black box of the glyph, or in other words,
+    // it's extents/size relative to its baseline origin (at 0,0).
     //
     //  box.top --------++-----######--+
     //   (-7)           ||  ############
@@ -1125,16 +1120,11 @@ void BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
     //               box.left       box.right
     //                 (-1)           (+14)
     //
-    const f32 fontScale = glyphRun.fontEmSize / fontMetrics.designUnitsPerEm;
-    f32r box{
-        static_cast<f32>(glyphMetrics.leftSideBearing) * fontScale,
-        static_cast<f32>(glyphMetrics.topSideBearing - glyphMetrics.verticalOriginY) * fontScale,
-        static_cast<f32>(static_cast<INT32>(glyphMetrics.advanceWidth) - glyphMetrics.rightSideBearing) * fontScale,
-        static_cast<f32>(static_cast<INT32>(glyphMetrics.advanceHeight) - glyphMetrics.bottomSideBearing - glyphMetrics.verticalOriginY) * fontScale,
-    };
+    D2D1_RECT_F box{};
+    THROW_IF_FAILED(_d2dRenderTarget->GetGlyphRunWorldBounds({}, &glyphRun, DWRITE_MEASURING_MODE_NATURAL, &box));
 
     // box may be empty if the glyph is whitespace.
-    if (box.empty())
+    if (box.left >= box.right || box.top >= box.bottom)
     {
         // This will indicate to `BackendD3D::_drawText` that this glyph is whitespace. It's important to set this member,
         // because `GlyphCacheMap` does not zero out inserted entries and `shadingType` might still contain "garbage".
@@ -1142,14 +1132,14 @@ void BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
         return;
     }
 
-    const auto isDoubleHeight = static_cast<LineRendition>(entry.key.lineRendition) >= LineRendition::DoubleHeightTop;
+    const auto lineRendition = entry.key.fontRendition & FontRendition::LineRenditionMask;
 
     std::optional<D2D1_MATRIX_3X2_F> transform;
-    if (entry.key.lineRendition)
+    if (lineRendition != FontRendition::None)
     {
         auto& t = transform.emplace();
         t.m11 = 2.0f;
-        t.m22 = isDoubleHeight ? 2.0f : 1.0f;
+        t.m22 = lineRendition >= FontRendition::DoubleHeightTop ? 2.0f : 1.0f;
 
         box.left *= t.m11;
         box.top *= t.m22;
@@ -1157,14 +1147,10 @@ void BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
         box.bottom *= t.m22;
     }
 
-    // To take anti-aliasing of the borders into account, we'll add a 1px padding on all 4 sides.
-    // This doesn't work however if font hinting causes the pixels to be offset from the design outline.
-    // We need to use round (and not ceil/floor) to ensure we pixel-snap individual
-    // glyphs correctly and form a consistent baseline across an entire run of glyphs.
-    const auto bl = lround(box.left) - 1;
-    const auto bt = lround(box.top) - 1;
-    const auto br = lround(box.right) + 1;
-    const auto bb = lround(box.bottom) + 1;
+    const auto bl = lrintf(box.left);
+    const auto bt = lrintf(box.top);
+    const auto br = lrintf(box.right);
+    const auto bb = lrintf(box.bottom);
 
     stbrp_rect rect{
         .w = br - bl,
@@ -1177,11 +1163,11 @@ void BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
 
     _d2dBeginDrawing();
 
-    D2D1_POINT_2F baseline{
+    const D2D1_POINT_2F baseline{
         static_cast<f32>(rect.x - bl),
         static_cast<f32>(rect.y - bt),
     };
-    D2D1_RECT_F clipRect{
+    const D2D1_RECT_F clipRect{
         static_cast<f32>(rect.x),
         static_cast<f32>(rect.y),
         static_cast<f32>(rect.x + rect.w),
@@ -1222,7 +1208,7 @@ void BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
         static constexpr D2D1_MATRIX_3X2_F identity{ .m11 = 1, .m22 = 1 };
         _d2dRenderTarget->SetTransform(&identity);
 
-        if (isDoubleHeight)
+        if (lineRendition >= FontRendition::DoubleHeightTop)
         {
             _splitDoubleHeightGlyph(p, entry);
         }
@@ -1249,28 +1235,27 @@ void BackendD3D::_drawGlyphRetry(const RenderingPayload& p, stbrp_rect& rect)
 // and create a second entry in our glyph cache hashmap that contains the other half.
 void BackendD3D::_splitDoubleHeightGlyph(const RenderingPayload& p, GlyphCacheEntry& entry)
 {
-    static constexpr auto lrTop = static_cast<u16>(LineRendition::DoubleHeightTop);
-    static constexpr auto lrBottom = static_cast<u16>(LineRendition::DoubleHeightBottom);
-
     // Twice the line height, twice the descender gap. For both.
     entry.data.offset.y -= p.s->font->descender;
 
-    const auto isTop = entry.key.lineRendition == lrTop;
-    const auto altRendition = isTop ? lrBottom : lrTop;
-    const auto topSize = clamp(-entry.data.offset.y - p.s->font->baseline, 0, static_cast<int>(entry.data.size.y));
+    const auto lineRendition = entry.key.fontRendition & FontRendition::LineRenditionMask;
+    const auto fontRendition = entry.key.fontRendition & FontRendition::FontRenditionMask;
+    const auto isTop = lineRendition == FontRendition::DoubleHeightTop;
+    const auto altRendition = isTop ? FontRendition::DoubleHeightBottom : FontRendition::DoubleHeightTop;
 
-    bool inserted;
     auto key2 = entry.key;
-    key2.lineRendition = altRendition;
+    key2.fontRendition = altRendition | fontRendition;
+
+    bool inserted = false;
     auto& entry2 = _glyphCache.FindOrInsert(key2, inserted);
     entry2.data = entry.data;
 
     auto& top = isTop ? entry : entry2;
     auto& bottom = isTop ? entry2 : entry;
 
+    const auto topSize = clamp(-entry.data.offset.y - p.s->font->baseline, 0, static_cast<int>(entry.data.size.y));
     top.data.offset.y += p.s->font->cellSize.y;
     top.data.size.y = topSize;
-
     bottom.data.offset.y += topSize;
     bottom.data.size.y = std::max(0, bottom.data.size.y - topSize);
     bottom.data.texcoord.y += topSize;

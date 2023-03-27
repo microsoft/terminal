@@ -162,6 +162,10 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::UpdateSoftFont(const std::span<const uint16_t> bitPattern, const til::size cellSize, const size_t centeringHint) noexcept
 {
+    const auto softFont = _api.s.write()->font.write();
+    softFont->softFontPattern = std::vector(bitPattern.begin(), bitPattern.end());
+    softFont->softFontCellSize = cellSize;
+    softFont->softFontCenteringHint = centeringHint;
     return S_OK;
 }
 
@@ -395,7 +399,7 @@ void AtlasEngine::SetRetroTerminalEffect(bool enable) noexcept
 
 void AtlasEngine::SetSelectionBackground(const COLORREF color, const float alpha) noexcept
 {
-    const u32 selectionColor = (color & 0xffffff) | gsl::narrow_cast<u32>(std::lroundf(alpha * 255.0f)) << 24;
+    const u32 selectionColor = (color & 0xffffff) | gsl::narrow_cast<u32>(lrintf(alpha * 255.0f)) << 24;
     if (_api.s->misc->selectionColor != selectionColor)
     {
         _api.s.write()->misc.write()->selectionColor = selectionColor;
@@ -678,8 +682,8 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
     doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, adjustedHeight - thinLineWidth);
 
-    const auto cellWidth = gsl::narrow<u16>(std::lroundf(adjustedWidth));
-    const auto cellHeight = gsl::narrow<u16>(std::lroundf(adjustedHeight));
+    const auto cellWidth = gsl::narrow<u16>(lrintf(adjustedWidth));
+    const auto cellHeight = gsl::narrow<u16>(lrintf(adjustedHeight));
 
     {
         til::size coordSize;
@@ -691,7 +695,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
             // The coordSizeUnscaled parameter to SetFromEngine is used for API functions like GetConsoleFontSize.
             // Since clients expect that settings the font height to Y yields back a font height of Y,
             // we're scaling the X relative/proportional to the actual cellWidth/cellHeight ratio.
-            requestedSize.width = gsl::narrow_cast<til::CoordType>(std::lroundf(fontSize / cellHeight * cellWidth));
+            requestedSize.width = gsl::narrow_cast<til::CoordType>(lrintf(fontSize / cellHeight * cellWidth));
         }
 
         fontInfo.SetFromEngine(requestedFaceName, requestedFamily, requestedWeight, false, coordSize, requestedSize);
@@ -700,6 +704,16 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     if (fontMetrics)
     {
         std::wstring fontName{ requestedFaceName };
+        const auto fontWeightU16 = gsl::narrow_cast<u16>(requestedWeight);
+        const auto baselineU16 = static_cast<u16>(baseline + 0.5f);
+        const auto descenderU16 = gsl::narrow_cast<u16>(cellHeight - baselineU16);
+        const auto underlinePosU16 = static_cast<u16>(underlinePos + 0.5f);
+        const auto underlineWidthU16 = static_cast<u16>(underlineWidth + 0.5f);
+        const auto strikethroughPosU16 = static_cast<u16>(strikethroughPos + 0.5f);
+        const auto strikethroughWidthU16 = static_cast<u16>(strikethroughWidth + 0.5f);
+        const auto doubleUnderlinePosTopU16 = static_cast<u16>(doubleUnderlinePosTop + 0.5f);
+        const auto doubleUnderlinePosBottomU16 = static_cast<u16>(doubleUnderlinePosBottom + 0.5f);
+        const auto thinLineWidthU16 = static_cast<u16>(thinLineWidth + 0.5f);
 
         // NOTE: From this point onward no early returns or throwing code should exist,
         // as we might cause _api to be in an inconsistent state otherwise.
@@ -711,15 +725,15 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         fontMetrics->advanceScale = cellWidth / advanceWidth;
         fontMetrics->cellSize.x = cellWidth;
         fontMetrics->cellSize.y = cellHeight;
-        fontMetrics->fontWeight = gsl::narrow_cast<u16>(requestedWeight);
-        fontMetrics->baseline = static_cast<u16>(baseline);
-        fontMetrics->descender = static_cast<u16>(cellHeight - fontMetrics->baseline);
-        fontMetrics->underlinePos = static_cast<u16>(underlinePos);
-        fontMetrics->underlineWidth = static_cast<u16>(underlineWidth);
-        fontMetrics->strikethroughPos = static_cast<u16>(strikethroughPos);
-        fontMetrics->strikethroughWidth = static_cast<u16>(strikethroughWidth);
-        fontMetrics->doubleUnderlinePos.x = static_cast<u16>(doubleUnderlinePosTop);
-        fontMetrics->doubleUnderlinePos.y = static_cast<u16>(doubleUnderlinePosBottom);
-        fontMetrics->thinLineWidth = static_cast<u16>(thinLineWidth);
+        fontMetrics->fontWeight = fontWeightU16;
+        fontMetrics->baseline = baselineU16;
+        fontMetrics->descender = descenderU16;
+        fontMetrics->underlinePos = underlinePosU16;
+        fontMetrics->underlineWidth = underlineWidthU16;
+        fontMetrics->strikethroughPos = strikethroughPosU16;
+        fontMetrics->strikethroughWidth = strikethroughWidthU16;
+        fontMetrics->doubleUnderlinePos.x = doubleUnderlinePosTopU16;
+        fontMetrics->doubleUnderlinePos.y = doubleUnderlinePosBottomU16;
+        fontMetrics->thinLineWidth = thinLineWidthU16;
     }
 }
