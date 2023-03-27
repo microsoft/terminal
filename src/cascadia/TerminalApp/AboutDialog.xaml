@@ -43,8 +43,8 @@
                     <Run x:Uid="AboutDialog_VersionLabel" />
                     <Run Text="{x:Bind PendingUpdateVersion, Mode=OneWay}" />
                 </TextBlock>
-                <Button x:Uid="AboutDialog_InstallUpdateButton"
-                        Margin="0" />
+                <!-- <Button x:Uid="AboutDialog_InstallUpdateButton"
+                        Margin="0" />-->
             </StackPanel>
         </StackPanel>
 

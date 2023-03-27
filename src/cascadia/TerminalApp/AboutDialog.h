@@ -16,6 +16,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ApplicationVersion();
         bool UpdatesAvailable() const;
         winrt::hstring PendingUpdateVersion() const;
+        winrt::fire_and_forget QueueUpdateCheck();
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(bool, CheckingForUpdates, _PropertyChangedHandlers, false);
@@ -23,7 +24,6 @@ namespace winrt::TerminalApp::implementation
     private:
         friend struct AboutDialogT<AboutDialog>; // for Xaml to bind events
 
-        winrt::fire_and_forget _QueueUpdateCheck();
         void _SetPendingUpdateVersion(const winrt::hstring& pendingUpdateVersion);
 
         std::chrono::system_clock::time_point _lastUpdateCheck{};

@@ -63,9 +63,6 @@ namespace TerminalApp
 
         TaskbarState TaskbarState{ get; };
 
-        Boolean CheckingForUpdates { get; };
-        Boolean UpdatesAvailable { get; };
-        String PendingUpdateVersion { get; };
 
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
         void WindowActivated(Boolean activated);

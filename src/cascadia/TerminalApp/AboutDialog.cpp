@@ -76,7 +76,7 @@ namespace winrt::TerminalApp::implementation
         _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"UpdatesAvailable" });
     }
 
-    winrt::fire_and_forget AboutDialog::_QueueUpdateCheck()
+    winrt::fire_and_forget AboutDialog::QueueUpdateCheck()
     {
         auto strongThis = get_strong();
         auto now{ std::chrono::system_clock::now() };
