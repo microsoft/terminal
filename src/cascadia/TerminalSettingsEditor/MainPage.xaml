@@ -208,7 +208,7 @@
                         <TextBlock Foreground="SlateBlue">
                             <Run x:Uid="Settings_PortableModeNote" />
                             <Hyperlink x:Uid="Settings_PortableModeInfoLink">
-                                <Run x:Uid="Settings_PortableModeInfoLinkTextRunYesThisIsFuckingStupid" />
+                                <Run x:Uid="Settings_PortableModeInfoLinkTextRun" />
                             </Hyperlink>
                         </TextBlock>
                     </StackPanel>

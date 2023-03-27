@@ -1593,7 +1593,7 @@
     <value>https://aka.ms/terminal-portable-mode</value>
     <comment>{Locked}</comment>
   </data>
-  <data name="Settings_PortableModeInfoLinkTextRunYesThisIsFuckingStupid.Text" xml:space="preserve">
+  <data name="Settings_PortableModeInfoLinkTextRun.Text" xml:space="preserve">
     <value>Learn more.</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
   </data>
