@@ -136,8 +136,6 @@ namespace winrt::TerminalApp::implementation
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
-        WINRT_OBSERVABLE_PROPERTY(bool, CheckingForUpdates, _PropertyChangedHandlers, false);
-
         // -------------------------------- WinRT Events ---------------------------------
         TYPED_EVENT(TitleChanged, IInspectable, winrt::hstring);
         TYPED_EVENT(LastTabClosed, IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);

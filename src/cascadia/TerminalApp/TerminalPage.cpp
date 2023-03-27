@@ -14,9 +14,6 @@
 #include <LibraryResources.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
-#include <WtExeUtils.h>
-
-#include <winrt/Windows.Services.Store.h>
 
 #include "../../types/inc/utils.hpp"
 #include "ColorHelper.h"

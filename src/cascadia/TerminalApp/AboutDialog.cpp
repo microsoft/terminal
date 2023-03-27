@@ -9,8 +9,6 @@
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
 
-#include <winrt/Windows.Services.Store.h>
-
 #include "../../types/inc/utils.hpp"
 #include "Utils.h"
 
@@ -104,13 +102,15 @@ namespace winrt::TerminalApp::implementation
             co_await wil::resume_foreground(strongThis->Dispatcher());
             _SetPendingUpdateVersion(L"X.Y.Z");
 #else // release build, likely has a store context
-            auto storeContext = winrt::Windows::Services::Store::StoreContext::GetDefault();
-            auto updates = co_await storeContext.GetAppAndOptionalStorePackageUpdatesAsync();
-            co_await wil::resume_foreground(strongThis->Dispatcher());
-            if (updates.Size() > 0)
+            if (auto storeContext{ winrt::Windows::Services::Store::StoreContext::GetDefault() })
             {
-                auto version = updates.GetAt(0).Package().Id().Version();
-                _SetPendingUpdateVersion(fmt::format(L"{0}.{1}.{2}", version.Major, version.Minor, version.Revision));
+                auto updates = co_await storeContext.GetAppAndOptionalStorePackageUpdatesAsync();
+                co_await wil::resume_foreground(strongThis->Dispatcher());
+                if (updates.Size() > 0)
+                {
+                    auto version = updates.GetAt(0).Package().Id().Version();
+                    _SetPendingUpdateVersion(fmt::format(L"{0}.{1}.{2}", version.Major, version.Minor, version.Revision));
+                }
             }
 #endif
         }
