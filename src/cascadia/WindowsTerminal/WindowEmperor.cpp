@@ -185,7 +185,13 @@ void WindowEmperor::_windowExitedHandler(uint64_t senderID)
     // * We're not allowed to run headless OR
     // * we've explicitly been told to "quit", which should fully exit the Terminal.
     const bool noMoreWindows{ lockedWindows->size() == 0 };
-    const bool quitWhenLastWindowExits{ !_app.Logic().AllowHeadless() };
+
+    // We're not allowed to run headless:
+    //
+    const bool quitWhenLastWindowExits{
+        (!_app.Logic().AllowHeadless() && !_manager.HeadlessMode()) ||
+        _app.Logic().IsolatedMode()
+    };
     if (noMoreWindows &&
         (_quitting || quitWhenLastWindowExits))
     {

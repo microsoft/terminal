@@ -193,13 +193,19 @@ void AppCommandlineArgs::_buildParser()
     };
     _app.add_option_function<std::string>("--size", sizeCallback, RS_A(L"CmdSizeDesc"));
 
-    _app.add_option("-w,--window",
-                    _windowTarget,
-                    RS_A(L"CmdWindowTargetArgDesc"));
+    auto windowTarget = _app.add_option("-w,--window",
+                                        _windowTarget,
+                                        RS_A(L"CmdWindowTargetArgDesc"));
 
     _app.add_option("-s,--saved",
                     _loadPersistedLayoutIdx,
                     RS_A(L"CmdSavedLayoutArgDesc"));
+
+    auto headless = _app.add_option("--headless",
+                                    _headless,
+                                    RS_A(L"CmdHeadlessArgDesc"));
+
+    _windowTarget->excludes(headless);
 
     // Subcommands
     _buildNewTabParser();
@@ -918,7 +924,7 @@ void AppCommandlineArgs::ValidateStartupCommands()
     // Only check over the actions list for the potential to add a new-tab
     // command if we are not starting for the purposes of receiving an inbound
     // handoff connection from the operating system.
-    if (!_isHandoffListener)
+    if (!_isHandoffListener && !_headless)
     {
         // If we parsed no commands, or the first command we've parsed is not a new
         // tab action, prepend a new-tab command to the front of the list.
@@ -1084,6 +1090,7 @@ void AppCommandlineArgs::FullResetState()
     _startupActions.clear();
     _exitMessage = "";
     _shouldExitEarly = false;
+    _isHandoffListener = false;
     _isHandoffListener = false;
 
     _windowTarget = {};

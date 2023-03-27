@@ -70,6 +70,8 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.Collections.IVectorView<PeasantInfo> GetPeasantInfos { get; };
         Windows.Foundation.Collections.IVector<String> GetAllWindowLayouts();
 
+        Boolean HeadlessMode { get; };
+
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;

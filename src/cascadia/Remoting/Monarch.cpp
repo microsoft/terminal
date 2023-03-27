@@ -666,6 +666,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // window.
             return winrt::make<Remoting::implementation::ProposeCommandlineResult>(false);
         }
+
+        for (const auto& arg : args.Commandline())
+        {
+            if (args == L"--headless")
+            {
+                _HeadlessMode = true;
+            }
+        }
+
         // If there's a valid ID returned, then let's try and find the peasant
         // that goes with it. Alternatively, if we were given a magic windowing
         // constant, we can use that to look up an appropriate peasant.
