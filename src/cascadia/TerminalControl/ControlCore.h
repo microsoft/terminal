@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
 
         uint64_t SwapChainHandle() const;
-        void Reparent(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
+        void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scale);

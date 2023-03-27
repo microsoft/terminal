@@ -50,8 +50,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void ContentManager::_finalizeDetach(winrt::Windows::Foundation::IInspectable sender,
-                                         winrt::Windows::Foundation::IInspectable e)
+    void ContentManager::_finalizeDetach(const winrt::Windows::Foundation::IInspectable& sender,
+                                         const winrt::Windows::Foundation::IInspectable&)
     {
         if (const auto& content{ sender.try_as<winrt::Microsoft::Terminal::Control::ControlInteractivity>() })
         {
@@ -59,8 +59,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void ContentManager::_closedHandler(winrt::Windows::Foundation::IInspectable sender,
-                                        winrt::Windows::Foundation::IInspectable e)
+    void ContentManager::_closedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                        const winrt::Windows::Foundation::IInspectable&)
     {
         if (const auto& content{ sender.try_as<winrt::Microsoft::Terminal::Control::ControlInteractivity>() })
         {

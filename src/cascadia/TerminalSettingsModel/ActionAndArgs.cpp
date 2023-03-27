@@ -428,7 +428,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return found != GeneratedActionNames.end() ? found->second : L"";
     }
 
-    winrt::hstring ActionAndArgs::Serialize(winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs> args)
+    winrt::hstring ActionAndArgs::Serialize(const winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs>& args)
     {
         Json::Value json{ Json::objectValue };
         JsonUtils::SetValueForKey(json, "actions", args);

@@ -259,7 +259,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static bool _isColorLight(til::color bg) noexcept;
         void _changeBackgroundOpacity();
 
-        bool _InitializeTerminal(const bool reattach);
+        enum InitializeReason : bool
+        {
+            Create,
+            Reattach
+        };
+        bool _InitializeTerminal(const InitializeReason reason);
         void _SetFontSize(int fontSize);
         void _TappedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
         void _KeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);

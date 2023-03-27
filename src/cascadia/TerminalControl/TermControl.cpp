@@ -106,7 +106,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // in any layout change chain. That gives us great flexibility in finding the right point
             // at which to initialize our renderer (and our terminal).
             // Any earlier than the last layout update and we may not know the terminal's starting size.
-            if (_InitializeTerminal(false))
+            if (_InitializeTerminal(InitializeReason::Create))
             {
                 // Only let this succeed once.
                 _layoutUpdatedRevoker.revoke();
@@ -211,11 +211,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         });
     }
 
-    Control::TermControl TermControl::AttachContent(Control::ControlInteractivity content, const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    // Function Description:
+    // - Static hepler for building a new TermControl from an already existing
+    //   content. We'll attach the existing swapchain to this new control's
+    //   SwapChainPanel. The IKeyBindings might belong to a non-agile object on
+    //   a new thread, so we'll hook up the core to these new bindings.
+    // Arguments:
+    // - content: The pre-existing ControlInteractivity to connect to.
+    // - keybindings: The new IKeyBindings instance to use for this control.
+    // Return Value:
+    // - The newly constructed TermControl.
+    Control::TermControl TermControl::AttachContent(Control::ControlInteractivity content,
+                                                    const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
     {
         const auto term{ winrt::make_self<TermControl>(content) };
         term->_AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(term->_core.SwapChainHandle()));
-        content.Reparent(keyBindings);
+        content.AttachToNewControl(keyBindings);
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -223,7 +234,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Replace the normal initialize routine with one that will allow up
             // to complete initialization even though the Core was already
             // initialized.
-            if (term->_InitializeTerminal(true))
+            if (term->_InitializeTerminal(InitializeReason::Reattach))
             {
                 // Only let this succeed once.
                 term->_layoutUpdatedRevoker.revoke();
@@ -911,7 +922,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         nativePanel->SetSwapChainHandle(swapChainHandle);
     }
 
-    bool TermControl::_InitializeTerminal(const bool reattach)
+    bool TermControl::_InitializeTerminal(const InitializeReason reason)
     {
         if (_initializedTerminal)
         {
@@ -938,7 +949,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.RendererWarning = _core.RendererWarning(winrt::auto_revoke, { get_weak(), &TermControl::_RendererWarning });
 
         // If we're re-attaching an existing content, then we want to proceed even though the Terminal was already initialized.
-        if (!reattach)
+        if (reason == InitializeReason::Create)
         {
             const auto coreInitialized = _core.Initialize(panelWidth,
                                                           panelHeight,

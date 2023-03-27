@@ -158,7 +158,9 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
     // object. That would work for schemes set by the Terminal, but not ones set
     // by VT, but that seems good enough.
 
-    // Only fill in the ContentGuid if absolutely needed.
+    // Only fill in the ContentId if absolutely needed. If you fill in a number
+    // here (even 0), we'll serialize that number, AND treat that action as an
+    // "attach existing" rather than a "create"
     if (asContent)
     {
         args.ContentId(_control.ContentId());
@@ -176,7 +178,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
 // - currentId: the id to use for the current/first pane
 // - nextId: the id to use for a new pane if we split
 // - asContent: We're serializing this set of actions as content actions for
-//   moving to other windows, so we need to make sure to include ContentGuid's
+//   moving to other windows, so we need to make sure to include ContentId's
 //   in the final actions.
 // - asMovePane: only used with asContent. When this is true, we're building
 //   these actions as a part of moving the pane to another window, but without

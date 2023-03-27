@@ -240,7 +240,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _updateScrollBar.reset();
     }
 
-    void ControlCore::Reparent(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    void ControlCore::AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
     {
         _settings->KeyBindings(keyBindings);
         _setupDispatcherAndCallbacks();

@@ -406,10 +406,10 @@ namespace winrt::TerminalApp::implementation
 
         void _Find(const TerminalTab& tab);
 
-        winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
-                                                                      const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
-        winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Control::TermControl& term);
-        winrt::Microsoft::Terminal::Control::TermControl _InitControlFromContent(const uint64_t& contentGuid);
+        winrt::Microsoft::Terminal::Control::TermControl _CreateNewControlAndContent(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
+                                                                                     const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
+        winrt::Microsoft::Terminal::Control::TermControl _SetupControl(const winrt::Microsoft::Terminal::Control::TermControl& term);
+        winrt::Microsoft::Terminal::Control::TermControl _AttachControlToContent(const uint64_t& contentGuid);
 
         std::shared_ptr<Pane> _MakePane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
                                         const winrt::TerminalApp::TabBase& sourceTab = nullptr,
@@ -484,7 +484,7 @@ namespace winrt::TerminalApp::implementation
 
         void _DetachPaneFromWindow(std::shared_ptr<Pane> pane);
         void _DetachTabFromWindow(const winrt::com_ptr<TerminalTab>& terminalTab);
-        void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions, const winrt::hstring& windowName, const uint32_t tabIndex);
+        void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>&& actions, const winrt::hstring& windowName, const uint32_t tabIndex);
 
         void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
         void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);
