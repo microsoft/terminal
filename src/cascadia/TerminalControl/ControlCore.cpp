@@ -1777,8 +1777,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Get the text of the command
             const auto line = mark.end.y;
             const auto& row = textBuffer.GetRowByOffset(line);
-            const auto rowText = row.GetText();
-            const auto commandText = rowText.substr(mark.end.x, mark.commandEnd->x - mark.end.x);
+            const auto commandText = row.GetText(mark.end.x, mark.commandEnd->x);
 
             // Trim off trailing spaces.
             const auto strEnd = commandText.find_last_not_of(UNICODE_SPACE);
