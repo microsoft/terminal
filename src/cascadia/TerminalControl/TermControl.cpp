@@ -72,6 +72,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // This event is specifically triggered by the renderer thread, a BG thread. Use a weak ref here.
         _revokers.RendererEnteredErrorState = _core.RendererEnteredErrorState(winrt::auto_revoke, { get_weak(), &TermControl::_RendererEnteredErrorState });
 
+        // IMPORTANT! Set this callback up sooner rather than later. If we do it
+        // after Enable, then it'll be possible to paint the frame once
+        // _before_ the warning handler is set up, and then warnings from
+        // the first paint will be ignored!
+        _revokers.RendererWarning = _core.RendererWarning(winrt::auto_revoke, { get_weak(), &TermControl::_RendererWarning });
+        // ALSO IMPORTANT: Make sure to set this callback up in the ctor, so
+        // that we won't miss any swap chain changes.
+        _revokers.SwapChainChanged = _core.SwapChainChanged(winrt::auto_revoke, { get_weak(), &TermControl::RenderEngineSwapChainChanged });
+
         // These callbacks can only really be triggered by UI interactions. So
         // they don't need weak refs - they can't be triggered unless we're
         // alive.
@@ -855,16 +864,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     winrt::fire_and_forget TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable args)
     {
-        // This event is only registered during terminal initialization,
-        // so we don't need to check _initializedTerminal.
+        // This event comes in on the render thread, not the UI thread.
+
         const auto weakThis{ get_weak() };
 
-        // Create a copy of the swap chain HANDLE in args, since we don't own that parameter.
-        // By the time we return from the co_await below, it might be deleted already.
         winrt::handle handle;
-        const auto processHandle = GetCurrentProcess();
-        const auto sourceHandle = reinterpret_cast<HANDLE>(winrt::unbox_value<uint64_t>(args));
-        THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(processHandle, sourceHandle, processHandle, handle.put(), 0, FALSE, DUPLICATE_SAME_ACCESS));
+
+        // Add a ref to the handle passed to us, so that the HANDLE will remain
+        // valid to the other side of the co_await.
+        handle.attach(reinterpret_cast<HANDLE>(winrt::unbox_value<uint64_t>(args)));
 
         co_await wil::resume_foreground(Dispatcher());
 
@@ -872,6 +880,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _AttachDxgiSwapChainToXaml(handle.get());
         }
+        // Detach from the handle. If you don't do this, we'll CloseHandle() on
+        // the handle when `handle` goes out of scope, resulting in the swap
+        // chain being closed.
+        handle.detach();
     }
 
     // Method Description:
@@ -942,12 +954,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
 
-        // IMPORTANT! Set this callback up sooner rather than later. If we do it
-        // after Enable, then it'll be possible to paint the frame once
-        // _before_ the warning handler is set up, and then warnings from
-        // the first paint will be ignored!
-        _revokers.RendererWarning = _core.RendererWarning(winrt::auto_revoke, { get_weak(), &TermControl::_RendererWarning });
-
         // If we're re-attaching an existing content, then we want to proceed even though the Terminal was already initialized.
         if (reason == InitializeReason::Create)
         {
@@ -965,7 +971,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _core.SizeOrScaleChanged(panelWidth, panelHeight, panelScaleX);
         }
 
-        _revokers.SwapChainChanged = _core.SwapChainChanged(winrt::auto_revoke, { get_weak(), &TermControl::RenderEngineSwapChainChanged });
         _core.EnablePainting();
 
         auto bufferHeight = _core.BufferHeight();

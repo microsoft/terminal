@@ -265,6 +265,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<::Microsoft::Console::Render::IRenderEngine> _renderEngine{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
+        winrt::handle _lastSwapChainHandle{ nullptr };
+
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
         winrt::hstring _actualFontFaceName;

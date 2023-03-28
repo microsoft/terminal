@@ -332,9 +332,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // the first paint will be ignored!
             _renderEngine->SetWarningCallback(std::bind(&ControlCore::_rendererWarning, this, std::placeholders::_1));
 
-            // Tell the DX Engine to notify us when the swap chain changes.
-            // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
-            _renderEngine->SetCallback([this](auto handle) { _renderEngineSwapChainChanged(handle); });
+            // Tell the render engine to notify us when the swap chain changes.
+            // We do this after we initially set the swapchain so as to avoid
+            // unnecessary callbacks (and locking problems)
+            _renderEngine->SetCallback([this](HANDLE handle) {
+                _renderEngineSwapChainChanged(handle);
+            });
 
             _renderEngine->SetRetroTerminalEffect(_settings->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(_settings->PixelShaderPath());
@@ -1551,6 +1554,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_renderEngineSwapChainChanged(const HANDLE handle)
     {
+        // `handle` is a weak ref to a HANDLE that's ultimately owned by the
+        // render engine's own unique_handle. We'll add another ref to it here.
+        // This will make sure that we always have a valid HANDLE to give to
+        // callers of our own SwapChainHandle method, even if the renderer is
+        // currently in the process of discarding this value and creating a new
+        // one. Callers should have already set up the SwapChainChanged
+        // callback, so this all works out.
+        _lastSwapChainHandle.attach(handle);
+
+        // Now bubble the event up to the control.
         _SwapChainChangedHandlers(*this, winrt::box_value<uint64_t>(reinterpret_cast<uint64_t>(handle)));
     }
 
@@ -1744,13 +1757,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     uint64_t ControlCore::SwapChainHandle() const
     {
-        // This is called by:
-        // * TermControl::RenderEngineSwapChainChanged, who is only registered
-        //   after Core::Initialize() is called.
-        // * TermControl::_InitializeTerminal, after the call to Initialize, for
-        //   _AttachDxgiSwapChainToXaml.
-        // In both cases, we'll have a _renderEngine by then.
-        return _renderEngine ? reinterpret_cast<uint64_t>(_renderEngine->GetSwapChainHandle()) : 0u;
+        // This is only ever called by TermControl::AttachContent, which occurs
+        // when we're taking an existing core and moving it to a new control.
+        // Otherwise, we only ever use the value from the SwapChainChanged
+        // event.
+        return reinterpret_cast<uint64_t>(_lastSwapChainHandle.get());
     }
 
     // Method Description:
