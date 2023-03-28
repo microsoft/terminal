@@ -866,28 +866,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ConnectionState();
     }
 
-    winrt::fire_and_forget TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable args)
+    void TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable args)
     {
-        // This event comes in on the render thread, not the UI thread.
-
-        const auto weakThis{ get_weak() };
-
-        winrt::handle handle;
-
-        // Add a ref to the handle passed to us, so that the HANDLE will remain
-        // valid to the other side of the co_await.
-        handle.attach(reinterpret_cast<HANDLE>(winrt::unbox_value<uint64_t>(args)));
-
-        co_await wil::resume_foreground(Dispatcher());
-
-        if (auto control{ weakThis.get() })
-        {
-            _AttachDxgiSwapChainToXaml(handle.get());
-        }
-        // Detach from the handle. If you don't do this, we'll CloseHandle() on
-        // the handle when `handle` goes out of scope, resulting in the swap
-        // chain being closed.
-        handle.detach();
+        // This event comes in on the UI thread
+        HANDLE h = reinterpret_cast<HANDLE>(winrt::unbox_value<uint64_t>(args));
+        _AttachDxgiSwapChainToXaml(h);
     }
 
     // Method Description:
@@ -1818,7 +1801,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#5421: Enable the UiaEngine before checking for the SearchBox
         // That way, new selections are notified to automation clients.
         // The _uiaEngine lives in _interactivity, so call into there to enable it.
-        _interactivity.GotFocus();
+
+        if (_interactivity)
+        {
+            _interactivity.GotFocus();
+        }
 
         // If the searchbox is focused, we don't want TSFInputControl to think
         // it has focus so it doesn't intercept IME input. We also don't want the
@@ -1873,7 +1860,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // This will disable the accessibility notifications, because the
         // UiaEngine lives in ControlInteractivity
-        _interactivity.LostFocus();
+        if (_interactivity)
+        {
+            _interactivity.LostFocus();
+        }
 
         if (TSFInputControl() != nullptr)
         {
