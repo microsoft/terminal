@@ -6349,17 +6349,17 @@ void ScreenBufferTests::CursorSaveRestore()
     // Verify home position inside margins, i.e. relative origin mode restored.
     VERIFY_ARE_EQUAL(til::point(0, 9), cursor.GetPosition());
 
-    Log::Comment(L"Clamp inside top margin.");
+    Log::Comment(L"Restore relative to new origin.");
     // Reset margins, with absolute origin, and set cursor position.
     stateMachine.ProcessString(L"\x1b[r");
     stateMachine.ProcessString(setDECOM);
-    cursor.SetPosition({ 5, 15 });
+    cursor.SetPosition({ 5, 5 });
     // Save state.
     stateMachine.ProcessString(saveCursor);
     // Set margins and restore state.
-    stateMachine.ProcessString(L"\x1b[20;25r");
+    stateMachine.ProcessString(L"\x1b[15;25r");
     stateMachine.ProcessString(restoreCursor);
-    // Verify Y position is clamped inside the top margin
+    // Verify Y position is now relative to new top margin
     VERIFY_ARE_EQUAL(til::point(5, 19), cursor.GetPosition());
 
     Log::Comment(L"Clamp inside bottom margin.");

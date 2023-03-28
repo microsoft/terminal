@@ -438,6 +438,12 @@ bool AdaptDispatch::CursorSaveState()
     auto cursorPosition = textBuffer.GetCursor().GetPosition();
     cursorPosition.y -= viewport.top;
 
+    // Although if origin mode is set, the cursor is relative to the margin origin.
+    if (_modes.test(Mode::Origin))
+    {
+        cursorPosition.y -= _GetVerticalMargins(viewport, false).first;
+    }
+
     // VT is also 1 based, not 0 based, so correct by 1.
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
     savedCursorState.Column = cursorPosition.x + 1;
@@ -464,31 +470,17 @@ bool AdaptDispatch::CursorRestoreState()
 {
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
 
-    auto row = savedCursorState.Row;
-    const auto col = savedCursorState.Column;
+    // Restore the origin mode first, since the cursor coordinates may be relative.
+    _modes.set(Mode::Origin, savedCursorState.IsOriginModeRelative);
 
-    // If the origin mode is relative, we need to make sure the restored
-    // position is clamped within the margins.
-    if (savedCursorState.IsOriginModeRelative)
-    {
-        const auto viewport = _api.GetViewport();
-        const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, false);
-        // VT origin is at 1,1 so we need to add 1 to these margins.
-        row = std::clamp(row, topMargin + 1, bottomMargin + 1);
-    }
-
-    // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
-    _modes.reset(Mode::Origin);
-    CursorPosition(row, col);
+    // We can then restore the position with a standard CUP operation.
+    CursorPosition(savedCursorState.Row, savedCursorState.Column);
 
     // If the delayed wrap flag was set when the cursor was saved, we need to restore that now.
     if (savedCursorState.IsDelayedEOLWrap)
     {
         _api.GetTextBuffer().GetCursor().DelayEOLWrap();
     }
-
-    // Once the cursor position is restored, we can then restore the actual origin mode.
-    _modes.set(Mode::Origin, savedCursorState.IsOriginModeRelative);
 
     // Restore text attributes.
     _api.SetTextAttributes(savedCursorState.Attributes);
