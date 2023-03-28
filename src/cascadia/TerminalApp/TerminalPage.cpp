@@ -4310,7 +4310,10 @@ namespace winrt::TerminalApp::implementation
                 if (auto terminalTab{ _GetTerminalTabImpl(tab) })
                 {
                     // The root pane will propagate the theme change to all its children.
-                    terminalTab->GetRootPane()->UpdateResources(_paneResources);
+                    if (const auto& rootPane{ terminalTab->GetRootPane() })
+                    {
+                        rootPane->UpdateResources(_paneResources);
+                    }
                 }
             }
         }
