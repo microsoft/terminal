@@ -451,6 +451,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewTabArgs>();
             args->_TerminalArgs = NewTerminalArgs::FromJson(json);
+
+            // Don't let the user specify the __content property in their
+            // settings. That's an internal-use-only property.
+            if (args->_TerminalArgs.ContentId())
+            {
+                return { nullptr, { SettingsLoadWarnings::InvalidUseOfContent } };
+            }
             return { *args, {} };
         }
         static Json::Value ToJson(const IActionArgs& val)
@@ -530,6 +537,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 return { nullptr, { SettingsLoadWarnings::InvalidSplitSize } };
             }
+
+            // Don't let the user specify the __content property in their
+            // settings. That's an internal-use-only property.
+            if (args->_TerminalArgs.ContentId())
+            {
+                return { nullptr, { SettingsLoadWarnings::InvalidUseOfContent } };
+            }
+
             return { *args, {} };
         }
         static Json::Value ToJson(const IActionArgs& val)
@@ -589,6 +604,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewWindowArgs>();
             args->_TerminalArgs = NewTerminalArgs::FromJson(json);
+
+            // Don't let the user specify the __content property in their
+            // settings. That's an internal-use-only property.
+            if (args->_TerminalArgs.ContentId())
+            {
+                return { nullptr, { SettingsLoadWarnings::InvalidUseOfContent } };
+            }
+
             return { *args, {} };
         }
         static Json::Value ToJson(const IActionArgs& val)
