@@ -456,7 +456,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // settings. That's an internal-use-only property.
             if (args->_TerminalArgs.ContentId())
             {
-                return { nullptr, { SettingsLoadWarnings::InvalidUseOfContent } };
+                args->_TerminalArgs.ContentId(0);
+                return { *args, { SettingsLoadWarnings::InvalidUseOfContent } };
             }
             return { *args, {} };
         }
@@ -542,7 +543,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // settings. That's an internal-use-only property.
             if (args->_TerminalArgs.ContentId())
             {
-                return { nullptr, { SettingsLoadWarnings::InvalidUseOfContent } };
+                args->_TerminalArgs.ContentId(0);
+                return { *args, { SettingsLoadWarnings::InvalidUseOfContent } };
             }
 
             return { *args, {} };
@@ -609,7 +611,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // settings. That's an internal-use-only property.
             if (args->_TerminalArgs.ContentId())
             {
-                return { nullptr, { SettingsLoadWarnings::InvalidUseOfContent } };
+                args->_TerminalArgs.ContentId(0);
+                return { *args, { SettingsLoadWarnings::InvalidUseOfContent } };
             }
 
             return { *args, {} };

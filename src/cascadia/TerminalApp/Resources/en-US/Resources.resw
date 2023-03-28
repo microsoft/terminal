@@ -763,7 +763,7 @@
     <comment>{Locked="newTabMenu"} {Locked="remainingProfiles"}</comment>
   </data>
   <data name="InvalidUseOfContent" xml:space="preserve">
-    <value>The "__content" property is reserved for internal use. Ignoring any actions that contained that value</value>
+    <value>The "__content" property is reserved for internal use. Ignoring that value from any actions that have it set.</value>
     <comment>{Locked="__content"}</comment>
   </data>
   <data name="AboutToolTip" xml:space="preserve">
