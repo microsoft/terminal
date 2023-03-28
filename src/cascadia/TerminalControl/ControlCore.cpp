@@ -1555,32 +1555,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _RendererWarningHandlers(*this, winrt::make<RendererWarningArgs>(hr));
     }
 
-    winrt::fire_and_forget ControlCore::_renderEngineSwapChainChanged(const HANDLE sourceHandle)
+    void ControlCore::_renderEngineSwapChainChanged(const HANDLE handle)
     {
-        // `sourceHandle` is a weak ref to a HANDLE that's ultimately owned by the
+        // `handle` is a weak ref to a HANDLE that's ultimately owned by the
         // render engine's own unique_handle. We'll add another ref to it here.
         // This will make sure that we always have a valid HANDLE to give to
         // callers of our own SwapChainHandle method, even if the renderer is
         // currently in the process of discarding this value and creating a new
         // one. Callers should have already set up the SwapChainChanged
         // callback, so this all works out.
+        _lastSwapChainHandle.attach(handle);
 
-        winrt::handle duplicatedHandle;
-        const auto processHandle = GetCurrentProcess();
-        THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(processHandle, sourceHandle, processHandle, duplicatedHandle.put(), 0, FALSE, DUPLICATE_SAME_ACCESS));
-
-        const auto weakThis{ get_weak() };
-
-        co_await wil::resume_foreground(_dispatcher);
-
-        if (auto core{ weakThis.get() })
-        {
-            // `this` is safe to use now
-
-            _lastSwapChainHandle = (std::move(duplicatedHandle));
-            // Now bubble the event up to the control.
-            _SwapChainChangedHandlers(*this, winrt::box_value<uint64_t>(reinterpret_cast<uint64_t>(_lastSwapChainHandle.get())));
-        }
+        // Now bubble the event up to the control.
+        _SwapChainChangedHandlers(*this, winrt::box_value<uint64_t>(reinterpret_cast<uint64_t>(handle)));
     }
 
     void ControlCore::_rendererBackgroundColorChanged()
