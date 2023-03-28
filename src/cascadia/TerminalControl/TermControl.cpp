@@ -230,28 +230,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - keybindings: The new IKeyBindings instance to use for this control.
     // Return Value:
     // - The newly constructed TermControl.
-    Control::TermControl TermControl::AttachContent(Control::ControlInteractivity content,
-                                                    const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    Control::TermControl TermControl::NewControlByAttachingContent(Control::ControlInteractivity content,
+                                                                   const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
     {
         const auto term{ winrt::make_self<TermControl>(content) };
-        term->_AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(term->_core.SwapChainHandle()));
-        content.AttachToNewControl(keyBindings);
+        term->_initializeForAttach(keyBindings);
+        return *term;
+    }
+
+    void TermControl::_initializeForAttach(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    {
+        _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core.SwapChainHandle()));
+        _interactivity.AttachToNewControl(keyBindings);
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
-        auto r = term->SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [term](auto /*s*/, auto /*e*/) {
+        auto r = SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
             // Replace the normal initialize routine with one that will allow up
             // to complete initialization even though the Core was already
             // initialized.
-            if (term->_InitializeTerminal(InitializeReason::Reattach))
+            if (_InitializeTerminal(InitializeReason::Reattach))
             {
                 // Only let this succeed once.
-                term->_layoutUpdatedRevoker.revoke();
+                _layoutUpdatedRevoker.revoke();
             }
         });
-        term->_layoutUpdatedRevoker.swap(r);
-
-        return *term;
+        _layoutUpdatedRevoker.swap(r);
     }
 
     uint64_t TermControl::ContentId() const

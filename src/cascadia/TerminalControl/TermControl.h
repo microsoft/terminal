@@ -29,7 +29,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         TermControl(IControlSettings settings, Control::IControlAppearance unfocusedAppearance, TerminalConnection::ITerminalConnection connection);
 
-        static Control::TermControl AttachContent(Control::ControlInteractivity content, const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
+        static Control::TermControl NewControlByAttachingContent(Control::ControlInteractivity content, const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
         winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings);
         winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
@@ -246,6 +246,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #endif
             return _closing;
         }
+
+        void _initializeForAttach(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
         void _UpdateSettingsFromUIThread();
         void _UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance);

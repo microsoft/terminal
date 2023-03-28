@@ -235,6 +235,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // for our engines while we're not attached to anything.
         _renderer->WaitForPaintCompletionAndDisable(INFINITE);
 
+        // Clear out any throttled funcs that we had wired up to run on this UI
+        // thread. These will be recreated in _setupDispatcherAndCallbacks, when
+        // we're re-attached to a new control (on a possibly new UI thread).
         _tsfTryRedrawCanvas.reset();
         _updatePatternLocations.reset();
         _updateScrollBar.reset();

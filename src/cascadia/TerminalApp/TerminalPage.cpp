@@ -2757,7 +2757,7 @@ namespace winrt::TerminalApp::implementation
             // don't, then when we move the content to another thread, and it
             // tries to handle a key, it'll callback on the original page's
             // stack, inevitably resulting in a wrong_thread
-            return _SetupControl(TermControl::AttachContent(content, *_bindings));
+            return _SetupControl(TermControl::NewControlByAttachingContent(content, *_bindings));
         }
         return nullptr;
     }
