@@ -107,7 +107,7 @@ namespace Microsoft::Console::Render::Atlas
 
         struct ApiState
         {
-            til::generational<Settings> s;
+            GenerationalSettings s = DirtyGenerationalSettings();
 
             // This structure is loosely sorted in chunks from "very often accessed together"
             // to seldom accessed and/or usually not together.

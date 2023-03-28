@@ -985,19 +985,10 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     auto lines = Renderer::s_GetGridlines(textAttribute);
 
     // For now, we dash underline patterns and switch to regular underline on hover
-    // Since we're only rendering pattern links on *hover*, there's no point in checking
-    // the pattern range if we aren't currently hovering.
-    if (_hoveredInterval.has_value())
+    if (_isHoveredHyperlink(textAttribute) || _isInHoveredInterval(coordTarget))
     {
-        const til::point coordTargetTil{ coordTarget };
-        if (_hoveredInterval->start <= coordTargetTil &&
-            coordTargetTil <= _hoveredInterval->stop)
-        {
-            if (_pData->GetPatternId(coordTarget).size() > 0)
-            {
-                lines.set(GridLines::Underline);
-            }
-        }
+        lines.reset(GridLines::HyperlinkUnderline);
+        lines.set(GridLines::Underline);
     }
 
     // Return early if there are no lines to paint.
@@ -1008,6 +999,18 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
         // Draw the lines
         LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
     }
+}
+
+bool Renderer::_isHoveredHyperlink(const TextAttribute& textAttribute) const noexcept
+{
+    return _hyperlinkHoveredId && _hyperlinkHoveredId == textAttribute.GetHyperlinkId();
+}
+
+bool Renderer::_isInHoveredInterval(const til::point coordTarget) const noexcept
+{
+    return _hoveredInterval &&
+           _hoveredInterval->start <= coordTarget && coordTarget <= _hoveredInterval->stop &&
+           _pData->GetPatternId(coordTarget).size() > 0;
 }
 
 // Routine Description:
@@ -1346,6 +1349,15 @@ void Renderer::ResetErrorStateAndResume()
 {
     // because we're not stateful (we could be in the future), all we want to do is reenable painting.
     EnablePainting();
+}
+
+void Renderer::UpdateHyperlinkHoveredId(uint16_t id) noexcept
+{
+    _hyperlinkHoveredId = id;
+    FOREACH_ENGINE(pEngine)
+    {
+        pEngine->UpdateHyperlinkHoveredId(id);
+    }
 }
 
 void Renderer::UpdateLastHoveredInterval(const std::optional<PointTree::interval>& newInterval)

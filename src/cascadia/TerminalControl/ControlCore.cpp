@@ -686,7 +686,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                 _lastHoveredId = newId;
                 _lastHoveredInterval = newInterval;
-                _renderEngine->UpdateHyperlinkHoveredId(newId);
+                _renderer->UpdateHyperlinkHoveredId(newId);
                 _renderer->UpdateLastHoveredInterval(newInterval);
                 _renderer->TriggerRedrawAll();
             }

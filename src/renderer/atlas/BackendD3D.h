@@ -126,6 +126,7 @@ namespace Microsoft::Console::Render::Atlas
             const GlyphCacheMap& operator=(const GlyphCacheMap&) = delete;
             GlyphCacheMap& operator=(GlyphCacheMap&& other) noexcept;
 
+            size_t Size() const noexcept;
             void Clear() noexcept;
             GlyphCacheEntry& FindOrInsert(const GlyphCacheKey& key, bool& inserted);
 
@@ -163,8 +164,8 @@ namespace Microsoft::Console::Render::Atlas
         __declspec(noinline) void _recreateInstanceBuffers(const RenderingPayload& p);
         void _drawBackground(const RenderingPayload& p);
         void _drawText(RenderingPayload& p);
-        __declspec(noinline) void _drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f32 fontEmSize);
-        __declspec(noinline) void _drawGlyphRetry(const RenderingPayload& p, stbrp_rect& rect);
+        __declspec(noinline) [[nodiscard]] bool _drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f32 fontEmSize);
+        void _drawGlyphPrepareRetry(const RenderingPayload& p);
         void _splitDoubleHeightGlyph(const RenderingPayload& p, GlyphCacheEntry& entry);
         void _drawGridlines(const RenderingPayload& p);
         void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);

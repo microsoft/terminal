@@ -344,6 +344,19 @@ namespace Microsoft::Console::Render::Atlas
         u16x2 cellCount;
     };
 
+    using GenerationalSettings = til::generational<Settings>;
+
+    inline GenerationalSettings DirtyGenerationalSettings() noexcept
+    {
+        return GenerationalSettings{
+            til::generation_t{ 1 },
+            til::generational<TargetSettings>{ til::generation_t{ 1 } },
+            til::generational<FontSettings>{ til::generation_t{ 1 } },
+            til::generational<CursorSettings>{ til::generation_t{ 1 } },
+            til::generational<MiscellaneousSettings>{ til::generation_t{ 1 } },
+        };
+    }
+
     enum class FontRelevantAttributes : u8
     {
         None = 0,
@@ -432,7 +445,7 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<IDXGIFactory2> dxgiFactory;
 
         //// Parameters which change seldom.
-        til::generational<Settings> s;
+        GenerationalSettings s;
 
         //// Parameters which change every frame.
         // This is the backing buffer for `rows`.
