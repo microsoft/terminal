@@ -55,6 +55,24 @@ More code always bears a risk.
 This is a net new feature, and it does not break any existing features. A distributor (or a user) can opt in (or out) by
 adding (or removing) the `.portable` file.
 
+The following features may be impacted.
+
+- **Dynamic Profiles** and **Fragment Extensions**
+  - _No impact expected._ Dynamic profiles will still be generated. If a portable installation is moved to a machine without the dynamic profile source, that profile will disappear.
+- `firstWindowPreference` and `state.json`
+  - _No impact expected._
+  - State is stored next to settings, even for portable installations.
+  - If a dynamic profile was saved in `state` and has been removed, Terminal will proceed as in non-portable mode.
+- Moving an install from Windows 10 to Windows 11 and back
+  - _No impact expected._
+- "Machine-specific" settings, like those about rendering and repainting
+  - _No impact expected._
+  - Terminal does not distinguish settings that are specific to a machine. These settings will move along with the portable install.
+- The shell extension
+  - _No impact expected._
+  - The shell extension will not be registered with Windows.
+  - If we choose to register the shell extension, it is already prepared for running a version of WT from the same directory. Registering the portable shell extension will make it launch portable Terminal.
+
 ### Performance, Power, and Efficiency
 
 _No change is expected._
