@@ -221,7 +221,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Function Description:
-    // - Static hepler for building a new TermControl from an already existing
+    // - Static helper for building a new TermControl from an already existing
     //   content. We'll attach the existing swapchain to this new control's
     //   SwapChainPanel. The IKeyBindings might belong to a non-agile object on
     //   a new thread, so we'll hook up the core to these new bindings.
