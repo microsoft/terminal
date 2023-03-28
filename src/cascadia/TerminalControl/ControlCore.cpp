@@ -1577,7 +1577,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // `this` is safe to use now
 
-            _lastSwapChainHandle = (std::move(duplicatedHandle));
+            _lastSwapChainHandle = std::move(duplicatedHandle);
             // Now bubble the event up to the control.
             _SwapChainChangedHandlers(*this, winrt::box_value<uint64_t>(reinterpret_cast<uint64_t>(_lastSwapChainHandle.get())));
         }
