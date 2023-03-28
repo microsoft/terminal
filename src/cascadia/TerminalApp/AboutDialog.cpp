@@ -104,12 +104,13 @@ namespace winrt::TerminalApp::implementation
 #else // release build, likely has a store context
             if (auto storeContext{ winrt::Windows::Services::Store::StoreContext::GetDefault() })
             {
-                auto updates = co_await storeContext.GetAppAndOptionalStorePackageUpdatesAsync();
+                const auto updates = co_await storeContext.GetAppAndOptionalStorePackageUpdatesAsync();
                 co_await wil::resume_foreground(strongThis->Dispatcher());
                 if (updates.Size() > 0)
                 {
-                    auto version = updates.GetAt(0).Package().Id().Version();
-                    _SetPendingUpdateVersion(fmt::format(L"{0}.{1}.{2}", version.Major, version.Minor, version.Revision));
+                    const auto version = updates.GetAt(0).Package().Id().Version();
+                    const auto str = fmt::format(FMT_COMPILE(L"{}.{}.{}"), version.Major, version.Minor, version.Revision);
+                    _SetPendingUpdateVersion(winrt::hstring{ str });
                 }
             }
 #endif
