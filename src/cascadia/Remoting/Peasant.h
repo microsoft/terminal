@@ -66,7 +66,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         winrt::Microsoft::Terminal::Remoting::CommandlineArgs InitialArgs();
 
         winrt::hstring GetWindowLayout();
-        void SendContent(winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs args);
+        void SendContent(const winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs& args);
 
         WINRT_PROPERTY(winrt::hstring, WindowName);
         WINRT_PROPERTY(winrt::hstring, ActiveTabTitle);
