@@ -23,7 +23,6 @@ namespace Microsoft::Console::Render::Atlas
         [[nodiscard]] HRESULT EndPaint() noexcept override;
         [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
         void WaitUntilCanRender() noexcept override;
-        void _recreateBackend();
         [[nodiscard]] HRESULT Present() noexcept override;
         [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* pForcePaint) noexcept override;
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
@@ -93,6 +92,7 @@ namespace Microsoft::Console::Render::Atlas
         void _resolveFontMetrics(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics = nullptr) const;
 
         // AtlasEngine.r.cpp
+        void _recreateBackend();
 
         static constexpr u16 u16min = 0x0000;
         static constexpr u16 u16max = 0xffff;

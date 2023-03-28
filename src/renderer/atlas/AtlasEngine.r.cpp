@@ -32,23 +32,16 @@ using namespace Microsoft::Console::Render::Atlas;
 [[nodiscard]] HRESULT AtlasEngine::Present() noexcept
 try
 {
-    if (!_p.dirtyRectInPx)
-    {
-        return S_OK;
-    }
-
-    if (_p.dxgiFactory && !_p.dxgiFactory->IsCurrent())
-    {
-        _p.dxgiFactory.reset();
-        _b.reset();
-    }
-
     if (!_b)
     {
         _recreateBackend();
     }
 
-    _b->Render(_p);
+    if (_p.dirtyRectInPx)
+    {
+        _b->Render(_p);
+    }
+
     return S_OK;
 }
 catch (const wil::ResultException& exception)
@@ -228,4 +221,13 @@ void AtlasEngine::_recreateBackend()
     {
         _b = std::make_unique<BackendD3D>(std::move(device), std::move(deviceContext));
     }
+
+    // !!! NOTE !!!
+    // Normally the viewport is indirectly marked as dirty by `AtlasEngine::_handleSettingsUpdate()` whenever
+    // the settings change, but the `!_p.dxgiFactory->IsCurrent()` check is not part of the settings change
+    // flow and so we have to manually recreate how AtlasEngine.cpp marks viewports as dirty here.
+    // This ensures that the backends redraw their entire viewports whenever a new swap chain is created.
+    _p.dirtyRectInPx = { 0, 0, _p.s->targetSize.x, _p.s->targetSize.y };
+    _p.invalidatedRows = { 0, _p.s->cellCount.y };
+    _p.scrollOffset = 0;
 }

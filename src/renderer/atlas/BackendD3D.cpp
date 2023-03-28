@@ -1138,7 +1138,7 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
         _d2dRenderTarget->SetTransform(&t);
     }
 
-    const auto restoreTransform = wil::scope_exit([&]() {
+    const auto restoreTransform = wil::scope_exit([&]() noexcept {
         static constexpr D2D1_MATRIX_3X2_F identity{ .m11 = 1, .m22 = 1 };
         _d2dRenderTarget->SetTransform(&identity);
     });

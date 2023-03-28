@@ -47,11 +47,13 @@ namespace Microsoft::Console::Render::Atlas
             else if (_targetSize != p.s->targetSize)
             {
                 prepareResize();
-                THROW_IF_FAILED(_swapChain->ResizeBuffers(0, p.s->targetSize.x, p.s->targetSize.y, DXGI_FORMAT_UNKNOWN, flags));
-                _targetSize = p.s->targetSize;
+                _resizeBuffers(p);
             }
 
-            _updateMatrixTransform(p);
+            if (_fontGeneration != p.s->font.generation())
+            {
+                _updateMatrixTransform(p);
+            }
         }
 
         wil::com_ptr<ID3D11Texture2D> GetBuffer() const;
@@ -60,7 +62,8 @@ namespace Microsoft::Console::Render::Atlas
 
     private:
         void _createSwapChain(const RenderingPayload& p, IUnknown* device);
-        void _updateMatrixTransform(const RenderingPayload& p) const;
+        void _resizeBuffers(const RenderingPayload& p);
+        void _updateMatrixTransform(const RenderingPayload& p);
 
         static constexpr DXGI_SWAP_CHAIN_FLAG flags = ATLAS_DEBUG_DISABLE_FRAME_LATENCY_WAITABLE_OBJECT ? DXGI_SWAP_CHAIN_FLAG{} : DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 

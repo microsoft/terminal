@@ -457,9 +457,10 @@ namespace Microsoft::Console::Render::Atlas
         // 1 ensures that the backends redraw the background, even if the background is
         // entirely black, just like `backgroundBitmap` is all back after it gets created.
         til::generation_t backgroundBitmapGeneration{ 1 };
+        u16r cursorRect;
+
         til::rect dirtyRectInPx;
         u16x2 invalidatedRows;
-        u16r cursorRect;
         i16 scrollOffset = 0;
     };
 

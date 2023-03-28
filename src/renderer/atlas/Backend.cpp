@@ -87,35 +87,36 @@ void SwapChainManager::_createSwapChain(const RenderingPayload& p, IUnknown* dev
     _swapChain.reset();
     _frameLatencyWaitableObject.reset();
 
-    DXGI_SWAP_CHAIN_DESC1 desc{};
-    desc.Width = p.s->targetSize.x;
-    desc.Height = p.s->targetSize.y;
-    desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    desc.SampleDesc.Count = 1;
-    desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    // Sometimes up to 2 buffers are locked, for instance during screen capture or when moving the window.
-    // 3 buffers seems to guarantee a stable framerate at display frequency at all times.
-    desc.BufferCount = 3;
-    desc.Scaling = DXGI_SCALING_NONE;
-    // DXGI_SWAP_EFFECT_FLIP_DISCARD is a mode that was created at a time were display drivers
-    // lacked support for Multiplane Overlays (MPO) and were copying buffers was expensive.
-    // This allowed DWM to quickly draw overlays (like gamebars) on top of rendered content.
-    // With faster GPU memory in general and with support for MPO in particular this isn't
-    // really an advantage anymore. Instead DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL allows for a
-    // more "intelligent" composition and display updates to occur like Panel Self Refresh
-    // (PSR) which requires dirty rectangles (Present1 API) to work correctly.
-    desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-    // If our background is opaque we can enable "independent" flips by setting DXGI_ALPHA_MODE_IGNORE.
-    // As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
-    desc.AlphaMode = p.s->target->enableTransparentBackground ? DXGI_ALPHA_MODE_PREMULTIPLIED : DXGI_ALPHA_MODE_IGNORE;
-    desc.Flags = flags;
+    DXGI_SWAP_CHAIN_DESC1 desc{
+        .Width = p.s->targetSize.x,
+        .Height = p.s->targetSize.y,
+        .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
+        .SampleDesc = { .Count = 1 },
+        .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
+        // Sometimes up to 2 buffers are locked, for instance during screen capture or when moving the window.
+        // 3 buffers seems to guarantee a stable framerate at display frequency at all times.
+        .BufferCount = 3,
+        .Scaling = DXGI_SCALING_NONE,
+        // DXGI_SWAP_EFFECT_FLIP_DISCARD is a mode that was created at a time were display drivers
+        // lacked support for Multiplane Overlays (MPO) and were copying buffers was expensive.
+        // This allowed DWM to quickly draw overlays (like gamebars) on top of rendered content.
+        // With faster GPU memory in general and with support for MPO in particular this isn't
+        // really an advantage anymore. Instead DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL allows for a
+        // more "intelligent" composition and display updates to occur like Panel Self Refresh
+        // (PSR) which requires dirty rectangles (Present1 API) to work correctly.
+        .SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL,
+        // If our background is opaque we can enable "independent" flips by setting DXGI_ALPHA_MODE_IGNORE.
+        // As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
+        .AlphaMode = p.s->target->enableTransparentBackground ? DXGI_ALPHA_MODE_PREMULTIPLIED : DXGI_ALPHA_MODE_IGNORE,
+        .Flags = flags,
+    };
 
-    wil::com_ptr<IDXGISwapChain1> swapChain0;
+    wil::com_ptr<IDXGISwapChain1> swapChain1;
 
     if (p.s->target->hwnd)
     {
         desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-        THROW_IF_FAILED(p.dxgiFactory->CreateSwapChainForHwnd(device, p.s->target->hwnd, &desc, nullptr, nullptr, swapChain0.addressof()));
+        THROW_IF_FAILED(p.dxgiFactory->CreateSwapChainForHwnd(device, p.s->target->hwnd, &desc, nullptr, nullptr, swapChain1.addressof()));
     }
     else
     {
@@ -126,12 +127,13 @@ void SwapChainManager::_createSwapChain(const RenderingPayload& p, IUnknown* dev
         // As per: https://docs.microsoft.com/en-us/windows/win32/api/dcomp/nf-dcomp-dcompositioncreatesurfacehandle
         static constexpr DWORD COMPOSITIONSURFACE_ALL_ACCESS = 0x0003L;
         THROW_IF_FAILED(DCompositionCreateSurfaceHandle(COMPOSITIONSURFACE_ALL_ACCESS, nullptr, _swapChainHandle.addressof()));
-        THROW_IF_FAILED(p.dxgiFactory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(device, _swapChainHandle.get(), &desc, nullptr, swapChain0.addressof()));
+        THROW_IF_FAILED(p.dxgiFactory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(device, _swapChainHandle.get(), &desc, nullptr, swapChain1.addressof()));
     }
 
-    _swapChain = swapChain0.query<IDXGISwapChain2>();
+    _swapChain = swapChain1.query<IDXGISwapChain2>();
     _frameLatencyWaitableObject.reset(_swapChain->GetFrameLatencyWaitableObject());
     _targetGeneration = p.s->target.generation();
+    _fontGeneration = {};
     _targetSize = p.s->targetSize;
     _waitForPresentation = true;
 
@@ -147,18 +149,25 @@ void SwapChainManager::_createSwapChain(const RenderingPayload& p, IUnknown* dev
     }
 }
 
-void SwapChainManager::_updateMatrixTransform(const RenderingPayload& p) const
+void SwapChainManager::_resizeBuffers(const RenderingPayload& p)
 {
-    // XAML's SwapChainPanel combines the worst of both worlds and always applies a transform to
-    // the swap chain to make it match the display scale. This if condition undoes the damage.
-    if (_fontGeneration != p.s->font.generation() && !p.s->target->hwnd)
+    THROW_IF_FAILED(_swapChain->ResizeBuffers(0, p.s->targetSize.x, p.s->targetSize.y, DXGI_FORMAT_UNKNOWN, flags));
+    _targetSize = p.s->targetSize;
+}
+
+void SwapChainManager::_updateMatrixTransform(const RenderingPayload& p)
+{
+    if (!p.s->target->hwnd)
     {
+        // XAML's SwapChainPanel combines the worst of both worlds and always applies a transform
+        // to the swap chain to make it match the display scale. This undoes the damage.
         const DXGI_MATRIX_3X2_F matrix{
             ._11 = static_cast<f32>(USER_DEFAULT_SCREEN_DPI) / static_cast<f32>(p.s->font->dpi),
             ._22 = static_cast<f32>(USER_DEFAULT_SCREEN_DPI) / static_cast<f32>(p.s->font->dpi),
         };
         THROW_IF_FAILED(_swapChain->SetMatrixTransform(&matrix));
     }
+    _fontGeneration = p.s->font.generation();
 }
 
 // Draws a `DWRITE_GLYPH_RUN` at `baselineOrigin` into the given `ID2D1DeviceContext`.

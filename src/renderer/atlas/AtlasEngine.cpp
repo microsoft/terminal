@@ -464,6 +464,9 @@ void AtlasEngine::_handleSettingsUpdate()
         _recreateCellCountDependentResources();
     }
 
+    // !!! NOTE !!!
+    // This will indirectly mark the entire viewport as dirty, but AtlasEngine::_recreateBackend()
+    // may do the same, so make sure that that function stays in sync with what this code does.
     _api.invalidatedRows = invalidatedRowsAll;
 
     u16 y = 0;
@@ -829,7 +832,7 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
             {
             }
         }
-        
+
         const auto initialIndicesCount = row.glyphIndices.size();
         row.mappings.emplace_back(_api.replacementCharacterFontFace, _p.s->font->fontSize, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(row.glyphIndices.size()), FontRendition::SoftFont);
     }
