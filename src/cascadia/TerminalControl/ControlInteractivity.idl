@@ -25,7 +25,7 @@ namespace Microsoft.Terminal.Control
 
         UInt64 Id { get; };
 
-        void Reparent(Microsoft.Terminal.Control.IKeyBindings keyBindings);
+        void AttachToNewControl(Microsoft.Terminal.Control.IKeyBindings keyBindings);
         void Detach();
 
         void Close();

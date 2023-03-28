@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
 
         uint64_t SwapChainHandle() const;
-        void Reparent(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
+        void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scale);
@@ -265,6 +265,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<::Microsoft::Console::Render::IRenderEngine> _renderEngine{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
+        winrt::handle _lastSwapChainHandle{ nullptr };
+
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
         winrt::hstring _actualFontFaceName;
@@ -326,7 +328,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr);
-        void _renderEngineSwapChainChanged(const HANDLE handle);
+        winrt::fire_and_forget _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();
 #pragma endregion

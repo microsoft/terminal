@@ -58,7 +58,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT SetWindowSize(const til::size pixels) noexcept override;
 
         void SetCallback(std::function<void(const HANDLE)> pfn) noexcept override;
-        HANDLE GetSwapChainHandle() noexcept override;
         void SetWarningCallback(std::function<void(const HRESULT)> pfn) noexcept override;
 
         bool GetRetroTerminalEffect() const noexcept override;
