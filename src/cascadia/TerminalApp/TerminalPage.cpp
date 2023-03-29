@@ -4703,7 +4703,8 @@ namespace winrt::TerminalApp::implementation
                 {
                     const auto posX{ e.GetPosition(item).X }; // The point of the drop, relative to the tab
                     const auto itemWidth{ item.ActualWidth() }; // The right of the tab
-                    if (posX < itemWidth)
+                    // If the drag point is on the left half of the tab, then insert here.
+                    if (posX < itemWidth / 2)
                     {
                         index = i;
                         break;
