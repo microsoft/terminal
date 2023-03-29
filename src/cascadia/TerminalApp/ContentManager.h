@@ -42,10 +42,6 @@ namespace winrt::TerminalApp::implementation
 
     private:
         std::unordered_map<uint64_t, Microsoft::Terminal::Control::ControlInteractivity> _content;
-        std::unordered_map<uint64_t, Microsoft::Terminal::Control::ControlInteractivity> _recentlyDetachedContent;
-
-        void _finalizeDetach(const winrt::Windows::Foundation::IInspectable& sender,
-                             const winrt::Windows::Foundation::IInspectable& e);
 
         void _closedHandler(const winrt::Windows::Foundation::IInspectable& sender,
                             const winrt::Windows::Foundation::IInspectable& e);

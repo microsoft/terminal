@@ -45,17 +45,6 @@ namespace winrt::TerminalApp::implementation
         if (const auto& content{ TryLookupCore(contentId) })
         {
             control.Detach();
-            content.Attached({ get_weak(), &ContentManager::_finalizeDetach });
-            _recentlyDetachedContent.emplace(contentId, content);
-        }
-    }
-
-    void ContentManager::_finalizeDetach(const winrt::Windows::Foundation::IInspectable& sender,
-                                         const winrt::Windows::Foundation::IInspectable&)
-    {
-        if (const auto& content{ sender.try_as<winrt::Microsoft::Terminal::Control::ControlInteractivity>() })
-        {
-            _recentlyDetachedContent.erase(content.Id());
         }
     }
 
@@ -66,7 +55,6 @@ namespace winrt::TerminalApp::implementation
         {
             const auto& contentId{ content.Id() };
             _content.erase(contentId);
-            _recentlyDetachedContent.erase(contentId);
         }
     }
 }
