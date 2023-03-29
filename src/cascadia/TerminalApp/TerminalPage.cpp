@@ -4639,10 +4639,10 @@ namespace winrt::TerminalApp::implementation
             const auto id{ _WindowProperties.WindowId() };
 
             // Get our PID
-            const winrt::hstring pid{ fmt::format(L"{}", GetCurrentProcessId()) };
+            const auto pid{ GetCurrentProcessId() };
 
             e.Data().Properties().Insert(L"windowId", winrt::box_value(id));
-            e.Data().Properties().Insert(L"pid", winrt::box_value(pid));
+            e.Data().Properties().Insert(L"pid", winrt::box_value<uint32_t>(pid));
             e.Data().RequestedOperation(DataPackageOperation::Move);
 
             // The next thing that will happen:
@@ -4705,15 +4705,7 @@ namespace winrt::TerminalApp::implementation
             // No windowId? Bail.
             co_return;
         }
-        const auto windowId{ winrt::unbox_value<winrt::hstring>(windowIdObj) };
-
-        // Convert the windowId to a number
-        uint32_t src;
-        if (!Utils::StringToUint(windowId.c_str(), src))
-        {
-            // Failed to convert the windowId to a number. Bail.
-            co_return;
-        }
+        const uint64_t src{ winrt::unbox_value<uint64_t>(windowIdObj) };
 
         // Figure out where in the tab strip we're dropping this tab. Add that
         // index to the request. This is largely taken from the WinUI sample
