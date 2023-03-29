@@ -4599,12 +4599,12 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_onTabDragStarting(winrt::Microsoft::UI::Xaml::Controls::TabView sender,
-                                          winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs e)
+    void TerminalPage::_onTabDragStarting(const winrt::Microsoft::UI::Xaml::Controls::TabView&,
+                                          const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& e)
     {
         // Get the tab impl from this event.
-        const auto& eventTab = e.Tab();
-        const auto& tabBase = _GetTabByTabViewItem(eventTab);
+        const auto eventTab = e.Tab();
+        const auto tabBase = _GetTabByTabViewItem(eventTab);
         winrt::com_ptr<TabBase> tabImpl;
         tabImpl.copy_from(winrt::get_self<TabBase>(tabBase));
         if (tabImpl)
@@ -4614,7 +4614,7 @@ namespace winrt::TerminalApp::implementation
             _stashedDraggedTab = tabImpl;
 
             // Into the DataPackage, let's stash our own window ID.
-            const winrt::hstring id{ fmt::format(L"{}", _WindowProperties.WindowId()) };
+            const auto id{ _WindowProperties.WindowId() };
 
             // Get our PID
             const winrt::hstring pid{ fmt::format(L"{}", GetCurrentProcessId()) };
@@ -4634,12 +4634,15 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_onTabStripDragOver(winrt::Windows::Foundation::IInspectable /*sender*/,
-                                           winrt::Windows::UI::Xaml::DragEventArgs e)
+    void TerminalPage::_onTabStripDragOver(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                           const winrt::Windows::UI::Xaml::DragEventArgs& e)
     {
         // We must mark that we can accept the drag/drop. The system will never
         // call TabStripDrop on us if we don't indicate that we're willing.
-        if (e.DataView().Properties().HasKey(L"windowId"))
+        const auto& props{ e.DataView().Properties() };
+        if (props.HasKey(L"windowId") &&
+            props.HasKey(L"pid") &&
+            (winrt::unbox_value_or<uint32_t>(props.TryLookup(L"pid"), 0u) == GetCurrentProcessId()))
         {
             e.AcceptedOperation(DataPackageOperation::Move);
         }
@@ -4660,15 +4663,11 @@ namespace winrt::TerminalApp::implementation
         // Get the PID and make sure it is the same as ours.
         if (const auto& pidObj{ e.DataView().Properties().TryLookup(L"pid") })
         {
-            const auto pidStr{ winrt::unbox_value<winrt::hstring>(pidObj) };
-            uint32_t pidNum;
-            if (Utils::StringToUint(pidStr.c_str(), pidNum))
+            const auto pid{ winrt::unbox_value_or<uint32_t>(pidObj, 0u) };
+            if (pid != GetCurrentProcessId())
             {
-                if (pidNum != GetCurrentProcessId())
-                {
-                    // The PID doesn't match ours. We can't handle this drop.
-                    co_return;
-                }
+                // The PID doesn't match ours. We can't handle this drop.
+                co_return;
             }
         }
         else
@@ -4710,9 +4709,9 @@ namespace winrt::TerminalApp::implementation
             {
                 if (const auto& item{ _tabView.ContainerFromIndex(i).try_as<winrt::MUX::Controls::TabViewItem>() })
                 {
-                    const auto posX{ e.GetPosition(item).X };
-                    const auto itemWidth{ item.ActualWidth() };
-                    if (posX - itemWidth < 0)
+                    const auto posX{ e.GetPosition(item).X }; // The point of the drop, relative to the tab
+                    const auto itemWidth{ item.ActualWidth() }; // The right of the tab
+                    if (posX < itemWidth)
                     {
                         index = i;
                         break;

@@ -1112,7 +1112,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     // Very similar to the above. Someone came and told us that they were the target of a drag/drop, and they know who started it.
     // We will go tell the person who started it that they should send that target the content which was dragged.
-    void Monarch::RequestSendContent(Remoting::RequestReceiveContentArgs args)
+    void Monarch::RequestSendContent(const Remoting::RequestReceiveContentArgs& args)
     {
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_SendContent_Requested",

@@ -329,7 +329,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return args->WindowLayoutJson();
     }
 
-    void Peasant::SendContent(winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs args)
+    void Peasant::SendContent(const Remoting::RequestReceiveContentArgs& args)
     {
         _SendContentRequestedHandlers(*this, args);
     }
