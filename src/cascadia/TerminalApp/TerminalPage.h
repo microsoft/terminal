@@ -512,7 +512,7 @@ namespace winrt::TerminalApp::implementation
         void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>&& actions,
                           const winrt::hstring& windowName,
                           const uint32_t tabIndex,
-                          Windows::Foundation::IReference<Windows::Foundation::Point> dragPoint = nullptr);
+                          const Windows::Foundation::IReference<Windows::Foundation::Point>& dragPoint = nullptr);
 
         void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
         void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);

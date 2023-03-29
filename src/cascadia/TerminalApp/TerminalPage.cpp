@@ -1987,7 +1987,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_MoveContent(std::vector<Settings::Model::ActionAndArgs>&& actions,
                                     const winrt::hstring& windowName,
                                     const uint32_t tabIndex,
-                                    Windows::Foundation::IReference<Windows::Foundation::Point> dragPoint)
+                                    const Windows::Foundation::IReference<Windows::Foundation::Point>& dragPoint)
     {
         const auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)) };
         const auto str{ ActionAndArgs::Serialize(winRtActions) };

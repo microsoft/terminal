@@ -1050,8 +1050,8 @@ namespace winrt::TerminalApp::implementation
         return result;
     }
 
-    void TerminalWindow::SetStartupContent(winrt::hstring content,
-                                           Windows::Foundation::IReference<Windows::Foundation::Rect> bounds)
+    void TerminalWindow::SetStartupContent(const winrt::hstring& content,
+                                           const Windows::Foundation::IReference<Windows::Foundation::Rect>& bounds)
     {
         _contentBounds = bounds;
         try
