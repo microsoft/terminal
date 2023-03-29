@@ -35,7 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     std::filesystem::path GetBaseSettingsPath()
     {
         static auto baseSettingsPath = []() {
-            if (IsPortableMode())
+            if (!IsPackaged() && IsPortableMode())
             {
                 std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
                 modulePath.replace_filename(PortableModeSettingsFolder);
