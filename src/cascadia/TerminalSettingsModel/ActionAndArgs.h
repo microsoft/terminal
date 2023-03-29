@@ -16,7 +16,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                       std::vector<SettingsLoadWarnings>& warnings);
         static Json::Value ToJson(const Model::ActionAndArgs& val);
 
-        static winrt::hstring Serialize(winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs> args);
+        static winrt::hstring Serialize(const winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs>& args);
         static winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs> Deserialize(winrt::hstring content);
 
         ActionAndArgs() = default;
