@@ -116,7 +116,6 @@
     </Midl>
     <Midl Include="PaletteItemTemplateSelector.idl" />
     <Midl Include="TabBase.idl" />
-    <Midl Include="EmptyStringVisibilityConverter.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

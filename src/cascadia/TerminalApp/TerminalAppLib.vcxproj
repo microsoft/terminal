@@ -119,9 +119,6 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="FilteredCommand.h" />
-    <ClInclude Include="EmptyStringVisibilityConverter.h">
-      <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="Pane.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="pch.h" />
@@ -215,9 +212,6 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="FilteredCommand.cpp" />
-    <ClCompile Include="EmptyStringVisibilityConverter.cpp">
-      <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
     <ClCompile Include="ColorHelper.cpp" />
@@ -309,7 +303,6 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="FilteredCommand.idl" />
-    <Midl Include="EmptyStringVisibilityConverter.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
