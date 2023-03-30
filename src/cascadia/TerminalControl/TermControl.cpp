@@ -226,7 +226,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   SwapChainPanel. The IKeyBindings might belong to a non-agile object on
     //   a new thread, so we'll hook up the core to these new bindings.
     // Arguments:
-    // - content: The pre-existing ControlInteractivity to connect to.
+    // - content: The preexisting ControlInteractivity to connect to.
     // - keybindings: The new IKeyBindings instance to use for this control.
     // Return Value:
     // - The newly constructed TermControl.

@@ -376,6 +376,32 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
     return fSuccess;
 }
 
+void TextBuffer::ConsumeGrapheme(std::wstring_view& chars) noexcept
+{
+    // This function is supposed to mirror the behavior of ROW::Write, when it reads characters off of `chars`.
+    // (I know that a UTF-16 code point is not a grapheme, but that's what we're working towards.)
+    chars = til::utf16_pop(chars);
+}
+
+// This function is intended for writing regular "lines" of text and only the `state.text` and`state.columnBegin`
+// fields are being used, whereas `state.columnLimit` is automatically overwritten by the line width of the given row.
+// This allows this function to automatically set the wrap-forced field of the row, which is also the return value.
+// The return value indicates to the caller whether the cursor should be moved to the next line.
+void TextBuffer::WriteLine(til::CoordType row, bool wrapAtEOL, const TextAttribute& attributes, RowWriteState& state)
+{
+    auto& r = GetRowByOffset(row);
+
+    r.ReplaceText(state);
+    r.ReplaceAttributes(state.columnBegin, state.columnEnd, attributes);
+
+    if (state.columnEnd >= state.columnLimit)
+    {
+        r.SetWrapForced(wrapAtEOL);
+    }
+
+    TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, state.columnEndDirty, row + 1 }));
+}
+
 // Routine Description:
 // - Writes cells to the output buffer. Writes at the cursor.
 // Arguments:

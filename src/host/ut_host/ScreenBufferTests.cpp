@@ -5249,6 +5249,16 @@ void ScreenBufferTests::SetAutoWrapMode()
     // Content should be clamped to the line width, overwriting the last char.
     VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"abf", attributes));
     VERIFY_ARE_EQUAL(til::point(79, startLine), cursor.GetPosition());
+    // Writing a wide glyph into the last 2 columns and overwriting it with a narrow one.
+    cursor.SetPosition({ 80 - 3, startLine });
+    stateMachine.ProcessString(L"a\U0001F604b");
+    VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"a b", attributes));
+    VERIFY_ARE_EQUAL(til::point(79, startLine), cursor.GetPosition());
+    // Writing a wide glyph into the last column and overwriting it with a narrow one.
+    cursor.SetPosition({ 80 - 3, startLine });
+    stateMachine.ProcessString(L"ab\U0001F604c");
+    VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"abc", attributes));
+    VERIFY_ARE_EQUAL(til::point(79, startLine), cursor.GetPosition());
 
     Log::Comment(L"When DECAWM is set, output is wrapped again.");
     stateMachine.ProcessString(L"\x1b[?7h");
@@ -6339,17 +6349,17 @@ void ScreenBufferTests::CursorSaveRestore()
     // Verify home position inside margins, i.e. relative origin mode restored.
     VERIFY_ARE_EQUAL(til::point(0, 9), cursor.GetPosition());
 
-    Log::Comment(L"Clamp inside top margin.");
+    Log::Comment(L"Restore relative to new origin.");
     // Reset margins, with absolute origin, and set cursor position.
     stateMachine.ProcessString(L"\x1b[r");
     stateMachine.ProcessString(setDECOM);
-    cursor.SetPosition({ 5, 15 });
+    cursor.SetPosition({ 5, 5 });
     // Save state.
     stateMachine.ProcessString(saveCursor);
     // Set margins and restore state.
-    stateMachine.ProcessString(L"\x1b[20;25r");
+    stateMachine.ProcessString(L"\x1b[15;25r");
     stateMachine.ProcessString(restoreCursor);
-    // Verify Y position is clamped inside the top margin
+    // Verify Y position is now relative to new top margin
     VERIFY_ARE_EQUAL(til::point(5, 19), cursor.GetPosition());
 
     Log::Comment(L"Clamp inside bottom margin.");
