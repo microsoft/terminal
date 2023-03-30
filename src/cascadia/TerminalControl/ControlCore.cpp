@@ -1142,7 +1142,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // content, which is unexpected.
         const auto htmlData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::HTML) ?
                                   TextBuffer::GenHTML(bufferData,
-                                                      _actualFont.GetUnscaledSize().width,
+                                                      _actualFont.GetUnscaledSize().height,
                                                       _actualFont.GetFaceName(),
                                                       bgColor) :
                                   "";
