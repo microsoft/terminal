@@ -1229,6 +1229,28 @@ void ScreenBufferTests::VtResizeComprehensive()
     VERIFY_ARE_EQUAL(expectedViewHeight, newViewHeight);
 }
 
+til::rect _GetRelativeScrollMargins()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto viewport = si.GetViewport();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+    const auto savePos = cursor.GetPosition();
+
+    // We can't access the AdaptDispatch internals where the margins are stored,
+    // but we calculate their boundaries by using VT sequences to move down and
+    // up as far as possible, and read the cursor positions at the two limits.
+    stateMachine.ProcessString(L"\033[H\033[9999B");
+    const auto bottom = cursor.GetPosition().y - viewport.Top();
+    stateMachine.ProcessString(L"\033[9999A");
+    const auto top = cursor.GetPosition().y - viewport.Top();
+
+    cursor.SetPosition(savePos);
+    const auto noMargins = (top == 0 && bottom == viewport.Height() - 1);
+    return noMargins ? til::rect{} : til::rect{ 0, top, 0, bottom };
+}
+
 void ScreenBufferTests::VtResizeDECCOLM()
 {
     // Run this test in isolation - for one reason or another, this breaks other tests.
@@ -1252,13 +1274,13 @@ void ScreenBufferTests::VtResizeDECCOLM()
         return si.GetTextBuffer().GetCursor().GetPosition() - si.GetViewport().Origin();
     };
     auto areMarginsSet = [&]() {
-        const auto margins = si.GetRelativeScrollMargins();
-        return margins.BottomInclusive() > margins.Top();
+        const auto margins = _GetRelativeScrollMargins();
+        return margins.bottom > margins.top;
     };
 
     stateMachine.ProcessString(setInitialMargins);
     stateMachine.ProcessString(setInitialCursor);
-    auto initialMargins = si.GetRelativeScrollMargins();
+    auto initialMargins = _GetRelativeScrollMargins();
     auto initialCursorPosition = getRelativeCursorPosition();
 
     auto initialSbHeight = si.GetBufferSize().Height();
@@ -1275,7 +1297,7 @@ void ScreenBufferTests::VtResizeDECCOLM()
     auto newViewWidth = si.GetViewport().Width();
 
     VERIFY_IS_TRUE(areMarginsSet());
-    VERIFY_ARE_EQUAL(initialMargins, si.GetRelativeScrollMargins());
+    VERIFY_ARE_EQUAL(initialMargins, _GetRelativeScrollMargins());
     VERIFY_ARE_EQUAL(initialCursorPosition, getRelativeCursorPosition());
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
@@ -1311,7 +1333,7 @@ void ScreenBufferTests::VtResizeDECCOLM()
 
     stateMachine.ProcessString(setInitialMargins);
     stateMachine.ProcessString(setInitialCursor);
-    initialMargins = si.GetRelativeScrollMargins();
+    initialMargins = _GetRelativeScrollMargins();
     initialCursorPosition = getRelativeCursorPosition();
 
     initialSbHeight = newSbHeight;
@@ -1329,7 +1351,7 @@ void ScreenBufferTests::VtResizeDECCOLM()
     newViewWidth = si.GetViewport().Width();
 
     VERIFY_IS_TRUE(areMarginsSet());
-    VERIFY_ARE_EQUAL(initialMargins, si.GetRelativeScrollMargins());
+    VERIFY_ARE_EQUAL(initialMargins, _GetRelativeScrollMargins());
     VERIFY_ARE_EQUAL(initialCursorPosition, getRelativeCursorPosition());
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
@@ -1649,6 +1671,7 @@ void ScreenBufferTests::VtNewlineOutsideMargins()
 
     Log::Comment(L"Reset viewport and apply DECSTBM margins");
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, { 0, viewportTop }, true));
+    si.UpdateBottom();
     stateMachine.ProcessString(L"\x1b[1;5r");
     // Make sure we clear the margins on exit so they can't break other tests.
     auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
@@ -6389,8 +6412,8 @@ void ScreenBufferTests::ScreenAlignmentPattern()
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     auto areMarginsSet = [&]() {
-        const auto margins = si.GetRelativeScrollMargins();
-        return margins.BottomInclusive() > margins.Top();
+        const auto margins = _GetRelativeScrollMargins();
+        return margins.bottom > margins.top;
     };
 
     Log::Comment(L"Set the initial buffer state.");
