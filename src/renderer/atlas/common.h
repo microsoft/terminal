@@ -165,13 +165,15 @@ namespace Microsoft::Console::Render::Atlas
             destroy();
         }
 
+        Buffer(const Buffer& other) = delete;
+        Buffer& operator=(const Buffer& other) = delete;
+
         Buffer(Buffer&& other) noexcept :
             _data{ std::exchange(other._data, nullptr) },
             _size{ std::exchange(other._size, 0) }
         {
         }
 
-#pragma warning(suppress : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
         Buffer& operator=(Buffer&& other) noexcept
         {
             destroy();
