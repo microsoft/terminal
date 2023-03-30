@@ -205,7 +205,7 @@ try
     }
 
 #if ATLAS_DEBUG_CONTINUOUS_REDRAW
-    _p.MarkAllAsDirt();
+    _p.MarkAllAsDirty();
 #endif
 
     return S_OK;

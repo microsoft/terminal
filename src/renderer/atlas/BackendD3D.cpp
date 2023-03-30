@@ -904,6 +904,7 @@ void BackendD3D::_appendQuad(i16x2 position, u16x2 size, u32 color, ShadingType 
     _appendQuad(position, size, {}, color, shadingType);
 }
 
+// NOTE: Up to 5M calls per second -> no std::vector, no std::unordered_map.
 void BackendD3D::_appendQuad(i16x2 position, u16x2 size, u16x2 texcoord, u32 color, ShadingType shadingType)
 {
     if (_instancesCount >= _instances.size())
@@ -1147,8 +1148,8 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
     };
 
     const auto lineRendition = static_cast<LineRendition>(entry.key.lineRendition);
-
     std::optional<D2D1_MATRIX_3X2_F> transform;
+
     if (lineRendition != LineRendition::SingleWidth)
     {
         auto& t = transform.emplace();
@@ -1236,13 +1237,20 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
     return true;
 }
 
-bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, BackendD3D::GlyphCacheEntry& entry)
+bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, GlyphCacheEntry& entry)
 {
-    // TODO: Add support for line renditions - call _splitDoubleHeightGlyph for this.
     stbrp_rect rect{
         .w = p.s->font->cellSize.x,
         .h = p.s->font->cellSize.y,
     };
+
+    const auto lineRendition = static_cast<LineRendition>(entry.key.lineRendition);
+    if (lineRendition != LineRendition::SingleWidth)
+    {
+        rect.w <<= 1;
+        rect.h <<= static_cast<u8>(lineRendition >= LineRendition::DoubleHeightTop);
+    }
+
     if (!stbrp_pack_rects(&_rectPacker, &rect, 1))
     {
         _drawGlyphPrepareRetry(p);
@@ -1266,7 +1274,8 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, BackendD3D::Glyph
         const auto height = static_cast<size_t>(p.s->font->softFontCellSize.height);
 
         auto bitmapData = Buffer<u32>{ width * height };
-        auto src = p.s->font->softFontPattern.begin() + height * (entry.key.glyphIndex - 0xEF20u);
+        const auto glyphIndex = entry.key.glyphIndex - 0xEF20u;
+        auto src = p.s->font->softFontPattern.begin() + height * glyphIndex;
         auto dst = bitmapData.begin();
 
         for (size_t y = 0; y < height; y++)
@@ -1284,6 +1293,7 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, BackendD3D::Glyph
         THROW_IF_FAILED(_softFontBitmap->CopyFromMemory(nullptr, bitmapData.data(), pitch));
     }
 
+    const auto interpolation = p.s->font->antialiasingMode == D2D1_ANTIALIAS_MODE_ALIASED ? D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR : D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC;
     const D2D1_RECT_F dest{
         static_cast<f32>(rect.x),
         static_cast<f32>(rect.y),
@@ -1292,7 +1302,7 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, BackendD3D::Glyph
     };
 
     _d2dBeginDrawing();
-    _d2dRenderTarget->DrawBitmap(_softFontBitmap.get(), &dest, 1, D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC, nullptr, nullptr);
+    _d2dRenderTarget->DrawBitmap(_softFontBitmap.get(), &dest, 1, interpolation, nullptr, nullptr);
 
     // TODO: What is the p.s->font->softFontCenteringHint?
     entry.data.offset.x = 0;
@@ -1302,6 +1312,13 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, BackendD3D::Glyph
     entry.data.texcoord.x = rect.x;
     entry.data.texcoord.y = rect.y;
     entry.data.shadingType = ShadingType::TextGrayscale;
+
+    if (lineRendition >= LineRendition::DoubleHeightTop)
+    {
+        entry.data.offset.y -= p.s->font->cellSize.y;
+        _splitDoubleHeightGlyph(p, entry);
+    }
+
     return true;
 }
 

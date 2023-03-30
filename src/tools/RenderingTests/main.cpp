@@ -191,32 +191,33 @@ int main()
             printUTF16(L"\x1bP1;1;2{ @\x1b\\");
         };
 
+        constexpr auto width = 13;
         const auto glyph =
-            " W   W         "
-            " W   W         "
-            " W W W         "
-            " W W W         "
-            " W W W         "
-            " W W W TTTTTTT "
-            "  W W     T    "
-            "          T    "
-            "          T    "
-            "          T    "
-            "          T    "
-            "          T    ";
+            "W   W        "
+            "W   W        "
+            "W W W        "
+            "W W W        "
+            "W W W        "
+            "W W W TTTTTTT"
+            " W W     T   "
+            "         T   "
+            "         T   "
+            "         T   "
+            "         T   "
+            "         T   ";
 
         // Convert the above visual glyph to sixels
-        wchar_t rows[2][15];
+        wchar_t rows[2][width];
         for (int r = 0; r < 2; ++r)
         {
-            const auto glyphData = &glyph[r * 15 * 6];
+            const auto glyphData = &glyph[r * width * 6];
 
-            for (int x = 0; x < 15; ++x)
+            for (int x = 0; x < width; ++x)
             {
                 unsigned int accumulator = 0;
                 for (int y = 5; y >= 0; --y)
                 {
-                    const auto isSet = glyphData[y * 15 + x] != ' ';
+                    const auto isSet = glyphData[y * width + x] != ' ';
                     accumulator <<= 1;
                     accumulator |= static_cast<unsigned int>(isSet);
                 }
@@ -225,21 +226,33 @@ int main()
             }
         }
 
+        // DECDLD - Dynamically Redefinable Character Sets
         printfUTF16(
             // * Pfn  | font number             | 1    |
             // * Pcn  | starting character      | 3    | = ASCII 0x23 "#"
             // * Pe   | erase control           | 2    | erase all
-            //   Pcmw | character matrix width  | 0    | 15 pixels
+            //   Pcmw | character matrix width  | 13   | 13 pixels
             //   Pw   | font width              | 0    | 80 columns
             //   Pt   | text or full cell       | 0    | text
             //   Pcmh | character matrix height | 0    | 12 pixels
             //   Pcss | character set size      | 0    | 94
             // * Dscs | character set name      | " @" | unregistered soft set
-            L"\x1bP1;3;2{ @%.15s/%.15s\x1b\\",
+            L"\x1bP1;3;2;%d{ @%.15s/%.15s\x1b\\",
+            width,
             rows[0],
             rows[1]);
 
-        printUTF16(L"\x1B[3;5HDECDLD glyph \"WT\": \x1b( @#\x1b(A");
+#define DRCS_SEQUENCE L"\x1b( @#\x1b(A"
+        printUTF16(
+            L"\x1B[3;5HDECDLD and DRCS test - it should show \"WT\" in a single cell"
+            L"\x1B[5;5HRegular: " DRCS_SEQUENCE L""
+            L"\x1B[7;3H\x1b#6DECDWL: " DRCS_SEQUENCE L""
+            L"\x1B[9;3H\x1b#3DECDHL: " DRCS_SEQUENCE L""
+            L"\x1B[10;3H\x1b#4DECDHL: " DRCS_SEQUENCE L""
+            // We map soft fonts into the private use area starting at U+EF20. This test ensures
+            // that we correctly map actual fallback glyphs mixed into the DRCS glyphs.
+            L"\x1B[12;5HUnicode Fallback: \uE000\uE001" DRCS_SEQUENCE L"\uE003\uE004");
+#undef DRCS_SEQUENCE
 
         wait();
     }
