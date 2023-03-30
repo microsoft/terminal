@@ -196,6 +196,10 @@ namespace winrt::TerminalApp::implementation
         void _RefreshThemeRoutine();
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _OpenSettingsUI();
+
+        winrt::Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _contentStringToActions(const winrt::hstring& content,
+                                                                                                                                      const bool replaceFirstWithNewTab);
+
         // These are events that are handled by the TerminalPage, but are
         // exposed through the AppLogic. This macro is used to forward the event
         // directly to them.

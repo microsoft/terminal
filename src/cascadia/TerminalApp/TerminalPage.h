@@ -163,8 +163,10 @@ namespace winrt::TerminalApp::implementation
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
-        winrt::fire_and_forget AttachContent(winrt::hstring content, uint32_t tabIndex);
+        winrt::fire_and_forget AttachContent(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> args, uint32_t tabIndex);
         winrt::fire_and_forget SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args);
+
+        uint32_t NumberOfTabs() const;
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -512,7 +514,8 @@ namespace winrt::TerminalApp::implementation
         void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>&& actions,
                           const winrt::hstring& windowName,
                           const uint32_t tabIndex,
-                          const Windows::Foundation::IReference<Windows::Foundation::Point>& dragPoint = nullptr);
+                          const std::optional<til::point>& dragPoint = std::nullopt);
+        void _sendDraggedTabToWindow(const winrt::hstring& windowId, const uint32_t tabIndex, std::optional<til::point> dragPoint);
 
         void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
         void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);

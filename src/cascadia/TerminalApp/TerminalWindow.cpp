@@ -23,6 +23,7 @@ using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Windows::Foundation::Collections;
 using namespace ::TerminalApp;
 
 namespace winrt
@@ -1054,35 +1055,12 @@ namespace winrt::TerminalApp::implementation
                                            const Windows::Foundation::IReference<Windows::Foundation::Rect>& bounds)
     {
         _contentBounds = bounds;
-        try
-        {
-            auto args = ActionAndArgs::Deserialize(content);
-            if (args == nullptr ||
-                args.Size() == 0)
-            {
-                return;
-            }
 
-            const auto& firstAction = args.GetAt(0);
-            const bool firstIsSplitPane{ firstAction.Action() == ShortcutAction::SplitPane };
-            if (firstIsSplitPane)
-            {
-                // Create the equivalent NewTab action.
-                const auto newAction = Settings::Model::ActionAndArgs{ Settings::Model::ShortcutAction::NewTab,
-                                                                       Settings::Model::NewTabArgs(firstAction.Args() ?
-                                                                                                       firstAction.Args().try_as<Settings::Model::SplitPaneArgs>().TerminalArgs() :
-                                                                                                       nullptr) };
-                args.SetAt(0, newAction);
-            }
+        const auto& args = _contentStringToActions(content, true);
 
-            for (const auto& action : args)
-            {
-                _initialContentArgs.push_back(action);
-            }
-        }
-        catch (...)
+        for (const auto& action : args)
         {
-            LOG_CAUGHT_EXCEPTION();
+            _initialContentArgs.push_back(action);
         }
     }
 
@@ -1253,11 +1231,57 @@ namespace winrt::TerminalApp::implementation
         _WindowProperties->WindowId(id);
     }
 
+    IVector<Settings::Model::ActionAndArgs> TerminalWindow::_contentStringToActions(const winrt::hstring& content, const bool replaceFirstWithNewTab)
+    {
+        try
+        {
+            const auto& args = ActionAndArgs::Deserialize(content);
+            if (args == nullptr ||
+                args.Size() == 0)
+            {
+                return args;
+            }
+
+            const auto& firstAction = args.GetAt(0);
+            const bool firstIsSplitPane{ firstAction.Action() == ShortcutAction::SplitPane };
+            if (replaceFirstWithNewTab &&
+                firstIsSplitPane)
+            {
+                // Create the equivalent NewTab action.
+                const auto newAction = Settings::Model::ActionAndArgs{ Settings::Model::ShortcutAction::NewTab,
+                                                                       Settings::Model::NewTabArgs(firstAction.Args() ?
+                                                                                                       firstAction.Args().try_as<Settings::Model::SplitPaneArgs>().TerminalArgs() :
+                                                                                                       nullptr) };
+                args.SetAt(0, newAction);
+            }
+
+            return args;
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+
+        return nullptr;
+    }
+
     void TerminalWindow::AttachContent(winrt::hstring content, uint32_t tabIndex)
     {
         if (_root)
         {
-            _root->AttachContent(content, tabIndex);
+            // `splitPane` allows the user to specify which tab to split. In that
+            // case, split specifically the requested pane.
+            //
+            // If there's not enough tabs, then just turn this pane into a new tab.
+            //
+            // If the first action is `newTab`, the index is always going to be 0,
+            // so don't do anything in that case.
+
+            const bool replaceFirstWithNewTab = tabIndex >= _root->NumberOfTabs();
+
+            const auto& args = _contentStringToActions(content, replaceFirstWithNewTab);
+
+            _root->AttachContent(args, tabIndex);
         }
     }
     void TerminalWindow::SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args)
