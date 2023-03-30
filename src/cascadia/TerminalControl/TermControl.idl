@@ -24,6 +24,8 @@ namespace Microsoft.Terminal.Control
                     IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
+        static TermControl NewControlByAttachingContent(ControlInteractivity content, Microsoft.Terminal.Control.IKeyBindings keyBindings);
+
         static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings,
                                                              UInt32 dpi,
                                                              Int32 commandlineCols,
@@ -31,6 +33,8 @@ namespace Microsoft.Terminal.Control
 
         void UpdateControlSettings(IControlSettings settings);
         void UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance);
+
+        UInt64 ContentId{ get; };
 
         Microsoft.Terminal.Control.IControlSettings Settings { get; };
 
@@ -107,5 +111,7 @@ namespace Microsoft.Terminal.Control
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
 
         void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
+
+        void Detach();
     }
 }

@@ -25,6 +25,9 @@ namespace Microsoft.Terminal.Control
 
         UInt64 Id { get; };
 
+        void AttachToNewControl(Microsoft.Terminal.Control.IKeyBindings keyBindings);
+        void Detach();
+
         void Close();
 
         InteractivityAutomationPeer OnCreateAutomationPeer();
@@ -69,11 +72,12 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
 
+        event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
+
         event Windows.Foundation.TypedEventHandler<Object, Object> Closed;
 
         // Used to communicate to the TermControl, but not necessarily higher up in the stack
         event Windows.Foundation.TypedEventHandler<Object, ContextMenuRequestedEventArgs> ContextMenuRequested;
-
 
     };
 }

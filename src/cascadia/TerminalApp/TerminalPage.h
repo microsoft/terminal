@@ -9,6 +9,7 @@
 #include "AppCommandlineArgs.h"
 #include "LastTabClosedEventArgs.g.h"
 #include "RenameWindowRequestedArgs.g.h"
+#include "RequestMoveContentArgs.g.h"
 #include "Toast.h"
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
@@ -58,6 +59,19 @@ namespace winrt::TerminalApp::implementation
     public:
         RenameWindowRequestedArgs(const winrt::hstring& name) :
             _ProposedName{ name } {};
+    };
+
+    struct RequestMoveContentArgs : RequestMoveContentArgsT<RequestMoveContentArgs>
+    {
+        WINRT_PROPERTY(winrt::hstring, Window);
+        WINRT_PROPERTY(winrt::hstring, Content);
+        WINRT_PROPERTY(uint32_t, TabIndex);
+
+    public:
+        RequestMoveContentArgs(const winrt::hstring window, const winrt::hstring content, uint32_t tabIndex) :
+            _Window{ window },
+            _Content{ content },
+            _TabIndex{ tabIndex } {};
     };
 
     struct TerminalPage : TerminalPageT<TerminalPage>
@@ -134,6 +148,8 @@ namespace winrt::TerminalApp::implementation
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
+        winrt::fire_and_forget AttachContent(winrt::hstring content, uint32_t tabIndex);
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         // -------------------------------- WinRT Events ---------------------------------
@@ -150,10 +166,13 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(IdentifyWindowsRequested, IInspectable, IInspectable);
         TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
         TYPED_EVENT(SummonWindowRequested, IInspectable, IInspectable);
+
         TYPED_EVENT(CloseRequested, IInspectable, IInspectable);
         TYPED_EVENT(OpenSystemMenu, IInspectable, IInspectable);
         TYPED_EVENT(QuitRequested, IInspectable, IInspectable);
         TYPED_EVENT(ShowWindowChanged, IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs)
+
+        TYPED_EVENT(RequestMoveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestMoveContentArgs);
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, _PropertyChangedHandlers, nullptr);
 
@@ -297,7 +316,8 @@ namespace winrt::TerminalApp::implementation
         bool _SelectTab(uint32_t tabIndex);
         bool _MoveFocus(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool _SwapPane(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
-        bool _MovePane(const uint32_t tabIdx);
+        bool _MovePane(const Microsoft::Terminal::Settings::Model::MovePaneArgs args);
+        bool _MoveTab(const Microsoft::Terminal::Settings::Model::MoveTabArgs args);
 
         template<typename F>
         bool _ApplyToActiveControls(F f)
@@ -386,8 +406,10 @@ namespace winrt::TerminalApp::implementation
 
         void _Find(const TerminalTab& tab);
 
-        winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
-                                                                      const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
+        winrt::Microsoft::Terminal::Control::TermControl _CreateNewControlAndContent(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
+                                                                                     const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
+        winrt::Microsoft::Terminal::Control::TermControl _SetupControl(const winrt::Microsoft::Terminal::Control::TermControl& term);
+        winrt::Microsoft::Terminal::Control::TermControl _AttachControlToContent(const uint64_t& contentGuid);
 
         std::shared_ptr<Pane> _MakePane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
                                         const winrt::TerminalApp::TabBase& sourceTab = nullptr,
@@ -459,6 +481,10 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
         winrt::fire_and_forget _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
+
+        void _DetachPaneFromWindow(std::shared_ptr<Pane> pane);
+        void _DetachTabFromWindow(const winrt::com_ptr<TerminalTab>& terminalTab);
+        void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>&& actions, const winrt::hstring& windowName, const uint32_t tabIndex);
 
         void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
         void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);
