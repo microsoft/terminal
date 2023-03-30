@@ -32,6 +32,11 @@ using namespace Microsoft::Console::Render::Atlas;
 [[nodiscard]] HRESULT AtlasEngine::Present() noexcept
 try
 {
+    if (!_p.dxgi.adapter || !_p.dxgi.factory->IsCurrent())
+    {
+        _recreateAdapter();
+    }
+
     if (!_b)
     {
         _recreateBackend();
@@ -47,9 +52,14 @@ try
 catch (const wil::ResultException& exception)
 {
     const auto hr = exception.GetErrorCode();
-    const auto isExpected = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET || hr == D2DERR_RECREATE_TARGET;
 
-    if (!isExpected && _p.warningCallback)
+    if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+    {
+        _p.dxgi = {};
+        return E_PENDING;
+    }
+
+    if (_p.warningCallback)
     {
         try
         {
@@ -58,9 +68,8 @@ catch (const wil::ResultException& exception)
         CATCH_LOG()
     }
 
-    _p.dxgiFactory.reset();
     _b.reset();
-    return isExpected ? E_PENDING : hr;
+    return hr;
 }
 CATCH_RETURN()
 
@@ -83,7 +92,7 @@ void AtlasEngine::WaitUntilCanRender() noexcept
 
 #pragma endregion
 
-void AtlasEngine::_recreateBackend()
+void AtlasEngine::_recreateAdapter()
 {
 #ifndef NDEBUG
     if (IsDebuggerPresent())
@@ -101,16 +110,6 @@ void AtlasEngine::_recreateBackend()
     }
 #endif
 
-    // Tell the OS that we're resilient to graphics device removal. Docs say:
-    // > This function should be called once per process and before any device creation.
-    if (const auto module = GetModuleHandleW(L"dxgi.dll"))
-    {
-        if (const auto func = GetProcAddressByFunctionDeclaration(module, DXGIDeclareAdapterRemovalSupport))
-        {
-            LOG_IF_FAILED(func());
-        }
-    }
-
 #ifndef NDEBUG
     static constexpr UINT flags = DXGI_CREATE_FACTORY_DEBUG;
 #else
@@ -118,31 +117,19 @@ void AtlasEngine::_recreateBackend()
 #endif
 
     // IID_PPV_ARGS doesn't work here for some reason.
-    THROW_IF_FAILED(CreateDXGIFactory2(flags, __uuidof(_p.dxgiFactory), _p.dxgiFactory.put_void()));
+    THROW_IF_FAILED(CreateDXGIFactory2(flags, __uuidof(_p.dxgi.factory), _p.dxgi.factory.put_void()));
 
-    auto d2dMode = ATLAS_DEBUG_FORCE_D2D_MODE;
-    auto deviceFlags = D3D11_CREATE_DEVICE_SINGLETHREADED
-#ifndef NDEBUG
-                       | D3D11_CREATE_DEVICE_DEBUG
-#endif
-                       // This flag prevents the driver from creating a large thread pool for things like shader computations
-                       // that would be advantageous for games. For us this has only a minimal performance benefit,
-                       // but comes with a large memory usage overhead. At the time of writing the Nvidia
-                       // driver launches $cpu_thread_count more worker threads without this flag.
-                       | D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS
-                       // Direct2D support.
-                       | D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+    wil::com_ptr<IDXGIAdapter1> adapter;
+    DXGI_ADAPTER_DESC1 desc{};
 
-    wil::com_ptr<IDXGIAdapter1> dxgiAdapter;
     {
         const auto useSoftwareRendering = _p.s->target->useSoftwareRendering;
-        DXGI_ADAPTER_DESC1 desc{};
         UINT index = 0;
 
         do
         {
-            THROW_IF_FAILED(_p.dxgiFactory->EnumAdapters1(index++, dxgiAdapter.put()));
-            THROW_IF_FAILED(dxgiAdapter->GetDesc1(&desc));
+            THROW_IF_FAILED(_p.dxgi.factory->EnumAdapters1(index++, adapter.put()));
+            THROW_IF_FAILED(adapter->GetDesc1(&desc));
 
             // If useSoftwareRendering is false we exit during the first iteration. Using the default adapter (index 0)
             // is the right thing to do under most circumstances, unless you _really_ want to get your hands dirty.
@@ -151,12 +138,37 @@ void AtlasEngine::_recreateBackend()
             //
             // If useSoftwareRendering is true we search until we find the first WARP adapter (usually the last adapter).
         } while (useSoftwareRendering && WI_IsFlagClear(desc.Flags, DXGI_ADAPTER_FLAG_SOFTWARE));
+    }
 
-        if (WI_IsFlagSet(desc.Flags, DXGI_ADAPTER_FLAG_SOFTWARE))
-        {
-            WI_ClearFlag(deviceFlags, D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS);
-            d2dMode = true;
-        }
+    if (memcmp(&_p.dxgi.adapterLuid, &desc.AdapterLuid, sizeof(LUID)) != 0)
+    {
+        _p.dxgi.adapter = std::move(adapter);
+        _p.dxgi.adapterLuid = desc.AdapterLuid;
+        _p.dxgi.adapterFlags = desc.Flags;
+        _b.reset();
+    }
+}
+
+void AtlasEngine::_recreateBackend()
+{
+    auto d2dMode = ATLAS_DEBUG_FORCE_D2D_MODE;
+    auto deviceFlags =
+        D3D11_CREATE_DEVICE_SINGLETHREADED
+#ifndef NDEBUG
+        | D3D11_CREATE_DEVICE_DEBUG
+#endif
+        // This flag prevents the driver from creating a large thread pool for things like shader computations
+        // that would be advantageous for games. For us this has only a minimal performance benefit,
+        // but comes with a large memory usage overhead. At the time of writing the Nvidia
+        // driver launches $cpu_thread_count more worker threads without this flag.
+        | D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS
+        // Direct2D support.
+        | D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+
+    if (WI_IsFlagSet(_p.dxgi.adapterFlags, DXGI_ADAPTER_FLAG_SOFTWARE))
+    {
+        WI_ClearFlag(deviceFlags, D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS);
+        d2dMode = true;
     }
 
     wil::com_ptr<ID3D11Device> device0;
@@ -174,7 +186,7 @@ void AtlasEngine::_recreateBackend()
     };
 
     THROW_IF_FAILED(D3D11CreateDevice(
-        /* pAdapter */ dxgiAdapter.get(),
+        /* pAdapter */ _p.dxgi.adapter.get(),
         /* DriverType */ D3D_DRIVER_TYPE_UNKNOWN,
         /* Software */ nullptr,
         /* Flags */ deviceFlags,
@@ -224,10 +236,8 @@ void AtlasEngine::_recreateBackend()
 
     // !!! NOTE !!!
     // Normally the viewport is indirectly marked as dirty by `AtlasEngine::_handleSettingsUpdate()` whenever
-    // the settings change, but the `!_p.dxgiFactory->IsCurrent()` check is not part of the settings change
+    // the settings change, but the `!_p.dxgi.factory->IsCurrent()` check is not part of the settings change
     // flow and so we have to manually recreate how AtlasEngine.cpp marks viewports as dirty here.
     // This ensures that the backends redraw their entire viewports whenever a new swap chain is created.
-    _p.dirtyRectInPx = { 0, 0, _p.s->targetSize.x, _p.s->targetSize.y };
-    _p.invalidatedRows = { 0, _p.s->cellCount.y };
-    _p.scrollOffset = 0;
+    _p.MarkAllAsDirty();
 }

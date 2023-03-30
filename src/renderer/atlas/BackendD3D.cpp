@@ -60,22 +60,27 @@ size_t BackendD3D::GlyphCacheMap::Size() const noexcept
 
 void BackendD3D::GlyphCacheMap::Clear() noexcept
 {
-    for (auto& entry : _map)
+    for (const auto& entry : _map)
     {
-        if (entry.key.fontFace)
+        if (entry.key.fontFace > IDWriteFontFace_SoftFont)
         {
             // I'm pretty sure Release() doesn't throw exceptions.
 #pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Release()' which may throw exceptions (f.6).
             entry.key.fontFace->Release();
-            entry.key.fontFace = nullptr;
         }
     }
 
+    // memset() is used instead of std::fill() and its variants, because MSVC fails to understand that
+    // GlyphCacheEntry can be initialized with all zeroes and so it uses much slower approaches.
+    memset(_map.data(), 0, _map.size() * sizeof(*_map.data()));
     _size = 0;
 }
 
 BackendD3D::GlyphCacheEntry& BackendD3D::GlyphCacheMap::FindOrInsert(const GlyphCacheKey& key, bool& inserted)
 {
+    // The fontRendition member must be non-zero to mark the hashmap slot as occupied
+    //assert(key.fontRendition != LineRendition::None);
+
     // Putting this into the Find() path is a little pessimistic, but it
     // allows us to default-construct this hashmap with a size of 0.
     if (_size >= _capacity)
@@ -87,7 +92,7 @@ BackendD3D::GlyphCacheEntry& BackendD3D::GlyphCacheMap::FindOrInsert(const Glyph
     for (auto i = hash;; ++i)
     {
         auto& entry = _map[i & _mask];
-        if (entry.key == key)
+        if (_equals(entry.key, key))
         {
             inserted = false;
             return entry;
@@ -96,7 +101,10 @@ BackendD3D::GlyphCacheEntry& BackendD3D::GlyphCacheMap::FindOrInsert(const Glyph
         {
             ++_size;
             entry.key = key;
-            entry.key.fontFace->AddRef();
+            if (entry.key.fontFace > IDWriteFontFace_SoftFont)
+            {
+                entry.key.fontFace->AddRef();
+            }
             inserted = true;
             return entry;
         }
@@ -105,13 +113,12 @@ BackendD3D::GlyphCacheEntry& BackendD3D::GlyphCacheMap::FindOrInsert(const Glyph
 
 size_t BackendD3D::GlyphCacheMap::_hash(const GlyphCacheKey& key) noexcept
 {
-    //auto h = UINT64_C(0xcafef00dd15ea5e5);
-    //h = (h ^ key.hashField1) * UINT64_C(6364136223846793005) + UINT64_C(1442695040888963407);
-    //h = (h ^ key.hashField2) * UINT64_C(6364136223846793005) + UINT64_C(1442695040888963407);
-    //const int r = h & 63;
-    //const auto x = static_cast<uint32_t>(h >> 32) ^ static_cast<uint32_t>(h);
-    //return _rotl(x, r);
     return til::hash(&key, GlyphCacheKeyDataSize);
+}
+
+bool BackendD3D::GlyphCacheMap::_equals(const GlyphCacheKey& lhs, const GlyphCacheKey& rhs) noexcept
+{
+    return memcmp(&lhs, &rhs, GlyphCacheKeyDataSize) == 0;
 }
 
 void BackendD3D::GlyphCacheMap::_bumpSize()
@@ -449,6 +456,8 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
     {
         _d2dRenderTargetUpdateFontSettings(*p.s->font);
     }
+
+    _softFontBitmap.reset();
 }
 
 void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
@@ -910,7 +919,9 @@ void BackendD3D::_bumpInstancesSize()
     const auto newSize = std::max<size_t>(256, _instances.size() * 2);
     Expects(newSize > _instances.size());
 
-    auto newInstances = Buffer<QuadInstance>{ newSize };
+    // Our render loop heavily relies on memcpy() which is up to between 1.5x (Intel)
+    // and 40x (AMD) faster for allocations with an alignment of 32 or greater.
+    auto newInstances = Buffer<QuadInstance, 32>{ newSize };
     std::copy_n(_instances.data(), _instances.size(), newInstances.data());
 
     _instances = std::move(newInstances);
@@ -1016,11 +1027,16 @@ void BackendD3D::_drawBackground(const RenderingPayload& p)
         D3D11_MAPPED_SUBRESOURCE mapped{};
         THROW_IF_FAILED(_deviceContext->Map(_backgroundBitmap.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
 
-        auto data = static_cast<char*>(mapped.pData);
+        const auto srcStride = p.backgroundBitmapStride * sizeof(u32);
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+        auto src = reinterpret_cast<const char*>(p.backgroundBitmap.data());
+        auto dst = static_cast<char*>(mapped.pData);
+
         for (size_t i = 0; i < p.s->cellCount.y; ++i)
         {
-            memcpy(data, p.backgroundBitmap.data() + i * p.s->cellCount.x, p.s->cellCount.x * sizeof(u32));
-            data += mapped.RowPitch;
+            memcpy(dst, src, srcStride);
+            src += srcStride;
+            dst += mapped.RowPitch;
         }
 
         _deviceContext->Unmap(_backgroundBitmap.get(), 0);
@@ -1045,33 +1061,31 @@ void BackendD3D::_drawText(RenderingPayload& p)
     {
         f32 baselineX = 0;
         const auto baselineY = y * p.s->font->cellSize.y + p.s->font->baseline;
-        const auto lineRenditionScale = static_cast<uint8_t>(row->lineRendition != FontRendition::SingleWidth);
+        const auto lineRenditionScale = static_cast<uint8_t>(row->lineRendition != LineRendition::SingleWidth);
 
         for (const auto& m : row->mappings)
         {
             GlyphCacheKey key{
                 .fontFace = m.fontFace.get(),
-                .fontRendition = row->lineRendition | m.fontRendition
+                .lineRendition = static_cast<u16>(row->lineRendition),
             };
 
             for (auto x = m.glyphsFrom; x < m.glyphsTo; ++x)
             {
                 key.glyphIndex = row->glyphIndices[x];
 
-                // This loop merely exists to allow us to retry rendering a glyph if the glyph atlas was full.
-                // We need to retry here, because a retry will cause the atlas texture as well as the
+                // This loop exists to allow us to retry rendering a glyph if the glyph atlas was full.
+                // We need to loop here, because a retry will cause the atlas texture as well as the
                 // _glyphCache hashmap to be cleared, and so we'll have to call FindOrInsert() again.
                 for (;;)
                 {
                     bool inserted = false;
                     auto& entry = _glyphCache.FindOrInsert(key, inserted);
 
-                    if (inserted)
+                    if (inserted && !_drawGlyph(p, entry, m.fontEmSize))
                     {
-                        if (!_drawGlyph(p, entry, m.fontEmSize))
-                        {
-                            continue;
-                        }
+                        // A deadlock in this retry loop is detected in _drawGlyphPrepareRetry.
+                        continue;
                     }
 
                     if (entry.data.shadingType != ShadingType::Default)
@@ -1120,6 +1134,11 @@ void BackendD3D::_drawText(RenderingPayload& p)
 
 bool BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f32 fontEmSize)
 {
+    if (entry.key.fontFace == IDWriteFontFace_SoftFont)
+    {
+        return _drawSoftFontGlyph(p, entry);
+    }
+
     const DWRITE_GLYPH_RUN glyphRun{
         .fontFace = entry.key.fontFace,
         .fontEmSize = fontEmSize,
@@ -1127,14 +1146,14 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
         .glyphIndices = &entry.key.glyphIndex,
     };
 
-    const auto lineRendition = entry.key.fontRendition & FontRendition::LineRenditionMask;
+    const auto lineRendition = static_cast<LineRendition>(entry.key.lineRendition);
 
     std::optional<D2D1_MATRIX_3X2_F> transform;
-    if (lineRendition != FontRendition::None)
+    if (lineRendition != LineRendition::SingleWidth)
     {
         auto& t = transform.emplace();
         t.m11 = 2.0f;
-        t.m22 = lineRendition >= FontRendition::DoubleHeightTop ? 2.0f : 1.0f;
+        t.m22 = lineRendition >= LineRendition::DoubleHeightTop ? 2.0f : 1.0f;
         _d2dRenderTarget->SetTransform(&t);
     }
 
@@ -1166,9 +1185,6 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
     // box may be empty if the glyph is whitespace.
     if (box.left >= box.right || box.top >= box.bottom)
     {
-        // This will indicate to `BackendD3D::_drawText` that this glyph is whitespace. It's important to set this member,
-        // because `GlyphCacheMap` does not zero out inserted entries and `shadingType` might still contain "garbage".
-        entry.data.shadingType = ShadingType::Default;
         return true;
     }
 
@@ -1212,11 +1228,80 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
     entry.data.texcoord.y = rect.y;
     entry.data.shadingType = colorGlyph ? ShadingType::Passthrough : _textShadingType;
 
-    if (lineRendition >= FontRendition::DoubleHeightTop)
+    if (lineRendition >= LineRendition::DoubleHeightTop)
     {
         _splitDoubleHeightGlyph(p, entry);
     }
 
+    return true;
+}
+
+bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, BackendD3D::GlyphCacheEntry& entry)
+{
+    // TODO: Add support for line renditions - call _splitDoubleHeightGlyph for this.
+    stbrp_rect rect{
+        .w = p.s->font->cellSize.x,
+        .h = p.s->font->cellSize.y,
+    };
+    if (!stbrp_pack_rects(&_rectPacker, &rect, 1))
+    {
+        _drawGlyphPrepareRetry(p);
+        return false;
+    }
+
+    if (!_softFontBitmap)
+    {
+        const D2D1_SIZE_U size{
+            static_cast<UINT32>(p.s->font->softFontCellSize.width),
+            static_cast<UINT32>(p.s->font->softFontCellSize.height),
+        };
+        static constexpr D2D1_BITMAP_PROPERTIES1 bitmapProperties{
+            .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
+        };
+        THROW_IF_FAILED(_d2dRenderTarget->CreateBitmap(size, nullptr, 0, &bitmapProperties, _softFontBitmap.addressof()));
+    }
+
+    {
+        const auto width = static_cast<size_t>(p.s->font->softFontCellSize.width);
+        const auto height = static_cast<size_t>(p.s->font->softFontCellSize.height);
+
+        auto bitmapData = Buffer<u32>{ width * height };
+        auto src = p.s->font->softFontPattern.begin() + height * (entry.key.glyphIndex - 0xEF20u);
+        auto dst = bitmapData.begin();
+
+        for (size_t y = 0; y < height; y++)
+        {
+            auto srcBits = *src++;
+            for (size_t x = 0; x < width; x++)
+            {
+                const auto srcBitIsSet = (srcBits & 0x8000) != 0;
+                *dst++ = srcBitIsSet ? 0xffffffff : 0x00000000;
+                srcBits <<= 1;
+            }
+        }
+
+        const auto pitch = static_cast<UINT32>(width * sizeof(u32));
+        THROW_IF_FAILED(_softFontBitmap->CopyFromMemory(nullptr, bitmapData.data(), pitch));
+    }
+
+    const D2D1_RECT_F dest{
+        static_cast<f32>(rect.x),
+        static_cast<f32>(rect.y),
+        static_cast<f32>(rect.x + rect.w),
+        static_cast<f32>(rect.y + rect.h),
+    };
+
+    _d2dBeginDrawing();
+    _d2dRenderTarget->DrawBitmap(_softFontBitmap.get(), &dest, 1, D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC, nullptr, nullptr);
+
+    // TODO: What is the p.s->font->softFontCenteringHint?
+    entry.data.offset.x = 0;
+    entry.data.offset.y = -p.s->font->baseline;
+    entry.data.size.x = rect.w;
+    entry.data.size.y = rect.h;
+    entry.data.texcoord.x = rect.x;
+    entry.data.texcoord.y = rect.y;
+    entry.data.shadingType = ShadingType::TextGrayscale;
     return true;
 }
 
@@ -1234,16 +1319,16 @@ void BackendD3D::_drawGlyphPrepareRetry(const RenderingPayload& p)
 // and create a second entry in our glyph cache hashmap that contains the other half.
 void BackendD3D::_splitDoubleHeightGlyph(const RenderingPayload& p, GlyphCacheEntry& entry)
 {
+    static constexpr auto lrTop = static_cast<u16>(LineRendition::DoubleHeightTop);
+    static constexpr auto lrBottom = static_cast<u16>(LineRendition::DoubleHeightBottom);
+
     // Twice the line height, twice the descender gap. For both.
     entry.data.offset.y -= p.s->font->descender;
 
-    const auto lineRendition = entry.key.fontRendition & FontRendition::LineRenditionMask;
-    const auto fontRendition = entry.key.fontRendition & FontRendition::FontRenditionMask;
-    const auto isTop = lineRendition == FontRendition::DoubleHeightTop;
-    const auto altRendition = isTop ? FontRendition::DoubleHeightBottom : FontRendition::DoubleHeightTop;
+    const auto isTop = entry.key.lineRendition == lrTop;
 
     auto key2 = entry.key;
-    key2.fontRendition = altRendition | fontRendition;
+    key2.lineRendition = isTop ? lrBottom : lrTop;
 
     bool inserted = false;
     auto& entry2 = _glyphCache.FindOrInsert(key2, inserted);

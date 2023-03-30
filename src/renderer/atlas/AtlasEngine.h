@@ -92,6 +92,7 @@ namespace Microsoft::Console::Render::Atlas
         void _resolveFontMetrics(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics = nullptr) const;
 
         // AtlasEngine.r.cpp
+        void _recreateAdapter();
         void _recreateBackend();
 
         static constexpr u16 u16min = 0x0000;

@@ -161,7 +161,7 @@ void BackendD2D::_drawBackground(const RenderingPayload& p) noexcept
 {
     if (_backgroundBitmapGeneration != p.backgroundBitmapGeneration)
     {
-        _backgroundBitmap->CopyFromMemory(nullptr, p.backgroundBitmap.data(), p.s->cellCount.x * 4);
+        _backgroundBitmap->CopyFromMemory(nullptr, p.backgroundBitmap.data(), gsl::narrow_cast<UINT32>(p.backgroundBitmapStride * sizeof(u32)));
         _backgroundBitmapGeneration = p.backgroundBitmapGeneration;
     }
 
@@ -195,6 +195,11 @@ void BackendD2D::_drawText(RenderingPayload& p)
         {
             for (const auto& m : row->mappings)
             {
+                if (!m.fontFace.is_proper_font())
+                {
+                    continue;
+                }
+
                 const DWRITE_GLYPH_RUN glyphRun{
                     .fontFace = m.fontFace.get(),
                     .fontEmSize = m.fontEmSize,
@@ -214,11 +219,11 @@ void BackendD2D::_drawText(RenderingPayload& p)
                     // (Vice versa for the bottom half of a double height row.)
                     //
                     // Since we used SetUnitMode(D2D1_UNIT_MODE_PIXELS), bounds.top/bottom is in pixels already and requires no conversion nor rounding.
-                    if (row->lineRendition != FontRendition::DoubleHeightBottom)
+                    if (row->lineRendition != LineRendition::DoubleHeightBottom)
                     {
                         row->dirtyTop = std::min(row->dirtyTop, static_cast<i32>(lrintf(bounds.top)));
                     }
-                    if (row->lineRendition != FontRendition::DoubleHeightTop)
+                    if (row->lineRendition != LineRendition::DoubleHeightTop)
                     {
                         row->dirtyBottom = std::max(row->dirtyBottom, static_cast<i32>(lrintf(bounds.bottom)));
                     }
@@ -237,7 +242,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
         };
         _renderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
 
-        if (row->lineRendition != FontRendition::SingleWidth)
+        if (row->lineRendition != LineRendition::SingleWidth)
         {
             baselineY = _drawTextPrepareLineRendition(p, baselineY, row->lineRendition);
         }
@@ -269,7 +274,10 @@ void BackendD2D::_drawText(RenderingPayload& p)
                     .glyphOffsets = &row->glyphOffsets[off],
                 };
 
-                DrawGlyphRun(_renderTarget.get(), _renderTarget4.get(), p.dwriteFactory4.get(), { baselineX, baselineY }, &glyphRun, brush);
+                if (m.fontFace.is_proper_font())
+                {
+                    DrawGlyphRun(_renderTarget.get(), _renderTarget4.get(), p.dwriteFactory4.get(), { baselineX, baselineY }, &glyphRun, brush);
+                }
 
                 for (UINT32 i = 0; i < glyphRun.glyphCount; ++i)
                 {
@@ -278,7 +286,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
             }
         }
 
-        if (row->lineRendition != FontRendition::SingleWidth)
+        if (row->lineRendition != LineRendition::SingleWidth)
         {
             _drawTextResetLineRendition();
         }
@@ -295,7 +303,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
     }
 }
 
-f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, f32 baselineY, FontRendition lineRendition) const noexcept
+f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, f32 baselineY, LineRendition lineRendition) const noexcept
 {
     const auto descender = static_cast<f32>(p.s->font->cellSize.y - p.s->font->baseline);
     D2D1_MATRIX_3X2_F transform{
@@ -303,12 +311,12 @@ f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, f32 bas
         .m22 = 1.0f,
     };
 
-    if (lineRendition >= FontRendition::DoubleHeightTop)
+    if (lineRendition >= LineRendition::DoubleHeightTop)
     {
         transform.m22 = 2.0f;
         transform.dy = -1.0f * (baselineY + descender);
 
-        if (lineRendition == FontRendition::DoubleHeightTop)
+        if (lineRendition == LineRendition::DoubleHeightTop)
         {
             const auto delta = static_cast<f32>(p.s->font->cellSize.y);
             baselineY += delta;

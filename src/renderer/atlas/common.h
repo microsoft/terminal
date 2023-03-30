@@ -365,29 +365,123 @@ namespace Microsoft::Console::Render::Atlas
     };
     ATLAS_FLAG_OPS(FontRelevantAttributes, u8)
 
-    // This is u16 so that it fits right into BackendD3D's GlyphCacheKey alignment.
-    enum class FontRendition : u16
+    // This fake IDWriteFontFace* is a place holder that is used when we draw DECDLD/DRCS soft fonts. It's wildly
+    // invalid C++, but I wrote the alternative, proper code with bitfields/flags and such and it turned into a
+    // bigger mess than this violation against the C++ consortium's conscience. It also didn't help BackendD3D,
+    // which hashes FontFace and an additional flag field would double the hashmap key size due to padding.
+    // It's a macro, because constexpr doesn't work here in C++20 and regular "const" doesn't inline.
+#define IDWriteFontFace_SoftFont (static_cast<IDWriteFontFace*>(nullptr) + 1)
+
+    // The existence of IDWriteFontFace_SoftFont unfortunately requires us to reimplement wil::com_ptr<IDWriteFontFace>.
+    //
+    // Unfortunately this code seems to confuse MSVC's linter? The 3 smart pointer warnings are somewhat funny.
+    // It doesn't understand that this class is a smart pointer itself. The other 2 are valid, but don't apply here.
+#pragma warning(push)
+#pragma warning(disable : 26415) // Smart pointer parameter 'other' is used only to access contained pointer. Use T* or T& instead (r.30).
+#pragma warning(disable : 26416) // Shared pointer parameter 'other' is passed by rvalue reference. Pass by value instead (r.34).
+#pragma warning(disable : 26418) // Shared pointer parameter 'other' is not copied or moved. Use T* or T& instead (r.36).
+#pragma warning(disable : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).)
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+    struct FontFace
     {
-        None = 0,
+        FontFace() = default;
 
-        LineRenditionMask = 0x00ff,
-        SingleWidth = LineRendition::SingleWidth,
-        DoubleWidth = LineRendition::DoubleWidth,
-        DoubleHeightTop = LineRendition::DoubleHeightTop,
-        DoubleHeightBottom = LineRendition::DoubleHeightBottom,
+        ~FontFace() noexcept
+        {
+            _release();
+        }
 
-        FontRenditionMask = 0xff00,
-        SoftFont = 0x8000,
+        FontFace(const FontFace& other) noexcept :
+            FontFace{ other.get() }
+        {
+        }
+
+        FontFace(FontFace&& other) noexcept :
+            _ptr{ other.detach() }
+        {
+        }
+
+        FontFace& operator=(const FontFace& other) noexcept
+        {
+            _release();
+            _ptr = other.get();
+            _addRef();
+            return *this;
+        }
+
+        FontFace& operator=(FontFace&& other) noexcept
+        {
+            _release();
+            _ptr = other.detach();
+            return *this;
+        }
+
+        FontFace(IDWriteFontFace* ptr) noexcept :
+            _ptr{ ptr }
+        {
+            _addRef();
+        }
+
+        FontFace(const wil::com_ptr<IDWriteFontFace>& other) noexcept :
+            FontFace{ other.get() }
+        {
+        }
+
+        FontFace(wil::com_ptr<IDWriteFontFace>&& other) noexcept :
+            _ptr{ other.detach() }
+        {
+        }
+
+        void attach(IDWriteFontFace* other) noexcept
+        {
+            _release();
+            _ptr = other;
+        }
+
+        [[nodiscard]] IDWriteFontFace* detach() noexcept
+        {
+            const auto tmp = _ptr;
+            _ptr = nullptr;
+            return tmp;
+        }
+
+        IDWriteFontFace* get() const noexcept
+        {
+            return _ptr;
+        }
+
+        bool is_proper_font() const noexcept
+        {
+            return _ptr > IDWriteFontFace_SoftFont;
+        }
+
+    private:
+        void _addRef() const noexcept
+        {
+            if (is_proper_font())
+            {
+                _ptr->AddRef();
+            }
+        }
+
+        void _release() const noexcept
+        {
+            if (is_proper_font())
+            {
+                _ptr->Release();
+            }
+        }
+
+        IDWriteFontFace* _ptr = nullptr;
     };
-    ATLAS_FLAG_OPS(FontRendition, u16)
+#pragma warning(pop)
 
     struct FontMapping
     {
-        wil::com_ptr<IDWriteFontFace> fontFace;
+        FontFace fontFace;
         f32 fontEmSize = 0;
         u32 glyphsFrom = 0;
         u32 glyphsTo = 0;
-        FontRendition fontRendition = FontRendition::None;
     };
 
     struct GridLineRange
@@ -408,7 +502,7 @@ namespace Microsoft::Console::Render::Atlas
             glyphOffsets.clear();
             colors.clear();
             gridLineRanges.clear();
-            lineRendition = FontRendition::None;
+            lineRendition = LineRendition::SingleWidth;
             selectionFrom = 0;
             selectionTo = 0;
             dirtyTop = y * cellHeight;
@@ -421,7 +515,7 @@ namespace Microsoft::Console::Render::Atlas
         std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets; // same size as glyphIndices
         std::vector<u32> colors; // same size as glyphIndices
         std::vector<GridLineRange> gridLineRanges;
-        FontRendition lineRendition = FontRendition::None;
+        LineRendition lineRendition = LineRendition::SingleWidth;
         u16 selectionFrom = 0;
         u16 selectionTo = 0;
         til::CoordType dirtyTop = 0;
@@ -442,7 +536,13 @@ namespace Microsoft::Console::Render::Atlas
         std::function<void(HANDLE)> swapChainChangedCallback;
 
         //// Parameters which are constant for the existence of the backend.
-        wil::com_ptr<IDXGIFactory2> dxgiFactory;
+        struct
+        {
+            wil::com_ptr<IDXGIFactory2> factory;
+            wil::com_ptr<IDXGIAdapter1> adapter;
+            LUID adapterLuid{};
+            UINT adapterFlags = 0;
+        } dxgi;
 
         //// Parameters which change seldom.
         GenerationalSettings s;
@@ -453,15 +553,25 @@ namespace Microsoft::Console::Render::Atlas
         // This is used as a scratch buffer during scrolling.
         Buffer<ShapedRow*> rowsScratch;
         Buffer<ShapedRow*> rows;
-        Buffer<u32> backgroundBitmap;
+        // This stride (width) of the backgroundBitmap is a "count" of u32 and not in bytes.
+        size_t backgroundBitmapStride = 0;
+        Buffer<u32, 32> backgroundBitmap;
         // 1 ensures that the backends redraw the background, even if the background is
         // entirely black, just like `backgroundBitmap` is all back after it gets created.
         til::generation_t backgroundBitmapGeneration{ 1 };
+
         u16r cursorRect;
 
         til::rect dirtyRectInPx;
         u16x2 invalidatedRows;
         i16 scrollOffset = 0;
+
+        void MarkAllAsDirty() noexcept
+        {
+            dirtyRectInPx = { 0, 0, s->targetSize.x, s->targetSize.y };
+            invalidatedRows = { 0, s->cellCount.y };
+            scrollOffset = 0;
+        }
     };
 
     struct IBackend

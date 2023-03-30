@@ -132,11 +132,10 @@ try
         // Scrolling the background bitmap is a lot easier because we can rely on memmove which works
         // with both forwards and backwards copying. It's a mystery why the STL doesn't have this.
         {
-            const auto width = _p.s->cellCount.x;
             const auto beg = _p.backgroundBitmap.begin();
             const auto end = _p.backgroundBitmap.end();
-            const auto src = beg - std::min<ptrdiff_t>(0, offset) * width;
-            const auto dst = beg + std::max<ptrdiff_t>(0, offset) * width;
+            const auto src = beg - std::min<ptrdiff_t>(0, offset) * _p.backgroundBitmapStride;
+            const auto dst = beg + std::max<ptrdiff_t>(0, offset) * _p.backgroundBitmapStride;
             const auto count = end - std::max(src, dst);
             assert(dst >= beg && dst + count <= end);
             assert(src >= beg && src + count <= end);
@@ -205,6 +204,10 @@ try
         }
     }
 
+#if ATLAS_DEBUG_CONTINUOUS_REDRAW
+    _p.MarkAllAsDirt();
+#endif
+
     return S_OK;
 }
 CATCH_RETURN()
@@ -246,7 +249,7 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::PrepareLineTransform(const LineRendition lineRendition, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
 {
     const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(targetRow, 0, _p.s->cellCount.y));
-    _p.rows[y]->lineRendition = static_cast<FontRendition>(lineRendition);
+    _p.rows[y]->lineRendition = lineRendition;
     _api.lineRendition = lineRendition;
     return S_OK;
 }
@@ -299,7 +302,7 @@ try
 
     {
         const auto shift = _api.lineRendition >= LineRendition::DoubleWidth ? 1 : 0;
-        const auto backgroundRow = _p.backgroundBitmap.begin() + static_cast<size_t>(y) * _p.s->cellCount.x;
+        const auto backgroundRow = _p.backgroundBitmap.begin() + _p.backgroundBitmapStride * y;
         auto it = backgroundRow + x;
         const auto end = backgroundRow + (static_cast<size_t>(column) << shift);
         const auto bg = _api.currentColor.y;
@@ -453,7 +456,9 @@ void AtlasEngine::_handleSettingsUpdate()
 
     if (targetChanged)
     {
-        _b.reset();
+        // target->useSoftwareRendering affects the selection of our IDXGIAdapter which requires us to reset _p.dxgi.
+        // This will indirectly also recreate the backend, when AtlasEngine::_recreateAdapter() detects this change.
+        _p.dxgi = {};
     }
     if (fontChanged)
     {
@@ -539,7 +544,14 @@ void AtlasEngine::_recreateCellCountDependentResources()
     _p.unorderedRows = Buffer<ShapedRow>(_p.s->cellCount.y);
     _p.rowsScratch = Buffer<ShapedRow*>(_p.s->cellCount.y);
     _p.rows = Buffer<ShapedRow*>(_p.s->cellCount.y);
-    _p.backgroundBitmap = Buffer<u32>(static_cast<size_t>(_p.s->cellCount.x) * _p.s->cellCount.y);
+
+    // Our render loop heavily relies on memcpy() which is up to between 1.5x (Intel)
+    // and 40x (AMD) faster for allocations with an alignment of 32 or greater.
+    // backgroundBitmapStride is a "count" of u32 and not in bytes,
+    // so we round up to multiple of 8 because 8 * sizeof(u32) == 32.
+    _p.backgroundBitmapStride = (static_cast<size_t>(_p.s->cellCount.x) + 7) & ~7;
+    _p.backgroundBitmap = Buffer<u32, 32>(_p.backgroundBitmapStride * _p.s->cellCount.y);
+    memset(_p.backgroundBitmap.data(), 0, _p.backgroundBitmap.size() * sizeof(u32));
 
     auto it = _p.unorderedRows.data();
     for (auto& r : _p.rows)
@@ -821,23 +833,6 @@ void AtlasEngine::_mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 leng
 
 void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
 {
-    // TODO soft fonts
-#if 0
-    if (!_p.s->font->softFontPattern.empty())
-    {
-        for (u32 i = from; i < to; ++i)
-        {
-            const auto ch = _api.bufferLine[from];
-            if (ch >= 0xEF20 && ch < 0xEF80)
-            {
-            }
-        }
-
-        const auto initialIndicesCount = row.glyphIndices.size();
-        row.mappings.emplace_back(_api.replacementCharacterFontFace, _p.s->font->fontSize, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(row.glyphIndices.size()), FontRendition::SoftFont);
-    }
-#endif
-
     if (!_api.replacementCharacterLookedUp)
     {
         bool succeeded = false;
@@ -861,16 +856,59 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
         _api.replacementCharacterLookedUp = true;
     }
 
-    if (_api.replacementCharacterFontFace)
+    static constexpr auto isSoftFontChar = [](wchar_t ch) noexcept {
+        return ch >= 0xEF20 && ch < 0xEF80;
+    };
+
+    auto pos1 = from;
+    auto pos2 = pos1;
+    auto col1 = _api.bufferLineColumn[from];
+    auto col2 = col1;
+    auto initialIndicesCount = row.glyphIndices.size();
+    const auto softFontAvailable = !_p.s->font->softFontPattern.empty();
+    auto currentlyMappingSoftFont = isSoftFontChar(_api.bufferLine[pos1]);
+
+    while (pos2 < to)
     {
-        const auto initialIndicesCount = row.glyphIndices.size();
-        const auto col0 = _api.bufferLineColumn[from];
-        const auto col1 = _api.bufferLineColumn[to];
-        const auto cols = gsl::narrow_cast<size_t>(col1 - col0);
-        row.glyphIndices.insert(row.glyphIndices.end(), cols, _api.replacementCharacterGlyphIndex);
-        row.glyphAdvances.insert(row.glyphAdvances.end(), cols, _p.s->font->cellSize.x);
-        row.glyphOffsets.insert(row.glyphOffsets.end(), cols, DWRITE_GLYPH_OFFSET{});
-        row.colors.insert(row.colors.end(), _api.colorsForeground.begin() + col0, _api.colorsForeground.begin() + col1);
-        row.mappings.emplace_back(_api.replacementCharacterFontFace, _p.s->font->fontSize, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(row.glyphIndices.size()));
+        col2 = _api.bufferLineColumn[++pos2];
+        if (col1 == col2)
+        {
+            continue;
+        }
+
+        const auto cols = col2 - col1;
+        const auto ch = static_cast<u16>(_api.bufferLine[pos1]);
+        const auto nowMappingSoftFont = isSoftFontChar(ch);
+
+        row.glyphIndices.emplace_back(nowMappingSoftFont ? ch : _api.replacementCharacterGlyphIndex);
+        row.glyphAdvances.emplace_back(static_cast<f32>(cols * _p.s->font->cellSize.x));
+        row.glyphOffsets.emplace_back(DWRITE_GLYPH_OFFSET{});
+        row.colors.emplace_back(_api.colorsForeground[col1]);
+
+        if (currentlyMappingSoftFont != nowMappingSoftFont)
+        {
+            const auto indicesCount = row.glyphIndices.size();
+            const auto fontFace = currentlyMappingSoftFont && softFontAvailable ? IDWriteFontFace_SoftFont : _api.replacementCharacterFontFace.get();
+
+            if (indicesCount > initialIndicesCount && fontFace)
+            {
+                row.mappings.emplace_back(fontFace, _p.s->font->fontSize, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
+                initialIndicesCount = indicesCount;
+            }
+        }
+
+        pos1 = pos2;
+        col1 = col2;
+        currentlyMappingSoftFont = nowMappingSoftFont;
+    }
+
+    {
+        const auto indicesCount = row.glyphIndices.size();
+        const auto fontFace = currentlyMappingSoftFont && softFontAvailable ? IDWriteFontFace_SoftFont : _api.replacementCharacterFontFace.get();
+
+        if (indicesCount > initialIndicesCount && fontFace)
+        {
+            row.mappings.emplace_back(fontFace, _p.s->font->fontSize, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
+        }
     }
 }

@@ -116,7 +116,7 @@ void SwapChainManager::_createSwapChain(const RenderingPayload& p, IUnknown* dev
     if (p.s->target->hwnd)
     {
         desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-        THROW_IF_FAILED(p.dxgiFactory->CreateSwapChainForHwnd(device, p.s->target->hwnd, &desc, nullptr, nullptr, swapChain1.addressof()));
+        THROW_IF_FAILED(p.dxgi.factory->CreateSwapChainForHwnd(device, p.s->target->hwnd, &desc, nullptr, nullptr, swapChain1.addressof()));
     }
     else
     {
@@ -127,7 +127,7 @@ void SwapChainManager::_createSwapChain(const RenderingPayload& p, IUnknown* dev
         // As per: https://docs.microsoft.com/en-us/windows/win32/api/dcomp/nf-dcomp-dcompositioncreatesurfacehandle
         static constexpr DWORD COMPOSITIONSURFACE_ALL_ACCESS = 0x0003L;
         THROW_IF_FAILED(DCompositionCreateSurfaceHandle(COMPOSITIONSURFACE_ALL_ACCESS, nullptr, _swapChainHandle.addressof()));
-        THROW_IF_FAILED(p.dxgiFactory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(device, _swapChainHandle.get(), &desc, nullptr, swapChain1.addressof()));
+        THROW_IF_FAILED(p.dxgi.factory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(device, _swapChainHandle.get(), &desc, nullptr, swapChain1.addressof()));
     }
 
     _swapChain = swapChain1.query<IDXGISwapChain2>();

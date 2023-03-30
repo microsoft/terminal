@@ -19,7 +19,7 @@ namespace Microsoft::Console::Render::Atlas
         __declspec(noinline) void _handleSettingsUpdate(const RenderingPayload& p);
         void _drawBackground(const RenderingPayload& p) noexcept;
         void _drawText(RenderingPayload& p);
-        f32 _drawTextPrepareLineRendition(const RenderingPayload& p, f32 baselineY, FontRendition lineRendition) const noexcept;
+        f32 _drawTextPrepareLineRendition(const RenderingPayload& p, f32 baselineY, LineRendition lineRendition) const noexcept;
         void _drawTextResetLineRendition() const noexcept;
         __declspec(noinline) f32r _getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY);
         void _drawGridlines(const RenderingPayload& p);

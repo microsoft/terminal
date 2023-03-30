@@ -86,20 +86,24 @@ namespace Microsoft::Console::Render::Atlas
             // which at the time of writing returns the same IDWriteFontFace as long as someone is
             // holding a reference / the reference count doesn't drop to 0 (see ActiveFaceCache).
             // This allows us to hash the value of the pointer as if it was uniquely identifying the font face.
+            //
+            // This isn't using a raw pointer instead of a managed struct, because this allows
+            // us to construct a GlyphCacheKey for lookup without AddRef()ing the fontFace.
             IDWriteFontFace* fontFace = nullptr;
-            FontRendition fontRendition = FontRendition::None;
+            u16 lineRendition = 0;
             u16 glyphIndex = 0;
-
-            constexpr bool operator==(const GlyphCacheKey& rhs) const noexcept
-            {
-                return __builtin_memcmp(this, &rhs, GlyphCacheKeyDataSize) == 0;
-            }
+#ifdef _WIN64
+            u32 _padding = 0;
+#endif
         };
-        static_assert(sizeof(GlyphCacheKey) == 2 * sizeof(void*));
+        static_assert(std::has_unique_object_representations_v<GlyphCacheKey>);
 
         // Due to padding on 64-Bit systems, sizeof(GlyphCacheKey) will be 16,
         // but the actual contents of the struct still only be 12 bytes.
-        static constexpr size_t GlyphCacheKeyDataSize = sizeof(GlyphCacheKey::fontFace) + 2 * sizeof(u16);
+        static constexpr size_t GlyphCacheKeyDataSize =
+            sizeof(GlyphCacheKey::fontFace) +
+            sizeof(GlyphCacheKey::lineRendition) +
+            sizeof(GlyphCacheKey::glyphIndex);
 
         struct GlyphCacheData
         {
@@ -108,12 +112,14 @@ namespace Microsoft::Console::Render::Atlas
             u16x2 texcoord;
             ShadingType shadingType = ShadingType::Default;
         };
+        static_assert(std::has_unique_object_representations_v<GlyphCacheData>);
 
         struct GlyphCacheEntry
         {
             GlyphCacheKey key;
             GlyphCacheData data;
         };
+        static_assert(std::has_unique_object_representations_v<GlyphCacheEntry>);
 
         struct GlyphCacheMap
         {
@@ -132,6 +138,7 @@ namespace Microsoft::Console::Render::Atlas
 
         private:
             static size_t _hash(const GlyphCacheKey& key) noexcept;
+            static bool _equals(const GlyphCacheKey& lhs, const GlyphCacheKey& rhs) noexcept;
             void _bumpSize();
 
             Buffer<GlyphCacheEntry> _map;
@@ -165,6 +172,7 @@ namespace Microsoft::Console::Render::Atlas
         void _drawBackground(const RenderingPayload& p);
         void _drawText(RenderingPayload& p);
         __declspec(noinline) [[nodiscard]] bool _drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f32 fontEmSize);
+        bool _drawSoftFontGlyph(const RenderingPayload& p, GlyphCacheEntry& entry);
         void _drawGlyphPrepareRetry(const RenderingPayload& p);
         void _splitDoubleHeightGlyph(const RenderingPayload& p, GlyphCacheEntry& entry);
         void _drawGridlines(const RenderingPayload& p);
@@ -191,7 +199,7 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID3D11Buffer> _indexBuffer;
         wil::com_ptr<ID3D11Buffer> _instanceBuffer;
         size_t _instanceBufferCapacity = 0;
-        Buffer<QuadInstance> _instances;
+        Buffer<QuadInstance, 32> _instances;
         size_t _instancesCount = 0;
 
         // This allows us to batch inverted cursors into the same
@@ -227,6 +235,7 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID2D1DeviceContext> _d2dRenderTarget;
         wil::com_ptr<ID2D1DeviceContext4> _d2dRenderTarget4; // Optional. Supported since Windows 10 14393.
         wil::com_ptr<ID2D1SolidColorBrush> _brush;
+        wil::com_ptr<ID2D1Bitmap1> _softFontBitmap;
         bool _d2dBeganDrawing = false;
         bool _fontChangedResetGlyphAtlas = false;
 
