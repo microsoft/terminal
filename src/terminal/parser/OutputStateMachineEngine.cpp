@@ -44,10 +44,10 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 {
     switch (wch)
     {
-    case AsciiChars::NUL:
-        // microsoft/terminal#1825 - VT applications expect to be able to write NUL
-        // and have _nothing_ happen. Filter the NULs here, so they don't fill the
-        // buffer with empty spaces.
+    case AsciiChars::ENQ:
+        // GH#11946: At some point we may want to add support for the VT
+        // answerback feature, which requires responding to an ENQ control
+        // with a user-defined reply, but until then we just ignore it.
         break;
     case AsciiChars::BEL:
         _dispatch->WarningBell();
@@ -79,8 +79,22 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
     case AsciiChars::SO:
         _dispatch->LockingShift(1);
         break;
-    default:
+    case AsciiChars::SUB:
+        // The SUB control is used to cancel a control sequence in the same
+        // way as CAN, but unlike CAN it also displays an error character,
+        // typically a reverse question mark.
+        _dispatch->Print(L'\u2E2E');
+        break;
+    case AsciiChars::DEL:
+        // The DEL control can sometimes be translated into a printable glyph
+        // if a 96-character set is designated, so we need to pass it through
+        // to the Print method. If not translated, it will filtered out there.
         _dispatch->Print(wch);
+        break;
+    default:
+        // GH#1825, GH#10786: VT applications expect to be able to write other
+        // control characters and have _nothing_ happen. We filter out these
+        // characters here, so they don't fill the buffer.
         break;
     }
 
