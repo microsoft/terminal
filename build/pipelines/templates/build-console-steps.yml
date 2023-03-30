@@ -64,17 +64,24 @@ steps:
       Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
 
 - task: CopyFiles@2
-  displayName: 'Copy *.appx/*.msix to Artifacts (Non-PR builds only)'
+  displayName: 'Copy *.msix to Artifacts'
   inputs:
     Contents: |
-     **/*.appx
      **/*.msix
      **/*.appxsym
-     !**/Microsoft.VCLibs*.appx
     TargetFolder: '$(Build.ArtifactStagingDirectory)/appx'
     OverWrite: true
     flattenFolders: true
-  condition: succeeded()
+
+- pwsh: |-
+    $TerminalMsixPath = (Get-Item "$(Build.ArtifactStagingDirectory)\appx\Cascadia*.msix").FullName
+    $XamlAppxPath = (Get-Item "src\cascadia\CascadiaPackage\AppPackages\*\Dependencies\$(BuildPlatform)\Microsoft.UI.Xaml*.appx").FullName
+    & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 -TerminalAppX $TerminalMsixPath -XamlAppX $XamlAppxPath -Destination "$(Build.ArtifactStagingDirectory)/unpackaged"
+  displayName: Build Unpackaged Distribution
+
+- publish: $(Build.ArtifactStagingDirectory)/unpackaged
+  artifact: unpackaged-$(BuildPlatform)-$(BuildConfiguration)
+  displayName: Publish Artifact (unpackaged)
 
 - task: CopyFiles@2
   displayName: 'Copy outputs needed for test runs to Artifacts'

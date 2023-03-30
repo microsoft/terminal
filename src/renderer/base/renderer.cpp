@@ -1309,6 +1309,20 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
     THROW_HR_MSG(E_UNEXPECTED, "engines array is full");
 }
 
+void Renderer::RemoveRenderEngine(_In_ IRenderEngine* const pEngine)
+{
+    THROW_HR_IF_NULL(E_INVALIDARG, pEngine);
+
+    for (auto& p : _engines)
+    {
+        if (p == pEngine)
+        {
+            p = nullptr;
+            return;
+        }
+    }
+}
+
 // Method Description:
 // - Registers a callback for when the background color is changed
 // Arguments:

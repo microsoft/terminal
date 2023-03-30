@@ -154,7 +154,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
         }
+        _setupDispatcherAndCallbacks();
 
+        UpdateSettings(settings, unfocusedAppearance);
+    }
+
+    void ControlCore::_setupDispatcherAndCallbacks()
+    {
         // Get our dispatcher. If we're hosted in-proc with XAML, this will get
         // us the same dispatcher as TermControl::Dispatcher(). If we're out of
         // proc, this'll return null. We'll need to instead make a new
@@ -211,8 +217,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     core->_ScrollPositionChangedHandlers(*core, update);
                 }
             });
-
-        UpdateSettings(settings, unfocusedAppearance);
     }
 
     ControlCore::~ControlCore()
@@ -223,6 +227,33 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _renderer->TriggerTeardown();
         }
+    }
+
+    void ControlCore::Detach()
+    {
+        // Disable the renderer, so that it doesn't try to start any new frames
+        // for our engines while we're not attached to anything.
+        _renderer->WaitForPaintCompletionAndDisable(INFINITE);
+
+        // Clear out any throttled funcs that we had wired up to run on this UI
+        // thread. These will be recreated in _setupDispatcherAndCallbacks, when
+        // we're re-attached to a new control (on a possibly new UI thread).
+        _tsfTryRedrawCanvas.reset();
+        _updatePatternLocations.reset();
+        _updateScrollBar.reset();
+    }
+
+    void ControlCore::AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    {
+        _settings->KeyBindings(keyBindings);
+        _setupDispatcherAndCallbacks();
+        const auto actualNewSize = _actualFont.GetSize();
+        // Bubble this up, so our new control knows how big we want the font.
+        _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, true);
+
+        // Turn the rendering back on now that we're ready to go.
+        _renderer->EnablePainting();
+        _AttachedHandlers(*this, nullptr);
     }
 
     bool ControlCore::Initialize(const double actualWidth,
@@ -304,9 +335,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // the first paint will be ignored!
             _renderEngine->SetWarningCallback(std::bind(&ControlCore::_rendererWarning, this, std::placeholders::_1));
 
-            // Tell the DX Engine to notify us when the swap chain changes.
-            // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
-            _renderEngine->SetCallback([this](auto handle) { _renderEngineSwapChainChanged(handle); });
+            // Tell the render engine to notify us when the swap chain changes.
+            // We do this after we initially set the swapchain so as to avoid
+            // unnecessary callbacks (and locking problems)
+            _renderEngine->SetCallback([this](HANDLE handle) {
+                _renderEngineSwapChainChanged(handle);
+            });
 
             _renderEngine->SetRetroTerminalEffect(_settings->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(_settings->PixelShaderPath());
@@ -574,7 +608,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      itself - it was initiated by the mouse wheel, or the scrollbar.
         _terminal->UserScrollViewport(viewTop);
 
-        (*_updatePatternLocations)();
+        if (_updatePatternLocations)
+        {
+            (*_updatePatternLocations)();
+        }
     }
 
     void ControlCore::AdjustOpacity(const double adjustment)
@@ -971,18 +1008,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::SizeChanged(const double width,
                                   const double height)
     {
-        // _refreshSizeUnderLock redraws the entire terminal.
-        // Don't call it if we don't have to.
-        if (_panelWidth == width && _panelHeight == height)
-        {
-            return;
-        }
-
-        _panelWidth = width;
-        _panelHeight = height;
-
-        auto lock = _terminal->LockForWriting();
-        _refreshSizeUnderLock();
+        SizeOrScaleChanged(width, height, _compositionScale);
     }
 
     void ControlCore::ScaleChanged(const double scale)
@@ -991,19 +1017,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
+        SizeOrScaleChanged(_panelWidth, _panelHeight, scale);
+    }
 
+    void ControlCore::SizeOrScaleChanged(const double width,
+                                         const double height,
+                                         const double scale)
+    {
         // _refreshSizeUnderLock redraws the entire terminal.
         // Don't call it if we don't have to.
-        if (_compositionScale == scale)
+        if (_panelWidth == width && _panelHeight == height && _compositionScale == scale)
         {
             return;
         }
+        const auto oldScale = _compositionScale;
 
+        _panelWidth = width;
+        _panelHeight = height;
         _compositionScale = scale;
 
         auto lock = _terminal->LockForWriting();
-        // _updateFont relies on the new _compositionScale set above
-        _updateFont();
+        if (oldScale != scale)
+        {
+            // _updateFont relies on the new _compositionScale set above
+            _updateFont();
+        }
         _refreshSizeUnderLock();
     }
 
@@ -1104,7 +1142,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // content, which is unexpected.
         const auto htmlData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::HTML) ?
                                   TextBuffer::GenHTML(bufferData,
-                                                      _actualFont.GetUnscaledSize().width,
+                                                      _actualFont.GetUnscaledSize().height,
                                                       _actualFont.GetFaceName(),
                                                       bgColor) :
                                   "";
@@ -1364,7 +1402,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto update{ winrt::make<ScrollPositionChangedArgs>(viewTop,
                                                             viewHeight,
                                                             bufferSize) };
-        if (!_inUnitTests)
+        if (!_inUnitTests && _updateScrollBar)
         {
             _updateScrollBar->Run(update);
         }
@@ -1374,14 +1412,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Additionally, start the throttled update of where our links are.
-        (*_updatePatternLocations)();
+
+        if (_updatePatternLocations)
+        {
+            (*_updatePatternLocations)();
+        }
     }
 
     void ControlCore::_terminalCursorPositionChanged()
     {
         // When the buffer's cursor moves, start the throttled func to
         // eventually dispatch a CursorPositionChanged event.
-        _tsfTryRedrawCanvas->Run();
+        if (_tsfTryRedrawCanvas)
+        {
+            _tsfTryRedrawCanvas->Run();
+        }
     }
 
     void ControlCore::_terminalTaskbarProgressChanged()
@@ -1409,7 +1454,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // The UI thread might try to acquire the console lock from time to time.
         // --> Unlock it, so the UI doesn't hang while we're busy.
         const auto suspension = _terminal->SuspendLock();
-
         // This call will block for the duration, unless shutdown early.
         _midiAudio.PlayNote(reinterpret_cast<HWND>(_owningHwnd), noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
     }
@@ -1511,9 +1555,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _RendererWarningHandlers(*this, winrt::make<RendererWarningArgs>(hr));
     }
 
-    void ControlCore::_renderEngineSwapChainChanged(const HANDLE handle)
+    winrt::fire_and_forget ControlCore::_renderEngineSwapChainChanged(const HANDLE sourceHandle)
     {
-        _SwapChainChangedHandlers(*this, winrt::box_value<uint64_t>(reinterpret_cast<uint64_t>(handle)));
+        // `sourceHandle` is a weak ref to a HANDLE that's ultimately owned by the
+        // render engine's own unique_handle. We'll add another ref to it here.
+        // This will make sure that we always have a valid HANDLE to give to
+        // callers of our own SwapChainHandle method, even if the renderer is
+        // currently in the process of discarding this value and creating a new
+        // one. Callers should have already set up the SwapChainChanged
+        // callback, so this all works out.
+
+        winrt::handle duplicatedHandle;
+        const auto processHandle = GetCurrentProcess();
+        THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(processHandle, sourceHandle, processHandle, duplicatedHandle.put(), 0, FALSE, DUPLICATE_SAME_ACCESS));
+
+        const auto weakThis{ get_weak() };
+
+        co_await wil::resume_foreground(_dispatcher);
+
+        if (auto core{ weakThis.get() })
+        {
+            // `this` is safe to use now
+
+            _lastSwapChainHandle = std::move(duplicatedHandle);
+            // Now bubble the event up to the control.
+            _SwapChainChangedHandlers(*this, winrt::box_value<uint64_t>(reinterpret_cast<uint64_t>(_lastSwapChainHandle.get())));
+        }
     }
 
     void ControlCore::_rendererBackgroundColorChanged()
@@ -1660,6 +1727,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // _renderer will always exist since it's introduced in the ctor
         _renderer->AddRenderEngine(pEngine);
     }
+    void ControlCore::DetachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine)
+    {
+        _renderer->RemoveRenderEngine(pEngine);
+    }
 
     bool ControlCore::IsInReadOnlyMode() const
     {
@@ -1688,13 +1759,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->Write(hstr);
 
             // Start the throttled update of where our hyperlinks are.
-            (*_updatePatternLocations)();
+            if (_updatePatternLocations)
+            {
+                (*_updatePatternLocations)();
+            }
         }
         catch (...)
         {
             // We're expecting to receive an exception here if the terminal
             // is closed while we're blocked playing a MIDI note.
         }
+    }
+
+    uint64_t ControlCore::SwapChainHandle() const
+    {
+        // This is only ever called by TermControl::AttachContent, which occurs
+        // when we're taking an existing core and moving it to a new control.
+        // Otherwise, we only ever use the value from the SwapChainChanged
+        // event.
+        return reinterpret_cast<uint64_t>(_lastSwapChainHandle.get());
     }
 
     // Method Description:

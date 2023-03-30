@@ -10,7 +10,9 @@ namespace TerminalApp
         Microsoft.Terminal.Control.ControlInteractivity CreateCore(Microsoft.Terminal.Control.IControlSettings settings,
                                                                    Microsoft.Terminal.Control.IControlAppearance unfocusedAppearance,
                                                                    Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+
         Microsoft.Terminal.Control.ControlInteractivity TryLookupCore(UInt64 id);
+        void Detach(Microsoft.Terminal.Control.TermControl control);
     }
 
     [default_interface] runtimeclass LastTabClosedEventArgs
@@ -21,6 +23,19 @@ namespace TerminalApp
     [default_interface] runtimeclass RenameWindowRequestedArgs
     {
         String ProposedName { get; };
+    };
+    [default_interface] runtimeclass RequestMoveContentArgs
+    {
+        String Window { get; };
+        String Content { get; };
+        UInt32 TabIndex { get; };
+    };
+    [default_interface] runtimeclass RequestReceiveContentArgs {
+        RequestReceiveContentArgs(UInt64 src, UInt64 tgt, UInt32 tabIndex);
+
+        UInt64 SourceWindow { get; };
+        UInt64 TargetWindow { get; };
+        UInt32 TabIndex { get; };
     };
 
     interface IDialogPresenter
@@ -62,9 +77,11 @@ namespace TerminalApp
         String KeyboardServiceDisabledText { get; };
 
         TaskbarState TaskbarState{ get; };
+        void AttachContent(String content, UInt32 tabIndex);
 
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
         void WindowActivated(Boolean activated);
+        void SendContentToOther(RequestReceiveContentArgs args);
 
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
@@ -77,8 +94,12 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
         event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.ShowWindowArgs> ShowWindowChanged;
+
+        event Windows.Foundation.TypedEventHandler<Object, RequestMoveContentArgs> RequestMoveContent;
+        event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> RequestReceiveContent;
     }
 }

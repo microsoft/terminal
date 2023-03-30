@@ -1055,4 +1055,93 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         return winrt::single_threaded_vector(std::move(vec));
     }
+
+    void Monarch::RequestMoveContent(winrt::hstring window,
+                                     winrt::hstring content,
+                                     uint32_t tabIndex)
+    {
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Monarch_MoveContent_Requested",
+                          TraceLoggingWideString(window.c_str(), "window", "The name of the window we tried to move to"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+        uint64_t windowId = _lookupPeasantIdForName(window);
+        if (windowId == 0)
+        {
+            // Try the name as an integer ID
+            uint32_t temp;
+            if (!Utils::StringToUint(window.c_str(), temp))
+            {
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "Monarch_MoveContent_FailedToParseId",
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+            }
+            else
+            {
+                windowId = temp;
+            }
+        }
+
+        if (auto targetPeasant{ _getPeasant(windowId) })
+        {
+            auto request = winrt::make_self<implementation::AttachRequest>(content, tabIndex);
+            targetPeasant.AttachContentToWindow(*request);
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_MoveContent_Completed",
+                              TraceLoggingInt64(windowId, "windowId", "The ID of the peasant which we sent the content to"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        }
+        else
+        {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_MoveContent_NoWindow",
+                              TraceLoggingInt64(windowId, "windowId", "We could not find a peasant with this ID"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+            // TODO GH#5000
+            //
+            // In the case where window couldn't be found, then create a window
+            // for that name / ID. Do this as a part of tear-out (different than
+            // drag/drop)
+        }
+    }
+
+    // Very similar to the above. Someone came and told us that they were the target of a drag/drop, and they know who started it.
+    // We will go tell the person who started it that they should send that target the content which was dragged.
+    void Monarch::RequestSendContent(const Remoting::RequestReceiveContentArgs& args)
+    {
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Monarch_SendContent_Requested",
+                          TraceLoggingUInt64(args.SourceWindow(), "source", "The window which started the drag"),
+                          TraceLoggingUInt64(args.TargetWindow(), "target", "The window which was the target of the drop"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+        if (auto senderPeasant{ _getPeasant(args.SourceWindow()) })
+        {
+            senderPeasant.SendContent(args);
+
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_SendContent_Completed",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        }
+        else
+        {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_SendContent_NoWindow",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+            // TODO GH#5000
+            //
+            // In the case where window couldn't be found, then create a window
+            // for that name / ID. Do this as a part of tear-out (different than
+            // drag/drop)
+        }
+    }
 }

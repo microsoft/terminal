@@ -7,6 +7,8 @@
 #include "TerminalPage.g.cpp"
 #include "LastTabClosedEventArgs.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
+#include "RequestMoveContentArgs.g.cpp"
+#include "RequestReceiveContentArgs.g.cpp"
 
 #include <filesystem>
 
@@ -244,6 +246,10 @@ namespace winrt::TerminalApp::implementation
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
         _tabView.TabCloseRequested({ this, &TerminalPage::_OnTabCloseRequested });
         _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
+
+        _tabView.TabDragStarting({ this, &TerminalPage::_onTabDragStarting });
+        _tabView.TabStripDragOver({ this, &TerminalPage::_onTabStripDragOver });
+        _tabView.TabStripDrop({ this, &TerminalPage::_onTabStripDrop });
 
         _CreateNewTabFlyout();
 
@@ -1883,17 +1889,37 @@ namespace winrt::TerminalApp::implementation
     //   is the last remaining pane on a tab, that tab will be closed upon moving.
     // - No move will occur if the tabIdx is the same as the current tab, or if
     //   the specified tab is not a host of terminals (such as the settings tab).
-    // Arguments:
-    // - tabIdx: The target tab index.
+    // - If the Window is specified, the pane will instead be detached and moved
+    //   to the window with the given name/id.
     // Return Value:
     // - true if the pane was successfully moved to the new tab.
-    bool TerminalPage::_MovePane(const uint32_t tabIdx)
+    bool TerminalPage::_MovePane(MovePaneArgs args)
     {
+        const auto tabIdx{ args.TabIndex() };
+        const auto windowId{ args.Window() };
+
         auto focusedTab{ _GetFocusedTabImpl() };
 
         if (!focusedTab)
         {
             return false;
+        }
+
+        // If there was a windowId in the action, try to move it to the
+        // specified window instead of moving it in our tab row.
+        if (!windowId.empty())
+        {
+            if (const auto terminalTab{ _GetFocusedTabImpl() })
+            {
+                if (const auto pane{ terminalTab->GetActivePane() })
+                {
+                    auto startupActions = pane->BuildStartupActions(0, 1, true, true);
+                    _DetachPaneFromWindow(pane);
+                    _MoveContent(std::move(startupActions.args), args.Window(), args.TabIndex());
+                    focusedTab->DetachPane();
+                    return true;
+                }
+            }
         }
 
         // If we are trying to move from the current tab to the current tab do nothing.
@@ -1924,6 +1950,156 @@ namespace winrt::TerminalApp::implementation
         }
 
         return true;
+    }
+
+    // Detach a tree of panes from this terminal. Helper used for moving panes
+    // and tabs to other windows.
+    void TerminalPage::_DetachPaneFromWindow(std::shared_ptr<Pane> pane)
+    {
+        pane->WalkTree([&](auto p) {
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                _manager.Detach(control);
+            }
+        });
+    }
+
+    void TerminalPage::_DetachTabFromWindow(const winrt::com_ptr<TabBase>& tab)
+    {
+        if (const auto terminalTab = tab.try_as<TerminalTab>())
+        {
+            // Detach the root pane, which will act like the whole tab got detached.
+            if (const auto rootPane = terminalTab->GetRootPane())
+            {
+                _DetachPaneFromWindow(rootPane);
+            }
+        }
+    }
+
+    // Method Description:
+    // - Serialize these actions to json, and raise them as a RequestMoveContent
+    //   event. Our Window will raise that to the window manager / monarch, who
+    //   will dispatch this blob of json back to the window that should handle
+    //   this.
+    // - `actions` will be emptied into a winrt IVector as a part of this method
+    //   and should be expected to be empty after this call.
+    void TerminalPage::_MoveContent(std::vector<Settings::Model::ActionAndArgs>&& actions,
+                                    const winrt::hstring& windowName,
+                                    const uint32_t tabIndex)
+    {
+        const auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)) };
+        const auto str{ ActionAndArgs::Serialize(winRtActions) };
+        const auto request = winrt::make_self<RequestMoveContentArgs>(windowName,
+                                                                      str,
+                                                                      tabIndex);
+        _RequestMoveContentHandlers(*this, *request);
+    }
+
+    bool TerminalPage::_MoveTab(MoveTabArgs args)
+    {
+        // If there was a windowId in the action, try to move it to the
+        // specified window instead of moving it in our tab row.
+        const auto windowId{ args.Window() };
+        if (!windowId.empty())
+        {
+            if (const auto terminalTab{ _GetFocusedTabImpl() })
+            {
+                auto startupActions = terminalTab->BuildStartupActions(true);
+                _DetachTabFromWindow(terminalTab);
+                _MoveContent(std::move(startupActions), args.Window(), 0);
+                _RemoveTab(*terminalTab);
+                return true;
+            }
+        }
+
+        const auto direction = args.Direction();
+        if (direction != MoveTabDirection::None)
+        {
+            if (auto focusedTabIndex = _GetFocusedTabIndex())
+            {
+                const auto currentTabIndex = focusedTabIndex.value();
+                const auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
+                _TryMoveTab(currentTabIndex, currentTabIndex + delta);
+            }
+        }
+
+        return true;
+    }
+
+    // Method Description:
+    // - Called when it is determined that an existing tab or pane should be
+    //   attached to our window. content represents a blob of JSON describing
+    //   some startup actions for rebuilding the specified panes. They will
+    //   include `__content` properties with the GUID of the existing
+    //   ControlInteractivity's we should use, rather than starting new ones.
+    // - _MakePane is already enlightened to use the ContentId property to
+    //   reattach instead of create new content, so this method simply needs to
+    //   parse the JSON and pump it into our action handler. Almost the same as
+    //   doing something like `wt -w 0 nt`.
+    winrt::fire_and_forget TerminalPage::AttachContent(winrt::hstring content,
+                                                       uint32_t tabIndex)
+    {
+        auto args = ActionAndArgs::Deserialize(content);
+
+        if (args == nullptr ||
+            args.Size() == 0)
+        {
+            co_return;
+        }
+
+        // Switch to the UI thread before selecting a tab or dispatching actions.
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
+
+        const auto& firstAction = args.GetAt(0);
+        const bool firstIsSplitPane{ firstAction.Action() == ShortcutAction::SplitPane };
+
+        // `splitPane` allows the user to specify which tab to split. In that
+        // case, split specifically the requested pane.
+        //
+        // If there's not enough tabs, then just turn this pane into a new tab.
+        //
+        // If the first action is `newTab`, the index is always going to be 0,
+        // so don't do anything in that case.
+        if (firstIsSplitPane && tabIndex < _tabs.Size())
+        {
+            _SelectTab(tabIndex);
+        }
+        else
+        {
+            if (firstIsSplitPane)
+            {
+                // Create the equivalent NewTab action.
+                const auto newAction = Settings::Model::ActionAndArgs{ Settings::Model::ShortcutAction::NewTab,
+                                                                       Settings::Model::NewTabArgs(firstAction.Args() ?
+                                                                                                       firstAction.Args().try_as<Settings::Model::SplitPaneArgs>().TerminalArgs() :
+                                                                                                       nullptr) };
+                args.SetAt(0, newAction);
+            }
+        }
+
+        for (const auto& action : args)
+        {
+            _actionDispatch->DoAction(action);
+        }
+
+        // After handling all the actions, then re-check the tabIndex. We might
+        // have been called as a part of a tab drag/drop. In that case, the
+        // tabIndex is actually relevant, and we need to move the tab we just
+        // made into position.
+        if (!firstIsSplitPane && tabIndex != -1)
+        {
+            // Move the currently active tab to the requested index Use the
+            // currently focused tab index, because we don't know if the new tab
+            // opened at the end of the list, or adjacent to the previously
+            // active tab. This is affected by the user's "newTabPosition"
+            // setting.
+            if (const auto focusedTabIndex = _GetFocusedTabIndex())
+            {
+                const auto source = *focusedTabIndex;
+                _TryMoveTab(source, tabIndex);
+            }
+            // else: This shouldn't really be possible, because the tab we _just_ opened should be active.
+        }
     }
 
     // Method Description:
@@ -2589,26 +2765,46 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    TermControl TerminalPage::_InitControl(const TerminalSettingsCreateResult& settings, const ITerminalConnection& connection)
+    TermControl TerminalPage::_CreateNewControlAndContent(const TerminalSettingsCreateResult& settings, const ITerminalConnection& connection)
     {
         // Do any initialization that needs to apply to _every_ TermControl we
         // create here.
         // TermControl will copy the settings out of the settings passed to it.
 
         const auto content = _manager.CreateCore(settings.DefaultSettings(), settings.UnfocusedSettings(), connection);
+        return _SetupControl(TermControl{ content });
+    }
 
-        TermControl term{ content };
+    TermControl TerminalPage::_AttachControlToContent(const uint64_t& contentId)
+    {
+        if (const auto& content{ _manager.TryLookupCore(contentId) })
+        {
+            // We have to pass in our current keybindings, because that's an
+            // object that belongs to this TerminalPage, on this thread. If we
+            // don't, then when we move the content to another thread, and it
+            // tries to handle a key, it'll callback on the original page's
+            // stack, inevitably resulting in a wrong_thread
+            return _SetupControl(TermControl::NewControlByAttachingContent(content, *_bindings));
+        }
+        return nullptr;
+    }
 
+    TermControl TerminalPage::_SetupControl(const TermControl& term)
+    {
         // GH#12515: ConPTY assumes it's hidden at the start. If we're not, let it know now.
         if (_visible)
         {
             term.WindowVisibilityChanged(_visible);
         }
 
+        // Even in the case of re-attaching content from another window, this
+        // will correctly update the control's owning HWND
         if (_hostingHwnd.has_value())
         {
             term.OwningHwnd(reinterpret_cast<uint64_t>(*_hostingHwnd));
         }
+
+        _RegisterTerminalEvents(term);
         return term;
     }
 
@@ -2632,6 +2828,19 @@ namespace winrt::TerminalApp::implementation
                                                   const winrt::TerminalApp::TabBase& sourceTab,
                                                   TerminalConnection::ITerminalConnection existingConnection)
     {
+        // First things first - Check for making a pane from content ID.
+        if (newTerminalArgs &&
+            newTerminalArgs.ContentId() != 0)
+        {
+            // Don't need to worry about duplicating or anything - we'll
+            // serialize the actual profile's GUID along with the content guid.
+            const auto& profile = _settings.GetProfileForArgs(newTerminalArgs);
+
+            const auto control = _AttachControlToContent(newTerminalArgs.ContentId());
+
+            return std::make_shared<Pane>(profile, control);
+        }
+
         TerminalSettingsCreateResult controlSettings{ nullptr };
         Profile profile{ nullptr };
 
@@ -2683,15 +2892,13 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        const auto control = _InitControl(controlSettings, connection);
-        _RegisterTerminalEvents(control);
+        const auto control = _CreateNewControlAndContent(controlSettings, connection);
 
         auto resultPane = std::make_shared<Pane>(profile, control);
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
-            auto newControl = _InitControl(controlSettings, debugConnection);
-            _RegisterTerminalEvents(newControl);
+            auto newControl = _CreateNewControlAndContent(controlSettings, debugConnection);
             // Split (auto) with the debug tap.
             auto debugPane = std::make_shared<Pane>(profile, newControl);
 
@@ -4130,7 +4337,10 @@ namespace winrt::TerminalApp::implementation
                 if (auto terminalTab{ _GetTerminalTabImpl(tab) })
                 {
                     // The root pane will propagate the theme change to all its children.
-                    terminalTab->GetRootPane()->UpdateResources(_paneResources);
+                    if (const auto& rootPane{ terminalTab->GetRootPane() })
+                    {
+                        rootPane->UpdateResources(_paneResources);
+                    }
                 }
             }
         }
@@ -4386,6 +4596,162 @@ namespace winrt::TerminalApp::implementation
             {
                 page->IdentifyWindow();
             }
+        }
+    }
+
+    void TerminalPage::_onTabDragStarting(const winrt::Microsoft::UI::Xaml::Controls::TabView&,
+                                          const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& e)
+    {
+        // Get the tab impl from this event.
+        const auto eventTab = e.Tab();
+        const auto tabBase = _GetTabByTabViewItem(eventTab);
+        winrt::com_ptr<TabBase> tabImpl;
+        tabImpl.copy_from(winrt::get_self<TabBase>(tabBase));
+        if (tabImpl)
+        {
+            // First: stash the tab we started dragging.
+            // We're going to be asked for this.
+            _stashedDraggedTab = tabImpl;
+
+            // Into the DataPackage, let's stash our own window ID.
+            const auto id{ _WindowProperties.WindowId() };
+
+            // Get our PID
+            const auto pid{ GetCurrentProcessId() };
+
+            e.Data().Properties().Insert(L"windowId", winrt::box_value(id));
+            e.Data().Properties().Insert(L"pid", winrt::box_value<uint32_t>(pid));
+            e.Data().RequestedOperation(DataPackageOperation::Move);
+
+            // The next thing that will happen:
+            //  * Another TerminalPage will get a TabStripDragOver, then get a
+            //    TabStripDrop
+            //    * This will be handled by the _other_ page asking the monarch
+            //      to ask us to send our content to them.
+            //  * We'll get a TabDroppedOutside to indicate that this tab was
+            //    dropped _not_ on a TabView.
+            //    * This we can't handle yet, and is the last point of TODO GH#5000
+        }
+    }
+
+    void TerminalPage::_onTabStripDragOver(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                           const winrt::Windows::UI::Xaml::DragEventArgs& e)
+    {
+        // We must mark that we can accept the drag/drop. The system will never
+        // call TabStripDrop on us if we don't indicate that we're willing.
+        const auto& props{ e.DataView().Properties() };
+        if (props.HasKey(L"windowId") &&
+            props.HasKey(L"pid") &&
+            (winrt::unbox_value_or<uint32_t>(props.TryLookup(L"pid"), 0u) == GetCurrentProcessId()))
+        {
+            e.AcceptedOperation(DataPackageOperation::Move);
+        }
+
+        // You may think to yourself, this is a great place to increase the
+        // width of the TabView artificially, to make room for the new tab item.
+        // However, we'll never get a message that the tab left the tab view
+        // (without being dropped). So there's no good way to resize back down.
+    }
+
+    // Method Description:
+    // - Called on the TARGET of a tab drag/drop. We'll unpack the DataPackage
+    //   to find who the tab came from. We'll then ask the Monarch to ask the
+    //   sender to move that tab to us.
+    winrt::fire_and_forget TerminalPage::_onTabStripDrop(winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                         winrt::Windows::UI::Xaml::DragEventArgs e)
+    {
+        // Get the PID and make sure it is the same as ours.
+        if (const auto& pidObj{ e.DataView().Properties().TryLookup(L"pid") })
+        {
+            const auto pid{ winrt::unbox_value_or<uint32_t>(pidObj, 0u) };
+            if (pid != GetCurrentProcessId())
+            {
+                // The PID doesn't match ours. We can't handle this drop.
+                co_return;
+            }
+        }
+        else
+        {
+            // No PID? We can't handle this drop. Bail.
+            co_return;
+        }
+
+        const auto& windowIdObj{ e.DataView().Properties().TryLookup(L"windowId") };
+        if (windowIdObj == nullptr)
+        {
+            // No windowId? Bail.
+            co_return;
+        }
+        const uint64_t src{ winrt::unbox_value<uint64_t>(windowIdObj) };
+
+        // Figure out where in the tab strip we're dropping this tab. Add that
+        // index to the request. This is largely taken from the WinUI sample
+        // app.
+
+        // We need to be on OUR UI thread to figure out where we dropped
+        auto weakThis{ get_weak() };
+        co_await wil::resume_foreground(Dispatcher());
+        if (const auto& page{ weakThis.get() })
+        {
+            // First we need to get the position in the List to drop to
+            auto index = -1;
+
+            // Determine which items in the list our pointer is between.
+            for (auto i = 0u; i < _tabView.TabItems().Size(); i++)
+            {
+                if (const auto& item{ _tabView.ContainerFromIndex(i).try_as<winrt::MUX::Controls::TabViewItem>() })
+                {
+                    const auto posX{ e.GetPosition(item).X }; // The point of the drop, relative to the tab
+                    const auto itemWidth{ item.ActualWidth() }; // The right of the tab
+                    // If the drag point is on the left half of the tab, then insert here.
+                    if (posX < itemWidth / 2)
+                    {
+                        index = i;
+                        break;
+                    }
+                }
+            }
+
+            // `this` is safe to use
+            const auto request = winrt::make_self<RequestReceiveContentArgs>(src, _WindowProperties.WindowId(), index);
+
+            // This will go up to the monarch, who will then dispatch the request
+            // back down to the source TerminalPage, who will then perform a
+            // RequestMoveContent to move their tab to us.
+            _RequestReceiveContentHandlers(*this, *request);
+        }
+    }
+
+    // Method Description:
+    // - This is called on the drag/drop SOURCE TerminalPage, when the monarch has
+    //   requested that we send our tab to another window. We'll need to
+    //   serialize the tab, and send it to the monarch, who will then send it to
+    //   the destination window.
+    // - Fortunately, sending the tab is basically just a MoveTab action, so we
+    //   can largely reuse that.
+    winrt::fire_and_forget TerminalPage::SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args)
+    {
+        // validate that we're the source window of the tab in this request
+        if (args.SourceWindow() != _WindowProperties.WindowId())
+        {
+            co_return;
+        }
+        if (!_stashedDraggedTab)
+        {
+            co_return;
+        }
+
+        // must do the work of adding/removing tabs on the UI thread.
+        auto weakThis{ get_weak() };
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+        if (const auto& page{ weakThis.get() })
+        {
+            // `this` is safe to use in here.
+            auto startupActions = _stashedDraggedTab->BuildStartupActions(true);
+            _DetachTabFromWindow(_stashedDraggedTab);
+            _MoveContent(std::move(startupActions), winrt::hstring{ fmt::format(L"{}", args.TargetWindow()) }, args.TabIndex());
+            // _RemoveTab will make sure to null out the _stashedDraggedTab
+            _RemoveTab(*_stashedDraggedTab);
         }
     }
 

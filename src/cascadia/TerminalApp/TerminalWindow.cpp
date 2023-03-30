@@ -52,6 +52,7 @@ static const std::array settingsLoadWarningsLabels{
     USES_RESOURCE(L"FailedToParseSubCommands"),
     USES_RESOURCE(L"UnknownTheme"),
     USES_RESOURCE(L"DuplicateRemainingProfilesEntry"),
+    USES_RESOURCE(L"InvalidUseOfContent"),
 };
 
 static_assert(settingsLoadWarningsLabels.size() == static_cast<size_t>(SettingsLoadWarnings::WARNINGS_SIZE));
@@ -1172,6 +1173,21 @@ namespace winrt::TerminalApp::implementation
     void TerminalWindow::WindowId(const uint64_t& id)
     {
         _WindowProperties->WindowId(id);
+    }
+
+    void TerminalWindow::AttachContent(winrt::hstring content, uint32_t tabIndex)
+    {
+        if (_root)
+        {
+            _root->AttachContent(content, tabIndex);
+        }
+    }
+    void TerminalWindow::SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args)
+    {
+        if (_root)
+        {
+            _root->SendContentToOther(args);
+        }
     }
 
     bool TerminalWindow::ShouldImmediatelyHandoffToElevated()

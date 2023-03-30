@@ -762,6 +762,10 @@
     <value>The "newTabMenu" field contains more than one entry of type "remainingProfiles". Only the first one will be considered.</value>
     <comment>{Locked="newTabMenu"} {Locked="remainingProfiles"}</comment>
   </data>
+  <data name="InvalidUseOfContent" xml:space="preserve">
+    <value>The "__content" property is reserved for internal use</value>
+    <comment>{Locked="__content"}</comment>
+  </data>
   <data name="AboutToolTip" xml:space="preserve">
     <value>Open a dialog containing product information</value>
   </data>

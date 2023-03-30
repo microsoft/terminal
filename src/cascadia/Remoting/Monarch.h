@@ -81,6 +81,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
         Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
 
+        void RequestMoveContent(winrt::hstring window, winrt::hstring content, uint32_t tabIndex);
+        void RequestSendContent(const Remoting::RequestReceiveContentArgs& args);
+
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
         TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
