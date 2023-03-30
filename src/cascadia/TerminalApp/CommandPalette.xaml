@@ -9,7 +9,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="using:TerminalApp"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:model="using:Microsoft.Terminal.Settings.Model"
              xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              AllowFocusOnInteraction="True"
@@ -24,8 +23,6 @@
 
     <UserControl.Resources>
         <ResourceDictionary>
-            <model:IconPathConverter x:Key="IconSourceConverter" />
-
             <DataTemplate x:Key="ListItemTemplate"
                           x:DataType="local:FilteredCommand">
                 <ListViewItem HorizontalContentAlignment="Stretch"
