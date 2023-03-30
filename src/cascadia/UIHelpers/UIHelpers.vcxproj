@@ -17,6 +17,9 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Converters.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="ResourceString.h">
       <DependentUpon>ResourceString.idl</DependentUpon>
     </ClInclude>
@@ -26,12 +29,16 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Converters.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="ResourceString.cpp">
       <DependentUpon>ResourceString.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Midl Include="Converters.idl" />
     <Midl Include="ResourceString.idl" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->

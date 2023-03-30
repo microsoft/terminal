@@ -1,24 +1,30 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-namespace Microsoft.Terminal.Settings.Editor
+namespace Microsoft.Terminal.UI
 {
 
     [bindable]
-    [default_interface] static runtimeclass Converters
+    static runtimeclass Converters
     {
+        // Booleans
+        static Boolean InvertBoolean(Boolean value);
+        static Windows.UI.Xaml.Visibility InvertedBooleanToVisibility(Boolean value);
 
+        // Numbers
+        static Int32 PercentageToPercentageValue(Double value);
+        static Double PercentageValueToPercentage(Double value);
+
+        // Strings
+        static Boolean StringsAreNotEqual(String expected, String actual);
+        static Windows.UI.Xaml.Visibility StringNotEmptyToVisibility(String value);
+        static String StringOrEmptyIfPlaceholder(String placeholder, String value);
+
+        // Misc
         static String AppendPercentageSign(Double value);
         static Windows.UI.Text.FontWeight DoubleToFontWeight(Double value);
         static Windows.UI.Xaml.Media.SolidColorBrush ColorToBrush(Windows.UI.Color color);
         static Double FontWeightToDouble(Windows.UI.Text.FontWeight fontWeight);
-        static Boolean InvertBoolean(Boolean value);
-        static Windows.UI.Xaml.Visibility InvertedBooleanToVisibility(Boolean value);
         static Double MaxValueFromPaddingString(String paddingString);
-        static Int32 PercentageToPercentageValue(Double value);
-        static Double PercentageValueToPercentage(Double value);
-        static Boolean StringsAreNotEqual(String expected, String actual);
-        static Windows.UI.Xaml.Visibility StringNotEmptyToVisibility(String value);
-        static String StringOrEmptyIfPlaceholder(String placeholder, String value);
     }
 }

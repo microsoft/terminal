@@ -9,6 +9,7 @@
              xmlns:local="using:Microsoft.Terminal.Settings.Editor"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:model="using:Microsoft.Terminal.Settings.Model"
+             xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
              IsTabStop="False"
              mc:Ignorable="d">
@@ -34,7 +35,7 @@
                           x:DataType="local:ColorTableEntry">
                 <Border Width="8"
                         Height="8"
-                        Background="{x:Bind local:Converters.ColorToBrush(Color)}"
+                        Background="{x:Bind mtu:Converters.ColorToBrush(Color)}"
                         CornerRadius="1" />
             </DataTemplate>
         </ResourceDictionary>
@@ -62,7 +63,7 @@
                                   Height="32"
                                   Padding="8,8,0,0"
                                   VerticalAlignment="Center"
-                                  Background="{x:Bind local:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
+                                  Background="{x:Bind mtu:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
                                   ColumnSpacing="1"
                                   CornerRadius="2"
                                   RowSpacing="1">
@@ -169,7 +170,7 @@
                                            VerticalAlignment="Center"
                                            AutomationProperties.AccessibilityView="Raw"
                                            FontFamily="Cascadia Code"
-                                           Foreground="{x:Bind local:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
+                                           Foreground="{x:Bind mtu:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
                                            Text="{x:Bind Name, Mode=OneWay}"
                                            TextTrimming="WordEllipsis" />
                             </Grid>
@@ -196,7 +197,7 @@
                               SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
                               SelectionChanged="FontFace_SelectionChanged"
                               Style="{StaticResource ComboBoxSettingStyle}"
-                              Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ShowAllFonts), Mode=OneWay}" />
+                              Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ShowAllFonts), Mode=OneWay}" />
                     <ComboBox x:Uid="Profile_FontFaceBox"
                               ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
                               ItemsSource="{x:Bind SourceProfile.CompleteFontList, Mode=OneWay}"
@@ -273,7 +274,7 @@
                                 Minimum="0"
                                 TickFrequency="50"
                                 TickPlacement="Outside"
-                                Value="{x:Bind local:Converters.FontWeightToDouble(Appearance.FontWeight), BindBack=Appearance.SetFontWeightFromDouble, Mode=TwoWay}" />
+                                Value="{x:Bind mtu:Converters.FontWeightToDouble(Appearance.FontWeight), BindBack=Appearance.SetFontWeightFromDouble, Mode=TwoWay}" />
                         <TextBlock Grid.Column="1"
                                    Margin="10,0,0,0"
                                    Style="{StaticResource SliderValueLabelStyle}"
@@ -359,15 +360,15 @@
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Orientation="Vertical">
                     <TextBox x:Uid="Profile_BackgroundImageBox"
-                             IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
+                             IsEnabled="{x:Bind mtu:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
                              IsSpellCheckEnabled="False"
                              Style="{StaticResource TextBoxSettingStyle}"
-                             Text="{x:Bind local:Converters.StringOrEmptyIfPlaceholder('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
+                             Text="{x:Bind mtu:Converters.StringOrEmptyIfPlaceholder('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
                     <StackPanel Orientation="Horizontal">
                         <Button x:Uid="Profile_BackgroundImageBrowse"
                                 Margin="0,10,10,0"
                                 Click="BackgroundImage_Click"
-                                IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
+                                IsEnabled="{x:Bind mtu:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
                                 Style="{StaticResource BrowseButtonStyle}" />
                         <CheckBox x:Name="UseDesktopImageCheckBox"
                                   x:Uid="Profile_UseDesktopImage"
@@ -592,10 +593,10 @@
                     <Slider x:Name="BIOpacitySlider"
                             x:Uid="Profile_BackgroundImageOpacitySlider"
                             Grid.Column="0"
-                            Value="{x:Bind local:Converters.PercentageToPercentageValue(Appearance.BackgroundImageOpacity), BindBack=Appearance.SetBackgroundImageOpacityFromPercentageValue, Mode=TwoWay}" />
+                            Value="{x:Bind mtu:Converters.PercentageToPercentageValue(Appearance.BackgroundImageOpacity), BindBack=Appearance.SetBackgroundImageOpacityFromPercentageValue, Mode=TwoWay}" />
                     <TextBlock Grid.Column="1"
                                Style="{StaticResource SliderValueLabelStyle}"
-                               Text="{x:Bind local:Converters.AppendPercentageSign(BIOpacitySlider.Value), Mode=OneWay}" />
+                               Text="{x:Bind mtu:Converters.AppendPercentageSign(BIOpacitySlider.Value), Mode=OneWay}" />
                 </Grid>
             </local:SettingContainer>
         </StackPanel>

@@ -108,12 +108,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::SetFontWeightFromDouble(double fontWeight)
     {
-        FontWeight(Converters::DoubleToFontWeight(fontWeight));
+        FontWeight(winrt::Microsoft::Terminal::UI::Converters::DoubleToFontWeight(fontWeight));
     }
 
     void AppearanceViewModel::SetBackgroundImageOpacityFromPercentageValue(double percentageValue)
     {
-        BackgroundImageOpacity(Converters::PercentageValueToPercentage(percentageValue));
+        BackgroundImageOpacity(winrt::Microsoft::Terminal::UI::Converters::PercentageValueToPercentage(percentageValue));
     }
 
     void AppearanceViewModel::SetBackgroundImagePath(winrt::hstring path)
