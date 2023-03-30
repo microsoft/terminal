@@ -147,6 +147,7 @@ class TextBufferTests
 
     TEST_METHOD(TestBurrito);
     TEST_METHOD(TestOverwriteChars);
+    TEST_METHOD(TestRowReplaceText);
 
     TEST_METHOD(TestAppendRTFText);
 
@@ -2044,6 +2045,87 @@ void TextBufferTests::TestOverwriteChars()
 #undef simple
 #undef complex2
 #undef complex1
+}
+
+void TextBufferTests::TestRowReplaceText()
+{
+    static constexpr til::size bufferSize{ 10, 3 };
+    static constexpr UINT cursorSize = 12;
+    const TextAttribute attr{ 0x7f };
+    TextBuffer buffer{ bufferSize, attr, cursorSize, false, _renderer };
+    auto& row = buffer.GetRowByOffset(0);
+
+#define complex L"\U0001F41B"
+
+    struct Test
+    {
+        const wchar_t* description;
+        struct
+        {
+            std::wstring_view text;
+            til::CoordType columnBegin = 0;
+            til::CoordType columnLimit = 0;
+        } input;
+        struct
+        {
+            std::wstring_view text;
+            til::CoordType columnEnd = 0;
+            til::CoordType columnBeginDirty = 0;
+            til::CoordType columnEndDirty = 0;
+        } expected;
+        std::wstring_view expectedRow;
+    };
+
+    static constexpr std::array tests{
+        Test{
+            L"Not enough space -> early exit",
+            { complex, 2, 2 },
+            { complex, 2, 2, 2 },
+            L"          ",
+        },
+        Test{
+            L"Exact right amount of space",
+            { complex, 2, 4 },
+            { L"", 4, 2, 4 },
+            L"  " complex L"      ",
+        },
+        Test{
+            L"Not enough space -> columnEnd = columnLimit",
+            { complex complex, 0, 3 },
+            { complex, 3, 0, 4 },
+            complex L"        ",
+        },
+        Test{
+            L"Too much to fit into the row",
+            { complex L"b" complex L"c" complex L"abcd", 0, til::CoordTypeMax },
+            { L"cd", 10, 0, 10 },
+            complex L"b" complex L"c" complex L"ab",
+        },
+        Test{
+            L"Overwriting wide glyphs dirties both cells, but leaves columnEnd at the end of the text",
+            { L"efg", 1, til::CoordTypeMax },
+            { L"", 4, 0, 5 },
+            L" efg c" complex L"ab",
+        },
+    };
+
+    for (const auto& t : tests)
+    {
+        Log::Comment(t.description);
+        RowWriteState actual{
+            .text = t.input.text,
+            .columnBegin = t.input.columnBegin,
+            .columnLimit = t.input.columnLimit,
+        };
+        row.ReplaceText(actual);
+        VERIFY_ARE_EQUAL(t.expected.text, actual.text);
+        VERIFY_ARE_EQUAL(t.expected.columnEnd, actual.columnEnd);
+        VERIFY_ARE_EQUAL(t.expected.columnBeginDirty, actual.columnBeginDirty);
+        VERIFY_ARE_EQUAL(t.expected.columnEndDirty, actual.columnEndDirty);
+        VERIFY_ARE_EQUAL(t.expectedRow, row.GetText());
+    }
+
+#undef complex
 }
 
 void TextBufferTests::TestAppendRTFText()

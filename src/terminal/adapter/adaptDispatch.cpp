@@ -80,11 +80,12 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
     // Turn off the cursor until we're done, so it isn't refreshed unnecessarily.
     cursor.SetIsOn(false);
 
-    // The width at which we wrap is determined by the line rendition attribute.
-    auto lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
+    RowWriteState state{
+        .text = string,
+        .columnLimit = textBuffer.GetLineWidth(cursorPosition.y),
+    };
 
-    auto stringPosition = string.cbegin();
-    while (stringPosition < string.cend())
+    while (!state.text.empty())
     {
         if (cursor.IsDelayedEOLWrap() && wrapAtEOL)
         {
@@ -97,64 +98,59 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
                 _api.LineFeed(true, true);
                 cursorPosition = cursor.GetPosition();
                 // We need to recalculate the width when moving to a new line.
-                lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
+                state.columnLimit = textBuffer.GetLineWidth(cursorPosition.y);
             }
         }
 
-        const OutputCellIterator it(std::wstring_view{ stringPosition, string.cend() }, attributes);
         if (_modes.test(Mode::InsertReplace))
         {
             // If insert-replace mode is enabled, we first measure how many cells
             // the string will occupy, and scroll the target area right by that
             // amount to make space for the incoming text.
+            const OutputCellIterator it(state.text, attributes);
             auto measureIt = it;
-            while (measureIt && measureIt.GetCellDistance(it) < lineWidth)
+            while (measureIt && measureIt.GetCellDistance(it) < state.columnLimit)
             {
-                measureIt++;
+                ++measureIt;
             }
             const auto row = cursorPosition.y;
             const auto cellCount = measureIt.GetCellDistance(it);
-            _ScrollRectHorizontally(textBuffer, { cursorPosition.x, row, lineWidth, row + 1 }, cellCount);
+            _ScrollRectHorizontally(textBuffer, { cursorPosition.x, row, state.columnLimit, row + 1 }, cellCount);
         }
-        const auto itEnd = textBuffer.WriteLine(it, cursorPosition, wrapAtEOL, lineWidth - 1);
 
-        if (itEnd.GetInputDistance(it) == 0)
+        state.columnBegin = cursorPosition.x;
+
+        const auto textPositionBefore = state.text.data();
+        textBuffer.WriteLine(cursorPosition.y, wrapAtEOL, attributes, state);
+        const auto textPositionAfter = state.text.data();
+
+        if (state.columnBeginDirty != state.columnEndDirty)
         {
-            // If we haven't written anything out because there wasn't enough space,
-            // we move the cursor to the end of the line so that it's forced to wrap.
-            cursorPosition.x = lineWidth;
-            // But if wrapping is disabled, we also need to move to the next string
-            // position, otherwise we'll be stuck in this loop forever.
-            if (!wrapAtEOL)
-            {
-                stringPosition++;
-            }
-        }
-        else
-        {
-            const auto cellCount = itEnd.GetCellDistance(it);
-            const auto changedRect = til::rect{ cursorPosition, til::size{ cellCount, 1 } };
+            const til::rect changedRect{ state.columnBeginDirty, cursorPosition.y, state.columnEndDirty, cursorPosition.y + 1 };
             _api.NotifyAccessibilityChange(changedRect);
-
-            stringPosition += itEnd.GetInputDistance(it);
-            cursorPosition.x += cellCount;
         }
 
-        if (cursorPosition.x >= lineWidth)
+        // If we're past the end of the line, we need to clamp the cursor
+        // back into range, and if wrapping is enabled, set the delayed wrap
+        // flag. The wrapping only occurs once another character is output.
+        const auto isWrapping = state.columnEnd >= state.columnLimit;
+        cursorPosition.x = isWrapping ? state.columnLimit - 1 : state.columnEnd;
+        cursor.SetPosition(cursorPosition);
+
+        if (isWrapping)
         {
-            // If we're past the end of the line, we need to clamp the cursor
-            // back into range, and if wrapping is enabled, set the delayed wrap
-            // flag. The wrapping only occurs once another character is output.
-            cursorPosition.x = lineWidth - 1;
-            cursor.SetPosition(cursorPosition);
             if (wrapAtEOL)
             {
                 cursor.DelayEOLWrap();
             }
-        }
-        else
-        {
-            cursor.SetPosition(cursorPosition);
+            else if (textPositionBefore == textPositionAfter)
+            {
+                // We want to wrap, but we're not allowed to and we failed to write even a single character into the row.
+                // This can only mean one thing! The DECAWM Autowrap mode is disabled ("\x1b[?7l") and we tried writing a
+                // wide glyph into the last column. ROW::Write() returns the lineWidth and leaves stringIterator untouched.
+                // To prevent a deadlock, because stringIterator never advances, we need to throw that glyph away.
+                textBuffer.ConsumeGrapheme(state.text);
+            }
         }
     }
 
@@ -442,6 +438,12 @@ bool AdaptDispatch::CursorSaveState()
     auto cursorPosition = textBuffer.GetCursor().GetPosition();
     cursorPosition.y -= viewport.top;
 
+    // Although if origin mode is set, the cursor is relative to the margin origin.
+    if (_modes.test(Mode::Origin))
+    {
+        cursorPosition.y -= _GetVerticalMargins(viewport, false).first;
+    }
+
     // VT is also 1 based, not 0 based, so correct by 1.
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
     savedCursorState.Column = cursorPosition.x + 1;
@@ -468,31 +470,17 @@ bool AdaptDispatch::CursorRestoreState()
 {
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
 
-    auto row = savedCursorState.Row;
-    const auto col = savedCursorState.Column;
+    // Restore the origin mode first, since the cursor coordinates may be relative.
+    _modes.set(Mode::Origin, savedCursorState.IsOriginModeRelative);
 
-    // If the origin mode is relative, we need to make sure the restored
-    // position is clamped within the margins.
-    if (savedCursorState.IsOriginModeRelative)
-    {
-        const auto viewport = _api.GetViewport();
-        const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, false);
-        // VT origin is at 1,1 so we need to add 1 to these margins.
-        row = std::clamp(row, topMargin + 1, bottomMargin + 1);
-    }
-
-    // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
-    _modes.reset(Mode::Origin);
-    CursorPosition(row, col);
+    // We can then restore the position with a standard CUP operation.
+    CursorPosition(savedCursorState.Row, savedCursorState.Column);
 
     // If the delayed wrap flag was set when the cursor was saved, we need to restore that now.
     if (savedCursorState.IsDelayedEOLWrap)
     {
         _api.GetTextBuffer().GetCursor().DelayEOLWrap();
     }
-
-    // Once the cursor position is restored, we can then restore the actual origin mode.
-    _modes.set(Mode::Origin, savedCursorState.IsOriginModeRelative);
 
     // Restore text attributes.
     _api.SetTextAttributes(savedCursorState.Attributes);
