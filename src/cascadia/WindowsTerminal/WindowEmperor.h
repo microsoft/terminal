@@ -52,7 +52,6 @@ private:
 
     std::unique_ptr<NotificationIcon> _notificationIcon;
 
-    void _windowStartedHandlerPreXAML();
     void _windowStartedHandlerPostXAML(const std::shared_ptr<WindowThread>& sender);
     void _windowExitedHandler(uint64_t senderID);
 

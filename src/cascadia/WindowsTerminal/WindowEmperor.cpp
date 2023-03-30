@@ -114,10 +114,24 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
     auto window{ std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant) };
     std::weak_ptr<WindowEmperor> weakThis{ weak_from_this() };
 
-    _windowStartedHandlerPreXAML();
+    // Increment our count of window instances _now_, immediately. We're
+    // starting a window now, we shouldn't exit (due to having 0 windows) till
+    // this window has a chance to actually start.
+    // * We can't just put the window immediately into _windows right now,
+    //   because there are multiple async places where we iterate over all
+    //   _windows assuming that they have initialized and we can call methods
+    //   that might hit the TerminalPage.
+    // * If we don't somehow track this window now, before it has been actually
+    //   started, there's a possible race. As an example, it would be possible
+    //   to drag a tab out of the single window, which would create a new
+    //   window, but have the original window exit before the new window has
+    //   started, causing the app to exit.
+    // Hence: increment the number of total windows now.
+    _windowThreadInstances.fetch_add(1, std::memory_order_relaxed);
 
     std::thread t([weakThis, window]() {
-        try {
+        try
+        {
             const auto cleanup = wil::scope_exit([&]() {
                 if (auto self{ weakThis.lock() })
                 {
@@ -133,16 +147,12 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
             }
 
             window->RunMessagePump();
-        } CATCH_LOG()
+        }
+        CATCH_LOG()
     });
     LOG_IF_FAILED(SetThreadDescription(t.native_handle(), L"Window Thread"));
 
     t.detach();
-}
-
-void WindowEmperor::_windowStartedHandlerPreXAML()
-{
-    _windowThreadInstances.fetch_add(1, std::memory_order_relaxed);
 }
 
 // Handler for a WindowThread's Started event, which it raises once the window

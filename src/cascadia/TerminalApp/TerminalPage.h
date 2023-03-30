@@ -266,8 +266,11 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::ContentManager _manager{ nullptr };
 
-        winrt::com_ptr<winrt::TerminalApp::implementation::TabBase> _stashedDraggedTab{ nullptr };
-        til::point _dragOffset{ 0, 0 };
+        struct StashedDragData
+        {
+            winrt::com_ptr<winrt::TerminalApp::implementation::TabBase> draggedTab{ nullptr };
+            til::point dragOffset{ 0, 0 };
+        } _stashed;
 
         winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::NewConnection_revoker _newConnectionRevoker;
 

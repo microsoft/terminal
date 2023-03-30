@@ -4622,7 +4622,7 @@ namespace winrt::TerminalApp::implementation
         {
             // First: stash the tab we started dragging.
             // We're going to be asked for this.
-            _stashedDraggedTab = tabImpl;
+            _stashed.draggedTab = tabImpl;
 
             // Stash the offset from where we started the drag to the
             // tab's origin. We'll use that offset in the future to help
@@ -4638,7 +4638,7 @@ namespace winrt::TerminalApp::implementation
             const til::point windowOrigin{ til::math::rounding, coreWindowBounds.X, coreWindowBounds.Y };
             const auto realTabPosition = windowOrigin + tabPosition;
             // Subtract the two to get the offset.
-            _dragOffset = til::point{ pointerPosition - realTabPosition };
+            _stashed.dragOffset = til::point{ pointerPosition - realTabPosition };
 
             // Into the DataPackage, let's stash our own window ID.
             const auto id{ _WindowProperties.WindowId() };
@@ -4764,7 +4764,7 @@ namespace winrt::TerminalApp::implementation
         {
             co_return;
         }
-        if (!_stashedDraggedTab)
+        if (!_stashed.draggedTab)
         {
             co_return;
         }
@@ -4793,7 +4793,7 @@ namespace winrt::TerminalApp::implementation
         // invoke a moveTab action with the target window being -1. That will
         // force the creation of a new window.
 
-        if (!_stashedDraggedTab)
+        if (!_stashed.draggedTab)
         {
             co_return;
         }
@@ -4812,7 +4812,7 @@ namespace winrt::TerminalApp::implementation
 
             // -1 is the magic number for "new window"
             // 0 as the tab index, because we don't care. It's making a new window. It'll be the only tab.
-            const til::point adjusted = til::point{ til::math::rounding, pointerPoint } - _dragOffset;
+            const til::point adjusted = til::point{ til::math::rounding, pointerPoint } - _stashed.dragOffset;
             _sendDraggedTabToWindow(winrt::hstring{ L"-1" }, 0, adjusted);
         }
     }
@@ -4821,20 +4821,14 @@ namespace winrt::TerminalApp::implementation
                                                const uint32_t tabIndex,
                                                std::optional<til::point> dragPoint)
     {
-        auto startupActions = _stashedDraggedTab->BuildStartupActions(true);
-        _DetachTabFromWindow(_stashedDraggedTab);
-
-        // // We need to convert the pointer point to a point that we can use
-        // // to position the new window. We'll use the drag offset from before
-        // // so that the tab in the new window is positioned so that it's
-        // // basically still directly under the cursor.
-        // const til::point adjusted = til::point{ til::math::rounding, pointerPoint } - _dragOffset;
+        auto startupActions = _stashed.draggedTab->BuildStartupActions(true);
+        _DetachTabFromWindow(_stashed.draggedTab);
 
         // -1 is the magic number for "new window"
         // 0 as the tab index, because we don't care. It's making a new window. It'll be the only tab.
         _MoveContent(std::move(startupActions), windowId, tabIndex, dragPoint);
-        // _RemoveTab will make sure to null out the _stashedDraggedTab
-        _RemoveTab(*_stashedDraggedTab);
+        // _RemoveTab will make sure to null out the _stashed.draggedTab
+        _RemoveTab(*_stashed.draggedTab);
     }
 
 }
