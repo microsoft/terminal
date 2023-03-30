@@ -2050,8 +2050,6 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::AttachContent(IVector<Settings::Model::ActionAndArgs> args,
                                                        uint32_t tabIndex)
     {
-        // auto args = ActionAndArgs::Deserialize(content);
-
         if (args == nullptr ||
             args.Size() == 0)
         {
@@ -2075,18 +2073,6 @@ namespace winrt::TerminalApp::implementation
         {
             _SelectTab(tabIndex);
         }
-        // else
-        // {
-        //     if (firstIsSplitPane)
-        //     {
-        //         // Create the equivalent NewTab action.
-        //         const auto newAction = Settings::Model::ActionAndArgs{ Settings::Model::ShortcutAction::NewTab,
-        //                                                                Settings::Model::NewTabArgs(firstAction.Args() ?
-        //                                                                                                firstAction.Args().try_as<Settings::Model::SplitPaneArgs>().TerminalArgs() :
-        //                                                                                                nullptr) };
-        //         args.SetAt(0, newAction);
-        //     }
-        // }
 
         for (const auto& action : args)
         {
@@ -4824,8 +4810,6 @@ namespace winrt::TerminalApp::implementation
         auto startupActions = _stashed.draggedTab->BuildStartupActions(true);
         _DetachTabFromWindow(_stashed.draggedTab);
 
-        // -1 is the magic number for "new window"
-        // 0 as the tab index, because we don't care. It's making a new window. It'll be the only tab.
         _MoveContent(std::move(startupActions), windowId, tabIndex, dragPoint);
         // _RemoveTab will make sure to null out the _stashed.draggedTab
         _RemoveTab(*_stashed.draggedTab);

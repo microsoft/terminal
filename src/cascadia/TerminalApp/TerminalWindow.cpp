@@ -146,7 +146,7 @@ namespace winrt::TerminalApp::implementation
         _dialog = ContentDialog{};
 
         // Pass in information about the initial state of the window.
-        // * If we were suppost to start from serialized "content", do that,
+        // * If we were supposed to start from serialized "content", do that,
         // * If we were supposed to load from a persisted layout, do that
         //   instead.
         // * if we have commandline arguments, Pass commandline args into the
