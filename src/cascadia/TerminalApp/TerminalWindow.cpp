@@ -1231,7 +1231,13 @@ namespace winrt::TerminalApp::implementation
         _WindowProperties->WindowId(id);
     }
 
-    IVector<Settings::Model::ActionAndArgs> TerminalWindow::_contentStringToActions(const winrt::hstring& content, const bool replaceFirstWithNewTab)
+    // Method Description:
+    // - Deserialize this string of content into a list of actions to perform.
+    //   If replaceFirstWithNewTab is true and the first serialized action is a
+    //   `splitPane` action, we'll attempt to replace that action with the
+    //   equivalent `newTab` action.
+    IVector<Settings::Model::ActionAndArgs> TerminalWindow::_contentStringToActions(const winrt::hstring& content,
+                                                                                    const bool replaceFirstWithNewTab)
     {
         try
         {

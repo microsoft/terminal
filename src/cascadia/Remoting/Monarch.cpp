@@ -1059,7 +1059,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     void Monarch::RequestMoveContent(winrt::hstring window,
                                      winrt::hstring content,
                                      uint32_t tabIndex,
-                                     Windows::Foundation::IReference<Windows::Foundation::Rect> windowBounds)
+                                     const Windows::Foundation::IReference<Windows::Foundation::Rect>& windowBounds)
     {
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_MoveContent_Requested",

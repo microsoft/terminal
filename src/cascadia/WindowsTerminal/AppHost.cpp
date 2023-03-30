@@ -1231,6 +1231,9 @@ winrt::TerminalApp::TerminalWindow AppHost::Logic()
 void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                  winrt::TerminalApp::RequestMoveContentArgs args)
 {
+    winrt::Windows::Foundation::Rect rect{};
+    winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Rect> windowBoundsReference{ nullptr };
+
     if (args.WindowPosition() && _window)
     {
         // The WindowPosition is in DIPs. We need to convert it to pixels.
@@ -1278,20 +1281,14 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
         windowSize = windowSize - nonClientFrame.size();
 
         // Use the drag event as the new position, and the size of the actual window.
-        winrt::Windows::Foundation::Rect rect{ static_cast<float>(dragPositionInPixels.x),
-                                               static_cast<float>(dragPositionInPixels.y),
-                                               static_cast<float>(windowSize.width),
-                                               static_cast<float>(windowSize.height) };
+        rect = winrt::Windows::Foundation::Rect{ static_cast<float>(dragPositionInPixels.x),
+                                                 static_cast<float>(dragPositionInPixels.y),
+                                                 static_cast<float>(windowSize.width),
+                                                 static_cast<float>(windowSize.height) };
+        windowBoundsReference = rect;
+    }
 
-        _windowManager.RequestMoveContent(args.Window(),
-                                          args.Content(),
-                                          args.TabIndex(),
-                                          { rect });
-    }
-    else
-    {
-        _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex(), nullptr);
-    }
+    _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex(), windowBoundsReference);
 }
 
 void AppHost::_handleAttach(const winrt::Windows::Foundation::IInspectable& /*sender*/,
