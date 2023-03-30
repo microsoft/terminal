@@ -30,6 +30,13 @@ namespace TerminalApp
         String Content { get; };
         UInt32 TabIndex { get; };
     };
+    [default_interface] runtimeclass RequestReceiveContentArgs {
+        RequestReceiveContentArgs(UInt64 src, UInt64 tgt, UInt32 tabIndex);
+
+        UInt64 SourceWindow { get; };
+        UInt64 TargetWindow { get; };
+        UInt32 TabIndex { get; };
+    };
 
     interface IDialogPresenter
     {
@@ -74,6 +81,7 @@ namespace TerminalApp
 
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
         void WindowActivated(Boolean activated);
+        void SendContentToOther(RequestReceiveContentArgs args);
 
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
@@ -92,6 +100,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.ShowWindowArgs> ShowWindowChanged;
 
         event Windows.Foundation.TypedEventHandler<Object, RequestMoveContentArgs> RequestMoveContent;
-
+        event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> RequestReceiveContent;
     }
 }

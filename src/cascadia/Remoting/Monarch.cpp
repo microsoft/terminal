@@ -1109,4 +1109,39 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // drag/drop)
         }
     }
+
+    // Very similar to the above. Someone came and told us that they were the target of a drag/drop, and they know who started it.
+    // We will go tell the person who started it that they should send that target the content which was dragged.
+    void Monarch::RequestSendContent(const Remoting::RequestReceiveContentArgs& args)
+    {
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Monarch_SendContent_Requested",
+                          TraceLoggingUInt64(args.SourceWindow(), "source", "The window which started the drag"),
+                          TraceLoggingUInt64(args.TargetWindow(), "target", "The window which was the target of the drop"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+        if (auto senderPeasant{ _getPeasant(args.SourceWindow()) })
+        {
+            senderPeasant.SendContent(args);
+
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_SendContent_Completed",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        }
+        else
+        {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_SendContent_NoWindow",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+            // TODO GH#5000
+            //
+            // In the case where window couldn't be found, then create a window
+            // for that name / ID. Do this as a part of tear-out (different than
+            // drag/drop)
+        }
+    }
 }

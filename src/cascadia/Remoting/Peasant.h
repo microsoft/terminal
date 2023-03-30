@@ -6,6 +6,7 @@
 #include "Peasant.g.h"
 #include "RenameRequestArgs.h"
 #include "AttachRequest.g.h"
+#include "RequestReceiveContentArgs.g.h"
 
 namespace RemotingUnitTests
 {
@@ -22,6 +23,19 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         AttachRequest(winrt::hstring content,
                       uint32_t tabIndex) :
             _Content{ content },
+            _TabIndex{ tabIndex } {};
+    };
+
+    struct RequestReceiveContentArgs : RequestReceiveContentArgsT<RequestReceiveContentArgs>
+    {
+        WINRT_PROPERTY(uint64_t, SourceWindow);
+        WINRT_PROPERTY(uint64_t, TargetWindow);
+        WINRT_PROPERTY(uint32_t, TabIndex);
+
+    public:
+        RequestReceiveContentArgs(const uint64_t src, const uint64_t tgt, const uint32_t tabIndex) :
+            _SourceWindow{ src },
+            _TargetWindow{ tgt },
             _TabIndex{ tabIndex } {};
     };
 
@@ -52,6 +66,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         winrt::Microsoft::Terminal::Remoting::CommandlineArgs InitialArgs();
 
         winrt::hstring GetWindowLayout();
+        void SendContent(const winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs& args);
 
         WINRT_PROPERTY(winrt::hstring, WindowName);
         WINRT_PROPERTY(winrt::hstring, ActiveTabTitle);
@@ -70,6 +85,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs);
 
         TYPED_EVENT(AttachRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::AttachRequest);
+        TYPED_EVENT(SendContentRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs);
 
     private:
         Peasant(const uint64_t testPID);
@@ -87,4 +103,5 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 namespace winrt::Microsoft::Terminal::Remoting::factory_implementation
 {
     BASIC_FACTORY(Peasant);
+    BASIC_FACTORY(RequestReceiveContentArgs);
 }

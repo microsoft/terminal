@@ -86,6 +86,7 @@ namespace RemotingUnitTests
         void RequestQuitAll() DIE;
         void Quit() DIE;
         void AttachContentToWindow(Remoting::AttachRequest) DIE;
+        void SendContent(winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs) DIE;
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, Remoting::WindowActivatedArgs);
         TYPED_EVENT(ExecuteCommandlineRequested, winrt::Windows::Foundation::IInspectable, Remoting::CommandlineArgs);
         TYPED_EVENT(IdentifyWindowsRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
@@ -98,6 +99,7 @@ namespace RemotingUnitTests
         TYPED_EVENT(QuitRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, Remoting::GetWindowLayoutArgs);
         TYPED_EVENT(AttachRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::AttachRequest);
+        TYPED_EVENT(SendContentRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs);
     };
 
     // Same idea.
@@ -117,6 +119,7 @@ namespace RemotingUnitTests
         winrt::Windows::Foundation::Collections::IVectorView<Remoting::PeasantInfo> GetPeasantInfos() DIE;
         winrt::Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts() DIE;
         void RequestMoveContent(winrt::hstring, winrt::hstring, uint32_t) DIE;
+        void RequestSendContent(Remoting::RequestReceiveContentArgs) DIE;
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, Remoting::FindTargetWindowArgs);
         TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);

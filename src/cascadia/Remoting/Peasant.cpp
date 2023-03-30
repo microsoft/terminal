@@ -9,6 +9,7 @@
 #include "Peasant.g.cpp"
 #include "../../types/inc/utils.hpp"
 #include "AttachRequest.g.cpp"
+#include "RequestReceiveContentArgs.g.cpp"
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
@@ -326,5 +327,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             return str;
         }
         return args->WindowLayoutJson();
+    }
+
+    void Peasant::SendContent(const Remoting::RequestReceiveContentArgs& args)
+    {
+        _SendContentRequestedHandlers(*this, args);
     }
 }

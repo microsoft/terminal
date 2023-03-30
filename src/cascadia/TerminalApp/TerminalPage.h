@@ -10,6 +10,7 @@
 #include "LastTabClosedEventArgs.g.h"
 #include "RenameWindowRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
+#include "RequestReceiveContentArgs.g.h"
 #include "Toast.h"
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
@@ -71,6 +72,19 @@ namespace winrt::TerminalApp::implementation
         RequestMoveContentArgs(const winrt::hstring window, const winrt::hstring content, uint32_t tabIndex) :
             _Window{ window },
             _Content{ content },
+            _TabIndex{ tabIndex } {};
+    };
+
+    struct RequestReceiveContentArgs : RequestReceiveContentArgsT<RequestReceiveContentArgs>
+    {
+        WINRT_PROPERTY(uint64_t, SourceWindow);
+        WINRT_PROPERTY(uint64_t, TargetWindow);
+        WINRT_PROPERTY(uint32_t, TabIndex);
+
+    public:
+        RequestReceiveContentArgs(const uint64_t src, const uint64_t tgt, const uint32_t tabIndex) :
+            _SourceWindow{ src },
+            _TargetWindow{ tgt },
             _TabIndex{ tabIndex } {};
     };
 
@@ -149,6 +163,7 @@ namespace winrt::TerminalApp::implementation
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
         winrt::fire_and_forget AttachContent(winrt::hstring content, uint32_t tabIndex);
+        winrt::fire_and_forget SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -173,6 +188,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(ShowWindowChanged, IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs)
 
         TYPED_EVENT(RequestMoveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestMoveContentArgs);
+        TYPED_EVENT(RequestReceiveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestReceiveContentArgs);
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, _PropertyChangedHandlers, nullptr);
 
@@ -246,6 +262,8 @@ namespace winrt::TerminalApp::implementation
         PaneResources _paneResources;
 
         TerminalApp::ContentManager _manager{ nullptr };
+
+        winrt::com_ptr<winrt::TerminalApp::implementation::TabBase> _stashedDraggedTab{ nullptr };
 
         winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::NewConnection_revoker _newConnectionRevoker;
 
@@ -482,8 +500,12 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
         winrt::fire_and_forget _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
+        void _onTabDragStarting(const winrt::Microsoft::UI::Xaml::Controls::TabView& sender, const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& e);
+        void _onTabStripDragOver(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::DragEventArgs& e);
+        winrt::fire_and_forget _onTabStripDrop(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
+
         void _DetachPaneFromWindow(std::shared_ptr<Pane> pane);
-        void _DetachTabFromWindow(const winrt::com_ptr<TerminalTab>& terminalTab);
+        void _DetachTabFromWindow(const winrt::com_ptr<TabBase>& terminalTab);
         void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>&& actions, const winrt::hstring& windowName, const uint32_t tabIndex);
 
         void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
@@ -505,4 +527,5 @@ namespace winrt::TerminalApp::implementation
 namespace winrt::TerminalApp::factory_implementation
 {
     BASIC_FACTORY(TerminalPage);
+    BASIC_FACTORY(RequestReceiveContentArgs);
 }

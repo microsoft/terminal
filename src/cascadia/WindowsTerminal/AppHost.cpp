@@ -384,7 +384,8 @@ void AppHost::Initialize()
     _revokers.QuitRequested = _windowLogic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
     _revokers.ShowWindowChanged = _windowLogic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
     _revokers.RequestMoveContent = _windowLogic.RequestMoveContent(winrt::auto_revoke, { this, &AppHost::_handleMoveContent });
-
+    _revokers.RequestReceiveContent = _windowLogic.RequestReceiveContent(winrt::auto_revoke, { this, &AppHost::_handleReceiveContent });
+    _revokers.SendContentRequested = _peasant.SendContentRequested(winrt::auto_revoke, { this, &AppHost::_handleSendContent });
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
     // it will accumulate an unbounded amount of queued animations while
@@ -1230,6 +1231,23 @@ void AppHost::_handleAttach(const winrt::Windows::Foundation::IInspectable& /*se
                             winrt::Microsoft::Terminal::Remoting::AttachRequest args)
 {
     _windowLogic.AttachContent(args.Content(), args.TabIndex());
+}
+
+// Page -> us -> manager -> monarch
+// The page wants to tell the monarch that it was the drop target for a drag drop.
+// The manager will tell the monarch to tell the _other_ window to send its content to us.
+void AppHost::_handleReceiveContent(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                    winrt::TerminalApp::RequestReceiveContentArgs args)
+{
+    _windowManager.RequestSendContent(winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs{ args.SourceWindow(), args.TargetWindow(), args.TabIndex() });
+}
+
+// monarch -> Peasant -> us -> Page
+// The Monarch was told to tell us to send our dragged content to someone else.
+void AppHost::_handleSendContent(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                 winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs args)
+{
+    _windowLogic.SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs{ args.SourceWindow(), args.TargetWindow(), args.TabIndex() });
 }
 
 // Bubble the update settings request up to the emperor. We're being called on

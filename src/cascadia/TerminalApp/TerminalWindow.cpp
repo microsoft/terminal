@@ -1182,6 +1182,13 @@ namespace winrt::TerminalApp::implementation
             _root->AttachContent(content, tabIndex);
         }
     }
+    void TerminalWindow::SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args)
+    {
+        if (_root)
+        {
+            _root->SendContentToOther(args);
+        }
+    }
 
     bool TerminalWindow::ShouldImmediatelyHandoffToElevated()
     {
