@@ -78,7 +78,6 @@ namespace TerminalApp
         String KeyboardServiceDisabledText { get; };
 
         TaskbarState TaskbarState{ get; };
-        // void AttachContent(String content, UInt32 tabIndex);
 
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
         void WindowActivated(Boolean activated);
