@@ -191,20 +191,20 @@ int main()
             printUTF16(L"\x1bP1;1;2{ @\x1b\\");
         };
 
-        constexpr auto width = 13;
+        constexpr auto width = 14;
         const auto glyph =
-            "W   W        "
-            "W   W        "
-            "W W W        "
-            "W W W        "
-            "W W W        "
-            "W W W TTTTTTT"
-            " W W     T   "
-            "         T   "
-            "         T   "
-            "         T   "
-            "         T   "
-            "         T   ";
+            "W   W         "
+            "W   W         "
+            "W W W         "
+            "W W W         "
+            "W W W         "
+            "W W W  TTTTTTT"
+            " W W      T   "
+            "          T   "
+            "          T   "
+            "          T   "
+            "          T   "
+            "          T   ";
 
         // Convert the above visual glyph to sixels
         wchar_t rows[2][width];
@@ -231,7 +231,7 @@ int main()
             // * Pfn  | font number             | 1    |
             // * Pcn  | starting character      | 3    | = ASCII 0x23 "#"
             // * Pe   | erase control           | 2    | erase all
-            //   Pcmw | character matrix width  | 13   | 13 pixels
+            //   Pcmw | character matrix width  | %d   | `width` pixels
             //   Pw   | font width              | 0    | 80 columns
             //   Pt   | text or full cell       | 0    | text
             //   Pcmh | character matrix height | 0    | 12 pixels

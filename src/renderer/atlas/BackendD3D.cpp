@@ -1259,12 +1259,16 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, GlyphCacheEntry& 
 
     if (!_softFontBitmap)
     {
+        // Allocating such a tiny texture is very wasteful (min. texture size on GPUs
+        // right now is 64kB), but this is a seldomly used feature so it's fine...
         const D2D1_SIZE_U size{
             static_cast<UINT32>(p.s->font->softFontCellSize.width),
             static_cast<UINT32>(p.s->font->softFontCellSize.height),
         };
-        static constexpr D2D1_BITMAP_PROPERTIES1 bitmapProperties{
+        const D2D1_BITMAP_PROPERTIES1 bitmapProperties{
             .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
+            .dpiX = static_cast<f32>(p.s->font->dpi),
+            .dpiY = static_cast<f32>(p.s->font->dpi),
         };
         THROW_IF_FAILED(_d2dRenderTarget->CreateBitmap(size, nullptr, 0, &bitmapProperties, _softFontBitmap.addressof()));
     }
@@ -1293,7 +1297,7 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, GlyphCacheEntry& 
         THROW_IF_FAILED(_softFontBitmap->CopyFromMemory(nullptr, bitmapData.data(), pitch));
     }
 
-    const auto interpolation = p.s->font->antialiasingMode == D2D1_ANTIALIAS_MODE_ALIASED ? D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR : D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC;
+    const auto interpolation = p.s->font->antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_ALIASED ? D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR : D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC;
     const D2D1_RECT_F dest{
         static_cast<f32>(rect.x),
         static_cast<f32>(rect.y),
@@ -1304,7 +1308,6 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, GlyphCacheEntry& 
     _d2dBeginDrawing();
     _d2dRenderTarget->DrawBitmap(_softFontBitmap.get(), &dest, 1, interpolation, nullptr, nullptr);
 
-    // TODO: What is the p.s->font->softFontCenteringHint?
     entry.data.offset.x = 0;
     entry.data.offset.y = -p.s->font->baseline;
     entry.data.size.x = rect.w;

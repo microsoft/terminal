@@ -305,7 +305,7 @@ try
         const auto backgroundRow = _p.backgroundBitmap.begin() + _p.backgroundBitmapStride * y;
         auto it = backgroundRow + x;
         const auto end = backgroundRow + (static_cast<size_t>(column) << shift);
-        const auto bg = _api.currentColor.y;
+        const auto bg = u32ColorPremultiply(_api.currentColor.y);
 
         for (; it != end; ++it)
         {

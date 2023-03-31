@@ -165,7 +165,6 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
     const auto softFont = _api.s.write()->font.write();
     softFont->softFontPattern = std::vector(bitPattern.begin(), bitPattern.end());
     softFont->softFontCellSize = cellSize;
-    softFont->softFontCenteringHint = centeringHint;
     return S_OK;
 }
 

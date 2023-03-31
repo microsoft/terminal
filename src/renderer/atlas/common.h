@@ -316,7 +316,6 @@ namespace Microsoft::Console::Render::Atlas
 
         std::vector<uint16_t> softFontPattern;
         til::size softFontCellSize;
-        size_t softFontCenteringHint = 0;
     };
 
     struct CursorSettings
