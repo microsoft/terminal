@@ -626,8 +626,9 @@ namespace winrt::TerminalApp::implementation
         // TabViewItem().RequestedTheme(reqTheme == ElementTheme::Dark ? ElementTheme::Light : ElementTheme::Dark);
         TabViewItem().RequestedTheme(ElementTheme::Light);
         TabViewItem().RequestedTheme(ElementTheme::Dark);
-        TabViewItem().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&]() {
-            TabViewItem().RequestedTheme(reqTheme);
-        });
+        // TabViewItem().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&]() {
+        //     TabViewItem().RequestedTheme(reqTheme);
+        // });
+        TabViewItem().RequestedTheme(reqTheme);
     }
 }
