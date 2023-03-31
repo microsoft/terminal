@@ -118,7 +118,7 @@ namespace RemotingUnitTests
         bool DoesQuakeWindowExist() DIE;
         winrt::Windows::Foundation::Collections::IVectorView<Remoting::PeasantInfo> GetPeasantInfos() DIE;
         winrt::Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts() DIE;
-        void RequestMoveContent(winrt::hstring, winrt::hstring, uint32_t) DIE;
+        void RequestMoveContent(winrt::hstring, winrt::hstring, uint32_t, winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Rect>) DIE;
         void RequestSendContent(Remoting::RequestReceiveContentArgs) DIE;
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, Remoting::FindTargetWindowArgs);
