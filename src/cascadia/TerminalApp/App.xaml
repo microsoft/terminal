@@ -148,11 +148,11 @@
                                 
                                 See GH #12356 for more history on the subject.
                             -->
-                            <SolidColorBrush x:Key="TabViewBackground"
+                            <SolidColorBrush x:Key="TabViewBackground2"
                                              Color="#2e2e2e" />
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
-                                            ResourceKey="TabViewBackground" />
+                                            ResourceKey="TabViewBackground2" />
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
                                              Color="#0c0c0c" />
@@ -164,11 +164,11 @@
                             <!--
                                 GH #12398 has more history on this value, as well as GH #12400
                             -->
-                            <SolidColorBrush x:Key="TabViewBackground"
+                            <SolidColorBrush x:Key="TabViewBackground2"
                                              Color="#e8e8e8" />
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
-                                            ResourceKey="TabViewBackground" />
+                                            ResourceKey="TabViewBackground2" />
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
                                              Color="#ffffff" />
@@ -187,7 +187,7 @@
                                 
                                 SystemColorButtonFaceColorBrush is the default background color for WinUI's TabViewBackground under high contrast mode.
                             -->
-                            <StaticResource x:Key="TabViewBackground"
+                            <StaticResource x:Key="TabViewBackground2"
                                             ResourceKey="SystemColorButtonFaceColorBrush" />
 
                             <StaticResource x:Key="SettingsUiTabBrush"

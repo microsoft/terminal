@@ -475,10 +475,13 @@ namespace winrt::TerminalApp::implementation
         // In GH#11294 we thought we'd still need to set
         // TabViewItemHeaderBackground manually, but GH#11382 discovered that
         // Background() was actually okay after all.
-        TabViewItem().Background(deselectedTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+
+        { // attempt 1
+            TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
+            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
+            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+        }
 
         // Similarly, TabViewItem().Foreground()  sets the color for the text
         // when the TabViewItem isn't selected, but not when it is hovered,
