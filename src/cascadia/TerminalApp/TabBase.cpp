@@ -561,25 +561,16 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // Toggles the visual state of the tab view item,
-    // so that changes to the tab color are reflected immediately
+    // - Toggles the requested theme of the tab view item,
+    //   so that changes to the tab color are reflected immediately
+    // - Prior to MUX 2.8, we toggled the visual state here, but that seemingly
+    //   doesn't work in 2.8.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void TabBase::_RefreshVisualState()
     {
-        if (TabViewItem().IsSelected())
-        {
-            VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
-            VisualStateManager::GoToState(TabViewItem(), L"Selected", true);
-        }
-        else
-        {
-            VisualStateManager::GoToState(TabViewItem(), L"Selected", true);
-            VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
-        }
-
         const auto& reqTheme = TabViewItem().RequestedTheme();
         TabViewItem().RequestedTheme(ElementTheme::Light);
         TabViewItem().RequestedTheme(ElementTheme::Dark);
