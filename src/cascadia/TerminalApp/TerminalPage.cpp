@@ -4348,7 +4348,7 @@ namespace winrt::TerminalApp::implementation
         const auto res = Application::Current().Resources();
 
         // Use our helper to lookup the theme-aware version of the resource.
-        const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground2");
+        const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
         const auto backgroundSolidBrush = ThemeLookup(res, requestedTheme, tabViewBackgroundKey).as<Media::SolidColorBrush>();
 
         til::color bgColor = backgroundSolidBrush.Color();
