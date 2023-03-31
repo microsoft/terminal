@@ -290,7 +290,14 @@ namespace Microsoft::Console::Render::Atlas
         bool useSoftwareRendering = false;
     };
 
-    inline constexpr auto DefaultAntialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+    enum class AntialiasingMode : u8
+    {
+        ClearType = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE,
+        Grayscale = D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE,
+        Aliased = D2D1_TEXT_ANTIALIAS_MODE_ALIASED,
+    };
+
+    inline constexpr auto DefaultAntialiasingMode = AntialiasingMode::ClearType;
 
     struct FontSettings
     {
@@ -312,7 +319,7 @@ namespace Microsoft::Console::Render::Atlas
         u16x2 doubleUnderlinePos;
         u16 thinLineWidth = 0;
         u16 dpi = 96;
-        u8 antialiasingMode = DefaultAntialiasingMode;
+        AntialiasingMode antialiasingMode = DefaultAntialiasingMode;
 
         std::vector<uint16_t> softFontPattern;
         til::size softFontCellSize;
@@ -371,7 +378,7 @@ namespace Microsoft::Console::Render::Atlas
     // bigger mess than this violation against the C++ consortium's conscience. It also didn't help BackendD3D,
     // which hashes FontFace and an additional flag field would double the hashmap key size due to padding.
     // It's a macro, because constexpr doesn't work here in C++20 and regular "const" doesn't inline.
-#define IDWriteFontFace_SoftFont (static_cast<IDWriteFontFace*>(nullptr) + 1)
+#define IDWriteFontFace_SoftFont (static_cast<IDWriteFontFace2*>(nullptr) + 1)
 
     // The existence of IDWriteFontFace_SoftFont unfortunately requires us to reimplement wil::com_ptr<IDWriteFontFace>.
     //
@@ -385,6 +392,8 @@ namespace Microsoft::Console::Render::Atlas
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
     struct FontFace
     {
+        using InterfaceType = IDWriteFontFace2;
+
         FontFace() = default;
 
         ~FontFace() noexcept
@@ -417,36 +426,36 @@ namespace Microsoft::Console::Render::Atlas
             return *this;
         }
 
-        FontFace(IDWriteFontFace* ptr) noexcept :
+        FontFace(InterfaceType* ptr) noexcept :
             _ptr{ ptr }
         {
             _addRef();
         }
 
-        FontFace(const wil::com_ptr<IDWriteFontFace>& other) noexcept :
+        FontFace(const wil::com_ptr<InterfaceType>& other) noexcept :
             FontFace{ other.get() }
         {
         }
 
-        FontFace(wil::com_ptr<IDWriteFontFace>&& other) noexcept :
+        FontFace(wil::com_ptr<InterfaceType>&& other) noexcept :
             _ptr{ other.detach() }
         {
         }
 
-        void attach(IDWriteFontFace* other) noexcept
+        void attach(InterfaceType* other) noexcept
         {
             _release();
             _ptr = other;
         }
 
-        [[nodiscard]] IDWriteFontFace* detach() noexcept
+        [[nodiscard]] InterfaceType* detach() noexcept
         {
             const auto tmp = _ptr;
             _ptr = nullptr;
             return tmp;
         }
 
-        IDWriteFontFace* get() const noexcept
+        InterfaceType* get() const noexcept
         {
             return _ptr;
         }
@@ -473,7 +482,7 @@ namespace Microsoft::Console::Render::Atlas
             }
         }
 
-        IDWriteFontFace* _ptr = nullptr;
+        InterfaceType* _ptr = nullptr;
     };
 #pragma warning(pop)
 

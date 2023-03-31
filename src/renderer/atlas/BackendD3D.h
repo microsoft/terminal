@@ -89,7 +89,7 @@ namespace Microsoft::Console::Render::Atlas
             //
             // This isn't using a raw pointer instead of a managed struct, because this allows
             // us to construct a GlyphCacheKey for lookup without AddRef()ing the fontFace.
-            IDWriteFontFace* fontFace = nullptr;
+            IDWriteFontFace2* fontFace = nullptr;
             u16 lineRendition = 0;
             u16 glyphIndex = 0;
 #ifdef _WIN64
@@ -160,8 +160,7 @@ namespace Microsoft::Console::Render::Atlas
         void _debugDumpRenderTarget(const RenderingPayload& p);
         void _d2dBeginDrawing() noexcept;
         void _d2dEndDrawing();
-        void _handleFontChangedResetGlyphAtlas(const RenderingPayload& p);
-        void _resetGlyphAtlasAndBeginDraw(const RenderingPayload& p);
+        void _resetGlyphAtlas(const RenderingPayload& p);
         void _markStateChange(ID3D11BlendState* blendState);
         QuadInstance& _getLastQuad() noexcept;
         void _appendQuad(i16x2 position, u16x2 size, u32 color, ShadingType shadingType);

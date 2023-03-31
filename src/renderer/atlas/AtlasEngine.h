@@ -82,7 +82,7 @@ namespace Microsoft::Console::Render::Atlas
         void _recreateFontDependentResources();
         void _recreateCellCountDependentResources();
         void _flushBufferLine();
-        void _mapCharacters(const wchar_t* text, u32 textLength, u32* mappedLength, float* scale, IDWriteFontFace** mappedFontFace) const;
+        void _mapCharacters(const wchar_t* text, u32 textLength, u32* mappedLength, float* scale, IDWriteFontFace2** mappedFontFace) const;
         void _mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 length, ShapedRow& row);
         __declspec(noinline) void _mapReplacementCharacter(u32 from, u32 to, ShapedRow& row);
 
@@ -117,7 +117,7 @@ namespace Microsoft::Console::Render::Atlas
             // These two are redundant with TargetSettings/MiscellaneousSettings, but that's because _resolveTransparencySettings()
             // turns the given settings into potentially different actual settings (which are then written into the Settings).
             bool enableTransparentBackground = false;
-            u8 antialiasingMode = DefaultAntialiasingMode;
+            AntialiasingMode antialiasingMode = DefaultAntialiasingMode;
 
             std::vector<wchar_t> bufferLine;
             std::vector<u16> bufferLineColumn;
@@ -132,7 +132,7 @@ namespace Microsoft::Console::Render::Atlas
             Buffer<f32> glyphAdvances;
             Buffer<DWRITE_GLYPH_OFFSET> glyphOffsets;
 
-            wil::com_ptr<IDWriteFontFace> replacementCharacterFontFace;
+            wil::com_ptr<IDWriteFontFace2> replacementCharacterFontFace;
             u16 replacementCharacterGlyphIndex = 0;
             bool replacementCharacterLookedUp = false;
 

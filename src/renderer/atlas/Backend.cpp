@@ -170,12 +170,8 @@ void SwapChainManager::_updateMatrixTransform(const RenderingPayload& p)
     _fontGeneration = p.s->font.generation();
 }
 
-// Draws a `DWRITE_GLYPH_RUN` at `baselineOrigin` into the given `ID2D1DeviceContext`.
-// `d2dRenderTarget4` and `dwriteFactory4` are optional and used to draw colored glyphs.
-// Returns true if the `DWRITE_GLYPH_RUN` contained a color glyph.
-bool Microsoft::Console::Render::Atlas::DrawGlyphRun(ID2D1DeviceContext* d2dRenderTarget, ID2D1DeviceContext4* d2dRenderTarget4, IDWriteFactory4* dwriteFactory4, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, ID2D1Brush* foregroundBrush)
+wil::com_ptr<IDWriteColorGlyphRunEnumerator1> Microsoft::Console::Render::Atlas::TranslateColorGlyphRun(IDWriteFactory4* dwriteFactory4, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun)
 {
-    static constexpr auto measuringMode = DWRITE_MEASURING_MODE_NATURAL;
     static constexpr auto formats =
         DWRITE_GLYPH_IMAGE_FORMATS_TRUETYPE |
         DWRITE_GLYPH_IMAGE_FORMATS_CFF |
@@ -188,24 +184,39 @@ bool Microsoft::Console::Render::Atlas::DrawGlyphRun(ID2D1DeviceContext* d2dRend
 
     wil::com_ptr<IDWriteColorGlyphRunEnumerator1> enumerator;
 
-    // If ID2D1DeviceContext4 isn't supported, we'll exit early below.
-    auto hr = DWRITE_E_NOCOLOR;
-
-    if (d2dRenderTarget4)
+    if (dwriteFactory4)
     {
-        // Support for ID2D1DeviceContext4 implies support for IDWriteFactory4.
-        // ID2D1DeviceContext4 is required for drawing below.
-        hr = dwriteFactory4->TranslateColorGlyphRun(baselineOrigin, glyphRun, nullptr, formats, measuringMode, nullptr, 0, &enumerator);
+        THROW_IF_FAILED(dwriteFactory4->TranslateColorGlyphRun(baselineOrigin, glyphRun, nullptr, formats, DWRITE_MEASURING_MODE_NATURAL, nullptr, 0, enumerator.addressof()));
     }
 
-    if (hr == DWRITE_E_NOCOLOR)
+    return enumerator;
+}
+
+// Draws a `DWRITE_GLYPH_RUN` at `baselineOrigin` into the given `ID2D1DeviceContext`.
+// `d2dRenderTarget4` and `dwriteFactory4` are optional and used to draw colored glyphs.
+// Returns true if the `DWRITE_GLYPH_RUN` contained a color glyph.
+bool Microsoft::Console::Render::Atlas::DrawGlyphRun(ID2D1DeviceContext* d2dRenderTarget, ID2D1DeviceContext4* d2dRenderTarget4, IDWriteFactory4* dwriteFactory4, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, ID2D1Brush* foregroundBrush)
+{
+    // Support for ID2D1DeviceContext4 implies support for IDWriteFactory4 and vice versa.
+    if (const auto enumerator = TranslateColorGlyphRun(dwriteFactory4, baselineOrigin, glyphRun))
     {
-        d2dRenderTarget->DrawGlyphRun(baselineOrigin, glyphRun, foregroundBrush, measuringMode);
+        DrawColorGlyphRun(d2dRenderTarget4, enumerator.get(), foregroundBrush);
+        return true;
+    }
+    else
+    {
+        DrawBasicGlyphRun(d2dRenderTarget, baselineOrigin, glyphRun, foregroundBrush);
         return false;
     }
+}
 
-    THROW_IF_FAILED(hr);
+void Microsoft::Console::Render::Atlas::DrawBasicGlyphRun(ID2D1DeviceContext* d2dRenderTarget, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, ID2D1Brush* foregroundBrush)
+{
+    d2dRenderTarget->DrawGlyphRun(baselineOrigin, glyphRun, foregroundBrush, DWRITE_MEASURING_MODE_NATURAL);
+}
 
+void Microsoft::Console::Render::Atlas::DrawColorGlyphRun(ID2D1DeviceContext4* d2dRenderTarget4, IDWriteColorGlyphRunEnumerator1* enumerator, ID2D1Brush* foregroundBrush)
+{
     const auto previousAntialiasingMode = d2dRenderTarget4->GetTextAntialiasMode();
     d2dRenderTarget4->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
     const auto cleanup = wil::scope_exit([&]() {
@@ -267,8 +278,6 @@ bool Microsoft::Console::Render::Atlas::DrawGlyphRun(ID2D1DeviceContext* d2dRend
             break;
         }
     }
-
-    return true;
 }
 
 TIL_FAST_MATH_END

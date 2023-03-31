@@ -273,10 +273,14 @@ void BackendD2D::_drawText(RenderingPayload& p)
                     .glyphAdvances = &row->glyphAdvances[off],
                     .glyphOffsets = &row->glyphOffsets[off],
                 };
+                const D2D1_POINT_2F baselineOrigin{
+                    baselineX,
+                    baselineY,
+                };
 
                 if (m.fontFace.is_proper_font())
                 {
-                    DrawGlyphRun(_renderTarget.get(), _renderTarget4.get(), p.dwriteFactory4.get(), { baselineX, baselineY }, &glyphRun, brush);
+                    DrawGlyphRun(_renderTarget.get(), _renderTarget4.get(), p.dwriteFactory4.get(), baselineOrigin, &glyphRun, brush);
                 }
 
                 for (UINT32 i = 0; i < glyphRun.glyphCount; ++i)

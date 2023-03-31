@@ -577,7 +577,7 @@ void AtlasEngine::_flushBufferLine()
 
     auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
 
-    wil::com_ptr<IDWriteFontFace> mappedFontFace;
+    wil::com_ptr<IDWriteFontFace2> mappedFontFace;
 
 #pragma warning(suppress : 26494) // Variable 'mappedEnd' is uninitialized. Always initialize an object (type.5).
     for (u32 idx = 0, mappedEnd; idx < _api.bufferLine.size(); idx = mappedEnd)
@@ -608,10 +608,9 @@ void AtlasEngine::_flushBufferLine()
         // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
         for (u32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
         {
-            BOOL isTextSimple;
+            BOOL isTextSimple = FALSE;
             THROW_IF_FAILED(_p.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + idx, mappedEnd - idx, mappedFontFace.get(), &isTextSimple, &complexityLength, _api.glyphIndices.data()));
 
-#pragma warning(suppress : 4127)
             if (isTextSimple)
             {
                 for (size_t i = 0; i < complexityLength; ++i)
@@ -640,7 +639,7 @@ void AtlasEngine::_flushBufferLine()
     }
 }
 
-void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32* mappedLength, float* scale, IDWriteFontFace** mappedFontFace) const
+void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32* mappedLength, float* scale, IDWriteFontFace2** mappedFontFace) const
 {
     TextAnalysisSource analysisSource{ text, textLength };
     const auto& textFormatAxis = _api.textFormatAxes[static_cast<size_t>(_api.attributes)];
@@ -680,7 +679,7 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
 
         if (font)
         {
-            THROW_IF_FAILED(font->CreateFontFace(mappedFontFace));
+            THROW_IF_FAILED(font->CreateFontFace(reinterpret_cast<IDWriteFontFace**>(mappedFontFace)));
         }
     }
 }
@@ -856,6 +855,11 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
         _api.replacementCharacterLookedUp = true;
     }
 
+    if (!_api.replacementCharacterFontFace)
+    {
+        return;
+    }
+
     static constexpr auto isSoftFontChar = [](wchar_t ch) noexcept {
         return ch >= 0xEF20 && ch < 0xEF80;
     };
@@ -888,9 +892,9 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
         if (currentlyMappingSoftFont != nowMappingSoftFont)
         {
             const auto indicesCount = row.glyphIndices.size();
-            const auto fontFace = currentlyMappingSoftFont && softFontAvailable ? IDWriteFontFace_SoftFont : _api.replacementCharacterFontFace.get();
+            const auto fontFace = currentlyMappingSoftFont && softFontAvailable ? nullptr : _api.replacementCharacterFontFace.get();
 
-            if (indicesCount > initialIndicesCount && fontFace)
+            if (indicesCount > initialIndicesCount)
             {
                 row.mappings.emplace_back(fontFace, _p.s->font->fontSize, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
                 initialIndicesCount = indicesCount;
@@ -904,9 +908,9 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
 
     {
         const auto indicesCount = row.glyphIndices.size();
-        const auto fontFace = currentlyMappingSoftFont && softFontAvailable ? IDWriteFontFace_SoftFont : _api.replacementCharacterFontFace.get();
+        const auto fontFace = currentlyMappingSoftFont && softFontAvailable ? nullptr : _api.replacementCharacterFontFace.get();
 
-        if (indicesCount > initialIndicesCount && fontFace)
+        if (indicesCount > initialIndicesCount)
         {
             row.mappings.emplace_back(fontFace, _p.s->font->fontSize, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
         }

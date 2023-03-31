@@ -341,7 +341,7 @@ HRESULT AtlasEngine::Enable() noexcept
 
 void AtlasEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
 {
-    const auto mode = gsl::narrow_cast<u8>(antialiasingMode);
+    const auto mode = static_cast<AntialiasingMode>(antialiasingMode);
     if (_api.antialiasingMode != mode)
     {
         _api.antialiasingMode = mode;
@@ -475,7 +475,7 @@ void AtlasEngine::_resolveTransparencySettings() noexcept
     // If the user asks for ClearType, but also for a transparent background
     // (which our ClearType shader doesn't simultaneously support)
     // then we need to sneakily force the renderer to grayscale AA.
-    const u8 antialiasingMode = _api.enableTransparentBackground && _api.antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE ? D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE : _api.antialiasingMode;
+    const auto antialiasingMode = _api.enableTransparentBackground && _api.antialiasingMode == AntialiasingMode::ClearType ? AntialiasingMode::Grayscale : _api.antialiasingMode;
     const bool enableTransparentBackground = _api.enableTransparentBackground || !_api.s->misc->customPixelShaderPath.empty() || _api.s->misc->useRetroTerminalEffect;
 
     if (antialiasingMode != _api.s->font->antialiasingMode || enableTransparentBackground != _api.s->target->enableTransparentBackground)

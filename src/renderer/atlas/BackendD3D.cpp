@@ -450,7 +450,7 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
     DWrite_GetRenderParams(p.dwriteFactory.get(), &_gamma, &_cleartypeEnhancedContrast, &_grayscaleEnhancedContrast, _textRenderingParams.put());
     // Clearing the atlas requires BeginDraw(), which is expensive. Defer this until we need Direct2D anyways.
     _fontChangedResetGlyphAtlas = true;
-    _textShadingType = p.s->font->antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE ? ShadingType::TextClearType : ShadingType::TextGrayscale;
+    _textShadingType = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? ShadingType::TextClearType : ShadingType::TextGrayscale;
 
     if (_d2dRenderTarget)
     {
@@ -658,7 +658,7 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
         data.cellSize = { static_cast<f32>(p.s->font->cellSize.x), static_cast<f32>(p.s->font->cellSize.y) };
         data.cellCount = { static_cast<f32>(p.s->cellCount.x), static_cast<f32>(p.s->cellCount.y) };
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);
-        data.enhancedContrast = p.s->font->antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
+        data.enhancedContrast = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
         data.dashedLineLength = p.s->font->underlineWidth * 3.0f;
         _deviceContext->UpdateSubresource(_psConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
@@ -801,13 +801,7 @@ void BackendD3D::_d2dEndDrawing()
     }
 }
 
-void BackendD3D::_handleFontChangedResetGlyphAtlas(const RenderingPayload& p)
-{
-    _fontChangedResetGlyphAtlas = false;
-    _resetGlyphAtlasAndBeginDraw(p);
-}
-
-void BackendD3D::_resetGlyphAtlasAndBeginDraw(const RenderingPayload& p)
+void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
 {
     // The index returned by _BitScanReverse is undefined when the input is 0. We can simultaneously guard
     // against that and avoid unreasonably small textures, by clamping the min. texture size to `minArea`.
@@ -866,6 +860,19 @@ void BackendD3D::_resetGlyphAtlasAndBeginDraw(const RenderingPayload& p)
             _d2dRenderTarget->SetTextRenderingParams(_textRenderingParams.get());
 
             _d2dRenderTargetUpdateFontSettings(*p.s->font);
+        }
+
+        // We have our own glyph cache so Direct2D's cache doesn't help much.
+        // This saves us 1MB of RAM, which is not much, but also not nothing.
+        {
+            wil::com_ptr<ID2D1Device> device;
+            _d2dRenderTarget4->GetDevice(device.addressof());
+
+            device->SetMaximumTextureMemory(0);
+            if (const auto device4 = device.try_query<ID2D1Device4>())
+            {
+                device4->SetMaximumColorGlyphCacheMemory(0);
+            }
         }
 
         {
@@ -1051,7 +1058,8 @@ void BackendD3D::_drawText(RenderingPayload& p)
 {
     if (_fontChangedResetGlyphAtlas)
     {
-        _handleFontChangedResetGlyphAtlas(p);
+        _fontChangedResetGlyphAtlas = false;
+        _resetGlyphAtlas(p);
     }
 
     til::CoordType dirtyTop = til::CoordTypeMax;
@@ -1147,6 +1155,74 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
         .glyphIndices = &entry.key.glyphIndex,
     };
 
+    // It took me a while to figure out how to rasterize glyphs manually with DirectWrite without depending on Direct2D.
+    // The benefits are a reduction in memory usage, an increase in performance under certain circumstances and most
+    // importantly, the ability to debug the renderer more easily, because many graphics debuggers don't support Direct2D.
+    // Direct2D has one big advantage however: It features a clever glyph uploader with a pool of D3D11_USAGE_STAGING textures,
+    // which I was too short on time to implement myself. This makes rasterization with Direct2D roughly 2x faster.
+    //
+    // This code remains, because it features some parts that are slightly more and some parts that are outright difficult to figure out.
+#if 0
+    const auto wantsClearType = p.s->font->antialiasingMode == AntialiasingMode::ClearType;
+    const auto wantsAliased = p.s->font->antialiasingMode == AntialiasingMode::Aliased;
+    const auto antialiasMode = wantsClearType ? DWRITE_TEXT_ANTIALIAS_MODE_CLEARTYPE : DWRITE_TEXT_ANTIALIAS_MODE_GRAYSCALE;
+    const auto outlineThreshold = wantsAliased ? DWRITE_OUTLINE_THRESHOLD_ALIASED : DWRITE_OUTLINE_THRESHOLD_ANTIALIASED;
+
+    DWRITE_RENDERING_MODE renderingMode{};
+    DWRITE_GRID_FIT_MODE gridFitMode{};
+    THROW_IF_FAILED(entry.key.fontFace->GetRecommendedRenderingMode(
+        /* fontEmSize       */ fontEmSize,
+        /* dpiX             */ 1, // fontEmSize is already in pixel
+        /* dpiY             */ 1, // fontEmSize is already in pixel
+        /* transform        */ nullptr,
+        /* isSideways       */ FALSE,
+        /* outlineThreshold */ outlineThreshold,
+        /* measuringMode    */ DWRITE_MEASURING_MODE_NATURAL,
+        /* renderingParams  */ _textRenderingParams.get(),
+        /* renderingMode    */ &renderingMode,
+        /* gridFitMode      */ &gridFitMode));
+
+    wil::com_ptr<IDWriteGlyphRunAnalysis> glyphRunAnalysis;
+    THROW_IF_FAILED(p.dwriteFactory->CreateGlyphRunAnalysis(
+        /* glyphRun         */ &glyphRun,
+        /* transform        */ nullptr,
+        /* renderingMode    */ renderingMode,
+        /* measuringMode    */ DWRITE_MEASURING_MODE_NATURAL,
+        /* gridFitMode      */ gridFitMode,
+        /* antialiasMode    */ antialiasMode,
+        /* baselineOriginX  */ 0,
+        /* baselineOriginY  */ 0,
+        /* glyphRunAnalysis */ glyphRunAnalysis.put()));
+
+    RECT textureBounds{};
+
+    if (wantsClearType)
+    {
+        THROW_IF_FAILED(glyphRunAnalysis->GetAlphaTextureBounds(DWRITE_TEXTURE_CLEARTYPE_3x1, &textureBounds));
+
+        // Some glyphs cannot be drawn with ClearType, such as bitmap fonts. In that case
+        // GetAlphaTextureBounds() supposedly returns an empty RECT, but I haven't tested that yet.
+        if (!IsRectEmpty(&textureBounds))
+        {
+            // Allocate a buffer of `3 * width * height` bytes.
+            THROW_IF_FAILED(glyphRunAnalysis->CreateAlphaTexture(DWRITE_TEXTURE_CLEARTYPE_3x1, &textureBounds, buffer.data(), buffer.size()));
+            // The buffer contains RGB ClearType weights which can now be packed into RGBA and uploaded to the glyph atlas.
+            return;
+        }
+
+        // --> Retry with grayscale AA.
+    }
+
+    // Even though it says "ALIASED" and even though the docs for the flag still say:
+    // > [...] that is, each pixel is either fully opaque or fully transparent [...]
+    // don't be confused: It's grayscale antialiased. lol
+    THROW_IF_FAILED(glyphRunAnalysis->GetAlphaTextureBounds(DWRITE_TEXTURE_ALIASED_1x1, &textureBounds));
+
+    // Allocate a buffer of `width * height` bytes.
+    THROW_IF_FAILED(glyphRunAnalysis->CreateAlphaTexture(DWRITE_TEXTURE_ALIASED_1x1, &textureBounds, buffer.data(), buffer.size()));
+    // The buffer now contains a grayscale alpha mask.
+#endif
+
     const auto lineRendition = static_cast<LineRendition>(entry.key.lineRendition);
     std::optional<D2D1_MATRIX_3X2_F> transform;
 
@@ -1204,9 +1280,7 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
         return false;
     }
 
-    _d2dBeginDrawing();
-
-    const D2D1_POINT_2F baseline{
+    const D2D1_POINT_2F baselineOrigin{
         static_cast<f32>(rect.x - bl),
         static_cast<f32>(rect.y - bt),
     };
@@ -1214,12 +1288,13 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
     if (transform)
     {
         auto& t = *transform;
-        t.dx = (1.0f - t.m11) * baseline.x;
-        t.dy = (1.0f - t.m22) * baseline.y;
+        t.dx = (1.0f - t.m11) * baselineOrigin.x;
+        t.dy = (1.0f - t.m22) * baselineOrigin.y;
         _d2dRenderTarget->SetTransform(&t);
     }
 
-    const auto colorGlyph = DrawGlyphRun(_d2dRenderTarget.get(), _d2dRenderTarget4.get(), p.dwriteFactory4.get(), baseline, &glyphRun, _brush.get());
+    _d2dBeginDrawing();
+    const auto colorGlyph = DrawGlyphRun(_d2dRenderTarget.get(), _d2dRenderTarget4.get(), p.dwriteFactory4.get(), baselineOrigin, &glyphRun, _brush.get());
 
     entry.data.offset.x = bl;
     entry.data.offset.y = bt;
@@ -1297,7 +1372,7 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, GlyphCacheEntry& 
         THROW_IF_FAILED(_softFontBitmap->CopyFromMemory(nullptr, bitmapData.data(), pitch));
     }
 
-    const auto interpolation = p.s->font->antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_ALIASED ? D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR : D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC;
+    const auto interpolation = p.s->font->antialiasingMode == AntialiasingMode::Aliased ? D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR : D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC;
     const D2D1_RECT_F dest{
         static_cast<f32>(rect.x),
         static_cast<f32>(rect.y),
@@ -1330,7 +1405,7 @@ void BackendD3D::_drawGlyphPrepareRetry(const RenderingPayload& p)
     THROW_HR_IF_MSG(E_UNEXPECTED, _glyphCache.Size() == 0, "BackendD3D::_drawGlyph deadlock");
     _d2dEndDrawing();
     _flushQuads(p);
-    _resetGlyphAtlasAndBeginDraw(p);
+    _resetGlyphAtlas(p);
 }
 
 // If this is a double-height glyph (DECDHL), we need to split it into 2 glyph entries:
