@@ -478,49 +478,10 @@ namespace winrt::TerminalApp::implementation
 
         const auto& tabItemResources{ TabViewItem().Resources() };
 
-        { // original
-            TabViewItem().Background(deselectedTabBrush);
-            tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-            tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-            tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
-        }
-        // { // attempt 1
-        //     // TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
-        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
-        // }
-        // { // attempt 2
-        //     TabViewItem().Background(selectedTabBrush);
-        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
-        // }
-        // { // attempt 3
-        //     // Paired with NOT using custom resources
-        //     TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
-        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
-        // }
-        // { // attempt 3
-        //     // Paired with setting the SelectedBackgroundPath.Fill to {TemplateBinding Background}
-        //     TabViewItem().Background(selectedTabBrush);
-        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
-        // }
-
-        // { // attempt 4
-        //     // Paired with setting the SelectedBackgroundPath.Fill to {TemplateBinding Background}
-        //     TabViewItem().Background(deselectedTabBrush);
-
-        //     TabViewItem().Content().try_as<winrt::WUX::Controls::Border>().Background(selectedTabBrush);
-
-        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
-        // }
+        TabViewItem().Background(deselectedTabBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
 
         // Similarly, TabViewItem().Foreground()  sets the color for the text
         // when the TabViewItem isn't selected, but not when it is hovered,
