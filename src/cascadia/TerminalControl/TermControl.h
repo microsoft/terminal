@@ -373,6 +373,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlInteractivity::OpenHyperlink_revoker interactivityOpenHyperlink;
             Control::ControlInteractivity::ScrollPositionChanged_revoker interactivityScrollPositionChanged;
             Control::ControlInteractivity::PasteFromClipboard_revoker PasteFromClipboard;
+            Control::ControlInteractivity::ContextMenuRequested_revoker ContextMenuRequested;
         } _revokers{};
     };
 }
