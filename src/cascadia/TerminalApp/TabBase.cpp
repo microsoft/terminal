@@ -572,14 +572,11 @@ namespace winrt::TerminalApp::implementation
         if (TabViewItem().IsSelected())
         {
             VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
-            // Useless: try switching multiple states on a visual refresh. This did nothing.
-            // VisualStateManager::GoToState(TabViewItem(), L"PointerOver", false);
             VisualStateManager::GoToState(TabViewItem(), L"Selected", true);
         }
         else
         {
             VisualStateManager::GoToState(TabViewItem(), L"Selected", true);
-            // VisualStateManager::GoToState(TabViewItem(), L"PointerOver", false);
             VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
         }
 
@@ -587,9 +584,6 @@ namespace winrt::TerminalApp::implementation
         // TabViewItem().RequestedTheme(reqTheme == ElementTheme::Dark ? ElementTheme::Light : ElementTheme::Dark);
         TabViewItem().RequestedTheme(ElementTheme::Light);
         TabViewItem().RequestedTheme(ElementTheme::Dark);
-        // TabViewItem().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&]() {
-        //     TabViewItem().RequestedTheme(reqTheme);
-        // });
         TabViewItem().RequestedTheme(reqTheme);
     }
 }
