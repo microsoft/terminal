@@ -28,7 +28,7 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
   <PropertyGroup>
-    <!-- This magic property will let WebVeiw2 know that it needs to reveal its
+    <!-- This magic property will let WebView2 know that it needs to reveal its
     winmd to us. Without it, the WebView2 targets don't think we're a WinRT
     context, and our build will fail when MUX fails midl compile (due to missing
     webview components). -->
