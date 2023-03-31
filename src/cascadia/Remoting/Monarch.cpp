@@ -1058,7 +1058,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     void Monarch::RequestMoveContent(winrt::hstring window,
                                      winrt::hstring content,
-                                     uint32_t tabIndex)
+                                     uint32_t tabIndex,
+                                     const Windows::Foundation::IReference<Windows::Foundation::Rect>& windowBounds)
     {
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_MoveContent_Requested",
@@ -1102,11 +1103,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-            // TODO GH#5000
-            //
             // In the case where window couldn't be found, then create a window
-            // for that name / ID. Do this as a part of tear-out (different than
-            // drag/drop)
+            // for that name / ID.
+            //
+            // Don't let the window literally be named "-1", because that's silly
+            auto request = winrt::make_self<implementation::WindowRequestedArgs>(window == L"-1" ? L"" : window,
+                                                                                 content,
+                                                                                 windowBounds);
+            _RequestNewWindowHandlers(*this, *request);
         }
     }
 
@@ -1132,16 +1136,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
         else
         {
+            // We couldn't find the peasant that started the drag. Well that
+            // sure is weird, but that would indicate that the sender closed
+            // after starting the drag. No matter. We can just do nothing.
+
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_SendContent_NoWindow",
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-            // TODO GH#5000
-            //
-            // In the case where window couldn't be found, then create a window
-            // for that name / ID. Do this as a part of tear-out (different than
-            // drag/drop)
         }
     }
 }

@@ -29,6 +29,7 @@ namespace TerminalApp
         String Window { get; };
         String Content { get; };
         UInt32 TabIndex { get; };
+        Windows.Foundation.IReference<Windows.Foundation.Point> WindowPosition { get; };
     };
     [default_interface] runtimeclass RequestReceiveContentArgs {
         RequestReceiveContentArgs(UInt64 src, UInt64 tgt, UInt32 tabIndex);
@@ -77,7 +78,6 @@ namespace TerminalApp
         String KeyboardServiceDisabledText { get; };
 
         TaskbarState TaskbarState{ get; };
-        void AttachContent(String content, UInt32 tabIndex);
 
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
         void WindowActivated(Boolean activated);

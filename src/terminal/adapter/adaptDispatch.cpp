@@ -95,7 +95,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             // different position from where the EOL was marked.
             if (delayedCursorPosition == cursorPosition)
             {
-                _api.LineFeed(true, true);
+                _DoLineFeed(textBuffer, true, true);
                 cursorPosition = cursor.GetPosition();
                 // We need to recalculate the width when moving to a new line.
                 state.columnLimit = textBuffer.GetLineWidth(cursorPosition.y);
@@ -248,14 +248,13 @@ bool AdaptDispatch::CursorPrevLine(const VTInt distance)
 // - absolute - Should coordinates be absolute or relative to the viewport.
 // Return Value:
 // - A std::pair containing the top and bottom coordinates (inclusive).
-std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const til::rect& viewport, const bool absolute)
+std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const til::rect& viewport, const bool absolute) noexcept
 {
     // If the top is out of range, reset the margins completely.
     const auto bottommostRow = viewport.bottom - viewport.top - 1;
     if (_scrollMargins.top >= bottommostRow)
     {
         _scrollMargins.top = _scrollMargins.bottom = 0;
-        _api.SetScrollingRegion(_scrollMargins);
     }
     // If margins aren't set, use the full extent of the viewport.
     const auto marginsSet = _scrollMargins.top < _scrollMargins.bottom;
@@ -696,23 +695,11 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     //      by moving the current contents of the viewport into the scrollback.
     if (eraseType == DispatchTypes::EraseType::Scrollback)
     {
-        _EraseScrollback();
-        // GH#2715 - If this succeeded, but we're in a conpty, return `false` to
-        // make the state machine propagate this ED sequence to the connected
-        // terminal application. While we're in conpty mode, we don't really
-        // have a scrollback, but the attached terminal might.
-        return !_api.IsConsolePty();
+        return _EraseScrollback();
     }
     else if (eraseType == DispatchTypes::EraseType::All)
     {
-        // GH#5683 - If this succeeded, but we're in a conpty, return `false` to
-        // make the state machine propagate this ED sequence to the connected
-        // terminal application. While we're in conpty mode, when the client
-        // requests a Erase All operation, we need to manually tell the
-        // connected terminal to do the same thing, so that the terminal will
-        // move it's own buffer contents into the scrollback.
-        _EraseAll();
-        return !_api.IsConsolePty();
+        return _EraseAll();
     }
 
     const auto viewport = _api.GetViewport();
@@ -2039,7 +2026,6 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
         }
         _scrollMargins.top = actualTop;
         _scrollMargins.bottom = actualBottom;
-        _api.SetScrollingRegion(_scrollMargins);
     }
 }
 
@@ -2089,6 +2075,94 @@ bool AdaptDispatch::CarriageReturn()
 }
 
 // Routine Description:
+// - Helper method for executing a line feed, possibly preceded by carriage return.
+// Arguments:
+// - textBuffer - Target buffer on which the line feed is executed.
+// - withReturn - Set to true if a carriage return should be performed as well.
+// - wrapForced - Set to true is the line feed was the result of the line wrapping.
+// Return Value:
+// - <none>
+void AdaptDispatch::_DoLineFeed(TextBuffer& textBuffer, const bool withReturn, const bool wrapForced)
+{
+    const auto viewport = _api.GetViewport();
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    const auto bufferHeight = textBuffer.GetSize().Height();
+
+    auto& cursor = textBuffer.GetCursor();
+    const auto currentPosition = cursor.GetPosition();
+    auto newPosition = currentPosition;
+
+    // If the line was forced to wrap, set the wrap status.
+    // When explicitly moving down a row, clear the wrap status.
+    textBuffer.GetRowByOffset(currentPosition.y).SetWrapForced(wrapForced);
+
+    if (currentPosition.y != bottomMargin)
+    {
+        // If we're not at the bottom margin then there's no scrolling,
+        // so we make sure we don't move past the bottom of the viewport.
+        newPosition.y = std::min(currentPosition.y + 1, viewport.bottom - 1);
+        newPosition = textBuffer.ClampPositionWithinLine(newPosition);
+    }
+    else if (topMargin > viewport.top)
+    {
+        // If the top margin isn't at the top of the viewport, then we're
+        // just scrolling the margin area and the cursor stays where it is.
+        _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin + 1 }, -1);
+    }
+    else if (viewport.bottom < bufferHeight)
+    {
+        // If the top margin is at the top of the viewport, then we'll scroll
+        // the content up by panning the viewport down, and also move the cursor
+        // down a row. But we only do this if the viewport hasn't yet reached
+        // the end of the buffer.
+        _api.SetViewportPosition({ viewport.left, viewport.top + 1 });
+        newPosition.y++;
+
+        // And if the bottom margin didn't cover the full viewport, we copy the
+        // lower part of the viewport down so it remains static. But for a full
+        // pan we reset the newly revealed row with the current attributes.
+        if (bottomMargin < viewport.bottom - 1)
+        {
+            _ScrollRectVertically(textBuffer, { 0, bottomMargin + 1, bufferWidth, viewport.bottom + 1 }, 1);
+        }
+        else
+        {
+            auto eraseAttributes = textBuffer.GetCurrentAttributes();
+            eraseAttributes.SetStandardErase();
+            textBuffer.GetRowByOffset(newPosition.y).Reset(eraseAttributes);
+        }
+    }
+    else
+    {
+        // If the viewport has reached the end of the buffer, we can't pan down,
+        // so we cycle the row coordinates, which effectively scrolls the buffer
+        // content up. In this case we don't need to move the cursor down.
+        textBuffer.IncrementCircularBuffer(true);
+        _api.NotifyBufferRotation(1);
+
+        // We trigger a scroll rather than a redraw, since that's more efficient,
+        // but we need to turn the cursor off before doing so, otherwise a ghost
+        // cursor can be left behind in the previous position.
+        cursor.SetIsOn(false);
+        textBuffer.TriggerScroll({ 0, -1 });
+
+        // And again, if the bottom margin didn't cover the full viewport, we
+        // copy the lower part of the viewport down so it remains static.
+        if (bottomMargin < viewport.bottom - 1)
+        {
+            _ScrollRectVertically(textBuffer, { 0, bottomMargin, bufferWidth, bufferHeight }, 1);
+        }
+    }
+
+    // If a carriage return was requested, we also move to the leftmost column.
+    newPosition.x = withReturn ? 0 : newPosition.x;
+
+    cursor.SetPosition(newPosition);
+    _ApplyCursorMovementFlags(cursor);
+}
+
+// Routine Description:
 // - IND/NEL - Performs a line feed, possibly preceded by carriage return.
 //    Moves the cursor down one line, and possibly also to the leftmost column.
 // Arguments:
@@ -2097,16 +2171,17 @@ bool AdaptDispatch::CarriageReturn()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
 {
+    auto& textBuffer = _api.GetTextBuffer();
     switch (lineFeedType)
     {
     case DispatchTypes::LineFeedType::DependsOnMode:
-        _api.LineFeed(_api.GetLineFeedMode(), false);
+        _DoLineFeed(textBuffer, _api.GetLineFeedMode(), false);
         return true;
     case DispatchTypes::LineFeedType::WithoutReturn:
-        _api.LineFeed(false, false);
+        _DoLineFeed(textBuffer, false, false);
         return true;
     case DispatchTypes::LineFeedType::WithReturn:
-        _api.LineFeed(true, false);
+        _DoLineFeed(textBuffer, true, false);
         return true;
     default:
         return false;
@@ -2636,8 +2711,8 @@ bool AdaptDispatch::ScreenAlignmentPattern()
 // Arguments:
 // - <none>
 // Return value:
-// - <none>
-void AdaptDispatch::_EraseScrollback()
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::_EraseScrollback()
 {
     const auto viewport = _api.GetViewport();
     const auto top = viewport.top;
@@ -2658,6 +2733,12 @@ void AdaptDispatch::_EraseScrollback()
     // Move the cursor to the same relative location.
     cursor.SetYPosition(row - top);
     cursor.SetHasMoved(true);
+
+    // GH#2715 - If this succeeded, but we're in a conpty, return `false` to
+    // make the state machine propagate this ED sequence to the connected
+    // terminal application. While we're in conpty mode, we don't really
+    // have a scrollback, but the attached terminal might.
+    return !_api.IsConsolePty();
 }
 
 //Routine Description:
@@ -2671,13 +2752,14 @@ void AdaptDispatch::_EraseScrollback()
 // Arguments:
 // - <none>
 // Return value:
-// - <none>
-void AdaptDispatch::_EraseAll()
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::_EraseAll()
 {
     const auto viewport = _api.GetViewport();
     const auto viewportHeight = viewport.bottom - viewport.top;
     auto& textBuffer = _api.GetTextBuffer();
     const auto bufferSize = textBuffer.GetSize();
+    const auto inPtyMode = _api.IsConsolePty();
 
     // Stash away the current position of the cursor within the viewport.
     // We'll need to restore the cursor to that same relative position, after
@@ -2692,10 +2774,21 @@ void AdaptDispatch::_EraseAll()
     auto newViewportTop = lastChar == til::point{} ? 0 : lastChar.y + 1;
     const auto newViewportBottom = newViewportTop + viewportHeight;
     const auto delta = newViewportBottom - (bufferSize.Height());
-    for (auto i = 0; i < delta; i++)
+    if (delta > 0)
     {
-        textBuffer.IncrementCircularBuffer();
-        newViewportTop--;
+        for (auto i = 0; i < delta; i++)
+        {
+            textBuffer.IncrementCircularBuffer();
+        }
+        _api.NotifyBufferRotation(delta);
+        newViewportTop -= delta;
+        // We don't want to trigger a scroll in pty mode, because we're going to
+        // pass through the ED sequence anyway, and this will just result in the
+        // buffer being scrolled up by two pages instead of one.
+        if (!inPtyMode)
+        {
+            textBuffer.TriggerScroll({ 0, -delta });
+        }
     }
     // Move the viewport
     _api.SetViewportPosition({ viewport.left, newViewportTop });
@@ -2710,6 +2803,14 @@ void AdaptDispatch::_EraseAll()
 
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(newViewportTop, newViewportBottom);
+
+    // GH#5683 - If this succeeded, but we're in a conpty, return `false` to
+    // make the state machine propagate this ED sequence to the connected
+    // terminal application. While we're in conpty mode, when the client
+    // requests a Erase All operation, we need to manually tell the
+    // connected terminal to do the same thing, so that the terminal will
+    // move it's own buffer contents into the scrollback.
+    return !inPtyMode;
 }
 
 //Routine Description:

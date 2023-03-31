@@ -1258,12 +1258,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return true;
         }
 
-        // TODO: GH#5000
-        // The Core owning the keybindings is weird. That's for sure. In the
-        // future, we may want to pass the keybindings into the control
-        // separately, so the control can have a pointer to an in-proc
-        // Keybindings object, rather than routing through the ControlCore.
-        // (see GH#5000)
         auto bindings = _core.Settings().KeyBindings();
         if (!bindings)
         {
@@ -2877,18 +2871,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     IControlSettings TermControl::Settings() const
     {
-        // TODO: GH#5000
-        // We still need this in a couple places:
-        // - Pane.cpp uses this for parsing out the StartingTitle, Commandline,
-        //   etc for Pane::GetTerminalArgsForPane.
-        // - TerminalTab::_CreateToolTipTitle uses the ProfileName for the
-        //   tooltip for the tab.
-        //
-        // These both happen on the UI thread right now. In the future, when we
-        // have to hop across the process boundary to get at the core settings,
-        // it may make sense to cache these values inside the TermControl
-        // itself, so it can do the hop once when it's first setup, rather than
-        // when it's needed by the UI thread.
         return _core.Settings();
     }
 

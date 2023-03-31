@@ -250,6 +250,7 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabDragStarting({ this, &TerminalPage::_onTabDragStarting });
         _tabView.TabStripDragOver({ this, &TerminalPage::_onTabStripDragOver });
         _tabView.TabStripDrop({ this, &TerminalPage::_onTabStripDrop });
+        _tabView.TabDroppedOutside({ this, &TerminalPage::_onTabDroppedOutside });
 
         _CreateNewTabFlyout();
 
@@ -1985,13 +1986,18 @@ namespace winrt::TerminalApp::implementation
     //   and should be expected to be empty after this call.
     void TerminalPage::_MoveContent(std::vector<Settings::Model::ActionAndArgs>&& actions,
                                     const winrt::hstring& windowName,
-                                    const uint32_t tabIndex)
+                                    const uint32_t tabIndex,
+                                    const std::optional<til::point>& dragPoint)
     {
         const auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)) };
         const auto str{ ActionAndArgs::Serialize(winRtActions) };
         const auto request = winrt::make_self<RequestMoveContentArgs>(windowName,
                                                                       str,
                                                                       tabIndex);
+        if (dragPoint.has_value())
+        {
+            request->WindowPosition(dragPoint->to_winrt_point());
+        }
         _RequestMoveContentHandlers(*this, *request);
     }
 
@@ -2026,6 +2032,11 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    uint32_t TerminalPage::NumberOfTabs() const
+    {
+        return _tabs.Size();
+    }
+
     // Method Description:
     // - Called when it is determined that an existing tab or pane should be
     //   attached to our window. content represents a blob of JSON describing
@@ -2036,11 +2047,9 @@ namespace winrt::TerminalApp::implementation
     //   reattach instead of create new content, so this method simply needs to
     //   parse the JSON and pump it into our action handler. Almost the same as
     //   doing something like `wt -w 0 nt`.
-    winrt::fire_and_forget TerminalPage::AttachContent(winrt::hstring content,
+    winrt::fire_and_forget TerminalPage::AttachContent(IVector<Settings::Model::ActionAndArgs> args,
                                                        uint32_t tabIndex)
     {
-        auto args = ActionAndArgs::Deserialize(content);
-
         if (args == nullptr ||
             args.Size() == 0)
         {
@@ -2063,18 +2072,6 @@ namespace winrt::TerminalApp::implementation
         if (firstIsSplitPane && tabIndex < _tabs.Size())
         {
             _SelectTab(tabIndex);
-        }
-        else
-        {
-            if (firstIsSplitPane)
-            {
-                // Create the equivalent NewTab action.
-                const auto newAction = Settings::Model::ActionAndArgs{ Settings::Model::ShortcutAction::NewTab,
-                                                                       Settings::Model::NewTabArgs(firstAction.Args() ?
-                                                                                                       firstAction.Args().try_as<Settings::Model::SplitPaneArgs>().TerminalArgs() :
-                                                                                                       nullptr) };
-                args.SetAt(0, newAction);
-            }
         }
 
         for (const auto& action : args)
@@ -4611,7 +4608,23 @@ namespace winrt::TerminalApp::implementation
         {
             // First: stash the tab we started dragging.
             // We're going to be asked for this.
-            _stashedDraggedTab = tabImpl;
+            _stashed.draggedTab = tabImpl;
+
+            // Stash the offset from where we started the drag to the
+            // tab's origin. We'll use that offset in the future to help
+            // position the dropped window.
+
+            // First, the position of the pointer, from the CoreWindow
+            const til::point pointerPosition{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
+            // Next, the position of the tab itself:
+            const til::point tabPosition{ til::math::rounding, eventTab.TransformToVisual(nullptr).TransformPoint({ 0, 0 }) };
+            // Now, we need to add the origin of our CoreWindow to the tab
+            // position.
+            const auto& coreWindowBounds{ CoreWindow::GetForCurrentThread().Bounds() };
+            const til::point windowOrigin{ til::math::rounding, coreWindowBounds.X, coreWindowBounds.Y };
+            const auto realTabPosition = windowOrigin + tabPosition;
+            // Subtract the two to get the offset.
+            _stashed.dragOffset = til::point{ pointerPosition - realTabPosition };
 
             // Into the DataPackage, let's stash our own window ID.
             const auto id{ _WindowProperties.WindowId() };
@@ -4630,7 +4643,8 @@ namespace winrt::TerminalApp::implementation
             //      to ask us to send our content to them.
             //  * We'll get a TabDroppedOutside to indicate that this tab was
             //    dropped _not_ on a TabView.
-            //    * This we can't handle yet, and is the last point of TODO GH#5000
+            //    * This will be handled by _onTabDroppedOutside, which will
+            //      raise a MoveContent (to a new window) event.
         }
     }
 
@@ -4736,7 +4750,7 @@ namespace winrt::TerminalApp::implementation
         {
             co_return;
         }
-        if (!_stashedDraggedTab)
+        if (!_stashed.draggedTab)
         {
             co_return;
         }
@@ -4747,12 +4761,58 @@ namespace winrt::TerminalApp::implementation
         if (const auto& page{ weakThis.get() })
         {
             // `this` is safe to use in here.
-            auto startupActions = _stashedDraggedTab->BuildStartupActions(true);
-            _DetachTabFromWindow(_stashedDraggedTab);
-            _MoveContent(std::move(startupActions), winrt::hstring{ fmt::format(L"{}", args.TargetWindow()) }, args.TabIndex());
-            // _RemoveTab will make sure to null out the _stashedDraggedTab
-            _RemoveTab(*_stashedDraggedTab);
+
+            _sendDraggedTabToWindow(winrt::hstring{ fmt::format(L"{}", args.TargetWindow()) },
+                                    args.TabIndex(),
+                                    std::nullopt);
         }
+    }
+
+    winrt::fire_and_forget TerminalPage::_onTabDroppedOutside(winrt::IInspectable sender,
+                                                              winrt::MUX::Controls::TabViewTabDroppedOutsideEventArgs e)
+    {
+        // Get the current pointer point from the CoreWindow
+        const auto& pointerPoint{ CoreWindow::GetForCurrentThread().PointerPosition() };
+
+        // This is called when a tab FROM OUR WINDOW was dropped outside the
+        // tabview. We already know which tab was being dragged. We'll just
+        // invoke a moveTab action with the target window being -1. That will
+        // force the creation of a new window.
+
+        if (!_stashed.draggedTab)
+        {
+            co_return;
+        }
+
+        // must do the work of adding/removing tabs on the UI thread.
+        auto weakThis{ get_weak() };
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+        if (const auto& page{ weakThis.get() })
+        {
+            // `this` is safe to use in here.
+
+            // We need to convert the pointer point to a point that we can use
+            // to position the new window. We'll use the drag offset from before
+            // so that the tab in the new window is positioned so that it's
+            // basically still directly under the cursor.
+
+            // -1 is the magic number for "new window"
+            // 0 as the tab index, because we don't care. It's making a new window. It'll be the only tab.
+            const til::point adjusted = til::point{ til::math::rounding, pointerPoint } - _stashed.dragOffset;
+            _sendDraggedTabToWindow(winrt::hstring{ L"-1" }, 0, adjusted);
+        }
+    }
+
+    void TerminalPage::_sendDraggedTabToWindow(const winrt::hstring& windowId,
+                                               const uint32_t tabIndex,
+                                               std::optional<til::point> dragPoint)
+    {
+        auto startupActions = _stashed.draggedTab->BuildStartupActions(true);
+        _DetachTabFromWindow(_stashed.draggedTab);
+
+        _MoveContent(std::move(startupActions), windowId, tabIndex, dragPoint);
+        // _RemoveTab will make sure to null out the _stashed.draggedTab
+        _RemoveTab(*_stashed.draggedTab);
     }
 
 }
