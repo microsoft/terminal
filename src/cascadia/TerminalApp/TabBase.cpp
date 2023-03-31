@@ -476,37 +476,39 @@ namespace winrt::TerminalApp::implementation
         // TabViewItemHeaderBackground manually, but GH#11382 discovered that
         // Background() was actually okay after all.
 
+        const auto& tabItemResources{ TabViewItem().Resources() };
+
         { // original
             TabViewItem().Background(deselectedTabBrush);
-            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+            tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+            tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
+            tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
         }
         // { // attempt 1
         //     // TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
-        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
+        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
         // }
         // { // attempt 2
         //     TabViewItem().Background(selectedTabBrush);
-        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
+        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
         // }
         // { // attempt 3
         //     // Paired with NOT using custom resources
         //     TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
-        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
+        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
         // }
         // { // attempt 3
         //     // Paired with setting the SelectedBackgroundPath.Fill to {TemplateBinding Background}
         //     TabViewItem().Background(selectedTabBrush);
-        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
+        //     tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
         // }
 
         // Similarly, TabViewItem().Foreground()  sets the color for the text
@@ -514,23 +516,23 @@ namespace winrt::TerminalApp::implementation
         // pressed, dragged, or selected, so we'll need to just set them all
         // anyways.
         TabViewItem().Foreground(deselectedFontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), deselectedFontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderForeground"), deselectedFontBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
 
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForeground"), deselectedFontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForegroundPressed"), secondaryFontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForegroundPointerOver"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderPressedCloseButtonForeground"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderPointerOverCloseButtonForeground"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderSelectedCloseButtonForeground"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBackgroundPressed"), subtleFillColorTertiaryBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBackgroundPointerOver"), subtleFillColorSecondaryBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForeground"), deselectedFontBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForegroundPressed"), secondaryFontBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForegroundPointerOver"), fontBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderPressedCloseButtonForeground"), fontBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderPointerOverCloseButtonForeground"), fontBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderSelectedCloseButtonForeground"), fontBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBackgroundPressed"), subtleFillColorTertiaryBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonBackgroundPointerOver"), subtleFillColorSecondaryBrush);
 
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundActiveTab"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundPressed"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundPointerOver"), fontBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewButtonForegroundActiveTab"), fontBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewButtonForegroundPressed"), fontBrush);
+        tabItemResources.Insert(winrt::box_value(L"TabViewButtonForegroundPointerOver"), fontBrush);
 
         _RefreshVisualState();
     }
@@ -566,13 +568,15 @@ namespace winrt::TerminalApp::implementation
             L"TabViewButtonForegroundPointerOver"
         };
 
+        const auto& tabItemResources{ TabViewItem().Resources() };
+
         // simply clear any of the colors in the tab's dict
         for (const auto& keyString : keys)
         {
             auto key = winrt::box_value(keyString);
-            if (TabViewItem().Resources().HasKey(key))
+            if (tabItemResources.HasKey(key))
             {
-                TabViewItem().Resources().Remove(key);
+                tabItemResources.Remove(key);
             }
         }
 
