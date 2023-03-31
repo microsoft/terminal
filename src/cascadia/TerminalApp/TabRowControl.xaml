@@ -14,15 +14,6 @@
 
     <!--  GH#13143: Make sure that the Background is actually TabViewBackground here, not Transparent. This is load bearing, for showTabsInTitlebar=false.  -->
 
-
-    <ContentPresenter.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="TabViewStyles.xaml" />
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
-    </ContentPresenter.Resources>
-
     <mux:TabView x:Name="TabView"
                  VerticalAlignment="Bottom"
                  HorizontalContentAlignment="Stretch"
@@ -31,7 +22,6 @@
                  CanDragTabs="True"
                  CanReorderTabs="True"
                  IsAddTabButtonVisible="false"
-                 Style="{StaticResource MyTabViewStyle}"
                  TabWidthMode="Equal">
 
         <mux:TabView.TabStripHeader>

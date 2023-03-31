@@ -580,8 +580,7 @@ namespace winrt::TerminalApp::implementation
             VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
         }
 
-        auto reqTheme = TabViewItem().RequestedTheme();
-        // TabViewItem().RequestedTheme(reqTheme == ElementTheme::Dark ? ElementTheme::Light : ElementTheme::Dark);
+        const auto& reqTheme = TabViewItem().RequestedTheme();
         TabViewItem().RequestedTheme(ElementTheme::Light);
         TabViewItem().RequestedTheme(ElementTheme::Dark);
         TabViewItem().RequestedTheme(reqTheme);
