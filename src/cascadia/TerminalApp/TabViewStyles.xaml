@@ -678,8 +678,10 @@
                                         <Setter Target="BottomBorderLine.Visibility" Value="Collapsed" />
                                         <Setter Target="RightRadiusRenderArc.Visibility" Value="Visible" />
                                         <Setter Target="LeftRadiusRenderArc.Visibility" Value="Visible" />
+
                                         <Setter Target="SelectedBackgroundPath.Visibility" Value="Visible" />
-                                        <!--<Setter Target="SelectedBackgroundPath.Fill" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />-->
+                                        <Setter Target="SelectedBackgroundPath.Fill" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />
+                                        <!-- <Setter Target="SelectedBackgroundPath.Fill" Value="{TemplateBinding Background}" /> -->
 
                                         <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackground}" />
                                         <Setter Target="TabContainer.Margin" Value="{ThemeResource TabViewSelectedItemHeaderMargin}" />
@@ -700,8 +702,10 @@
                                         <Setter Target="BottomBorderLine.Visibility" Value="Collapsed" />
                                         <Setter Target="RightRadiusRenderArc.Visibility" Value="Visible" />
                                         <Setter Target="LeftRadiusRenderArc.Visibility" Value="Visible" />
+
                                         <Setter Target="SelectedBackgroundPath.Visibility" Value="Visible" />
-                                        <!--<Setter Target="SelectedBackgroundPath.Fill" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />-->
+                                        <Setter Target="SelectedBackgroundPath.Fill" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />
+
                                         <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackground}" />
                                         <Setter Target="TabContainer.Margin" Value="{ThemeResource TabViewSelectedItemHeaderMargin}" />
                                         <Setter Target="TabContainer.BorderBrush" Value="{ThemeResource TabViewSelectedItemBorderBrush}" />
@@ -722,7 +726,9 @@
                                         <Setter Target="RightRadiusRenderArc.Visibility" Value="Visible" />
                                         <Setter Target="LeftRadiusRenderArc.Visibility" Value="Visible" />
                                         <Setter Target="SelectedBackgroundPath.Visibility" Value="Visible" />
-                                        <!--<Setter Target="SelectedBackgroundPath.Fill" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />-->
+
+                                        <Setter Target="SelectedBackgroundPath.Fill" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />
+
                                         <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackground}" />
                                         <Setter Target="TabContainer.Margin" Value="{ThemeResource TabViewSelectedItemHeaderMargin}" />
                                         <Setter Target="TabContainer.BorderBrush" Value="{ThemeResource TabViewSelectedItemBorderBrush}" />

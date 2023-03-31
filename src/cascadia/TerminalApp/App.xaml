@@ -156,6 +156,25 @@
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
                                              Color="#0c0c0c" />
+
+
+
+
+                            <!--
+                                ~bad~ useless idea
+                                manually set the tabview resources to what they were in 2.7. This changed nothing, unfortunately.
+                            -->
+                            <StaticResource x:Key="TabViewItemHeaderBackground"
+                                            ResourceKey="SubtleFillColorTransparentBrush" />
+                            <StaticResource x:Key="TabViewItemHeaderBackgroundSelected"
+                                            ResourceKey="SolidBackgroundFillColorTertiaryBrush" />
+                            <StaticResource x:Key="TabViewItemHeaderBackgroundPointerOver"
+                                            ResourceKey="SubtleFillColorSecondaryBrush" />
+                            <StaticResource x:Key="TabViewItemHeaderBackgroundPressed"
+                                            ResourceKey="SubtleFillColorTertiaryBrush" />
+                            <StaticResource x:Key="TabViewItemHeaderBackgroundDisabled"
+                                            ResourceKey="SubtleFillColorTransparentBrush" />
+
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
@@ -172,6 +191,17 @@
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
                                              Color="#ffffff" />
+
+                            <StaticResource x:Key="TabViewItemHeaderBackground"
+                                            ResourceKey="SubtleFillColorTransparentBrush" />
+                            <StaticResource x:Key="TabViewItemHeaderBackgroundSelected"
+                                            ResourceKey="SolidBackgroundFillColorTertiaryBrush" />
+                            <StaticResource x:Key="TabViewItemHeaderBackgroundPointerOver"
+                                            ResourceKey="SubtleFillColorSecondaryBrush" />
+                            <StaticResource x:Key="TabViewItemHeaderBackgroundPressed"
+                                            ResourceKey="SubtleFillColorTertiaryBrush" />
+                            <StaticResource x:Key="TabViewItemHeaderBackgroundDisabled"
+                                            ResourceKey="SubtleFillColorTransparentBrush" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="HighContrast">

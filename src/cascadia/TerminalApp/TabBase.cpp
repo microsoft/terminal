@@ -476,12 +476,12 @@ namespace winrt::TerminalApp::implementation
         // TabViewItemHeaderBackground manually, but GH#11382 discovered that
         // Background() was actually okay after all.
 
-        // { // original
-        //     TabViewItem().Background(deselectedTabBrush);
-        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
-        // }
+        { // original
+            TabViewItem().Background(deselectedTabBrush);
+            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
+            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+        }
         // { // attempt 1
         //     // TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
         //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
@@ -494,13 +494,20 @@ namespace winrt::TerminalApp::implementation
         //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
         //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
         // }
-        { // attempt 3
-            // Paired with NOT using custom resources
-            TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
-            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
-        }
+        // { // attempt 3
+        //     // Paired with NOT using custom resources
+        //     TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
+        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
+        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+        // }
+        // { // attempt 3
+        //     // Paired with setting the SelectedBackgroundPath.Fill to {TemplateBinding Background}
+        //     TabViewItem().Background(selectedTabBrush);
+        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
+        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+        // }
 
         // Similarly, TabViewItem().Foreground()  sets the color for the text
         // when the TabViewItem isn't selected, but not when it is hovered,
@@ -588,13 +595,16 @@ namespace winrt::TerminalApp::implementation
     {
         if (TabViewItem().IsSelected())
         {
-            VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
-            VisualStateManager::GoToState(TabViewItem(), L"Selected", true);
+            VisualStateManager::GoToState(TabViewItem(), L"Normal", false);
+            // Useless: try switching multiple states on a visual refresh. This did nothing.
+            VisualStateManager::GoToState(TabViewItem(), L"PointerOver", false);
+            VisualStateManager::GoToState(TabViewItem(), L"Selected", false);
         }
         else
         {
-            VisualStateManager::GoToState(TabViewItem(), L"Selected", true);
-            VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
+            VisualStateManager::GoToState(TabViewItem(), L"Selected", false);
+            VisualStateManager::GoToState(TabViewItem(), L"PointerOver", false);
+            VisualStateManager::GoToState(TabViewItem(), L"Normal", false);
         }
     }
 
