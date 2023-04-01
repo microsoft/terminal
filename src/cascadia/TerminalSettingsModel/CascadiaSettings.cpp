@@ -418,7 +418,7 @@ void CascadiaSettings::_validateSettings()
     _validateKeybindings();
     _validateColorSchemesInCommands();
     _validateThemeExists();
-    _ValidateProfileEnvironmentVariables();
+    _validateProfileEnvironmentVariables();
 }
 
 // Method Description:
@@ -546,7 +546,7 @@ void CascadiaSettings::_validateMediaResources()
 // Method Description:
 // - Checks if the profiles contain multiple environment variables with the same name, but different
 //   cases
-    void CascadiaSettings::_ValidateProfileEnvironmentVariables()
+    void CascadiaSettings::_validateProfileEnvironmentVariables()
 {
     for (const auto& profile : _allProfiles)
     {

@@ -38,13 +38,8 @@ namespace SettingsModelLocalTests
         TEST_METHOD(LayerProfileProperties);
         TEST_METHOD(LayerProfileIcon);
         TEST_METHOD(LayerProfilesOnArray);
-        TEST_METHOD(ProfileWithEnvVarSelfRefKeyThrows);
-        TEST_METHOD(ProfileWithEnvVarCircularRefsThrows);
-        TEST_METHOD(ProfileWithEnvVarNoReferences);
-        TEST_METHOD(ProfileWithEnvVarProcessEnv);
-        TEST_METHOD(ProfileWithEnvVarComplex);
-        TEST_METHOD(ProfileWithEnvVarWithParent);
-        TEST_METHOD(ProfileWithEnvVarAppendingToExistingProcessEnvVer);
+        TEST_METHOD(ProfileWithEnvVars);
+        TEST_METHOD(ProfileWithEnvVarsSameNameDifferentCases);
 
         TEST_METHOD(DuplicateProfileTest);
         TEST_METHOD(TestGenGuidsForProfiles);
@@ -357,35 +352,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_NOT_EQUAL(settings->AllProfiles().GetAt(0).Guid(), settings->AllProfiles().GetAt(1).Guid());
     }
 
-    void ProfileTests::ProfileWithEnvVarSelfRefKeyThrows()
-    {
-        const std::string profileString{ R"({
-            "name": "profile0",
-            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "environment": {
-                "VAR_1": "${env:VAR_1}"
-            }
-        })" };
-        auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
-        VERIFY_THROWS(profile->ValidateEvaluatedEnvironmentVariables(), winrt::hresult_error);
-    }
-
-    void ProfileTests::ProfileWithEnvVarCircularRefsThrows()
-    {
-        const std::string profileString{ R"({
-            "name": "profile0",
-            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "environment": {
-                "VAR_1": "${env:VAR_2}",
-                "VAR_2": "${env:VAR_3}",
-                "VAR_3": "${env:VAR_1}"
-            }
-        })" };
-        auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
-        VERIFY_THROWS(profile->ValidateEvaluatedEnvironmentVariables(), winrt::hresult_error);
-    }
-
-    void ProfileTests::ProfileWithEnvVarNoReferences()
+    void ProfileTests::ProfileWithEnvVars()
     {
         const std::string profileString{ R"({
             "name": "profile0",
@@ -393,146 +360,40 @@ namespace SettingsModelLocalTests
             "environment": {
                 "VAR_1": "value1",
                 "VAR_2": "value2",
-                "VAR_3": "value3"
+                "VAR_3": "%VAR_3%;value3"
             }
         })" };
         const auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
         std::vector<winrt::Windows::Foundation::Collections::StringMap> envVarMaps{};
         envVarMaps.emplace_back(profile->EnvironmentVariables());
-        envVarMaps.emplace_back(profile->EvaluatedEnvironmentVariables());
         for (auto& envMap : envVarMaps)
         {
             VERIFY_ARE_EQUAL(static_cast<uint32_t>(3), envMap.Size());
             VERIFY_ARE_EQUAL(L"value1", envMap.Lookup(L"VAR_1"));
             VERIFY_ARE_EQUAL(L"value2", envMap.Lookup(L"VAR_2"));
-            VERIFY_ARE_EQUAL(L"value3", envMap.Lookup(L"VAR_3"));
+            VERIFY_ARE_EQUAL(L"%VAR_3%;value3", envMap.Lookup(L"VAR_3"));
         }
     }
 
-    void ProfileTests::ProfileWithEnvVarProcessEnv()
+    void ProfileTests::ProfileWithEnvVarsSameNameDifferentCases()
     {
-        const std::string profileString{ R"({
-            "name": "profile0",
-            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "environment": {
-                "VAR_1": "${env:SystemRoot}",
-                "VAR_2": "${env:___DOES_NOT_EXIST_IN_ENVIRONMENT___1234567890}"
-            }
+        const std::string userSettings{ R"({
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "environment": {
+                        "FOO": "VALUE",
+                        "Foo": "Value"
+                    }
+                }
+            ]
         })" };
-
-        const auto expectedSystemRoot = wil::TryGetEnvironmentVariableW<std::wstring>(L"SystemRoot");
-        VERIFY_IS_FALSE(expectedSystemRoot.empty());
-        const auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
-        const auto envMap = profile->EvaluatedEnvironmentVariables();
-        VERIFY_ARE_EQUAL(static_cast<uint32_t>(2), envMap.Size());
-        VERIFY_ARE_EQUAL(expectedSystemRoot, envMap.Lookup(L"VAR_1"));
-        VERIFY_ARE_EQUAL(L"", envMap.Lookup(L"VAR_2"));
-    }
-
-    void ProfileTests::ProfileWithEnvVarComplex()
-    {
-        const std::string profileString{ R"({
-            "name": "profile0",
-            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "environment": {
-                "TEST_HOME_DRIVE": "C:",
-                "TEST_HOME": "${env:TEST_HOME_DRIVE}${env:TEST_HOME_PATH}",
-                "TEST_HOME_PATH": "\\Users\\example",
-                "PARAM_START": "${env:TEST_HOME} abc",
-                "PARAM_MIDDLE": "abc ${env:TEST_HOME} abc",
-                "PARAM_END": "abc ${env:TEST_HOME}",
-                "PARAM_MULTIPLE": "${env:PARAM_START};${env:PARAM_MIDDLE};${env:PARAM_END}",
-                "PARAM_MULTIPLE_SAME": "${env:TEST_HOME_DRIVE};${env:TEST_HOME_DRIVE};${env:TEST_HOME_DRIVE};${env:TEST_HOME_DRIVE};${env:TEST_HOME_DRIVE};"
-            }
-        })" };
-
-        const auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
-        const auto envMap = profile->EvaluatedEnvironmentVariables();
-        VERIFY_ARE_EQUAL(static_cast<uint32_t>(8), envMap.Size());
-        VERIFY_ARE_EQUAL(L"C:\\Users\\example", envMap.Lookup(L"TEST_HOME"));
-        VERIFY_ARE_EQUAL(L"C:\\Users\\example abc", envMap.Lookup(L"PARAM_START"));
-        VERIFY_ARE_EQUAL(L"abc C:\\Users\\example abc", envMap.Lookup(L"PARAM_MIDDLE"));
-        VERIFY_ARE_EQUAL(L"abc C:\\Users\\example", envMap.Lookup(L"PARAM_END"));
-        VERIFY_ARE_EQUAL(L"C:\\Users\\example abc;abc C:\\Users\\example abc;abc C:\\Users\\example", envMap.Lookup(L"PARAM_MULTIPLE"));
-        VERIFY_ARE_EQUAL(L"C:;C:;C:;C:;C:;", envMap.Lookup(L"PARAM_MULTIPLE_SAME"));
-    }
-
-    void ProfileTests::ProfileWithEnvVarWithParent()
-    {
-        const std::string parentString{ R"({
-            "name": "profile0",
-            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "environment": {
-                "VAR_1": "parent",
-                "VAR_2": "parent",
-                "VAR_4": "parent",
-                "VAR_6": "${env:VAR_3}",
-                "VAR_8": "${env:SystemRoot}"
-            }
-        })" };
-
-        const std::string childString{ R"({
-            "name": "profile0",
-            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "environment": {
-                "VAR_1": "child",
-                "VAR_3": "child",
-                "VAR_5": "${env:VAR_4}",
-                "VAR_7": "${env:VAR_6}"
-            }
-        })" };
-
-        const auto parentProfile = implementation::Profile::FromJson(VerifyParseSucceeded(parentString));
-        const auto childProfile = implementation::Profile::FromJson(VerifyParseSucceeded(childString));
-        childProfile->InsertParent(parentProfile);
-
-        const auto expectedSystemRoot = wil::TryGetEnvironmentVariableW<std::wstring>(L"SystemRoot");
-        VERIFY_IS_FALSE(expectedSystemRoot.empty());
-
-        const auto parentEnvVars = parentProfile->EvaluatedEnvironmentVariables();
-        const auto childEnvVars = childProfile->EvaluatedEnvironmentVariables();
-
-        VERIFY_ARE_EQUAL(L"parent", parentEnvVars.Lookup(L"VAR_1"));
-        VERIFY_ARE_EQUAL(L"parent", parentEnvVars.Lookup(L"VAR_2"));
-        VERIFY_ARE_EQUAL(L"parent", parentEnvVars.Lookup(L"VAR_4"));
-        VERIFY_ARE_EQUAL(L"", parentEnvVars.Lookup(L"VAR_6"));
-        VERIFY_ARE_EQUAL(expectedSystemRoot, parentEnvVars.Lookup(L"VAR_8"));
-
-        VERIFY_ARE_EQUAL(L"child", childEnvVars.Lookup(L"VAR_1"));
-        VERIFY_ARE_EQUAL(L"parent", childEnvVars.Lookup(L"VAR_2"));
-        VERIFY_ARE_EQUAL(L"child", childEnvVars.Lookup(L"VAR_3"));
-        VERIFY_ARE_EQUAL(L"parent", childEnvVars.Lookup(L"VAR_4"));
-        VERIFY_ARE_EQUAL(L"parent", childEnvVars.Lookup(L"VAR_5"));
-        VERIFY_ARE_EQUAL(L"child", childEnvVars.Lookup(L"VAR_6"));
-        VERIFY_ARE_EQUAL(L"child", childEnvVars.Lookup(L"VAR_7"));
-        VERIFY_ARE_EQUAL(expectedSystemRoot, childEnvVars.Lookup(L"VAR_8"));
-    }
-
-    void ProfileTests::ProfileWithEnvVarAppendingToExistingProcessEnvVer()
-    {
-        const std::string profileString{ R"({
-            "name": "profile0",
-            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "environment": {
-                "PATH": "${env:PATH};C:\\MyAwesomeFolder",
-                "SystemRoot": "prepend${env:SystemRoot}"
-            }
-        })" };
-
-        const auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
-        const auto envMap = profile->EvaluatedEnvironmentVariables();
-
-        auto expectedPath = wil::TryGetEnvironmentVariableW<std::wstring>(L"PATH");
-        VERIFY_IS_FALSE(expectedPath.empty());
-        expectedPath += L";C:\\MyAwesomeFolder";
-
-        auto expectedSystemRoot = wil::TryGetEnvironmentVariableW<std::wstring>(L"SystemRoot");
-        VERIFY_IS_FALSE(expectedSystemRoot.empty());
-        expectedSystemRoot.insert(0, L"prepend");
-
-        VERIFY_ARE_EQUAL(static_cast<uint32_t>(2), envMap.Size());
-        VERIFY_ARE_EQUAL(expectedPath, envMap.Lookup(L"PATH"));
-        VERIFY_ARE_EQUAL(expectedSystemRoot, envMap.Lookup(L"SystemRoot"));
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings);
+        const auto warnings = settings->Warnings();
+        VERIFY_ARE_EQUAL(static_cast<uint32_t>(2), warnings.Size());
+        uint32_t index;
+        VERIFY_IS_TRUE(warnings.IndexOf(SettingsLoadWarnings::InvalidProfileEnvironmentVariables, index));
     }
 
     void ProfileTests::TestCorrectOldDefaultShellPaths()
