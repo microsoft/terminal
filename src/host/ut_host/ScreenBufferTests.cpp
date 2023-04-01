@@ -5188,28 +5188,35 @@ void ScreenBufferTests::SetOriginMode()
     cursor.SetPosition({ 40, 12 });
     stateMachine.ProcessString(L"\x1B[6;20r");
     VERIFY_ARE_EQUAL(til::point(0, 0), cursor.GetPosition());
+    stateMachine.ProcessString(L"\x1B[?69h");
+    cursor.SetPosition({ 40, 12 });
+    stateMachine.ProcessString(L"\x1B[31;50s");
+    VERIFY_ARE_EQUAL(til::point(0, 0), cursor.GetPosition());
     Log::Comment(L"Cursor addressing is relative to the top-left of the screen.");
     stateMachine.ProcessString(L"\x1B[13;41H");
     VERIFY_ARE_EQUAL(til::point(40, 12), cursor.GetPosition());
-    Log::Comment(L"The cursor can be moved below the bottom margin.");
-    stateMachine.ProcessString(L"\x1B[23;41H");
-    VERIFY_ARE_EQUAL(til::point(40, 22), cursor.GetPosition());
+    Log::Comment(L"The cursor can be moved past the bottom right margins.");
+    stateMachine.ProcessString(L"\x1B[23;61H");
+    VERIFY_ARE_EQUAL(til::point(60, 22), cursor.GetPosition());
 
     // Testing the effects of DECOM being set (relative cursor addressing)
     Log::Comment(L"Setting DECOM moves the cursor to the top-left of the margin area.");
     cursor.SetPosition({ 40, 12 });
     stateMachine.ProcessString(L"\x1B[?6h");
-    VERIFY_ARE_EQUAL(til::point(0, 5), cursor.GetPosition());
+    VERIFY_ARE_EQUAL(til::point(30, 5), cursor.GetPosition());
     Log::Comment(L"Setting a margin moves the cursor to the top-left of the margin area.");
     cursor.SetPosition({ 40, 12 });
     stateMachine.ProcessString(L"\x1B[6;20r");
-    VERIFY_ARE_EQUAL(til::point(0, 5), cursor.GetPosition());
+    VERIFY_ARE_EQUAL(til::point(30, 5), cursor.GetPosition());
+    cursor.SetPosition({ 40, 12 });
+    stateMachine.ProcessString(L"\x1B[31;50s");
+    VERIFY_ARE_EQUAL(til::point(30, 5), cursor.GetPosition());
     Log::Comment(L"Cursor addressing is relative to the top-left of the margin area.");
-    stateMachine.ProcessString(L"\x1B[8;41H");
+    stateMachine.ProcessString(L"\x1B[8;11H");
     VERIFY_ARE_EQUAL(til::point(40, 12), cursor.GetPosition());
-    Log::Comment(L"The cursor cannot be moved below the bottom margin.");
-    stateMachine.ProcessString(L"\x1B[100;41H");
-    VERIFY_ARE_EQUAL(til::point(40, 19), cursor.GetPosition());
+    Log::Comment(L"The cursor cannot be moved past the bottom right margins.");
+    stateMachine.ProcessString(L"\x1B[100;100H");
+    VERIFY_ARE_EQUAL(til::point(49, 19), cursor.GetPosition());
 
     // Testing the effects of DECOM being reset (absolute cursor addressing)
     Log::Comment(L"Resetting DECOM moves the cursor to the top-left of the screen.");
@@ -5220,16 +5227,20 @@ void ScreenBufferTests::SetOriginMode()
     cursor.SetPosition({ 40, 12 });
     stateMachine.ProcessString(L"\x1B[6;20r");
     VERIFY_ARE_EQUAL(til::point(0, 0), cursor.GetPosition());
+    cursor.SetPosition({ 40, 12 });
+    stateMachine.ProcessString(L"\x1B[31;50s");
+    VERIFY_ARE_EQUAL(til::point(0, 0), cursor.GetPosition());
     Log::Comment(L"Cursor addressing is relative to the top-left of the screen.");
     stateMachine.ProcessString(L"\x1B[13;41H");
     VERIFY_ARE_EQUAL(til::point(40, 12), cursor.GetPosition());
-    Log::Comment(L"The cursor can be moved below the bottom margin.");
-    stateMachine.ProcessString(L"\x1B[23;41H");
-    VERIFY_ARE_EQUAL(til::point(40, 22), cursor.GetPosition());
+    Log::Comment(L"The cursor can be moved past the bottom right margins.");
+    stateMachine.ProcessString(L"\x1B[23;61H");
+    VERIFY_ARE_EQUAL(til::point(60, 22), cursor.GetPosition());
 
     // Testing the effects of DECOM being set with no margins
     Log::Comment(L"With no margins, setting DECOM moves the cursor to the top-left of the screen.");
     stateMachine.ProcessString(L"\x1B[r");
+    stateMachine.ProcessString(L"\x1B[s");
     cursor.SetPosition({ 40, 12 });
     stateMachine.ProcessString(L"\x1B[?6h");
     VERIFY_ARE_EQUAL(til::point(0, 0), cursor.GetPosition());
@@ -5237,8 +5248,8 @@ void ScreenBufferTests::SetOriginMode()
     stateMachine.ProcessString(L"\x1B[13;41H");
     VERIFY_ARE_EQUAL(til::point(40, 12), cursor.GetPosition());
 
-    // Reset DECOM so we don't affect future tests
-    stateMachine.ProcessString(L"\x1B[?6l");
+    // Reset DECOM and DECLRMM so we don't affect future tests
+    stateMachine.ProcessString(L"\x1B[?6;69l");
 }
 
 void ScreenBufferTests::SetAutoWrapMode()
