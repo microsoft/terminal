@@ -128,7 +128,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     {
                         // This will throw if the value isn't a string. If that
                         // happens, then just skip this entry.
-                        auto value = winrt::unbox_value<hstring>(_environment.Lookup(key));
+                        const auto value = winrt::unbox_value<hstring>(_environment.Lookup(key));
 
                         environment.set_user_environment_var(key.c_str(), value.c_str());
                     }

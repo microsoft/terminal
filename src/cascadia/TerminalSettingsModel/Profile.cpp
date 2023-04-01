@@ -18,7 +18,6 @@ using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::Foundation::Collections;
 using namespace ::Microsoft::Console;
 
 static constexpr std::string_view UpdatesKey{ "updates" };

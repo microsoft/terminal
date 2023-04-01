@@ -1217,10 +1217,13 @@ namespace winrt::TerminalApp::implementation
             // profile is guaranteed to exist here
             auto guidWString = Utils::GuidToString(profile.Guid());
 
-            auto envMap = settings.EnvironmentVariables();
-            if (envMap == nullptr)
+            StringMap envMap{};
+            if (settings.EnvironmentVariables() != nullptr)
             {
-                envMap = {};
+                for (const auto [key, value] : settings.EnvironmentVariables())
+                {
+                    envMap.Insert(key, value);
+                }
             }
             envMap.Insert(L"WT_PROFILE_ID", guidWString);
             envMap.Insert(L"WSLENV", L"%WSLENV%:WT_PROFILE_ID");

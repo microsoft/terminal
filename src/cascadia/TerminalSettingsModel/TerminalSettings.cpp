@@ -9,7 +9,6 @@
 #include "TerminalSettingsCreateResult.g.cpp"
 
 using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Windows::Foundation::Collections;
 using namespace Microsoft::Console::Utils;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
