@@ -546,7 +546,7 @@ void CascadiaSettings::_validateMediaResources()
 // Method Description:
 // - Checks if the profiles contain multiple environment variables with the same name, but different
 //   cases
-    void CascadiaSettings::_validateProfileEnvironmentVariables()
+void CascadiaSettings::_validateProfileEnvironmentVariables()
 {
     for (const auto& profile : _allProfiles)
     {
