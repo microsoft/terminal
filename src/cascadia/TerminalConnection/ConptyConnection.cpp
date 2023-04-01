@@ -10,7 +10,6 @@
 
 #include "CTerminalHandoff.h"
 #include "LibraryResources.h"
-#include "../../types/inc/Environment.hpp"
 #include "../../types/inc/utils.hpp"
 
 #include "ConptyConnection.g.cpp"

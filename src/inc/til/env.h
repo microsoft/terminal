@@ -526,6 +526,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             parse(block);
         }
 
+        // Function Description:
+        // - Creates a new environment with the current process's unicode environment
+        //   variables.
+        // Return Value:
+        // - A new environment
         static til::env from_current_environment()
         {
             LPWCH currentEnvVars{};
@@ -589,6 +594,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return result;
         }
 
+        // Function Description:
+        // - Creates a new environment block using the provided vector as appropriate
+        //   (resizing if needed) based on the current environment variable map
+        //   matching the format of GetEnvironmentStringsW.
+        // Arguments:
+        // - newEnvVars: The vector that will be used to create the new environment block.
+        // Return Value:
+        // - S_OK if we succeeded, or an appropriate HRESULT for failing
         HRESULT to_environment_strings_w(std::vector<wchar_t>& newEnvVars)
         try
         {
