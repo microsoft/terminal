@@ -1218,6 +1218,10 @@ namespace winrt::TerminalApp::implementation
             auto guidWString = Utils::GuidToString(profile.Guid());
 
             auto envMap = settings.EnvironmentVariables();
+            if (envMap == nullptr)
+            {
+                envMap = {};
+            }
             envMap.Insert(L"WT_PROFILE_ID", guidWString);
             envMap.Insert(L"WSLENV", L"WT_PROFILE_ID");
 

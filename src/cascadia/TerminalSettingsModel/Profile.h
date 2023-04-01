@@ -126,7 +126,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
         Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
-        winrt::Windows::Foundation::Collections::StringMap _EvaluatedEnvironmentVariables() const;
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;

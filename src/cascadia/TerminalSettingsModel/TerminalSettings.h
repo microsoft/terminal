@@ -143,7 +143,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, StartingDirectory);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, StartingTitle);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, SuppressApplicationTitle);
-        INHERITABLE_SETTING(TerminalApp::TerminalSettings, winrt::Windows::Foundation::Collections::StringMap, EnvironmentVariables);
+        INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::Foundation::Collections::StringMap, EnvironmentVariables);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAtlasEngine, false);

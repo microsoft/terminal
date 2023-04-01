@@ -417,7 +417,6 @@ void CascadiaSettings::_validateSettings()
     _validateKeybindings();
     _validateColorSchemesInCommands();
     _validateThemeExists();
-    _ValidateProfileEnvironmentVariables();
 }
 
 // Method Description:
@@ -539,24 +538,6 @@ void CascadiaSettings::_validateMediaResources()
     if (invalidIcon)
     {
         _warnings.Append(SettingsLoadWarnings::InvalidIcon);
-    }
-}
-
-// Method Description:
-// - Checks if the profiles contain invalid environment variable values. Only winrt::hresult_error are caught
-//   other failures, such as std::bad_alloc will not be considered an environment variable configuration issue
-void CascadiaSettings::_ValidateProfileEnvironmentVariables()
-{
-    for (const auto& profile : _allProfiles)
-    {
-        try
-        {
-            profile.ValidateEvaluatedEnvironmentVariables();
-        }
-        catch (winrt::hresult_error&)
-        {
-            _warnings.Append(Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::InvalidProfileEnvironmentVariables);
-        }
     }
 }
 

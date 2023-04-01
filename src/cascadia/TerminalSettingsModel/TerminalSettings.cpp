@@ -307,7 +307,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _TabColor = static_cast<winrt::Microsoft::Terminal::Core::Color>(colorRef);
         }
 
-        _EnvironmentVariables = profile.EvaluatedEnvironmentVariables();
+        _EnvironmentVariables = profile.EnvironmentVariables();
 
         _Elevate = profile.Elevate();
         _AutoMarkPrompts = Feature_ScrollbarMarks::IsEnabled() && profile.AutoMarkPrompts();
