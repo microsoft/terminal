@@ -1,20 +1,18 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
-
-#include "../inc/cppwinrt_utils.h"
 
 template<typename T>
 struct ViewModelHelper
 {
 public:
-    winrt::event_token PropertyChanged(::winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler const& handler)
+    winrt::event_token PropertyChanged(const ::winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler& handler)
     {
         return _propertyChangedHandlers.add(handler);
     }
 
-    void PropertyChanged(winrt::event_token const& token)
+    void PropertyChanged(const winrt::event_token& token)
     {
         _propertyChangedHandlers.remove(token);
     }
@@ -35,7 +33,7 @@ protected:
         _NotifyChanges(std::forward<Args>(more)...);
     }
 
-private:
+protected:
     winrt::event<::winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler> _propertyChangedHandlers;
 };
 
@@ -48,7 +46,7 @@ public:                                                   \
         if (name() != value)                              \
         {                                                 \
             target.name(value);                           \
-            _NotifyChanges(L"Has" #name, L#name);         \
+            _NotifyChanges(L"Has" #name, L## #name);      \
         }                                                 \
     }                                                     \
     bool Has##name() { return target.Has##name(); }
@@ -63,7 +61,7 @@ public:                                                   \
         target.Clear##name();                        \
         if (hadValue)                                \
         {                                            \
-            _NotifyChanges(L"Has" #name, L#name);    \
+            _NotifyChanges(L"Has" #name, L## #name); \
         }                                            \
     }                                                \
     auto name##OverrideSource() { return target.name##OverrideSource(); }
@@ -72,3 +70,21 @@ public:                                                   \
 // setting, but which cannot be erased.
 #define PERMANENT_OBSERVABLE_PROJECTED_SETTING(target, name) \
     _BASE_OBSERVABLE_PROJECTED_SETTING(target, name)
+
+// Defines a basic observable property that uses the _NotifyChanges
+// system from ViewModelHelper. This is very similar to WINRT_OBSERVABLE_PROPERTY
+// except it leverages _NotifyChanges.
+#define VIEW_MODEL_OBSERVABLE_PROPERTY(type, name, ...) \
+public:                                                 \
+    type name() const noexcept { return _##name; };     \
+    void name(const type& value)                        \
+    {                                                   \
+        if (_##name != value)                           \
+        {                                               \
+            _##name = value;                            \
+            _NotifyChanges(L## #name);                  \
+        }                                               \
+    };                                                  \
+                                                        \
+private:                                                \
+    type _##name{ __VA_ARGS__ };

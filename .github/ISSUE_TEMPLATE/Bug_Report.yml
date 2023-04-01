@@ -1,0 +1,61 @@
+name: "Bug report 🐛"
+description: Report errors or unexpected behavior
+labels: [Issue-Bug, Needs-Triage]
+body:
+- type: markdown
+  attributes:
+    value: |
+      Please make sure to [search for existing issues](https://github.com/microsoft/terminal/issues) and [check the FAQ](https://github.com/microsoft/terminal/wiki/Frequently-Asked-Questions-(FAQ)) before filing a new one!
+
+      If this is an application crash, please also provide a [Feedback Hub](https://aka.ms/terminal-feedback-hub) submission link so we can find your diagnostic data on the backend. Use the category "Apps > Windows Terminal" and choose "Share My Feedback" after submission to get the link.
+
+- type: input
+  attributes:
+    label: Windows Terminal version
+    placeholder: "1.7.3651.0"
+    description: |
+      You can copy the version number from the About dialog. Open the About dialog by opening the menu with the "V" button (to the right of the "+" button that opens a new tab) and choosing About from the end of the list.
+  validations:
+    required: false
+    
+- type: input
+  attributes:
+    label: Windows build number
+    placeholder: "10.0.19042.0"
+    description: |
+      Please run `ver` or `[Environment]::OSVersion`.
+  validations:
+    required: false
+
+- type: textarea
+  attributes:
+    label: Other Software
+    description: If you're reporting a bug about our interaction with other software, what software? What versions?
+    placeholder: |
+      vim 8.2 (inside WSL)
+      OpenSSH_for_Windows_8.1p1
+      My Cool Application v0.3 (include a code snippet if it would help!)
+  validations:
+    required: false
+
+- type: textarea
+  attributes:
+    label: Steps to reproduce
+    placeholder: Tell us the steps required to trigger your bug.
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: Expected Behavior
+    description: If you want to include screenshots, paste them into the markdown editor below.
+    placeholder: What were you expecting?
+  validations:
+    required: false
+
+- type: textarea
+  attributes:
+    label: Actual Behavior
+    placeholder: What happened instead?
+  validations:
+    required: true

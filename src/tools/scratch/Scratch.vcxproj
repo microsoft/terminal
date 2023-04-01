@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{ED82003F-FC5D-4E94-8B36-F480018ED064}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -21,6 +21,14 @@
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <!-- subsume fmt, one of our dependencies, into contypes. -->
+    <ProjectReference Include="..\..\dep\fmt\fmt.vcxproj">
+      <Project>{6bae5851-50d5-4934-8d5e-30361a8a40f3}</Project>
+    </ProjectReference>
+  </ItemGroup>
+
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\..\common.build.post.props" />
   <Import Project="..\..\common.build.tests.props" />

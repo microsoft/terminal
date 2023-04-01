@@ -41,7 +41,7 @@ class IInputEvent
 {
 public:
     static std::unique_ptr<IInputEvent> Create(const INPUT_RECORD& record);
-    static std::deque<std::unique_ptr<IInputEvent>> Create(gsl::span<const INPUT_RECORD> records);
+    static std::deque<std::unique_ptr<IInputEvent>> Create(std::span<const INPUT_RECORD> records);
     static std::deque<std::unique_ptr<IInputEvent>> Create(const std::deque<INPUT_RECORD>& records);
 
     static std::vector<INPUT_RECORD> ToInputRecords(const std::deque<std::unique_ptr<IInputEvent>>& events);
@@ -62,9 +62,9 @@ public:
 #endif
 };
 
-inline IInputEvent::~IInputEvent()
-{
-}
+inline IInputEvent::~IInputEvent() = default;
+
+using InputEventQueue = std::deque<std::unique_ptr<IInputEvent>>;
 
 #ifdef UNIT_TESTING
 std::wostream& operator<<(std::wostream& stream, const IInputEvent* pEvent);
@@ -292,6 +292,7 @@ public:
     void SetRepeatCount(const WORD repeatCount) noexcept;
     void SetVirtualKeyCode(const WORD virtualKeyCode) noexcept;
     void SetVirtualScanCode(const WORD virtualScanCode) noexcept;
+    void SetCharData(const char character) noexcept;
     void SetCharData(const wchar_t character) noexcept;
 
     void SetActiveModifierKeys(const DWORD activeModifierKeys) noexcept;
@@ -356,14 +357,14 @@ class MouseEvent : public IInputEvent
 {
 public:
     constexpr MouseEvent(const MOUSE_EVENT_RECORD& record) :
-        _position{ record.dwMousePosition },
+        _position{ til::wrap_coord(record.dwMousePosition) },
         _buttonState{ record.dwButtonState },
         _activeModifierKeys{ record.dwControlKeyState },
         _eventFlags{ record.dwEventFlags }
     {
     }
 
-    constexpr MouseEvent(const COORD position,
+    constexpr MouseEvent(const til::point position,
                          const DWORD buttonState,
                          const DWORD activeModifierKeys,
                          const DWORD eventFlags) :
@@ -388,7 +389,7 @@ public:
         return _eventFlags == MOUSE_MOVED;
     }
 
-    constexpr COORD GetPosition() const noexcept
+    constexpr til::point GetPosition() const noexcept
     {
         return _position;
     }
@@ -408,13 +409,13 @@ public:
         return _eventFlags;
     }
 
-    void SetPosition(const COORD position) noexcept;
+    void SetPosition(const til::point position) noexcept;
     void SetButtonState(const DWORD buttonState) noexcept;
     void SetActiveModifierKeys(const DWORD activeModifierKeys) noexcept;
     void SetEventFlags(const DWORD eventFlags) noexcept;
 
 private:
-    COORD _position;
+    til::point _position;
     DWORD _buttonState;
     DWORD _activeModifierKeys;
     DWORD _eventFlags;
@@ -432,11 +433,11 @@ class WindowBufferSizeEvent : public IInputEvent
 {
 public:
     constexpr WindowBufferSizeEvent(const WINDOW_BUFFER_SIZE_RECORD& record) :
-        _size{ record.dwSize }
+        _size{ til::wrap_coord_size(record.dwSize) }
     {
     }
 
-    constexpr WindowBufferSizeEvent(const COORD size) :
+    constexpr WindowBufferSizeEvent(const til::size size) :
         _size{ size }
     {
     }
@@ -450,15 +451,15 @@ public:
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
-    constexpr COORD GetSize() const noexcept
+    constexpr til::size GetSize() const noexcept
     {
         return _size;
     }
 
-    void SetSize(const COORD size) noexcept;
+    void SetSize(const til::size size) noexcept;
 
 private:
-    COORD _size;
+    til::size _size;
 
 #ifdef UNIT_TESTING
     friend std::wostream& operator<<(std::wostream& stream, const WindowBufferSizeEvent* const pEvent);
@@ -514,12 +515,14 @@ class FocusEvent : public IInputEvent
 {
 public:
     constexpr FocusEvent(const FOCUS_EVENT_RECORD& record) :
-        _focus{ !!record.bSetFocus }
+        _focus{ !!record.bSetFocus },
+        _cameFromApi{ true }
     {
     }
 
     constexpr FocusEvent(const bool focus) :
-        _focus{ focus }
+        _focus{ focus },
+        _cameFromApi{ false }
     {
     }
 
@@ -539,8 +542,15 @@ public:
 
     void SetFocus(const bool focus) noexcept;
 
+    // BODGY - see FocusEvent.cpp for details.
+    constexpr bool CameFromApi() const noexcept
+    {
+        return _cameFromApi;
+    }
+
 private:
     bool _focus;
+    bool _cameFromApi;
 
 #ifdef UNIT_TESTING
     friend std::wostream& operator<<(std::wostream& stream, const FocusEvent* const pFocusEvent);

@@ -32,7 +32,7 @@ CETCOMPAT=1
 
 SOURCES = \
     $(SOURCES) \
-    ..\exemain.cpp \
+    exemain.cpp \
     ..\res.rc \
 
 # -------------------------------------

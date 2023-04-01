@@ -1,10 +1,8 @@
 /*++
 Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
-
 Class Name:
 - WindowManager.h
-
 Abstract:
 - The Window Manager takes care of coordinating the monarch and peasant for this
   process.
@@ -16,51 +14,62 @@ Abstract:
 - When the monarch needs to ask the TerminalApp about how to parse a
   commandline, it'll ask by raising an event that we'll bubble up to the
   AppHost.
-
 --*/
-
 #pragma once
 
 #include "WindowManager.g.h"
 #include "Peasant.h"
 #include "Monarch.h"
-#include "../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
-    struct WindowManager final : public WindowManagerT<WindowManager>
+    struct WindowManager : public WindowManagerT<WindowManager>
     {
+    public:
         WindowManager();
         ~WindowManager();
+        winrt::Microsoft::Terminal::Remoting::ProposeCommandlineResult ProposeCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args, const bool isolatedMode);
+        Remoting::Peasant CreatePeasant(const Remoting::WindowRequestedArgs& args);
 
-        void ProposeCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args);
-        bool ShouldCreateWindow();
+        void SignalClose(const Remoting::Peasant& peasant);
+        void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
+        void SummonAllWindows();
+        Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
 
-        winrt::Microsoft::Terminal::Remoting::Peasant CurrentWindow();
+        uint64_t GetNumberOfPeasants();
+
+        static winrt::fire_and_forget RequestQuitAll(Remoting::Peasant peasant);
+        void UpdateActiveTabTitle(const winrt::hstring& title, const Remoting::Peasant& peasant);
+
+        Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
+        bool DoesQuakeWindowExist();
+
+        winrt::fire_and_forget RequestMoveContent(winrt::hstring window, winrt::hstring content, uint32_t tabIndex, Windows::Foundation::IReference<Windows::Foundation::Rect> windowBounds);
+        winrt::fire_and_forget RequestSendContent(Remoting::RequestReceiveContentArgs args);
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
 
+        TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
+        TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs);
+
+        TYPED_EVENT(RequestNewWindow, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs);
+
     private:
-        bool _shouldCreateWindow{ false };
-        bool _isKing{ false };
         DWORD _registrationHostClass{ 0 };
-        winrt::Microsoft::Terminal::Remoting::Monarch _monarch{ nullptr };
-        winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
+        winrt::Microsoft::Terminal::Remoting::IMonarch _monarch{ nullptr };
 
-        wil::unique_event _monarchWaitInterrupt;
-        std::thread _electionThread;
-
-        void _registerAsMonarch();
         void _createMonarch();
-        void _createMonarchAndCallbacks();
-        bool _areWeTheKing();
-        winrt::Microsoft::Terminal::Remoting::IPeasant _createOurPeasant(std::optional<uint64_t> givenID);
+        void _registerAsMonarch();
 
-        bool _performElection();
-        void _createPeasantThread();
-        void _waitOnMonarchThread();
+        bool _proposeToMonarch(const Remoting::CommandlineArgs& args);
+
+        void _createCallbacks();
         void _raiseFindTargetWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                              const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
+        void _raiseRequestNewWindow(const winrt::Windows::Foundation::IInspectable& sender,
+                                    const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args);
     };
 }
 

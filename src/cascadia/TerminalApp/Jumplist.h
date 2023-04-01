@@ -21,6 +21,6 @@ public:
     static winrt::fire_and_forget UpdateJumplist(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) noexcept;
 
 private:
-    [[nodiscard]] static HRESULT _updateProfiles(IObjectCollection* jumplistItems, winrt::Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Settings::Model::Profile> profiles) noexcept;
-    [[nodiscard]] static HRESULT _createShellLink(const std::wstring_view name, const std::wstring_view path, const std::wstring_view args, IShellLinkW** shLink) noexcept;
+    static void _updateProfiles(IObjectCollection* jumplistItems, winrt::Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Settings::Model::Profile> profiles);
+    static winrt::com_ptr<IShellLinkW> _createShellLink(const std::wstring_view name, const std::wstring_view path, const std::wstring_view args);
 };

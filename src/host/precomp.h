@@ -85,11 +85,10 @@ TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 #endif
 
 #include "../inc/contsf.h"
-#include "../inc/operators.hpp"
 #include "../inc/conattrs.hpp"
 
 // TODO: MSFT 9355094 Find a better way of doing this. http://osgvsowi/9355094
-[[nodiscard]] inline NTSTATUS NTSTATUS_FROM_HRESULT(HRESULT hr)
+[[nodiscard]] constexpr NTSTATUS NTSTATUS_FROM_HRESULT(HRESULT hr) noexcept
 {
     return NTSTATUS_FROM_WIN32(HRESULT_CODE(hr));
 }

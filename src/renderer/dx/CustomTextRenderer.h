@@ -24,6 +24,7 @@ namespace Microsoft::Console::Render
             renderTarget(renderTarget),
             foregroundBrush(foregroundBrush),
             backgroundBrush(backgroundBrush),
+            useBoldFont(false),
             useItalicFont(false),
             forceGrayscaleAA(forceGrayscaleAA),
             dwriteFactory(dwriteFactory),
@@ -31,13 +32,16 @@ namespace Microsoft::Console::Render
             cellSize(cellSize),
             targetSize(targetSize),
             cursorInfo(cursorInfo),
-            options(options)
+            options(options),
+            topClipOffset(0),
+            bottomClipOffset(0)
         {
         }
 
         ID2D1RenderTarget* renderTarget;
         ID2D1SolidColorBrush* foregroundBrush;
         ID2D1SolidColorBrush* backgroundBrush;
+        bool useBoldFont;
         bool useItalicFont;
         bool forceGrayscaleAA;
         IDWriteFactory* dwriteFactory;
@@ -46,6 +50,8 @@ namespace Microsoft::Console::Render
         D2D_SIZE_F targetSize;
         std::optional<CursorOptions> cursorInfo;
         D2D1_DRAW_TEXT_OPTIONS options;
+        FLOAT topClipOffset;
+        FLOAT bottomClipOffset;
     };
 
     // Helper to choose which Direct2D method to use when drawing the cursor rectangle
@@ -55,7 +61,8 @@ namespace Microsoft::Console::Render
         Outline
     };
 
-    constexpr const ULONG MinCursorHeightPercent = 25;
+    constexpr const ULONG MinCursorHeightPixels = 1;
+    constexpr const ULONG MinCursorHeightPercent = 1;
     constexpr const ULONG MaxCursorHeightPercent = 100;
 
     class CustomTextRenderer : public ::Microsoft::WRL::RuntimeClass<::Microsoft::WRL::RuntimeClassFlags<::Microsoft::WRL::ClassicCom | ::Microsoft::WRL::InhibitFtmBase>, IDWriteTextRenderer>
@@ -104,6 +111,11 @@ namespace Microsoft::Console::Render
                                                                  IUnknown* clientDrawingEffect) noexcept override;
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE EndClip(void* clientDrawingContext) noexcept;
+
+        [[nodiscard]] static HRESULT DrawCursor(gsl::not_null<ID2D1DeviceContext*> d2dContext,
+                                                D2D1_RECT_F textRunBounds,
+                                                const DrawingContext& drawingContext,
+                                                const bool firstPass);
 
     private:
         [[nodiscard]] HRESULT _FillRectangle(void* clientDrawingContext,

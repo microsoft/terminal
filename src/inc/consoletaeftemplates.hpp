@@ -17,10 +17,12 @@ Revision History:
 
 #pragma once
 
+#include <til/bit.h>
+
 // Helper for declaring a variable to store a TEST_METHOD_PROPERTY and get it's value from the test metadata
-#define INIT_TEST_PROPERTY(type, identifer, description) \
-    type identifer;                                      \
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L#identifer, identifer), description);
+#define INIT_TEST_PROPERTY(type, identifier, description) \
+    type identifier;                                      \
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L## #identifier, identifier), description);
 
 // Thinking of adding a new VerifyOutputTraits for a new type? MAKE SURE that
 // you include this header (or at least the relevant definition) before _every_
@@ -43,6 +45,45 @@ Revision History:
 
 namespace WEX::TestExecution
 {
+    // Compare two floats using a ULP (unit last place) tolerance of up to 4.
+    // Allows you to compare two floats that are almost equal.
+    // Think of: 0.200000000000000 vs. 0.200000000000001.
+    template<typename T, typename U>
+    bool CompareFloats(T a, T b) noexcept
+    {
+        if (std::isnan(a))
+        {
+            return std::isnan(b);
+        }
+
+        if (a == b)
+        {
+            return true;
+        }
+
+        const auto nDiff = static_cast<std::make_signed_t<U>>(til::bit_cast<U>(a) - til::bit_cast<U>(b));
+        const auto uDiff = static_cast<U>(nDiff < 0 ? -nDiff : nDiff);
+        return uDiff <= 4;
+    }
+
+    template<>
+    struct VerifyCompareTraits<float, float>
+    {
+        static bool AreEqual(float a, float b) noexcept
+        {
+            return CompareFloats<float, uint32_t>(a, b);
+        }
+    };
+
+    template<>
+    struct VerifyCompareTraits<double, double>
+    {
+        static bool AreEqual(double a, double b) noexcept
+        {
+            return CompareFloats<double, uint64_t>(a, b);
+        }
+    };
+
     template<>
     class VerifyOutputTraits<SMALL_RECT>
     {
@@ -201,65 +242,13 @@ namespace WEX::TestExecution
     public:
         static bool AreEqual(const CONSOLE_SCREEN_BUFFER_INFOEX& expected, const CONSOLE_SCREEN_BUFFER_INFOEX& actual)
         {
-            return expected.bFullscreenSupported == actual.bFullscreenSupported &&
-                   expected.wAttributes == actual.wAttributes &&
-                   expected.wPopupAttributes == actual.wPopupAttributes &&
-                   VerifyCompareTraits<COORD>::AreEqual(expected.dwCursorPosition, actual.dwCursorPosition) &&
-                   VerifyCompareTraits<COORD>::AreEqual(expected.dwSize, actual.dwSize) &&
-                   VerifyCompareTraits<COORD>::AreEqual(expected.dwMaximumWindowSize, actual.dwMaximumWindowSize) &&
-                   VerifyCompareTraits<SMALL_RECT>::AreEqual(expected.srWindow, actual.srWindow) &&
-                   expected.ColorTable[0] == actual.ColorTable[0] &&
-                   expected.ColorTable[1] == actual.ColorTable[1] &&
-                   expected.ColorTable[2] == actual.ColorTable[2] &&
-                   expected.ColorTable[3] == actual.ColorTable[3] &&
-                   expected.ColorTable[4] == actual.ColorTable[4] &&
-                   expected.ColorTable[5] == actual.ColorTable[5] &&
-                   expected.ColorTable[6] == actual.ColorTable[6] &&
-                   expected.ColorTable[7] == actual.ColorTable[7] &&
-                   expected.ColorTable[8] == actual.ColorTable[8] &&
-                   expected.ColorTable[9] == actual.ColorTable[9] &&
-                   expected.ColorTable[10] == actual.ColorTable[10] &&
-                   expected.ColorTable[11] == actual.ColorTable[11] &&
-                   expected.ColorTable[12] == actual.ColorTable[12] &&
-                   expected.ColorTable[13] == actual.ColorTable[13] &&
-                   expected.ColorTable[14] == actual.ColorTable[14] &&
-                   expected.ColorTable[15] == actual.ColorTable[15];
+            static_assert(std::has_unique_object_representations_v<CONSOLE_SCREEN_BUFFER_INFOEX>);
+            return memcmp(&expected, &actual, sizeof(CONSOLE_SCREEN_BUFFER_INFOEX)) == 0;
         }
 
         static bool AreSame(const CONSOLE_SCREEN_BUFFER_INFOEX& expected, const CONSOLE_SCREEN_BUFFER_INFOEX& actual)
         {
             return &expected == &actual;
-        }
-
-        static bool IsLessThan(const CONSOLE_SCREEN_BUFFER_INFOEX& expectedLess, const CONSOLE_SCREEN_BUFFER_INFOEX& expectedGreater) = delete;
-
-        static bool IsGreaterThan(const CONSOLE_SCREEN_BUFFER_INFOEX& expectedGreater, const CONSOLE_SCREEN_BUFFER_INFOEX& expectedLess) = delete;
-
-        static bool IsNull(const CONSOLE_SCREEN_BUFFER_INFOEX& object)
-        {
-            return object.bFullscreenSupported == 0 &&
-                   object.wAttributes == 0 &&
-                   object.wPopupAttributes == 0 &&
-                   VerifyCompareTraits<COORD>::IsNull(object.dwCursorPosition) &&
-                   VerifyCompareTraits<COORD>::IsNull(object.dwSize) &&
-                   VerifyCompareTraits<COORD>::IsNull(object.dwMaximumWindowSize) &&
-                   VerifyCompareTraits<SMALL_RECT>::IsNull(object.srWindow) &&
-                   object.ColorTable[0] == 0x0 &&
-                   object.ColorTable[1] == 0x0 &&
-                   object.ColorTable[2] == 0x0 &&
-                   object.ColorTable[3] == 0x0 &&
-                   object.ColorTable[4] == 0x0 &&
-                   object.ColorTable[5] == 0x0 &&
-                   object.ColorTable[6] == 0x0 &&
-                   object.ColorTable[7] == 0x0 &&
-                   object.ColorTable[8] == 0x0 &&
-                   object.ColorTable[9] == 0x0 &&
-                   object.ColorTable[10] == 0x0 &&
-                   object.ColorTable[11] == 0x0 &&
-                   object.ColorTable[12] == 0x0 &&
-                   object.ColorTable[13] == 0x0 &&
-                   object.ColorTable[14] == 0x0 &&
-                   object.ColorTable[15] == 0x0;
         }
     };
 
@@ -270,73 +259,60 @@ namespace WEX::TestExecution
         static WEX::Common::NoThrowString ToString(const INPUT_RECORD& ir)
         {
             SetVerifyOutput verifySettings(VerifyOutputSettings::LogOnlyFailures);
-            WCHAR szBuf[1024];
-            VERIFY_SUCCEEDED(StringCchCopy(szBuf, ARRAYSIZE(szBuf), L"(ev: "));
+
+            WEX::Common::NoThrowString str;
+            str.Append(L"(ev: ");
+
             switch (ir.EventType)
             {
             case FOCUS_EVENT:
             {
-                WCHAR szFocus[512];
-                VERIFY_SUCCEEDED(StringCchPrintf(szFocus,
-                                                 ARRAYSIZE(szFocus),
-                                                 L"FOCUS set: %s)",
-                                                 ir.Event.FocusEvent.bSetFocus ? L"T" : L"F"));
-                VERIFY_SUCCEEDED(StringCchCat(szBuf, ARRAYSIZE(szBuf), szFocus));
+                str.AppendFormat(
+                    L"FOCUS set: %s)",
+                    ir.Event.FocusEvent.bSetFocus ? L"T" : L"F");
                 break;
             }
 
             case KEY_EVENT:
             {
-                WCHAR szKey[512];
-                VERIFY_SUCCEEDED(StringCchPrintf(szKey,
-                                                 ARRAYSIZE(szKey),
-                                                 L"KEY down: %s reps: %d kc: 0x%x sc: 0x%x uc: %d ctl: 0x%x)",
-                                                 ir.Event.KeyEvent.bKeyDown ? L"T" : L"F",
-                                                 ir.Event.KeyEvent.wRepeatCount,
-                                                 ir.Event.KeyEvent.wVirtualKeyCode,
-                                                 ir.Event.KeyEvent.wVirtualScanCode,
-                                                 ir.Event.KeyEvent.uChar.UnicodeChar,
-                                                 ir.Event.KeyEvent.dwControlKeyState));
-                VERIFY_SUCCEEDED(StringCchCat(szBuf, ARRAYSIZE(szBuf), szKey));
+                str.AppendFormat(
+                    L"KEY down: %s reps: %d kc: 0x%x sc: 0x%x uc: %d ctl: 0x%x)",
+                    ir.Event.KeyEvent.bKeyDown ? L"T" : L"F",
+                    ir.Event.KeyEvent.wRepeatCount,
+                    ir.Event.KeyEvent.wVirtualKeyCode,
+                    ir.Event.KeyEvent.wVirtualScanCode,
+                    ir.Event.KeyEvent.uChar.UnicodeChar,
+                    ir.Event.KeyEvent.dwControlKeyState);
                 break;
             }
 
             case MENU_EVENT:
             {
-                WCHAR szMenu[512];
-                VERIFY_SUCCEEDED(StringCchPrintf(szMenu,
-                                                 ARRAYSIZE(szMenu),
-                                                 L"MENU cmd: %d (0x%x))",
-                                                 ir.Event.MenuEvent.dwCommandId,
-                                                 ir.Event.MenuEvent.dwCommandId));
-                VERIFY_SUCCEEDED(StringCchCat(szBuf, ARRAYSIZE(szBuf), szMenu));
+                str.AppendFormat(
+                    L"MENU cmd: %d (0x%x))",
+                    ir.Event.MenuEvent.dwCommandId,
+                    ir.Event.MenuEvent.dwCommandId);
                 break;
             }
 
             case MOUSE_EVENT:
             {
-                WCHAR szMouse[512];
-                VERIFY_SUCCEEDED(StringCchPrintf(szMouse,
-                                                 ARRAYSIZE(szMouse),
-                                                 L"MOUSE pos: (%d, %d) buttons: 0x%x ctl: 0x%x evflags: 0x%x)",
-                                                 ir.Event.MouseEvent.dwMousePosition.X,
-                                                 ir.Event.MouseEvent.dwMousePosition.Y,
-                                                 ir.Event.MouseEvent.dwButtonState,
-                                                 ir.Event.MouseEvent.dwControlKeyState,
-                                                 ir.Event.MouseEvent.dwEventFlags));
-                VERIFY_SUCCEEDED(StringCchCat(szBuf, ARRAYSIZE(szBuf), szMouse));
+                str.AppendFormat(
+                    L"MOUSE pos: (%d, %d) buttons: 0x%x ctl: 0x%x evflags: 0x%x)",
+                    ir.Event.MouseEvent.dwMousePosition.X,
+                    ir.Event.MouseEvent.dwMousePosition.Y,
+                    ir.Event.MouseEvent.dwButtonState,
+                    ir.Event.MouseEvent.dwControlKeyState,
+                    ir.Event.MouseEvent.dwEventFlags);
                 break;
             }
 
             case WINDOW_BUFFER_SIZE_EVENT:
             {
-                WCHAR szBufferSize[512];
-                VERIFY_SUCCEEDED(StringCchPrintf(szBufferSize,
-                                                 ARRAYSIZE(szBufferSize),
-                                                 L"WINDOW_BUFFER_SIZE (%d, %d)",
-                                                 ir.Event.WindowBufferSizeEvent.dwSize.X,
-                                                 ir.Event.WindowBufferSizeEvent.dwSize.Y));
-                VERIFY_SUCCEEDED(StringCchCat(szBuf, ARRAYSIZE(szBuf), szBufferSize));
+                str.AppendFormat(
+                    L"WINDOW_BUFFER_SIZE (%d, %d)",
+                    ir.Event.WindowBufferSizeEvent.dwSize.X,
+                    ir.Event.WindowBufferSizeEvent.dwSize.Y);
                 break;
             }
 
@@ -344,7 +320,7 @@ namespace WEX::TestExecution
                 VERIFY_FAIL(L"ERROR: unknown input event type encountered");
             }
 
-            return WEX::Common::NoThrowString(szBuf);
+            return str;
         }
     };
 
@@ -529,10 +505,10 @@ namespace WEX::TestExecution
         static WEX::Common::NoThrowString ToString(const CHAR_INFO& ci)
         {
             // 0x2400 is the Unicode symbol for a printable 'NUL' inscribed in a 1 column block. It's for communicating NUL without printing 0x0.
-            wchar_t const wch = ci.Char.UnicodeChar != L'\0' ? ci.Char.UnicodeChar : 0x2400;
+            const wchar_t wch = ci.Char.UnicodeChar != L'\0' ? ci.Char.UnicodeChar : 0x2400;
 
             // 0x20 is a standard space character.
-            char const ch = ci.Char.AsciiChar != '\0' ? ci.Char.AsciiChar : 0x20;
+            const char ch = ci.Char.AsciiChar != '\0' ? ci.Char.AsciiChar : 0x20;
 
             return WEX::Common::NoThrowString().Format(L"Unicode Char: %lc (0x%x),  Attributes: 0x%x,  [Ascii Char: %c (0x%hhx)]",
                                                        wch,
@@ -569,36 +545,58 @@ namespace WEX::TestExecution
     };
 
     template<>
+    class VerifyOutputTraits<std::string_view>
+    {
+    public:
+        static WEX::Common::NoThrowString ToString(const std::string_view& view)
+        {
+            if (view.empty())
+            {
+                return L"<empty>";
+            }
+
+            WEX::Common::NoThrowString s;
+            s.AppendFormat(L"%.*hs", gsl::narrow_cast<unsigned int>(view.size()), view.data());
+            return s;
+        }
+    };
+
+    template<>
     class VerifyOutputTraits<std::wstring_view>
     {
     public:
         static WEX::Common::NoThrowString ToString(const std::wstring_view& view)
         {
+            if (view.empty())
+            {
+                return L"<empty>";
+            }
+
             return WEX::Common::NoThrowString(view.data(), gsl::narrow<int>(view.size()));
         }
     };
 
-    template<>
-    class VerifyCompareTraits<std::wstring_view, std::wstring_view>
+    template<typename Elem>
+    class VerifyCompareTraits<std::basic_string_view<Elem>, std::basic_string_view<Elem>>
     {
     public:
-        static bool AreEqual(const std::wstring_view& expected, const std::wstring_view& actual)
+        static bool AreEqual(const std::basic_string_view<Elem>& expected, const std::basic_string_view<Elem>& actual)
         {
             return expected == actual;
         }
 
-        static bool AreSame(const std::wstring_view& expected, const std::wstring_view& actual)
+        static bool AreSame(const std::basic_string_view<Elem>& expected, const std::basic_string_view<Elem>& actual)
         {
             return expected.data() == actual.data();
         }
 
-        static bool IsLessThan(const std::wstring_view&, const std::wstring_view&) = delete;
+        static bool IsLessThan(const std::basic_string_view<Elem>&, const std::basic_string_view<Elem>&) = delete;
 
-        static bool IsGreaterThan(const std::wstring_view&, const std::wstring_view&) = delete;
+        static bool IsGreaterThan(const std::basic_string_view<Elem>&, const std::basic_string_view<Elem>&) = delete;
 
-        static bool IsNull(const std::wstring_view& object)
+        static bool IsNull(const std::basic_string_view<Elem>& object)
         {
-            return object.size() == 0;
+            return object.empty();
         }
     };
 }

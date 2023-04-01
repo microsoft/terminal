@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef __INSIDE_WINDOWS
+#if !TIL_FEATURE_DXENGINESHADERSUPPORT_ENABLED
 const char screenVertexShaderString[] = "";
 #else
 const char screenVertexShaderString[] = R"(

@@ -51,6 +51,8 @@ public:
 
     void LogRipMessage(_In_z_ const char* pszMessage, ...) const;
 
+    bool IsUserInteractive();
+
     // Names are from the external API call names.  Note that some names can be different
     // than the internal API calls.
     // Don't worry about the following APIs, because they are external to our conhost codebase and hard to track through
@@ -127,8 +129,8 @@ private:
     // Used to prevent multiple instances
     Telemetry();
     ~Telemetry();
-    Telemetry(Telemetry const&);
-    void operator=(Telemetry const&);
+    Telemetry(const Telemetry&);
+    void operator=(const Telemetry&);
 
     bool FindProcessName(const WCHAR* pszProcessName, _Out_ size_t* iPosition) const;
     void TotalCodesForPreviousProcess();

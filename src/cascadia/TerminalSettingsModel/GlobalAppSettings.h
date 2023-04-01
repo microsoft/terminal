@@ -17,10 +17,14 @@ Author(s):
 
 #include "GlobalAppSettings.g.h"
 #include "IInheritable.h"
+#include "MTSMSettings.h"
 
-#include "KeyMapping.h"
+#include "ActionMap.h"
 #include "Command.h"
 #include "ColorScheme.h"
+#include "Theme.h"
+#include "NewTabMenuEntry.h"
+#include "RemainingProfilesEntry.h"
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
@@ -34,7 +38,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct GlobalAppSettings : GlobalAppSettingsT<GlobalAppSettings>, IInheritable<GlobalAppSettings>
     {
     public:
-        GlobalAppSettings();
         void _FinalizeInheritance() override;
         com_ptr<GlobalAppSettings> Copy() const;
 
@@ -42,71 +45,47 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void AddColorScheme(const Model::ColorScheme& scheme);
         void RemoveColorScheme(hstring schemeName);
 
-        Model::KeyMapping KeyMap() const noexcept;
+        Model::ActionMap ActionMap() const noexcept;
 
         static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
 
         Json::Value ToJson() const;
 
-        std::vector<SettingsLoadWarnings> KeybindingsWarnings() const;
+        const std::vector<SettingsLoadWarnings>& KeybindingsWarnings() const;
 
-        Windows::Foundation::Collections::IMapView<hstring, Model::Command> Commands() noexcept;
-
-        // These are implemented manually to handle the string/GUID exchange
-        // by higher layers in the app.
+        // This DefaultProfile() setter is called by CascadiaSettings,
+        // when it parses UnparsedDefaultProfile in _finalizeSettings().
         void DefaultProfile(const guid& defaultProfile) noexcept;
         guid DefaultProfile() const;
-        bool HasUnparsedDefaultProfile() const;
-        winrt::hstring UnparsedDefaultProfile() const;
-        void UnparsedDefaultProfile(const hstring& value);
-        void ClearUnparsedDefaultProfile();
 
-        INHERITABLE_SETTING(Model::GlobalAppSettings, int32_t, InitialRows, DEFAULT_ROWS);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, int32_t, InitialCols, DEFAULT_COLS);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysShowTabs, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ShowTitleInTitlebar, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ConfirmCloseAllTabs, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ShowTabsInTitlebar, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, CopyOnSelect, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, InputServiceWarning, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormatting, 0);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, WarnAboutLargePaste, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, WarnAboutMultiLinePaste, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::LaunchPosition, InitialPosition, nullptr, nullptr);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, CenterOnLaunch, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::LaunchMode, LaunchMode, LaunchMode::DefaultMode);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, SnapToGridOnResize, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ForceFullRepaintRendering, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, SoftwareRendering, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ForceVTInput, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DebugFeaturesEnabled, _getDefaultDebugFeaturesValue());
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, StartOnUserLogin, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysOnTop, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::TabSwitcherMode, TabSwitcherMode, Model::TabSwitcherMode::InOrder);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DisableAnimations, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, StartupActions, L"");
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, FocusFollowMouse, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::WindowingMode, WindowingBehavior, Model::WindowingMode::UseNew);
+        Windows::Foundation::Collections::IMapView<hstring, Model::Theme> Themes() noexcept;
+        void AddTheme(const Model::Theme& theme);
+        Model::Theme CurrentTheme() noexcept;
+        bool ShouldUsePersistedLayout() const;
+
+        void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
+                            const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes);
+
+        INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
+
+#define GLOBAL_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
+    INHERITABLE_SETTING(Model::GlobalAppSettings, type, name, ##__VA_ARGS__)
+        MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_INITIALIZE)
+#undef GLOBAL_SETTINGS_INITIALIZE
 
     private:
-        guid _defaultProfile;
-        std::optional<hstring> _UnparsedDefaultProfile{ std::nullopt };
-        bool _validDefaultProfile;
+#ifdef NDEBUG
+        static constexpr bool debugFeaturesDefault{ false };
+#else
+        static constexpr bool debugFeaturesDefault{ true };
+#endif
 
-        com_ptr<KeyMapping> _keymap;
+        winrt::guid _defaultProfile;
+        winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };
+
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;
-
-        Windows::Foundation::Collections::IMap<hstring, Model::ColorScheme> _colorSchemes;
-        Windows::Foundation::Collections::IMap<hstring, Model::Command> _commands;
-
-        std::optional<hstring> _getUnparsedDefaultProfileImpl() const;
-        static bool _getDefaultDebugFeaturesValue();
-
-        friend class SettingsModelLocalTests::DeserializationTests;
-        friend class SettingsModelLocalTests::ColorSchemeTests;
+        Windows::Foundation::Collections::IMap<winrt::hstring, Model::ColorScheme> _colorSchemes{ winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>() };
+        Windows::Foundation::Collections::IMap<winrt::hstring, Model::Theme> _themes{ winrt::single_threaded_map<winrt::hstring, Model::Theme>() };
     };
 }

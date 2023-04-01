@@ -16,11 +16,11 @@ static DWORD GetVersion(_In_ PCWSTR pwszDllName)
 
     // We have to call for ComCtl32.dll without a path name so Fusion SxS will redirect us
     // if it thinks we are manifested properly and Fusion is enabled in this process space.
-    HINSTANCE const hinstDll = LoadLibrary(pwszDllName);
+    const auto hinstDll = LoadLibrary(pwszDllName);
 
     if (nullptr != hinstDll)
     {
-        DLLGETVERSIONPROC const pDllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(hinstDll, "DllGetVersion");
+        const auto pDllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(hinstDll, "DllGetVersion");
 
         // Because some DLLs might not implement this function, you must test for
         // it explicitly. Depending on the particular DLL, the lack of a DllGetVersion
@@ -44,9 +44,9 @@ static DWORD GetVersion(_In_ PCWSTR pwszDllName)
 
 static bool IsComCtlV6Present()
 {
-    PCWSTR pwszDllName = L"ComCtl32.dll";
-    DWORD const dwVer = GetVersion(pwszDllName);
-    DWORD const dwTarget = PACKVERSION(6, 0);
+    auto pwszDllName = L"ComCtl32.dll";
+    const auto dwVer = GetVersion(pwszDllName);
+    const auto dwTarget = PACKVERSION(6, 0);
 
     if (dwVer >= dwTarget)
     {
@@ -67,7 +67,7 @@ BOOL InitializeConsoleState()
     OEMCP = GetOEMCP();
     g_fIsComCtlV6Present = IsComCtlV6Present();
 
-    return NT_SUCCESS(InitializeDbcsMisc());
+    return SUCCEEDED_NTSTATUS(InitializeDbcsMisc());
 }
 
 void UninitializeConsoleState()

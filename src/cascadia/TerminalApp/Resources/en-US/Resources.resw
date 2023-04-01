@@ -1,17 +1,17 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!--
-    Microsoft ResX Schema
-
+  <!-- 
+    Microsoft ResX Schema 
+    
     Version 2.0
-
-    The primary goals of this format is to allow a simple XML format
-    that is mostly human readable. The generation and parsing of the
-    various data types are done through the TypeConverter classes
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
     associated with the data types.
-
+    
     Example:
-
+    
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-
-    There are any number of "resheader" rows that contain simple
+                
+    There are any number of "resheader" rows that contain simple 
     name/value pairs.
-
-    Each data row contains a name, and value. The row also contains a
-    type or mimetype. Type corresponds to a .NET class that support
-    text/value conversion through the TypeConverter architecture.
-    Classes that don't support this are serialized and stored with the
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
     mimetype set.
-
-    The mimetype is used for serialized objects, and tells the
-    ResXResourceReader how to depersist the object. This is currently not
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
     extensible. For a given mimetype the value must be set accordingly:
-
-    Note - application/x-microsoft.net.object.binary.base64 is the format
-    that the ResXResourceWriter will generate, however the reader can
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
     read any of the formats listed below.
-
+    
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-
+    
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array
+    value   : The object must be serialized into a byte array 
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -184,8 +184,14 @@
   <data name="CloseAll" xml:space="preserve">
     <value>Close all</value>
   </data>
+  <data name="Quit" xml:space="preserve">
+    <value>Quit</value>
+  </data>
   <data name="CloseWindowWarningTitle" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
+  </data>
+  <data name="MultiplePanes" xml:space="preserve">
+    <value>Multiple panes</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>Close...</value>
@@ -198,6 +204,15 @@
   </data>
   <data name="TabClose" xml:space="preserve">
     <value>Close Tab</value>
+  </data>
+  <data name="PaneClose" xml:space="preserve">
+    <value>Close Pane</value>
+  </data>
+  <data name="SplitTabText" xml:space="preserve">
+    <value>Split Tab</value>
+  </data>
+  <data name="SplitPaneText" xml:space="preserve">
+    <value>Split Pane</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
     <value>Color...</value>
@@ -226,12 +241,19 @@
     <value>Warnings were found while parsing your keybindings:</value>
   </data>
   <data name="TooManyKeysForChord" xml:space="preserve">
-    <value>&#x2022; Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.</value>
-    <comment>{Locked="\"keys\"","&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
+    <value>• Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.</value>
+    <comment>{Locked="\"keys\"","•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="FailedToParseSubCommands" xml:space="preserve">
+    <value>• Failed to parse all subcommands of nested command.</value>
   </data>
   <data name="MissingRequiredParameter" xml:space="preserve">
-    <value>&#x2022; Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
-    <comment>{Locked="&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
+    <value>• Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="UnknownTheme" xml:space="preserve">
+    <value>• The specified "theme" was not found in the list of themes. Temporarily falling back to the default value.</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
   <data name="LegacyGlobalsProperty" xml:space="preserve">
     <value>The "globals" property is deprecated - your settings might need updating. </value>
@@ -282,6 +304,16 @@
   <data name="CmdFocusTabTargetArgDesc" xml:space="preserve">
     <value>Move focus the tab at the given index</value>
   </data>
+  <data name="CmdMovePaneTabArgDesc" xml:space="preserve">
+    <value>Move focused pane to the tab at the given index</value>
+  </data>
+  <data name="CmdMovePaneDesc" xml:space="preserve">
+    <value>Move focused pane to another tab</value>
+  </data>
+  <data name="CmdMPDesc" xml:space="preserve">
+    <value>An alias for the "move-pane" subcommand.</value>
+    <comment>{Locked="\"move-pane\""}</comment>
+  </data>
   <data name="CmdSplitPaneSizeArgDesc" xml:space="preserve">
     <value>Specify the size as a percentage of the parent pane. Valid values are between (0,1), exclusive.</value>
   </data>
@@ -291,6 +323,16 @@
   <data name="CmdNTDesc" xml:space="preserve">
     <value>An alias for the "new-tab" subcommand.</value>
     <comment>{Locked="\"new-tab\""}</comment>
+  </data>
+  <data name="CmdFocusPaneDesc" xml:space="preserve">
+    <value>Move focus to another pane</value>
+  </data>
+  <data name="CmdFPDesc" xml:space="preserve">
+    <value>An alias for the "focus-pane" subcommand.</value>
+    <comment>{Locked="\"focus-pane\""}</comment>
+  </data>
+  <data name="CmdFocusPaneTargetArgDesc" xml:space="preserve">
+    <value>Focus the pane at the given index</value>
   </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>Open with the given profile. Accepts either the name or GUID of a profile</value>
@@ -308,6 +350,9 @@
   <data name="CmdSplitPaneVerticalArgDesc" xml:space="preserve">
     <value>Create the new pane as a vertical split (think [|])</value>
   </data>
+  <data name="CmdSplitPaneDuplicateArgDesc" xml:space="preserve">
+    <value>Create the new pane by duplicating the profile of the focused pane</value>
+  </data>
   <data name="CmdStartingDirArgDesc" xml:space="preserve">
     <value>Open in the given directory instead of the profile's set "startingDirectory"</value>
     <comment>{Locked="\"startingDirectory\""}</comment>
@@ -318,6 +363,14 @@
   </data>
   <data name="CmdTabColorArgDesc" xml:space="preserve">
     <value>Open the tab with the specified color, in #rrggbb format</value>
+  </data>
+  <data name="CmdSuppressApplicationTitleDesc" xml:space="preserve">
+    <value>Open the tab with tabTitle overriding default title and suppressing title change messages from the application</value>
+    <comment>{Locked="\"tabTitle\""}</comment>
+  </data>
+  <data name="CmdColorSchemeArgDesc" xml:space="preserve">
+    <value>Open the tab with the specified color scheme, instead of the profile's set "colorScheme"</value>
+    <comment>{Locked="\"colorScheme\""}</comment>
   </data>
   <data name="CmdVersionDesc" xml:space="preserve">
     <value>Display the application version</value>
@@ -338,11 +391,26 @@
   <data name="CmdMoveFocusDirectionArgDesc" xml:space="preserve">
     <value>The direction to move focus in</value>
   </data>
+  <data name="CmdSwapPaneDesc" xml:space="preserve">
+    <value>Swap the focused pane with the adjacent pane in the specified direction</value>
+  </data>
+  <data name="CmdSwapPaneDirectionArgDesc" xml:space="preserve">
+    <value>The direction to move the focused pane in</value>
+  </data>
   <data name="CmdFocusDesc" xml:space="preserve">
     <value>Launch the window in focus mode</value>
   </data>
+  <data name="CmdSavedLayoutArgDesc" xml:space="preserve">
+    <value>This parameter is an internal implementation detail and should not be used.</value>
+  </data>
   <data name="CmdWindowTargetArgDesc" xml:space="preserve">
     <value>Specify a terminal window to run the given commandline in. "0" always refers to the current window. </value>
+  </data>
+  <data name="CmdPositionDesc" xml:space="preserve">
+    <value>Specify the position for the terminal, in "x,y" format.</value>
+  </data>
+  <data name="CmdSizeDesc" xml:space="preserve">
+    <value>Specify the number of columns and rows for the terminal, in "c,r" format.</value>
   </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Press the button to open a new terminal tab with your default profile. Open the flyout to select which profile you want to open.</value>
@@ -356,16 +424,22 @@
   <data name="NewPaneRun.Text" xml:space="preserve">
     <value>Alt+Click to split the current window</value>
   </data>
+  <data name="NewWindowRun.Text" xml:space="preserve">
+    <value>Shift+Click to open a new window</value>
+  </data>
+  <data name="ElevatedRun.Text" xml:space="preserve">
+    <value>Ctrl+Click to open as administrator</value>
+  </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Close</value>
   </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Close</value>
   </data>
-  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Maximize</value>
+  <data name="WindowCloseButtonToolTip.Text" xml:space="preserve">
+    <value>Close</value>
   </data>
-  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Maximize</value>
   </data>
   <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -374,8 +448,14 @@
   <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Minimize</value>
   </data>
+  <data name="WindowMinimizeButtonToolTip.Text" xml:space="preserve">
+    <value>Minimize</value>
+  </data>
   <data name="AboutDialog.Title" xml:space="preserve">
     <value>About</value>
+  </data>
+  <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Send Feedback</value>
   </data>
   <data name="AboutDialog.CloseButtonText" xml:space="preserve">
     <value>OK</value>
@@ -387,6 +467,10 @@
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
     <value>Getting Started</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
+  </data>
+  <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
+    <value>Source Code</value>
+    <comment>A hyperlink name for the Terminal's documentation</comment>
   </data>
   <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
     <value>Documentation</value>
@@ -404,6 +488,15 @@
     <value>Third-Party Notices</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
+  <data name="QuitDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="QuitDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Close all</value>
+  </data>
+  <data name="QuitDialog.Title" xml:space="preserve">
+    <value>Do you want to close all windows?</value>
+  </data>
   <data name="CloseAllDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
@@ -414,10 +507,10 @@
     <value>Do you want to close all tabs?</value>
   </data>
   <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
-    <value>Close anyway</value>
+    <value>Cancel</value>
   </data>
   <data name="CloseReadOnlyDialog.PrimaryButtonText" xml:space="preserve">
-    <value>Cancel</value>
+    <value>Close anyway</value>
   </data>
   <data name="CloseReadOnlyDialog.Title" xml:space="preserve">
     <value>Warning</value>
@@ -454,6 +547,22 @@
   </data>
   <data name="CommandPalette_NoMatchesText.Text" xml:space="preserve">
     <value>No matching commands</value>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_ActionMode" xml:space="preserve">
+    <value>Action search mode</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into action (command search) mode.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_TabSearchSwitchMode" xml:space="preserve">
+    <value>Tab title mode</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into a mode that filters tab names.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_CommandlineMode" xml:space="preserve">
+    <value>Command-line mode</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into the raw commandline parsing mode.</comment>
+  </data>
+  <data name="CommandPalette_NestedCommandAnnouncement" xml:space="preserve">
+    <value>More options for "{}"</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
   </data>
   <data name="CommandPalette_ParsedCommandLine" xml:space="preserve">
     <value>Executing command line will invoke the following commands:</value>
@@ -567,5 +676,136 @@
   </data>
   <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>More options</value>
+  </data>
+  <data name="WindowIdLabel" xml:space="preserve">
+    <value>Window</value>
+    <comment>This is displayed as a label for a number, like "Window: 10"</comment>
+  </data>
+  <data name="UnnamedWindowName" xml:space="preserve">
+    <value>unnamed window</value>
+    <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
+  </data>
+  <data name="WindowRenamer.Subtitle" xml:space="preserve">
+    <value>Enter a new name:</value>
+  </data>
+  <data name="WindowRenamer.ActionButtonContent" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="RenameFailedToast.Title" xml:space="preserve">
+    <value>Failed to rename window</value>
+  </data>
+  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
+    <value>Another window with that name already exists</value>
+  </data>
+  <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
+    <value>Maximize</value>
+  </data>
+  <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
+    <value>Restore Down</value>
+  </data>
+  <data name="CommandPaletteMenuItem" xml:space="preserve">
+    <value>Command Palette</value>
+  </data>
+  <data name="NotificationIconFocusTerminal" xml:space="preserve">
+    <value>Focus Terminal</value>
+    <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>
+  </data>
+  <data name="NotificationIconWindowSubmenu" xml:space="preserve">
+    <value>Windows</value>
+    <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
+  </data>
+  <data name="DropPathTabRun.Text" xml:space="preserve">
+    <value>Open a new tab in given starting directory</value>
+  </data>
+  <data name="DropPathTabNewWindow.Text" xml:space="preserve">
+    <value>Open a new window with given starting directory</value>
+  </data>
+  <data name="DropPathTabSplit.Text" xml:space="preserve">
+    <value>Split the window and start in given directory</value>
+  </data>
+  <data name="ExportTabText" xml:space="preserve">
+    <value>Export Text</value>
+  </data>
+  <data name="ExportFailure" xml:space="preserve">
+    <value>Failed to export terminal content</value>
+  </data>
+  <data name="ExportSuccess" xml:space="preserve">
+    <value>Successfully exported terminal content</value>
+  </data>
+  <data name="FindText" xml:space="preserve">
+    <value>Find</value>
+  </data>
+  <data name="PlainText" xml:space="preserve">
+    <value>Plain Text</value>
+  </data>
+  <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
+    <value>Termination behavior can be configured in advanced profile settings.</value>
+  </data>
+  <data name="SetAsDefaultInfoBar.Message" xml:space="preserve">
+    <value>Windows Terminal can be set as the default terminal application in your settings.</value>
+  </data>
+  <data name="InfoBarDismissButton.Content" xml:space="preserve">
+    <value>Don't show again</value>
+  </data>
+  <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>This Terminal window is running as Admin</value>
+  </data>
+  <data name="SetAsDefaultTip_OpenSettingsLink.Content" xml:space="preserve">
+    <value>Open Settings</value>
+    <comment>This is a call-to-action hyperlink; it will open the settings.</comment>
+  </data>
+  <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
+    <value>Suggestions found: {0}</value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="DuplicateRemainingProfilesEntry" xml:space="preserve">
+    <value>The "newTabMenu" field contains more than one entry of type "remainingProfiles". Only the first one will be considered.</value>
+    <comment>{Locked="newTabMenu"} {Locked="remainingProfiles"}</comment>
+  </data>
+  <data name="InvalidUseOfContent" xml:space="preserve">
+    <value>The "__content" property is reserved for internal use</value>
+    <comment>{Locked="__content"}</comment>
+  </data>
+  <data name="AboutToolTip" xml:space="preserve">
+    <value>Open a dialog containing product information</value>
+  </data>
+  <data name="ChooseColorToolTip" xml:space="preserve">
+    <value>Open the color picker to choose the color of this tab</value>
+  </data>
+  <data name="CommandPaletteToolTip" xml:space="preserve">
+    <value>Open the command palette</value>
+  </data>
+  <data name="DuplicateTabToolTip" xml:space="preserve">
+    <value>Open a new tab using the active profile in the current directory</value>
+  </data>
+  <data name="ExportTabToolTip" xml:space="preserve">
+    <value>Export the contents of the text buffer into a text file</value>
+  </data>
+  <data name="FindToolTip" xml:space="preserve">
+    <value>Open the search dialog</value>
+  </data>
+  <data name="RenameTabToolTip" xml:space="preserve">
+    <value>Rename this tab</value>
+  </data>
+  <data name="SettingsToolTip" xml:space="preserve">
+    <value>Open the settings page</value>
+  </data>
+  <data name="SplitTabToolTip" xml:space="preserve">
+    <value>Open a new pane using the active profile in the current directory</value>
+  </data>
+  <data name="TabCloseAfterToolTip" xml:space="preserve">
+    <value>Close all tabs to the right of this tab</value>
+  </data>
+  <data name="TabCloseOtherToolTip" xml:space="preserve">
+    <value>Close all tabs except this tab</value>
+  </data>
+  <data name="TabCloseToolTip" xml:space="preserve">
+    <value>Close this tab</value>
+  </data>
+  <data name="NewTabMenuFolderEmpty" xml:space="preserve">
+    <value>Empty...</value>
   </data>
 </root>

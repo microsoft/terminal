@@ -11,6 +11,7 @@
     "/packages/",
     "/ipch/",
     "/dep/",
+    "/doc/",
     "/.vs/",
     "/build/",
     "/src/cascadia/",
@@ -19,10 +20,16 @@
     "/.github/",
     "/samples/",
     "/res/terminal/",
+    "/res/fonts/",
     "/doc/specs/",
     "/doc/cascadia/",
     "/doc/user-docs/",
     "/src/tools/MonarchPeasantSample/",
+    "/src/tools/MonarchPeasantPackage/",
+    "/src/tools/ansi-color/",
+    "/src/tools/ColorTool/",
+    "/scratch/",
+    "Scratch.sln",
   ],
   "SuffixFilters": [
     ".dbb",
@@ -38,6 +45,7 @@
     ".wrn",
     ".rec",
     ".err",
+    "XamlStyler.json",
     ".xlsx"
   ]
 }

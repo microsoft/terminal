@@ -2,158 +2,141 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include <argb.h>
-#include <conattrs.hpp>
-#include <io.h>
-#include <fcntl.h>
 #include "CascadiaSettings.h"
-#include "../../types/inc/utils.hpp"
-#include "../../inc/DefaultSettings.h"
-#include "Utils.h"
-#include "LibraryResources.h"
-
-#include "PowershellCoreProfileGenerator.h"
-#include "WslDistroGenerator.h"
-#include "AzureCloudShellGenerator.h"
-
 #include "CascadiaSettings.g.cpp"
 
-using namespace ::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+#include "DefaultTerminal.h"
+#include "FileUtils.h"
+
+#include <LibraryResources.h>
+#include <VersionHelpers.h>
+#include <WtExeUtils.h>
+
+#include <shellapi.h>
+#include <shlwapi.h>
+#include <til/latch.h>
+
+using namespace winrt::Microsoft::Terminal;
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace Microsoft::Console;
 
-static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///ProfileIcons/" };
-
-static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
-static constexpr std::wstring_view DEFAULT_LINUX_ICON_GUID{ L"{9acb9455-ca41-5af7-950f-6bca1bc9722f}" };
-
-// make sure this matches defaults.json.
-static constexpr std::wstring_view DEFAULT_WINDOWS_POWERSHELL_GUID{ L"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}" };
-
-CascadiaSettings::CascadiaSettings() :
-    CascadiaSettings(true)
+// Creating a child of a profile requires us to copy certain
+// required attributes. This method handles those attributes.
+//
+// NOTE however that it doesn't call _FinalizeInheritance() for you! Don't forget that!
+//
+// At the time of writing only one caller needs to call _FinalizeInheritance(),
+// which is why this unsafety wasn't further abstracted away.
+winrt::com_ptr<Profile> Model::implementation::CreateChild(const winrt::com_ptr<Profile>& parent)
 {
+    // If you add more fields here, make sure to do the same in
+    // SettingsLoader::_addUserProfileParent().
+    auto profile = winrt::make_self<Profile>();
+    profile->Origin(OriginTag::User);
+    profile->Name(parent->Name());
+    profile->Guid(parent->Guid());
+    profile->Hidden(parent->Hidden());
+    profile->AddLeastImportantParent(parent);
+    return profile;
 }
 
-// Constructor Description:
-// - Creates a new settings object. If addDynamicProfiles is true, we'll
-//   automatically add the built-in profile generators to our list of profile
-//   generators. Set this to `false` for unit testing.
-// Arguments:
-// - addDynamicProfiles: if true, we'll add the built-in DPGs.
-CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
-    _globals{ winrt::make_self<implementation::GlobalAppSettings>() },
-    _allProfiles{ winrt::single_threaded_observable_vector<Model::Profile>() },
-    _activeProfiles{ winrt::single_threaded_observable_vector<Model::Profile>() },
-    _warnings{ winrt::single_threaded_vector<SettingsLoadWarnings>() },
-    _deserializationErrorMessage{ L"" }
+winrt::hstring CascadiaSettings::Hash() const noexcept
 {
-    if (addDynamicProfiles)
+    return _hash;
+}
+
+Model::CascadiaSettings CascadiaSettings::Copy() const
+{
+    const auto settings{ winrt::make_self<CascadiaSettings>() };
+
+    // user settings
     {
-        _profileGenerators.emplace_back(std::make_unique<PowershellCoreProfileGenerator>());
-        _profileGenerators.emplace_back(std::make_unique<WslDistroGenerator>());
-        _profileGenerators.emplace_back(std::make_unique<AzureCloudShellGenerator>());
+        std::vector<Model::Profile> allProfiles;
+        std::vector<Model::Profile> activeProfiles;
+        allProfiles.reserve(_allProfiles.Size());
+        activeProfiles.reserve(_activeProfiles.Size());
+
+        // Clone the graph of profiles.
+        // _baseLayerProfile is part of the graph
+        // and thus needs to be handled here as well.
+        {
+            std::vector<winrt::com_ptr<Profile>> sourceProfiles;
+            std::vector<winrt::com_ptr<Profile>> targetProfiles;
+            sourceProfiles.reserve(allProfiles.size());
+            targetProfiles.reserve(allProfiles.size());
+
+            for (const auto& profile : _allProfiles)
+            {
+                winrt::com_ptr<Profile> profileImpl;
+                profileImpl.copy_from(winrt::get_self<Profile>(profile));
+                sourceProfiles.emplace_back(std::move(profileImpl));
+            }
+
+            // Profiles are basically a directed acyclic graph. Cloning it without creating duplicated nodes,
+            // requires us to "intern" visited profiles. Thus the "visited" map contains a cache of
+            // previously cloned profiles/sub-graphs. It maps from source-profile-pointer to cloned-profile.
+            std::unordered_map<const Profile*, winrt::com_ptr<Profile>> visited;
+            // I'm just gonna estimate that each profile has 3 parents at most on average:
+            // * base layer
+            // * fragment
+            // * inbox defaults
+            visited.reserve(sourceProfiles.size() * 3);
+
+            // _baseLayerProfile is part of the profile graph.
+            // In order to get a reference to the clone, we need to copy it explicitly.
+            settings->_baseLayerProfile = _baseLayerProfile->CopyInheritanceGraph(visited);
+            Profile::CopyInheritanceGraphs(visited, sourceProfiles, targetProfiles);
+
+            for (const auto& profile : targetProfiles)
+            {
+                allProfiles.emplace_back(*profile);
+                if (!profile->Hidden())
+                {
+                    activeProfiles.emplace_back(*profile);
+                }
+            }
+        }
+
+        settings->_globals = _globals->Copy();
+        settings->_allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
+        settings->_activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
     }
-}
 
-CascadiaSettings::CascadiaSettings(winrt::hstring json) :
-    CascadiaSettings(false)
-{
-    const auto jsonString{ til::u16u8(json) };
-    _ParseJsonString(jsonString, false);
-    LayerJson(_userSettings);
-    _ValidateSettings();
-}
-
-winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::Copy() const
-{
-    // dynamic profile generators added by default
-    auto settings{ winrt::make_self<CascadiaSettings>() };
-    settings->_globals = _globals->Copy();
-    for (auto warning : _warnings)
+    // load errors
     {
-        settings->_warnings.Append(warning);
-    }
-    settings->_loadError = _loadError;
-    settings->_deserializationErrorMessage = _deserializationErrorMessage;
-    settings->_userSettingsString = _userSettingsString;
-    settings->_userSettings = _userSettings;
-    settings->_defaultSettings = _defaultSettings;
+        std::vector<Model::SettingsLoadWarnings> warnings{ _warnings.Size() };
+        _warnings.GetMany(0, warnings);
 
-    _CopyProfileInheritanceTree(settings);
+        settings->_warnings = winrt::single_threaded_vector(std::move(warnings));
+        settings->_loadError = _loadError;
+        settings->_deserializationErrorMessage = _deserializationErrorMessage;
+    }
+
+    // defterm
+    settings->_currentDefaultTerminal = _currentDefaultTerminal;
 
     return *settings;
-}
-
-// Method Description:
-// - Copies the inheritance tree for profiles and hooks them up to a clone CascadiaSettings
-// Arguments:
-// - cloneSettings: the CascadiaSettings we're copying the inheritance tree to
-// Return Value:
-// - <none>
-void CascadiaSettings::_CopyProfileInheritanceTree(winrt::com_ptr<CascadiaSettings>& cloneSettings) const
-{
-    // Our profiles inheritance graph doesn't have a formal root.
-    // However, if we create a dummy Profile, and set _profiles as the parent,
-    //  we now have a root. So we'll do just that, then copy the inheritance graph
-    //  from the dummyRoot.
-    auto dummyRootSource{ winrt::make_self<Profile>() };
-    for (const auto& profile : _allProfiles)
-    {
-        winrt::com_ptr<Profile> profileImpl;
-        profileImpl.copy_from(winrt::get_self<Profile>(profile));
-        dummyRootSource->InsertParent(profileImpl);
-    }
-
-    auto dummyRootClone{ winrt::make_self<Profile>() };
-    std::unordered_map<void*, winrt::com_ptr<Profile>> visited{};
-
-    if (_userDefaultProfileSettings)
-    {
-        // profile.defaults must be saved to CascadiaSettings
-        // So let's do that manually first, and add that to visited
-        cloneSettings->_userDefaultProfileSettings = Profile::CopySettings(_userDefaultProfileSettings);
-        visited[_userDefaultProfileSettings.get()] = cloneSettings->_userDefaultProfileSettings;
-    }
-
-    Profile::CloneInheritanceGraph(dummyRootSource, dummyRootClone, visited);
-
-    // All of the parents of the dummy root clone are _profiles.
-    // Get the parents and add them to the settings clone.
-    const auto cloneParents{ dummyRootClone->Parents() };
-    for (const auto& profile : cloneParents)
-    {
-        cloneSettings->_allProfiles.Append(*profile);
-        if (!profile->Hidden())
-        {
-            cloneSettings->_activeProfiles.Append(*profile);
-        }
-    }
 }
 
 // Method Description:
 // - Finds a profile that matches the given GUID. If there is no profile in this
 //      settings object that matches, returns nullptr.
 // Arguments:
-// - profileGuid: the GUID of the profile to return.
+// - guid: the GUID of the profile to return.
 // Return Value:
-// - a non-ownership pointer to the profile matching the given guid, or nullptr
+// - a strong reference to the profile matching the given guid, or nullptr
 //      if there is no match.
-winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::FindProfile(winrt::guid profileGuid) const noexcept
+Model::Profile CascadiaSettings::FindProfile(const winrt::guid& guid) const noexcept
 {
-    const winrt::guid guid{ profileGuid };
     for (const auto& profile : _allProfiles)
     {
-        try
+        if (profile.Guid() == guid)
         {
-            if (profile.Guid() == guid)
-            {
-                return profile;
-            }
+            return profile;
         }
-        CATCH_LOG();
     }
     return nullptr;
 }
@@ -164,7 +147,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::FindProfi
 // - <none>
 // Return Value:
 // - an iterable collection of all of our Profiles.
-IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Profile> CascadiaSettings::AllProfiles() const noexcept
+IObservableVector<Model::Profile> CascadiaSettings::AllProfiles() const noexcept
 {
     return _allProfiles;
 }
@@ -175,7 +158,7 @@ IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Profile> Cascadia
 // - <none>
 // Return Value:
 // - an iterable collection of all of our Profiles.
-IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Profile> CascadiaSettings::ActiveProfiles() const noexcept
+IObservableVector<Model::Profile> CascadiaSettings::ActiveProfiles() const noexcept
 {
     return _activeProfiles;
 }
@@ -186,9 +169,9 @@ IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Profile> Cascadia
 // - <none>
 // Return Value:
 // - the globally configured keybindings
-winrt::Microsoft::Terminal::Settings::Model::KeyMapping CascadiaSettings::KeyMap() const noexcept
+Model::ActionMap CascadiaSettings::ActionMap() const noexcept
 {
-    return _globals->KeyMap();
+    return _globals->ActionMap();
 }
 
 // Method Description:
@@ -197,7 +180,7 @@ winrt::Microsoft::Terminal::Settings::Model::KeyMapping CascadiaSettings::KeyMap
 // - <none>
 // Return Value:
 // - a reference to our global settings
-winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings CascadiaSettings::GlobalSettings() const
+Model::GlobalAppSettings CascadiaSettings::GlobalSettings() const
 {
     return *_globals;
 }
@@ -208,9 +191,9 @@ winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings CascadiaSettings:
 // - <none>
 // Return Value:
 // - a reference to our profile.defaults object
-winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::ProfileDefaults() const
+Model::Profile CascadiaSettings::ProfileDefaults() const
 {
-    return *_userDefaultProfileSettings;
+    return *_baseLayerProfile;
 }
 
 // Method Description:
@@ -219,16 +202,166 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::ProfileDe
 // - <none>
 // Return Value:
 // - a reference to the new profile
-winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNewProfile()
+Model::Profile CascadiaSettings::CreateNewProfile()
 {
-    auto newProfile{ _userDefaultProfileSettings->CreateChild() };
+    if (_allProfiles.Size() == std::numeric_limits<uint32_t>::max())
+    {
+        // Shouldn't really happen
+        return nullptr;
+    }
+
+    std::wstring newName;
+    for (uint32_t candidateIndex = 0, count = _allProfiles.Size() + 1; candidateIndex < count; candidateIndex++)
+    {
+        // There is a theoretical unsigned integer wraparound, which is OK
+        newName = fmt::format(L"Profile {}", count + candidateIndex);
+        if (std::none_of(begin(_allProfiles), end(_allProfiles), [&](auto&& profile) { return profile.Name() == newName; }))
+        {
+            break;
+        }
+    }
+
+    const auto newProfile = _createNewProfile(newName);
     _allProfiles.Append(*newProfile);
-
-    // Give the new profile a distinct name so a guid is properly generated
-    const winrt::hstring newName{ fmt::format(L"Profile {}", _allProfiles.Size()) };
-    newProfile->Name(newName);
-
+    _activeProfiles.Append(*newProfile);
     return *newProfile;
+}
+
+template<typename T>
+static bool isProfilesDefaultsOrigin(const T& profile)
+{
+    return profile && profile.Origin() != winrt::Microsoft::Terminal::Settings::Model::OriginTag::ProfilesDefaults;
+}
+
+template<typename T>
+static bool isProfilesDefaultsOriginSub(const T& sub)
+{
+    return sub && isProfilesDefaultsOrigin(sub.SourceProfile());
+}
+
+// Method Description:
+// - Duplicate a new profile based off another profile's settings
+// - This differs from Profile::Copy because it also copies over settings
+//   that were not defined in the json (for example, settings that were
+//   defined in one of the parents)
+// - This will not duplicate settings that were defined in profiles.defaults
+//   however, because we do not want the json blob generated from the new profile
+//   to contain those settings
+// Arguments:
+// - source: the Profile object we are duplicating (must not be null)
+// Return Value:
+// - a reference to the new profile
+Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
+{
+    THROW_HR_IF_NULL(E_INVALIDARG, source);
+
+    auto newName = fmt::format(L"{} ({})", source.Name(), RS_(L"CopySuffix"));
+
+    // Check if this name already exists and if so, append a number
+    for (uint32_t candidateIndex = 0, count = _allProfiles.Size() + 1; candidateIndex < count; ++candidateIndex)
+    {
+        if (std::none_of(begin(_allProfiles), end(_allProfiles), [&](auto&& profile) { return profile.Name() == newName; }))
+        {
+            break;
+        }
+        // There is a theoretical unsigned integer wraparound, which is OK
+        newName = fmt::format(L"{} ({} {})", source.Name(), RS_(L"CopySuffix"), candidateIndex + 2);
+    }
+
+    const auto duplicated = _createNewProfile(newName);
+
+#define NEEDS_DUPLICATION(settingName) source.Has##settingName() || isProfilesDefaultsOrigin(source.settingName##OverrideSource())
+#define NEEDS_DUPLICATION_SUB(source, settingName) source.Has##settingName() || isProfilesDefaultsOriginSub(source.settingName##OverrideSource())
+
+#define DUPLICATE_SETTING_MACRO(settingName)           \
+    if (NEEDS_DUPLICATION(settingName))                \
+    {                                                  \
+        duplicated->settingName(source.settingName()); \
+    }
+
+#define DUPLICATE_SETTING_MACRO_SUB(source, target, settingName) \
+    if (NEEDS_DUPLICATION_SUB(source, settingName))              \
+    {                                                            \
+        target.settingName(source.settingName());                \
+    }
+
+    // If the source is hidden and the Settings UI creates a
+    // copy of it we don't want the copy to be hidden as well.
+    // --> Don't do DUPLICATE_SETTING_MACRO(Hidden);
+
+#define DUPLICATE_PROFILE_SETTINGS(type, name, jsonKey, ...) \
+    DUPLICATE_SETTING_MACRO(name);
+
+    MTSM_PROFILE_SETTINGS(DUPLICATE_PROFILE_SETTINGS)
+#undef DUPLICATE_PROFILE_SETTINGS
+
+    // These aren't in MTSM_PROFILE_SETTINGS because they're special
+    DUPLICATE_SETTING_MACRO(TabColor);
+    DUPLICATE_SETTING_MACRO(Padding);
+
+    {
+        const auto font = source.FontInfo();
+        const auto target = duplicated->FontInfo();
+
+#define DUPLICATE_FONT_SETTINGS(type, name, jsonKey, ...) \
+    DUPLICATE_SETTING_MACRO_SUB(font, target, name);
+
+        MTSM_FONT_SETTINGS(DUPLICATE_FONT_SETTINGS)
+#undef DUPLICATE_FONT_SETTINGS
+    }
+
+    {
+        const auto appearance = source.DefaultAppearance();
+        const auto target = duplicated->DefaultAppearance();
+
+#define DUPLICATE_APPEARANCE_SETTINGS(type, name, jsonKey, ...) \
+    DUPLICATE_SETTING_MACRO_SUB(appearance, target, name);
+
+        MTSM_APPEARANCE_SETTINGS(DUPLICATE_APPEARANCE_SETTINGS)
+#undef DUPLICATE_APPEARANCE_SETTINGS
+
+        // These aren't in MTSM_APPEARANCE_SETTINGS because they're special
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, Foreground);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, Background);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, SelectionBackground);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorColor);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, Opacity);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, DarkColorSchemeName);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, LightColorSchemeName);
+    }
+
+    // UnfocusedAppearance is treated as a single setting,
+    // but requires a little more legwork to duplicate properly
+    if (NEEDS_DUPLICATION(UnfocusedAppearance))
+    {
+        // It is alright to simply call CopyAppearance here instead of needing a separate function
+        // like DuplicateAppearance since UnfocusedAppearance is treated as a single setting.
+        const auto unfocusedAppearance = AppearanceConfig::CopyAppearance(
+            winrt::get_self<AppearanceConfig>(source.UnfocusedAppearance()),
+            winrt::weak_ref<Model::Profile>(*duplicated));
+
+        // Make sure to add the default appearance of the duplicated profile as a parent to the duplicate's UnfocusedAppearance
+        winrt::com_ptr<AppearanceConfig> defaultAppearance;
+        defaultAppearance.copy_from(winrt::get_self<AppearanceConfig>(duplicated->DefaultAppearance()));
+        unfocusedAppearance->AddLeastImportantParent(defaultAppearance);
+
+        duplicated->UnfocusedAppearance(*unfocusedAppearance);
+    }
+
+    // GH#12120: Check if the connection type isn't just the default value. If
+    // it is, then we should copy it. The only case this applies right now is
+    // for the Azure Cloud Shell, which is the only thing that has a non-{}
+    // guid. The user's version of this profile won't have connectionType set,
+    // because it inherits the setting from the parent. If we fail to copy it
+    // here, they won't actually get a Azure shell profile.
+    if (source.ConnectionType() != winrt::guid{})
+    {
+        duplicated->ConnectionType(source.ConnectionType());
+    }
+
+    _allProfiles.Append(*duplicated);
+    _activeProfiles.Append(*duplicated);
+    return *duplicated;
 }
 
 // Method Description:
@@ -236,29 +369,35 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNew
 //   knew were bad when we called `_ValidateSettings` last.
 // Return Value:
 // - a reference to our list of warnings.
-IVectorView<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> CascadiaSettings::Warnings()
+IVectorView<Model::SettingsLoadWarnings> CascadiaSettings::Warnings() const
 {
     return _warnings.GetView();
 }
 
-void CascadiaSettings::ClearWarnings()
-{
-    _warnings.Clear();
-}
-
-void CascadiaSettings::AppendWarning(SettingsLoadWarnings warning)
-{
-    _warnings.Append(warning);
-}
-
-winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadErrors> CascadiaSettings::GetLoadingError()
+winrt::Windows::Foundation::IReference<Model::SettingsLoadErrors> CascadiaSettings::GetLoadingError() const
 {
     return _loadError;
 }
 
-winrt::hstring CascadiaSettings::GetSerializationErrorMessage()
+winrt::hstring CascadiaSettings::GetSerializationErrorMessage() const
 {
     return _deserializationErrorMessage;
+}
+
+// As used by CreateNewProfile and DuplicateProfile this function
+// creates a new Profile instance with a random UUID and a given name.
+winrt::com_ptr<Profile> CascadiaSettings::_createNewProfile(const std::wstring_view& name) const
+{
+    // Technically there's Utils::CreateV5Uuid which we could use, but I wanted
+    // truly globally unique UUIDs for profiles created through the settings UI.
+    GUID guid{};
+    LOG_IF_FAILED(CoCreateGuid(&guid));
+
+    auto profile = CreateChild(_baseLayerProfile);
+    profile->_FinalizeInheritance();
+    profile->Guid(guid);
+    profile->Name(winrt::hstring{ name });
+    return profile;
 }
 
 // Method Description:
@@ -271,68 +410,135 @@ winrt::hstring CascadiaSettings::GetSerializationErrorMessage()
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::_ValidateSettings()
+void CascadiaSettings::_validateSettings()
 {
-    // Make sure to check that profiles exists at all first and foremost:
-    _ValidateProfilesExist();
-
-    // Re-order profiles so that all profiles from the user's settings appear
-    // before profiles that _weren't_ in the user profiles.
-    _ReorderProfilesToMatchUserSettingsOrder();
-
-    // Remove hidden profiles _after_ re-ordering. The re-ordering uses the raw
-    // json, and will get confused if the profile isn't in the list.
-    _UpdateActiveProfiles();
-
-    // Then do some validation on the profiles. The order of these does not
-    // terribly matter.
-    _ValidateNoDuplicateProfiles();
-
-    // Resolve the default profile before we validate that it exists.
-    _ResolveDefaultProfile();
-    _ValidateDefaultProfileExists();
-
-    // Ensure that all the profile's color scheme names are
-    // actually the names of schemes we've parsed. If the scheme doesn't exist,
-    // just use the hardcoded defaults
-    _ValidateAllSchemesExist();
-
-    // Ensure all profile's with specified images resources have valid file path.
-    // This validates icons and background images.
-    _ValidateMediaResources();
-
-    // TODO:GH#2548 ensure there's at least one key bound. Display a warning if
-    // there's _NO_ keys bound to any actions. That's highly irregular, and
-    // likely an indication of an error somehow.
-
-    // GH#3522 - With variable args to keybindings, it's possible that a user
-    // set a keybinding without all the required args for an action. Display a
-    // warning if an action didn't have a required arg.
-    // This will also catch other keybinding warnings, like from GH#4239
-    _ValidateKeybindings();
-
-    _ValidateColorSchemesInCommands();
-
-    _ValidateNoGlobalsKey();
-
+    _validateAllSchemesExist();
+    _validateMediaResources();
+    _validateKeybindings();
+    _validateColorSchemesInCommands();
+    _validateThemeExists();
     _ValidateProfileEnvironmentVariables();
 }
 
 // Method Description:
-// - Checks if the settings contain profiles at all. As we'll need to have some
-//   profiles at all, we'll throw an error if there aren't any profiles.
-void CascadiaSettings::_ValidateProfilesExist()
+// - Ensures that every profile has a valid "color scheme" set. If any profile
+//   has a colorScheme set to a value which is _not_ the name of an actual color
+//   scheme, we'll set the color table of the profile to something reasonable.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+// - Appends a SettingsLoadWarnings::UnknownColorScheme to our list of warnings if
+//   we find any such duplicate.
+void CascadiaSettings::_validateAllSchemesExist()
 {
-    const bool hasProfiles = _allProfiles.Size() > 0;
-    if (!hasProfiles)
+    const auto colorSchemes = _globals->ColorSchemes();
+    auto foundInvalidDarkScheme = false;
+    auto foundInvalidLightScheme = false;
+
+    for (const auto& profile : _allProfiles)
     {
-        // Throw an exception. This is an invalid state, and we want the app to
-        // be able to gracefully use the default settings.
+        for (const auto& appearance : std::array{ profile.DefaultAppearance(), profile.UnfocusedAppearance() })
+        {
+            if (appearance && !colorSchemes.HasKey(appearance.DarkColorSchemeName()))
+            {
+                // Clear the user set dark color scheme. We'll just fallback instead.
+                appearance.ClearDarkColorSchemeName();
+                foundInvalidDarkScheme = true;
+            }
+            if (appearance && !colorSchemes.HasKey(appearance.LightColorSchemeName()))
+            {
+                // Clear the user set light color scheme. We'll just fallback instead.
+                appearance.ClearLightColorSchemeName();
+                foundInvalidLightScheme = true;
+            }
+        }
+    }
 
-        // We can't add the warning to the list of warnings here, because this
-        // object is not going to be returned at any point.
+    if (foundInvalidDarkScheme || foundInvalidLightScheme)
+    {
+        _warnings.Append(SettingsLoadWarnings::UnknownColorScheme);
+    }
+}
 
-        throw SettingsException(Microsoft::Terminal::Settings::Model::SettingsLoadErrors::NoProfiles);
+// Method Description:
+// - Ensures that all specified images resources (icons and background images) are valid URIs.
+//   This does not verify that the icon or background image files are encoded as an image.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+// - Appends a SettingsLoadWarnings::InvalidBackgroundImage to our list of warnings if
+//   we find any invalid background images.
+// - Appends a SettingsLoadWarnings::InvalidIconImage to our list of warnings if
+//   we find any invalid icon images.
+void CascadiaSettings::_validateMediaResources()
+{
+    auto invalidBackground{ false };
+    auto invalidIcon{ false };
+
+    for (auto profile : _allProfiles)
+    {
+        if (const auto path = profile.DefaultAppearance().ExpandedBackgroundImagePath(); !path.empty())
+        {
+            // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
+            // This covers file paths on the machine, app data, URLs, and other resource paths.
+            try
+            {
+                winrt::Windows::Foundation::Uri imagePath{ path };
+            }
+            catch (...)
+            {
+                // reset background image path
+                profile.DefaultAppearance().ClearBackgroundImagePath();
+                invalidBackground = true;
+            }
+        }
+
+        if (profile.UnfocusedAppearance())
+        {
+            if (const auto path = profile.UnfocusedAppearance().ExpandedBackgroundImagePath(); !path.empty())
+            {
+                // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
+                // This covers file paths on the machine, app data, URLs, and other resource paths.
+                try
+                {
+                    winrt::Windows::Foundation::Uri imagePath{ path };
+                }
+                catch (...)
+                {
+                    // reset background image path
+                    profile.UnfocusedAppearance().ClearBackgroundImagePath();
+                    invalidBackground = true;
+                }
+            }
+        }
+
+        // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol,
+        // so treat it as an invalid path.
+        if (const auto icon = profile.Icon(); icon.size() > 2)
+        {
+            const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(icon.c_str()) };
+            try
+            {
+                winrt::Windows::Foundation::Uri imagePath{ iconPath };
+            }
+            catch (...)
+            {
+                profile.ClearIcon();
+                invalidIcon = true;
+            }
+        }
+    }
+
+    if (invalidBackground)
+    {
+        _warnings.Append(SettingsLoadWarnings::InvalidBackgroundImage);
+    }
+
+    if (invalidIcon)
+    {
+        _warnings.Append(SettingsLoadWarnings::InvalidIcon);
     }
 }
 
@@ -355,272 +561,6 @@ void CascadiaSettings::_ValidateProfileEnvironmentVariables()
 }
 
 // Method Description:
-// - Resolves the "defaultProfile", which can be a profile name, to a GUID
-//   and stores it back to the globals.
-void CascadiaSettings::_ResolveDefaultProfile()
-{
-    const auto unparsedDefaultProfile{ GlobalSettings().UnparsedDefaultProfile() };
-    if (!unparsedDefaultProfile.empty())
-    {
-        auto maybeParsedDefaultProfile{ _GetProfileGuidByName(unparsedDefaultProfile) };
-        auto defaultProfileGuid{ til::coalesce_value(maybeParsedDefaultProfile, winrt::guid{}) };
-        GlobalSettings().DefaultProfile(defaultProfileGuid);
-    }
-}
-
-// Method Description:
-// - Checks if the "defaultProfile" is set to one of the profiles we
-//   actually have. If the value is unset, or the value is set to something that
-//   doesn't exist in the list of profiles, we'll arbitrarily pick the first
-//   profile to use temporarily as the default.
-// - Appends a SettingsLoadWarnings::MissingDefaultProfile to our list of
-//   warnings if we failed to find the default.
-void CascadiaSettings::_ValidateDefaultProfileExists()
-{
-    const winrt::guid defaultProfileGuid{ GlobalSettings().DefaultProfile() };
-    const bool nullDefaultProfile = defaultProfileGuid == winrt::guid{};
-    bool defaultProfileNotInProfiles = true;
-    for (const auto& profile : _allProfiles)
-    {
-        if (profile.Guid() == defaultProfileGuid)
-        {
-            defaultProfileNotInProfiles = false;
-            break;
-        }
-    }
-
-    if (nullDefaultProfile || defaultProfileNotInProfiles)
-    {
-        _warnings.Append(Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::MissingDefaultProfile);
-        // Use the first profile as the new default
-
-        // _temporarily_ set the default profile to the first profile. Because
-        // we're adding a warning, this settings change won't be re-serialized.
-        GlobalSettings().DefaultProfile(_allProfiles.GetAt(0).Guid());
-    }
-}
-
-// Method Description:
-// - Checks to make sure there aren't any duplicate profiles in the list of
-//   profiles. If so, we'll remove the subsequent entries (temporarily), as they
-//   won't be accessible anyways.
-// - Appends a SettingsLoadWarnings::DuplicateProfile to our list of warnings if
-//   we find any such duplicate.
-void CascadiaSettings::_ValidateNoDuplicateProfiles()
-{
-    bool foundDupe = false;
-
-    std::vector<uint32_t> indicesToDelete;
-
-    std::set<winrt::guid> uniqueGuids;
-
-    // Try collecting all the unique guids. If we ever encounter a guid that's
-    // already in the set, then we need to delete that profile.
-    for (uint32_t i = 0; i < _allProfiles.Size(); i++)
-    {
-        if (!uniqueGuids.insert(_allProfiles.GetAt(i).Guid()).second)
-        {
-            foundDupe = true;
-            indicesToDelete.push_back(i);
-        }
-    }
-
-    // Remove all the duplicates we've marked
-    // Walk backwards, so we don't accidentally shift any of the elements
-    for (auto iter = indicesToDelete.rbegin(); iter != indicesToDelete.rend(); iter++)
-    {
-        _allProfiles.RemoveAt(*iter);
-    }
-
-    if (foundDupe)
-    {
-        _warnings.Append(Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::DuplicateProfile);
-    }
-}
-
-// Method Description:
-// - Re-orders the list of profiles to match what the user would expect them to
-//   be. Orders profiles to be in the ordering { [profiles from user settings],
-//   [default profiles that weren't in the user profiles]}.
-// - Does not set any warnings.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
-{
-    std::set<winrt::guid> uniqueGuids;
-    std::deque<winrt::guid> guidOrder;
-
-    auto collectGuids = [&](const auto& json) {
-        for (auto profileJson : _GetProfilesJsonObject(json))
-        {
-            if (profileJson.isObject())
-            {
-                auto guid = implementation::Profile::GetGuidOrGenerateForJson(profileJson);
-                if (uniqueGuids.insert(guid).second)
-                {
-                    guidOrder.push_back(guid);
-                }
-            }
-        }
-    };
-
-    // Push all the userSettings profiles' GUIDS into the set
-    collectGuids(_userSettings);
-
-    // Push all the defaultSettings profiles' GUIDS into the set
-    collectGuids(_defaultSettings);
-    std::equal_to<winrt::guid> equals;
-    // Re-order the list of profiles to match that ordering
-    // for (gIndex=0 -> uniqueGuids.size)
-    //   pIndex = the pIndex of the profile with guid==guids[gIndex]
-    //   profiles.swap(pIndex <-> gIndex)
-    // This is O(N^2), which is kinda rough. I'm sure there's a better way
-    for (uint32_t gIndex = 0; gIndex < guidOrder.size(); gIndex++)
-    {
-        const auto guid = guidOrder.at(gIndex);
-        for (uint32_t pIndex = gIndex; pIndex < _allProfiles.Size(); pIndex++)
-        {
-            auto profileGuid = _allProfiles.GetAt(pIndex).Guid();
-            if (equals(profileGuid, guid))
-            {
-                auto prof1 = _allProfiles.GetAt(pIndex);
-                _allProfiles.SetAt(pIndex, _allProfiles.GetAt(gIndex));
-                _allProfiles.SetAt(gIndex, prof1);
-                break;
-            }
-        }
-    }
-}
-
-// Method Description:
-// - Updates the list of active profiles from the list of all profiles
-// - If there are no active profiles (all profiles are hidden), throw a SettingsException
-// - Does not set any warnings.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void CascadiaSettings::_UpdateActiveProfiles()
-{
-    _activeProfiles.Clear();
-    for (auto const& profile : _allProfiles)
-    {
-        if (!profile.Hidden())
-        {
-            _activeProfiles.Append(profile);
-        }
-    }
-
-    // Ensure that we still have some profiles here. If we don't, then throw an
-    // exception, so the app can use the defaults.
-    const bool hasProfiles = _activeProfiles.Size() > 0;
-    if (!hasProfiles)
-    {
-        // Throw an exception. This is an invalid state, and we want the app to
-        // be able to gracefully use the default settings.
-        throw SettingsException(SettingsLoadErrors::AllProfilesHidden);
-    }
-}
-
-// Method Description:
-// - Ensures that every profile has a valid "color scheme" set. If any profile
-//   has a colorScheme set to a value which is _not_ the name of an actual color
-//   scheme, we'll set the color table of the profile to something reasonable.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-// - Appends a SettingsLoadWarnings::UnknownColorScheme to our list of warnings if
-//   we find any such duplicate.
-void CascadiaSettings::_ValidateAllSchemesExist()
-{
-    bool foundInvalidScheme = false;
-    for (auto profile : _allProfiles)
-    {
-        const auto schemeName = profile.ColorSchemeName();
-        if (!_globals->ColorSchemes().HasKey(schemeName))
-        {
-            // Clear the user set color scheme. We'll just fallback instead.
-            profile.ClearColorSchemeName();
-            foundInvalidScheme = true;
-        }
-    }
-
-    if (foundInvalidScheme)
-    {
-        _warnings.Append(SettingsLoadWarnings::UnknownColorScheme);
-    }
-}
-
-// Method Description:
-// - Ensures that all specified images resources (icons and background images) are valid URIs.
-//   This does not verify that the icon or background image files are encoded as an image.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-// - Appends a SettingsLoadWarnings::InvalidBackgroundImage to our list of warnings if
-//   we find any invalid background images.
-// - Appends a SettingsLoadWarnings::InvalidIconImage to our list of warnings if
-//   we find any invalid icon images.
-void CascadiaSettings::_ValidateMediaResources()
-{
-    bool invalidBackground{ false };
-    bool invalidIcon{ false };
-
-    for (auto profile : _allProfiles)
-    {
-        if (!profile.BackgroundImagePath().empty())
-        {
-            // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
-            // This covers file paths on the machine, app data, URLs, and other resource paths.
-            try
-            {
-                winrt::Windows::Foundation::Uri imagePath{ profile.ExpandedBackgroundImagePath() };
-            }
-            catch (...)
-            {
-                // reset background image path
-                profile.BackgroundImagePath(L"");
-                invalidBackground = true;
-            }
-        }
-
-        if (!profile.Icon().empty())
-        {
-            const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(profile.Icon().c_str()) };
-            try
-            {
-                winrt::Windows::Foundation::Uri imagePath{ iconPath };
-            }
-            catch (...)
-            {
-                // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol,
-                // so treat it as an invalid path.
-                if (iconPath.size() > 2)
-                {
-                    // reset icon path
-                    profile.Icon(L"");
-                    invalidIcon = true;
-                }
-            }
-        }
-    }
-
-    if (invalidBackground)
-    {
-        _warnings.Append(SettingsLoadWarnings::InvalidBackgroundImage);
-    }
-
-    if (invalidIcon)
-    {
-        _warnings.Append(SettingsLoadWarnings::InvalidIcon);
-    }
-}
-
-// Method Description:
 // - Helper to get the GUID of a profile, given an optional index and a possible
 //   "profile" value to override that.
 // - First, we'll try looking up the profile for the given index. This will
@@ -636,30 +576,263 @@ void CascadiaSettings::_ValidateMediaResources()
 //   and attempt to look the profile up by name instead.
 // Return Value:
 // - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
-winrt::guid CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const
+Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const
 {
-    std::optional<winrt::guid> profileByIndex, profileByName;
     if (newTerminalArgs)
     {
-        if (newTerminalArgs.ProfileIndex() != nullptr)
+        if (const auto name = newTerminalArgs.Profile(); !name.empty())
         {
-            profileByIndex = _GetProfileGuidByIndex(newTerminalArgs.ProfileIndex().Value());
+            if (auto profile = GetProfileByName(name))
+            {
+                return profile;
+            }
         }
 
-        profileByName = _GetProfileGuidByName(newTerminalArgs.Profile());
+        if (const auto index = newTerminalArgs.ProfileIndex())
+        {
+            if (auto profile = GetProfileByIndex(gsl::narrow<uint32_t>(index.Value())))
+            {
+                return profile;
+            }
+            else
+            {
+                // GH#11114 - Return NOTHING if they asked for a profile index
+                // outside the range of available profiles.
+                // Really, the caller should check this beforehand
+                return nullptr;
+            }
+        }
+
+        if (const auto commandLine = newTerminalArgs.Commandline(); !commandLine.empty())
+        {
+            if (auto profile = _getProfileForCommandLine(commandLine))
+            {
+                return profile;
+            }
+        }
     }
 
-    return til::coalesce_value(profileByName, profileByIndex, _globals->DefaultProfile());
+    // If the user has access to the "Defaults" profile, and no profile was otherwise specified,
+    // what we do is dependent on whether there was a commandline.
+    // If there was a commandline (case 1), we we'll launch in the "Defaults" profile.
+    // If there wasn't a commandline or there wasn't a NewTerminalArgs (case 2), we'll
+    //   launch in the user's actual default profile.
+    // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
+    // TODO GH#10952: Detect the profile based on the commandline (add matching support)
+    return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
+               FindProfile(GlobalSettings().DefaultProfile()) :
+               ProfileDefaults();
+}
+
+// The method does some crude command line matching for our console hand-off support.
+// If you have hand-off enabled and start PowerShell from the start menu we might be called with
+//   "C:\Program Files\PowerShell\7\pwsh.exe -WorkingDirectory ~"
+// This function then checks all known user profiles for one that's compatible with the commandLine.
+// In this case we might have a profile with the command line
+//   "C:\Program Files\PowerShell\7\pwsh.exe"
+// This function will then match this profile return it.
+//
+// If no matching profile could be found a nullptr will be returned.
+Model::Profile CascadiaSettings::_getProfileForCommandLine(const winrt::hstring& commandLine) const
+{
+    // We're going to cache all the command lines we got, as
+    // NormalizeCommandLine is a relatively heavy operation.
+    std::call_once(_commandLinesCacheOnce, [this]() {
+        _commandLinesCache.reserve(_allProfiles.Size());
+
+        for (const auto& profile : _allProfiles)
+        {
+            if (profile.ConnectionType() != winrt::guid{})
+            {
+                continue;
+            }
+
+            const auto cmd = profile.Commandline();
+            if (cmd.empty())
+            {
+                continue;
+            }
+
+            try
+            {
+                _commandLinesCache.emplace_back(NormalizeCommandLine(cmd.c_str()), profile);
+            }
+            CATCH_LOG()
+        }
+
+        // We're trying to find the command line with the longest common prefix below.
+        // Given the commandLine "foo.exe -bar -baz" and these two user profiles:
+        // * "foo.exe"
+        // * "foo.exe -bar"
+        // we want to choose the second one. By sorting the _commandLinesCache in a descending order
+        // by command line length, we can return from this function the moment we found a matching
+        // profile as there cannot possibly be any other profile anymore with a longer command line.
+        std::stable_sort(_commandLinesCache.begin(), _commandLinesCache.end(), [](const auto& lhs, const auto& rhs) {
+            return lhs.first.size() > rhs.first.size();
+        });
+    });
+
+    try
+    {
+        const auto needle = NormalizeCommandLine(commandLine.c_str());
+
+        // til::starts_with(string, prefix) will always return false if prefix.size() > string.size().
+        // --> Using binary search we can safely skip all items in _commandLinesCache where .first.size() > needle.size().
+        const auto end = _commandLinesCache.end();
+        auto it = std::lower_bound(_commandLinesCache.begin(), end, needle, [&](const auto& lhs, const auto& rhs) {
+            return lhs.first.size() > rhs.size();
+        });
+
+        // `it` is now at a position where it->first.size() <= needle.size().
+        // Hopefully we'll now find a command line with matching prefix.
+        for (; it != end; ++it)
+        {
+            const auto& prefix = it->first;
+            const auto length = gsl::narrow<int>(prefix.size());
+            if (CompareStringOrdinal(needle.data(), length, prefix.data(), length, TRUE) == CSTR_EQUAL)
+            {
+                return it->second;
+            }
+        }
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+    }
+
+    return nullptr;
+}
+
+// Given a commandLine like the following:
+// * "C:\WINDOWS\System32\cmd.exe"
+// * "pwsh -WorkingDirectory ~"
+// * "C:\Program Files\PowerShell\7\pwsh.exe"
+// * "C:\Program Files\PowerShell\7\pwsh.exe -WorkingDirectory ~"
+//
+// This function returns:
+// * "C:\Windows\System32\cmd.exe"
+// * "C:\Program Files\PowerShell\7\pwsh.exe\0-WorkingDirectory\0~"
+// * "C:\Program Files\PowerShell\7\pwsh.exe"
+// * "C:\Program Files\PowerShell\7\pwsh.exe\0-WorkingDirectory\0~"
+//
+// The resulting strings are then used for comparisons in _getProfileForCommandLine().
+// For instance a resulting string of
+//   "C:\Program Files\PowerShell\7\pwsh.exe"
+// is considered a compatible profile with
+//   "C:\Program Files\PowerShell\7\pwsh.exe -WorkingDirectory ~"
+// as it shares the same (normalized) prefix.
+std::wstring CascadiaSettings::NormalizeCommandLine(LPCWSTR commandLine)
+{
+    // Turn "%SystemRoot%\System32\cmd.exe" into "C:\WINDOWS\System32\cmd.exe".
+    // We do this early, as environment variables might occur anywhere in the commandLine.
+    std::wstring normalized;
+    THROW_IF_FAILED(wil::ExpandEnvironmentStringsW(commandLine, normalized));
+
+    // One of the most important things this function does is to strip quotes.
+    // That way the commandLine "foo.exe -bar" and "\"foo.exe\" \"-bar\"" appear identical.
+    // We'll abuse CommandLineToArgvW for that as it's close to what CreateProcessW uses.
+    auto argc = 0;
+    wil::unique_hlocal_ptr<PWSTR[]> argv{ CommandLineToArgvW(normalized.c_str(), &argc) };
+    THROW_LAST_ERROR_IF(!argc);
+
+    // The index of the first argument in argv for our executable in argv[0].
+    // Given {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"} this will be 1.
+    auto startOfArguments = 1;
+
+    // The given commandLine should start with an executable name or path.
+    // For instance given the following argv arrays:
+    // * {"C:\WINDOWS\System32\cmd.exe"}
+    // * {"pwsh", "-WorkingDirectory", "~"}
+    // * {"C:\Program", "Files\PowerShell\7\pwsh.exe"}
+    //               ^^^^
+    //   Notice how there used to be a space in the path, which was split by ExpandEnvironmentStringsW().
+    //   CreateProcessW() supports such atrocities, so we got to do the same.
+    // * {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"}
+    //
+    // This loop tries to resolve relative paths, as well as executable names in %PATH%
+    // into absolute paths and normalizes them. The results for the above would be:
+    // * "C:\Windows\System32\cmd.exe"
+    // * "C:\Program Files\PowerShell\7\pwsh.exe"
+    // * "C:\Program Files\PowerShell\7\pwsh.exe"
+    // * "C:\Program Files\PowerShell\7\pwsh.exe"
+    for (;;)
+    {
+        // CreateProcessW uses RtlGetExePath to get the lpPath for SearchPathW.
+        // The difference between the behavior of SearchPathW if lpPath is nullptr and what RtlGetExePath returns
+        // seems to be mostly whether SafeProcessSearchMode is respected and the support for relative paths.
+        // Windows Terminal makes the use of relative paths rather impractical which is why we simply dropped the call to RtlGetExePath.
+        const auto status = wil::SearchPathW(nullptr, argv[0], L".exe", normalized);
+
+        if (status == S_OK)
+        {
+            const auto attributes = GetFileAttributesW(normalized.c_str());
+
+            if (attributes != INVALID_FILE_ATTRIBUTES && WI_IsFlagClear(attributes, FILE_ATTRIBUTE_DIRECTORY))
+            {
+                std::filesystem::path path{ std::move(normalized) };
+
+                // canonical() will resolve symlinks, etc. for us.
+                {
+                    std::error_code ec;
+                    auto canonicalPath = std::filesystem::canonical(path, ec);
+                    if (!ec)
+                    {
+                        path = std::move(canonicalPath);
+                    }
+                }
+
+                // std::filesystem::path has no way to extract the internal path.
+                // So about that.... I own you, computer. Give me that path.
+                normalized = std::move(const_cast<std::wstring&>(path.native()));
+                break;
+            }
+        }
+        // All other error types aren't handled at the moment.
+        else if (status != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+        {
+            break;
+        }
+        // If the file path couldn't be found by SearchPathW this could be the result of us being given a commandLine
+        // like "C:\foo bar\baz.exe -arg" which is resolved to the argv array {"C:\foo", "bar\baz.exe", "-arg"},
+        // or we were erroneously given a directory to execute (e.g. someone ran `wt .`).
+        // Just like CreateProcessW() we thus try to concatenate arguments until we successfully resolve a valid path.
+        // Of course we can only do that if we have at least 2 remaining arguments in argv.
+        if ((argc - startOfArguments) < 2)
+        {
+            break;
+        }
+
+        // As described in the comment right above, we concatenate arguments in an attempt to resolve a valid path.
+        // The code below turns argv from {"C:\foo", "bar\baz.exe", "-arg"} into {"C:\foo bar\baz.exe", "-arg"}.
+        // The code abuses the fact that CommandLineToArgvW allocates all arguments back-to-back on the heap separated by '\0'.
+        argv[startOfArguments][-1] = L' ';
+        ++startOfArguments;
+    }
+
+    // We've (hopefully) finished resolving the path to the executable.
+    // We're now going to append all remaining arguments to the resulting string.
+    // If argv is {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"},
+    // then we'll get "C:\Program Files\PowerShell\7\pwsh.exe\0-WorkingDirectory\0~"
+    if (startOfArguments < argc)
+    {
+        // normalized contains a canonical form of argv[0] at this point.
+        // -1 allows us to include the \0 between argv[0] and argv[1] in the call to append().
+        const auto beg = argv[startOfArguments] - 1;
+        const auto lastArg = argv[argc - 1];
+        const auto end = lastArg + wcslen(lastArg);
+        normalized.append(beg, end);
+    }
+
+    return normalized;
 }
 
 // Method Description:
-// - Helper to get the GUID of a profile given a name that could be a guid or an actual name.
+// - Helper to get a profile given a name that could be a guid or an actual name.
 // Arguments:
 // - name: a guid string _or_ the name of a profile
 // Return Value:
 // - the GUID of the profile corresponding to this name
-std::optional<winrt::guid> CascadiaSettings::_GetProfileGuidByName(const winrt::hstring name) const
-try
+Model::Profile CascadiaSettings::GetProfileByName(const winrt::hstring& name) const
 {
     // First, try and parse the "name" as a GUID. If it's a
     // GUID, and the GUID of one of our profiles, then use that as the
@@ -672,10 +845,10 @@ try
         // it doesn't, it's _definitely_ not a GUID.
         if (name.size() == 38 && name[0] == L'{')
         {
-            const auto newGUID{ Utils::GuidFromString(static_cast<std::wstring>(name)) };
-            if (FindProfile(newGUID))
+            const auto newGUID{ Utils::GuidFromString(name.c_str()) };
+            if (auto profile = FindProfile(newGUID))
             {
-                return newGUID;
+                return profile;
             }
         }
 
@@ -686,43 +859,24 @@ try
         {
             if (profile.Name() == name)
             {
-                return profile.Guid();
+                return profile;
             }
         }
     }
 
-    return std::nullopt;
-}
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return std::nullopt;
+    return nullptr;
 }
 
 // Method Description:
-// - Helper to find the profile GUID for a the profile at the given index in the
-//   list of profiles. If no index is provided, this instead returns the default
-//   profile's guid. This is used by the NewTabProfile<N> ShortcutActions to
-//   create a tab for the Nth profile in the list of profiles.
+// - Helper to get the profile at the given index in the list of profiles.
+// - Returns a nullptr if the index is out of bounds.
 // Arguments:
-// - index: if provided, the index in the list of profiles to get the GUID for.
-//   If omitted, instead return the default profile's GUID
+// - index: The profile index in ActiveProfiles()
 // Return Value:
-// - the Nth profile's GUID, or the default profile's GUID
-std::optional<winrt::guid> CascadiaSettings::_GetProfileGuidByIndex(std::optional<int> index) const
+// - the Nth profile
+Model::Profile CascadiaSettings::GetProfileByIndex(uint32_t index) const
 {
-    if (index)
-    {
-        const auto realIndex{ index.value() };
-        // If we don't have that many profiles, then do nothing.
-        if (realIndex >= 0 &&
-            realIndex < gsl::narrow_cast<decltype(realIndex)>(_activeProfiles.Size()))
-        {
-            const auto& selectedProfile = _activeProfiles.GetAt(realIndex);
-            return selectedProfile.Guid();
-        }
-    }
-    return std::nullopt;
+    return index < _activeProfiles.Size() ? _activeProfiles.GetAt(index) : nullptr;
 }
 
 // Method Description:
@@ -730,13 +884,18 @@ std::optional<winrt::guid> CascadiaSettings::_GetProfileGuidByIndex(std::optiona
 //   keybindings, add them to the list of warnings here. If there were warnings
 //   generated in this way, we'll add a AtLeastOneKeybindingWarning, which will
 //   act as a header for the other warnings
+// - GH#3522
+//   With variable args to keybindings, it's possible that a user
+//   set a keybinding without all the required args for an action.
+//   Display a warning if an action didn't have a required arg.
+//   This will also catch other keybinding warnings, like from GH#4239.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::_ValidateKeybindings()
+void CascadiaSettings::_validateKeybindings() const
 {
-    auto keybindingWarnings = _globals->KeybindingsWarnings();
+    const auto keybindingWarnings = _globals->KeybindingsWarnings();
 
     if (!keybindingWarnings.empty())
     {
@@ -756,12 +915,12 @@ void CascadiaSettings::_ValidateKeybindings()
 // - <none>
 // - Appends a SettingsLoadWarnings::InvalidColorSchemeInCmd to our list of warnings if
 //   we find any command with an invalid color scheme.
-void CascadiaSettings::_ValidateColorSchemesInCommands()
+void CascadiaSettings::_validateColorSchemesInCommands() const
 {
-    bool foundInvalidScheme{ false };
-    for (const auto& nameAndCmd : _globals->Commands())
+    auto foundInvalidScheme{ false };
+    for (const auto& nameAndCmd : _globals->ActionMap().NameMap())
     {
-        if (_HasInvalidColorScheme(nameAndCmd.Value()))
+        if (_hasInvalidColorScheme(nameAndCmd.Value()))
         {
             foundInvalidScheme = true;
             break;
@@ -774,25 +933,25 @@ void CascadiaSettings::_ValidateColorSchemesInCommands()
     }
 }
 
-bool CascadiaSettings::_HasInvalidColorScheme(const Model::Command& command)
+bool CascadiaSettings::_hasInvalidColorScheme(const Model::Command& command) const
 {
-    bool invalid{ false };
+    auto invalid{ false };
     if (command.HasNestedCommands())
     {
         for (const auto& nested : command.NestedCommands())
         {
-            if (_HasInvalidColorScheme(nested.Value()))
+            if (_hasInvalidColorScheme(nested.Value()))
             {
                 invalid = true;
                 break;
             }
         }
     }
-    else if (const auto& actionAndArgs = command.Action())
+    else if (const auto& actionAndArgs = command.ActionAndArgs())
     {
         if (const auto& realArgs = actionAndArgs.Args().try_as<Model::SetColorSchemeArgs>())
         {
-            auto cmdImpl{ winrt::get_self<Command>(command) };
+            const auto cmdImpl{ winrt::get_self<Command>(command) };
             // no need to validate iterable commands on color schemes
             // they will be expanded to commands with a valid scheme name
             if (cmdImpl->IterateOn() != ExpandCommandType::ColorSchemes &&
@@ -807,107 +966,52 @@ bool CascadiaSettings::_HasInvalidColorScheme(const Model::Command& command)
 }
 
 // Method Description:
-// - Checks for the presence of the legacy "globals" key in the user's
-//   settings.json. If this key is present, then they've probably got a pre-0.11
-//   settings file that won't work as expected anymore. We should warn them
-//   about that.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-// - Appends a SettingsLoadWarnings::LegacyGlobalsProperty to our list of warnings if
-//   we find any invalid background images.
-void CascadiaSettings::_ValidateNoGlobalsKey()
-{
-    // use isMember here. If you use [], you're actually injecting "globals": null.
-    if (_userSettings.isMember("globals"))
-    {
-        _warnings.Append(SettingsLoadWarnings::LegacyGlobalsProperty);
-    }
-}
-
-// Method Description
-// - Replaces known tokens DEFAULT_PROFILE, PRODUCT and VERSION in the settings template
-//   with their expected values. DEFAULT_PROFILE is updated to match PowerShell Core's GUID
-//   if such a profile is detected. If it isn't, it'll be set to Windows PowerShell's GUID.
-// Arguments:
-// - settingsTemplate: a settings template
-// Return value:
-// - The new settings string.
-std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::string_view settingsTemplate) const
-{
-    // We're using replace_needle_in_haystack_inplace here, because it's more
-    // efficient to iteratively modify a single string in-place than it is to
-    // keep copying over the contents and modifying a copy (which
-    // replace_needle_in_haystack would do).
-    std::string finalSettings{ settingsTemplate };
-
-    std::wstring defaultProfileGuid{ DEFAULT_WINDOWS_POWERSHELL_GUID };
-    if (const auto psCoreProfileGuid{ _GetProfileGuidByName(hstring{ PowershellCoreProfileGenerator::GetPreferredPowershellProfileName() }) })
-    {
-        defaultProfileGuid = Utils::GuidToString(*psCoreProfileGuid);
-    }
-
-    til::replace_needle_in_haystack_inplace(finalSettings,
-                                            "%DEFAULT_PROFILE%",
-                                            til::u16u8(defaultProfileGuid));
-
-    til::replace_needle_in_haystack_inplace(finalSettings,
-                                            "%VERSION%",
-                                            til::u16u8(ApplicationVersion()));
-    til::replace_needle_in_haystack_inplace(finalSettings,
-                                            "%PRODUCT%",
-                                            til::u16u8(ApplicationDisplayName()));
-
-    til::replace_needle_in_haystack_inplace(finalSettings,
-                                            "%COMMAND_PROMPT_LOCALIZED_NAME%",
-                                            RS_A(L"CommandPromptDisplayName"));
-
-    return finalSettings;
-}
-
-// Method Description:
-// - Lookup the color scheme for a given profile. If the profile doesn't exist,
-//   or the scheme name listed in the profile doesn't correspond to a scheme,
-//   this will return `nullptr`.
-// Arguments:
-// - profileGuid: the GUID of the profile to find the scheme for.
-// Return Value:
-// - a non-owning pointer to the scheme.
-winrt::Microsoft::Terminal::Settings::Model::ColorScheme CascadiaSettings::GetColorSchemeForProfile(const winrt::guid profileGuid) const
-{
-    auto profile = FindProfile(profileGuid);
-    if (!profile)
-    {
-        return nullptr;
-    }
-    const auto schemeName = profile.ColorSchemeName();
-    return _globals->ColorSchemes().TryLookup(schemeName);
-}
-
-// Method Description:
 // - updates all references to that color scheme with the new name
 // Arguments:
 // - oldName: the original name for the color scheme
 // - newName: the new name for the color scheme
 // Return Value:
 // - <none>
-void CascadiaSettings::UpdateColorSchemeReferences(const hstring oldName, const hstring newName)
+void CascadiaSettings::UpdateColorSchemeReferences(const winrt::hstring& oldName, const winrt::hstring& newName)
 {
     // update profiles.defaults, if necessary
-    if (_userDefaultProfileSettings &&
-        _userDefaultProfileSettings->HasColorSchemeName() &&
-        _userDefaultProfileSettings->ColorSchemeName() == oldName)
+    if (_baseLayerProfile &&
+        _baseLayerProfile->DefaultAppearance().HasDarkColorSchemeName() &&
+        _baseLayerProfile->DefaultAppearance().DarkColorSchemeName() == oldName)
     {
-        _userDefaultProfileSettings->ColorSchemeName(newName);
+        _baseLayerProfile->DefaultAppearance().DarkColorSchemeName(newName);
+    }
+    // NOT else-if, because both could match
+    if (_baseLayerProfile &&
+        _baseLayerProfile->DefaultAppearance().HasLightColorSchemeName() &&
+        _baseLayerProfile->DefaultAppearance().LightColorSchemeName() == oldName)
+    {
+        _baseLayerProfile->DefaultAppearance().LightColorSchemeName(newName);
     }
 
     // update all profiles referencing this color scheme
     for (const auto& profile : _allProfiles)
     {
-        if (profile.HasColorSchemeName() && profile.ColorSchemeName() == oldName)
+        const auto defaultAppearance = profile.DefaultAppearance();
+        if (defaultAppearance.HasLightColorSchemeName() && defaultAppearance.LightColorSchemeName() == oldName)
         {
-            profile.ColorSchemeName(newName);
+            defaultAppearance.LightColorSchemeName(newName);
+        }
+        if (defaultAppearance.HasDarkColorSchemeName() && defaultAppearance.DarkColorSchemeName() == oldName)
+        {
+            defaultAppearance.DarkColorSchemeName(newName);
+        }
+
+        if (auto unfocused{ profile.UnfocusedAppearance() })
+        {
+            if (unfocused.HasLightColorSchemeName() && unfocused.LightColorSchemeName() == oldName)
+            {
+                unfocused.LightColorSchemeName(newName);
+            }
+            if (unfocused.HasDarkColorSchemeName() && unfocused.DarkColorSchemeName() == oldName)
+            {
+                unfocused.DarkColorSchemeName(newName);
+            }
         }
     }
 }
@@ -921,7 +1025,7 @@ winrt::hstring CascadiaSettings::ApplicationDisplayName()
     }
     CATCH_LOG();
 
-    return RS_(L"ApplicationDisplayNameUnpackaged");
+    return IsPortableMode() ? RS_(L"ApplicationDisplayNamePortable") : RS_(L"ApplicationDisplayNameUnpackaged");
 }
 
 winrt::hstring CascadiaSettings::ApplicationVersion()
@@ -935,7 +1039,12 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
     }
     CATCH_LOG();
 
-    // Try to get the version the old-fashioned way
+    // Get the product version the old-fashioned way from the localized version compartment.
+    //
+    // We explicitly aren't using VS_FIXEDFILEINFO here, because our build pipeline puts
+    // a non-standard version number into the localized version field.
+    // For instance the fixed file info might contain "1.12.2109.13002",
+    // while the localized field might contain "1.11.210830001-release1.11".
     try
     {
         struct LocalizationInfo
@@ -969,4 +1078,172 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
     CATCH_LOG();
 
     return RS_(L"ApplicationVersionUnknown");
+}
+
+// Method Description:
+// - Determines if we're on an OS platform that supports
+//   the default terminal handoff functionality.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if OS supports default terminal. False otherwise.
+bool CascadiaSettings::IsDefaultTerminalAvailable() noexcept
+{
+    if (!IsPackaged())
+    {
+        return false;
+    }
+
+    OSVERSIONINFOEXW osver{};
+    osver.dwOSVersionInfoSize = sizeof(osver);
+    osver.dwBuildNumber = 22000;
+
+    DWORDLONG dwlConditionMask = 0;
+    VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+    if (VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE)
+    {
+        return true;
+    }
+
+    static bool isOtherwiseAvailable = [] {
+        wil::unique_hkey key;
+        const auto lResult = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+                                           L"SOFTWARE\\Microsoft\\SystemSettings\\SettingId\\SystemSettings_Developer_Mode_Setting_DefaultTerminalApp",
+                                           0,
+                                           KEY_READ,
+                                           &key);
+        return static_cast<bool>(key) && ERROR_SUCCESS == lResult;
+    }();
+    return isOtherwiseAvailable;
+}
+
+bool CascadiaSettings::IsDefaultTerminalSet() noexcept
+{
+    return DefaultTerminal::HasCurrent();
+}
+
+// Method Description:
+// - Returns an iterable collection of all available terminals.
+// Arguments:
+// - <none>
+// Return Value:
+// - an iterable collection of all available terminals that could be the default.
+IObservableVector<Model::DefaultTerminal> CascadiaSettings::DefaultTerminals() noexcept
+{
+    _refreshDefaultTerminals();
+    return _defaultTerminals;
+}
+
+// Method Description:
+// - Returns the currently selected default terminal application.
+// Arguments:
+// - <none>
+// Return Value:
+// - the selected default terminal application
+Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() noexcept
+{
+    _refreshDefaultTerminals();
+    return _currentDefaultTerminal;
+}
+
+// Method Description:
+// - Sets the current default terminal application
+// Arguments:
+// - terminal - Terminal from `DefaultTerminals` list to set as default
+// Return Value:
+// - <none>
+void CascadiaSettings::CurrentDefaultTerminal(const Model::DefaultTerminal& terminal)
+{
+    _currentDefaultTerminal = terminal;
+}
+
+// This function is implicitly called by DefaultTerminals/CurrentDefaultTerminal().
+// It reloads the selection of available, installed terminals and caches them.
+// WinUI requires us that the `SelectedItem` of a collection is member of the list given to `ItemsSource`.
+// It's thus important that _currentDefaultTerminal is a member of _defaultTerminals.
+// Right now this is implicitly the case thanks to DefaultTerminal::Available(),
+// but in the future it might be worthwhile to change the code to use list indices instead.
+void CascadiaSettings::_refreshDefaultTerminals()
+{
+    if (_defaultTerminals)
+    {
+        return;
+    }
+
+    // This is an extract of extractValueFromTaskWithoutMainThreadAwait
+    // as DefaultTerminal::Available creates the exact same issue.
+    std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> result{ {}, nullptr };
+    til::latch latch{ 1 };
+
+    std::ignore = [&]() -> winrt::fire_and_forget {
+        const auto cleanup = wil::scope_exit([&]() {
+            latch.count_down();
+        });
+        co_await winrt::resume_background();
+        result = DefaultTerminal::Available();
+    }();
+
+    latch.wait();
+    _defaultTerminals = winrt::single_threaded_observable_vector(std::move(result.first));
+    _currentDefaultTerminal = std::move(result.second);
+}
+
+void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
+{
+    try
+    {
+        WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
+    }
+    CATCH_LOG();
+}
+
+void CascadiaSettings::_validateThemeExists()
+{
+    const auto& themes{ _globals->Themes() };
+    if (themes.Size() == 0)
+    {
+        // We didn't even load the default themes. This should only be possible
+        // if the defaults.json didn't include any themes, or if no
+        // defaults.json was loaded at all. The second case is especially common
+        // in tests (that don't bother with a defaults.json). No matter. Create
+        // a default theme under `system` and just stick it in there.
+
+        auto newTheme = winrt::make_self<Theme>();
+        newTheme->Name(L"system");
+        _globals->AddTheme(*newTheme);
+        _globals->Theme(Model::ThemePair{ L"system" });
+    }
+
+    const auto& theme{ _globals->Theme() };
+    if (theme.DarkName() == theme.LightName())
+    {
+        // Only one theme. We'll treat it as such.
+        if (!themes.HasKey(theme.DarkName()))
+        {
+            _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+            // safely fall back to system as the theme.
+            _globals->Theme(*winrt::make_self<ThemePair>(L"system"));
+        }
+    }
+    else
+    {
+        // Two different themes. Check each separately, and fall back to a
+        // reasonable default contextually
+        if (!themes.HasKey(theme.LightName()))
+        {
+            _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+            theme.LightName(L"light");
+        }
+        if (!themes.HasKey(theme.DarkName()))
+        {
+            _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+            theme.DarkName(L"dark");
+        }
+    }
+}
+
+void CascadiaSettings::ExpandCommands()
+{
+    _globals->ExpandCommands(ActiveProfiles().GetView(), GlobalSettings().ColorSchemes());
 }

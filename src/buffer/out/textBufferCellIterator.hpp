@@ -15,8 +15,7 @@ Author(s):
 
 #pragma once
 
-#include "AttrRowIterator.hpp"
-#include "CharRow.hpp"
+#include "Row.hpp"
 #include "OutputCellView.hpp"
 #include "../../types/inc/viewport.hpp"
 
@@ -25,8 +24,8 @@ class TextBuffer;
 class TextBufferCellIterator
 {
 public:
-    TextBufferCellIterator(const TextBuffer& buffer, COORD pos);
-    TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Microsoft::Console::Types::Viewport limits);
+    TextBufferCellIterator(const TextBuffer& buffer, til::point pos);
+    TextBufferCellIterator(const TextBuffer& buffer, til::point pos, const Microsoft::Console::Types::Viewport limits);
 
     operator bool() const noexcept;
 
@@ -47,19 +46,21 @@ public:
     const OutputCellView& operator*() const noexcept;
     const OutputCellView* operator->() const noexcept;
 
-protected:
-    void _SetPos(const COORD newPos);
-    void _GenerateView();
-    static const ROW* s_GetRow(const TextBuffer& buffer, const COORD pos);
+    til::point Pos() const noexcept;
 
+protected:
+    void _SetPos(const til::point newPos) noexcept;
+    void _GenerateView() noexcept;
+    static const ROW* s_GetRow(const TextBuffer& buffer, const til::point pos) noexcept;
+
+    til::small_rle<TextAttribute, uint16_t, 1>::const_iterator _attrIter;
     OutputCellView _view;
 
     const ROW* _pRow;
-    AttrRowIterator _attrIter;
     const TextBuffer& _buffer;
     const Microsoft::Console::Types::Viewport _bounds;
     bool _exceeded;
-    COORD _pos;
+    til::point _pos;
 
 #if UNIT_TESTING
     friend class TextBufferIteratorTests;

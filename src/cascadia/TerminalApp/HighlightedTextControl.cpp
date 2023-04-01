@@ -54,7 +54,7 @@ namespace winrt::TerminalApp::implementation
         return winrt::unbox_value<winrt::TerminalApp::HighlightedText>(GetValue(_textProperty));
     }
 
-    void HighlightedTextControl::Text(winrt::TerminalApp::HighlightedText const& value)
+    void HighlightedTextControl::Text(const winrt::TerminalApp::HighlightedText& value)
     {
         SetValue(_textProperty, winrt::box_value(value));
     }
@@ -65,7 +65,7 @@ namespace winrt::TerminalApp::implementation
     // - o - dependency object that was modified, expected to be an instance of this control
     // - e - event arguments of the property changed event fired by the event system upon Text property change.
     // The new value is expected to be an instance of HighlightedText
-    void HighlightedTextControl::_onTextChanged(DependencyObject const& o, DependencyPropertyChangedEventArgs const& e)
+    void HighlightedTextControl::_onTextChanged(const DependencyObject& o, const DependencyPropertyChangedEventArgs& e)
     {
         const auto control = o.try_as<winrt::TerminalApp::HighlightedTextControl>();
         const auto highlightedText = e.NewValue().try_as<winrt::TerminalApp::HighlightedText>();

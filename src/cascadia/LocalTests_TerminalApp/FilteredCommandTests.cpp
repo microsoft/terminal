@@ -1,17 +1,17 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
 #include "../TerminalApp/CommandLinePaletteItem.h"
 #include "../TerminalApp/CommandPalette.h"
-#include "../CppWinrtTailored.h"
+#include "CppWinrtTailored.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 
 namespace TerminalAppLocalTests
 {

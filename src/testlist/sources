@@ -19,4 +19,4 @@ TESTLIST_REFERENCE_DIRS=\
     $(OBJ_PATH)\..\terminal\adapter\ut_adapter\$O \
     $(OBJ_PATH)\..\terminal\parser\ut_parser\$O \
     $(OBJ_PATH)\..\types\ut_types\$O \
-    $(ONECORE_PRIVATE_PATH)\minkernel\lib\$(TARGET_DIRECTORY)\testmetadata\console \
+    $(MINKERNEL_PRIVATE_TESTMETADATA_PATH_L)\console \

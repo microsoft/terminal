@@ -38,8 +38,7 @@ public:
 
     DirectReadData(DirectReadData&&) = default;
 
-    ~DirectReadData() override;
-
+    void MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer) override;
     bool Notify(const WaitTerminationReason TerminationReason,
                 const bool fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
@@ -49,6 +48,5 @@ public:
 
 private:
     const size_t _eventReadCount;
-    std::deque<std::unique_ptr<IInputEvent>> _partialEvents;
     std::deque<std::unique_ptr<IInputEvent>> _outEvents;
 };

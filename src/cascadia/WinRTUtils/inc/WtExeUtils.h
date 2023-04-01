@@ -1,9 +1,23 @@
+constexpr std::wstring_view WtExe{ L"wt.exe" };
+constexpr std::wstring_view WtdExe{ L"wtd.exe" };
+constexpr std::wstring_view WindowsTerminalExe{ L"WindowsTerminal.exe" };
+constexpr std::wstring_view LocalAppDataAppsPath{ L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\" };
 
-static constexpr std::wstring_view WtExe{ L"wt.exe" };
-static constexpr std::wstring_view WtdExe{ L"wtd.exe" };
-static constexpr std::wstring_view WindowsTerminalExe{ L"WindowsTerminal.exe" };
-
-static constexpr std::wstring_view LocalAppDataAppsPath{ L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\" };
+_TIL_INLINEPREFIX bool IsPackaged()
+{
+    static const auto isPackaged = []() -> bool {
+        try
+        {
+            const auto package = winrt::Windows::ApplicationModel::Package::Current();
+            return true;
+        }
+        catch (...)
+        {
+            return false;
+        }
+    }();
+    return isPackaged;
+}
 
 // Function Description:
 // - This is a helper to determine if we're running as a part of the Dev Build
@@ -18,19 +32,21 @@ static constexpr std::wstring_view LocalAppDataAppsPath{ L"%LOCALAPPDATA%\\Micro
 _TIL_INLINEPREFIX bool IsDevBuild()
 {
     // use C++11 magic statics to make sure we only do this once.
-    static bool isDevBuild = []() -> bool {
-        try
+    static const auto isDevBuild = []() -> bool {
+        if (IsPackaged())
         {
-            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
-            const auto id = package.Id();
-            const std::wstring name{ id.FullName() };
-            // Does our PFN start with WindowsTerminalDev?
-            return name.rfind(L"WindowsTerminalDev", 0) == 0;
+            try
+            {
+                const auto package = winrt::Windows::ApplicationModel::Package::Current();
+                const auto id = package.Id();
+                const auto name = id.FullName();
+                return til::starts_with(name, L"WindowsTerminalDev");
+            }
+            CATCH_LOG();
         }
-        CATCH_LOG();
+
         return true;
     }();
-
     return isDevBuild;
 }
 
@@ -45,10 +61,9 @@ _TIL_INLINEPREFIX bool IsDevBuild()
 // - <none>
 // Return Value:
 // - the full path to the exe, one of `wt.exe`, `wtd.exe`, or `WindowsTerminal.exe`.
-_TIL_INLINEPREFIX std::wstring GetWtExePath()
+_TIL_INLINEPREFIX const std::wstring& GetWtExePath()
 {
-    // use C++11 magic statics to make sure we only do this once.
-    static const std::wstring exePath = []() -> std::wstring {
+    static const auto exePath = []() -> std::wstring {
         // First, check a packaged location for the exe. If we've got a package
         // family name, that means we're one of the packaged Dev build, packaged
         // Release build, or packaged Preview build.
@@ -57,37 +72,72 @@ _TIL_INLINEPREFIX std::wstring GetWtExePath()
         // `wt.exe` on the %PATH% is us or not. Fortunately, _our_ execution alias
         // is located in "%LOCALAPPDATA%\Microsoft\WindowsApps\<our package family
         // name>", _always_, so we can use that to look up the exe easier.
-        try
+        if (IsPackaged())
         {
-            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
-            const auto id = package.Id();
-            const std::wstring pfn{ id.FamilyName() };
-            if (!pfn.empty())
+            try
             {
-                const std::filesystem::path windowsAppsPath{ wil::ExpandEnvironmentStringsW<std::wstring>(LocalAppDataAppsPath.data()) };
-                const std::filesystem::path wtPath = windowsAppsPath / pfn / (IsDevBuild() ? WtdExe : WtExe);
-                return wtPath;
+                const auto package = winrt::Windows::ApplicationModel::Package::Current();
+                const auto id = package.Id();
+                const auto pfn = id.FamilyName();
+                if (!pfn.empty())
+                {
+                    const std::filesystem::path windowsAppsPath{ wil::ExpandEnvironmentStringsW<std::wstring>(LocalAppDataAppsPath.data()) };
+                    const auto wtPath = windowsAppsPath / std::wstring_view{ pfn } / (IsDevBuild() ? WtdExe : WtExe);
+                    return wtPath;
+                }
             }
+            CATCH_LOG();
         }
-        CATCH_LOG();
 
         // If we're here, then we couldn't resolve our exe from the package. This
         // means we're running unpackaged. We should just use the
         // WindowsTerminal.exe that's sitting in the directory next to us.
         try
         {
-            HMODULE hModule = GetModuleHandle(nullptr);
-            THROW_LAST_ERROR_IF(hModule == nullptr);
-            std::wstring dllPathString;
-            THROW_IF_FAILED(wil::GetModuleFileNameW(hModule, dllPathString));
-            const std::filesystem::path dllPath{ dllPathString };
-            const std::filesystem::path rootDir = dllPath.parent_path();
-            std::filesystem::path wtPath = rootDir / WindowsTerminalExe;
-            return wtPath;
+            std::filesystem::path module = wil::GetModuleFileNameW<std::wstring>(nullptr);
+            module.replace_filename(WindowsTerminalExe);
+            return module;
         }
         CATCH_LOG();
 
-        return L"wt.exe";
+        return std::wstring{ WtExe };
     }();
     return exePath;
+}
+
+// Method Description:
+// - Quotes and escapes the given string so that it can be used as a command-line arg.
+// - e.g. given `\";foo\` will return `"\\\"\;foo\\"` so that the caller can construct a command-line
+//   using something such as `fmt::format(L"wt --title {}", QuoteAndQuoteAndEscapeCommandlineArg(TabTitle()))`.
+// Arguments:
+// - arg - the command-line argument to quote and escape.
+// Return Value:
+// - the quoted and escaped command-line argument.
+_TIL_INLINEPREFIX std::wstring QuoteAndEscapeCommandlineArg(const std::wstring_view& arg)
+{
+    std::wstring out;
+    out.reserve(arg.size() + 2);
+    out.push_back(L'"');
+
+    size_t backslashes = 0;
+    for (const auto ch : arg)
+    {
+        if (ch == L'\\')
+        {
+            backslashes++;
+        }
+        else
+        {
+            if (ch == L';' || ch == L'"')
+            {
+                out.append(backslashes + 1, L'\\');
+            }
+            backslashes = 0;
+        }
+        out.push_back(ch);
+    }
+
+    out.append(backslashes, L'\\');
+    out.push_back(L'"');
+    return out;
 }

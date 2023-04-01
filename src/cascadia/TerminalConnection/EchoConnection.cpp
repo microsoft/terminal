@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
@@ -9,15 +9,13 @@
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    EchoConnection::EchoConnection() noexcept
-    {
-    }
+    EchoConnection::EchoConnection() noexcept = default;
 
     void EchoConnection::Start() noexcept
     {
     }
 
-    void EchoConnection::WriteInput(hstring const& data)
+    void EchoConnection::WriteInput(const hstring& data)
     {
         std::wstringstream prettyPrint;
         for (const auto& wch : data)

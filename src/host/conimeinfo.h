@@ -45,11 +45,11 @@ public:
     void RefreshAreaAttributes();
     void ClearAllAreas();
 
-    [[nodiscard]] HRESULT ResizeAllAreas(const COORD newSize);
+    [[nodiscard]] HRESULT ResizeAllAreas(const til::size newSize);
 
     void WriteCompMessage(const std::wstring_view text,
-                          const gsl::span<const BYTE> attributes,
-                          const gsl::span<const WORD> colorArray);
+                          const std::span<const BYTE> attributes,
+                          const std::span<const WORD> colorArray);
 
     void WriteResultMessage(const std::wstring_view text);
 
@@ -64,22 +64,22 @@ private:
     void _ClearComposition();
 
     void _WriteUndeterminedChars(const std::wstring_view text,
-                                 const gsl::span<const BYTE> attributes,
-                                 const gsl::span<const WORD> colorArray);
+                                 const std::span<const BYTE> attributes,
+                                 const std::span<const WORD> colorArray);
 
     void _InsertConvertedString(const std::wstring_view text);
 
     static TextAttribute s_RetrieveAttributeAt(const size_t pos,
-                                               const gsl::span<const BYTE> attributes,
-                                               const gsl::span<const WORD> colorArray);
+                                               const std::span<const BYTE> attributes,
+                                               const std::span<const WORD> colorArray);
 
     static std::vector<OutputCell> s_ConvertToCells(const std::wstring_view text,
-                                                    const gsl::span<const BYTE> attributes,
-                                                    const gsl::span<const WORD> colorArray);
+                                                    const std::span<const BYTE> attributes,
+                                                    const std::span<const WORD> colorArray);
 
     std::vector<OutputCell>::const_iterator _WriteConversionArea(const std::vector<OutputCell>::const_iterator begin,
                                                                  const std::vector<OutputCell>::const_iterator end,
-                                                                 COORD& pos,
+                                                                 til::point& pos,
                                                                  const Microsoft::Console::Types::Viewport view,
                                                                  SCREEN_INFORMATION& screenInfo);
 

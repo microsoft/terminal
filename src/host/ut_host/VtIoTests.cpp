@@ -6,20 +6,20 @@
 #include "../../inc/consoletaeftemplates.hpp"
 #include "../../types/inc/Viewport.hpp"
 
+#include "../VtIo.hpp"
+#include "../../interactivity/inc/ServiceLocator.hpp"
+#include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/vt/Xterm256Engine.hpp"
 #include "../../renderer/vt/XtermEngine.hpp"
-#include "../../renderer/base/Renderer.hpp"
-#include "../Settings.hpp"
-#include "../VtIo.hpp"
 
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
 #include "../../renderer/dx/DxRenderer.hpp"
 #endif
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
-using namespace std;
+using namespace Microsoft::Console::Interactivity;
 
 class Microsoft::Console::VirtualTerminal::VtIoTests
 {
@@ -38,7 +38,7 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
 
     TEST_METHOD(RendererDtorAndThread);
 
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
     TEST_METHOD(RendererDtorAndThreadAndDx);
 #endif
 
@@ -80,10 +80,10 @@ void VtIoTests::ModeParsingTest()
 
 Viewport SetUpViewport()
 {
-    SMALL_RECT view = {};
-    view.Top = view.Left = 0;
-    view.Bottom = 31;
-    view.Right = 79;
+    til::inclusive_rect view;
+    view.top = view.left = 0;
+    view.bottom = 31;
+    view.right = 79;
 
     return Viewport::FromInclusive(view);
 }
@@ -98,7 +98,7 @@ void VtIoTests::DtorTestJustEngine()
 
     Log::Comment(NoThrowString().Format(
         L"New some engines and delete them"));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"New/Delete loop #%d", i));
@@ -136,16 +136,16 @@ void VtIoTests::DtorTestDeleteVtio()
 
     Log::Comment(NoThrowString().Format(
         L"New some engines and delete them"));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"New/Delete loop #%d", i));
 
-        wil::unique_hfile hOutputFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+        auto hOutputFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
 
-        VtIo* vtio = new VtIo();
+        auto vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
                                                                   SetUpViewport());
@@ -185,7 +185,7 @@ void VtIoTests::DtorTestStackAlloc()
 
     Log::Comment(NoThrowString().Format(
         L"make some engines and let them fall out of scope"));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"Scope Exit Auto cleanup #%d", i));
@@ -227,7 +227,7 @@ void VtIoTests::DtorTestStackAllocMany()
 
     Log::Comment(NoThrowString().Format(
         L"Try an make a whole bunch all at once, and have them all fall out of scope at once."));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"Multiple engines, one scope loop #%d", i));
@@ -254,7 +254,7 @@ void VtIoTests::DtorTestStackAllocMany()
     }
 }
 
-class MockRenderData : public IRenderData, IUiaData
+class MockRenderData : public IRenderData
 {
 public:
     Microsoft::Console::Types::Viewport GetViewport() noexcept override
@@ -262,17 +262,17 @@ public:
         return Microsoft::Console::Types::Viewport{};
     }
 
-    COORD GetTextBufferEndPosition() const noexcept override
+    til::point GetTextBufferEndPosition() const noexcept override
     {
-        return COORD{};
+        return {};
     }
 
-    const TextBuffer& GetTextBuffer() noexcept override
+    const TextBuffer& GetTextBuffer() const noexcept override
     {
         FAIL_FAST_HR(E_NOTIMPL);
     }
 
-    const FontInfo& GetFontInfo() noexcept override
+    const FontInfo& GetFontInfo() const noexcept override
     {
         FAIL_FAST_HR(E_NOTIMPL);
     }
@@ -290,19 +290,14 @@ public:
     {
     }
 
-    const TextAttribute GetDefaultBrushColors() noexcept override
-    {
-        return TextAttribute{};
-    }
-
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& /*attr*/) const noexcept override
     {
         return std::make_pair(COLORREF{}, COLORREF{});
     }
 
-    COORD GetCursorPosition() const noexcept override
+    til::point GetCursorPosition() const noexcept override
     {
-        return COORD{};
+        return {};
     }
 
     bool IsCursorVisible() const noexcept override
@@ -330,17 +325,7 @@ public:
         return 12ul;
     }
 
-    COLORREF GetCursorColor() const noexcept override
-    {
-        return COLORREF{};
-    }
-
-    bool IsCursorDoubleWidth() const override
-    {
-        return false;
-    }
-
-    bool IsScreenReversed() const noexcept override
+    bool IsCursorDoubleWidth() const noexcept override
     {
         return false;
     }
@@ -374,35 +359,40 @@ public:
     {
     }
 
-    void SelectNewRegion(const COORD /*coordStart*/, const COORD /*coordEnd*/) override
+    void SelectNewRegion(const til::point /*coordStart*/, const til::point /*coordEnd*/) override
     {
     }
 
-    const COORD GetSelectionAnchor() const noexcept
-    {
-        return COORD{};
-    }
-
-    const COORD GetSelectionEnd() const noexcept
-    {
-        return COORD{};
-    }
-
-    void ColorSelection(const COORD /*coordSelectionStart*/, const COORD /*coordSelectionEnd*/, const TextAttribute /*attr*/)
-    {
-    }
-
-    const std::wstring GetHyperlinkUri(uint16_t /*id*/) const noexcept
+    const til::point GetSelectionAnchor() const noexcept
     {
         return {};
     }
 
-    const std::wstring GetHyperlinkCustomId(uint16_t /*id*/) const noexcept
+    const til::point GetSelectionEnd() const noexcept
     {
         return {};
     }
 
-    const std::vector<size_t> GetPatternId(const COORD /*location*/) const noexcept
+    void ColorSelection(const til::point /*coordSelectionStart*/, const til::point /*coordSelectionEnd*/, const TextAttribute /*attr*/)
+    {
+    }
+
+    const bool IsUiaDataInitialized() const noexcept
+    {
+        return true;
+    }
+
+    const std::wstring GetHyperlinkUri(uint16_t /*id*/) const
+    {
+        return {};
+    }
+
+    const std::wstring GetHyperlinkCustomId(uint16_t /*id*/) const
+    {
+        return {};
+    }
+
+    const std::vector<size_t> GetPatternId(const til::point /*location*/) const
     {
         return {};
     }
@@ -413,12 +403,12 @@ void VtIoTests::RendererDtorAndThread()
     Log::Comment(NoThrowString().Format(
         L"Test deleting a Renderer a bunch of times"));
 
-    for (int i = 0; i < 16; ++i)
+    for (auto i = 0; i < 16; ++i)
     {
         auto data = std::make_unique<MockRenderData>();
         auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
         auto* pThread = thread.get();
-        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(data.get(), nullptr, 0, std::move(thread));
+        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(RenderSettings{}, data.get(), nullptr, 0, std::move(thread));
         VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
         // Sleep for a hot sec to make sure the thread starts before we enable painting
         // If you don't, the thread might wait on the paint enabled event AFTER
@@ -433,18 +423,18 @@ void VtIoTests::RendererDtorAndThread()
     }
 }
 
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
 void VtIoTests::RendererDtorAndThreadAndDx()
 {
     Log::Comment(NoThrowString().Format(
         L"Test deleting a Renderer a bunch of times"));
 
-    for (int i = 0; i < 16; ++i)
+    for (auto i = 0; i < 16; ++i)
     {
         auto data = std::make_unique<MockRenderData>();
         auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
         auto* pThread = thread.get();
-        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(data.get(), nullptr, 0, std::move(thread));
+        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(RenderSettings{}, data.get(), nullptr, 0, std::move(thread));
         VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
 
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
@@ -456,6 +446,7 @@ void VtIoTests::RendererDtorAndThreadAndDx()
         // which is what CI uses.
         /*Sleep(500);*/
 
+        (void)dxEngine->Enable();
         pThread->EnablePainting();
         pRenderer->TriggerTeardown();
         pRenderer.reset();
@@ -481,6 +472,13 @@ void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
     VERIFY_WIN32_BOOL_SUCCEEDED(CreatePipe(&signalPipeReadSide, &signalPipeWriteSide, nullptr, 0), L"Create anonymous signal pipe.");
 
     Log::Comment(L"\tinitializing vtio");
+
+    // CreateIoHandlers() assert()s on IsConsoleLocked() to guard against a race condition.
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole();
+    const auto cleanup = wil::scope_exit([&]() {
+        gci.UnlockConsole();
+    });
 
     VtIo vtio;
     VERIFY_IS_FALSE(vtio.IsUsingVt());

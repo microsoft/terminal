@@ -18,7 +18,6 @@ Revision History:
 
 #pragma once
 
-#include "inputReadHandleData.h"
 #include "readData.hpp"
 #include "../types/inc/IInputEvent.hpp"
 
@@ -28,6 +27,12 @@ Revision History:
 
 #include <deque>
 
+namespace Microsoft::Console::Render
+{
+    class Renderer;
+    class VtEngine;
+}
+
 class InputBuffer final : public ConsoleObjectHeader
 {
 public:
@@ -36,12 +41,15 @@ public:
     bool fInComposition; // specifies if there's an ongoing text composition
 
     InputBuffer();
-    ~InputBuffer();
 
-    // storage API for partial dbcs bytes being read from the buffer
-    bool IsReadPartialByteSequenceAvailable();
-    std::unique_ptr<IInputEvent> FetchReadPartialByteSequence(_In_ bool peek);
-    void StoreReadPartialByteSequence(std::unique_ptr<IInputEvent> event);
+    // String oriented APIs
+    void Consume(bool isUnicode, std::wstring_view& source, std::span<char>& target);
+    void ConsumeCached(bool isUnicode, std::span<char>& target);
+    void Cache(std::wstring_view source);
+    // INPUT_RECORD oriented APIs
+    size_t ConsumeCached(bool isUnicode, size_t count, InputEventQueue& target);
+    size_t PeekCached(bool isUnicode, size_t count, InputEventQueue& target);
+    void Cache(bool isUnicode, InputEventQueue& source, size_t expectedSourceSize);
 
     // storage API for partial dbcs bytes being written to the buffer
     bool IsWritePartialByteSequenceAvailable();
@@ -75,12 +83,29 @@ public:
 
     bool IsInVirtualTerminalInputMode() const;
     Microsoft::Console::VirtualTerminal::TerminalInput& GetTerminalInput();
+    void SetTerminalConnection(_In_ Microsoft::Console::Render::VtEngine* const pTtyConnection);
+    void PassThroughWin32MouseRequest(bool enable);
 
 private:
+    enum class ReadingMode : uint8_t
+    {
+        StringA,
+        StringW,
+        InputEventsA,
+        InputEventsW,
+    };
+
+    std::string _cachedTextA;
+    std::string_view _cachedTextReaderA;
+    std::wstring _cachedTextW;
+    std::wstring_view _cachedTextReaderW;
+    std::deque<std::unique_ptr<IInputEvent>> _cachedInputEvents;
+    ReadingMode _readingMode = ReadingMode::StringA;
+
     std::deque<std::unique_ptr<IInputEvent>> _storage;
-    std::unique_ptr<IInputEvent> _readPartialByteSequence;
     std::unique_ptr<IInputEvent> _writePartialByteSequence;
     Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
+    Microsoft::Console::Render::VtEngine* _pTtyConnection;
 
     // This flag is used in _HandleTerminalInputCallback
     // If the InputBuffer leads to a _HandleTerminalInputCallback call,
@@ -88,13 +113,8 @@ private:
     // Otherwise, we should be calling them.
     bool _vtInputShouldSuppress{ false };
 
-    void _ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                     const size_t readCount,
-                     _Out_ size_t& eventsRead,
-                     const bool peek,
-                     _Out_ bool& resetWaitEvent,
-                     const bool unicode,
-                     const bool streamRead);
+    void _switchReadingMode(ReadingMode mode);
+    void _switchReadingModeSlowPath(ReadingMode mode);
 
     void _WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inRecords,
                       _Out_ size_t& eventsWritten,

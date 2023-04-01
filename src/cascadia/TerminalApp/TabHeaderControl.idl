@@ -14,6 +14,8 @@ namespace TerminalApp
         TabHeaderControl();
         void BeginRename();
 
+        Boolean InRename { get; };
+
         TerminalTabStatus TabStatus { get;  set; };
 
         event TitleChangeRequestedArgs TitleChangeRequested;

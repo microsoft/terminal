@@ -1,0 +1,19 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+
+namespace SampleApp
+{
+
+    [default_interface] runtimeclass SampleAppLogic
+    {
+        SampleAppLogic();
+
+        void Create();
+
+        Windows.UI.Xaml.UIElement GetRoot();
+
+        String Title { get; };
+
+    }
+}

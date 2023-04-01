@@ -15,7 +15,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleCP(_Inout_ CONSOLE_API_MSG* const m,
                                                          _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    CONSOLE_GETCP_MSG* const a = &m->u.consoleMsgL1.GetConsoleCP;
+    const auto a = &m->u.consoleMsgL1.GetConsoleCP;
 
     if (a->Output)
     {
@@ -34,12 +34,13 @@
                                                            _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
-    CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.GetConsoleMode;
+    const auto a = &m->u.consoleMsgL1.GetConsoleMode;
     std::wstring_view handleType = L"unknown";
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "API_GetConsoleMode",
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE),
                       TraceLoggingOpcode(WINEVENT_OPCODE_START));
 
     auto tracing = wil::scope_exit([&]() {
@@ -47,10 +48,11 @@
         TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                           "API_GetConsoleMode",
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE),
                           TraceLoggingOpcode(WINEVENT_OPCODE_STOP));
     });
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
     if (pObjectHandle->IsInputHandle())
     {
@@ -73,9 +75,9 @@
                                                            _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleMode);
-    CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.SetConsoleMode;
+    const auto a = &m->u.consoleMsgL1.SetConsoleMode;
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
     if (pObjectHandle->IsInputHandle())
     {
@@ -95,9 +97,9 @@
                                                                    _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetNumberOfConsoleInputEvents);
-    CONSOLE_GETNUMBEROFINPUTEVENTS_MSG* const a = &m->u.consoleMsgL1.GetNumberOfConsoleInputEvents;
+    const auto a = &m->u.consoleMsgL1.GetNumberOfConsoleInputEvents;
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     InputBuffer* pObj;
@@ -111,7 +113,7 @@
 {
     *pbReplyPending = FALSE;
 
-    CONSOLE_GETCONSOLEINPUT_MSG* const a = &m->u.consoleMsgL1.GetConsoleInput;
+    const auto a = &m->u.consoleMsgL1.GetConsoleInput;
     if (WI_IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE))
     {
         Telemetry::Instance().LogApiCall(Telemetry::ApiCall::PeekConsoleInput, a->Unicode);
@@ -130,7 +132,7 @@
     }
 
     // Make sure we have a valid input buffer.
-    ConsoleHandleData* const pHandleData = m->GetObjectHandle();
+    const auto pHandleData = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pHandleData);
     InputBuffer* pInputBuffer;
     RETURN_IF_FAILED(pHandleData->GetInputBuffer(GENERIC_READ, &pInputBuffer));
@@ -140,18 +142,18 @@
     ULONG cbBufferSize;
     RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBufferSize));
 
-    INPUT_RECORD* const rgRecords = reinterpret_cast<INPUT_RECORD*>(pvBuffer);
-    size_t const cRecords = cbBufferSize / sizeof(INPUT_RECORD);
+    const auto rgRecords = reinterpret_cast<INPUT_RECORD*>(pvBuffer);
+    const auto cRecords = cbBufferSize / sizeof(INPUT_RECORD);
 
-    bool const fIsPeek = WI_IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE);
-    bool const fIsWaitAllowed = WI_IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT);
+    const auto fIsPeek = WI_IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE);
+    const auto fIsWaitAllowed = WI_IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT);
 
-    INPUT_READ_HANDLE_DATA* const pInputReadHandleData = pHandleData->GetClientInput();
+    const auto pInputReadHandleData = pHandleData->GetClientInput();
 
     std::unique_ptr<IWaitRoutine> waiter;
     HRESULT hr;
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
-    size_t const eventsToRead = cRecords;
+    const auto eventsToRead = cRecords;
     if (a->Unicode)
     {
         if (fIsPeek)
@@ -254,13 +256,13 @@
 {
     *pbReplyPending = FALSE;
 
-    CONSOLE_READCONSOLE_MSG* const a = &m->u.consoleMsgL1.ReadConsole;
+    const auto a = &m->u.consoleMsgL1.ReadConsole;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsole, a->Unicode);
 
     a->NumBytes = 0; // we return 0 until proven otherwise.
 
     // Make sure we have a valid input buffer.
-    ConsoleHandleData* const HandleData = m->GetObjectHandle();
+    const auto HandleData = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, HandleData);
     InputBuffer* pInputBuffer;
     RETURN_IF_FAILED(HandleData->GetInputBuffer(GENERIC_READ, &pInputBuffer));
@@ -268,20 +270,15 @@
     // Get output parameter buffer.
     PVOID pvBuffer;
     ULONG cbBufferSize;
-    // TODO: This is dumb. We should find out how much we need, not guess.
-    // If the request is not in Unicode mode, we must allocate an output buffer that is twice as big as the actual caller buffer.
-    RETURN_IF_FAILED(m->GetAugmentedOutputBuffer((a->Unicode != FALSE) ? 1 : 2,
-                                                 &pvBuffer,
-                                                 &cbBufferSize));
+    RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBufferSize));
 
-    // TODO: This is also rather strange and will also probably make more sense if we stop guessing that we need 2x buffer to convert.
     // This might need to go on the other side of the fence (inside host) because the server doesn't know what we're going to do with initial num bytes.
     // (This restriction exists because it's going to copy initial into the final buffer, but we don't know that.)
     RETURN_HR_IF(E_INVALIDARG, a->InitialNumBytes > cbBufferSize);
 
     // Retrieve input parameters.
     // 1. Exe name making the request
-    ULONG const cchExeName = a->ExeNameLength;
+    const auto cchExeName = a->ExeNameLength;
     ULONG cbExeName;
     RETURN_IF_FAILED(ULongMult(cchExeName, sizeof(wchar_t), &cbExeName));
     wistd::unique_ptr<wchar_t[]> pwsExeName;
@@ -295,7 +292,7 @@
     const std::wstring_view exeView(pwsExeName.get(), cchExeName);
 
     // 2. Existing data in the buffer that was passed in.
-    ULONG const cbInitialData = a->InitialNumBytes;
+    const auto cbInitialData = a->InitialNumBytes;
     std::unique_ptr<char[]> pbInitialData;
 
     try
@@ -310,12 +307,12 @@
     }
     CATCH_RETURN();
 
-    // ReadConsole needs this to get the command history list associated with an attached process, but it can be an opaque value.
-    HANDLE const hConsoleClient = (HANDLE)m->GetProcessHandle();
+    // ReadConsole needs this to get details associated with an attached process (such as the command history list, telemetry metadata).
+    const auto hConsoleClient = (HANDLE)m->GetProcessHandle();
 
     // ReadConsole needs this to store context information across "processed reads" e.g. reads on the same handle
     // across multiple calls when we are simulating a command prompt input line for the client application.
-    INPUT_READ_HANDLE_DATA* const pInputReadHandleData = HandleData->GetClientInput();
+    const auto pInputReadHandleData = HandleData->GetClientInput();
 
     std::unique_ptr<IWaitRoutine> waiter;
     size_t cbWritten;
@@ -324,7 +321,7 @@
     if (a->Unicode)
     {
         const std::string_view initialData(pbInitialData.get(), cbInitialData);
-        const gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
+        const std::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
         hr = m->_pApiRoutines->ReadConsoleWImpl(*pInputBuffer,
                                                 outputBuffer,
                                                 cbWritten, // We must set the reply length in bytes.
@@ -339,7 +336,7 @@
     else
     {
         const std::string_view initialData(pbInitialData.get(), cbInitialData);
-        const gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
+        const std::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
         hr = m->_pApiRoutines->ReadConsoleAImpl(*pInputBuffer,
                                                 outputBuffer,
                                                 cbWritten, // We must set the reply length in bytes.
@@ -388,11 +385,11 @@
 {
     *pbReplyPending = FALSE;
 
-    CONSOLE_WRITECONSOLE_MSG* const a = &m->u.consoleMsgL1.WriteConsole;
+    const auto a = &m->u.consoleMsgL1.WriteConsole;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsole, a->Unicode);
 
     // Make sure we have a valid screen buffer.
-    ConsoleHandleData* HandleData = m->GetObjectHandle();
+    auto HandleData = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, HandleData);
     SCREEN_INFORMATION* pScreenInfo;
     RETURN_IF_FAILED(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
@@ -460,7 +457,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerFillConsoleOutput(_Inout_ CONSOLE_API_MSG* const m,
                                                               _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    PCONSOLE_FILLCONSOLEOUTPUT_MSG const a = &m->u.consoleMsgL2.FillConsoleOutput;
+    const auto a = &m->u.consoleMsgL2.FillConsoleOutput;
 
     switch (a->ElementType)
     {
@@ -483,7 +480,7 @@
     a->Length = 0;
 
     // Make sure we have a valid screen buffer.
-    ConsoleHandleData* HandleData = m->GetObjectHandle();
+    auto HandleData = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, HandleData);
     SCREEN_INFORMATION* pScreenInfo;
     RETURN_IF_FAILED(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
@@ -497,7 +494,7 @@
         hr = m->_pApiRoutines->FillConsoleOutputAttributeImpl(*pScreenInfo,
                                                               a->Element,
                                                               fill,
-                                                              a->WriteCoord,
+                                                              til::wrap_coord(a->WriteCoord),
                                                               amountWritten);
         break;
     }
@@ -509,7 +506,7 @@
         hr = m->_pApiRoutines->FillConsoleOutputCharacterWImpl(*pScreenInfo,
                                                                a->Element,
                                                                fill,
-                                                               a->WriteCoord,
+                                                               til::wrap_coord(a->WriteCoord),
                                                                amountWritten,
                                                                m->GetProcessHandle()->GetShimPolicy().IsPowershellExe());
         break;
@@ -519,7 +516,7 @@
         hr = m->_pApiRoutines->FillConsoleOutputCharacterAImpl(*pScreenInfo,
                                                                static_cast<char>(a->Element),
                                                                fill,
-                                                               a->WriteCoord,
+                                                               til::wrap_coord(a->WriteCoord),
                                                                amountWritten);
         break;
     }
@@ -536,7 +533,7 @@
                                                                          _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleActiveScreenBuffer);
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
@@ -550,7 +547,7 @@
                                                                     _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FlushConsoleInputBuffer);
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     InputBuffer* pObj;
@@ -563,7 +560,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleCP(_Inout_ CONSOLE_API_MSG* const m,
                                                          _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    CONSOLE_SETCP_MSG* const a = &m->u.consoleMsgL2.SetConsoleCP;
+    const auto a = &m->u.consoleMsgL2.SetConsoleCP;
 
     if (a->Output)
     {
@@ -581,15 +578,15 @@
                                                                  _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleCursorInfo);
-    CONSOLE_GETCURSORINFO_MSG* const a = &m->u.consoleMsgL2.GetConsoleCursorInfo;
+    const auto a = &m->u.consoleMsgL2.GetConsoleCursorInfo;
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    bool visible = false;
+    auto visible = false;
     m->_pApiRoutines->GetConsoleCursorInfoImpl(*pObj, a->CursorSize, visible);
     a->Visible = !!visible;
     return S_OK;
@@ -599,9 +596,9 @@
                                                                  _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleCursorInfo);
-    CONSOLE_SETCURSORINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleCursorInfo;
+    const auto a = &m->u.consoleMsgL2.SetConsoleCursorInfo;
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
@@ -614,7 +611,7 @@
                                                                        _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleScreenBufferInfoEx);
-    CONSOLE_SCREENBUFFERINFO_MSG* const a = &m->u.consoleMsgL2.GetConsoleScreenBufferInfo;
+    const auto a = &m->u.consoleMsgL2.GetConsoleScreenBufferInfo;
 
     auto tracing = wil::scope_exit([&]() {
         Tracing::s_TraceApi(a);
@@ -623,7 +620,7 @@
     CONSOLE_SCREEN_BUFFER_INFOEX ex = { 0 };
     ex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
@@ -632,7 +629,7 @@
     m->_pApiRoutines->GetConsoleScreenBufferInfoExImpl(*pObj, ex);
 
     a->FullscreenSupported = !!ex.bFullscreenSupported;
-    size_t const ColorTableSizeInBytes = RTL_NUMBER_OF_V2(ex.ColorTable) * sizeof(*ex.ColorTable);
+    const auto ColorTableSizeInBytes = RTL_NUMBER_OF_V2(ex.ColorTable) * sizeof(*ex.ColorTable);
     CopyMemory(a->ColorTable, ex.ColorTable, ColorTableSizeInBytes);
     a->CursorPosition = ex.dwCursorPosition;
     a->MaximumWindowSize = ex.dwMaximumWindowSize;
@@ -651,9 +648,9 @@
                                                                        _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleScreenBufferInfoEx);
-    CONSOLE_SCREENBUFFERINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleScreenBufferInfo;
+    const auto a = &m->u.consoleMsgL2.SetConsoleScreenBufferInfo;
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
@@ -662,7 +659,7 @@
     CONSOLE_SCREEN_BUFFER_INFOEX ex = { 0 };
     ex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     ex.bFullscreenSupported = a->FullscreenSupported;
-    size_t const ColorTableSizeInBytes = RTL_NUMBER_OF_V2(ex.ColorTable) * sizeof(*ex.ColorTable);
+    const auto ColorTableSizeInBytes = RTL_NUMBER_OF_V2(ex.ColorTable) * sizeof(*ex.ColorTable);
     CopyMemory(ex.ColorTable, a->ColorTable, ColorTableSizeInBytes);
     ex.dwCursorPosition = a->CursorPosition;
     ex.dwMaximumWindowSize = a->MaximumWindowSize;
@@ -682,55 +679,56 @@
                                                                        _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleScreenBufferSize);
-    CONSOLE_SETSCREENBUFFERSIZE_MSG* const a = &m->u.consoleMsgL2.SetConsoleScreenBufferSize;
+    const auto a = &m->u.consoleMsgL2.SetConsoleScreenBufferSize;
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleScreenBufferSizeImpl(*pObj, a->Size);
+    return m->_pApiRoutines->SetConsoleScreenBufferSizeImpl(*pObj, til::wrap_coord_size(a->Size));
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleCursorPosition(_Inout_ CONSOLE_API_MSG* const m,
                                                                      _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleCursorPosition);
-    CONSOLE_SETCURSORPOSITION_MSG* const a = &m->u.consoleMsgL2.SetConsoleCursorPosition;
+    const auto a = &m->u.consoleMsgL2.SetConsoleCursorPosition;
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleCursorPositionImpl(*pObj, a->CursorPosition);
+    return m->_pApiRoutines->SetConsoleCursorPositionImpl(*pObj, til::wrap_coord(a->CursorPosition));
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetLargestConsoleWindowSize(_Inout_ CONSOLE_API_MSG* const m,
                                                                         _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetLargestConsoleWindowSize);
-    CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a = &m->u.consoleMsgL2.GetLargestConsoleWindowSize;
+    const auto a = &m->u.consoleMsgL2.GetLargestConsoleWindowSize;
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    m->_pApiRoutines->GetLargestConsoleWindowSizeImpl(*pObj, a->Size);
-    return S_OK;
+    auto size = til::wrap_coord_size(a->Size);
+    m->_pApiRoutines->GetLargestConsoleWindowSizeImpl(*pObj, size);
+    return til::unwrap_coord_size_hr(size, a->Size);
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerScrollConsoleScreenBuffer(_Inout_ CONSOLE_API_MSG* const m,
                                                                       _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    CONSOLE_SCROLLSCREENBUFFER_MSG* const a = &m->u.consoleMsgL2.ScrollConsoleScreenBuffer;
+    const auto a = &m->u.consoleMsgL2.ScrollConsoleScreenBuffer;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ScrollConsoleScreenBuffer, a->Unicode);
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
@@ -741,9 +739,9 @@
         // GH#3126 if the client application is cmd.exe, then we might need to
         // enable a compatibility shim.
         return m->_pApiRoutines->ScrollConsoleScreenBufferWImpl(*pObj,
-                                                                a->ScrollRectangle,
-                                                                a->DestinationOrigin,
-                                                                a->Clip ? std::optional<SMALL_RECT>(a->ClipRectangle) : std::nullopt,
+                                                                til::wrap_small_rect(a->ScrollRectangle),
+                                                                til::wrap_coord(a->DestinationOrigin),
+                                                                a->Clip ? std::optional{ til::wrap_small_rect(a->ClipRectangle) } : std::nullopt,
                                                                 a->Fill.Char.UnicodeChar,
                                                                 a->Fill.Attributes,
                                                                 m->GetProcessHandle()->GetShimPolicy().IsCmdExe());
@@ -751,9 +749,9 @@
     else
     {
         return m->_pApiRoutines->ScrollConsoleScreenBufferAImpl(*pObj,
-                                                                a->ScrollRectangle,
-                                                                a->DestinationOrigin,
-                                                                a->Clip ? std::optional<SMALL_RECT>(a->ClipRectangle) : std::nullopt,
+                                                                til::wrap_small_rect(a->ScrollRectangle),
+                                                                til::wrap_coord(a->DestinationOrigin),
+                                                                a->Clip ? std::optional{ til::wrap_small_rect(a->ClipRectangle) } : std::nullopt,
                                                                 a->Fill.Char.AsciiChar,
                                                                 a->Fill.Attributes);
     }
@@ -763,13 +761,13 @@
                                                                     _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleTextAttribute);
-    CONSOLE_SETTEXTATTRIBUTE_MSG* const a = &m->u.consoleMsgL2.SetConsoleTextAttribute;
+    const auto a = &m->u.consoleMsgL2.SetConsoleTextAttribute;
 
     auto tracing = wil::scope_exit([&]() {
         Tracing::s_TraceApi(a);
     });
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
@@ -781,15 +779,15 @@
                                                                  _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleWindowInfo);
-    CONSOLE_SETWINDOWINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleWindowInfo;
+    const auto a = &m->u.consoleMsgL2.SetConsoleWindowInfo;
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleWindowInfoImpl(*pObj, a->Absolute, a->Window);
+    return m->_pApiRoutines->SetConsoleWindowInfoImpl(*pObj, a->Absolute, til::wrap_small_rect(a->Window));
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerReadConsoleOutputString(_Inout_ CONSOLE_API_MSG* const m,
@@ -797,7 +795,7 @@
 {
     RETURN_HR_IF(E_ACCESSDENIED, !m->GetProcessHandle()->GetPolicy().CanReadOutputBuffer());
 
-    CONSOLE_READCONSOLEOUTPUTSTRING_MSG* const a = &m->u.consoleMsgL2.ReadConsoleOutputString;
+    const auto a = &m->u.consoleMsgL2.ReadConsoleOutputString;
 
     switch (a->StringType)
     {
@@ -819,7 +817,7 @@
     ULONG cbBuffer;
     RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBuffer));
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pScreenInfo;
@@ -830,21 +828,21 @@
     {
     case CONSOLE_ATTRIBUTE:
     {
-        const gsl::span<WORD> buffer(reinterpret_cast<WORD*>(pvBuffer), cbBuffer / sizeof(WORD));
-        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputAttributeImpl(*pScreenInfo, a->ReadCoord, buffer, written));
+        const std::span<WORD> buffer(reinterpret_cast<WORD*>(pvBuffer), cbBuffer / sizeof(WORD));
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputAttributeImpl(*pScreenInfo, til::wrap_coord(a->ReadCoord), buffer, written));
         break;
     }
     case CONSOLE_REAL_UNICODE:
     case CONSOLE_FALSE_UNICODE:
     {
-        const gsl::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
-        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterWImpl(*pScreenInfo, a->ReadCoord, buffer, written));
+        const std::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterWImpl(*pScreenInfo, til::wrap_coord(a->ReadCoord), buffer, written));
         break;
     }
     case CONSOLE_ASCII:
     {
-        const gsl::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
-        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterAImpl(*pScreenInfo, a->ReadCoord, buffer, written));
+        const std::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterAImpl(*pScreenInfo, til::wrap_coord(a->ReadCoord), buffer, written));
         break;
     }
     default:
@@ -862,7 +860,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerWriteConsoleInput(_Inout_ CONSOLE_API_MSG* const m,
                                                               _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    PCONSOLE_WRITECONSOLEINPUT_MSG const a = &m->u.consoleMsgL2.WriteConsoleInput;
+    const auto a = &m->u.consoleMsgL2.WriteConsoleInput;
 
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleInput, a->Unicode);
 
@@ -874,14 +872,14 @@
     ULONG cbSize;
     RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbSize));
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     InputBuffer* pInputBuffer;
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pInputBuffer));
 
     size_t written;
-    gsl::span<const INPUT_RECORD> buffer(reinterpret_cast<INPUT_RECORD*>(pvBuffer), cbSize / sizeof(INPUT_RECORD));
+    std::span<const INPUT_RECORD> buffer(reinterpret_cast<INPUT_RECORD*>(pvBuffer), cbSize / sizeof(INPUT_RECORD));
     if (!a->Unicode)
     {
         RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleInputAImpl(*pInputBuffer, buffer, written, !!a->Append));
@@ -899,14 +897,14 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerWriteConsoleOutput(_Inout_ CONSOLE_API_MSG* const m,
                                                                _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    PCONSOLE_WRITECONSOLEOUTPUT_MSG const a = &m->u.consoleMsgL2.WriteConsoleOutput;
+    const auto a = &m->u.consoleMsgL2.WriteConsoleOutput;
 
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutput, a->Unicode);
 
     // Backup originalRegion and set the written area to a 0 size rectangle in case of failures.
-    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(a->CharRegion);
+    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(til::wrap_small_rect(a->CharRegion));
     auto writtenRegion = Microsoft::Console::Types::Viewport::FromDimensions(originalRegion.Origin(), { 0, 0 });
-    a->CharRegion = writtenRegion.ToInclusive();
+    RETURN_IF_FAILED(til::unwrap_small_rect_hr(writtenRegion.ToInclusive(), a->CharRegion));
 
     // Get input parameter buffer
     PVOID pvBuffer;
@@ -914,19 +912,19 @@
     RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbSize));
 
     // Make sure we have a valid screen buffer.
-    ConsoleHandleData* HandleData = m->GetObjectHandle();
+    auto HandleData = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, HandleData);
     SCREEN_INFORMATION* pScreenInfo;
     RETURN_IF_FAILED(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
 
     // Validate parameters
     size_t regionArea;
-    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().X, originalRegion.Dimensions().Y, &regionArea));
+    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().width, originalRegion.Dimensions().height, &regionArea));
     size_t regionBytes;
     RETURN_IF_FAILED(SizeTMult(regionArea, sizeof(CHAR_INFO), &regionBytes));
     RETURN_HR_IF(E_INVALIDARG, cbSize < regionBytes); // If given fewer bytes on input than we need to do this write, it's invalid.
 
-    const gsl::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbSize / sizeof(CHAR_INFO));
+    const std::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbSize / sizeof(CHAR_INFO));
     if (!a->Unicode)
     {
         RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleOutputAImpl(*pScreenInfo, buffer, originalRegion, writtenRegion));
@@ -937,15 +935,13 @@
     }
 
     // Update the written region if we were successful
-    a->CharRegion = writtenRegion.ToInclusive();
-
-    return S_OK;
+    return til::unwrap_small_rect_hr(writtenRegion.ToInclusive(), a->CharRegion);
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerWriteConsoleOutputString(_Inout_ CONSOLE_API_MSG* const m,
                                                                      _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    PCONSOLE_WRITECONSOLEOUTPUTSTRING_MSG const a = &m->u.consoleMsgL2.WriteConsoleOutputString;
+    const auto a = &m->u.consoleMsgL2.WriteConsoleOutputString;
 
     auto tracing = wil::scope_exit([&]() {
         Tracing::s_TraceApi(a);
@@ -969,7 +965,7 @@
     a->NumRecords = 0;
 
     // Make sure we have a valid screen buffer.
-    ConsoleHandleData* HandleData = m->GetObjectHandle();
+    auto HandleData = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, HandleData);
     SCREEN_INFORMATION* pScreenInfo;
     RETURN_IF_FAILED(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
@@ -989,7 +985,7 @@
 
         hr = m->_pApiRoutines->WriteConsoleOutputCharacterAImpl(*pScreenInfo,
                                                                 text,
-                                                                a->WriteCoord,
+                                                                til::wrap_coord(a->WriteCoord),
                                                                 used);
 
         break;
@@ -1001,18 +997,18 @@
 
         hr = m->_pApiRoutines->WriteConsoleOutputCharacterWImpl(*pScreenInfo,
                                                                 text,
-                                                                a->WriteCoord,
+                                                                til::wrap_coord(a->WriteCoord),
                                                                 used);
 
         break;
     }
     case CONSOLE_ATTRIBUTE:
     {
-        const gsl::span<const WORD> text(reinterpret_cast<WORD*>(pvBuffer), cbBufferSize / sizeof(WORD));
+        const std::span<const WORD> text(reinterpret_cast<WORD*>(pvBuffer), cbBufferSize / sizeof(WORD));
 
         hr = m->_pApiRoutines->WriteConsoleOutputAttributeImpl(*pScreenInfo,
                                                                text,
-                                                               a->WriteCoord,
+                                                               til::wrap_coord(a->WriteCoord),
                                                                used);
 
         break;
@@ -1032,20 +1028,20 @@
 {
     RETURN_HR_IF(E_ACCESSDENIED, !m->GetProcessHandle()->GetPolicy().CanReadOutputBuffer());
 
-    CONSOLE_READCONSOLEOUTPUT_MSG* const a = &m->u.consoleMsgL2.ReadConsoleOutput;
+    const auto a = &m->u.consoleMsgL2.ReadConsoleOutput;
 
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutput, a->Unicode);
 
     // Backup data region passed and set it to a zero size region in case we exit early for failures.
-    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(a->CharRegion);
+    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(til::wrap_small_rect(a->CharRegion));
     const auto zeroRegion = Microsoft::Console::Types::Viewport::FromDimensions(originalRegion.Origin(), { 0, 0 });
-    a->CharRegion = zeroRegion.ToInclusive();
+    RETURN_IF_FAILED(til::unwrap_small_rect_hr(zeroRegion.ToInclusive(), a->CharRegion));
 
     PVOID pvBuffer;
     ULONG cbBuffer;
     RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBuffer));
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pScreenInfo;
@@ -1053,12 +1049,12 @@
 
     // Validate parameters
     size_t regionArea;
-    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().X, originalRegion.Dimensions().Y, &regionArea));
+    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().width, originalRegion.Dimensions().height, &regionArea));
     size_t regionBytes;
     RETURN_IF_FAILED(SizeTMult(regionArea, sizeof(CHAR_INFO), &regionBytes));
     RETURN_HR_IF(E_INVALIDARG, regionArea > 0 && ((regionArea > ULONG_MAX / sizeof(CHAR_INFO)) || (cbBuffer < regionBytes)));
 
-    gsl::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbBuffer / sizeof(CHAR_INFO));
+    std::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbBuffer / sizeof(CHAR_INFO));
     auto finalRegion = Microsoft::Console::Types::Viewport::Empty(); // the actual region read out of the buffer
     if (!a->Unicode)
     {
@@ -1075,7 +1071,7 @@
                                                                   finalRegion));
     }
 
-    a->CharRegion = finalRegion.ToInclusive();
+    RETURN_IF_FAILED(til::unwrap_small_rect_hr(finalRegion.ToInclusive(), a->CharRegion));
 
     // We have to reply back with the entire buffer length. The client side in kernelbase will trim out
     // the correct region of the buffer for return to the original caller.
@@ -1087,17 +1083,17 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleTitle(_Inout_ CONSOLE_API_MSG* const m,
                                                             _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    PCONSOLE_GETTITLE_MSG const a = &m->u.consoleMsgL2.GetConsoleTitle;
+    const auto a = &m->u.consoleMsgL2.GetConsoleTitle;
     Telemetry::Instance().LogApiCall(a->Original ? Telemetry::ApiCall::GetConsoleOriginalTitle : Telemetry::ApiCall::GetConsoleTitle, a->Unicode);
 
     PVOID pvBuffer;
     ULONG cbBuffer;
     RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBuffer));
 
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     if (a->Unicode)
     {
-        gsl::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
+        std::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
         size_t written;
         size_t needed;
         if (a->Original)
@@ -1119,7 +1115,7 @@
     }
     else
     {
-        gsl::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
+        std::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
         size_t written;
         size_t needed;
         if (a->Original)
@@ -1144,7 +1140,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleTitle(_Inout_ CONSOLE_API_MSG* const m,
                                                             _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    CONSOLE_SETTITLE_MSG* const a = &m->u.consoleMsgL2.SetConsoleTitle;
+    const auto a = &m->u.consoleMsgL2.SetConsoleTitle;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleTitle, a->Unicode);
 
     PVOID pvBuffer;
@@ -1168,7 +1164,7 @@
                                                                 _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetNumberOfConsoleMouseButtons);
-    CONSOLE_GETMOUSEINFO_MSG* const a = &m->u.consoleMsgL3.GetConsoleMouseInfo;
+    const auto a = &m->u.consoleMsgL3.GetConsoleMouseInfo;
 
     m->_pApiRoutines->GetNumberOfConsoleMouseButtonsImpl(a->NumButtons);
     return S_OK;
@@ -1178,24 +1174,26 @@
                                                                _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleFontSize);
-    CONSOLE_GETFONTSIZE_MSG* const a = &m->u.consoleMsgL3.GetConsoleFontSize;
+    const auto a = &m->u.consoleMsgL3.GetConsoleFontSize;
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
 
-    return m->_pApiRoutines->GetConsoleFontSizeImpl(*pObj, a->FontIndex, a->FontSize);
+    auto size = til::wrap_coord_size(a->FontSize);
+    RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleFontSizeImpl(*pObj, a->FontIndex, size));
+    return til::unwrap_coord_size_hr(size, a->FontSize);
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG* const m,
                                                                   _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetCurrentConsoleFontEx);
-    CONSOLE_CURRENTFONT_MSG* const a = &m->u.consoleMsgL3.GetCurrentConsoleFont;
+    const auto a = &m->u.consoleMsgL3.GetCurrentConsoleFont;
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
@@ -1219,22 +1217,24 @@
                                                                   _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleDisplayMode);
-    CONSOLE_SETDISPLAYMODE_MSG* const a = &m->u.consoleMsgL3.SetConsoleDisplayMode;
+    const auto a = &m->u.consoleMsgL3.SetConsoleDisplayMode;
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleDisplayModeImpl(*pObj, a->dwFlags, a->ScreenBufferDimensions);
+    auto size = til::wrap_coord_size(a->ScreenBufferDimensions);
+    RETURN_IF_FAILED(m->_pApiRoutines->SetConsoleDisplayModeImpl(*pObj, a->dwFlags, size));
+    return til::unwrap_coord_size_hr(size, a->ScreenBufferDimensions);
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG* const m,
                                                                   _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleDisplayMode);
-    CONSOLE_GETDISPLAYMODE_MSG* const a = &m->u.consoleMsgL3.GetConsoleDisplayMode;
+    const auto a = &m->u.consoleMsgL3.GetConsoleDisplayMode;
 
     // Historically this has never checked the handles. It just returns global state.
 
@@ -1245,7 +1245,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerAddConsoleAlias(_Inout_ CONSOLE_API_MSG* const m,
                                                             _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    CONSOLE_ADDALIAS_MSG* const a = &m->u.consoleMsgL3.AddConsoleAliasW;
+    const auto a = &m->u.consoleMsgL3.AddConsoleAliasW;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AddConsoleAlias, a->Unicode);
 
     // Read the input buffer and validate the strings.
@@ -1254,11 +1254,11 @@
     RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbBufferSize));
 
     PVOID pvInputTarget;
-    ULONG const cbInputTarget = a->TargetLength;
+    const auto cbInputTarget = a->TargetLength;
     PVOID pvInputExeName;
-    ULONG const cbInputExeName = a->ExeLength;
+    const auto cbInputExeName = a->ExeLength;
     PVOID pvInputSource;
-    ULONG const cbInputSource = a->SourceLength;
+    const auto cbInputSource = a->SourceLength;
     // clang-format off
     RETURN_HR_IF(E_INVALIDARG, !IsValidStringBuffer(a->Unicode,
                                                     pvBuffer,
@@ -1293,7 +1293,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG* const m,
                                                             _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    CONSOLE_GETALIAS_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasW;
+    const auto a = &m->u.consoleMsgL3.GetConsoleAliasW;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAlias, a->Unicode);
 
     PVOID pvInputBuffer;
@@ -1301,9 +1301,9 @@
     RETURN_IF_FAILED(m->GetInputBuffer(&pvInputBuffer, &cbInputBufferSize));
 
     PVOID pvInputExe;
-    ULONG const cbInputExe = a->ExeLength;
+    const auto cbInputExe = a->ExeLength;
     PVOID pvInputSource;
-    ULONG const cbInputSource = a->SourceLength;
+    const auto cbInputSource = a->SourceLength;
     // clang-format off
     RETURN_HR_IF(E_INVALIDARG, !IsValidStringBuffer(a->Unicode,
                                                     pvInputBuffer,
@@ -1325,7 +1325,7 @@
     {
         const std::wstring_view inputSource(reinterpret_cast<wchar_t*>(pvInputSource), cbInputSource / sizeof(wchar_t));
         const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvInputExe), cbInputExe / sizeof(wchar_t));
-        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbOutputBufferSize / sizeof(wchar_t));
+        std::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbOutputBufferSize / sizeof(wchar_t));
         size_t cchWritten;
 
         hr = m->_pApiRoutines->GetConsoleAliasWImpl(inputSource, outputBuffer, cchWritten, inputExeName);
@@ -1337,7 +1337,7 @@
     {
         const std::string_view inputSource(reinterpret_cast<char*>(pvInputSource), cbInputSource);
         const std::string_view inputExeName(reinterpret_cast<char*>(pvInputExe), cbInputExe);
-        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbOutputBufferSize);
+        std::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbOutputBufferSize);
         size_t cchWritten;
 
         hr = m->_pApiRoutines->GetConsoleAliasAImpl(inputSource, outputBuffer, cchWritten, inputExeName);
@@ -1365,7 +1365,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleAliasesLength(_Inout_ CONSOLE_API_MSG* const m,
                                                                     _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    PCONSOLE_GETALIASESLENGTH_MSG const a = &m->u.consoleMsgL3.GetConsoleAliasesLengthW;
+    const auto a = &m->u.consoleMsgL3.GetConsoleAliasesLengthW;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliasesLength, a->Unicode);
 
     ULONG cbExeNameLength;
@@ -1398,7 +1398,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleAliasExesLength(_Inout_ CONSOLE_API_MSG* const m,
                                                                       _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    PCONSOLE_GETALIASEXESLENGTH_MSG const a = &m->u.consoleMsgL3.GetConsoleAliasExesLengthW;
+    const auto a = &m->u.consoleMsgL3.GetConsoleAliasExesLengthW;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliasExesLength, a->Unicode);
 
     size_t cbAliasExesLength;
@@ -1423,7 +1423,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleAliases(_Inout_ CONSOLE_API_MSG* const m,
                                                               _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    CONSOLE_GETALIASES_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasesW;
+    const auto a = &m->u.consoleMsgL3.GetConsoleAliasesW;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliases, a->Unicode);
 
     PVOID pvExeName;
@@ -1438,7 +1438,7 @@
     if (a->Unicode)
     {
         const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));
-        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbAliasesBufferLength / sizeof(wchar_t));
+        std::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbAliasesBufferLength / sizeof(wchar_t));
         size_t cchWritten;
 
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesWImpl(inputExeName, outputBuffer, cchWritten));
@@ -1449,7 +1449,7 @@
     else
     {
         const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
-        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbAliasesBufferLength);
+        std::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbAliasesBufferLength);
         size_t cchWritten;
 
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesAImpl(inputExeName, outputBuffer, cchWritten));
@@ -1467,7 +1467,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleAliasExes(_Inout_ CONSOLE_API_MSG* const m,
                                                                 _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    CONSOLE_GETALIASEXES_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasExesW;
+    const auto a = &m->u.consoleMsgL3.GetConsoleAliasExesW;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliasExes, a->Unicode);
 
     PVOID pvBuffer;
@@ -1477,7 +1477,7 @@
     size_t cbWritten;
     if (a->Unicode)
     {
-        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvBuffer), cbAliasExesBufferLength / sizeof(wchar_t));
+        std::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvBuffer), cbAliasExesBufferLength / sizeof(wchar_t));
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesWImpl(outputBuffer, cchWritten));
 
@@ -1485,7 +1485,7 @@
     }
     else
     {
-        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbAliasExesBufferLength);
+        std::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbAliasExesBufferLength);
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesAImpl(outputBuffer, cchWritten));
 
@@ -1503,7 +1503,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerExpungeConsoleCommandHistory(_Inout_ CONSOLE_API_MSG* const m,
                                                                          _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    CONSOLE_EXPUNGECOMMANDHISTORY_MSG* const a = &m->u.consoleMsgL3.ExpungeConsoleCommandHistoryW;
+    const auto a = &m->u.consoleMsgL3.ExpungeConsoleCommandHistoryW;
 
     PVOID pvExeName;
     ULONG cbExeNameLength;
@@ -1526,12 +1526,12 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleNumberOfCommands(_Inout_ CONSOLE_API_MSG* const m,
                                                                        _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    CONSOLE_SETNUMBEROFCOMMANDS_MSG* const a = &m->u.consoleMsgL3.SetConsoleNumberOfCommandsW;
+    const auto a = &m->u.consoleMsgL3.SetConsoleNumberOfCommandsW;
     PVOID pvExeName;
     ULONG cbExeNameLength;
     RETURN_IF_FAILED(m->GetInputBuffer(&pvExeName, &cbExeNameLength));
 
-    size_t const NumberOfCommands = a->NumCommands;
+    const size_t NumberOfCommands = a->NumCommands;
     if (a->Unicode)
     {
         const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));
@@ -1549,7 +1549,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleCommandHistoryLength(_Inout_ CONSOLE_API_MSG* const m,
                                                                            _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    PCONSOLE_GETCOMMANDHISTORYLENGTH_MSG const a = &m->u.consoleMsgL3.GetConsoleCommandHistoryLengthW;
+    const auto a = &m->u.consoleMsgL3.GetConsoleCommandHistoryLengthW;
 
     PVOID pvExeName;
     ULONG cbExeNameLength;
@@ -1585,7 +1585,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleCommandHistory(_Inout_ CONSOLE_API_MSG* const m,
                                                                      _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    PCONSOLE_GETCOMMANDHISTORY_MSG const a = &m->u.consoleMsgL3.GetConsoleCommandHistoryW;
+    const auto a = &m->u.consoleMsgL3.GetConsoleCommandHistoryW;
 
     PVOID pvExeName;
     ULONG cbExeNameLength;
@@ -1599,7 +1599,7 @@
     if (a->Unicode)
     {
         const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));
-        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbOutputBuffer / sizeof(wchar_t));
+        std::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbOutputBuffer / sizeof(wchar_t));
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryWImpl(inputExeName, outputBuffer, cchWritten));
 
@@ -1609,7 +1609,7 @@
     else
     {
         const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
-        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbOutputBuffer);
+        std::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbOutputBuffer);
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryAImpl(inputExeName, outputBuffer, cchWritten));
 
@@ -1628,7 +1628,7 @@
                                                              _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleWindow);
-    CONSOLE_GETCONSOLEWINDOW_MSG* const a = &m->u.consoleMsgL3.GetConsoleWindow;
+    const auto a = &m->u.consoleMsgL3.GetConsoleWindow;
 
     m->_pApiRoutines->GetConsoleWindowImpl(a->hwnd);
     return S_OK;
@@ -1638,7 +1638,7 @@
                                                                     _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleSelectionInfo);
-    CONSOLE_GETSELECTIONINFO_MSG* const a = &m->u.consoleMsgL3.GetConsoleSelectionInfo;
+    const auto a = &m->u.consoleMsgL3.GetConsoleSelectionInfo;
 
     m->_pApiRoutines->GetConsoleSelectionInfoImpl(a->SelectionInfo);
     return S_OK;
@@ -1647,7 +1647,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleHistory(_Inout_ CONSOLE_API_MSG* const m,
                                                               _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    CONSOLE_HISTORY_MSG* const a = &m->u.consoleMsgL3.GetConsoleHistory;
+    const auto a = &m->u.consoleMsgL3.GetConsoleHistory;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleHistoryInfo);
 
     CONSOLE_HISTORY_INFO info;
@@ -1665,7 +1665,7 @@
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleHistory(_Inout_ CONSOLE_API_MSG* const m,
                                                               _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    CONSOLE_HISTORY_MSG* const a = &m->u.consoleMsgL3.SetConsoleHistory;
+    const auto a = &m->u.consoleMsgL3.SetConsoleHistory;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleHistoryInfo);
 
     CONSOLE_HISTORY_INFO info;
@@ -1681,9 +1681,9 @@
                                                                   _Inout_ BOOL* const /*pbReplyPending*/)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetCurrentConsoleFontEx);
-    CONSOLE_CURRENTFONT_MSG* const a = &m->u.consoleMsgL3.SetCurrentConsoleFont;
+    const auto a = &m->u.consoleMsgL3.SetCurrentConsoleFont;
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;

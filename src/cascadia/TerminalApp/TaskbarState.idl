@@ -1,0 +1,15 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass TaskbarState
+    {
+        TaskbarState();
+        TaskbarState(UInt64 dispatchTypesState, UInt64 progress);
+
+        UInt64 State{ get; };
+        UInt64 Progress{ get; };
+        UInt64 Priority { get; };
+    }
+}

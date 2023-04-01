@@ -1,0 +1,27 @@
+trigger: none
+pr: none
+
+variables:
+  - name: runCodesignValidationInjectionBG
+    value: false
+
+#     0.0.yyMM.dd##
+#     0.0.1904.0900
+name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
+
+stages:
+  - stage: Build_x64
+    displayName: Build x64
+    dependsOn: []
+    condition: succeeded()
+    jobs:
+      - template: ./templates/build-console-pgo.yml
+        parameters:
+          platform: x64
+  - stage: Publish_PGO_Databases
+    displayName: Publish PGO databases
+    dependsOn: ['Build_x64']
+    jobs:
+      - template: ./templates/pgo-build-and-publish-nuget-job.yml
+        parameters:
+          pgoArtifact: 'PGO'

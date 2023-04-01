@@ -1,19 +1,24 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-
-import "TerminalPage.idl";
-import "ShortcutActionDispatch.idl";
-import "IDirectKeyListener.idl";
+import "TerminalWindow.idl";
 
 namespace TerminalApp
 {
-    struct InitialPosition
+    [default_interface] runtimeclass FindTargetWindowResult
     {
-        Int64 X;
-        Int64 Y;
+        Int32 WindowId { get; };
+        String WindowName { get; };
     };
 
-    [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
+    struct ParseCommandlineResult
+    {
+        String Message;
+        Int32 ExitCode;
+    };
+
+    // See IDialogPresenter and TerminalPage's DialogPresenter for more
+    // information.
+    [default_interface] runtimeclass AppLogic
     {
         AppLogic();
 
@@ -26,51 +31,32 @@ namespace TerminalApp
 
         Boolean IsUwp();
         void RunAsUwp();
-        Boolean IsElevated();
+        Boolean IsRunningElevated();
+        Boolean CanDragDrop();
 
-        Int32 SetStartupCommandline(String[] commands);
-        Int32 ExecuteCommandline(String[] commands, String cwd);
-        String ParseCommandlineMessage { get; };
-        Boolean ShouldExitEarly { get; };
+        ContentManager ContentManager { get; };
 
-        void LoadSettings();
-        Windows.UI.Xaml.UIElement GetRoot();
+        Boolean HasSettingsStartupActions();
 
-        String Title { get; };
+        Boolean ShouldUsePersistedLayout();
+        void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
 
-        Boolean FocusMode { get; };
-        Boolean Fullscreen { get; };
-        Boolean AlwaysOnTop { get; };
+        void ReloadSettings();
 
-        Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
-        Boolean CenterOnLaunch { get; };
+        // Selected settings to expose
+        Microsoft.Terminal.Settings.Model.Theme Theme { get; };
+        Boolean IsolatedMode { get; };
+        Boolean RequestsTrayIcon { get; };
 
-        InitialPosition GetInitialPosition(Int64 defaultInitialX, Int64 defaultInitialY);
-        Windows.UI.Xaml.ElementTheme GetRequestedTheme();
-        Microsoft.Terminal.Settings.Model.LaunchMode GetLaunchMode();
-        Boolean GetShowTabsInTitlebar();
-        Boolean GetInitialAlwaysOnTop();
-        Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
-        void TitlebarClicked();
-        void WindowCloseButtonClicked();
+        FindTargetWindowResult FindTargetWindow(String[] args);
 
-        UInt64 GetLastActiveControlTaskbarState();
-        UInt64 GetLastActiveControlTaskbarProgress();
+        TerminalWindow CreateNewWindow();
 
-        Int32 FindTargetWindow(String[] args);
+        ParseCommandlineResult GetParseCommandlineMessage(String[] args);
 
-        // See IDialogPresenter and TerminalPage's DialogPresenter for more
-        // information.
-        Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
+        IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 
-        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
-        event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
-        event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
-        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> RaiseVisualBell;
-        event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
+        event Windows.Foundation.TypedEventHandler<Object, SettingsLoadEventArgs> SettingsChanged;
+
     }
 }

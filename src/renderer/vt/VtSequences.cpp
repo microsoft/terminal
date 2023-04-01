@@ -3,6 +3,8 @@
 
 #include "precomp.h"
 #include "vtrenderer.hpp"
+
+#include "../renderer/base/renderer.hpp"
 #include "../../inc/conattrs.hpp"
 
 #pragma hdrstop
@@ -79,10 +81,9 @@ using namespace Microsoft::Console::Render;
 // - chars: a number of characters to erase (by overwriting with space)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_EraseCharacter(const short chars) noexcept
+[[nodiscard]] HRESULT VtEngine::_EraseCharacter(const til::CoordType chars) noexcept
 {
-    static const std::string format = "\x1b[%dX";
-    return _WriteFormattedString(&format, chars);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{}X"), chars);
 }
 
 // Method Description:
@@ -91,10 +92,9 @@ using namespace Microsoft::Console::Render;
 // - chars: a number of characters to move cursor right by.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_CursorForward(const short chars) noexcept
+[[nodiscard]] HRESULT VtEngine::_CursorForward(const til::CoordType chars) noexcept
 {
-    static const std::string format = "\x1b[%dC";
-    return _WriteFormattedString(&format, chars);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{}C"), chars);
 }
 
 // Method Description:
@@ -122,7 +122,7 @@ using namespace Microsoft::Console::Render;
 // - fInsertLine: true iff we should insert the lines, false to delete them.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_InsertDeleteLine(const short sLines, const bool fInsertLine) noexcept
+[[nodiscard]] HRESULT VtEngine::_InsertDeleteLine(const til::CoordType sLines, const bool fInsertLine) noexcept
 {
     if (sLines <= 0)
     {
@@ -132,9 +132,8 @@ using namespace Microsoft::Console::Render;
     {
         return _Write(fInsertLine ? "\x1b[L" : "\x1b[M");
     }
-    const std::string format = fInsertLine ? "\x1b[%dL" : "\x1b[%dM";
 
-    return _WriteFormattedString(&format, sLines);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{}{}"), sLines, fInsertLine ? 'L' : 'M');
 }
 
 // Method Description:
@@ -144,7 +143,7 @@ using namespace Microsoft::Console::Render;
 // - sLines: a number of lines to insert
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_DeleteLine(const short sLines) noexcept
+[[nodiscard]] HRESULT VtEngine::_DeleteLine(const til::CoordType sLines) noexcept
 {
     return _InsertDeleteLine(sLines, false);
 }
@@ -156,7 +155,7 @@ using namespace Microsoft::Console::Render;
 // - sLines: a number of lines to insert
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_InsertLine(const short sLines) noexcept
+[[nodiscard]] HRESULT VtEngine::_InsertLine(const til::CoordType sLines) noexcept
 {
     return _InsertDeleteLine(sLines, true);
 }
@@ -169,16 +168,14 @@ using namespace Microsoft::Console::Render;
 // - coord: Console coordinates to move the cursor to.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_CursorPosition(const COORD coord) noexcept
+[[nodiscard]] HRESULT VtEngine::_CursorPosition(const til::point coord) noexcept
 {
-    static const std::string cursorFormat = "\x1b[%d;%dH";
-
     // VT coords start at 1,1
-    COORD coordVt = coord;
-    coordVt.X++;
-    coordVt.Y++;
+    auto coordVt = coord;
+    coordVt.x++;
+    coordVt.y++;
 
-    return _WriteFormattedString(&cursorFormat, coordVt.Y, coordVt.X);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{};{}H"), coordVt.y, coordVt.x);
 }
 
 // Method Description:
@@ -204,55 +201,44 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
-// - Formats and writes a sequence to change the current text attributes.
+// - Formats and writes a sequence to change the current text attributes to an
+//      indexed color from the 16-color table.
 // Arguments:
-// - wAttr: Windows color table index to emit as a VT sequence
+// - index: color table index to emit as a VT sequence
 // - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetGraphicsRendition16Color(const WORD wAttr,
+[[nodiscard]] HRESULT VtEngine::_SetGraphicsRendition16Color(const BYTE index,
                                                              const bool fIsForeground) noexcept
 {
-    static const std::string fmt = "\x1b[%dm";
-
     // Always check using the foreground flags, because the bg flags constants
     //  are a higher byte
     // Foreground sequences are in [30,37] U [90,97]
     // Background sequences are in [40,47] U [100,107]
     // The "dark" sequences are in the first 7 values, the bright sequences in the second set.
-    // Note that text brightness and boldness are different in VT. Boldness is
-    //      handled by _SetGraphicsBoldness. Here, we can emit either bright or
+    // Note that text brightness and intensity are different in VT. Intensity is
+    //      handled by _SetIntense. Here, we can emit either bright or
     //      dark colors. For conhost as a terminal, it can't draw bold
-    //      characters, so it displays "bold" as bright, and in fact most
-    //      terminals display the bright color when displaying bolded text.
-    // By specifying the boldness and brightness separately, we'll make sure the
+    //      characters, so it displays "intense" as bright, and in fact most
+    //      terminals display the bright color when displaying intense text.
+    // By specifying the intensity and brightness separately, we'll make sure the
     //      terminal has an accurate representation of our buffer.
-    const int vtIndex = 30 +
-                        (fIsForeground ? 0 : 10) +
-                        ((WI_IsFlagSet(wAttr, FOREGROUND_INTENSITY)) ? 60 : 0) +
-                        (WI_IsFlagSet(wAttr, FOREGROUND_RED) ? 1 : 0) +
-                        (WI_IsFlagSet(wAttr, FOREGROUND_GREEN) ? 2 : 0) +
-                        (WI_IsFlagSet(wAttr, FOREGROUND_BLUE) ? 4 : 0);
-
-    return _WriteFormattedString(&fmt, vtIndex);
+    const auto prefix = WI_IsFlagSet(index, FOREGROUND_INTENSITY) ? (fIsForeground ? 90 : 100) : (fIsForeground ? 30 : 40);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{}m"), prefix + (index & 7));
 }
 
 // Method Description:
 // - Formats and writes a sequence to change the current text attributes to an
 //      indexed color from the 256-color table.
 // Arguments:
-// - wAttr: Windows color table index to emit as a VT sequence
+// - index: color table index to emit as a VT sequence
 // - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetGraphicsRendition256Color(const WORD index,
+[[nodiscard]] HRESULT VtEngine::_SetGraphicsRendition256Color(const BYTE index,
                                                               const bool fIsForeground) noexcept
 {
-    const std::string fmt = fIsForeground ?
-                                "\x1b[38;5;%dm" :
-                                "\x1b[48;5;%dm";
-
-    return _WriteFormattedString(&fmt, ::Xterm256ToWindowsIndex(index));
+    return _WriteFormatted(FMT_COMPILE("\x1b[{}8;5;{}m"), fIsForeground ? '3' : '4', index);
 }
 
 // Method Description:
@@ -266,29 +252,22 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsRenditionRGBColor(const COLORREF color,
                                                               const bool fIsForeground) noexcept
 {
-    const std::string fmt = fIsForeground ?
-                                "\x1b[38;2;%d;%d;%dm" :
-                                "\x1b[48;2;%d;%d;%dm";
-
-    DWORD const r = GetRValue(color);
-    DWORD const g = GetGValue(color);
-    DWORD const b = GetBValue(color);
-
-    return _WriteFormattedString(&fmt, r, g, b);
+    const auto r = GetRValue(color);
+    const auto g = GetGValue(color);
+    const auto b = GetBValue(color);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{}8;2;{};{};{}m"), fIsForeground ? '3' : '4', r, g, b);
 }
 
 // Method Description:
 // - Formats and writes a sequence to change the current text attributes to the
-//      default foreground or background. Does not affect the boldness of text.
+//      default foreground or background. Does not affect the intensity of text.
 // Arguments:
 // - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(const bool fIsForeground) noexcept
 {
-    const std::string_view fmt = fIsForeground ? ("\x1b[39m") : ("\x1b[49m");
-
-    return _Write(fmt);
+    return _Write(fIsForeground ? ("\x1b[39m") : ("\x1b[49m"));
 }
 
 // Method Description:
@@ -298,15 +277,14 @@ using namespace Microsoft::Console::Render;
 // - sHeight: number of rows the terminal should display
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_ResizeWindow(const short sWidth, const short sHeight) noexcept
+[[nodiscard]] HRESULT VtEngine::_ResizeWindow(const til::CoordType sWidth, const til::CoordType sHeight) noexcept
 {
-    static const std::string resizeFormat = "\x1b[8;%d;%dt";
     if (sWidth < 0 || sHeight < 0)
     {
         return E_INVALIDARG;
     }
 
-    return _WriteFormattedString(&resizeFormat, sHeight, sWidth);
+    return _WriteFormatted(FMT_COMPILE("\x1b[8;{};{}t"), sHeight, sWidth);
 }
 
 // Method Description:
@@ -329,19 +307,18 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT VtEngine::_ChangeTitle(_In_ const std::string& title) noexcept
 {
-    const std::string titleFormat = "\x1b]0;" + title + "\x7";
-    return _Write(titleFormat);
+    return _WriteFormatted(FMT_COMPILE("\x1b]0;{}\x7"), title);
 }
 
 // Method Description:
-// - Formats and writes a sequence to change the boldness of the following text.
+// - Formats and writes a sequence to change the intensity of the following text.
 // Arguments:
-// - isBold: If true, we'll embolden the text. Otherwise we'll debolden the text.
+// - isIntense: If true, we'll make the text intense. Otherwise we'll remove the intensity.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetBold(const bool isBold) noexcept
+[[nodiscard]] HRESULT VtEngine::_SetIntense(const bool isIntense) noexcept
 {
-    return _Write(isBold ? "\x1b[1m" : "\x1b[22m");
+    return _Write(isIntense ? "\x1b[1m" : "\x1b[22m");
 }
 
 // Method Description:
@@ -457,6 +434,22 @@ using namespace Microsoft::Console::Render;
     return _Write("\x1b[?9001h");
 }
 
+[[nodiscard]] HRESULT VtEngine::_RequestFocusEventMode() noexcept
+{
+    return _Write("\x1b[?1004h");
+}
+
+// Method Description:
+// - Send a sequence to the connected terminal to switch to the alternate or main screen buffer.
+// Arguments:
+// - useAltBuffer: if true, switch to the alt buffer, otherwise to the main buffer.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SwitchScreenBuffer(const bool useAltBuffer) noexcept
+{
+    return _Write(useAltBuffer ? "\x1b[?1049h" : "\x1b[?1049l");
+}
+
 // Method Description:
 // - Formats and writes a sequence to add a hyperlink to the terminal buffer
 // Arguments:
@@ -472,21 +465,17 @@ using namespace Microsoft::Console::Render;
         // send the auto-assigned ID, prefixed with the PID of this session
         // (we do this so different conpty sessions do not overwrite each other's hyperlinks)
         const auto sessionID = GetCurrentProcessId();
-        const std::string fmt{ "\x1b]8;id={}-{};{}\x1b\\" };
-        const std::string uri_str{ til::u16u8(uri) };
-        auto s = fmt::format(fmt, sessionID, numberId, uri_str);
-        return _Write(s);
+        const auto uriStr = til::u16u8(uri);
+        return _WriteFormatted(FMT_COMPILE("\x1b]8;id={}-{};{}\x1b\\"), sessionID, numberId, uriStr);
     }
     else
     {
         // This is the case of user-defined IDs:
         // send the user-defined ID, prefixed with a "u"
         // (we do this so no application can accidentally override a user defined ID)
-        const std::string fmt{ "\x1b]8;id=u-{};{}\x1b\\" };
-        const std::string uri_str{ til::u16u8(uri) };
-        const std::string customId_str{ til::u16u8(customId) };
-        auto s = fmt::format(fmt, customId_str, uri_str);
-        return _Write(s);
+        const auto uriStr = til::u16u8(uri);
+        const auto customIdStr = til::u16u8(customId);
+        return _WriteFormatted(FMT_COMPILE("\x1b]8;id=u-{};{}\x1b\\"), customIdStr, uriStr);
     }
 }
 

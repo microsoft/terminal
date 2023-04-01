@@ -7,7 +7,36 @@ Module Name:
 
 Abstract:
 - A profile acts as a single set of terminal settings. Many tabs or panes could
-     exist side-by-side with different profiles simultaneously.
+  exist side-by-side with different profiles simultaneously.
+- Profiles could also specify their appearance when unfocused, this is what
+  the inheritance tree looks like for unfocused settings:
+
+                +-------------------+
+                |                   |
+                |Profile.defaults   |
+                |                   |
+                |DefaultAppearance  |
+                |                   |
+                +-------------------+
+                   ^             ^
+                   |             |
++------------------++           ++------------------+
+|                   |           |                   |
+|MyProfile          |           |Profile.defaults   |
+|                   |           |                   |
+|DefaultAppearance  |           |UnfocusedAppearance|
+|                   |           |                   |
++-------------------+           +-------------------+
+                   ^
+                   |
++------------------++
+|                   |
+|MyProfile          |
+|                   |
+|UnfocusedAppearance|
+|                   |
++-------------------+
+
 
 Author(s):
 - Mike Griese - March 2019
@@ -17,10 +46,12 @@ Author(s):
 
 #include "Profile.g.h"
 #include "IInheritable.h"
+#include "MTSMSettings.h"
 
-#include "../inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
 #include <DefaultSettings.h>
+#include "AppearanceConfig.h"
+#include "FontConfig.h"
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
@@ -45,93 +76,60 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct Profile : ProfileT<Profile>, IInheritable<Profile>
     {
     public:
-        Profile();
-        Profile(guid guid);
+        Profile() noexcept = default;
+        Profile(guid guid) noexcept;
+
+        void CreateUnfocusedAppearance();
+        void DeleteUnfocusedAppearance();
 
         hstring ToString()
         {
             return Name();
         }
 
-        static com_ptr<Profile> CloneInheritanceGraph(com_ptr<Profile> oldProfile, com_ptr<Profile> newProfile, std::unordered_map<void*, com_ptr<Profile>>& visited);
-        static com_ptr<Profile> CopySettings(com_ptr<Profile> source);
+        static void CopyInheritanceGraphs(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited, const std::vector<winrt::com_ptr<Profile>>& source, std::vector<winrt::com_ptr<Profile>>& target);
+        winrt::com_ptr<Profile>& CopyInheritanceGraph(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited) const;
+        winrt::com_ptr<Profile> CopySettings() const;
 
-        Json::Value GenerateStub() const;
         static com_ptr<Profile> FromJson(const Json::Value& json);
-        bool ShouldBeLayered(const Json::Value& json) const;
         void LayerJson(const Json::Value& json);
-        static bool IsDynamicProfileObject(const Json::Value& json);
         Json::Value ToJson() const;
 
         hstring EvaluatedStartingDirectory() const;
-        hstring ExpandedBackgroundImagePath() const;
-        static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
-        winrt::Windows::Foundation::Collections::StringMap EvaluatedEnvironmentVariables() const;
-        void ValidateEvaluatedEnvironmentVariables() const;
+        Model::IAppearanceConfig DefaultAppearance();
+        Model::FontConfig FontInfo();
 
-        WINRT_PROPERTY(OriginTag, Origin, OriginTag::Custom);
+        void _FinalizeInheritance() override;
 
-        INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
+        // Special fields
+        WINRT_PROPERTY(bool, Deleted, false);
+        WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
+        WINRT_PROPERTY(guid, Updates);
+
+        // Nullable/optional settings
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
+        INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
+
+        // Settings that cannot be put in the macro because of how they are handled in ToJson/LayerJson
         INHERITABLE_SETTING(Model::Profile, hstring, Name, L"Default");
         INHERITABLE_SETTING(Model::Profile, hstring, Source);
         INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
-        INHERITABLE_SETTING(Model::Profile, guid, ConnectionType);
-
-        // Default Icon: Segoe MDL2 CommandPrompt icon
-        INHERITABLE_SETTING(Model::Profile, hstring, Icon, L"\uE756");
-
-        INHERITABLE_SETTING(Model::Profile, CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful);
-        INHERITABLE_SETTING(Model::Profile, hstring, TabTitle);
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, TabColor, nullptr);
-        INHERITABLE_SETTING(Model::Profile, bool, SuppressApplicationTitle, false);
-
-        INHERITABLE_SETTING(Model::Profile, bool, UseAcrylic, false);
-        INHERITABLE_SETTING(Model::Profile, double, AcrylicOpacity, 0.5);
-        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
-
-        INHERITABLE_SETTING(Model::Profile, hstring, FontFace, DEFAULT_FONT_FACE);
-        INHERITABLE_SETTING(Model::Profile, int32_t, FontSize, DEFAULT_FONT_SIZE);
-        INHERITABLE_SETTING(Model::Profile, Windows::UI::Text::FontWeight, FontWeight, DEFAULT_FONT_WEIGHT);
+        INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
 
-        INHERITABLE_SETTING(Model::Profile, hstring, Commandline, L"cmd.exe");
-        INHERITABLE_SETTING(Model::Profile, hstring, StartingDirectory);
-
-        INHERITABLE_SETTING(Model::Profile, hstring, BackgroundImagePath);
-        INHERITABLE_SETTING(Model::Profile, double, BackgroundImageOpacity, 1.0);
-        INHERITABLE_SETTING(Model::Profile, Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
-        INHERITABLE_SETTING(Model::Profile, ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
-
-        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
-        INHERITABLE_SETTING(Model::Profile, bool, RetroTerminalEffect, false);
-        INHERITABLE_SETTING(Model::Profile, hstring, PixelShaderPath, L"");
-        INHERITABLE_SETTING(Model::Profile, bool, ForceFullRepaintRendering, false);
-        INHERITABLE_SETTING(Model::Profile, bool, SoftwareRendering, false);
-
-        INHERITABLE_SETTING(Model::Profile, hstring, ColorSchemeName, L"Campbell");
-
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Foreground, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, Background, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, SelectionBackground, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Windows::UI::Color, CursorColor, nullptr);
-
-        INHERITABLE_SETTING(Model::Profile, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
-        INHERITABLE_SETTING(Model::Profile, bool, SnapOnInput, true);
-        INHERITABLE_SETTING(Model::Profile, bool, AltGrAliasing, true);
-
-        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
-        INHERITABLE_SETTING(Model::Profile, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
-
-        INHERITABLE_SETTING(Model::Profile, Model::BellStyle, BellStyle, BellStyle::Audible);
-
-        INHERITABLE_SETTING(Model::Profile, winrt::Windows::Foundation::Collections::StringMap, EnvironmentVariables, {});
+#define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
+    INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
+        MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
+#undef PROFILE_SETTINGS_INITIALIZE
 
     private:
+        Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
+        Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
         winrt::Windows::Foundation::Collections::StringMap _EvaluatedEnvironmentVariables() const;
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
-        static guid _GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept;
+        static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;
 
         friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::ProfileTests;

@@ -24,8 +24,6 @@ Abstract:
 #define NOCOMM
 #include <unknwn.h>
 
-#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
-
 #include <windows.h>
 
 #include "../inc/LibraryIncludes.h"
@@ -33,7 +31,10 @@ Abstract:
 #include <wil/cppwinrt.h>
 
 #include <winrt/Windows.system.h>
+#include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 
 #include <wil/resource.h>
 #include <wil/win32_helpers.h>
+
+#include <cppwinrt_utils.h>

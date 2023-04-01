@@ -10,6 +10,22 @@ namespace Microsoft.Terminal.Settings.Editor
     interface IHostedInWindow
     {
         Boolean TryPropagateHostingWindow(IInspectable i);
+        UInt64 GetHostingWindow();
+    }
+
+    enum BreadcrumbSubPage
+    {
+        None = 0,
+        Profile_Appearance,
+        Profile_Advanced,
+        ColorSchemes_Edit
+    };
+
+    runtimeclass Breadcrumb : Windows.Foundation.IStringable
+    {
+        IInspectable Tag;
+        String Label;
+        BreadcrumbSubPage SubPage;
     }
 
     [default_interface] runtimeclass MainPage : Windows.UI.Xaml.Controls.Page, IHostedInWindow
@@ -22,5 +38,9 @@ namespace Microsoft.Terminal.Settings.Editor
         // Due to the aforementioned bug, we can't use IInitializeWithWindow _here_ either.
         // Let's just smuggle the HWND in as a UInt64 :|
         void SetHostingWindow(UInt64 window);
+
+        Windows.Foundation.Collections.IObservableVector<IInspectable> Breadcrumbs { get; };
+
+        Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
     }
 }

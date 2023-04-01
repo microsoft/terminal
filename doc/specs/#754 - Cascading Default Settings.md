@@ -115,7 +115,7 @@ greater detail below:
 
 ### Default Settings
 
-We'll have a static version of the "Default" file **hardcoded within the
+We'll have a static version of the "Default" file **hard-coded within the
 application package**. This `defaults.json` file will live within the
 application's package, which will prevent users from being able to edit it.
 
@@ -128,19 +128,19 @@ won't actually be generated, but because it's shipped with our app, it'll be
 overridden each time the app is updated. "Auto-generated" should be good enough
 to indicate to users that it should not be modified.
 
-Because the `defaults.json` file is hardcoded within our application, we can use
+Because the `defaults.json` file is hard-coded within our application, we can use
 its text directly, without loading the file from disk. This should help save
 some startup time, as we'll only need to load the user settings from disk.
 
 When we make changes to the default settings, or we make changes to the settings
-schema, we should make sure that we update the hardcoded `defaults.json` with
+schema, we should make sure that we update the hard-coded `defaults.json` with
 the new values. That way, the `defaults.json` file will always have the complete
 set of settings in it.
 
 ### Layering settings
 
 When we load the settings, we'll do it in three stages. First, we'll deserialize
-the default settings that we've hardcoded. We'll then generate any profiles that
+the default settings that we've hard-coded. We'll then generate any profiles that
 might come from dynamic profile sources. Then, we'll intelligently layer the
 user's setting upon those we've already loaded. If a user wants to make changes
 to some objects, like the default profiles, we'll need to make sure to load from
@@ -659,7 +659,7 @@ loading until that generator is complete.
 However, if the user disables that generator entirely, we'll never display that
 profile to the user, even if they've done that setup before.
 
-So the trade-off with this design is that non-existent dynamic profiles will
+So the trade-off with this design is that nonexistent dynamic profiles will
 never roam to machines where they don't exist and aren't valid, but the
 generators _must_ be enabled to use the dynamic profiles.
 

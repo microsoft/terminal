@@ -1,0 +1,10 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "IAppearanceConfig.idl";
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    [default_interface] runtimeclass AppearanceConfig : IAppearanceConfig {
+    }
+}

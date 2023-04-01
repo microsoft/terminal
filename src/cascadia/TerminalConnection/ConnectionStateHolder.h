@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "../inc/cppwinrt_utils.h"
-
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     template<typename T>
@@ -86,6 +84,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         bool _isConnected() const noexcept
         {
             return _isStateOneOf(ConnectionState::Connected);
+        }
+
+        void _resetConnectionState()
+        {
+            {
+                std::lock_guard<std::mutex> stateLock{ _stateMutex };
+                _connectionState = ConnectionState::NotConnected;
+            }
         }
 
     private:

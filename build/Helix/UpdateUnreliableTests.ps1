@@ -23,7 +23,7 @@ Write-Host "queryUri = $queryUri"
 # To account for unreliable tests, we'll iterate through all of the tests associated with this build, check to see any tests that were unreliable
 # (denoted by being marked as "skipped"), and if so, we'll instead mark those tests with a warning and enumerate all of the attempted runs
 # with their pass/fail states as well as any relevant error messages for failed attempts.
-$testRuns = Invoke-RestMethod -Uri $queryUri -Method Get -Headers $azureDevOpsRestApiHeaders
+$testRuns = Invoke-RestMethodWithRetries $queryUri -Headers $azureDevOpsRestApiHeaders
 
 $timesSeenByRunName = @{}
       
@@ -32,10 +32,10 @@ foreach ($testRun in $testRuns.value)
     $testRunResultsUri = "$($testRun.url)/results?api-version=5.0"
         
     Write-Host "Marking test run `"$($testRun.name)`" as in progress so we can change its results to account for unreliable tests."
-    Invoke-RestMethod -Uri "$($testRun.url)?api-version=5.0" -Method Patch -Body (ConvertTo-Json @{ "state" = "InProgress" }) -Headers $azureDevOpsRestApiHeaders -ContentType "application/json" | Out-Null
+    Invoke-RestMethod "$($testRun.url)?api-version=5.0" -Method Patch -Body (ConvertTo-Json @{ "state" = "InProgress" }) -Headers $azureDevOpsRestApiHeaders -ContentType "application/json" | Out-Null
 
     Write-Host "Retrieving test results..."
-    $testResults = Invoke-RestMethod -Uri $testRunResultsUri -Method Get -Headers $azureDevOpsRestApiHeaders
+    $testResults = Invoke-RestMethodWithRetries $testRunResultsUri -Headers $azureDevOpsRestApiHeaders
         
     foreach ($testResult in $testResults.value)
     {
@@ -54,7 +54,8 @@ foreach ($testRun in $testRuns.value)
             Write-Host "  Test $($testResult.testCaseTitle) was detected as unreliable. Updating..."
             
             # The errorMessage field contains a link to the JSON-encoded rerun result data.
-            $rerunResults = ConvertFrom-Json (New-Object System.Net.WebClient).DownloadString($testResult.errorMessage)
+            $resultsJson = Download-StringWithRetries "Error results" $testResult.errorMessage
+            $rerunResults = ConvertFrom-Json $resultsJson
             [System.Collections.Generic.List[System.Collections.Hashtable]]$rerunDataList = @()
             $attemptCount = 0
             $passCount = 0

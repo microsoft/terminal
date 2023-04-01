@@ -1,0 +1,126 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Core
+{
+    enum MatchMode
+    {
+        None,
+        All
+    };
+
+    enum CursorStyle
+    {
+        Vintage,
+        Bar,
+        Underscore,
+        DoubleUnderscore,
+        FilledBox,
+        EmptyBox
+    };
+
+    enum AdjustTextMode
+    {
+        Never,
+        Indexed,
+        Always
+    };
+
+    // TerminalCore declares its own Color struct to avoid depending
+    // on Windows.UI.Color and to avoid passing around unclothed uint32s.
+    // It is supported by til::color for conversions in and out of WinRT land.
+    struct Color
+    {
+        UInt8 R;
+        UInt8 G;
+        UInt8 B;
+        UInt8 A;
+    };
+
+    // Yes, this is also just an IReference<Color>. However, IReference has some
+    // weird ownership semantics that just make it a pain for something as
+    // simple as "maybe this color doesn't have a value set".
+    struct OptionalColor
+    {
+        Boolean HasValue;
+        Microsoft.Terminal.Core.Color Color;
+    };
+
+    // TerminalCore declares its own Color struct to avoid depending on
+    // Windows.UI. Windows.Foundation.Point also exists, but it's composed of
+    // floating-point coordinates, when we almost always need integer coordinates.
+    // It is supported by til::point for conversions in and out of WinRT land.
+    struct Point
+    {
+        Int32 X;
+        Int32 Y;
+    };
+
+    // Same thing here, but with padding. Can't use Windows.UI.Thickness, so
+    // we'll declare our own.
+    struct Padding {
+        Double Left;
+        Double Top;
+        Double Right;
+        Double Bottom;
+    };
+
+    // This is a projection of Microsoft::Terminal::Core::ControlKeyStates,
+    // for conversions in and out of WinRT land.
+    struct ControlKeyStates
+    {
+        UInt32 Value;
+    };
+
+    struct Scheme
+    {
+        Microsoft.Terminal.Core.Color Foreground;
+        Microsoft.Terminal.Core.Color Background;
+
+        Microsoft.Terminal.Core.Color SelectionBackground;
+
+        Microsoft.Terminal.Core.Color CursorColor;
+
+        // Table: A WinRT struct doesn't allow pointers (READ: doesn't allow
+        // array members) in structs, but we very much would like this object to
+        // be a struct. So we'll call out each color individually. There's only
+        // 16, it's not that bad.
+        Microsoft.Terminal.Core.Color Black;
+        Microsoft.Terminal.Core.Color Red;
+        Microsoft.Terminal.Core.Color Green;
+        Microsoft.Terminal.Core.Color Yellow;
+        Microsoft.Terminal.Core.Color Blue;
+        Microsoft.Terminal.Core.Color Purple;
+        Microsoft.Terminal.Core.Color Cyan;
+        Microsoft.Terminal.Core.Color White;
+        Microsoft.Terminal.Core.Color BrightBlack;
+        Microsoft.Terminal.Core.Color BrightRed;
+        Microsoft.Terminal.Core.Color BrightGreen;
+        Microsoft.Terminal.Core.Color BrightYellow;
+        Microsoft.Terminal.Core.Color BrightBlue;
+        Microsoft.Terminal.Core.Color BrightPurple;
+        Microsoft.Terminal.Core.Color BrightCyan;
+        Microsoft.Terminal.Core.Color BrightWhite;
+    };
+
+    declare
+    {
+        // Forward declare this parameterized specialization so that it lives
+        // in TerminalCore instead of being flung to the winds of all IDL dependents.
+        interface Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>;
+        interface Windows.Foundation.IReference<Microsoft.Terminal.Core.Point>;
+    }
+
+    interface ICoreAppearance
+    {
+        Microsoft.Terminal.Core.Color DefaultForeground;
+        Microsoft.Terminal.Core.Color DefaultBackground;
+        Microsoft.Terminal.Core.Color GetColorTableEntry(Int32 index);
+        Microsoft.Terminal.Core.Color CursorColor;
+        CursorStyle CursorShape;
+        UInt32 CursorHeight;
+        Boolean IntenseIsBold;
+        Boolean IntenseIsBright;
+        AdjustTextMode AdjustIndistinguishableColors;
+    };
+}

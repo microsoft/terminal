@@ -28,7 +28,16 @@ Revision History:
 class ConsoleProcessHandle
 {
 public:
-    std::unique_ptr<ConsoleWaitQueue> const pWaitBlockQueue;
+    ConsoleProcessHandle(const DWORD dwProcessId,
+                         const DWORD dwThreadId,
+                         const ULONG ulProcessGroupId);
+    ~ConsoleProcessHandle() = default;
+    ConsoleProcessHandle(const ConsoleProcessHandle&) = delete;
+    ConsoleProcessHandle(ConsoleProcessHandle&&) = delete;
+    ConsoleProcessHandle& operator=(const ConsoleProcessHandle&) & = delete;
+    ConsoleProcessHandle& operator=(ConsoleProcessHandle&&) & = delete;
+
+    const std::unique_ptr<ConsoleWaitQueue> pWaitBlockQueue;
     std::unique_ptr<ConsoleHandleData> pInputHandle;
     std::unique_ptr<ConsoleHandleData> pOutputHandle;
 
@@ -40,21 +49,18 @@ public:
     const ConsoleProcessPolicy GetPolicy() const;
     const ConsoleShimPolicy GetShimPolicy() const;
 
+    const HANDLE GetRawHandle() const;
+
     CD_CONNECTION_INFORMATION GetConnectionInformation(IDeviceComm* deviceComm) const;
 
-private:
-    ConsoleProcessHandle(const DWORD dwProcessId,
-                         const DWORD dwThreadId,
-                         const ULONG ulProcessGroupId);
-    ~ConsoleProcessHandle() = default;
-    ConsoleProcessHandle(const ConsoleProcessHandle&) = delete;
-    ConsoleProcessHandle(ConsoleProcessHandle&&) = delete;
-    ConsoleProcessHandle& operator=(const ConsoleProcessHandle&) & = delete;
-    ConsoleProcessHandle& operator=(ConsoleProcessHandle&&) & = delete;
+    const ULONG64 GetProcessCreationTime() const;
 
+private:
     ULONG _ulTerminateCount;
     ULONG const _ulProcessGroupId;
     wil::unique_handle const _hProcess;
+
+    mutable ULONG64 _processCreationTime;
 
     const ConsoleProcessPolicy _policy;
     const ConsoleShimPolicy _shimPolicy;

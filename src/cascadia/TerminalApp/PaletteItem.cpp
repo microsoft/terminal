@@ -9,10 +9,17 @@
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::System;
 
 namespace winrt::TerminalApp::implementation
 {
+    Controls::IconElement PaletteItem::ResolvedIcon()
+    {
+        const auto icon = IconPathConverter::IconWUX(Icon());
+        icon.Width(16);
+        icon.Height(16);
+        return icon;
+    }
 }

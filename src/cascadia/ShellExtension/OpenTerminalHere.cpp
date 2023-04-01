@@ -4,11 +4,11 @@
 #include "pch.h"
 #include "OpenTerminalHere.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
+#include "../WinRTUtils/inc/LibraryResources.h"
+
+#include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <ShlObj.h>
 
-// TODO GH#6112: Localize these strings
-static constexpr std::wstring_view VerbDisplayName{ L"Open in Windows Terminal" };
-static constexpr std::wstring_view VerbDevBuildDisplayName{ L"Open in Windows Terminal (Dev Build)" };
 static constexpr std::wstring_view VerbName{ L"WindowsTerminalOpenHere" };
 
 // This code is aggressively copied from
@@ -25,47 +25,34 @@ static constexpr std::wstring_view VerbName{ L"WindowsTerminalOpenHere" };
 //   failure from an earlier HRESULT.
 HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
                                  IBindCtx* /*pBindContext*/)
+try
 {
+    wil::com_ptr_nothrow<IShellItem> psi;
+    RETURN_IF_FAILED(GetBestLocationFromSelectionOrSite(psiItemArray, psi.put()));
+    if (!psi)
+    {
+        return S_FALSE;
+    }
+
     wil::unique_cotaskmem_string pszName;
-
-    if (psiItemArray == nullptr)
-    {
-        // get the current path from explorer.exe
-        const auto path = this->_GetPathFromExplorer();
-
-        // no go, unable to get a reasonable path
-        if (path.empty())
-        {
-            return S_FALSE;
-        }
-        pszName = wil::make_cotaskmem_string(path.c_str(), path.length());
-    }
-    else
-    {
-        DWORD count;
-        psiItemArray->GetCount(&count);
-
-        winrt::com_ptr<IShellItem> psi;
-        RETURN_IF_FAILED(psiItemArray->GetItemAt(0, psi.put()));
-        RETURN_IF_FAILED(psi->GetDisplayName(SIGDN_FILESYSPATH, &pszName));
-    }
+    RETURN_IF_FAILED(psi->GetDisplayName(SIGDN_FILESYSPATH, &pszName));
 
     {
         wil::unique_process_information _piClient;
         STARTUPINFOEX siEx{ 0 };
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
 
-        // Append a "\." to the given path, so that this will work in "C:\"
-        std::wstring cmdline = fmt::format(L"\"{}\" -d \"{}\\.\"", GetWtExePath(), pszName.get());
+        std::wstring cmdline;
+        RETURN_IF_FAILED(wil::str_printf_nothrow(cmdline, LR"-("%s" -d %s)-", GetWtExePath().c_str(), QuoteAndEscapeCommandlineArg(pszName.get()).c_str()));
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
-            nullptr,
+            nullptr, // lpApplicationName
             cmdline.data(),
             nullptr, // lpProcessAttributes
             nullptr, // lpThreadAttributes
             false, // bInheritHandles
             EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT, // dwCreationFlags
             nullptr, // lpEnvironment
-            nullptr,
+            pszName.get(),
             &siEx.StartupInfo, // lpStartupInfo
             &_piClient // lpProcessInformation
             ));
@@ -73,6 +60,7 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
 
     return S_OK;
 }
+CATCH_RETURN()
 
 HRESULT OpenTerminalHere::GetToolTip(IShellItemArray* /*psiItemArray*/,
                                      LPWSTR* ppszInfoTip)
@@ -87,11 +75,18 @@ HRESULT OpenTerminalHere::GetTitle(IShellItemArray* /*psiItemArray*/,
 {
     // Change the string we return depending on if we're running from the dev
     // build package or not.
-    const bool isDevBuild = IsDevBuild();
-    return SHStrDup(isDevBuild ? VerbDevBuildDisplayName.data() : VerbDisplayName.data(), ppszName);
+    const auto resource =
+#if defined(WT_BRANDING_RELEASE)
+        RS_(L"ShellExtension_OpenInTerminalMenuItem");
+#elif defined(WT_BRANDING_PREVIEW)
+        RS_(L"ShellExtension_OpenInTerminalMenuItem_Preview");
+#else
+        RS_(L"ShellExtension_OpenInTerminalMenuItem_Dev");
+#endif
+    return SHStrDup(resource.data(), ppszName);
 }
 
-HRESULT OpenTerminalHere::GetState(IShellItemArray* /*psiItemArray*/,
+HRESULT OpenTerminalHere::GetState(IShellItemArray* psiItemArray,
                                    BOOL /*fOkToBeSlow*/,
                                    EXPCMDSTATE* pCmdState)
 {
@@ -100,10 +95,18 @@ HRESULT OpenTerminalHere::GetState(IShellItemArray* /*psiItemArray*/,
     // E_PENDING and this object will be called back on a background thread with
     // fOkToBeSlow == TRUE
 
-    // We however don't need to bother with any of that, so we'll just return
-    // ECS_ENABLED.
+    // We however don't need to bother with any of that.
 
-    *pCmdState = ECS_ENABLED;
+    // If no item was selected when the context menu was opened and Explorer
+    // is not at a valid location (e.g. This PC or Quick Access), we should hide
+    // the verb from the context menu.
+    wil::com_ptr_nothrow<IShellItem> psi;
+    RETURN_IF_FAILED(GetBestLocationFromSelectionOrSite(psiItemArray, psi.put()));
+
+    SFGAOF attributes;
+    const bool isFileSystemItem = psi && (psi->GetAttributes(SFGAO_FILESYSTEM, &attributes) == S_OK);
+    *pCmdState = isFileSystemItem ? ECS_ENABLED : ECS_HIDDEN;
+
     return S_OK;
 }
 
@@ -114,7 +117,7 @@ try
     std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
     modulePath.replace_filename(WindowsTerminalExe);
     // WindowsTerminal.exe,-101 will be the first icon group in WT
-    // We're using WindowsTerminal here explicitly, and not wt (from _getExePath), because
+    // We're using WindowsTerminal here explicitly, and not wt (from GetWtExePath), because
     // WindowsTerminal is the only one built with the right icons.
     const auto resource{ modulePath.wstring() + L",-101" };
     return SHStrDupW(resource.c_str(), ppszIcon);
@@ -139,102 +142,54 @@ HRESULT OpenTerminalHere::EnumSubCommands(IEnumExplorerCommand** ppEnum)
     return E_NOTIMPL;
 }
 
-std::wstring OpenTerminalHere::_GetPathFromExplorer() const
+IFACEMETHODIMP OpenTerminalHere::SetSite(IUnknown* site) noexcept
 {
-    using namespace std;
-    using namespace winrt;
+    site_ = site;
+    return S_OK;
+}
 
-    wstring path;
-    HRESULT hr = NOERROR;
+IFACEMETHODIMP OpenTerminalHere::GetSite(REFIID riid, void** site) noexcept
+{
+    RETURN_IF_FAILED(site_.query_to(riid, site));
+    return S_OK;
+}
 
-    auto hwnd = ::GetForegroundWindow();
-    if (hwnd == nullptr)
+HRESULT OpenTerminalHere::GetLocationFromSite(IShellItem** location) const noexcept
+{
+    wil::assign_null_to_opt_param(location);
+
+    if (!site_)
     {
-        return path;
+        return S_FALSE;
     }
 
-    TCHAR szName[MAX_PATH] = { 0 };
-    ::GetClassName(hwnd, szName, MAX_PATH);
-    if (0 == StrCmp(szName, L"WorkerW") ||
-        0 == StrCmp(szName, L"Progman"))
+    wil::com_ptr_nothrow<IServiceProvider> serviceProvider;
+    RETURN_IF_FAILED(site_.query_to(serviceProvider.put()));
+    wil::com_ptr_nothrow<IFolderView> folderView;
+    RETURN_IF_FAILED(serviceProvider->QueryService(SID_SFolderView, IID_PPV_ARGS(folderView.put())));
+    RETURN_IF_FAILED(folderView->GetFolder(IID_PPV_ARGS(location)));
+    return S_OK;
+}
+
+HRESULT OpenTerminalHere::GetBestLocationFromSelectionOrSite(IShellItemArray* psiArray, IShellItem** location) const noexcept
+{
+    wil::com_ptr_nothrow<IShellItem> psi;
+    if (psiArray)
     {
-        //special folder: desktop
-        hr = ::SHGetFolderPath(NULL, CSIDL_DESKTOP, NULL, SHGFP_TYPE_CURRENT, szName);
-        if (FAILED(hr))
+        DWORD count{};
+        RETURN_IF_FAILED(psiArray->GetCount(&count));
+        if (count) // Sometimes we get an array with a count of 0. Fall back to the site chain.
         {
-            return path;
-        }
-
-        path = szName;
-        return path;
-    }
-
-    if (0 != StrCmp(szName, L"CabinetWClass"))
-    {
-        return path;
-    }
-
-    com_ptr<IShellWindows> shell;
-    try
-    {
-        shell = create_instance<IShellWindows>(CLSID_ShellWindows, CLSCTX_ALL);
-    }
-    catch (...)
-    {
-        //look like try_create_instance is not available no more
-    }
-
-    if (shell == nullptr)
-    {
-        return path;
-    }
-
-    com_ptr<IDispatch> disp;
-    wil::unique_variant variant;
-    variant.vt = VT_I4;
-
-    com_ptr<IWebBrowserApp> browser;
-    // look for correct explorer window
-    for (variant.intVal = 0;
-         shell->Item(variant, disp.put()) == S_OK;
-         variant.intVal++)
-    {
-        com_ptr<IWebBrowserApp> tmp;
-        if (FAILED(disp->QueryInterface(tmp.put())))
-        {
-            disp = nullptr; // get rid of DEBUG non-nullptr warning
-            continue;
-        }
-
-        HWND tmpHWND = NULL;
-        hr = tmp->get_HWND(reinterpret_cast<SHANDLE_PTR*>(&tmpHWND));
-        if (hwnd == tmpHWND)
-        {
-            browser = tmp;
-            disp = nullptr; // get rid of DEBUG non-nullptr warning
-            break; //found
-        }
-
-        disp = nullptr; // get rid of DEBUG non-nullptr warning
-    }
-
-    if (browser != nullptr)
-    {
-        wil::unique_bstr url;
-        hr = browser->get_LocationURL(&url);
-        if (FAILED(hr))
-        {
-            return path;
-        }
-
-        wstring sUrl(url.get(), SysStringLen(url.get()));
-        DWORD size = MAX_PATH;
-        hr = ::PathCreateFromUrl(sUrl.c_str(), szName, &size, NULL);
-        if (SUCCEEDED(hr))
-        {
-            path = szName;
+            RETURN_IF_FAILED(psiArray->GetItemAt(0, psi.put()));
         }
     }
 
-    return path;
+    if (!psi)
+    {
+        RETURN_IF_FAILED(GetLocationFromSite(psi.put()));
+    }
+
+    RETURN_HR_IF(S_FALSE, !psi);
+    RETURN_IF_FAILED(psi.copy_to(location));
+    return S_OK;
 }

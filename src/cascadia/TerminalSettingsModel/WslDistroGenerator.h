@@ -15,16 +15,15 @@ Author(s):
 --*/
 
 #pragma once
+
 #include "IDynamicProfileGenerator.h"
 
-namespace Microsoft::Terminal::Settings::Model
+namespace winrt::Microsoft::Terminal::Settings::Model
 {
-    class WslDistroGenerator : public Microsoft::Terminal::Settings::Model::IDynamicProfileGenerator
+    class WslDistroGenerator final : public IDynamicProfileGenerator
     {
     public:
-        WslDistroGenerator() = default;
-        ~WslDistroGenerator() = default;
-        std::wstring_view GetNamespace() override;
-        std::vector<winrt::Microsoft::Terminal::Settings::Model::Profile> GenerateProfiles() override;
+        std::wstring_view GetNamespace() const noexcept override;
+        void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const override;
     };
 };

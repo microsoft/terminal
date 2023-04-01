@@ -10,8 +10,11 @@
 
 #include "../renderer/base/renderer.hpp"
 #include "../types/inc/utils.hpp"
+#include "handle.h" // LockConsole
 #include "input.h" // ProcessCtrlEvents
 #include "output.h" // CloseConsoleProcessState
+
+#include "VtApiRoutines.h"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
@@ -70,6 +73,7 @@ VtIo::VtIo() :
     _lookingForCursorPosition = pArgs->GetInheritCursor();
     _resizeQuirk = pArgs->IsResizeQuirkEnabled();
     _win32InputMode = pArgs->IsWin32InputModeEnabled();
+    _passthroughMode = pArgs->IsPassthroughMode();
 
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->InConptyMode())
@@ -136,8 +140,11 @@ VtIo::VtIo() :
     {
         return S_FALSE;
     }
+    auto& globals = ServiceLocator::LocateGlobals();
 
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = globals.getConsoleInformation();
+    // SetWindowVisibility uses the console lock to protect access to _pVtRenderEngine.
+    assert(gci.IsConsoleLocked());
 
     try
     {
@@ -148,27 +155,65 @@ VtIo::VtIo() :
 
         if (IsValidHandle(_hOutput.get()))
         {
-            Viewport initialViewport = Viewport::FromDimensions({ 0, 0 },
-                                                                gci.GetWindowSize().X,
-                                                                gci.GetWindowSize().Y);
+            auto initialViewport = Viewport::FromDimensions({ 0, 0 },
+                                                            gci.GetWindowSize().width,
+                                                            gci.GetWindowSize().height);
             switch (_IoMode)
             {
             case VtIoMode::XTERM_256:
-                _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
-                                                                    initialViewport);
+            {
+                auto xterm256Engine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
+                                                                       initialViewport);
+                if constexpr (Feature_VtPassthroughMode::IsEnabled())
+                {
+                    if (_passthroughMode)
+                    {
+                        auto vtapi = new VtApiRoutines();
+                        vtapi->m_pVtEngine = xterm256Engine.get();
+                        vtapi->m_pUsualRoutines = globals.api;
+
+                        xterm256Engine->SetPassthroughMode(true);
+
+                        if (_pVtInputThread)
+                        {
+                            auto pfnSetListenForDSR = std::bind(&VtInputThread::SetLookingForDSR, _pVtInputThread.get(), std::placeholders::_1);
+                            xterm256Engine->SetLookingForDSRCallback(pfnSetListenForDSR);
+                        }
+
+                        globals.api = vtapi;
+                    }
+                }
+
+                _pVtRenderEngine = std::move(xterm256Engine);
                 break;
+            }
             case VtIoMode::XTERM:
+            {
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  initialViewport,
                                                                  false);
+                if (_passthroughMode)
+                {
+                    return E_NOTIMPL;
+                }
                 break;
+            }
             case VtIoMode::XTERM_ASCII:
+            {
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  initialViewport,
                                                                  true);
+
+                if (_passthroughMode)
+                {
+                    return E_NOTIMPL;
+                }
                 break;
+            }
             default:
+            {
                 return E_FAIL;
+            }
             }
             if (_pVtRenderEngine)
             {
@@ -205,7 +250,7 @@ bool VtIo::IsUsingVt() const
     {
         return S_FALSE;
     }
-    Globals& g = ServiceLocator::LocateGlobals();
+    auto& g = ServiceLocator::LocateGlobals();
 
     if (_pVtRenderEngine)
     {
@@ -213,6 +258,11 @@ bool VtIo::IsUsingVt() const
         {
             g.pRender->AddRenderEngine(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
+            g.getConsoleInformation().GetActiveInputBuffer()->SetTerminalConnection(_pVtRenderEngine.get());
+
+            // Force the whole window to be put together first.
+            // We don't really need the handle, we just want to leverage the setup steps.
+            ServiceLocator::LocatePseudoWindow();
         }
         CATCH_RETURN();
     }
@@ -252,11 +302,58 @@ bool VtIo::IsUsingVt() const
 
     if (_pPtySignalInputThread)
     {
-        // Let the signal thread know that the console is connected
+        // Let the signal thread know that the console is connected.
+        //
+        // By this point, the pseudo window should have already been created, by
+        // ConsoleInputThreadProcWin32. That thread has a message pump, which is
+        // needed to ensure that DPI change messages to the owning terminal
+        // window don't end up hanging because the pty didn't also process it.
         _pPtySignalInputThread->ConnectConsole();
     }
 
     return S_OK;
+}
+
+// Method Description:
+// - Create our pseudo window. This is exclusively called by
+//   ConsoleInputThreadProcWin32 on the console input thread.
+//    * It needs to be called on that thread, before any other calls to
+//      LocatePseudoWindow, to make sure that the input thread is the HWND's
+//      message thread.
+//    * It needs to be plumbed through the signal thread, because the signal
+//      thread knows if someone should be marked as the window's owner. It's
+//      VERY IMPORTANT that any initial owners are set up when the window is
+//      first created.
+// - Refer to GH#13066 for details.
+void VtIo::CreatePseudoWindow()
+{
+    if (_pPtySignalInputThread)
+    {
+        _pPtySignalInputThread->CreatePseudoWindow();
+    }
+    else
+    {
+        ServiceLocator::LocatePseudoWindow();
+    }
+}
+
+void VtIo::SetWindowVisibility(bool showOrHide) noexcept
+{
+    auto& gci = ::Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    gci.LockConsole();
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    // ConsoleInputThreadProcWin32 calls VtIo::CreatePseudoWindow,
+    // which calls CreateWindowExW, which causes a WM_SIZE message.
+    // In short, this function might be called before _pVtRenderEngine exists.
+    // See PtySignalInputThread::CreatePseudoWindow().
+    if (!_pVtRenderEngine)
+    {
+        return;
+    }
+
+    LOG_IF_FAILED(_pVtRenderEngine->SetWindowVisibility(showOrHide));
 }
 
 // Method Description:
@@ -305,7 +402,7 @@ bool VtIo::IsUsingVt() const
 //      appropriate HRESULT indicating failure.
 [[nodiscard]] HRESULT VtIo::SuppressResizeRepaint()
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     if (_pVtRenderEngine)
     {
         hr = _pVtRenderEngine->SuppressResizeRepaint();
@@ -321,9 +418,9 @@ bool VtIo::IsUsingVt() const
 // Return Value:
 // - S_OK if we successfully inherited the cursor or did nothing, else an
 //      appropriate HRESULT
-[[nodiscard]] HRESULT VtIo::SetCursorPosition(const COORD coordCursor)
+[[nodiscard]] HRESULT VtIo::SetCursorPosition(const til::point coordCursor)
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     if (_lookingForCursorPosition)
     {
         if (_pVtRenderEngine)
@@ -336,56 +433,39 @@ bool VtIo::IsUsingVt() const
     return hr;
 }
 
+[[nodiscard]] HRESULT VtIo::SwitchScreenBuffer(const bool useAltBuffer)
+{
+    auto hr = S_OK;
+    if (_pVtRenderEngine)
+    {
+        hr = _pVtRenderEngine->SwitchScreenBuffer(useAltBuffer);
+    }
+    return hr;
+}
+
 void VtIo::CloseInput()
 {
-    // This will release the lock when it goes out of scope
-    std::lock_guard<std::mutex> lk(_shutdownLock);
     _pVtInputThread = nullptr;
-    _ShutdownIfNeeded();
+    SendCloseEvent();
 }
 
 void VtIo::CloseOutput()
 {
-    // This will release the lock when it goes out of scope
-    std::lock_guard<std::mutex> lk(_shutdownLock);
-
-    Globals& g = ServiceLocator::LocateGlobals();
-    // DON'T RemoveRenderEngine, as that requires the engine list lock, and this
-    // is usually being triggered on a paint operation, when the lock is already
-    // owned by the paint.
-    // Instead we're releasing the Engine here. A pointer to it has already been
-    // given to the Renderer, so we don't want the unique_ptr to delete it. The
-    // Renderer will own its lifetime now.
-    _pVtRenderEngine.release();
-
+    auto& g = ServiceLocator::LocateGlobals();
     g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(nullptr);
-
-    _ShutdownIfNeeded();
 }
 
-void VtIo::_ShutdownIfNeeded()
+void VtIo::SendCloseEvent()
 {
-    // The callers should have both acquired the _shutdownLock at this point -
-    //      we dont want a race on who is actually responsible for closing it.
-    if (_objectsCreated && _pVtInputThread == nullptr && _pVtRenderEngine == nullptr)
+    LockConsole();
+    const auto unlock = wil::scope_exit([] { UnlockConsole(); });
+
+    // This function is called when the ConPTY signal pipe is closed (PtySignalInputThread) and when the input
+    // pipe is closed (VtIo). Usually these two happen at about the same time. This if condition is a bit of
+    // a premature optimization and prevents us from sending out a CTRL_CLOSE_EVENT right after another.
+    if (!std::exchange(_closeEventSent, true))
     {
-        // At this point, we no longer have a renderer or inthread. So we've
-        //      effectively been disconnected from the terminal.
-
-        // If we have any remaining attached processes, this will prepare us to send a ctrl+close to them
-        // if we don't, this will cause us to rundown and exit.
         CloseConsoleProcessState();
-
-        // If we haven't terminated by now, that's because there's a client that's still attached.
-        // Force the handling of the control events by the attached clients.
-        // As of MSFT:19419231, CloseConsoleProcessState will make sure this
-        //      happens if this method is called outside of lock, but if we're
-        //      currently locked, we want to make sure ctrl events are handled
-        //      _before_ we RundownAndExit.
-        ProcessCtrlEvents();
-
-        // Make sure we terminate.
-        ServiceLocator::RundownAndExit(ERROR_BROKEN_PIPE);
     }
 }
 
@@ -443,7 +523,7 @@ void VtIo::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::
 // - Returns true if the Resize Quirk is enabled. This changes the behavior of
 //   conpty to _not_ InvalidateAll the entire viewport on a resize operation.
 //   This is used by the Windows Terminal, because it is prepared to be
-//   connected to a conpty, and handles it's own buffer specifically for a
+//   connected to a conpty, and handles its own buffer specifically for a
 //   conpty scenario.
 // - See also: GH#3490, #4354, #4741
 // Arguments:

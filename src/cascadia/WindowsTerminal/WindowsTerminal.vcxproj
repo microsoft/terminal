@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}</ProjectGuid>
@@ -13,13 +12,19 @@
     <ApplicationType>Windows Store</ApplicationType>
     <WindowsStoreApp>true</WindowsStoreApp>
     <WindowsAppContainer>false</WindowsAppContainer>
-    <!-- IMPORTANT! Xaml Islands only works on >= 17709 -->
-    <!-- IMPORTANT! cppwinrt.pre.props specifies 17134 -->
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+    <PgoTarget>true</PgoTarget>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalVCRTForwarders>true</TerminalVCRTForwarders>
+    <TerminalThemeHelpers>true</TerminalThemeHelpers>
+    <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
   <ItemDefinitionGroup>
@@ -46,8 +51,13 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="AppHost.h" />
     <ClInclude Include="BaseWindow.h" />
+    <ClInclude Include="CustomWindowMessages.h" />
     <ClInclude Include="IslandWindow.h" />
     <ClInclude Include="NonClientIslandWindow.h" />
+    <ClInclude Include="NotificationIcon.h" />
+    <ClInclude Include="VirtualDesktopUtils.h" />
+    <ClInclude Include="WindowEmperor.h" />
+    <ClInclude Include="WindowThread.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -57,6 +67,10 @@
     <ClCompile Include="AppHost.cpp" />
     <ClCompile Include="IslandWindow.cpp" />
     <ClCompile Include="NonClientIslandWindow.cpp" />
+    <ClCompile Include="NotificationIcon.cpp" />
+    <ClCompile Include="VirtualDesktopUtils.cpp" />
+    <ClCompile Include="WindowEmperor.cpp" />
+    <ClCompile Include="WindowThread.cpp" />
     <ClCompile Include="icon.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -65,14 +79,11 @@
   <ItemGroup>
     <Manifest Include="WindowsTerminal.manifest" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <!-- Dependencies -->
   <ItemGroup>
     <!-- Even though we do have proper recursive dependencies, we want to keep some of these here
          so that the AppX Manifest contains their activatable classes. -->
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj" />
 
@@ -81,8 +92,25 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.vcxproj" />
 
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
+      <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
 
+  <!-- Manually add a reference to Core here. We need this so MDMERGE will know
+  where the Core types are defined. However, we need to do it exactly like this,
+  because the Core project is a lib not a dll, so it can't be ProjectReference'd
+  like everything else. It does get built into TerminalControl.dll, so we don't
+  need to worry about that. -->
+  <ItemGroup>
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+  </ItemGroup>
   <!--
     This ItemGroup and the Globals PropertyGroup below it are required in order
     to enable F5 debugging for the unpackaged application
@@ -95,21 +123,24 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 
-  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <!--
+  BODGY
 
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
-  <Import Project="..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets" Condition="Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets'))" />
-  </Target>
+  The wapproj `GetResolvedWinMD` target tries to get a winmd from every cppwinrt
+  executable we put in the package. But we DON'T produce a winmd. This makes the
+  FastUpToDate check fail every time, and leads to the whole wapproj build
+  running even if you're just f5'ing the package. EVEN AFTER A SUCCESSFUL BUILD.
+
+  Setting GenerateWindowsMetadata=false is enough to tell the build system that
+  we don't produce one, and get it off our backs.
+  -->
+  <ItemDefinitionGroup>
+    <Link>
+        <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
   <!-- Override GetPackagingOutputs to roll up all our dependencies.
        This ensures that when the WAP packaging project asks what files go into
@@ -137,27 +168,8 @@
       <PackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" />
     </ItemGroup>
 
-    <!-- **BEGIN VC LIBS HACK** -->
-    <PropertyGroup>
-      <ReasonablePlatform Condition="'$(Platform)'=='Win32'">x86</ReasonablePlatform>
-      <ReasonablePlatform Condition="'$(ReasonablePlatform)'==''">$(Platform)</ReasonablePlatform>
-    </PropertyGroup>
-
-    <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
-      <!-- Add all the CRT libs as content; these must be inside a Target as they are wildcards. -->
-      <_OpenConsoleVCLibToCopy Include="$(VCToolsRedistInstallDir)\$(ReasonablePlatform)\Microsoft.VC142.CRT\*.dll" />
-
-      <PackagingOutputs Include="@(_OpenConsoleVCLibToCopy)">
-        <ProjectName>$(ProjectName)</ProjectName>
-        <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
-        <TargetPath>%(Filename)%(Extension)</TargetPath>
-      </PackagingOutputs>
-    </ItemGroup>
-    <!-- **END VC LIBS HACK** -->
   </Target>
-
-  <Import Project="$(OpenConsoleDir)\build\rules\Branding.targets" />
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
-  <Import Project="..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets" Condition="Exists('..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets')" />
-</Project>
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
+</Project>

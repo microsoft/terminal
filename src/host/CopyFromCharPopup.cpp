@@ -15,18 +15,18 @@ CopyFromCharPopup::CopyFromCharPopup(SCREEN_INFORMATION& screenInfo) :
 }
 
 // Routine Description:
-// - This routine handles the delete from cursor to char char popup.  It returns when we're out of input or the user has entered a char.
+// - This routine handles the delete from cursor to char popup.  It returns when we're out of input or the user has entered a char.
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
 [[nodiscard]] NTSTATUS CopyFromCharPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
 {
     // get user input
-    WCHAR Char = UNICODE_NULL;
-    bool PopupKeys = false;
+    auto Char = UNICODE_NULL;
+    auto PopupKeys = false;
     DWORD modifiers = 0;
-    NTSTATUS Status = _getUserInput(cookedReadData, PopupKeys, modifiers, Char);
-    if (!NT_SUCCESS(Status))
+    auto Status = _getUserInput(cookedReadData, PopupKeys, modifiers, Char);
+    if (FAILED_NTSTATUS(Status))
     {
         return Status;
     }

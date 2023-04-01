@@ -12,8 +12,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     DependencyProperty SettingContainer::_HeaderProperty{ nullptr };
     DependencyProperty SettingContainer::_HelpTextProperty{ nullptr };
+    DependencyProperty SettingContainer::_CurrentValueProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
     DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
+    DependencyProperty SettingContainer::_StartExpandedProperty{ nullptr };
 
     SettingContainer::SettingContainer()
     {
@@ -43,6 +45,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ box_value(L"") });
         }
+        if (!_CurrentValueProperty)
+        {
+            _CurrentValueProperty =
+                DependencyProperty::Register(
+                    L"CurrentValue",
+                    xaml_typename<hstring>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ box_value(L"") });
+        }
         if (!_HasSettingValueProperty)
         {
             _HasSettingValueProperty =
@@ -57,13 +68,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _SettingOverrideSourceProperty =
                 DependencyProperty::Register(
                     L"SettingOverrideSource",
+                    xaml_typename<IInspectable>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ nullptr, PropertyChangedCallback{ &SettingContainer::_OnHasSettingValueChanged } });
+        }
+        if (!_StartExpandedProperty)
+        {
+            _StartExpandedProperty =
+                DependencyProperty::Register(
+                    L"StartExpanded",
                     xaml_typename<bool>(),
                     xaml_typename<Editor::SettingContainer>(),
-                    PropertyMetadata{ nullptr });
+                    PropertyMetadata{ box_value(false) });
         }
     }
 
-    void SettingContainer::_OnHasSettingValueChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& /*args*/)
+    void SettingContainer::_OnHasSettingValueChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*args*/)
     {
         // update visibility for override message and reset button
         const auto& obj{ d.try_as<Editor::SettingContainer>() };
@@ -112,27 +132,55 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _UpdateOverrideSystem();
 
+        // Get the correct base to apply automation properties to
+        std::vector<DependencyObject> base;
+        base.reserve(2);
+        if (const auto& child{ GetTemplateChild(L"Expander") })
+        {
+            if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
+            {
+                base.push_back(child);
+            }
+        }
         if (const auto& content{ Content() })
         {
-            if (const auto& obj{ content.try_as<DependencyObject>() })
+            const auto& panel{ content.try_as<Controls::Panel>() };
+            const auto& obj{ content.try_as<DependencyObject>() };
+            if (!panel && obj)
             {
-                // apply header text as name (automation property)
-                if (const auto& header{ Header() })
-                {
-                    const auto headerText{ header.try_as<hstring>() };
-                    if (headerText && !headerText->empty())
-                    {
-                        Automation::AutomationProperties::SetName(obj, *headerText);
-                    }
-                }
+                base.push_back(obj);
+            }
+        }
 
-                // apply help text as tooltip and full description (automation property)
-                const auto& helpText{ HelpText() };
-                if (!helpText.empty())
+        for (const auto& obj : base)
+        {
+            // apply header as name (automation property)
+            if (const auto& header{ Header() })
+            {
+                if (const auto headerText{ header.try_as<hstring>() })
                 {
-                    Controls::ToolTipService::SetToolTip(obj, box_value(helpText));
-                    Automation::AutomationProperties::SetFullDescription(obj, helpText);
+                    Automation::AutomationProperties::SetName(obj, *headerText);
                 }
+            }
+
+            // apply help text as tooltip and full description (automation property)
+            if (const auto& helpText{ HelpText() }; !helpText.empty())
+            {
+                Automation::AutomationProperties::SetFullDescription(obj, helpText);
+            }
+            else
+            {
+                Controls::ToolTipService::SetToolTip(obj, nullptr);
+                Automation::AutomationProperties::SetFullDescription(obj, L"");
+            }
+        }
+
+        const auto textBlockHidden = HelpText().empty();
+        if (const auto& child{ GetTemplateChild(L"HelpTextBlock") })
+        {
+            if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
+            {
+                textBlock.Visibility(textBlockHidden ? Visibility::Collapsed : Visibility::Visible);
             }
         }
     }
@@ -152,13 +200,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     // We want to be smart about showing the override system.
                     // Don't just show it if the user explicitly set the setting.
                     // If the tooltip is empty, we'll hide the entire override system.
-                    hstring tooltip{};
 
                     const auto& settingSrc{ SettingOverrideSource() };
-                    if (const auto& profile{ settingSrc.try_as<Model::Profile>() })
-                    {
-                        tooltip = _GenerateOverrideMessage(profile);
-                    }
+                    const auto tooltip{ _GenerateOverrideMessage(settingSrc) };
 
                     Controls::ToolTipService::SetToolTip(button, box_value(tooltip));
                     button.Visibility(tooltip.empty() ? Visibility::Collapsed : Visibility::Visible);
@@ -178,31 +222,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - profile: the profile that defines the setting (aka SettingOverrideSource)
     // Return Value:
     // - text specifying where the setting was defined. If empty, we don't want to show the system.
-    hstring SettingContainer::_GenerateOverrideMessage(const Model::Profile& profile)
+    hstring SettingContainer::_GenerateOverrideMessage(const IInspectable& settingOrigin)
     {
-        const auto originTag{ profile.Origin() };
-        if (originTag == Model::OriginTag::InBox)
+        // We only get here if the user had an override in place.
+        auto originTag{ Model::OriginTag::None };
+        winrt::hstring source;
+
+        if (const auto& profile{ settingOrigin.try_as<Model::Profile>() })
         {
-            // in-box profile
-            return {};
+            source = profile.Source();
+            originTag = profile.Origin();
         }
-        else if (originTag == Model::OriginTag::Generated)
+        else if (const auto& appearanceConfig{ settingOrigin.try_as<Model::AppearanceConfig>() })
         {
-            // from a dynamic profile generator
-            return {};
+            const auto profile = appearanceConfig.SourceProfile();
+            source = profile.Source();
+            originTag = profile.Origin();
         }
-        else if (originTag == Model::OriginTag::Fragment)
+
+        // We will display arrows for all origins, and informative tooltips for Fragments and Generated
+        if (originTag == Model::OriginTag::Fragment || originTag == Model::OriginTag::Generated)
         {
-            // from a fragment extension
-            return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, profile.Source()) };
+            // from a fragment extension or generated profile
+            return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, source) };
         }
-        else
-        {
-            // base layer
-            // TODO GH#3818: When we add profile inheritance as a setting,
-            //               we'll need an extra conditional check to see if this
-            //               is the base layer or some other profile
-            return RS_(L"SettingContainer_OverrideMessageBaseLayer");
-        }
+        return RS_(L"SettingContainer_OverrideMessageBaseLayer");
     }
 }

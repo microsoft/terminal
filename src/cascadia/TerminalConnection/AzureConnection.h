@@ -5,13 +5,9 @@
 
 #include "AzureConnection.g.h"
 
-#include <cpprest/http_client.h>
-#include <cpprest/http_listener.h>
-#include <cpprest/ws_client.h>
 #include <mutex>
 #include <condition_variable>
 
-#include "../cascadia/inc/cppwinrt_utils.h"
 #include "ConnectionStateHolder.h"
 #include "AzureClient.h"
 
@@ -21,18 +17,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         static winrt::guid ConnectionType() noexcept;
         static bool IsAzureConnectionAvailable() noexcept;
-        AzureConnection(const uint32_t rows, const uint32_t cols);
+
+        AzureConnection() = default;
+        void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
 
         void Start();
-        void WriteInput(hstring const& data);
+        void WriteInput(const hstring& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
     private:
-        uint32_t _initialRows{};
-        uint32_t _initialCols{};
+        til::CoordType _initialRows{};
+        til::CoordType _initialCols{};
 
         enum class AzureState
         {
@@ -55,30 +53,30 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void _RunStoreState();
         void _RunConnectState();
 
-        const utility::string_t _loginUri{ U("https://login.microsoftonline.com/") };
-        const utility::string_t _resourceUri{ U("https://management.azure.com/") };
-        const utility::string_t _wantedResource{ U("https://management.core.windows.net/") };
+        static constexpr std::wstring_view _loginUri{ L"https://login.microsoftonline.com/" };
+        static constexpr std::wstring_view _resourceUri{ L"https://management.azure.com/" };
+        static constexpr std::wstring_view _wantedResource{ L"https://management.core.windows.net/" };
         const int _expireLimit{ 2700 };
-        utility::string_t _accessToken;
-        utility::string_t _refreshToken;
+        winrt::hstring _accessToken;
+        winrt::hstring _refreshToken;
         int _expiry{ 0 };
-        utility::string_t _cloudShellUri;
-        utility::string_t _terminalID;
+        winrt::hstring _cloudShellUri;
+        winrt::hstring _terminalID;
 
         std::vector<::Microsoft::Terminal::Azure::Tenant> _tenantList;
         std::optional<::Microsoft::Terminal::Azure::Tenant> _currentTenant;
 
         void _WriteStringWithNewline(const std::wstring_view str);
         void _WriteCaughtExceptionRecord();
-        web::json::value _SendRequestReturningJson(web::http::client::http_client& theClient, web::http::http_request theRequest);
-        web::json::value _SendAuthenticatedRequestReturningJson(web::http::client::http_client& theClient, web::http::http_request theRequest);
-        web::json::value _GetDeviceCode();
-        web::json::value _WaitForUser(utility::string_t deviceCode, int pollInterval, int expiresIn);
+        winrt::Windows::Data::Json::JsonObject _SendRequestReturningJson(std::wstring_view uri, const winrt::Windows::Web::Http::IHttpContent& content = nullptr, winrt::Windows::Web::Http::HttpMethod method = nullptr);
+        void _setAccessToken(std::wstring_view accessToken);
+        winrt::Windows::Data::Json::JsonObject _GetDeviceCode();
+        winrt::Windows::Data::Json::JsonObject _WaitForUser(const winrt::hstring& deviceCode, int pollInterval, int expiresIn);
         void _PopulateTenantList();
         void _RefreshTokens();
-        web::json::value _GetCloudShellUserSettings();
-        utility::string_t _GetCloudShell();
-        utility::string_t _GetTerminal(utility::string_t shellType);
+        winrt::Windows::Data::Json::JsonObject _GetCloudShellUserSettings();
+        winrt::hstring _GetCloudShell();
+        winrt::hstring _GetTerminal(const winrt::hstring& shellType);
         void _StoreCredential();
         void _RemoveCredentials();
 
@@ -94,15 +92,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         std::optional<std::wstring> _ReadUserInput(InputMode mode);
 
-        web::websockets::client::websocket_client _cloudShellSocket;
+        winrt::Windows::Web::Http::HttpClient _httpClient{ nullptr };
+        wil::unique_winhttp_hinternet _socketSessionHandle;
+        wil::unique_winhttp_hinternet _socketConnectionHandle;
+        wil::unique_winhttp_hinternet _webSocket;
 
-        static std::optional<utility::string_t> _ParsePreferredShellType(const web::json::value& settingsResponse);
+        til::u8state _u8State{};
+        std::wstring _u16Str;
+        std::array<char, 4096> _buffer{};
+
+        static winrt::hstring _ParsePreferredShellType(const winrt::Windows::Data::Json::JsonObject& settingsResponse);
     };
 }
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
 {
-    struct AzureConnection : AzureConnectionT<AzureConnection, implementation::AzureConnection>
-    {
-    };
+    BASIC_FACTORY(AzureConnection);
 }

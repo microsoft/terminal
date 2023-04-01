@@ -1,0 +1,92 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.AddProfile"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <model:IconPathConverter x:Key="IconSourceConverter" />
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <ScrollViewer ViewChanging="ViewChanging">
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
+            <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
+                <Button x:Name="AddNewButton"
+                        Click="AddNewClick"
+                        Style="{StaticResource AccentButtonStyle}">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE710;" />
+                            <TextBlock x:Uid="AddProfile_AddNewTextBlock"
+                                       Style="{StaticResource IconButtonTextBlockStyle}" />
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
+            </Border>
+            <StackPanel Margin="{StaticResource StandardControlMargin}">
+                <local:SettingContainer x:Uid="AddProfile_Duplicate">
+                    <ComboBox x:Name="Profiles"
+                              AutomationProperties.AccessibilityView="Content"
+                              ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
+                              SelectedIndex="0"
+                              SelectionChanged="ProfilesSelectionChanged"
+                              Style="{StaticResource ComboBoxSettingStyle}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="model:Profile">
+                                <Grid HorizontalAlignment="Stretch"
+                                      ColumnSpacing="8">
+
+                                    <Grid.ColumnDefinitions>
+                                        <!--  icon  -->
+                                        <ColumnDefinition Width="16" />
+                                        <!--  profile name  -->
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <IconSourceElement Grid.Column="0"
+                                                       Width="16"
+                                                       Height="16"
+                                                       IconSource="{x:Bind Icon, Converter={StaticResource IconSourceConverter}}" />
+
+                                    <TextBlock Grid.Column="1"
+                                               Text="{x:Bind Name}" />
+
+                                </Grid>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </local:SettingContainer>
+                <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
+                    <Button x:Name="DuplicateButton"
+                            Margin="{StaticResource StandardControlMargin}"
+                            Click="DuplicateClick"
+                            IsEnabled="{x:Bind IsProfileSelected, Mode=OneWay}"
+                            Style="{StaticResource AccentButtonStyle}">
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                          Glyph="&#xE8C8;" />
+                                <TextBlock x:Uid="AddProfile_DuplicateTextBlock"
+                                           Style="{StaticResource IconButtonTextBlockStyle}" />
+                            </StackPanel>
+                        </Button.Content>
+                    </Button>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

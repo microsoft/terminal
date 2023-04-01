@@ -24,20 +24,20 @@ Author(s):
 namespace Microsoft::Console::VirtualTerminal
 {
     // The values used by VkKeyScan to encode modifiers in the high order byte
-    const short KEYSCAN_SHIFT = 1;
-    const short KEYSCAN_CTRL = 2;
-    const short KEYSCAN_ALT = 4;
+    constexpr short KEYSCAN_SHIFT = 1;
+    constexpr short KEYSCAN_CTRL = 2;
+    constexpr short KEYSCAN_ALT = 4;
 
     // The values with which VT encodes modifier values.
-    const short VT_SHIFT = 1;
-    const short VT_ALT = 2;
-    const short VT_CTRL = 4;
+    constexpr short VT_SHIFT = 1;
+    constexpr short VT_ALT = 2;
+    constexpr short VT_CTRL = 4;
 
     // The assumed values for SGR Mouse Scroll Wheel deltas
     constexpr DWORD SCROLL_DELTA_BACKWARD = 0xFF800000;
     constexpr DWORD SCROLL_DELTA_FORWARD = 0x00800000;
 
-    const size_t WRAPPED_SEQUENCE_MAX_LENGTH = 8;
+    constexpr size_t WRAPPED_SEQUENCE_MAX_LENGTH = 8;
 
     // For reference, the equivalent INPUT_RECORD values are:
     // RIGHT_ALT_PRESSED   0x0001
@@ -58,6 +58,8 @@ namespace Microsoft::Console::VirtualTerminal
         ArrowLeft = VTID("D"),
         Home = VTID("H"),
         End = VTID("F"),
+        FocusIn = VTID("I"),
+        FocusOut = VTID("O"),
         MouseDown = VTID("<M"),
         MouseUp = VTID("<m"),
         Generic = VTID("~"), // Used for a whole bunch of possible keys
@@ -131,6 +133,8 @@ namespace Microsoft::Console::VirtualTerminal
         InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch,
                                 const bool lookingForDSR);
 
+        void SetLookingForDSR(const bool looking) noexcept;
+
         bool ActionExecute(const wchar_t wch) override;
         bool ActionExecuteFromEscape(const wchar_t wch) override;
 
@@ -146,6 +150,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override;
 
+        StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) noexcept override;
+
         bool ActionClear() noexcept override;
 
         bool ActionIgnore() noexcept override;
@@ -156,11 +162,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) override;
 
-        bool ParseControlSequenceAfterSs3() const noexcept override;
-        bool FlushAtEndOfString() const noexcept override;
-        bool DispatchControlCharsFromEscape() const noexcept override;
-        bool DispatchIntermediatesFromEscape() const noexcept override;
-
         void SetFlushToInputQueueCallback(std::function<bool()> pfnFlushToInputQueue);
 
     private:
@@ -168,6 +169,10 @@ namespace Microsoft::Console::VirtualTerminal
         std::function<bool()> _pfnFlushToInputQueue;
         bool _lookingForDSR;
         DWORD _mouseButtonState = 0;
+        std::chrono::milliseconds _doubleClickTime;
+        std::optional<til::point> _lastMouseClickPos{};
+        std::optional<std::chrono::steady_clock::time_point> _lastMouseClickTime{};
+        std::optional<size_t> _lastMouseClickButton{};
 
         DWORD _GetCursorKeysModifierState(const VTParameters parameters, const VTID id) noexcept;
         DWORD _GetGenericKeysModifierState(const VTParameters parameters) noexcept;
@@ -179,7 +184,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool _UpdateSGRMouseButtonState(const VTID id,
                                         const size_t sgrEncoding,
                                         DWORD& buttonState,
-                                        DWORD& eventFlags) noexcept;
+                                        DWORD& eventFlags,
+                                        const til::point uiPos);
         bool _GetGenericVkey(const GenericKeyIdentifiers identifier, short& vkey) const;
         bool _GetCursorKeysVkey(const VTID id, short& vkey) const;
         bool _GetSs3KeysVkey(const wchar_t wch, short& vkey) const;
@@ -187,7 +193,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _WriteSingleKey(const short vkey, const DWORD modifierState);
         bool _WriteSingleKey(const wchar_t wch, const short vkey, const DWORD modifierState);
 
-        bool _WriteMouseEvent(const size_t column, const size_t line, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags);
+        bool _WriteMouseEvent(const til::point uiPos, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags);
 
         void _GenerateWrappedSequence(const wchar_t wch,
                                       const short vkey,
@@ -199,7 +205,7 @@ namespace Microsoft::Console::VirtualTerminal
                                 const DWORD modifierState,
                                 std::vector<INPUT_RECORD>& input);
 
-        bool _GetWindowManipulationType(const gsl::span<const size_t> parameters,
+        bool _GetWindowManipulationType(const std::span<const size_t> parameters,
                                         unsigned int& function) const noexcept;
 
         KeyEvent _GenerateWin32Key(const VTParameters parameters);

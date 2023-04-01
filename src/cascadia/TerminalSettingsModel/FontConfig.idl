@@ -1,0 +1,26 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "Profile.idl";
+#include "IInheritable.idl.h"
+
+#define INHERITABLE_FONT_SETTING(Type, Name) \
+    _BASE_INHERITABLE_SETTING(Type, Name);      \
+    Microsoft.Terminal.Settings.Model.FontConfig Name##OverrideSource { get; }
+
+#define COMMA ,
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    [default_interface] runtimeclass FontConfig {
+        Microsoft.Terminal.Settings.Model.Profile SourceProfile { get; };
+
+        INHERITABLE_FONT_SETTING(String, FontFace);
+        INHERITABLE_FONT_SETTING(Single, FontSize);
+        INHERITABLE_FONT_SETTING(Windows.UI.Text.FontWeight, FontWeight);
+        INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA UInt32>, FontFeatures);
+        INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA Single>, FontAxes);
+        INHERITABLE_FONT_SETTING(String, CellWidth);
+        INHERITABLE_FONT_SETTING(String, CellHeight);
+    }
+}

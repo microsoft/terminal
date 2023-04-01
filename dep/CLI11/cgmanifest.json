@@ -1,13 +1,15 @@
-{"Registrations":[
+{
+  "$schema": "https://json.schemastore.org/component-detection-manifest.json",
+  "Registrations": [
     {
       "component": {
-       "type": "git",
-       "git": {
-         "repositoryUrl": "https://github.com/CLIUtils/CLI11",
-         "commitHash": "dd0d8e4fe729e5b1110232c7a5c9566dad884686"
-         }
-       }
+        "type": "git",
+        "git": {
+          "repositoryUrl": "https://github.com/CLIUtils/CLI11",
+          "commitHash": "5cb3efabce007c3a0230e4cc2e27da491c646b6c"
+        }
+      }
     }
- ],
- "Version": 1
+  ],
+  "Version": 1
 }

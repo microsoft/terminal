@@ -10,22 +10,16 @@ parameters:
   maxParallel: 4
   rerunPassesRequiredToAvoidFailure: 5
   taefQuery: ''
+  configuration: ''
+  platform: ''
   # if 'useBuildOutputFromBuildId' is set, we will default to using a build from this pipeline:
   useBuildOutputFromPipeline: $(System.DefinitionId)
-  matrix:
-    # Release_x86:
-    #   buildPlatform: 'x86'
-    #   buildConfiguration: 'release'
-    #   openHelixTargetQueues: 'windows.10.amd64.client19h1.open.xaml'
-    #   closedHelixTargetQueues: 'windows.10.amd64.client19h1.xaml'
-    Release_x64:
-      buildPlatform: 'x64'
-      buildConfiguration: 'release'
-      openHelixTargetQueues: 'windows.10.amd64.client19h1.open.xaml'
-      closedHelixTargetQueues: 'windows.10.amd64.client19h1.xaml'
+  openHelixTargetQueues: 'windows.11.amd64.client.open.reunion'
+  closedHelixTargetQueues: 'windows.11.amd64.client.reunion'
 
 jobs:
 - job: ${{ parameters.name }}
+  displayName: Submit Helix ${{ parameters.platform }} ${{ parameters.configuration }}
   dependsOn: ${{ parameters.dependsOn }}
   condition: ${{ parameters.condition }}
   pool:
@@ -33,12 +27,14 @@ jobs:
   timeoutInMinutes: 120
   strategy:
     maxParallel: ${{ parameters.maxParallel }}
-    matrix: ${{ parameters.matrix }}
   variables:
+    buildConfiguration: ${{ parameters.configuration }}
+    buildPlatform: ${{ parameters.platform }}
+    openHelixTargetQueues: ${{ parameters.openHelixTargetQueues }}
+    closedHelixTargetQueues: ${{ parameters.closedHelixTargetQueues }}
     artifactsDir: $(Build.SourcesDirectory)\Artifacts
-    taefPath: $(Build.SourcesDirectory)\build\Helix\packages\taef.redist.wlk.10.57.200731005-develop\build\Binaries\$(buildPlatform)
+    taefPath: $(Build.SourcesDirectory)\build\Helix\packages\Microsoft.Taef.10.60.210621002\build\Binaries\$(buildPlatform)
     helixCommonArgs: '/binaryLogger:$(Build.SourcesDirectory)/${{parameters.name}}.$(buildPlatform).$(buildConfiguration).binlog /p:HelixBuild=$(Build.BuildId).$(buildPlatform).$(buildConfiguration) /p:Platform=$(buildPlatform) /p:Configuration=$(buildConfiguration) /p:HelixType=${{parameters.helixType}} /p:TestSuite=${{parameters.testSuite}} /p:ProjFilesPath=$(Build.ArtifactStagingDirectory) /p:rerunPassesRequiredToAvoidFailure=${{parameters.rerunPassesRequiredToAvoidFailure}}'
-
 
   steps:
   - task: CmdLine@1
@@ -47,9 +43,9 @@ jobs:
       filename: 'set'
 
   - task: NuGetToolInstaller@0
-    displayName: 'Use NuGet 5.2.0'
+    displayName: 'Use NuGet 6.3.0'
     inputs:
-      versionSpec: 5.2.0
+      versionSpec: 6.3.0
 
   - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
     displayName: 'NuGet restore build/Helix/packages.config'
@@ -97,9 +93,17 @@ jobs:
       filename: 'dir'
       arguments: '/s $(Build.SourcesDirectory)\HelixPayload'
 
+  - task: PowerShell@2
+    displayName: 'Make artifact directories'
+    inputs:
+      targetType: inline
+      script: |
+        New-Item -ItemType Directory -Force -Path "$(Build.ArtifactStagingDirectory)\$(BuildConfiguration)\"
+        New-Item -ItemType Directory -Force -Path "$(Build.ArtifactStagingDirectory)\$(BuildConfiguration)\$(BuildPlatform)\"
+
   - template: helix-createprojfile-steps.yml
     parameters:
-      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
+      condition: and(succeeded(),eq('${{ parameters.testSuite }}','DevTestSuite'))
       testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\TerminalApp.LocalTests.dll'
       outputProjFileName: 'RunTestsInHelix-TerminalAppLocalTests.proj'
       testSuite: '${{ parameters.testSuite }}'
@@ -107,7 +111,7 @@ jobs:
 
   - template: helix-createprojfile-steps.yml
     parameters:
-      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
+      condition: and(succeeded(),eq('${{ parameters.testSuite }}','DevTestSuite'))
       testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\SettingsModel.LocalTests.dll'
       outputProjFileName: 'RunTestsInHelix-SettingsModelLocalTests.proj'
       testSuite: '${{ parameters.testSuite }}'
@@ -116,9 +120,17 @@ jobs:
 
   - template: helix-createprojfile-steps.yml
     parameters:
-      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
+      condition: and(succeeded(),eq('${{ parameters.testSuite }}','DevTestSuite'))
       testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\Conhost.UIA.Tests.dll'
       outputProjFileName: 'RunTestsInHelix-HostTestsUIA.proj'
+      testSuite: '${{ parameters.testSuite }}'
+      taefQuery: ${{ parameters.taefQuery }}
+
+  - template: helix-createprojfile-steps.yml
+    parameters:
+      condition: and(succeeded(),or(eq('${{ parameters.testSuite }}','PgoInstrumentationSuite'),eq('${{ parameters.testSuite }}','DevTestSuite')))
+      testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\WindowsTerminal.UIA.Tests.dll'
+      outputProjFileName: 'RunTestsInHelix-WindowsTerminalUIATests.proj'
       testSuite: '${{ parameters.testSuite }}'
       taefQuery: ${{ parameters.taefQuery }}
 
@@ -130,6 +142,7 @@ jobs:
 
   - task: DotNetCoreCLI@2
     displayName: 'Run tests in Helix (open queues)'
+    condition: and(succeeded(),eq(variables['System.CollectionUri'],'https://dev.azure.com/ms/'))
     env:
       SYSTEM_ACCESSTOKEN: $(System.AccessToken)
     inputs:
@@ -138,3 +151,14 @@ jobs:
       custom: msbuild
       arguments: '$(helixCommonArgs) /p:IsExternal=true /p:Creator=Terminal /p:HelixTargetQueues=$(openHelixTargetQueues)'
 
+  - task: DotNetCoreCLI@2
+    displayName: 'Run tests in Helix (closed queues)'
+    condition: and(succeeded(),ne(variables['System.CollectionUri'],'https://dev.azure.com/ms/'))
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      HelixAccessToken: $(HelixApiAccessToken)
+    inputs:
+      command: custom
+      projects: build\Helix\RunTestsInHelix.proj
+      custom: msbuild
+      arguments: '$(helixCommonArgs) /p:HelixTargetQueues=$(closedHelixTargetQueues)'

@@ -45,13 +45,14 @@ Author(s):
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Text.h>
 
+#include <winrt/Microsoft.Terminal.Core.h>
+
 #include "winrtTaefTemplates.hpp"
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
 
 // Common includes for most tests:
-#include "../../inc/argb.h"
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"

@@ -18,14 +18,16 @@
     <ClCompile Include="WslDistroGenerator.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
-    <ClCompile Include="KeyMappingSerialization.cpp" />
+    <ClCompile Include="SshHostGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
     <ClCompile Include="CascadiaSettings.cpp" />
     <ClCompile Include="CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="GlobalAppSettings.cpp" />
     <ClCompile Include="KeyChordSerialization.cpp" />
     <ClCompile Include="Profile.cpp" />
     <ClCompile Include="ColorScheme.cpp" />
-    <ClCompile Include="DefaultProfileUtils.cpp">
+    <ClCompile Include="DynamicProfileUtils.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
@@ -33,6 +35,20 @@
     </ClCompile>
     <ClCompile Include="init.cpp" />
     <ClCompile Include="IconPathConverter.cpp" />
+    <ClCompile Include="DefaultTerminal.cpp" />
+    <ClCompile Include="FileUtils.cpp" />
+    <ClCompile Include="VisualStudioGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
+    <ClCompile Include="VsDevCmdGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
+    <ClCompile Include="VsDevShellGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
+    <ClCompile Include="VsSetupConfiguration.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -48,6 +64,9 @@
     <ClInclude Include="WslDistroGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
+    <ClInclude Include="SshHostGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
     <ClInclude Include="CascadiaSettings.h" />
     <ClInclude Include="GlobalAppSettings.h" />
     <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
@@ -56,27 +75,52 @@
     <ClInclude Include="SettingsTypes.h" />
     <ClInclude Include="TerminalWarnings.h" />
     <ClInclude Include="ColorScheme.h" />
-    <ClInclude Include="DefaultProfileUtils.h">
+    <ClInclude Include="DynamicProfileUtils.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="JsonUtils.h">
       <Filter>json</Filter>
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
+    <ClInclude Include="MTSMSettings.h" />
     <ClInclude Include="IconPathConverter.h" />
+    <ClInclude Include="DefaultTerminal.h" />
+    <ClInclude Include="FileUtils.h" />
+    <ClInclude Include="HashUtils.h" />
+    <ClInclude Include="VisualStudioGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="VsDevCmdGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="VsDevShellGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="VsSetupConfiguration.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="ActionArgsMagic.h" />
+    <ClInclude Include="NewTabMenuEntry.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
+    <Midl Include="ActionMap.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
     <Midl Include="GlobalAppSettings.idl" />
-    <Midl Include="KeyMapping.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
     <Midl Include="EnumMappings.idl" />
     <Midl Include="IconPathConverter.idl" />
+    <Midl Include="TerminalSettings.idl" />
+    <Midl Include="AppearanceConfig.idl" />
+    <Midl Include="IAppearanceConfig.idl" />
+    <Midl Include="FontConfig.idl" />
+    <Midl Include="DefaultTerminal.idl" />
+    <Midl Include="ApplicationState.idl" />
+    <Midl Include="NewTabMenuEntry.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

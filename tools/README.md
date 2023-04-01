@@ -38,9 +38,68 @@ for Linux entrypoint) in your `~` directory.
 
 Likewise, `openps` launches powershell.
 
-## runformat
+## runformat & runxamlformat
 
-`runformat` will format the c++ code to match our coding style.
+`runxamlformat` will format `.xaml` files to match our coding style. `runformat`
+will format the c++ code (and will also call `runxamlformat`). **`runformat`
+should be called before making a new PR**, to ensure that code is formatted
+correctly. If it isn't, the CI will prevent your PR from merging.
+
+The C++ code is formatted with `clang-format`. Many editors have built-in
+support for automatically running clang-format on save.
+
+Our XAML code is formatted with
+[XamlStyler](https://github.com/Xavalon/XamlStyler). I don't have a good way of
+running this on save, but you can add a `git` hook to format before committing
+`.xaml` files. To do so, add the following to your `.git/hooks/pre-commit` file:
+
+```sh
+# XAML Styler - xstyler.exe pre-commit Git Hook
+# Documentation: https://github.com/Xavalon/XamlStyler/wiki
+# Originally from https://github.com/Xavalon/XamlStyler/wiki/Git-Hook
+
+# Define path to xstyler.exe
+XSTYLER_PATH="dotnet tool run xstyler --"
+
+# Define path to XAML Styler configuration
+XSTYLER_CONFIG="XamlStyler.json"
+
+echo "Running XAML Styler on committed XAML files"
+git diff --cached --name-only --diff-filter=ACM  | grep -e '\.xaml$' | \
+# Wrap in brackets to preserve variable through loop
+{
+    files=""
+    # Build list of files to pass to xstyler.exe
+    while read FILE; do
+        if [ "$files" == "" ]; then
+            files="$FILE";
+        else
+            files="$files,$FILE";
+        fi
+    done
+
+    if [ "$files" != "" ]; then
+        # Check if external configuration is specified
+        [ -z "$XSTYLER_CONFIG" ] && configParam="" || configParam="-c $XSTYLER_CONFIG"
+
+        # Format XAML files
+        $XSTYLER_PATH -f "$files" $configParam
+
+        for i in $(echo $files | sed "s/,/ /g")
+        do
+            #strip BOM
+            sed -i '1s/^\xEF\xBB\xBF//' $i
+            unix2dos $i
+            # stage updated file
+            git add -u $i
+        done
+    else
+        echo "No XAML files detected in commit"
+    fi
+
+    exit 0
+}
+```
 
 ## testcon, runut, runft
 `runut` will automatically run all of the unit tests through TAEF. `runft` will

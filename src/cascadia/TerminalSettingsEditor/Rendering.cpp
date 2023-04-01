@@ -1,10 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
 #include "Rendering.h"
 #include "Rendering.g.cpp"
-#include "RenderingPageNavigationState.g.cpp"
 
 using namespace winrt::Windows::UI::Xaml::Navigation;
 
@@ -17,6 +16,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Rendering::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _State = e.Parameter().as<Editor::RenderingPageNavigationState>();
+        _ViewModel = e.Parameter().as<Editor::RenderingViewModel>();
     }
 }
