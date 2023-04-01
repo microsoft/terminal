@@ -7637,7 +7637,7 @@ void ScreenBufferTests::DelayedWrapReset()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
-        TEST_METHOD_PROPERTY(L"Data:op", L"{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34}")
+        TEST_METHOD_PROPERTY(L"Data:op", L"{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35}")
     END_TEST_METHOD_PROPERTIES();
 
     int opIndex;
@@ -7650,7 +7650,6 @@ void ScreenBufferTests::DelayedWrapReset()
     const auto halfWidth = width / 2;
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     WI_SetFlag(si.OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
-    stateMachine.ProcessString(L"\033[?40h"); // Make sure DECCOLM is allowed
 
     const auto startRow = 5;
     const auto startCol = width - 1;
@@ -7669,13 +7668,14 @@ void ScreenBufferTests::DelayedWrapReset()
         bool absolutePos = false;
     } ops[] = {
         { L"DECSTBM", L"\033[1;10r", { 0, 0 }, true },
+        { L"DECSLRM", L"\033[1;10s", { 0, 0 }, true },
         { L"DECSWL", L"\033#5" },
         { L"DECDWL", L"\033#6", { halfWidth - 1, startRow }, true },
         { L"DECDHL (top)", L"\033#3", { halfWidth - 1, startRow }, true },
         { L"DECDHL (bottom)", L"\033#4", { halfWidth - 1, startRow }, true },
         { L"DECCOLM set", L"\033[?3h", { 0, 0 }, true },
         { L"DECOM set", L"\033[?6h", { 0, 0 }, true },
-        { L"DECCOLM set", L"\033[?3l", { 0, 0 }, true },
+        { L"DECCOLM reset", L"\033[?3l", { 0, 0 }, true },
         { L"DECOM reset", L"\033[?6l", { 0, 0 }, true },
         { L"DECAWM reset", L"\033[?7l" },
         { L"CUU", L"\033[A", { 0, -1 } },
@@ -7705,6 +7705,17 @@ void ScreenBufferTests::DelayedWrapReset()
         { L"DECSED", L"\033[?J" },
     };
     const auto& op = gsl::at(ops, opIndex);
+
+    if (op.name == L"DECSLRM")
+    {
+        // Private mode 69 makes sure DECSLRM is allowed
+        stateMachine.ProcessString(L"\033[?69h");
+    }
+    if (op.name.starts_with(L"DECCOLM"))
+    {
+        // Private mode 40 makes sure DECCOLM is allowed
+        stateMachine.ProcessString(L"\033[?40h");
+    }
 
     Log::Comment(L"Writing a character at the end of the line should set delayed EOL wrap");
     const auto startPos = til::point{ startCol, startRow };
