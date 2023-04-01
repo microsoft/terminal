@@ -114,14 +114,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // Ensure every connection has the unique identifier in the environment.
             environment.as_map().insert_or_assign(L"WT_SESSION", guidSubStr.data());
 
+            // The profile Guid does include the enclosing '{}'
+            const auto profileGuid{ Utils::GuidToString(_profileGuid) };
+            environment.as_map().insert_or_assign(L"WT_PROFILE_ID", profileGuid.data());
+
             if (_environment)
             {
-                // add additional WT env vars like WT_SETTINGS, WT_DEFAULTS and WT_PROFILE_ID
+                // Order the environment variable names so that resolution order is consistent
                 std::set<std::wstring, til::details::wstring_case_insensitive_compare> keys{};
                 for (const auto item : _environment)
                 {
                     keys.insert(item.Key().c_str());
                 }
+                // add additional env vars
                 for (const auto& key : keys)
                 {
                     try
@@ -139,8 +144,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // WSLENV is a colon-delimited list of environment variables (+flags) that should appear inside WSL
             // https://devblogs.microsoft.com/commandline/share-environment-vars-between-wsl-and-windows/
 
-            auto wslEnv = environment.as_map()[L"WSLENV"];
-            wslEnv = L"WT_SESSION:" + wslEnv; // prepend WT_SESSION to make sure it's visible inside WSL.
+            const auto existingWslEnv = environment.as_map()[L"WSLENV"];
+            std::wstring wslEnv{ L"WT_SESSION:WT_PROFILE_ID" };
+            if (!existingWslEnv.empty())
+            {
+                wslEnv += L":" + existingWslEnv; // prepend WT_SESSION and WT_PROFILE_ID to make sure they're visible inside WSL.
+            }
             environment.as_map().insert_or_assign(L"WSLENV", wslEnv);
         }
 
@@ -234,7 +243,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                                                 const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
                                                                                 uint32_t rows,
                                                                                 uint32_t columns,
-                                                                                const winrt::guid& guid)
+                                                                                const winrt::guid& guid,
+                                                                                const winrt::guid& profileGuid)
     {
         Windows::Foundation::Collections::ValueSet vs{};
 
@@ -244,6 +254,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         vs.Insert(L"initialRows", Windows::Foundation::PropertyValue::CreateUInt32(rows));
         vs.Insert(L"initialCols", Windows::Foundation::PropertyValue::CreateUInt32(columns));
         vs.Insert(L"guid", Windows::Foundation::PropertyValue::CreateGuid(guid));
+        vs.Insert(L"profileGuid", Windows::Foundation::PropertyValue::CreateGuid(profileGuid));
 
         if (environment)
         {
@@ -278,6 +289,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
             _reloadEnvironmentVariables = winrt::unbox_value_or<bool>(settings.TryLookup(L"reloadEnvironmentVariables").try_as<Windows::Foundation::IPropertyValue>(),
                                                                       _reloadEnvironmentVariables);
+            _profileGuid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"profileGuid").try_as<Windows::Foundation::IPropertyValue>(), _profileGuid);
         }
 
         if (_guid == guid{})
