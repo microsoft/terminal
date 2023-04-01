@@ -162,6 +162,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _validateSettings();
         void _validateAllSchemesExist();
         void _validateMediaResources();
+        void _ValidateProfileEnvironmentVariables();
         void _validateKeybindings() const;
         void _validateColorSchemesInCommands() const;
         bool _hasInvalidColorScheme(const Model::Command& command) const;
