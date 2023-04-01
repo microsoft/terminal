@@ -20,8 +20,10 @@ add_compile_definitions(
 )
 
 add_compile_options(
-	/W3 /WX /fp:fast /utf-8
+	/W3 /WX /utf-8
 	/wd4201 /wd4702
+	/permissive-
+	/Zc:externConstexpr /Zc:lambda /Zc:throwingNew /fp:contract
 	/FI${CMAKE_CURRENT_LIST_DIR}\\feature.h
 )
 

@@ -8,6 +8,7 @@ target_sources(ConInteractivityBase
 		RemoteConsoleControl.cpp
 		ServiceLocator.cpp
 		VtApiRedirection.cpp
+		PseudoConsoleWindowAccessibilityProvider.cpp
 )
 
 target_precompile_headers(ConInteractivityBase

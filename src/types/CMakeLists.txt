@@ -20,7 +20,6 @@ target_sources(ConTypes
 		ThemeUtils.cpp
 		UiaTextRangeBase.cpp
 		UiaTracing.cpp
-		Utf16Parser.cpp
 		utils.cpp
 		viewport.cpp
 		WindowBufferSizeEvent.cpp

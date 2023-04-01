@@ -4,6 +4,7 @@ target_sources(ConTermAdapt
 		adaptDispatch.cpp
 		adaptDispatchGraphics.cpp
 		FontBuffer.cpp
+		MacroBuffer.cpp
 		InteractDispatch.cpp
 		telemetry.cpp
 		terminalOutput.cpp
