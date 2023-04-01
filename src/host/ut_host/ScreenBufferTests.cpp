@@ -6177,26 +6177,34 @@ void ScreenBufferTests::CursorNextPreviousLine()
     // We should end up in column 0 of line 5.
     VERIFY_ARE_EQUAL(til::point(0, 5), cursor.GetPosition());
 
-    // Set the margins to 8:12 (9:13 in VT coordinates).
+    // Enable DECLRMM margin mode
+    stateMachine.ProcessString(L"\x1b[?69h");
+    // Set horizontal margins to 10:29 (11:30 in VT coordinates).
+    stateMachine.ProcessString(L"\x1b[11;30s");
+    // Set vertical margins to 8:12 (9:13 in VT coordinates).
     stateMachine.ProcessString(L"\x1b[9;13r");
     // Make sure we clear the margins on exit so they can't break other tests.
-    auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
+    auto clearMargins = wil::scope_exit([&] {
+        stateMachine.ProcessString(L"\x1b[r");
+        stateMachine.ProcessString(L"\x1b[s");
+        stateMachine.ProcessString(L"\x1b[?69l");
+    });
 
     Log::Comment(L"CNL inside margins");
     // Starting from column 20 of line 10.
     cursor.SetPosition({ 20, 10 });
     // Move down 5 lines (CNL).
     stateMachine.ProcessString(L"\x1b[5E");
-    // We should stop on line 12, the bottom margin.
-    VERIFY_ARE_EQUAL(til::point(0, 12), cursor.GetPosition());
+    // We should stop on column 10, line 12, the bottom left margins.
+    VERIFY_ARE_EQUAL(til::point(10, 12), cursor.GetPosition());
 
     Log::Comment(L"CPL inside margins");
     // Starting from column 20 of line 10.
     cursor.SetPosition({ 20, 10 });
     // Move up 5 lines (CPL).
     stateMachine.ProcessString(L"\x1b[5F");
-    // We should stop on line 8, the top margin.
-    VERIFY_ARE_EQUAL(til::point(0, 8), cursor.GetPosition());
+    // We should stop on column 10, line 8, the top left margins.
+    VERIFY_ARE_EQUAL(til::point(10, 8), cursor.GetPosition());
 
     Log::Comment(L"CNL below bottom");
     // Starting from column 20 of line 13 (1 below bottom margin).
