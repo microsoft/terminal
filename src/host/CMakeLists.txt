@@ -88,6 +88,7 @@ target_link_libraries(conhost
 		onecoreuap_apiset.lib
 		usp10.lib
 		winmm.lib
+		ntdll.lib
 )
 
 target_link_options(conhost PRIVATE /entry:wWinMainCRTStartup)
