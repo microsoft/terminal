@@ -12,8 +12,8 @@ Abstract:
 
 namespace Microsoft::Console::Utils
 {
-    void InitializeColorTable(const gsl::span<COLORREF> table);
-    gsl::span<const til::color> CampbellColorTable();
+    void InitializeColorTable(const std::span<COLORREF> table);
+    std::span<const til::color> CampbellColorTable() noexcept;
 
     std::optional<til::color> ColorFromXOrgAppColorName(const std::wstring_view wstr) noexcept;
 }

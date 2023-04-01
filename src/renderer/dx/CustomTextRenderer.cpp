@@ -275,8 +275,8 @@ try
 
     // Create rectangular block representing where the cursor can fill.
     D2D1_RECT_F rect;
-    rect.left = options.coordCursor.X * drawingContext.cellSize.width;
-    rect.top = options.coordCursor.Y * drawingContext.cellSize.height;
+    rect.left = options.coordCursor.x * drawingContext.cellSize.width;
+    rect.top = options.coordCursor.y * drawingContext.cellSize.height;
     rect.right = rect.left + drawingContext.cellSize.width;
     rect.bottom = rect.top + drawingContext.cellSize.height;
 
@@ -540,7 +540,7 @@ CATCH_RETURN()
 
     // Draw the background
     // The rectangle needs to be deduced based on the origin and the BidiDirection
-    const auto advancesSpan = gsl::make_span(glyphRun->glyphAdvances, glyphRun->glyphCount);
+    const auto advancesSpan = std::span{ glyphRun->glyphAdvances, glyphRun->glyphCount };
     const auto totalSpan = std::accumulate(advancesSpan.begin(), advancesSpan.end(), 0.0f);
 
     D2D1_RECT_F rect;

@@ -6,6 +6,7 @@
 #include "ApiDetector.hpp"
 
 #include "../inc/IInteractivityFactory.hpp"
+#include "PseudoConsoleWindowAccessibilityProvider.hpp"
 
 #include <map>
 
@@ -36,5 +37,8 @@ namespace Microsoft::Console::Interactivity
 
     private:
         void _WritePseudoWindowCallback(bool showOrHide);
+
+        HWND _pseudoConsoleWindowHwnd{ nullptr };
+        WRL::ComPtr<PseudoConsoleWindowAccessibilityProvider> _pPseudoConsoleUiaProvider{ nullptr };
     };
 }

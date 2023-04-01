@@ -38,7 +38,7 @@ static CodepointWidth GetQuickCharWidthLegacyForNumpadEventSynthesis(const wchar
         return CodepointWidth::Wide;
     }
 
-    return CodepointWidth::Invalid;
+    return CodepointWidth::Narrow;
 }
 
 std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::CharToKeyEvents(const wchar_t wch,

@@ -44,8 +44,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Initialize();
         Control::ControlCore Core();
 
+        void Close();
+        void Detach();
+
         Control::InteractivityAutomationPeer OnCreateAutomationPeer();
-        ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
+        ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
 #pragma region Input Methods
         void PointerPressed(Control::MouseButtonState buttonState,
@@ -85,9 +88,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetEndSelectionPoint(const Core::Point pixelPosition);
         bool ManglePathsForWsl();
 
+        uint64_t Id();
+        void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
+
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
         TYPED_EVENT(ScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
+        TYPED_EVENT(ContextMenuRequested, IInspectable, Control::ContextMenuRequestedEventArgs);
+
+        TYPED_EVENT(Attached, IInspectable, IInspectable);
+        TYPED_EVENT(Closed, IInspectable, IInspectable);
 
     private:
         // NOTE: _uiaEngine must be ordered before _core.
@@ -128,6 +138,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint16_t _lastHoveredId{ 0 };
 
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval{ std::nullopt };
+
+        uint64_t _id;
+        static std::atomic<uint64_t> _nextId;
 
         unsigned int _numberOfClicks(Core::Point clickPos, Timestamp clickTime);
         void _updateSystemParameterSettings() noexcept;

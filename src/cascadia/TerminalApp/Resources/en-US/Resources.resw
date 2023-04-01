@@ -205,6 +205,15 @@
   <data name="TabClose" xml:space="preserve">
     <value>Close Tab</value>
   </data>
+  <data name="PaneClose" xml:space="preserve">
+    <value>Close Pane</value>
+  </data>
+  <data name="SplitTabText" xml:space="preserve">
+    <value>Split Tab</value>
+  </data>
+  <data name="SplitPaneText" xml:space="preserve">
+    <value>Split Pane</value>
+  </data>
   <data name="TabColorChoose" xml:space="preserve">
     <value>Color...</value>
   </data>
@@ -232,19 +241,19 @@
     <value>Warnings were found while parsing your keybindings:</value>
   </data>
   <data name="TooManyKeysForChord" xml:space="preserve">
-    <value>&#x2022; Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.</value>
-    <comment>{Locked="\"keys\"","&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
+    <value>• Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.</value>
+    <comment>{Locked="\"keys\"","•"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
   <data name="FailedToParseSubCommands" xml:space="preserve">
-    <value>&#x2022; Failed to parse all subcommands of nested command.</value>
+    <value>• Failed to parse all subcommands of nested command.</value>
   </data>
   <data name="MissingRequiredParameter" xml:space="preserve">
-    <value>&#x2022; Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
-    <comment>{Locked="&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
+    <value>• Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
   <data name="UnknownTheme" xml:space="preserve">
-    <value>&#x2022; The specified "theme" was not found in the list of themes. Temporarily falling back to the default value.</value>
-    <comment>{Locked="&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
+    <value>• The specified "theme" was not found in the list of themes. Temporarily falling back to the default value.</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
   <data name="LegacyGlobalsProperty" xml:space="preserve">
     <value>The "globals" property is deprecated - your settings might need updating. </value>
@@ -708,9 +717,6 @@
   <data name="DropPathTabRun.Text" xml:space="preserve">
     <value>Open a new tab in given starting directory</value>
   </data>
-  <data name="SplitTabText" xml:space="preserve">
-    <value>Split Tab</value>
-  </data>
   <data name="DropPathTabNewWindow.Text" xml:space="preserve">
     <value>Open a new window with given starting directory</value>
   </data>
@@ -752,6 +758,14 @@
     <value>Suggestions found: {0}</value>
     <comment>{0} will be replaced with a number.</comment>
   </data>
+  <data name="DuplicateRemainingProfilesEntry" xml:space="preserve">
+    <value>The "newTabMenu" field contains more than one entry of type "remainingProfiles". Only the first one will be considered.</value>
+    <comment>{Locked="newTabMenu"} {Locked="remainingProfiles"}</comment>
+  </data>
+  <data name="InvalidUseOfContent" xml:space="preserve">
+    <value>The "__content" property is reserved for internal use</value>
+    <comment>{Locked="__content"}</comment>
+  </data>
   <data name="AboutToolTip" xml:space="preserve">
     <value>Open a dialog containing product information</value>
   </data>
@@ -787,5 +801,8 @@
   </data>
   <data name="TabCloseToolTip" xml:space="preserve">
     <value>Close this tab</value>
+  </data>
+  <data name="NewTabMenuFolderEmpty" xml:space="preserve">
+    <value>Empty...</value>
   </data>
 </root>

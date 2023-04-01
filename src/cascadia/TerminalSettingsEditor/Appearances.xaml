@@ -29,6 +29,14 @@
                 <TextBlock FontFamily="{x:Bind Name}"
                            Text="{x:Bind LocalizedName}" />
             </DataTemplate>
+
+            <DataTemplate x:Key="ColorChipTemplate"
+                          x:DataType="local:ColorTableEntry">
+                <Border Width="8"
+                        Height="8"
+                        Background="{x:Bind local:Converters.ColorToBrush(Color)}"
+                        CornerRadius="1" />
+            </DataTemplate>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -39,16 +47,132 @@
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Color Scheme  -->
+            <!--  This currently only display the Dark color scheme, even if the user has a pair of schemes set.  -->
             <local:SettingContainer x:Uid="Profile_ColorScheme"
-                                    ClearSettingValue="{x:Bind Appearance.ClearColorSchemeName}"
-                                    HasSettingValue="{x:Bind Appearance.HasColorSchemeName, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.ColorSchemeNameOverrideSource, Mode=OneWay}">
-                <ComboBox ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
-                          SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"
+                                    ClearSettingValue="{x:Bind Appearance.ClearColorScheme}"
+                                    HasSettingValue="{x:Bind Appearance.HasDarkColorSchemeName, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.DarkColorSchemeNameOverrideSource, Mode=OneWay}">
+                <ComboBox Padding="4"
+                          ItemsSource="{x:Bind Appearance.SchemesList, Mode=OneWay}"
+                          SelectedItem="{x:Bind Appearance.CurrentColorScheme, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}">
                     <ComboBox.ItemTemplate>
-                        <DataTemplate x:DataType="model:ColorScheme">
-                            <TextBlock Text="{x:Bind Name, Mode=OneWay}" />
+                        <DataTemplate x:DataType="local:ColorSchemeViewModel">
+                            <Grid Grid.Column="0"
+                                  Height="32"
+                                  Padding="8,8,0,0"
+                                  VerticalAlignment="Center"
+                                  Background="{x:Bind local:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
+                                  ColumnSpacing="1"
+                                  CornerRadius="2"
+                                  RowSpacing="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="0"
+                                                Content="{x:Bind ColorEntryAt(0), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="1"
+                                                Content="{x:Bind ColorEntryAt(1), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="2"
+                                                Content="{x:Bind ColorEntryAt(2), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="3"
+                                                Content="{x:Bind ColorEntryAt(3), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="4"
+                                                Content="{x:Bind ColorEntryAt(4), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="5"
+                                                Content="{x:Bind ColorEntryAt(5), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="6"
+                                                Content="{x:Bind ColorEntryAt(6), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <ContentControl Grid.Row="0"
+                                                Grid.Column="7"
+                                                Content="{x:Bind ColorEntryAt(7), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="0"
+                                                Content="{x:Bind ColorEntryAt(8), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="1"
+                                                Content="{x:Bind ColorEntryAt(9), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="2"
+                                                Content="{x:Bind ColorEntryAt(10), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="3"
+                                                Content="{x:Bind ColorEntryAt(11), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="4"
+                                                Content="{x:Bind ColorEntryAt(12), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="5"
+                                                Content="{x:Bind ColorEntryAt(13), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="6"
+                                                Content="{x:Bind ColorEntryAt(14), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <ContentControl Grid.Row="1"
+                                                Grid.Column="7"
+                                                Content="{x:Bind ColorEntryAt(15), Mode=OneWay}"
+                                                ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                IsTabStop="False" />
+                                <TextBlock Grid.RowSpan="2"
+                                           Grid.Column="8"
+                                           MaxWidth="192"
+                                           Margin="4,0,4,0"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           AutomationProperties.AccessibilityView="Raw"
+                                           FontFamily="Cascadia Code"
+                                           Foreground="{x:Bind local:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
+                                           Text="{x:Bind Name, Mode=OneWay}"
+                                           TextTrimming="WordEllipsis" />
+                            </Grid>
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
@@ -95,13 +219,28 @@
                                     Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
                 <muxc:NumberBox x:Name="_fontSizeBox"
                                 x:Uid="Profile_FontSizeBox"
-                                AcceptsExpression="False"
                                 LargeChange="10"
                                 Maximum="128"
                                 Minimum="1"
                                 SmallChange="1"
                                 Style="{StaticResource NumberBoxSettingStyle}"
                                 Value="{x:Bind Appearance.FontSize, Mode=TwoWay}" />
+            </local:SettingContainer>
+
+            <!--  Line Height  -->
+            <local:SettingContainer x:Uid="Profile_LineHeight"
+                                    ClearSettingValue="{x:Bind Appearance.ClearLineHeight}"
+                                    HasSettingValue="{x:Bind Appearance.HasLineHeight, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.LineHeightOverrideSource, Mode=OneWay}"
+                                    Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
+                <muxc:NumberBox x:Name="_lineHeightBox"
+                                x:Uid="Profile_LineHeightBox"
+                                LargeChange="0.1"
+                                Maximum="10"
+                                Minimum="0.1"
+                                SmallChange="0.1"
+                                Style="{StaticResource NumberBoxSettingStyle}"
+                                Value="{x:Bind Appearance.LineHeight, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Font Weight  -->
@@ -156,8 +295,7 @@
             <local:SettingContainer x:Uid="Profile_AdjustIndistinguishableColors"
                                     ClearSettingValue="{x:Bind Appearance.ClearAdjustIndistinguishableColors}"
                                     HasSettingValue="{x:Bind Appearance.HasAdjustIndistinguishableColors, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.AdjustIndistinguishableColorsOverrideSource, Mode=OneWay}"
-                                    Visibility="{x:Bind ShowIndistinguishableColorsItem}">
+                                    SettingOverrideSource="{x:Bind Appearance.AdjustIndistinguishableColorsOverrideSource, Mode=OneWay}">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind AdjustIndistinguishableColorsList, Mode=OneWay}"

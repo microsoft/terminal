@@ -623,7 +623,7 @@ bool Utils::IsValidHandle(const HANDLE handle) noexcept
 // - name: Bytes comprising the name (in a namespace-specific format)
 // Return Value:
 // - a new stable v5 UUID
-GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte> name)
+GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const std::span<const std::byte> name)
 {
     // v5 uuid generation happens over values in network byte order, so let's enforce that
     auto correctEndianNamespaceGuid{ EndianSwap(namespaceGuid) };
@@ -635,7 +635,7 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::b
     // through unsigned char or char pointer *is defined*.
     THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(&correctEndianNamespaceGuid), sizeof(GUID), 0));
     // BCryptHashData is ill-specified in that it leaves off "const" qualification for pbInput
-    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(const_cast<gsl::byte*>(name.data())), gsl::narrow<ULONG>(name.size()), 0));
+    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(const_cast<std::byte*>(name.data())), gsl::narrow<ULONG>(name.size()), 0));
 
     std::array<uint8_t, 20> buffer;
     THROW_IF_NTSTATUS_FAILED(BCryptFinishHash(hash.get(), buffer.data(), gsl::narrow<ULONG>(buffer.size()), 0));
@@ -653,9 +653,18 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::b
     return EndianSwap(newGuid);
 }
 
-bool Utils::IsElevated()
+// * Elevated users cannot use the modern drag drop experience. This is
+//   specifically normal users running the Terminal as admin
+// * The Default Administrator, who does not have a split token, CAN drag drop
+//   perfectly fine. So in that case, we want to return false.
+// * This has to be kept separate from IsRunningElevated, which is exclusively
+//   used for "is this instance running as admin".
+bool Utils::CanUwpDragDrop()
 {
-    static auto isElevated = []() {
+    // There's a lot of wacky double negatives here so that the logic is
+    // basically the same as IsRunningElevated, but the end result semantically
+    // makes sense as "CanDragDrop".
+    static auto isDragDropBroken = []() {
         try
         {
             wil::unique_handle processToken{ GetCurrentProcessToken() };
@@ -670,8 +679,30 @@ bool Utils::IsElevated()
                 //
                 // See GH#7754, GH#11096
                 return false;
+                // drag drop is _not_ broken -> they _can_ drag drop
             }
 
+            // If they are running admin, they cannot drag drop.
+            return wil::test_token_membership(nullptr, SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            // This failed? That's very peculiar indeed. Let's err on the side
+            // of "drag drop is broken", just in case.
+            return true;
+        }
+    }();
+
+    return !isDragDropBroken;
+}
+
+// See CanUwpDragDrop, GH#13928 for why this is different.
+bool Utils::IsRunningElevated()
+{
+    static auto isElevated = []() {
+        try
+        {
             return wil::test_token_membership(nullptr, SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
         }
         catch (...)

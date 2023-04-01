@@ -22,7 +22,6 @@ Author(s):
 #include "thread.hpp"
 
 #include "../../buffer/out/textBuffer.hpp"
-#include "../../buffer/out/CharRow.hpp"
 
 // fwdecl unittest classes
 #ifdef UNIT_TESTING
@@ -68,7 +67,7 @@ namespace Microsoft::Console::Render
                                const FontInfoDesired& FontInfoDesired,
                                _Out_ FontInfo& FontInfo);
 
-        void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+        void UpdateSoftFont(const std::span<const uint16_t> bitPattern,
                             const til::size cellSize,
                             const size_t centeringHint);
 
@@ -83,6 +82,7 @@ namespace Microsoft::Console::Render
         void WaitUntilCanRender();
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine);
+        void RemoveRenderEngine(_In_ IRenderEngine* const pEngine);
 
         void SetBackgroundColorChangedCallback(std::function<void()> pfn);
         void SetFrameColorChangedCallback(std::function<void()> pfn);

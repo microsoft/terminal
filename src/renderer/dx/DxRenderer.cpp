@@ -1229,10 +1229,10 @@ CATCH_RETURN();
 // - <none> - Updates reference
 void _ScaleByFont(til::rect& cellsToPixels, til::size fontSize) noexcept
 {
-    cellsToPixels.left *= fontSize.cx;
-    cellsToPixels.right *= fontSize.cx;
-    cellsToPixels.top *= fontSize.cy;
-    cellsToPixels.bottom *= fontSize.cy;
+    cellsToPixels.left *= fontSize.width;
+    cellsToPixels.right *= fontSize.width;
+    cellsToPixels.top *= fontSize.height;
+    cellsToPixels.bottom *= fontSize.height;
 }
 
 // Routine Description:
@@ -1663,7 +1663,7 @@ CATCH_RETURN()
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT DxEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                 const til::point coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
@@ -1715,7 +1715,7 @@ try
     _d2dBrushForeground->SetColor(_ColorFFromColorRef(color | 0xff000000));
 
     const auto font = _fontRenderData->GlyphCell().to_d2d_size();
-    const D2D_POINT_2F target = { coordTarget.X * font.width, coordTarget.Y * font.height };
+    const D2D_POINT_2F target = { coordTarget.x * font.width, coordTarget.y * font.height };
     const auto fullRunWidth = font.width * gsl::narrow_cast<unsigned>(cchLine);
 
     const auto DrawLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
@@ -2112,7 +2112,7 @@ CATCH_RETURN();
 // - area - Rectangle describing dirty area in characters.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
+[[nodiscard]] HRESULT DxEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 try
 {
     area = _invalidMap.runs();
@@ -2286,7 +2286,7 @@ void DxEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 // - centeringHint - The horizontal extent that glyphs are offset from center.
 // Return Value:
 // - S_OK if successful. E_FAIL if there was an error.
-HRESULT DxEngine::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+HRESULT DxEngine::UpdateSoftFont(const std::span<const uint16_t> bitPattern,
                                  const til::size cellSize,
                                  const size_t centeringHint) noexcept
 try

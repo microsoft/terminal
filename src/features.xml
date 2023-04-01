@@ -90,6 +90,9 @@
         <name>Feature_AdjustIndistinguishableText</name>
         <description>If enabled, the foreground color will, when necessary, be automatically adjusted to make it more visible.</description>
         <stage>AlwaysEnabled</stage>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
     </feature>
 
     <feature>
@@ -132,6 +135,33 @@
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>
             <brandingToken>Preview</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_DynamicSSHProfiles</name>
+        <description>Enables the dynamic profile generator for OpenSSH config files</description>
+        <id>9031</id>
+        <stage>AlwaysDisabled</stage>
+    </feature>
+
+    <feature>
+        <name>Feature_AzureConnectionInProc</name>
+        <description>Host the AzureConnection inside Terminal rather than via TerminalAzBridge</description>
+        <id>4661</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_VtChecksumReport</name>
+        <description>Enables the DECRQCRA checksum report, which can be used to read the screen contents</description>
+        <id>14974</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
 

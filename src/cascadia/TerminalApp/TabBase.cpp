@@ -264,6 +264,19 @@ namespace winrt::TerminalApp::implementation
                 tab->_RequestFocusActiveControlHandlers();
             }
         });
+
+        // BODGY: When the tab is drag/dropped, the TabView gets a
+        // TabDragStarting. However, the way it is implemented[^1], the
+        // TabViewItem needs either an Item or a Content for the event to
+        // include the correct TabViewItem. Otherwise, it will just return the
+        // first TabViewItem in the TabView with the same Content as the dragged
+        // tab (which, if the Content is null, will be the _first_ tab).
+        //
+        // So here, we'll stick an empty border in, just so that every tab has a
+        // Content which is not equal to the others.
+        //
+        // [^1]: microsoft-ui-xaml/blob/92fbfcd55f05c92ac65569f5d284c5b36492091e/dev/TabView/TabView.cpp#L751-L758
+        TabViewItem().Content(winrt::WUX::Controls::Border{});
     }
 
     std::optional<winrt::Windows::UI::Color> TabBase::GetTabColor()
@@ -356,16 +369,12 @@ namespace winrt::TerminalApp::implementation
         Media::SolidColorBrush hoverTabBrush{};
         Media::SolidColorBrush subtleFillColorSecondaryBrush;
         Media::SolidColorBrush subtleFillColorTertiaryBrush;
+
         // calculate the luminance of the current color and select a font
         // color based on that
         // see https://www.w3.org/TR/WCAG20/#relativeluminancedef
         if (TerminalApp::ColorHelper::IsBrightColor(color))
         {
-            fontBrush.Color(winrt::Windows::UI::Colors::Black());
-            auto secondaryFontColor = winrt::Windows::UI::Colors::Black();
-            // For alpha value see: https://github.com/microsoft/microsoft-ui-xaml/blob/7a33ad772d77d908aa6b316ec24e6d2eb3ebf571/dev/CommonStyles/Common_themeresources_any.xaml#L269
-            secondaryFontColor.A = 0x9E;
-            secondaryFontBrush.Color(secondaryFontColor);
             auto subtleFillColorSecondary = winrt::Windows::UI::Colors::Black();
             subtleFillColorSecondary.A = 0x09;
             subtleFillColorSecondaryBrush.Color(subtleFillColorSecondary);
@@ -375,17 +384,31 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            fontBrush.Color(winrt::Windows::UI::Colors::White());
-            auto secondaryFontColor = winrt::Windows::UI::Colors::White();
-            // For alpha value see: https://github.com/microsoft/microsoft-ui-xaml/blob/7a33ad772d77d908aa6b316ec24e6d2eb3ebf571/dev/CommonStyles/Common_themeresources_any.xaml#L14
-            secondaryFontColor.A = 0xC5;
-            secondaryFontBrush.Color(secondaryFontColor);
             auto subtleFillColorSecondary = winrt::Windows::UI::Colors::White();
             subtleFillColorSecondary.A = 0x0F;
             subtleFillColorSecondaryBrush.Color(subtleFillColorSecondary);
             auto subtleFillColorTertiary = winrt::Windows::UI::Colors::White();
             subtleFillColorTertiary.A = 0x0A;
             subtleFillColorTertiaryBrush.Color(subtleFillColorTertiary);
+        }
+
+        // The tab font should be based on the evaluated appearance of the tab color layered on tab row.
+        const auto layeredTabColor = til::color{ color }.layer_over(_tabRowColor);
+        if (TerminalApp::ColorHelper::IsBrightColor(layeredTabColor))
+        {
+            fontBrush.Color(winrt::Windows::UI::Colors::Black());
+            auto secondaryFontColor = winrt::Windows::UI::Colors::Black();
+            // For alpha value see: https://github.com/microsoft/microsoft-ui-xaml/blob/7a33ad772d77d908aa6b316ec24e6d2eb3ebf571/dev/CommonStyles/Common_themeresources_any.xaml#L269
+            secondaryFontColor.A = 0x9E;
+            secondaryFontBrush.Color(secondaryFontColor);
+        }
+        else
+        {
+            fontBrush.Color(winrt::Windows::UI::Colors::White());
+            auto secondaryFontColor = winrt::Windows::UI::Colors::White();
+            // For alpha value see: https://github.com/microsoft/microsoft-ui-xaml/blob/7a33ad772d77d908aa6b316ec24e6d2eb3ebf571/dev/CommonStyles/Common_themeresources_any.xaml#L14
+            secondaryFontColor.A = 0xC5;
+            secondaryFontBrush.Color(secondaryFontColor);
         }
 
         selectedTabBrush.Color(color);

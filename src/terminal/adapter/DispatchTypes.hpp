@@ -7,9 +7,11 @@ namespace Microsoft::Console::VirtualTerminal
 {
     using VTInt = int32_t;
 
-    class VTID
+    union VTID
     {
     public:
+        VTID() = default;
+
         template<size_t Length>
         constexpr VTID(const char (&s)[Length]) :
             _value{ _FromString(s) }
@@ -17,13 +19,18 @@ namespace Microsoft::Console::VirtualTerminal
         }
 
         constexpr VTID(const uint64_t value) :
-            _value{ value }
+            _value{ value & 0x00FFFFFFFFFFFFFF }
         {
         }
 
         constexpr operator uint64_t() const
         {
             return _value;
+        }
+
+        constexpr const std::string_view ToString() const
+        {
+            return &_string[0];
         }
 
         constexpr char operator[](const size_t offset) const
@@ -40,7 +47,7 @@ namespace Microsoft::Console::VirtualTerminal
         template<size_t Length>
         static constexpr uint64_t _FromString(const char (&s)[Length])
         {
-            static_assert(Length - 1 <= sizeof(_value));
+            static_assert(Length <= sizeof(_value));
             uint64_t value = 0;
             for (auto i = Length - 1; i-- > 0;)
             {
@@ -49,7 +56,12 @@ namespace Microsoft::Console::VirtualTerminal
             return value;
         }
 
-        uint64_t _value;
+        // In order for the _string to hold the correct representation of the
+        // ID stored in _value, we must be on a little endian architecture.
+        static_assert(std::endian::native == std::endian::little);
+
+        uint64_t _value = 0;
+        char _string[sizeof(_value)];
     };
 
     class VTIDBuilder
@@ -63,13 +75,13 @@ namespace Microsoft::Console::VirtualTerminal
 
         void AddIntermediate(const wchar_t intermediateChar) noexcept
         {
-            if (_idShift + CHAR_BIT >= sizeof(_idAccumulator) * CHAR_BIT)
+            if (_idShift + CHAR_BIT * 2 >= sizeof(_idAccumulator) * CHAR_BIT)
             {
                 // If there is not enough space in the accumulator to add
-                // the intermediate and still have room left for the final,
-                // then we reset the accumulator to zero. This will result
-                // in an id with all zero intermediates, which shouldn't
-                // match anything.
+                // the intermediate and still have room left for the final
+                // and null terminator, then we reset the accumulator to zero.
+                // This will result in an id with all zero intermediates,
+                // which shouldn't match anything.
                 _idAccumulator = 0;
             }
             else
@@ -155,7 +167,7 @@ namespace Microsoft::Console::VirtualTerminal
         constexpr VTParameter at(const size_t index) const noexcept
         {
             // If the index is out of range, we return a parameter with no value.
-            return index < _values.size() ? _values[index] : VTParameter{};
+            return index < _values.size() ? til::at(_values, index) : defaultParameter;
         }
 
         constexpr bool empty() const noexcept
@@ -179,18 +191,28 @@ namespace Microsoft::Console::VirtualTerminal
         template<typename T>
         bool for_each(const T&& predicate) const
         {
+            auto values = _values;
+
             // We always return at least 1 value here, since an empty parameter
             // list is the equivalent of a single "default" parameter.
-            auto success = predicate(at(0));
-            for (auto i = 1u; i < _values.size(); i++)
+            if (values.empty())
             {
-                success = predicate(_values[i]) && success;
+                values = defaultParameters;
+            }
+
+            auto success = true;
+            for (const auto& v : values)
+            {
+                success = predicate(v) && success;
             }
             return success;
         }
 
     private:
-        gsl::span<const VTParameter> _values;
+        static constexpr VTParameter defaultParameter;
+        static constexpr std::span defaultParameters{ &defaultParameter, 1 };
+
+        std::span<const VTParameter> _values;
     };
 
     // FlaggedEnumValue is a convenience class that produces enum values (of a specified size)
@@ -209,7 +231,7 @@ namespace Microsoft::Console::VirtualTerminal
     class FlaggedEnumValue
     {
     public:
-        static constexpr VTInt mask{ WI_StaticAssertSingleBitSet(Flag) };
+        static constexpr VTInt mask{ Flag };
 
         constexpr FlaggedEnumValue(const VTInt value) :
             _value{ value }
@@ -257,6 +279,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         FromBeginning = 1,
         All = 2,
         Scrollback = 3
+    };
+
+    enum class ChangeExtent : VTInt
+    {
+        Default = 0,
+        Stream = 1,
+        Rectangle = 2
     };
 
     enum class TaskbarState : VTInt
@@ -371,10 +400,16 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Max = SaveBackgroundColor
     };
 
-    enum class AnsiStatusType : VTInt
+    using ANSIStandardStatus = FlaggedEnumValue<0x00000000>;
+    using DECPrivateStatus = FlaggedEnumValue<0x01000000>;
+
+    enum class StatusType : VTInt
     {
-        OS_OperatingStatus = 5,
-        CPR_CursorPositionReport = 6,
+        OS_OperatingStatus = ANSIStandardStatus(5),
+        CPR_CursorPositionReport = ANSIStandardStatus(6),
+        ExCPR_ExtendedCursorPositionReport = DECPrivateStatus(6),
+        MSR_MacroSpaceReport = DECPrivateStatus(62),
+        MEM_MemoryChecksum = DECPrivateStatus(63),
     };
 
     using ANSIStandardMode = FlaggedEnumValue<0x00000000>;
@@ -382,6 +417,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 
     enum ModeParams : VTInt
     {
+        IRM_InsertReplaceMode = ANSIStandardMode(4),
         DECCKM_CursorKeysMode = DECPrivateMode(1),
         DECANM_AnsiMode = DECPrivateMode(2),
         DECCOLM_SetNumberOfColumns = DECPrivateMode(3),
@@ -392,6 +428,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ATT610_StartCursorBlink = DECPrivateMode(12),
         DECTCEM_TextCursorEnableMode = DECPrivateMode(25),
         XTERM_EnableDECCOLMSupport = DECPrivateMode(40),
+        DECNKM_NumericKeypadMode = DECPrivateMode(66),
         DECBKM_BackarrowKeyMode = DECPrivateMode(67),
         VT200_MOUSE_MODE = DECPrivateMode(1000),
         BUTTON_EVENT_MOUSE_MODE = DECPrivateMode(1002),
@@ -496,10 +533,28 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Size96 = 1
     };
 
+    enum class MacroDeleteControl : VTInt
+    {
+        DeleteId = 0,
+        DeleteAll = 1
+    };
+
+    enum class MacroEncoding : VTInt
+    {
+        Text = 0,
+        HexPair = 1
+    };
+
     enum class ReportFormat : VTInt
     {
         TerminalStateReport = 1,
         ColorTableReport = 2
+    };
+
+    enum class PresentationReportFormat : VTInt
+    {
+        CursorInformationReport = 1,
+        TabulationStopReport = 2
     };
 
     constexpr VTInt s_sDECCOLMSetColumns = 132;
@@ -519,6 +574,9 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         std::optional<til::color> color;
         til::point start;
         til::point end; // exclusive
+        std::optional<til::point> commandEnd;
+        std::optional<til::point> outputEnd;
+
         MarkCategory category{ MarkCategory::Info };
         // Other things we may want to think about in the future are listed in
         // GH#11000

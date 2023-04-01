@@ -32,10 +32,9 @@ DERR
 dlldata
 DNE
 DONTADDTORECENT
-DWMWA
-DWORDLONG
 DWMSBT
 DWMWA
+DWORDLONG
 endfor
 ENDSESSION
 enumset
@@ -55,6 +54,8 @@ GETMOUSEHOVERTIME
 Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
+hinternet
+HINTERNET
 hotkeys
 href
 hrgn
@@ -110,8 +111,8 @@ memchr
 memicmp
 MENUCOMMAND
 MENUDATA
-MENUITEMINFOW
 MENUINFO
+MENUITEMINFOW
 mmeapi
 MOUSELEAVE
 mov
@@ -158,8 +159,9 @@ rcx
 REGCLS
 RETURNCMD
 rfind
-roundf
+RLO
 ROOTOWNER
+roundf
 RSHIFT
 SACL
 schandle
@@ -211,8 +213,11 @@ UPDATEINIFILE
 userenv
 USEROBJECTFLAGS
 Viewbox
+virtualalloc
 wcsstr
 wcstoui
+WDJ
+winhttp
 winmain
 winsta
 winstamin
@@ -220,6 +225,7 @@ wmemcmp
 wpc
 WSF
 wsregex
+WWH
 wwinmain
 xchg
 XDocument
@@ -245,3 +251,4 @@ xtree
 xutility
 YIcon
 YMax
+zwstring

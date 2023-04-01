@@ -16,7 +16,6 @@ Author(s):
 
 #include "../../host/conimeinfo.h"
 #include "../../buffer/out/TextAttribute.hpp"
-#include "../../types/IBaseData.h"
 
 class Cursor;
 
@@ -37,37 +36,44 @@ namespace Microsoft::Console::Render
         const Microsoft::Console::Types::Viewport region;
     };
 
-    class IRenderData : public Microsoft::Console::Types::IBaseData
+    class IRenderData
     {
     public:
-        ~IRenderData() = 0;
-        IRenderData(const IRenderData&) = default;
-        IRenderData(IRenderData&&) = default;
-        IRenderData& operator=(const IRenderData&) = default;
-        IRenderData& operator=(IRenderData&&) = default;
+        virtual ~IRenderData() = default;
 
+        // This block used to be IBaseData.
+        virtual Microsoft::Console::Types::Viewport GetViewport() noexcept = 0;
+        virtual til::point GetTextBufferEndPosition() const noexcept = 0;
+        virtual const TextBuffer& GetTextBuffer() const noexcept = 0;
+        virtual const FontInfo& GetFontInfo() const noexcept = 0;
+        virtual std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept = 0;
+        virtual void LockConsole() noexcept = 0;
+        virtual void UnlockConsole() noexcept = 0;
+
+        // This block used to be the original IRenderData.
         virtual til::point GetCursorPosition() const noexcept = 0;
         virtual bool IsCursorVisible() const noexcept = 0;
         virtual bool IsCursorOn() const noexcept = 0;
         virtual ULONG GetCursorHeight() const noexcept = 0;
         virtual CursorType GetCursorStyle() const noexcept = 0;
         virtual ULONG GetCursorPixelWidth() const noexcept = 0;
-        virtual bool IsCursorDoubleWidth() const = 0;
-
+        virtual bool IsCursorDoubleWidth() const noexcept = 0;
         virtual const std::vector<RenderOverlay> GetOverlays() const noexcept = 0;
-
         virtual const bool IsGridLineDrawingAllowed() noexcept = 0;
         virtual const std::wstring_view GetConsoleTitle() const noexcept = 0;
+        virtual const std::wstring GetHyperlinkUri(uint16_t id) const = 0;
+        virtual const std::wstring GetHyperlinkCustomId(uint16_t id) const = 0;
+        virtual const std::vector<size_t> GetPatternId(const til::point location) const = 0;
 
-        virtual const std::wstring GetHyperlinkUri(uint16_t id) const noexcept = 0;
-        virtual const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept = 0;
-
-        virtual const std::vector<size_t> GetPatternId(const til::point location) const noexcept = 0;
-
-    protected:
-        IRenderData() = default;
+        // This block used to be IUiaData.
+        virtual std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept = 0;
+        virtual const bool IsSelectionActive() const = 0;
+        virtual const bool IsBlockSelection() const = 0;
+        virtual void ClearSelection() = 0;
+        virtual void SelectNewRegion(const til::point coordStart, const til::point coordEnd) = 0;
+        virtual const til::point GetSelectionAnchor() const noexcept = 0;
+        virtual const til::point GetSelectionEnd() const noexcept = 0;
+        virtual void ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute attr) = 0;
+        virtual const bool IsUiaDataInitialized() const noexcept = 0;
     };
-
-    // See docs/virtual-dtors.md for an explanation of why this is weird.
-    inline IRenderData::~IRenderData() = default;
 }

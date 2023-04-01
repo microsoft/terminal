@@ -56,7 +56,7 @@ template<typename T>
 T HostSignalInputThread::_ReceiveTypedPacket()
 {
     T msg = { 0 };
-    THROW_HR_IF(E_ABORT, !_GetData(gsl::as_writable_bytes(gsl::span{ &msg, 1 })));
+    THROW_HR_IF(E_ABORT, !_GetData(std::as_writable_bytes(std::span{ &msg, 1 })));
 
     // If the message is smaller than what we expected
     // then it was malformed and we need to throw.
@@ -80,7 +80,7 @@ T HostSignalInputThread::_ReceiveTypedPacket()
 {
     HostSignals signalId;
 
-    while (_GetData(gsl::as_writable_bytes(gsl::span{ &signalId, 1 })))
+    while (_GetData(std::as_writable_bytes(std::span{ &signalId, 1 })))
     {
         switch (signalId)
         {
@@ -128,7 +128,7 @@ T HostSignalInputThread::_ReceiveTypedPacket()
 // - True if we could skip forward successfully. False otherwise.
 bool HostSignalInputThread::_AdvanceReader(DWORD byteCount)
 {
-    std::array<gsl::byte, 256> buffer;
+    std::array<std::byte, 256> buffer;
 
     while (byteCount > 0)
     {
@@ -152,7 +152,7 @@ bool HostSignalInputThread::_AdvanceReader(DWORD byteCount)
 // - buffer - Buffer to fill with data.
 // Return Value:
 // - True if data was retrieved successfully. False otherwise.
-bool HostSignalInputThread::_GetData(gsl::span<gsl::byte> buffer)
+bool HostSignalInputThread::_GetData(std::span<std::byte> buffer)
 {
     DWORD bytesRead = 0;
     // If we failed to read because the terminal broke our pipe (usually due

@@ -99,7 +99,7 @@ class ClipboardTests
         // verify trailing bytes were trimmed
         // there are 2 double-byte characters in our sample string (see CommonState.hpp for sample)
         // the width is right - left
-        VERIFY_ARE_EQUAL((til::CoordType)wcslen(text[0].data()), selection[0].Right - selection[0].Left + 1);
+        VERIFY_ARE_EQUAL((til::CoordType)wcslen(text[0].data()), selection[0].right - selection[0].left + 1);
 
         // since we're not in line selection, the line should be \r\n terminated
         auto tempPtr = text[0].data();
@@ -109,7 +109,7 @@ class ClipboardTests
 
         // since we're not in line selection, spaces should be trimmed from the end
         tempPtr = text[0].data();
-        tempPtr += selection[0].Right - selection[0].Left - 2;
+        tempPtr += selection[0].right - selection[0].left - 2;
         tempPtr++;
         VERIFY_IS_NULL(wcsrchr(tempPtr, L' '));
 
@@ -231,25 +231,25 @@ class ClipboardTests
                     if (isKeyDown)
                     {
                         // shift then letter
-                        const KeyEvent shiftDownEvent({ TRUE, 1, VK_SHIFT, leftShiftScanCode, L'\0', SHIFT_PRESSED });
+                        const KeyEvent shiftDownEvent{ TRUE, 1, VK_SHIFT, leftShiftScanCode, L'\0', SHIFT_PRESSED };
                         VERIFY_ARE_EQUAL(shiftDownEvent, *keyEvent);
 
-                        const KeyEvent expectedKeyEvent({ TRUE, 1, LOBYTE(keyState2), virtualScanCode2, wch, SHIFT_PRESSED });
+                        const KeyEvent expectedKeyEvent{ TRUE, 1, LOBYTE(keyState2), virtualScanCode2, wch, SHIFT_PRESSED };
                         VERIFY_ARE_EQUAL(expectedKeyEvent, *keyEvent2);
                     }
                     else
                     {
                         // letter then shift
-                        const KeyEvent expectedKeyEvent({ FALSE, 1, LOBYTE(keyState), virtualScanCode, wch, SHIFT_PRESSED });
+                        const KeyEvent expectedKeyEvent{ FALSE, 1, LOBYTE(keyState), virtualScanCode, wch, SHIFT_PRESSED };
                         VERIFY_ARE_EQUAL(expectedKeyEvent, *keyEvent);
 
-                        const KeyEvent shiftUpEvent({ FALSE, 1, VK_SHIFT, leftShiftScanCode, L'\0', 0 });
+                        const KeyEvent shiftUpEvent{ FALSE, 1, VK_SHIFT, leftShiftScanCode, L'\0', 0 };
                         VERIFY_ARE_EQUAL(shiftUpEvent, *keyEvent2);
                     }
                 }
                 else
                 {
-                    const KeyEvent expectedKeyEvent({ !!isKeyDown, 1, LOBYTE(keyState), virtualScanCode, wch, 0 });
+                    const KeyEvent expectedKeyEvent{ !!isKeyDown, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
                     VERIFY_ARE_EQUAL(expectedKeyEvent, *keyEvent);
                 }
             }

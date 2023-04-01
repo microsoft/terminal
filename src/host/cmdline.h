@@ -142,7 +142,7 @@ void RedrawCommandLine(COOKED_READ_DATA& cookedReadData);
 #define WC_LIMIT_BACKSPACE 0x10
 //#define WC_NONDESTRUCTIVE_TAB    0x20  -  This is not needed anymore, because the VT code handles tabs internally now.
 //#define WC_NEWLINE_SAVE_X        0x40  -  This has been replaced with an output mode flag instead as it's line discipline behavior that may not necessarily be coupled with VT.
-#define WC_DELAY_EOL_WRAP 0x80
+//#define WC_DELAY_EOL_WRAP        0x80  -  This is not needed anymore, because the AdaptDispatch class handles all VT output.
 
 // Word delimiters
 bool IsWordDelim(const wchar_t wch);

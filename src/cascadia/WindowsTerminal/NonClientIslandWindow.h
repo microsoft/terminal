@@ -49,6 +49,8 @@ public:
 
     void SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush);
 
+    virtual void UseMica(const bool newValue, const double titlebarOpacity) override;
+
 private:
     std::optional<til::point> _oldIslandPos;
 
@@ -63,6 +65,9 @@ private:
 
     winrt::Windows::UI::Xaml::ElementTheme _theme;
 
+    bool _useMica{ false };
+    double _titlebarOpacity{ 1.0 };
+
     bool _isMaximized;
     bool _trackingMouse{ false };
 
@@ -76,7 +81,6 @@ private:
     int _GetTopBorderHeight() const noexcept;
     LRESULT _dragBarNcHitTest(const til::point pointer);
 
-    [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
     [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnNcHitTest(POINT ptMouse) const noexcept;
     [[nodiscard]] LRESULT _OnPaint() noexcept;
