@@ -438,13 +438,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return expanded;
         }
 
-        void set_user_environment_var(std::wstring_view var, std::wstring_view value)
-        {
-            auto valueString = expand_environment_strings(value);
-            valueString = check_for_temp(var, valueString);
-            save_to_map(std::wstring{ var }, std::move(valueString));
-        }
-
         void concat_var(std::wstring var, std::wstring value)
         {
             if (const auto existing = _envMap.find(var); existing != _envMap.end())
@@ -533,6 +526,30 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             parse(block);
         }
 
+        static til::env from_current_environment()
+        {
+            LPWCH currentEnvVars{};
+            auto freeCurrentEnv = wil::scope_exit([&] {
+                if (currentEnvVars)
+                {
+                    FreeEnvironmentStringsW(currentEnvVars);
+                    currentEnvVars = nullptr;
+                }
+            });
+
+            currentEnvVars = ::GetEnvironmentStringsW();
+            THROW_HR_IF_NULL(E_OUTOFMEMORY, currentEnvVars);
+
+            return til::env{ currentEnvVars };
+        }
+
+        void set_user_environment_var(std::wstring_view var, std::wstring_view value)
+        {
+            auto valueString = expand_environment_strings(value);
+            valueString = check_for_temp(var, valueString);
+            save_to_map(std::wstring{ var }, std::move(valueString));
+        }
+
         void regenerate()
         {
             // Generally replicates the behavior of shell32!RegenerateUserEnvironment
@@ -571,6 +588,74 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             result.append(L"\0", 1);
             return result;
         }
+
+        HRESULT to_environment_strings_w(std::vector<wchar_t>& newEnvVars)
+        try
+        {
+            // Clear environment block before use.
+            constexpr auto cbChar{ sizeof(decltype(newEnvVars.begin())::value_type) };
+
+            if (!newEnvVars.empty())
+            {
+                ::SecureZeroMemory(newEnvVars.data(), newEnvVars.size() * cbChar);
+            }
+
+            // Resize environment block to fit map.
+            size_t cchEnv{ 2 }; // For the block's double NULL-terminator.
+            for (const auto& [name, value] : _envMap)
+            {
+                // Final form of "name=value\0".
+                cchEnv += name.size() + 1 + value.size() + 1;
+            }
+            newEnvVars.resize(cchEnv);
+
+            // Ensure new block is wiped if we exit due to failure.
+            auto zeroNewEnv = wil::scope_exit([&]() noexcept {
+                ::SecureZeroMemory(newEnvVars.data(), newEnvVars.size() * cbChar);
+            });
+
+            // Transform each map entry and copy it into the new environment block.
+            auto pEnvVars{ newEnvVars.data() };
+            auto cbRemaining{ cchEnv * cbChar };
+            for (const auto& [name, value] : _envMap)
+            {
+                // Final form of "name=value\0" for every entry.
+                {
+                    const auto cchSrc{ name.size() };
+                    const auto cbSrc{ cchSrc * cbChar };
+                    RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, name.c_str(), cbSrc) != 0);
+                    pEnvVars += cchSrc;
+                    cbRemaining -= cbSrc;
+                }
+
+                RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, L"=", cbChar) != 0);
+                ++pEnvVars;
+                cbRemaining -= cbChar;
+
+                {
+                    const auto cchSrc{ value.size() };
+                    const auto cbSrc{ cchSrc * cbChar };
+                    RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, value.c_str(), cbSrc) != 0);
+                    pEnvVars += cchSrc;
+                    cbRemaining -= cbSrc;
+                }
+
+                RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, L"\0", cbChar) != 0);
+                ++pEnvVars;
+                cbRemaining -= cbChar;
+            }
+
+            // Environment block only has to be NULL-terminated, but double NULL-terminate anyway.
+            RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, L"\0\0", cbChar * 2) != 0);
+            cbRemaining -= cbChar * 2;
+
+            RETURN_HR_IF(E_UNEXPECTED, cbRemaining != 0);
+
+            zeroNewEnv.release(); // success; don't wipe new environment block on exit
+
+            return S_OK;
+        }
+        CATCH_RETURN();
 
         auto& as_map() noexcept
         {

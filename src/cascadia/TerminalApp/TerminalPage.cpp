@@ -1223,7 +1223,7 @@ namespace winrt::TerminalApp::implementation
                 envMap = {};
             }
             envMap.Insert(L"WT_PROFILE_ID", guidWString);
-            envMap.Insert(L"WSLENV", L"WT_PROFILE_ID");
+            envMap.Insert(L"WSLENV", L"%WSLENV%:WT_PROFILE_ID");
 
             // Update the path to be relative to whatever our CWD is.
             //
