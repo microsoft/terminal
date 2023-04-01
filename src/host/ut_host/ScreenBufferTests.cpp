@@ -6304,8 +6304,8 @@ void ScreenBufferTests::CursorSaveRestore()
 
     const auto selectAsciiChars = L"\x1b(B";
     const auto selectGraphicsChars = L"\x1b(0";
-    const auto saveCursor = L"\x1b[s";
-    const auto restoreCursor = L"\x1b[u";
+    const auto saveCursor = L"\x1b\x37";
+    const auto restoreCursor = L"\x1b\x38";
     const auto setDECOM = L"\x1b[?6h";
     const auto resetDECOM = L"\x1b[?6l";
 
@@ -6368,10 +6368,12 @@ void ScreenBufferTests::CursorSaveRestore()
 
     Log::Comment(L"Restore origin mode.");
     // Set margins and origin mode to relative.
+    stateMachine.ProcessString(L"\x1b[?69h");
     stateMachine.ProcessString(L"\x1b[10;20r");
+    stateMachine.ProcessString(L"\x1b[31;50s");
     stateMachine.ProcessString(setDECOM);
     // Verify home position inside margins.
-    VERIFY_ARE_EQUAL(til::point(0, 9), cursor.GetPosition());
+    VERIFY_ARE_EQUAL(til::point(30, 9), cursor.GetPosition());
     // Save state and reset origin mode to absolute.
     stateMachine.ProcessString(saveCursor);
     stateMachine.ProcessString(resetDECOM);
@@ -6381,37 +6383,43 @@ void ScreenBufferTests::CursorSaveRestore()
     stateMachine.ProcessString(restoreCursor);
     stateMachine.ProcessString(L"\x1b[H");
     // Verify home position inside margins, i.e. relative origin mode restored.
-    VERIFY_ARE_EQUAL(til::point(0, 9), cursor.GetPosition());
+    VERIFY_ARE_EQUAL(til::point(30, 9), cursor.GetPosition());
 
     Log::Comment(L"Restore relative to new origin.");
     // Reset margins, with absolute origin, and set cursor position.
     stateMachine.ProcessString(L"\x1b[r");
+    stateMachine.ProcessString(L"\x1b[s");
     stateMachine.ProcessString(setDECOM);
     cursor.SetPosition({ 5, 5 });
     // Save state.
     stateMachine.ProcessString(saveCursor);
     // Set margins and restore state.
     stateMachine.ProcessString(L"\x1b[15;25r");
+    stateMachine.ProcessString(L"\x1b[31;50s");
     stateMachine.ProcessString(restoreCursor);
-    // Verify Y position is now relative to new top margin
-    VERIFY_ARE_EQUAL(til::point(5, 19), cursor.GetPosition());
+    // Verify position is now relative to new top left margins
+    VERIFY_ARE_EQUAL(til::point(35, 19), cursor.GetPosition());
 
     Log::Comment(L"Clamp inside bottom margin.");
     // Reset margins, with absolute origin, and set cursor position.
     stateMachine.ProcessString(L"\x1b[r");
+    stateMachine.ProcessString(L"\x1b[s");
     stateMachine.ProcessString(setDECOM);
-    cursor.SetPosition({ 5, 15 });
+    cursor.SetPosition({ 15, 15 });
     // Save state.
     stateMachine.ProcessString(saveCursor);
     // Set margins and restore state.
     stateMachine.ProcessString(L"\x1b[1;10r");
+    stateMachine.ProcessString(L"\x1b[1;10s");
     stateMachine.ProcessString(restoreCursor);
-    // Verify Y position is clamped inside the top margin
-    VERIFY_ARE_EQUAL(til::point(5, 9), cursor.GetPosition());
+    // Verify position is clamped inside the bottom right margins
+    VERIFY_ARE_EQUAL(til::point(9, 9), cursor.GetPosition());
 
     // Reset origin mode and margins.
     stateMachine.ProcessString(resetDECOM);
     stateMachine.ProcessString(L"\x1b[r");
+    stateMachine.ProcessString(L"\x1b[s");
+    stateMachine.ProcessString(L"\x1b[?69l");
 }
 
 void ScreenBufferTests::ScreenAlignmentPattern()
