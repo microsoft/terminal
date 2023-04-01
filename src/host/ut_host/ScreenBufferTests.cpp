@@ -220,6 +220,10 @@ class ScreenBufferTests
     TEST_METHOD(CursorUpDownOutsideMargins);
     TEST_METHOD(CursorUpDownExactlyAtMargins);
 
+    TEST_METHOD(CursorLeftRightAcrossMargins);
+    TEST_METHOD(CursorLeftRightOutsideMargins);
+    TEST_METHOD(CursorLeftRightExactlyAtMargins);
+
     TEST_METHOD(CursorNextPreviousLine);
     TEST_METHOD(CursorPositionRelative);
 
@@ -6149,6 +6153,136 @@ void ScreenBufferTests::CursorUpDownExactlyAtMargins()
     }
 
     stateMachine.ProcessString(L"\x1b[r");
+}
+
+void ScreenBufferTests::CursorLeftRightAcrossMargins()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    VERIFY_IS_TRUE(si.GetViewport().BottomInclusive() > 24);
+
+    // Set some scrolling margins
+    stateMachine.ProcessString(L"\x1b[?69h");
+    stateMachine.ProcessString(L"\x1b[31;50s");
+
+    stateMachine.ProcessString(L"\x1b[12;40H");
+    VERIFY_ARE_EQUAL(39, cursor.GetPosition().x);
+    stateMachine.ProcessString(L"\x1b[99C");
+    VERIFY_ARE_EQUAL(49, cursor.GetPosition().x);
+    stateMachine.ProcessString(L"X");
+    {
+        auto iter = tbi.GetCellDataAt({ 49, 11 });
+        VERIFY_ARE_EQUAL(L"X", iter->Chars());
+    }
+
+    stateMachine.ProcessString(L"\x1b[12;40H");
+    VERIFY_ARE_EQUAL(39, cursor.GetPosition().x);
+    stateMachine.ProcessString(L"\x1b[99D");
+    VERIFY_ARE_EQUAL(30, cursor.GetPosition().x);
+    stateMachine.ProcessString(L"Y");
+    {
+        auto iter = tbi.GetCellDataAt({ 30, 11 });
+        VERIFY_ARE_EQUAL(L"Y", iter->Chars());
+    }
+
+    stateMachine.ProcessString(L"\x1b[s");
+    stateMachine.ProcessString(L"\x1b[?69l");
+}
+
+void ScreenBufferTests::CursorLeftRightOutsideMargins()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    VERIFY_IS_TRUE(si.GetViewport().BottomInclusive() > 24);
+
+    // Set some scrolling margins
+    stateMachine.ProcessString(L"\x1b[?69h");
+    stateMachine.ProcessString(L"\x1b[31;50s");
+
+    stateMachine.ProcessString(L"\x1b[12;1H");
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
+    stateMachine.ProcessString(L"\x1b[1C");
+    VERIFY_ARE_EQUAL(1, cursor.GetPosition().x);
+    stateMachine.ProcessString(L"Y");
+    {
+        auto iter = tbi.GetCellDataAt({ 1, 11 });
+        VERIFY_ARE_EQUAL(L"Y", iter->Chars());
+    }
+
+    stateMachine.ProcessString(L"\x1b[12;80H");
+    VERIFY_ARE_EQUAL(79, cursor.GetPosition().x);
+    stateMachine.ProcessString(L"\x1b[1D");
+    VERIFY_ARE_EQUAL(78, cursor.GetPosition().x);
+    stateMachine.ProcessString(L"X");
+    {
+        auto iter = tbi.GetCellDataAt({ 78, 11 });
+        VERIFY_ARE_EQUAL(L"X", iter->Chars());
+    }
+
+    stateMachine.ProcessString(L"\x1b[s");
+    stateMachine.ProcessString(L"\x1b[?69l");
+}
+
+void ScreenBufferTests::CursorLeftRightExactlyAtMargins()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    VERIFY_IS_TRUE(si.GetViewport().BottomInclusive() > 24);
+
+    // Set some scrolling margins
+    stateMachine.ProcessString(L"\x1b[?69h");
+    stateMachine.ProcessString(L"\x1b[31;50s");
+
+    stateMachine.ProcessString(L"\x1b[12;50H");
+    VERIFY_ARE_EQUAL(49, cursor.GetPosition().x);
+    stateMachine.ProcessString(L"\x1b[1C");
+    VERIFY_ARE_EQUAL(49, cursor.GetPosition().x);
+    stateMachine.ProcessString(L"1");
+    {
+        auto iter = tbi.GetCellDataAt({ 49, 11 });
+        VERIFY_ARE_EQUAL(L"1", iter->Chars());
+    }
+
+    stateMachine.ProcessString(L"\x1b[1D");
+    VERIFY_ARE_EQUAL(48, cursor.GetPosition().x);
+    stateMachine.ProcessString(L"2");
+    {
+        auto iter = tbi.GetCellDataAt({ 48, 11 });
+        VERIFY_ARE_EQUAL(L"2", iter->Chars());
+    }
+
+    stateMachine.ProcessString(L"\x1b[12;31H");
+    VERIFY_ARE_EQUAL(30, cursor.GetPosition().x);
+    stateMachine.ProcessString(L"\x1b[1D");
+    VERIFY_ARE_EQUAL(30, cursor.GetPosition().x);
+    stateMachine.ProcessString(L"3");
+    {
+        auto iter = tbi.GetCellDataAt({ 30, 11 });
+        VERIFY_ARE_EQUAL(L"3", iter->Chars());
+    }
+
+    stateMachine.ProcessString(L"\x1b[1C");
+    VERIFY_ARE_EQUAL(32, cursor.GetPosition().x);
+    stateMachine.ProcessString(L"4");
+    {
+        auto iter = tbi.GetCellDataAt({ 32, 11 });
+        VERIFY_ARE_EQUAL(L"4", iter->Chars());
+    }
+
+    stateMachine.ProcessString(L"\x1b[s");
+    stateMachine.ProcessString(L"\x1b[?69l");
 }
 
 void ScreenBufferTests::CursorNextPreviousLine()
