@@ -3892,11 +3892,11 @@ void ScreenBufferTests::InsertReplaceMode()
 void ScreenBufferTests::InsertChars()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:setMargins", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:setVerticalMargins", L"{false, true}")
     END_TEST_METHOD_PROPERTIES();
 
-    bool setMargins;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"setMargins", setMargins));
+    bool setVerticalMargins;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"setVerticalMargins", setVerticalMargins));
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
@@ -3911,16 +3911,24 @@ void ScreenBufferTests::InsertChars()
     VERIFY_SUCCEEDED(si.ResizeScreenBuffer({ bufferWidth, bufferHeight }, false));
     si.SetViewport(Viewport::FromExclusive({ viewportStart, 0, viewportEnd, 25 }), true);
 
-    // Tests are run both with and without the DECSTBM margins set. This should not alter
-    // the results, since the ICH operation is not affected by vertical margins.
-    stateMachine.ProcessString(setMargins ? L"\x1b[15;20r" : L"\x1b[r");
+    // Tests are run both with and without the DECSTBM margins set. And while they
+    // don't affect the ICH operation directly, when we're outside the vertical
+    // margins, the horizontal margins won't apply, and that does affect ICH.
+    const auto horizontalMarginsActive = !setVerticalMargins;
+    stateMachine.ProcessString(L"\x1b[?69h");
+    stateMachine.ProcessString(L"\x1b[11;30s");
+    stateMachine.ProcessString(setVerticalMargins ? L"\x1b[15;20r" : L"\x1b[r");
     // Make sure we clear the margins on exit so they can't break other tests.
-    auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
+    auto clearMargins = wil::scope_exit([&] {
+        stateMachine.ProcessString(L"\x1b[r");
+        stateMachine.ProcessString(L"\x1b[s");
+        stateMachine.ProcessString(L"\x1b[?69l");
+    });
 
     Log::Comment(
         L"Test 1: Fill the line with Qs. Write some text within the viewport boundaries. "
         L"Then insert 5 spaces at the cursor. Watch spaces get inserted, text slides right "
-        L"out of the viewport, pushing some of the Qs out of the buffer.");
+        L"up to the right margin or off the edge of the buffer.");
 
     const auto insertLine = til::CoordType{ 10 };
     auto insertPos = til::CoordType{ 20 };
@@ -3954,7 +3962,8 @@ void ScreenBufferTests::InsertChars()
 
     // Insert 5 spaces at the cursor position.
     // Before: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQQ
-    //  After: QQQQQQQQQQABCDEFGHIJ     KLMNOPQRSTQQQQQ
+    //  After: QQQQQQQQQQABCDEFGHIJ     KLMNOQQQQQQQQQQ (horizontal margins active)
+    //  After: QQQQQQQQQQABCDEFGHIJ     KLMNOPQRSTQQQQQ (horizontal margins inactive)
     Log::Comment(L"Inserting 5 spaces in the middle of the line.");
     auto before = si.GetTextBuffer().GetRowByOffset(insertLine).GetText();
     stateMachine.ProcessString(L"\x1b[5@");
@@ -3970,18 +3979,29 @@ void ScreenBufferTests::InsertChars()
                    L"First half of the alphabet should remain unchanged.");
     VERIFY_IS_TRUE(_ValidateLineContains({ insertPos, insertLine }, L"     ", expectedFillAttr),
                    L"Spaces should be inserted with standard erase attributes at the cursor position.");
-    VERIFY_IS_TRUE(_ValidateLineContains({ insertPos + 5, insertLine }, L"KLMNOPQRST", textAttr),
-                   L"Second half of the alphabet should have moved to the right by the number of spaces inserted.");
-    VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd + 5, insertLine }, L"QQQQQ", bufferAttr),
-                   L"Field of Qs right of the viewport should be moved right, half pushed outside the buffer.");
+
+    if (horizontalMarginsActive)
+    {
+        VERIFY_IS_TRUE(_ValidateLineContains({ insertPos + 5, insertLine }, L"KLMNO", textAttr),
+                       L"Second half of the alphabet should have moved to the right but only up to right margin.");
+        VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, insertLine }, L"QQQQQ", bufferAttr),
+                       L"Field of Qs right of the margin area should remain unchanged.");
+    }
+    else
+    {
+        VERIFY_IS_TRUE(_ValidateLineContains({ insertPos + 5, insertLine }, L"KLMNOPQRST", textAttr),
+                       L"Second half of the alphabet should have moved to the right by the number of spaces inserted.");
+        VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd + 5, insertLine }, L"QQQQQ", bufferAttr),
+                       L"Field of Qs right of the viewport should be moved right, half pushed outside the buffer.");
+    }
 
     Log::Comment(
-        L"Test 2: Inserting at the exact end of the line. Same line structure. "
-        L"Move cursor to right edge of window and insert > 1 space. "
+        L"Test 2: Inserting at the exact end of the scroll area. Same line structure. "
+        L"Move cursor to right edge of window or right margin and insert > 1 space. "
         L"Only 1 should be inserted, everything else unchanged.");
 
     // Move cursor to right edge.
-    insertPos = bufferWidth - 1;
+    insertPos = horizontalMarginsActive ? viewportEnd - 1 : bufferWidth - 1;
     VERIFY_SUCCEEDED(si.SetCursorPosition({ insertPos, insertLine }, true));
     expectedCursor = cursor.GetPosition();
 
@@ -3993,8 +4013,9 @@ void ScreenBufferTests::InsertChars()
 
     // Insert 5 spaces at the right edge. Only 1 should be inserted.
     // Before: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQQ
-    //  After: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQ
-    Log::Comment(L"Inserting 5 spaces at the right edge of the buffer.");
+    //  After: QQQQQQQQQQABCDEFGHIJKLMNOPQRS QQQQQQQQQQ (horizontal margins active)
+    //  After: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQ  (horizontal margins inactive)
+    Log::Comment(L"Inserting 5 spaces at the right edge.");
     before = si.GetTextBuffer().GetRowByOffset(insertLine).GetText();
     stateMachine.ProcessString(L"\x1b[5@");
     after = si.GetTextBuffer().GetRowByOffset(insertLine).GetText();
@@ -4005,20 +4026,32 @@ void ScreenBufferTests::InsertChars()
     // Verify the updated structure of the line.
     VERIFY_IS_TRUE(_ValidateLineContains({ 0, insertLine }, L"QQQQQQQQQQ", bufferAttr),
                    L"Field of Qs left of the viewport should remain unchanged.");
-    VERIFY_IS_TRUE(_ValidateLineContains({ viewportStart, insertLine }, L"ABCDEFGHIJKLMNOPQRST", textAttr),
-                   L"Entire viewport range should remain unchanged.");
-    VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, insertLine }, L"QQQQQQQQQ", bufferAttr),
-                   L"Field of Qs right of the viewport should remain unchanged except for the last spot.");
     VERIFY_IS_TRUE(_ValidateLineContains({ insertPos, insertLine }, L" ", expectedFillAttr),
                    L"One space should be inserted with standard erase attributes at the cursor position.");
 
+    if (horizontalMarginsActive)
+    {
+        VERIFY_IS_TRUE(_ValidateLineContains({ viewportStart, insertLine }, L"ABCDEFGHIJKLMNOPQRS", textAttr),
+                       L"Viewport range should remain unchanged except for the last spot.");
+        VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, insertLine }, L"QQQQQQQQQQ", bufferAttr),
+                       L"Field of Qs right of the viewport should remain unchanged.");
+    }
+    else
+    {
+        VERIFY_IS_TRUE(_ValidateLineContains({ viewportStart, insertLine }, L"ABCDEFGHIJKLMNOPQRST", textAttr),
+                       L"Entire viewport range should remain unchanged.");
+        VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, insertLine }, L"QQQQQQQQQ", bufferAttr),
+                       L"Field of Qs right of the viewport should remain unchanged except for the last spot.");
+    }
+
     Log::Comment(
-        L"Test 3: Inserting at the exact beginning of the line. Same line structure. "
-        L"Move cursor to left edge of buffer and insert > buffer width of space. "
-        L"The whole row should be replaced with spaces.");
+        L"Test 3: Inserting at the beginning of the scroll area. Same line structure. "
+        L"Move cursor to left edge of buffer or left margin and insert > buffer width of space. "
+        L"The whole scroll area should be replaced with spaces.");
 
     // Move cursor to left edge.
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ 0, insertLine }, true));
+    insertPos = horizontalMarginsActive ? viewportStart : 0;
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ insertPos, insertLine }, true));
     expectedCursor = cursor.GetPosition();
 
     // Fill the entire line with Qs. Blue on Green.
@@ -4027,10 +4060,11 @@ void ScreenBufferTests::InsertChars()
     // Fill the viewport range with text. Red on Blue.
     _FillLine({ viewportStart, insertLine }, textChars, textAttr);
 
-    // Insert greater than the buffer width at the left edge. The entire line should be erased.
+    // Insert greater than the buffer width at the left edge.
     // Before: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQQ
-    //  After:
-    Log::Comment(L"Inserting 100 spaces at the left edge of the buffer.");
+    //  After: QQQQQQQQQQ                    QQQQQQQQQQ (horizontal margins active)
+    //  After:                                          (horizontal margins inactive)
+    Log::Comment(L"Inserting 100 spaces at the left edge.");
     before = si.GetTextBuffer().GetRowByOffset(insertLine).GetText();
     stateMachine.ProcessString(L"\x1b[100@");
     after = si.GetTextBuffer().GetRowByOffset(insertLine).GetText();
@@ -4039,18 +4073,30 @@ void ScreenBufferTests::InsertChars()
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition(), L"Verify cursor didn't move from insert operation.");
 
     // Verify the updated structure of the line.
-    VERIFY_IS_TRUE(_ValidateLineContains(insertLine, L' ', expectedFillAttr),
-                   L"A whole line of spaces was inserted at the start, erasing the line.");
+    if (horizontalMarginsActive)
+    {
+        VERIFY_IS_TRUE(_ValidateLineContains({ 0, insertLine }, L"QQQQQQQQQQ", bufferAttr),
+                       L"Field of Qs left of the viewport should remain unchanged.");
+        VERIFY_IS_TRUE(_ValidateLineContains({ insertPos, insertLine }, L"                    ", expectedFillAttr),
+                       L"Entire viewport range should be erased with spaces.");
+        VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, insertLine }, L"QQQQQQQQQQ", bufferAttr),
+                       L"Field of Qs right of the viewport should remain unchanged.");
+    }
+    else
+    {
+        VERIFY_IS_TRUE(_ValidateLineContains(insertLine, L' ', expectedFillAttr),
+                       L"A whole line of spaces was inserted at the start, erasing the line.");
+    }
 }
 
 void ScreenBufferTests::DeleteChars()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:setMargins", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:setVerticalMargins", L"{false, true}")
     END_TEST_METHOD_PROPERTIES();
 
-    bool setMargins;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"setMargins", setMargins));
+    bool setVerticalMargins;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"setVerticalMargins", setVerticalMargins));
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
@@ -4065,16 +4111,24 @@ void ScreenBufferTests::DeleteChars()
     VERIFY_SUCCEEDED(si.ResizeScreenBuffer({ bufferWidth, bufferHeight }, false));
     si.SetViewport(Viewport::FromExclusive({ viewportStart, 0, viewportEnd, 25 }), true);
 
-    // Tests are run both with and without the DECSTBM margins set. This should not alter
-    // the results, since the DCH operation is not affected by vertical margins.
-    stateMachine.ProcessString(setMargins ? L"\x1b[15;20r" : L"\x1b[r");
+    // Tests are run both with and without the DECSTBM margins set. And while they
+    // don't affect the DCH operation directly, when we're outside the vertical
+    // margins, the horizontal margins won't apply, and that does affect DCH.
+    const auto horizontalMarginsActive = !setVerticalMargins;
+    stateMachine.ProcessString(L"\x1b[?69h");
+    stateMachine.ProcessString(L"\x1b[11;30s");
+    stateMachine.ProcessString(setVerticalMargins ? L"\x1b[15;20r" : L"\x1b[r");
     // Make sure we clear the margins on exit so they can't break other tests.
-    auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
+    auto clearMargins = wil::scope_exit([&] {
+        stateMachine.ProcessString(L"\x1b[r");
+        stateMachine.ProcessString(L"\x1b[s");
+        stateMachine.ProcessString(L"\x1b[?69l");
+    });
 
     Log::Comment(
         L"Test 1: Fill the line with Qs. Write some text within the viewport boundaries. "
         L"Then delete 5 characters at the cursor. Watch the rest of the line slide left, "
-        L"replacing the deleted characters, with spaces inserted at the end of the line.");
+        L"with spaces inserted at the end of the line or the right margin.");
 
     const auto deleteLine = til::CoordType{ 10 };
     auto deletePos = til::CoordType{ 20 };
@@ -4108,7 +4162,8 @@ void ScreenBufferTests::DeleteChars()
 
     // Delete 5 characters at the cursor position.
     // Before: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQQ
-    //  After: QQQQQQQQQQABCDEFGHIJPQRSTQQQQQQQQQQ
+    //  After: QQQQQQQQQQABCDEFGHIJPQRST     QQQQQQQQQQ (horizontal margins active)
+    //  After: QQQQQQQQQQABCDEFGHIJPQRSTQQQQQQQQQQ      (horizontal margins inactive)
     Log::Comment(L"Deleting 5 characters in the middle of the line.");
     auto before = si.GetTextBuffer().GetRowByOffset(deleteLine).GetText();
     stateMachine.ProcessString(L"\x1b[5P");
@@ -4124,18 +4179,29 @@ void ScreenBufferTests::DeleteChars()
                    L"First half of the alphabet should remain unchanged.");
     VERIFY_IS_TRUE(_ValidateLineContains({ deletePos, deleteLine }, L"PQRST", textAttr),
                    L"Only half of the second part of the alphabet remains.");
-    VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd - 5, deleteLine }, L"QQQQQQQQQQ", bufferAttr),
-                   L"Field of Qs right of the viewport should be moved left.");
-    VERIFY_IS_TRUE(_ValidateLineContains({ bufferWidth - 5, deleteLine }, L"     ", expectedFillAttr),
-                   L"The rest of the line should be replaced with spaces with standard erase attributes.");
+
+    if (horizontalMarginsActive)
+    {
+        VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd - 5, deleteLine }, L"     ", expectedFillAttr),
+                       L"The rest of the margin area should be replaced with spaces with standard erase attributes.");
+        VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, deleteLine }, L"QQQQQQQQQQ", bufferAttr),
+                       L"Field of Qs right of the viewport should remain unchanged.");
+    }
+    else
+    {
+        VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd - 5, deleteLine }, L"QQQQQQQQQQ", bufferAttr),
+                       L"Field of Qs right of the viewport should be moved left.");
+        VERIFY_IS_TRUE(_ValidateLineContains({ bufferWidth - 5, deleteLine }, L"     ", expectedFillAttr),
+                       L"The rest of the line should be replaced with spaces with standard erase attributes.");
+    }
 
     Log::Comment(
-        L"Test 2: Deleting at the exact end of the line. Same line structure. "
-        L"Move cursor to right edge of window and delete > 1 character. "
+        L"Test 2: Deleting at the exact end of the scroll area. Same line structure. "
+        L"Move cursor to right edge of window or right margin and delete > 1 character. "
         L"Only 1 should be deleted, everything else unchanged.");
 
     // Move cursor to right edge.
-    deletePos = bufferWidth - 1;
+    deletePos = horizontalMarginsActive ? viewportEnd - 1 : bufferWidth - 1;
     VERIFY_SUCCEEDED(si.SetCursorPosition({ deletePos, deleteLine }, true));
     expectedCursor = cursor.GetPosition();
 
@@ -4147,8 +4213,9 @@ void ScreenBufferTests::DeleteChars()
 
     // Delete 5 characters at the right edge. Only 1 should be deleted.
     // Before: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQQ
-    //  After: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQ
-    Log::Comment(L"Deleting 5 characters at the right edge of the buffer.");
+    //  After: QQQQQQQQQQABCDEFGHIJKLMNOPQRS QQQQQQQQQQ (horizontal margins active)
+    //  After: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQ  (horizontal margins inactive)
+    Log::Comment(L"Deleting 5 characters at the right edge.");
     before = si.GetTextBuffer().GetRowByOffset(deleteLine).GetText();
     stateMachine.ProcessString(L"\x1b[5P");
     after = si.GetTextBuffer().GetRowByOffset(deleteLine).GetText();
@@ -4159,20 +4226,32 @@ void ScreenBufferTests::DeleteChars()
     // Verify the updated structure of the line.
     VERIFY_IS_TRUE(_ValidateLineContains({ 0, deleteLine }, L"QQQQQQQQQQ", bufferAttr),
                    L"Field of Qs left of the viewport should remain unchanged.");
-    VERIFY_IS_TRUE(_ValidateLineContains({ viewportStart, deleteLine }, L"ABCDEFGHIJKLMNOPQRST", textAttr),
-                   L"Entire viewport range should remain unchanged.");
-    VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, deleteLine }, L"QQQQQQQQQ", bufferAttr),
-                   L"Field of Qs right of the viewport should remain unchanged except for the last spot.");
     VERIFY_IS_TRUE(_ValidateLineContains({ deletePos, deleteLine }, L" ", expectedFillAttr),
                    L"One character should be erased with standard erase attributes at the cursor position.");
 
+    if (horizontalMarginsActive)
+    {
+        VERIFY_IS_TRUE(_ValidateLineContains({ viewportStart, deleteLine }, L"ABCDEFGHIJKLMNOPQRS", textAttr),
+                       L"Viewport range should remain unchanged except for the last spot.");
+        VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, deleteLine }, L"QQQQQQQQQQ", bufferAttr),
+                       L"Field of Qs right of the viewport should remain unchanged.");
+    }
+    else
+    {
+        VERIFY_IS_TRUE(_ValidateLineContains({ viewportStart, deleteLine }, L"ABCDEFGHIJKLMNOPQRST", textAttr),
+                       L"Entire viewport range should remain unchanged.");
+        VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, deleteLine }, L"QQQQQQQQQ", bufferAttr),
+                       L"Field of Qs right of the viewport should remain unchanged except for the last spot.");
+    }
+
     Log::Comment(
-        L"Test 3: Deleting at the exact beginning of the line. Same line structure. "
-        L"Move cursor to left edge of buffer and delete > buffer width of characters. "
-        L"The whole row should be replaced with spaces.");
+        L"Test 3: Deleting at the beginning of the scroll area. Same line structure. "
+        L"Move cursor to left edge of buffer or left margin and delete > buffer width of characters. "
+        L"The whole scroll area should be replaced with spaces.");
 
     // Move cursor to left edge.
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ 0, deleteLine }, true));
+    deletePos = horizontalMarginsActive ? viewportStart : 0;
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ deletePos, deleteLine }, true));
     expectedCursor = cursor.GetPosition();
 
     // Fill the entire line with Qs. Blue on Green.
@@ -4181,10 +4260,11 @@ void ScreenBufferTests::DeleteChars()
     // Fill the viewport range with text. Red on Blue.
     _FillLine({ viewportStart, deleteLine }, textChars, textAttr);
 
-    // Delete greater than the buffer width at the left edge. The entire line should be erased.
+    // Delete greater than the buffer width at the left edge.
     // Before: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQQ
-    //  After:
-    Log::Comment(L"Deleting 100 characters at the left edge of the buffer.");
+    //  After: QQQQQQQQQQ                    QQQQQQQQQQ (horizontal margins active)
+    //  After:                                          (horizontal margins inactive)
+    Log::Comment(L"Deleting 100 characters at the left edge.");
     before = si.GetTextBuffer().GetRowByOffset(deleteLine).GetText();
     stateMachine.ProcessString(L"\x1b[100P");
     after = si.GetTextBuffer().GetRowByOffset(deleteLine).GetText();
@@ -4193,8 +4273,20 @@ void ScreenBufferTests::DeleteChars()
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition(), L"Verify cursor didn't move from delete operation.");
 
     // Verify the updated structure of the line.
-    VERIFY_IS_TRUE(_ValidateLineContains(deleteLine, L' ', expectedFillAttr),
-                   L"A whole line of spaces was inserted from the right, erasing the line.");
+    if (horizontalMarginsActive)
+    {
+        VERIFY_IS_TRUE(_ValidateLineContains({ 0, deleteLine }, L"QQQQQQQQQQ", bufferAttr),
+                       L"Field of Qs left of the viewport should remain unchanged.");
+        VERIFY_IS_TRUE(_ValidateLineContains({ deletePos, deleteLine }, L"                    ", expectedFillAttr),
+                       L"Entire viewport range should be erased with spaces.");
+        VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, deleteLine }, L"QQQQQQQQQQ", bufferAttr),
+                       L"Field of Qs right of the viewport should remain unchanged.");
+    }
+    else
+    {
+        VERIFY_IS_TRUE(_ValidateLineContains(deleteLine, L' ', expectedFillAttr),
+                       L"A whole line of spaces was inserted from the right, erasing the line.");
+    }
 }
 
 void ScreenBufferTests::ScrollingWideCharsHorizontally()
