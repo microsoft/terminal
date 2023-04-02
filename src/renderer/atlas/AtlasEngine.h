@@ -82,7 +82,7 @@ namespace Microsoft::Console::Render::Atlas
         void _recreateFontDependentResources();
         void _recreateCellCountDependentResources();
         void _flushBufferLine();
-        void _mapCharacters(const wchar_t* text, u32 textLength, u32* mappedLength, float* scale, IDWriteFontFace2** mappedFontFace) const;
+        void _mapCharacters(const wchar_t* text, u32 textLength, u32* mappedLength, IDWriteFontFace2** mappedFontFace) const;
         void _mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 length, ShapedRow& row);
         __declspec(noinline) void _mapReplacementCharacter(u32 from, u32 to, ShapedRow& row);
 

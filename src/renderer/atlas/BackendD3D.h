@@ -4,6 +4,7 @@
 #pragma once
 
 #include <stb_rect_pack.h>
+#include <til/flat_set.h>
 #include <til/small_vector.h>
 
 #include "Backend.h"
@@ -18,7 +19,6 @@ namespace Microsoft::Console::Render::Atlas
         bool RequiresContinuousRedraw() noexcept override;
         void WaitUntilCanRender() noexcept override;
 
-    private:
         // NOTE: D3D constant buffers sizes must be a multiple of 16 bytes.
         struct alignas(16) VSConstBuffer
         {
@@ -66,87 +66,83 @@ namespace Microsoft::Console::Render::Atlas
             SolidFill = 5,
         };
 
-        struct QuadInstance
+        // NOTE: Don't initialize any members in this struct. This ensures that no
+        // zero-initialization needs to occur when we allocate large buffers of this object.
+        struct alignas(u32) QuadInstance
         {
             // `position` might clip outside of the bounds of the viewport and so it needs to be a
             // signed coordinate. i16x2 is used as the size of the instance buffer made the largest
             // impact on performance and power draw. If (when?) displays with >32k resolution make their
             // appearance in the future, this should be changed to f32x2. But if you do so, please change
             // all other occurrences of i16x2 positions/offsets throughout the class to keep it consistent.
-            alignas(sizeof(i16x2)) i16x2 position;
-            alignas(sizeof(i16x2)) u16x2 size;
-            alignas(sizeof(i16x2)) u16x2 texcoord;
-            alignas(sizeof(u32)) ShadingType shadingType = ShadingType::Default;
-            alignas(sizeof(u32)) u32 color = 0;
+            i16 positionX;
+            i16 positionY;
+
+            u16 sizeX;
+            u16 sizeY;
+
+            u16 texcoordX;
+            u16 texcoordY;
+
+            ShadingType shadingType;
+            u32 color;
         };
 
-        struct GlyphCacheKey
+        // NOTE: Don't initialize any members in this struct. This ensures that no
+        // zero-initialization needs to occur when we allocate large buffers of this object.
+        struct AtlasGlyphEntry
         {
-            // BODGY: The IDWriteFontFace results from us calling IDWriteFontFallback::MapCharacters
-            // which at the time of writing returns the same IDWriteFontFace as long as someone is
-            // holding a reference / the reference count doesn't drop to 0 (see ActiveFaceCache).
-            // This allows us to hash the value of the pointer as if it was uniquely identifying the font face.
-            //
-            // This isn't using a raw pointer instead of a managed struct, because this allows
-            // us to construct a GlyphCacheKey for lookup without AddRef()ing the fontFace.
-            IDWriteFontFace2* fontFace = nullptr;
-            u16 lineRendition = 0;
-            u16 glyphIndex = 0;
-#ifdef _WIN64
-            u32 _padding = 0;
-#endif
+            u16 glyphIndex;
+            // All data in QuadInstance is u32-aligned anyways, so this simultaneously serves as padding.
+            u16 _occupied;
+            QuadInstance data;
         };
-        static_assert(std::has_unique_object_representations_v<GlyphCacheKey>);
 
-        // Due to padding on 64-Bit systems, sizeof(GlyphCacheKey) will be 16,
-        // but the actual contents of the struct still only be 12 bytes.
-        static constexpr size_t GlyphCacheKeyDataSize =
-            sizeof(GlyphCacheKey::fontFace) +
-            sizeof(GlyphCacheKey::lineRendition) +
-            sizeof(GlyphCacheKey::glyphIndex);
-
-        struct GlyphCacheData
+        // This exists so that we can look up a AtlasFontFaceEntry without AddRef()/Release()ing fontFace first.
+        struct AtlasFontFaceKey
         {
-            i16x2 offset;
-            u16x2 size;
-            u16x2 texcoord;
-            ShadingType shadingType = ShadingType::Default;
+            IDWriteFontFace2* fontFace;
+            LineRendition lineRendition;
         };
-        static_assert(std::has_unique_object_representations_v<GlyphCacheData>);
 
-        struct GlyphCacheEntry
+        // Just... uh... turn around and pretend you don't see this.
+        // This stuffs (or extracts, below) a pointer and the line rendition into a single pointer. This works because in C (and COM)
+        // the minimum heap allocation alignment is at least 8 (the size of a double) and so the lowest 4 bit are free real estate.
+        //
+        // I'm doing this because it shrinks the size of AtlasFontFaceEntry by a third and simplifies
+        // both the hashing and comparison code for the hashmap lookup from the POV of the CPU.
+        static constexpr uintptr_t combineAtlasFontFaceKey(IDWriteFontFace2* fontFace, LineRendition lineRendition) noexcept
         {
-            GlyphCacheKey key;
-            GlyphCacheData data;
-        };
-        static_assert(std::has_unique_object_representations_v<GlyphCacheEntry>);
+            const auto p = std::bit_cast<uintptr_t>(fontFace);
+            assert((p & 7) == 0);
+            return p | static_cast<u8>(lineRendition);
+        }
 
-        struct GlyphCacheMap
+        static constexpr IDWriteFontFace2* extractAtlasFontFaceKey(uintptr_t c) noexcept
         {
-            GlyphCacheMap() = default;
-            ~GlyphCacheMap();
+            return std::bit_cast<IDWriteFontFace2*>(c & ~7);
+        }
 
-            GlyphCacheMap(const GlyphCacheMap&) = delete;
-            GlyphCacheMap(GlyphCacheMap&&) = delete;
+        struct AtlasFontFaceEntryInner
+        {
+            // BODGY: At the time of writing IDWriteFontFallback::MapCharacters returns the same IDWriteFontFace instance
+            // for the same font face variant as long as someone is holding a reference to the instance (see ActiveFaceCache).
+            // This allows us to hash the value of the pointer as if it was uniquely identifying the font face variant.
+            wil::com_ptr<IDWriteFontFace2> fontFace;
+            LineRendition lineRendition = LineRendition::SingleWidth;
 
-            const GlyphCacheMap& operator=(const GlyphCacheMap&) = delete;
-            GlyphCacheMap& operator=(GlyphCacheMap&& other) noexcept;
-
-            size_t Size() const noexcept;
-            void Clear() noexcept;
-            GlyphCacheEntry& FindOrInsert(const GlyphCacheKey& key, bool& inserted);
-
-        private:
-            static size_t _hash(const GlyphCacheKey& key) noexcept;
-            static bool _equals(const GlyphCacheKey& lhs, const GlyphCacheKey& rhs) noexcept;
-            void _bumpSize();
-
-            Buffer<GlyphCacheEntry> _map;
-            size_t _mask = 0;
-            size_t _capacity = 0;
-            size_t _size = 0;
+            til::linear_flat_set<AtlasGlyphEntry> glyphs;
         };
 
+        struct AtlasFontFaceEntry
+        {
+            // This being a heap allocated allows us to insert into `glyphs` in `_splitDoubleHeightGlyph`
+            // (which might resize the hashmap!), while the caller `_drawText` is holding onto `glyphs`.
+            // If it wasn't heap allocated, all pointers into `linear_flat_set` would be invalidated.
+            std::unique_ptr<AtlasFontFaceEntryInner> inner;
+        };
+
+    private:
         __declspec(noinline) void _handleSettingsUpdate(const RenderingPayload& p);
         void _updateFontDependents(const RenderingPayload& p);
         void _recreateCustomShader(const RenderingPayload& p);
@@ -170,10 +166,10 @@ namespace Microsoft::Console::Render::Atlas
         __declspec(noinline) void _recreateInstanceBuffers(const RenderingPayload& p);
         void _drawBackground(const RenderingPayload& p);
         void _drawText(RenderingPayload& p);
-        __declspec(noinline) [[nodiscard]] bool _drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f32 fontEmSize);
-        bool _drawSoftFontGlyph(const RenderingPayload& p, GlyphCacheEntry& entry);
+        __declspec(noinline) [[nodiscard]] bool _drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
+        bool _drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         void _drawGlyphPrepareRetry(const RenderingPayload& p);
-        void _splitDoubleHeightGlyph(const RenderingPayload& p, GlyphCacheEntry& entry);
+        void _splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         void _drawGridlines(const RenderingPayload& p);
         void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
         void _drawCursorPart1(const RenderingPayload& p);
@@ -227,7 +223,7 @@ namespace Microsoft::Console::Render::Atlas
 
         wil::com_ptr<ID3D11Texture2D> _glyphAtlas;
         wil::com_ptr<ID3D11ShaderResourceView> _glyphAtlasView;
-        GlyphCacheMap _glyphCache;
+        til::linear_flat_set<AtlasFontFaceEntry> _glyphAtlasMap;
         Buffer<stbrp_node> _rectPackerData;
         stbrp_context _rectPacker{};
 

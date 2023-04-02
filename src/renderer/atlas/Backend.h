@@ -108,8 +108,8 @@ namespace Microsoft::Console::Render::Atlas
         return val < min ? min : (max < val ? max : val);
     }
 
-    wil::com_ptr<IDWriteColorGlyphRunEnumerator1> TranslateColorGlyphRun(IDWriteFactory4* dwriteFactory4, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun);
+    wil::com_ptr<IDWriteColorGlyphRunEnumerator1> TranslateColorGlyphRun(IDWriteFactory4* dwriteFactory4, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun) noexcept;
     bool DrawGlyphRun(ID2D1DeviceContext* d2dRenderTarget, ID2D1DeviceContext4* d2dRenderTarget4, IDWriteFactory4* dwriteFactory4, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, ID2D1Brush* foregroundBrush);
-    void DrawBasicGlyphRun(ID2D1DeviceContext* d2dRenderTarget, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, ID2D1Brush* foregroundBrush);
+    void DrawBasicGlyphRun(ID2D1DeviceContext* d2dRenderTarget, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, ID2D1Brush* foregroundBrush) noexcept;
     void DrawColorGlyphRun(ID2D1DeviceContext4* d2dRenderTarget4, IDWriteColorGlyphRunEnumerator1* enumerator, ID2D1Brush* foregroundBrush);
 }

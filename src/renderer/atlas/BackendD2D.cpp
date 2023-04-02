@@ -195,14 +195,14 @@ void BackendD2D::_drawText(RenderingPayload& p)
         {
             for (const auto& m : row->mappings)
             {
-                if (!m.fontFace.is_proper_font())
+                if (!m.fontFace)
                 {
                     continue;
                 }
 
                 const DWRITE_GLYPH_RUN glyphRun{
                     .fontFace = m.fontFace.get(),
-                    .fontEmSize = m.fontEmSize,
+                    .fontEmSize = p.s->font->fontSize,
                     .glyphCount = gsl::narrow_cast<UINT32>(m.glyphsTo - m.glyphsFrom),
                     .glyphIndices = &row->glyphIndices[m.glyphsFrom],
                     .glyphAdvances = &row->glyphAdvances[m.glyphsFrom],
@@ -267,7 +267,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
                 const auto brush = _brushWithColor(fg);
                 const DWRITE_GLYPH_RUN glyphRun{
                     .fontFace = m.fontFace.get(),
-                    .fontEmSize = m.fontEmSize,
+                    .fontEmSize = p.s->font->fontSize,
                     .glyphCount = gsl::narrow_cast<UINT32>(count),
                     .glyphIndices = &row->glyphIndices[off],
                     .glyphAdvances = &row->glyphAdvances[off],
@@ -278,7 +278,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
                     baselineY,
                 };
 
-                if (m.fontFace.is_proper_font())
+                if (glyphRun.fontFace)
                 {
                     DrawGlyphRun(_renderTarget.get(), _renderTarget4.get(), p.dwriteFactory4.get(), baselineOrigin, &glyphRun, brush);
                 }

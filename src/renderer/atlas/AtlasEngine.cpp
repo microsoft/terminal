@@ -582,9 +582,8 @@ void AtlasEngine::_flushBufferLine()
 #pragma warning(suppress : 26494) // Variable 'mappedEnd' is uninitialized. Always initialize an object (type.5).
     for (u32 idx = 0, mappedEnd; idx < _api.bufferLine.size(); idx = mappedEnd)
     {
-        f32 scale = 1;
         u32 mappedLength = 0;
-        _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx, &mappedLength, &scale, mappedFontFace.put());
+        _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx, &mappedLength, mappedFontFace.put());
         mappedEnd = idx + mappedLength;
 
         if (!mappedFontFace)
@@ -634,15 +633,19 @@ void AtlasEngine::_flushBufferLine()
         const auto indicesCount = row.glyphIndices.size();
         if (indicesCount > initialIndicesCount)
         {
-            row.mappings.emplace_back(std::move(mappedFontFace), _p.s->font->fontSize * scale, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
+            row.mappings.emplace_back(std::move(mappedFontFace), gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
         }
     }
 }
 
-void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32* mappedLength, float* scale, IDWriteFontFace2** mappedFontFace) const
+void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32* mappedLength, IDWriteFontFace2** mappedFontFace) const
 {
     TextAnalysisSource analysisSource{ text, textLength };
     const auto& textFormatAxis = _api.textFormatAxes[static_cast<size_t>(_api.attributes)];
+
+    // We don't read from scale anyways.
+#pragma warning(suppress : 26494) // Variable 'scale' is uninitialized. Always initialize an object (type.5).
+    f32 scale;
 
     if (textFormatAxis)
     {
@@ -655,7 +658,7 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
             /* fontAxisValues     */ textFormatAxis.data(),
             /* fontAxisValueCount */ gsl::narrow_cast<u32>(textFormatAxis.size()),
             /* mappedLength       */ mappedLength,
-            /* scale              */ scale,
+            /* scale              */ &scale,
             /* mappedFontFace     */ reinterpret_cast<IDWriteFontFace5**>(mappedFontFace)));
     }
     else
@@ -675,7 +678,7 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
             /* baseStretch        */ DWRITE_FONT_STRETCH_NORMAL,
             /* mappedLength       */ mappedLength,
             /* mappedFont         */ font.addressof(),
-            /* scale              */ scale));
+            /* scale              */ &scale));
 
         if (font)
         {
@@ -837,8 +840,7 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
         bool succeeded = false;
 
         u32 mappedLength = 0;
-        f32 scale = 1.0f;
-        _mapCharacters(L"\uFFFD", 1, &mappedLength, &scale, _api.replacementCharacterFontFace.put());
+        _mapCharacters(L"\uFFFD", 1, &mappedLength, _api.replacementCharacterFontFace.put());
 
         if (mappedLength == 1)
         {
@@ -896,7 +898,7 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
 
             if (indicesCount > initialIndicesCount)
             {
-                row.mappings.emplace_back(fontFace, _p.s->font->fontSize, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
+                row.mappings.emplace_back(fontFace, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
                 initialIndicesCount = indicesCount;
             }
         }
@@ -912,7 +914,7 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
 
         if (indicesCount > initialIndicesCount)
         {
-            row.mappings.emplace_back(fontFace, _p.s->font->fontSize, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
+            row.mappings.emplace_back(fontFace, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
         }
     }
 }

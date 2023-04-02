@@ -170,7 +170,7 @@ void SwapChainManager::_updateMatrixTransform(const RenderingPayload& p)
     _fontGeneration = p.s->font.generation();
 }
 
-wil::com_ptr<IDWriteColorGlyphRunEnumerator1> Microsoft::Console::Render::Atlas::TranslateColorGlyphRun(IDWriteFactory4* dwriteFactory4, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun)
+wil::com_ptr<IDWriteColorGlyphRunEnumerator1> Microsoft::Console::Render::Atlas::TranslateColorGlyphRun(IDWriteFactory4* dwriteFactory4, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun) noexcept
 {
     static constexpr auto formats =
         DWRITE_GLYPH_IMAGE_FORMATS_TRUETYPE |
@@ -186,7 +186,7 @@ wil::com_ptr<IDWriteColorGlyphRunEnumerator1> Microsoft::Console::Render::Atlas:
 
     if (dwriteFactory4)
     {
-        THROW_IF_FAILED(dwriteFactory4->TranslateColorGlyphRun(baselineOrigin, glyphRun, nullptr, formats, DWRITE_MEASURING_MODE_NATURAL, nullptr, 0, enumerator.addressof()));
+        std::ignore = dwriteFactory4->TranslateColorGlyphRun(baselineOrigin, glyphRun, nullptr, formats, DWRITE_MEASURING_MODE_NATURAL, nullptr, 0, enumerator.addressof());
     }
 
     return enumerator;
@@ -210,7 +210,7 @@ bool Microsoft::Console::Render::Atlas::DrawGlyphRun(ID2D1DeviceContext* d2dRend
     }
 }
 
-void Microsoft::Console::Render::Atlas::DrawBasicGlyphRun(ID2D1DeviceContext* d2dRenderTarget, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, ID2D1Brush* foregroundBrush)
+void Microsoft::Console::Render::Atlas::DrawBasicGlyphRun(ID2D1DeviceContext* d2dRenderTarget, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, ID2D1Brush* foregroundBrush) noexcept
 {
     d2dRenderTarget->DrawGlyphRun(baselineOrigin, glyphRun, foregroundBrush, DWRITE_MEASURING_MODE_NATURAL);
 }
