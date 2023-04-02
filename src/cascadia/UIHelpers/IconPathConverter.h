@@ -2,7 +2,7 @@
 
 #include "IconPathConverter.g.h"
 
-namespace winrt::Microsoft::Terminal::Settings::Model::implementation
+namespace winrt::Microsoft::Terminal::UI::implementation
 {
     struct IconPathConverter : IconPathConverterT<IconPathConverter>
     {
@@ -23,7 +23,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     };
 }
 
-namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
+namespace winrt::Microsoft::Terminal::UI::factory_implementation
 {
     BASIC_FACTORY(IconPathConverter);
 }

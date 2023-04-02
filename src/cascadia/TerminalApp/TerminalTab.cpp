@@ -295,7 +295,7 @@ namespace winrt::TerminalApp::implementation
         {
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
             Icon(_lastIconPath);
-            TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
+            TabViewItem().IconSource(Microsoft::Terminal::UI::IconPathConverter::IconSourceMUX(_lastIconPath));
         }
     }
 
@@ -322,7 +322,7 @@ namespace winrt::TerminalApp::implementation
                 else
                 {
                     Icon(_lastIconPath);
-                    TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
+                    TabViewItem().IconSource(Microsoft::Terminal::UI::IconPathConverter::IconSourceMUX(_lastIconPath));
                 }
                 tab->_iconHidden = hide;
             }

@@ -111,7 +111,7 @@ namespace winrt::TerminalApp::implementation
 
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
             Icon(glyph);
-            TabViewItem().IconSource(IconPathConverter::IconSourceMUX(glyph));
+            TabViewItem().IconSource(Microsoft::Terminal::UI::IconPathConverter::IconSourceMUX(glyph));
         }
     }
 
