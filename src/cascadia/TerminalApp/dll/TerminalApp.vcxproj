@@ -70,6 +70,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
+      <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
+    </ProjectReference>
     <!-- Reference TerminalAppLib here, so we can use its TerminalApp.winmd as
     our TerminalApp.winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
