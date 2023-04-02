@@ -18,7 +18,6 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            <mtu:IconPathConverter x:Key="IconSourceConverter" />
         </ResourceDictionary>
     </Page.Resources>
 
@@ -61,7 +60,7 @@
                                     <IconSourceElement Grid.Column="0"
                                                        Width="16"
                                                        Height="16"
-                                                       IconSource="{x:Bind Icon, Converter={StaticResource IconSourceConverter}}" />
+                                                       IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneTime}" />
 
                                     <TextBlock Grid.Column="1"
                                                Text="{x:Bind Name}" />

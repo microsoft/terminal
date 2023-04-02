@@ -95,7 +95,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         return nullptr;
     }
 
-    _TIL_INLINEPREFIX winrt::hstring _expandIconPath(hstring iconPath)
+    static winrt::hstring _expandIconPath(const hstring& iconPath)
     {
         if (iconPath.empty())
         {
@@ -178,51 +178,25 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         return iconSource;
     }
 
-    // Method Description:
-    // - Attempt to convert something into another type. For the
-    //   IconPathConverter, we support a variety of icons:
-    //    * If the icon is a path to an image, we'll use that.
-    //    * If it isn't, then we'll try and use the text as a FontIcon. If the
-    //      character is in the range of symbols reserved for the Segoe MDL2
-    //      Asserts, well treat it as such. Otherwise, we'll default to a Sego
-    //      UI icon, so things like emoji will work.
-    // - MUST BE CALLED ON THE UI THREAD.
-    // Arguments:
-    // - value: the input object to attempt to convert into an IconSource.
-    // Return Value:
-    // - Visible if the object was a string and wasn't the empty string.
-    Foundation::IInspectable IconPathConverter::Convert(const Foundation::IInspectable& value,
-                                                        const Windows::UI::Xaml::Interop::TypeName& /* targetType */,
-                                                        const Foundation::IInspectable& /* parameter */,
-                                                        const hstring& /* language */)
+    Windows::UI::Xaml::Controls::IconSource IconPathConverter::IconSourceWUX(const hstring& path)
     {
-        const auto& iconPath = winrt::unbox_value_or<winrt::hstring>(value, L"");
-        return _getIconSource<Controls::IconSource>(iconPath);
-    }
-
-    // unused for one-way bindings
-    Foundation::IInspectable IconPathConverter::ConvertBack(const Foundation::IInspectable& /* value */,
-                                                            const Windows::UI::Xaml::Interop::TypeName& /* targetType */,
-                                                            const Foundation::IInspectable& /* parameter */,
-                                                            const hstring& /* language */)
-    {
-        throw hresult_not_implemented();
-    }
-
-    Windows::UI::Xaml::Controls::IconSource _IconSourceWUX(hstring path)
-    {
+        //    * If the icon is a path to an image, we'll use that.
+        //    * If it isn't, then we'll try and use the text as a FontIcon. If the
+        //      character is in the range of symbols reserved for the Segoe MDL2
+        //      Asserts, well treat it as such. Otherwise, we'll default to a Segoe
+        //      UI icon, so things like emoji will work.
         return _getIconSource<Windows::UI::Xaml::Controls::IconSource>(path);
     }
 
-    Microsoft::UI::Xaml::Controls::IconSource _IconSourceMUX(hstring path)
+    static Microsoft::UI::Xaml::Controls::IconSource _IconSourceMUX(const hstring& path)
     {
         return _getIconSource<Microsoft::UI::Xaml::Controls::IconSource>(path);
     }
 
-    SoftwareBitmap _convertToSoftwareBitmap(HICON hicon,
-                                            BitmapPixelFormat pixelFormat,
-                                            BitmapAlphaMode alphaMode,
-                                            IWICImagingFactory* imagingFactory)
+    static SoftwareBitmap _convertToSoftwareBitmap(HICON hicon,
+                                                   BitmapPixelFormat pixelFormat,
+                                                   BitmapAlphaMode alphaMode,
+                                                   IWICImagingFactory* imagingFactory)
     {
         // Load the icon into an IWICBitmap
         wil::com_ptr<IWICBitmap> iconBitmap;
@@ -245,9 +219,9 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         return softwareBitmap;
     }
 
-    SoftwareBitmap _getBitmapFromIconFileAsync(const winrt::hstring& iconPath,
-                                               int32_t iconIndex,
-                                               uint32_t iconSize)
+    static SoftwareBitmap _getBitmapFromIconFileAsync(const winrt::hstring& iconPath,
+                                                      int32_t iconIndex,
+                                                      uint32_t iconSize)
     {
         wil::unique_hicon hicon;
         LOG_IF_FAILED(SHDefExtractIcon(iconPath.c_str(), iconIndex, 0, &hicon, nullptr, iconSize));
@@ -276,7 +250,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
     // - 0 if the iconPath is an exe/dll/lnk file but does not contain an index (i.e. we default
     //   to the first icon in the file)
     // - the icon index if the iconPath is an exe/dll/lnk file and contains an index
-    std::optional<int> _getIconIndex(const winrt::hstring& iconPath, std::wstring_view& iconPathWithoutIndex)
+    static std::optional<int> _getIconIndex(const winrt::hstring& iconPath, std::wstring_view& iconPathWithoutIndex)
     {
         const auto pathView = std::wstring_view{ iconPath };
         // Does iconPath have a comma in it? If so, split the string on the
@@ -309,8 +283,8 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         return 0;
     }
 
-    winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource _getImageIconSourceForBinary(std::wstring_view iconPathWithoutIndex,
-                                                                                                int index)
+    static winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource _getImageIconSourceForBinary(std::wstring_view iconPathWithoutIndex,
+                                                                                                       int index)
     {
         // Try:
         // * c:\Windows\System32\SHELL32.dll, 210
@@ -352,7 +326,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         const auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
         if (!indexOpt.has_value())
         {
-            auto source = _IconSourceWUX(iconPath);
+            auto source = IconSourceWUX(iconPath);
             Controls::IconSourceElement icon;
             icon.IconSource(source);
             return icon;

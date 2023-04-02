@@ -23,7 +23,6 @@
                           x:DataType="local:EnumEntry">
                 <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
-            <mtu:IconPathConverter x:Key="IconSourceConverter" />
             <Style x:Key="LaunchSizeNumberBoxStyle"
                    BasedOn="{StaticResource NumberBoxSettingStyle}"
                    TargetType="muxc:NumberBox">
@@ -58,7 +57,7 @@
                                     <IconSourceElement Grid.Column="0"
                                                        Width="16"
                                                        Height="16"
-                                                       IconSource="{x:Bind Icon, Converter={StaticResource IconSourceConverter}}" />
+                                                       IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneTime}" />
 
                                     <TextBlock Grid.Column="1"
                                                Text="{x:Bind Name}" />
@@ -105,7 +104,7 @@
                                                        Width="24"
                                                        Height="24"
                                                        VerticalAlignment="Center"
-                                                       IconSource="{x:Bind Icon, Converter={StaticResource IconSourceConverter}}" />
+                                                       IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneTime}" />
 
                                     <TextBlock Grid.Row="0"
                                                Grid.Column="1"
