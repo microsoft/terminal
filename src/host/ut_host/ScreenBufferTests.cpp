@@ -4556,24 +4556,24 @@ void ScreenBufferTests::ProtectedAttributeTests()
 void _CommonScrollingSetup()
 {
     // Used for testing MSFT:20204600
-    // Place an A on the first line, and a B on the 6th line (index 5).
+    // Place As on the first line, and Bs on the 6th line (index 5).
     // Set the scrolling region in between those lines (so scrolling won't affect them.)
-    // First write "1\n2\n3\n4", to put 1-4 on the lines in between the A and B.
+    // First write "1111\n2222\n3333\n4444", to put 1-4 on the lines in between the A and B.
     // the viewport will look like:
-    // A
-    // 1
-    // 2
-    // 3
-    // 4
-    // B
-    // then write "\n5\n6\n7\n", which will cycle around the scroll region a bit.
+    // AAAAAA...
+    // 111111...
+    // 222222...
+    // 333333...
+    // 444444...
+    // BBBBBB...
+    // then write "\n5555\n6666\n7777\n", which will cycle around the scroll region a bit.
     // the viewport will look like:
-    // A
-    // 5
-    // 6
-    // 7
+    // AAAAAA...
+    // 555555...
+    // 666666...
+    // 777777...
     //
-    // B
+    // BBBBBB...
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
@@ -4582,38 +4582,46 @@ void _CommonScrollingSetup()
     auto& cursor = si.GetTextBuffer().GetCursor();
     const auto oldView = si.GetViewport();
     const auto view = Viewport::FromDimensions({ 0, 0 }, { oldView.Width(), 6 });
+    const auto bufferWidth = tbi.GetSize().Width();
+    const auto attr = tbi.GetCurrentAttributes();
+
     si.SetViewport(view, true);
     cursor.SetPosition({ 0, 0 });
-    stateMachine.ProcessString(L"A");
+    stateMachine.ProcessString(std::wstring(bufferWidth, L'A'));
     cursor.SetPosition({ 0, 5 });
-    stateMachine.ProcessString(L"B");
+    stateMachine.ProcessString(std::wstring(bufferWidth, L'B'));
     stateMachine.ProcessString(L"\x1b[2;5r");
     stateMachine.ProcessString(L"\x1b[2;1H");
-    stateMachine.ProcessString(L"1\n2\n3\n4");
+    stateMachine.ProcessString(std::wstring(bufferWidth, L'1'));
+    stateMachine.ProcessCharacter(L'\n');
+    stateMachine.ProcessString(std::wstring(bufferWidth, L'2'));
+    stateMachine.ProcessCharacter(L'\n');
+    stateMachine.ProcessString(std::wstring(bufferWidth, L'3'));
+    stateMachine.ProcessCharacter(L'\n');
+    stateMachine.ProcessString(std::wstring(bufferWidth, L'4'));
 
     Log::Comment(NoThrowString().Format(
         L"cursor=%s", VerifyOutputTraits<til::point>::ToString(cursor.GetPosition()).GetBuffer()));
     Log::Comment(NoThrowString().Format(
         L"viewport=%s", VerifyOutputTraits<til::inclusive_rect>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
 
-    VERIFY_ARE_EQUAL(1, cursor.GetPosition().x);
+    VERIFY_ARE_EQUAL(bufferWidth - 1, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(4, cursor.GetPosition().y);
-    {
-        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
-        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
-        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
-        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
-        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
-        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
-        VERIFY_ARE_EQUAL(L"A", iter0->Chars());
-        VERIFY_ARE_EQUAL(L"1", iter1->Chars());
-        VERIFY_ARE_EQUAL(L"2", iter2->Chars());
-        VERIFY_ARE_EQUAL(L"3", iter3->Chars());
-        VERIFY_ARE_EQUAL(L"4", iter4->Chars());
-        VERIFY_ARE_EQUAL(L"B", iter5->Chars());
-    }
 
-    stateMachine.ProcessString(L"\n5\n6\n7\n");
+    VERIFY_IS_TRUE(_ValidateLineContains(0, L'A', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(1, L'1', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(2, L'2', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(3, L'3', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(4, L'4', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(5, L'B', attr));
+
+    stateMachine.ProcessCharacter(L'\n');
+    stateMachine.ProcessString(std::wstring(bufferWidth, L'5'));
+    stateMachine.ProcessCharacter(L'\n');
+    stateMachine.ProcessString(std::wstring(bufferWidth, L'6'));
+    stateMachine.ProcessCharacter(L'\n');
+    stateMachine.ProcessString(std::wstring(bufferWidth, L'7'));
+    stateMachine.ProcessCharacter(L'\n');
 
     Log::Comment(NoThrowString().Format(
         L"cursor=%s", VerifyOutputTraits<til::point>::ToString(cursor.GetPosition()).GetBuffer()));
@@ -4622,21 +4630,13 @@ void _CommonScrollingSetup()
 
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(4, cursor.GetPosition().y);
-    {
-        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
-        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
-        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
-        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
-        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
-        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
-        VERIFY_ARE_EQUAL(L"A", iter0->Chars());
-        VERIFY_ARE_EQUAL(L"5", iter1->Chars());
-        VERIFY_ARE_EQUAL(L"6", iter2->Chars());
-        VERIFY_ARE_EQUAL(L"7", iter3->Chars());
-        // Chars() will return a single space for an empty row.
-        VERIFY_ARE_EQUAL(L"\x20", iter4->Chars());
-        VERIFY_ARE_EQUAL(L"B", iter5->Chars());
-    }
+
+    VERIFY_IS_TRUE(_ValidateLineContains(0, L'A', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(1, L'5', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(2, L'6', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(3, L'7', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(4, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(5, L'B', attr));
 }
 
 void ScreenBufferTests::ScrollUpInMargins()
@@ -4650,7 +4650,8 @@ void ScreenBufferTests::ScrollUpInMargins()
     auto& si = gci.GetActiveOutputBuffer();
     auto& tbi = si.GetTextBuffer();
     auto& stateMachine = si.GetStateMachine();
-    auto& cursor = si.GetTextBuffer().GetCursor();
+    auto& cursor = tbi.GetCursor();
+    const auto attr = tbi.GetCurrentAttributes();
 
     // Execute a Scroll Up command
     stateMachine.ProcessString(L"\x1b[S");
@@ -4662,20 +4663,35 @@ void ScreenBufferTests::ScrollUpInMargins()
 
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(4, cursor.GetPosition().y);
-    {
-        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
-        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
-        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
-        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
-        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
-        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
-        VERIFY_ARE_EQUAL(L"A", iter0->Chars());
-        VERIFY_ARE_EQUAL(L"6", iter1->Chars());
-        VERIFY_ARE_EQUAL(L"7", iter2->Chars());
-        VERIFY_ARE_EQUAL(L"\x20", iter3->Chars());
-        VERIFY_ARE_EQUAL(L"\x20", iter4->Chars());
-        VERIFY_ARE_EQUAL(L"B", iter5->Chars());
-    }
+
+    VERIFY_IS_TRUE(_ValidateLineContains(0, L'A', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(1, L'6', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(2, L'7', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(3, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(4, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(5, L'B', attr));
+
+    _CommonScrollingSetup();
+    // Set horizontal margins
+    stateMachine.ProcessString(L"\x1b[?69h");
+    stateMachine.ProcessString(L"\x1b[3;6s");
+    auto resetMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[?69l"); });
+
+    // Execute a Scroll Up command
+    stateMachine.ProcessString(L"\x1b[S");
+
+    VERIFY_IS_TRUE(_ValidateLineContains(0, L'A', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 1 }, L"55", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 1 }, L"6666", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 1 }, L'5', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 2 }, L"66", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 2 }, L"7777", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 2 }, L'6', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 3 }, L"77", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 3 }, L"    ", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 3 }, L'7', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(4, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(5, L'B', attr));
 }
 
 void ScreenBufferTests::ScrollDownInMargins()
@@ -4689,7 +4705,8 @@ void ScreenBufferTests::ScrollDownInMargins()
     auto& si = gci.GetActiveOutputBuffer();
     auto& tbi = si.GetTextBuffer();
     auto& stateMachine = si.GetStateMachine();
-    auto& cursor = si.GetTextBuffer().GetCursor();
+    auto& cursor = tbi.GetCursor();
+    const auto attr = tbi.GetCurrentAttributes();
 
     // Execute a Scroll Down command
     stateMachine.ProcessString(L"\x1b[T");
@@ -4701,20 +4718,37 @@ void ScreenBufferTests::ScrollDownInMargins()
 
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(4, cursor.GetPosition().y);
-    {
-        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
-        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
-        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
-        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
-        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
-        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
-        VERIFY_ARE_EQUAL(L"A", iter0->Chars());
-        VERIFY_ARE_EQUAL(L"\x20", iter1->Chars());
-        VERIFY_ARE_EQUAL(L"5", iter2->Chars());
-        VERIFY_ARE_EQUAL(L"6", iter3->Chars());
-        VERIFY_ARE_EQUAL(L"7", iter4->Chars());
-        VERIFY_ARE_EQUAL(L"B", iter5->Chars());
-    }
+
+    VERIFY_IS_TRUE(_ValidateLineContains(0, L'A', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(1, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(2, L'5', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(3, L'6', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(4, L'7', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(5, L'B', attr));
+
+    _CommonScrollingSetup();
+    // Set horizontal margins
+    stateMachine.ProcessString(L"\x1b[?69h");
+    stateMachine.ProcessString(L"\x1b[3;6s");
+    auto resetMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[?69l"); });
+
+    // Execute a Scroll Down command
+    stateMachine.ProcessString(L"\x1b[T");
+
+    VERIFY_IS_TRUE(_ValidateLineContains(0, L'A', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 1 }, L"55", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 1 }, L"    ", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 1 }, L'5', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 2 }, L"66", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 2 }, L"5555", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 2 }, L'6', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 3 }, L"77", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 3 }, L"6666", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 3 }, L'7', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 4 }, L"  ", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 4 }, L"7777", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 4 }, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(5, L'B', attr));
 }
 
 void ScreenBufferTests::InsertLinesInMargins()
@@ -4728,7 +4762,8 @@ void ScreenBufferTests::InsertLinesInMargins()
     auto& si = gci.GetActiveOutputBuffer();
     auto& tbi = si.GetTextBuffer();
     auto& stateMachine = si.GetStateMachine();
-    auto& cursor = si.GetTextBuffer().GetCursor();
+    auto& cursor = tbi.GetCursor();
+    const auto attr = tbi.GetCurrentAttributes();
 
     // Move to column 5 of line 3
     stateMachine.ProcessString(L"\x1b[3;5H");
@@ -4743,20 +4778,13 @@ void ScreenBufferTests::InsertLinesInMargins()
     // Verify cursor moved to left margin.
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(2, cursor.GetPosition().y);
-    {
-        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
-        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
-        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
-        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
-        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
-        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
-        VERIFY_ARE_EQUAL(L"A", iter0->Chars());
-        VERIFY_ARE_EQUAL(L"5", iter1->Chars());
-        VERIFY_ARE_EQUAL(L"\x20", iter2->Chars());
-        VERIFY_ARE_EQUAL(L"\x20", iter3->Chars());
-        VERIFY_ARE_EQUAL(L"6", iter4->Chars());
-        VERIFY_ARE_EQUAL(L"B", iter5->Chars());
-    }
+
+    VERIFY_IS_TRUE(_ValidateLineContains(0, L'A', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(1, L'5', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(2, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(3, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(4, L'6', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(5, L'B', attr));
 
     Log::Comment(
         L"Does the common scrolling setup, then inserts one line with no "
@@ -4778,20 +4806,44 @@ void ScreenBufferTests::InsertLinesInMargins()
     // Verify cursor moved to left margin.
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(1, cursor.GetPosition().y);
-    {
-        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
-        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
-        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
-        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
-        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
-        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
-        VERIFY_ARE_EQUAL(L"A", iter0->Chars());
-        VERIFY_ARE_EQUAL(L"\x20", iter1->Chars());
-        VERIFY_ARE_EQUAL(L"5", iter2->Chars());
-        VERIFY_ARE_EQUAL(L"6", iter3->Chars());
-        VERIFY_ARE_EQUAL(L"7", iter4->Chars());
-        VERIFY_ARE_EQUAL(L"\x20", iter5->Chars());
-    }
+
+    VERIFY_IS_TRUE(_ValidateLineContains(0, L'A', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(1, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(2, L'5', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(3, L'6', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(4, L'7', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(5, L' ', attr));
+
+    Log::Comment(
+        L"Does the common scrolling setup, then inserts two lines inside the "
+        L"margin boundaries, and verifies the rows have what we'd expect.");
+
+    _CommonScrollingSetup();
+    // Set horizontal margins
+    stateMachine.ProcessString(L"\x1b[?69h");
+    stateMachine.ProcessString(L"\x1b[3;6s");
+    auto resetMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[?69l"); });
+    // Move to column 5 of line 3
+    stateMachine.ProcessString(L"\x1b[3;5H");
+    // Insert 2 lines
+    stateMachine.ProcessString(L"\x1b[2L");
+
+    // Verify cursor moved to left margin.
+    VERIFY_ARE_EQUAL(2, cursor.GetPosition().x);
+    VERIFY_ARE_EQUAL(2, cursor.GetPosition().y);
+
+    VERIFY_IS_TRUE(_ValidateLineContains(0, L'A', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(1, L'5', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 2 }, L"66", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 2 }, L"    ", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 2 }, L'6', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 3 }, L"77", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 3 }, L"    ", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 3 }, L'7', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 4 }, L"  ", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 4 }, L"6666", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 4 }, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(5, L'B', attr));
 }
 
 void ScreenBufferTests::DeleteLinesInMargins()
@@ -4805,7 +4857,8 @@ void ScreenBufferTests::DeleteLinesInMargins()
     auto& si = gci.GetActiveOutputBuffer();
     auto& tbi = si.GetTextBuffer();
     auto& stateMachine = si.GetStateMachine();
-    auto& cursor = si.GetTextBuffer().GetCursor();
+    auto& cursor = tbi.GetCursor();
+    const auto attr = tbi.GetCurrentAttributes();
 
     // Move to column 5 of line 3
     stateMachine.ProcessString(L"\x1b[3;5H");
@@ -4820,20 +4873,13 @@ void ScreenBufferTests::DeleteLinesInMargins()
     // Verify cursor moved to left margin.
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(2, cursor.GetPosition().y);
-    {
-        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
-        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
-        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
-        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
-        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
-        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
-        VERIFY_ARE_EQUAL(L"A", iter0->Chars());
-        VERIFY_ARE_EQUAL(L"5", iter1->Chars());
-        VERIFY_ARE_EQUAL(L"\x20", iter2->Chars());
-        VERIFY_ARE_EQUAL(L"\x20", iter3->Chars());
-        VERIFY_ARE_EQUAL(L"\x20", iter4->Chars());
-        VERIFY_ARE_EQUAL(L"B", iter5->Chars());
-    }
+
+    VERIFY_IS_TRUE(_ValidateLineContains(0, L'A', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(1, L'5', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(2, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(3, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(4, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(5, L'B', attr));
 
     Log::Comment(
         L"Does the common scrolling setup, then deletes one line with no "
@@ -4855,20 +4901,42 @@ void ScreenBufferTests::DeleteLinesInMargins()
     // Verify cursor moved to left margin.
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(1, cursor.GetPosition().y);
-    {
-        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
-        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
-        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
-        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
-        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
-        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
-        VERIFY_ARE_EQUAL(L"A", iter0->Chars());
-        VERIFY_ARE_EQUAL(L"6", iter1->Chars());
-        VERIFY_ARE_EQUAL(L"7", iter2->Chars());
-        VERIFY_ARE_EQUAL(L"\x20", iter3->Chars());
-        VERIFY_ARE_EQUAL(L"B", iter4->Chars());
-        VERIFY_ARE_EQUAL(L"\x20", iter5->Chars());
-    }
+
+    VERIFY_IS_TRUE(_ValidateLineContains(0, L'A', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(1, L'6', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(2, L'7', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(3, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(4, L'B', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(5, L' ', attr));
+
+    Log::Comment(
+        L"Does the common scrolling setup, then deletes two lines inside the "
+        L"margin boundaries, and verifies the rows have what we'd expect.");
+
+    _CommonScrollingSetup();
+    // Set horizontal margins
+    stateMachine.ProcessString(L"\x1b[?69h");
+    stateMachine.ProcessString(L"\x1b[3;6s");
+    auto resetMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[?69l"); });
+    // Move to column 5 of line 3
+    stateMachine.ProcessString(L"\x1b[3;5H");
+    // Delete 2 lines
+    stateMachine.ProcessString(L"\x1b[2M");
+
+    // Verify cursor moved to left margin.
+    VERIFY_ARE_EQUAL(2, cursor.GetPosition().x);
+    VERIFY_ARE_EQUAL(2, cursor.GetPosition().y);
+
+    VERIFY_IS_TRUE(_ValidateLineContains(0, L'A', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(1, L'5', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 2 }, L"66", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 2 }, L"    ", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 2 }, L'6', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 3 }, L"77", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 3 }, L"    ", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 3 }, L'7', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(4, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(5, L'B', attr));
 }
 
 void ScreenBufferTests::ReverseLineFeedInMargins()
@@ -4882,7 +4950,8 @@ void ScreenBufferTests::ReverseLineFeedInMargins()
     auto& si = gci.GetActiveOutputBuffer();
     auto& tbi = si.GetTextBuffer();
     auto& stateMachine = si.GetStateMachine();
-    auto& cursor = si.GetTextBuffer().GetCursor();
+    auto& cursor = tbi.GetCursor();
+    const auto attr = tbi.GetCurrentAttributes();
 
     // Move to column 5 of line 2, the top margin
     stateMachine.ProcessString(L"\x1b[2;5H");
@@ -4896,20 +4965,13 @@ void ScreenBufferTests::ReverseLineFeedInMargins()
 
     VERIFY_ARE_EQUAL(4, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(1, cursor.GetPosition().y);
-    {
-        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
-        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
-        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
-        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
-        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
-        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
-        VERIFY_ARE_EQUAL(L"A", iter0->Chars());
-        VERIFY_ARE_EQUAL(L"\x20", iter1->Chars());
-        VERIFY_ARE_EQUAL(L"5", iter2->Chars());
-        VERIFY_ARE_EQUAL(L"6", iter3->Chars());
-        VERIFY_ARE_EQUAL(L"7", iter4->Chars());
-        VERIFY_ARE_EQUAL(L"B", iter5->Chars());
-    }
+
+    VERIFY_IS_TRUE(_ValidateLineContains(0, L'A', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(1, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(2, L'5', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(3, L'6', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(4, L'7', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(5, L'B', attr));
 
     Log::Comment(
         L"Does the common scrolling setup, then executes a reverse line feed "
@@ -4933,20 +4995,45 @@ void ScreenBufferTests::ReverseLineFeedInMargins()
 
     VERIFY_ARE_EQUAL(4, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().y);
-    {
-        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
-        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
-        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
-        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
-        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
-        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
-        VERIFY_ARE_EQUAL(L"\x20", iter0->Chars());
-        VERIFY_ARE_EQUAL(L"A", iter1->Chars());
-        VERIFY_ARE_EQUAL(L"5", iter2->Chars());
-        VERIFY_ARE_EQUAL(L"6", iter3->Chars());
-        VERIFY_ARE_EQUAL(L"7", iter4->Chars());
-        VERIFY_ARE_EQUAL(L"B", iter5->Chars());
-    }
+
+    VERIFY_IS_TRUE(_ValidateLineContains(0, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(1, L'A', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(2, L'5', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(3, L'6', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(4, L'7', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(5, L'B', attr));
+
+    Log::Comment(
+        L"Does the common scrolling setup, then executes a reverse line feed "
+        L"below the top margin, and verifies the rows have what we'd expect.");
+
+    _CommonScrollingSetup();
+    // Set horizontal margins
+    stateMachine.ProcessString(L"\x1b[?69h");
+    stateMachine.ProcessString(L"\x1b[3;6s");
+    auto resetMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[?69l"); });
+    // Move to column 5 of line 2, the top margin
+    stateMachine.ProcessString(L"\x1b[2;5H");
+    // Execute a reverse line feed (RI)
+    stateMachine.ProcessString(L"\x1bM");
+
+    VERIFY_ARE_EQUAL(4, cursor.GetPosition().x);
+    VERIFY_ARE_EQUAL(1, cursor.GetPosition().y);
+
+    VERIFY_IS_TRUE(_ValidateLineContains(0, L'A', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 1 }, L"55", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 1 }, L"    ", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 1 }, L'5', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 2 }, L"66", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 2 }, L"5555", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 2 }, L'6', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 3 }, L"77", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 3 }, L"6666", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 3 }, L'7', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, 4 }, L"  ", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 2, 4 }, L"7777", attr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 6, 4 }, L' ', attr));
+    VERIFY_IS_TRUE(_ValidateLineContains(5, L'B', attr));
 }
 
 void ScreenBufferTests::LineFeedEscapeSequences()
