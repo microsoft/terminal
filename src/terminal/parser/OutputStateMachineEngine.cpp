@@ -668,6 +668,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->CopyRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.at(4), parameters.at(5), parameters.at(6), parameters.at(7));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECCRA);
         break;
+    case CsiActionCodes::DECRQPSR_RequestPresentationStateReport:
+        success = _dispatch->RequestPresentationStateReport(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQPSR);
+        break;
     case CsiActionCodes::DECFRA_FillRectangularArea:
         success = _dispatch->FillRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2), parameters.at(3).value_or(0), parameters.at(4).value_or(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECFRA);
@@ -683,6 +687,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::DECSACE_SelectAttributeChangeExtent:
         success = _dispatch->SelectAttributeChangeExtent(parameters.at(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSACE);
+        break;
+    case CsiActionCodes::DECRQCRA_RequestChecksumRectangularArea:
+        success = _dispatch->RequestChecksumRectangularArea(parameters.at(0).value_or(0), parameters.at(1).value_or(0), parameters.at(2), parameters.at(3), parameters.at(4).value_or(0), parameters.at(5).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQCRA);
         break;
     case CsiActionCodes::DECINVM_InvokeMacro:
         success = _dispatch->InvokeMacro(parameters.at(0).value_or(0));
@@ -747,6 +755,9 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
         break;
     case DcsActionCodes::DECRQSS_RequestSetting:
         handler = _dispatch->RequestSetting();
+        break;
+    case DcsActionCodes::DECRSPS_RestorePresentationState:
+        handler = _dispatch->RestorePresentationState(parameters.at(0));
         break;
     default:
         handler = nullptr;

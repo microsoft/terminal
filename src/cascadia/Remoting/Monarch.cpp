@@ -10,6 +10,7 @@
 #include "ProposeCommandlineResult.h"
 
 #include "Monarch.g.cpp"
+#include "WindowRequestedArgs.g.cpp"
 #include "../../types/inc/utils.hpp"
 
 using namespace winrt;
@@ -658,6 +659,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
+        if (targetWindow == WindowingBehaviorUseNone)
+        {
+            // In this case, the targetWindow was UseNone, which means that we
+            // want to make a message box, but otherwise not make a Terminal
+            // window.
+            return winrt::make<Remoting::implementation::ProposeCommandlineResult>(false);
+        }
         // If there's a valid ID returned, then let's try and find the peasant
         // that goes with it. Alternatively, if we were given a magic windowing
         // constant, we can use that to look up an appropriate peasant.
@@ -687,6 +695,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             case WindowingBehaviorUseName:
                 windowID = _lookupPeasantIdForName(targetWindowName);
                 break;
+            case WindowingBehaviorUseNone:
+                // This should be impossible. The if statement above should have
+                // prevented WindowingBehaviorUseNone from falling in here.
+                // Explode, because this is a programming error.
+                THROW_HR(E_UNEXPECTED);
             default:
                 windowID = ::base::saturated_cast<uint64_t>(targetWindow);
                 break;
@@ -724,6 +737,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     result->WindowName(targetWindowName);
                     result->ShouldCreateWindow(true);
 
+                    _RequestNewWindowHandlers(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
+
                     // If this fails, it'll be logged in the following
                     // TraceLoggingWrite statement, with succeeded=false
                 }
@@ -759,6 +774,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 auto result{ winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true) };
                 result->Id(windowID);
                 result->WindowName(targetWindowName);
+
+                _RequestNewWindowHandlers(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
+
                 return *result;
             }
         }
@@ -773,6 +791,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // In this case, no usable ID was provided. Return { true, nullopt }
         auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true);
         result->WindowName(targetWindowName);
+
+        _RequestNewWindowHandlers(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
+
         return *result;
     }
 
@@ -1033,5 +1054,96 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _forEachPeasant(callback, onError);
 
         return winrt::single_threaded_vector(std::move(vec));
+    }
+
+    void Monarch::RequestMoveContent(winrt::hstring window,
+                                     winrt::hstring content,
+                                     uint32_t tabIndex,
+                                     const Windows::Foundation::IReference<Windows::Foundation::Rect>& windowBounds)
+    {
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Monarch_MoveContent_Requested",
+                          TraceLoggingWideString(window.c_str(), "window", "The name of the window we tried to move to"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+        uint64_t windowId = _lookupPeasantIdForName(window);
+        if (windowId == 0)
+        {
+            // Try the name as an integer ID
+            uint32_t temp;
+            if (!Utils::StringToUint(window.c_str(), temp))
+            {
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "Monarch_MoveContent_FailedToParseId",
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+            }
+            else
+            {
+                windowId = temp;
+            }
+        }
+
+        if (auto targetPeasant{ _getPeasant(windowId) })
+        {
+            auto request = winrt::make_self<implementation::AttachRequest>(content, tabIndex);
+            targetPeasant.AttachContentToWindow(*request);
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_MoveContent_Completed",
+                              TraceLoggingInt64(windowId, "windowId", "The ID of the peasant which we sent the content to"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        }
+        else
+        {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_MoveContent_NoWindow",
+                              TraceLoggingInt64(windowId, "windowId", "We could not find a peasant with this ID"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+            // In the case where window couldn't be found, then create a window
+            // for that name / ID.
+            //
+            // Don't let the window literally be named "-1", because that's silly
+            auto request = winrt::make_self<implementation::WindowRequestedArgs>(window == L"-1" ? L"" : window,
+                                                                                 content,
+                                                                                 windowBounds);
+            _RequestNewWindowHandlers(*this, *request);
+        }
+    }
+
+    // Very similar to the above. Someone came and told us that they were the target of a drag/drop, and they know who started it.
+    // We will go tell the person who started it that they should send that target the content which was dragged.
+    void Monarch::RequestSendContent(const Remoting::RequestReceiveContentArgs& args)
+    {
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Monarch_SendContent_Requested",
+                          TraceLoggingUInt64(args.SourceWindow(), "source", "The window which started the drag"),
+                          TraceLoggingUInt64(args.TargetWindow(), "target", "The window which was the target of the drop"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+        if (auto senderPeasant{ _getPeasant(args.SourceWindow()) })
+        {
+            senderPeasant.SendContent(args);
+
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_SendContent_Completed",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        }
+        else
+        {
+            // We couldn't find the peasant that started the drag. Well that
+            // sure is weird, but that would indicate that the sender closed
+            // after starting the drag. No matter. We can just do nothing.
+
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_SendContent_NoWindow",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        }
     }
 }

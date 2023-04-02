@@ -155,4 +155,14 @@
         </alwaysEnabledBrandingTokens>
     </feature>
 
+    <feature>
+        <name>Feature_VtChecksumReport</name>
+        <description>Enables the DECRQCRA checksum report, which can be used to read the screen contents</description>
+        <id>14974</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
 </featureStaging>

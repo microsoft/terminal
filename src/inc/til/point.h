@@ -6,6 +6,8 @@
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     using CoordType = int32_t;
+    inline constexpr CoordType CoordTypeMin = INT32_MIN;
+    inline constexpr CoordType CoordTypeMax = INT32_MAX;
 
     namespace details
     {
