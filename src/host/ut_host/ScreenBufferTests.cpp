@@ -5119,6 +5119,42 @@ void ScreenBufferTests::LineFeedEscapeSequences()
         VERIFY_IS_TRUE(_ValidateLineContains(initialY - 1, L'Q', {}));
         VERIFY_IS_TRUE(_ValidateLineContains(initialY, L' ', si.GetAttributes()));
     }
+
+    {
+        Log::Comment(L"Starting at the bottom of the scroll margins with horizontal margins");
+        // Set the margins to rows 5 to 10.
+        stateMachine.ProcessString(L"\x1b[5;10r");
+        // Set the margins to columns 3 to 6.
+        stateMachine.ProcessString(L"\x1b[?69h");
+        stateMachine.ProcessString(L"\x1b[3;6s");
+        // Make sure we clear the margins on exit so they can't break other tests.
+        auto clearMargins = wil::scope_exit([&] {
+            stateMachine.ProcessString(L"\x1b[r");
+            stateMachine.ProcessString(L"\x1b[s");
+            stateMachine.ProcessString(L"\x1b[?69l");
+        });
+
+        const auto initialY = si.GetViewport().Top() + 9;
+        const auto expectedY = initialY;
+        const auto initialXInMargins = 5;
+        const auto expectedXInMargins = withReturn ? 2 : initialXInMargins;
+        const auto expectedViewportTop = si.GetViewport().Top();
+        _FillLine(initialY, L'R', {});
+        cursor.SetPosition({ initialXInMargins, initialY });
+        stateMachine.ProcessString(escapeSequence);
+
+        VERIFY_ARE_EQUAL(expectedXInMargins, cursor.GetPosition().x);
+        VERIFY_ARE_EQUAL(expectedY, cursor.GetPosition().y);
+        VERIFY_ARE_EQUAL(expectedViewportTop, si.GetViewport().Top());
+        // Verify the line of Rs has been scrolled up only within the margins.
+        const auto defaultAttr = TextAttribute{};
+        VERIFY_IS_TRUE(_ValidateLineContains({ 0, initialY - 1 }, L"QQ", defaultAttr));
+        VERIFY_IS_TRUE(_ValidateLineContains({ 2, initialY - 1 }, L"RRRR", defaultAttr));
+        VERIFY_IS_TRUE(_ValidateLineContains({ 6, initialY - 1 }, L'Q', defaultAttr));
+        VERIFY_IS_TRUE(_ValidateLineContains({ 0, initialY }, L"RR", defaultAttr));
+        VERIFY_IS_TRUE(_ValidateLineContains({ 2, initialY }, L"    ", si.GetAttributes()));
+        VERIFY_IS_TRUE(_ValidateLineContains({ 6, initialY }, L'R', defaultAttr));
+    }
 }
 
 void ScreenBufferTests::ScrollLines256Colors()
