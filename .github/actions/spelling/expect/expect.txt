@@ -257,6 +257,7 @@ condrv
 conechokey
 conemu
 configurability
+confusables
 conhost
 conime
 conimeinfo
