@@ -256,9 +256,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _AttachedHandlers(*this, nullptr);
     }
 
-    bool ControlCore::Initialize(const double actualWidth,
-                                 const double actualHeight,
-                                 const double compositionScale)
+    bool ControlCore::Initialize(const float actualWidth,
+                                 const float actualHeight,
+                                 const float compositionScale)
     {
         assert(_settings);
 
@@ -298,8 +298,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // and react accordingly.
             _updateFont(true);
 
-            const til::size windowSize{ static_cast<til::CoordType>(windowWidth),
-                                        static_cast<til::CoordType>(windowHeight) };
+            const til::size windowSize{ til::math::rounding, windowWidth, windowHeight };
 
             // First set up the dx engine with the window size in pixels.
             // Then, using the font, get the number of characters that can fit.
@@ -853,8 +852,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   concerned with initialization process. Value forwarded to event handler.
     void ControlCore::_updateFont(const bool initialUpdate)
     {
-        const auto newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) *
-                                             _compositionScale);
+        const auto newDpi = static_cast<int>(lrint(_compositionScale * USER_DEFAULT_SCREEN_DPI));
 
         _terminal->SetFontInfo(_actualFont);
 
@@ -975,8 +973,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        auto cx = gsl::narrow_cast<til::CoordType>(_panelWidth * _compositionScale);
-        auto cy = gsl::narrow_cast<til::CoordType>(_panelHeight * _compositionScale);
+        auto cx = gsl::narrow_cast<til::CoordType>(lrint(_panelWidth * _compositionScale));
+        auto cy = gsl::narrow_cast<til::CoordType>(lrint(_panelHeight * _compositionScale));
 
         // Don't actually resize so small that a single character wouldn't fit
         // in either dimension. The buffer really doesn't like being size 0.
@@ -986,7 +984,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Convert our new dimensions to characters
         const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { cx, cy });
         const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
-        const auto currentVP = _terminal->GetViewport();
 
         _terminal->ClearSelection();
 
@@ -1005,13 +1002,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::SizeChanged(const double width,
-                                  const double height)
+    void ControlCore::SizeChanged(const float width,
+                                  const float height)
     {
         SizeOrScaleChanged(width, height, _compositionScale);
     }
 
-    void ControlCore::ScaleChanged(const double scale)
+    void ControlCore::ScaleChanged(const float scale)
     {
         if (!_renderEngine)
         {
@@ -1020,24 +1017,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SizeOrScaleChanged(_panelWidth, _panelHeight, scale);
     }
 
-    void ControlCore::SizeOrScaleChanged(const double width,
-                                         const double height,
-                                         const double scale)
+    void ControlCore::SizeOrScaleChanged(const float width,
+                                         const float height,
+                                         const float scale)
     {
+        const auto scaleChanged = _compositionScale != scale;
         // _refreshSizeUnderLock redraws the entire terminal.
         // Don't call it if we don't have to.
-        if (_panelWidth == width && _panelHeight == height && _compositionScale == scale)
+        if (_panelWidth == width && _panelHeight == height && !scaleChanged)
         {
             return;
         }
-        const auto oldScale = _compositionScale;
 
         _panelWidth = width;
         _panelHeight = height;
         _compositionScale = scale;
 
         auto lock = _terminal->LockForWriting();
-        if (oldScale != scale)
+        if (scaleChanged)
         {
             // _updateFont relies on the new _compositionScale set above
             _updateFont();
@@ -1267,7 +1264,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     winrt::Windows::Foundation::Size ControlCore::FontSizeInDips() const
     {
         const auto fontSize = _actualFont.GetSize();
-        const auto scale = 1.0f / static_cast<float>(_compositionScale);
+        const auto scale = 1.0f / _compositionScale;
         return {
             fontSize.width * scale,
             fontSize.height * scale,

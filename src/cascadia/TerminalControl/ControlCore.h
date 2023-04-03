@@ -58,9 +58,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     TerminalConnection::ITerminalConnection connection);
         ~ControlCore();
 
-        bool Initialize(const double actualWidth,
-                        const double actualHeight,
-                        const double compositionScale);
+        bool Initialize(const float actualWidth,
+                        const float actualHeight,
+                        const float compositionScale);
         void EnablePainting();
 
         void Detach();
@@ -78,9 +78,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t SwapChainHandle() const;
         void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
-        void SizeChanged(const double width, const double height);
-        void ScaleChanged(const double scale);
-        void SizeOrScaleChanged(const double width, const double height, const double scale);
+        void SizeChanged(const float width, const float height);
+        void ScaleChanged(const float scale);
+        void SizeOrScaleChanged(const float width, const float height, const float scale);
 
         void AdjustFontSize(float fontSizeDelta);
         void ResetFontSize();
@@ -286,9 +286,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // These members represent the size of the surface that we should be
         // rendering to.
-        double _panelWidth{ 0 };
-        double _panelHeight{ 0 };
-        double _compositionScale{ 0 };
+        float _panelWidth{ 0 };
+        float _panelHeight{ 0 };
+        float _compositionScale{ 0 };
 
         uint64_t _owningHwnd{ 0 };
 
