@@ -16,6 +16,8 @@
 #pragma warning(disable : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe ... (stl.1).
 // small_vector::_data references potentially uninitialized data and so we can't pass it regular iterators which reference initialized data.
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+// small_vector::_buffer is explicitly uninitialized, because we manage its initialization manually.
+#pragma warning(disable : 26495) // Variable '...' is uninitialized. Always initialize a member variable (type.6).
 
 namespace til
 {
