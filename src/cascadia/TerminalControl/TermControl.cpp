@@ -3016,7 +3016,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto lastHoveredCell = _core.HoveredCell();
             if (lastHoveredCell)
             {
-                const auto uriText = _core.HoveredUriText();
+                winrt::hstring uriText = _core.HoveredUriText();
+                try
+                {
+                    // DisplayUri will filter out non-printable characters and confusables.
+                    Windows::Foundation::Uri parsedUri{ uriText };
+                    uriText = parsedUri.DisplayUri();
+                }
+                catch (...)
+                {
+                    LOG_CAUGHT_EXCEPTION();
+                    uriText = {};
+                }
+
                 if (!uriText.empty())
                 {
                     const auto panel = SwapChainPanel();
