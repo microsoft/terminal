@@ -1280,11 +1280,13 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
         dragPositionInPixels.y -= nonClientFrame.top;
         windowSize = windowSize - nonClientFrame.size();
 
+        // Convert to DIPs for the size, so that dragging across a DPI boundary
+        // retains the correct dimensions.
+        const auto sizeInDips = windowSize.scale(til::math::rounding, 1.0f / scale);
+        til::rect inDips{ dragPositionInPixels, sizeInDips };
+
         // Use the drag event as the new position, and the size of the actual window.
-        rect = winrt::Windows::Foundation::Rect{ static_cast<float>(dragPositionInPixels.x),
-                                                 static_cast<float>(dragPositionInPixels.y),
-                                                 static_cast<float>(windowSize.width),
-                                                 static_cast<float>(windowSize.height) };
+        rect = winrt::Windows::Foundation::Rect{ inDips.to_winrt_rect() };
         windowBoundsReference = rect;
     }
 
