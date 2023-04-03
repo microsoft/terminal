@@ -561,6 +561,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // BODGY
     // - Toggles the requested theme of the tab view item,
     //   so that changes to the tab color are reflected immediately
     // - Prior to MUX 2.8, we toggled the visual state here, but that seemingly
