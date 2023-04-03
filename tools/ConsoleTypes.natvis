@@ -105,4 +105,14 @@
             <Item Name="[ptr]">_ptr</Item>
         </Expand>
     </Type>
+
+    <Type Name="til::linear_flat_set&lt;*,*&gt;">
+        <DisplayString>{{ size={_load / $T2} }}</DisplayString>
+        <Expand>
+            <ArrayItems>
+                <Size>_capacity</Size>
+                <ValuePointer>_map._Mypair._Myval2</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
 </AutoVisualizer>

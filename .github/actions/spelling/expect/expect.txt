@@ -1123,6 +1123,7 @@ Mip
 MMBB
 mmcc
 MMCPL
+MMIX
 mmsystem
 MNC
 MNOPQ
@@ -2287,6 +2288,7 @@ YCENTER
 YCount
 YDPI
 YOffset
+ype
 YSubstantial
 YVIRTUALSCREEN
 YWalk
