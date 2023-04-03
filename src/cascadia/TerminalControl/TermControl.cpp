@@ -3019,7 +3019,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 winrt::hstring uriText = _core.HoveredUriText();
                 try
                 {
-                    // DisplayUri will filter out non-printables and confusables.
+                    // DisplayUri will filter out non-printable characters and confusables.
                     Windows::Foundation::Uri parsedUri{ uriText };
                     uriText = parsedUri.DisplayUri();
                 }
