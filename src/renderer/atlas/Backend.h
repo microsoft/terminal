@@ -86,6 +86,16 @@ namespace Microsoft::Console::Render::Atlas
         return { r, g, b, a };
     }
 
+    template<typename T = D2D1_COLOR_F>
+    constexpr T colorFromU32Premultiply(u32 rgba)
+    {
+        const auto r = static_cast<f32>((rgba >> 0) & 0xff) / 255.0f;
+        const auto g = static_cast<f32>((rgba >> 8) & 0xff) / 255.0f;
+        const auto b = static_cast<f32>((rgba >> 16) & 0xff) / 255.0f;
+        const auto a = static_cast<f32>((rgba >> 24) & 0xff) / 255.0f;
+        return { r * a, g * a, b * a, a };
+    }
+
     constexpr u32 u32ColorPremultiply(u32 rgba)
     {
         auto rb = rgba & 0x00ff00ff;

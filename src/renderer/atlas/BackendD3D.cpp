@@ -594,7 +594,7 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
     }
     {
         PSConstBuffer data{};
-        data.backgroundColor = colorFromU32<f32x4>(p.s->misc->backgroundColor);
+        data.backgroundColor = colorFromU32Premultiply<f32x4>(p.s->misc->backgroundColor);
         data.cellSize = { static_cast<f32>(p.s->font->cellSize.x), static_cast<f32>(p.s->font->cellSize.y) };
         data.cellCount = { static_cast<f32>(p.s->cellCount.x), static_cast<f32>(p.s->cellCount.y) };
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);
@@ -1723,7 +1723,7 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
                 static_cast<f32>(_cellCount.x * p.s->font->cellSize.x),
                 static_cast<f32>(_cellCount.y * p.s->font->cellSize.y),
             },
-            .background = colorFromU32<f32x4>(p.s->misc->backgroundColor),
+            .background = colorFromU32Premultiply<f32x4>(p.s->misc->backgroundColor),
         };
 
         D3D11_MAPPED_SUBRESOURCE mapped{};
