@@ -6,8 +6,6 @@
 #include <array>
 #include <cassert>
 
-#include <wil/resource.h>
-
 // Another variant of "defer" for C++.
 namespace
 {

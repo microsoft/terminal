@@ -67,6 +67,7 @@ namespace winrt::TerminalApp::implementation
         WINRT_PROPERTY(winrt::hstring, Window);
         WINRT_PROPERTY(winrt::hstring, Content);
         WINRT_PROPERTY(uint32_t, TabIndex);
+        WINRT_PROPERTY(Windows::Foundation::IReference<Windows::Foundation::Point>, WindowPosition);
 
     public:
         RequestMoveContentArgs(const winrt::hstring window, const winrt::hstring content, uint32_t tabIndex) :
@@ -162,8 +163,10 @@ namespace winrt::TerminalApp::implementation
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
-        winrt::fire_and_forget AttachContent(winrt::hstring content, uint32_t tabIndex);
+        winrt::fire_and_forget AttachContent(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> args, uint32_t tabIndex);
         winrt::fire_and_forget SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args);
+
+        uint32_t NumberOfTabs() const;
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -263,7 +266,11 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::ContentManager _manager{ nullptr };
 
-        winrt::com_ptr<winrt::TerminalApp::implementation::TabBase> _stashedDraggedTab{ nullptr };
+        struct StashedDragData
+        {
+            winrt::com_ptr<winrt::TerminalApp::implementation::TabBase> draggedTab{ nullptr };
+            til::point dragOffset{ 0, 0 };
+        } _stashed;
 
         winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::NewConnection_revoker _newConnectionRevoker;
 
@@ -503,10 +510,15 @@ namespace winrt::TerminalApp::implementation
         void _onTabDragStarting(const winrt::Microsoft::UI::Xaml::Controls::TabView& sender, const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& e);
         void _onTabStripDragOver(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::DragEventArgs& e);
         winrt::fire_and_forget _onTabStripDrop(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
+        winrt::fire_and_forget _onTabDroppedOutside(winrt::Windows::Foundation::IInspectable sender, winrt::Microsoft::UI::Xaml::Controls::TabViewTabDroppedOutsideEventArgs e);
 
         void _DetachPaneFromWindow(std::shared_ptr<Pane> pane);
         void _DetachTabFromWindow(const winrt::com_ptr<TabBase>& terminalTab);
-        void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>&& actions, const winrt::hstring& windowName, const uint32_t tabIndex);
+        void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>&& actions,
+                          const winrt::hstring& windowName,
+                          const uint32_t tabIndex,
+                          const std::optional<til::point>& dragPoint = std::nullopt);
+        void _sendDraggedTabToWindow(const winrt::hstring& windowId, const uint32_t tabIndex, std::optional<til::point> dragPoint);
 
         void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
         void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);

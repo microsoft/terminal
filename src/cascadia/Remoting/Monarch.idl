@@ -26,6 +26,9 @@ namespace Microsoft.Terminal.Remoting
 
         String[] Commandline { get; };
         String CurrentDirectory { get; };
+
+        String Content { get; };
+        Windows.Foundation.IReference<Windows.Foundation.Rect> InitialBounds { get; };
     }
 
     [default_interface] runtimeclass SummonWindowSelectionArgs {
@@ -69,7 +72,7 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.Collections.IVectorView<PeasantInfo> GetPeasantInfos { get; };
         Windows.Foundation.Collections.IVector<String> GetAllWindowLayouts();
 
-        void RequestMoveContent(String window, String content, UInt32 tabIndex);
+        void RequestMoveContent(String window, String content, UInt32 tabIndex, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
         void RequestSendContent(RequestReceiveContentArgs args);
 
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;

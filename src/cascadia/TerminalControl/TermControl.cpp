@@ -94,6 +94,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.coreOpenHyperlink = _core.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
         _revokers.interactivityOpenHyperlink = _interactivity.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
         _revokers.interactivityScrollPositionChanged = _interactivity.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
+        _revokers.ContextMenuRequested = _interactivity.ContextMenuRequested(winrt::auto_revoke, { get_weak(), &TermControl::_contextMenuHandler });
 
         // "Bubbled" events - ones we want to handle, by raising our own event.
         _revokers.CopyToClipboard = _core.CopyToClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCopyToClipboard });
@@ -105,8 +106,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.CloseTerminalRequested = _core.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCloseTerminalRequested });
 
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
-
-        _interactivity.ContextMenuRequested({ this, &TermControl::_contextMenuHandler });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -1258,12 +1257,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return true;
         }
 
-        // TODO: GH#5000
-        // The Core owning the keybindings is weird. That's for sure. In the
-        // future, we may want to pass the keybindings into the control
-        // separately, so the control can have a pointer to an in-proc
-        // Keybindings object, rather than routing through the ControlCore.
-        // (see GH#5000)
         auto bindings = _core.Settings().KeyBindings();
         if (!bindings)
         {
@@ -2877,18 +2870,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     IControlSettings TermControl::Settings() const
     {
-        // TODO: GH#5000
-        // We still need this in a couple places:
-        // - Pane.cpp uses this for parsing out the StartingTitle, Commandline,
-        //   etc for Pane::GetTerminalArgsForPane.
-        // - TerminalTab::_CreateToolTipTitle uses the ProfileName for the
-        //   tooltip for the tab.
-        //
-        // These both happen on the UI thread right now. In the future, when we
-        // have to hop across the process boundary to get at the core settings,
-        // it may make sense to cache these values inside the TermControl
-        // itself, so it can do the hop once when it's first setup, rather than
-        // when it's needed by the UI thread.
         return _core.Settings();
     }
 

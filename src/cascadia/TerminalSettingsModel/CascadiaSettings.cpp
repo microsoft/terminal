@@ -1006,7 +1006,7 @@ winrt::hstring CascadiaSettings::ApplicationDisplayName()
     }
     CATCH_LOG();
 
-    return RS_(L"ApplicationDisplayNameUnpackaged");
+    return IsPortableMode() ? RS_(L"ApplicationDisplayNamePortable") : RS_(L"ApplicationDisplayNameUnpackaged");
 }
 
 winrt::hstring CascadiaSettings::ApplicationVersion()
