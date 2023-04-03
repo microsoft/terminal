@@ -1231,7 +1231,6 @@ winrt::TerminalApp::TerminalWindow AppHost::Logic()
 void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                  winrt::TerminalApp::RequestMoveContentArgs args)
 {
-    winrt::Windows::Foundation::Rect rect{};
     winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Rect> windowBoundsReference{ nullptr };
 
     if (args.WindowPosition() && _window)
@@ -1286,8 +1285,7 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
         til::rect inDips{ dragPositionInPixels, sizeInDips };
 
         // Use the drag event as the new position, and the size of the actual window.
-        rect = winrt::Windows::Foundation::Rect{ inDips.to_winrt_rect() };
-        windowBoundsReference = rect;
+        windowBoundsReference = inDips.to_winrt_rect();
     }
 
     _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex(), windowBoundsReference);
