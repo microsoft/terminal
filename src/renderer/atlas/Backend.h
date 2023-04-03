@@ -72,7 +72,7 @@ namespace Microsoft::Console::Render::Atlas
         wil::unique_handle _frameLatencyWaitableObject;
         til::generation_t _targetGeneration;
         til::generation_t _fontGeneration;
-        u16x2 _targetSize;
+        u16x2 _targetSize{};
         bool _waitForPresentation = false;
     };
 

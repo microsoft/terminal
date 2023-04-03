@@ -83,8 +83,8 @@ try
         _api.invalidatedCursorArea.bottom = clamp(_api.invalidatedCursorArea.bottom, _api.invalidatedCursorArea.top, _p.s->cellCount.y);
     }
     {
-        _api.invalidatedRows.x = std::min(_api.invalidatedRows.x, _p.s->cellCount.y);
-        _api.invalidatedRows.y = clamp(_api.invalidatedRows.y, _api.invalidatedRows.x, _p.s->cellCount.y);
+        _api.invalidatedRows.start = std::min(_api.invalidatedRows.start, _p.s->cellCount.y);
+        _api.invalidatedRows.end = clamp(_api.invalidatedRows.end, _api.invalidatedRows.start, _p.s->cellCount.y);
     }
     {
         const auto limit = gsl::narrow_cast<i16>(_p.s->cellCount.y & 0x7fff);
@@ -94,7 +94,7 @@ try
     // Scroll the buffer by the given offset and mark the newly uncovered rows as "invalid".
     if (const auto offset = _api.scrollOffset)
     {
-        const auto nothingInvalid = _api.invalidatedRows.x == _api.invalidatedRows.y;
+        const auto nothingInvalid = _api.invalidatedRows.start == _api.invalidatedRows.end;
 
         if (offset < 0)
         {
@@ -105,8 +105,8 @@ try
             // |xxxxxxx   |    |          |
             // +----------+    +----------+
             const u16 begRow = _p.s->cellCount.y + offset;
-            _api.invalidatedRows.x = nothingInvalid ? begRow : std::min(_api.invalidatedRows.x, begRow);
-            _api.invalidatedRows.y = _p.s->cellCount.y;
+            _api.invalidatedRows.start = nothingInvalid ? begRow : std::min(_api.invalidatedRows.start, begRow);
+            _api.invalidatedRows.end = _p.s->cellCount.y;
 
             const auto dst = std::copy_n(_p.rows.begin() - offset, _p.rows.size() + offset, _p.rowsScratch.begin());
             std::copy_n(_p.rows.begin(), -offset, dst);
@@ -120,8 +120,8 @@ try
             // |          |    |xxxxxxx   |
             // +----------+    +----------+
             const u16 endRow = offset;
-            _api.invalidatedRows.x = 0;
-            _api.invalidatedRows.y = nothingInvalid ? endRow : std::max(_api.invalidatedRows.y, endRow);
+            _api.invalidatedRows.start = 0;
+            _api.invalidatedRows.end = nothingInvalid ? endRow : std::max(_api.invalidatedRows.end, endRow);
 
             const auto dst = std::copy_n(_p.rows.end() - offset, offset, _p.rowsScratch.begin());
             std::copy_n(_p.rows.begin(), _p.rows.size() - offset, dst);
@@ -146,9 +146,9 @@ try
 
     _api.dirtyRect = {
         0,
-        _api.invalidatedRows.x,
+        _api.invalidatedRows.start,
         _p.s->cellCount.x,
-        _api.invalidatedRows.y,
+        _api.invalidatedRows.end,
     };
 
     _p.dirtyRectInPx = {
@@ -161,7 +161,7 @@ try
     _p.cursorRect = {};
     _p.scrollOffset = _api.scrollOffset;
 
-    if (_api.invalidatedRows.x != _api.invalidatedRows.y)
+    if (_api.invalidatedRows.start != _api.invalidatedRows.end)
     {
         const auto deltaPx = _api.scrollOffset * _p.s->font->cellSize.y;
         const til::CoordType targetSizeX = _p.s->targetSize.x;
@@ -169,16 +169,16 @@ try
         u16 y = 0;
 
         _p.dirtyRectInPx.left = 0;
-        _p.dirtyRectInPx.top = _api.invalidatedRows.x * _p.s->font->cellSize.y;
+        _p.dirtyRectInPx.top = _api.invalidatedRows.start * _p.s->font->cellSize.y;
         _p.dirtyRectInPx.right = targetSizeX;
-        _p.dirtyRectInPx.bottom = _api.invalidatedRows.y * _p.s->font->cellSize.y;
+        _p.dirtyRectInPx.bottom = _api.invalidatedRows.end * _p.s->font->cellSize.y;
 
         for (const auto r : _p.rows)
         {
             r->dirtyTop += deltaPx;
             r->dirtyBottom += deltaPx;
 
-            if (y >= _api.invalidatedRows.x && y < _api.invalidatedRows.y)
+            if (_api.invalidatedRows.contains(y))
             {
                 const auto clampedTop = clamp(r->dirtyTop, 0, targetSizeY);
                 const auto clampedBottom = clamp(r->dirtyBottom, 0, targetSizeY);
@@ -197,7 +197,7 @@ try
         // I feel a little bit like this is a hack, but I'm not sure how to better express this.
         // This ensures that we end up calling Present1() without dirty rects if the swap chain is
         // recreated/resized, because DXGI requires you to then call Present1() without dirty rects.
-        if (_api.invalidatedRows.x == 0 && _api.invalidatedRows.y == _p.s->cellCount.y)
+        if (_api.invalidatedRows == range<u16>{ 0, _p.s->cellCount.y })
         {
             _p.dirtyRectInPx.top = 0;
             _p.dirtyRectInPx.bottom = targetSizeY;
@@ -297,7 +297,7 @@ try
     }
 
     {
-        std::fill(_api.colorsForeground.begin() + x, _api.colorsForeground.begin() + column, _api.currentColor.x);
+        std::fill(_api.colorsForeground.begin() + x, _api.colorsForeground.begin() + column, _api.currentForeground);
     }
 
     {
@@ -305,7 +305,7 @@ try
         const auto backgroundRow = _p.backgroundBitmap.begin() + _p.backgroundBitmapStride * y;
         auto it = backgroundRow + x;
         const auto end = backgroundRow + (static_cast<size_t>(column) << shift);
-        const auto bg = u32ColorPremultiply(_api.currentColor.y);
+        const auto bg = u32ColorPremultiply(_api.currentBackground);
 
         for (; it != end; ++it)
         {
@@ -420,8 +420,6 @@ try
 
     if (!isSettingDefaultBrushes)
     {
-        const u32x2 newColors{ gsl::narrow_cast<u32>(fg), gsl::narrow_cast<u32>(bg) };
-
         auto attributes = FontRelevantAttributes::None;
         WI_SetFlagIf(attributes, FontRelevantAttributes::Bold, textAttributes.IsIntense() && renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold));
         WI_SetFlagIf(attributes, FontRelevantAttributes::Italic, textAttributes.IsItalic());
@@ -431,7 +429,8 @@ try
             _flushBufferLine();
         }
 
-        _api.currentColor = newColors;
+        _api.currentBackground = gsl::narrow_cast<u32>(bg);
+        _api.currentForeground = gsl::narrow_cast<u32>(fg);
         _api.attributes = attributes;
     }
     else if (textAttributes.BackgroundIsDefault() && bg != _api.s->misc->backgroundColor)

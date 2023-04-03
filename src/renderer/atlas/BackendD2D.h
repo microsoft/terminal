@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <til/flat_set.h>
+
 #include "Backend.h"
 
 namespace Microsoft::Console::Render::Atlas
@@ -15,6 +17,12 @@ namespace Microsoft::Console::Render::Atlas
         bool RequiresContinuousRedraw() noexcept override;
         void WaitUntilCanRender() noexcept override;
 
+        struct CachedBrush
+        {
+            wil::com_ptr<ID2D1SolidColorBrush> brush;
+            u32 color;
+        };
+
     private:
         __declspec(noinline) void _handleSettingsUpdate(const RenderingPayload& p);
         void _drawBackground(const RenderingPayload& p) noexcept;
@@ -24,12 +32,15 @@ namespace Microsoft::Console::Render::Atlas
         __declspec(noinline) f32r _getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY);
         void _drawGridlines(const RenderingPayload& p);
         void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
-        void _drawCursor(const RenderingPayload& p);
+        void _drawCursorWithColor(const RenderingPayload& p);
+        void _drawCursorPart1(const RenderingPayload& p);
+        void _drawCursorPart2(const RenderingPayload& p);
+        static void _drawCursor(const RenderingPayload& p, ID2D1RenderTarget* renderTarget, D2D1_RECT_F rect, ID2D1Brush* brush) noexcept;
+        void _resizeCursorBitmap(const RenderingPayload& p, til::size newSize);
         void _drawSelection(const RenderingPayload& p);
         void _debugShowDirty(const RenderingPayload& p);
         void _debugDumpRenderTarget(const RenderingPayload& p);
         ID2D1Brush* _brushWithColor(u32 color);
-        void _fillRectangle(const til::rect& rect, u32 color);
         void _fillRectangle(const D2D1_RECT_F& rect, u32 color);
 
         SwapChainManager _swapChainManager;
@@ -44,14 +55,17 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID2D1BitmapBrush> _backgroundBrush;
         til::generation_t _backgroundBitmapGeneration;
 
-        wil::com_ptr<ID2D1SolidColorBrush> _brush;
-        u32 _brushColor = 0;
+        wil::com_ptr<ID2D1Bitmap> _cursorBitmap;
+        til::size _cursorBitmapSize; // in columns/rows
+
+        til::linear_flat_set<CachedBrush> _brushes;
 
         Buffer<DWRITE_GLYPH_METRICS> _glyphMetrics;
 
         til::generation_t _generation;
         til::generation_t _fontGeneration;
-        u16x2 _cellCount;
+        til::generation_t _cursorGeneration;
+        u16x2 _cellCount{};
 
 #if ATLAS_DEBUG_SHOW_DIRTY
         til::rect _presentRects[9]{};

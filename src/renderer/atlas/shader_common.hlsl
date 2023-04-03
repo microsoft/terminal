@@ -13,10 +13,10 @@
 struct VSData
 {
     float2 vertex : SV_Position;
+    uint shadingType : shadingType;
     int2 position : position;
     uint2 size : size;
     uint2 texcoord : texcoord;
-    uint shadingType : shadingType;
     float4 color : color;
 };
 

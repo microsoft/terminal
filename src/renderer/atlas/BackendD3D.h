@@ -68,24 +68,26 @@ namespace Microsoft::Console::Render::Atlas
 
         // NOTE: Don't initialize any members in this struct. This ensures that no
         // zero-initialization needs to occur when we allocate large buffers of this object.
-        struct alignas(u32) QuadInstance
+        struct QuadInstance
         {
             // `position` might clip outside of the bounds of the viewport and so it needs to be a
             // signed coordinate. i16x2 is used as the size of the instance buffer made the largest
             // impact on performance and power draw. If (when?) displays with >32k resolution make their
             // appearance in the future, this should be changed to f32x2. But if you do so, please change
             // all other occurrences of i16x2 positions/offsets throughout the class to keep it consistent.
-            i16 positionX;
-            i16 positionY;
+            alignas(u32) ShadingType shadingType;
+            alignas(u32) i16x2 position;
+            alignas(u32) u16x2 size;
+            alignas(u32) u16x2 texcoord;
+            alignas(u32) u32 color;
+        };
 
-            u16 sizeX;
-            u16 sizeY;
-
-            u16 texcoordX;
-            u16 texcoordY;
-
+        struct alignas(u32) AtlasGlyphEntryData
+        {
             ShadingType shadingType;
-            u32 color;
+            i16x2 offset;
+            u16x2 size;
+            u16x2 texcoord;
         };
 
         // NOTE: Don't initialize any members in this struct. This ensures that no
@@ -95,7 +97,8 @@ namespace Microsoft::Console::Render::Atlas
             u16 glyphIndex;
             // All data in QuadInstance is u32-aligned anyways, so this simultaneously serves as padding.
             u16 _occupied;
-            QuadInstance data;
+
+            AtlasGlyphEntryData data;
         };
 
         // This exists so that we can look up a AtlasFontFaceEntry without AddRef()/Release()ing fontFace first.
@@ -159,8 +162,7 @@ namespace Microsoft::Console::Render::Atlas
         void _resetGlyphAtlas(const RenderingPayload& p);
         void _markStateChange(ID3D11BlendState* blendState);
         QuadInstance& _getLastQuad() noexcept;
-        void _appendQuad(i16x2 position, u16x2 size, u32 color, ShadingType shadingType);
-        void _appendQuad(i16x2 position, u16x2 size, u16x2 texcoord, u32 color, ShadingType shadingType);
+        QuadInstance& _appendQuad();
         __declspec(noinline) void _bumpInstancesSize();
         void _flushQuads(const RenderingPayload& p);
         __declspec(noinline) void _recreateInstanceBuffers(const RenderingPayload& p);
@@ -242,8 +244,8 @@ namespace Microsoft::Console::Render::Atlas
         til::generation_t _generation;
         til::generation_t _fontGeneration;
         til::generation_t _miscGeneration;
-        u16x2 _targetSize;
-        u16x2 _cellCount;
+        u16x2 _targetSize{};
+        u16x2 _cellCount{};
         ShadingType _textShadingType = ShadingType::Default;
 
         // An empty-box cursor spanning a wide glyph that has different
@@ -252,7 +254,7 @@ namespace Microsoft::Console::Render::Atlas
         {
             i16x2 position;
             u16x2 size;
-            u32 color = 0;
+            u32 color;
         };
         til::small_vector<CursorRect, 6> _cursorRects;
 

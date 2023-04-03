@@ -47,8 +47,8 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
     //assert(psrRegion->top < psrRegion->bottom && psrRegion->top >= 0 && psrRegion->bottom <= _api.cellCount.y);
 
     // BeginPaint() protects against invalid out of bounds numbers.
-    _api.invalidatedRows.x = std::min(_api.invalidatedRows.x, gsl::narrow_cast<u16>(psrRegion->top));
-    _api.invalidatedRows.y = std::max(_api.invalidatedRows.y, gsl::narrow_cast<u16>(psrRegion->bottom));
+    _api.invalidatedRows.start = std::min(_api.invalidatedRows.start, gsl::narrow_cast<u16>(psrRegion->top));
+    _api.invalidatedRows.end = std::max(_api.invalidatedRows.end, gsl::narrow_cast<u16>(psrRegion->bottom));
     return S_OK;
 }
 
@@ -89,8 +89,8 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
         // BeginPaint() protects against invalid out of bounds numbers.
         // TODO: rect can contain invalid out of bounds coordinates when the selection is being
         // dragged outside of the viewport (and the window begins scrolling automatically).
-        _api.invalidatedRows.x = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.x, std::max<int>(0, rect.top)));
-        _api.invalidatedRows.y = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.y, std::max<int>(0, rect.bottom)));
+        _api.invalidatedRows.start = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.start, std::max<int>(0, rect.top)));
+        _api.invalidatedRows.end = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.end, std::max<int>(0, rect.bottom)));
     }
     return S_OK;
 }
@@ -118,13 +118,13 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
 
         if (delta < 0)
         {
-            _api.invalidatedRows.x = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.x + delta, u16min, u16max));
-            _api.invalidatedRows.y = _api.s->cellCount.y;
+            _api.invalidatedRows.start = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.start + delta, u16min, u16max));
+            _api.invalidatedRows.end = _api.s->cellCount.y;
         }
         else
         {
-            _api.invalidatedRows.x = 0;
-            _api.invalidatedRows.y = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.y + delta, u16min, u16max));
+            _api.invalidatedRows.start = 0;
+            _api.invalidatedRows.end = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.end + delta, u16min, u16max));
         }
     }
 

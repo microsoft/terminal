@@ -4,7 +4,8 @@
 #pragma once
 
 #pragma warning(push)
-#pragma warning(suppress : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
+#pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
+#pragma warning(disable : 26409) // Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).
 
 namespace til
 {
@@ -34,26 +35,26 @@ namespace til
     {
         using T = size_t;
 
-        static size_t hash(T v) noexcept
+        static constexpr size_t hash(T v) noexcept
         {
             return flat_set_hash_integer(v);
         }
 
         // Return true if the key and existing slot in the hashmap match.
-        static bool equals(T slot, T key)
+        static constexpr bool equals(T slot, T key)
         {
             return slot == key;
         }
 
         // Return true if this slot can be filled with a new item.
-        static bool empty(T slot)
+        static constexpr bool empty(T slot)
         {
             return slot == -1;
         }
 
         // Called when a new item is inserted into the hashmap.
         // T::operator=(T&&) is called when the map is resized and existing items must be moved over.
-        static void fill(T& slot, T key)
+        static constexpr void fill(T& slot, T key)
         {
             slot = key;
         }
@@ -61,14 +62,14 @@ namespace til
         // Called when a new backing buffer is allocated. You need to then initialize the raw memory.
         static std::unique_ptr<T[]> allocate(size_t capacity)
         {
-            return std::unique_ptr<T[]>{ new T[capacity]{ size_t(-1) } };
+            return std::unique_ptr<T[]>{ new T[capacity]{ static_cast<size_t>(-1) } };
         }
 
         static void clear(T* data, size_t capacity) noexcept
         {
             for (auto& slot : std::span{ data, capacity })
             {
-                slot = size_t(-1);
+                slot = static_cast<size_t>(-1);
             }
         }
     };
@@ -116,6 +117,7 @@ namespace til
             // by some prime number and divide by the number of slots. It's been shown
             // many times in literature that such a scheme performs the best on average.
             // As such, we perform the divide her to get the topmost bits down.
+            // See flat_set_hash_integer.
             const auto hash = Trait::hash(key) >> _shift;
 
             for (auto i = hash;; ++i)

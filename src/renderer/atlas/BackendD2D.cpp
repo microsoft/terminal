@@ -23,6 +23,53 @@ TIL_FAST_MATH_BEGIN
 
 using namespace Microsoft::Console::Render::Atlas;
 
+namespace til
+{
+    template<>
+    struct flat_set_trait<BackendD2D::CachedBrush>
+    {
+        using T = BackendD2D::CachedBrush;
+
+        static constexpr size_t hash(u32 key) noexcept
+        {
+            return flat_set_hash_integer(key);
+        }
+
+        static constexpr size_t hash(const T& slot) noexcept
+        {
+            return flat_set_hash_integer(slot.color);
+        }
+
+        static constexpr bool equals(const T& slot, u32 key)
+        {
+            return slot.color == key;
+        }
+
+        static bool empty(const T& slot)
+        {
+            return !slot.brush;
+        }
+
+        static constexpr void fill(T& slot, u32 key)
+        {
+            slot.color = key;
+        }
+
+        static std::unique_ptr<T[]> allocate(size_t capacity)
+        {
+            return std::make_unique<T[]>(capacity);
+        }
+
+        static void clear(T* data, size_t capacity) noexcept
+        {
+            for (auto& slot : std::span{ data, capacity })
+            {
+                slot.brush.reset();
+            }
+        }
+    };
+}
+
 BackendD2D::BackendD2D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11DeviceContext2> deviceContext) noexcept :
     _device{ std::move(device) },
     _deviceContext{ std::move(deviceContext) }
@@ -42,9 +89,10 @@ void BackendD2D::Render(RenderingPayload& p)
     _renderTarget->Clear();
 #endif
     _drawBackground(p);
+    _drawCursorPart1(p);
     _drawText(p);
     _drawGridlines(p);
-    _drawCursor(p);
+    _drawCursorPart2(p);
     _drawSelection(p);
 #if ATLAS_DEBUG_SHOW_DIRTY
     _debugShowDirty(p);
@@ -86,6 +134,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
 
     const auto renderTargetChanged = !_renderTarget;
     const auto fontChanged = _fontGeneration != p.s->font.generation();
+    const auto cursorChanged = _cursorGeneration != p.s->cursor.generation();
     const auto cellCountChanged = _cellCount != p.s->cellCount;
 
     if (renderTargetChanged)
@@ -99,19 +148,14 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
                 .dpiX = static_cast<f32>(p.s->font->dpi),
                 .dpiY = static_cast<f32>(p.s->font->dpi),
             };
-            wil::com_ptr<ID2D1RenderTarget> renderTarget;
-            THROW_IF_FAILED(p.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, renderTarget.addressof()));
-            _renderTarget = renderTarget.query<ID2D1DeviceContext>();
-            _renderTarget4 = renderTarget.try_query<ID2D1DeviceContext4>();
+            // ID2D1RenderTarget and ID2D1DeviceContext are the same and I'm tired of pretending they're not.
+            THROW_IF_FAILED(p.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, reinterpret_cast<ID2D1RenderTarget**>(_renderTarget.addressof())));
+            _renderTarget.query_to(_renderTarget4.addressof());
 
             _renderTarget->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
             _renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
         }
-        {
-            static constexpr D2D1_COLOR_F color{ 1, 1, 1, 1 };
-            THROW_IF_FAILED(_renderTarget->CreateSolidColorBrush(&color, nullptr, _brush.put()));
-            _brushColor = 0xffffffff;
-        }
+        _brushes.clear();
     }
 
     if (!_dottedStrokeStyle)
@@ -152,8 +196,15 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
         _backgroundBitmapGeneration = {};
     }
 
+    if (fontChanged || cursorChanged)
+    {
+        _cursorBitmap.reset();
+        _cursorBitmapSize = {};
+    }
+
     _generation = p.s.generation();
     _fontGeneration = p.s->font.generation();
+    _cursorGeneration = p.s->cursor.generation();
     _cellCount = p.s->cellCount;
 }
 
@@ -191,7 +242,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
         auto baselineX = 0.0f;
         auto baselineY = static_cast<f32>(p.s->font->cellSize.y * y + p.s->font->baseline);
 
-        if (y >= p.invalidatedRows.x && y < p.invalidatedRows.y)
+        if (p.invalidatedRows.contains(y))
         {
             for (const auto& m : row->mappings)
             {
@@ -413,14 +464,14 @@ void BackendD2D::_drawGridlines(const RenderingPayload& p)
 
 void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y)
 {
-    const auto columnToDIP = [&](til::CoordType i) {
-        return i * p.s->font->cellSize.x;
+    const auto columnToPx = [&](til::CoordType i) {
+        return static_cast<f32>(i * p.s->font->cellSize.x);
     };
-    const auto rowToDIP = [&](til::CoordType i) {
-        return i * p.s->font->cellSize.y;
+    const auto rowToPx = [&](til::CoordType i) {
+        return static_cast<f32>(i * p.s->font->cellSize.y);
     };
 
-    const auto top = rowToDIP(y);
+    const auto top = rowToPx(y);
     const auto bottom = top + p.s->font->cellSize.y;
 
     for (const auto& r : row->gridLineRanges)
@@ -428,9 +479,9 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         // AtlasEngine.cpp shouldn't add any gridlines if they don't do anything.
         assert(r.lines.any());
 
-        const auto left = columnToDIP(r.from);
-        const auto right = columnToDIP(r.to);
-        til::rect rect;
+        const auto left = columnToPx(r.from);
+        const auto right = columnToPx(r.to);
+        D2D1_RECT_F rect{};
 
         if (r.lines.test(GridLines::Left))
         {
@@ -438,7 +489,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
             rect.bottom = bottom;
             for (auto i = r.from; i < r.to; ++i)
             {
-                rect.left = columnToDIP(i);
+                rect.left = columnToPx(i);
                 rect.right = rect.left + p.s->font->thinLineWidth;
                 _fillRectangle(rect, r.color);
             }
@@ -457,7 +508,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
             rect.bottom = bottom;
             for (auto i = r.to; i > r.from; --i)
             {
-                rect.right = columnToDIP(i);
+                rect.right = columnToPx(i);
                 rect.left = rect.right - p.s->font->thinLineWidth;
                 _fillRectangle(rect, r.color);
             }
@@ -512,64 +563,150 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
     }
 }
 
-void BackendD2D::_drawCursor(const RenderingPayload& p)
+void BackendD2D::_drawCursorPart1(const RenderingPayload& p)
 {
     if (p.cursorRect.empty())
     {
         return;
     }
 
-    // Inverted cursors could be implemented in the future using
-    // ID2D1DeviceContext::DrawImage and D2D1_COMPOSITE_MODE_MASK_INVERT.
+    const auto cursorColor = p.s->cursor->cursorColor;
+    if (cursorColor == 0xffffffff)
+    {
+        const auto cursorSize = p.cursorRect.size();
+        if (cursorSize != _cursorBitmapSize)
+        {
+            _resizeCursorBitmap(p, cursorSize);
+        }
 
-    til::rect rect{
-        p.s->font->cellSize.x * p.cursorRect.left,
-        p.s->font->cellSize.y * p.cursorRect.top,
-        p.s->font->cellSize.x * p.cursorRect.right,
-        p.s->font->cellSize.y * p.cursorRect.bottom,
+        const auto backgroundBitmapOffset = p.cursorRect.top * p.backgroundBitmapStride;
+        const auto cellSizeX = static_cast<f32>(p.s->font->cellSize.x);
+        const auto cellSizeY = static_cast<f32>(p.s->font->cellSize.y);
+        const auto offsetX = p.cursorRect.left * cellSizeX;
+        const auto offsetY = p.cursorRect.top * cellSizeY;
+
+        D2D1_RECT_F srcRect{
+            .bottom = cursorSize.height * cellSizeY,
+        };
+        D2D1_RECT_F dstRect{
+            .top = offsetY,
+            .bottom = offsetY + srcRect.bottom,
+        };
+
+        for (til::CoordType x = 0; x < cursorSize.width; ++x)
+        {
+            const auto bg = p.backgroundBitmap[backgroundBitmapOffset + x];
+            const auto brush = _brushWithColor(bg ^ 0x3f3f3f);
+            srcRect.left = x * cellSizeX;
+            srcRect.right = srcRect.left + cellSizeX;
+            dstRect.left = srcRect.left + offsetX;
+            dstRect.right = srcRect.right + offsetX;
+            _renderTarget->FillOpacityMask(_cursorBitmap.get(), brush, &dstRect, &srcRect);
+        }
+    }
+}
+
+void BackendD2D::_drawCursorPart2(const RenderingPayload& p)
+{
+    if (p.cursorRect.empty())
+    {
+        return;
+    }
+
+    const auto cursorColor = p.s->cursor->cursorColor;
+    const D2D1_POINT_2F target{
+        static_cast<f32>(p.cursorRect.left * p.s->font->cellSize.x),
+        static_cast<f32>(p.cursorRect.top * p.s->font->cellSize.y),
     };
 
+    if (cursorColor == 0xffffffff)
+    {
+        _renderTarget->DrawImage(_cursorBitmap.get(), &target, nullptr, D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR, D2D1_COMPOSITE_MODE_MASK_INVERT);
+    }
+    else
+    {
+        const D2D1_RECT_F rect{
+            target.x,
+            target.y,
+            static_cast<f32>(p.cursorRect.right * p.s->font->cellSize.x),
+            static_cast<f32>(p.cursorRect.bottom * p.s->font->cellSize.y),
+        };
+        const auto brush = _brushWithColor(cursorColor);
+        _drawCursor(p, _renderTarget.get(), rect, brush);
+    }
+}
+
+void BackendD2D::_resizeCursorBitmap(const RenderingPayload& p, const til::size newSize)
+{
+    const til::size newSizeInPx{
+        newSize.width * p.s->font->cellSize.x,
+        newSize.height * p.s->font->cellSize.y,
+    };
+
+    // CreateCompatibleRenderTarget is a terrific API and does not adopt _any_ of the settings of the
+    // parent render target (like the AA mode or D2D1_UNIT_MODE_PIXELS). Not sure who came up with that,
+    // but fact is that we need to set both sizes to override the DPI and fake D2D1_UNIT_MODE_PIXELS.
+    const D2D1_SIZE_F sizeF{ static_cast<f32>(newSizeInPx.width), static_cast<f32>(newSizeInPx.height) };
+    const D2D1_SIZE_U sizeU{ gsl::narrow_cast<UINT32>(newSizeInPx.width), gsl::narrow_cast<UINT32>(newSizeInPx.height) };
+    wil::com_ptr<ID2D1BitmapRenderTarget> cursorRenderTarget;
+    _renderTarget->CreateCompatibleRenderTarget(&sizeF, &sizeU, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, cursorRenderTarget.addressof());
+    cursorRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+    cursorRenderTarget->BeginDraw();
+    {
+        const D2D1_RECT_F rect{ 0, 0, sizeF.width, sizeF.height };
+        const auto brush = _brushWithColor(0xffffffff);
+        _drawCursor(p, cursorRenderTarget.get(), rect, brush);
+    }
+    THROW_IF_FAILED(cursorRenderTarget->EndDraw());
+
+    cursorRenderTarget->GetBitmap(_cursorBitmap.put());
+    _cursorBitmapSize = newSize;
+}
+
+void BackendD2D::_drawCursor(const RenderingPayload& p, ID2D1RenderTarget* renderTarget, D2D1_RECT_F rect, ID2D1Brush* brush) noexcept
+{
     switch (static_cast<CursorType>(p.s->cursor->cursorType))
     {
     case CursorType::Legacy:
-        rect.top = rect.bottom - (p.s->font->cellSize.y * p.s->cursor->heightPercentage + 50) / 100;
-        _fillRectangle(rect, p.s->cursor->cursorColor);
+    {
+        const auto height = p.s->cursor->heightPercentage / 100.0f;
+        rect.top = roundf((rect.top - rect.bottom) * height + rect.bottom);
+        renderTarget->FillRectangle(&rect, brush);
         break;
+    }
     case CursorType::VerticalBar:
         rect.right = rect.left + p.s->font->thinLineWidth;
-        _fillRectangle(rect, p.s->cursor->cursorColor);
+        renderTarget->FillRectangle(&rect, brush);
         break;
     case CursorType::Underscore:
         rect.top += p.s->font->underlinePos;
         rect.bottom = rect.top + p.s->font->underlineWidth;
-        _fillRectangle(rect, p.s->cursor->cursorColor);
+        renderTarget->FillRectangle(&rect, brush);
         break;
     case CursorType::EmptyBox:
     {
-        const auto brush = _brushWithColor(p.s->cursor->cursorColor);
-        const auto w = p.s->font->thinLineWidth;
+        const auto w = static_cast<f32>(p.s->font->thinLineWidth);
         const auto wh = w / 2.0f;
-        const D2D1_RECT_F rectF{
-            rect.left + wh,
-            rect.top + wh,
-            rect.right - wh,
-            rect.bottom - wh,
-        };
-        _renderTarget->DrawRectangle(&rectF, brush, w, nullptr);
+        rect.left += wh;
+        rect.top += wh;
+        rect.right -= wh;
+        rect.bottom -= wh;
+        renderTarget->DrawRectangle(&rect, brush, w, nullptr);
         break;
     }
     case CursorType::FullBox:
-        _fillRectangle(rect, p.s->cursor->cursorColor);
+        renderTarget->FillRectangle(&rect, brush);
         break;
     case CursorType::DoubleUnderscore:
     {
         auto rect2 = rect;
         rect2.top = rect.top + p.s->font->doubleUnderlinePos.x;
         rect2.bottom = rect2.top + p.s->font->thinLineWidth;
-        _fillRectangle(rect2, p.s->cursor->cursorColor);
+        renderTarget->FillRectangle(&rect2, brush);
         rect.top = rect.top + p.s->font->doubleUnderlinePos.y;
         rect.bottom = rect.top + p.s->font->thinLineWidth;
-        _fillRectangle(rect, p.s->cursor->cursorColor);
+        renderTarget->FillRectangle(&rect, brush);
         break;
     }
     default:
@@ -638,24 +775,19 @@ void BackendD2D::_debugDumpRenderTarget(const RenderingPayload& p)
 
 ID2D1Brush* BackendD2D::_brushWithColor(u32 color)
 {
-    if (_brushColor != color)
+    if (_brushes.size() >= 16)
+    {
+        _brushes.clear();
+    }
+
+    const auto [cached, inserted] = _brushes.insert(color);
+    if (inserted)
     {
         const auto d2dColor = colorFromU32(color);
-        THROW_IF_FAILED(_renderTarget->CreateSolidColorBrush(&d2dColor, nullptr, _brush.put()));
-        _brushColor = color;
+        THROW_IF_FAILED(_renderTarget->CreateSolidColorBrush(&d2dColor, nullptr, cached.brush.addressof()));
     }
-    return _brush.get();
-}
 
-void BackendD2D::_fillRectangle(const til::rect& rect, u32 color)
-{
-    const D2D1_RECT_F rectF{
-        static_cast<f32>(rect.left),
-        static_cast<f32>(rect.top),
-        static_cast<f32>(rect.right),
-        static_cast<f32>(rect.bottom),
-    };
-    _fillRectangle(rectF, color);
+    return cached.brush.get();
 }
 
 void BackendD2D::_fillRectangle(const D2D1_RECT_F& rect, u32 color)

@@ -100,8 +100,8 @@ namespace Microsoft::Console::Render::Atlas
         static constexpr i16 i16min = -0x8000;
         static constexpr i16 i16max = 0x7fff;
         static constexpr u16r invalidatedAreaNone = { u16max, u16max, u16min, u16min };
-        static constexpr u16x2 invalidatedRowsNone{ u16max, u16min };
-        static constexpr u16x2 invalidatedRowsAll{ u16min, u16max };
+        static constexpr range<u16> invalidatedRowsNone{ u16max, u16min };
+        static constexpr range<u16> invalidatedRowsAll{ u16min, u16max };
 
         std::unique_ptr<IBackend> _b;
         RenderingPayload _p;
@@ -140,9 +140,10 @@ namespace Microsoft::Console::Render::Atlas
             LineRendition lineRendition = LineRendition::SingleWidth;
             // UpdateDrawingBrushes()
             u32 backgroundOpaqueMixin = 0xff000000;
-            u32x2 currentColor;
+            u32 currentBackground = 0;
+            u32 currentForeground = 0;
             FontRelevantAttributes attributes = FontRelevantAttributes::None;
-            u16x2 lastPaintBufferLineCoord;
+            u16x2 lastPaintBufferLineCoord{};
             // UpdateHyperlinkHoveredId()
             u16 hyperlinkHoveredId = 0;
 
@@ -150,7 +151,7 @@ namespace Microsoft::Console::Render::Atlas
             til::rect dirtyRect;
             // These "invalidation" fields are reset in EndPaint()
             u16r invalidatedCursorArea = invalidatedAreaNone;
-            u16x2 invalidatedRows = invalidatedRowsNone; // x is treated as "top" and y as "bottom"
+            range<u16> invalidatedRows = invalidatedRowsNone; // x is treated as "top" and y as "bottom"
             i16 scrollOffset = 0;
         } _api;
     };

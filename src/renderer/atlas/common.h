@@ -56,8 +56,10 @@ namespace Microsoft::Console::Render::Atlas
     template<typename T>
     struct vec2
     {
-        T x{};
-        T y{};
+        // These members aren't zero-initialized to make these trivial types,
+        // and allow the compiler to quickly memset() allocations, etc.
+        T x;
+        T y;
 
         ATLAS_POD_OPS(vec2)
     };
@@ -65,10 +67,12 @@ namespace Microsoft::Console::Render::Atlas
     template<typename T>
     struct vec4
     {
-        T x{};
-        T y{};
-        T z{};
-        T w{};
+        // These members aren't zero-initialized to make these trivial types,
+        // and allow the compiler to quickly memset() allocations, etc.
+        T x;
+        T y;
+        T z;
+        T w;
 
         ATLAS_POD_OPS(vec4)
     };
@@ -76,38 +80,44 @@ namespace Microsoft::Console::Render::Atlas
     template<typename T>
     struct rect
     {
-        T left{};
-        T top{};
-        T right{};
-        T bottom{};
+        // These members aren't zero-initialized to make these trivial types,
+        // and allow the compiler to quickly memset() allocations, etc.
+        T left;
+        T top;
+        T right;
+        T bottom;
 
         ATLAS_POD_OPS(rect)
 
         constexpr bool empty() const noexcept
         {
-            return (left >= right) || (top >= bottom);
+            return left >= right || top >= bottom;
         }
 
         constexpr bool non_empty() const noexcept
         {
-            return (left < right) && (top < bottom);
+            return left < right && top < bottom;
         }
     };
 
     template<typename T>
     struct range
     {
-        T start{};
-        T end{};
+        T start;
+        T end;
 
         ATLAS_POD_OPS(range)
+
+        constexpr bool contains(T v) const noexcept
+        {
+            return v >= start && v < end;
+        }
     };
 
     using u8 = uint8_t;
 
     using u16 = uint16_t;
     using u16x2 = vec2<u16>;
-    using u16x4 = vec4<u16>;
     using u16r = rect<u16>;
 
     using i16 = int16_t;
@@ -316,7 +326,7 @@ namespace Microsoft::Console::Render::Atlas
         u16 underlineWidth = 0;
         u16 strikethroughPos = 0;
         u16 strikethroughWidth = 0;
-        u16x2 doubleUnderlinePos;
+        u16x2 doubleUnderlinePos{};
         u16 thinLineWidth = 0;
         u16 dpi = 96;
         AntialiasingMode antialiasingMode = DefaultAntialiasingMode;
@@ -348,8 +358,8 @@ namespace Microsoft::Console::Render::Atlas
         til::generational<FontSettings> font;
         til::generational<CursorSettings> cursor;
         til::generational<MiscellaneousSettings> misc;
-        u16x2 targetSize;
-        u16x2 cellCount;
+        u16x2 targetSize{};
+        u16x2 cellCount{};
     };
 
     using GenerationalSettings = til::generational<Settings>;
@@ -448,6 +458,9 @@ namespace Microsoft::Console::Render::Atlas
         Buffer<ShapedRow> unorderedRows;
         // This is used as a scratch buffer during scrolling.
         Buffer<ShapedRow*> rowsScratch;
+        // This contains the rows in the right order from row 0 to N.
+        // They get rotated around when we scroll the buffer. Technically
+        // we could also implement scrolling by using a circular array.
         Buffer<ShapedRow*> rows;
         // This stride (width) of the backgroundBitmap is a "count" of u32 and not in bytes.
         size_t backgroundBitmapStride = 0;
@@ -455,11 +468,13 @@ namespace Microsoft::Console::Render::Atlas
         // 1 ensures that the backends redraw the background, even if the background is
         // entirely black, just like `backgroundBitmap` is all back after it gets created.
         til::generation_t backgroundBitmapGeneration{ 1 };
-
-        u16r cursorRect;
-
+        // In columns/rows.
+        til::rect cursorRect;
+        // In pixel.
         til::rect dirtyRectInPx;
-        u16x2 invalidatedRows;
+        // In rows.
+        range<u16> invalidatedRows{};
+        // In pixel.
         i16 scrollOffset = 0;
 
         void MarkAllAsDirty() noexcept
