@@ -28,6 +28,7 @@
     <ClCompile Include="u8u16convertTests.cpp" />
     <ClCompile Include="EnvTests.cpp" />
     <ClCompile Include="UnicodeTests.cpp" />
+    <ClCompile Include="GenerationalTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
@@ -116,6 +117,15 @@
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\til\unicode.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\til\bytes.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\til\generational.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\til\type_traits.h">
       <Filter>inc</Filter>
     </ClInclude>
   </ItemGroup>

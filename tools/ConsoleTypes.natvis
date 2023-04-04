@@ -105,4 +105,11 @@
             <Item Name="[ptr]">_ptr</Item>
         </Expand>
     </Type>
+
+    <Type Name="til::generational&lt;*&gt;">
+        <DisplayString>{{ gen={_generation._value}, {_value} }}</DisplayString>
+        <Expand>
+            <ExpandedItem>_value</ExpandedItem>
+        </Expand>
+    </Type>
 </AutoVisualizer>
