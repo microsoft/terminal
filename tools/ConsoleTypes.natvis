@@ -107,7 +107,7 @@
     </Type>
 
     <Type Name="til::generational&lt;*&gt;">
-        <DisplayString>{{ generation={_generation._value}}}</DisplayString>
+        <DisplayString>{{ gen={_generation._value}, {_value} }}</DisplayString>
         <Expand>
             <ExpandedItem>_value</ExpandedItem>
         </Expand>
