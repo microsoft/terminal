@@ -4,7 +4,6 @@ constexpr std::wstring_view WindowsTerminalExe{ L"WindowsTerminal.exe" };
 constexpr std::wstring_view LocalAppDataAppsPath{ L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\" };
 constexpr std::wstring_view ElevateShimExe{ L"elevate-shim.exe" };
 
-
 _TIL_INLINEPREFIX bool IsPackaged()
 {
     static const auto isPackaged = []() -> bool {

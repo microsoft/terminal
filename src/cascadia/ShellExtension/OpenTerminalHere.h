@@ -60,7 +60,6 @@ private:
     HRESULT GetBestLocationFromSelectionOrSite(IShellItemArray* psiArray, IShellItem** location) const noexcept;
     bool IsControlPressed();
 
-
     wil::com_ptr_nothrow<IUnknown> site_;
 };
 
