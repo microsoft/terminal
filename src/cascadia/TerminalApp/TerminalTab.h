@@ -7,9 +7,6 @@
 #include "TabBase.h"
 #include "TerminalTab.g.h"
 
-static constexpr double HeaderRenameBoxWidthDefault{ 165 };
-static constexpr double HeaderRenameBoxWidthTitleLength{ std::numeric_limits<double>::infinity() };
-
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
@@ -109,6 +106,9 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:
+        static constexpr double HeaderRenameBoxWidthDefault{ 165 };
+        static constexpr double HeaderRenameBoxWidthTitleLength{ std::numeric_limits<double>::infinity() };
+
         std::shared_ptr<Pane> _rootPane{ nullptr };
         std::shared_ptr<Pane> _activePane{ nullptr };
         std::shared_ptr<Pane> _zoomedPane{ nullptr };

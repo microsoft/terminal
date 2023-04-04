@@ -579,10 +579,8 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, til::rect proposedRect, Launc
 
     auto initialSize = _windowLogic.GetLaunchDimensions(dpix);
 
-    const auto islandWidth = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.Width)), 1);
-    const auto islandHeight = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.Height)), 1);
+    const auto islandWidth = Utils::ClampToShortMax(lrintf(initialSize.Width), 1);
+    const auto islandHeight = Utils::ClampToShortMax(lrintf(initialSize.Height), 1);
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
@@ -1231,7 +1229,6 @@ winrt::TerminalApp::TerminalWindow AppHost::Logic()
 void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                  winrt::TerminalApp::RequestMoveContentArgs args)
 {
-    winrt::Windows::Foundation::Rect rect{};
     winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Rect> windowBoundsReference{ nullptr };
 
     if (args.WindowPosition() && _window)
@@ -1261,8 +1258,8 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
         {
             const auto initialSize = _windowLogic.GetLaunchDimensions(dpi);
 
-            const auto islandWidth = Utils::ClampToShortMax(static_cast<long>(ceil(initialSize.Width)), 1);
-            const auto islandHeight = Utils::ClampToShortMax(static_cast<long>(ceil(initialSize.Height)), 1);
+            const auto islandWidth = Utils::ClampToShortMax(lrintf(initialSize.Width), 1);
+            const auto islandHeight = Utils::ClampToShortMax(lrintf(initialSize.Height), 1);
 
             // Get the size of a window we'd need to host that client rect. This will
             // add the titlebar space.
@@ -1280,12 +1277,13 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
         dragPositionInPixels.y -= nonClientFrame.top;
         windowSize = windowSize - nonClientFrame.size();
 
+        // Convert to DIPs for the size, so that dragging across a DPI boundary
+        // retains the correct dimensions.
+        const auto sizeInDips = windowSize.scale(til::math::rounding, 1.0f / scale);
+        til::rect inDips{ dragPositionInPixels, sizeInDips };
+
         // Use the drag event as the new position, and the size of the actual window.
-        rect = winrt::Windows::Foundation::Rect{ static_cast<float>(dragPositionInPixels.x),
-                                                 static_cast<float>(dragPositionInPixels.y),
-                                                 static_cast<float>(windowSize.width),
-                                                 static_cast<float>(windowSize.height) };
-        windowBoundsReference = rect;
+        windowBoundsReference = inDips.to_winrt_rect();
     }
 
     _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex(), windowBoundsReference);
