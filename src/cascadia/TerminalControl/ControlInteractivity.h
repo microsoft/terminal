@@ -45,6 +45,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::ControlCore Core();
 
         void Close();
+        void Detach();
 
         Control::InteractivityAutomationPeer OnCreateAutomationPeer();
         ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
@@ -88,12 +89,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ManglePathsForWsl();
 
         uint64_t Id();
+        void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
         TYPED_EVENT(ScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
         TYPED_EVENT(ContextMenuRequested, IInspectable, Control::ContextMenuRequestedEventArgs);
 
+        TYPED_EVENT(Attached, IInspectable, IInspectable);
         TYPED_EVENT(Closed, IInspectable, IInspectable);
 
     private:

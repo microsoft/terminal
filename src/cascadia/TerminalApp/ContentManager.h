@@ -18,6 +18,9 @@ Abstract:
   other threads.
 - When you want to create a new TermControl, call CreateCore to instantiate a
   new content with a GUID for later reparenting.
+- Detach can be used to temporarily remove a content from its hosted
+  TermControl. After detaching, you can still use LookupCore &
+  TermControl::AttachContent to re-attach to the content.
 --*/
 #pragma once
 
@@ -35,10 +38,12 @@ namespace winrt::TerminalApp::implementation
                                                                       const Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
         Microsoft::Terminal::Control::ControlInteractivity TryLookupCore(uint64_t id);
 
+        void Detach(const Microsoft::Terminal::Control::TermControl& control);
+
     private:
         std::unordered_map<uint64_t, Microsoft::Terminal::Control::ControlInteractivity> _content;
 
-        void _closedHandler(winrt::Windows::Foundation::IInspectable sender,
-                            winrt::Windows::Foundation::IInspectable e);
+        void _closedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                            const winrt::Windows::Foundation::IInspectable& e);
     };
 }
