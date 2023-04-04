@@ -61,6 +61,6 @@ class FlatSetTests
         VERIFY_IS_FALSE(inserted2);
 
         VERIFY_ARE_EQUAL(&entry1, &entry2);
-        VERIFY_ARE_EQUAL(123, entry2.value);
+        VERIFY_ARE_EQUAL(123u, entry2.value);
     }
 };
