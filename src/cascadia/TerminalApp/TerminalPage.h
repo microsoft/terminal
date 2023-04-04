@@ -15,9 +15,6 @@
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
-static constexpr uint32_t DefaultRowsToScroll{ 3 };
-static constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
-
 namespace TerminalAppLocalTests
 {
     class TabTests;
@@ -31,6 +28,9 @@ namespace Microsoft::Terminal::Core
 
 namespace winrt::TerminalApp::implementation
 {
+    inline constexpr uint32_t DefaultRowsToScroll{ 3 };
+    inline constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
+
     enum StartupState : int
     {
         NotInitialized = 0,
