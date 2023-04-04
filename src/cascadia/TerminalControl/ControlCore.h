@@ -32,13 +32,19 @@ namespace ControlUnitTests
     class ControlInteractivityTests;
 };
 
-#define RUNTIME_SETTING(type, name, setting)                      \
-private:                                                          \
-    std::optional<type> _runtime##name{ std::nullopt };           \
-    void name(const type newValue) { _runtime##name = newValue; } \
-                                                                  \
-public:                                                           \
-    type name() const { return til::coalesce_value(_runtime##name, setting); }
+#define RUNTIME_SETTING(type, name, setting)                 \
+private:                                                     \
+    std::optional<type> _runtime##name{ std::nullopt };      \
+    void name(const type newValue)                           \
+    {                                                        \
+        _runtime##name = newValue;                           \
+    }                                                        \
+                                                             \
+public:                                                      \
+    type name() const                                        \
+    {                                                        \
+        return til::coalesce_value(_runtime##name, setting); \
+    }
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
