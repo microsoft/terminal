@@ -52,6 +52,9 @@ static constexpr std::string_view ThemesKey{ "themes" };
 constexpr std::wstring_view systemThemeName{ L"system" };
 constexpr std::wstring_view darkThemeName{ L"dark" };
 constexpr std::wstring_view lightThemeName{ L"light" };
+constexpr std::wstring_view legacySystemThemeName{ L"legacySystem" };
+constexpr std::wstring_view legacyDarkThemeName{ L"legacyDark" };
+constexpr std::wstring_view legacyLightThemeName{ L"legacyLight" };
 
 static constexpr std::wstring_view jsonExtension{ L".json" };
 static constexpr std::wstring_view FragmentsSubDirectory{ L"\\Fragments" };
@@ -562,8 +565,9 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
         {
             if (const auto theme = Theme::FromJson(themeJson))
             {
+                const auto& name{ theme->Name() };
                 if (origin != OriginTag::InBox &&
-                    (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName))
+                    (name == systemThemeName || name == lightThemeName || name == darkThemeName || name == legacySystemThemeName || name == legacyDarkThemeName || name == legacyLightThemeName))
                 {
                     // If the theme didn't come from the in-box themes, and its
                     // name was one of the reserved names, then just ignore it.
@@ -954,9 +958,9 @@ void CascadiaSettings::_researchOnLoad()
         // dark: 2
         // a custom theme: 3
         const auto themeChoice = themeInUse == L"system" ? 0 :
-                                 themeInUse == L"light"  ? 1 :
-                                 themeInUse == L"dark"   ? 2 :
-                                                           3;
+                                                           themeInUse == L"light" ? 1 :
+                                                                                    themeInUse == L"dark" ? 2 :
+                                                                                                            3;
 
         TraceLoggingWrite(
             g_hSettingsModelProvider,

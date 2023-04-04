@@ -316,6 +316,38 @@
                 "background": "terminalBackground",
                 "unfocusedBackground": "#00000000"
             }
+        },
+        {
+            "name": "legacyDark",
+            "tab":
+            {
+                "background": null,
+                "unfocusedBackground": null
+            },
+            "window":
+            {
+                "applicationTheme": "dark"
+            }
+        },
+        {
+            "name": "legacyLight",
+            "tab":
+            {
+                "background": null,
+                "unfocusedBackground": null
+            },
+            "window":
+            {
+                "applicationTheme": "light"
+            }
+        },
+        {
+            "name": "legacySystem",
+            "tab":
+            {
+                "background": null,
+                "unfocusedBackground": null
+            }
         }
     ],
     "actions":
