@@ -20,7 +20,7 @@ namespace Microsoft::Console::Render::Atlas
         struct CachedBrush
         {
             wil::com_ptr<ID2D1SolidColorBrush> brush;
-            u32 color;
+            u32 color = 0;
 
             constexpr bool operator==(u32 key) const noexcept
             {
@@ -57,7 +57,7 @@ namespace Microsoft::Console::Render::Atlas
         void _debugShowDirty(const RenderingPayload& p);
         void _debugDumpRenderTarget(const RenderingPayload& p);
         ID2D1Brush* _brushWithColor(u32 color);
-        __declspec(noinline) void _clearBrushes();
+        __declspec(noinline) void _clearBrushes() const noexcept;
         void _fillRectangle(const D2D1_RECT_F& rect, u32 color);
 
         SwapChainManager _swapChainManager;

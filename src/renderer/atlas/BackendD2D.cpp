@@ -757,7 +757,7 @@ ID2D1Brush* BackendD2D::_brushWithColor(u32 color)
     return cached.brush.get();
 }
 
-void BackendD2D::_clearBrushes()
+void BackendD2D::_clearBrushes() const noexcept
 {
     for (auto& slot : _brushes.container())
     {
