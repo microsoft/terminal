@@ -21,6 +21,7 @@
     <ClCompile Include="EnumSetTests.cpp" />
     <ClCompile Include="EnvTests.cpp" />
     <ClCompile Include="FlatSetTests.cpp" />
+    <ClCompile Include="GenerationalTests.cpp" />
     <ClCompile Include="HashTests.cpp" />
     <ClCompile Include="MathTests.cpp" />
     <ClCompile Include="mutex.cpp" />
@@ -49,7 +50,7 @@
     <ClInclude Include="..\..\inc\til\color.h" />
     <ClInclude Include="..\..\inc\til\enumset.h" />
     <ClInclude Include="..\..\inc\til\env.h" />
-    <ClInclude Include="..\..\inc\til\flat_set.h" />
+    <ClInclude Include="..\..\inc\til\generational.h" />
     <ClInclude Include="..\..\inc\til\hash.h" />
     <ClInclude Include="..\..\inc\til\latch.h" />
     <ClInclude Include="..\..\inc\til\math.h" />

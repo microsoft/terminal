@@ -28,6 +28,7 @@
     <ClCompile Include="u8u16convertTests.cpp" />
     <ClCompile Include="EnvTests.cpp" />
     <ClCompile Include="UnicodeTests.cpp" />
+    <ClCompile Include="GenerationalTests.cpp" />
     <ClCompile Include="FlatSetTests.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -122,7 +123,7 @@
     <ClInclude Include="..\..\inc\til\bytes.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\til\flat_set.h">
+    <ClInclude Include="..\..\inc\til\generational.h">
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\til\type_traits.h">
