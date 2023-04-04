@@ -238,6 +238,7 @@ MODULE_SETUP(ModuleSetup)
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(FreeConsole());
 
     // Wait a moment for the driver to be ready after freeing to attach.
+    Sleep(100);
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(AttachConsole(dwFindPid));
 
     auto tries = 0;
@@ -269,10 +270,13 @@ MODULE_SETUP(ModuleSetup)
         {
             auto gle = GetLastError();
             VERIFY_ARE_EQUAL(6u, gle, L"If we fail to set up the console, GetLastError should return 6 here.");
-            Sleep(1000);
+
+            // Sleep with a backoff, to give us longer to try next time.
+            Sleep(1000 * (1 + tries));
         }
         else
         {
+            Log::Comment(NoThrowString().Format(L"Succeeded on try #%d", tries));
             break;
         }
     };
