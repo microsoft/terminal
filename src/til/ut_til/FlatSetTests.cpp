@@ -52,7 +52,7 @@ class FlatSetTests
     {
         til::linear_flat_set<Data> set;
 
-        // This simultaneously demonstrates how the class can't just do "hetegorenous lookups"
+        // This simultaneously demonstrates how the class can't just do "heterogeneous lookups"
         // like STL does, but also insert items with a different type.
         const auto [entry1, inserted1] = set.insert(123);
         VERIFY_IS_TRUE(inserted1);
