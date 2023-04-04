@@ -1,3 +1,4 @@
+![Screenshot_20230404_074953_Chrome](https://user-images.githubusercontent.com/106925214/229836694-136d3176-5b6e-45ec-a091-fefb26b59df5.jpg)
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
 This repository contains the source code for:
