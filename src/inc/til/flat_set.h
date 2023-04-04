@@ -65,7 +65,7 @@ namespace til
             // The most common, basic and performant hash function is to multiply the value
             // by some prime number and divide by the number of slots. It's been shown
             // many times in literature that such a scheme performs the best on average.
-            // As such, we perform the divide her to get the topmost bits down.
+            // As such, we perform the divide here to get the topmost bits down.
             // See flat_set_hash_integer.
             const auto hash = T::hash(key) >> _shift;
 

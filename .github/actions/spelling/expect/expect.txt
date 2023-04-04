@@ -2288,7 +2288,6 @@ YCENTER
 YCount
 YDPI
 YOffset
-ype
 YSubstantial
 YVIRTUALSCREEN
 YWalk
