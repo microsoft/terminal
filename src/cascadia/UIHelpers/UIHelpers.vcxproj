@@ -46,6 +46,7 @@
   <ItemGroup>
     <Midl Include="Converters.idl" />
     <Midl Include="IconPathConverter.idl" />
+    <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="ResourceString.idl" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->

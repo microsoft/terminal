@@ -249,7 +249,6 @@
     header in TerminalApp.vcxproj (as well as in this file) -->
     <Midl Include="ActionPaletteItem.idl" />
     <Midl Include="CommandLinePaletteItem.idl" />
-    <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>

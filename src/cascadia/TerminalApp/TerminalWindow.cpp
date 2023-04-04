@@ -871,7 +871,7 @@ namespace winrt::TerminalApp::implementation
             auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(xamlRoot) };
             do
             {
-                if (auto keyListener{ focusedObject.try_as<IDirectKeyListener>() })
+                if (auto keyListener{ focusedObject.try_as<UI::IDirectKeyListener>() })
                 {
                     if (keyListener.OnDirectKeyEvent(vkey, scanCode, down))
                     {

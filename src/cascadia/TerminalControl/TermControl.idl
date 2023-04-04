@@ -4,7 +4,6 @@
 import "IMouseWheelListener.idl";
 import "IControlSettings.idl";
 import "ControlInteractivity.idl";
-import "IDirectKeyListener.idl";
 import "EventArgs.idl";
 import "ICoreState.idl";
 import "ControlCore.idl";
@@ -13,7 +12,7 @@ namespace Microsoft.Terminal.Control
 {
 
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl,
-                                                   IDirectKeyListener,
+                                                   Microsoft.Terminal.UI.IDirectKeyListener,
                                                    IMouseWheelListener,
                                                    ICoreState,
                                                    Windows.UI.Xaml.Data.INotifyPropertyChanged
