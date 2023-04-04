@@ -613,11 +613,11 @@ namespace winrt::TerminalApp::implementation
         if (_contentBounds)
         {
             // If we've been created as a torn-out window, then we'll need to
-            // use that size instead. _contentBounds is in raw pixels. Huzzah!
-            // Just return that.
+            // use that size instead. _contentBounds is in DIPs. Scale
+            // accordingly to the new pixel size.
             return {
-                _contentBounds.Value().Width,
-                _contentBounds.Value().Height
+                _contentBounds.Value().Width * scale,
+                _contentBounds.Value().Height * scale
             };
         }
 
