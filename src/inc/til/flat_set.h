@@ -67,7 +67,7 @@ namespace til
             // many times in literature that such a scheme performs the best on average.
             // As such, we perform the divide here to get the topmost bits down.
             // See flat_set_hash_integer.
-            const auto hash = T::hash(key) >> _shift;
+            const auto hash = ::std::hash<T>{}(key) >> _shift;
 
             for (auto i = hash;; ++i)
             {
@@ -108,7 +108,7 @@ namespace til
                     continue;
                 }
 
-                const auto hash = T::hash(oldSlot) >> newShift;
+                const auto hash = ::std::hash<T>{}(oldSlot) >> newShift;
 
                 for (auto i = hash;; ++i)
                 {

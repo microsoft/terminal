@@ -13,17 +13,6 @@ struct Data
 {
     static constexpr auto emptyMarker = std::numeric_limits<size_t>::max();
 
-#pragma region linear_flat_set interface
-    static constexpr size_t hash(int key) noexcept
-    {
-        return til::flat_set_hash_integer(static_cast<size_t>(key));
-    }
-
-    static constexpr size_t hash(Data d) noexcept
-    {
-        return til::flat_set_hash_integer(d.value);
-    }
-
     constexpr operator bool() const noexcept
     {
         return value != emptyMarker;
@@ -39,9 +28,22 @@ struct Data
         value = static_cast<size_t>(key);
         return *this;
     }
-#pragma endregion
 
     size_t value = emptyMarker;
+};
+
+template<>
+struct ::std::hash<Data>
+{
+    constexpr size_t operator()(int key) const noexcept
+    {
+        return til::flat_set_hash_integer(static_cast<size_t>(key));
+    }
+
+    constexpr size_t operator()(Data d) const noexcept
+    {
+        return til::flat_set_hash_integer(d.value);
+    }
 };
 
 class FlatSetTests
