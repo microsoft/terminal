@@ -64,9 +64,9 @@ namespace Microsoft.Terminal.Control
                     IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        Boolean Initialize(Double actualWidth,
-                           Double actualHeight,
-                           Double compositionScale);
+        Boolean Initialize(Single actualWidth,
+                           Single actualHeight,
+                           Single compositionScale);
 
         void UpdateSettings(IControlSettings settings, IControlAppearance appearance);
         void ApplyAppearance(Boolean focused);
@@ -108,9 +108,9 @@ namespace Microsoft.Terminal.Control
 
         void ResetFontSize();
         void AdjustFontSize(Single fontSizeDelta);
-        void SizeChanged(Double width, Double height);
-        void ScaleChanged(Double scale);
-        void SizeOrScaleChanged(Double width, Double height, Double scale);
+        void SizeChanged(Single width, Single height);
+        void ScaleChanged(Single scale);
+        void SizeOrScaleChanged(Single width, Single height, Single scale);
 
         void ToggleShaderEffects();
         void ToggleReadOnlyMode();

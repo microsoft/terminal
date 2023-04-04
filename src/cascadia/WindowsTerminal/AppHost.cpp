@@ -579,10 +579,8 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, til::rect proposedRect, Launc
 
     auto initialSize = _windowLogic.GetLaunchDimensions(dpix);
 
-    const auto islandWidth = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.Width)), 1);
-    const auto islandHeight = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.Height)), 1);
+    const auto islandWidth = Utils::ClampToShortMax(lrintf(initialSize.Width), 1);
+    const auto islandHeight = Utils::ClampToShortMax(lrintf(initialSize.Height), 1);
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
@@ -1260,8 +1258,8 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
         {
             const auto initialSize = _windowLogic.GetLaunchDimensions(dpi);
 
-            const auto islandWidth = Utils::ClampToShortMax(static_cast<long>(ceil(initialSize.Width)), 1);
-            const auto islandHeight = Utils::ClampToShortMax(static_cast<long>(ceil(initialSize.Height)), 1);
+            const auto islandWidth = Utils::ClampToShortMax(lrintf(initialSize.Width), 1);
+            const auto islandHeight = Utils::ClampToShortMax(lrintf(initialSize.Height), 1);
 
             // Get the size of a window we'd need to host that client rect. This will
             // add the titlebar space.
