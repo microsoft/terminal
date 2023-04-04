@@ -2,8 +2,13 @@
 Language: Cpp
 BasedOnStyle: Microsoft
 AccessModifierOffset: -4
+AlignEscapedNewlines: Left
 AlignTrailingComments: false
+AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortFunctionsOnASingleLine: All
+AlwaysBreakTemplateDeclarations: Yes
+BinPackArguments: false
+BinPackParameters: false
 BraceWrapping:
   AfterCaseLabel: true
   AfterUnion: true
@@ -13,8 +18,10 @@ BreakConstructorInitializers: AfterColon
 BreakInheritanceList: AfterColon
 ColumnLimit: 0
 CommentPragmas: "suppress"
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
 Cpp11BracedListStyle: false
 FixNamespaceComments: false
+IncludeBlocks: Regroup
 IncludeCategories:
     - Regex: '^.*(precomp|pch|stdafx)'
       Priority: -1
@@ -24,6 +31,7 @@ IncludeCategories:
       Priority: 2
     - Regex: '.*'
       Priority: 3
+KeepEmptyLinesAtTheStartOfBlocks: false
 MacroBlockBegin: "BEGIN_TEST_METHOD_PROPERTIES|BEGIN_MODULE|BEGIN_TEST_CLASS|BEGIN_TEST_METHOD"
 MacroBlockEnd: "END_TEST_METHOD_PROPERTIES|END_MODULE|END_TEST_CLASS|END_TEST_METHOD"
 NamespaceIndentation: All
@@ -31,3 +39,5 @@ PointerAlignment: Left
 ReflowComments: false
 SortIncludes: false
 SpaceAfterTemplateKeyword: false
+SpacesInAngles: false
+SpacesInContainerLiterals: false
