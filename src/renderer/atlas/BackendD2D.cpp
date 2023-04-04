@@ -23,52 +23,19 @@ TIL_FAST_MATH_BEGIN
 
 using namespace Microsoft::Console::Render::Atlas;
 
-namespace til
+template<>
+struct ::std::hash<BackendD2D::CachedBrush>
 {
-    template<>
-    struct flat_set_trait<BackendD2D::CachedBrush>
+    constexpr size_t operator()(u32 key) const noexcept
     {
-        using T = BackendD2D::CachedBrush;
+        return til::flat_set_hash_integer(key);
+    }
 
-        static constexpr size_t hash(u32 key) noexcept
-        {
-            return flat_set_hash_integer(key);
-        }
-
-        static constexpr size_t hash(const T& slot) noexcept
-        {
-            return flat_set_hash_integer(slot.color);
-        }
-
-        static constexpr bool equals(const T& slot, u32 key)
-        {
-            return slot.color == key;
-        }
-
-        static bool empty(const T& slot)
-        {
-            return !slot.brush;
-        }
-
-        static constexpr void fill(T& slot, u32 key)
-        {
-            slot.color = key;
-        }
-
-        static std::unique_ptr<T[]> allocate(size_t capacity)
-        {
-            return std::make_unique<T[]>(capacity);
-        }
-
-        static void clear(T* data, size_t capacity) noexcept
-        {
-            for (auto& slot : std::span{ data, capacity })
-            {
-                slot.brush.reset();
-            }
-        }
-    };
-}
+    constexpr size_t operator()(const BackendD2D::CachedBrush& slot) const noexcept
+    {
+        return til::flat_set_hash_integer(slot.color);
+    }
+};
 
 BackendD2D::BackendD2D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11DeviceContext2> deviceContext) noexcept :
     _device{ std::move(device) },
@@ -155,7 +122,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
             _renderTarget->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
             _renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
         }
-        _brushes.clear();
+        _clearBrushes();
     }
 
     if (!_dottedStrokeStyle)
@@ -777,7 +744,7 @@ ID2D1Brush* BackendD2D::_brushWithColor(u32 color)
 {
     if (_brushes.size() >= 16)
     {
-        _brushes.clear();
+        _clearBrushes();
     }
 
     const auto [cached, inserted] = _brushes.insert(color);
@@ -788,6 +755,14 @@ ID2D1Brush* BackendD2D::_brushWithColor(u32 color)
     }
 
     return cached.brush.get();
+}
+
+void BackendD2D::_clearBrushes()
+{
+    for (auto& slot : _brushes.container())
+    {
+        slot.brush.reset();
+    }
 }
 
 void BackendD2D::_fillRectangle(const D2D1_RECT_F& rect, u32 color)

@@ -37,100 +37,36 @@ TIL_FAST_MATH_BEGIN
 
 using namespace Microsoft::Console::Render::Atlas;
 
-namespace til
+template<>
+struct ::std::hash<BackendD3D::AtlasGlyphEntry>
 {
-    template<>
-    struct flat_set_trait<BackendD3D::AtlasGlyphEntry>
+    constexpr size_t operator()(u16 key) const noexcept
     {
-        using T = BackendD3D::AtlasGlyphEntry;
+        return til::flat_set_hash_integer(key);
+    }
 
-        static constexpr size_t hash(u16 key) noexcept
-        {
-            return flat_set_hash_integer(key);
-        }
-
-        static constexpr size_t hash(const T& slot) noexcept
-        {
-            return flat_set_hash_integer(slot.glyphIndex);
-        }
-
-        static constexpr bool equals(const T& slot, u16 key)
-        {
-            return slot.glyphIndex == key;
-        }
-
-        static constexpr bool empty(const T& slot)
-        {
-            return !slot._occupied;
-        }
-
-        static constexpr void fill(T& slot, u16 key)
-        {
-            slot.glyphIndex = key;
-            slot._occupied = 1;
-        }
-
-        static std::unique_ptr<T[]> allocate(size_t capacity)
-        {
-            return std::make_unique<T[]>(capacity);
-        }
-
-        static void clear(T* data, size_t capacity) noexcept
-        {
-            memset(data, 0, capacity * sizeof(T));
-        }
-    };
-
-    template<>
-    struct flat_set_trait<BackendD3D::AtlasFontFaceEntry>
+    constexpr size_t operator()(const BackendD3D::AtlasGlyphEntry& slot) const noexcept
     {
-        using T = BackendD3D::AtlasFontFaceEntry;
+        return til::flat_set_hash_integer(slot.glyphIndex);
+    }
+};
 
-        static size_t hash(const BackendD3D::AtlasFontFaceKey& key) noexcept
-        {
-            return flat_set_hash_integer(std::bit_cast<uintptr_t>(key.fontFace) | static_cast<u8>(key.lineRendition));
-        }
+template<>
+struct ::std::hash<BackendD3D::AtlasFontFaceEntry>
+{
+    using T = BackendD3D::AtlasFontFaceEntry;
 
-        static size_t hash(const T& slot) noexcept
-        {
-            const auto& inner = *slot.inner;
-            return flat_set_hash_integer(std::bit_cast<uintptr_t>(inner.fontFace.get()) | static_cast<u8>(inner.lineRendition));
-        }
+    size_t operator()(const BackendD3D::AtlasFontFaceKey& key) const noexcept
+    {
+        return til::flat_set_hash_integer(std::bit_cast<uintptr_t>(key.fontFace) | static_cast<u8>(key.lineRendition));
+    }
 
-        static bool equals(const T& slot, const BackendD3D::AtlasFontFaceKey& key) noexcept
-        {
-            const auto& inner = *slot.inner;
-            return inner.fontFace.get() == key.fontFace && inner.lineRendition == key.lineRendition;
-        }
-
-        static bool empty(const T& slot) noexcept
-        {
-            return !slot.inner;
-        }
-
-        static void fill(T& slot, const BackendD3D::AtlasFontFaceKey& key)
-        {
-            slot.inner = std::make_unique<BackendD3D::AtlasFontFaceEntryInner>();
-
-            auto& inner = *slot.inner;
-            inner.fontFace = key.fontFace;
-            inner.lineRendition = key.lineRendition;
-        }
-
-        static std::unique_ptr<T[]> allocate(size_t capacity)
-        {
-            return std::make_unique<T[]>(capacity);
-        }
-
-        static void clear(T* data, size_t capacity) noexcept
-        {
-            for (auto& slot : std::span{ data, capacity })
-            {
-                slot.inner.reset();
-            }
-        }
-    };
-}
+    size_t operator()(const BackendD3D::AtlasFontFaceEntry& slot) const noexcept
+    {
+        const auto& inner = *slot.inner;
+        return til::flat_set_hash_integer(std::bit_cast<uintptr_t>(inner.fontFace.get()) | static_cast<u8>(inner.lineRendition));
+    }
+};
 
 BackendD3D::BackendD3D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11DeviceContext2> deviceContext) :
     _device{ std::move(device) },
@@ -840,8 +776,12 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
         _rectPackerData = Buffer<stbrp_node>{ u };
     }
 
-    _glyphAtlasMap.clear();
     stbrp_init_target(&_rectPacker, u, v, _rectPackerData.data(), _rectPackerData.size());
+
+    for (auto& slot : _glyphAtlasMap.container())
+    {
+        slot.inner.reset();
+    }
 
     _d2dBeginDrawing();
     _d2dRenderTarget->Clear();
@@ -1364,7 +1304,7 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
 
 void BackendD3D::_drawGlyphPrepareRetry(const RenderingPayload& p)
 {
-    THROW_HR_IF_MSG(E_UNEXPECTED, _glyphAtlasMap.load() == 0, "BackendD3D::_drawGlyph deadlock");
+    THROW_HR_IF_MSG(E_UNEXPECTED, _glyphAtlasMap.empty(), "BackendD3D::_drawGlyph deadlock");
     _d2dEndDrawing();
     _flushQuads(p);
     _resetGlyphAtlas(p);

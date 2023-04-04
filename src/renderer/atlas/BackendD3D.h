@@ -99,6 +99,23 @@ namespace Microsoft::Console::Render::Atlas
             u16 _occupied;
 
             AtlasGlyphEntryData data;
+
+            constexpr bool operator==(u16 key) const noexcept
+            {
+                return glyphIndex == key;
+            }
+
+            constexpr operator bool() const noexcept
+            {
+                return _occupied != 0;
+            }
+
+            constexpr AtlasGlyphEntry& operator=(u16 key) noexcept
+            {
+                glyphIndex = key;
+                _occupied = 1;
+                return *this;
+            }
         };
 
         // This exists so that we can look up a AtlasFontFaceEntry without AddRef()/Release()ing fontFace first.
@@ -107,24 +124,6 @@ namespace Microsoft::Console::Render::Atlas
             IDWriteFontFace2* fontFace;
             LineRendition lineRendition;
         };
-
-        // Just... uh... turn around and pretend you don't see this.
-        // This stuffs (or extracts, below) a pointer and the line rendition into a single pointer. This works because in C (and COM)
-        // the minimum heap allocation alignment is at least 8 (the size of a double) and so the lowest 4 bit are free real estate.
-        //
-        // I'm doing this because it shrinks the size of AtlasFontFaceEntry by a third and simplifies
-        // both the hashing and comparison code for the hashmap lookup from the POV of the CPU.
-        static constexpr uintptr_t combineAtlasFontFaceKey(IDWriteFontFace2* fontFace, LineRendition lineRendition) noexcept
-        {
-            const auto p = std::bit_cast<uintptr_t>(fontFace);
-            assert((p & 7) == 0);
-            return p | static_cast<u8>(lineRendition);
-        }
-
-        static constexpr IDWriteFontFace2* extractAtlasFontFaceKey(uintptr_t c) noexcept
-        {
-            return std::bit_cast<IDWriteFontFace2*>(c & ~7);
-        }
 
         struct AtlasFontFaceEntryInner
         {
@@ -143,6 +142,26 @@ namespace Microsoft::Console::Render::Atlas
             // (which might resize the hashmap!), while the caller `_drawText` is holding onto `glyphs`.
             // If it wasn't heap allocated, all pointers into `linear_flat_set` would be invalidated.
             std::unique_ptr<AtlasFontFaceEntryInner> inner;
+
+            bool operator==(const AtlasFontFaceKey& key) const noexcept
+            {
+                const auto& i = *inner;
+                return i.fontFace.get() == key.fontFace && i.lineRendition == key.lineRendition;
+            }
+
+            operator bool() const noexcept
+            {
+                return static_cast<bool>(inner);
+            }
+
+            AtlasFontFaceEntry& operator=(const AtlasFontFaceKey& key)
+            {
+                inner = std::make_unique<AtlasFontFaceEntryInner>();
+                auto& i = *inner;
+                i.fontFace = key.fontFace;
+                i.lineRendition = key.lineRendition;
+                return *this;
+            }
         };
 
     private:
