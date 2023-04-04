@@ -88,7 +88,8 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
     case AsciiChars::DEL:
         // The DEL control can sometimes be translated into a printable glyph
         // if a 96-character set is designated, so we need to pass it through
-        // to the Print method. If not translated, it will filtered out there.
+        // to the Print method. If not translated, it will be filtered out
+        // there.
         _dispatch->Print(wch);
         break;
     default:
