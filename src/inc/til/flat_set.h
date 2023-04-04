@@ -25,55 +25,6 @@ namespace til
 #endif
     }
 
-    template<typename T>
-    struct flat_set_trait;
-
-    // This is an example implementation for a linear_flat_set that can store any size_t != -1.
-    // Apart from this trait, the only other thing the type T has to implement is a copy or move assignment operator.
-    template<>
-    struct flat_set_trait<size_t>
-    {
-        using T = size_t;
-
-        static constexpr size_t hash(T v) noexcept
-        {
-            return flat_set_hash_integer(v);
-        }
-
-        // Return true if the key and existing slot in the hashmap match.
-        static constexpr bool equals(T slot, T key)
-        {
-            return slot == key;
-        }
-
-        // Return true if this slot can be filled with a new item.
-        static constexpr bool empty(T slot)
-        {
-            return slot == -1;
-        }
-
-        // Called when a new item is inserted into the hashmap.
-        // T::operator=(T&&) is called when the map is resized and existing items must be moved over.
-        static constexpr void fill(T& slot, T key)
-        {
-            slot = key;
-        }
-
-        // Called when a new backing buffer is allocated. You need to then initialize the raw memory.
-        static std::unique_ptr<T[]> allocate(size_t capacity)
-        {
-            return std::unique_ptr<T[]>{ new T[capacity]{ static_cast<size_t>(-1) } };
-        }
-
-        static void clear(T* data, size_t capacity) noexcept
-        {
-            for (auto& slot : std::span{ data, capacity })
-            {
-                slot = static_cast<size_t>(-1);
-            }
-        }
-    };
-
     // A basic, hashmap with linear probing. A `LoadFactor` of 2 equals
     // a max. load of roughly 50% and a `LoadFactor` of 4 roughly 25%.
     //
@@ -84,8 +35,6 @@ namespace til
     template<typename T, size_t LoadFactor = 2>
     struct linear_flat_set
     {
-        using Trait = typename flat_set_trait<T>;
-
         static_assert(LoadFactor >= 2);
 
         bool empty() const noexcept
@@ -93,14 +42,14 @@ namespace til
             return _load == 0;
         }
 
-        size_t load() const noexcept
-        {
-            return _load;
-        }
-
         size_t size() const noexcept
         {
             return _load / LoadFactor;
+        }
+
+        std::span<T> container() const noexcept
+        {
+            return { _map.get(), _capacity };
         }
 
         template<typename U>
@@ -118,34 +67,30 @@ namespace til
             // many times in literature that such a scheme performs the best on average.
             // As such, we perform the divide her to get the topmost bits down.
             // See flat_set_hash_integer.
-            const auto hash = Trait::hash(key) >> _shift;
+            const auto hash = T::hash(key) >> _shift;
 
             for (auto i = hash;; ++i)
             {
                 auto& slot = _map[i & _mask];
-                if (Trait::empty(slot))
+                if (!slot)
                 {
-                    Trait::fill(slot, std::forward<U>(key));
+                    slot = std::forward<U>(key);
                     _load += LoadFactor;
                     return { slot, true };
                 }
-                if (Trait::equals(slot, key)) [[likely]]
+                if (slot == key) [[likely]]
                 {
                     return { slot, false };
                 }
             }
         }
 
-        void clear() noexcept
-        {
-            Trait::clear(_map.get(), _capacity);
-            _load = 0;
-        }
-
     private:
         __declspec(noinline) void _bumpSize()
         {
-            if (!_shift)
+            // A _shift of 0 would result in a newShift of 0xfffff...
+            // A _shift of 1 would result in a newCapacity of 0
+            if (_shift < 2)
             {
                 throw std::bad_array_new_length{};
             }
@@ -153,22 +98,22 @@ namespace til
             const auto newShift = _shift - 1;
             const auto newCapacity = size_t{ 1 } << (digits - newShift);
             const auto newMask = newCapacity - 1;
-            auto newMap = Trait::allocate(newCapacity);
+            auto newMap = std::make_unique<T[]>(newCapacity);
 
             // This mirrors the insert() function, but without the lookup part.
-            for (auto& oldSlot : std::span{ _map.get(), _capacity })
+            for (auto& oldSlot : container())
             {
-                if (Trait::empty(oldSlot))
+                if (!oldSlot)
                 {
                     continue;
                 }
 
-                const auto hash = Trait::hash(oldSlot) >> newShift;
+                const auto hash = T::hash(oldSlot) >> newShift;
 
                 for (auto i = hash;; ++i)
                 {
                     auto& slot = newMap[i & newMask];
-                    if (Trait::empty(slot))
+                    if (!slot)
                     {
                         slot = std::move_if_noexcept(oldSlot);
                         break;

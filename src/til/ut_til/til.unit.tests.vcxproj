@@ -20,6 +20,7 @@
     <ClCompile Include="ColorTests.cpp" />
     <ClCompile Include="EnumSetTests.cpp" />
     <ClCompile Include="EnvTests.cpp" />
+    <ClCompile Include="FlatSetTests.cpp" />
     <ClCompile Include="HashTests.cpp" />
     <ClCompile Include="MathTests.cpp" />
     <ClCompile Include="mutex.cpp" />
