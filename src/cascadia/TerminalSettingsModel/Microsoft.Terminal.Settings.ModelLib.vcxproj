@@ -325,6 +325,13 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
+  <!-- PowerShell version check, outputs error if the wrong version is installed. -->
+  <Target Name="_WindowsPowershellVersionCheck" BeforeTargets="BeforeClCompile">
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\WindowsCheckPSVersion.ps1&quot;" />
+  </Target>
+  <Target Name="_PowershellVersionCheck" BeforeTargets="BeforeClCompile">
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CheckPSVersion.ps1&quot;" />
+  </Target>
   <!-- This target will take our defaults.json and stamp it into a .h file that
   we can include in the code directly. This way, we don't need to worry about
   failing to load the default settings at runtime. -->

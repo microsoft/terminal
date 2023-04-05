@@ -1700,11 +1700,12 @@ void ConptyRoundtripTests::ScrollWithMargins()
     hostSm.ProcessString(completeCursorAtPromptLine);
 
     // Set up the verifications like above.
-    auto verifyBufferAfter = [&](const TextBuffer& tb) {
+    auto verifyBufferAfter = [&](const TextBuffer& tb, const auto panOffset) {
         auto& cursor = tb.GetCursor();
         // Verify the cursor is waiting on the freshly revealed line (1 above mode line)
         // and in the left most column.
-        VERIFY_ARE_EQUAL(initialTermView.Height() - 2, cursor.GetPosition().y);
+        const auto bottomLine = initialTermView.BottomInclusive() + panOffset;
+        VERIFY_ARE_EQUAL(bottomLine - 1, cursor.GetPosition().y);
         VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
 
         // For all rows except the last two, verify that we have a run of four letters.
@@ -1712,44 +1713,46 @@ void ConptyRoundtripTests::ScrollWithMargins()
         {
             // Start with B this time because the A line got scrolled off the top.
             const std::wstring expectedString(4, static_cast<wchar_t>(L'B' + i));
-            const til::point expectedPos{ 0, i };
+            const til::point expectedPos{ 0, panOffset + i };
             TestUtils::VerifyExpectedString(tb, expectedString, expectedPos);
         }
 
         // For the second to last row, verify that it is blank.
         {
             const std::wstring expectedBlankLine(initialTermView.Width(), L' ');
-            const til::point blankLinePos{ 0, rowsToWrite - 1 };
+            const til::point blankLinePos{ 0, panOffset + rowsToWrite - 1 };
             TestUtils::VerifyExpectedString(tb, expectedBlankLine, blankLinePos);
         }
 
         // For the last row, verify we have an entire row of asterisks for the mode line.
         {
             const std::wstring expectedModeLine(initialTermView.Width() - 1, L'*');
-            const til::point modeLinePos{ 0, rowsToWrite };
+            const til::point modeLinePos{ 0, panOffset + rowsToWrite };
             TestUtils::VerifyExpectedString(tb, expectedModeLine, modeLinePos);
         }
     };
 
     // This will verify the text emitted from the PTY.
 
-    expectedOutput.push_back("\x1b[H"); // cursor returns to top left corner.
-    for (auto i = 0; i < rowsToWrite - 1; ++i)
+    expectedOutput.push_back("\r\n"); // cursor moved to bottom left corner
+    expectedOutput.push_back("\n"); // linefeed pans the viewport down
     {
-        const std::string expectedString(4, static_cast<char>('B' + i));
+        // Cursor gets reset into second line from bottom, left most column
+        std::stringstream ss;
+        ss << "\x1b[" << initialTermView.Height() - 1 << ";1H";
+        expectedOutput.push_back(ss.str());
+    }
+    {
+        // Bottom of the scroll region is replaced with a blank line
+        const std::string expectedString(initialTermView.Width(), ' ');
         expectedOutput.push_back(expectedString);
-        expectedOutput.push_back("\x1b[K"); // erase the rest of the line.
-        expectedOutput.push_back("\r\n");
     }
+    expectedOutput.push_back("\r\n"); // cursor moved to bottom left corner
     {
-        expectedOutput.push_back(""); // nothing for the empty line
-        expectedOutput.push_back("\x1b[K"); // erase the rest of the line.
-        expectedOutput.push_back("\r\n");
-    }
-    {
+        // Mode line is redrawn at the bottom of the viewport
         const std::string expectedString(initialTermView.Width() - 1, '*');
-        // There will be one extra blank space at the end of the line, to prevent delayed EOL wrapping
-        expectedOutput.push_back(expectedString + " ");
+        expectedOutput.push_back(expectedString);
+        expectedOutput.push_back(" ");
     }
     {
         // Cursor gets reset into second line from bottom, left most column
@@ -1761,15 +1764,15 @@ void ConptyRoundtripTests::ScrollWithMargins()
 
     Log::Comment(L"Verify host buffer contains pattern moved up one and mode line still in place.");
     // Verify the host side.
-    verifyBufferAfter(hostTb);
+    verifyBufferAfter(hostTb, 0);
 
     Log::Comment(L"Emit PTY frame and validate it transmits the right data.");
     // Paint the frame
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
     Log::Comment(L"Verify terminal buffer contains pattern moved up one and mode line still in place.");
-    // Verify the terminal side.
-    verifyBufferAfter(termTb);
+    // Verify the terminal side. Note the viewport has panned down a line.
+    verifyBufferAfter(termTb, 1);
 }
 
 void ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame()
