@@ -59,6 +59,30 @@ namespace til
         return { ptr, len };
     }
 
+    // Removes the first code point off of `wstr` and returns the rest.
+    constexpr std::wstring_view utf16_pop(std::wstring_view wstr) noexcept
+    {
+        auto it = wstr.begin();
+        const auto end = wstr.end();
+
+        if (it != end)
+        {
+            const auto wch = *it;
+            ++it;
+
+            if (is_surrogate(wch))
+            {
+                const auto wch2 = it != end ? *it : wchar_t{};
+                if (is_leading_surrogate(wch) && is_trailing_surrogate(wch2))
+                {
+                    ++it;
+                }
+            }
+        }
+
+        return { it, end };
+    }
+
     // Splits a UTF16 string into codepoints, yielding `wstring_view`s of UTF16 text. Use it as:
     //   for (const auto& str : til::utf16_iterator{ input }) { ... }
     struct utf16_iterator

@@ -41,6 +41,7 @@ private:
     winrt::Microsoft::Terminal::Remoting::WindowManager _manager;
 
     til::shared_mutex<std::vector<std::shared_ptr<WindowThread>>> _windows;
+    std::atomic<uint32_t> _windowThreadInstances;
 
     std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
 
@@ -53,7 +54,7 @@ private:
 
     bool _quitting{ false };
 
-    void _windowStartedHandler(const std::shared_ptr<WindowThread>& sender);
+    void _windowStartedHandlerPostXAML(const std::shared_ptr<WindowThread>& sender);
     void _windowExitedHandler(uint64_t senderID);
 
     void _becomeMonarch();

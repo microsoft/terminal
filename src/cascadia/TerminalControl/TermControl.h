@@ -27,13 +27,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         TermControl(Control::ControlInteractivity content);
 
-        TermControl(IControlSettings settings,
-                    Control::IControlAppearance unfocusedAppearance,
-                    TerminalConnection::ITerminalConnection connection);
+        TermControl(IControlSettings settings, Control::IControlAppearance unfocusedAppearance, TerminalConnection::ITerminalConnection connection);
+
+        static Control::TermControl NewControlByAttachingContent(Control::ControlInteractivity content, const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
         winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings);
         winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
         IControlSettings Settings() const;
+
+        uint64_t ContentId() const;
 
         hstring GetProfileName() const;
 
@@ -93,7 +95,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void ToggleShaderEffects();
 
-        winrt::fire_and_forget RenderEngineSwapChainChanged(IInspectable sender, IInspectable args);
+        void RenderEngineSwapChainChanged(IInspectable sender, IInspectable args);
         void _AttachDxgiSwapChainToXaml(HANDLE swapChainHandle);
         winrt::fire_and_forget _RendererEnteredErrorState(IInspectable sender, IInspectable args);
 
@@ -138,6 +140,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme) const noexcept;
 
         void AdjustOpacity(const double opacity, const bool relative);
+
+        void Detach();
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         // -------------------------------- WinRT Events ---------------------------------
@@ -224,6 +228,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _showMarksInScrollbar{ false };
 
         bool _isBackgroundLight{ false };
+        bool _detached{ false };
 
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalPrimaryElements{ nullptr };
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSecondaryElements{ nullptr };
@@ -242,6 +247,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return _closing;
         }
 
+        void _initializeForAttach(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
+
         void _UpdateSettingsFromUIThread();
         void _UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance);
         void _ApplyUISettings();
@@ -254,7 +261,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static bool _isColorLight(til::color bg) noexcept;
         void _changeBackgroundOpacity();
 
-        bool _InitializeTerminal();
+        enum InitializeReason : bool
+        {
+            Create,
+            Reattach
+        };
+        bool _InitializeTerminal(const InitializeReason reason);
         void _SetFontSize(int fontSize);
         void _TappedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
         void _KeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
@@ -361,6 +373,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlInteractivity::OpenHyperlink_revoker interactivityOpenHyperlink;
             Control::ControlInteractivity::ScrollPositionChanged_revoker interactivityScrollPositionChanged;
             Control::ControlInteractivity::PasteFromClipboard_revoker PasteFromClipboard;
+            Control::ControlInteractivity::ContextMenuRequested_revoker ContextMenuRequested;
         } _revokers{};
     };
 }
