@@ -38,6 +38,7 @@ ansicpg
 ANSISYS
 ANSISYSRC
 ANSISYSSC
+answerback
 antialiasing
 ANull
 anycpu
@@ -176,7 +177,6 @@ CConsole
 CConversion
 CCRT
 cdd
-CDeclaration
 CEdit
 CELLSIZE
 cfae
@@ -332,7 +332,7 @@ Cspace
 csrmsg
 CSRSS
 csrutil
-cstyle
+CSTYLE
 CSwitch
 CTerminal
 CText
@@ -1124,6 +1124,7 @@ Mip
 MMBB
 mmcc
 MMCPL
+MMIX
 mmsystem
 MNC
 MNOPQ
