@@ -63,7 +63,7 @@ private:
     void _AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable& sender,
                              const winrt::Windows::Foundation::IInspectable& arg);
     winrt::fire_and_forget _WindowInitializedHandler(const winrt::Windows::Foundation::IInspectable& sender,
-                                   const winrt::Windows::Foundation::IInspectable& arg);
+                                                     const winrt::Windows::Foundation::IInspectable& arg);
 
     void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,
                           const winrt::Windows::Foundation::IInspectable& arg);
