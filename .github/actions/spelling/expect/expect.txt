@@ -177,7 +177,6 @@ CConsole
 CConversion
 CCRT
 cdd
-CDeclaration
 CEdit
 CELLSIZE
 cfae
@@ -333,7 +332,7 @@ Cspace
 csrmsg
 CSRSS
 csrutil
-cstyle
+CSTYLE
 CSwitch
 CTerminal
 CText

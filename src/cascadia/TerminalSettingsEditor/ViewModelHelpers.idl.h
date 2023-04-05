@@ -9,7 +9,10 @@
         get;                                           \
         set;                                           \
     };                                                 \
-    Boolean Has##Name { get; }
+    Boolean Has##Name                                  \
+    {                                                  \
+        get;                                           \
+    }
 
 #define OBSERVABLE_PROJECTED_SETTING(Type, Name)    \
     _BASE_OBSERVABLE_PROJECTED_SETTING(Type, Name); \
