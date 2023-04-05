@@ -27,6 +27,8 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
                                  IBindCtx* /*pBindContext*/)
 try
 {
+    const auto runElevated = IsControlPressed();
+
     wil::com_ptr_nothrow<IShellItem> psi;
     RETURN_IF_FAILED(GetBestLocationFromSelectionOrSite(psiItemArray, psi.put()));
     if (!psi)
@@ -42,10 +44,18 @@ try
         STARTUPINFOEX siEx{ 0 };
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
 
+        std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
         std::wstring cmdline;
-        RETURN_IF_FAILED(wil::str_printf_nothrow(cmdline, LR"-("%s" -d %s)-", GetWtExePath().c_str(), QuoteAndEscapeCommandlineArg(pszName.get()).c_str()));
+        if (runElevated)
+        {
+            RETURN_IF_FAILED(wil::str_printf_nothrow(cmdline, LR"-(-d %s)-", QuoteAndEscapeCommandlineArg(pszName.get()).c_str()));
+        }
+        else
+        {
+            RETURN_IF_FAILED(wil::str_printf_nothrow(cmdline, LR"-("%s" -d %s)-", GetWtExePath().c_str(), QuoteAndEscapeCommandlineArg(pszName.get()).c_str()));
+        }
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
-            nullptr, // lpApplicationName
+            runElevated ? modulePath.replace_filename(ElevateShimExe).c_str() : nullptr, // if elevation requested pass the elevate-shim.exe as the application name
             cmdline.data(),
             nullptr, // lpProcessAttributes
             nullptr, // lpThreadAttributes
@@ -192,4 +202,16 @@ HRESULT OpenTerminalHere::GetBestLocationFromSelectionOrSite(IShellItemArray* ps
     RETURN_HR_IF(S_FALSE, !psi);
     RETURN_IF_FAILED(psi.copy_to(location));
     return S_OK;
+}
+
+// This method checks if any of the ctrl keys are pressed during activation of the shell extension
+bool OpenTerminalHere::IsControlPressed()
+{
+    const auto ControlPressed = 1U;
+
+    const auto control = GetKeyState(VK_CONTROL);
+    const auto leftControl = GetKeyState(VK_LCONTROL);
+    const auto rightControl = GetKeyState(VK_RCONTROL);
+
+    return WI_IsFlagSet(control, ControlPressed) || WI_IsFlagSet(leftControl, ControlPressed) || WI_IsFlagSet(rightControl, ControlPressed);
 }

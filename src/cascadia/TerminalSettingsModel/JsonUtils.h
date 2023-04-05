@@ -693,6 +693,30 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 
     template<>
+    struct ConversionTrait<uint64_t>
+    {
+        unsigned int FromJson(const Json::Value& json)
+        {
+            return json.asUInt();
+        }
+
+        bool CanConvert(const Json::Value& json)
+        {
+            return json.isUInt();
+        }
+
+        Json::Value ToJson(const uint64_t& val)
+        {
+            return val;
+        }
+
+        std::string TypeDescription() const
+        {
+            return "number (>= 0)";
+        }
+    };
+
+    template<>
     struct ConversionTrait<float>
     {
         float FromJson(const Json::Value& json)

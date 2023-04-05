@@ -822,7 +822,7 @@ try
     // read settings.json from the Release stable file path if it exists.
     // Otherwise use default settings file provided from original settings file
     bool releaseSettingExists = false;
-    if (firstTimeSetup)
+    if (firstTimeSetup && !IsPortableMode())
     {
 #if defined(WT_BRANDING_PREVIEW)
         {
@@ -1160,6 +1160,11 @@ winrt::hstring CascadiaSettings::_calculateHash(std::string_view settings, const
 winrt::hstring CascadiaSettings::SettingsPath()
 {
     return winrt::hstring{ _settingsPath().native() };
+}
+
+bool CascadiaSettings::IsPortableMode()
+{
+    return Model::IsPortableMode();
 }
 
 winrt::hstring CascadiaSettings::DefaultSettingsPath()

@@ -39,8 +39,17 @@ namespace winrt::TerminalApp::implementation
         return it != _content.end() ? it->second : ControlInteractivity{ nullptr };
     }
 
-    void ContentManager::_closedHandler(winrt::Windows::Foundation::IInspectable sender,
-                                        winrt::Windows::Foundation::IInspectable e)
+    void ContentManager::Detach(const Microsoft::Terminal::Control::TermControl& control)
+    {
+        const auto contentId{ control.ContentId() };
+        if (const auto& content{ TryLookupCore(contentId) })
+        {
+            control.Detach();
+        }
+    }
+
+    void ContentManager::_closedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                        const winrt::Windows::Foundation::IInspectable&)
     {
         if (const auto& content{ sender.try_as<winrt::Microsoft::Terminal::Control::ControlInteractivity>() })
         {

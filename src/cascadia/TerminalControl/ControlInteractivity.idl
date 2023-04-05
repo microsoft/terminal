@@ -25,6 +25,9 @@ namespace Microsoft.Terminal.Control
 
         UInt64 Id { get; };
 
+        void AttachToNewControl(Microsoft.Terminal.Control.IKeyBindings keyBindings);
+        void Detach();
+
         void Close();
 
         InteractivityAutomationPeer OnCreateAutomationPeer();
@@ -71,9 +74,10 @@ namespace Microsoft.Terminal.Control
 
         event Windows.Foundation.TypedEventHandler<Object, Object> Closed;
 
+        event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
+
         // Used to communicate to the TermControl, but not necessarily higher up in the stack
         event Windows.Foundation.TypedEventHandler<Object, ContextMenuRequestedEventArgs> ContextMenuRequested;
-
 
     };
 }

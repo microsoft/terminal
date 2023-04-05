@@ -38,31 +38,12 @@
         <DisplayString>{{LT({Left}, {Top}) RB({Right}, {Bottom}) In:[{Right-Left+1} x {Bottom-Top+1}] Ex:[{Right-Left} x {Bottom-Top}]}}</DisplayString>
     </Type>
 
-    <Type Name="CharRowCell">
-        <DisplayString Condition="_attr._glyphStored">Stored Glyph, go to UnicodeStorage.</DisplayString>
-        <DisplayString Condition="_attr._attribute == 0">{_wch,X} Single</DisplayString>
-        <DisplayString Condition="_attr._attribute == 1">{_wch,X} Lead</DisplayString>
-        <DisplayString Condition="_attr._attribute == 2">{_wch,X} Trail</DisplayString>
-    </Type>
-
-    <Type Name="ATTR_ROW">
-        <Expand>
-            <ExpandedItem>_data</ExpandedItem>
-        </Expand>
-    </Type>
-
-    <Type Name="CharRow">
-        <DisplayString>{{ wrap={_wrapForced} padded={_doubleBytePadded} }}</DisplayString>
-        <Expand>
-            <ExpandedItem>_data</ExpandedItem>
-        </Expand>
-    </Type>
-
     <Type Name="ROW">
-        <DisplayString>{{ id={_id} width={_rowWidth} }}</DisplayString>
+        <DisplayString>{_chars.data(),[_charOffsets[_columnCount]]}</DisplayString>
+        <StringView>_chars.data(),[_charOffsets[_columnCount]]</StringView>
         <Expand>
-            <Item Name="_charRow">_charRow</Item>
-            <Item Name="_attrRow">_attrRow</Item>
+            <Item Name="_chars">_chars.data(),[_charOffsets[_columnCount]]</Item>
+            <Item Name="_charOffsets">_charOffsets.data(),[_charOffsets.size()]</Item>
         </Expand>
     </Type>
 
@@ -122,6 +103,23 @@
         <SmartPointer Usage="Indexable">_ptr,na</SmartPointer>
         <Expand>
             <Item Name="[ptr]">_ptr</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="til::generational&lt;*&gt;">
+        <DisplayString>{{ gen={_generation._value}, {_value} }}</DisplayString>
+        <Expand>
+            <ExpandedItem>_value</ExpandedItem>
+        </Expand>
+    </Type>
+
+    <Type Name="til::linear_flat_set&lt;*,*&gt;">
+        <DisplayString>{{ size={_load / $T2} }}</DisplayString>
+        <Expand>
+            <ArrayItems>
+                <Size>_capacity</Size>
+                <ValuePointer>_map._Mypair._Myval2</ValuePointer>
+            </ArrayItems>
         </Expand>
     </Type>
 </AutoVisualizer>

@@ -340,7 +340,7 @@ void AppCommandlineArgs::_buildMovePaneParser()
             if (_movePaneTabIndex >= 0)
             {
                 movePaneAction.Action(ShortcutAction::MovePane);
-                MovePaneArgs args{ static_cast<unsigned int>(_movePaneTabIndex) };
+                MovePaneArgs args{ static_cast<unsigned int>(_movePaneTabIndex), L"" };
                 movePaneAction.Args(args);
                 _startupActions.push_back(movePaneAction);
             }

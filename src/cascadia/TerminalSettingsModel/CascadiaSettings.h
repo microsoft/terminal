@@ -105,6 +105,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::hstring DefaultSettingsPath();
         static winrt::hstring ApplicationDisplayName();
         static winrt::hstring ApplicationVersion();
+        static bool IsPortableMode();
         static void ExportFile(winrt::hstring path, winrt::hstring content);
 
         CascadiaSettings() noexcept = default;
