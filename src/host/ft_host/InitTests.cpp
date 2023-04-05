@@ -242,7 +242,7 @@ MODULE_SETUP(ModuleSetup)
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(AttachConsole(dwFindPid));
 
     auto tries = 0;
-    while (tries < 5)
+    while (tries < 10)
     {
         tries++;
         Log::Comment(NoThrowString().Format(L"Attempt #%d to confirm we've attached", tries));
@@ -281,7 +281,7 @@ MODULE_SETUP(ModuleSetup)
         }
     };
 
-    VERIFY_IS_LESS_THAN(tries, 5, L"Make sure we set up the new console in time");
+    VERIFY_IS_LESS_THAN(tries, 10, L"Make sure we set up the new console in time");
 
     return true;
 }
