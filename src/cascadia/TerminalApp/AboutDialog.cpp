@@ -106,10 +106,12 @@ namespace winrt::TerminalApp::implementation
             {
                 const auto updates = co_await storeContext.GetAppAndOptionalStorePackageUpdatesAsync();
                 co_await wil::resume_foreground(strongThis->Dispatcher());
-                if (updates.Size() > 0)
+                const auto numUpdates = updates.Size();
+                if (numUpdates > 0)
                 {
-                    const auto version = updates.GetAt(0).Package().Id().Version();
-                    const auto str = fmt::format(FMT_COMPILE(L"{}.{}.{}"), version.Major, version.Minor, version.Revision);
+                    const auto update = updates.GetAt(0);
+                    const auto version = update.Package().Id().Version();
+                    const auto str = fmt::format(FMT_COMPILE(L"{}.{}.{}"), version.Major, version.Minor, version.Build);
                     _SetPendingUpdateVersion(winrt::hstring{ str });
                 }
             }
