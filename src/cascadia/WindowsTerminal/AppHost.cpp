@@ -1230,7 +1230,7 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
     }
 }
 
-void AppHost::_WindowInitializedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                         const winrt::Windows::Foundation::IInspectable& /*arg*/)
 {
     // GH#11561: We're totally done being initialized. Resize the window to
@@ -1242,6 +1242,16 @@ void AppHost::_WindowInitializedHandler(const winrt::Windows::Foundation::IInspe
     {
         nCmdShow = SW_MAXIMIZE;
     }
+    InvalidateRect(_window->GetInteropHandle(), nullptr, false);
+    //co_await winrt::resume_background();
+
+    // Huh. If we wait a second, then this just works. But that delays startup by a second, which is... obviously dumb.
+    //co_await winrt::resume_after(1s);
+
+
+    co_await winrt::resume_background();
+
+    co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher(), winrt::Windows::UI::Core::CoreDispatcherPriority::Low);
     ShowWindow(_window->GetHandle(), nCmdShow);
 }
 

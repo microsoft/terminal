@@ -173,14 +173,14 @@ void WindowEmperor::_windowStartedHandlerPostXAML(const std::shared_ptr<WindowTh
     // the foreground, but we should act like the new window is.
     //
     // TODO: GH#14957 - use AllowSetForeground from the original wt.exe instead
-    Remoting::SummonWindowSelectionArgs args{};
-    args.OnCurrentDesktop(false);
-    args.WindowID(sender->Peasant().GetID());
-    args.SummonBehavior().MoveToCurrentDesktop(false);
-    args.SummonBehavior().ToggleVisibility(false);
-    args.SummonBehavior().DropdownDuration(0);
-    args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
-    _manager.SummonWindow(args);
+    // Remoting::SummonWindowSelectionArgs args{};
+    // args.OnCurrentDesktop(false);
+    // args.WindowID(sender->Peasant().GetID());
+    // args.SummonBehavior().MoveToCurrentDesktop(false);
+    // args.SummonBehavior().ToggleVisibility(false);
+    // args.SummonBehavior().DropdownDuration(0);
+    // args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
+    // _manager.SummonWindow(args);
 
     // Now that the window is ready to go, we can add it to our list of windows,
     // because we know it will be well behaved.
