@@ -36,4 +36,7 @@
     <SeleniumSupportPathRoot>$(MSBuildThisFileDirectory)..\packages\Selenium.Support.3.5.0</SeleniumSupportPathRoot>
   </PropertyGroup>
 
+  <!-- WinUI (which depends on WebView2 as of 2.8.0) -->
+  <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.UI.Xaml.2.8.2\build\native\Microsoft.UI.Xaml.props" Condition="'$(TerminalMUX)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.UI.Xaml.2.8.2\build\native\Microsoft.UI.Xaml.props')" />
+
 </Project>

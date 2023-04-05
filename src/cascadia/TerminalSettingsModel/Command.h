@@ -71,9 +71,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                                                            winrt::hstring currentCommandline,
                                                                                            bool directories);
 
-        winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
-
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
         WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
 

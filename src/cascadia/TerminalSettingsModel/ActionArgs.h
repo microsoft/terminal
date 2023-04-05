@@ -57,12 +57,18 @@
 
 #include "ActionArgsMagic.h"
 
-#define ACTION_ARG(type, name, ...)                                                                    \
-public:                                                                                                \
-    type name() const noexcept { return _##name.has_value() ? _##name.value() : type{ __VA_ARGS__ }; } \
-    void name(const type& value) noexcept { _##name = value; }                                         \
-                                                                                                       \
-private:                                                                                               \
+#define ACTION_ARG(type, name, ...)                                         \
+public:                                                                     \
+    type name() const noexcept                                              \
+    {                                                                       \
+        return _##name.has_value() ? _##name.value() : type{ __VA_ARGS__ }; \
+    }                                                                       \
+    void name(const type& value) noexcept                                   \
+    {                                                                       \
+        _##name = value;                                                    \
+    }                                                                       \
+                                                                            \
+private:                                                                    \
     std::optional<type> _##name{ std::nullopt };
 
 // Notes on defining ActionArgs and ActionEventArgs:
@@ -97,8 +103,9 @@ private:                                                                        
     X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define MOVE_PANE_ARGS(X) \
-    X(uint32_t, TabIndex, "index", false, 0)
+#define MOVE_PANE_ARGS(X)                    \
+    X(uint32_t, TabIndex, "index", false, 0) \
+    X(winrt::hstring, Window, "window", false, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SWITCH_TO_TAB_ARGS(X) \
@@ -173,8 +180,15 @@ private:                                                                        
     X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define MOVE_TAB_ARGS(X) \
-    X(MoveTabDirection, Direction, "direction", args->Direction() == MoveTabDirection::None, MoveTabDirection::None)
+// Interestingly, the order MATTERS here. Window has to be BEFORE Direction,
+// because otherwise we won't have parsed the Window yet when we validate the
+// Direction.
+#define MOVE_TAB_ARGS(X)                            \
+    X(winrt::hstring, Window, "window", false, L"") \
+    X(MoveTabDirection, Direction, "direction", (args->Direction() == MoveTabDirection::None) && (args->Window().empty()), MoveTabDirection::None)
+
+// Other ideas:
+//  X(uint32_t, TabIndex, "index", false, 0) \ // target? source?
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SCROLL_UP_ARGS(X) \
@@ -281,6 +295,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ACTION_ARG(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, nullptr);
         ACTION_ARG(winrt::hstring, ColorScheme);
         ACTION_ARG(Windows::Foundation::IReference<bool>, Elevate, nullptr);
+        ACTION_ARG(uint64_t, ContentId);
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
         static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
@@ -291,6 +306,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
         static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
         static constexpr std::string_view ElevateKey{ "elevate" };
+        static constexpr std::string_view ContentKey{ "__content" };
 
     public:
         hstring GenerateName() const;
@@ -309,7 +325,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                        otherAsUs->_Profile == _Profile &&
                        otherAsUs->_SuppressApplicationTitle == _SuppressApplicationTitle &&
                        otherAsUs->_ColorScheme == _ColorScheme &&
-                       otherAsUs->_Elevate == _Elevate;
+                       otherAsUs->_Elevate == _Elevate &&
+                       otherAsUs->_ContentId == _ContentId;
             }
             return false;
         };
@@ -326,6 +343,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
             JsonUtils::GetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
             JsonUtils::GetValueForKey(json, ElevateKey, args->_Elevate);
+            JsonUtils::GetValueForKey(json, ContentKey, args->_ContentId);
             return *args;
         }
         static Json::Value ToJson(const Model::NewTerminalArgs& val)
@@ -345,6 +363,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
             JsonUtils::SetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
             JsonUtils::SetValueForKey(json, ElevateKey, args->_Elevate);
+            JsonUtils::SetValueForKey(json, ContentKey, args->_ContentId);
             return json;
         }
         Model::NewTerminalArgs Copy() const
@@ -359,6 +378,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_SuppressApplicationTitle = _SuppressApplicationTitle;
             copy->_ColorScheme = _ColorScheme;
             copy->_Elevate = _Elevate;
+            copy->_ContentId = _ContentId;
             return *copy;
         }
         size_t Hash() const
@@ -378,6 +398,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(SuppressApplicationTitle());
             h.write(ColorScheme());
             h.write(Elevate());
+            h.write(ContentId());
         }
     };
 }
@@ -441,6 +462,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewTabArgs>();
             args->_TerminalArgs = NewTerminalArgs::FromJson(json);
+
+            // Don't let the user specify the __content property in their
+            // settings. That's an internal-use-only property.
+            if (args->_TerminalArgs.ContentId())
+            {
+                return { *args, { SettingsLoadWarnings::InvalidUseOfContent } };
+            }
             return { *args, {} };
         }
         static Json::Value ToJson(const IActionArgs& val)
@@ -520,6 +548,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 return { nullptr, { SettingsLoadWarnings::InvalidSplitSize } };
             }
+
+            // Don't let the user specify the __content property in their
+            // settings. That's an internal-use-only property.
+            if (args->_TerminalArgs.ContentId())
+            {
+                return { *args, { SettingsLoadWarnings::InvalidUseOfContent } };
+            }
+
             return { *args, {} };
         }
         static Json::Value ToJson(const IActionArgs& val)
@@ -579,6 +615,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewWindowArgs>();
             args->_TerminalArgs = NewTerminalArgs::FromJson(json);
+
+            // Don't let the user specify the __content property in their
+            // settings. That's an internal-use-only property.
+            if (args->_TerminalArgs.ContentId())
+            {
+                return { *args, { SettingsLoadWarnings::InvalidUseOfContent } };
+            }
+
             return { *args, {} };
         }
         static Json::Value ToJson(const IActionArgs& val)

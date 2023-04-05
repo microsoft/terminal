@@ -26,6 +26,9 @@ namespace Microsoft.Terminal.Remoting
 
         Boolean DoesQuakeWindowExist();
 
+        void RequestMoveContent(String window, String content, UInt32 tabIndex, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
+        void RequestSendContent(RequestReceiveContentArgs args);
+
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
 
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;

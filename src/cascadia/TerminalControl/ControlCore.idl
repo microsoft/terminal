@@ -70,9 +70,9 @@ namespace Microsoft.Terminal.Control
                     IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        Boolean Initialize(Double actualWidth,
-                           Double actualHeight,
-                           Double compositionScale);
+        Boolean Initialize(Single actualWidth,
+                           Single actualHeight,
+                           Single compositionScale);
 
         void UpdateSettings(IControlSettings settings, IControlAppearance appearance);
         void ApplyAppearance(Boolean focused);
@@ -81,6 +81,8 @@ namespace Microsoft.Terminal.Control
         IControlAppearance FocusedAppearance { get; };
         IControlAppearance UnfocusedAppearance { get; };
         Boolean HasUnfocusedAppearance();
+
+        UInt64 SwapChainHandle { get; };
 
         Windows.Foundation.Size FontSize { get; };
         String FontFaceName { get; };
@@ -112,8 +114,9 @@ namespace Microsoft.Terminal.Control
 
         void ResetFontSize();
         void AdjustFontSize(Single fontSizeDelta);
-        void SizeChanged(Double width, Double height);
-        void ScaleChanged(Double scale);
+        void SizeChanged(Single width, Single height);
+        void ScaleChanged(Single scale);
+        void SizeOrScaleChanged(Single width, Single height, Single scale);
 
         void ToggleShaderEffects();
         void ToggleReadOnlyMode();
@@ -169,6 +172,9 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, UpdateSelectionMarkersEventArgs> UpdateSelectionMarkers;
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
+
         event Windows.Foundation.TypedEventHandler<Object, MenuChangedEventArgs> MenuChanged;
 
     };

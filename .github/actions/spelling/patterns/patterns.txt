@@ -35,7 +35,7 @@ ROY\sG\.\sBIV
 # hit-count: 71 file-count: 35
 # Compiler flags
 (?:^|[\t ,"'`=(])-[D](?=[A-Z]{2,}|[A-Z][a-z])
-(?:^|[\t ,"'`=(])-[X](?=[A-Z]{2,}|[A-Z][a-z]|[a-z]{2,})
+(?:^|[\t ,"'`=(])-[X](?!aml)(?=[A-Z]{2,}|[A-Z][a-z]|[a-z]{2,})
 
 # hit-count: 41 file-count: 28
 # version suffix <word>v#
