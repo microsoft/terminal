@@ -319,35 +319,33 @@
         },
         {
             "name": "legacyDark",
-            "tab":
-            {
+            "tab": {
                 "background": null,
                 "unfocusedBackground": null
             },
-            "window":
-            {
+            "window": {
                 "applicationTheme": "dark"
             }
         },
         {
             "name": "legacyLight",
-            "tab":
-            {
+            "tab": {
                 "background": null,
                 "unfocusedBackground": null
             },
-            "window":
-            {
+            "window": {
                 "applicationTheme": "light"
             }
         },
         {
             "name": "legacySystem",
-            "tab":
-            {
+            "tab": {
                 "background": null,
                 "unfocusedBackground": null
-            }
+            },
+            "window": {
+                "applicationTheme": "system"
+            },
         }
     ],
     "actions":
