@@ -58,12 +58,18 @@
 
 #include "ActionArgsMagic.h"
 
-#define ACTION_ARG(type, name, ...)                                                                    \
-public:                                                                                                \
-    type name() const noexcept { return _##name.has_value() ? _##name.value() : type{ __VA_ARGS__ }; } \
-    void name(const type& value) noexcept { _##name = value; }                                         \
-                                                                                                       \
-private:                                                                                               \
+#define ACTION_ARG(type, name, ...)                                         \
+public:                                                                     \
+    type name() const noexcept                                              \
+    {                                                                       \
+        return _##name.has_value() ? _##name.value() : type{ __VA_ARGS__ }; \
+    }                                                                       \
+    void name(const type& value) noexcept                                   \
+    {                                                                       \
+        _##name = value;                                                    \
+    }                                                                       \
+                                                                            \
+private:                                                                    \
     std::optional<type> _##name{ std::nullopt };
 
 // Notes on defining ActionArgs and ActionEventArgs:
