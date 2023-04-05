@@ -27,7 +27,7 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
                                  IBindCtx* /*pBindContext*/)
 try
 {
-    const auto runElevated = IsControlPressed();
+    const auto runElevated = IsControlPressed() && IsShiftPressed();
 
     wil::com_ptr_nothrow<IShellItem> psi;
     RETURN_IF_FAILED(GetBestLocationFromSelectionOrSite(psiItemArray, psi.put()));
@@ -214,4 +214,16 @@ bool OpenTerminalHere::IsControlPressed()
     const auto rightControl = GetKeyState(VK_RCONTROL);
 
     return WI_IsFlagSet(control, ControlPressed) || WI_IsFlagSet(leftControl, ControlPressed) || WI_IsFlagSet(rightControl, ControlPressed);
+}
+
+//Check if either shift key is pressed during shell extension activation
+bool OpenTerminalHere::IsShiftPressed()
+{
+    const auto ShiftPressed = 1U;
+
+    const auto shift = GetKeyState(VK_SHIFT);
+    const auto leftShift = GetKeyState(VK_LSHIFT);
+    const auto rightShift = GetKeyState(VK_RSHIFT);
+
+    return WI_IsFlagSet(shift, ShiftPressed) || WI_IsFlagSet(leftShift, ShiftPressed) || WI_IsFlagSet(rightShift, ShiftPressed);
 }
