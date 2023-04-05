@@ -1242,14 +1242,12 @@ winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::
     {
         nCmdShow = SW_MAXIMIZE;
     }
-    // InvalidateRect(_window->GetInteropHandle(), nullptr, false);
-    //co_await winrt::resume_background();
 
-    // Huh. If we wait a second, then this just works. But that delays startup by a second, which is... obviously dumb.
-    //co_await winrt::resume_after(1s);
-
+    // For inexplicable reasons, again, hop to the BG thread, then back to the
+    // UI thread. This is shockingly load bearing - without this, then
+    // sometimes, we'll _still_ show the HWND before the XAML island actually
+    // paints.
     co_await winrt::resume_background();
-
     co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher(), winrt::Windows::UI::Core::CoreDispatcherPriority::Low);
     ShowWindow(_window->GetHandle(), nCmdShow);
 }
