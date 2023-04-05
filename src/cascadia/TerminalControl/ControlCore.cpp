@@ -2207,7 +2207,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // If this mark is before/after the start of our search in the
             // buffer, ...
 
-            const auto inTheRightDirection = (goUp && (m.commandEnd < start)) || // prev
+            const auto inTheRightDirection = (goUp && (m.commandEnd <= start)) || // prev
                                              (!goUp && (m.end > start)); // next
             // (If we're going down, we need to compare the end, not the
             // commandEnd, to actually find the next one. Otherwise we'll just
@@ -2263,7 +2263,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 continue;
             }
             // If this mark is before/after the start of our search in the buffer, ...
-            const auto inTheRightDirection = (goUp && (m.outputEnd < start)) || // prev
+            const auto inTheRightDirection = (goUp && (m.outputEnd <= start)) || // prev
                                              (!goUp && (m.commandEnd > start)); // next
             // (If we're going down, we need to compare the commandEnd, not the
             // outputEnd, to actually find the next one. Otherwise we'll just
