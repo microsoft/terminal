@@ -36,7 +36,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         inline constexpr uint8_t F_ = 0b10; // stripped in clean_filename
         inline constexpr uint8_t _P = 0b01; // stripped in clean_path
         inline constexpr uint8_t FP = 0b11; // stripped in clean_filename and clean_path
-        static constexpr std::array<uint8_t, 128> pathFilter{ {
+        inline constexpr std::array<uint8_t, 128> pathFilter{ {
             // clang-format off
             __ /* NUL */, __ /* SOH */, __ /* STX */, __ /* ETX */, __ /* EOT */, __ /* ENQ */, __ /* ACK */, __ /* BEL */, __ /* BS  */, __ /* HT  */, __ /* LF  */, __ /* VT  */, __ /* FF  */, __ /* CR  */, __ /* SO  */, __ /* SI  */,
             __ /* DLE */, __ /* DC1 */, __ /* DC2 */, __ /* DC3 */, __ /* DC4 */, __ /* NAK */, __ /* SYN */, __ /* ETB */, __ /* CAN */, __ /* EM  */, __ /* SUB */, __ /* ESC */, __ /* FS  */, __ /* GS  */, __ /* RS  */, __ /* US  */,

@@ -38,7 +38,7 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     _windowLogic{ nullptr },
     _window{ nullptr }
 {
-    _HandleCommandlineArgs();
+    _HandleCommandlineArgs(args);
 
     // _HandleCommandlineArgs will create a _windowLogic
     _useNonClientArea = _windowLogic.GetShowTabsInTitlebar();
@@ -157,8 +157,6 @@ void AppHost::s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResu
 //   the WindowManager, to ask if we should become a window process.
 // - If we should create a window, then pass the arguments to the app logic for
 //   processing.
-// - If we shouldn't become a window, set _shouldCreateWindow to false and exit
-//   immediately.
 // - If the logic determined there's an error while processing that commandline,
 //   display a message box to the user with the text of the error, and exit.
 //    * We display a message box because we're a Win32 application (not a
@@ -169,7 +167,7 @@ void AppHost::s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResu
 // - <none>
 // Return Value:
 // - <none>
-void AppHost::_HandleCommandlineArgs()
+void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& windowArgs)
 {
     // We did want to make a window, so let's instantiate it here.
     // We don't have XAML yet, but we do have other stuff.
@@ -178,7 +176,12 @@ void AppHost::_HandleCommandlineArgs()
     if (_peasant)
     {
         const auto& args{ _peasant.InitialArgs() };
-        if (args)
+
+        if (!windowArgs.Content().empty())
+        {
+            _windowLogic.SetStartupContent(windowArgs.Content(), windowArgs.InitialBounds());
+        }
+        else if (args)
         {
             const auto result = _windowLogic.SetStartupCommandline(args.Commandline());
             const auto message = _windowLogic.ParseCommandlineMessage();
@@ -202,7 +205,6 @@ void AppHost::_HandleCommandlineArgs()
         // then we're going to exit immediately.
         if (_windowLogic.ShouldImmediatelyHandoffToElevated())
         {
-            _shouldCreateWindow = false;
             _windowLogic.HandoffToElevated();
             return;
         }
@@ -272,6 +274,8 @@ void AppHost::_HandleCommandlineArgs()
 
         _windowLogic.WindowName(_peasant.WindowName());
         _windowLogic.WindowId(_peasant.GetID());
+
+        _revokers.AttachRequested = _peasant.AttachRequested(winrt::auto_revoke, { this, &AppHost::_handleAttach });
     }
 }
 
@@ -381,7 +385,9 @@ void AppHost::Initialize()
     _revokers.OpenSystemMenu = _windowLogic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
     _revokers.QuitRequested = _windowLogic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
     _revokers.ShowWindowChanged = _windowLogic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
-
+    _revokers.RequestMoveContent = _windowLogic.RequestMoveContent(winrt::auto_revoke, { this, &AppHost::_handleMoveContent });
+    _revokers.RequestReceiveContent = _windowLogic.RequestReceiveContent(winrt::auto_revoke, { this, &AppHost::_handleReceiveContent });
+    _revokers.SendContentRequested = _peasant.SendContentRequested(winrt::auto_revoke, { this, &AppHost::_handleSendContent });
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
     // it will accumulate an unbounded amount of queued animations while
@@ -573,10 +579,8 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, til::rect proposedRect, Launc
 
     auto initialSize = _windowLogic.GetLaunchDimensions(dpix);
 
-    const auto islandWidth = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.Width)), 1);
-    const auto islandHeight = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.Height)), 1);
+    const auto islandWidth = Utils::ClampToShortMax(lrintf(initialSize.Width), 1);
+    const auto islandHeight = Utils::ClampToShortMax(lrintf(initialSize.Height), 1);
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
@@ -790,11 +794,6 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
             }
         }
     }
-}
-
-bool AppHost::HasWindow()
-{
-    return _shouldCreateWindow;
 }
 
 // Method Description:
@@ -1215,6 +1214,102 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
 winrt::TerminalApp::TerminalWindow AppHost::Logic()
 {
     return _windowLogic;
+}
+
+// Method Description:
+// - Raised from Page -> us -> manager -> monarch
+// - Called when the user attempts to move a tab or pane to another window.
+//   `args` will contain info about the structure of the content being moved,
+//   and where it should go.
+// - If the WindowPosition is filled in, then the user was dragging a tab out of
+//   this window and dropping it in empty space, indicating it should create a
+//   new window. In that case, we'll make some adjustments using that info and
+//   our own window info, so that the new window will be created in the right
+//   place and with the same size.
+void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                 winrt::TerminalApp::RequestMoveContentArgs args)
+{
+    winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Rect> windowBoundsReference{ nullptr };
+
+    if (args.WindowPosition() && _window)
+    {
+        // The WindowPosition is in DIPs. We need to convert it to pixels.
+        const til::point dragPositionInDips{ til::math::rounding, args.WindowPosition().Value() };
+        const auto scale = _window->GetCurrentDpiScale();
+
+        til::point dragPositionInPixels{
+            til::math::rounding,
+            dragPositionInDips.x * scale,
+            dragPositionInDips.y * scale,
+        };
+
+        // Fortunately, the window position is already in pixels.
+        til::rect windowBoundsInPixels{ _window->GetWindowRect() };
+        til::size windowSize{ windowBoundsInPixels.size() };
+
+        const auto dpi = _window->GetCurrentDpi();
+        const auto nonClientFrame = _window->GetNonClientFrame(dpi);
+
+        // If this window is maximized, you don't _really_ want the new window
+        // showing up at the same size (the size of a maximized window). You
+        // want it to just make a normal-sized window. This logic was taken out
+        // of AppHost::_HandleCreateWindow.
+        if (IsZoomed(_window->GetHandle()))
+        {
+            const auto initialSize = _windowLogic.GetLaunchDimensions(dpi);
+
+            const auto islandWidth = Utils::ClampToShortMax(lrintf(initialSize.Width), 1);
+            const auto islandHeight = Utils::ClampToShortMax(lrintf(initialSize.Height), 1);
+
+            // Get the size of a window we'd need to host that client rect. This will
+            // add the titlebar space.
+            const til::size nonClientSize{ _window->GetTotalNonClientExclusiveSize(dpi) };
+
+            const auto adjustedWidth = islandWidth + nonClientSize.width;
+            const auto adjustedHeight = islandHeight + nonClientSize.height;
+
+            windowSize = til::size{ Utils::ClampToShortMax(adjustedWidth, 1),
+                                    Utils::ClampToShortMax(adjustedHeight, 1) };
+        }
+
+        // Adjust for the non-client bounds
+        dragPositionInPixels.x -= nonClientFrame.left;
+        dragPositionInPixels.y -= nonClientFrame.top;
+        windowSize = windowSize - nonClientFrame.size();
+
+        // Convert to DIPs for the size, so that dragging across a DPI boundary
+        // retains the correct dimensions.
+        const auto sizeInDips = windowSize.scale(til::math::rounding, 1.0f / scale);
+        til::rect inDips{ dragPositionInPixels, sizeInDips };
+
+        // Use the drag event as the new position, and the size of the actual window.
+        windowBoundsReference = inDips.to_winrt_rect();
+    }
+
+    _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex(), windowBoundsReference);
+}
+
+void AppHost::_handleAttach(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                            winrt::Microsoft::Terminal::Remoting::AttachRequest args)
+{
+    _windowLogic.AttachContent(args.Content(), args.TabIndex());
+}
+
+// Page -> us -> manager -> monarch
+// The page wants to tell the monarch that it was the drop target for a drag drop.
+// The manager will tell the monarch to tell the _other_ window to send its content to us.
+void AppHost::_handleReceiveContent(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                    winrt::TerminalApp::RequestReceiveContentArgs args)
+{
+    _windowManager.RequestSendContent(winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs{ args.SourceWindow(), args.TargetWindow(), args.TabIndex() });
+}
+
+// monarch -> Peasant -> us -> Page
+// The Monarch was told to tell us to send our dragged content to someone else.
+void AppHost::_handleSendContent(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                 winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs args)
+{
+    _windowLogic.SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs{ args.SourceWindow(), args.TargetWindow(), args.TabIndex() });
 }
 
 // Bubble the update settings request up to the emperor. We're being called on

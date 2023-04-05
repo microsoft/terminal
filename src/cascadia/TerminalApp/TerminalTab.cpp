@@ -438,16 +438,16 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - A vector of commands
-    std::vector<ActionAndArgs> TerminalTab::BuildStartupActions() const
+    std::vector<ActionAndArgs> TerminalTab::BuildStartupActions(const bool asContent) const
     {
         // Give initial ids (0 for the child created with this tab,
         // 1 for the child after the first split.
-        auto state = _rootPane->BuildStartupActions(0, 1);
+        auto state = _rootPane->BuildStartupActions(0, 1, asContent);
 
         {
             ActionAndArgs newTabAction{};
             newTabAction.Action(ShortcutAction::NewTab);
-            NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane() };
+            NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane(asContent) };
             newTabAction.Args(newTabArgs);
 
             state.args.emplace(state.args.begin(), std::move(newTabAction));
@@ -783,6 +783,10 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalTab::FocusPane(const uint32_t id)
     {
+        if (_rootPane == nullptr)
+        {
+            return false;
+        }
         _changingActivePane = true;
         const auto res = _rootPane->FocusPane(id);
         _changingActivePane = false;
