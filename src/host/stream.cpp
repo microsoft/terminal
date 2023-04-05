@@ -445,7 +445,7 @@ try
     {
         wchar_t wch;
         status = GetChar(&inputBuffer, &wch, wait, nullptr, nullptr, nullptr);
-        if (!NT_SUCCESS(status))
+        if (FAILED_NTSTATUS(status))
         {
             break;
         }
@@ -457,7 +457,7 @@ try
     }
 
     bytesRead = buffer.size() - writer.size();
-    return status;
+    return wait ? status : STATUS_SUCCESS;
 }
 NT_CATCH_RETURN()
 
