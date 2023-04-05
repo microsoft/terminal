@@ -37,7 +37,7 @@ public:
                      _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                      SCREEN_INFORMATION& screenInfo,
                      _In_ size_t UserBufferSize,
-                     _In_ PWCHAR UserBuffer,
+                     _In_ char* UserBuffer,
                      _In_ ULONG CtrlWakeupMask,
                      _In_ const std::wstring_view exeName,
                      _In_ const std::string_view initialData,
@@ -57,8 +57,8 @@ public:
                 _Out_ DWORD* const pControlKeyState,
                 _Out_ void* const pOutputData) override;
 
-    gsl::span<wchar_t> SpanAtPointer();
-    gsl::span<wchar_t> SpanWholeBuffer();
+    std::span<wchar_t> SpanAtPointer();
+    std::span<wchar_t> SpanWholeBuffer();
 
     size_t Write(const std::wstring_view wstr);
 
@@ -129,7 +129,7 @@ private:
     wchar_t* _backupLimit;
 
     size_t _userBufferSize; // doubled size in ansi case
-    wchar_t* _userBuffer;
+    char* _userBuffer;
 
     size_t* _pdwNumBytes;
 

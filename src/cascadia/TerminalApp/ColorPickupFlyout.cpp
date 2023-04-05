@@ -1,9 +1,6 @@
 #include "pch.h"
 #include "ColorPickupFlyout.h"
 #include "ColorPickupFlyout.g.cpp"
-#include "winrt/Windows.UI.Xaml.Media.h"
-#include "winrt/Windows.UI.Xaml.Shapes.h"
-#include "winrt/Windows.UI.Xaml.Interop.h"
 #include <LibraryResources.h>
 
 namespace winrt::TerminalApp::implementation

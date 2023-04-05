@@ -138,26 +138,6 @@ bool ConhostInternalGetSet::GetAutoWrapMode() const
     return WI_IsFlagSet(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
 }
 
-// Routine Description:
-// - Sets the top and bottom scrolling margins for the current page. This creates
-//     a subsection of the screen that scrolls when input reaches the end of the
-//     region, leaving the rest of the screen untouched.
-// Arguments:
-// - scrollMargins - A rect who's Top and Bottom members will be used to set
-//     the new values of the top and bottom margins. If (0,0), then the margins
-//     will be disabled. NOTE: This is a rect in the case that we'll need the
-//     left and right margins in the future.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetScrollingRegion(const til::inclusive_rect& scrollMargins)
-{
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    auto srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
-    srScrollMargins.top = scrollMargins.top;
-    srScrollMargins.bottom = scrollMargins.bottom;
-    screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
-}
-
 // Method Description:
 // - Retrieves the current Line Feed/New Line (LNM) mode.
 // Arguments:
@@ -166,38 +146,8 @@ void ConhostInternalGetSet::SetScrollingRegion(const til::inclusive_rect& scroll
 // - true if a line feed also produces a carriage return. false otherwise.
 bool ConhostInternalGetSet::GetLineFeedMode() const
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.IsReturnOnNewlineAutomatic();
-}
-
-// Routine Description:
-// - Performs a line feed, possibly preceded by carriage return.
-// Arguments:
-// - withReturn - Set to true if a carriage return should be performed as well.
-// - wrapForced - Set to true is the line feed was the result of the line wrapping.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::LineFeed(const bool withReturn, const bool wrapForced)
-{
     auto& screenInfo = _io.GetActiveOutputBuffer();
-    auto& textBuffer = screenInfo.GetTextBuffer();
-    auto cursorPosition = textBuffer.GetCursor().GetPosition();
-
-    // If the line was forced to wrap, set the wrap status.
-    // When explicitly moving down a row, clear the wrap status.
-    textBuffer.GetRowByOffset(cursorPosition.y).SetWrapForced(wrapForced);
-
-    cursorPosition.y += 1;
-    if (withReturn)
-    {
-        cursorPosition.x = 0;
-    }
-    else
-    {
-        cursorPosition = textBuffer.ClampPositionWithinLine(cursorPosition);
-    }
-
-    THROW_IF_NTSTATUS_FAILED(AdjustCursorPosition(screenInfo, cursorPosition, FALSE, nullptr));
+    return WI_IsFlagClear(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
 }
 
 // Routine Description:
@@ -471,6 +421,25 @@ void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRe
             changedRect.top,
             changedRect.right - 1,
             changedRect.bottom - 1);
+    }
+}
+
+// Routine Description:
+// - Implements conhost-specific behavior when the buffer is rotated.
+// Arguments:
+// - delta - the number of cycles that the buffer has rotated.
+// Return value:
+// - <none>
+void ConhostInternalGetSet::NotifyBufferRotation(const int delta)
+{
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    if (screenInfo.IsActiveScreenBuffer())
+    {
+        auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+        if (pNotifier)
+        {
+            pNotifier->NotifyConsoleUpdateScrollEvent(0, -delta);
+        }
     }
 }
 

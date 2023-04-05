@@ -67,6 +67,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECERA
         bool SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECSERA
         bool SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) noexcept override; // DECSACE
+        bool RequestChecksumRectangularArea(const VTInt id, const VTInt page, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECRQCRA
         bool SetGraphicsRendition(const VTParameters options) override; // SGR
         bool SetLineRendition(const LineRendition rendition) override; // DECSWL, DECDWL, DECDHL
         bool SetCharacterProtectionAttribute(const VTParameters options) override; // DECSCA
@@ -103,7 +104,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool Designate96Charset(const VTInt gsetNumber, const VTID charset) override; // SCS
         bool LockingShift(const VTInt gsetNumber) override; // LS0, LS1, LS2, LS3
         bool LockingShiftRight(const VTInt gsetNumber) override; // LS1R, LS2R, LS3R
-        bool SingleShift(const VTInt gsetNumber) override; // SS2, SS3
+        bool SingleShift(const VTInt gsetNumber) noexcept override; // SS2, SS3
         bool AcceptC1Controls(const bool enabled) override; // DECAC1
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
@@ -150,6 +151,9 @@ namespace Microsoft::Console::VirtualTerminal
 
         StringHandler RequestSetting() override; // DECRQSS
 
+        bool RequestPresentationStateReport(const DispatchTypes::PresentationReportFormat format) override; // DECRQPSR
+        StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat format) override; // DECRSPS
+
         bool PlaySounds(const VTParameters parameters) override; // DECPS
 
     private:
@@ -170,6 +174,7 @@ namespace Microsoft::Console::VirtualTerminal
         {
             VTInt Row = 1;
             VTInt Column = 1;
+            bool IsDelayedEOLWrap = false;
             bool IsOriginModeRelative = false;
             TextAttribute Attributes = {};
             TerminalOutput TermOutput = {};
@@ -195,7 +200,7 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         void _WriteToBuffer(const std::wstring_view string);
-        std::pair<int, int> _GetVerticalMargins(const til::rect& viewport, const bool absolute);
+        std::pair<int, int> _GetVerticalMargins(const til::rect& viewport, const bool absolute) noexcept;
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
         void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
@@ -203,8 +208,8 @@ namespace Microsoft::Console::VirtualTerminal
         void _ChangeRectAttributes(TextBuffer& textBuffer, const til::rect& changeRect, const ChangeOps& changeOps);
         void _ChangeRectOrStreamAttributes(const til::rect& changeArea, const ChangeOps& changeOps);
         til::rect _CalculateRectArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const til::size bufferSize);
-        void _EraseScrollback();
-        void _EraseAll();
+        bool _EraseScrollback();
+        bool _EraseAll();
         void _ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
         void _ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
         void _InsertDeleteCharacterHelper(const VTInt delta);
@@ -213,6 +218,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _DoSetTopBottomScrollingMargins(const VTInt topMargin,
                                              const VTInt bottomMargin);
+        void _DoLineFeed(TextBuffer& textBuffer, const bool withReturn, const bool wrapForced);
+
         void _OperatingStatus() const;
         void _CursorPositionReport(const bool extendedReport);
         void _MacroSpaceReport() const;
@@ -234,6 +241,12 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportDECSTBMSetting();
         void _ReportDECSCASetting() const;
         void _ReportDECSACESetting() const;
+        void _ReportDECACSetting(const VTInt itemNumber) const;
+
+        void _ReportCursorInformation();
+        StringHandler _RestoreCursorInformation();
+        void _ReportTabStops();
+        StringHandler _RestoreTabStops();
 
         StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize);
         StringHandler _CreatePassthroughHandler();

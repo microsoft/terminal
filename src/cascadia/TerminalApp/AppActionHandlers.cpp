@@ -209,7 +209,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
         {
-            auto moved = _MovePane(realArgs.TabIndex());
+            auto moved = _MovePane(realArgs);
             args.Handled(moved);
         }
     }
@@ -280,6 +280,28 @@ namespace winrt::TerminalApp::implementation
         if (const auto activeTab{ _GetFocusedTabImpl() })
         {
             activeTab->TogglePaneReadOnly();
+        }
+
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleEnablePaneReadOnly(const IInspectable& /*sender*/,
+                                                 const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            activeTab->SetPaneReadOnly(true);
+        }
+
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleDisablePaneReadOnly(const IInspectable& /*sender*/,
+                                                  const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            activeTab->SetPaneReadOnly(false);
         }
 
         args.Handled(true);
@@ -789,17 +811,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<MoveTabArgs>())
         {
-            auto direction = realArgs.Direction();
-            if (direction != MoveTabDirection::None)
-            {
-                if (auto focusedTabIndex = _GetFocusedTabIndex())
-                {
-                    auto currentTabIndex = focusedTabIndex.value();
-                    auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
-                    _TryMoveTab(currentTabIndex, currentTabIndex + delta);
-                }
-            }
-            actionArgs.Handled(true);
+            auto moved = _MoveTab(realArgs);
+            actionArgs.Handled(moved);
         }
     }
 

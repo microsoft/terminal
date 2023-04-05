@@ -342,7 +342,7 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(gsl::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
 {
     const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _api.cellCount.y));
@@ -1147,6 +1147,14 @@ void AtlasEngine::_recreateFontDependentResources()
                 // NOTE: SetAutomaticFontAxes(DWRITE_AUTOMATIC_FONT_AXES_OPTICAL_SIZE) breaks certain
                 // fonts making them look fairly unslightly. With no option to easily disable this
                 // feature in Windows Terminal, it's better left disabled by default.
+
+                const DWRITE_LINE_SPACING lineSpacing{
+                    .method = DWRITE_LINE_SPACING_METHOD_UNIFORM,
+                    .height = _r.cellSizeDIP.y,
+                    .baseline = _api.fontMetrics.baselineInDIP,
+                    .fontLineGapUsage = DWRITE_FONT_LINE_GAP_USAGE_ENABLED,
+                };
+                THROW_IF_FAILED(textFormat.query<IDWriteTextFormat2>()->SetLineSpacing(&lineSpacing));
 
                 if (!_api.fontAxisValues.empty())
                 {

@@ -117,6 +117,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             lastBreadcrumb = _breadcrumbs.GetAt(size - 1);
         }
 
+        // Collect all the values out of the old nav view item source
         auto menuItems{ SettingsNav().MenuItems() };
 
         // We'll remove a bunch of items and iterate over it twice.
@@ -156,7 +157,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }),
             menuItemsSTL.end());
 
-        menuItems.ReplaceAll(menuItemsSTL);
+        // Now, we've got a list of just the static entries again. Lets take
+        // those and stick them back into a new winrt vector, and set that as
+        // the source again.
+        //
+        // By setting MenuItemsSource in its entirety, rather than manipulating
+        // MenuItems, we avoid a crash in WinUI.
+        auto newSource = winrt::single_threaded_vector<IInspectable>(std::move(menuItemsSTL));
+        SettingsNav().MenuItemsSource(newSource);
 
         // Repopulate profile-related menu items
         _InitializeProfilesList();
@@ -209,7 +217,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Couldn't find the selected item, fallback to first menu item
         // This happens when the selected item was a profile which doesn't exist in the new configuration
         // We can use menuItemsSTL here because the only things they miss are profile entries.
-        const auto& firstItem{ menuItemsSTL.at(0).as<MUX::Controls::NavigationViewItem>() };
+        const auto& firstItem{ SettingsNav().MenuItems().GetAt(0).as<MUX::Controls::NavigationViewItem>() };
         SettingsNav().SelectedItem(firstItem);
         _Navigate(unbox_value<hstring>(firstItem.Tag()), BreadcrumbSubPage::None);
     }
@@ -348,14 +356,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto currentPage = profile.CurrentPage();
                 if (currentPage == ProfileSubPage::Base)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), profile);
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
                     _breadcrumbs.Clear();
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, breadcrumbText, BreadcrumbSubPage::None);
                     _breadcrumbs.Append(crumb);
                 }
                 else if (currentPage == ProfileSubPage::Appearance)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), profile);
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Appearance/Header"), BreadcrumbSubPage::Profile_Appearance);
                     _breadcrumbs.Append(crumb);
                 }
@@ -400,12 +408,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (clickedItemTag == globalProfileTag)
         {
             auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone) };
-            profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes(), *this);
+            profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
             profileVM.IsBaseLayer(true);
 
             _SetupProfileEventHandling(profileVM);
 
-            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), profileVM);
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<implementation::NavigateToProfileArgs>(profileVM, *this));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_ProfileDefaults/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
 
@@ -457,7 +465,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _SetupProfileEventHandling(profile);
 
-        contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), profile);
+        contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
         const auto crumb = winrt::make<Breadcrumb>(box_value(profile), profile.Name(), BreadcrumbSubPage::None);
         _breadcrumbs.Append(crumb);
 
@@ -527,7 +535,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_InitializeProfilesList()
     {
-        const auto menuItems = SettingsNav().MenuItems();
+        const auto& itemSource{ SettingsNav().MenuItemsSource() };
+        if (!itemSource)
+        {
+            // There wasn't a MenuItemsSource set yet? The only way that's
+            // possible is if we haven't used
+            // _MoveXamlParsedNavItemsIntoItemSource to move the hardcoded menu
+            // entries from XAML into our runtime menu item source. Do that now.
+
+            _MoveXamlParsedNavItemsIntoItemSource();
+        }
+        const auto menuItems = SettingsNav().MenuItemsSource().try_as<IVector<IInspectable>>();
 
         // Manually create a NavigationViewItem for each profile
         // and keep a reference to them in a map so that we
@@ -538,7 +556,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (!profile.Deleted())
             {
                 auto profileVM = _viewModelForProfile(profile, _settingsClone);
-                profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes(), *this);
+                profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
                 auto navItem = _CreateProfileNavViewItem(profileVM);
                 menuItems.Append(navItem);
             }
@@ -557,11 +575,42 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         menuItems.Append(addProfileItem);
     }
 
+    // BODGY
+    // Does the very wacky business of moving all our MenuItems that we
+    // hardcoded in XAML into a runtime MenuItemsSource. We'll then use _that_
+    // MenuItemsSource as the source for our nav view entries instead. This
+    // lets us hardcode the initial entries in precompiled XAML, but then adjust
+    // the items at runtime. Without using a MenuItemsSource, the NavView just
+    // crashes when items are removed (see GH#13673)
+    void MainPage::_MoveXamlParsedNavItemsIntoItemSource()
+    {
+        if (SettingsNav().MenuItemsSource())
+        {
+            // We've already copied over the original items to a source. We can
+            // just skip this now.
+            return;
+        }
+
+        auto menuItems{ SettingsNav().MenuItems() };
+        // Remove all the existing items, and move them to a separate vector
+        // that we'll use as a MenuItemsSource. By doing this, we avoid a WinUI
+        // bug (MUX#6302) where modifying the NavView.Items() directly causes a
+        // crash. By leaving these static entries in XAML, we maintain the
+        // benefit of instantiating them from the XBF, rather than at runtime.
+        //
+        // --> Copy it into an STL vector to simplify our code and reduce COM overhead.
+        std::vector<IInspectable> menuItemsSTL(menuItems.Size(), nullptr);
+        menuItems.GetMany(0, menuItemsSTL);
+
+        auto newSource = winrt::single_threaded_vector<IInspectable>(std::move(menuItemsSTL));
+        SettingsNav().MenuItemsSource(newSource);
+    }
+
     void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile)
     {
         const auto newProfile{ profile ? profile : _settingsClone.CreateNewProfile() };
         const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone) };
-        profileViewModel.SetupAppearances(_colorSchemesPageVM.AllColorSchemes(), *this);
+        profileViewModel.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
         const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
         SettingsNav().MenuItems().InsertAt(index, navItem);
 

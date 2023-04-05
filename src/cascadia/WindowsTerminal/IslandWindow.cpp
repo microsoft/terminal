@@ -27,8 +27,6 @@ using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 #define IDM_SYSTEM_MENU_BEGIN 0x1000
 
-const UINT WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
-
 IslandWindow::IslandWindow() noexcept :
     _interopWindowHandle{ nullptr },
     _rootGrid{ nullptr },
@@ -399,18 +397,19 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
 // - The total dimension
 long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize)
 {
-    return gsl::narrow_cast<int>(_pfnSnapDimensionCallback(isWidth, gsl::narrow_cast<float>(clientSize)) + nonClientSize);
+    if (_pfnSnapDimensionCallback)
+    {
+        return gsl::narrow_cast<int>(_pfnSnapDimensionCallback(isWidth, gsl::narrow_cast<float>(clientSize)) + nonClientSize);
+    }
+    // We might have been called in WM_CREATE, before we've initialized XAML or
+    // our page. That's okay.
+    return clientSize + nonClientSize;
 }
 
 [[nodiscard]] LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
     switch (message)
     {
-    case WM_HOTKEY:
-    {
-        _HotkeyPressedHandlers(static_cast<long>(wparam));
-        return 0;
-    }
     case WM_GETMINMAXINFO:
     {
         _OnGetMinMaxInfo(wparam, lparam);
@@ -626,30 +625,6 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         }
         break;
     }
-    case CM_NOTIFY_FROM_NOTIFICATION_AREA:
-    {
-        switch (LOWORD(lparam))
-        {
-        case NIN_SELECT:
-        case NIN_KEYSELECT:
-        {
-            _NotifyNotificationIconPressedHandlers();
-            return 0;
-        }
-        case WM_CONTEXTMENU:
-        {
-            const til::point eventPoint{ GET_X_LPARAM(wparam), GET_Y_LPARAM(wparam) };
-            _NotifyShowNotificationIconContextMenuHandlers(eventPoint);
-            return 0;
-        }
-        }
-        break;
-    }
-    case WM_MENUCOMMAND:
-    {
-        _NotifyNotificationIconMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
-        return 0;
-    }
     case WM_SYSCOMMAND:
     {
         // the low 4 bits contain additional information (that we don't care about)
@@ -726,16 +701,6 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         _AutomaticShutdownRequestedHandlers();
         return true;
     }
-    default:
-        // We'll want to receive this message when explorer.exe restarts
-        // so that we can re-add our icon to the notification area.
-        // This unfortunately isn't a switch case because we register the
-        // message at runtime.
-        if (message == WM_TASKBARCREATED)
-        {
-            _NotifyReAddNotificationIconHandlers();
-            return 0;
-        }
     }
 
     // TODO: handle messages here...
@@ -1250,65 +1215,6 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
             _RestoreFullscreenPosition(mi.rcWork);
         }
     }
-}
-
-// Method Description:
-// - Call UnregisterHotKey once for each previously registered hotkey.
-// Return Value:
-// - <none>
-void IslandWindow::UnregisterHotKey(const int index) noexcept
-{
-    TraceLoggingWrite(
-        g_hWindowsTerminalProvider,
-        "UnregisterHotKey",
-        TraceLoggingDescription("Emitted when clearing previously set hotkeys"),
-        TraceLoggingInt64(index, "index", "the index of the hotkey to remove"),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-        TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-    LOG_IF_WIN32_BOOL_FALSE(::UnregisterHotKey(_window.get(), index));
-}
-
-// Method Description:
-// - Call RegisterHotKey to attempt to register that keybinding as a global hotkey.
-// - When these keys are pressed, we'll get a WM_HOTKEY message with the payload
-//   containing the index we registered here.
-// - Call UnregisterHotKey() before registering your hotkeys.
-//   See: https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerhotkey#remarks
-// Arguments:
-// - hotkey: The key-combination to register.
-// Return Value:
-// - <none>
-bool IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept
-{
-    const auto vkey = hotkey.Vkey();
-    auto hotkeyFlags = MOD_NOREPEAT;
-    {
-        const auto modifiers = hotkey.Modifiers();
-        WI_SetFlagIf(hotkeyFlags, MOD_WIN, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Windows));
-        WI_SetFlagIf(hotkeyFlags, MOD_ALT, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu));
-        WI_SetFlagIf(hotkeyFlags, MOD_CONTROL, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Control));
-        WI_SetFlagIf(hotkeyFlags, MOD_SHIFT, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift));
-    }
-
-    // TODO GH#8888: We should display a warning of some kind if this fails.
-    // This can fail if something else already bound this hotkey.
-    const auto result = ::RegisterHotKey(_window.get(), index, hotkeyFlags, vkey);
-
-    TraceLoggingWrite(g_hWindowsTerminalProvider,
-                      "RegisterHotKey",
-                      TraceLoggingDescription("Emitted when setting hotkeys"),
-                      TraceLoggingInt64(index, "index", "the index of the hotkey to add"),
-                      TraceLoggingUInt64(vkey, "vkey", "the key"),
-                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_WIN), "win", "is WIN in the modifiers"),
-                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_ALT), "alt", "is ALT in the modifiers"),
-                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_CONTROL), "control", "is CONTROL in the modifiers"),
-                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_SHIFT), "shift", "is SHIFT in the modifiers"),
-                      TraceLoggingBool(result, "succeeded", "true if we succeeded"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-    return result;
 }
 
 // Method Description:

@@ -500,7 +500,7 @@ Json::Value SettingsLoader::_parseJSON(const std::string_view& content)
 {
     Json::Value json;
     std::string errs;
-    const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+    const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
 
     if (!reader->parse(content.data(), content.data() + content.size(), &json, &errs))
     {
@@ -531,10 +531,10 @@ const Json::Value& SettingsLoader::_getJSONValue(const Json::Value& json, const 
 // Thus no matter how many profiles are added later on, the following condition holds true:
 // The userSettings.profiles in the range [0, _userProfileCount) contain all profiles specified by the user.
 // In turn all profiles in the range [_userProfileCount, ∞) contain newly generated/added profiles.
-// gsl::make_span(userSettings.profiles).subspan(_userProfileCount) gets us the latter range.
-gsl::span<const winrt::com_ptr<Profile>> SettingsLoader::_getNonUserOriginProfiles() const
+// std::span{ userSettings.profiles }.subspan(_userProfileCount) gets us the latter range.
+std::span<const winrt::com_ptr<Profile>> SettingsLoader::_getNonUserOriginProfiles() const
 {
-    return gsl::make_span(userSettings.profiles).subspan(_userProfileCount);
+    return std::span{ userSettings.profiles }.subspan(_userProfileCount);
 }
 
 // Parses the given JSON string ("content") and fills a ParsedSettings instance with it.
@@ -791,7 +791,7 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
     {
         const winrt::hstring source{ generatorNamespace };
 
-        for (const auto& profile : gsl::span(inboxSettings.profiles).subspan(previousSize))
+        for (const auto& profile : std::span(inboxSettings.profiles).subspan(previousSize))
         {
             profile->Origin(OriginTag::Generated);
             profile->Source(source);
@@ -822,7 +822,7 @@ try
     // read settings.json from the Release stable file path if it exists.
     // Otherwise use default settings file provided from original settings file
     bool releaseSettingExists = false;
-    if (firstTimeSetup)
+    if (firstTimeSetup && !IsPortableMode())
     {
 #if defined(WT_BRANDING_PREVIEW)
         {
@@ -1110,6 +1110,8 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _resolveDefaultProfile();
     _resolveNewTabMenuProfiles();
     _validateSettings();
+
+    ExpandCommands();
 }
 
 // Method Description:
@@ -1158,6 +1160,11 @@ winrt::hstring CascadiaSettings::_calculateHash(std::string_view settings, const
 winrt::hstring CascadiaSettings::SettingsPath()
 {
     return winrt::hstring{ _settingsPath().native() };
+}
+
+bool CascadiaSettings::IsPortableMode()
+{
+    return Model::IsPortableMode();
 }
 
 winrt::hstring CascadiaSettings::DefaultSettingsPath()

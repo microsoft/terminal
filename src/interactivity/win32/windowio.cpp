@@ -209,7 +209,7 @@ void HandleKeyEvent(const HWND hWnd,
         }
         else
         {
-            keyEvent.SetCharData(0);
+            keyEvent.SetCharData(L'\0');
         }
     }
     else
@@ -220,7 +220,7 @@ void HandleKeyEvent(const HWND hWnd,
             return;
         }
         keyEvent.SetActiveModifierKeys(ControlKeyState);
-        keyEvent.SetCharData(0);
+        keyEvent.SetCharData(L'\0');
     }
 
     const INPUT_KEY_INFO inputKeyInfo(VirtualKeyCode, ControlKeyState);
@@ -992,7 +992,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK* phhook)
     // Create and activate the main window
     auto Status = Window::CreateInstance(&gci, gci.ScreenBuffers);
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         RIPMSG2(RIP_WARNING, "CreateWindowsWindow failed with status 0x%x, gle = 0x%x", Status, GetLastError());
         return Status;
@@ -1053,7 +1053,7 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
     }
 
     UnlockConsole();
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         ServiceLocator::LocateGlobals().ntstatusConsoleInputInitStatus = Status;
         ServiceLocator::LocateGlobals().hConsoleInputInitEvent.SetEvent();

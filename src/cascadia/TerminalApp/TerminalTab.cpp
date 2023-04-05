@@ -438,16 +438,16 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - A vector of commands
-    std::vector<ActionAndArgs> TerminalTab::BuildStartupActions() const
+    std::vector<ActionAndArgs> TerminalTab::BuildStartupActions(const bool asContent) const
     {
         // Give initial ids (0 for the child created with this tab,
         // 1 for the child after the first split.
-        auto state = _rootPane->BuildStartupActions(0, 1);
+        auto state = _rootPane->BuildStartupActions(0, 1, asContent);
 
         {
             ActionAndArgs newTabAction{};
             newTabAction.Action(ShortcutAction::NewTab);
-            NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane() };
+            NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane(asContent) };
             newTabAction.Args(newTabArgs);
 
             state.args.emplace(state.args.begin(), std::move(newTabAction));
@@ -783,6 +783,10 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalTab::FocusPane(const uint32_t id)
     {
+        if (_rootPane == nullptr)
+        {
+            return false;
+        }
         _changingActivePane = true;
         const auto res = _rootPane->FocusPane(id);
         _changingActivePane = false;
@@ -1563,14 +1567,14 @@ namespace winrt::TerminalApp::implementation
     {
         auto hasReadOnly = false;
         auto allReadOnly = true;
-        _activePane->WalkTree([&](auto p) {
+        _activePane->WalkTree([&](const auto& p) {
             if (const auto& control{ p->GetTerminalControl() })
             {
                 hasReadOnly |= control.ReadOnly();
                 allReadOnly &= control.ReadOnly();
             }
         });
-        _activePane->WalkTree([&](auto p) {
+        _activePane->WalkTree([&](const auto& p) {
             if (const auto& control{ p->GetTerminalControl() })
             {
                 // If all controls have the same read only state then just toggle
@@ -1582,6 +1586,38 @@ namespace winrt::TerminalApp::implementation
                 else if (!control.ReadOnly())
                 {
                     control.ToggleReadOnly();
+                }
+            }
+        });
+    }
+
+    // Method Description:
+    // - Set read-only mode on the active pane
+    // - If a parent pane is selected, this will ensure that all children have
+    //   the same read-only status.
+    void TerminalTab::SetPaneReadOnly(const bool readOnlyState)
+    {
+        auto hasReadOnly = false;
+        auto allReadOnly = true;
+        _activePane->WalkTree([&](const auto& p) {
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                hasReadOnly |= control.ReadOnly();
+                allReadOnly &= control.ReadOnly();
+            }
+        });
+        _activePane->WalkTree([&](const auto& p) {
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                // If all controls have the same read only state then just disable
+                if (allReadOnly || !hasReadOnly)
+                {
+                    control.SetReadOnly(readOnlyState);
+                }
+                // otherwise set to all read only.
+                else if (!control.ReadOnly())
+                {
+                    control.SetReadOnly(readOnlyState);
                 }
             }
         });

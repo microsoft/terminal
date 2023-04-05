@@ -44,7 +44,6 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                                             const BOOL fKeepCursorVisible,
                                             _Inout_opt_ til::CoordType* psScrollY)
 {
-    const auto inVtMode = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
     if (coordCursor.x < 0)
     {
@@ -68,180 +67,8 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         }
         else
         {
-            if (inVtMode)
-            {
-                // In VT mode, the cursor must be left in the last column.
-                coordCursor.x = bufferSize.width - 1;
-            }
-            else
-            {
-                // For legacy apps, it is left where it was at the start of the write.
-                coordCursor.x = screenInfo.GetTextBuffer().GetCursor().GetPosition().x;
-            }
+            coordCursor.x = screenInfo.GetTextBuffer().GetCursor().GetPosition().x;
         }
-    }
-
-    // The VT standard requires the lines revealed when scrolling are filled
-    // with the current background color, but with no meta attributes set.
-    auto fillAttributes = screenInfo.GetAttributes();
-    fillAttributes.SetStandardErase();
-
-    const auto relativeMargins = screenInfo.GetRelativeScrollMargins();
-    auto viewport = screenInfo.GetViewport();
-    auto srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
-    const auto fMarginsSet = srMargins.bottom > srMargins.top;
-    auto currentCursor = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-    const auto iCurrentCursorY = currentCursor.y;
-
-    const auto fCursorInMargins = iCurrentCursorY <= srMargins.bottom && iCurrentCursorY >= srMargins.top;
-    const auto cursorAboveViewport = coordCursor.y < 0 && inVtMode;
-    const auto fScrollDown = fMarginsSet && fCursorInMargins && (coordCursor.y > srMargins.bottom);
-    auto fScrollUp = fMarginsSet && fCursorInMargins && (coordCursor.y < srMargins.top);
-
-    const auto fScrollUpWithoutMargins = (!fMarginsSet) && cursorAboveViewport;
-    // if we're in VT mode, AND MARGINS AREN'T SET and a Reverse Line Feed took the cursor up past the top of the viewport,
-    //   VT style scroll the contents of the screen.
-    // This can happen in applications like `less`, that don't set margins, because they're going to
-    //   scroll the entire screen anyways, so no need for them to ever set the margins.
-    if (fScrollUpWithoutMargins)
-    {
-        fScrollUp = true;
-        srMargins.top = 0;
-        srMargins.bottom = screenInfo.GetViewport().BottomInclusive();
-    }
-
-    const auto scrollDownAtTop = fScrollDown && relativeMargins.Top() == 0;
-    if (scrollDownAtTop)
-    {
-        // We're trying to scroll down, and the top margin is at the top of the viewport.
-        // In this case, we want the lines that are "scrolled off" to appear in
-        //      the scrollback instead of being discarded.
-        // To do this, we're going to scroll everything starting at the bottom
-        //  margin down, then move the viewport down.
-
-        const auto delta = coordCursor.y - srMargins.bottom;
-        til::inclusive_rect scrollRect;
-        scrollRect.left = 0;
-        scrollRect.top = srMargins.bottom + 1; // One below margins
-        scrollRect.bottom = bufferSize.height - 1; // -1, otherwise this would be an exclusive rect.
-        scrollRect.right = bufferSize.width - 1; // -1, otherwise this would be an exclusive rect.
-
-        // This is the Y position we're moving the contents below the bottom margin to.
-        auto moveToYPosition = scrollRect.top + delta;
-
-        // This is where the viewport will need to be to give the effect of
-        //      scrolling the contents in the margins.
-        auto newViewTop = viewport.Top() + delta;
-
-        // This is how many new lines need to be added to the buffer to support this operation.
-        const auto newRows = (viewport.BottomExclusive() + delta) - bufferSize.height;
-
-        // If we're near the bottom of the buffer, we might need to insert some
-        //      new rows at the bottom.
-        // If we do this, then the viewport is now one line higher than it used
-        //      to be, so it needs to move down by one less line.
-        for (auto i = 0; i < newRows; i++)
-        {
-            screenInfo.GetTextBuffer().IncrementCircularBuffer();
-            moveToYPosition--;
-            newViewTop--;
-            scrollRect.top--;
-        }
-
-        const til::point newPostMarginsOrigin{ 0, moveToYPosition };
-        const til::point newViewOrigin{ 0, newViewTop };
-
-        try
-        {
-            ScrollRegion(screenInfo, scrollRect, std::nullopt, newPostMarginsOrigin, UNICODE_SPACE, fillAttributes);
-        }
-        CATCH_LOG();
-
-        // Move the viewport down
-        auto hr = screenInfo.SetViewportOrigin(true, newViewOrigin, true);
-        if (FAILED(hr))
-        {
-            return NTSTATUS_FROM_HRESULT(hr);
-        }
-        // If we didn't actually move the viewport, it's because we're at the
-        //      bottom of the buffer, and the top lines of the viewport have
-        //      changed. Manually invalidate here, to make sure the screen
-        //      displays the correct text.
-        if (newViewOrigin == viewport.Origin())
-        {
-            // Inside this block, we're shifting down at the bottom.
-            // This means that we had something like this:
-            // AAAA
-            // BBBB
-            // CCCC
-            // DDDD
-            // EEEE
-            //
-            // Our margins were set for lines A-D, but not on line E.
-            // So we circled the whole buffer up by one:
-            // BBBB
-            // CCCC
-            // DDDD
-            // EEEE
-            // <blank, was AAAA>
-            //
-            // Then we scrolled the contents of everything OUTSIDE the margin frame down.
-            // BBBB
-            // CCCC
-            // DDDD
-            // <blank, filled during scroll down of EEEE>
-            // EEEE
-            //
-            // And now we need to report that only the bottom line didn't "move" as we put the EEEE
-            // back where it started, but everything else moved.
-            // In this case, delta was 1. So the amount that moved is the entire viewport height minus the delta.
-            auto invalid = Viewport::FromDimensions(viewport.Origin(), { viewport.Width(), viewport.Height() - delta });
-            screenInfo.GetTextBuffer().TriggerRedraw(invalid);
-        }
-
-        // reset where our local viewport is, and recalculate the cursor and
-        //      margin positions.
-        viewport = screenInfo.GetViewport();
-        if (newRows > 0)
-        {
-            currentCursor.y -= newRows;
-            coordCursor.y -= newRows;
-        }
-        srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
-    }
-
-    // If we did the above scrollDownAtTop case, then we've already scrolled
-    //      the margins content, and we can skip this.
-    if (fScrollUp || (fScrollDown && !scrollDownAtTop))
-    {
-        auto diff = coordCursor.y - (fScrollUp ? srMargins.top : srMargins.bottom);
-
-        til::inclusive_rect scrollRect;
-        scrollRect.top = srMargins.top;
-        scrollRect.bottom = srMargins.bottom;
-        scrollRect.left = 0; // NOTE: Left/Right Scroll margins don't do anything currently.
-        scrollRect.right = bufferSize.width - 1; // -1, otherwise this would be an exclusive rect.
-
-        til::point dest;
-        dest.x = scrollRect.left;
-        dest.y = scrollRect.top - diff;
-
-        try
-        {
-            ScrollRegion(screenInfo, scrollRect, scrollRect, dest, UNICODE_SPACE, fillAttributes);
-        }
-        CATCH_LOG();
-
-        coordCursor.y -= diff;
-    }
-
-    // If the margins are set, then it shouldn't be possible for the cursor to
-    //   move below the bottom of the viewport. Either it should be constrained
-    //   inside the margins by one of the scrollDown cases handled above, or
-    //   we'll need to clamp it inside the viewport here.
-    if (fMarginsSet && coordCursor.y > viewport.BottomInclusive())
-    {
-        coordCursor.y = viewport.BottomInclusive();
     }
 
     auto Status = STATUS_SUCCESS;
@@ -263,8 +90,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
     }
 
     const auto cursorMovedPastViewport = coordCursor.y > screenInfo.GetViewport().BottomInclusive();
-    const auto cursorMovedPastVirtualViewport = coordCursor.y > screenInfo.GetVirtualViewport().BottomInclusive();
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         // if at right or bottom edge of window, scroll right or down one char.
         if (cursorMovedPastViewport)
@@ -276,27 +102,13 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         }
     }
 
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         if (fKeepCursorVisible)
         {
             screenInfo.MakeCursorVisible(coordCursor);
         }
         Status = screenInfo.SetCursorPosition(coordCursor, !!fKeepCursorVisible);
-
-        // MSFT:19989333 - Only re-initialize the cursor row if the cursor moved
-        //      below the terminal section of the buffer (the virtual viewport),
-        //      and the visible part of the buffer (the actual viewport).
-        // If this is only cursorMovedPastViewport, and you scroll up, then type
-        //      a character, we'll re-initialize the line the cursor is on.
-        // If this is only cursorMovedPastVirtualViewport and you scroll down,
-        //      (with terminal scrolling disabled) then all lines newly exposed
-        //      will get their attributes constantly cleared out.
-        // Both cursorMovedPastViewport and cursorMovedPastVirtualViewport works
-        if (inVtMode && cursorMovedPastViewport && cursorMovedPastVirtualViewport)
-        {
-            screenInfo.InitializeCursorRowAttributes();
-        }
     }
 
     return Status;
@@ -805,7 +617,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             // move cursor to the next line.
             pwchBuffer++;
 
-            if (gci.IsReturnOnNewlineAutomatic())
+            if (WI_IsFlagClear(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN))
             {
                 // Traditionally, we reset the X position to 0 with a newline automatically.
                 // Some things might not want this automatic "ONLCR line discipline" (for example, things that are expecting a *NIX behavior.)
@@ -872,7 +684,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             break;
         }
         }
-        if (!NT_SUCCESS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             return Status;
         }
@@ -942,7 +754,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         size_t TempNumSpaces = 0;
 
         {
-            if (NT_SUCCESS(Status))
+            if (SUCCEEDED_NTSTATUS(Status))
             {
                 FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT)));
                 FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING)));

@@ -156,7 +156,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             if (newTerminalArgs.TabColor())
             {
-                defaultSettings.StartingTabColor(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>{ til::color{ newTerminalArgs.TabColor().Value() } });
+                defaultSettings.StartingTabColor(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>{ static_cast<winrt::Microsoft::Terminal::Core::Color>(til::color{ newTerminalArgs.TabColor().Value() }) });
             }
             if (newTerminalArgs.SuppressApplicationTitle())
             {
@@ -271,11 +271,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _ProfileSource = profile.Source();
         _UseAcrylic = profile.UseAcrylic();
 
-        _FontFace = profile.FontInfo().FontFace();
-        _FontSize = profile.FontInfo().FontSize();
-        _FontWeight = profile.FontInfo().FontWeight();
-        _FontFeatures = profile.FontInfo().FontFeatures();
-        _FontAxes = profile.FontInfo().FontAxes();
+        const auto fontInfo = profile.FontInfo();
+        _FontFace = fontInfo.FontFace();
+        _FontSize = fontInfo.FontSize();
+        _FontWeight = fontInfo.FontWeight();
+        _FontFeatures = fontInfo.FontFeatures();
+        _FontAxes = fontInfo.FontAxes();
+        _CellWidth = fontInfo.CellWidth();
+        _CellHeight = fontInfo.CellHeight();
         _Padding = profile.Padding();
 
         _Commandline = profile.Commandline();
@@ -306,6 +309,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _Elevate = profile.Elevate();
         _AutoMarkPrompts = Feature_ScrollbarMarks::IsEnabled() && profile.AutoMarkPrompts();
         _ShowMarks = Feature_ScrollbarMarks::IsEnabled() && profile.ShowMarks();
+
+        _RightClickContextMenu = profile.RightClickContextMenu();
     }
 
     // Method Description:
@@ -395,11 +400,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return colorTable;
     }
 
-    gsl::span<winrt::Microsoft::Terminal::Core::Color> TerminalSettings::_getColorTableImpl()
+    std::span<winrt::Microsoft::Terminal::Core::Color> TerminalSettings::_getColorTableImpl()
     {
         if (_ColorTable.has_value())
         {
-            return gsl::make_span(*_ColorTable);
+            return std::span{ *_ColorTable };
         }
         for (auto&& parent : _parents)
         {

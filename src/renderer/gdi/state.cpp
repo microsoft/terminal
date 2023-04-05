@@ -440,7 +440,7 @@ GdiEngine::~GdiEngine()
 // - centeringHint - The horizontal extent that glyphs are offset from center.
 // Return Value:
 // - S_OK if successful. E_FAIL if there was an error.
-[[nodiscard]] HRESULT GdiEngine::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+[[nodiscard]] HRESULT GdiEngine::UpdateSoftFont(const std::span<const uint16_t> bitPattern,
                                                 const til::size cellSize,
                                                 const size_t centeringHint) noexcept
 {

@@ -44,8 +44,6 @@ int ConvertToOem(const UINT uiCodePage,
                  _Out_writes_(cchTarget) CHAR* const pchTarget,
                  const UINT cchTarget) noexcept;
 
-void SplitToOem(std::deque<std::unique_ptr<IInputEvent>>& events);
-
 int ConvertInputToUnicode(const UINT uiCodePage,
                           _In_reads_(cchSource) const CHAR* const pchSource,
                           const UINT cchSource,
