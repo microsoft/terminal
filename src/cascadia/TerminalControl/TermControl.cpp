@@ -3019,7 +3019,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 winrt::hstring uriText = _core.HoveredUriText();
                 if (uriText.empty())
                 {
-                    return;
+                    co_return;
                 }
 
                 try
@@ -3028,7 +3028,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     Windows::Foundation::Uri parsedUri{ uriText };
                     if (!parsedUri)
                     {
-                        return;
+                        co_return;
                     }
                     uriText = parsedUri.DisplayUri();
 
