@@ -2188,11 +2188,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
         std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
         const auto& marks{ _terminal->GetScrollMarks() };
-        auto it = marks.rbegin();
-        const auto end = marks.rend();
-        for (; it != end; ++it)
+        for (const auto& m : marks)
         {
-            const auto& m = *it;
             // If this mark doesn't know anything about the position of its
             // command, OR it does but thinks that it was empty, then just skip
             // it.
@@ -2242,11 +2239,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
         std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
         const auto& marks{ _terminal->GetScrollMarks() };
-        auto it = marks.rbegin();
-        const auto end = marks.rend();
-        for (; it != end; ++it)
+        for (const auto& m : marks)
         {
-            const auto& m = *it;
             // If this mark doesn't know anything about the position of its
             // output, OR it does but thinks that it was empty, then just skip
             // it.
