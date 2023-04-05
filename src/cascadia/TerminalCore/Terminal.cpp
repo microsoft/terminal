@@ -490,9 +490,7 @@ void Terminal::Write(std::wstring_view stringView)
     const til::point cursorPosAfter{ cursor.GetPosition() };
 
     // Firing the CursorPositionChanged event is very expensive so we try not to
-    // do that when the cursor does not need to be redrawn. We don't do this
-    // inside _AdjustCursorPosition, only once we're done writing the whole run
-    // of output.
+    // do that when the cursor does not need to be redrawn.
     if (cursorPosBefore != cursorPosAfter)
     {
         _NotifyTerminalCursorPositionChanged();
@@ -1078,146 +1076,16 @@ Viewport Terminal::_GetVisibleViewport() const noexcept
                                     size);
 }
 
-void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
+void Terminal::_PreserveUserScrollOffset(const int viewportDelta) noexcept
 {
-#pragma warning(suppress : 26496) // cpp core checks wants this const but it's modified below.
-    auto proposedCursorPosition = proposedPosition;
-    auto& cursor = _activeBuffer().GetCursor();
-    const auto bufferSize = _activeBuffer().GetSize();
-
-    // If we're about to scroll past the bottom of the buffer, instead cycle the
-    // buffer.
-    til::CoordType rowsPushedOffTopOfBuffer = 0;
-    const auto newRows = std::max(0, proposedCursorPosition.y - bufferSize.Height() + 1);
-    if (proposedCursorPosition.y >= bufferSize.Height())
+    // When the mutable viewport is moved down, and there's an active selection,
+    // or the visible viewport isn't already at the bottom, then we want to keep
+    // the visible viewport where it is. To do this, we adjust the scroll offset
+    // by the same amount that we've just moved down.
+    if (viewportDelta > 0 && (IsSelectionActive() || _scrollOffset != 0))
     {
-        for (auto dy = 0; dy < newRows; dy++)
-        {
-            _activeBuffer().IncrementCircularBuffer();
-            proposedCursorPosition.y--;
-            rowsPushedOffTopOfBuffer++;
-
-            // Update our selection too, so it doesn't move as the buffer is cycled
-            if (_selection)
-            {
-                // Stash this, so we can make sure to update the pivot to match later
-                const auto pivotWasStart = _selection->start == _selection->pivot;
-                // If the start of the selection is above 0, we can reduce both the start and end by 1
-                if (_selection->start.y > 0)
-                {
-                    _selection->start.y -= 1;
-                    _selection->end.y -= 1;
-                }
-                else
-                {
-                    // The start of the selection is at 0, if the end is greater than 0, then only reduce the end
-                    if (_selection->end.y > 0)
-                    {
-                        _selection->start.x = 0;
-                        _selection->end.y -= 1;
-                    }
-                    else
-                    {
-                        // Both the start and end of the selection are at 0, clear the selection
-                        _selection.reset();
-                    }
-                }
-
-                // If we still have a selection, make sure to sync the pivot
-                // with whichever value is the right one.
-                //
-                // Failure to do this might lead to GH #14462
-                if (_selection.has_value())
-                {
-                    _selection->pivot = pivotWasStart ? _selection->start : _selection->end;
-                }
-            }
-        }
-
-        // manually erase our pattern intervals since the locations have changed now
-        _patternIntervalTree = {};
-    }
-
-    // Update Cursor Position
-    cursor.SetPosition(proposedCursorPosition);
-
-    // Move the viewport down if the cursor moved below the viewport.
-    // Obviously, don't need to do this in the alt buffer.
-    if (!_inAltBuffer())
-    {
-        auto updatedViewport = false;
-        const auto scrollAmount = std::max(0, proposedCursorPosition.y - _mutableViewport.BottomInclusive());
-        if (scrollAmount > 0)
-        {
-            const auto newViewTop = std::max(0, proposedCursorPosition.y - (_mutableViewport.Height() - 1));
-            // In the alt buffer, we never need to adjust _mutableViewport, which is the viewport of the main buffer.
-            if (newViewTop != _mutableViewport.Top())
-            {
-                _mutableViewport = Viewport::FromDimensions({ 0, newViewTop },
-                                                            _mutableViewport.Dimensions());
-                updatedViewport = true;
-            }
-        }
-
-        // If the viewport moved, or we circled the buffer, we might need to update
-        // our _scrollOffset
-        if (updatedViewport || newRows != 0)
-        {
-            const auto oldScrollOffset = _scrollOffset;
-
-            // scroll if...
-            //   - no selection is active
-            //   - viewport is already at the bottom
-            const auto scrollToOutput = !IsSelectionActive() && _scrollOffset == 0;
-
-            _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
-
-            // Clamp the range to make sure that we don't scroll way off the top of the buffer
-            _scrollOffset = std::clamp(_scrollOffset,
-                                       0,
-                                       _activeBuffer().GetSize().Height() - _mutableViewport.Height());
-
-            // If the new scroll offset is different, then we'll still want to raise a scroll event
-            updatedViewport = updatedViewport || (oldScrollOffset != _scrollOffset);
-        }
-
-        // If the viewport moved, then send a scrolling notification.
-        if (updatedViewport)
-        {
-            _NotifyScrollEvent();
-        }
-    }
-
-    if (rowsPushedOffTopOfBuffer != 0)
-    {
-        if (_scrollMarks.size() > 0)
-        {
-            for (auto& mark : _scrollMarks)
-            {
-                // Move the mark up
-                mark.start.y -= rowsPushedOffTopOfBuffer;
-
-                // If the mark had sub-regions, then move those pointers too
-                if (mark.commandEnd.has_value())
-                {
-                    (*mark.commandEnd).y -= rowsPushedOffTopOfBuffer;
-                }
-                if (mark.outputEnd.has_value())
-                {
-                    (*mark.outputEnd).y -= rowsPushedOffTopOfBuffer;
-                }
-            }
-
-            _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
-                                              _scrollMarks.end(),
-                                              [](const VirtualTerminal::DispatchTypes::ScrollMark& m) { return m.start.y < 0; }),
-                               _scrollMarks.end());
-        }
-        // We have to report the delta here because we might have circled the text buffer.
-        // That didn't change the viewport and therefore the TriggerScroll(void)
-        // method can't detect the delta on its own.
-        const til::point delta{ 0, -rowsPushedOffTopOfBuffer };
-        _activeBuffer().TriggerScroll(delta);
+        const auto maxScrollOffset = _activeBuffer().GetSize().Height() - _mutableViewport.Height();
+        _scrollOffset = std::min(_scrollOffset + viewportDelta, maxScrollOffset);
     }
 }
 

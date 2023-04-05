@@ -36,6 +36,7 @@ libucrtd
 LKG
 LOCKFILE
 Lxss
+makepri
 mfcribbon
 microsoft
 microsoftonline
@@ -53,10 +54,13 @@ pgo
 pgosweep
 powerrename
 powershell
+priconfig
+PRIINFO
 propkey
 pscustomobject
 QWORD
 regedit
+resfiles
 robocopy
 SACLs
 segoe

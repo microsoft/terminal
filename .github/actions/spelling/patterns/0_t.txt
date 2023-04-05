@@ -10,4 +10,4 @@
 \\tests(?![a-z])
 \\thread(?![a-z])
 \\tools(?![a-z])
-\\types(?![a-z])
+\\types?(?![a-z])

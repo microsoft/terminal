@@ -68,9 +68,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static Windows::Foundation::Collections::IVector<Model::Command> ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength);
 
-        winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
-
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
         WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
         WINRT_PROPERTY(winrt::hstring, Description, L"");

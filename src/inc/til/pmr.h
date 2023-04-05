@@ -39,7 +39,7 @@ namespace til::pmr
             {
                 if (align > __STDCPP_DEFAULT_NEW_ALIGNMENT__)
                 {
-                    return ::operator new (bytes, std::align_val_t{ align });
+                    return ::operator new(bytes, std::align_val_t{ align });
                 }
 
                 return ::operator new(bytes);
@@ -49,7 +49,7 @@ namespace til::pmr
             {
                 if (align > __STDCPP_DEFAULT_NEW_ALIGNMENT__)
                 {
-                    return ::operator delete (ptr, bytes, std::align_val_t{ align });
+                    return ::operator delete(ptr, bytes, std::align_val_t{ align });
                 }
 
                 ::operator delete(ptr, bytes);

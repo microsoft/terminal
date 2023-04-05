@@ -41,12 +41,9 @@ public:
     void SetAutoWrapMode(const bool wrapAtEOL) override;
     bool GetAutoWrapMode() const override;
 
-    void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override;
-
     void WarningBell() override;
 
     bool GetLineFeedMode() const override;
-    void LineFeed(const bool withReturn, const bool wrapForced) override;
 
     void SetWindowTitle(const std::wstring_view title) override;
 
@@ -74,6 +71,7 @@ public:
     bool IsVtInputEnabled() const override;
 
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
+    void NotifyBufferRotation(const int delta) override;
 
     void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
     void MarkCommandStart() override;

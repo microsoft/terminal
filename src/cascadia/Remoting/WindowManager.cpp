@@ -413,4 +413,19 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
         return nullptr;
     }
+
+    winrt::fire_and_forget WindowManager::RequestMoveContent(winrt::hstring window,
+                                                             winrt::hstring content,
+                                                             uint32_t tabIndex,
+                                                             Windows::Foundation::IReference<Windows::Foundation::Rect> windowBounds)
+    {
+        co_await winrt::resume_background();
+        _monarch.RequestMoveContent(window, content, tabIndex, windowBounds);
+    }
+
+    winrt::fire_and_forget WindowManager::RequestSendContent(Remoting::RequestReceiveContentArgs args)
+    {
+        co_await winrt::resume_background();
+        _monarch.RequestSendContent(args);
+    }
 }

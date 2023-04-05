@@ -21,7 +21,6 @@ public:
     bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
     void SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
 
-    bool HasWindow();
     winrt::TerminalApp::TerminalWindow Logic();
 
     static void s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResult& message);
@@ -39,14 +38,13 @@ private:
 
     winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
 
-    bool _shouldCreateWindow{ false };
     bool _useNonClientArea{ false };
 
     std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;
 
     void _preInit();
 
-    void _HandleCommandlineArgs();
+    void _HandleCommandlineArgs(const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args);
     winrt::Microsoft::Terminal::Settings::Model::LaunchPosition _GetWindowLaunchPosition();
 
     void _HandleCreateWindow(const HWND hwnd, til::rect proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
@@ -110,9 +108,6 @@ private:
     void _CloseRequested(const winrt::Windows::Foundation::IInspectable& sender,
                          const winrt::Windows::Foundation::IInspectable& args);
 
-    void _QuitAllRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                           const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args);
-
     void _ShowWindowChanged(const winrt::Windows::Foundation::IInspectable& sender,
                             const winrt::Microsoft::Terminal::Control::ShowWindowArgs& args);
 
@@ -123,7 +118,20 @@ private:
 
     void _initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
 
+    void _handleMoveContent(const winrt::Windows::Foundation::IInspectable& sender,
+                            winrt::TerminalApp::RequestMoveContentArgs args);
+    void _handleAttach(const winrt::Windows::Foundation::IInspectable& sender,
+                       winrt::Microsoft::Terminal::Remoting::AttachRequest args);
+
     void _requestUpdateSettings();
+
+    // Page -> us -> monarch
+    void _handleReceiveContent(const winrt::Windows::Foundation::IInspectable& sender,
+                               winrt::TerminalApp::RequestReceiveContentArgs args);
+
+    // monarch -> us -> Page
+    void _handleSendContent(const winrt::Windows::Foundation::IInspectable& sender,
+                            winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs args);
 
     winrt::event_token _GetWindowLayoutRequestedToken;
 
@@ -138,6 +146,8 @@ private:
         winrt::Microsoft::Terminal::Remoting::Peasant::SummonRequested_revoker peasantSummonRequested;
         winrt::Microsoft::Terminal::Remoting::Peasant::DisplayWindowIdRequested_revoker peasantDisplayWindowIdRequested;
         winrt::Microsoft::Terminal::Remoting::Peasant::QuitRequested_revoker peasantQuitRequested;
+        winrt::Microsoft::Terminal::Remoting::Peasant::AttachRequested_revoker AttachRequested;
+
         winrt::TerminalApp::TerminalWindow::CloseRequested_revoker CloseRequested;
         winrt::TerminalApp::TerminalWindow::RequestedThemeChanged_revoker RequestedThemeChanged;
         winrt::TerminalApp::TerminalWindow::FullscreenChanged_revoker FullscreenChanged;
@@ -156,9 +166,12 @@ private:
         winrt::TerminalApp::TerminalWindow::OpenSystemMenu_revoker OpenSystemMenu;
         winrt::TerminalApp::TerminalWindow::QuitRequested_revoker QuitRequested;
         winrt::TerminalApp::TerminalWindow::ShowWindowChanged_revoker ShowWindowChanged;
+        winrt::TerminalApp::TerminalWindow::RequestMoveContent_revoker RequestMoveContent;
+        winrt::TerminalApp::TerminalWindow::RequestReceiveContent_revoker RequestReceiveContent;
         winrt::TerminalApp::TerminalWindow::PropertyChanged_revoker PropertyChanged;
         winrt::TerminalApp::TerminalWindow::SettingsChanged_revoker SettingsChanged;
 
         winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;
+        winrt::Microsoft::Terminal::Remoting::Peasant::SendContentRequested_revoker SendContentRequested;
     } _revokers{};
 };

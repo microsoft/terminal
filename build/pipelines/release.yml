@@ -236,16 +236,12 @@ jobs:
       arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
   - ${{ if eq(parameters.buildTerminal, true) }}:
     - task: CopyFiles@2
-      displayName: Copy *.appx/*.msix to Artifacts
+      displayName: Copy *.msix and symbols to Artifacts
       inputs:
         Contents: >-
-          **/*.appx
-
           **/*.msix
 
           **/*.appxsym
-
-          !**/Microsoft.VCLibs*.appx
         TargetFolder: $(Build.ArtifactStagingDirectory)/appx
         OverWrite: true
         flattenFolders: true
@@ -280,6 +276,16 @@ jobs:
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/appx
         ArtifactName: appx-$(BuildPlatform)-$(BuildConfiguration)
+
+    - pwsh: |-
+        $XamlAppxPath = (Get-Item "src\cascadia\CascadiaPackage\AppPackages\*\Dependencies\$(BuildPlatform)\Microsoft.UI.Xaml*.appx").FullName
+        & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 -TerminalAppX $(WindowsTerminalPackagePath) -XamlAppX $XamlAppxPath -Destination "$(Build.ArtifactStagingDirectory)/unpackaged"
+      displayName: Build Unpackaged Distribution
+
+    - publish: $(Build.ArtifactStagingDirectory)/unpackaged
+      artifact: unpackaged-$(BuildPlatform)-$(BuildConfiguration)
+      displayName: Publish Artifact (unpackaged)
+
   - ${{ if eq(parameters.buildConPTY, true) }}:
     - task: CopyFiles@2
       displayName: Copy ConPTY to Artifacts
