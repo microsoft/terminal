@@ -58,10 +58,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     TerminalConnection::ITerminalConnection connection);
         ~ControlCore();
 
-        bool Initialize(const double actualWidth,
-                        const double actualHeight,
-                        const double compositionScale);
+        bool Initialize(const float actualWidth,
+                        const float actualHeight,
+                        const float compositionScale);
         void EnablePainting();
+
+        void Detach();
 
         void UpdateSettings(const Control::IControlSettings& settings, const IControlAppearance& newAppearance);
         void ApplyAppearance(const bool& focused);
@@ -73,8 +75,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
 
-        void SizeChanged(const double width, const double height);
-        void ScaleChanged(const double scale);
+        uint64_t SwapChainHandle() const;
+        void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
+
+        void SizeChanged(const float width, const float height);
+        void ScaleChanged(const float scale);
+        void SizeOrScaleChanged(const float width, const float height, const float scale);
 
         void AdjustFontSize(float fontSizeDelta);
         void ResetFontSize();
@@ -193,6 +199,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  bool& selectionNeedsToBeCopied);
 
         void AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine);
+        void DetachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine);
 
         bool IsInReadOnlyMode() const;
         void ToggleReadOnlyMode();
@@ -243,6 +250,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(CloseTerminalRequested,    IInspectable, IInspectable);
+
+        TYPED_EVENT(Attached,                  IInspectable, IInspectable);
         // clang-format on
 
     private:
@@ -265,6 +274,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<::Microsoft::Console::Render::IRenderEngine> _renderEngine{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
+        winrt::handle _lastSwapChainHandle{ nullptr };
+
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
         winrt::hstring _actualFontFaceName;
@@ -284,9 +295,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // These members represent the size of the surface that we should be
         // rendering to.
-        double _panelWidth{ 0 };
-        double _panelHeight{ 0 };
-        double _compositionScale{ 0 };
+        float _panelWidth{ 0 };
+        float _panelHeight{ 0 };
+        float _compositionScale{ 0 };
 
         uint64_t _owningHwnd{ 0 };
 
@@ -296,6 +307,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
 
         til::point _contextMenuBufferPosition{ 0, 0 };
+
+        void _setupDispatcherAndCallbacks();
 
         bool _setFontSizeUnderLock(float fontSize);
         void _updateFont(const bool initialUpdate = false);
@@ -326,7 +339,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr);
-        void _renderEngineSwapChainChanged(const HANDLE handle);
+        winrt::fire_and_forget _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();
 #pragma endregion

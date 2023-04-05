@@ -108,10 +108,12 @@ Pane::Pane(std::shared_ptr<Pane> first,
 // - Extract the terminal settings from the current (leaf) pane's control
 //   to be used to create an equivalent control
 // Arguments:
-// - <none>
+// - asContent: when true, we're trying to serialize this pane for moving across
+//   windows. In that case, we'll need to fill in the content guid for our new
+//   terminal args.
 // Return Value:
 // - Arguments appropriate for a SplitPane or NewTab action
-NewTerminalArgs Pane::GetTerminalArgsForPane() const
+NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
 {
     // Leaves are the only things that have controls
     assert(_IsLeaf());
@@ -156,6 +158,14 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     // object. That would work for schemes set by the Terminal, but not ones set
     // by VT, but that seems good enough.
 
+    // Only fill in the ContentId if absolutely needed. If you fill in a number
+    // here (even 0), we'll serialize that number, AND treat that action as an
+    // "attach existing" rather than a "create"
+    if (asContent)
+    {
+        args.ContentId(_control.ContentId());
+    }
+
     return args;
 }
 
@@ -167,35 +177,61 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
 // Arguments:
 // - currentId: the id to use for the current/first pane
 // - nextId: the id to use for a new pane if we split
+// - asContent: We're serializing this set of actions as content actions for
+//   moving to other windows, so we need to make sure to include ContentId's
+//   in the final actions.
+// - asMovePane: only used with asContent. When this is true, we're building
+//   these actions as a part of moving the pane to another window, but without
+//   the context of the hosting tab. In that case, we'll want to build a
+//   splitPane action even if we're just a single leaf, because there's no other
+//   parent to try and build an action for us.
 // Return Value:
 // - The state from building the startup actions, includes a vector of commands,
 //   the original root pane, the id of the focused pane, and the number of panes
 //   created.
-Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t nextId)
+Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId,
+                                                  uint32_t nextId,
+                                                  const bool asContent,
+                                                  const bool asMovePane)
 {
-    // if we are a leaf then all there is to do is defer to the parent.
-    if (_IsLeaf())
+    // Normally, if we're a leaf, return an empt set of actions, because the
+    // parent pane will build the SplitPane action for us. If we're building
+    // actions for a movePane action though, we'll still need to include
+    // ourselves.
+    if (!asMovePane && _IsLeaf())
     {
         if (_lastActive)
         {
-            return { {}, shared_from_this(), currentId, 0 };
+            // empty args, this is the first pane, currentId is
+            return { .args = {}, .firstPane = shared_from_this(), .focusedPaneId = currentId, .panesCreated = 0 };
         }
 
-        return { {}, shared_from_this(), std::nullopt, 0 };
+        return { .args = {}, .firstPane = shared_from_this(), .focusedPaneId = std::nullopt, .panesCreated = 0 };
     }
 
     auto buildSplitPane = [&](auto newPane) {
         ActionAndArgs actionAndArgs;
         actionAndArgs.Action(ShortcutAction::SplitPane);
-        const auto terminalArgs{ newPane->GetTerminalArgsForPane() };
+        const auto terminalArgs{ newPane->GetTerminalArgsForPane(asContent) };
         // When creating a pane the split size is the size of the new pane
         // and not position.
         const auto splitDirection = _splitState == SplitState::Horizontal ? SplitDirection::Down : SplitDirection::Right;
-        SplitPaneArgs args{ SplitType::Manual, splitDirection, 1. - _desiredSplitPosition, terminalArgs };
+        const auto splitSize = (asContent && _IsLeaf() ? .5 : 1. - _desiredSplitPosition);
+        SplitPaneArgs args{ SplitType::Manual, splitDirection, splitSize, terminalArgs };
         actionAndArgs.Args(args);
 
         return actionAndArgs;
     };
+
+    if (asContent && _IsLeaf())
+    {
+        return {
+            .args = { buildSplitPane(shared_from_this()) },
+            .firstPane = shared_from_this(),
+            .focusedPaneId = currentId,
+            .panesCreated = 1
+        };
+    }
 
     auto buildMoveFocus = [](auto direction) {
         MoveFocusArgs args{ direction };
@@ -223,7 +259,12 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
             focusedPaneId = nextId;
         }
 
-        return { { actionAndArgs }, _firstChild, focusedPaneId, 1 };
+        return {
+            .args = { actionAndArgs },
+            .firstPane = _firstChild,
+            .focusedPaneId = focusedPaneId,
+            .panesCreated = 1
+        };
     }
 
     // We now need to execute the commands for each side of the tree
@@ -260,7 +301,12 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
     // mutually exclusive.
     const auto focusedPaneId = firstState.focusedPaneId.has_value() ? firstState.focusedPaneId : secondState.focusedPaneId;
 
-    return { actions, firstState.firstPane, focusedPaneId, firstState.panesCreated + secondState.panesCreated + 1 };
+    return {
+        .args = { actions },
+        .firstPane = firstState.firstPane,
+        .focusedPaneId = focusedPaneId,
+        .panesCreated = firstState.panesCreated + secondState.panesCreated + 1
+    };
 }
 
 // Method Description:
