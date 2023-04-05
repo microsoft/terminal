@@ -423,16 +423,16 @@ namespace ControlUnitTests
             VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
         }
         VERIFY_IS_FALSE(core->HasSelection());
-        // core->SelectCommand(true);
-        // VERIFY_IS_TRUE(core->HasSelection());
-        // {
-        //     const auto& start = core->_terminal->GetSelectionAnchor();
-        //     const auto& end = core->_terminal->GetSelectionEnd();
-        //     const til::point expectedStart{ 17, 4 };
-        //     const til::point expectedEnd{ 23, 4 };
-        //     VERIFY_ARE_EQUAL(expectedStart, start);
-        //     VERIFY_ARE_EQUAL(expectedEnd, end);
-        // }
+        core->SelectCommand(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 17, 4 };
+            const til::point expectedEnd{ 23, 4 };
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
         core->SelectCommand(true);
         VERIFY_IS_TRUE(core->HasSelection());
         {
