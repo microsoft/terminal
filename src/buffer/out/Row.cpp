@@ -628,6 +628,18 @@ std::wstring_view ROW::GetText() const noexcept
     return { _chars.data(), _charSize() };
 }
 
+std::wstring_view ROW::GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept
+{
+    // This ensures that `chEnd >= chBeg` will always be true.
+    // That way we can safely calculate `chEnd - chBeg`.
+    columnEnd = std::max(columnBegin, columnEnd);
+
+    const size_t chBeg = _uncheckedCharOffset(_clampedColumnInclusive(columnBegin));
+    const size_t chEnd = _uncheckedCharOffset(_clampedColumnInclusive(columnEnd));
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+    return { _chars.data() + chBeg, chEnd - chBeg };
+}
+
 DelimiterClass ROW::DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept
 {
     const auto col = _clampedColumn(column);
