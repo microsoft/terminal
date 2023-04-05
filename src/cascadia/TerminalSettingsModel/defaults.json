@@ -26,7 +26,7 @@
     // Miscellaneous
     "confirmCloseAllTabs": true,
     "startOnUserLogin": false,
-    "theme": "system",
+    "theme": "dark",
     "snapToGridOnResize": true,
     "disableAnimations": false,
     "startupActions": "",
@@ -283,20 +283,38 @@
     "themes": [
         {
             "name": "light",
-            "window":{
+            "window": {
                 "applicationTheme": "light"
+            },
+            "tab": {
+                "background": "terminalBackground",
+                "unfocusedBackground": "#00000000"
+            },
+            "tabRow": {
+                "unfocusedBackground": "#FFFFFFFF"
             }
         },
         {
             "name": "dark",
-            "window":{
+            "window": {
                 "applicationTheme": "dark"
+            },
+            "tab": {
+                "background": "terminalBackground",
+                "unfocusedBackground": "#00000000"
+            },
+            "tabRow": {
+                "unfocusedBackground": "#333333FF"
             }
         },
         {
             "name": "system",
-            "window":{
+            "window": {
                 "applicationTheme": "system"
+            },
+            "tab": {
+                "background": "terminalBackground",
+                "unfocusedBackground": "#00000000"
             }
         }
     ],
@@ -359,6 +377,7 @@
         { "command": { "action": "switchToTab", "index": 4294967295 }, "keys": "ctrl+alt+9" },
 
         // Pane Management
+        { "command": "closeOtherPanes" },
         { "command": "closePane", "keys": "ctrl+shift+w" },
         { "command": { "action": "splitPane", "split": "up" } },
         { "command": { "action": "splitPane", "split": "down" }, "keys": "alt+shift+-" },
@@ -389,6 +408,8 @@
         { "command": "togglePaneZoom" },
         { "command": "toggleSplitOrientation" },
         { "command": "toggleReadOnlyMode" },
+        { "command": "enableReadOnlyMode" },
+        { "command": "disableReadOnlyMode" },
         { "command": { "action": "movePane", "index": 0 } },
         { "command": { "action": "movePane", "index": 1 } },
         { "command": { "action": "movePane", "index": 2 } },
@@ -402,12 +423,14 @@
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+insert" },
+        { "command": { "action": "copy", "singleLine": false }, "keys": "enter" },
         { "command": "paste", "keys": "ctrl+shift+v" },
         { "command": "paste", "keys": "shift+insert" },
         { "command": "selectAll", "keys": "ctrl+shift+a" },
         { "command": "markMode", "keys": "ctrl+shift+m" },
         { "command": "toggleBlockSelection" },
         { "command": "switchSelectionEndpoint" },
+        { "command": "expandSelectionToWord" },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },

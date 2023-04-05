@@ -116,14 +116,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // is always "Use system language" ("und").
             tags.emplace_back(systemLanguageTag);
 
-            // Add our hardcoded languages after the system definition.
+            // Add our hard-coded languages after the system definition.
             for (const auto& v : appLanguageTags)
             {
                 tags.push_back(v);
             }
         }
 
-        // NOTE: The size of tags is always >0, due to tags[0] being hardcoded to "und".
+        // NOTE: The size of tags is always >0, due to tags[0] being hard-coded to "und".
         const auto tagsBegin = ++tags.begin();
         const auto tagsEnd = tags.end();
 
@@ -218,7 +218,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (const auto& theme{ tag.try_as<Model::Theme>() })
         {
-            _GlobalSettings.Theme(theme.Name());
+            _GlobalSettings.Theme(Model::ThemePair{ theme.Name() });
         }
     }
 
@@ -259,5 +259,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void GlobalAppearanceViewModel::InvertedDisableAnimations(bool value)
     {
         _GlobalSettings.DisableAnimations(!value);
+    }
+
+    void GlobalAppearanceViewModel::ShowTitlebarToggled(const winrt::Windows::Foundation::IInspectable& /* sender */, const RoutedEventArgs& /* args */)
+    {
+        // Set AlwaysShowTabs to true if ShowTabsInTitlebar was toggled OFF -> ON
+        if (!ShowTabsInTitlebar())
+        {
+            AlwaysShowTabs(true);
+        }
     }
 }

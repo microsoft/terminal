@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include <precomp.h>
+#include "precomp.h"
 
 #include "adaptDispatch.hpp"
 #include "../../types/inc/utils.hpp"
@@ -63,6 +63,210 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
 }
 
 // Routine Description:
+// - Helper to apply a single graphic rendition option to an attribute.
+// Arguments:
+// - options - An array of options.
+// - optionIndex - The start index of the option that will be applied.
+// - attr - The attribute that will be updated with the applied option.
+// Return Value:
+// - The number of entries in the array that were consumed.
+size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
+                                           const size_t optionIndex,
+                                           TextAttribute& attr) noexcept
+{
+    const GraphicsOptions opt = options.at(optionIndex);
+    switch (opt)
+    {
+    case Off:
+        attr.SetDefaultForeground();
+        attr.SetDefaultBackground();
+        attr.SetDefaultRenditionAttributes();
+        return 1;
+    case ForegroundDefault:
+        attr.SetDefaultForeground();
+        return 1;
+    case BackgroundDefault:
+        attr.SetDefaultBackground();
+        return 1;
+    case Intense:
+        attr.SetIntense(true);
+        return 1;
+    case RGBColorOrFaint:
+        attr.SetFaint(true);
+        return 1;
+    case NotIntenseOrFaint:
+        attr.SetIntense(false);
+        attr.SetFaint(false);
+        return 1;
+    case Italics:
+        attr.SetItalic(true);
+        return 1;
+    case NotItalics:
+        attr.SetItalic(false);
+        return 1;
+    case BlinkOrXterm256Index:
+    case RapidBlink: // We just interpret rapid blink as an alias of blink.
+        attr.SetBlinking(true);
+        return 1;
+    case Steady:
+        attr.SetBlinking(false);
+        return 1;
+    case Invisible:
+        attr.SetInvisible(true);
+        return 1;
+    case Visible:
+        attr.SetInvisible(false);
+        return 1;
+    case CrossedOut:
+        attr.SetCrossedOut(true);
+        return 1;
+    case NotCrossedOut:
+        attr.SetCrossedOut(false);
+        return 1;
+    case Negative:
+        attr.SetReverseVideo(true);
+        return 1;
+    case Positive:
+        attr.SetReverseVideo(false);
+        return 1;
+    case Underline:
+        attr.SetUnderlined(true);
+        return 1;
+    case DoublyUnderlined:
+        attr.SetDoublyUnderlined(true);
+        return 1;
+    case NoUnderline:
+        attr.SetUnderlined(false);
+        attr.SetDoublyUnderlined(false);
+        return 1;
+    case Overline:
+        attr.SetOverlined(true);
+        return 1;
+    case NoOverline:
+        attr.SetOverlined(false);
+        return 1;
+    case ForegroundBlack:
+        attr.SetIndexedForeground(TextColor::DARK_BLACK);
+        return 1;
+    case ForegroundBlue:
+        attr.SetIndexedForeground(TextColor::DARK_BLUE);
+        return 1;
+    case ForegroundGreen:
+        attr.SetIndexedForeground(TextColor::DARK_GREEN);
+        return 1;
+    case ForegroundCyan:
+        attr.SetIndexedForeground(TextColor::DARK_CYAN);
+        return 1;
+    case ForegroundRed:
+        attr.SetIndexedForeground(TextColor::DARK_RED);
+        return 1;
+    case ForegroundMagenta:
+        attr.SetIndexedForeground(TextColor::DARK_MAGENTA);
+        return 1;
+    case ForegroundYellow:
+        attr.SetIndexedForeground(TextColor::DARK_YELLOW);
+        return 1;
+    case ForegroundWhite:
+        attr.SetIndexedForeground(TextColor::DARK_WHITE);
+        return 1;
+    case BackgroundBlack:
+        attr.SetIndexedBackground(TextColor::DARK_BLACK);
+        return 1;
+    case BackgroundBlue:
+        attr.SetIndexedBackground(TextColor::DARK_BLUE);
+        return 1;
+    case BackgroundGreen:
+        attr.SetIndexedBackground(TextColor::DARK_GREEN);
+        return 1;
+    case BackgroundCyan:
+        attr.SetIndexedBackground(TextColor::DARK_CYAN);
+        return 1;
+    case BackgroundRed:
+        attr.SetIndexedBackground(TextColor::DARK_RED);
+        return 1;
+    case BackgroundMagenta:
+        attr.SetIndexedBackground(TextColor::DARK_MAGENTA);
+        return 1;
+    case BackgroundYellow:
+        attr.SetIndexedBackground(TextColor::DARK_YELLOW);
+        return 1;
+    case BackgroundWhite:
+        attr.SetIndexedBackground(TextColor::DARK_WHITE);
+        return 1;
+    case BrightForegroundBlack:
+        attr.SetIndexedForeground(TextColor::BRIGHT_BLACK);
+        return 1;
+    case BrightForegroundBlue:
+        attr.SetIndexedForeground(TextColor::BRIGHT_BLUE);
+        return 1;
+    case BrightForegroundGreen:
+        attr.SetIndexedForeground(TextColor::BRIGHT_GREEN);
+        return 1;
+    case BrightForegroundCyan:
+        attr.SetIndexedForeground(TextColor::BRIGHT_CYAN);
+        return 1;
+    case BrightForegroundRed:
+        attr.SetIndexedForeground(TextColor::BRIGHT_RED);
+        return 1;
+    case BrightForegroundMagenta:
+        attr.SetIndexedForeground(TextColor::BRIGHT_MAGENTA);
+        return 1;
+    case BrightForegroundYellow:
+        attr.SetIndexedForeground(TextColor::BRIGHT_YELLOW);
+        return 1;
+    case BrightForegroundWhite:
+        attr.SetIndexedForeground(TextColor::BRIGHT_WHITE);
+        return 1;
+    case BrightBackgroundBlack:
+        attr.SetIndexedBackground(TextColor::BRIGHT_BLACK);
+        return 1;
+    case BrightBackgroundBlue:
+        attr.SetIndexedBackground(TextColor::BRIGHT_BLUE);
+        return 1;
+    case BrightBackgroundGreen:
+        attr.SetIndexedBackground(TextColor::BRIGHT_GREEN);
+        return 1;
+    case BrightBackgroundCyan:
+        attr.SetIndexedBackground(TextColor::BRIGHT_CYAN);
+        return 1;
+    case BrightBackgroundRed:
+        attr.SetIndexedBackground(TextColor::BRIGHT_RED);
+        return 1;
+    case BrightBackgroundMagenta:
+        attr.SetIndexedBackground(TextColor::BRIGHT_MAGENTA);
+        return 1;
+    case BrightBackgroundYellow:
+        attr.SetIndexedBackground(TextColor::BRIGHT_YELLOW);
+        return 1;
+    case BrightBackgroundWhite:
+        attr.SetIndexedBackground(TextColor::BRIGHT_WHITE);
+        return 1;
+    case ForegroundExtended:
+        return 1 + _SetRgbColorsHelper(options.subspan(optionIndex + 1), attr, true);
+    case BackgroundExtended:
+        return 1 + _SetRgbColorsHelper(options.subspan(optionIndex + 1), attr, false);
+    default:
+        return 1;
+    }
+}
+
+// Routine Description:
+// - Helper to apply a number of graphic rendition options to an attribute.
+// Arguments:
+// - options - An array of options that will be applied in sequence.
+// - attr - The attribute that will be updated with the applied options.
+// Return Value:
+// - <none>
+void AdaptDispatch::_ApplyGraphicsOptions(const VTParameters options,
+                                          TextAttribute& attr) noexcept
+{
+    for (size_t i = 0; i < options.size();)
+    {
+        i += _ApplyGraphicsOption(options, i, attr);
+    }
+}
+
+// Routine Description:
 // - SGR - Modifies the graphical rendering options applied to the next
 //   characters written into the buffer.
 //       - Options include colors, invert, underlines, and other "font style"
@@ -75,187 +279,40 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
 bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
 {
     auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+    _ApplyGraphicsOptions(options, attr);
+    _api.SetTextAttributes(attr);
+    return true;
+}
 
-    // Run through the graphics options and apply them
+// Routine Description:
+// - DECSCA - Modifies the character protection attribute. This operation was
+//   originally intended to support a range of logical character attributes,
+//   but the protected attribute was the only one ever implemented.
+// Arguments:
+// - options - An array of options that will be applied in order.
+// Return Value:
+// - True.
+bool AdaptDispatch::SetCharacterProtectionAttribute(const VTParameters options)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    auto attr = textBuffer.GetCurrentAttributes();
     for (size_t i = 0; i < options.size(); i++)
     {
-        const GraphicsOptions opt = options.at(i);
+        const LogicalAttributeOptions opt = options.at(i);
         switch (opt)
         {
-        case Off:
-            attr.SetDefaultForeground();
-            attr.SetDefaultBackground();
-            attr.SetDefaultMetaAttrs();
+        case Default:
+            attr.SetProtected(false);
             break;
-        case ForegroundDefault:
-            attr.SetDefaultForeground();
+        case Protected:
+            attr.SetProtected(true);
             break;
-        case BackgroundDefault:
-            attr.SetDefaultBackground();
-            break;
-        case Intense:
-            attr.SetIntense(true);
-            break;
-        case RGBColorOrFaint:
-            attr.SetFaint(true);
-            break;
-        case NotIntenseOrFaint:
-            attr.SetIntense(false);
-            attr.SetFaint(false);
-            break;
-        case Italics:
-            attr.SetItalic(true);
-            break;
-        case NotItalics:
-            attr.SetItalic(false);
-            break;
-        case BlinkOrXterm256Index:
-        case RapidBlink: // We just interpret rapid blink as an alias of blink.
-            attr.SetBlinking(true);
-            break;
-        case Steady:
-            attr.SetBlinking(false);
-            break;
-        case Invisible:
-            attr.SetInvisible(true);
-            break;
-        case Visible:
-            attr.SetInvisible(false);
-            break;
-        case CrossedOut:
-            attr.SetCrossedOut(true);
-            break;
-        case NotCrossedOut:
-            attr.SetCrossedOut(false);
-            break;
-        case Negative:
-            attr.SetReverseVideo(true);
-            break;
-        case Positive:
-            attr.SetReverseVideo(false);
-            break;
-        case Underline:
-            attr.SetUnderlined(true);
-            break;
-        case DoublyUnderlined:
-            attr.SetDoublyUnderlined(true);
-            break;
-        case NoUnderline:
-            attr.SetUnderlined(false);
-            attr.SetDoublyUnderlined(false);
-            break;
-        case Overline:
-            attr.SetOverlined(true);
-            break;
-        case NoOverline:
-            attr.SetOverlined(false);
-            break;
-        case ForegroundBlack:
-            attr.SetIndexedForeground(TextColor::DARK_BLACK);
-            break;
-        case ForegroundBlue:
-            attr.SetIndexedForeground(TextColor::DARK_BLUE);
-            break;
-        case ForegroundGreen:
-            attr.SetIndexedForeground(TextColor::DARK_GREEN);
-            break;
-        case ForegroundCyan:
-            attr.SetIndexedForeground(TextColor::DARK_CYAN);
-            break;
-        case ForegroundRed:
-            attr.SetIndexedForeground(TextColor::DARK_RED);
-            break;
-        case ForegroundMagenta:
-            attr.SetIndexedForeground(TextColor::DARK_MAGENTA);
-            break;
-        case ForegroundYellow:
-            attr.SetIndexedForeground(TextColor::DARK_YELLOW);
-            break;
-        case ForegroundWhite:
-            attr.SetIndexedForeground(TextColor::DARK_WHITE);
-            break;
-        case BackgroundBlack:
-            attr.SetIndexedBackground(TextColor::DARK_BLACK);
-            break;
-        case BackgroundBlue:
-            attr.SetIndexedBackground(TextColor::DARK_BLUE);
-            break;
-        case BackgroundGreen:
-            attr.SetIndexedBackground(TextColor::DARK_GREEN);
-            break;
-        case BackgroundCyan:
-            attr.SetIndexedBackground(TextColor::DARK_CYAN);
-            break;
-        case BackgroundRed:
-            attr.SetIndexedBackground(TextColor::DARK_RED);
-            break;
-        case BackgroundMagenta:
-            attr.SetIndexedBackground(TextColor::DARK_MAGENTA);
-            break;
-        case BackgroundYellow:
-            attr.SetIndexedBackground(TextColor::DARK_YELLOW);
-            break;
-        case BackgroundWhite:
-            attr.SetIndexedBackground(TextColor::DARK_WHITE);
-            break;
-        case BrightForegroundBlack:
-            attr.SetIndexedForeground(TextColor::BRIGHT_BLACK);
-            break;
-        case BrightForegroundBlue:
-            attr.SetIndexedForeground(TextColor::BRIGHT_BLUE);
-            break;
-        case BrightForegroundGreen:
-            attr.SetIndexedForeground(TextColor::BRIGHT_GREEN);
-            break;
-        case BrightForegroundCyan:
-            attr.SetIndexedForeground(TextColor::BRIGHT_CYAN);
-            break;
-        case BrightForegroundRed:
-            attr.SetIndexedForeground(TextColor::BRIGHT_RED);
-            break;
-        case BrightForegroundMagenta:
-            attr.SetIndexedForeground(TextColor::BRIGHT_MAGENTA);
-            break;
-        case BrightForegroundYellow:
-            attr.SetIndexedForeground(TextColor::BRIGHT_YELLOW);
-            break;
-        case BrightForegroundWhite:
-            attr.SetIndexedForeground(TextColor::BRIGHT_WHITE);
-            break;
-        case BrightBackgroundBlack:
-            attr.SetIndexedBackground(TextColor::BRIGHT_BLACK);
-            break;
-        case BrightBackgroundBlue:
-            attr.SetIndexedBackground(TextColor::BRIGHT_BLUE);
-            break;
-        case BrightBackgroundGreen:
-            attr.SetIndexedBackground(TextColor::BRIGHT_GREEN);
-            break;
-        case BrightBackgroundCyan:
-            attr.SetIndexedBackground(TextColor::BRIGHT_CYAN);
-            break;
-        case BrightBackgroundRed:
-            attr.SetIndexedBackground(TextColor::BRIGHT_RED);
-            break;
-        case BrightBackgroundMagenta:
-            attr.SetIndexedBackground(TextColor::BRIGHT_MAGENTA);
-            break;
-        case BrightBackgroundYellow:
-            attr.SetIndexedBackground(TextColor::BRIGHT_YELLOW);
-            break;
-        case BrightBackgroundWhite:
-            attr.SetIndexedBackground(TextColor::BRIGHT_WHITE);
-            break;
-        case ForegroundExtended:
-            i += _SetRgbColorsHelper(options.subspan(i + 1), attr, true);
-            break;
-        case BackgroundExtended:
-            i += _SetRgbColorsHelper(options.subspan(i + 1), attr, false);
+        case Unprotected:
+            attr.SetProtected(false);
             break;
         }
     }
-    _api.SetTextAttributes(attr);
-
+    textBuffer.SetCurrentAttributes(attr);
     return true;
 }
 

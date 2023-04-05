@@ -8,6 +8,7 @@
 
 #include "../../inc/unicode.hpp"
 #include "ascii.hpp"
+#include "../../interactivity/inc/VtApiRedirection.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -581,7 +582,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wRepeatCount = 1;
         next.Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
-        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_SHIFT, MAPVK_VK_TO_VSC));
         next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
         input.push_back(next);
     }
@@ -593,7 +594,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wRepeatCount = 1;
         next.Event.KeyEvent.wVirtualKeyCode = VK_MENU;
-        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_MENU, MAPVK_VK_TO_VSC));
         next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
         input.push_back(next);
     }
@@ -605,7 +606,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wRepeatCount = 1;
         next.Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
-        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_CONTROL, MAPVK_VK_TO_VSC));
         next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
         input.push_back(next);
     }
@@ -623,7 +624,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wRepeatCount = 1;
         next.Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
-        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_CONTROL, MAPVK_VK_TO_VSC));
         next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
         input.push_back(next);
     }
@@ -635,7 +636,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wRepeatCount = 1;
         next.Event.KeyEvent.wVirtualKeyCode = VK_MENU;
-        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_MENU, MAPVK_VK_TO_VSC));
         next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
         input.push_back(next);
     }
@@ -647,7 +648,7 @@ void InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
         next.Event.KeyEvent.dwControlKeyState = currentModifiers;
         next.Event.KeyEvent.wRepeatCount = 1;
         next.Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
-        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC));
+        next.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_SHIFT, MAPVK_VK_TO_VSC));
         next.Event.KeyEvent.uChar.UnicodeChar = 0x0;
         input.push_back(next);
     }
@@ -678,7 +679,7 @@ void InputStateMachineEngine::_GetSingleKeypress(const wchar_t wch,
     rec.Event.KeyEvent.dwControlKeyState = modifierState;
     rec.Event.KeyEvent.wRepeatCount = 1;
     rec.Event.KeyEvent.wVirtualKeyCode = vkey;
-    rec.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(MapVirtualKey(vkey, MAPVK_VK_TO_VSC));
+    rec.Event.KeyEvent.wVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC));
     rec.Event.KeyEvent.uChar.UnicodeChar = wch;
     input.push_back(rec);
 
@@ -702,7 +703,7 @@ bool InputStateMachineEngine::_WriteSingleKey(const wchar_t wch, const short vke
     // At most 8 records - 2 for each of shift,ctrl,alt up and down, and 2 for the actual key up and down.
     std::vector<INPUT_RECORD> input;
     _GenerateWrappedSequence(wch, vkey, modifierState, input);
-    auto inputEvents = IInputEvent::Create(gsl::make_span(input));
+    auto inputEvents = IInputEvent::Create(std::span{ input });
 
     return _pDispatch->WriteInput(inputEvents);
 }
@@ -717,7 +718,7 @@ bool InputStateMachineEngine::_WriteSingleKey(const wchar_t wch, const short vke
 // - true iff we successfully wrote the keypress to the input callback.
 bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD modifierState)
 {
-    const auto wch = gsl::narrow_cast<wchar_t>(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR));
+    const auto wch = gsl::narrow_cast<wchar_t>(OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
     return _WriteSingleKey(wch, vkey, modifierState);
 }
 
@@ -743,7 +744,7 @@ bool InputStateMachineEngine::_WriteMouseEvent(const til::point uiPos, const DWO
 
     // pack and write input record
     // 1 record - the modifiers don't get their own events
-    auto inputEvents = IInputEvent::Create(gsl::make_span(&rgInput, 1));
+    auto inputEvents = IInputEvent::Create(std::span{ &rgInput, 1 });
     return _pDispatch->WriteInput(inputEvents);
 }
 
@@ -1045,7 +1046,7 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
                                                    DWORD& modifierState) noexcept
 {
     // Low order byte is key, high order is modifiers
-    const auto keyscan = VkKeyScanW(wch);
+    const auto keyscan = OneCoreSafeVkKeyScanW(wch);
 
     short key = LOBYTE(keyscan);
 
@@ -1094,7 +1095,7 @@ void InputStateMachineEngine::SetFlushToInputQueueCallback(std::function<bool()>
 // - function - Receives the function type
 // Return Value:
 // - True iff we successfully pulled the function type from the parameters
-bool InputStateMachineEngine::_GetWindowManipulationType(const gsl::span<const size_t> parameters,
+bool InputStateMachineEngine::_GetWindowManipulationType(const std::span<const size_t> parameters,
                                                          unsigned int& function) const noexcept
 {
     auto success = false;

@@ -25,39 +25,37 @@ static constexpr std::wstring_view VerbName{ L"WindowsTerminalOpenHere" };
 //   failure from an earlier HRESULT.
 HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
                                  IBindCtx* /*pBindContext*/)
+try
 {
+    const auto runElevated = IsControlPressed();
+
+    wil::com_ptr_nothrow<IShellItem> psi;
+    RETURN_IF_FAILED(GetBestLocationFromSelectionOrSite(psiItemArray, psi.put()));
+    if (!psi)
+    {
+        return S_FALSE;
+    }
+
     wil::unique_cotaskmem_string pszName;
-
-    if (psiItemArray == nullptr)
-    {
-        // get the current path from explorer.exe
-        const auto path = this->_GetPathFromExplorer();
-
-        // no go, unable to get a reasonable path
-        if (path.empty())
-        {
-            return S_FALSE;
-        }
-        pszName = wil::make_cotaskmem_string(path.c_str(), path.length());
-    }
-    else
-    {
-        DWORD count;
-        psiItemArray->GetCount(&count);
-
-        winrt::com_ptr<IShellItem> psi;
-        RETURN_IF_FAILED(psiItemArray->GetItemAt(0, psi.put()));
-        RETURN_IF_FAILED(psi->GetDisplayName(SIGDN_FILESYSPATH, &pszName));
-    }
+    RETURN_IF_FAILED(psi->GetDisplayName(SIGDN_FILESYSPATH, &pszName));
 
     {
         wil::unique_process_information _piClient;
         STARTUPINFOEX siEx{ 0 };
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
 
-        auto cmdline{ wil::str_printf<std::wstring>(LR"-("%s" -d %s)-", GetWtExePath().c_str(), QuoteAndEscapeCommandlineArg(pszName.get()).c_str()) };
+        std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
+        std::wstring cmdline;
+        if (runElevated)
+        {
+            RETURN_IF_FAILED(wil::str_printf_nothrow(cmdline, LR"-(-d %s)-", QuoteAndEscapeCommandlineArg(pszName.get()).c_str()));
+        }
+        else
+        {
+            RETURN_IF_FAILED(wil::str_printf_nothrow(cmdline, LR"-("%s" -d %s)-", GetWtExePath().c_str(), QuoteAndEscapeCommandlineArg(pszName.get()).c_str()));
+        }
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
-            nullptr, // lpApplicationName
+            runElevated ? modulePath.replace_filename(ElevateShimExe).c_str() : nullptr, // if elevation requested pass the elevate-shim.exe as the application name
             cmdline.data(),
             nullptr, // lpProcessAttributes
             nullptr, // lpThreadAttributes
@@ -72,6 +70,7 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
 
     return S_OK;
 }
+CATCH_RETURN()
 
 HRESULT OpenTerminalHere::GetToolTip(IShellItemArray* /*psiItemArray*/,
                                      LPWSTR* ppszInfoTip)
@@ -109,21 +108,14 @@ HRESULT OpenTerminalHere::GetState(IShellItemArray* psiItemArray,
     // We however don't need to bother with any of that.
 
     // If no item was selected when the context menu was opened and Explorer
-    // is not at a valid path (e.g. This PC or Quick Access), we should hide
+    // is not at a valid location (e.g. This PC or Quick Access), we should hide
     // the verb from the context menu.
-    if (psiItemArray == nullptr)
-    {
-        const auto path = this->_GetPathFromExplorer();
-        *pCmdState = path.empty() ? ECS_HIDDEN : ECS_ENABLED;
-    }
-    else
-    {
-        winrt::com_ptr<IShellItem> psi;
-        psiItemArray->GetItemAt(0, psi.put());
-        SFGAOF attributes;
-        const bool isFileSystemItem = (psi->GetAttributes(SFGAO_FILESYSTEM, &attributes) == S_OK);
-        *pCmdState = isFileSystemItem ? ECS_ENABLED : ECS_HIDDEN;
-    }
+    wil::com_ptr_nothrow<IShellItem> psi;
+    RETURN_IF_FAILED(GetBestLocationFromSelectionOrSite(psiItemArray, psi.put()));
+
+    SFGAOF attributes;
+    const bool isFileSystemItem = psi && (psi->GetAttributes(SFGAO_FILESYSTEM, &attributes) == S_OK);
+    *pCmdState = isFileSystemItem ? ECS_ENABLED : ECS_HIDDEN;
 
     return S_OK;
 }
@@ -160,102 +152,66 @@ HRESULT OpenTerminalHere::EnumSubCommands(IEnumExplorerCommand** ppEnum)
     return E_NOTIMPL;
 }
 
-std::wstring OpenTerminalHere::_GetPathFromExplorer() const
+IFACEMETHODIMP OpenTerminalHere::SetSite(IUnknown* site) noexcept
 {
-    using namespace std;
-    using namespace winrt;
+    site_ = site;
+    return S_OK;
+}
 
-    wstring path;
-    HRESULT hr = NOERROR;
+IFACEMETHODIMP OpenTerminalHere::GetSite(REFIID riid, void** site) noexcept
+{
+    RETURN_IF_FAILED(site_.query_to(riid, site));
+    return S_OK;
+}
 
-    auto hwnd = ::GetForegroundWindow();
-    if (hwnd == nullptr)
+HRESULT OpenTerminalHere::GetLocationFromSite(IShellItem** location) const noexcept
+{
+    wil::assign_null_to_opt_param(location);
+
+    if (!site_)
     {
-        return path;
+        return S_FALSE;
     }
 
-    TCHAR szName[MAX_PATH] = { 0 };
-    ::GetClassName(hwnd, szName, MAX_PATH);
-    if (0 == StrCmp(szName, L"WorkerW") ||
-        0 == StrCmp(szName, L"Progman"))
+    wil::com_ptr_nothrow<IServiceProvider> serviceProvider;
+    RETURN_IF_FAILED(site_.query_to(serviceProvider.put()));
+    wil::com_ptr_nothrow<IFolderView> folderView;
+    RETURN_IF_FAILED(serviceProvider->QueryService(SID_SFolderView, IID_PPV_ARGS(folderView.put())));
+    RETURN_IF_FAILED(folderView->GetFolder(IID_PPV_ARGS(location)));
+    return S_OK;
+}
+
+HRESULT OpenTerminalHere::GetBestLocationFromSelectionOrSite(IShellItemArray* psiArray, IShellItem** location) const noexcept
+{
+    wil::com_ptr_nothrow<IShellItem> psi;
+    if (psiArray)
     {
-        //special folder: desktop
-        hr = ::SHGetFolderPath(NULL, CSIDL_DESKTOP, NULL, SHGFP_TYPE_CURRENT, szName);
-        if (FAILED(hr))
+        DWORD count{};
+        RETURN_IF_FAILED(psiArray->GetCount(&count));
+        if (count) // Sometimes we get an array with a count of 0. Fall back to the site chain.
         {
-            return path;
-        }
-
-        path = szName;
-        return path;
-    }
-
-    if (0 != StrCmp(szName, L"CabinetWClass"))
-    {
-        return path;
-    }
-
-    com_ptr<IShellWindows> shell;
-    try
-    {
-        shell = create_instance<IShellWindows>(CLSID_ShellWindows, CLSCTX_ALL);
-    }
-    catch (...)
-    {
-        //look like try_create_instance is not available no more
-    }
-
-    if (shell == nullptr)
-    {
-        return path;
-    }
-
-    com_ptr<IDispatch> disp;
-    wil::unique_variant variant;
-    variant.vt = VT_I4;
-
-    com_ptr<IWebBrowserApp> browser;
-    // look for correct explorer window
-    for (variant.intVal = 0;
-         shell->Item(variant, disp.put()) == S_OK;
-         variant.intVal++)
-    {
-        com_ptr<IWebBrowserApp> tmp;
-        if (FAILED(disp->QueryInterface(tmp.put())))
-        {
-            disp = nullptr; // get rid of DEBUG non-nullptr warning
-            continue;
-        }
-
-        HWND tmpHWND = NULL;
-        hr = tmp->get_HWND(reinterpret_cast<SHANDLE_PTR*>(&tmpHWND));
-        if (hwnd == tmpHWND)
-        {
-            browser = tmp;
-            disp = nullptr; // get rid of DEBUG non-nullptr warning
-            break; //found
-        }
-
-        disp = nullptr; // get rid of DEBUG non-nullptr warning
-    }
-
-    if (browser != nullptr)
-    {
-        wil::unique_bstr url;
-        hr = browser->get_LocationURL(&url);
-        if (FAILED(hr))
-        {
-            return path;
-        }
-
-        wstring sUrl(url.get(), SysStringLen(url.get()));
-        DWORD size = MAX_PATH;
-        hr = ::PathCreateFromUrl(sUrl.c_str(), szName, &size, NULL);
-        if (SUCCEEDED(hr))
-        {
-            path = szName;
+            RETURN_IF_FAILED(psiArray->GetItemAt(0, psi.put()));
         }
     }
 
-    return path;
+    if (!psi)
+    {
+        RETURN_IF_FAILED(GetLocationFromSite(psi.put()));
+    }
+
+    RETURN_HR_IF(S_FALSE, !psi);
+    RETURN_IF_FAILED(psi.copy_to(location));
+    return S_OK;
+}
+
+// This method checks if any of the ctrl keys are pressed during activation of the shell extension
+bool OpenTerminalHere::IsControlPressed()
+{
+    const auto ControlPressed = 1U;
+
+    const auto control = GetKeyState(VK_CONTROL);
+    const auto leftControl = GetKeyState(VK_LCONTROL);
+    const auto rightControl = GetKeyState(VK_RCONTROL);
+
+    return WI_IsFlagSet(control, ControlPressed) || WI_IsFlagSet(leftControl, ControlPressed) || WI_IsFlagSet(rightControl, ControlPressed);
 }

@@ -70,7 +70,7 @@ namespace winrt::TerminalApp::implementation
                     TraceLoggingDescription("Event emitted when the Command Palette is opened"),
                     TraceLoggingWideString(L"Action", "Mode", "which mode the palette was opened in"),
                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             }
             else
             {
@@ -530,6 +530,34 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void CommandPalette::_listItemSelectionChanged(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e)
+    {
+        // We don't care about...
+        // - CommandlineMode: it doesn't have any selectable items in the list view
+        // - TabSwitchMode: focus and selected item are in sync
+        if (_currentMode == CommandPaletteMode::ActionMode || _currentMode == CommandPaletteMode::TabSearchMode)
+        {
+            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
+            {
+                if (const auto selectedList = e.AddedItems(); selectedList.Size() > 0)
+                {
+                    const auto selectedCommand = selectedList.GetAt(0);
+                    if (const auto filteredCmd = selectedCommand.try_as<TerminalApp::FilteredCommand>())
+                    {
+                        if (const auto paletteItem = filteredCmd.Item().try_as<TerminalApp::PaletteItem>())
+                        {
+                            automationPeer.RaiseNotificationEvent(
+                                Automation::Peers::AutomationNotificationKind::ItemAdded,
+                                Automation::Peers::AutomationNotificationProcessing::MostRecent,
+                                paletteItem.Name() + L" " + paletteItem.KeyChordText(),
+                                L"CommandPaletteSelectedItemChanged" /* unique name for this notification category */);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Method Description:
     // This event is called when the user clicks on a ChevronLeft button right
     // next to the ParentCommandName (e.g. New Tab...) above the subcommands list.
@@ -696,7 +724,7 @@ namespace winrt::TerminalApp::implementation
                         TraceLoggingUInt32(searchTextLength, "SearchTextLength", "Number of characters in the search string"),
                         TraceLoggingUInt32(nestedCommandDepth, "NestedCommandDepth", "the depth in the tree of commands for the dispatched action"),
                         TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                        TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
                 }
             }
         }
@@ -764,7 +792,7 @@ namespace winrt::TerminalApp::implementation
                 "CommandPaletteDispatchedCommandline",
                 TraceLoggingDescription("Event emitted when the user runs a commandline in the Command Palette"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
             if (const auto commandLinePaletteItem{ filteredCommand.value().Item().try_as<winrt::TerminalApp::CommandLinePaletteItem>() })
             {
@@ -802,7 +830,7 @@ namespace winrt::TerminalApp::implementation
             "CommandPaletteDismissed",
             TraceLoggingDescription("Event emitted when the user dismisses the Command Palette without selecting an action"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     // Method Description:

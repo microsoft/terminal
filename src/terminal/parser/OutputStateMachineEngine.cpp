@@ -44,10 +44,10 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 {
     switch (wch)
     {
-    case AsciiChars::NUL:
-        // microsoft/terminal#1825 - VT applications expect to be able to write NUL
-        // and have _nothing_ happen. Filter the NULs here, so they don't fill the
-        // buffer with empty spaces.
+    case AsciiChars::ENQ:
+        // GH#11946: At some point we may want to add support for the VT
+        // answerback feature, which requires responding to an ENQ control
+        // with a user-defined reply, but until then we just ignore it.
         break;
     case AsciiChars::BEL:
         _dispatch->WarningBell();
@@ -79,8 +79,23 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
     case AsciiChars::SO:
         _dispatch->LockingShift(1);
         break;
-    default:
+    case AsciiChars::SUB:
+        // The SUB control is used to cancel a control sequence in the same
+        // way as CAN, but unlike CAN it also displays an error character,
+        // typically a reverse question mark.
+        _dispatch->Print(L'\u2E2E');
+        break;
+    case AsciiChars::DEL:
+        // The DEL control can sometimes be translated into a printable glyph
+        // if a 96-character set is designated, so we need to pass it through
+        // to the Print method. If not translated, it will be filtered out
+        // there.
         _dispatch->Print(wch);
+        break;
+    default:
+        // GH#1825, GH#10786: VT applications expect to be able to write other
+        // control characters and have _nothing_ happen. We filter out these
+        // characters here, so they don't fill the buffer.
         break;
     }
 
@@ -494,11 +509,29 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         });
         TermTelemetry::Instance().Log(TermTelemetry::Codes::ED);
         break;
+    case CsiActionCodes::DECSED_SelectiveEraseDisplay:
+        success = parameters.for_each([&](const auto eraseType) {
+            return _dispatch->SelectiveEraseInDisplay(eraseType);
+        });
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSED);
+        break;
     case CsiActionCodes::EL_EraseLine:
         success = parameters.for_each([&](const auto eraseType) {
             return _dispatch->EraseInLine(eraseType);
         });
         TermTelemetry::Instance().Log(TermTelemetry::Codes::EL);
+        break;
+    case CsiActionCodes::DECSEL_SelectiveEraseLine:
+        success = parameters.for_each([&](const auto eraseType) {
+            return _dispatch->SelectiveEraseInLine(eraseType);
+        });
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSEL);
+        break;
+    case CsiActionCodes::SM_SetMode:
+        success = parameters.for_each([&](const auto mode) {
+            return _dispatch->SetMode(DispatchTypes::ANSIStandardMode(mode));
+        });
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::SM);
         break;
     case CsiActionCodes::DECSET_PrivateModeSet:
         success = parameters.for_each([&](const auto mode) {
@@ -506,6 +539,12 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         });
         //TODO: MSFT:6367459 Add specific logging for each of the DECSET/DECRST codes
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSET);
+        break;
+    case CsiActionCodes::RM_ResetMode:
+        success = parameters.for_each([&](const auto mode) {
+            return _dispatch->ResetMode(DispatchTypes::ANSIStandardMode(mode));
+        });
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::RM);
         break;
     case CsiActionCodes::DECRST_PrivateModeReset:
         success = parameters.for_each([&](const auto mode) {
@@ -518,7 +557,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
         break;
     case CsiActionCodes::DSR_DeviceStatusReport:
-        success = _dispatch->DeviceStatusReport(parameters.at(0));
+        success = _dispatch->DeviceStatusReport(DispatchTypes::ANSIStandardStatus(parameters.at(0)), parameters.at(1));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
+        break;
+    case CsiActionCodes::DSR_PrivateDeviceStatusReport:
+        success = _dispatch->DeviceStatusReport(DispatchTypes::DECPrivateStatus(parameters.at(0)), parameters.at(1));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
         break;
     case CsiActionCodes::DA_DeviceAttributes:
@@ -606,6 +649,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->SoftReset();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTR);
         break;
+    case CsiActionCodes::DECSCA_SetCharacterProtectionAttribute:
+        success = _dispatch->SetCharacterProtectionAttribute(parameters);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSCA);
+        break;
     case CsiActionCodes::XT_PushSgr:
     case CsiActionCodes::XT_PushSgrAlias:
         success = _dispatch->PushGraphicsRendition(parameters);
@@ -615,6 +662,54 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::XT_PopSgrAlias:
         success = _dispatch->PopGraphicsRendition();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::XTPOPSGR);
+        break;
+    case CsiActionCodes::DECRQM_RequestMode:
+        success = _dispatch->RequestMode(DispatchTypes::ANSIStandardMode(parameters.at(0)));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQM);
+        break;
+    case CsiActionCodes::DECRQM_PrivateRequestMode:
+        success = _dispatch->RequestMode(DispatchTypes::DECPrivateMode(parameters.at(0)));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQM);
+        break;
+    case CsiActionCodes::DECCARA_ChangeAttributesRectangularArea:
+        success = _dispatch->ChangeAttributesRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.subspan(4));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECCARA);
+        break;
+    case CsiActionCodes::DECRARA_ReverseAttributesRectangularArea:
+        success = _dispatch->ReverseAttributesRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.subspan(4));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRARA);
+        break;
+    case CsiActionCodes::DECCRA_CopyRectangularArea:
+        success = _dispatch->CopyRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.at(4), parameters.at(5), parameters.at(6), parameters.at(7));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECCRA);
+        break;
+    case CsiActionCodes::DECRQPSR_RequestPresentationStateReport:
+        success = _dispatch->RequestPresentationStateReport(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQPSR);
+        break;
+    case CsiActionCodes::DECFRA_FillRectangularArea:
+        success = _dispatch->FillRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2), parameters.at(3).value_or(0), parameters.at(4).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECFRA);
+        break;
+    case CsiActionCodes::DECERA_EraseRectangularArea:
+        success = _dispatch->EraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECERA);
+        break;
+    case CsiActionCodes::DECSERA_SelectiveEraseRectangularArea:
+        success = _dispatch->SelectiveEraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSERA);
+        break;
+    case CsiActionCodes::DECSACE_SelectAttributeChangeExtent:
+        success = _dispatch->SelectAttributeChangeExtent(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSACE);
+        break;
+    case CsiActionCodes::DECRQCRA_RequestChecksumRectangularArea:
+        success = _dispatch->RequestChecksumRectangularArea(parameters.at(0).value_or(0), parameters.at(1).value_or(0), parameters.at(2), parameters.at(3), parameters.at(4).value_or(0), parameters.at(5).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQCRA);
+        break;
+    case CsiActionCodes::DECINVM_InvokeMacro:
+        success = _dispatch->InvokeMacro(parameters.at(0).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECINVM);
         break;
     case CsiActionCodes::DECAC_AssignColor:
         success = _dispatch->AssignColor(parameters.at(0), parameters.at(1).value_or(0), parameters.at(2).value_or(0));
@@ -667,11 +762,17 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
                                           parameters.at(6),
                                           parameters.at(7));
         break;
+    case DcsActionCodes::DECDMAC_DefineMacro:
+        handler = _dispatch->DefineMacro(parameters.at(0).value_or(0), parameters.at(1), parameters.at(2));
+        break;
     case DcsActionCodes::DECRSTS_RestoreTerminalState:
         handler = _dispatch->RestoreTerminalState(parameters.at(0));
         break;
     case DcsActionCodes::DECRQSS_RequestSetting:
         handler = _dispatch->RequestSetting();
+        break;
+    case DcsActionCodes::DECRSPS_RestorePresentationState:
+        handler = _dispatch->RestorePresentationState(parameters.at(0));
         break;
     default:
         handler = nullptr;
@@ -941,7 +1042,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 }
 
 #pragma warning(push)
-#pragma warning(disable : 26445) // Suppress lifetime check for a reference to gsl::span or std::string_view
+#pragma warning(disable : 26445) // Suppress lifetime check for a reference to std::span or std::string_view
 
 // Routine Description:
 // - Given a hyperlink string, attempts to parse the URI encoded. An 'id' parameter
@@ -973,7 +1074,7 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
     const auto midPos = string.find(';');
     if (midPos != std::wstring::npos)
     {
-        uri = string.substr(midPos + 1);
+        uri = string.substr(midPos + 1, MAX_URL_LENGTH);
         const auto paramStr = string.substr(0, midPos);
         const auto paramParts = Utils::SplitString(paramStr, ':');
         for (const auto& part : paramParts)

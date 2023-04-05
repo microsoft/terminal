@@ -303,10 +303,10 @@ class SizeTests
         Log::Comment(L"1.) Scale results in value that is too large.");
         {
             const til::size sz{ 5, 10 };
-            constexpr auto scale = std::numeric_limits<float>().max();
+            constexpr auto scale = 1e12f;
 
             auto fn = [&]() {
-                sz.scale(til::math::ceiling, scale);
+                std::ignore = sz.scale(til::math::ceiling, scale);
             };
 
             VERIFY_THROWS(fn(), gsl::narrowing_error);
@@ -359,7 +359,7 @@ class SizeTests
             const til::size divisor{ 3, 2 };
 
             auto fn = [&]() {
-                sz.divide_ceil(divisor);
+                std::ignore = sz.divide_ceil(divisor);
             };
 
             VERIFY_THROWS(fn(), std::invalid_argument);

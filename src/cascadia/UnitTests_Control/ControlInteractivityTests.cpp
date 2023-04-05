@@ -144,8 +144,8 @@ namespace ControlUnitTests
             // The Settings object's opacity shouldn't be changed
             VERIFY_ARE_EQUAL(0.5, settings->Opacity());
 
-            auto expectedUseAcrylic = winrt::Microsoft::Terminal::Control::implementation::ControlCore::IsVintageOpacityAvailable() ? useAcrylic :
-                                                                                                                                      (expectedOpacity < 1.0 ? true : false);
+            auto expectedUseAcrylic = expectedOpacity < 1.0 &&
+                                      (useAcrylic);
             VERIFY_ARE_EQUAL(useAcrylic, settings->UseAcrylic());
             VERIFY_ARE_EQUAL(expectedUseAcrylic, core->UseAcrylic());
         };
@@ -757,12 +757,14 @@ namespace ControlUnitTests
         _standardInit(core, interactivity);
 
         Log::Comment(L"Fill up the history buffer");
+        const auto scrollbackLength = settings->HistorySize();
         // Output lines equal to history size + viewport height to make sure we're
         // at the point where outputting more lines causes circular incrementing
         for (auto i = 0; i < settings->HistorySize() + core->ViewHeight(); ++i)
         {
             conn->WriteInput(L"Foo\r\n");
         }
+        VERIFY_ARE_EQUAL(scrollbackLength, core->_terminal->GetScrollOffset());
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
@@ -810,9 +812,87 @@ namespace ControlUnitTests
 
         Log::Comment(L"Verify the location of the selection");
         // The selection should now be 1 row lower
-        expectedAnchor.Y -= 1;
-        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
-        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
+        expectedAnchor.y -= 1;
+        {
+            const auto anchor{ core->_terminal->GetSelectionAnchor() };
+            const auto end{ core->_terminal->GetSelectionEnd() };
+            Log::Comment(fmt::format(L"expectedAnchor:({},{})", expectedAnchor.x, expectedAnchor.y).c_str());
+            Log::Comment(fmt::format(L"anchor:({},{})", anchor.x, anchor.y).c_str());
+            Log::Comment(fmt::format(L"end:({},{})", end.x, end.y).c_str());
+
+            VERIFY_ARE_EQUAL(expectedAnchor, anchor);
+            VERIFY_ARE_EQUAL(expectedAnchor, end);
+        }
+        VERIFY_ARE_EQUAL(scrollbackLength - 1, core->_terminal->GetScrollOffset());
+
+        Log::Comment(L"Output a line of text");
+        conn->WriteInput(L"Foo\r\n");
+
+        Log::Comment(L"Verify the location of the selection");
+        // The selection should now be 1 row lower
+        expectedAnchor.y -= 1;
+        {
+            const auto anchor{ core->_terminal->GetSelectionAnchor() };
+            const auto end{ core->_terminal->GetSelectionEnd() };
+            Log::Comment(fmt::format(L"expectedAnchor:({},{})", expectedAnchor.x, expectedAnchor.y).c_str());
+            Log::Comment(fmt::format(L"anchor:({},{})", anchor.x, anchor.y).c_str());
+            Log::Comment(fmt::format(L"end:({},{})", end.x, end.y).c_str());
+
+            VERIFY_ARE_EQUAL(expectedAnchor, anchor);
+            VERIFY_ARE_EQUAL(expectedAnchor, end);
+        }
+        VERIFY_ARE_EQUAL(scrollbackLength - 2, core->_terminal->GetScrollOffset());
+
+        Log::Comment(L"Move the mouse a little, to update the selection");
+        // At this point, there should only be one selection region! The
+        // viewport moved up to keep the selection at the same relative spot. So
+        // wiggling the cursor should continue to select only the same
+        // character in the buffer (if, albeit in a new location).
+        //
+        // This helps test GH #14462, a regression from #10749.
+        interactivity->PointerMoved(leftMouseDown,
+                                    WM_LBUTTONDOWN, //pointerUpdateKind
+                                    modifiers,
+                                    true, // focused,
+                                    cursorPosition0.to_core_point(),
+                                    true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
+        {
+            const auto anchor{ core->_terminal->GetSelectionAnchor() };
+            const auto end{ core->_terminal->GetSelectionEnd() };
+            Log::Comment(fmt::format(L"expectedAnchor:({},{})", expectedAnchor.x, expectedAnchor.y).c_str());
+            Log::Comment(fmt::format(L"anchor:({},{})", anchor.x, anchor.y).c_str());
+            Log::Comment(fmt::format(L"end:({},{})", end.x, end.y).c_str());
+
+            VERIFY_ARE_EQUAL(expectedAnchor, anchor);
+            VERIFY_ARE_EQUAL(expectedAnchor, end);
+        }
+
+        Log::Comment(L"Output a line ant move the mouse a little to update the selection, all at once");
+        // Same as above. The viewport has moved, so the mouse is still over the
+        // same character, even though it's at a new offset.
+        conn->WriteInput(L"Foo\r\n");
+        expectedAnchor.y -= 1;
+        VERIFY_ARE_EQUAL(scrollbackLength - 3, core->_terminal->GetScrollOffset());
+        interactivity->PointerMoved(leftMouseDown,
+                                    WM_LBUTTONDOWN, //pointerUpdateKind
+                                    modifiers,
+                                    true, // focused,
+                                    cursorPosition1.to_core_point(),
+                                    true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
+        {
+            const auto anchor{ core->_terminal->GetSelectionAnchor() };
+            const auto end{ core->_terminal->GetSelectionEnd() };
+            Log::Comment(fmt::format(L"expectedAnchor:({},{})", expectedAnchor.x, expectedAnchor.y).c_str());
+            Log::Comment(fmt::format(L"anchor:({},{})", anchor.x, anchor.y).c_str());
+            Log::Comment(fmt::format(L"end:({},{})", end.x, end.y).c_str());
+
+            VERIFY_ARE_EQUAL(expectedAnchor, anchor);
+            VERIFY_ARE_EQUAL(expectedAnchor, end);
+        }
 
         // Output enough text for the selection to get pushed off the buffer
         for (auto i = 0; i < settings->HistorySize() + core->ViewHeight(); ++i)
@@ -953,8 +1033,9 @@ namespace ControlUnitTests
                                       cursorPosition1.to_core_point());
 
         Log::Comment(L" --- Resize the terminal to be 10 columns wider ---");
-        const auto newSizeInDips{ til::size{ 40, 20 } * fontSize };
-        core->SizeChanged(newSizeInDips.width, newSizeInDips.height);
+        const auto newWidth = 40.0f * fontSize.width;
+        const auto newHeight = 20.0f * fontSize.height;
+        core->SizeChanged(newWidth, newHeight);
 
         Log::Comment(L" --- Click on a spot that's NOW INSIDE the buffer ---");
         // (32 + 35 + 1) = 68 = 'D'

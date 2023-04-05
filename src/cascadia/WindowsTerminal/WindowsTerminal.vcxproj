@@ -18,8 +18,6 @@
 
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
-    <TerminalXamlApplicationToolkit>true</TerminalXamlApplicationToolkit>
-    <TerminalVCRTForwarders>true</TerminalVCRTForwarders>
     <TerminalThemeHelpers>true</TerminalThemeHelpers>
     <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
@@ -57,6 +55,8 @@
     <ClInclude Include="NonClientIslandWindow.h" />
     <ClInclude Include="NotificationIcon.h" />
     <ClInclude Include="VirtualDesktopUtils.h" />
+    <ClInclude Include="WindowEmperor.h" />
+    <ClInclude Include="WindowThread.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -68,6 +68,8 @@
     <ClCompile Include="NonClientIslandWindow.cpp" />
     <ClCompile Include="NotificationIcon.cpp" />
     <ClCompile Include="VirtualDesktopUtils.cpp" />
+    <ClCompile Include="WindowEmperor.cpp" />
+    <ClCompile Include="WindowThread.cpp" />
     <ClCompile Include="icon.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -75,9 +77,6 @@
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="WindowsTerminal.manifest" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <!-- Dependencies -->
   <ItemGroup>

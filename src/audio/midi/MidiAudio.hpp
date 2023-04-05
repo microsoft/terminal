@@ -12,8 +12,6 @@ Abstract:
 #pragma once
 
 #include <array>
-#include <future>
-#include <mutex>
 
 struct IDirectSound8;
 struct IDirectSoundBuffer;
@@ -21,26 +19,20 @@ struct IDirectSoundBuffer;
 class MidiAudio
 {
 public:
-    MidiAudio(HWND windowHandle);
-    MidiAudio(const MidiAudio&) = delete;
-    MidiAudio(MidiAudio&&) = delete;
-    MidiAudio& operator=(const MidiAudio&) = delete;
-    MidiAudio& operator=(MidiAudio&&) = delete;
-    ~MidiAudio() noexcept;
-    void Initialize();
-    void Shutdown();
-    void Lock();
-    void Unlock();
-    void PlayNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration) noexcept;
+    void BeginSkip() noexcept;
+    void EndSkip() noexcept;
+    void PlayNote(HWND windowHandle, const int noteNumber, const int velocity, const std::chrono::milliseconds duration) noexcept;
 
 private:
+    void _initialize(HWND windowHandle) noexcept;
     void _createBuffers() noexcept;
 
-    Microsoft::WRL::ComPtr<IDirectSound8> _directSound;
-    std::array<Microsoft::WRL::ComPtr<IDirectSoundBuffer>, 2> _buffers;
+    wil::slim_event_manual_reset _skip;
+
+    HWND _hwnd = nullptr;
+    wil::unique_hmodule _directSoundModule;
+    wil::com_ptr<IDirectSound8> _directSound;
+    std::array<wil::com_ptr<IDirectSoundBuffer>, 2> _buffers;
     size_t _activeBufferIndex = 0;
     DWORD _lastBufferPosition = 0;
-    std::promise<void> _shutdownPromise;
-    std::future<void> _shutdownFuture;
-    std::mutex _inUseMutex;
 };

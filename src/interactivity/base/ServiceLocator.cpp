@@ -3,6 +3,10 @@
 
 #include "precomp.h"
 
+// MidiAudio
+#include <mmeapi.h>
+#include <dsound.h>
+
 #include "../inc/ServiceLocator.hpp"
 
 #include "InteractivityFactory.hpp"
@@ -39,14 +43,29 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
     s_oneCoreTeardownFunction = pfn;
 }
 
-[[noreturn]] void ServiceLocator::RundownAndExit(const HRESULT hr)
+void ServiceLocator::RundownAndExit(const HRESULT hr)
 {
+    // The TriggerTeardown() call below depends on the render thread being able to acquire the
+    // console lock, so that it can safely progress with flushing the last frame. Since there's no
+    // coming back from this function (it's [[noreturn]]), it's safe to unlock the console here.
+    auto& gci = s_globals.getConsoleInformation();
+    while (gci.IsConsoleLocked())
+    {
+        gci.UnlockConsole();
+    }
+
     // MSFT:40146639
     //   The premise of this function is that 1 thread enters and 0 threads leave alive.
     //   We need to prevent anyone from calling us until we actually ExitProcess(),
     //   so that we don't TriggerTeardown() twice. LockConsole() can't be used here,
     //   because doing so would prevent the render thread from progressing.
-    AcquireSRWLockExclusive(&s_shutdownLock);
+    static std::atomic<bool> locked;
+    if (locked.exchange(true, std::memory_order_relaxed))
+    {
+        // If we reach this point, another thread is already in the process of exiting.
+        // There's a lot of ways to suspend ourselves until we exit, one of which is "sleep forever".
+        Sleep(INFINITE);
+    }
 
     // MSFT:15506250
     // In VT I/O Mode, a client application might die before we've rendered
@@ -119,11 +138,11 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
         {
             status = ServiceLocator::LoadInteractivityFactory();
         }
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = s_interactivityFactory->CreateConsoleInputThread(s_consoleInputThread);
 
-            if (NT_SUCCESS(status))
+            if (SUCCEEDED_NTSTATUS(status))
             {
                 *thread = s_consoleInputThread.get();
             }
@@ -213,7 +232,7 @@ IConsoleControl* ServiceLocator::LocateConsoleControl()
             status = ServiceLocator::LoadInteractivityFactory();
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = s_interactivityFactory->CreateConsoleControl(s_consoleControl);
         }
@@ -240,7 +259,7 @@ IHighDpiApi* ServiceLocator::LocateHighDpiApi()
             status = ServiceLocator::LoadInteractivityFactory();
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = s_interactivityFactory->CreateHighDpiApi(s_highDpiApi);
         }
@@ -262,7 +281,7 @@ IWindowMetrics* ServiceLocator::LocateWindowMetrics()
             status = ServiceLocator::LoadInteractivityFactory();
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = s_interactivityFactory->CreateWindowMetrics(s_windowMetrics);
         }
@@ -289,7 +308,7 @@ ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider(
             status = ServiceLocator::LoadInteractivityFactory();
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = s_interactivityFactory->CreateSystemConfigurationProvider(s_systemConfigurationProvider);
         }
@@ -303,27 +322,6 @@ ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider(
 Globals& ServiceLocator::LocateGlobals()
 {
     return s_globals;
-}
-
-// Method Description:
-// - Installs a callback method to receive notifications when the pseudo console
-//   window is shown or hidden by an attached client application (so we can
-//   translate it and forward it to the attached terminal, in case it would like
-//   to react accordingly.)
-// Arguments:
-// - func - Callback function that takes True as Show and False as Hide.
-// Return Value:
-// - <none>
-void ServiceLocator::SetPseudoWindowCallback(std::function<void(bool)> func)
-{
-    // Force the whole window to be put together first.
-    // We don't really need the handle, we just want to leverage the setup steps.
-    (void)LocatePseudoWindow();
-
-    if (s_interactivityFactory)
-    {
-        s_interactivityFactory->SetPseudoWindowCallback(func);
-    }
 }
 
 // Method Description:
@@ -343,7 +341,7 @@ HWND ServiceLocator::LocatePseudoWindow(const HWND owner)
             status = ServiceLocator::LoadInteractivityFactory();
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             HWND hwnd;
             status = s_interactivityFactory->CreatePseudoWindow(hwnd, owner);

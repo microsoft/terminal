@@ -258,7 +258,7 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                      const til::point coord,
                                                      const bool /*trimLeft*/,
                                                      const bool /*lineWrapped*/) noexcept
@@ -269,8 +269,8 @@ CATCH_RETURN()
 
         for (size_t i = 0; i < clusters.size() && i < gsl::narrow_cast<size_t>(_displayWidth); i++)
         {
-            const auto OldChar = &_displayState[coord.Y]->Old[coord.X + i];
-            const auto NewChar = &_displayState[coord.Y]->New[coord.X + i];
+            const auto OldChar = &_displayState[coord.y]->Old[coord.x + i];
+            const auto NewChar = &_displayState[coord.y]->New[coord.x + i];
 
             OldChar->Character = NewChar->Character;
             OldChar->Attribute = NewChar->Attribute;
@@ -279,7 +279,7 @@ CATCH_RETURN()
             NewChar->Attribute = _currentLegacyColorAttribute;
         }
 
-        return WDDMConUpdateDisplay(_hWddmConCtx, _displayState[coord.Y], FALSE);
+        return WDDMConUpdateDisplay(_hWddmConCtx, _displayState[coord.y], FALSE);
     }
     CATCH_RETURN();
 }
@@ -353,7 +353,7 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
+[[nodiscard]] HRESULT WddmConEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 {
     _dirtyArea.bottom = std::max<LONG>(0, _displayHeight);
     _dirtyArea.right = std::max<LONG>(0, _displayWidth);

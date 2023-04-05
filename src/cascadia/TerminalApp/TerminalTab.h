@@ -7,9 +7,6 @@
 #include "TabBase.h"
 #include "TerminalTab.g.h"
 
-static constexpr double HeaderRenameBoxWidthDefault{ 165 };
-static constexpr double HeaderRenameBoxWidthTitleLength{ std::numeric_limits<double>::infinity() };
-
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
@@ -71,9 +68,7 @@ namespace winrt::TerminalApp::implementation
         void ResetTabText();
         void ActivateTabRenamer();
 
-        std::optional<winrt::Windows::UI::Color> GetTabColor();
-
-        void ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& color);
+        virtual std::optional<winrt::Windows::UI::Color> GetTabColor() override;
         void SetRuntimeTabColor(const winrt::Windows::UI::Color& color);
         void ResetRuntimeTabColor();
         void RequestColorPicker();
@@ -84,11 +79,13 @@ namespace winrt::TerminalApp::implementation
         void EnterZoom();
         void ExitZoom();
 
-        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const override;
+        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions(const bool asContent = false) const override;
 
         int GetLeafPaneCount() const noexcept;
 
         void TogglePaneReadOnly();
+        void SetPaneReadOnly(const bool readOnlyState);
+
         std::shared_ptr<Pane> GetActivePane() const;
         winrt::TerminalApp::TaskbarState GetCombinedTaskbarState() const;
 
@@ -100,8 +97,6 @@ namespace winrt::TerminalApp::implementation
         }
 
         WINRT_CALLBACK(ActivePaneChanged, winrt::delegate<>);
-        WINRT_CALLBACK(ColorSelected, winrt::delegate<winrt::Windows::UI::Color>);
-        WINRT_CALLBACK(ColorCleared, winrt::delegate<>);
         WINRT_CALLBACK(TabRaiseVisualBell, winrt::delegate<>);
         WINRT_CALLBACK(DuplicateRequested, winrt::delegate<>);
         WINRT_CALLBACK(SplitTabRequested, winrt::delegate<>);
@@ -111,6 +106,9 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:
+        static constexpr double HeaderRenameBoxWidthDefault{ 165 };
+        static constexpr double HeaderRenameBoxWidthTitleLength{ std::numeric_limits<double>::infinity() };
+
         std::shared_ptr<Pane> _rootPane{ nullptr };
         std::shared_ptr<Pane> _activePane{ nullptr };
         std::shared_ptr<Pane> _zoomedPane{ nullptr };
@@ -119,7 +117,6 @@ namespace winrt::TerminalApp::implementation
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
         winrt::TerminalApp::TerminalTabStatus _tabStatus{};
-        winrt::Microsoft::Terminal::Settings::Model::ThemeColor _themeColor{ nullptr };
 
         winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{ nullptr };
         winrt::event_token _colorSelectedToken;
@@ -163,8 +160,6 @@ namespace winrt::TerminalApp::implementation
         void _CreateContextMenu() override;
         virtual winrt::hstring _CreateToolTipTitle() override;
 
-        void _RefreshVisualState();
-
         void _DetachEventHandlersFromControl(const uint32_t paneId, const winrt::Microsoft::Terminal::Control::TermControl& control);
         void _AttachEventHandlersToControl(const uint32_t paneId, const winrt::Microsoft::Terminal::Control::TermControl& control);
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
@@ -173,15 +168,13 @@ namespace winrt::TerminalApp::implementation
 
         winrt::hstring _GetActiveTitle() const;
 
-        void _RecalculateAndApplyTabColor();
-        void _ApplyTabColor(const winrt::Windows::UI::Color& color);
-        void _ClearTabBackgroundColor();
-
         void _RecalculateAndApplyReadOnly();
 
         void _UpdateProgressState();
 
         void _DuplicateTab();
+
+        virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() override;
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

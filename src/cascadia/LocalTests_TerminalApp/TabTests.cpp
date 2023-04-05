@@ -4,11 +4,13 @@
 #include "pch.h"
 
 #include "../TerminalApp/TerminalPage.h"
+#include "../TerminalApp/TerminalWindow.h"
 #include "../TerminalApp/MinMaxCloseControl.h"
 #include "../TerminalApp/TabRowControl.h"
 #include "../TerminalApp/ShortcutActionDispatch.h"
 #include "../TerminalApp/TerminalTab.h"
 #include "../TerminalApp/CommandPalette.h"
+#include "../TerminalApp/ContentManager.h"
 #include "CppWinrtTailored.h"
 
 using namespace Microsoft::Console;
@@ -110,6 +112,8 @@ namespace TerminalAppLocalTests
         void _initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
                                      CascadiaSettings initialSettings);
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> _commonSetup();
+        winrt::com_ptr<winrt::TerminalApp::implementation::WindowProperties> _windowProperties;
+        winrt::com_ptr<winrt::TerminalApp::implementation::ContentManager> _contentManager;
     };
 
     template<typename TFunction>
@@ -194,8 +198,14 @@ namespace TerminalAppLocalTests
     {
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
 
-        auto result = RunOnUIThread([&page]() {
-            page = winrt::make_self<winrt::TerminalApp::implementation::TerminalPage>();
+        _windowProperties = winrt::make_self<winrt::TerminalApp::implementation::WindowProperties>();
+        winrt::TerminalApp::WindowProperties props = *_windowProperties;
+
+        _contentManager = winrt::make_self<winrt::TerminalApp::implementation::ContentManager>();
+        winrt::TerminalApp::ContentManager contentManager = *_contentManager;
+
+        auto result = RunOnUIThread([&page, props, contentManager]() {
+            page = winrt::make_self<winrt::TerminalApp::implementation::TerminalPage>(props, contentManager);
             VERIFY_IS_NOT_NULL(page);
         });
         VERIFY_SUCCEEDED(result);
@@ -239,9 +249,13 @@ namespace TerminalAppLocalTests
         // it's weird.
         winrt::TerminalApp::TerminalPage projectedPage{ nullptr };
 
+        _windowProperties = winrt::make_self<winrt::TerminalApp::implementation::WindowProperties>();
+        winrt::TerminalApp::WindowProperties props = *_windowProperties;
+        _contentManager = winrt::make_self<winrt::TerminalApp::implementation::ContentManager>();
+        winrt::TerminalApp::ContentManager contentManager = *_contentManager;
         Log::Comment(NoThrowString().Format(L"Construct the TerminalPage"));
-        auto result = RunOnUIThread([&projectedPage, &page, initialSettings]() {
-            projectedPage = winrt::TerminalApp::TerminalPage();
+        auto result = RunOnUIThread([&projectedPage, &page, initialSettings, props, contentManager]() {
+            projectedPage = winrt::TerminalApp::TerminalPage(props, contentManager);
             page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
             page->_settings = initialSettings;
         });
@@ -503,7 +517,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the first pane"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, true, nullptr));
+            page->_SplitPane(SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
@@ -521,7 +535,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the pane, and don't crash"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, true, nullptr));
+            page->_SplitPane(SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
@@ -843,7 +857,7 @@ namespace TerminalAppLocalTests
             // |   1    |   2    |
             // |        |        |
             // -------------------
-            page->_SplitPane(SplitDirection::Right, 0.5f, page->_MakePane(nullptr, true, nullptr));
+            page->_SplitPane(SplitDirection::Right, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
             secondId = tab->_activePane->Id().value();
         });
         Sleep(250);
@@ -861,7 +875,7 @@ namespace TerminalAppLocalTests
             // |   3    |        |
             // |        |        |
             // -------------------
-            page->_SplitPane(SplitDirection::Down, 0.5f, page->_MakePane(nullptr, true, nullptr));
+            page->_SplitPane(SplitDirection::Down, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             // Split again to make the 3rd tab
             thirdId = tab->_activePane->Id().value();
@@ -881,7 +895,7 @@ namespace TerminalAppLocalTests
             // |   3    |   4    |
             // |        |        |
             // -------------------
-            page->_SplitPane(SplitDirection::Down, 0.5f, page->_MakePane(nullptr, true, nullptr));
+            page->_SplitPane(SplitDirection::Down, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             fourthId = tab->_activePane->Id().value();
         });
@@ -1242,14 +1256,16 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         auto page = _commonSetup();
-        page->RenameWindowRequested([&page](auto&&, const winrt::TerminalApp::RenameWindowRequestedArgs args) {
+        page->RenameWindowRequested([&page, this](auto&&, const winrt::TerminalApp::RenameWindowRequestedArgs args) {
             // In the real terminal, this would bounce up to the monarch and
             // come back down. Instead, immediately call back and set the name.
-            page->WindowName(args.ProposedName());
+            //
+            // This replicates how TerminalWindow works
+            _windowProperties->WindowName(args.ProposedName());
         });
 
         auto windowNameChanged = false;
-        page->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {
+        _windowProperties->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {
             if (args.PropertyName() == L"WindowNameForDisplay")
             {
                 windowNameChanged = true;
@@ -1260,7 +1276,7 @@ namespace TerminalAppLocalTests
             page->_RequestWindowRename(winrt::hstring{ L"Foo" });
         });
         TestOnUIThread([&]() {
-            VERIFY_ARE_EQUAL(L"Foo", page->_WindowName);
+            VERIFY_ARE_EQUAL(L"Foo", page->WindowProperties().WindowName());
             VERIFY_IS_TRUE(windowNameChanged,
                            L"The window name should have changed, and we should have raised a notification that WindowNameForDisplay changed");
         });

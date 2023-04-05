@@ -5,6 +5,8 @@
 
 #include "InteractivityFactory.hpp"
 
+#include "../inc/ServiceLocator.hpp"
+
 #ifdef BUILD_ONECORE_INTERACTIVITY
 #include "..\onecore\AccessibilityNotifier.hpp"
 #include "..\onecore\ConsoleControl.hpp"
@@ -36,7 +38,7 @@ using namespace Microsoft::Console::Interactivity;
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         std::unique_ptr<IConsoleControl> newControl;
         try
@@ -62,7 +64,7 @@ using namespace Microsoft::Console::Interactivity;
             status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             control.swap(newControl);
         }
@@ -78,7 +80,7 @@ using namespace Microsoft::Console::Interactivity;
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         std::unique_ptr<IConsoleInputThread> newThread;
         try
@@ -104,7 +106,7 @@ using namespace Microsoft::Console::Interactivity;
             status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             thread.swap(newThread);
         }
@@ -120,7 +122,7 @@ using namespace Microsoft::Console::Interactivity;
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         std::unique_ptr<IHighDpiApi> newApi;
         try
@@ -146,7 +148,7 @@ using namespace Microsoft::Console::Interactivity;
             status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             api.swap(newApi);
         }
@@ -162,7 +164,7 @@ using namespace Microsoft::Console::Interactivity;
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         std::unique_ptr<IWindowMetrics> newMetrics;
         try
@@ -188,7 +190,7 @@ using namespace Microsoft::Console::Interactivity;
             status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             metrics.swap(newMetrics);
         }
@@ -204,7 +206,7 @@ using namespace Microsoft::Console::Interactivity;
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         std::unique_ptr<IAccessibilityNotifier> newNotifier;
         try
@@ -230,7 +232,7 @@ using namespace Microsoft::Console::Interactivity;
             status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             notifier.swap(newNotifier);
         }
@@ -246,7 +248,7 @@ using namespace Microsoft::Console::Interactivity;
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         std::unique_ptr<ISystemConfigurationProvider> NewProvider;
         try
@@ -272,7 +274,7 @@ using namespace Microsoft::Console::Interactivity;
             status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             provider.swap(NewProvider);
         }
@@ -298,19 +300,21 @@ using namespace Microsoft::Console::Interactivity;
     ApiLevel level;
     auto status = ApiDetector::DetectNtUserWindow(&level);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         try
         {
             static const auto PSEUDO_WINDOW_CLASS = L"PseudoConsoleWindow";
-            WNDCLASS pseudoClass{ 0 };
+            WNDCLASSEXW pseudoClass{ 0 };
             switch (level)
             {
             case ApiLevel::Win32:
             {
+                pseudoClass.cbSize = sizeof(WNDCLASSEXW);
                 pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
                 pseudoClass.lpfnWndProc = s_PseudoWindowProc;
-                RegisterClass(&pseudoClass);
+                pseudoClass.cbWndExtra = GWL_CONSOLE_WNDALLOC; // this is required to store the owning thread/process override in NTUSER
+                auto windowClassAtom{ RegisterClassExW(&pseudoClass) };
 
                 // Note that because we're not specifying WS_CHILD, this window
                 // will become an _owned_ window, not a _child_ window. This is
@@ -331,7 +335,7 @@ using namespace Microsoft::Console::Interactivity;
 
                 // Attempt to create window.
                 hwnd = CreateWindowExW(exStyles,
-                                       PSEUDO_WINDOW_CLASS,
+                                       reinterpret_cast<LPCWSTR>(windowClassAtom),
                                        nullptr,
                                        windowStyle,
                                        0,
@@ -348,7 +352,7 @@ using namespace Microsoft::Console::Interactivity;
                     const auto gle = GetLastError();
                     status = NTSTATUS_FROM_WIN32(gle);
                 }
-
+                _pseudoConsoleWindowHwnd = hwnd;
                 break;
             }
 #ifdef BUILD_ONECORE_INTERACTIVITY
@@ -369,18 +373,6 @@ using namespace Microsoft::Console::Interactivity;
     }
 
     return status;
-}
-
-// Method Description:
-// - Gives the pseudo console window a target to relay show/hide window messages
-// Arguments:
-// - func - A function that will take a true for "show" and false for "hide" and
-//          relay that information to the attached terminal to adjust its window state.
-// Return Value:
-// - <none>
-void InteractivityFactory::SetPseudoWindowCallback(std::function<void(bool)> func)
-{
-    _pseudoWindowMessageCallback = func;
 }
 
 // Method Description:
@@ -472,6 +464,18 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(bool)> fun
             _WritePseudoWindowCallback((bool)wParam);
         }
     }
+    case WM_GETOBJECT:
+    {
+        if (static_cast<long>(lParam) == static_cast<long>(UiaRootObjectId))
+        {
+            if (nullptr == _pPseudoConsoleUiaProvider)
+            {
+                LOG_IF_FAILED(WRL::MakeAndInitialize<PseudoConsoleWindowAccessibilityProvider>(&_pPseudoConsoleUiaProvider, _pseudoConsoleWindowHwnd));
+            }
+            return UiaReturnRawElementProvider(hWnd, wParam, lParam, _pPseudoConsoleUiaProvider.Get());
+        }
+        return 0;
+    }
     }
     // If we get this far, call the default window proc
     return DefWindowProcW(hWnd, Message, wParam, lParam);
@@ -492,9 +496,10 @@ void InteractivityFactory::_WritePseudoWindowCallback(bool showOrHide)
     // A hosting terminal window should only "restore" itself in response to
     // this message, if it's already minimized. If the window is maximized a
     // restore will restore-down the window instead.
-    if (_pseudoWindowMessageCallback)
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    if (const auto io = gci.GetVtIo())
     {
-        _pseudoWindowMessageCallback(showOrHide);
+        io->SetWindowVisibility(showOrHide);
     }
 }
 

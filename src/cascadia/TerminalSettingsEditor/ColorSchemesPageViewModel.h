@@ -19,19 +19,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void CurrentScheme(const Editor::ColorSchemeViewModel& newSelectedScheme);
         Editor::ColorSchemeViewModel CurrentScheme();
+        bool HasCurrentScheme() const noexcept;
 
-        void AddNew_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-
-        void RequestEnterRename();
-        bool RequestExitRename(bool saveChanges, winrt::hstring newName);
+        Editor::ColorSchemeViewModel RequestAddNew();
+        bool RequestRenameCurrentScheme(winrt::hstring newName);
         void RequestDeleteCurrentScheme();
+        void RequestEditSelectedScheme();
+        void RequestSetSelectedSchemeAsDefault();
 
         bool CanDeleteCurrentScheme() const;
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        void SchemeListItemClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::ItemClickEventArgs& e);
 
-        WINRT_OBSERVABLE_PROPERTY(bool, InRenameMode, _PropertyChangedHandlers, false);
-        WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, AllColorSchemes, _PropertyChangedHandlers, nullptr);
+        // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
+        using ViewModelHelper<ColorSchemesPageViewModel>::PropertyChanged;
+
+        WINRT_OBSERVABLE_PROPERTY(ColorSchemesSubPage, CurrentPage, _propertyChangedHandlers, ColorSchemesSubPage::Base);
+        WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, AllColorSchemes, _propertyChangedHandlers, nullptr);
 
     private:
         Editor::ColorSchemeViewModel _CurrentScheme{ nullptr };
@@ -39,7 +43,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IMap<Editor::ColorSchemeViewModel, Model::ColorScheme> _viewModelToSchemeMap;
 
         void _MakeColorSchemeVMsHelper();
-        Editor::ColorSchemeViewModel _AddNewScheme();
     };
 };
 

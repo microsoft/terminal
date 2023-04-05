@@ -9,7 +9,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // a number of other color types.
 #pragma warning(push)
     // we can't depend on GSL here, so we use static_cast for explicit narrowing
-#pragma warning(disable : 26472)
+#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, gsl::narrow_cast or gsl::narrow (type.1).
+#pragma warning(disable : 26495) // Variable 'til::color::<unnamed-tag>::abgr' is uninitialized. Always initialize a member variable (type.6).
     struct color
     {
         // Clang (10) has no trouble optimizing the COLORREF conversion operator, below, to a
@@ -131,6 +132,26 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 g,
                 b,
                 alpha
+            };
+        }
+
+        // source-over alpha blending/composition.
+        // `this` (source/top) will be blended "over" `destination` (bottom).
+        // `this` and `destination` are expected to be in straight alpha.
+        // See https://en.wikipedia.org/wiki/Alpha_compositing#Description
+        constexpr color layer_over(const color& destination) const
+        {
+            const auto aInverse = (255 - a) / 255.0f;
+            const auto resultA = a + destination.a * aInverse;
+            const auto resultR = (r * a + destination.r * destination.a * aInverse) / resultA;
+            const auto resultG = (g * a + destination.g * destination.a * aInverse) / resultA;
+            const auto resultB = (b * a + destination.b * destination.a * aInverse) / resultA;
+
+            return {
+                static_cast<uint8_t>(resultR + 0.5f),
+                static_cast<uint8_t>(resultG + 0.5f),
+                static_cast<uint8_t>(resultB + 0.5f),
+                static_cast<uint8_t>(resultA + 0.5f),
             };
         }
 

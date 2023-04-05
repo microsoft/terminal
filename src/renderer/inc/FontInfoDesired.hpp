@@ -20,6 +20,7 @@ Author(s):
 
 #include "FontInfoBase.hpp"
 #include "FontInfo.hpp"
+#include "CSSLengthPercentage.h"
 
 class FontInfoDesired : public FontInfoBase
 {
@@ -27,15 +28,23 @@ public:
     FontInfoDesired(const std::wstring_view& faceName,
                     const unsigned char family,
                     const unsigned int weight,
-                    const til::size coordSizeDesired,
+                    const float fontSize,
                     const unsigned int uiCodePage) noexcept;
     FontInfoDesired(const FontInfo& fiFont) noexcept;
 
-    bool operator==(const FontInfoDesired& other) noexcept;
+    bool operator==(const FontInfoDesired& other) = delete;
 
+    void SetCellSize(const CSSLengthPercentage& cellWidth, const CSSLengthPercentage& cellHeight) noexcept;
+
+    const CSSLengthPercentage& GetCellWidth() const noexcept;
+    const CSSLengthPercentage& GetCellHeight() const noexcept;
+    float GetFontSize() const noexcept;
     til::size GetEngineSize() const noexcept;
     bool IsDefaultRasterFont() const noexcept;
 
 private:
     til::size _coordSizeDesired;
+    float _fontSize;
+    CSSLengthPercentage _cellWidth;
+    CSSLengthPercentage _cellHeight;
 };

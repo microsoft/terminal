@@ -25,12 +25,13 @@
 
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
+  
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -39,6 +40,9 @@
     </ClInclude>
     <ClInclude Include="ControlInteractivity.h">
       <DependentUpon>ControlInteractivity.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ScrollBarVisualStateManager.h">
+      <DependentUpon>ScrollBarVisualStateManager.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="KeyChord.h">
       <DependentUpon>KeyChord.idl</DependentUpon>
@@ -77,6 +81,9 @@
     <ClCompile Include="ControlInteractivity.cpp">
       <DependentUpon>ControlInteractivity.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="ScrollBarVisualStateManager.cpp">
+      <DependentUpon>ScrollBarVisualStateManager.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="EventArgs.cpp">
       <DependentUpon>EventArgs.idl</DependentUpon>
     </ClCompile>
@@ -109,6 +116,7 @@
   <ItemGroup>
     <Midl Include="ControlCore.idl" />
     <Midl Include="ControlInteractivity.idl" />
+    <Midl Include="ScrollBarVisualStateManager.idl" />
     <Midl Include="ICoreState.idl" />
     <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="KeyChord.idl" />

@@ -5,20 +5,29 @@ import "ColorSchemeViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    enum ColorSchemesSubPage
+    {
+        Base = 0,
+        EditColorScheme = 1
+    };
+
     runtimeclass ColorSchemesPageViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         ColorSchemesPageViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
         void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
-        void AddNew_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs e);
-
-        void RequestEnterRename();
-        Boolean RequestExitRename(Boolean saveChanges, String newName);
+        ColorSchemeViewModel RequestAddNew();
+        Boolean RequestRenameCurrentScheme(String newName);
         void RequestDeleteCurrentScheme();
+        void RequestEditSelectedScheme();
+        void RequestSetSelectedSchemeAsDefault();
 
         ColorSchemeViewModel CurrentScheme;
+        Boolean HasCurrentScheme { get; };
         Boolean CanDeleteCurrentScheme { get; };
-        Boolean InRenameMode { get; };
+        ColorSchemesSubPage CurrentPage;
         Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> AllColorSchemes { get; };
+
+        void SchemeListItemClicked(IInspectable sender, Windows.UI.Xaml.Controls.ItemClickEventArgs args);
     }
 }

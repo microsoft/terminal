@@ -5,11 +5,13 @@ import "ColorSchemes.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass ColorSchemeViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    runtimeclass ColorSchemeViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged, Windows.Foundation.IStringable
     {
-        ColorSchemeViewModel(Microsoft.Terminal.Settings.Model.ColorScheme scheme);
-
         String Name;
+        Boolean IsInBoxScheme;
+        Boolean IsDefaultScheme { get; };
+
+        Boolean RequestRename(String newName);
 
         // Terminal Colors
         Windows.Foundation.Collections.IVector<ColorTableEntry> NonBrightColorTable;
@@ -22,6 +24,9 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorTableEntry BackgroundColor;
         ColorTableEntry CursorColor;
         ColorTableEntry SelectionBackgroundColor;
+
+        void DeleteConfirmation_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+        void SetAsDefault_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
     }
 
     [default_interface] runtimeclass ColorTableEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged

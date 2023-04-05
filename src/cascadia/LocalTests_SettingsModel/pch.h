@@ -18,7 +18,7 @@ Author(s):
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #define BLOCK_TIL
 // This includes support libraries from the CRT, STL, WIL, and GSL
-#include "LibraryIncludes.h"
+#include <LibraryIncludes.h>
 // This is inexplicable, but for whatever reason, cppwinrt conflicts with the
 //      SDK definition of this function, so the only fix is to undef it.
 // from WinBase.h
@@ -28,8 +28,9 @@ Author(s):
 #endif
 
 #include <wil/cppwinrt.h>
-#include <unknwn.h>
+#include <Unknwn.h>
 #include <hstring.h>
+#include <shellapi.h>
 
 #include <WexTestClass.h>
 #include <json.h>
@@ -41,11 +42,14 @@ Author(s):
 #include <winrt/Windows.system.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
+#include <Windows.Graphics.Imaging.Interop.h>
 #include <winrt/windows.ui.core.h>
 #include <winrt/Windows.ui.input.h>
+#include <winrt/Windows.UI.ViewManagement.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Windows.ui.xaml.media.h>
+#include <winrt/Windows.UI.Xaml.Media.Imaging.h>
 #include <winrt/Windows.ui.xaml.input.h>
 #include <winrt/Windows.UI.Xaml.Markup.h>
 #include <winrt/Windows.UI.Xaml.Documents.h>

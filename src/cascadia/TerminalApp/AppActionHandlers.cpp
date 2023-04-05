@@ -166,6 +166,40 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleCloseOtherPanes(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        if (const auto terminalTab{ _GetFocusedTabImpl() })
+        {
+            const auto activePane = terminalTab->GetActivePane();
+            if (terminalTab->GetRootPane() != activePane)
+            {
+                _UnZoomIfNeeded();
+
+                // Accumulate list of all unfocused leaf panes, ignore read-only panes
+                std::vector<uint32_t> unfocusedPaneIds;
+                const auto activePaneId = activePane->Id();
+                terminalTab->GetRootPane()->WalkTree([&](auto&& p) {
+                    const auto id = p->Id();
+                    if (id.has_value() && id != activePaneId && !p->ContainsReadOnly())
+                    {
+                        unfocusedPaneIds.push_back(id.value());
+                    }
+                });
+
+                if (!empty(unfocusedPaneIds))
+                {
+                    // Start by removing the panes that were least recently added
+                    sort(begin(unfocusedPaneIds), end(unfocusedPaneIds), std::less<uint32_t>());
+                    _ClosePanes(terminalTab->get_weak(), std::move(unfocusedPaneIds));
+                    args.Handled(true);
+                    return;
+                }
+            }
+            args.Handled(false);
+        }
+    }
+
     void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
@@ -175,7 +209,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
         {
-            auto moved = _MovePane(realArgs.TabIndex());
+            auto moved = _MovePane(realArgs);
             args.Handled(moved);
         }
     }
@@ -201,10 +235,11 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
+            const auto& duplicateFromTab{ realArgs.SplitMode() == SplitType::Duplicate ? _GetFocusedTab() : nullptr };
             _SplitPane(realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        ::base::saturated_cast<float>(realArgs.SplitSize()),
-                       _MakePane(realArgs.TerminalArgs(), realArgs.SplitMode() == SplitType::Duplicate));
+                       _MakePane(realArgs.TerminalArgs(), duplicateFromTab));
             args.Handled(true);
         }
     }
@@ -245,6 +280,28 @@ namespace winrt::TerminalApp::implementation
         if (const auto activeTab{ _GetFocusedTabImpl() })
         {
             activeTab->TogglePaneReadOnly();
+        }
+
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleEnablePaneReadOnly(const IInspectable& /*sender*/,
+                                                 const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            activeTab->SetPaneReadOnly(true);
+        }
+
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleDisablePaneReadOnly(const IInspectable& /*sender*/,
+                                                  const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            activeTab->SetPaneReadOnly(false);
         }
 
         args.Handled(true);
@@ -475,7 +532,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleFind(const IInspectable& /*sender*/,
                                    const ActionEventArgs& args)
     {
-        _Find();
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            _Find(*activeTab);
+        }
         args.Handled(true);
     }
 
@@ -751,17 +811,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<MoveTabArgs>())
         {
-            auto direction = realArgs.Direction();
-            if (direction != MoveTabDirection::None)
-            {
-                if (auto focusedTabIndex = _GetFocusedTabIndex())
-                {
-                    auto currentTabIndex = focusedTabIndex.value();
-                    auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
-                    _TryMoveTab(currentTabIndex, currentTabIndex + delta);
-                }
-            }
-            actionArgs.Handled(true);
+            auto moved = _MoveTab(realArgs);
+            actionArgs.Handled(moved);
         }
     }
 
@@ -1119,6 +1170,31 @@ namespace winrt::TerminalApp::implementation
         if (const auto& control{ _GetActiveControl() })
         {
             const auto handled = control.SwitchSelectionEndpoint();
+            args.Handled(handled);
+        }
+    }
+
+    void TerminalPage::_HandleColorSelection(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<ColorSelectionArgs>())
+            {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.ColorSelection(realArgs.Foreground(), realArgs.Background(), realArgs.MatchMode());
+                });
+                args.Handled(res);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleExpandSelectionToWord(const IInspectable& /*sender*/,
+                                                    const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            const auto handled = control.ExpandSelectionToWord();
             args.Handled(handled);
         }
     }

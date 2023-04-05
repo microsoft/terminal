@@ -190,7 +190,7 @@ class RunLengthEncodingTests
 
         // We're testing replace() elsewhere, but this is special:
         // This ensures that even if we're default constructed we can add data.
-        rle.replace(0, 0, { 1, 5 });
+        rle.replace(0, 0, rle_type{ 1, 5 });
         VERIFY_ARE_EQUAL(5u, rle.size());
         VERIFY_IS_FALSE(rle.empty());
     }
@@ -490,7 +490,7 @@ class RunLengthEncodingTests
         // linear backward iteration
         {
             std::string reverse_expectation{ expected };
-            std::reverse(reverse_expectation.begin(), reverse_expectation.end());
+            std::ranges::reverse(reverse_expectation);
 
             std::string actual;
             actual.reserve(reverse_expectation.size());
@@ -574,7 +574,7 @@ class RunLengthEncodingTests
             const auto beg = rle.begin();
             auto it = beg;
 
-            for (size_t i = 0; i <= expected.size(); ++i, ++it)
+            for (size_t i = 0; i < expected.size(); ++i, ++it)
             {
                 VERIFY_ARE_EQUAL(static_cast<difference_type>(i), it - beg);
                 VERIFY_ARE_EQUAL(-static_cast<difference_type>(i), beg - it);

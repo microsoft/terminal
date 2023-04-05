@@ -29,7 +29,6 @@ class ConhostInternalGetSet final : public Microsoft::Console::VirtualTerminal::
 public:
     ConhostInternalGetSet(_In_ Microsoft::Console::IIoProvider& io);
 
-    void PrintString(const std::wstring_view string) override;
     void ReturnResponse(const std::wstring_view response) override;
 
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() override;
@@ -40,13 +39,11 @@ public:
     void SetTextAttributes(const TextAttribute& attrs) override;
 
     void SetAutoWrapMode(const bool wrapAtEOL) override;
-
-    void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override;
+    bool GetAutoWrapMode() const override;
 
     void WarningBell() override;
 
     bool GetLineFeedMode() const override;
-    void LineFeed(const bool withReturn) override;
 
     void SetWindowTitle(const std::wstring_view title) override;
 
@@ -63,7 +60,8 @@ public:
     void SetConsoleOutputCP(const unsigned int codepage) override;
     unsigned int GetConsoleOutputCP() const override;
 
-    void EnableXtermBracketedPasteMode(const bool enabled) override;
+    void SetBracketedPasteMode(const bool enabled) override;
+    std::optional<bool> GetBracketedPasteMode() const override;
     void CopyToClipboard(const std::wstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(const std::wstring_view uri) override;
@@ -73,9 +71,14 @@ public:
     bool IsVtInputEnabled() const override;
 
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
+    void NotifyBufferRotation(const int delta) override;
 
-    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
+    void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
+    void MarkCommandStart() override;
+    void MarkOutputStart() override;
+    void MarkCommandFinish(std::optional<unsigned int> error) override;
 
 private:
     Microsoft::Console::IIoProvider& _io;
+    bool _bracketedPasteMode{ false };
 };

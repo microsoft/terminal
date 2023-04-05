@@ -17,8 +17,6 @@
 
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
-    <TerminalXamlApplicationToolkit>true</TerminalXamlApplicationToolkit>
-    <TerminalVCRTForwarders>true</TerminalVCRTForwarders>
     <TerminalThemeHelpers>true</TerminalThemeHelpers>
   </PropertyGroup>
 
@@ -90,7 +88,7 @@
     Particularly tricky is Microsoft.Terminal.Core.winmd. That winmd doesn't
     have its own DLL (it doesn't have any activatable classes, only structs and
     interfaces). However, it too is necessary for Terminal.Control to be able to
-    marshall the Core types across the boundary.
+    marshal the Core types across the boundary.
     -->
     <Reference Include="Microsoft.Terminal.Core">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
@@ -144,12 +142,12 @@
 
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
 
   <!-- Override GetPackagingOutputs to roll up all our dependencies.
@@ -196,26 +194,6 @@
     </ItemGroup>
     <!-- **END VC LIBS HACK** -->
 
-
-    <!-- **BEGIN TERMINAL CONNECTION HACK** -->
-    <!-- This is the same as the above VC libs hack, but for TerminalConnection.
-    TerminalConnection depends on cpprest*.dll, and if we don't include it in
-    the packaging output, we'll crash as soon as we try to load
-    TerminalConnection.dll.
-
-    The Sample sln needs to do this manually - the real exe has a
-    ProjectReference to TerminalConnection.vcxproj and can figure this out on
-    its own. -->
-    <ItemGroup>
-      <_TerminalConnectionDlls Include="$(OpenConsoleCommonOutDir)\TerminalConnection\*.dll" />
-
-      <PackagingOutputs Include="@(_TerminalConnectionDlls)">
-        <ProjectName>$(ProjectName)</ProjectName>
-        <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
-        <TargetPath>%(Filename)%(Extension)</TargetPath>
-      </PackagingOutputs>
-    </ItemGroup>
-    <!-- **END TERMINAL CONNECTION HACK** -->
 
     <!-- Same thing again here, with WindowsTerminal.exe -->
     <ItemGroup>

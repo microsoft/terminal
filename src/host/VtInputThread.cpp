@@ -30,7 +30,6 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     _u8State{},
     _dwThreadId{ 0 },
     _exitRequested{ false },
-    _exitResult{ S_OK },
     _pfnSetLookingForDSR{}
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
@@ -94,7 +93,8 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 {
     const auto pInstance = reinterpret_cast<VtInputThread*>(lpParameter);
-    return pInstance->_InputThread();
+    pInstance->_InputThread();
+    return S_OK;
 }
 
 // Method Description:
@@ -111,14 +111,9 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
     DWORD dwRead = 0;
     auto fSuccess = !!ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
 
-    // If we failed to read because the terminal broke our pipe (usually due
-    //      to dying itself), close gracefully with ERROR_BROKEN_PIPE.
-    // Otherwise throw an exception. ERROR_BROKEN_PIPE is the only case that
-    //       we want to gracefully close in.
     if (!fSuccess)
     {
         _exitRequested = true;
-        _exitResult = HRESULT_FROM_WIN32(GetLastError());
         return;
     }
 
@@ -127,7 +122,6 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
     {
         if (throwOnFail)
         {
-            _exitResult = hr;
             _exitRequested = true;
         }
         else
@@ -149,18 +143,13 @@ void VtInputThread::SetLookingForDSR(const bool looking) noexcept
 // - The ThreadProc for the VT Input Thread. Reads input from the pipe, and
 //      passes it to _HandleRunInput to be processed by the
 //      InputStateMachineEngine.
-// Return Value:
-// - Any error from reading the pipe or writing to the input buffer that might
-//      have caused us to exit.
-DWORD VtInputThread::_InputThread()
+void VtInputThread::_InputThread()
 {
     while (!_exitRequested)
     {
         DoReadInput(true);
     }
     ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CloseInput();
-
-    return _exitResult;
 }
 
 // Method Description:

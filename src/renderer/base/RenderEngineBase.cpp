@@ -35,7 +35,7 @@ HRESULT RenderEngineBase::NotifyNewText(const std::wstring_view /*newText*/) noe
     return S_FALSE;
 }
 
-HRESULT RenderEngineBase::UpdateSoftFont(const gsl::span<const uint16_t> /*bitPattern*/,
+HRESULT RenderEngineBase::UpdateSoftFont(const std::span<const uint16_t> /*bitPattern*/,
                                          const til::size /*cellSize*/,
                                          const size_t /*centeringHint*/) noexcept
 {
@@ -53,8 +53,8 @@ HRESULT RenderEngineBase::ResetLineTransform() noexcept
 }
 
 HRESULT RenderEngineBase::PrepareLineTransform(const LineRendition /*lineRendition*/,
-                                               const size_t /*targetRow*/,
-                                               const size_t /*viewportLeft*/) noexcept
+                                               const til::CoordType /*targetRow*/,
+                                               const til::CoordType /*viewportLeft*/) noexcept
 {
     return S_FALSE;
 }

@@ -15,14 +15,34 @@
 static constexpr std::string_view Utf8Bom{ "\xEF\xBB\xBF", 3 };
 static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
 static constexpr std::wstring_view ReleaseSettingsFolder{ L"Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\" };
+static constexpr std::wstring_view PortableModeMarkerFile{ L".portable" };
+static constexpr std::wstring_view PortableModeSettingsFolder{ L"settings" };
 
 namespace winrt::Microsoft::Terminal::Settings::Model
 {
     // Returns a path like C:\Users\<username>\AppData\Local\Packages\<packagename>\LocalState
     // You can put your settings.json or state.json in this directory.
+    bool IsPortableMode()
+    {
+        static auto portableMode = []() {
+            std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
+            modulePath.replace_filename(PortableModeMarkerFile);
+            return std::filesystem::exists(modulePath);
+        }();
+        return portableMode;
+    }
+
     std::filesystem::path GetBaseSettingsPath()
     {
         static auto baseSettingsPath = []() {
+            if (!IsPackaged() && IsPortableMode())
+            {
+                std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
+                modulePath.replace_filename(PortableModeSettingsFolder);
+                std::filesystem::create_directories(modulePath);
+                return modulePath;
+            }
+
             wil::unique_cotaskmem_string localAppDataFolder;
             // KF_FLAG_FORCE_APP_DATA_REDIRECTION, when engaged, causes SHGet... to return
             // the new AppModel paths (Packages/xxx/RoamingState, etc.) for standard path requests.
@@ -107,7 +127,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     }
     // Tries to read a file somewhat atomically without locking it.
     // Strips the UTF8 BOM if it exists.
-    std::string ReadUTF8File(const std::filesystem::path& path, const bool elevatedOnly)
+    std::string ReadUTF8File(const std::filesystem::path& path, const bool elevatedOnly, FILETIME* lastWriteTime)
     {
         // From some casual observations we can determine that:
         // * ReadFile() always returns the requested amount of data (unless the file is smaller)
@@ -179,6 +199,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                 buffer.erase(0, Utf8Bom.size());
             }
 
+            if (lastWriteTime)
+            {
+                THROW_IF_WIN32_BOOL_FALSE(GetFileTime(file.get(), nullptr, nullptr, lastWriteTime));
+            }
+
             return buffer;
         }
 
@@ -186,11 +211,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     }
 
     // Same as ReadUTF8File, but returns an empty optional, if the file couldn't be opened.
-    std::optional<std::string> ReadUTF8FileIfExists(const std::filesystem::path& path, const bool elevatedOnly)
+    std::optional<std::string> ReadUTF8FileIfExists(const std::filesystem::path& path, const bool elevatedOnly, FILETIME* lastWriteTime)
     {
         try
         {
-            return { ReadUTF8File(path, elevatedOnly) };
+            return { ReadUTF8File(path, elevatedOnly, lastWriteTime) };
         }
         catch (const wil::ResultException& exception)
         {
@@ -203,9 +228,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         }
     }
 
-    void WriteUTF8File(const std::filesystem::path& path,
-                       const std::string_view& content,
-                       const bool elevatedOnly)
+    void WriteUTF8File(const std::filesystem::path& path, const std::string_view& content, const bool elevatedOnly, FILETIME* lastWriteTime)
     {
         SECURITY_ATTRIBUTES sa;
         // stash the security descriptor here, so it will stay in context until
@@ -255,7 +278,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             // Programs running in an elevated context will be free to write the
             // file, and unelevated processes will be able to read the file. An
             // unelevated process could always delete the file and rename a new
-            // file in it's place (a la the way `vim.exe` saves files), but if
+            // file in its place (a la the way `vim.exe` saves files), but if
             // they do that, the new file _won't_ be owned by Administrators,
             // failing the above check.
         }
@@ -277,10 +300,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         {
             THROW_WIN32_MSG(ERROR_WRITE_FAULT, "failed to write whole file");
         }
+
+        if (lastWriteTime)
+        {
+            THROW_IF_WIN32_BOOL_FALSE(GetFileTime(file.get(), nullptr, nullptr, lastWriteTime));
+        }
     }
 
-    void WriteUTF8FileAtomic(const std::filesystem::path& path,
-                             const std::string_view& content)
+    void WriteUTF8FileAtomic(const std::filesystem::path& path, const std::string_view& content, FILETIME* lastWriteTime)
     {
         // GH#10787: rename() will replace symbolic links themselves and not the path they point at.
         // It's thus important that we first resolve them before generating temporary path.
@@ -298,7 +325,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             //   * resolve the link manually, which might be less accurate and more prone to race conditions
             //   * write to the file directly, which lets the system resolve the symbolic link but leaves the write non-atomic
             // The latter is chosen, as this is an edge case and our 'atomic' writes are only best-effort.
-            WriteUTF8File(path, content);
+            WriteUTF8File(path, content, false, lastWriteTime);
             return;
         }
 
@@ -306,7 +333,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         tmpPath += L".tmp";
 
         // Writing to a file isn't atomic, but...
-        WriteUTF8File(tmpPath, content);
+        WriteUTF8File(tmpPath, content, false, lastWriteTime);
 
         // renaming one is (supposed to be) atomic.
         // Wait... "supposed to be"!? Well it's technically not always atomic,

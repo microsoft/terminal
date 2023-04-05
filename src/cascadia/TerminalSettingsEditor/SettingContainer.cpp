@@ -15,6 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty SettingContainer::_CurrentValueProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
     DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
+    DependencyProperty SettingContainer::_StartExpandedProperty{ nullptr };
 
     SettingContainer::SettingContainer()
     {
@@ -71,6 +72,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ nullptr, PropertyChangedCallback{ &SettingContainer::_OnHasSettingValueChanged } });
         }
+        if (!_StartExpandedProperty)
+        {
+            _StartExpandedProperty =
+                DependencyProperty::Register(
+                    L"StartExpanded",
+                    xaml_typename<bool>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ box_value(false) });
+        }
     }
 
     void SettingContainer::_OnHasSettingValueChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*args*/)
@@ -123,49 +133,54 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _UpdateOverrideSystem();
 
         // Get the correct base to apply automation properties to
-        DependencyObject base{ nullptr };
+        std::vector<DependencyObject> base;
+        base.reserve(2);
         if (const auto& child{ GetTemplateChild(L"Expander") })
         {
             if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
             {
-                base = child;
+                base.push_back(child);
             }
         }
-        else if (const auto& content{ Content() })
+        if (const auto& content{ Content() })
         {
-            if (const auto& obj{ content.try_as<DependencyObject>() })
+            const auto& panel{ content.try_as<Controls::Panel>() };
+            const auto& obj{ content.try_as<DependencyObject>() };
+            if (!panel && obj)
             {
-                base = obj;
+                base.push_back(obj);
             }
         }
 
-        if (base)
+        for (const auto& obj : base)
         {
             // apply header as name (automation property)
             if (const auto& header{ Header() })
             {
                 if (const auto headerText{ header.try_as<hstring>() })
                 {
-                    Automation::AutomationProperties::SetName(base, *headerText);
+                    Automation::AutomationProperties::SetName(obj, *headerText);
                 }
             }
 
             // apply help text as tooltip and full description (automation property)
             if (const auto& helpText{ HelpText() }; !helpText.empty())
             {
-                Controls::ToolTipService::SetToolTip(base, box_value(helpText));
-                Automation::AutomationProperties::SetFullDescription(base, helpText);
+                Automation::AutomationProperties::SetFullDescription(obj, helpText);
+            }
+            else
+            {
+                Controls::ToolTipService::SetToolTip(obj, nullptr);
+                Automation::AutomationProperties::SetFullDescription(obj, L"");
             }
         }
 
-        if (HelpText().empty())
+        const auto textBlockHidden = HelpText().empty();
+        if (const auto& child{ GetTemplateChild(L"HelpTextBlock") })
         {
-            if (const auto& child{ GetTemplateChild(L"HelpTextBlock") })
+            if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
             {
-                if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
-                {
-                    textBlock.Visibility(Visibility::Collapsed);
-                }
+                textBlock.Visibility(textBlockHidden ? Visibility::Collapsed : Visibility::Visible);
             }
         }
     }

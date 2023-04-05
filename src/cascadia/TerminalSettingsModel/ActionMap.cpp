@@ -4,12 +4,14 @@
 #include "pch.h"
 #include "AllShortcutActions.h"
 #include "ActionMap.h"
+#include "Command.h"
 #include "AllShortcutActions.h"
 
 #include "ActionMap.g.cpp"
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
+using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -118,7 +120,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     // Method Description:
     // - Retrieves a map of actions that can be bound to a key
-    Windows::Foundation::Collections::IMapView<hstring, Model::ActionAndArgs> ActionMap::AvailableActions()
+    IMapView<hstring, Model::ActionAndArgs> ActionMap::AvailableActions()
     {
         if (!_AvailableActionsCache)
         {
@@ -172,7 +174,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Retrieves a map of command names to the commands themselves
     // - These commands should not be modified directly because they may result in
     //    an invalid state for the `ActionMap`
-    Windows::Foundation::Collections::IMapView<hstring, Model::Command> ActionMap::NameMap()
+    IMapView<hstring, Model::Command> ActionMap::NameMap()
     {
         if (!_NameMapCache)
         {
@@ -196,7 +198,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // Update NameMap with our parents.
         // Starting with this means we're doing a top-down approach.
-        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             parent->_PopulateNameMapWithSpecialCommands(nameMap);
@@ -274,7 +275,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         });
 
         // Now, add the accumulated actions from our parents
-        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             const auto parentActions{ parent->_GetCumulativeActions() };
@@ -285,7 +285,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return cumulativeActions;
     }
 
-    Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> ActionMap::GlobalHotkeys()
+    IMapView<Control::KeyChord, Model::Command> ActionMap::GlobalHotkeys()
     {
         if (!_GlobalHotkeysCache)
         {
@@ -294,7 +294,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _GlobalHotkeysCache.GetView();
     }
 
-    Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> ActionMap::KeyBindings()
+    IMapView<Control::KeyChord, Model::Command> ActionMap::KeyBindings()
     {
         if (!_KeyBindingMapCache)
         {
@@ -367,7 +367,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Update keyBindingsMap and unboundKeys with our parents
-        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             parent->_PopulateKeyBindingMapWithStandardCommands(keyBindingsMap, unboundKeys);
@@ -408,7 +407,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             actionMap->_IterableCommands.emplace_back(*winrt::get_self<Command>(cmd)->Copy());
         }
 
-        assert(_parents.size() <= 1);
         actionMap->_parents.reserve(_parents.size());
         for (const auto& parent : _parents)
         {
@@ -518,7 +516,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (maskingActionPair == _MaskingActions.end())
         {
             // Check if we need to add this to our list of masking commands.
-            FAIL_FAST_IF(_parents.size() > 1);
             for (const auto& parent : _parents)
             {
                 // NOTE: This only checks the layer above us, but that's ok.
@@ -737,7 +734,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // the command was not bound in this layer,
         // ask my parents
-        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             const auto& inheritedCmd{ parent->_GetActionByKeyChordInternal(keys) };
@@ -787,7 +783,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Check our parents
-        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             if (const auto& keys{ parent->GetKeyBindingForAction(myAction, myArgs) })
@@ -860,5 +855,80 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         cmd->RegisterKey(keys);
         cmd->ActionAndArgs(action);
         AddAction(*cmd);
+    }
+
+    void ActionMap::_recursiveUpdateCommandKeybindingLabels()
+    {
+        const auto& commands{ _ExpandedCommandsCache };
+
+        for (const auto& command : commands)
+        {
+            if (command.HasNestedCommands())
+            {
+                _recursiveUpdateCommandKeybindingLabels();
+            }
+            else
+            {
+                // If there's a keybinding that's bound to exactly this command,
+                // then get the keychord and display it as a
+                // part of the command in the UI.
+                // We specifically need to do this for nested commands.
+                const auto keyChord{ GetKeyBindingForAction(command.ActionAndArgs().Action(),
+                                                            command.ActionAndArgs().Args()) };
+                command.RegisterKey(keyChord);
+            }
+        }
+    }
+
+    // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
+    static bool _compareSchemeNames(const ColorScheme& lhs, const ColorScheme& rhs)
+    {
+        std::wstring leftName{ lhs.Name() };
+        std::wstring rightName{ rhs.Name() };
+        return leftName.compare(rightName) < 0;
+    }
+
+    void ActionMap::ExpandCommands(const IVectorView<Model::Profile>& profiles,
+                                   const IMapView<winrt::hstring, Model::ColorScheme>& schemes)
+    {
+        // TODO in review - It's a little weird to stash the expanded commands
+        // into a separate map. Is it possible to just replace the name map with
+        // the post-expanded commands?
+        //
+        // WHILE also making sure that upon re-saving the commands, we don't
+        // actually serialize the results of the expansion. I don't think it is.
+
+        std::vector<Model::ColorScheme> sortedSchemes;
+        sortedSchemes.reserve(schemes.Size());
+
+        for (const auto& nameAndScheme : schemes)
+        {
+            sortedSchemes.push_back(nameAndScheme.Value());
+        }
+        std::sort(sortedSchemes.begin(),
+                  sortedSchemes.end(),
+                  _compareSchemeNames);
+
+        auto copyOfCommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+
+        const auto& commandsToExpand{ NameMap() };
+        for (auto nameAndCommand : commandsToExpand)
+        {
+            copyOfCommands.Insert(nameAndCommand.Key(), nameAndCommand.Value());
+        }
+
+        implementation::Command::ExpandCommands(copyOfCommands,
+                                                profiles,
+                                                winrt::param::vector_view<Model::ColorScheme>{ sortedSchemes });
+
+        _ExpandedCommandsCache = winrt::single_threaded_vector<Model::Command>();
+        for (const auto& [_, command] : copyOfCommands)
+        {
+            _ExpandedCommandsCache.Append(command);
+        }
+    }
+    IVector<Model::Command> ActionMap::ExpandedCommands()
+    {
+        return _ExpandedCommandsCache;
     }
 }

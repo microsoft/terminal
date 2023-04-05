@@ -10,6 +10,7 @@
     <ClCompile Include="CoalesceTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
     <ClCompile Include="EnumSetTests.cpp" />
+    <ClCompile Include="HashTests.cpp" />
     <ClCompile Include="MathTests.cpp" />
     <ClCompile Include="mutex.cpp" />
     <ClCompile Include="OperatorTests.cpp" />
@@ -18,13 +19,17 @@
     <ClCompile Include="ReplaceTests.cpp" />
     <ClCompile Include="RunLengthEncodingTests.cpp" />
     <ClCompile Include="SizeTests.cpp" />
+    <ClCompile Include="SmallVectorTests.cpp" />
     <ClCompile Include="SomeTests.cpp" />
     <ClCompile Include="SPSCTests.cpp" />
     <ClCompile Include="StaticMapTests.cpp" />
     <ClCompile Include="string.cpp" />
     <ClCompile Include="throttled_func.cpp" />
     <ClCompile Include="u8u16convertTests.cpp" />
-    <ClCompile Include="HashTests.cpp" />
+    <ClCompile Include="EnvTests.cpp" />
+    <ClCompile Include="UnicodeTests.cpp" />
+    <ClCompile Include="GenerationalTests.cpp" />
+    <ClCompile Include="FlatSetTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
@@ -47,6 +52,9 @@
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\til\enumset.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\til\env.h">
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\til\hash.h">
@@ -85,6 +93,9 @@
     <ClInclude Include="..\..\inc\til\size.h">
       <Filter>inc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\inc\til\small_vector.h">
+      <Filter>inc</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\inc\til\some.h">
       <Filter>inc</Filter>
     </ClInclude>
@@ -104,6 +115,18 @@
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\til\u8u16convert.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\til\unicode.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\til\bytes.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\til\generational.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\til\type_traits.h">
       <Filter>inc</Filter>
     </ClInclude>
   </ItemGroup>

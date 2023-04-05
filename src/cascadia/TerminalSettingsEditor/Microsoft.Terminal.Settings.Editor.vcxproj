@@ -61,6 +61,10 @@
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="EditColorScheme.h">
+      <DependentUpon>EditColorScheme.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="Interaction.h">
       <DependentUpon>Interaction.xaml</DependentUpon>
     </ClInclude>
@@ -73,10 +77,6 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="Profiles.h">
-      <DependentUpon>Profiles.idl</DependentUpon>
-      <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="ProfileViewModel.h">
       <DependentUpon>ProfileViewModel.idl</DependentUpon>
@@ -148,6 +148,9 @@
     <Page Include="ColorSchemes.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="EditColorScheme.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Interaction.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -196,6 +199,10 @@
     </ClCompile>
     <ClCompile Include="ColorSchemes.cpp">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="EditColorScheme.cpp">
+      <DependentUpon>EditColorScheme.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="Interaction.cpp">
@@ -289,6 +296,10 @@
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="EditColorScheme.idl">
+      <DependentUpon>EditColorScheme.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="KeyChordListener.idl">
       <DependentUpon>KeyChordListener.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -307,9 +318,6 @@
     </Midl>
     <Midl Include="MainPage.idl">
       <DependentUpon>MainPage.xaml</DependentUpon>
-    </Midl>
-    <Midl Include="Profiles.idl">
-      <SubType>Code</SubType>
     </Midl>
     <Midl Include="ProfileViewModel.idl" />
     <Midl Include="ColorSchemeViewModel.idl" />
@@ -345,7 +353,6 @@
     </PRIResource>
     <OCResourceDirectory Include="Resources" />
     <None Include="$(ProjectName).def" />
-    <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>

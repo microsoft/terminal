@@ -879,7 +879,7 @@ static bool IsSizePresentInList(const __in SHORT sSizeDesired, __in_ecount(nTTPo
     return fSizePresent;
 }
 
-// Given a face name, determine if the size provided is custom (i.e. not on the hardcoded list of sizes). Note that the
+// Given a face name, determine if the size provided is custom (i.e. not on the hard-coded list of sizes). Note that the
 // list of sizes we use varies depending on the codepage being used
 bool IsFontSizeCustom(__in PCWSTR pszFaceName, const __in SHORT sSize)
 {
@@ -902,7 +902,7 @@ static bool IsCurrentFontSizeCustom()
     return IsFontSizeCustom(gpStateInfo->FaceName, gpStateInfo->FontSize.Y);
 }
 
-// Given a size, iterate through all TT fonts and load them in the provided size (only used for custom (non-hardcoded)
+// Given a size, iterate through all TT fonts and load them in the provided size (only used for custom (non-hard-coded)
 // font sizes)
 void CreateSizeForAllTTFonts(const __in SHORT sSize)
 {
@@ -1036,7 +1036,7 @@ EnumerateFonts(
         pFN->dwFlag |= EF_ENUMERATED;
     }
 
-    // Now check to see if the currently selected font is using a custom size not in the hardcoded list (TTPoints or
+    // Now check to see if the currently selected font is using a custom size not in the hard-coded list (TTPoints or
     // TTPointsDbcs depending on locale). If so, make sure we populate all of our fonts at that size.
     if (IsCurrentFontSizeCustom())
     {
