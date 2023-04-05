@@ -12,10 +12,41 @@
 #include "WindowManager.g.cpp"
 #include "../../types/inc/utils.hpp"
 
+#include <WtExeUtils.h>
+
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Windows::Foundation;
 using namespace ::Microsoft::Console;
+
+namespace
+{
+    const GUID& MonarchCLSID()
+    {
+        if (!IsPackaged()) [[unlikely]]
+        {
+            // Unpackaged installations don't have the luxury of magic package isolation
+            // to stop them from accidentally touching each other's monarchs.
+            // We need to enforce that ourselves by making their monarch CLSIDs unique
+            // per install.
+            // This applies in both portable mode and normal unpackaged mode.
+            // We'll use a v5 UUID based on the install folder to unique them.
+            static GUID processRootHashedGuid = []() {
+                // {5456C4DB-557D-4A22-B043-B1577418E4AF}
+                static constexpr GUID processRootHashedGuidBase = { 0x5456c4db, 0x557d, 0x4a22, { 0xb0, 0x43, 0xb1, 0x57, 0x74, 0x18, 0xe4, 0xaf } };
+
+                // Make a temporary monarch CLSID based on the unpackaged install root
+                std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
+                modulePath.remove_filename();
+                std::wstring pathRootAsString{ modulePath.wstring() };
+
+                return Utils::CreateV5Uuid(processRootHashedGuidBase, std::as_bytes(std::span{ pathRootAsString }));
+            }();
+            return processRootHashedGuid;
+        }
+        return Monarch_clsid;
+    }
+}
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
@@ -325,7 +356,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     void WindowManager::_registerAsMonarch()
     {
-        winrt::check_hresult(CoRegisterClassObject(Monarch_clsid,
+        winrt::check_hresult(CoRegisterClassObject(MonarchCLSID(),
                                                    winrt::make<::MonarchFactory>().get(),
                                                    CLSCTX_LOCAL_SERVER,
                                                    REGCLS_MULTIPLEUSE,
@@ -342,7 +373,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         //
         // * If we're running unpackaged: the .winmd must be a sibling of the .exe
         // * If we're running packaged: the .winmd must be in the package root
-        _monarch = create_instance<Remoting::IMonarch>(Monarch_clsid,
+        _monarch = create_instance<Remoting::IMonarch>(MonarchCLSID(),
                                                        CLSCTX_LOCAL_SERVER);
     }
 
