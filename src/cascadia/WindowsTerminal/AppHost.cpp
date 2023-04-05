@@ -1231,7 +1231,7 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
 }
 
 winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                        const winrt::Windows::Foundation::IInspectable& /*arg*/)
+                                                          const winrt::Windows::Foundation::IInspectable& /*arg*/)
 {
     // GH#11561: We're totally done being initialized. Resize the window to
     // match the initial settings, and then call ShowWindow to finally make us
@@ -1242,12 +1242,11 @@ winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::
     {
         nCmdShow = SW_MAXIMIZE;
     }
-    InvalidateRect(_window->GetInteropHandle(), nullptr, false);
+    // InvalidateRect(_window->GetInteropHandle(), nullptr, false);
     //co_await winrt::resume_background();
 
     // Huh. If we wait a second, then this just works. But that delays startup by a second, which is... obviously dumb.
     //co_await winrt::resume_after(1s);
-
 
     co_await winrt::resume_background();
 
