@@ -8,6 +8,7 @@
 #define SHADING_TYPE_PASSTHROUGH        3
 #define SHADING_TYPE_DASHED_LINE        4
 #define SHADING_TYPE_SOLID_FILL         5
+#define SHADING_TYPE_LIGATURE_MARKER    0x80000000
 // clang-format on
 
 struct VSData

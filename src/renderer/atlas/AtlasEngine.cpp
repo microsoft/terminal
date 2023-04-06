@@ -132,15 +132,30 @@ try
         // Scrolling the background bitmap is a lot easier because we can rely on memmove which works
         // with both forwards and backwards copying. It's a mystery why the STL doesn't have this.
         {
-            const auto beg = _p.backgroundBitmap.begin();
-            const auto end = _p.backgroundBitmap.end();
-            const auto src = beg - std::min<ptrdiff_t>(0, offset) * _p.backgroundBitmapStride;
-            const auto dst = beg + std::max<ptrdiff_t>(0, offset) * _p.backgroundBitmapStride;
-            const auto count = end - std::max(src, dst);
-            assert(dst >= beg && dst + count <= end);
-            assert(src >= beg && src + count <= end);
-            memmove(dst, src, count * sizeof(u32));
-            _p.backgroundBitmapGeneration.bump();
+            const auto srcOffset = std::max<ptrdiff_t>(0, -offset) * static_cast<ptrdiff_t>(_p.colorBitmapRowStride);
+            const auto dstOffset = std::max<ptrdiff_t>(0, offset) * static_cast<ptrdiff_t>(_p.colorBitmapRowStride);
+            const auto count = _p.colorBitmapDepthStride - std::max(srcOffset, dstOffset);
+            assert(dstOffset >= 0 && dstOffset + count <= _p.colorBitmapDepthStride);
+            assert(srcOffset >= 0 && srcOffset + count <= _p.colorBitmapDepthStride);
+
+            auto src = _p.colorBitmap.data() + srcOffset;
+            auto dst = _p.colorBitmap.data() + dstOffset;
+            const auto bytes = count * sizeof(u32);
+
+            for (size_t i = 0; i < 2; ++i)
+            {
+                // Avoid bumping the colorBitmapGeneration unless necessary. This approx. further halves
+                // the (already small) GPU load. This could easily be replaced with some custom SIMD
+                // to avoid going over the memory twice, but... that's a story for another day.
+                if (memcmp(dst, src, bytes) != 0)
+                {
+                    memmove(dst, src, bytes);
+                    _p.colorBitmapGenerations[i].bump();
+                }
+
+                src += _p.colorBitmapDepthStride;
+                dst += _p.colorBitmapDepthStride;
+            }
         }
     }
 
@@ -277,7 +292,7 @@ try
     }
 
     const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x, 0, _p.s->cellCount.x));
-    auto column = x;
+    auto columnEnd = x;
 
     // Due to the current IRenderEngine interface (that wasn't refactored yet) we need to assemble
     // the current buffer line first as the remaining function operates on whole lines of text.
@@ -287,34 +302,42 @@ try
             for (const auto& ch : cluster.GetText())
             {
                 _api.bufferLine.emplace_back(ch);
-                _api.bufferLineColumn.emplace_back(column);
+                _api.bufferLineColumn.emplace_back(columnEnd);
             }
 
-            column += gsl::narrow_cast<u16>(cluster.GetColumns());
+            columnEnd += gsl::narrow_cast<u16>(cluster.GetColumns());
         }
 
-        _api.bufferLineColumn.emplace_back(column);
-    }
-
-    {
-        std::fill(_api.colorsForeground.begin() + x, _api.colorsForeground.begin() + column, _api.currentForeground);
+        _api.bufferLineColumn.emplace_back(columnEnd);
     }
 
     {
         const auto shift = _api.lineRendition >= LineRendition::DoubleWidth ? 1 : 0;
-        const auto backgroundRow = _p.backgroundBitmap.begin() + _p.backgroundBitmapStride * y;
-        auto it = backgroundRow + x;
-        const auto end = backgroundRow + (static_cast<size_t>(column) << shift);
-        const auto bg = u32ColorPremultiply(_api.currentBackground);
+        const auto row = _p.colorBitmap.begin() + _p.colorBitmapRowStride * y;
+        auto beg = row + x;
+        auto end = row + (static_cast<size_t>(columnEnd) << shift);
 
-        for (; it != end; ++it)
+        const u32 colors[] = {
+            u32ColorPremultiply(_api.currentBackground),
+            u32ColorPremultiply(_api.currentForeground),
+        };
+
+        for (size_t i = 0; i < 2; ++i)
         {
-            if (*it != bg)
+            const auto color = colors[i];
+
+            for (auto it = beg; it != end; ++it)
             {
-                _p.backgroundBitmapGeneration.bump();
-                std::fill(it, end, bg);
-                break;
+                if (*it != color)
+                {
+                    _p.colorBitmapGenerations[i].bump();
+                    std::fill(it, end, color);
+                    break;
+                }
             }
+
+            beg += _p.colorBitmapDepthStride;
+            end += _p.colorBitmapDepthStride;
         }
     }
 
@@ -509,11 +532,11 @@ void AtlasEngine::_recreateFontDependentResources()
             const auto bold = (i & static_cast<size_t>(FontRelevantAttributes::Bold)) != 0;
             const auto italic = (i & static_cast<size_t>(FontRelevantAttributes::Italic)) != 0;
             // The wght axis defaults to the font weight.
-            fontAxisValues[0].value = bold ? DWRITE_FONT_WEIGHT_BOLD : (isnan(standardAxes[0].value) ? static_cast<f32>(_p.s->font->fontWeight) : standardAxes[0].value);
+            fontAxisValues[0].value = bold ? DWRITE_FONT_WEIGHT_BOLD : (standardAxes[0].value < 0 ? static_cast<f32>(_p.s->font->fontWeight) : standardAxes[0].value);
             // The ital axis defaults to 1 if this is italic and 0 otherwise.
-            fontAxisValues[1].value = italic ? 1.0f : (isnan(standardAxes[1].value) ? 0.0f : standardAxes[1].value);
+            fontAxisValues[1].value = italic ? 1.0f : (standardAxes[1].value < 0 ? 0.0f : standardAxes[1].value);
             // The slnt axis defaults to -12 if this is italic and 0 otherwise.
-            fontAxisValues[2].value = italic ? -12.0f : (isnan(standardAxes[2].value) ? 0.0f : standardAxes[2].value);
+            fontAxisValues[2].value = italic ? -12.0f : (standardAxes[2].value < 0 ? 0.0f : standardAxes[2].value);
             _api.textFormatAxes[i] = { fontAxisValues.data(), fontAxisValues.size() };
         }
     }
@@ -530,7 +553,6 @@ void AtlasEngine::_recreateCellCountDependentResources()
     _api.bufferLine = std::vector<wchar_t>{};
     _api.bufferLine.reserve(projectedTextSize);
     _api.bufferLineColumn.reserve(projectedTextSize + 1);
-    _api.colorsForeground = Buffer<u32>(_p.s->cellCount.x);
 
     _api.analysisResults = std::vector<TextAnalysisSinkResult>{};
     _api.clusterMap = Buffer<u16>{ projectedTextSize };
@@ -548,9 +570,11 @@ void AtlasEngine::_recreateCellCountDependentResources()
     // and 40x (AMD) faster for allocations with an alignment of 32 or greater.
     // backgroundBitmapStride is a "count" of u32 and not in bytes,
     // so we round up to multiple of 8 because 8 * sizeof(u32) == 32.
-    _p.backgroundBitmapStride = (static_cast<size_t>(_p.s->cellCount.x) + 7) & ~7;
-    _p.backgroundBitmap = Buffer<u32, 32>(_p.backgroundBitmapStride * _p.s->cellCount.y);
-    memset(_p.backgroundBitmap.data(), 0, _p.backgroundBitmap.size() * sizeof(u32));
+    _p.colorBitmapRowStride = (static_cast<size_t>(_p.s->cellCount.x) + 7) & ~7;
+    _p.colorBitmapDepthStride = _p.colorBitmapRowStride * _p.s->cellCount.y;
+    _p.colorBitmap = Buffer<u32, 32>(2 * _p.colorBitmapDepthStride);
+
+    memset(_p.colorBitmap.data(), 0, _p.colorBitmap.size() * sizeof(u32));
 
     auto it = _p.unorderedRows.data();
     for (auto& r : _p.rows)
@@ -614,9 +638,9 @@ void AtlasEngine::_flushBufferLine()
                 for (size_t i = 0; i < complexityLength; ++i)
                 {
                     const auto col1 = _api.bufferLineColumn[idx + i + 0];
-                    const auto fg = _api.colorsForeground[col1];
                     const auto col2 = _api.bufferLineColumn[idx + i + 1];
                     const auto glyphAdvance = (col2 - col1) * _p.s->font->cellSize.x;
+                    const auto fg = _p.colorBitmap[_p.colorBitmapDepthStride + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y + col1];
                     row.glyphIndices.emplace_back(_api.glyphIndices[i]);
                     row.glyphAdvances.emplace_back(static_cast<f32>(glyphAdvance));
                     row.glyphOffsets.emplace_back();
@@ -810,7 +834,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 leng
 
             const auto col1 = _api.bufferLineColumn[a.textPosition + beg];
             const auto col2 = _api.bufferLineColumn[a.textPosition + i];
-            const auto fg = _api.colorsForeground[col1];
+            const auto fg = _p.colorBitmap[_p.colorBitmapDepthStride + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y + col1];
 
             const auto expectedAdvance = (col2 - col1) * _p.s->font->cellSize.x;
             f32 actualAdvance = 0;
@@ -888,7 +912,7 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
         row.glyphIndices.emplace_back(nowMappingSoftFont ? ch : _api.replacementCharacterGlyphIndex);
         row.glyphAdvances.emplace_back(static_cast<f32>(cols * _p.s->font->cellSize.x));
         row.glyphOffsets.emplace_back(DWRITE_GLYPH_OFFSET{});
-        row.colors.emplace_back(_api.colorsForeground[col1]);
+        row.colors.emplace_back(_p.colorBitmap[_p.colorBitmapDepthStride + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y + col1]);
 
         if (currentlyMappingSoftFont != nowMappingSoftFont)
         {

@@ -184,8 +184,8 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
 [[nodiscard]] HRESULT AtlasEngine::UpdateViewport(const til::inclusive_rect& srNewViewport) noexcept
 {
     const u16x2 cellCount{
-        gsl::narrow_cast<u16>(srNewViewport.right - srNewViewport.left + 1),
-        gsl::narrow_cast<u16>(srNewViewport.bottom - srNewViewport.top + 1),
+        gsl::narrow_cast<u16>(std::max(1, srNewViewport.right - srNewViewport.left + 1)),
+        gsl::narrow_cast<u16>(std::max(1, srNewViewport.bottom - srNewViewport.top + 1)),
     };
     if (_api.s->cellCount != cellCount)
     {
@@ -537,9 +537,9 @@ void AtlasEngine::_updateFont(const wchar_t* faceName, const FontInfoDesired& fo
 
         // AtlasEngine::_recreateFontDependentResources() relies on these fields to
         // exist in this particular order in order to create appropriate default axes.
-        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, NAN });
-        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_ITALIC, NAN });
-        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_SLANT, NAN });
+        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, -1.0f });
+        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_ITALIC, -1.0f });
+        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_SLANT, -1.0f });
 
         for (const auto& p : axes)
         {
@@ -615,18 +615,6 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     DWRITE_FONT_METRICS metrics{};
     fontFace->GetMetrics(&metrics);
 
-    // According to Wikipedia:
-    // > One em was traditionally defined as the width of the capital 'M' in the current typeface and point size,
-    // > because the 'M' was commonly cast the full-width of the square blocks [...] which are used in printing presses.
-    // Even today M is often the widest character in a font that supports ASCII.
-    // In the future a more robust solution could be written, until then this simple solution works for most cases.
-    static constexpr u32 codePoint = L'M';
-    u16 glyphIndex;
-    THROW_IF_FAILED(fontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex));
-
-    DWRITE_GLYPH_METRICS glyphMetrics{};
-    THROW_IF_FAILED(fontFace->GetDesignGlyphMetrics(&glyphIndex, 1, &glyphMetrics));
-
     // Point sizes are commonly treated at a 72 DPI scale
     // (including by OpenType), whereas DirectWrite uses 96 DPI.
     // Since we want the height in px we multiply by the display's DPI.
@@ -641,8 +629,22 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     const auto underlineThickness = static_cast<f32>(metrics.underlineThickness) * designUnitsPerPx;
     const auto strikethroughPosition = static_cast<f32>(-metrics.strikethroughPosition) * designUnitsPerPx;
     const auto strikethroughThickness = static_cast<f32>(metrics.strikethroughThickness) * designUnitsPerPx;
-    const auto advanceWidth = static_cast<f32>(glyphMetrics.advanceWidth) * designUnitsPerPx;
     const auto advanceHeight = ascent + descent + lineGap;
+
+    // We use the same character to determine the advance width as CSS for its "ch" unit ("0").
+    // According to the CSS spec, if it's impossible to determine the advance width,
+    // it must be assumed to be 0.5em wide. em in CSS refers to the computed font-size.
+    auto advanceWidth = 0.5f * fontSizeInPx;
+    {
+        static constexpr u32 codePoint = '0';
+        u16 glyphIndex;
+        if (SUCCEEDED(fontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex)))
+        {
+            DWRITE_GLYPH_METRICS glyphMetrics{};
+            THROW_IF_FAILED(fontFace->GetDesignGlyphMetrics(&glyphIndex, 1, &glyphMetrics, FALSE));
+            advanceWidth = static_cast<f32>(glyphMetrics.advanceWidth) * designUnitsPerPx;
+        }
+    }
 
     auto adjustedWidth = std::roundf(fontInfoDesired.GetCellWidth().Resolve(advanceWidth, dpi, fontSizeInPx, advanceWidth));
     auto adjustedHeight = std::roundf(fontInfoDesired.GetCellHeight().Resolve(advanceHeight, dpi, fontSizeInPx, advanceWidth));
@@ -704,15 +706,15 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     {
         std::wstring fontName{ requestedFaceName };
         const auto fontWeightU16 = gsl::narrow_cast<u16>(requestedWeight);
-        const auto baselineU16 = static_cast<u16>(baseline + 0.5f);
+        const auto baselineU16 = static_cast<u16>(lrintf(baseline));
         const auto descenderU16 = gsl::narrow_cast<u16>(cellHeight - baselineU16);
-        const auto underlinePosU16 = static_cast<u16>(underlinePos + 0.5f);
-        const auto underlineWidthU16 = static_cast<u16>(underlineWidth + 0.5f);
-        const auto strikethroughPosU16 = static_cast<u16>(strikethroughPos + 0.5f);
-        const auto strikethroughWidthU16 = static_cast<u16>(strikethroughWidth + 0.5f);
-        const auto doubleUnderlinePosTopU16 = static_cast<u16>(doubleUnderlinePosTop + 0.5f);
-        const auto doubleUnderlinePosBottomU16 = static_cast<u16>(doubleUnderlinePosBottom + 0.5f);
-        const auto thinLineWidthU16 = static_cast<u16>(thinLineWidth + 0.5f);
+        const auto underlinePosU16 = static_cast<u16>(lrintf(underlinePos));
+        const auto underlineWidthU16 = static_cast<u16>(lrintf(underlineWidth));
+        const auto strikethroughPosU16 = static_cast<u16>(lrintf(strikethroughPos));
+        const auto strikethroughWidthU16 = static_cast<u16>(lrintf(strikethroughWidth));
+        const auto doubleUnderlinePosTopU16 = static_cast<u16>(lrintf(doubleUnderlinePosTop));
+        const auto doubleUnderlinePosBottomU16 = static_cast<u16>(lrintf(doubleUnderlinePosBottom));
+        const auto thinLineWidthU16 = static_cast<u16>(lrintf(thinLineWidth));
 
         // NOTE: From this point onward no early returns or throwing code should exist,
         // as we might cause _api to be in an inconsistent state otherwise.
@@ -734,5 +736,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         fontMetrics->doubleUnderlinePos.x = doubleUnderlinePosTopU16;
         fontMetrics->doubleUnderlinePos.y = doubleUnderlinePosBottomU16;
         fontMetrics->thinLineWidth = thinLineWidthU16;
+        fontMetrics->ligatureOverhangTriggerLeft = cellWidth / -2;
+        fontMetrics->ligatureOverhangTriggerRight = cellWidth + cellWidth / 2;
     }
 }

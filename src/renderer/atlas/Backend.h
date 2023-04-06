@@ -12,7 +12,7 @@ namespace Microsoft::Console::Render::Atlas
 #define ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION 0
 
     // Redraw at display refresh rate at all times. This helps with shader debugging.
-#define ATLAS_DEBUG_CONTINUOUS_REDRAW 0
+#define ATLAS_DEBUG_CONTINUOUS_REDRAW 1
 
     // Disables the use of DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT.
     // This helps with benchmarking the application as it'll run beyond display refresh rate.

@@ -301,7 +301,7 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     }
     if (cellCountChanged)
     {
-        _recreateBackgroundColorBitmap(p.s->cellCount);
+        _recreateColorBitmap(p.s->cellCount);
     }
 
     // Similar to _renderTargetView above, we might have to recreate the _customRenderTargetView whenever _swapChainManager
@@ -493,15 +493,15 @@ void BackendD3D::_recreateCustomRenderTargetView(u16x2 targetSize)
     THROW_IF_FAILED(_device->CreateRenderTargetView(_customOffscreenTexture.get(), nullptr, _renderTargetView.addressof()));
 }
 
-void BackendD3D::_recreateBackgroundColorBitmap(u16x2 cellCount)
+void BackendD3D::_recreateColorBitmap(u16x2 cellCount)
 {
     // Avoid memory usage spikes by releasing memory first.
-    _backgroundBitmap.reset();
-    _backgroundBitmapView.reset();
+    _colorBitmap.reset();
+    _colorBitmapView.reset();
 
     const D3D11_TEXTURE2D_DESC desc{
         .Width = cellCount.x,
-        .Height = cellCount.y,
+        .Height = cellCount.y * 2u,
         .MipLevels = 1,
         .ArraySize = 1,
         .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
@@ -510,9 +510,9 @@ void BackendD3D::_recreateBackgroundColorBitmap(u16x2 cellCount)
         .BindFlags = D3D11_BIND_SHADER_RESOURCE,
         .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
     };
-    THROW_IF_FAILED(_device->CreateTexture2D(&desc, nullptr, _backgroundBitmap.addressof()));
-    THROW_IF_FAILED(_device->CreateShaderResourceView(_backgroundBitmap.get(), nullptr, _backgroundBitmapView.addressof()));
-    _backgroundBitmapGeneration = {};
+    THROW_IF_FAILED(_device->CreateTexture2D(&desc, nullptr, _colorBitmap.addressof()));
+    THROW_IF_FAILED(_device->CreateShaderResourceView(_colorBitmap.get(), nullptr, _colorBitmapView.addressof()));
+    _colorBitmapGenerations = {};
 }
 
 void BackendD3D::_d2dRenderTargetUpdateFontSettings(const FontSettings& font) const noexcept
@@ -562,7 +562,7 @@ void BackendD3D::_setupDeviceContextState(const RenderingPayload& p)
     _deviceContext->RSSetViewports(1, &viewport);
 
     // PS: Pixel Shader
-    ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
+    ID3D11ShaderResourceView* resources[]{ _colorBitmapView.get(), _glyphAtlasView.get() };
     _deviceContext->PSSetShader(_pixelShader.get(), nullptr, 0);
     _deviceContext->PSSetConstantBuffers(0, 1, _psConstantBuffer.addressof());
     _deviceContext->PSSetShaderResources(0, 2, &resources[0]);
@@ -770,7 +770,7 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
             THROW_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(&color, nullptr, _brush.put()));
         }
 
-        ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
+        ID3D11ShaderResourceView* resources[]{ _colorBitmapView.get(), _glyphAtlasView.get() };
         _deviceContext->PSSetShaderResources(0, 2, &resources[0]);
 
         _rectPackerData = Buffer<stbrp_node>{ u };
@@ -785,6 +785,8 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
 
     _d2dBeginDrawing();
     _d2dRenderTarget->Clear();
+
+    _fontChangedResetGlyphAtlas = false;
 }
 
 void BackendD3D::_markStateChange(ID3D11BlendState* blendState)
@@ -833,6 +835,8 @@ void BackendD3D::_flushQuads(const RenderingPayload& p)
     {
         return;
     }
+
+    _uploadColorBitmap(p);
 
     // TODO: Shrink instances buffer
     if (_instancesCount > _instanceBufferCapacity)
@@ -887,6 +891,37 @@ void BackendD3D::_flushQuads(const RenderingPayload& p)
     _instancesCount = 0;
 }
 
+void BackendD3D::_uploadColorBitmap(const RenderingPayload& p)
+{
+    // Not uploading the bitmap halves (!) the GPU load for any given frame.
+    // We don't need to upload if the background and foreground bitmaps are the same
+    // or when the _drawText() function determined that no glyph has the LigatureMarker,
+    // because then the pixel shader doesn't need to access the foreground bitmap anyways.
+    if (_colorBitmapGenerations[0] == p.colorBitmapGenerations[0] &&
+        (_colorBitmapGenerations[1] == p.colorBitmapGenerations[1] || _skipForegroundBitmapUpload))
+    {
+        return;
+    }
+
+    D3D11_MAPPED_SUBRESOURCE mapped{};
+    THROW_IF_FAILED(_deviceContext->Map(_colorBitmap.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+
+    auto src = std::bit_cast<const char*>(&*p.colorBitmap.begin());
+    const auto srcEnd = std::bit_cast<const char*>(&*p.colorBitmap.end());
+    const auto srcStride = p.colorBitmapRowStride * sizeof(u32);
+    auto dst = static_cast<char*>(mapped.pData);
+
+    while (src < srcEnd)
+    {
+        memcpy(dst, src, srcStride);
+        src += srcStride;
+        dst += mapped.RowPitch;
+    }
+
+    _deviceContext->Unmap(_colorBitmap.get(), 0);
+    _colorBitmapGenerations = p.colorBitmapGenerations;
+}
+
 void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
 {
     // We use the viewport size of the terminal as the initial estimate for the amount of instances we'll see.
@@ -922,27 +957,6 @@ void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
 
 void BackendD3D::_drawBackground(const RenderingPayload& p)
 {
-    if (_backgroundBitmapGeneration != p.backgroundBitmapGeneration)
-    {
-        D3D11_MAPPED_SUBRESOURCE mapped{};
-        THROW_IF_FAILED(_deviceContext->Map(_backgroundBitmap.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
-
-        const auto srcStride = p.backgroundBitmapStride * sizeof(u32);
-#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-        auto src = reinterpret_cast<const char*>(p.backgroundBitmap.data());
-        auto dst = static_cast<char*>(mapped.pData);
-
-        for (size_t i = 0; i < p.s->cellCount.y; ++i)
-        {
-            memcpy(dst, src, srcStride);
-            src += srcStride;
-            dst += mapped.RowPitch;
-        }
-
-        _deviceContext->Unmap(_backgroundBitmap.get(), 0);
-        _backgroundBitmapGeneration = p.backgroundBitmapGeneration;
-    }
-
     _appendQuad() = {
         .shadingType = ShadingType::Background,
         .size = p.s->targetSize,
@@ -953,9 +967,11 @@ void BackendD3D::_drawText(RenderingPayload& p)
 {
     if (_fontChangedResetGlyphAtlas)
     {
-        _fontChangedResetGlyphAtlas = false;
         _resetGlyphAtlas(p);
     }
+
+    auto shadingTypeAccumulator = ShadingType::Default;
+    _skipForegroundBitmapUpload = false;
 
     til::CoordType dirtyTop = til::CoordTypeMax;
     til::CoordType dirtyBottom = til::CoordTypeMin;
@@ -985,7 +1001,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
             {
                 const auto [glyphEntry, inserted] = fontFaceEntry.glyphs.insert(row->glyphIndices[x]);
 
-                if (inserted && !_drawGlyph(p, fontFaceEntry, glyphEntry))
+                if (inserted && !_drawGlyph(p, row->glyphAdvances[x], fontFaceEntry, glyphEntry))
                 {
                     // A deadlock in this retry loop is detected in _drawGlyphPrepareRetry.
                     //
@@ -1018,6 +1034,8 @@ void BackendD3D::_drawText(RenderingPayload& p)
                         .texcoord = glyphEntry.data.texcoord,
                         .color = row->colors[x],
                     };
+
+                    shadingTypeAccumulator |= glyphEntry.data.shadingType;
                 }
 
                 baselineX += row->glyphAdvances[x];
@@ -1041,9 +1059,11 @@ void BackendD3D::_drawText(RenderingPayload& p)
     }
 
     _d2dEndDrawing();
+
+    _skipForegroundBitmapUpload = WI_IsFlagClear(shadingTypeAccumulator, ShadingType::LigatureMarker);
 }
 
-bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry)
+bool BackendD3D::_drawGlyph(const RenderingPayload& p, f32 glyphAdvance, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry)
 {
     if (!fontFaceEntry.fontFace)
     {
@@ -1134,11 +1154,15 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
         t.m11 = 2.0f;
         t.m22 = lineRendition >= LineRendition::DoubleHeightTop ? 2.0f : 1.0f;
         _d2dRenderTarget->SetTransform(&t);
+        glyphAdvance *= 2;
     }
 
     const auto restoreTransform = wil::scope_exit([&]() noexcept {
-        static constexpr D2D1_MATRIX_3X2_F identity{ .m11 = 1, .m22 = 1 };
-        _d2dRenderTarget->SetTransform(&identity);
+        if (transform)
+        {
+            static constexpr D2D1_MATRIX_3X2_F identity{ .m11 = 1, .m22 = 1 };
+            _d2dRenderTarget->SetTransform(&identity);
+        }
     });
 
     // This calculates the black box of the glyph, or in other words,
@@ -1197,8 +1221,19 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
 
     _d2dBeginDrawing();
     const auto colorGlyph = DrawGlyphRun(_d2dRenderTarget.get(), _d2dRenderTarget4.get(), p.dwriteFactory4.get(), baselineOrigin, &glyphRun, _brush.get());
+    auto shadingType = colorGlyph ? ShadingType::Passthrough : _textShadingType;
 
-    glyphEntry.data.shadingType = colorGlyph ? ShadingType::Passthrough : _textShadingType;
+    // Ligatures are drawn with strict cell-wise foreground color, while other text allows colors to overhang
+    // their cells. This makes sure that italics and such retain their color and don't look "cut off".
+    //
+    // The former condition makes sure to exclude diacritics and such from being considered a ligature,
+    // while the latter condition-pair makes sure to exclude regular BMP wide glyphs that overlap a little.
+    if (rect.w >= p.s->font->cellSize.x && (bl <= p.s->font->ligatureOverhangTriggerLeft || br >= p.s->font->ligatureOverhangTriggerRight))
+    {
+        shadingType |= ShadingType::LigatureMarker;
+    }
+
+    glyphEntry.data.shadingType = shadingType;
     glyphEntry.data.offset.x = bl;
     glyphEntry.data.offset.y = bt;
     glyphEntry.data.size.x = rect.w;
@@ -1445,14 +1480,14 @@ void BackendD3D::_drawCursorPart1(const RenderingPayload& p)
     }
 
     const auto cursorColor = p.s->cursor->cursorColor;
-    const auto offset = p.cursorRect.top * p.backgroundBitmapStride;
+    const auto offset = p.cursorRect.top * p.colorBitmapRowStride;
 
     for (auto x1 = p.cursorRect.left; x1 < p.cursorRect.right; ++x1)
     {
         const auto x0 = x1;
-        const auto bg = p.backgroundBitmap[offset + x1] | 0xff000000;
+        const auto bg = p.colorBitmap[offset + x1] | 0xff000000;
 
-        for (; x1 < p.cursorRect.right && (p.backgroundBitmap[offset + x1] | 0xff000000) == bg; ++x1)
+        for (; x1 < p.cursorRect.right && (p.colorBitmap[offset + x1] | 0xff000000) == bg; ++x1)
         {
         }
 
@@ -1714,7 +1749,7 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
         _deviceContext->VSSetConstantBuffers(0, 1, _vsConstantBuffer.addressof());
 
         // PS: Pixel Shader
-        ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
+        ID3D11ShaderResourceView* resources[]{ _colorBitmapView.get(), _glyphAtlasView.get() };
         _deviceContext->PSSetShader(_pixelShader.get(), nullptr, 0);
         _deviceContext->PSSetConstantBuffers(0, 1, _psConstantBuffer.addressof());
         _deviceContext->PSSetShaderResources(0, 2, &resources[0]);

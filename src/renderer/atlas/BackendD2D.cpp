@@ -177,10 +177,10 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
 
 void BackendD2D::_drawBackground(const RenderingPayload& p) noexcept
 {
-    if (_backgroundBitmapGeneration != p.backgroundBitmapGeneration)
+    if (_backgroundBitmapGeneration != p.colorBitmapGenerations[0])
     {
-        _backgroundBitmap->CopyFromMemory(nullptr, p.backgroundBitmap.data(), gsl::narrow_cast<UINT32>(p.backgroundBitmapStride * sizeof(u32)));
-        _backgroundBitmapGeneration = p.backgroundBitmapGeneration;
+        _backgroundBitmap->CopyFromMemory(nullptr, p.colorBitmap.data(), gsl::narrow_cast<UINT32>(p.colorBitmapRowStride * sizeof(u32)));
+        _backgroundBitmapGeneration = p.colorBitmapGenerations[0];
     }
 
     // If the terminal was 120x30 cells and 1200x600 pixels large, this would draw the
@@ -546,7 +546,7 @@ void BackendD2D::_drawCursorPart1(const RenderingPayload& p)
             _resizeCursorBitmap(p, cursorSize);
         }
 
-        const auto backgroundBitmapOffset = p.cursorRect.top * p.backgroundBitmapStride;
+        const auto backgroundBitmapOffset = p.cursorRect.top * p.colorBitmapRowStride;
         const auto cellSizeX = static_cast<f32>(p.s->font->cellSize.x);
         const auto cellSizeY = static_cast<f32>(p.s->font->cellSize.y);
         const auto offsetX = p.cursorRect.left * cellSizeX;
@@ -562,7 +562,7 @@ void BackendD2D::_drawCursorPart1(const RenderingPayload& p)
 
         for (til::CoordType x = 0; x < cursorSize.width; ++x)
         {
-            const auto bg = p.backgroundBitmap[backgroundBitmapOffset + x];
+            const auto bg = p.colorBitmap[backgroundBitmapOffset + x];
             const auto brush = _brushWithColor(bg ^ 0x3f3f3f);
             srcRect.left = x * cellSizeX;
             srcRect.right = srcRect.left + cellSizeX;

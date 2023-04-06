@@ -12,32 +12,32 @@
 
 namespace Microsoft::Console::Render::Atlas
 {
-#define ATLAS_FLAG_OPS(type, underlying)                                                       \
-    constexpr type operator~(type v) noexcept                                                  \
+#define ATLAS_FLAG_OPS(type, underlying, attr)                                                 \
+    attr constexpr type operator~(type v) noexcept                                             \
     {                                                                                          \
         return static_cast<type>(~static_cast<underlying>(v));                                 \
     }                                                                                          \
-    constexpr type operator|(type lhs, type rhs) noexcept                                      \
+    attr constexpr type operator|(type lhs, type rhs) noexcept                                 \
     {                                                                                          \
         return static_cast<type>(static_cast<underlying>(lhs) | static_cast<underlying>(rhs)); \
     }                                                                                          \
-    constexpr type operator&(type lhs, type rhs) noexcept                                      \
+    attr constexpr type operator&(type lhs, type rhs) noexcept                                 \
     {                                                                                          \
         return static_cast<type>(static_cast<underlying>(lhs) & static_cast<underlying>(rhs)); \
     }                                                                                          \
-    constexpr type operator^(type lhs, type rhs) noexcept                                      \
+    attr constexpr type operator^(type lhs, type rhs) noexcept                                 \
     {                                                                                          \
         return static_cast<type>(static_cast<underlying>(lhs) ^ static_cast<underlying>(rhs)); \
     }                                                                                          \
-    constexpr void operator|=(type& lhs, type rhs) noexcept                                    \
+    attr constexpr void operator|=(type& lhs, type rhs) noexcept                               \
     {                                                                                          \
         lhs = lhs | rhs;                                                                       \
     }                                                                                          \
-    constexpr void operator&=(type& lhs, type rhs) noexcept                                    \
+    attr constexpr void operator&=(type& lhs, type rhs) noexcept                               \
     {                                                                                          \
         lhs = lhs & rhs;                                                                       \
     }                                                                                          \
-    constexpr void operator^=(type& lhs, type rhs) noexcept                                    \
+    attr constexpr void operator^=(type& lhs, type rhs) noexcept                               \
     {                                                                                          \
         lhs = lhs ^ rhs;                                                                       \
     }
@@ -330,6 +330,8 @@ namespace Microsoft::Console::Render::Atlas
         u16 thinLineWidth = 0;
         u16 dpi = 96;
         AntialiasingMode antialiasingMode = DefaultAntialiasingMode;
+        til::CoordType ligatureOverhangTriggerLeft = 0;
+        til::CoordType ligatureOverhangTriggerRight = 0;
 
         std::vector<uint16_t> softFontPattern;
         til::size softFontCellSize;
@@ -381,7 +383,7 @@ namespace Microsoft::Console::Render::Atlas
         Bold = 0b01,
         Italic = 0b10,
     };
-    ATLAS_FLAG_OPS(FontRelevantAttributes, u8)
+    ATLAS_FLAG_OPS(FontRelevantAttributes, u8, )
 
     struct FontMapping
     {
@@ -462,12 +464,17 @@ namespace Microsoft::Console::Render::Atlas
         // They get rotated around when we scroll the buffer. Technically
         // we could also implement scrolling by using a circular array.
         Buffer<ShapedRow*> rows;
-        // This stride (width) of the backgroundBitmap is a "count" of u32 and not in bytes.
-        size_t backgroundBitmapStride = 0;
-        Buffer<u32, 32> backgroundBitmap;
-        // 1 ensures that the backends redraw the background, even if the background is
-        // entirely black, just like `backgroundBitmap` is all back after it gets created.
-        til::generation_t backgroundBitmapGeneration{ 1 };
+        // This contains two viewport-sized bitmaps back to back, sort of like a Texture2DArray.
+        // The first NxM (for instance 120x30 pixel) chunk contains background colors and the
+        // second chunk contains foreground colors. The distance in u32 items between the start
+        // and the begin of the foreground bitmap is equal to colorBitmapDepthStride.
+        Buffer<u32, 32> colorBitmap;
+        // This stride of the colorBitmap is a "count" of u32 and not in bytes.
+        size_t colorBitmapRowStride = 0;
+        size_t colorBitmapDepthStride = 0;
+        // A generation of 1 ensures that the backends redraw the background on the first Present().
+        // The 1st entry in this array corresponds to the background and the 2nd to the foreground bitmap.
+        std::array<til::generation_t, 2> colorBitmapGenerations{ 1, 1 };
         // In columns/rows.
         til::rect cursorRect;
         // In pixel.

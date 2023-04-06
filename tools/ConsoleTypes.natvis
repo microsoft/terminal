@@ -107,10 +107,9 @@
     </Type>
 
     <Type Name="til::generational&lt;*&gt;">
-        <DisplayString>{{ gen={_generation._value}, {_value} }}</DisplayString>
-        <Expand>
-            <ExpandedItem>_value</ExpandedItem>
-        </Expand>
+        <AlternativeType Name="$T1" />
+        <SmartPointer Usage="Minimal">&amp;_value</SmartPointer>
+        <DisplayString>{{ generation={_generation._value} }}</DisplayString>
     </Type>
 
     <Type Name="til::linear_flat_set&lt;*,*&gt;">

@@ -64,7 +64,14 @@ namespace Microsoft::Console::Render::Atlas
             Passthrough = 3,
             DashedLine = 4,
             SolidFill = 5,
+
+            // The shader normally uses per-glyph coloring for text, because this allows us to retain the color of
+            // glyphs even if they're slightly out of their cell's bounds. This improves the look of fonts with large descenders/ascenders, etc., in particular for complex Unicode text.
+            // The shader uses strict per-cell coloring for common coding ligatures like ===
+            // because they're drawn as
+            LigatureMarker = 0x80000000,
         };
+        ATLAS_FLAG_OPS(ShadingType, u32, friend);
 
         // NOTE: Don't initialize any members in this struct. This ensures that no
         // zero-initialization needs to occur when we allocate large buffers of this object.
@@ -170,7 +177,7 @@ namespace Microsoft::Console::Render::Atlas
         void _recreateCustomShader(const RenderingPayload& p);
         void _recreateCustomRenderTargetView(u16x2 targetSize);
         void _d2dRenderTargetUpdateFontSettings(const FontSettings& font) const noexcept;
-        void _recreateBackgroundColorBitmap(u16x2 cellCount);
+        void _recreateColorBitmap(u16x2 cellCount);
         void _recreateConstBuffer(const RenderingPayload& p) const;
         void _setupDeviceContextState(const RenderingPayload& p);
         void _debugUpdateShaders(const RenderingPayload& p) noexcept;
@@ -178,16 +185,17 @@ namespace Microsoft::Console::Render::Atlas
         void _debugDumpRenderTarget(const RenderingPayload& p);
         void _d2dBeginDrawing() noexcept;
         void _d2dEndDrawing();
-        void _resetGlyphAtlas(const RenderingPayload& p);
+        __declspec(noinline) void _resetGlyphAtlas(const RenderingPayload& p);
         void _markStateChange(ID3D11BlendState* blendState);
         QuadInstance& _getLastQuad() noexcept;
         QuadInstance& _appendQuad();
         __declspec(noinline) void _bumpInstancesSize();
         void _flushQuads(const RenderingPayload& p);
         __declspec(noinline) void _recreateInstanceBuffers(const RenderingPayload& p);
+        void _uploadColorBitmap(const RenderingPayload& p);
         void _drawBackground(const RenderingPayload& p);
         void _drawText(RenderingPayload& p);
-        __declspec(noinline) [[nodiscard]] bool _drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
+        __declspec(noinline) [[nodiscard]] bool _drawGlyph(const RenderingPayload& p, f32 glyphAdvance, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         bool _drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         void _drawGlyphPrepareRetry(const RenderingPayload& p);
         void _splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
@@ -238,9 +246,10 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID3D11SamplerState> _customShaderSamplerState;
         std::chrono::steady_clock::time_point _customShaderStartTime;
 
-        wil::com_ptr<ID3D11Texture2D> _backgroundBitmap;
-        wil::com_ptr<ID3D11ShaderResourceView> _backgroundBitmapView;
-        til::generation_t _backgroundBitmapGeneration;
+        wil::com_ptr<ID3D11Texture2D> _colorBitmap;
+        wil::com_ptr<ID3D11ShaderResourceView> _colorBitmapView;
+        std::array<til::generation_t, 2> _colorBitmapGenerations;
+        bool _skipForegroundBitmapUpload = false;
 
         wil::com_ptr<ID3D11Texture2D> _glyphAtlas;
         wil::com_ptr<ID3D11ShaderResourceView> _glyphAtlasView;
