@@ -25,13 +25,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct TermControl : TermControlT<TermControl>
     {
-        TermControl(IControlSettings settings,
-                    Control::IControlAppearance unfocusedAppearance,
-                    TerminalConnection::ITerminalConnection connection);
+        TermControl(Control::ControlInteractivity content);
+
+        TermControl(IControlSettings settings, Control::IControlAppearance unfocusedAppearance, TerminalConnection::ITerminalConnection connection);
+
+        static Control::TermControl NewControlByAttachingContent(Control::ControlInteractivity content, const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
         winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings);
         winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
         IControlSettings Settings() const;
+
+        uint64_t ContentId() const;
 
         hstring GetProfileName() const;
 
@@ -91,7 +95,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void ToggleShaderEffects();
 
-        winrt::fire_and_forget RenderEngineSwapChainChanged(IInspectable sender, IInspectable args);
+        void RenderEngineSwapChainChanged(IInspectable sender, IInspectable args);
         void _AttachDxgiSwapChainToXaml(HANDLE swapChainHandle);
         winrt::fire_and_forget _RendererEnteredErrorState(IInspectable sender, IInspectable args);
 
@@ -124,6 +128,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool ReadOnly() const noexcept;
         void ToggleReadOnly();
+        void SetReadOnly(const bool readOnlyState);
 
         static Control::MouseButtonState GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
         static unsigned int GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point);
@@ -140,21 +145,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool RawWriteChar(const wchar_t character, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
         void RawWriteString(const winrt::hstring& text);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        void Detach();
 
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
 
-        PROJECTED_FORWARDED_TYPED_EVENT(CopyToClipboard,        IInspectable, Control::CopyToClipboardEventArgs, _core, CopyToClipboard);
-        PROJECTED_FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs, _core, TitleChanged);
-        PROJECTED_FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable, _core, TabColorChanged);
-        PROJECTED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable, _core, TaskbarProgressChanged);
-        PROJECTED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
-        PROJECTED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs, _core, ShowWindowChanged);
-        PROJECTED_FORWARDED_TYPED_EVENT(CloseTerminalRequested, IInspectable, IInspectable, _core, CloseTerminalRequested);
+        // UNDER NO CIRCUMSTANCES SHOULD YOU ADD A (PROJECTED_)FORWARDED_TYPED_EVENT HERE
+        // Those attach the handler to the core directly, and will explode if
+        // the core ever gets detached & reattached to another window.
+        BUBBLED_FORWARDED_TYPED_EVENT(CopyToClipboard,        IInspectable, Control::CopyToClipboardEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(CloseTerminalRequested, IInspectable, IInspectable);
 
-        PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
+        BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
 
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(RaiseNotice,               IInspectable, Control::NoticeEventArgs);
@@ -164,11 +173,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
         TYPED_EVENT(Initialized,               Control::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(WarningBell,               IInspectable, IInspectable);
-
         TYPED_EVENT(KeySent,                   IInspectable, Control::KeySentEventArgs);
         TYPED_EVENT(CharSent,                  IInspectable, Control::CharSentEventArgs);
         TYPED_EVENT(StringSent,                IInspectable, Control::StringSentEventArgs);
-
         // clang-format on
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, BackgroundBrush, _PropertyChangedHandlers, nullptr);
@@ -227,6 +234,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _showMarksInScrollbar{ false };
 
         bool _isBackgroundLight{ false };
+        bool _detached{ false };
+
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalPrimaryElements{ nullptr };
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSecondaryElements{ nullptr };
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedPrimaryElements{ nullptr };
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedSecondaryElements{ nullptr };
 
         inline bool _IsClosing() const noexcept
         {
@@ -240,6 +253,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return _closing;
         }
 
+        void _initializeForAttach(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
+
         void _UpdateSettingsFromUIThread();
         void _UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance);
         void _ApplyUISettings();
@@ -252,7 +267,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static bool _isColorLight(til::color bg) noexcept;
         void _changeBackgroundOpacity();
 
-        bool _InitializeTerminal();
+        enum InitializeReason : bool
+        {
+            Create,
+            Reattach
+        };
+        bool _InitializeTerminal(const InitializeReason reason);
         void _SetFontSize(int fontSize);
         void _TappedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
         void _KeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
@@ -324,7 +344,45 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
+
         void _pasteTextWithBroadcast(const winrt::hstring& text);
+
+        void _contextMenuHandler(IInspectable sender, Control::ContextMenuRequestedEventArgs args);
+
+        void _PasteCommandHandler(const IInspectable& sender, const IInspectable& args);
+        void _CopyCommandHandler(const IInspectable& sender, const IInspectable& args);
+        void _SearchCommandHandler(const IInspectable& sender, const IInspectable& args);
+
+        struct Revokers
+        {
+            Control::ControlCore::ScrollPositionChanged_revoker coreScrollPositionChanged;
+            Control::ControlCore::WarningBell_revoker WarningBell;
+            Control::ControlCore::CursorPositionChanged_revoker CursorPositionChanged;
+            Control::ControlCore::RendererEnteredErrorState_revoker RendererEnteredErrorState;
+            Control::ControlCore::BackgroundColorChanged_revoker BackgroundColorChanged;
+            Control::ControlCore::FontSizeChanged_revoker FontSizeChanged;
+            Control::ControlCore::TransparencyChanged_revoker TransparencyChanged;
+            Control::ControlCore::RaiseNotice_revoker RaiseNotice;
+            Control::ControlCore::HoveredHyperlinkChanged_revoker HoveredHyperlinkChanged;
+            Control::ControlCore::FoundMatch_revoker FoundMatch;
+            Control::ControlCore::UpdateSelectionMarkers_revoker UpdateSelectionMarkers;
+            Control::ControlCore::OpenHyperlink_revoker coreOpenHyperlink;
+            Control::ControlCore::CopyToClipboard_revoker CopyToClipboard;
+            Control::ControlCore::TitleChanged_revoker TitleChanged;
+            Control::ControlCore::TabColorChanged_revoker TabColorChanged;
+            Control::ControlCore::TaskbarProgressChanged_revoker TaskbarProgressChanged;
+            Control::ControlCore::ConnectionStateChanged_revoker ConnectionStateChanged;
+            Control::ControlCore::ShowWindowChanged_revoker ShowWindowChanged;
+            Control::ControlCore::CloseTerminalRequested_revoker CloseTerminalRequested;
+            // These are set up in _InitializeTerminal
+            Control::ControlCore::RendererWarning_revoker RendererWarning;
+            Control::ControlCore::SwapChainChanged_revoker SwapChainChanged;
+
+            Control::ControlInteractivity::OpenHyperlink_revoker interactivityOpenHyperlink;
+            Control::ControlInteractivity::ScrollPositionChanged_revoker interactivityScrollPositionChanged;
+            Control::ControlInteractivity::PasteFromClipboard_revoker PasteFromClipboard;
+            Control::ControlInteractivity::ContextMenuRequested_revoker ContextMenuRequested;
+        } _revokers{};
     };
 }
 

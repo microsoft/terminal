@@ -169,75 +169,21 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        std::deque<std::unique_ptr<IInputEvent>> partialEvents;
-        if (!IsUnicode)
-        {
-            if (inputBuffer.IsReadPartialByteSequenceAvailable())
-            {
-                partialEvents.push_back(inputBuffer.FetchReadPartialByteSequence(IsPeek));
-            }
-        }
-
-        size_t amountToRead;
-        if (FAILED(SizeTSub(eventReadCount, partialEvents.size(), &amountToRead)))
-        {
-            return STATUS_INTEGER_OVERFLOW;
-        }
-        std::deque<std::unique_ptr<IInputEvent>> readEvents;
-        auto Status = inputBuffer.Read(readEvents,
-                                       amountToRead,
-                                       IsPeek,
-                                       true,
-                                       IsUnicode,
-                                       false);
+        const auto Status = inputBuffer.Read(outEvents,
+                                             eventReadCount,
+                                             IsPeek,
+                                             true,
+                                             IsUnicode,
+                                             false);
 
         if (CONSOLE_STATUS_WAIT == Status)
         {
-            FAIL_FAST_IF(!(readEvents.empty()));
             // If we're told to wait until later, move all of our context
             // to the read data object and send it back up to the server.
             waiter = std::make_unique<DirectReadData>(&inputBuffer,
                                                       &readHandleState,
                                                       eventReadCount,
-                                                      std::move(partialEvents));
-        }
-        else if (NT_SUCCESS(Status))
-        {
-            // split key events to oem chars if necessary
-            if (!IsUnicode)
-            {
-                try
-                {
-                    SplitToOem(readEvents);
-                }
-                CATCH_LOG();
-            }
-
-            // combine partial and readEvents
-            while (!partialEvents.empty())
-            {
-                readEvents.push_front(std::move(partialEvents.back()));
-                partialEvents.pop_back();
-            }
-
-            // move events over
-            for (size_t i = 0; i < eventReadCount; ++i)
-            {
-                if (readEvents.empty())
-                {
-                    break;
-                }
-                outEvents.push_back(std::move(readEvents.front()));
-                readEvents.pop_front();
-            }
-
-            // store partial event if necessary
-            if (!readEvents.empty())
-            {
-                inputBuffer.StoreReadPartialByteSequence(std::move(readEvents.front()));
-                readEvents.pop_front();
-                FAIL_FAST_IF(!(readEvents.empty()));
-            }
+                                                      std::move(outEvents));
         }
         return Status;
     }
@@ -1125,7 +1071,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                                      Cursor::CURSOR_SMALL_SIZE,
                                                      &ScreenInfo);
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         goto Exit;
     }
@@ -1135,7 +1081,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                                                 Information->ShareMode,
                                                                 handle));
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         goto Exit;
     }
@@ -1143,7 +1089,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
     SCREEN_INFORMATION::s_InsertScreenBuffer(ScreenInfo);
 
 Exit:
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         delete ScreenInfo;
     }

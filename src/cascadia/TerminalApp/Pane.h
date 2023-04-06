@@ -51,6 +51,13 @@ enum class SplitState : int
     Vertical = 2
 };
 
+struct PaneResources
+{
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush focusedBorderBrush{ nullptr };
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush unfocusedBorderBrush{ nullptr };
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush broadcastBorderBrush{ nullptr };
+};
+
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
@@ -91,8 +98,8 @@ public:
         std::optional<uint32_t> focusedPaneId;
         uint32_t panesCreated;
     };
-    BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId);
-    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane() const;
+    BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId, const bool asContent = false, const bool asMovePane = false);
+    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane(const bool asContent = false) const;
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                         const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
@@ -141,7 +148,7 @@ public:
     void BroadcastChar(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const wchar_t vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
     void BroadcastString(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const winrt::hstring& text);
 
-    static void SetupResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+    void UpdateResources(const PaneResources& resources);
 
     // Method Description:
     // - A helper method for ad-hoc recursion on a pane tree. Walks the pane
@@ -222,9 +229,8 @@ private:
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
     winrt::Windows::UI::Xaml::Controls::Border _borderFirst{};
     winrt::Windows::UI::Xaml::Controls::Border _borderSecond{};
-    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
-    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
-    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_broadcastBorderBrush;
+
+    PaneResources _themeResources;
 
 #pragma region Properties that need to be transferred between child / parent panes upon splitting / closing
     std::shared_ptr<Pane> _firstChild{ nullptr };

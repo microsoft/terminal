@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include <precomp.h>
+#include "precomp.h"
 
 #include "telemetry.hpp"
 
@@ -289,10 +289,12 @@ void TermTelemetry::WriteFinalTraceLog() const
                                       TraceLoggingUInt32(_uiTimesUsed[DECCARA], "DECCARA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECRARA], "DECRARA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECCRA], "DECCRA"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECRQPSR], "DECRQPSR"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECFRA], "DECFRA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECERA], "DECERA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECSERA], "DECSERA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECSACE], "DECSACE"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECRQCRA], "DECRQCRA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECINVM], "DECINVM"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECAC], "DECAC"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECPS], "DECPS"),

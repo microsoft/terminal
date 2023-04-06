@@ -126,6 +126,10 @@
   <data name="SplitPaneParentCommandName" xml:space="preserve">
     <value>Split Pane...</value>
   </data>
+  <data name="ApplicationDisplayNamePortable" xml:space="preserve">
+    <value>Terminal (Portable)</value>
+    <comment>This display name is used when the Terminal application is running in a "portable" mode, where settings are not stored in a shared location.</comment>
+  </data>
   <data name="ApplicationDisplayNameUnpackaged" xml:space="preserve">
     <value>Terminal (Unpackaged)</value>
     <comment>This display name is used when the application's name cannot be determined</comment>
@@ -165,6 +169,10 @@
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>Move tab {0}</value>
     <comment>{0} will be replaced with a "forward" / "backward"</comment>
+  </data>
+  <data name="MoveTabToWindowCommandKey" xml:space="preserve">
+    <value>Move tab to window "{0}"</value>
+    <comment>{0} will be replaced with a user-specified name of a window</comment>
   </data>
   <data name="MoveTabDirectionForward" xml:space="preserve">
     <value>forward</value>
@@ -471,6 +479,12 @@
   </data>
   <data name="TogglePaneReadOnlyCommandKey" xml:space="preserve">
     <value>Toggle pane read-only mode</value>
+  </data>
+  <data name="EnablePaneReadOnlyCommandKey" xml:space="preserve">
+    <value>Enable pane read-only mode</value>
+  </data>
+  <data name="DisablePaneReadOnlyCommandKey" xml:space="preserve">
+    <value>Disable pane read-only mode</value>
   </data>
   <data name="ToggleShaderEffectsCommandKey" xml:space="preserve">
     <value>Toggle terminal visual effects</value>

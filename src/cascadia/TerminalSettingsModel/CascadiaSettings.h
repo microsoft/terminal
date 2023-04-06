@@ -105,6 +105,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::hstring DefaultSettingsPath();
         static winrt::hstring ApplicationDisplayName();
         static winrt::hstring ApplicationVersion();
+        static bool IsPortableMode();
         static void ExportFile(winrt::hstring path, winrt::hstring content);
 
         CascadiaSettings() noexcept = default;
@@ -142,6 +143,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() noexcept;
         Model::DefaultTerminal CurrentDefaultTerminal() noexcept;
         void CurrentDefaultTerminal(const Model::DefaultTerminal& terminal);
+
+        void ExpandCommands();
 
     private:
         static const std::filesystem::path& _settingsPath();

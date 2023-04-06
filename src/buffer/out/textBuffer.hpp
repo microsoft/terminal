@@ -89,6 +89,9 @@ public:
     TextBufferTextIterator GetTextDataAt(const til::point at, const Microsoft::Console::Types::Viewport limit) const;
 
     // Text insertion functions
+    static void ConsumeGrapheme(std::wstring_view& chars) noexcept;
+    void WriteLine(til::CoordType row, bool wrapAtEOL, const TextAttribute& attributes, RowWriteState& state);
+
     OutputCellIterator Write(const OutputCellIterator givenIt);
 
     OutputCellIterator Write(const OutputCellIterator givenIt,
@@ -216,6 +219,8 @@ public:
     interval_tree::IntervalTree<til::point, size_t> GetPatterns(const til::CoordType firstRow, const til::CoordType lastRow) const;
 
 private:
+    static wil::unique_virtualalloc_ptr<std::byte> _allocateBuffer(til::size sz, const TextAttribute& attributes, std::vector<ROW>& rows);
+
     void _UpdateSize();
     void _SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept;
     til::point _GetPreviousFromCursor() const noexcept;

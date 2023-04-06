@@ -94,14 +94,35 @@ namespace Microsoft::Console::Render
         return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0; \
     }
 
-#define ATLAS_FLAG_OPS(type, underlying)                                                                                                                    \
-    friend constexpr type operator~(type v) noexcept { return static_cast<type>(~static_cast<underlying>(v)); }                                             \
-    friend constexpr type operator|(type lhs, type rhs) noexcept { return static_cast<type>(static_cast<underlying>(lhs) | static_cast<underlying>(rhs)); } \
-    friend constexpr type operator&(type lhs, type rhs) noexcept { return static_cast<type>(static_cast<underlying>(lhs) & static_cast<underlying>(rhs)); } \
-    friend constexpr type operator^(type lhs, type rhs) noexcept { return static_cast<type>(static_cast<underlying>(lhs) ^ static_cast<underlying>(rhs)); } \
-    friend constexpr void operator|=(type& lhs, type rhs) noexcept { lhs = lhs | rhs; }                                                                     \
-    friend constexpr void operator&=(type& lhs, type rhs) noexcept { lhs = lhs & rhs; }                                                                     \
-    friend constexpr void operator^=(type& lhs, type rhs) noexcept { lhs = lhs ^ rhs; }
+#define ATLAS_FLAG_OPS(type, underlying)                                                       \
+    friend constexpr type operator~(type v) noexcept                                           \
+    {                                                                                          \
+        return static_cast<type>(~static_cast<underlying>(v));                                 \
+    }                                                                                          \
+    friend constexpr type operator|(type lhs, type rhs) noexcept                               \
+    {                                                                                          \
+        return static_cast<type>(static_cast<underlying>(lhs) | static_cast<underlying>(rhs)); \
+    }                                                                                          \
+    friend constexpr type operator&(type lhs, type rhs) noexcept                               \
+    {                                                                                          \
+        return static_cast<type>(static_cast<underlying>(lhs) & static_cast<underlying>(rhs)); \
+    }                                                                                          \
+    friend constexpr type operator^(type lhs, type rhs) noexcept                               \
+    {                                                                                          \
+        return static_cast<type>(static_cast<underlying>(lhs) ^ static_cast<underlying>(rhs)); \
+    }                                                                                          \
+    friend constexpr void operator|=(type& lhs, type rhs) noexcept                             \
+    {                                                                                          \
+        lhs = lhs | rhs;                                                                       \
+    }                                                                                          \
+    friend constexpr void operator&=(type& lhs, type rhs) noexcept                             \
+    {                                                                                          \
+        lhs = lhs & rhs;                                                                       \
+    }                                                                                          \
+    friend constexpr void operator^=(type& lhs, type rhs) noexcept                             \
+    {                                                                                          \
+        lhs = lhs ^ rhs;                                                                       \
+    }
 
         template<typename T>
         struct vec2
@@ -412,8 +433,8 @@ namespace Microsoft::Console::Render
             wil::com_ptr<IDWriteFontCollection> fontCollection;
             wil::com_ptr<IDWriteFontFamily> fontFamily;
             std::wstring fontName;
-            float baselineInDIP = 0.0f;
-            float fontSizeInDIP = 0.0f;
+            f32 baselineInDIP = 0.0f;
+            f32 fontSizeInDIP = 0.0f;
             f32 advanceScale = 0;
             u16x2 cellSize;
             u16 fontWeight = 0;

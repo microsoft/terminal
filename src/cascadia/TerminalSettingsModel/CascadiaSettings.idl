@@ -15,6 +15,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         static String SettingsPath { get; };
         static String DefaultSettingsPath { get; };
+        static Boolean IsPortableMode { get; };
 
         static String ApplicationDisplayName { get; };
         static String ApplicationVersion { get; };
@@ -53,5 +54,7 @@ namespace Microsoft.Terminal.Settings.Model
         static Boolean IsDefaultTerminalSet { get; };
         IObservableVector<DefaultTerminal> DefaultTerminals { get; };
         DefaultTerminal CurrentDefaultTerminal;
+
+        void ExpandCommands();
     }
 }
