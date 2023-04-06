@@ -23,6 +23,13 @@ namespace Microsoft.Terminal.Control
         void GotFocus();
         void LostFocus();
 
+        UInt64 Id { get; };
+
+        void AttachToNewControl(Microsoft.Terminal.Control.IKeyBindings keyBindings);
+        void Detach();
+
+        void Close();
+
         InteractivityAutomationPeer OnCreateAutomationPeer();
 
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
@@ -65,6 +72,12 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
 
+        event Windows.Foundation.TypedEventHandler<Object, Object> Closed;
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
+
+        // Used to communicate to the TermControl, but not necessarily higher up in the stack
+        event Windows.Foundation.TypedEventHandler<Object, ContextMenuRequestedEventArgs> ContextMenuRequested;
 
     };
 }

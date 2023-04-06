@@ -32,17 +32,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return std::equal(left.rbegin(), left.rend(), right.rbegin(), right.rend());
         };
 
-        Windows::Foundation::IInspectable inspectable{};
-
-        const auto name = static_cast<HSTRING>(winrt::get_abi(info.ClassName()));
-        const auto pointer = winrt::put_abi(inspectable);
-
-#pragma warning(push)
-#pragma warning(disable : 26490)
-        // C++/WinRT just loves its void**, nothing we can do here _except_ reinterpret_cast
-        auto raw = reinterpret_cast<::IInspectable**>(pointer);
-#pragma warning(pop)
-
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
         // A couple short-circuits, for connections that _we_ implement.

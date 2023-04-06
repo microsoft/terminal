@@ -34,7 +34,6 @@ DNE
 DONTADDTORECENT
 DWMSBT
 DWMWA
-DWMWA
 DWORDLONG
 endfor
 ENDSESSION
@@ -55,6 +54,8 @@ GETMOUSEHOVERTIME
 Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
+hinternet
+HINTERNET
 hotkeys
 href
 hrgn
@@ -159,6 +160,7 @@ REGCLS
 requal
 RETURNCMD
 rfind
+RLO
 ROOTOWNER
 roundf
 RSHIFT
@@ -215,6 +217,8 @@ Viewbox
 virtualalloc
 wcsstr
 wcstoui
+WDJ
+winhttp
 winmain
 winsta
 winstamin
@@ -222,6 +226,7 @@ wmemcmp
 wpc
 WSF
 wsregex
+WWH
 wwinmain
 xchg
 XDocument
@@ -247,3 +252,4 @@ xtree
 xutility
 YIcon
 YMax
+zwstring

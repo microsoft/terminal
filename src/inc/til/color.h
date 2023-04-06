@@ -9,7 +9,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // a number of other color types.
 #pragma warning(push)
     // we can't depend on GSL here, so we use static_cast for explicit narrowing
-#pragma warning(disable : 26472)
+#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, gsl::narrow_cast or gsl::narrow (type.1).
+#pragma warning(disable : 26495) // Variable 'til::color::<unnamed-tag>::abgr' is uninitialized. Always initialize a member variable (type.6).
     struct color
     {
         // Clang (10) has no trouble optimizing the COLORREF conversion operator, below, to a

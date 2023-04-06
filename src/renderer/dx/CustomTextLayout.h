@@ -23,7 +23,7 @@ namespace Microsoft::Console::Render
 
         CustomTextLayout(const gsl::not_null<DxFontRenderData*> fontRenderData);
 
-        [[nodiscard]] HRESULT STDMETHODCALLTYPE AppendClusters(const gsl::span<const ::Microsoft::Console::Render::Cluster> clusters);
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE AppendClusters(const std::span<const ::Microsoft::Console::Render::Cluster> clusters);
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE Reset() noexcept;
 

@@ -131,17 +131,15 @@ CATCH_RETURN();
 
 // Routine Description:
 // - This routine retrieves the output buffer associated with this message. It will allocate one if needed.
-//   The allocated will be bigger than the actual output size by the requested factor.
 // - Before completing the message, ReleaseMessageBuffers must be called to free any allocation performed by this routine.
 // Arguments:
-// - Factor - Supplies the factor to multiply the allocated buffer by.
+// - Message - Supplies the message whose output buffer will be retrieved.
 // - Buffer - Receives a pointer to the output buffer.
 // - Size - Receives the size, in bytes, of the output buffer.
-//  Return Value:
+// Return Value:
 // - HRESULT indicating if the output buffer was successfully retrieved.
-[[nodiscard]] HRESULT _CONSOLE_API_MSG::GetAugmentedOutputBuffer(const ULONG cbFactor,
-                                                                 _Outptr_result_bytebuffer_(*pcbSize) PVOID* const ppvBuffer,
-                                                                 _Out_ PULONG pcbSize)
+[[nodiscard]] HRESULT _CONSOLE_API_MSG::GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer,
+                                                        _Out_ ULONG* const pcbSize)
 try
 {
     // Initialize the buffer if it hasn't been initialized yet.
@@ -150,7 +148,6 @@ try
         RETURN_HR_IF(E_FAIL, State.WriteOffset > Descriptor.OutputSize);
 
         auto cbWriteSize = Descriptor.OutputSize - State.WriteOffset;
-        RETURN_IF_FAILED(ULongMult(cbWriteSize, cbFactor, &cbWriteSize));
 
         // If we were previously called with a huge buffer we have an equally large _outputBuffer.
         // We shouldn't just keep this huge buffer around, if no one needs it anymore.
@@ -177,21 +174,6 @@ try
 CATCH_RETURN();
 
 // Routine Description:
-// - This routine retrieves the output buffer associated with this message. It will allocate one if needed.
-// - Before completing the message, ReleaseMessageBuffers must be called to free any allocation performed by this routine.
-// Arguments:
-// - Message - Supplies the message whose output buffer will be retrieved.
-// - Buffer - Receives a pointer to the output buffer.
-// - Size - Receives the size, in bytes, of the output buffer.
-// Return Value:
-// - HRESULT indicating if the output buffer was successfully retrieved.
-[[nodiscard]] HRESULT _CONSOLE_API_MSG::GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer,
-                                                        _Out_ ULONG* const pcbSize)
-{
-    return GetAugmentedOutputBuffer(1, ppvBuffer, pcbSize);
-}
-
-// Routine Description:
 // - This routine releases output or input buffers that might have been allocated
 //   during the processing of the given message. If the current completion status
 //   of the message indicates success, this routine also writes the output buffer
@@ -213,7 +195,7 @@ CATCH_RETURN();
 
     if (State.OutputBuffer != nullptr)
     {
-        if (NT_SUCCESS(Complete.IoStatus.Status))
+        if (SUCCEEDED_NTSTATUS(Complete.IoStatus.Status))
         {
             CD_IO_OPERATION IoOperation;
             IoOperation.Identifier = Descriptor.Identifier;

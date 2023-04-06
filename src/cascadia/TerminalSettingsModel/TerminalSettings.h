@@ -126,6 +126,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Text::FontWeight, FontWeight);
         INHERITABLE_SETTING(Model::TerminalSettings, IFontAxesMap, FontAxes);
         INHERITABLE_SETTING(Model::TerminalSettings, IFontFeatureMap, FontFeatures);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, CellWidth);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, CellHeight);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Model::ColorScheme, AppliedColorScheme);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, BackgroundImage);
@@ -160,10 +162,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::TerminalSettings, bool, AutoMarkPrompts, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ShowMarks, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, RightClickContextMenu, false);
 
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;
-        gsl::span<Microsoft::Terminal::Core::Color> _getColorTableImpl();
+        std::span<Microsoft::Terminal::Core::Color> _getColorTableImpl();
 
         static winrt::com_ptr<implementation::TerminalSettings> _CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::Profile& profile);
         void _ApplyProfileSettings(const Model::Profile& profile);
