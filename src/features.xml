@@ -68,6 +68,15 @@
     </feature>
 
     <feature>
+        <name>Feature_LegacyConhost</name>
+        <description>conhost should support ForceV2=false, and try to load conhostv1.dll</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
         <name>Feature_AtlasEngine</name>
         <description>If enabled, AtlasEngine is used by default</description>
         <stage>AlwaysEnabled</stage>
