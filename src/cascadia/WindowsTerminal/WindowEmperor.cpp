@@ -176,8 +176,6 @@ void WindowEmperor::_windowStartedHandlerPostXAML(const std::shared_ptr<WindowTh
     // the Terminal window, making it visible BEFORE the XAML island is actually
     // ready to be drawn. We want to wait till the app's Initialized event
     // before we make the window visible.
-    //
-    // TODO: GH#14957 - use AllowSetForeground from the original wt.exe instead
 
     // Now that the window is ready to go, we can add it to our list of windows,
     // because we know it will be well behaved.
