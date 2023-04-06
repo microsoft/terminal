@@ -76,7 +76,7 @@ bool WindowEmperor::HandleCommandlineArgs()
     // Get the requested initial state of the window from our startup info. For
     // something like `start /min`, this will set the wShowWindow member to
     // SW_SHOWMINIMIZED. We'll need to make sure is bubbled all the way through,
-    // so we can open a new window with the stame state.
+    // so we can open a new window with the same state.
     STARTUPINFOW si;
     GetStartupInfoW(&si);
     const auto showWindow = si.wShowWindow;
