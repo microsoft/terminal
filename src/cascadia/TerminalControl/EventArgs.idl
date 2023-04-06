@@ -81,6 +81,7 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass ShowWindowArgs
     {
+        ShowWindowArgs(Boolean showOrHide);
         Boolean ShowOrHide { get; };
     }
     

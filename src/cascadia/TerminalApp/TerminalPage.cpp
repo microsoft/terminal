@@ -1,4 +1,4 @@
-
+ShowWindowChanged
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
@@ -24,7 +24,7 @@
 #include "TabRowControl.h"
 #include "Utils.h"
 
-using namespace winrt;
+    using namespace winrt;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
@@ -3568,7 +3568,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Asks the window to change its maximized state.
-    void TerminalPage::RequestSetMaximized(bool newMaximized)
+    void TerminalPage::_RequestSetMaximized(bool newMaximized)
     {
         if (_isMaximized == newMaximized)
         {
@@ -3576,6 +3576,20 @@ namespace winrt::TerminalApp::implementation
         }
         _isMaximized = newMaximized;
         _ChangeMaximizeRequestedHandlers(*this, nullptr);
+    }
+
+    // Set the window to be minimized. This will bubble it up to the window
+    // layer, and propogate down to the term controls. This should only be used
+    // for an INITIAL defterm connection. We don't really want a `start /min
+    // cmd` to glom to an existing wt and minimize it.
+    void TerminalPage::_RequestSetMinimized()
+    {
+        // Two parts here:
+        // * We need to tell the window layer to minimize the window
+        // * We need to inform the control that we want it to act like it's minimized
+        Microsoft::Terminal::Control::ShowWindowArgs args(false /* show */);
+        _ShowWindowChangedHandlers(*this, args);
+        WindowVisibilityChanged(false);
     }
 
     HRESULT TerminalPage::_OnNewConnection(const ConptyConnection& connection)
@@ -3634,9 +3648,16 @@ namespace winrt::TerminalApp::implementation
             // Make sure that there were no other tabs already existing (in
             // the case that we are in glomming mode), because we don't want
             // to be maximizing other existing sessions that did not ask for it.
-            if (_tabs.Size() == 1 && connection.ShowWindow() == SW_SHOWMAXIMIZED)
+            if (_tabs.Size())
             {
-                RequestSetMaximized(true);
+                if (connection.ShowWindow() == SW_SHOWMAXIMIZED)
+                {
+                    _RequestSetMaximized(true);
+                }
+                else if (connection.ShowWindow() == SW_SHOWMINIMIZED)
+                {
+                    _RequestSetMinimized();
+                }
             }
             return S_OK;
         }

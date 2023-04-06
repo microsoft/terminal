@@ -596,7 +596,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<SetMaximizedArgs>())
         {
-            RequestSetMaximized(realArgs.IsMaximized());
+            _RequestSetMaximized(realArgs.IsMaximized());
             args.Handled(true);
         }
     }

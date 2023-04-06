@@ -130,7 +130,6 @@ namespace winrt::TerminalApp::implementation
         void SetFullscreen(bool);
         void SetFocusMode(const bool inFocusMode);
         void Maximized(bool newMaximized);
-        void RequestSetMaximized(bool newMaximized);
 
         void SetStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
 
@@ -523,6 +522,9 @@ namespace winrt::TerminalApp::implementation
         void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
         void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);
         void _PopulateContextMenu(const IInspectable& sender, const bool withSelection);
+
+        void _RequestSetMaximized(bool newMaximized);
+        void _RequestSetMinimized();
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
