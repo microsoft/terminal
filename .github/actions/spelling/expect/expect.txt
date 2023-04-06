@@ -2283,6 +2283,8 @@ xunit
 xutr
 XVIRTUALSCREEN
 XWalk
+xwwyzz
+xxyyzz
 yact
 YCast
 YCENTER
