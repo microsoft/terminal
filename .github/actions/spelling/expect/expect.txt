@@ -2,6 +2,7 @@ aabbcc
 ABANDONFONT
 abbcc
 ABCDEFGHIJKLMNOPQRSTUVWXY
+ABCF
 abgr
 abi
 ABORTIFHUNG
@@ -37,6 +38,7 @@ ansicpg
 ANSISYS
 ANSISYSRC
 ANSISYSSC
+answerback
 antialiasing
 ANull
 anycpu
@@ -175,7 +177,6 @@ CConsole
 CConversion
 CCRT
 cdd
-CDeclaration
 CEdit
 CELLSIZE
 cfae
@@ -193,7 +194,6 @@ chh
 chk
 CHT
 Cic
-CLA
 Clcompile
 CLE
 cleartype
@@ -257,6 +257,7 @@ condrv
 conechokey
 conemu
 configurability
+confusables
 conhost
 conime
 conimeinfo
@@ -331,7 +332,7 @@ Cspace
 csrmsg
 CSRSS
 csrutil
-cstyle
+CSTYLE
 CSwitch
 CTerminal
 CText
@@ -408,6 +409,7 @@ DECAUPSS
 DECAWM
 DECBKM
 DECCARA
+DECCIR
 DECCKM
 DECCKSR
 DECCOLM
@@ -437,9 +439,12 @@ DECRC
 DECREQTPARM
 DECRLM
 DECRPM
+DECRQCRA
 DECRQM
+DECRQPSR
 DECRQSS
 DECRQTSR
+DECRSPS
 decrst
 DECSACE
 DECSASD
@@ -460,6 +465,7 @@ DECSTBM
 DECSTGLT
 DECSTR
 DECSWL
+DECTABSR
 DECTCEM
 DECXCPR
 DEFAPP
@@ -479,7 +485,6 @@ defterm
 DELAYLOAD
 DELETEONRELEASE
 Delt
-demoable
 depersist
 deprioritized
 deserializers
@@ -536,7 +541,6 @@ DSSCL
 DSwap
 DTest
 DTTERM
-DUMMYUNIONNAME
 dup'ed
 dvi
 dwl
@@ -589,7 +593,6 @@ ETW
 EUDC
 EVENTID
 eventing
-everytime
 evflags
 evt
 execd
@@ -611,8 +614,12 @@ FACESIZE
 FAILIFTHERE
 fastlink
 fcharset
+FDEA
 fdw
+FECF
+FEEF
 fesb
+FFAF
 FFDE
 FFrom
 fgbg
@@ -797,7 +804,6 @@ HIBYTE
 hicon
 HIDEWINDOW
 hinst
-Hirots
 HISTORYBUFS
 HISTORYNODUP
 HISTORYSIZE
@@ -809,6 +815,8 @@ hkl
 HKLM
 hlocal
 hlsl
+HMB
+HMK
 hmod
 hmodule
 hmon
@@ -898,7 +906,6 @@ INSERTMODE
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
 INTERNALNAME
-inthread
 intsafe
 INVALIDARG
 INVALIDATERECT
@@ -1117,6 +1124,7 @@ Mip
 MMBB
 mmcc
 MMCPL
+MMIX
 mmsystem
 MNC
 MNOPQ
@@ -1255,14 +1263,12 @@ ntm
 nto
 ntrtl
 ntstatus
-ntsubauth
 NTSYSCALLAPI
 nttree
 nturtl
 ntuser
 NTVDM
 ntverp
-NTWIN
 nugetversions
 nullability
 nullness
@@ -1301,8 +1307,6 @@ opencode
 opencon
 openconsole
 openconsoleproxy
-OPENIF
-OPENLINK
 openps
 openvt
 ORIGINALFILENAME
@@ -1355,9 +1359,7 @@ pcg
 pch
 PCIDLIST
 PCIS
-PCLIENT
 PCLONG
-PCOBJECT
 pcon
 PCONSOLE
 PCONSOLEENDTASK
@@ -1369,7 +1371,6 @@ pcshell
 PCSHORT
 PCSR
 PCSTR
-PCUNICODE
 PCWCH
 PCWCHAR
 PCWSTR
@@ -1418,7 +1419,6 @@ PLOGICAL
 pnm
 PNMLINK
 pntm
-PNTSTATUS
 POBJECT
 Podcast
 POINTSLIST
@@ -1437,7 +1437,6 @@ ppf
 ppguid
 ppidl
 PPROC
-PPROCESS
 ppropvar
 ppsi
 ppsl
@@ -1501,7 +1500,6 @@ ptrs
 ptsz
 PTYIn
 PUCHAR
-PUNICODE
 pwch
 PWDDMCONSOLECONTEXT
 pws
@@ -1563,7 +1561,6 @@ REGISTEROS
 REGISTERVDM
 regkey
 REGSTR
-reingest
 RELBINPATH
 remoting
 renamer
@@ -1776,6 +1773,7 @@ srv
 srvinit
 srvpipe
 ssa
+startdir
 STARTF
 STARTUPINFO
 STARTUPINFOEX
@@ -1858,6 +1856,7 @@ TDP
 TEAMPROJECT
 tearoff
 Teb
+Techo
 tellp
 teraflop
 terminalcore
@@ -1949,6 +1948,7 @@ trx
 tsattrs
 tsf
 tsgr
+tsm
 TStr
 TSTRFORMAT
 TSub
@@ -2000,7 +2000,6 @@ unittesting
 unittests
 unk
 unknwn
-unmark
 UNORM
 unparseable
 unregistering
@@ -2284,8 +2283,6 @@ xunit
 xutr
 XVIRTUALSCREEN
 XWalk
-xwwyzz
-xxyyzz
 yact
 YCast
 YCENTER

@@ -64,9 +64,9 @@ namespace Microsoft.Terminal.Control
                     IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        Boolean Initialize(Double actualWidth,
-                           Double actualHeight,
-                           Double compositionScale);
+        Boolean Initialize(Single actualWidth,
+                           Single actualHeight,
+                           Single compositionScale);
 
         Microsoft.Terminal.TerminalConnection.ConnectionInformation ConnectionInfo{ get; set; };
 
@@ -77,6 +77,8 @@ namespace Microsoft.Terminal.Control
         IControlAppearance FocusedAppearance { get; };
         IControlAppearance UnfocusedAppearance { get; };
         Boolean HasUnfocusedAppearance();
+
+        UInt64 SwapChainHandle { get; };
 
         Windows.Foundation.Size FontSize { get; };
         String FontFaceName { get; };
@@ -108,11 +110,13 @@ namespace Microsoft.Terminal.Control
 
         void ResetFontSize();
         void AdjustFontSize(Single fontSizeDelta);
-        void SizeChanged(Double width, Double height);
-        void ScaleChanged(Double scale);
+        void SizeChanged(Single width, Single height);
+        void ScaleChanged(Single scale);
+        void SizeOrScaleChanged(Single width, Single height, Single scale);
 
         void ToggleShaderEffects();
         void ToggleReadOnlyMode();
+        void SetReadOnlyMode(Boolean readOnlyState);
 
         Microsoft.Terminal.Core.Point CursorPosition { get; };
         void ResumeRendering();
@@ -128,7 +132,6 @@ namespace Microsoft.Terminal.Control
         String HoveredUriText { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };
 
-        void Close();
         void BlinkCursor();
         Boolean IsInReadOnlyMode { get; };
         Boolean CursorOn;
@@ -164,5 +167,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, UpdateSelectionMarkersEventArgs> UpdateSelectionMarkers;
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
     };
 }

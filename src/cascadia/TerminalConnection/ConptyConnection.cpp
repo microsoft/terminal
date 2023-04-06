@@ -5,6 +5,7 @@
 #include "ConptyConnection.h"
 
 #include <conpty-static.h>
+#include <til/env.h>
 #include <winternl.h>
 
 #include "CTerminalHandoff.h"
@@ -95,7 +96,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         });
 
         // Populate the environment map with the current environment.
-        RETURN_IF_FAILED(Utils::UpdateEnvironmentMapW(environment));
+        if (_reloadEnvironmentVariables)
+        {
+            til::env refreshedEnvironment;
+            refreshedEnvironment.regenerate();
+
+            for (auto& [key, value] : refreshedEnvironment.as_map())
+            {
+                environment.try_emplace(key, std::move(value));
+            }
+        }
+        else
+        {
+            RETURN_IF_FAILED(Utils::UpdateEnvironmentMapW(environment));
+        }
 
         {
             // Convert connection Guid to string and ignore the enclosing '{}'.
@@ -295,6 +309,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 _passthroughMode = winrt::unbox_value_or<bool>(settings.TryLookup(L"passthroughMode").try_as<Windows::Foundation::IPropertyValue>(), _passthroughMode);
             }
             _inheritCursor = winrt::unbox_value_or<bool>(settings.TryLookup(L"inheritCursor").try_as<Windows::Foundation::IPropertyValue>(), _inheritCursor);
+            _reloadEnvironmentVariables = winrt::unbox_value_or<bool>(settings.TryLookup(L"reloadEnvironmentVariables").try_as<Windows::Foundation::IPropertyValue>(),
+                                                                      _reloadEnvironmentVariables);
         }
 
         if (_guid == guid{})

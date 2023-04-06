@@ -34,7 +34,6 @@ DNE
 DONTADDTORECENT
 DWMSBT
 DWMWA
-DWMWA
 DWORDLONG
 endfor
 ENDSESSION
@@ -161,6 +160,7 @@ REGCLS
 requal
 RETURNCMD
 rfind
+RLO
 ROOTOWNER
 roundf
 RSHIFT
@@ -252,3 +252,4 @@ xtree
 xutility
 YIcon
 YMax
+zwstring
