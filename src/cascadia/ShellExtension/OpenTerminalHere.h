@@ -58,6 +58,7 @@ struct
 private:
     HRESULT GetLocationFromSite(IShellItem** location) const noexcept;
     HRESULT GetBestLocationFromSelectionOrSite(IShellItemArray* psiArray, IShellItem** location) const noexcept;
+    bool IsControlPressed();
 
     wil::com_ptr_nothrow<IUnknown> site_;
 };

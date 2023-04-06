@@ -49,6 +49,78 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    double AppearanceViewModel::LineHeight() const noexcept
+    {
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        const auto cellHeight = fontInfo.CellHeight();
+        const auto str = cellHeight.c_str();
+
+        auto& errnoRef = errno; // Nonzero cost, pay it once.
+        errnoRef = 0;
+
+        wchar_t* end;
+        const auto value = std::wcstod(str, &end);
+
+        return str == end || errnoRef == ERANGE ? NAN : value;
+    }
+
+    void AppearanceViewModel::LineHeight(const double value)
+    {
+        std::wstring str;
+
+        if (value >= 0.1 && value <= 10.0)
+        {
+            str = fmt::format(FMT_STRING(L"{:.6g}"), value);
+        }
+
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+
+        if (fontInfo.CellHeight() != str)
+        {
+            if (str.empty())
+            {
+                fontInfo.ClearCellHeight();
+            }
+            else
+            {
+                fontInfo.CellHeight(str);
+            }
+            _NotifyChanges(L"HasLineHeight", L"LineHeight");
+        }
+    }
+
+    bool AppearanceViewModel::HasLineHeight() const
+    {
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        return fontInfo.HasCellHeight();
+    }
+
+    void AppearanceViewModel::ClearLineHeight()
+    {
+        LineHeight(NAN);
+    }
+
+    Model::FontConfig AppearanceViewModel::LineHeightOverrideSource() const
+    {
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        return fontInfo.CellHeightOverrideSource();
+    }
+
+    void AppearanceViewModel::SetFontWeightFromDouble(double fontWeight)
+    {
+        FontWeight(Converters::DoubleToFontWeight(fontWeight));
+    }
+
+    void AppearanceViewModel::SetBackgroundImageOpacityFromPercentageValue(double percentageValue)
+    {
+        BackgroundImageOpacity(Converters::PercentageValueToPercentage(percentageValue));
+    }
+
+    void AppearanceViewModel::SetBackgroundImagePath(winrt::hstring path)
+    {
+        BackgroundImagePath(path);
+    }
+
     bool AppearanceViewModel::UseDesktopBGImage()
     {
         return BackgroundImagePath() == L"desktopWallpaper";
@@ -83,11 +155,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return BackgroundImagePath() != L"";
     }
 
+    void AppearanceViewModel::ClearColorScheme()
+    {
+        ClearDarkColorSchemeName();
+        _NotifyChanges(L"CurrentColorScheme");
+    }
+
+    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme()
+    {
+        const auto schemeName{ DarkColorSchemeName() };
+        const auto allSchemes{ SchemesList() };
+        for (const auto& scheme : allSchemes)
+        {
+            if (scheme.Name() == schemeName)
+            {
+                return scheme;
+            }
+        }
+        // This Appearance points to a color scheme that was renamed or deleted.
+        // Fallback to the first one in the list.
+        return allSchemes.GetAt(0);
+    }
+
+    void AppearanceViewModel::CurrentColorScheme(const ColorSchemeViewModel& val)
+    {
+        DarkColorSchemeName(val.Name());
+        LightColorSchemeName(val.Name());
+    }
+
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 
     Appearances::Appearances() :
-        _ShowAllFonts{ false },
-        _ColorSchemeList{ single_threaded_observable_vector<ColorScheme>() }
+        _ShowAllFonts{ false }
     {
         InitializeComponent();
 
@@ -96,10 +195,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // > .NET rounds to 12 significant digits when displaying doubles, so we will [...]
             // ...obviously not do that, because this is an UI element for humans. This prevents
             // issues when displaying 32-bit floats, because WinUI is unaware about their existence.
-            SignificantDigitsNumberRounder rounder;
-            rounder.SignificantDigits(6);
-            // BODGY: Depends on WinUI internals.
-            _fontSizeBox().NumberFormatter().as<DecimalFormatter>().NumberRounder(rounder);
+            IncrementNumberRounder rounder;
+            rounder.Increment(1e-6);
+
+            for (const auto& box : { _fontSizeBox(), _lineHeightBox() })
+            {
+                // BODGY: Depends on WinUI internals.
+                box.NumberFormatter().as<DecimalFormatter>().NumberRounder(rounder);
+            }
         }
 
         INITIALIZE_BINDABLE_ENUM_SETTING(CursorShape, CursorStyle, winrt::Microsoft::Terminal::Core::CursorStyle, L"Profile_CursorShape", L"Content");
@@ -224,12 +327,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (Appearance())
         {
-            const auto& colorSchemeMap{ Appearance().Schemes() };
-            for (const auto& pair : colorSchemeMap)
-            {
-                _ColorSchemeList.Append(pair.Value());
-            }
-
             const auto& biAlignmentVal{ static_cast<int32_t>(Appearance().BackgroundImageAlignment()) };
             for (const auto& biButton : _BIAlignmentButtons)
             {
@@ -317,7 +414,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto lifetime = get_strong();
 
-        const auto parentHwnd{ reinterpret_cast<HWND>(Appearance().WindowRoot().GetHostingWindow()) };
+        const auto parentHwnd{ reinterpret_cast<HWND>(WindowRoot().GetHostingWindow()) };
         auto file = co_await OpenImagePicker(parentHwnd);
         if (!file.empty())
         {
@@ -351,27 +448,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 biButton.IsChecked(biButtonAlignment == val);
             }
         }
-    }
-
-    ColorScheme Appearances::CurrentColorScheme()
-    {
-        const auto schemeName{ Appearance().DarkColorSchemeName() };
-        if (const auto scheme{ Appearance().Schemes().TryLookup(schemeName) })
-        {
-            return scheme;
-        }
-        else
-        {
-            // This Appearance points to a color scheme that was renamed or deleted.
-            // Fallback to Campbell.
-            return Appearance().Schemes().TryLookup(L"Campbell");
-        }
-    }
-
-    void Appearances::CurrentColorScheme(const ColorScheme& val)
-    {
-        Appearance().DarkColorSchemeName(val.Name());
-        Appearance().LightColorSchemeName(val.Name());
     }
 
     bool Appearances::IsVintageCursor() const

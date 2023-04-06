@@ -276,15 +276,16 @@ void Renderer::TriggerRedrawCursor(const til::point* const pcoord)
         // cells for the cursor, taking line rendition into account.
         const auto lineRendition = buffer.GetLineRendition(pcoord->y);
         const auto cursorWidth = _pData->IsCursorDoubleWidth() ? 2 : 1;
-        const til::inclusive_rect cursorRect = { pcoord->x, pcoord->y, pcoord->x + cursorWidth - 1, pcoord->y };
-        auto cursorView = Viewport::FromInclusive(BufferToScreenLine(cursorRect, lineRendition));
+        til::inclusive_rect cursorRect = { pcoord->x, pcoord->y, pcoord->x + cursorWidth - 1, pcoord->y };
+        cursorRect = BufferToScreenLine(cursorRect, lineRendition);
 
-        // The region is clamped within the viewport boundaries and we only
-        // trigger a redraw if the region is not empty.
+        // That region is then clipped within the viewport boundaries and we
+        // only trigger a redraw if the resulting region is not empty.
         auto view = _pData->GetViewport();
-        if (view.IsInBounds(cursorView))
+        auto updateRect = til::rect{ cursorRect };
+        if (view.TrimToViewport(&updateRect))
         {
-            const auto updateRect = view.ConvertToOrigin(cursorView).ToExclusive();
+            view.ConvertToOrigin(&updateRect);
             FOREACH_ENGINE(pEngine)
             {
                 LOG_IF_FAILED(pEngine->InvalidateCursor(&updateRect));
@@ -543,7 +544,7 @@ void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfo
 // - centeringHint - The horizontal extent that glyphs are offset from center.
 // Return Value:
 // - <none>
-void Renderer::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern, const til::size cellSize, const size_t centeringHint)
+void Renderer::UpdateSoftFont(const std::span<const uint16_t> bitPattern, const til::size cellSize, const size_t centeringHint)
 {
     // We reserve PUA code points U+EF20 to U+EF7F for soft fonts, but the range
     // that we test for in _IsSoftFontChar will depend on the size of the active
@@ -686,7 +687,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
     // This is effectively the number of cells on the visible screen that need to be redrawn.
     // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
-    gsl::span<const til::rect> dirtyAreas;
+    std::span<const til::rect> dirtyAreas;
     LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
 
     // This is to make sure any transforms are reset when this paint is finished.
@@ -912,55 +913,55 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 }
 
 // Method Description:
-// - Generates a IRenderEngine::GridLines structure from the values in the
+// - Generates a GridLines structure from the values in the
 //      provided textAttribute
 // Arguments:
 // - textAttribute: the TextAttribute to generate GridLines from.
 // Return Value:
 // - a GridLineSet containing all the gridline info from the TextAttribute
-IRenderEngine::GridLineSet Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcept
+GridLineSet Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcept
 {
     // Convert console grid line representations into rendering engine enum representations.
-    IRenderEngine::GridLineSet lines;
+    GridLineSet lines;
 
     if (textAttribute.IsTopHorizontalDisplayed())
     {
-        lines.set(IRenderEngine::GridLines::Top);
+        lines.set(GridLines::Top);
     }
 
     if (textAttribute.IsBottomHorizontalDisplayed())
     {
-        lines.set(IRenderEngine::GridLines::Bottom);
+        lines.set(GridLines::Bottom);
     }
 
     if (textAttribute.IsLeftVerticalDisplayed())
     {
-        lines.set(IRenderEngine::GridLines::Left);
+        lines.set(GridLines::Left);
     }
 
     if (textAttribute.IsRightVerticalDisplayed())
     {
-        lines.set(IRenderEngine::GridLines::Right);
+        lines.set(GridLines::Right);
     }
 
     if (textAttribute.IsCrossedOut())
     {
-        lines.set(IRenderEngine::GridLines::Strikethrough);
+        lines.set(GridLines::Strikethrough);
     }
 
     if (textAttribute.IsUnderlined())
     {
-        lines.set(IRenderEngine::GridLines::Underline);
+        lines.set(GridLines::Underline);
     }
 
     if (textAttribute.IsDoublyUnderlined())
     {
-        lines.set(IRenderEngine::GridLines::DoubleUnderline);
+        lines.set(GridLines::DoubleUnderline);
     }
 
     if (textAttribute.IsHyperlink())
     {
-        lines.set(IRenderEngine::GridLines::HyperlinkUnderline);
+        lines.set(GridLines::HyperlinkUnderline);
     }
     return lines;
 }
@@ -984,19 +985,10 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     auto lines = Renderer::s_GetGridlines(textAttribute);
 
     // For now, we dash underline patterns and switch to regular underline on hover
-    // Since we're only rendering pattern links on *hover*, there's no point in checking
-    // the pattern range if we aren't currently hovering.
-    if (_hoveredInterval.has_value())
+    if (_isHoveredHyperlink(textAttribute) || _isInHoveredInterval(coordTarget))
     {
-        const til::point coordTargetTil{ coordTarget };
-        if (_hoveredInterval->start <= coordTargetTil &&
-            coordTargetTil <= _hoveredInterval->stop)
-        {
-            if (_pData->GetPatternId(coordTarget).size() > 0)
-            {
-                lines.set(IRenderEngine::GridLines::Underline);
-            }
-        }
+        lines.reset(GridLines::HyperlinkUnderline);
+        lines.set(GridLines::Underline);
     }
 
     // Return early if there are no lines to paint.
@@ -1007,6 +999,18 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
         // Draw the lines
         LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
     }
+}
+
+bool Renderer::_isHoveredHyperlink(const TextAttribute& textAttribute) const noexcept
+{
+    return _hyperlinkHoveredId && _hyperlinkHoveredId == textAttribute.GetHyperlinkId();
+}
+
+bool Renderer::_isInHoveredInterval(const til::point coordTarget) const noexcept
+{
+    return _hoveredInterval &&
+           _hoveredInterval->start <= coordTarget && coordTarget <= _hoveredInterval->stop &&
+           _pData->GetPatternId(coordTarget).size() > 0;
 }
 
 // Routine Description:
@@ -1126,7 +1130,7 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
         srCaView.left += overlay.origin.x;
         srCaView.right += overlay.origin.x;
 
-        gsl::span<const til::rect> dirtyAreas;
+        std::span<const til::rect> dirtyAreas;
         LOG_IF_FAILED(engine.GetDirtyArea(dirtyAreas));
 
         for (const auto& rect : dirtyAreas)
@@ -1180,7 +1184,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 {
     try
     {
-        gsl::span<const til::rect> dirtyAreas;
+        std::span<const til::rect> dirtyAreas;
         LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
 
         // Get selection rectangles
@@ -1305,6 +1309,20 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
     THROW_HR_MSG(E_UNEXPECTED, "engines array is full");
 }
 
+void Renderer::RemoveRenderEngine(_In_ IRenderEngine* const pEngine)
+{
+    THROW_HR_IF_NULL(E_INVALIDARG, pEngine);
+
+    for (auto& p : _engines)
+    {
+        if (p == pEngine)
+        {
+            p = nullptr;
+            return;
+        }
+    }
+}
+
 // Method Description:
 // - Registers a callback for when the background color is changed
 // Arguments:
@@ -1345,6 +1363,15 @@ void Renderer::ResetErrorStateAndResume()
 {
     // because we're not stateful (we could be in the future), all we want to do is reenable painting.
     EnablePainting();
+}
+
+void Renderer::UpdateHyperlinkHoveredId(uint16_t id) noexcept
+{
+    _hyperlinkHoveredId = id;
+    FOREACH_ENGINE(pEngine)
+    {
+        pEngine->UpdateHyperlinkHoveredId(id);
+    }
 }
 
 void Renderer::UpdateLastHoveredInterval(const std::optional<PointTree::interval>& newInterval)

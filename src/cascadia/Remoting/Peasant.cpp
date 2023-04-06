@@ -8,6 +8,8 @@
 #include "GetWindowLayoutArgs.h"
 #include "Peasant.g.cpp"
 #include "../../types/inc/utils.hpp"
+#include "AttachRequest.g.cpp"
+#include "RequestReceiveContentArgs.g.cpp"
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
@@ -148,7 +150,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     }
 
     // Method Description:
-    // - Tell this window to display it's window ID. We'll raise a
+    // - Tell this window to display its window ID. We'll raise a
     //   DisplayWindowIdRequested event, which will get handled in the AppHost,
     //   and used to tell the app to display the ID toast.
     // Arguments:
@@ -275,6 +277,22 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 
+    void Peasant::AttachContentToWindow(Remoting::AttachRequest request)
+    {
+        try
+        {
+            _AttachRequestedHandlers(*this, request);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_AttachContentToWindow",
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    }
+
     void Peasant::Quit()
     {
         try
@@ -309,5 +327,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             return str;
         }
         return args->WindowLayoutJson();
+    }
+
+    void Peasant::SendContent(const Remoting::RequestReceiveContentArgs& args)
+    {
+        _SendContentRequestedHandlers(*this, args);
     }
 }

@@ -61,6 +61,8 @@
     X(winrt::Windows::UI::Text::FontWeight, FontWeight)                                                                                                  \
     X(IFontFeatureMap, FontFeatures)                                                                                                                     \
     X(IFontAxesMap, FontAxes)                                                                                                                            \
+    X(winrt::hstring, CellWidth)                                                                                                                         \
+    X(winrt::hstring, CellHeight)                                                                                                                        \
     X(winrt::Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr)                                                                           \
     X(winrt::hstring, Commandline)                                                                                                                       \
     X(winrt::hstring, StartingDirectory)                                                                                                                 \
@@ -71,4 +73,5 @@
     X(bool, SoftwareRendering, false)                                                                                                                    \
     X(bool, UseAtlasEngine, false)                                                                                                                       \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
-    X(bool, ShowMarks, false)
+    X(bool, ShowMarks, false)                                                                                                                            \
+    X(bool, RightClickContextMenu, false)

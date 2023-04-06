@@ -81,7 +81,6 @@ private:
     int _GetTopBorderHeight() const noexcept;
     LRESULT _dragBarNcHitTest(const til::point pointer);
 
-    [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
     [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnNcHitTest(POINT ptMouse) const noexcept;
     [[nodiscard]] LRESULT _OnPaint() noexcept;

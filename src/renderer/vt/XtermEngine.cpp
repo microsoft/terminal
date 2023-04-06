@@ -69,7 +69,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     }
     else
     {
-        gsl::span<const til::rect> dirty;
+        std::span<const til::rect> dirty;
         RETURN_IF_FAILED(GetDirtyArea(dirty));
 
         // If we have 0 or 1 dirty pieces in the area, set as appropriate.
@@ -504,7 +504,7 @@ CATCH_RETURN();
 //   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                    const til::point coord,
                                                    const bool /*trimLeft*/,
                                                    const bool lineWrapped) noexcept
