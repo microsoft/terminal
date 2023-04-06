@@ -1256,6 +1256,20 @@ winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::
     co_await winrt::resume_background();
     co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher(), winrt::Windows::UI::Core::CoreDispatcherPriority::Low);
     ShowWindow(_window->GetHandle(), nCmdShow);
+
+    // If we didn't start the window hidden (in one way or another), then try to
+    // pull ourselves to the foreground. Don't necessarily do a whole "summon",
+    // we don't really want to STEAL foreground if someone rightfully took it
+
+    const bool noForeground = nCmdShow == SW_SHOWMINIMIZED ||
+                              nCmdShow == SW_SHOWNOACTIVATE ||
+                              nCmdShow == SW_SHOWMINNOACTIVE ||
+                              nCmdShow == SW_SHOWNA ||
+                              nCmdShow == SW_FORCEMINIMIZE;
+    if (!noForeground)
+    {
+        SetForegroundWindow(_window->GetHandle());
+    }
 }
 
 winrt::TerminalApp::TerminalWindow AppHost::Logic()
