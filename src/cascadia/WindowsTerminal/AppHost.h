@@ -43,6 +43,8 @@ private:
 
     std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;
 
+    uint32_t _launchShowWindowCommand{ SW_NORMAL };
+
     void _preInit();
 
     void _HandleCommandlineArgs(const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args);
