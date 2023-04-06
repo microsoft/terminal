@@ -1,21 +1,36 @@
+[CmdletBinding(DefaultParameterSetName = 'AppX')]
 Param(
     [Parameter(Mandatory,
+      ParameterSetName = 'AppX',
       HelpMessage="Path to Terminal AppX")]
     [ValidateScript({Test-Path $_ -Type Leaf})]
     [string]
     $TerminalAppX,
 
     [Parameter(Mandatory,
+      ParameterSetName = 'Loose',
+      HelpMessage="Path to Terminal Loose Deployment")]
+    [ValidateScript({Test-Path $_ -Type Container})]
+    [string]
+    $TerminalDeploymentRoot,
+
+    [Parameter(Mandatory,
+      ParameterSetName = 'AppX',
+      HelpMessage="Path to Xaml AppX")]
+    [Parameter(Mandatory,
+      ParameterSetName = 'Loose',
       HelpMessage="Path to Xaml AppX")]
     [ValidateScript({Test-Path $_ -Type Leaf})]
     [string]
     $XamlAppX,
 
-    [Parameter(HelpMessage="Output Directory")]
+    [Parameter(HelpMessage="Output Directory", ParameterSetName='AppX')]
+    [Parameter(HelpMessage="Output Directory", ParameterSetName='Loose')]
     [string]
     $Destination = ".",
 
-    [Parameter(HelpMessage="Path to makeappx.exe")]
+    [Parameter(HelpMessage="Path to makeappx.exe", ParameterSetName='AppX')]
+    [Parameter(HelpMessage="Path to makeappx.exe", ParameterSetName='Loose')]
     [ValidateScript({Test-Path $_ -Type Leaf})]
     [string]
     $MakeAppxPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\MakeAppx.exe"
@@ -36,14 +51,17 @@ $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "tmp$([Convert]::ToString
 New-Item -ItemType Directory -Path $tempDir | Out-Null
 
 $XamlAppX = Get-Item $XamlAppX | Select-Object -Expand FullName
-$TerminalAppX = Get-Item $TerminalAppX | Select-Object -Expand FullName
 
 ########
 # Reading the AppX Manifest for preliminary info
 ########
 
-$appxManifestPath = Join-Path $tempDir AppxManifest.xml
-& tar.exe -x -f "$TerminalAppX" -C $tempDir AppxManifest.xml
+If ($TerminalAppX) {
+	$appxManifestPath = Join-Path $tempDir AppxManifest.xml
+	& tar.exe -x -f "$TerminalAppX" -C $tempDir AppxManifest.xml
+} ElseIf($TerminalDeploymentRoot) {
+	$appxManifestPath = Join-Path $TerminalDeploymentRoot AppxManifest.xml
+}
 $manifest = [xml](Get-Content $appxManifestPath)
 $pfn = $manifest.Package.Identity.Name
 $version = $manifest.Package.Identity.Version
@@ -57,13 +75,20 @@ $terminalDir = "terminal-{0}" -f ($version)
 ########
 
 $terminalAppPath = Join-Path $tempdir $terminalDir
-$xamlAppPath = Join-Path $tempdir "xaml"
-New-Item -ItemType Directory -Path $terminalAppPath | Out-Null
-New-Item -ItemType Directory -Path $xamlAppPath | Out-Null
-& $MakeAppxPath unpack /p $TerminalAppX /d $terminalAppPath /o | Out-Null
-If ($LASTEXITCODE -Ne 0) {
-    Throw "Unpacking $TerminalAppX failed"
+
+If ($TerminalAppX) {
+	$TerminalAppX = Get-Item $TerminalAppX | Select-Object -Expand FullName
+	New-Item -ItemType Directory -Path $terminalAppPath | Out-Null
+	& $MakeAppxPath unpack /p $TerminalAppX /d $terminalAppPath /o | Out-Null
+	If ($LASTEXITCODE -Ne 0) {
+	    Throw "Unpacking $TerminalAppX failed"
+	}
+} ElseIf ($TerminalDeploymentRoot) {
+	Copy-Item -Recurse -Path $TerminalDeploymentRoot -Destination $terminalAppPath
 }
+
+$xamlAppPath = Join-Path $tempdir "xaml"
+New-Item -ItemType Directory -Path $xamlAppPath | Out-Null
 & $MakeAppxPath unpack /p $XamlAppX /d $xamlAppPath /o | Out-Null
 If ($LASTEXITCODE -Ne 0) {
     Throw "Unpacking $XamlAppX failed"
