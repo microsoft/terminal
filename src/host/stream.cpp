@@ -436,16 +436,16 @@ try
 
     inputBuffer.ConsumeCached(unicode, writer);
 
-    // We don't need to wait for input if `ConsumeCached` read something already, which is
-    // indicated by the writer having been advanced (= it's shorter than the original buffer).
-    auto wait = writer.size() == buffer.size();
+    auto noDataReadYet = writer.size() == buffer.size();
     auto status = STATUS_SUCCESS;
 
     while (writer.size() >= charSize)
     {
         wchar_t wch;
-        status = GetChar(&inputBuffer, &wch, wait, nullptr, nullptr, nullptr);
-        if (!NT_SUCCESS(status))
+        // We don't need to wait for input if `ConsumeCached` read something already, which is
+        // indicated by the writer having been advanced (= it's shorter than the original buffer).
+        status = GetChar(&inputBuffer, &wch, noDataReadYet, nullptr, nullptr, nullptr);
+        if (FAILED_NTSTATUS(status))
         {
             break;
         }
@@ -453,11 +453,13 @@ try
         std::wstring_view wchView{ &wch, 1 };
         inputBuffer.Consume(unicode, wchView, writer);
 
-        wait = false;
+        noDataReadYet = false;
     }
 
     bytesRead = buffer.size() - writer.size();
-    return status;
+    // Once we read some data off the InputBuffer it can't be read again, so we
+    // need to make sure to return a success status to the client in that case.
+    return noDataReadYet ? status : STATUS_SUCCESS;
 }
 NT_CATCH_RETURN()
 

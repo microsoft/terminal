@@ -1244,6 +1244,7 @@ winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::
     // basis. That means that a second window needs to have its STARTUPINFO's
     // wShowCmd passed into the original process.
     auto nCmdShow = _launchShowWindowCommand;
+
     if (WI_IsFlagSet(_launchMode, LaunchMode::MaximizedMode))
     {
         nCmdShow = SW_MAXIMIZE;

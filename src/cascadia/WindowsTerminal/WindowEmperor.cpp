@@ -205,7 +205,13 @@ void WindowEmperor::_windowExitedHandler(uint64_t senderID)
                       return w->Peasant().GetID() == senderID;
                   });
 
-    if (_windowThreadInstances.fetch_sub(1, std::memory_order_relaxed) == 1)
+    // When we run out of windows, exit our process if and only if:
+    // * We're not allowed to run headless OR
+    // * we've explicitly been told to "quit", which should fully exit the Terminal.
+    const bool quitWhenLastWindowExits{ !_app.Logic().AllowHeadless() };
+    const bool noMoreWindows{ _windowThreadInstances.fetch_sub(1, std::memory_order_relaxed) == 1 };
+    if (noMoreWindows &&
+        (_quitting || quitWhenLastWindowExits))
     {
         _close();
     }
@@ -300,6 +306,8 @@ void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::II
 void WindowEmperor::_quitAllRequested(const winrt::Windows::Foundation::IInspectable&,
                                       const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args)
 {
+    _quitting = true;
+
     // Make sure that the current timer is destroyed so that it doesn't attempt
     // to run while we are in the middle of quitting.
     if (_getWindowLayoutThrottler.has_value())
