@@ -3,6 +3,8 @@
 
 import "CascadiaSettings.idl";
 
+#define COMMA ,
+
 namespace Microsoft.Terminal.Settings.Model
 {
     runtimeclass TerminalSettingsCreateResult
@@ -26,7 +28,7 @@ namespace Microsoft.Terminal.Settings.Model
     {
         TerminalSettings();
 
-        Windows.Foundation.Collections.StringMap EnvironmentVariables;
+        Windows.Foundation.Collections.IMap<String COMMA String> EnvironmentVariables;
 
         static TerminalSettings CreateForPreview(CascadiaSettings appSettings, Profile profile);
         static TerminalSettingsCreateResult CreateWithProfile(CascadiaSettings appSettings, Profile profile, Microsoft.Terminal.Control.IKeyBindings keybindings);
