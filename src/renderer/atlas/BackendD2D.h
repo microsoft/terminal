@@ -40,12 +40,12 @@ namespace Microsoft::Console::Render::Atlas
         };
 
     private:
-        __declspec(noinline) void _handleSettingsUpdate(const RenderingPayload& p);
+        ATLAS_ATTR_COLD void _handleSettingsUpdate(const RenderingPayload& p);
         void _drawBackground(const RenderingPayload& p) noexcept;
         void _drawText(RenderingPayload& p);
         f32 _drawTextPrepareLineRendition(const RenderingPayload& p, f32 baselineY, LineRendition lineRendition) const noexcept;
         void _drawTextResetLineRendition() const noexcept;
-        __declspec(noinline) f32r _getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY);
+        ATLAS_ATTR_COLD f32r _getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY);
         void _drawGridlines(const RenderingPayload& p);
         void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
         void _drawCursorWithColor(const RenderingPayload& p);
@@ -57,7 +57,7 @@ namespace Microsoft::Console::Render::Atlas
         void _debugShowDirty(const RenderingPayload& p);
         void _debugDumpRenderTarget(const RenderingPayload& p);
         ID2D1Brush* _brushWithColor(u32 color);
-        __declspec(noinline) void _clearBrushes() const noexcept;
+        ATLAS_ATTR_COLD void _clearBrushes() const noexcept;
         void _fillRectangle(const D2D1_RECT_F& rect, u32 color);
 
         SwapChainManager _swapChainManager;

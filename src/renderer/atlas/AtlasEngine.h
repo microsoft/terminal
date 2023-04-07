@@ -78,13 +78,13 @@ namespace Microsoft::Console::Render::Atlas
 
     private:
         // AtlasEngine.cpp
-        __declspec(noinline) void _handleSettingsUpdate();
+        ATLAS_ATTR_COLD void _handleSettingsUpdate();
         void _recreateFontDependentResources();
         void _recreateCellCountDependentResources();
         void _flushBufferLine();
         void _mapCharacters(const wchar_t* text, u32 textLength, u32* mappedLength, IDWriteFontFace2** mappedFontFace) const;
         void _mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 length, ShapedRow& row);
-        __declspec(noinline) void _mapReplacementCharacter(u32 from, u32 to, ShapedRow& row);
+        ATLAS_ATTR_COLD void _mapReplacementCharacter(u32 from, u32 to, ShapedRow& row);
 
         // AtlasEngine.api.cpp
         void _resolveTransparencySettings() noexcept;

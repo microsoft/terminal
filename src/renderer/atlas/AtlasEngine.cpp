@@ -284,15 +284,15 @@ try
         _flushBufferLine();
     }
 
+    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x, 0, _p.s->cellCount.x));
+    auto columnEnd = x;
+
     // _api.bufferLineColumn contains 1 more item than _api.bufferLine, as it represents the
     // past-the-end index. It'll get appended again later once we built our new _api.bufferLine.
     if (!_api.bufferLineColumn.empty())
     {
         _api.bufferLineColumn.pop_back();
     }
-
-    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x, 0, _p.s->cellCount.x));
-    auto columnEnd = x;
 
     // Due to the current IRenderEngine interface (that wasn't refactored yet) we need to assemble
     // the current buffer line first as the remaining function operates on whole lines of text.
@@ -304,7 +304,6 @@ try
                 _api.bufferLine.emplace_back(ch);
                 _api.bufferLineColumn.emplace_back(columnEnd);
             }
-
             columnEnd += gsl::narrow_cast<u16>(cluster.GetColumns());
         }
 
@@ -319,7 +318,7 @@ try
 
         const u32 colors[] = {
             u32ColorPremultiply(_api.currentBackground),
-            u32ColorPremultiply(_api.currentForeground),
+            _api.currentForeground,
         };
 
         for (size_t i = 0; i < 2; ++i)
@@ -572,7 +571,9 @@ void AtlasEngine::_recreateCellCountDependentResources()
     // so we round up to multiple of 8 because 8 * sizeof(u32) == 32.
     _p.colorBitmapRowStride = (static_cast<size_t>(_p.s->cellCount.x) + 7) & ~7;
     _p.colorBitmapDepthStride = _p.colorBitmapRowStride * _p.s->cellCount.y;
-    _p.colorBitmap = Buffer<u32, 32>(2 * _p.colorBitmapDepthStride);
+    _p.colorBitmap = Buffer<u32, 32>(_p.colorBitmapDepthStride * 2);
+    _p.backgroundBitmap = { _p.colorBitmap.data(), _p.colorBitmapDepthStride };
+    _p.foregroundBitmap = { _p.colorBitmap.data() + _p.colorBitmapDepthStride, _p.colorBitmapDepthStride };
 
     memset(_p.colorBitmap.data(), 0, _p.colorBitmap.size() * sizeof(u32));
 
@@ -635,12 +636,14 @@ void AtlasEngine::_flushBufferLine()
 
             if (isTextSimple)
             {
+                const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
+
                 for (size_t i = 0; i < complexityLength; ++i)
                 {
                     const auto col1 = _api.bufferLineColumn[idx + i + 0];
                     const auto col2 = _api.bufferLineColumn[idx + i + 1];
                     const auto glyphAdvance = (col2 - col1) * _p.s->font->cellSize.x;
-                    const auto fg = _p.colorBitmap[_p.colorBitmapDepthStride + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y + col1];
+                    const auto fg = colors[col1];
                     row.glyphIndices.emplace_back(_api.glyphIndices[i]);
                     row.glyphAdvances.emplace_back(static_cast<f32>(glyphAdvance));
                     row.glyphOffsets.emplace_back();
@@ -656,7 +659,16 @@ void AtlasEngine::_flushBufferLine()
         const auto indicesCount = row.glyphIndices.size();
         if (indicesCount > initialIndicesCount)
         {
-            row.mappings.emplace_back(std::move(mappedFontFace), gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
+            // IDWriteFontFallback::MapCharacters() isn't just awfully slow,
+            // it can also repeatedly return the same font face again and again. :)
+            if (row.mappings.empty() || row.mappings.back().fontFace != mappedFontFace)
+            {
+                row.mappings.emplace_back(std::move(mappedFontFace), gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
+            }
+            else
+            {
+                row.mappings.back().glyphsTo = gsl::narrow_cast<u32>(indicesCount);
+            }
         }
     }
 }
@@ -708,6 +720,10 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
             THROW_IF_FAILED(font->CreateFontFace(reinterpret_cast<IDWriteFontFace**>(mappedFontFace)));
         }
     }
+
+    // Oh wow! You found a case where scale isn't 1! I tried every font and none
+    // returned something besides 1. I just couldn't figure out why this exists.
+    assert(scale == 1);
 }
 
 void AtlasEngine::_mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 length, ShapedRow& row)
@@ -821,6 +837,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 leng
 
         _api.clusterMap[a.textLength] = gsl::narrow_cast<u16>(actualGlyphCount);
 
+        const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
         auto prevCluster = _api.clusterMap[0];
         size_t beg = 0;
 
@@ -834,7 +851,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 leng
 
             const auto col1 = _api.bufferLineColumn[a.textPosition + beg];
             const auto col2 = _api.bufferLineColumn[a.textPosition + i];
-            const auto fg = _p.colorBitmap[_p.colorBitmapDepthStride + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y + col1];
+            const auto fg = colors[col1];
 
             const auto expectedAdvance = (col2 - col1) * _p.s->font->cellSize.x;
             f32 actualAdvance = 0;
@@ -896,6 +913,7 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
     auto initialIndicesCount = row.glyphIndices.size();
     const auto softFontAvailable = !_p.s->font->softFontPattern.empty();
     auto currentlyMappingSoftFont = isSoftFontChar(_api.bufferLine[pos1]);
+    const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
 
     while (pos2 < to)
     {
@@ -912,7 +930,7 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
         row.glyphIndices.emplace_back(nowMappingSoftFont ? ch : _api.replacementCharacterGlyphIndex);
         row.glyphAdvances.emplace_back(static_cast<f32>(cols * _p.s->font->cellSize.x));
         row.glyphOffsets.emplace_back(DWRITE_GLYPH_OFFSET{});
-        row.colors.emplace_back(_p.colorBitmap[_p.colorBitmapDepthStride + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y + col1]);
+        row.colors.emplace_back(colors[col1]);
 
         if (currentlyMappingSoftFont != nowMappingSoftFont)
         {

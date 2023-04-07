@@ -179,7 +179,7 @@ void BackendD2D::_drawBackground(const RenderingPayload& p) noexcept
 {
     if (_backgroundBitmapGeneration != p.colorBitmapGenerations[0])
     {
-        _backgroundBitmap->CopyFromMemory(nullptr, p.colorBitmap.data(), gsl::narrow_cast<UINT32>(p.colorBitmapRowStride * sizeof(u32)));
+        _backgroundBitmap->CopyFromMemory(nullptr, p.backgroundBitmap.data(), gsl::narrow_cast<UINT32>(p.colorBitmapRowStride * sizeof(u32)));
         _backgroundBitmapGeneration = p.colorBitmapGenerations[0];
     }
 
@@ -461,14 +461,6 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
                 _fillRectangle(rect, r.color);
             }
         }
-        if (r.lines.test(GridLines::Top))
-        {
-            rect.left = left;
-            rect.top = top;
-            rect.right = right;
-            rect.bottom = rect.top + p.s->font->thinLineWidth;
-            _fillRectangle(rect, r.color);
-        }
         if (r.lines.test(GridLines::Right))
         {
             rect.top = top;
@@ -479,6 +471,14 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
                 rect.left = rect.right - p.s->font->thinLineWidth;
                 _fillRectangle(rect, r.color);
             }
+        }
+        if (r.lines.test(GridLines::Top))
+        {
+            rect.left = left;
+            rect.top = top;
+            rect.right = right;
+            rect.bottom = rect.top + p.s->font->thinLineWidth;
+            _fillRectangle(rect, r.color);
         }
         if (r.lines.test(GridLines::Bottom))
         {
@@ -562,7 +562,7 @@ void BackendD2D::_drawCursorPart1(const RenderingPayload& p)
 
         for (til::CoordType x = 0; x < cursorSize.width; ++x)
         {
-            const auto bg = p.colorBitmap[backgroundBitmapOffset + x];
+            const auto bg = p.backgroundBitmap[backgroundBitmapOffset + x];
             const auto brush = _brushWithColor(bg ^ 0x3f3f3f);
             srcRect.left = x * cellSizeX;
             srcRect.right = srcRect.left + cellSizeX;

@@ -293,7 +293,7 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
 
     if (fontChanged)
     {
-        _updateFontDependents(p);
+        _updateFontDependents(p.dwriteFactory.get(), *p.s->font);
     }
     if (miscChanged)
     {
@@ -301,7 +301,7 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     }
     if (cellCountChanged)
     {
-        _recreateColorBitmap(p.s->cellCount);
+        _recreateBackgroundColorBitmap(p.s->cellCount);
     }
 
     // Similar to _renderTargetView above, we might have to recreate the _customRenderTargetView whenever _swapChainManager
@@ -321,16 +321,40 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     _cellCount = p.s->cellCount;
 }
 
-void BackendD3D::_updateFontDependents(const RenderingPayload& p)
+void BackendD3D::_updateFontDependents(IDWriteFactory2* dwriteFactory, const FontSettings& font)
 {
-    DWrite_GetRenderParams(p.dwriteFactory.get(), &_gamma, &_cleartypeEnhancedContrast, &_grayscaleEnhancedContrast, _textRenderingParams.put());
+    DWrite_GetRenderParams(dwriteFactory, &_gamma, &_cleartypeEnhancedContrast, &_grayscaleEnhancedContrast, _textRenderingParams.put());
     // Clearing the atlas requires BeginDraw(), which is expensive. Defer this until we need Direct2D anyways.
     _fontChangedResetGlyphAtlas = true;
-    _textShadingType = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? ShadingType::TextClearType : ShadingType::TextGrayscale;
+    _textShadingType = font.antialiasingMode == AntialiasingMode::ClearType ? ShadingType::TextClearType : ShadingType::TextGrayscale;
+
+    {
+        auto ligaturesDisabled = false;
+        for (const auto& feature : font.fontFeatures)
+        {
+            if (feature.nameTag == DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES)
+            {
+                ligaturesDisabled = !feature.parameter;
+                break;
+            }
+        }
+
+        if (ligaturesDisabled)
+        {
+            _ligatureOverhangTriggerLeft = til::CoordTypeMin;
+            _ligatureOverhangTriggerRight = til::CoordTypeMax;
+        }
+        else
+        {
+            const auto halfCellWidth = font.cellSize.x / 2;
+            _ligatureOverhangTriggerLeft = -halfCellWidth;
+            _ligatureOverhangTriggerRight = font.advanceWidth + halfCellWidth;
+        }
+    }
 
     if (_d2dRenderTarget)
     {
-        _d2dRenderTargetUpdateFontSettings(*p.s->font);
+        _d2dRenderTargetUpdateFontSettings(font);
     }
 
     _softFontBitmap.reset();
@@ -493,15 +517,15 @@ void BackendD3D::_recreateCustomRenderTargetView(u16x2 targetSize)
     THROW_IF_FAILED(_device->CreateRenderTargetView(_customOffscreenTexture.get(), nullptr, _renderTargetView.addressof()));
 }
 
-void BackendD3D::_recreateColorBitmap(u16x2 cellCount)
+void BackendD3D::_recreateBackgroundColorBitmap(u16x2 cellCount)
 {
     // Avoid memory usage spikes by releasing memory first.
-    _colorBitmap.reset();
-    _colorBitmapView.reset();
+    _backgroundBitmap.reset();
+    _backgroundBitmapView.reset();
 
     const D3D11_TEXTURE2D_DESC desc{
         .Width = cellCount.x,
-        .Height = cellCount.y * 2u,
+        .Height = cellCount.y,
         .MipLevels = 1,
         .ArraySize = 1,
         .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
@@ -510,9 +534,9 @@ void BackendD3D::_recreateColorBitmap(u16x2 cellCount)
         .BindFlags = D3D11_BIND_SHADER_RESOURCE,
         .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
     };
-    THROW_IF_FAILED(_device->CreateTexture2D(&desc, nullptr, _colorBitmap.addressof()));
-    THROW_IF_FAILED(_device->CreateShaderResourceView(_colorBitmap.get(), nullptr, _colorBitmapView.addressof()));
-    _colorBitmapGenerations = {};
+    THROW_IF_FAILED(_device->CreateTexture2D(&desc, nullptr, _backgroundBitmap.addressof()));
+    THROW_IF_FAILED(_device->CreateShaderResourceView(_backgroundBitmap.get(), nullptr, _backgroundBitmapView.addressof()));
+    _backgroundBitmapGeneration = {};
 }
 
 void BackendD3D::_d2dRenderTargetUpdateFontSettings(const FontSettings& font) const noexcept
@@ -562,7 +586,7 @@ void BackendD3D::_setupDeviceContextState(const RenderingPayload& p)
     _deviceContext->RSSetViewports(1, &viewport);
 
     // PS: Pixel Shader
-    ID3D11ShaderResourceView* resources[]{ _colorBitmapView.get(), _glyphAtlasView.get() };
+    ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
     _deviceContext->PSSetShader(_pixelShader.get(), nullptr, 0);
     _deviceContext->PSSetConstantBuffers(0, 1, _psConstantBuffer.addressof());
     _deviceContext->PSSetShaderResources(0, 2, &resources[0]);
@@ -770,7 +794,7 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
             THROW_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(&color, nullptr, _brush.put()));
         }
 
-        ID3D11ShaderResourceView* resources[]{ _colorBitmapView.get(), _glyphAtlasView.get() };
+        ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
         _deviceContext->PSSetShaderResources(0, 2, &resources[0]);
 
         _rectPackerData = Buffer<stbrp_node>{ u };
@@ -836,8 +860,6 @@ void BackendD3D::_flushQuads(const RenderingPayload& p)
         return;
     }
 
-    _uploadColorBitmap(p);
-
     // TODO: Shrink instances buffer
     if (_instancesCount > _instanceBufferCapacity)
     {
@@ -891,37 +913,6 @@ void BackendD3D::_flushQuads(const RenderingPayload& p)
     _instancesCount = 0;
 }
 
-void BackendD3D::_uploadColorBitmap(const RenderingPayload& p)
-{
-    // Not uploading the bitmap halves (!) the GPU load for any given frame.
-    // We don't need to upload if the background and foreground bitmaps are the same
-    // or when the _drawText() function determined that no glyph has the LigatureMarker,
-    // because then the pixel shader doesn't need to access the foreground bitmap anyways.
-    if (_colorBitmapGenerations[0] == p.colorBitmapGenerations[0] &&
-        (_colorBitmapGenerations[1] == p.colorBitmapGenerations[1] || _skipForegroundBitmapUpload))
-    {
-        return;
-    }
-
-    D3D11_MAPPED_SUBRESOURCE mapped{};
-    THROW_IF_FAILED(_deviceContext->Map(_colorBitmap.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
-
-    auto src = std::bit_cast<const char*>(&*p.colorBitmap.begin());
-    const auto srcEnd = std::bit_cast<const char*>(&*p.colorBitmap.end());
-    const auto srcStride = p.colorBitmapRowStride * sizeof(u32);
-    auto dst = static_cast<char*>(mapped.pData);
-
-    while (src < srcEnd)
-    {
-        memcpy(dst, src, srcStride);
-        src += srcStride;
-        dst += mapped.RowPitch;
-    }
-
-    _deviceContext->Unmap(_colorBitmap.get(), 0);
-    _colorBitmapGenerations = p.colorBitmapGenerations;
-}
-
 void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
 {
     // We use the viewport size of the terminal as the initial estimate for the amount of instances we'll see.
@@ -957,10 +948,38 @@ void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
 
 void BackendD3D::_drawBackground(const RenderingPayload& p)
 {
+    // Not uploading the bitmap halves (!) the GPU load for any given frame on 2023 hardware.
+    if (_backgroundBitmapGeneration != p.colorBitmapGenerations[0])
+    {
+        _uploadBackgroundBitmap(p);
+    }
+
     _appendQuad() = {
         .shadingType = ShadingType::Background,
         .size = p.s->targetSize,
     };
+    _flushQuads(p);
+}
+
+void BackendD3D::_uploadBackgroundBitmap(const RenderingPayload& p)
+{
+    D3D11_MAPPED_SUBRESOURCE mapped{};
+    THROW_IF_FAILED(_deviceContext->Map(_backgroundBitmap.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+
+    auto src = std::bit_cast<const char*>(p.backgroundBitmap.data());
+    const auto srcEnd = std::bit_cast<const char*>(p.backgroundBitmap.data() + p.backgroundBitmap.size());
+    const auto srcStride = p.colorBitmapRowStride * sizeof(u32);
+    auto dst = static_cast<char*>(mapped.pData);
+
+    while (src < srcEnd)
+    {
+        memcpy(dst, src, srcStride);
+        src += srcStride;
+        dst += mapped.RowPitch;
+    }
+
+    _deviceContext->Unmap(_backgroundBitmap.get(), 0);
+    _backgroundBitmapGeneration = p.colorBitmapGenerations[0];
 }
 
 void BackendD3D::_drawText(RenderingPayload& p)
@@ -969,9 +988,6 @@ void BackendD3D::_drawText(RenderingPayload& p)
     {
         _resetGlyphAtlas(p);
     }
-
-    auto shadingTypeAccumulator = ShadingType::Default;
-    _skipForegroundBitmapUpload = false;
 
     til::CoordType dirtyTop = til::CoordTypeMax;
     til::CoordType dirtyBottom = til::CoordTypeMin;
@@ -1012,7 +1028,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
                     goto drawGlyphRetry;
                 }
 
-                if (glyphEntry.data.shadingType != ShadingType::Default)
+                if (glyphEntry.data.GetShadingType() != ShadingType::Default)
                 {
                     auto l = static_cast<til::CoordType>(lrintf(baselineX + row->glyphOffsets[x].advanceOffset));
                     auto t = static_cast<til::CoordType>(lrintf(baselineY - row->glyphOffsets[x].ascenderOffset));
@@ -1028,14 +1044,17 @@ void BackendD3D::_drawText(RenderingPayload& p)
                     row->dirtyBottom = std::max(row->dirtyBottom, t + glyphEntry.data.size.y);
 
                     _appendQuad() = {
-                        .shadingType = glyphEntry.data.shadingType,
+                        .shadingType = glyphEntry.data.GetShadingType(),
                         .position = { static_cast<i16>(l), static_cast<i16>(t) },
                         .size = glyphEntry.data.size,
                         .texcoord = glyphEntry.data.texcoord,
                         .color = row->colors[x],
                     };
 
-                    shadingTypeAccumulator |= glyphEntry.data.shadingType;
+                    if (glyphEntry.data.overlapSplit)
+                    {
+                        _drawTextOverlapSplit(p, y);
+                    }
                 }
 
                 baselineX += row->glyphAdvances[x];
@@ -1059,8 +1078,59 @@ void BackendD3D::_drawText(RenderingPayload& p)
     }
 
     _d2dEndDrawing();
+}
 
-    _skipForegroundBitmapUpload = WI_IsFlagClear(shadingTypeAccumulator, ShadingType::LigatureMarker);
+// There are a number of coding-oriented fonts that feature ligatures which (for instance)
+// translate text like "!=" into a glyph that looks like "≠" (just 2 columns wide and not 1).
+// Glyphs like that still need to be colored in potentially multiple colors however, so this
+// function will handle these ligatures by splitting them up into multiple QuadInstances.
+void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
+{
+    const auto& originalQuad = _getLastQuad();
+
+    const int cellCountX{ p.s->cellCount.x };
+    const int cellSizeX{ p.s->font->cellSize.x };
+
+    // We must ensure to exit the loop below while `column` is less than `cellCount.x`,
+    // otherwise we cause a potential out of bounds access into foregroundBitmap.
+    // This may happen with glyphs that are severely overlapping their cells,
+    // outside of the viewport. In other words, the `clipLeft < clipEnd` condition
+    // doubles as a `column < cellCount.x` condition with this trick.
+    const auto limitRight = (cellCountX - 1) * cellSizeX;
+    const auto clipEnd = std::min(limitRight, originalQuad.position.x + originalQuad.size.x);
+
+    auto column = std::max(1, (originalQuad.position.x + cellSizeX) / cellSizeX);
+    auto clipLeft = column * cellSizeX;
+    const auto colors = &p.foregroundBitmap[p.colorBitmapRowStride * y];
+    auto lastFg = originalQuad.color;
+
+    for (; clipLeft < clipEnd; ++column, clipLeft += cellSizeX)
+    {
+        const auto fg = colors[column];
+
+        if (lastFg != fg)
+        {
+            // NOTE: _appendQuad might reallocate and any pointers
+            // acquired before calling this function are now invalid.
+            auto& next = _appendQuad();
+            // The item at -1 is the quad we've just appended, which means
+            // that the previous quad we want to split up is at -2.
+            auto& prev = _instances[_instancesCount - 2];
+
+            const auto prevWidth = clipLeft - prev.position.x;
+            const auto nextWidth = prev.size.x - prevWidth;
+
+            prev.size.x = gsl::narrow<u16>(prevWidth);
+
+            next = prev;
+            next.position.x = gsl::narrow<i16>(next.position.x + prevWidth);
+            next.texcoord.x = gsl::narrow<u16>(next.texcoord.x + prevWidth);
+            next.size.x = gsl::narrow<u16>(nextWidth);
+            next.color = fg;
+
+            lastFg = fg;
+        }
+    }
 }
 
 bool BackendD3D::_drawGlyph(const RenderingPayload& p, f32 glyphAdvance, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry)
@@ -1221,19 +1291,17 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, f32 glyphAdvance, const A
 
     _d2dBeginDrawing();
     const auto colorGlyph = DrawGlyphRun(_d2dRenderTarget.get(), _d2dRenderTarget4.get(), p.dwriteFactory4.get(), baselineOrigin, &glyphRun, _brush.get());
-    auto shadingType = colorGlyph ? ShadingType::Passthrough : _textShadingType;
+    auto shadingType = colorGlyph ? ShadingType::TextPassthrough : _textShadingType;
 
     // Ligatures are drawn with strict cell-wise foreground color, while other text allows colors to overhang
     // their cells. This makes sure that italics and such retain their color and don't look "cut off".
     //
     // The former condition makes sure to exclude diacritics and such from being considered a ligature,
     // while the latter condition-pair makes sure to exclude regular BMP wide glyphs that overlap a little.
-    if (rect.w >= p.s->font->cellSize.x && (bl <= p.s->font->ligatureOverhangTriggerLeft || br >= p.s->font->ligatureOverhangTriggerRight))
-    {
-        shadingType |= ShadingType::LigatureMarker;
-    }
+    const auto overlapSplit = rect.w >= p.s->font->cellSize.x && (bl <= _ligatureOverhangTriggerLeft || br >= _ligatureOverhangTriggerRight);
 
-    glyphEntry.data.shadingType = shadingType;
+    glyphEntry.data.shadingType = static_cast<u16>(shadingType);
+    glyphEntry.data.overlapSplit = overlapSplit;
     glyphEntry.data.offset.x = bl;
     glyphEntry.data.offset.y = bt;
     glyphEntry.data.size.x = rect.w;
@@ -1320,7 +1388,8 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
     _d2dBeginDrawing();
     _d2dRenderTarget->DrawBitmap(_softFontBitmap.get(), &dest, 1, interpolation, nullptr, nullptr);
 
-    glyphEntry.data.shadingType = ShadingType::TextGrayscale;
+    glyphEntry.data.shadingType = static_cast<u16>(ShadingType::TextGrayscale);
+    glyphEntry.data.overlapSplit = 0;
     glyphEntry.data.offset.x = 0;
     glyphEntry.data.offset.y = -p.s->font->baseline;
     glyphEntry.data.size.x = rect.w;
@@ -1379,11 +1448,11 @@ void BackendD3D::_splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasF
     // double-height row. This effectively turns the other (unneeded) side into whitespace.
     if (!top.data.size.y)
     {
-        top.data.shadingType = ShadingType::Default;
+        top.data.shadingType = static_cast<u16>(ShadingType::Default);
     }
     if (!bottom.data.size.y)
     {
-        bottom.data.shadingType = ShadingType::Default;
+        bottom.data.shadingType = static_cast<u16>(ShadingType::Default);
     }
 }
 
@@ -1411,16 +1480,16 @@ void BackendD3D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
 
         const auto left = static_cast<i16>(r.from * p.s->font->cellSize.x);
         const auto width = static_cast<u16>((r.to - r.from) * p.s->font->cellSize.x);
-        const auto appendHorizontalLine = [&](u16 offsetY, u16 height) {
-            _appendQuad() = QuadInstance{
-                .shadingType = ShadingType::SolidFill,
+        const auto appendHorizontalLine = [&](u16 offsetY, u16 height, ShadingType shadingType) {
+            _appendQuad() = {
+                .shadingType = shadingType,
                 .position = { left, static_cast<i16>(top + offsetY) },
                 .size = { width, height },
                 .color = r.color,
             };
         };
-        const auto appendVerticalLine = [&](int col) {
-            _appendQuad() = QuadInstance{
+        const auto appendVerticalLine = [&](u16 col) {
+            _appendQuad() = {
                 .shadingType = ShadingType::SolidFill,
                 .position = { static_cast<i16>(col * p.s->font->cellSize.x), top },
                 .size = { p.s->font->thinLineWidth, p.s->font->cellSize.y },
@@ -1435,10 +1504,6 @@ void BackendD3D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
                 appendVerticalLine(i);
             }
         }
-        if (r.lines.test(GridLines::Top))
-        {
-            appendHorizontalLine(0, p.s->font->thinLineWidth);
-        }
         if (r.lines.test(GridLines::Right))
         {
             for (auto i = r.to; i > r.from; --i)
@@ -1446,26 +1511,30 @@ void BackendD3D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
                 appendVerticalLine(i);
             }
         }
+        if (r.lines.test(GridLines::Top))
+        {
+            appendHorizontalLine(0, p.s->font->thinLineWidth, ShadingType::SolidFill);
+        }
         if (r.lines.test(GridLines::Bottom))
         {
-            appendHorizontalLine(p.s->font->cellSize.y - p.s->font->thinLineWidth, p.s->font->thinLineWidth);
+            appendHorizontalLine(p.s->font->cellSize.y - p.s->font->thinLineWidth, p.s->font->thinLineWidth, ShadingType::SolidFill);
         }
         if (r.lines.test(GridLines::Underline))
         {
-            appendHorizontalLine(p.s->font->underlinePos, p.s->font->underlineWidth);
+            appendHorizontalLine(p.s->font->underlinePos, p.s->font->underlineWidth, ShadingType::SolidFill);
         }
         if (r.lines.test(GridLines::HyperlinkUnderline))
         {
-            appendHorizontalLine(p.s->font->underlinePos, p.s->font->underlineWidth);
+            appendHorizontalLine(p.s->font->underlinePos, p.s->font->underlineWidth, ShadingType::DashedLine);
         }
         if (r.lines.test(GridLines::DoubleUnderline))
         {
-            appendHorizontalLine(p.s->font->doubleUnderlinePos.x, p.s->font->thinLineWidth);
-            appendHorizontalLine(p.s->font->doubleUnderlinePos.y, p.s->font->thinLineWidth);
+            appendHorizontalLine(p.s->font->doubleUnderlinePos.x, p.s->font->thinLineWidth, ShadingType::SolidFill);
+            appendHorizontalLine(p.s->font->doubleUnderlinePos.y, p.s->font->thinLineWidth, ShadingType::SolidFill);
         }
         if (r.lines.test(GridLines::Strikethrough))
         {
-            appendHorizontalLine(p.s->font->strikethroughPos, p.s->font->strikethroughWidth);
+            appendHorizontalLine(p.s->font->strikethroughPos, p.s->font->strikethroughWidth, ShadingType::SolidFill);
         }
     }
 }
@@ -1485,9 +1554,9 @@ void BackendD3D::_drawCursorPart1(const RenderingPayload& p)
     for (auto x1 = p.cursorRect.left; x1 < p.cursorRect.right; ++x1)
     {
         const auto x0 = x1;
-        const auto bg = p.colorBitmap[offset + x1] | 0xff000000;
+        const auto bg = p.backgroundBitmap[offset + x1] | 0xff000000;
 
-        for (; x1 < p.cursorRect.right && (p.colorBitmap[offset + x1] | 0xff000000) == bg; ++x1)
+        for (; x1 < p.cursorRect.right && (p.backgroundBitmap[offset + x1] | 0xff000000) == bg; ++x1)
         {
         }
 
@@ -1749,7 +1818,7 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
         _deviceContext->VSSetConstantBuffers(0, 1, _vsConstantBuffer.addressof());
 
         // PS: Pixel Shader
-        ID3D11ShaderResourceView* resources[]{ _colorBitmapView.get(), _glyphAtlasView.get() };
+        ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
         _deviceContext->PSSetShader(_pixelShader.get(), nullptr, 0);
         _deviceContext->PSSetConstantBuffers(0, 1, _psConstantBuffer.addressof());
         _deviceContext->PSSetShaderResources(0, 2, &resources[0]);

@@ -12,32 +12,32 @@
 
 namespace Microsoft::Console::Render::Atlas
 {
-#define ATLAS_FLAG_OPS(type, underlying, attr)                                                 \
-    attr constexpr type operator~(type v) noexcept                                             \
+#define ATLAS_FLAG_OPS(type, underlying)                                                       \
+    constexpr type operator~(type v) noexcept                                                  \
     {                                                                                          \
         return static_cast<type>(~static_cast<underlying>(v));                                 \
     }                                                                                          \
-    attr constexpr type operator|(type lhs, type rhs) noexcept                                 \
+    constexpr type operator|(type lhs, type rhs) noexcept                                      \
     {                                                                                          \
         return static_cast<type>(static_cast<underlying>(lhs) | static_cast<underlying>(rhs)); \
     }                                                                                          \
-    attr constexpr type operator&(type lhs, type rhs) noexcept                                 \
+    constexpr type operator&(type lhs, type rhs) noexcept                                      \
     {                                                                                          \
         return static_cast<type>(static_cast<underlying>(lhs) & static_cast<underlying>(rhs)); \
     }                                                                                          \
-    attr constexpr type operator^(type lhs, type rhs) noexcept                                 \
+    constexpr type operator^(type lhs, type rhs) noexcept                                      \
     {                                                                                          \
         return static_cast<type>(static_cast<underlying>(lhs) ^ static_cast<underlying>(rhs)); \
     }                                                                                          \
-    attr constexpr void operator|=(type& lhs, type rhs) noexcept                               \
+    constexpr void operator|=(type& lhs, type rhs) noexcept                                    \
     {                                                                                          \
         lhs = lhs | rhs;                                                                       \
     }                                                                                          \
-    attr constexpr void operator&=(type& lhs, type rhs) noexcept                               \
+    constexpr void operator&=(type& lhs, type rhs) noexcept                                    \
     {                                                                                          \
         lhs = lhs & rhs;                                                                       \
     }                                                                                          \
-    attr constexpr void operator^=(type& lhs, type rhs) noexcept                               \
+    constexpr void operator^=(type& lhs, type rhs) noexcept                                    \
     {                                                                                          \
         lhs = lhs ^ rhs;                                                                       \
     }
@@ -52,6 +52,9 @@ namespace Microsoft::Console::Render::Atlas
     {                                                          \
         return !(*this == rhs);                                \
     }
+
+    // My best effort of replicating __attribute__((cold)) from gcc/clang.
+#define ATLAS_ATTR_COLD __declspec(noinline)
 
     template<typename T>
     struct vec2
@@ -317,9 +320,9 @@ namespace Microsoft::Console::Render::Atlas
         std::vector<DWRITE_FONT_FEATURE> fontFeatures;
         std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues;
         f32 fontSize = 0;
-        f32 advanceScale = 0;
         u16x2 cellSize;
         u16 fontWeight = 0;
+        u16 advanceWidth = 0;
         u16 baseline = 0;
         u16 descender = 0;
         u16 underlinePos = 0;
@@ -330,8 +333,6 @@ namespace Microsoft::Console::Render::Atlas
         u16 thinLineWidth = 0;
         u16 dpi = 96;
         AntialiasingMode antialiasingMode = DefaultAntialiasingMode;
-        til::CoordType ligatureOverhangTriggerLeft = 0;
-        til::CoordType ligatureOverhangTriggerRight = 0;
 
         std::vector<uint16_t> softFontPattern;
         til::size softFontCellSize;
@@ -383,7 +384,7 @@ namespace Microsoft::Console::Render::Atlas
         Bold = 0b01,
         Italic = 0b10,
     };
-    ATLAS_FLAG_OPS(FontRelevantAttributes, u8, )
+    ATLAS_FLAG_OPS(FontRelevantAttributes, u8)
 
     struct FontMapping
     {
@@ -468,9 +469,23 @@ namespace Microsoft::Console::Render::Atlas
         // The first NxM (for instance 120x30 pixel) chunk contains background colors and the
         // second chunk contains foreground colors. The distance in u32 items between the start
         // and the begin of the foreground bitmap is equal to colorBitmapDepthStride.
+        //
+        // The background part is in premultiplied alpha, whereas the foreground part is in straight
+        // alpha. This is mostly because of Direct2D being annoying, as the former is the only thing
+        // it supports for bitmaps, whereas the latter is the only thing it supports for text.
+        // Since we implement Direct2D's text blending algorithm, we're equally dependent on
+        // straight alpha for BackendD3D, as straight alpha is used in the pixel shader there.
         Buffer<u32, 32> colorBitmap;
+        // This exists as a convenience access to colorBitmap and
+        // contains a view into the background color bitmap.
+        std::span<u32> backgroundBitmap;
+        // This exists as a convenience access to colorBitmap and
+        // contains a view into the foreground color bitmap.
+        std::span<u32> foregroundBitmap;
         // This stride of the colorBitmap is a "count" of u32 and not in bytes.
         size_t colorBitmapRowStride = 0;
+        // FYI depth refers to the `colorBitmapRowStride * height` size of each bitmap contained
+        // in colorBitmap. colorBitmap contains 2 bitmaps (background and foreground colors).
         size_t colorBitmapDepthStride = 0;
         // A generation of 1 ensures that the backends redraw the background on the first Present().
         // The 1st entry in this array corresponds to the background and the 2nd to the foreground bitmap.

@@ -705,9 +705,10 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     if (fontMetrics)
     {
         std::wstring fontName{ requestedFaceName };
-        const auto fontWeightU16 = gsl::narrow_cast<u16>(requestedWeight);
+        const auto fontWeightU16 = static_cast<u16>(requestedWeight);
+        const auto advanceWidthU16 = static_cast<u16>(lrintf(advanceWidth));
         const auto baselineU16 = static_cast<u16>(lrintf(baseline));
-        const auto descenderU16 = gsl::narrow_cast<u16>(cellHeight - baselineU16);
+        const auto descenderU16 = static_cast<u16>(cellHeight - baselineU16);
         const auto underlinePosU16 = static_cast<u16>(lrintf(underlinePos));
         const auto underlineWidthU16 = static_cast<u16>(lrintf(underlineWidth));
         const auto strikethroughPosU16 = static_cast<u16>(lrintf(strikethroughPos));
@@ -723,10 +724,10 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         fontMetrics->fontFamily = std::move(fontFamily);
         fontMetrics->fontName = std::move(fontName);
         fontMetrics->fontSize = fontSizeInPx;
-        fontMetrics->advanceScale = cellWidth / advanceWidth;
         fontMetrics->cellSize.x = cellWidth;
         fontMetrics->cellSize.y = cellHeight;
         fontMetrics->fontWeight = fontWeightU16;
+        fontMetrics->advanceWidth = advanceWidthU16;
         fontMetrics->baseline = baselineU16;
         fontMetrics->descender = descenderU16;
         fontMetrics->underlinePos = underlinePosU16;
@@ -736,7 +737,5 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         fontMetrics->doubleUnderlinePos.x = doubleUnderlinePosTopU16;
         fontMetrics->doubleUnderlinePos.y = doubleUnderlinePosBottomU16;
         fontMetrics->thinLineWidth = thinLineWidthU16;
-        fontMetrics->ligatureOverhangTriggerLeft = cellWidth / -2;
-        fontMetrics->ligatureOverhangTriggerRight = cellWidth + cellWidth / 2;
     }
 }
