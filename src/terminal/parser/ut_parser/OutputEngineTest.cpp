@@ -1659,7 +1659,7 @@ class StateMachineExternalTest final
 
         // Note that CSI s is dispatched as SetLeftRightScrollingMargins rather
         // than CursorSaveState, so we don't test that here. The CursorSaveState
-        // will only be triggered by this sequence (in AdaptDispatch ) when the
+        // will only be triggered by this sequence (in AdaptDispatch) when the
         // Left-Right-Margin mode (DECLRMM) is disabled.
 
         mach.ProcessCharacter(AsciiChars::ESC);
