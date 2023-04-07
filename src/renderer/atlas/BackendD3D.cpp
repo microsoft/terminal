@@ -1088,8 +1088,14 @@ void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
 {
     const auto& originalQuad = _getLastQuad();
 
-    const int cellCountX{ p.s->cellCount.x };
-    const int cellSizeX{ p.s->font->cellSize.x };
+    int cellCountX{ p.s->cellCount.x };
+    int cellSizeX{ p.s->font->cellSize.x };
+
+    if (p.rows[y]->lineRendition != LineRendition::SingleWidth)
+    {
+        cellCountX >>= 1;
+        cellSizeX <<= 1;
+    }
 
     // We must ensure to exit the loop below while `column` is less than `cellCount.x`,
     // otherwise we cause a potential out of bounds access into foregroundBitmap.
@@ -1298,7 +1304,10 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, f32 glyphAdvance, const A
     //
     // The former condition makes sure to exclude diacritics and such from being considered a ligature,
     // while the latter condition-pair makes sure to exclude regular BMP wide glyphs that overlap a little.
-    const auto overlapSplit = rect.w >= p.s->font->cellSize.x && (bl <= _ligatureOverhangTriggerLeft || br >= _ligatureOverhangTriggerRight);
+    const auto horizontalScale = lineRendition != LineRendition::SingleWidth ? 2 : 1;
+    const auto triggerLeft = _ligatureOverhangTriggerLeft * horizontalScale;
+    const auto triggerRight = _ligatureOverhangTriggerRight * horizontalScale;
+    const auto overlapSplit = rect.w >= p.s->font->cellSize.x && (bl <= triggerLeft || br >= triggerRight);
 
     glyphEntry.data.shadingType = static_cast<u16>(shadingType);
     glyphEntry.data.overlapSplit = overlapSplit;
