@@ -86,13 +86,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         til::env environment;
         auto zeroEnvMap = wil::scope_exit([&]() noexcept {
-            // Can't zero the keys, but at least we can zero the values.
-            for (auto& [name, value] : environment.as_map())
-            {
-                ::SecureZeroMemory(value.data(), value.size() * sizeof(decltype(value.begin())::value_type));
-            }
-
-            environment.as_map().clear();
+            environment.clear();
         });
 
         // Populate the environment map with the current environment.

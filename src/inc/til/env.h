@@ -564,6 +564,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return result;
         }
 
+        void clear()
+        {
+            // Can't zero the keys, but at least we can zero the values.
+            for (auto& [name, value] : _envMap)
+            {
+                ::SecureZeroMemory(value.data(), value.size() * sizeof(decltype(value.begin())::value_type));
+            }
+
+            _envMap.clear();
+        }
+
         // Function Description:
         // - Creates a new environment block using the provided vector as appropriate
         //   (resizing if needed) based on the current environment variable map
