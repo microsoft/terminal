@@ -705,17 +705,17 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     if (fontMetrics)
     {
         std::wstring fontName{ requestedFaceName };
-        const auto fontWeightU16 = static_cast<u16>(requestedWeight);
-        const auto advanceWidthU16 = static_cast<u16>(lrintf(advanceWidth));
-        const auto baselineU16 = static_cast<u16>(lrintf(baseline));
-        const auto descenderU16 = static_cast<u16>(cellHeight - baselineU16);
-        const auto underlinePosU16 = static_cast<u16>(lrintf(underlinePos));
-        const auto underlineWidthU16 = static_cast<u16>(lrintf(underlineWidth));
-        const auto strikethroughPosU16 = static_cast<u16>(lrintf(strikethroughPos));
-        const auto strikethroughWidthU16 = static_cast<u16>(lrintf(strikethroughWidth));
-        const auto doubleUnderlinePosTopU16 = static_cast<u16>(lrintf(doubleUnderlinePosTop));
-        const auto doubleUnderlinePosBottomU16 = static_cast<u16>(lrintf(doubleUnderlinePosBottom));
-        const auto thinLineWidthU16 = static_cast<u16>(lrintf(thinLineWidth));
+        const auto fontWeightU16 = gsl::narrow_cast<u16>(requestedWeight);
+        const auto advanceWidthU16 = gsl::narrow_cast<u16>(lrintf(advanceWidth));
+        const auto baselineU16 = gsl::narrow_cast<u16>(lrintf(baseline));
+        const auto descenderU16 = gsl::narrow_cast<u16>(cellHeight - baselineU16);
+        const auto underlinePosU16 = gsl::narrow_cast<u16>(lrintf(underlinePos));
+        const auto underlineWidthU16 = gsl::narrow_cast<u16>(lrintf(underlineWidth));
+        const auto strikethroughPosU16 = gsl::narrow_cast<u16>(lrintf(strikethroughPos));
+        const auto strikethroughWidthU16 = gsl::narrow_cast<u16>(lrintf(strikethroughWidth));
+        const auto doubleUnderlinePosTopU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlinePosTop));
+        const auto doubleUnderlinePosBottomU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlinePosBottom));
+        const auto thinLineWidthU16 = gsl::narrow_cast<u16>(lrintf(thinLineWidth));
 
         // NOTE: From this point onward no early returns or throwing code should exist,
         // as we might cause _api to be in an inconsistent state otherwise.

@@ -1297,7 +1297,7 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, f32 glyphAdvance, const A
 
     _d2dBeginDrawing();
     const auto colorGlyph = DrawGlyphRun(_d2dRenderTarget.get(), _d2dRenderTarget4.get(), p.dwriteFactory4.get(), baselineOrigin, &glyphRun, _brush.get());
-    auto shadingType = colorGlyph ? ShadingType::TextPassthrough : _textShadingType;
+    const auto shadingType = colorGlyph ? ShadingType::TextPassthrough : _textShadingType;
 
     // Ligatures are drawn with strict cell-wise foreground color, while other text allows colors to overhang
     // their cells. This makes sure that italics and such retain their color and don't look "cut off".
@@ -1334,10 +1334,14 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
     };
 
     const auto lineRendition = static_cast<LineRendition>(fontFaceEntry.lineRendition);
+    auto baseline = p.s->font->baseline;
+
     if (lineRendition != LineRendition::SingleWidth)
     {
+        const auto heightShift = static_cast<u8>(lineRendition >= LineRendition::DoubleHeightTop);
         rect.w <<= 1;
-        rect.h <<= static_cast<u8>(lineRendition >= LineRendition::DoubleHeightTop);
+        rect.h <<= heightShift;
+        baseline <<= heightShift;
     }
 
     if (!stbrp_pack_rects(&_rectPacker, &rect, 1))
@@ -1400,7 +1404,7 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
     glyphEntry.data.shadingType = static_cast<u16>(ShadingType::TextGrayscale);
     glyphEntry.data.overlapSplit = 0;
     glyphEntry.data.offset.x = 0;
-    glyphEntry.data.offset.y = -p.s->font->baseline;
+    glyphEntry.data.offset.y = -baseline;
     glyphEntry.data.size.x = rect.w;
     glyphEntry.data.size.y = rect.h;
     glyphEntry.data.texcoord.x = rect.x;
@@ -1408,7 +1412,6 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
 
     if (lineRendition >= LineRendition::DoubleHeightTop)
     {
-        glyphEntry.data.offset.y -= p.s->font->cellSize.y;
         _splitDoubleHeightGlyph(p, fontFaceEntry, glyphEntry);
     }
 

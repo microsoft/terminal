@@ -132,8 +132,8 @@ try
         // Scrolling the background bitmap is a lot easier because we can rely on memmove which works
         // with both forwards and backwards copying. It's a mystery why the STL doesn't have this.
         {
-            const auto srcOffset = std::max<ptrdiff_t>(0, -offset) * static_cast<ptrdiff_t>(_p.colorBitmapRowStride);
-            const auto dstOffset = std::max<ptrdiff_t>(0, offset) * static_cast<ptrdiff_t>(_p.colorBitmapRowStride);
+            const auto srcOffset = std::max<ptrdiff_t>(0, -offset) * gsl::narrow_cast<ptrdiff_t>(_p.colorBitmapRowStride);
+            const auto dstOffset = std::max<ptrdiff_t>(0, offset) * gsl::narrow_cast<ptrdiff_t>(_p.colorBitmapRowStride);
             const auto count = _p.colorBitmapDepthStride - std::max(srcOffset, dstOffset);
             assert(dstOffset >= 0 && dstOffset + count <= _p.colorBitmapDepthStride);
             assert(srcOffset >= 0 && srcOffset + count <= _p.colorBitmapDepthStride);
@@ -311,9 +311,9 @@ try
     }
 
     {
-        const auto shift = _api.lineRendition >= LineRendition::DoubleWidth ? 1 : 0;
+        const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
         const auto row = _p.colorBitmap.begin() + _p.colorBitmapRowStride * y;
-        auto beg = row + x;
+        auto beg = row + (static_cast<size_t>(x) << shift);
         auto end = row + (static_cast<size_t>(columnEnd) << shift);
 
         const u32 colors[] = {
@@ -348,7 +348,7 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const til::point coordTarget) noexcept
 try
 {
-    const auto shift = _api.lineRendition >= LineRendition::DoubleWidth ? 1 : 0;
+    const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
     const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.y, 0, _p.s->cellCount.y));
     const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.x << shift, 0, _p.s->cellCount.x - 1));
     const auto to = gsl::narrow_cast<u16>(clamp<size_t>((coordTarget.x + cchLine) << shift, from, _p.s->cellCount.x));
@@ -636,14 +636,15 @@ void AtlasEngine::_flushBufferLine()
 
             if (isTextSimple)
             {
+                const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
                 const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
 
                 for (size_t i = 0; i < complexityLength; ++i)
                 {
-                    const auto col1 = _api.bufferLineColumn[idx + i + 0];
-                    const auto col2 = _api.bufferLineColumn[idx + i + 1];
+                    const size_t col1 = _api.bufferLineColumn[idx + i + 0];
+                    const size_t col2 = _api.bufferLineColumn[idx + i + 1];
                     const auto glyphAdvance = (col2 - col1) * _p.s->font->cellSize.x;
-                    const auto fg = colors[col1];
+                    const auto fg = colors[col1 << shift];
                     row.glyphIndices.emplace_back(_api.glyphIndices[i]);
                     row.glyphAdvances.emplace_back(static_cast<f32>(glyphAdvance));
                     row.glyphOffsets.emplace_back();
@@ -837,6 +838,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 leng
 
         _api.clusterMap[a.textLength] = gsl::narrow_cast<u16>(actualGlyphCount);
 
+        const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
         const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
         auto prevCluster = _api.clusterMap[0];
         size_t beg = 0;
@@ -849,9 +851,9 @@ void AtlasEngine::_mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 leng
                 continue;
             }
 
-            const auto col1 = _api.bufferLineColumn[a.textPosition + beg];
-            const auto col2 = _api.bufferLineColumn[a.textPosition + i];
-            const auto fg = colors[col1];
+            const size_t col1 = _api.bufferLineColumn[a.textPosition + beg];
+            const size_t col2 = _api.bufferLineColumn[a.textPosition + i];
+            const auto fg = colors[col1 << shift];
 
             const auto expectedAdvance = (col2 - col1) * _p.s->font->cellSize.x;
             f32 actualAdvance = 0;
@@ -908,11 +910,12 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
 
     auto pos1 = from;
     auto pos2 = pos1;
-    auto col1 = _api.bufferLineColumn[from];
-    auto col2 = col1;
+    size_t col1 = _api.bufferLineColumn[from];
+    size_t col2 = col1;
     auto initialIndicesCount = row.glyphIndices.size();
     const auto softFontAvailable = !_p.s->font->softFontPattern.empty();
     auto currentlyMappingSoftFont = isSoftFontChar(_api.bufferLine[pos1]);
+    const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
     const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
 
     while (pos2 < to)
@@ -930,7 +933,7 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
         row.glyphIndices.emplace_back(nowMappingSoftFont ? ch : _api.replacementCharacterGlyphIndex);
         row.glyphAdvances.emplace_back(static_cast<f32>(cols * _p.s->font->cellSize.x));
         row.glyphOffsets.emplace_back(DWRITE_GLYPH_OFFSET{});
-        row.colors.emplace_back(colors[col1]);
+        row.colors.emplace_back(colors[col1 << shift]);
 
         if (currentlyMappingSoftFont != nowMappingSoftFont)
         {

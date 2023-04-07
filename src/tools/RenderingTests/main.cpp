@@ -172,11 +172,11 @@ int main()
 
     {
         printUTF16(
-            L"\x1B[3;5HDECDWL Double Width \U0001FAE0 A\u0353\u0353 B\u036F\u036F"
-            L"\x1B[4;5H\x1b#6DECDWL Double Width         \U0001FAE0 A\u0353\u0353 B\u036F\u036F"
-            L"\x1B[8;5HDECDHL Double Height \U0001F642\U0001F6C1 A\u0353\u0353 B\u036F\u036F X\u0353\u0353 Y\u036F\u036F"
-            L"\x1B[9;5H\x1b#3DECDHL Double Height Top    \U0001F642 A\u0353\u0353 B\u036F\u036F"
-            L"\x1B[10;5H\x1b#4DECDHL Double Height Bottom \U0001F6C1 X\u0353\u0353 Y\u036F\u036F");
+            L"\x1B[3;5HDECDWL Double Width \U0001FAE0 \x1B[43;36mA\u0353\u0353\x1B[m B\u036F\u036F"
+            L"\x1B[4;5H\x1b#6DECDWL Double Width         \U0001FAE0 \x1B[43;36mA\u0353\u0353\x1B[m B\u036F\u036F"
+            L"\x1B[8;5HDECDHL Double Height \U0001F952\U0001F6C1 A\u0353\u0353 \x1B[43;36mB\u036F\u036F\x1B[m \x1B[43;36mX\u0353\u0353\x1B[m Y\u036F\u036F"
+            L"\x1B[9;5H\x1b#3DECDHL Double Height Top    \U0001F952 A\u0353\u0353 \x1B[43;36mB\u036F\u036F\x1B[m"
+            L"\x1B[10;5H\x1b#4DECDHL Double Height Bottom \U0001F6C1 \x1B[43;36mX\u0353\u0353\x1B[m Y\u036F\u036F");
 
         wait();
         clear();
