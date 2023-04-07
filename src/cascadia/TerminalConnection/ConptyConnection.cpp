@@ -113,6 +113,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const auto profileGuid{ Utils::GuidToString(_profileGuid) };
             environment.as_map().insert_or_assign(L"WT_PROFILE_ID", profileGuid.data());
 
+            // WSLENV is a colon-delimited list of environment variables (+flags) that should appear inside WSL
+            // https://devblogs.microsoft.com/commandline/share-environment-vars-between-wsl-and-windows/
+            std::wstring wslEnv{ L"WT_SESSION:WT_PROFILE_ID:" };
             if (_environment)
             {
                 // Order the environment variable names so that resolution order is consistent
@@ -131,20 +134,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                         const auto value = winrt::unbox_value<hstring>(_environment.Lookup(key));
 
                         environment.set_user_environment_var(key.c_str(), value.c_str());
+                        // For each environment variable added to the environment, also add it to WSLENV
+                        wslEnv += key + L":";
                     }
                     CATCH_LOG();
                 }
             }
 
-            // WSLENV is a colon-delimited list of environment variables (+flags) that should appear inside WSL
-            // https://devblogs.microsoft.com/commandline/share-environment-vars-between-wsl-and-windows/
-
-            const auto existingWslEnv = environment.as_map()[L"WSLENV"];
-            std::wstring wslEnv{ L"WT_SESSION:WT_PROFILE_ID" };
-            if (!existingWslEnv.empty())
-            {
-                wslEnv += L":" + existingWslEnv; // prepend WT_SESSION and WT_PROFILE_ID to make sure they're visible inside WSL.
-            }
+            // We want to prepend new environment variables to WSLENV - that way if a variable already
+            // exists in WSLENV but with a flag, the flag will be respected.
+            // (This behaviour was empirically observed)
+            wslEnv += environment.as_map()[L"WSLENV"];
             environment.as_map().insert_or_assign(L"WSLENV", wslEnv);
         }
 
