@@ -5,6 +5,7 @@
 
 #include <wil/token_helpers.h>
 #include <winternl.h>
+#include <til/string.h>
 
 #pragma warning(push)
 #pragma warning(disable : 26429) // Symbol '...' is never tested for nullness, it can be marked as not_null (f.23).
@@ -20,37 +21,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     namespace details
     {
-
-        //
-        // A case-insensitive wide-character map is used to store environment variables
-        // due to documented requirements:
-        //
-        //      "All strings in the environment block must be sorted alphabetically by name.
-        //      The sort is case-insensitive, Unicode order, without regard to locale.
-        //      Because the equal sign is a separator, it must not be used in the name of
-        //      an environment variable."
-        //      https://docs.microsoft.com/en-us/windows/desktop/ProcThread/changing-environment-variables
-        //
-        // - Returns CSTR_LESS_THAN, CSTR_EQUAL or CSTR_GREATER_THAN
-        [[nodiscard]] inline int compare_string_ordinal(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
-        {
-            const auto result = CompareStringOrdinal(
-                lhs.data(),
-                ::base::saturated_cast<int>(lhs.size()),
-                rhs.data(),
-                ::base::saturated_cast<int>(rhs.size()),
-                TRUE);
-            FAIL_FAST_LAST_ERROR_IF(!result);
-            return result;
-        }
-
-        struct wstring_case_insensitive_compare
-        {
-            [[nodiscard]] bool operator()(const std::wstring& lhs, const std::wstring& rhs) const noexcept
-            {
-                return compare_string_ordinal(lhs, rhs) == CSTR_LESS_THAN;
-            }
-        };
 
         namespace vars
         {
@@ -250,7 +220,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         friend class ::EnvTests;
 #endif
 
-        std::map<std::wstring, std::wstring, til::details::wstring_case_insensitive_compare> _envMap{};
+        std::map<std::wstring, std::wstring, til::wstring_case_insensitive_compare> _envMap{};
 
         // We make copies of the environment variable names to ensure they are null terminated.
         void get(wil::zwstring_view variable)
@@ -468,8 +438,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             static constexpr std::wstring_view temp{ L"temp" };
             static constexpr std::wstring_view tmp{ L"tmp" };
-            if (til::details::compare_string_ordinal(var, temp) == CSTR_EQUAL ||
-                til::details::compare_string_ordinal(var, tmp) == CSTR_EQUAL)
+            if (til::compare_string_ordinal(var, temp) == CSTR_EQUAL ||
+                til::compare_string_ordinal(var, tmp) == CSTR_EQUAL)
             {
                 return til::details::wil_env::GetShortPathNameW<std::wstring, 256>(value.data());
             }
@@ -484,9 +454,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             static constexpr std::wstring_view path{ L"Path" };
             static constexpr std::wstring_view libPath{ L"LibPath" };
             static constexpr std::wstring_view os2LibPath{ L"Os2LibPath" };
-            return til::details::compare_string_ordinal(input, path) == CSTR_EQUAL ||
-                   til::details::compare_string_ordinal(input, libPath) == CSTR_EQUAL ||
-                   til::details::compare_string_ordinal(input, os2LibPath) == CSTR_EQUAL;
+            return til::compare_string_ordinal(input, path) == CSTR_EQUAL ||
+                   til::compare_string_ordinal(input, libPath) == CSTR_EQUAL ||
+                   til::compare_string_ordinal(input, os2LibPath) == CSTR_EQUAL;
         }
 
         static void strip_trailing_null(std::wstring& str) noexcept

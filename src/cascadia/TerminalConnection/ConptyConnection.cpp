@@ -5,6 +5,7 @@
 #include "ConptyConnection.h"
 
 #include <conpty-static.h>
+#include <til/string.h>
 #include <til/env.h>
 #include <winternl.h>
 
@@ -121,7 +122,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (_environment)
             {
                 // Order the environment variable names so that resolution order is consistent
-                std::set<std::wstring, til::details::wstring_case_insensitive_compare> keys{};
+                std::set<std::wstring, til::wstring_case_insensitive_compare> keys{};
                 for (const auto item : _environment)
                 {
                     keys.insert(item.Key().c_str());
