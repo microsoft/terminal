@@ -364,7 +364,7 @@ namespace SettingsModelLocalTests
             }
         })" };
         const auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
-        std::vector<winrt::Windows::Foundation::Collections::StringMap> envVarMaps{};
+        std::vector<IEnvironmentVariableMap> envVarMaps{};
         envVarMaps.emplace_back(profile->EnvironmentVariables());
         for (auto& envMap : envVarMaps)
         {
