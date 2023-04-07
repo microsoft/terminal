@@ -118,7 +118,7 @@ class ScreenBufferTests
 
     TEST_METHOD(EraseAllTests);
 
-    TEST_METHOD(OutputNULTest);
+    TEST_METHOD(InactiveControlCharactersTest);
 
     TEST_METHOD(VtResize);
     TEST_METHOD(VtResizeComprehensive);
@@ -1014,8 +1014,19 @@ void ScreenBufferTests::EraseAllTests()
         viewport.BottomInclusive()));
 }
 
-void ScreenBufferTests::OutputNULTest()
+void ScreenBufferTests::InactiveControlCharactersTest()
 {
+    // These are the control characters that don't write anything to the
+    // output buffer, and are expected not to move the cursor position.
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:ordinal", L"{0, 1, 2, 3, 4, 5, 6, 7, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31}")
+    END_TEST_METHOD_PROPERTIES()
+
+    unsigned ordinal;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"ordinal", ordinal));
+    const auto ch = static_cast<wchar_t>(ordinal);
+
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto& stateMachine = si.GetStateMachine();
@@ -1024,21 +1035,20 @@ void ScreenBufferTests::OutputNULTest()
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().y);
 
-    Log::Comment(NoThrowString().Format(
-        L"Writing a single NUL"));
-    stateMachine.ProcessString({ L"\0", 1 });
+    Log::Comment(L"Writing a single control character");
+    const auto singleChar = std::wstring(1, ch);
+    stateMachine.ProcessString(singleChar);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().y);
 
-    Log::Comment(NoThrowString().Format(
-        L"Writing many NULs"));
-    stateMachine.ProcessString({ L"\0\0\0\0\0\0\0\0", 8 });
+    Log::Comment(L"Writing many control characters");
+    const auto manyChars = std::wstring(8, ch);
+    stateMachine.ProcessString(manyChars);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().y);
 
-    Log::Comment(NoThrowString().Format(
-        L"Testing a single NUL followed by real text"));
-    stateMachine.ProcessString({ L"\0foo", 4 });
+    Log::Comment(L"Testing a single control character followed by real text");
+    stateMachine.ProcessString(singleChar + L"foo");
     VERIFY_ARE_EQUAL(3, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().y);
 
@@ -1046,9 +1056,8 @@ void ScreenBufferTests::OutputNULTest()
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(1, cursor.GetPosition().y);
 
-    Log::Comment(NoThrowString().Format(
-        L"Writing NULs in between other strings"));
-    stateMachine.ProcessString({ L"\0foo\0bar\0", 9 });
+    Log::Comment(L"Writing controls in between other strings");
+    stateMachine.ProcessString(singleChar + L"foo" + singleChar + L"bar" + singleChar);
     VERIFY_ARE_EQUAL(6, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(1, cursor.GetPosition().y);
 }

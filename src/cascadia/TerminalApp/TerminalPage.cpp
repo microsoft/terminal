@@ -623,7 +623,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_CompleteInitialization()
+    winrt::fire_and_forget TerminalPage::_CompleteInitialization()
     {
         _startupState = StartupState::Initialized;
 
@@ -643,10 +643,39 @@ namespace winrt::TerminalApp::implementation
         if (_tabs.Size() == 0 && !(_shouldStartInboundListener || _isEmbeddingInboundListener))
         {
             _LastTabClosedHandlers(*this, winrt::make<LastTabClosedEventArgs>(false));
+            co_return;
         }
         else
         {
-            _InitializedHandlers(*this, nullptr);
+            // GH#11561: When we start up, our window is initially just a frame
+            // with a transparent content area. We're gonna do all this startup
+            // init on the UI thread, so the UI won't actually paint till it's
+            // all done. This results in a few frames where the frame is
+            // visible, before the page paints for the first time, before any
+            // tabs appears, etc.
+            //
+            // To mitigate this, we're gonna wait for the UI thread to finish
+            // everything it's gotta do for the initial init, and _then_ fire
+            // our Initialized event. By waiting for everything else to finish
+            // (CoreDispatcherPriority::Low), we let all the tabs and panes
+            // actually get created. In the window layer, we're gonna cloak the
+            // window till this event is fired, so we don't actually see this
+            // frame until we're actually all ready to go.
+            //
+            // This will result in the window seemingly not loading as fast, but
+            // it will actually take exactly the same amount of time before it's
+            // usable.
+            //
+            // We also experimented with drawing a solid BG color before the
+            // initialization is finished. However, there are still a few frames
+            // after the frame is displayed before the XAML content first draws,
+            // so that didn't actually resolve any issues.
+            Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weak = get_weak()]() {
+                if (auto self{ weak.get() })
+                {
+                    self->_InitializedHandlers(*self, nullptr);
+                }
+            });
         }
     }
 
@@ -656,6 +685,7 @@ namespace winrt::TerminalApp::implementation
     //   Notes link, send feedback link and privacy policy link.
     void TerminalPage::_ShowAboutDialog()
     {
+        AboutDialog().QueueUpdateCheck();
         _ShowDialogHelper(L"AboutDialog");
     }
 
@@ -667,22 +697,6 @@ namespace winrt::TerminalApp::implementation
     winrt::hstring TerminalPage::ApplicationVersion()
     {
         return CascadiaSettings::ApplicationVersion();
-    }
-
-    void TerminalPage::_SendFeedbackOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs& /*eventArgs*/)
-    {
-#if defined(WT_BRANDING_RELEASE)
-        ShellExecute(nullptr, nullptr, L"https://go.microsoft.com/fwlink/?linkid=2125419", nullptr, nullptr, SW_SHOW);
-#else
-        ShellExecute(nullptr, nullptr, L"https://go.microsoft.com/fwlink/?linkid=2204904", nullptr, nullptr, SW_SHOW);
-#endif
-    }
-
-    void TerminalPage::_ThirdPartyNoticesOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
-    {
-        std::filesystem::path currentPath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
-        currentPath.replace_filename(L"NOTICE.html");
-        ShellExecute(nullptr, nullptr, currentPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
     // Method Description:
