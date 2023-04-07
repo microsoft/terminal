@@ -564,7 +564,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return result;
         }
 
-        void clear()
+        void clear() noexcept
         {
             // Can't zero the keys, but at least we can zero the values.
             for (auto& [name, value] : _envMap)
