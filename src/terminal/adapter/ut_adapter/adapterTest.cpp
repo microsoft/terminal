@@ -189,10 +189,10 @@ public:
         Log::Comment(L"SetBracketedPasteMode MOCK called...");
     }
 
-    std::optional<bool> GetBracketedPasteMode() const override
+    bool GetBracketedPasteMode() const override
     {
         Log::Comment(L"GetBracketedPasteMode MOCK called...");
-        return {};
+        return false;
     }
 
     void CopyToClipboard(const std::wstring_view /*content*/)
