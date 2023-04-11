@@ -96,17 +96,6 @@ public:
         Log::Comment(L"SetViewportPosition MOCK called...");
     }
 
-    void SetAutoWrapMode(const bool /*wrapAtEOL*/) override
-    {
-        Log::Comment(L"SetAutoWrapMode MOCK called...");
-    }
-
-    bool GetAutoWrapMode() const override
-    {
-        Log::Comment(L"GetAutoWrapMode MOCK called...");
-        return true;
-    }
-
     bool IsVtInputEnabled() const override
     {
         return false;
@@ -121,15 +110,21 @@ public:
         _textBuffer->SetCurrentAttributes(attrs);
     }
 
+    void SetSystemMode(const Mode mode, const bool enabled)
+    {
+        Log::Comment(L"SetSystemMode MOCK called...");
+        _systemMode.set(mode, enabled);
+    }
+
+    bool GetSystemMode(const Mode mode) const
+    {
+        Log::Comment(L"GetSystemMode MOCK called...");
+        return _systemMode.test(mode);
+    }
+
     void WarningBell() override
     {
         Log::Comment(L"WarningBell MOCK called...");
-    }
-
-    bool GetLineFeedMode() const override
-    {
-        Log::Comment(L"GetLineFeedMode MOCK called...");
-        return _getLineFeedModeResult;
     }
 
     void SetWindowTitle(const std::wstring_view title)
@@ -182,17 +177,6 @@ public:
     {
         Log::Comment(L"GetConsoleOutputCP MOCK called...");
         return _expectedOutputCP;
-    }
-
-    void SetBracketedPasteMode(const bool /*enabled*/) override
-    {
-        Log::Comment(L"SetBracketedPasteMode MOCK called...");
-    }
-
-    bool GetBracketedPasteMode() const override
-    {
-        Log::Comment(L"GetBracketedPasteMode MOCK called...");
-        return false;
     }
 
     void CopyToClipboard(const std::wstring_view /*content*/)
@@ -386,7 +370,7 @@ public:
     bool _setTextAttributesResult = false;
     bool _returnResponseResult = false;
 
-    bool _getLineFeedModeResult = false;
+    til::enumset<Mode> _systemMode{ Mode::AutoWrap };
 
     bool _setWindowTitleResult = false;
     std::wstring_view _expectedWindowTitle{};
@@ -2262,13 +2246,13 @@ public:
         VERIFY_ARE_EQUAL(til::point(0, 1), cursor.GetPosition());
 
         Log::Comment(L"Test 3: Line feed depends on mode, and mode reset.");
-        _testGetSet->_getLineFeedModeResult = false;
+        _testGetSet->_systemMode.reset(ITerminalApi::Mode::LineFeed);
         cursor.SetPosition({ 10, 0 });
         VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
         VERIFY_ARE_EQUAL(til::point(10, 1), cursor.GetPosition());
 
         Log::Comment(L"Test 4: Line feed depends on mode, and mode set.");
-        _testGetSet->_getLineFeedModeResult = true;
+        _testGetSet->_systemMode.set(ITerminalApi::Mode::LineFeed);
         cursor.SetPosition({ 10, 0 });
         VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
         VERIFY_ARE_EQUAL(til::point(0, 1), cursor.GetPosition());

@@ -236,7 +236,7 @@ void Terminal::EraseScrollback()
 
 bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
 {
-    return _bracketedPasteMode;
+    return _systemMode.test(Mode::BracketedPaste);
 }
 
 std::wstring_view Terminal::GetWorkingDirectory() noexcept

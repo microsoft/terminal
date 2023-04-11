@@ -74,7 +74,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
     auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
     auto cursorPosition = cursor.GetPosition();
-    const auto wrapAtEOL = _api.GetAutoWrapMode();
+    const auto wrapAtEOL = _api.GetSystemMode(ITerminalApi::Mode::AutoWrap);
     const auto attributes = textBuffer.GetCurrentAttributes();
 
     // Turn off the cursor until we're done, so it isn't refreshed unnecessarily.
@@ -1719,7 +1719,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         CursorPosition(1, 1);
         return true;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
-        _api.SetAutoWrapMode(enable);
+        _api.SetSystemMode(ITerminalApi::Mode::AutoWrap, enable);
         // Resetting DECAWM should also reset the delayed wrap flag.
         if (!enable)
         {
@@ -1771,7 +1771,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _SetAlternateScreenBufferMode(enable);
         return true;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-        _api.SetBracketedPasteMode(enable);
+        _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, enable);
         return !_api.IsConsolePty();
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::Win32, enable);
@@ -1840,7 +1840,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         enabled = _modes.test(Mode::Origin);
         break;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
-        enabled = _api.GetAutoWrapMode();
+        enabled = _api.GetSystemMode(ITerminalApi::Mode::AutoWrap);
         break;
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat);
@@ -1889,7 +1889,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         enabled = _usingAltBuffer;
         break;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-        enabled = _api.GetBracketedPasteMode();
+        enabled = _api.GetSystemMode(ITerminalApi::Mode::BracketedPaste);
         break;
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Win32);
@@ -2203,7 +2203,7 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
     switch (lineFeedType)
     {
     case DispatchTypes::LineFeedType::DependsOnMode:
-        _DoLineFeed(textBuffer, _api.GetLineFeedMode(), false);
+        _DoLineFeed(textBuffer, _api.GetSystemMode(ITerminalApi::Mode::LineFeed), false);
         return true;
     case DispatchTypes::LineFeedType::WithoutReturn:
         _DoLineFeed(textBuffer, false, false);
@@ -2590,7 +2590,7 @@ bool AdaptDispatch::SoftReset()
 {
     _api.GetTextBuffer().GetCursor().SetIsVisible(true); // Cursor enabled.
     _modes.reset(Mode::InsertReplace, Mode::Origin); // Replace mode; Absolute cursor addressing.
-    _api.SetAutoWrapMode(true); // Wrap at end of line.
+    _api.SetSystemMode(ITerminalApi::Mode::AutoWrap, true); // Wrap at end of line.
     _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, false); // Normal characters.
     _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, false); // Numeric characters.
 
@@ -2667,7 +2667,7 @@ bool AdaptDispatch::HardReset()
     _terminalInput.ResetInputModes();
 
     // Reset bracketed paste mode
-    _api.SetBracketedPasteMode(false);
+    _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, false);
 
     // Restore cursor blinking mode.
     _api.GetTextBuffer().GetCursor().SetBlinkingAllowed(true);

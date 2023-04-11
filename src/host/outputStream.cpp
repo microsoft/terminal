@@ -114,40 +114,49 @@ void ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
 }
 
 // Routine Description:
-// - Sets the ENABLE_WRAP_AT_EOL_OUTPUT mode. This controls whether the cursor moves
-//     to the beginning of the next row when it reaches the end of the current row.
+// - Sets the state of one of the system modes.
 // Arguments:
-// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
+// - mode - The mode being updated.
+// - enabled - True to enable the mode, false to disable it.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::SetAutoWrapMode(const bool wrapAtEOL)
+void ConhostInternalGetSet::SetSystemMode(const Mode mode, const bool enabled)
 {
-    auto& outputMode = _io.GetActiveOutputBuffer().OutputMode;
-    WI_UpdateFlag(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT, wrapAtEOL);
+    switch (mode)
+    {
+    case Mode::AutoWrap:
+        WI_UpdateFlag(_io.GetActiveOutputBuffer().OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT, enabled);
+        break;
+    case Mode::LineFeed:
+        WI_UpdateFlag(_io.GetActiveOutputBuffer().OutputMode, DISABLE_NEWLINE_AUTO_RETURN, !enabled);
+        break;
+    case Mode::BracketedPaste:
+        ServiceLocator::LocateGlobals().getConsoleInformation().SetBracketedPasteMode(enabled);
+        break;
+    default:
+        THROW_HR(E_INVALIDARG);
+    }
 }
 
 // Routine Description:
-// - Retrieves the current state of ENABLE_WRAP_AT_EOL_OUTPUT mode.
+// - Retrieves the current state of one of the system modes.
 // Arguments:
-// - <none>
+// - mode - The mode being queried.
 // Return Value:
 // - true if the mode is enabled. false otherwise.
-bool ConhostInternalGetSet::GetAutoWrapMode() const
+bool ConhostInternalGetSet::GetSystemMode(const Mode mode) const
 {
-    const auto outputMode = _io.GetActiveOutputBuffer().OutputMode;
-    return WI_IsFlagSet(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
-}
-
-// Method Description:
-// - Retrieves the current Line Feed/New Line (LNM) mode.
-// Arguments:
-// - None
-// Return Value:
-// - true if a line feed also produces a carriage return. false otherwise.
-bool ConhostInternalGetSet::GetLineFeedMode() const
-{
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    return WI_IsFlagClear(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
+    switch (mode)
+    {
+    case Mode::AutoWrap:
+        return WI_IsFlagSet(_io.GetActiveOutputBuffer().OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
+    case Mode::LineFeed:
+        return WI_IsFlagClear(_io.GetActiveOutputBuffer().OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
+    case Mode::BracketedPaste:
+        return ServiceLocator::LocateGlobals().getConsoleInformation().GetBracketedPasteMode();
+    default:
+        THROW_HR(E_INVALIDARG);
+    }
 }
 
 // Routine Description:
@@ -243,29 +252,6 @@ void ConhostInternalGetSet::SetConsoleOutputCP(const unsigned int codepage)
 unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
 {
     return ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
-}
-
-// Routine Description:
-// - Sets the XTerm bracketed paste mode. This controls whether pasted content is
-//     bracketed with control sequences to differentiate it from typed text.
-// Arguments:
-// - enable - set to true to enable bracketing, false to disable.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetBracketedPasteMode(const bool enabled)
-{
-    ServiceLocator::LocateGlobals().getConsoleInformation().SetBracketedPasteMode(enabled);
-}
-
-// Routine Description:
-// - Gets the current state of XTerm bracketed paste mode.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the mode is enabled, false if not.
-bool ConhostInternalGetSet::GetBracketedPasteMode() const
-{
-    return ServiceLocator::LocateGlobals().getConsoleInformation().GetBracketedPasteMode();
 }
 
 // Routine Description:
