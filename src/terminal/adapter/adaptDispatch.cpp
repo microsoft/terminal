@@ -1696,6 +1696,15 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
         _modes.set(Mode::InsertReplace, enable);
         return true;
+    case DispatchTypes::ModeParams::LNM_LineFeedNewLineMode:
+        // VT apps expect that the system and input modes are the same, so if
+        // they become out of sync, we just act as if LNM mode isn't supported.
+        if (_api.GetSystemMode(ITerminalApi::Mode::LineFeed) == _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed))
+        {
+            _api.SetSystemMode(ITerminalApi::Mode::LineFeed, enable);
+            _terminalInput.SetInputMode(TerminalInput::Mode::LineFeed, enable);
+        }
+        return true;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, enable);
         return !_PassThroughInputModes();
@@ -1819,6 +1828,14 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
     {
     case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
         enabled = _modes.test(Mode::InsertReplace);
+        break;
+    case DispatchTypes::ModeParams::LNM_LineFeedNewLineMode:
+        // VT apps expect that the system and input modes are the same, so if
+        // they become out of sync, we just act as if LNM mode isn't supported.
+        if (_api.GetSystemMode(ITerminalApi::Mode::LineFeed) == _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed))
+        {
+            enabled = _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed);
+        }
         break;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::CursorKey);
@@ -2662,6 +2679,15 @@ bool AdaptDispatch::HardReset()
 
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     CursorPosition(1, 1);
+
+    // We only reset the system line feed mode if the input mode is set. If it
+    // isn't set, that either means they're both reset, and there's nothing for
+    // us to do, or they're out of sync, which implies the system mode was set
+    // via the console API, so it's not our responsibility.
+    if (_terminalInput.GetInputMode(TerminalInput::Mode::LineFeed))
+    {
+        _api.SetSystemMode(ITerminalApi::Mode::LineFeed, false);
+    }
 
     // Reset input modes to their initial state
     _terminalInput.ResetInputModes();
