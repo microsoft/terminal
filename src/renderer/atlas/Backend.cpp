@@ -170,6 +170,19 @@ void SwapChainManager::_updateMatrixTransform(const RenderingPayload& p)
     _fontGeneration = p.s->font.generation();
 }
 
+void Microsoft::Console::Render::Atlas::GlyphRunAccumulateBounds(const ID2D1DeviceContext* d2dRenderTarget, D2D1_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, D2D1_RECT_F& bounds)
+{
+    D2D1_RECT_F rect{};
+    THROW_IF_FAILED(d2dRenderTarget->GetGlyphRunWorldBounds(baselineOrigin, glyphRun, DWRITE_MEASURING_MODE_NATURAL, &rect));
+    if (rect.top < rect.bottom)
+    {
+        bounds.left = std::min(bounds.left, rect.left);
+        bounds.top = std::min(bounds.top, rect.top);
+        bounds.right = std::max(bounds.right, rect.right);
+        bounds.bottom = std::max(bounds.bottom, rect.bottom);
+    }
+}
+
 wil::com_ptr<IDWriteColorGlyphRunEnumerator1> Microsoft::Console::Render::Atlas::TranslateColorGlyphRun(IDWriteFactory4* dwriteFactory4, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun) noexcept
 {
     static constexpr auto formats =
@@ -192,91 +205,57 @@ wil::com_ptr<IDWriteColorGlyphRunEnumerator1> Microsoft::Console::Render::Atlas:
     return enumerator;
 }
 
-// Draws a `DWRITE_GLYPH_RUN` at `baselineOrigin` into the given `ID2D1DeviceContext`.
-// `d2dRenderTarget4` and `dwriteFactory4` are optional and used to draw colored glyphs.
-// Returns true if the `DWRITE_GLYPH_RUN` contained a color glyph.
-bool Microsoft::Console::Render::Atlas::DrawGlyphRun(ID2D1DeviceContext* d2dRenderTarget, ID2D1DeviceContext4* d2dRenderTarget4, IDWriteFactory4* dwriteFactory4, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, ID2D1Brush* foregroundBrush)
+bool Microsoft::Console::Render::Atlas::ColorGlyphRunMoveNext(IDWriteColorGlyphRunEnumerator1* enumerator)
 {
-    // Support for ID2D1DeviceContext4 implies support for IDWriteFactory4 and vice versa.
-    if (const auto enumerator = TranslateColorGlyphRun(dwriteFactory4, baselineOrigin, glyphRun))
+    BOOL hasRun;
+    THROW_IF_FAILED(enumerator->MoveNext(&hasRun));
+    return hasRun;
+}
+
+const DWRITE_COLOR_GLYPH_RUN1* Microsoft::Console::Render::Atlas::ColorGlyphRunGetCurrentRun(IDWriteColorGlyphRunEnumerator1* enumerator)
+{
+    const DWRITE_COLOR_GLYPH_RUN1* colorGlyphRun = nullptr;
+    THROW_IF_FAILED(enumerator->GetCurrentRun(&colorGlyphRun));
+    return colorGlyphRun;
+}
+
+void Microsoft::Console::Render::Atlas::ColorGlyphRunAccumulateBounds(const ID2D1DeviceContext* d2dRenderTarget, const DWRITE_COLOR_GLYPH_RUN1* colorGlyphRun, D2D1_RECT_F& bounds)
+{
+    const D2D1_POINT_2F baselineOrigin{ colorGlyphRun->baselineOriginX, colorGlyphRun->baselineOriginY };
+    GlyphRunAccumulateBounds(d2dRenderTarget, baselineOrigin, &colorGlyphRun->glyphRun, bounds);
+}
+
+void Microsoft::Console::Render::Atlas::ColorGlyphRunDraw(ID2D1DeviceContext4* d2dRenderTarget4, ID2D1SolidColorBrush* emojiBrush, ID2D1SolidColorBrush* foregroundBrush, const DWRITE_COLOR_GLYPH_RUN1* colorGlyphRun) noexcept
+{
+    ID2D1Brush* runBrush = nullptr;
+    if (colorGlyphRun->paletteIndex == /*DWRITE_NO_PALETTE_INDEX*/ 0xffff)
     {
-        DrawColorGlyphRun(d2dRenderTarget4, enumerator.get(), foregroundBrush);
-        return true;
+        runBrush = foregroundBrush;
     }
     else
     {
-        DrawBasicGlyphRun(d2dRenderTarget, baselineOrigin, glyphRun, foregroundBrush);
-        return false;
+        emojiBrush->SetColor(&colorGlyphRun->runColor);
+        runBrush = emojiBrush;
     }
-}
 
-void Microsoft::Console::Render::Atlas::DrawBasicGlyphRun(ID2D1DeviceContext* d2dRenderTarget, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, ID2D1Brush* foregroundBrush) noexcept
-{
-    d2dRenderTarget->DrawGlyphRun(baselineOrigin, glyphRun, foregroundBrush, DWRITE_MEASURING_MODE_NATURAL);
-}
+    const D2D1_POINT_2F baselineOrigin{ colorGlyphRun->baselineOriginX, colorGlyphRun->baselineOriginY };
 
-void Microsoft::Console::Render::Atlas::DrawColorGlyphRun(ID2D1DeviceContext4* d2dRenderTarget4, IDWriteColorGlyphRunEnumerator1* enumerator, ID2D1Brush* foregroundBrush)
-{
-    const auto previousAntialiasingMode = d2dRenderTarget4->GetTextAntialiasMode();
-    d2dRenderTarget4->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-    const auto cleanup = wil::scope_exit([&]() {
-        d2dRenderTarget4->SetTextAntialiasMode(previousAntialiasingMode);
-    });
-
-    wil::com_ptr<ID2D1SolidColorBrush> solidBrush;
-
-    for (;;)
+    switch (colorGlyphRun->glyphImageFormat)
     {
-        BOOL hasRun;
-        THROW_IF_FAILED(enumerator->MoveNext(&hasRun));
-        if (!hasRun)
-        {
-            break;
-        }
-
-        const DWRITE_COLOR_GLYPH_RUN1* colorGlyphRun;
-        THROW_IF_FAILED(enumerator->GetCurrentRun(&colorGlyphRun));
-
-        ID2D1Brush* runBrush = nullptr;
-        if (colorGlyphRun->paletteIndex == /*DWRITE_NO_PALETTE_INDEX*/ 0xffff)
-        {
-            runBrush = foregroundBrush;
-        }
-        else
-        {
-            if (!solidBrush)
-            {
-                THROW_IF_FAILED(d2dRenderTarget4->CreateSolidColorBrush(colorGlyphRun->runColor, &solidBrush));
-            }
-            else
-            {
-                solidBrush->SetColor(colorGlyphRun->runColor);
-            }
-            runBrush = solidBrush.get();
-        }
-
-        const D2D1_POINT_2F runOrigin{
-            colorGlyphRun->baselineOriginX,
-            colorGlyphRun->baselineOriginY,
-        };
-
-        switch (colorGlyphRun->glyphImageFormat)
-        {
-        case DWRITE_GLYPH_IMAGE_FORMATS_NONE:
-            break;
-        case DWRITE_GLYPH_IMAGE_FORMATS_PNG:
-        case DWRITE_GLYPH_IMAGE_FORMATS_JPEG:
-        case DWRITE_GLYPH_IMAGE_FORMATS_TIFF:
-        case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8:
-            d2dRenderTarget4->DrawColorBitmapGlyphRun(colorGlyphRun->glyphImageFormat, runOrigin, &colorGlyphRun->glyphRun, colorGlyphRun->measuringMode, D2D1_COLOR_BITMAP_GLYPH_SNAP_OPTION_DEFAULT);
-            break;
-        case DWRITE_GLYPH_IMAGE_FORMATS_SVG:
-            d2dRenderTarget4->DrawSvgGlyphRun(runOrigin, &colorGlyphRun->glyphRun, runBrush, nullptr, 0, colorGlyphRun->measuringMode);
-            break;
-        default:
-            d2dRenderTarget4->DrawGlyphRun(runOrigin, &colorGlyphRun->glyphRun, colorGlyphRun->glyphRunDescription, runBrush, colorGlyphRun->measuringMode);
-            break;
-        }
+    case DWRITE_GLYPH_IMAGE_FORMATS_NONE:
+        break;
+    case DWRITE_GLYPH_IMAGE_FORMATS_PNG:
+    case DWRITE_GLYPH_IMAGE_FORMATS_JPEG:
+    case DWRITE_GLYPH_IMAGE_FORMATS_TIFF:
+    case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8:
+        d2dRenderTarget4->DrawColorBitmapGlyphRun(colorGlyphRun->glyphImageFormat, baselineOrigin, &colorGlyphRun->glyphRun, colorGlyphRun->measuringMode, D2D1_COLOR_BITMAP_GLYPH_SNAP_OPTION_DEFAULT);
+        break;
+    case DWRITE_GLYPH_IMAGE_FORMATS_SVG:
+        d2dRenderTarget4->DrawSvgGlyphRun(baselineOrigin, &colorGlyphRun->glyphRun, runBrush, nullptr, 0, colorGlyphRun->measuringMode);
+        break;
+    default:
+        d2dRenderTarget4->DrawGlyphRun(baselineOrigin, &colorGlyphRun->glyphRun, colorGlyphRun->glyphRunDescription, runBrush, colorGlyphRun->measuringMode);
+        break;
     }
 }
 

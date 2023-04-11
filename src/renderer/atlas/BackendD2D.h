@@ -17,28 +17,6 @@ namespace Microsoft::Console::Render::Atlas
         bool RequiresContinuousRedraw() noexcept override;
         void WaitUntilCanRender() noexcept override;
 
-        struct CachedBrush
-        {
-            wil::com_ptr<ID2D1SolidColorBrush> brush;
-            u32 color = 0;
-
-            constexpr bool operator==(u32 key) const noexcept
-            {
-                return color == key;
-            }
-
-            operator bool() const noexcept
-            {
-                return static_cast<bool>(brush);
-            }
-
-            constexpr CachedBrush& operator=(u32 key) noexcept
-            {
-                color = key;
-                return *this;
-            }
-        };
-
     private:
         ATLAS_ATTR_COLD void _handleSettingsUpdate(const RenderingPayload& p);
         void _drawBackground(const RenderingPayload& p) noexcept;
@@ -46,7 +24,6 @@ namespace Microsoft::Console::Render::Atlas
         f32 _drawTextPrepareLineRendition(const RenderingPayload& p, f32 baselineY, LineRendition lineRendition) const noexcept;
         void _drawTextResetLineRendition() const noexcept;
         ATLAS_ATTR_COLD f32r _getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY);
-        void _drawGridlines(const RenderingPayload& p);
         void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
         void _drawCursorWithColor(const RenderingPayload& p);
         void _drawCursorPart1(const RenderingPayload& p);
@@ -56,8 +33,8 @@ namespace Microsoft::Console::Render::Atlas
         void _drawSelection(const RenderingPayload& p);
         void _debugShowDirty(const RenderingPayload& p);
         void _debugDumpRenderTarget(const RenderingPayload& p);
-        ID2D1Brush* _brushWithColor(u32 color);
-        ATLAS_ATTR_COLD void _clearBrushes() const noexcept;
+        ATLAS_ATTR_COLD ID2D1SolidColorBrush* _brushWithColor(u32 color);
+        ATLAS_ATTR_COLD ID2D1SolidColorBrush* _brushWithColorUpdate(u32 color);
         void _fillRectangle(const D2D1_RECT_F& rect, u32 color);
 
         SwapChainManager _swapChainManager;
@@ -75,7 +52,9 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID2D1Bitmap> _cursorBitmap;
         til::size _cursorBitmapSize; // in columns/rows
 
-        til::linear_flat_set<CachedBrush> _brushes;
+        wil::com_ptr<ID2D1SolidColorBrush> _emojiBrush;
+        wil::com_ptr<ID2D1SolidColorBrush> _brush;
+        u32 _brushColor = 0;
 
         Buffer<DWRITE_GLYPH_METRICS> _glyphMetrics;
 

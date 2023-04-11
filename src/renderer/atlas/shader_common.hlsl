@@ -6,8 +6,9 @@
 #define SHADING_TYPE_TEXT_GRAYSCALE     1
 #define SHADING_TYPE_TEXT_CLEARTYPE     2
 #define SHADING_TYPE_TEXT_PASSTHROUGH   3
-#define SHADING_TYPE_DASHED_LINE        4
-#define SHADING_TYPE_SOLID_FILL         5
+#define SHADING_TYPE_DOTTED_LINE        4
+#define SHADING_TYPE_DOTTED_LINE_WIDE   5
+#define SHADING_TYPE_SOLID_FILL         6
 // clang-format on
 
 struct VSData

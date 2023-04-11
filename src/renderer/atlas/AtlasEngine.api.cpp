@@ -502,9 +502,9 @@ void AtlasEngine::_updateFont(const wchar_t* faceName, const FontInfoDesired& fo
         // Gsub is for GetGlyphs() and Gpos for GetGlyphPlacements().
         //
         // GH#10774: Apparently specifying all of the features is just redundant.
-        fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES, 1 });
-        fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_LIGATURES, 1 });
-        fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES, 1 });
+        fontFeatures.emplace_back(DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES, 1);
+        fontFeatures.emplace_back(DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_LIGATURES, 1);
+        fontFeatures.emplace_back(DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES, 1);
 
         for (const auto& p : features)
         {
@@ -523,7 +523,7 @@ void AtlasEngine::_updateFont(const wchar_t* faceName, const FontInfoDesired& fo
                     fontFeatures[2].parameter = p.second;
                     break;
                 default:
-                    fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ tag, p.second });
+                    fontFeatures.emplace_back(tag, p.second);
                     break;
                 }
             }
@@ -537,9 +537,9 @@ void AtlasEngine::_updateFont(const wchar_t* faceName, const FontInfoDesired& fo
 
         // AtlasEngine::_recreateFontDependentResources() relies on these fields to
         // exist in this particular order in order to create appropriate default axes.
-        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, -1.0f });
-        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_ITALIC, -1.0f });
-        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_SLANT, -1.0f });
+        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_TAG_WEIGHT, -1.0f);
+        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_TAG_ITALIC, -1.0f);
+        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_TAG_SLANT, -1.0f);
 
         for (const auto& p : axes)
         {
@@ -558,7 +558,7 @@ void AtlasEngine::_updateFont(const wchar_t* faceName, const FontInfoDesired& fo
                     fontAxisValues[2].value = p.second;
                     break;
                 default:
-                    fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ tag, p.second });
+                    fontAxisValues.emplace_back(tag, p.second);
                     break;
                 }
             }
@@ -709,13 +709,17 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         const auto advanceWidthU16 = gsl::narrow_cast<u16>(lrintf(advanceWidth));
         const auto baselineU16 = gsl::narrow_cast<u16>(lrintf(baseline));
         const auto descenderU16 = gsl::narrow_cast<u16>(cellHeight - baselineU16);
+        const auto thinLineWidthU16 = gsl::narrow_cast<u16>(lrintf(thinLineWidth));
+
+        const auto gridBottomPositionU16 = gsl::narrow_cast<u16>(cellHeight - thinLineWidth);
+        const auto gridRightPositionU16 = gsl::narrow_cast<u16>(cellWidth - thinLineWidth);
+
         const auto underlinePosU16 = gsl::narrow_cast<u16>(lrintf(underlinePos));
         const auto underlineWidthU16 = gsl::narrow_cast<u16>(lrintf(underlineWidth));
         const auto strikethroughPosU16 = gsl::narrow_cast<u16>(lrintf(strikethroughPos));
         const auto strikethroughWidthU16 = gsl::narrow_cast<u16>(lrintf(strikethroughWidth));
         const auto doubleUnderlinePosTopU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlinePosTop));
         const auto doubleUnderlinePosBottomU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlinePosBottom));
-        const auto thinLineWidthU16 = gsl::narrow_cast<u16>(lrintf(thinLineWidth));
 
         // NOTE: From this point onward no early returns or throwing code should exist,
         // as we might cause _api to be in an inconsistent state otherwise.
@@ -724,18 +728,22 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         fontMetrics->fontFamily = std::move(fontFamily);
         fontMetrics->fontName = std::move(fontName);
         fontMetrics->fontSize = fontSizeInPx;
-        fontMetrics->cellSize.x = cellWidth;
-        fontMetrics->cellSize.y = cellHeight;
+        fontMetrics->cellSize = { cellWidth, cellHeight };
         fontMetrics->fontWeight = fontWeightU16;
         fontMetrics->advanceWidth = advanceWidthU16;
         fontMetrics->baseline = baselineU16;
         fontMetrics->descender = descenderU16;
-        fontMetrics->underlinePos = underlinePosU16;
-        fontMetrics->underlineWidth = underlineWidthU16;
-        fontMetrics->strikethroughPos = strikethroughPosU16;
-        fontMetrics->strikethroughWidth = strikethroughWidthU16;
-        fontMetrics->doubleUnderlinePos.x = doubleUnderlinePosTopU16;
-        fontMetrics->doubleUnderlinePos.y = doubleUnderlinePosBottomU16;
         fontMetrics->thinLineWidth = thinLineWidthU16;
+
+        fontMetrics->gridTop = { 0, thinLineWidthU16 };
+        fontMetrics->gridBottom = { gridBottomPositionU16, thinLineWidthU16 };
+        fontMetrics->gridLeft = { 0, thinLineWidthU16 };
+        fontMetrics->gridRight = { gridRightPositionU16, thinLineWidthU16 };
+
+        fontMetrics->underline = { underlinePosU16, underlineWidthU16 };
+        fontMetrics->strikethrough = { strikethroughPosU16, strikethroughWidthU16 };
+        fontMetrics->doubleUnderline[0] = { doubleUnderlinePosTopU16, thinLineWidthU16 };
+        fontMetrics->doubleUnderline[1] = { doubleUnderlinePosBottomU16, thinLineWidthU16 };
+        fontMetrics->overline = { 0, underlineWidthU16 };
     }
 }

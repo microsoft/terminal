@@ -222,7 +222,7 @@ void BackendD3D::Render(RenderingPayload& p)
 #endif
 
     // After a Present() the render target becomes unbound.
-    _deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
+    _deviceContext->OMSetRenderTargets(1, _customRenderTargetView ? _customRenderTargetView.addressof() : _renderTargetView.addressof(), nullptr);
 
     // Invalidating the render target helps with spotting invalid quad instances and Present1() bugs.
 #if ATLAS_DEBUG_SHOW_DIRTY || ATLAS_DEBUG_DUMP_RENDER_TARGET
@@ -235,7 +235,6 @@ void BackendD3D::Render(RenderingPayload& p)
     _drawBackground(p);
     _drawCursorPart1(p);
     _drawText(p);
-    _drawGridlines(p);
     _drawCursorPart2(p);
     _drawSelection(p);
 #if ATLAS_DEBUG_SHOW_DIRTY
@@ -499,10 +498,6 @@ void BackendD3D::_recreateCustomRenderTargetView(u16x2 targetSize)
     _customOffscreenTexture.reset();
     _customOffscreenTextureView.reset();
 
-    // This causes our regular rendered contents to end up in the offscreen texture. We'll then use the
-    // `_customRenderTargetView` to render into the swap chain using the custom (user provided) shader.
-    _customRenderTargetView = std::move(_renderTargetView);
-
     const D3D11_TEXTURE2D_DESC desc{
         .Width = targetSize.x,
         .Height = targetSize.y,
@@ -514,7 +509,7 @@ void BackendD3D::_recreateCustomRenderTargetView(u16x2 targetSize)
     };
     THROW_IF_FAILED(_device->CreateTexture2D(&desc, nullptr, _customOffscreenTexture.addressof()));
     THROW_IF_FAILED(_device->CreateShaderResourceView(_customOffscreenTexture.get(), nullptr, _customOffscreenTextureView.addressof()));
-    THROW_IF_FAILED(_device->CreateRenderTargetView(_customOffscreenTexture.get(), nullptr, _renderTargetView.addressof()));
+    THROW_IF_FAILED(_device->CreateRenderTargetView(_customOffscreenTexture.get(), nullptr, _customRenderTargetView.addressof()));
 }
 
 void BackendD3D::_recreateBackgroundColorBitmap(u16x2 cellCount)
@@ -559,7 +554,7 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
         data.cellCount = { static_cast<f32>(p.s->cellCount.x), static_cast<f32>(p.s->cellCount.y) };
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);
         data.enhancedContrast = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
-        data.dashedLineLength = p.s->font->underlineWidth * 3.0f;
+        data.underlineWidth = p.s->font->underline.height;
         _deviceContext->UpdateSubresource(_psConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
 }
@@ -593,7 +588,7 @@ void BackendD3D::_setupDeviceContextState(const RenderingPayload& p)
 
     // OM: Output Merger
     _deviceContext->OMSetBlendState(_blendState.get(), nullptr, 0xffffffff);
-    _deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
+    _deviceContext->OMSetRenderTargets(1, _customRenderTargetView ? _customRenderTargetView.addressof() : _renderTargetView.addressof(), nullptr);
 }
 
 #ifndef NDEBUG
@@ -791,6 +786,7 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
 
         {
             static constexpr D2D1_COLOR_F color{ 1, 1, 1, 1 };
+            THROW_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(&color, nullptr, _emojiBrush.put()));
             THROW_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(&color, nullptr, _brush.put()));
         }
 
@@ -815,10 +811,7 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
 
 void BackendD3D::_markStateChange(ID3D11BlendState* blendState)
 {
-    _instancesStateChanges.emplace_back(StateChange{
-        .blendState = blendState,
-        .offset = _instancesCount,
-    });
+    _instancesStateChanges.emplace_back(blendState, _instancesCount);
 }
 
 BackendD3D::QuadInstance& BackendD3D::_getLastQuad() noexcept
@@ -996,8 +989,20 @@ void BackendD3D::_drawText(RenderingPayload& p)
     for (const auto row : p.rows)
     {
         f32 baselineX = 0;
-        const auto baselineY = y * p.s->font->cellSize.y + p.s->font->baseline;
-        const auto lineRenditionScale = static_cast<uint8_t>(row->lineRendition != LineRendition::SingleWidth);
+        f32 baselineY = y * p.s->font->cellSize.y + p.s->font->baseline;
+        f32 scaleX = 1;
+        f32 scaleY = 1;
+
+        if (row->lineRendition != LineRendition::SingleWidth)
+        {
+            scaleX = 2;
+
+            if (row->lineRendition >= LineRendition::DoubleHeightTop)
+            {
+                scaleY = 2;
+                baselineY /= 2;
+            }
+        }
 
         for (const auto& m : row->mappings)
         {
@@ -1017,7 +1022,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
             {
                 const auto [glyphEntry, inserted] = fontFaceEntry.glyphs.insert(row->glyphIndices[x]);
 
-                if (inserted && !_drawGlyph(p, row->glyphAdvances[x], fontFaceEntry, glyphEntry))
+                if (inserted && !_drawGlyph(p, fontFaceEntry, glyphEntry))
                 {
                     // A deadlock in this retry loop is detected in _drawGlyphPrepareRetry.
                     //
@@ -1030,12 +1035,8 @@ void BackendD3D::_drawText(RenderingPayload& p)
 
                 if (glyphEntry.data.GetShadingType() != ShadingType::Default)
                 {
-                    auto l = static_cast<til::CoordType>(lrintf(baselineX + row->glyphOffsets[x].advanceOffset));
-                    auto t = static_cast<til::CoordType>(lrintf(baselineY - row->glyphOffsets[x].ascenderOffset));
-
-                    // A non-standard line rendition will make characters appear twice as wide, which requires us to scale the baseline advance by 2.
-                    // We need to do this before applying the glyph offset however, since the offset is already 2x scaled in case of such glyphs.
-                    l <<= lineRenditionScale;
+                    auto l = static_cast<til::CoordType>(lrintf((baselineX + row->glyphOffsets[x].advanceOffset) * scaleX));
+                    auto t = static_cast<til::CoordType>(lrintf((baselineY - row->glyphOffsets[x].ascenderOffset) * scaleY));
 
                     l += glyphEntry.data.offset.x;
                     t += glyphEntry.data.offset.y;
@@ -1062,6 +1063,11 @@ void BackendD3D::_drawText(RenderingPayload& p)
             }
         }
 
+        if (!row->gridLineRanges.empty())
+        {
+            _drawGridlineRow(p, row, y);
+        }
+
         if (p.invalidatedRows.contains(y))
         {
             dirtyTop = std::min(dirtyTop, row->dirtyTop);
@@ -1084,33 +1090,46 @@ void BackendD3D::_drawText(RenderingPayload& p)
 // translate text like "!=" into a glyph that looks like "≠" (just 2 columns wide and not 1).
 // Glyphs like that still need to be colored in potentially multiple colors however, so this
 // function will handle these ligatures by splitting them up into multiple QuadInstances.
+//
+// It works by iteratively splitting the wide glyph into shorter and shorter segments like so
+// (whitespaces indicate that the glyph was split up in a leading and trailing half):
+//   <!--
+//   < !--
+//   < ! --
+//   < ! - -
 void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
 {
     const auto& originalQuad = _getLastQuad();
 
-    int cellCountX{ p.s->cellCount.x };
-    int cellSizeX{ p.s->font->cellSize.x };
+    i32 columnAdvance = 1;
+    i32 columnAdvanceInPx{ p.s->font->cellSize.x };
+    i32 cellCount{ p.s->cellCount.x };
 
     if (p.rows[y]->lineRendition != LineRendition::SingleWidth)
     {
-        cellCountX >>= 1;
-        cellSizeX <<= 1;
+        columnAdvance = 2;
+        columnAdvanceInPx <<= 1;
+        cellCount >>= 1;
     }
 
-    // We must ensure to exit the loop below while `column` is less than `cellCount.x`,
-    // otherwise we cause a potential out of bounds access into foregroundBitmap.
-    // This may happen with glyphs that are severely overlapping their cells,
-    // outside of the viewport. In other words, the `clipLeft < clipEnd` condition
-    // doubles as a `column < cellCount.x` condition with this trick.
-    const auto limitRight = (cellCountX - 1) * cellSizeX;
-    const auto clipEnd = std::min(limitRight, originalQuad.position.x + originalQuad.size.x);
+    i32 originalLeft = originalQuad.position.x;
+    i32 originalRight = originalQuad.position.x + originalQuad.size.x;
+    originalLeft = std::max(originalLeft, 0);
+    originalRight = std::min(originalRight, cellCount * columnAdvanceInPx);
 
-    auto column = std::max(1, (originalQuad.position.x + cellSizeX) / cellSizeX);
-    auto clipLeft = column * cellSizeX;
+    auto column = originalLeft / columnAdvanceInPx + 1;
+    auto clipLeft = column * columnAdvanceInPx;
+    column *= columnAdvance;
+
     const auto colors = &p.foregroundBitmap[p.colorBitmapRowStride * y];
     auto lastFg = originalQuad.color;
 
-    for (; clipLeft < clipEnd; ++column, clipLeft += cellSizeX)
+    // We must ensure to exit the loop while `column` is less than `cellCount.x`,
+    // otherwise we cause a potential out of bounds access into foregroundBitmap.
+    // This may happen with glyphs that are severely overlapping their cells,
+    // outside of the viewport. The `clipLeft < originalRight` condition doubles
+    // as a `column < cellCount.x` condition thanks to us std::min()ing it above.
+    for (; clipLeft < originalRight; column += columnAdvance, clipLeft += columnAdvanceInPx)
     {
         const auto fg = colors[column];
 
@@ -1139,7 +1158,7 @@ void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
     }
 }
 
-bool BackendD3D::_drawGlyph(const RenderingPayload& p, f32 glyphAdvance, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry)
+bool BackendD3D::_drawGlyph(const RenderingPayload& p, const BackendD3D::AtlasFontFaceEntryInner& fontFaceEntry, BackendD3D::AtlasGlyphEntry& glyphEntry)
 {
     if (!fontFaceEntry.fontFace)
     {
@@ -1230,7 +1249,6 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, f32 glyphAdvance, const A
         t.m11 = 2.0f;
         t.m22 = lineRendition >= LineRendition::DoubleHeightTop ? 2.0f : 1.0f;
         _d2dRenderTarget->SetTransform(&t);
-        glyphAdvance *= 2;
     }
 
     const auto restoreTransform = wil::scope_exit([&]() noexcept {
@@ -1258,19 +1276,47 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, f32 glyphAdvance, const A
     //               box.left       box.right
     //                 (-1)           (+14)
     //
-    D2D1_RECT_F box{};
-    THROW_IF_FAILED(_d2dRenderTarget->GetGlyphRunWorldBounds({}, &glyphRun, DWRITE_MEASURING_MODE_NATURAL, &box));
+
+    bool isColorGlyph = false;
+    D2D1_RECT_F bounds = GlyphRunEmptyBounds;
+
+    const auto cleanup = wil::scope_exit([&]() {
+        if (isColorGlyph)
+        {
+            _d2dRenderTarget4->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(p.s->font->antialiasingMode));
+        }
+    });
+
+    {
+        const auto enumerator = TranslateColorGlyphRun(p.dwriteFactory4.get(), {}, &glyphRun);
+
+        if (!enumerator)
+        {
+            THROW_IF_FAILED(_d2dRenderTarget->GetGlyphRunWorldBounds({}, &glyphRun, DWRITE_MEASURING_MODE_NATURAL, &bounds));
+        }
+        else
+        {
+            isColorGlyph = true;
+            _d2dRenderTarget4->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+
+            while (ColorGlyphRunMoveNext(enumerator.get()))
+            {
+                const auto colorGlyphRun = ColorGlyphRunGetCurrentRun(enumerator.get());
+                ColorGlyphRunAccumulateBounds(_d2dRenderTarget.get(), colorGlyphRun, bounds);
+            }
+        }
+    }
 
     // box may be empty if the glyph is whitespace.
-    if (box.left >= box.right || box.top >= box.bottom)
+    if (bounds.left >= bounds.right || bounds.top >= bounds.bottom)
     {
         return true;
     }
 
-    const auto bl = lrintf(box.left);
-    const auto bt = lrintf(box.top);
-    const auto br = lrintf(box.right);
-    const auto bb = lrintf(box.bottom);
+    const auto bl = lrintf(bounds.left);
+    const auto bt = lrintf(bounds.top);
+    const auto br = lrintf(bounds.right);
+    const auto bb = lrintf(bounds.bottom);
 
     stbrp_rect rect{
         .w = br - bl,
@@ -1296,8 +1342,20 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, f32 glyphAdvance, const A
     }
 
     _d2dBeginDrawing();
-    const auto colorGlyph = DrawGlyphRun(_d2dRenderTarget.get(), _d2dRenderTarget4.get(), p.dwriteFactory4.get(), baselineOrigin, &glyphRun, _brush.get());
-    const auto shadingType = colorGlyph ? ShadingType::TextPassthrough : _textShadingType;
+
+    if (!isColorGlyph)
+    {
+        _d2dRenderTarget->DrawGlyphRun(baselineOrigin, &glyphRun, _brush.get(), DWRITE_MEASURING_MODE_NATURAL);
+    }
+    else
+    {
+        const auto enumerator = TranslateColorGlyphRun(p.dwriteFactory4.get(), baselineOrigin, &glyphRun);
+        while (ColorGlyphRunMoveNext(enumerator.get()))
+        {
+            const auto colorGlyphRun = ColorGlyphRunGetCurrentRun(enumerator.get());
+            ColorGlyphRunDraw(_d2dRenderTarget4.get(), _emojiBrush.get(), _brush.get(), colorGlyphRun);
+        }
+    }
 
     // Ligatures are drawn with strict cell-wise foreground color, while other text allows colors to overhang
     // their cells. This makes sure that italics and such retain their color and don't look "cut off".
@@ -1309,7 +1367,7 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, f32 glyphAdvance, const A
     const auto triggerRight = _ligatureOverhangTriggerRight * horizontalScale;
     const auto overlapSplit = rect.w >= p.s->font->cellSize.x && (bl <= triggerLeft || br >= triggerRight);
 
-    glyphEntry.data.shadingType = static_cast<u16>(shadingType);
+    glyphEntry.data.shadingType = static_cast<u16>(isColorGlyph ? ShadingType::TextPassthrough : _textShadingType);
     glyphEntry.data.overlapSplit = overlapSplit;
     glyphEntry.data.offset.x = bl;
     glyphEntry.data.offset.y = bt;
@@ -1427,8 +1485,8 @@ void BackendD3D::_drawGlyphPrepareRetry(const RenderingPayload& p)
 }
 
 // If this is a double-height glyph (DECDHL), we need to split it into 2 glyph entries:
-// One for the top half and one for the bottom half, because that's how DECDHL works.This will clip
-// `glyphEntry` to only contain the top/bottom half (as specified by `fontFaceEntry.lineRendition`)
+// One for the top/bottom half each, because that's how DECDHL works. This will clip the
+// `glyphEntry` to only contain the one specified by `fontFaceEntry.lineRendition`
 // and create a second entry in our glyph cache hashmap that contains the other half.
 void BackendD3D::_splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry)
 {
@@ -1468,85 +1526,107 @@ void BackendD3D::_splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasF
     }
 }
 
-void BackendD3D::_drawGridlines(const RenderingPayload& p)
-{
-    u16 y = 0;
-    for (const auto row : p.rows)
-    {
-        if (!row->gridLineRanges.empty())
-        {
-            _drawGridlineRow(p, row, y);
-        }
-        y++;
-    }
-}
-
 void BackendD3D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y)
 {
-    const auto top = static_cast<i16>(p.s->font->cellSize.y * y);
+    const auto horizontalShift = static_cast<u8>(row->lineRendition != LineRendition::SingleWidth);
+    const auto verticalShift = static_cast<u8>(row->lineRendition >= LineRendition::DoubleHeightTop);
+
+    const auto cellSize = p.s->font->cellSize;
+    const auto dottedLineType = horizontalShift ? ShadingType::DottedLineWide : ShadingType::DottedLine;
+
+    const auto rowTop = static_cast<i16>(cellSize.y * y);
+    const auto rowBottom = static_cast<i16>(rowTop + cellSize.y);
+
+    auto textCellTop = rowTop;
+    if (row->lineRendition == LineRendition::DoubleHeightBottom)
+    {
+        textCellTop -= cellSize.y;
+    }
+
+    const i32 clipTop = row->lineRendition == LineRendition::DoubleHeightBottom ? rowTop : 0;
+    const i32 clipBottom = row->lineRendition == LineRendition::DoubleHeightTop ? rowBottom : p.s->targetSize.y;
+
+    const auto appendVerticalLines = [&](const GridLineRange& r, FontDecorationPosition pos) {
+        const auto textCellWidth = cellSize.x << horizontalShift;
+        const auto offset = pos.position << horizontalShift;
+        const auto width = static_cast<u16>(pos.height << horizontalShift);
+
+        auto posX = r.from * cellSize.x + offset;
+        const auto end = r.to * cellSize.x;
+
+        for (; posX < end; posX += textCellWidth)
+        {
+            _appendQuad() = {
+                .shadingType = ShadingType::SolidFill,
+                .position = { static_cast<i16>(posX), rowTop },
+                .size = { width, p.s->font->cellSize.y },
+                .color = r.color,
+            };
+        }
+    };
+    const auto appendHorizontalLine = [&](const GridLineRange& r, FontDecorationPosition pos, ShadingType shadingType) {
+        const auto offset = pos.position << verticalShift;
+        const auto height = static_cast<u16>(pos.height << verticalShift);
+
+        const auto left = static_cast<i16>(r.from * cellSize.x);
+        const auto width = static_cast<u16>((r.to - r.from) * cellSize.x);
+
+        i32 rt = textCellTop + offset;
+        i32 rb = rt + height;
+        rt = clamp(rt, clipTop, clipBottom);
+        rb = clamp(rb, clipTop, clipBottom);
+
+        if (rt < rb)
+        {
+            _appendQuad() = {
+                .shadingType = shadingType,
+                .position = { left, static_cast<i16>(rt) },
+                .size = { width, static_cast<u16>(rb - rt) },
+                .color = r.color,
+            };
+        }
+    };
 
     for (const auto& r : row->gridLineRanges)
     {
         // AtlasEngine.cpp shouldn't add any gridlines if they don't do anything.
         assert(r.lines.any());
 
-        const auto left = static_cast<i16>(r.from * p.s->font->cellSize.x);
-        const auto width = static_cast<u16>((r.to - r.from) * p.s->font->cellSize.x);
-        const auto appendHorizontalLine = [&](u16 offsetY, u16 height, ShadingType shadingType) {
-            _appendQuad() = {
-                .shadingType = shadingType,
-                .position = { left, static_cast<i16>(top + offsetY) },
-                .size = { width, height },
-                .color = r.color,
-            };
-        };
-        const auto appendVerticalLine = [&](u16 col) {
-            _appendQuad() = {
-                .shadingType = ShadingType::SolidFill,
-                .position = { static_cast<i16>(col * p.s->font->cellSize.x), top },
-                .size = { p.s->font->thinLineWidth, p.s->font->cellSize.y },
-                .color = r.color,
-            };
-        };
-
         if (r.lines.test(GridLines::Left))
         {
-            for (auto i = r.from; i < r.to; ++i)
-            {
-                appendVerticalLine(i);
-            }
+            appendVerticalLines(r, p.s->font->gridLeft);
         }
         if (r.lines.test(GridLines::Right))
         {
-            for (auto i = r.to; i > r.from; --i)
-            {
-                appendVerticalLine(i);
-            }
+            appendVerticalLines(r, p.s->font->gridRight);
         }
         if (r.lines.test(GridLines::Top))
         {
-            appendHorizontalLine(0, p.s->font->thinLineWidth, ShadingType::SolidFill);
+            appendHorizontalLine(r, p.s->font->gridTop, ShadingType::SolidFill);
         }
         if (r.lines.test(GridLines::Bottom))
         {
-            appendHorizontalLine(p.s->font->cellSize.y - p.s->font->thinLineWidth, p.s->font->thinLineWidth, ShadingType::SolidFill);
+            appendHorizontalLine(r, p.s->font->gridBottom, ShadingType::SolidFill);
         }
+
         if (r.lines.test(GridLines::Underline))
         {
-            appendHorizontalLine(p.s->font->underlinePos, p.s->font->underlineWidth, ShadingType::SolidFill);
+            appendHorizontalLine(r, p.s->font->underline, ShadingType::SolidFill);
         }
         if (r.lines.test(GridLines::HyperlinkUnderline))
         {
-            appendHorizontalLine(p.s->font->underlinePos, p.s->font->underlineWidth, ShadingType::DashedLine);
+            appendHorizontalLine(r, p.s->font->underline, dottedLineType);
         }
         if (r.lines.test(GridLines::DoubleUnderline))
         {
-            appendHorizontalLine(p.s->font->doubleUnderlinePos.x, p.s->font->thinLineWidth, ShadingType::SolidFill);
-            appendHorizontalLine(p.s->font->doubleUnderlinePos.y, p.s->font->thinLineWidth, ShadingType::SolidFill);
+            for (const auto pos : p.s->font->doubleUnderline)
+            {
+                appendHorizontalLine(r, pos, ShadingType::SolidFill);
+            }
         }
         if (r.lines.test(GridLines::Strikethrough))
         {
-            appendHorizontalLine(p.s->font->strikethroughPos, p.s->font->strikethroughWidth, ShadingType::SolidFill);
+            appendHorizontalLine(r, p.s->font->strikethrough, ShadingType::SolidFill);
         }
     }
 }
@@ -1581,7 +1661,7 @@ void BackendD3D::_drawCursorPart1(const RenderingPayload& p)
             p.s->font->cellSize.y,
         };
         const auto color = cursorColor == 0xffffffff ? bg ^ 0x3f3f3f : cursorColor;
-        auto& c0 = _cursorRects.emplace_back(CursorRect{ position, size, color });
+        auto& c0 = _cursorRects.emplace_back(position, size, color);
 
         switch (static_cast<CursorType>(p.s->cursor->cursorType))
         {
@@ -1596,8 +1676,8 @@ void BackendD3D::_drawCursorPart1(const RenderingPayload& p)
             c0.size.x = p.s->font->thinLineWidth;
             break;
         case CursorType::Underscore:
-            c0.position.y += p.s->font->underlinePos;
-            c0.size.y = p.s->font->underlineWidth;
+            c0.position.y += p.s->font->underline.position;
+            c0.size.y = p.s->font->underline.height;
             break;
         case CursorType::EmptyBox:
         {
@@ -1631,9 +1711,9 @@ void BackendD3D::_drawCursorPart1(const RenderingPayload& p)
         case CursorType::DoubleUnderscore:
         {
             auto& c1 = _cursorRects.emplace_back(c0);
-            c0.position.y += p.s->font->doubleUnderlinePos.x;
+            c0.position.y += p.s->font->doubleUnderline[0].position;
             c0.size.y = p.s->font->thinLineWidth;
-            c1.position.y += p.s->font->doubleUnderlinePos.y;
+            c1.position.y += p.s->font->doubleUnderline[1].position;
             c1.size.y = p.s->font->thinLineWidth;
             break;
         }
@@ -1791,7 +1871,7 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
     {
         // Before we do anything else we have to unbound _renderTargetView from being
         // a render target, otherwise we can't use it as a shader resource below.
-        _deviceContext->OMSetRenderTargets(1, _customRenderTargetView.addressof(), nullptr);
+        _deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
 
         // IA: Input Assembler
         _deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
@@ -1838,7 +1918,7 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
 
         // OM: Output Merger
         _deviceContext->OMSetBlendState(_blendState.get(), nullptr, 0xffffffff);
-        _deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
+        _deviceContext->OMSetRenderTargets(1, _customRenderTargetView.addressof(), nullptr);
     }
 
     // With custom shaders, everything might be invalidated, so we have to

@@ -41,7 +41,7 @@ namespace Microsoft::Console::Render::Atlas
             alignas(sizeof(f32x2)) f32x2 cellCount;
             alignas(sizeof(f32x4)) f32 gammaRatios[4]{};
             alignas(sizeof(f32)) f32 enhancedContrast = 0;
-            alignas(sizeof(f32)) f32 dashedLineLength = 0;
+            alignas(sizeof(f32)) f32 underlineWidth = 0;
 #pragma warning(suppress : 4324) // 'PSConstBuffer': structure was padded due to alignment specifier
         };
 
@@ -62,8 +62,9 @@ namespace Microsoft::Console::Render::Atlas
             TextGrayscale = 1,
             TextClearType = 2,
             TextPassthrough = 3,
-            DashedLine = 4,
-            SolidFill = 5,
+            DottedLine = 4,
+            DottedLineWide = 5,
+            SolidFill = 6,
         };
 
         // NOTE: Don't initialize any members in this struct. This ensures that no
@@ -195,11 +196,10 @@ namespace Microsoft::Console::Render::Atlas
         void _uploadBackgroundBitmap(const RenderingPayload& p);
         void _drawText(RenderingPayload& p);
         ATLAS_ATTR_COLD void _drawTextOverlapSplit(const RenderingPayload& p, u16 y);
-        ATLAS_ATTR_COLD [[nodiscard]] bool _drawGlyph(const RenderingPayload& p, f32 glyphAdvance, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
+        ATLAS_ATTR_COLD [[nodiscard]] bool _drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         bool _drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         void _drawGlyphPrepareRetry(const RenderingPayload& p);
         void _splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
-        void _drawGridlines(const RenderingPayload& p);
         void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
         void _drawCursorPart1(const RenderingPayload& p);
         void _drawCursorPart2(const RenderingPayload& p);
@@ -210,8 +210,8 @@ namespace Microsoft::Console::Render::Atlas
 
         wil::com_ptr<ID3D11Device2> _device;
         wil::com_ptr<ID3D11DeviceContext2> _deviceContext;
-        wil::com_ptr<ID3D11RenderTargetView> _renderTargetView;
 
+        wil::com_ptr<ID3D11RenderTargetView> _renderTargetView;
         wil::com_ptr<ID3D11InputLayout> _inputLayout;
         wil::com_ptr<ID3D11VertexShader> _vertexShader;
         wil::com_ptr<ID3D11PixelShader> _pixelShader;
@@ -260,6 +260,7 @@ namespace Microsoft::Console::Render::Atlas
 
         wil::com_ptr<ID2D1DeviceContext> _d2dRenderTarget;
         wil::com_ptr<ID2D1DeviceContext4> _d2dRenderTarget4; // Optional. Supported since Windows 10 14393.
+        wil::com_ptr<ID2D1SolidColorBrush> _emojiBrush;
         wil::com_ptr<ID2D1SolidColorBrush> _brush;
         wil::com_ptr<ID2D1Bitmap1> _softFontBitmap;
         bool _d2dBeganDrawing = false;

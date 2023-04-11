@@ -23,20 +23,6 @@ TIL_FAST_MATH_BEGIN
 
 using namespace Microsoft::Console::Render::Atlas;
 
-template<>
-struct ::std::hash<BackendD2D::CachedBrush>
-{
-    constexpr size_t operator()(u32 key) const noexcept
-    {
-        return til::flat_set_hash_integer(key);
-    }
-
-    constexpr size_t operator()(const BackendD2D::CachedBrush& slot) const noexcept
-    {
-        return til::flat_set_hash_integer(slot.color);
-    }
-};
-
 BackendD2D::BackendD2D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11DeviceContext2> deviceContext) noexcept :
     _device{ std::move(device) },
     _deviceContext{ std::move(deviceContext) }
@@ -58,7 +44,6 @@ void BackendD2D::Render(RenderingPayload& p)
     _drawBackground(p);
     _drawCursorPart1(p);
     _drawText(p);
-    _drawGridlines(p);
     _drawCursorPart2(p);
     _drawSelection(p);
 #if ATLAS_DEBUG_SHOW_DIRTY
@@ -122,13 +107,18 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
             _renderTarget->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
             _renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
         }
-        _clearBrushes();
+        {
+            static constexpr D2D1_COLOR_F color{};
+            THROW_IF_FAILED(_renderTarget->CreateSolidColorBrush(&color, nullptr, _emojiBrush.put()));
+            THROW_IF_FAILED(_renderTarget->CreateSolidColorBrush(&color, nullptr, _brush.put()));
+            _brushColor = 0;
+        }
     }
 
     if (!_dottedStrokeStyle)
     {
         static constexpr D2D1_STROKE_STYLE_PROPERTIES props{ .dashStyle = D2D1_DASH_STYLE_CUSTOM };
-        static constexpr FLOAT dashes[2]{ 1, 2 };
+        static constexpr FLOAT dashes[2]{ 1, 1 };
         THROW_IF_FAILED(p.d2dFactory->CreateStrokeStyle(&props, &dashes[0], 2, _dottedStrokeStyle.addressof()));
     }
 
@@ -209,59 +199,25 @@ void BackendD2D::_drawText(RenderingPayload& p)
         auto baselineX = 0.0f;
         auto baselineY = static_cast<f32>(p.s->font->cellSize.y * y + p.s->font->baseline);
 
-        if (p.invalidatedRows.contains(y))
-        {
-            for (const auto& m : row->mappings)
-            {
-                if (!m.fontFace)
-                {
-                    continue;
-                }
-
-                const DWRITE_GLYPH_RUN glyphRun{
-                    .fontFace = m.fontFace.get(),
-                    .fontEmSize = p.s->font->fontSize,
-                    .glyphCount = gsl::narrow_cast<UINT32>(m.glyphsTo - m.glyphsFrom),
-                    .glyphIndices = &row->glyphIndices[m.glyphsFrom],
-                    .glyphAdvances = &row->glyphAdvances[m.glyphsFrom],
-                    .glyphOffsets = &row->glyphOffsets[m.glyphsFrom],
-                };
-
-                D2D1_RECT_F bounds{};
-                THROW_IF_FAILED(_renderTarget->GetGlyphRunWorldBounds({ 0.0f, baselineY }, &glyphRun, DWRITE_MEASURING_MODE_NATURAL, &bounds));
-
-                if (bounds.top < bounds.bottom)
-                {
-                    // If you print the top half of a double height row (DECDHL), the expectation is that only
-                    // the top half is visible, which requires us to keep the clip rect at the bottom of the row.
-                    // (Vice versa for the bottom half of a double height row.)
-                    //
-                    // Since we used SetUnitMode(D2D1_UNIT_MODE_PIXELS), bounds.top/bottom is in pixels already and requires no conversion nor rounding.
-                    if (row->lineRendition != LineRendition::DoubleHeightBottom)
-                    {
-                        row->dirtyTop = std::min(row->dirtyTop, static_cast<i32>(lrintf(bounds.top)));
-                    }
-                    if (row->lineRendition != LineRendition::DoubleHeightTop)
-                    {
-                        row->dirtyBottom = std::max(row->dirtyBottom, static_cast<i32>(lrintf(bounds.bottom)));
-                    }
-                }
-            }
-
-            dirtyTop = std::min(dirtyTop, row->dirtyTop);
-            dirtyBottom = std::max(dirtyBottom, row->dirtyBottom);
-        }
-
-        const D2D1_RECT_F clipRect{
-            0,
-            static_cast<f32>(row->dirtyTop),
-            static_cast<f32>(p.s->targetSize.x),
-            static_cast<f32>(row->dirtyBottom),
-        };
-        _renderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
-
         if (row->lineRendition != LineRendition::SingleWidth)
         {
+            // If you print the top half of a double height row (DECDHL), the expectation is that only
+            // the top half is visible, which requires us to keep the clip rect at the bottom of the row.
+            // (Vice versa for the bottom half of a double height row.)
+            if (row->lineRendition >= LineRendition::DoubleHeightTop)
+            {
+                D2D1_RECT_F clipRect{ 0, 0, static_cast<f32>(p.s->targetSize.x), static_cast<f32>(p.s->targetSize.y) };
+                if (row->lineRendition == LineRendition::DoubleHeightTop)
+                {
+                    clipRect.bottom = static_cast<f32>(row->dirtyBottom);
+                }
+                else
+                {
+                    clipRect.top = static_cast<f32>(row->dirtyTop);
+                }
+                _renderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
+            }
+
             baselineY = _drawTextPrepareLineRendition(p, baselineY, row->lineRendition);
         }
 
@@ -298,7 +254,35 @@ void BackendD2D::_drawText(RenderingPayload& p)
 
                 if (glyphRun.fontFace)
                 {
-                    DrawGlyphRun(_renderTarget.get(), _renderTarget4.get(), p.dwriteFactory4.get(), baselineOrigin, &glyphRun, brush);
+                    D2D1_RECT_F bounds = GlyphRunEmptyBounds;
+
+                    if (const auto enumerator = TranslateColorGlyphRun(p.dwriteFactory4.get(), baselineOrigin, &glyphRun))
+                    {
+                        while (ColorGlyphRunMoveNext(enumerator.get()))
+                        {
+                            const auto colorGlyphRun = ColorGlyphRunGetCurrentRun(enumerator.get());
+                            ColorGlyphRunDraw(_renderTarget4.get(), _emojiBrush.get(), brush, colorGlyphRun);
+                            ColorGlyphRunAccumulateBounds(_renderTarget.get(), colorGlyphRun, bounds);
+                        }
+                    }
+                    else
+                    {
+                        _renderTarget->DrawGlyphRun(baselineOrigin, &glyphRun, brush, DWRITE_MEASURING_MODE_NATURAL);
+                        GlyphRunAccumulateBounds(_renderTarget.get(), baselineOrigin, &glyphRun, bounds);
+                    }
+
+                    if (bounds.top < bounds.bottom)
+                    {
+                        // Since we used SetUnitMode(D2D1_UNIT_MODE_PIXELS), bounds.top/bottom is in pixels already and requires no conversion/rounding.
+                        if (row->lineRendition != LineRendition::DoubleHeightTop)
+                        {
+                            row->dirtyBottom = std::max(row->dirtyBottom, static_cast<i32>(lrintf(bounds.bottom)));
+                        }
+                        if (row->lineRendition != LineRendition::DoubleHeightBottom)
+                        {
+                            row->dirtyTop = std::min(row->dirtyTop, static_cast<i32>(lrintf(bounds.top)));
+                        }
+                    }
                 }
 
                 for (UINT32 i = 0; i < glyphRun.glyphCount; ++i)
@@ -308,12 +292,26 @@ void BackendD2D::_drawText(RenderingPayload& p)
             }
         }
 
+        if (!row->gridLineRanges.empty())
+        {
+            _drawGridlineRow(p, row, y);
+        }
+
         if (row->lineRendition != LineRendition::SingleWidth)
         {
             _drawTextResetLineRendition();
+
+            if (row->lineRendition >= LineRendition::DoubleHeightTop)
+            {
+                _renderTarget->PopAxisAlignedClip();
+            }
         }
 
-        _renderTarget->PopAxisAlignedClip();
+        if (p.invalidatedRows.contains(y))
+        {
+            dirtyTop = std::min(dirtyTop, row->dirtyTop);
+            dirtyBottom = std::max(dirtyBottom, row->dirtyBottom);
+        }
 
         ++y;
     }
@@ -327,7 +325,6 @@ void BackendD2D::_drawText(RenderingPayload& p)
 
 f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, f32 baselineY, LineRendition lineRendition) const noexcept
 {
-    const auto descender = static_cast<f32>(p.s->font->cellSize.y - p.s->font->baseline);
     D2D1_MATRIX_3X2_F transform{
         .m11 = 2.0f,
         .m22 = 1.0f,
@@ -336,7 +333,7 @@ f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, f32 bas
     if (lineRendition >= LineRendition::DoubleHeightTop)
     {
         transform.m22 = 2.0f;
-        transform.dy = -1.0f * (baselineY + descender);
+        transform.dy = -1.0f * (baselineY + p.s->font->descender);
 
         if (lineRendition == LineRendition::DoubleHeightTop)
         {
@@ -416,116 +413,87 @@ f32r BackendD2D::_getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 
     return accumulatedBounds;
 }
 
-void BackendD2D::_drawGridlines(const RenderingPayload& p)
-{
-    u16 y = 0;
-    for (const auto row : p.rows)
-    {
-        if (!row->gridLineRanges.empty())
-        {
-            _drawGridlineRow(p, row, y);
-        }
-        y++;
-    }
-}
-
 void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y)
 {
-    const auto columnToPx = [&](til::CoordType i) {
-        return static_cast<f32>(i * p.s->font->cellSize.x);
-    };
-    const auto rowToPx = [&](til::CoordType i) {
-        return static_cast<f32>(i * p.s->font->cellSize.y);
-    };
+    const auto widthShift = gsl::narrow_cast<u8>(row->lineRendition != LineRendition::SingleWidth);
+    const auto cellSize = p.s->font->cellSize;
+    const auto rowTop = gsl::narrow_cast<i16>(cellSize.y * y);
+    const auto rowBottom = gsl::narrow_cast<i16>(rowTop + cellSize.y);
+    const auto textCellCenter = row->lineRendition == LineRendition::DoubleHeightTop ? rowBottom : rowTop;
 
-    const auto top = rowToPx(y);
-    const auto bottom = top + p.s->font->cellSize.y;
+    const auto appendVerticalLines = [&](const GridLineRange& r, FontDecorationPosition pos) {
+        const auto from = r.from >> widthShift;
+        const auto to = r.to >> widthShift;
+
+        auto posX = from * cellSize.x + pos.position;
+        const auto end = to * cellSize.x;
+
+        D2D1_POINT_2F point0{ 0, static_cast<f32>(textCellCenter) };
+        D2D1_POINT_2F point1{ 0, static_cast<f32>(textCellCenter + cellSize.y) };
+        const auto brush = _brushWithColor(r.color);
+        const f32 w = pos.height;
+        const f32 hw = w * 0.5f;
+
+        for (; posX < end; posX += cellSize.x)
+        {
+            const auto centerX = posX + hw;
+            point0.x = centerX;
+            point1.x = centerX;
+            _renderTarget->DrawLine(point0, point1, brush, w, nullptr);
+        }
+    };
+    const auto appendHorizontalLine = [&](const GridLineRange& r, FontDecorationPosition pos, ID2D1StrokeStyle* strokeStyle) {
+        const auto from = r.from >> widthShift;
+        const auto to = r.to >> widthShift;
+
+        const auto brush = _brushWithColor(r.color);
+        const f32 w = pos.height;
+        const f32 centerY = textCellCenter + pos.position + w * 0.5f;
+        const D2D1_POINT_2F point0{ static_cast<f32>(from * cellSize.x), centerY };
+        const D2D1_POINT_2F point1{ static_cast<f32>(to * cellSize.x), centerY };
+        _renderTarget->DrawLine(point0, point1, brush, w, strokeStyle);
+    };
 
     for (const auto& r : row->gridLineRanges)
     {
         // AtlasEngine.cpp shouldn't add any gridlines if they don't do anything.
         assert(r.lines.any());
 
-        const auto left = columnToPx(r.from);
-        const auto right = columnToPx(r.to);
-        D2D1_RECT_F rect{};
-
         if (r.lines.test(GridLines::Left))
         {
-            rect.top = top;
-            rect.bottom = bottom;
-            for (auto i = r.from; i < r.to; ++i)
-            {
-                rect.left = columnToPx(i);
-                rect.right = rect.left + p.s->font->thinLineWidth;
-                _fillRectangle(rect, r.color);
-            }
+            appendVerticalLines(r, p.s->font->gridLeft);
         }
         if (r.lines.test(GridLines::Right))
         {
-            rect.top = top;
-            rect.bottom = bottom;
-            for (auto i = r.to; i > r.from; --i)
-            {
-                rect.right = columnToPx(i);
-                rect.left = rect.right - p.s->font->thinLineWidth;
-                _fillRectangle(rect, r.color);
-            }
+            appendVerticalLines(r, p.s->font->gridRight);
         }
         if (r.lines.test(GridLines::Top))
         {
-            rect.left = left;
-            rect.top = top;
-            rect.right = right;
-            rect.bottom = rect.top + p.s->font->thinLineWidth;
-            _fillRectangle(rect, r.color);
+            appendHorizontalLine(r, p.s->font->gridTop, nullptr);
         }
         if (r.lines.test(GridLines::Bottom))
         {
-            rect.left = left;
-            rect.top = bottom - p.s->font->thinLineWidth;
-            rect.right = right;
-            rect.bottom = bottom;
-            _fillRectangle(rect, r.color);
+            appendHorizontalLine(r, p.s->font->gridBottom, nullptr);
         }
+
         if (r.lines.test(GridLines::Underline))
         {
-            rect.left = left;
-            rect.top = top + p.s->font->underlinePos;
-            rect.right = right;
-            rect.bottom = rect.top + p.s->font->underlineWidth;
-            _fillRectangle(rect, r.color);
+            appendHorizontalLine(r, p.s->font->underline, nullptr);
         }
         if (r.lines.test(GridLines::HyperlinkUnderline))
         {
-            const auto w = p.s->font->underlineWidth;
-            const auto centerY = (top + p.s->font->underlinePos) + w * 0.5f;
-            const auto brush = _brushWithColor(r.color);
-            const D2D1_POINT_2F point0{ static_cast<f32>(left), centerY };
-            const D2D1_POINT_2F point1{ static_cast<f32>(right), centerY };
-            _renderTarget->DrawLine(point0, point1, brush, w, _dottedStrokeStyle.get());
+            appendHorizontalLine(r, p.s->font->underline, _dottedStrokeStyle.get());
         }
         if (r.lines.test(GridLines::DoubleUnderline))
         {
-            rect.left = left;
-            rect.top = top + p.s->font->doubleUnderlinePos.x;
-            rect.right = right;
-            rect.bottom = rect.top + p.s->font->thinLineWidth;
-            _fillRectangle(rect, r.color);
-
-            rect.left = left;
-            rect.top = top + p.s->font->doubleUnderlinePos.y;
-            rect.right = right;
-            rect.bottom = rect.top + p.s->font->thinLineWidth;
-            _fillRectangle(rect, r.color);
+            for (const auto pos : p.s->font->doubleUnderline)
+            {
+                appendHorizontalLine(r, pos, nullptr);
+            }
         }
         if (r.lines.test(GridLines::Strikethrough))
         {
-            rect.left = left;
-            rect.top = top + p.s->font->strikethroughPos;
-            rect.right = right;
-            rect.bottom = rect.top + p.s->font->strikethroughWidth;
-            _fillRectangle(rect, r.color);
+            appendHorizontalLine(r, p.s->font->strikethrough, nullptr);
         }
     }
 }
@@ -647,8 +615,8 @@ void BackendD2D::_drawCursor(const RenderingPayload& p, ID2D1RenderTarget* rende
         renderTarget->FillRectangle(&rect, brush);
         break;
     case CursorType::Underscore:
-        rect.top += p.s->font->underlinePos;
-        rect.bottom = rect.top + p.s->font->underlineWidth;
+        rect.top += p.s->font->underline.position;
+        rect.bottom = rect.top + p.s->font->underline.height;
         renderTarget->FillRectangle(&rect, brush);
         break;
     case CursorType::EmptyBox:
@@ -668,10 +636,10 @@ void BackendD2D::_drawCursor(const RenderingPayload& p, ID2D1RenderTarget* rende
     case CursorType::DoubleUnderscore:
     {
         auto rect2 = rect;
-        rect2.top = rect.top + p.s->font->doubleUnderlinePos.x;
+        rect2.top = rect.top + p.s->font->doubleUnderline[0].position;
         rect2.bottom = rect2.top + p.s->font->thinLineWidth;
         renderTarget->FillRectangle(&rect2, brush);
-        rect.top = rect.top + p.s->font->doubleUnderlinePos.y;
+        rect.top = rect.top + p.s->font->doubleUnderline[1].position;
         rect.bottom = rect.top + p.s->font->thinLineWidth;
         renderTarget->FillRectangle(&rect, brush);
         break;
@@ -740,29 +708,21 @@ void BackendD2D::_debugDumpRenderTarget(const RenderingPayload& p)
 }
 #endif
 
-ID2D1Brush* BackendD2D::_brushWithColor(u32 color)
+ID2D1SolidColorBrush* BackendD2D::_brushWithColor(u32 color)
 {
-    if (_brushes.size() >= 16)
+    if (_brushColor != color)
     {
-        _clearBrushes();
+        _brushWithColorUpdate(color);
     }
-
-    const auto [cached, inserted] = _brushes.insert(color);
-    if (inserted)
-    {
-        const auto d2dColor = colorFromU32(color);
-        THROW_IF_FAILED(_renderTarget->CreateSolidColorBrush(&d2dColor, nullptr, cached.brush.addressof()));
-    }
-
-    return cached.brush.get();
+    return _brush.get();
 }
 
-void BackendD2D::_clearBrushes() const noexcept
+ID2D1SolidColorBrush* BackendD2D::_brushWithColorUpdate(u32 color)
 {
-    for (auto& slot : _brushes.container())
-    {
-        slot.brush.reset();
-    }
+    const auto d2dColor = colorFromU32(color);
+    _brush->SetColor(&d2dColor);
+    _brushColor = color;
+    return _brush.get();
 }
 
 void BackendD2D::_fillRectangle(const D2D1_RECT_F& rect, u32 color)

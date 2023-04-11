@@ -312,6 +312,12 @@ namespace Microsoft::Console::Render::Atlas
 
     inline constexpr auto DefaultAntialiasingMode = AntialiasingMode::ClearType;
 
+    struct FontDecorationPosition
+    {
+        u16 position = 0;
+        u16 height = 0;
+    };
+
     struct FontSettings
     {
         wil::com_ptr<IDWriteFontCollection> fontCollection;
@@ -325,12 +331,18 @@ namespace Microsoft::Console::Render::Atlas
         u16 advanceWidth = 0;
         u16 baseline = 0;
         u16 descender = 0;
-        u16 underlinePos = 0;
-        u16 underlineWidth = 0;
-        u16 strikethroughPos = 0;
-        u16 strikethroughWidth = 0;
-        u16x2 doubleUnderlinePos{};
         u16 thinLineWidth = 0;
+
+        FontDecorationPosition gridTop;
+        FontDecorationPosition gridBottom;
+        FontDecorationPosition gridLeft;
+        FontDecorationPosition gridRight;
+
+        FontDecorationPosition underline;
+        FontDecorationPosition strikethrough;
+        FontDecorationPosition doubleUnderline[2];
+        FontDecorationPosition overline;
+
         u16 dpi = 96;
         AntialiasingMode antialiasingMode = DefaultAntialiasingMode;
 

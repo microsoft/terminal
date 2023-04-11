@@ -417,14 +417,25 @@ try
         const auto point = options.coordCursor;
         // TODO: options.coordCursor can contain invalid out of bounds coordinates when
         // the window is being resized and the cursor is on the last line of the viewport.
-        const auto x = gsl::narrow_cast<u16>(clamp(point.x, 0, _p.s->cellCount.x - 1));
-        const auto y = gsl::narrow_cast<u16>(clamp(point.y, 0, _p.s->cellCount.y - 1));
+        const auto top = clamp(point.y, 0, _p.s->cellCount.y - 1);
+        const auto bottom = top + 1;
         const auto cursorWidth = 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
-        const auto right = gsl::narrow_cast<u16>(clamp(x + cursorWidth, 0, _p.s->cellCount.x - 0));
-        const auto bottom = gsl::narrow_cast<u16>(y + 1);
-        _p.cursorRect = { x, y, right, bottom };
-        _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, x * _p.s->font->cellSize.x);
-        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, y * _p.s->font->cellSize.y);
+
+        auto left = std::max(point.x, 0);
+        auto right = std::max(left + cursorWidth, 0);
+
+        if (_p.rows[top]->lineRendition != LineRendition::SingleWidth)
+        {
+            left <<= 1;
+            right <<= 1;
+        }
+
+        left = std::min(left, _p.s->cellCount.x - cursorWidth);
+        right = std::min(right, i32{ _p.s->cellCount.x });
+
+        _p.cursorRect = { left, top, right, bottom };
+        _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, left * _p.s->font->cellSize.x);
+        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, top * _p.s->font->cellSize.y);
         _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, right * _p.s->font->cellSize.x);
         _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, bottom * _p.s->font->cellSize.y);
     }
@@ -520,9 +531,7 @@ void AtlasEngine::_recreateFontDependentResources()
     {
         // See AtlasEngine::UpdateFont.
         // It hardcodes indices 0/1/2 in fontAxisValues to the weight/italic/slant axes.
-        // If they're NAN they haven't been set by the user and must be filled by us.
-        // When we call SetFontAxisValues() we basically override (disable) DirectWrite's internal font axes,
-        // and if either of the 3 aren't set we'd make it impossible for the user to see bold/italic text.
+        // If they're -1 they haven't been set by the user and must be filled by us.
         const auto& standardAxes = _p.s->font->fontAxisValues;
         auto fontAxisValues = _p.s->font->fontAxisValues;
 
@@ -727,7 +736,7 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
     assert(scale == 1);
 }
 
-void AtlasEngine::_mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 length, ShapedRow& row)
+void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 length, ShapedRow& row)
 {
     _api.analysisResults.clear();
 
@@ -737,7 +746,6 @@ void AtlasEngine::_mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 leng
 
     for (const auto& a : _api.analysisResults)
     {
-        const DWRITE_SCRIPT_ANALYSIS scriptAnalysis{ a.script, static_cast<DWRITE_SCRIPT_SHAPES>(a.shapes) };
         u32 actualGlyphCount = 0;
 
 #pragma warning(push)
@@ -775,8 +783,8 @@ void AtlasEngine::_mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 leng
                 /* textLength          */ a.textLength,
                 /* fontFace            */ mappedFontFace,
                 /* isSideways          */ false,
-                /* isRightToLeft       */ a.bidiLevel & 1,
-                /* scriptAnalysis      */ &scriptAnalysis,
+                /* isRightToLeft       */ 0,
+                /* scriptAnalysis      */ &a.analysis,
                 /* localeName          */ nullptr,
                 /* numberSubstitution  */ nullptr,
                 /* features            */ &features,
@@ -827,8 +835,8 @@ void AtlasEngine::_mapComplex(IDWriteFontFace* mappedFontFace, u32 idx, u32 leng
             /* fontFace            */ mappedFontFace,
             /* fontEmSize          */ _p.s->font->fontSize,
             /* isSideways          */ false,
-            /* isRightToLeft       */ a.bidiLevel & 1,
-            /* scriptAnalysis      */ &scriptAnalysis,
+            /* isRightToLeft       */ 0,
+            /* scriptAnalysis      */ &a.analysis,
             /* localeName          */ nullptr,
             /* features            */ &features,
             /* featureRangeLengths */ &featureRangeLengths,
@@ -932,7 +940,7 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
 
         row.glyphIndices.emplace_back(nowMappingSoftFont ? ch : _api.replacementCharacterGlyphIndex);
         row.glyphAdvances.emplace_back(static_cast<f32>(cols * _p.s->font->cellSize.x));
-        row.glyphOffsets.emplace_back(DWRITE_GLYPH_OFFSET{});
+        row.glyphOffsets.emplace_back();
         row.colors.emplace_back(colors[col1 << shift]);
 
         if (currentlyMappingSoftFont != nowMappingSoftFont)

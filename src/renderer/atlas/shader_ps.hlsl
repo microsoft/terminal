@@ -11,7 +11,7 @@ cbuffer ConstBuffer : register(b0)
     float2 cellCount;
     float4 gammaRatios;
     float enhancedContrast;
-    float dashedLineLength;
+    float underlineWidth;
 }
 
 Texture2D<float4> background : register(t0);
@@ -71,9 +71,16 @@ Output main(PSData data) : SV_Target
         weights = color.aaaa;
         break;
     }
-    case SHADING_TYPE_DASHED_LINE:
+    case SHADING_TYPE_DOTTED_LINE:
     {
-        const bool on = frac(data.position.x / dashedLineLength) < 0.333333333f;
+        const bool on = frac(data.position.x / (2.0f * underlineWidth)) < 0.5f;
+        color = on * premultiplyColor(data.color);
+        weights = color.aaaa;
+        break;
+    }
+    case SHADING_TYPE_DOTTED_LINE_WIDE:
+    {
+        const bool on = frac(data.position.x / (4.0f * underlineWidth)) < 0.5f;
         color = on * premultiplyColor(data.color);
         weights = color.aaaa;
         break;
