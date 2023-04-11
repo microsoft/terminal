@@ -212,6 +212,6 @@ bool OpenTerminalHere::IsControlAndShiftPressed()
     control = GetAsyncKeyState(VK_CONTROL);
     shift = GetAsyncKeyState(VK_SHIFT);
 
-    //GetAsyncKeyState returns a value with the most significant bit set to 1 if the key is pressed. This is the sign bit.
+    // GetAsyncKeyState returns a value with the most significant bit set to 1 if the key is pressed. This is the sign bit.
     return control < 0 && shift < 0;
 }
