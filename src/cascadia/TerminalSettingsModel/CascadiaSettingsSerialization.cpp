@@ -1274,7 +1274,9 @@ Json::Value CascadiaSettings::ToJson() const
         // Ignore the built in themes, when serializing the themes back out. We
         // don't want to re-include them in the user settings file.
         const auto theme{ winrt::get_self<Theme>(entry.Value()) };
-        if (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName)
+        const auto& name{ theme->Name() };
+        if (name == systemThemeName || name == lightThemeName || name == darkThemeName ||
+            name == legacySystemThemeName || name == legacyLightThemeName || name == legacyDarkThemeName)
         {
             continue;
         }
