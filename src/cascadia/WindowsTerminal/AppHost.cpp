@@ -388,7 +388,7 @@ void AppHost::Initialize()
     // to move to. If we set up this callback in the ctor, then it is possible
     // for there to be a time slice where
     // * the monarch creates the peasant for us,
-    // * we get ctor'ed (registering the callback)
+    // * we get constructed (registering the callback)
     // * then the monarch attempts to query all _peasants_ for their layout,
     //   coming back to ask us even before XAML has been created.
     _GetWindowLayoutRequestedToken = _peasant.GetWindowLayoutRequested([this](auto&&,
