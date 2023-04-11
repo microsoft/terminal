@@ -251,8 +251,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         uint32_t insertIndex;
         auto selectedItem{ SettingsNav().SelectedItem() };
-        auto menuItems{ SettingsNav().MenuItemsSource().try_as<Collections::IVector<IInspectable>>() };
-        menuItems.IndexOf(selectedItem, insertIndex);
+        if (const auto& menuItems{ SettingsNav().MenuItemsSource().try_as<Collections::IVector<IInspectable>>() })
+        {
+            menuItems.IndexOf(selectedItem, insertIndex);
+        }
         if (profileGuid != winrt::guid{})
         {
             // if we were given a non-empty guid, we want to duplicate the corresponding profile
@@ -613,9 +615,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         profileViewModel.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
         const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
 
-        auto navItems{ SettingsNav().MenuItemsSource().try_as<Collections::IVector<IInspectable>>() };
-        navItems.InsertAt(index, navItem);
-        SettingsNav().MenuItemsSource(navItems);
+        if (const auto& navItems{ SettingsNav().MenuItemsSource().try_as<Collections::IVector<IInspectable>>() })
+        {
+            navItems.InsertAt(index, navItem);
+        }
 
         // Select and navigate to the new profile
         SettingsNav().SelectedItem(navItem);
@@ -669,23 +672,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // remove selected item
         uint32_t index;
         auto selectedItem{ SettingsNav().SelectedItem() };
-        auto menuItems{ SettingsNav().MenuItemsSource().try_as<Collections::IVector<IInspectable>>() };
-        menuItems.IndexOf(selectedItem, index);
-        menuItems.RemoveAt(index);
-        SettingsNav().MenuItemsSource(menuItems);
+        if (const auto& menuItems{ SettingsNav().MenuItemsSource().try_as<Collections::IVector<IInspectable>>() })
+        {
+            menuItems.IndexOf(selectedItem, index);
+            menuItems.RemoveAt(index);
 
-        // navigate to the profile next to this one
-        const auto newSelectedItem{ menuItems.GetAt(index < menuItems.Size() - 1 ? index : index - 1) };
-        SettingsNav().SelectedItem(newSelectedItem);
-        const auto newTag = newSelectedItem.as<MUX::Controls::NavigationViewItem>().Tag();
-        if (const auto profileViewModel = newTag.try_as<ProfileViewModel>())
-        {
-            profileViewModel->FocusDeleteButton(true);
-            _Navigate(*profileViewModel, BreadcrumbSubPage::None);
-        }
-        else
-        {
-            _Navigate(newTag.as<hstring>(), BreadcrumbSubPage::None);
+            // navigate to the profile next to this one
+            const auto newSelectedItem{ menuItems.GetAt(index < menuItems.Size() - 1 ? index : index - 1) };
+            SettingsNav().SelectedItem(newSelectedItem);
+            const auto newTag = newSelectedItem.as<MUX::Controls::NavigationViewItem>().Tag();
+            if (const auto profileViewModel = newTag.try_as<ProfileViewModel>())
+            {
+                profileViewModel->FocusDeleteButton(true);
+                _Navigate(*profileViewModel, BreadcrumbSubPage::None);
+            }
+            else
+            {
+                _Navigate(newTag.as<hstring>(), BreadcrumbSubPage::None);
+            }
         }
     }
 
