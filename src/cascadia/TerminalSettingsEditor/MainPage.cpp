@@ -163,7 +163,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         //
         // By setting MenuItemsSource in its entirety, rather than manipulating
         // MenuItems, we avoid a crash in WinUI.
-        auto newSource = winrt::single_threaded_vector<IInspectable>(std::move(menuItemsSTL));
+        auto newSource = winrt::single_threaded_observable_vector<IInspectable>(std::move(menuItemsSTL));
         SettingsNav().MenuItemsSource(newSource);
 
         // Repopulate profile-related menu items
@@ -251,7 +251,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         uint32_t insertIndex;
         auto selectedItem{ SettingsNav().SelectedItem() };
-        auto menuItems{ SettingsNav().MenuItems() };
+        auto menuItems{ SettingsNav().MenuItemsSource().try_as<Collections::IVector<IInspectable>>() };
         menuItems.IndexOf(selectedItem, insertIndex);
         if (profileGuid != winrt::guid{})
         {
@@ -602,7 +602,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::vector<IInspectable> menuItemsSTL(menuItems.Size(), nullptr);
         menuItems.GetMany(0, menuItemsSTL);
 
-        auto newSource = winrt::single_threaded_vector<IInspectable>(std::move(menuItemsSTL));
+        auto newSource = winrt::single_threaded_observable_vector<IInspectable>(std::move(menuItemsSTL));
         SettingsNav().MenuItemsSource(newSource);
     }
 
@@ -612,7 +612,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone) };
         profileViewModel.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
         const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
-        SettingsNav().MenuItems().InsertAt(index, navItem);
+
+        auto navItems{ SettingsNav().MenuItemsSource().try_as<Collections::IVector<IInspectable>>() };
+        navItems.InsertAt(index, navItem);
+        SettingsNav().MenuItemsSource(navItems);
 
         // Select and navigate to the new profile
         SettingsNav().SelectedItem(navItem);
@@ -666,9 +669,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // remove selected item
         uint32_t index;
         auto selectedItem{ SettingsNav().SelectedItem() };
-        auto menuItems{ SettingsNav().MenuItems() };
+        auto menuItems{ SettingsNav().MenuItemsSource().try_as<Collections::IVector<IInspectable>>() };
         menuItems.IndexOf(selectedItem, index);
         menuItems.RemoveAt(index);
+        SettingsNav().MenuItemsSource(menuItems);
 
         // navigate to the profile next to this one
         const auto newSelectedItem{ menuItems.GetAt(index < menuItems.Size() - 1 ? index : index - 1) };
