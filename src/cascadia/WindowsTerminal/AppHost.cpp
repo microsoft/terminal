@@ -87,13 +87,6 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
 
     _window->MakeWindow();
-
-    _GetWindowLayoutRequestedToken = _peasant.GetWindowLayoutRequested([this](auto&&,
-                                                                              const Remoting::GetWindowLayoutArgs& args) {
-        // The peasants are running on separate threads, so they'll need to
-        // swap what context they are in to the ui thread to get the actual layout.
-        args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
-    });
 }
 
 AppHost::~AppHost()
@@ -388,6 +381,23 @@ void AppHost::Initialize()
     _revokers.RequestMoveContent = _windowLogic.RequestMoveContent(winrt::auto_revoke, { this, &AppHost::_handleMoveContent });
     _revokers.RequestReceiveContent = _windowLogic.RequestReceiveContent(winrt::auto_revoke, { this, &AppHost::_handleReceiveContent });
     _revokers.SendContentRequested = _peasant.SendContentRequested(winrt::auto_revoke, { this, &AppHost::_handleSendContent });
+
+    // Add our GetWindowLayoutRequested handler AFTER the xaml island is
+    // started. Our _GetWindowLayoutAsync handler requires us to be able to work
+    // on our UI thread, which requires that we have a Dispatcher ready for us
+    // to move to. If we set up this callback in the ctor, then it is possible
+    // for there to be a time slice where
+    // * the monarch creates the peasant for us,
+    // * we get ctor'ed (registering the callback)
+    // * then the monarch attempts to query all _peasants_ for their layout,
+    //   coming back to ask us even before XAML has been created.
+    _GetWindowLayoutRequestedToken = _peasant.GetWindowLayoutRequested([this](auto&&,
+                                                                              const Remoting::GetWindowLayoutArgs& args) {
+        // The peasants are running on separate threads, so they'll need to
+        // swap what context they are in to the ui thread to get the actual layout.
+        args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
+    });
+
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
     // it will accumulate an unbounded amount of queued animations while
