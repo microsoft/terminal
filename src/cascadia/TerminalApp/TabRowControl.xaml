@@ -18,14 +18,14 @@
     -->
 
     <!--
-        Set the padding to the default TabViewHeaderPadding (8,0,0,0), but with
-        -1 on the bottom. This prevents a small 1px gap that can appear on 150%
-        scale displays between the tab item and the content. The 1 on top helps keep
-        the tab the correct relative height within the tab row.
+        Set the padding to -1 on the bottom. This prevents a small 1px gap that
+        can appear on 150% scale displays between the tab item and the content.
+        The 1 on top helps keep the tab the correct relative height within the
+        tab row.
     -->
 
     <mux:TabView x:Name="TabView"
-                 Padding="8,1,0,-1"
+                 Padding="0,1,0,-1"
                  VerticalAlignment="Bottom"
                  HorizontalContentAlignment="Stretch"
                  AllowDropTabs="True"
