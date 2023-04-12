@@ -20,6 +20,7 @@ namespace Microsoft.Terminal.Settings.Model
         InvalidColorSchemeInCmd,
         InvalidSplitSize,
         FailedToParseStartupActions,
+        InvalidProfileEnvironmentVariables,
         FailedToParseSubCommands,
         UnknownTheme,
         DuplicateRemainingProfilesEntry,
