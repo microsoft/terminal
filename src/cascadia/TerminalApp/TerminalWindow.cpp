@@ -50,6 +50,7 @@ static const std::array settingsLoadWarningsLabels{
     USES_RESOURCE(L"InvalidColorSchemeInCmd"),
     USES_RESOURCE(L"InvalidSplitSize"),
     USES_RESOURCE(L"FailedToParseStartupActions"),
+    USES_RESOURCE(L"InvalidProfileEnvironmentVariables"),
     USES_RESOURCE(L"FailedToParseSubCommands"),
     USES_RESOURCE(L"UnknownTheme"),
     USES_RESOURCE(L"DuplicateRemainingProfilesEntry"),
