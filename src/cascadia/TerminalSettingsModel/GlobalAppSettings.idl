@@ -99,6 +99,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(IVector<NewTabMenuEntry>, NewTabMenu);
         INHERITABLE_SETTING(Boolean, EnableColorSelection);
         INHERITABLE_SETTING(Boolean, IsolatedMode);
+        INHERITABLE_SETTING(Boolean, AllowHeadless);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);

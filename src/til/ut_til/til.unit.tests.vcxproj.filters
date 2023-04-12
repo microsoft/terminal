@@ -29,6 +29,7 @@
     <ClCompile Include="EnvTests.cpp" />
     <ClCompile Include="UnicodeTests.cpp" />
     <ClCompile Include="GenerationalTests.cpp" />
+    <ClCompile Include="FlatSetTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />

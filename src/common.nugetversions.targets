@@ -44,9 +44,6 @@
 
     <!-- TAEF -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets" Condition="'$(TerminalTAEF)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets')" />
-    
-    <!-- VCRTForwarders -->
-    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets" Condition="'$(TerminalVCRTForwarders)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets')" />
 
     <!-- TerminalThemeHelpers -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.6.220404001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets" Condition="'$(TerminalThemeHelpers)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.6.220404001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" />
@@ -83,9 +80,6 @@
 
     <!-- TAEF -->
     <Error Condition="'$(TerminalTAEF)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets'))" />
-
-    <!-- VCRTForwarders -->
-    <Error Condition="'$(TerminalVCRTForwarders)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets'))" />
 
     <!-- TerminalThemeHelpers -->
     <Error Condition="'$(TerminalThemeHelpers)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.6.220404001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.6.220404001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets'))" />
