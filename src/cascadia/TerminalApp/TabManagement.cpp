@@ -1079,18 +1079,57 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_TabDragStarted(const IInspectable& /*sender*/,
-                                       const IInspectable& /*eventArgs*/)
+                                       const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& eventArgs)
     {
         _rearranging = true;
         _rearrangeFrom = std::nullopt;
         _rearrangeTo = std::nullopt;
+
+        const auto& draggedTvi{ eventArgs.Tab() };
+        uint32_t tabIndexFromControl{};
+        const auto tabItems{ _tabView.TabItems() };
+        if (tabItems.IndexOf(draggedTvi, tabIndexFromControl))
+        {
+            // If IndexOf returns true, we've actually got an index
+            _rearrangeFrom = tabIndexFromControl;
+        }
     }
 
     void TerminalPage::_TabDragCompleted(const IInspectable& /*sender*/,
-                                         const IInspectable& /*eventArgs*/)
+                                         const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragCompletedEventArgs& eventArgs)
     {
+        // FIRST
+        // * Get the `from` index. Get this by finding the TabBase of the
+        //   TabViewItem that's been dropped, and finding the index of it in
+        //   _tabs.
+        //
+        const auto& draggedTvi{ eventArgs.Tab() };
+
+        uint32_t tabIndexFromControl{};
+        // winrt::TerminalApp::TabBase tabBase{nullptr};
+        const auto tabItems{ _tabView.TabItems() };
+        if (tabItems.IndexOf(draggedTvi, tabIndexFromControl))
+        {
+            // If IndexOf returns true, we've actually got an index
+            // tabBase = _tabs.GetAt(tabIndexFromControl);
+            _rearrangeTo = tabIndexFromControl;
+        }
+        // if (tabBase ==nullptr)
+        //     {return;}
+
+        // winrt::com_ptr<TabBase> tabImpl;
+        // tabImpl.copy_from(winrt::get_self<TabBase>(tabBase));
+        // if (tabImpl ==nullptr)
+        // {
+        //     return;
+        // }
+
         auto& from{ _rearrangeFrom };
         auto& to{ _rearrangeTo };
+
+        // SECOND
+        // * get the `to` index. To do that, get the index of the dropped
+        //   TabViewItem in the TabView's items
 
         if (from.has_value() && to.has_value() && to != from)
         {

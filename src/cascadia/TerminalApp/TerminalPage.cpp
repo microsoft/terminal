@@ -4739,13 +4739,30 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
+            const auto otherId{ winrt::unbox_value_or<uint32_t>(windowIdObj, 0) };
+            const auto myId{ _WindowProperties.WindowId() };
+            otherId;
+            // if (otherId == myId)
+            // {
+            //     // dragged from us to ourselves
+
+            //     uint32_t tabIndexFromTab{};
+            //     if (_tabs.IndexOf(*_stashed.draggedTab, tabIndexFromTab))
+            //     {
+            //         _rearrangeFrom = tabIndexFromTab;
+            //         _rearrangeTo = index;
+            //     }
+            // }
+            // else
+            // {
             // `this` is safe to use
-            const auto request = winrt::make_self<RequestReceiveContentArgs>(src, _WindowProperties.WindowId(), index);
+            const auto request = winrt::make_self<RequestReceiveContentArgs>(src, myId, index);
 
             // This will go up to the monarch, who will then dispatch the request
             // back down to the source TerminalPage, who will then perform a
             // RequestMoveContent to move their tab to us.
             _RequestReceiveContentHandlers(*this, *request);
+            // }
         }
     }
 
