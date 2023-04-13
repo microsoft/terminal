@@ -139,17 +139,25 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 
         if (isWrapping)
         {
+            // We want to wrap, but we failed to write even a single character into the row.
+            // ROW::Write() returns the lineWidth and leaves stringIterator untouched. To prevent a
+            // deadlock, because stringIterator never advances, we need to throw that glyph away.
+            //
+            // This can happen under two circumstances:
+            // * The glyph is wider than the buffer and can never be inserted in
+            //   the first place. There's no good way to detect this, so we check
+            //   whether the begin column is the left margin, which is the column
+            //   at which any legit insertion should work at a minimum.
+            // * The DECAWM Autowrap mode is disabled ("\x1b[?7l", !wrapAtEOL) and
+            //   we tried writing a wide glyph into the last column which can't work.
+            if (textPositionBefore == textPositionAfter && (state.columnBegin == 0 || !wrapAtEOL))
+            {
+                textBuffer.ConsumeGrapheme(state.text);
+            }
+
             if (wrapAtEOL)
             {
                 cursor.DelayEOLWrap();
-            }
-            else if (textPositionBefore == textPositionAfter)
-            {
-                // We want to wrap, but we're not allowed to and we failed to write even a single character into the row.
-                // This can only mean one thing! The DECAWM Autowrap mode is disabled ("\x1b[?7l") and we tried writing a
-                // wide glyph into the last column. ROW::Write() returns the lineWidth and leaves stringIterator untouched.
-                // To prevent a deadlock, because stringIterator never advances, we need to throw that glyph away.
-                textBuffer.ConsumeGrapheme(state.text);
             }
         }
     }
