@@ -240,8 +240,9 @@ MODULE_SETUP(ModuleSetup)
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(AttachConsole(dwFindPid));
 
     int tries = 0;
+    DWORD delay;
     // This will wait for up to 32s in total (from 10ms to 163840ms)
-    for (DWORD delay = 10; delay < 30000; delay *= 2)
+    for (delay = 10; delay < 30000u; delay *= 2)
     {
         tries++;
         Log::Comment(NoThrowString().Format(L"Attempt #%d to confirm we've attached", tries));
@@ -267,7 +268,7 @@ MODULE_SETUP(ModuleSetup)
         auto succeeded = GetConsoleScreenBufferInfoEx(hOut, &csbiexBefore);
         if (!succeeded)
         {
-            auto gle = GetLastError();
+            const auto gle = GetLastError();
             VERIFY_ARE_EQUAL(6u, gle, L"If we fail to set up the console, GetLastError should return 6 here.");
 
             // Sleep with a backoff, to give us longer to try next time.
@@ -280,7 +281,7 @@ MODULE_SETUP(ModuleSetup)
         }
     };
 
-    VERIFY_IS_LESS_THAN(tries, 100, L"Make sure we set up the new console in time");
+    VERIFY_IS_LESS_THAN(delay, 30000u, L"Make sure we set up the new console in time");
 
     return true;
 }
