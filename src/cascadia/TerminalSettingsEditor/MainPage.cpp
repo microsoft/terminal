@@ -117,45 +117,45 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             lastBreadcrumb = _breadcrumbs.GetAt(size - 1);
         }
 
-        // Collect all the values out of the old nav view item source
-        auto menuItems{ SettingsNav().MenuItems() };
+        // // Collect all the values out of the old nav view item source
+        // auto menuItems{ SettingsNav().MenuItemsSource().try_as<IVector<IInspectable>>() };
 
-        // We'll remove a bunch of items and iterate over it twice.
-        // --> Copy it into an STL vector to simplify our code and reduce COM overhead.
-        std::vector<IInspectable> menuItemsSTL(menuItems.Size(), nullptr);
-        menuItems.GetMany(0, menuItemsSTL);
+        // // We'll remove a bunch of items and iterate over it twice.
+        // // --> Copy it into an STL vector to simplify our code and reduce COM overhead.
+        // std::vector<IInspectable> menuItemsSTL(menuItems.Size(), nullptr);
+        // menuItems.GetMany(0, menuItemsSTL);
 
-        // We want to refresh the list of profiles in the NavigationView.
-        // In order to add profiles we can use _InitializeProfilesList();
-        // But before we can do that we have to remove existing profiles first of course.
-        // This "erase-remove" idiom will achieve just that.
-        menuItemsSTL.erase(
-            std::remove_if(
-                menuItemsSTL.begin(),
-                menuItemsSTL.end(),
-                [](const auto& item) -> bool {
-                    if (const auto& navViewItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
-                    {
-                        if (const auto& tag{ navViewItem.Tag() })
-                        {
-                            if (tag.try_as<Editor::ProfileViewModel>())
-                            {
-                                // remove NavViewItem pointing to a Profile
-                                return true;
-                            }
-                            if (const auto& stringTag{ tag.try_as<hstring>() })
-                            {
-                                if (stringTag == addProfileTag)
-                                {
-                                    // remove the "Add Profile" item
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                    return false;
-                }),
-            menuItemsSTL.end());
+        // // We want to refresh the list of profiles in the NavigationView.
+        // // In order to add profiles we can use _InitializeProfilesList();
+        // // But before we can do that we have to remove existing profiles first of course.
+        // // This "erase-remove" idiom will achieve just that.
+        // menuItemsSTL.erase(
+        //     std::remove_if(
+        //         menuItemsSTL.begin(),
+        //         menuItemsSTL.end(),
+        //         [](const auto& item) -> bool {
+        //             if (const auto& navViewItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
+        //             {
+        //                 if (const auto& tag{ navViewItem.Tag() })
+        //                 {
+        //                     if (tag.try_as<Editor::ProfileViewModel>())
+        //                     {
+        //                         // remove NavViewItem pointing to a Profile
+        //                         return true;
+        //                     }
+        //                     if (const auto& stringTag{ tag.try_as<hstring>() })
+        //                     {
+        //                         if (stringTag == addProfileTag)
+        //                         {
+        //                             // remove the "Add Profile" item
+        //                             return true;
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //             return false;
+        //         }),
+        //     menuItemsSTL.end());
 
         // Now, we've got a list of just the static entries again. Lets take
         // those and stick them back into a new winrt vector, and set that as
@@ -163,7 +163,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         //
         // By setting MenuItemsSource in its entirety, rather than manipulating
         // MenuItems, we avoid a crash in WinUI.
-        auto newSource = winrt::single_threaded_observable_vector<IInspectable>(std::move(menuItemsSTL));
+        // auto newSource = winrt::single_threaded_observable_vector<IInspectable>(std::move(menuItemsSTL));
+        auto newSource = winrt::single_threaded_observable_vector<IInspectable>();
+        for (const auto& item : _originalMenuItems)
+        {
+            if (const auto& menuItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
+            {
+                if (const auto& tag{ menuItem.Tag() })
+                {
+                    if (const auto& breadcrumbStringTag{ tag.try_as<hstring>() })
+                    {
+                        breadcrumbStringTag;
+                        auto a = 9;
+                        a++;
+                        a;
+                    }
+                    else
+                    {
+                        auto a = 9;
+                        a++;
+                        a;
+
+                    }
+                }
+            }
+            newSource.Append(item);
+        }
         SettingsNav().MenuItemsSource(newSource);
 
         // Repopulate profile-related menu items
@@ -175,6 +200,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // now that the menuItems are repopulated,
         // refresh the current page using the breadcrumb data we collected before the refresh
+        auto menuItems{ SettingsNav().MenuItemsSource().try_as<IVector<IInspectable>>() };
         if (const auto& crumb{ lastBreadcrumb.try_as<Breadcrumb>() })
         {
             for (const auto& item : menuItems)
@@ -217,7 +243,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Couldn't find the selected item, fallback to first menu item
         // This happens when the selected item was a profile which doesn't exist in the new configuration
         // We can use menuItemsSTL here because the only things they miss are profile entries.
-        const auto& firstItem{ SettingsNav().MenuItems().GetAt(0).as<MUX::Controls::NavigationViewItem>() };
+        const auto& firstItem{ menuItems.GetAt(0).as<MUX::Controls::NavigationViewItem>() };
         SettingsNav().SelectedItem(firstItem);
         _Navigate(unbox_value<hstring>(firstItem.Tag()), BreadcrumbSubPage::None);
     }
@@ -549,18 +575,29 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         const auto menuItems = SettingsNav().MenuItemsSource().try_as<IVector<IInspectable>>();
 
+        MUX::Controls::NavigationViewItem testItem;
+        testItem.Content(box_value(L"testItem"));
+        testItem.Tag(box_value(L"testItem"));
+        menuItems.Append(testItem);
+
         // Manually create a NavigationViewItem for each profile
         // and keep a reference to them in a map so that we
         // can easily modify the correct one when the associated
         // profile changes.
         for (const auto& profile : _settingsClone.AllProfiles())
         {
+            auto sizeBefore = menuItems.Size();
             if (!profile.Deleted())
             {
                 auto profileVM = _viewModelForProfile(profile, _settingsClone);
                 profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
                 auto navItem = _CreateProfileNavViewItem(profileVM);
                 menuItems.Append(navItem);
+                auto sizeAfter = menuItems.Size();
+                sizeBefore;
+                sizeAfter;
+                const bool wasSame = sizeBefore == sizeAfter;
+                wasSame;
             }
         }
 
@@ -594,6 +631,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         auto menuItems{ SettingsNav().MenuItems() };
+        const auto originalNumItems = menuItems.Size();
         // Remove all the existing items, and move them to a separate vector
         // that we'll use as a MenuItemsSource. By doing this, we avoid a WinUI
         // bug (MUX#6302) where modifying the NavView.Items() directly causes a
@@ -601,10 +639,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // benefit of instantiating them from the XBF, rather than at runtime.
         //
         // --> Copy it into an STL vector to simplify our code and reduce COM overhead.
-        std::vector<IInspectable> menuItemsSTL(menuItems.Size(), nullptr);
-        menuItems.GetMany(0, menuItemsSTL);
+        // std::vector<IInspectable> menuItemsSTL(menuItems.Size(), nullptr);
+        // _originalMenuItems.reserve(menuItems.Size());
+        _originalMenuItems = std::vector<IInspectable>{ originalNumItems, nullptr };
 
-        auto newSource = winrt::single_threaded_observable_vector<IInspectable>(std::move(menuItemsSTL));
+        menuItems.GetMany(0, _originalMenuItems);
+
+        auto newSource = winrt::single_threaded_observable_vector<IInspectable>();
+        for (const auto& item : _originalMenuItems)
+        {
+            newSource.Append(item);
+        }
         SettingsNav().MenuItemsSource(newSource);
     }
 

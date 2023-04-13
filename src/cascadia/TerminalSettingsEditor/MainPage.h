@@ -50,6 +50,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Windows::Foundation::Collections::IObservableVector<IInspectable> _breadcrumbs;
+        std::vector<IInspectable> _originalMenuItems;
+
         Model::CascadiaSettings _settingsSource;
         Model::CascadiaSettings _settingsClone;
 
