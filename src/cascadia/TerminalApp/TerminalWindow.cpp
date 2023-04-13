@@ -740,19 +740,9 @@ namespace winrt::TerminalApp::implementation
     {
         // If
         // * the position has been specified on the commandline,
-        // * we're re-opening from a persisted layout,
         // * We're opening the window as a part of tear out (and _contentBounds were set)
         // then don't center on launch
-        bool hadPersistedPosition = false;
-        if (const auto layout = LoadPersistedLayout())
-        {
-            hadPersistedPosition = (bool)layout.InitialPosition();
-        }
-
-        return !_contentBounds &&
-               !hadPersistedPosition &&
-               _settings.GlobalSettings().CenterOnLaunch() &&
-               !_appArgs.GetPosition().has_value();
+        return !_contentBounds && _settings.GlobalSettings().CenterOnLaunch() && !_appArgs.GetPosition().has_value();
     }
 
     // Method Description:
