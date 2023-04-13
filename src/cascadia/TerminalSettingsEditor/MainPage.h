@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Windows::Foundation::Collections::IObservableVector<IInspectable> _breadcrumbs;
-        Windows::Foundation::Collections::IObservableVector<IInspectable> _originalMenuItems;
+        Windows::Foundation::Collections::IObservableVector<IInspectable> _menuItemSource;
         size_t _originalNumItems = 0u;
 
         Model::CascadiaSettings _settingsSource;
