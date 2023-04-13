@@ -567,10 +567,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // benefit of instantiating them from the XBF, rather than at runtime.
         //
         // --> Copy it into an STL vector to simplify our code and reduce COM overhead.
-        // std::vector<IInspectable> menuItemsSTL(menuItems.Size(), nullptr);
-        // _menuItemSource.reserve(menuItems.Size());
         auto original = std::vector<IInspectable>{ _originalNumItems, nullptr };
-
         menuItems.GetMany(0, original);
 
         _menuItemSource = winrt::single_threaded_observable_vector<IInspectable>(std::move(original));
