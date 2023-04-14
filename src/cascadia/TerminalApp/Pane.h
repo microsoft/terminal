@@ -394,9 +394,6 @@ private:
         LayoutSizeNode(const LayoutSizeNode& other);
 
         LayoutSizeNode& operator=(const LayoutSizeNode& other);
-
-    private:
-        void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
     };
 
     friend struct winrt::TerminalApp::implementation::TerminalTab;
