@@ -1060,10 +1060,10 @@ namespace winrt::TerminalApp::implementation
         // Start tracking the index of the tab that is being dragged. In
         // `_TabDragCompleted`, we'll use this to determine how to reorder our
         // internal tabs list.
-        const auto& draggedTvi{ eventArgs.Tab() };
+        const auto& draggedTabViewItem{ eventArgs.Tab() };
         uint32_t tabIndexFromControl{};
         const auto tabItems{ _tabView.TabItems() };
-        if (tabItems.IndexOf(draggedTvi, tabIndexFromControl))
+        if (tabItems.IndexOf(draggedTabViewItem, tabIndexFromControl))
         {
             // If IndexOf returns true, we've actually got an index
             _rearrangeFrom = tabIndexFromControl;
@@ -1073,11 +1073,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_TabDragCompleted(const IInspectable& /*sender*/,
                                          const winrt::MUX::Controls::TabViewTabDragCompletedEventArgs& eventArgs)
     {
-        const auto& draggedTvi{ eventArgs.Tab() };
+        const auto& draggedTabViewItem{ eventArgs.Tab() };
 
         uint32_t tabIndexFromControl{};
         const auto tabItems{ _tabView.TabItems() };
-        if (tabItems.IndexOf(draggedTvi, tabIndexFromControl))
+        if (tabItems.IndexOf(draggedTabViewItem, tabIndexFromControl))
         {
             _rearrangeTo = tabIndexFromControl;
         }

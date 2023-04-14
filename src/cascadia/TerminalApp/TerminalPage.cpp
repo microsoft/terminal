@@ -4720,7 +4720,7 @@ namespace winrt::TerminalApp::implementation
         if (const auto& page{ weakThis.get() })
         {
             // `this` is safe to use
-            // 
+            //
             // First we need to get the position in the List to drop to
             auto index = -1;
 
