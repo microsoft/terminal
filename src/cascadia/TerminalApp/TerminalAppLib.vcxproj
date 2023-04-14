@@ -36,6 +36,9 @@
   </ItemGroup>
   <!-- When we add other user controls, they should go in here as so: -->
   <ItemGroup>
+    <Page Include="AboutDialog.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MinMaxCloseControl.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -128,6 +131,9 @@
     <ClInclude Include="DebugTapConnection.h" />
     <ClInclude Include="AppKeyBindings.h">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="AboutDialog.h">
+      <DependentUpon>AboutDialog.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="App.h">
       <DependentUpon>App.xaml</DependentUpon>
@@ -225,6 +231,9 @@
     <ClCompile Include="ShortcutActionDispatch.cpp">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="AboutDialog.cpp">
+      <DependentUpon>AboutDialog.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="App.cpp">
       <DependentUpon>App.xaml</DependentUpon>
     </ClCompile>
@@ -249,6 +258,9 @@
     header in TerminalApp.vcxproj (as well as in this file) -->
     <Midl Include="ActionPaletteItem.idl" />
     <Midl Include="CommandLinePaletteItem.idl" />
+    <Midl Include="AboutDialog.idl">
+      <DependentUpon>AboutDialog.xaml</DependentUpon>
+    </Midl>
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>

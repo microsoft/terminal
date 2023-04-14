@@ -342,4 +342,35 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     {
         return prefix_split<>(str, needle);
     }
+
+    //
+    // A case-insensitive wide-character map is used to store environment variables
+    // due to documented requirements:
+    //
+    //      "All strings in the environment block must be sorted alphabetically by name.
+    //      The sort is case-insensitive, Unicode order, without regard to locale.
+    //      Because the equal sign is a separator, it must not be used in the name of
+    //      an environment variable."
+    //      https://docs.microsoft.com/en-us/windows/desktop/ProcThread/changing-environment-variables
+    //
+    // - Returns CSTR_LESS_THAN, CSTR_EQUAL or CSTR_GREATER_THAN
+    [[nodiscard]] inline int compare_string_ordinal(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
+    {
+        const auto result = CompareStringOrdinal(
+            lhs.data(),
+            ::base::saturated_cast<int>(lhs.size()),
+            rhs.data(),
+            ::base::saturated_cast<int>(rhs.size()),
+            TRUE);
+        FAIL_FAST_LAST_ERROR_IF(!result);
+        return result;
+    }
+
+    struct wstring_case_insensitive_compare
+    {
+        [[nodiscard]] bool operator()(const std::wstring& lhs, const std::wstring& rhs) const noexcept
+        {
+            return compare_string_ordinal(lhs, rhs) == CSTR_LESS_THAN;
+        }
+    };
 }
