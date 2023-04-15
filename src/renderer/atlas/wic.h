@@ -27,10 +27,8 @@ inline void SaveTextureToPNG(ID3D11DeviceContext* deviceContext, ID3D11Resource*
 
     deviceContext->CopyResource(staging.get(), source);
 
-    static const auto wicFactory = []() {
-        THROW_IF_FAILED(::CoInitializeEx(nullptr, COINIT_MULTITHREADED));
-        return wil::CoCreateInstance<IWICImagingFactory2>(CLSID_WICImagingFactory2);
-    }();
+    static const auto coUninitialize = wil::CoInitializeEx();
+    static const auto wicFactory = wil::CoCreateInstance<IWICImagingFactory2>(CLSID_WICImagingFactory2);
 
     wil::com_ptr<IWICStream> stream;
     THROW_IF_FAILED(wicFactory->CreateStream(stream.addressof()));

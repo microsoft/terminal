@@ -68,12 +68,10 @@ struct ::std::hash<BackendD3D::AtlasFontFaceEntry>
     }
 };
 
-BackendD3D::BackendD3D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11DeviceContext2> deviceContext) :
-    _device{ std::move(device) },
-    _deviceContext{ std::move(deviceContext) }
+BackendD3D::BackendD3D(const RenderingPayload& p)
 {
-    THROW_IF_FAILED(_device->CreateVertexShader(&shader_vs[0], sizeof(shader_vs), nullptr, _vertexShader.addressof()));
-    THROW_IF_FAILED(_device->CreatePixelShader(&shader_ps[0], sizeof(shader_ps), nullptr, _pixelShader.addressof()));
+    THROW_IF_FAILED(p.device->CreateVertexShader(&shader_vs[0], sizeof(shader_vs), nullptr, _vertexShader.addressof()));
+    THROW_IF_FAILED(p.device->CreatePixelShader(&shader_ps[0], sizeof(shader_ps), nullptr, _pixelShader.addressof()));
 
     {
         static constexpr D3D11_INPUT_ELEMENT_DESC layout[]{
@@ -84,7 +82,7 @@ BackendD3D::BackendD3D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11De
             { "texcoord", 0, DXGI_FORMAT_R16G16_UINT, 1, offsetof(QuadInstance, texcoord), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
             { "color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, offsetof(QuadInstance, color), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
         };
-        THROW_IF_FAILED(_device->CreateInputLayout(&layout[0], std::size(layout), &shader_vs[0], sizeof(shader_vs), _inputLayout.addressof()));
+        THROW_IF_FAILED(p.device->CreateInputLayout(&layout[0], std::size(layout), &shader_vs[0], sizeof(shader_vs), _inputLayout.addressof()));
     }
 
     {
@@ -100,7 +98,7 @@ BackendD3D::BackendD3D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11De
         desc.ByteWidth = sizeof(vertices);
         desc.Usage = D3D11_USAGE_IMMUTABLE;
         desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-        THROW_IF_FAILED(_device->CreateBuffer(&desc, &initialData, _vertexBuffer.addressof()));
+        THROW_IF_FAILED(p.device->CreateBuffer(&desc, &initialData, _vertexBuffer.addressof()));
     }
 
     {
@@ -118,7 +116,7 @@ BackendD3D::BackendD3D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11De
         desc.ByteWidth = sizeof(indices);
         desc.Usage = D3D11_USAGE_IMMUTABLE;
         desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-        THROW_IF_FAILED(_device->CreateBuffer(&desc, &initialData, _indexBuffer.addressof()));
+        THROW_IF_FAILED(p.device->CreateBuffer(&desc, &initialData, _indexBuffer.addressof()));
     }
 
     {
@@ -127,7 +125,7 @@ BackendD3D::BackendD3D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11De
             .Usage = D3D11_USAGE_DEFAULT,
             .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
         };
-        THROW_IF_FAILED(_device->CreateBuffer(&desc, nullptr, _vsConstantBuffer.addressof()));
+        THROW_IF_FAILED(p.device->CreateBuffer(&desc, nullptr, _vsConstantBuffer.addressof()));
     }
 
     {
@@ -136,7 +134,7 @@ BackendD3D::BackendD3D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11De
             .Usage = D3D11_USAGE_DEFAULT,
             .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
         };
-        THROW_IF_FAILED(_device->CreateBuffer(&desc, nullptr, _psConstantBuffer.addressof()));
+        THROW_IF_FAILED(p.device->CreateBuffer(&desc, nullptr, _psConstantBuffer.addressof()));
     }
 
     {
@@ -176,7 +174,7 @@ BackendD3D::BackendD3D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11De
                 .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL,
             } },
         };
-        THROW_IF_FAILED(_device->CreateBlendState(&desc, _blendState.addressof()));
+        THROW_IF_FAILED(p.device->CreateBlendState(&desc, _blendState.addressof()));
     }
 
     {
@@ -194,7 +192,7 @@ BackendD3D::BackendD3D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11De
                 .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL,
             } },
         };
-        THROW_IF_FAILED(_device->CreateBlendState(&desc, _blendStateInvert.addressof()));
+        THROW_IF_FAILED(p.device->CreateBlendState(&desc, _blendStateInvert.addressof()));
     }
 
 #ifndef NDEBUG
@@ -210,6 +208,14 @@ BackendD3D::BackendD3D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11De
 #endif
 }
 
+void BackendD3D::ReleaseResources() noexcept
+{
+    _renderTargetView.reset();
+    _customRenderTargetView.reset();
+    // Ensure _handleSettingsUpdate() is called so that _renderTarget gets recreated.
+    _generation = {};
+}
+
 void BackendD3D::Render(RenderingPayload& p)
 {
     if (_generation != p.s.generation())
@@ -222,13 +228,13 @@ void BackendD3D::Render(RenderingPayload& p)
 #endif
 
     // After a Present() the render target becomes unbound.
-    _deviceContext->OMSetRenderTargets(1, _customRenderTargetView ? _customRenderTargetView.addressof() : _renderTargetView.addressof(), nullptr);
+    p.deviceContext->OMSetRenderTargets(1, _customRenderTargetView ? _customRenderTargetView.addressof() : _renderTargetView.addressof(), nullptr);
 
     // Invalidating the render target helps with spotting invalid quad instances and Present1() bugs.
 #if ATLAS_DEBUG_SHOW_DIRTY || ATLAS_DEBUG_DUMP_RENDER_TARGET
     {
         static constexpr f32 clearColor[4]{};
-        _deviceContext->ClearView(_renderTargetView.get(), &clearColor[0], nullptr, 0);
+        p.deviceContext->ClearView(_renderTargetView.get(), &clearColor[0], nullptr, 0);
     }
 #endif
 
@@ -250,7 +256,6 @@ void BackendD3D::Render(RenderingPayload& p)
 #if ATLAS_DEBUG_DUMP_RENDER_TARGET
     _debugDumpRenderTarget(p);
 #endif
-    _swapChainManager.Present(p);
 }
 
 bool BackendD3D::RequiresContinuousRedraw() noexcept
@@ -258,32 +263,13 @@ bool BackendD3D::RequiresContinuousRedraw() noexcept
     return _requiresContinuousRedraw;
 }
 
-void BackendD3D::WaitUntilCanRender() noexcept
-{
-    _swapChainManager.WaitUntilCanRender();
-}
-
 void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
 {
-    _swapChainManager.UpdateSwapChainSettings(
-        p,
-        _device.get(),
-        [this]() {
-            _renderTargetView.reset();
-            _customRenderTargetView.reset();
-            _deviceContext->ClearState();
-            _deviceContext->Flush();
-        },
-        [this]() {
-            _renderTargetView.reset();
-            _customRenderTargetView.reset();
-            _deviceContext->ClearState();
-        });
-
     if (!_renderTargetView)
     {
-        const auto buffer = _swapChainManager.GetBuffer();
-        THROW_IF_FAILED(_device->CreateRenderTargetView(buffer.get(), nullptr, _renderTargetView.put()));
+        wil::com_ptr<ID3D11Texture2D> buffer;
+        THROW_IF_FAILED(p.swapChain.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(buffer.addressof())));
+        THROW_IF_FAILED(p.device->CreateRenderTargetView(buffer.get(), nullptr, _renderTargetView.put()));
     }
 
     const auto fontChanged = _fontGeneration != p.s->font.generation();
@@ -292,7 +278,7 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
 
     if (fontChanged)
     {
-        _updateFontDependents(p.dwriteFactory.get(), *p.s->font);
+        _updateFontDependents(p);
     }
     if (miscChanged)
     {
@@ -300,14 +286,14 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     }
     if (cellCountChanged)
     {
-        _recreateBackgroundColorBitmap(p.s->cellCount);
+        _recreateBackgroundColorBitmap(p);
     }
 
     // Similar to _renderTargetView above, we might have to recreate the _customRenderTargetView whenever _swapChainManager
     // resets it. We only do it after calling _recreateCustomShader however, since that sets the _customPixelShader.
     if (_customPixelShader && !_customRenderTargetView)
     {
-        _recreateCustomRenderTargetView(p.s->targetSize);
+        _recreateCustomRenderTargetView(p);
     }
 
     _recreateConstBuffer(p);
@@ -320,9 +306,11 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     _cellCount = p.s->cellCount;
 }
 
-void BackendD3D::_updateFontDependents(IDWriteFactory2* dwriteFactory, const FontSettings& font)
+void BackendD3D::_updateFontDependents(const RenderingPayload& p)
 {
-    DWrite_GetRenderParams(dwriteFactory, &_gamma, &_cleartypeEnhancedContrast, &_grayscaleEnhancedContrast, _textRenderingParams.put());
+    const auto& font = *p.s->font;
+
+    DWrite_GetRenderParams(p.dwriteFactory.get(), &_gamma, &_cleartypeEnhancedContrast, &_grayscaleEnhancedContrast, _textRenderingParams.put());
     // Clearing the atlas requires BeginDraw(), which is expensive. Defer this until we need Direct2D anyways.
     _fontChangedResetGlyphAtlas = true;
     _textShadingType = font.antialiasingMode == AntialiasingMode::ClearType ? ShadingType::TextClearType : ShadingType::TextGrayscale;
@@ -353,7 +341,7 @@ void BackendD3D::_updateFontDependents(IDWriteFactory2* dwriteFactory, const Fon
 
     if (_d2dRenderTarget)
     {
-        _d2dRenderTargetUpdateFontSettings(font);
+        _d2dRenderTargetUpdateFontSettings(p);
     }
 
     _softFontBitmap.reset();
@@ -373,7 +361,7 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
     if (!p.s->misc->customPixelShaderPath.empty())
     {
         const char* target = nullptr;
-        switch (_device->GetFeatureLevel())
+        switch (p.device->GetFeatureLevel())
         {
         case D3D_FEATURE_LEVEL_10_0:
             target = "ps_4_0";
@@ -418,7 +406,7 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
 
         if (SUCCEEDED(hr))
         {
-            THROW_IF_FAILED(_device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, _customPixelShader.put()));
+            THROW_IF_FAILED(p.device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, _customPixelShader.put()));
 
             // Try to determine whether the shader uses the Time variable
             wil::com_ptr<ID3D11ShaderReflection> reflector;
@@ -456,14 +444,14 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
     }
     else if (p.s->misc->useRetroTerminalEffect)
     {
-        THROW_IF_FAILED(_device->CreatePixelShader(&custom_shader_ps[0], sizeof(custom_shader_ps), nullptr, _customPixelShader.put()));
+        THROW_IF_FAILED(p.device->CreatePixelShader(&custom_shader_ps[0], sizeof(custom_shader_ps), nullptr, _customPixelShader.put()));
         // We know the built-in retro shader doesn't require continuous redraw.
         _requiresContinuousRedraw = false;
     }
 
     if (_customPixelShader)
     {
-        THROW_IF_FAILED(_device->CreateVertexShader(&custom_shader_vs[0], sizeof(custom_shader_vs), nullptr, _customVertexShader.put()));
+        THROW_IF_FAILED(p.device->CreateVertexShader(&custom_shader_vs[0], sizeof(custom_shader_vs), nullptr, _customVertexShader.put()));
 
         {
             static constexpr D3D11_BUFFER_DESC desc{
@@ -472,7 +460,7 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
                 .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
                 .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
             };
-            THROW_IF_FAILED(_device->CreateBuffer(&desc, nullptr, _customShaderConstantBuffer.put()));
+            THROW_IF_FAILED(p.device->CreateBuffer(&desc, nullptr, _customShaderConstantBuffer.put()));
         }
 
         {
@@ -485,42 +473,42 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
                 .ComparisonFunc = D3D11_COMPARISON_ALWAYS,
                 .MaxLOD = D3D11_FLOAT32_MAX,
             };
-            THROW_IF_FAILED(_device->CreateSamplerState(&desc, _customShaderSamplerState.put()));
+            THROW_IF_FAILED(p.device->CreateSamplerState(&desc, _customShaderSamplerState.put()));
         }
 
         _customShaderStartTime = std::chrono::steady_clock::now();
     }
 }
 
-void BackendD3D::_recreateCustomRenderTargetView(u16x2 targetSize)
+void BackendD3D::_recreateCustomRenderTargetView(const RenderingPayload& p)
 {
     // Avoid memory usage spikes by releasing memory first.
     _customOffscreenTexture.reset();
     _customOffscreenTextureView.reset();
 
     const D3D11_TEXTURE2D_DESC desc{
-        .Width = targetSize.x,
-        .Height = targetSize.y,
+        .Width = p.s->targetSize.x,
+        .Height = p.s->targetSize.y,
         .MipLevels = 1,
         .ArraySize = 1,
         .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
         .SampleDesc = { 1, 0 },
         .BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET,
     };
-    THROW_IF_FAILED(_device->CreateTexture2D(&desc, nullptr, _customOffscreenTexture.addressof()));
-    THROW_IF_FAILED(_device->CreateShaderResourceView(_customOffscreenTexture.get(), nullptr, _customOffscreenTextureView.addressof()));
-    THROW_IF_FAILED(_device->CreateRenderTargetView(_customOffscreenTexture.get(), nullptr, _customRenderTargetView.addressof()));
+    THROW_IF_FAILED(p.device->CreateTexture2D(&desc, nullptr, _customOffscreenTexture.addressof()));
+    THROW_IF_FAILED(p.device->CreateShaderResourceView(_customOffscreenTexture.get(), nullptr, _customOffscreenTextureView.addressof()));
+    THROW_IF_FAILED(p.device->CreateRenderTargetView(_customOffscreenTexture.get(), nullptr, _customRenderTargetView.addressof()));
 }
 
-void BackendD3D::_recreateBackgroundColorBitmap(u16x2 cellCount)
+void BackendD3D::_recreateBackgroundColorBitmap(const RenderingPayload& p)
 {
     // Avoid memory usage spikes by releasing memory first.
     _backgroundBitmap.reset();
     _backgroundBitmapView.reset();
 
     const D3D11_TEXTURE2D_DESC desc{
-        .Width = cellCount.x,
-        .Height = cellCount.y,
+        .Width = p.s->cellCount.x,
+        .Height = p.s->cellCount.y,
         .MipLevels = 1,
         .ArraySize = 1,
         .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
@@ -529,13 +517,14 @@ void BackendD3D::_recreateBackgroundColorBitmap(u16x2 cellCount)
         .BindFlags = D3D11_BIND_SHADER_RESOURCE,
         .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
     };
-    THROW_IF_FAILED(_device->CreateTexture2D(&desc, nullptr, _backgroundBitmap.addressof()));
-    THROW_IF_FAILED(_device->CreateShaderResourceView(_backgroundBitmap.get(), nullptr, _backgroundBitmapView.addressof()));
+    THROW_IF_FAILED(p.device->CreateTexture2D(&desc, nullptr, _backgroundBitmap.addressof()));
+    THROW_IF_FAILED(p.device->CreateShaderResourceView(_backgroundBitmap.get(), nullptr, _backgroundBitmapView.addressof()));
     _backgroundBitmapGeneration = {};
 }
 
-void BackendD3D::_d2dRenderTargetUpdateFontSettings(const FontSettings& font) const noexcept
+void BackendD3D::_d2dRenderTargetUpdateFontSettings(const RenderingPayload& p) const noexcept
 {
+    const auto& font = *p.s->font;
     _d2dRenderTarget->SetDpi(font.dpi, font.dpi);
     _d2dRenderTarget->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(font.antialiasingMode));
 }
@@ -545,7 +534,7 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
     {
         VSConstBuffer data{};
         data.positionScale = { 2.0f / p.s->targetSize.x, -2.0f / p.s->targetSize.y };
-        _deviceContext->UpdateSubresource(_vsConstantBuffer.get(), 0, nullptr, &data, 0, 0);
+        p.deviceContext->UpdateSubresource(_vsConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
     {
         PSConstBuffer data{};
@@ -555,7 +544,7 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);
         data.enhancedContrast = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
         data.underlineWidth = p.s->font->underline.height;
-        _deviceContext->UpdateSubresource(_psConstantBuffer.get(), 0, nullptr, &data, 0, 0);
+        p.deviceContext->UpdateSubresource(_psConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
 }
 
@@ -565,30 +554,30 @@ void BackendD3D::_setupDeviceContextState(const RenderingPayload& p)
     ID3D11Buffer* vertexBuffers[]{ _vertexBuffer.get(), _instanceBuffer.get() };
     static constexpr UINT strides[]{ sizeof(f32x2), sizeof(QuadInstance) };
     static constexpr UINT offsets[]{ 0, 0 };
-    _deviceContext->IASetIndexBuffer(_indexBuffer.get(), DXGI_FORMAT_R16_UINT, 0);
-    _deviceContext->IASetInputLayout(_inputLayout.get());
-    _deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    _deviceContext->IASetVertexBuffers(0, 2, &vertexBuffers[0], &strides[0], &offsets[0]);
+    p.deviceContext->IASetIndexBuffer(_indexBuffer.get(), DXGI_FORMAT_R16_UINT, 0);
+    p.deviceContext->IASetInputLayout(_inputLayout.get());
+    p.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    p.deviceContext->IASetVertexBuffers(0, 2, &vertexBuffers[0], &strides[0], &offsets[0]);
 
     // VS: Vertex Shader
-    _deviceContext->VSSetShader(_vertexShader.get(), nullptr, 0);
-    _deviceContext->VSSetConstantBuffers(0, 1, _vsConstantBuffer.addressof());
+    p.deviceContext->VSSetShader(_vertexShader.get(), nullptr, 0);
+    p.deviceContext->VSSetConstantBuffers(0, 1, _vsConstantBuffer.addressof());
 
     // RS: Rasterizer Stage
     D3D11_VIEWPORT viewport{};
     viewport.Width = static_cast<f32>(p.s->targetSize.x);
     viewport.Height = static_cast<f32>(p.s->targetSize.y);
-    _deviceContext->RSSetViewports(1, &viewport);
+    p.deviceContext->RSSetViewports(1, &viewport);
 
     // PS: Pixel Shader
     ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
-    _deviceContext->PSSetShader(_pixelShader.get(), nullptr, 0);
-    _deviceContext->PSSetConstantBuffers(0, 1, _psConstantBuffer.addressof());
-    _deviceContext->PSSetShaderResources(0, 2, &resources[0]);
+    p.deviceContext->PSSetShader(_pixelShader.get(), nullptr, 0);
+    p.deviceContext->PSSetConstantBuffers(0, 1, _psConstantBuffer.addressof());
+    p.deviceContext->PSSetShaderResources(0, 2, &resources[0]);
 
     // OM: Output Merger
-    _deviceContext->OMSetBlendState(_blendState.get(), nullptr, 0xffffffff);
-    _deviceContext->OMSetRenderTargets(1, _customRenderTargetView ? _customRenderTargetView.addressof() : _renderTargetView.addressof(), nullptr);
+    p.deviceContext->OMSetBlendState(_blendState.get(), nullptr, 0xffffffff);
+    p.deviceContext->OMSetRenderTargets(1, _customRenderTargetView ? _customRenderTargetView.addressof() : _renderTargetView.addressof(), nullptr);
 }
 
 #ifndef NDEBUG
@@ -656,12 +645,12 @@ try
     for (size_t i = 0; i < filesVS.size(); ++i)
     {
         const auto blob = compile(_sourceDirectory / filesVS[i].filename, "vs_4_0");
-        THROW_IF_FAILED(_device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, compiledVS[i].addressof()));
+        THROW_IF_FAILED(p.device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, compiledVS[i].addressof()));
     }
     for (size_t i = 0; i < filesPS.size(); ++i)
     {
         const auto blob = compile(_sourceDirectory / filesPS[i].filename, "ps_4_0");
-        THROW_IF_FAILED(_device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, compiledPS[i].addressof()));
+        THROW_IF_FAILED(p.device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, compiledPS[i].addressof()));
     }
 
     for (size_t i = 0; i < filesVS.size(); ++i)
@@ -746,8 +735,8 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
                 .SampleDesc = { 1, 0 },
                 .BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET,
             };
-            THROW_IF_FAILED(_device->CreateTexture2D(&desc, nullptr, _glyphAtlas.addressof()));
-            THROW_IF_FAILED(_device->CreateShaderResourceView(_glyphAtlas.get(), nullptr, _glyphAtlasView.addressof()));
+            THROW_IF_FAILED(p.device->CreateTexture2D(&desc, nullptr, _glyphAtlas.addressof()));
+            THROW_IF_FAILED(p.device->CreateShaderResourceView(_glyphAtlas.get(), nullptr, _glyphAtlasView.addressof()));
         }
 
         {
@@ -768,7 +757,7 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
             // Ensure that D2D uses the exact same gamma as our shader uses.
             _d2dRenderTarget->SetTextRenderingParams(_textRenderingParams.get());
 
-            _d2dRenderTargetUpdateFontSettings(*p.s->font);
+            _d2dRenderTargetUpdateFontSettings(p);
         }
 
         // We have our own glyph cache so Direct2D's cache doesn't help much.
@@ -791,7 +780,7 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
         }
 
         ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
-        _deviceContext->PSSetShaderResources(0, 2, &resources[0]);
+        p.deviceContext->PSSetShaderResources(0, 2, &resources[0]);
 
         _rectPackerData = Buffer<stbrp_node>{ u };
     }
@@ -861,9 +850,9 @@ void BackendD3D::_flushQuads(const RenderingPayload& p)
 
     {
         D3D11_MAPPED_SUBRESOURCE mapped{};
-        THROW_IF_FAILED(_deviceContext->Map(_instanceBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+        THROW_IF_FAILED(p.deviceContext->Map(_instanceBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
         memcpy(mapped.pData, _instances.data(), _instancesCount * sizeof(QuadInstance));
-        _deviceContext->Unmap(_instanceBuffer.get(), 0);
+        p.deviceContext->Unmap(_instanceBuffer.get(), 0);
     }
 
     // I found 4 approaches to drawing lots of quads quickly. There are probably even more.
@@ -893,11 +882,11 @@ void BackendD3D::_flushQuads(const RenderingPayload& p)
     {
         if (const auto count = state.offset - previousOffset)
         {
-            _deviceContext->DrawIndexedInstanced(6, count, 0, 0, previousOffset);
+            p.deviceContext->DrawIndexedInstanced(6, count, 0, 0, previousOffset);
         }
         if (state.blendState)
         {
-            _deviceContext->OMSetBlendState(state.blendState, nullptr, 0xffffffff);
+            p.deviceContext->OMSetBlendState(state.blendState, nullptr, 0xffffffff);
         }
         previousOffset = state.offset;
     }
@@ -927,14 +916,14 @@ void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
             .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
             .StructureByteStride = sizeof(QuadInstance),
         };
-        THROW_IF_FAILED(_device->CreateBuffer(&desc, nullptr, _instanceBuffer.addressof()));
+        THROW_IF_FAILED(p.device->CreateBuffer(&desc, nullptr, _instanceBuffer.addressof()));
     }
 
     // IA: Input Assembler
     ID3D11Buffer* vertexBuffers[]{ _vertexBuffer.get(), _instanceBuffer.get() };
     static constexpr UINT strides[]{ sizeof(f32x2), sizeof(QuadInstance) };
     static constexpr UINT offsets[]{ 0, 0 };
-    _deviceContext->IASetVertexBuffers(0, 2, &vertexBuffers[0], &strides[0], &offsets[0]);
+    p.deviceContext->IASetVertexBuffers(0, 2, &vertexBuffers[0], &strides[0], &offsets[0]);
 
     _instanceBufferCapacity = newCapacity;
 }
@@ -957,7 +946,7 @@ void BackendD3D::_drawBackground(const RenderingPayload& p)
 void BackendD3D::_uploadBackgroundBitmap(const RenderingPayload& p)
 {
     D3D11_MAPPED_SUBRESOURCE mapped{};
-    THROW_IF_FAILED(_deviceContext->Map(_backgroundBitmap.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+    THROW_IF_FAILED(p.deviceContext->Map(_backgroundBitmap.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
 
     auto src = std::bit_cast<const char*>(p.backgroundBitmap.data());
     const auto srcEnd = std::bit_cast<const char*>(p.backgroundBitmap.data() + p.backgroundBitmap.size());
@@ -971,7 +960,7 @@ void BackendD3D::_uploadBackgroundBitmap(const RenderingPayload& p)
         dst += mapped.RowPitch;
     }
 
-    _deviceContext->Unmap(_backgroundBitmap.get(), 0);
+    p.deviceContext->Unmap(_backgroundBitmap.get(), 0);
     _backgroundBitmapGeneration = p.colorBitmapGenerations[0];
 }
 
@@ -1844,7 +1833,7 @@ void BackendD3D::_debugDumpRenderTarget(const RenderingPayload& p)
 
     wchar_t path[MAX_PATH];
     swprintf_s(path, L"%s\\%u_%08zu.png", &_dumpRenderTargetBasePath[0], GetCurrentProcessId(), _dumpRenderTargetCounter);
-    SaveTextureToPNG(_deviceContext.get(), _swapChainManager.GetBuffer().get(), p.s->font->dpi, &path[0]);
+    SaveTextureToPNG(p.deviceContext.get(), _swapChainManager.GetBuffer().get(), p.s->font->dpi, &path[0]);
     _dumpRenderTargetCounter++;
 }
 #endif
@@ -1863,62 +1852,62 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
         };
 
         D3D11_MAPPED_SUBRESOURCE mapped{};
-        THROW_IF_FAILED(_deviceContext->Map(_customShaderConstantBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+        THROW_IF_FAILED(p.deviceContext->Map(_customShaderConstantBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
         memcpy(mapped.pData, &data, sizeof(data));
-        _deviceContext->Unmap(_customShaderConstantBuffer.get(), 0);
+        p.deviceContext->Unmap(_customShaderConstantBuffer.get(), 0);
     }
 
     {
         // Before we do anything else we have to unbound _renderTargetView from being
         // a render target, otherwise we can't use it as a shader resource below.
-        _deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
+        p.deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
 
         // IA: Input Assembler
-        _deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
-        _deviceContext->IASetInputLayout(nullptr);
-        _deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-        _deviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+        p.deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+        p.deviceContext->IASetInputLayout(nullptr);
+        p.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+        p.deviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
 
         // VS: Vertex Shader
-        _deviceContext->VSSetShader(_customVertexShader.get(), nullptr, 0);
-        _deviceContext->VSSetConstantBuffers(0, 0, nullptr);
+        p.deviceContext->VSSetShader(_customVertexShader.get(), nullptr, 0);
+        p.deviceContext->VSSetConstantBuffers(0, 0, nullptr);
 
         // PS: Pixel Shader
-        _deviceContext->PSSetShader(_customPixelShader.get(), nullptr, 0);
-        _deviceContext->PSSetConstantBuffers(0, 1, _customShaderConstantBuffer.addressof());
-        _deviceContext->PSSetShaderResources(0, 1, _customOffscreenTextureView.addressof());
-        _deviceContext->PSSetSamplers(0, 1, _customShaderSamplerState.addressof());
+        p.deviceContext->PSSetShader(_customPixelShader.get(), nullptr, 0);
+        p.deviceContext->PSSetConstantBuffers(0, 1, _customShaderConstantBuffer.addressof());
+        p.deviceContext->PSSetShaderResources(0, 1, _customOffscreenTextureView.addressof());
+        p.deviceContext->PSSetSamplers(0, 1, _customShaderSamplerState.addressof());
 
         // OM: Output Merger
-        _deviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+        p.deviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
     }
 
-    _deviceContext->Draw(4, 0);
+    p.deviceContext->Draw(4, 0);
 
     {
         // IA: Input Assembler
         ID3D11Buffer* vertexBuffers[]{ _vertexBuffer.get(), _instanceBuffer.get() };
         static constexpr UINT strides[]{ sizeof(f32x2), sizeof(QuadInstance) };
         static constexpr UINT offsets[]{ 0, 0 };
-        _deviceContext->IASetIndexBuffer(_indexBuffer.get(), DXGI_FORMAT_R16_UINT, 0);
-        _deviceContext->IASetInputLayout(_inputLayout.get());
-        _deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        _deviceContext->IASetVertexBuffers(0, 2, &vertexBuffers[0], &strides[0], &offsets[0]);
+        p.deviceContext->IASetIndexBuffer(_indexBuffer.get(), DXGI_FORMAT_R16_UINT, 0);
+        p.deviceContext->IASetInputLayout(_inputLayout.get());
+        p.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        p.deviceContext->IASetVertexBuffers(0, 2, &vertexBuffers[0], &strides[0], &offsets[0]);
 
         // VS: Vertex Shader
-        _deviceContext->VSSetShader(_vertexShader.get(), nullptr, 0);
-        _deviceContext->VSSetConstantBuffers(0, 1, _vsConstantBuffer.addressof());
+        p.deviceContext->VSSetShader(_vertexShader.get(), nullptr, 0);
+        p.deviceContext->VSSetConstantBuffers(0, 1, _vsConstantBuffer.addressof());
 
         // PS: Pixel Shader
         ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
-        _deviceContext->PSSetShader(_pixelShader.get(), nullptr, 0);
-        _deviceContext->PSSetConstantBuffers(0, 1, _psConstantBuffer.addressof());
-        _deviceContext->PSSetShaderResources(0, 2, &resources[0]);
-        _deviceContext->PSSetSamplers(0, 0, nullptr);
+        p.deviceContext->PSSetShader(_pixelShader.get(), nullptr, 0);
+        p.deviceContext->PSSetConstantBuffers(0, 1, _psConstantBuffer.addressof());
+        p.deviceContext->PSSetShaderResources(0, 2, &resources[0]);
+        p.deviceContext->PSSetSamplers(0, 0, nullptr);
 
         // OM: Output Merger
-        _deviceContext->OMSetBlendState(_blendState.get(), nullptr, 0xffffffff);
-        _deviceContext->OMSetRenderTargets(1, _customRenderTargetView.addressof(), nullptr);
+        p.deviceContext->OMSetBlendState(_blendState.get(), nullptr, 0xffffffff);
+        p.deviceContext->OMSetRenderTargets(1, _customRenderTargetView.addressof(), nullptr);
     }
 
     // With custom shaders, everything might be invalidated, so we have to

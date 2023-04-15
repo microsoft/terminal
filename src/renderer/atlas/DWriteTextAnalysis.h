@@ -3,15 +3,10 @@
 
 #pragma once
 
+#include "common.h"
+
 namespace Microsoft::Console::Render::Atlas
 {
-    struct TextAnalysisSinkResult
-    {
-        uint32_t textPosition;
-        uint32_t textLength;
-        DWRITE_SCRIPT_ANALYSIS analysis;
-    };
-
     struct TextAnalysisSource final : IDWriteTextAnalysisSource
     {
         TextAnalysisSource(const wchar_t* _text, const UINT32 _textLength) noexcept;

@@ -13,11 +13,11 @@ namespace Microsoft::Console::Render::Atlas
 {
     struct BackendD3D : IBackend
     {
-        BackendD3D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11DeviceContext2> deviceContext);
+        BackendD3D(const RenderingPayload& p);
 
+        void ReleaseResources() noexcept override;
         void Render(RenderingPayload& payload) override;
         bool RequiresContinuousRedraw() noexcept override;
-        void WaitUntilCanRender() noexcept override;
 
         // NOTE: D3D constant buffers sizes must be a multiple of 16 bytes.
         struct alignas(16) VSConstBuffer
@@ -173,11 +173,11 @@ namespace Microsoft::Console::Render::Atlas
 
     private:
         ATLAS_ATTR_COLD void _handleSettingsUpdate(const RenderingPayload& p);
-        void _updateFontDependents(IDWriteFactory2* dwriteFactory, const FontSettings& font);
+        void _updateFontDependents(const RenderingPayload& p);
         void _recreateCustomShader(const RenderingPayload& p);
-        void _recreateCustomRenderTargetView(u16x2 targetSize);
-        void _d2dRenderTargetUpdateFontSettings(const FontSettings& font) const noexcept;
-        void _recreateBackgroundColorBitmap(u16x2 cellCount);
+        void _recreateCustomRenderTargetView(const RenderingPayload& p);
+        void _d2dRenderTargetUpdateFontSettings(const RenderingPayload& p) const noexcept;
+        void _recreateBackgroundColorBitmap(const RenderingPayload& p);
         void _recreateConstBuffer(const RenderingPayload& p) const;
         void _setupDeviceContextState(const RenderingPayload& p);
         void _debugUpdateShaders(const RenderingPayload& p) noexcept;
@@ -205,11 +205,6 @@ namespace Microsoft::Console::Render::Atlas
         void _drawCursorPart2(const RenderingPayload& p);
         void _drawSelection(const RenderingPayload& p);
         void _executeCustomShader(RenderingPayload& p);
-
-        SwapChainManager _swapChainManager;
-
-        wil::com_ptr<ID3D11Device2> _device;
-        wil::com_ptr<ID3D11DeviceContext2> _deviceContext;
 
         wil::com_ptr<ID3D11RenderTargetView> _renderTargetView;
         wil::com_ptr<ID3D11InputLayout> _inputLayout;

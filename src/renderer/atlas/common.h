@@ -3,9 +3,6 @@
 
 #pragma once
 
-#include <dwrite_3.h>
-#include <dxgi1_2.h>
-
 #include <til/generational.h>
 
 #include "../../renderer/inc/IRenderEngine.hpp"
@@ -296,6 +293,13 @@ namespace Microsoft::Console::Render::Atlas
         size_t _size = 0;
     };
 
+    struct TextAnalysisSinkResult
+    {
+        uint32_t textPosition;
+        uint32_t textLength;
+        DWRITE_SCRIPT_ANALYSIS analysis;
+    };
+
     struct TargetSettings
     {
         HWND hwnd = nullptr;
@@ -464,6 +468,19 @@ namespace Microsoft::Console::Render::Atlas
             LUID adapterLuid{};
             UINT adapterFlags = 0;
         } dxgi;
+        struct
+        {
+            wil::com_ptr<IDXGISwapChain2> swapChain;
+            wil::unique_handle handle;
+            wil::unique_handle frameLatencyWaitableObject;
+            til::generation_t generation;
+            til::generation_t targetGeneration;
+            til::generation_t fontGeneration;
+            u16x2 targetSize{};
+            bool waitForPresentation = false;
+        } swapChain;
+        wil::com_ptr<ID3D11Device2> device;
+        wil::com_ptr<ID3D11DeviceContext2> deviceContext;
 
         //// Parameters which change seldom.
         GenerationalSettings s;
@@ -522,9 +539,9 @@ namespace Microsoft::Console::Render::Atlas
     struct IBackend
     {
         virtual ~IBackend() = default;
+        virtual void ReleaseResources() noexcept = 0;
         virtual void Render(RenderingPayload& payload) = 0;
         virtual bool RequiresContinuousRedraw() noexcept = 0;
-        virtual void WaitUntilCanRender() noexcept = 0;
     };
 
 }

@@ -32,50 +32,6 @@ namespace Microsoft::Console::Render::Atlas
 #define ATLAS_DEBUG_DUMP_RENDER_TARGET 0
 #define ATLAS_DEBUG_DUMP_RENDER_TARGET_PATH LR"(%USERPROFILE%\Downloads\AtlasEngine)"
 
-    struct SwapChainManager
-    {
-        void UpdateSwapChainSettings(const RenderingPayload& p, IUnknown* device, auto&& prepareRecreate, auto&& prepareResize)
-        {
-            if (_targetGeneration != p.s->target.generation())
-            {
-                if (_swapChain)
-                {
-                    prepareRecreate();
-                }
-                _createSwapChain(p, device);
-            }
-            else if (_targetSize != p.s->targetSize)
-            {
-                prepareResize();
-                _resizeBuffers(p);
-            }
-
-            if (_fontGeneration != p.s->font.generation())
-            {
-                _updateMatrixTransform(p);
-            }
-        }
-
-        wil::com_ptr<ID3D11Texture2D> GetBuffer() const;
-        void Present(const RenderingPayload& p);
-        void WaitUntilCanRender() noexcept;
-
-    private:
-        void _createSwapChain(const RenderingPayload& p, IUnknown* device);
-        void _resizeBuffers(const RenderingPayload& p);
-        void _updateMatrixTransform(const RenderingPayload& p);
-
-        static constexpr DXGI_SWAP_CHAIN_FLAG flags = ATLAS_DEBUG_DISABLE_FRAME_LATENCY_WAITABLE_OBJECT ? DXGI_SWAP_CHAIN_FLAG{} : DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
-
-        wil::com_ptr<IDXGISwapChain2> _swapChain;
-        wil::unique_handle _swapChainHandle;
-        wil::unique_handle _frameLatencyWaitableObject;
-        til::generation_t _targetGeneration;
-        til::generation_t _fontGeneration;
-        u16x2 _targetSize{};
-        bool _waitForPresentation = false;
-    };
-
     template<typename T = D2D1_COLOR_F>
     constexpr T colorFromU32(u32 rgba)
     {

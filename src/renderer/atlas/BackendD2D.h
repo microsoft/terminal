@@ -11,11 +11,9 @@ namespace Microsoft::Console::Render::Atlas
 {
     struct BackendD2D : IBackend
     {
-        BackendD2D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11DeviceContext2> deviceContext) noexcept;
-
+        void ReleaseResources() noexcept override;
         void Render(RenderingPayload& payload) override;
         bool RequiresContinuousRedraw() noexcept override;
-        void WaitUntilCanRender() noexcept override;
 
     private:
         ATLAS_ATTR_COLD void _handleSettingsUpdate(const RenderingPayload& p);
@@ -36,11 +34,6 @@ namespace Microsoft::Console::Render::Atlas
         ATLAS_ATTR_COLD ID2D1SolidColorBrush* _brushWithColor(u32 color);
         ATLAS_ATTR_COLD ID2D1SolidColorBrush* _brushWithColorUpdate(u32 color);
         void _fillRectangle(const D2D1_RECT_F& rect, u32 color);
-
-        SwapChainManager _swapChainManager;
-
-        wil::com_ptr<ID3D11Device2> _device;
-        wil::com_ptr<ID3D11DeviceContext2> _deviceContext;
 
         wil::com_ptr<ID2D1DeviceContext> _renderTarget;
         wil::com_ptr<ID2D1DeviceContext4> _renderTarget4; // Optional. Supported since Windows 10 14393.

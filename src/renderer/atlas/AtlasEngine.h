@@ -3,8 +3,11 @@
 
 #pragma once
 
+#include <dwrite_3.h>
+#include <d3d11_2.h>
+#include <dxgi1_3.h>
+
 #include "common.h"
-#include "DWriteTextAnalysis.h"
 
 namespace Microsoft::Console::Render::Atlas
 {
@@ -92,8 +95,14 @@ namespace Microsoft::Console::Render::Atlas
         void _resolveFontMetrics(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontSettings* fontMetrics = nullptr) const;
 
         // AtlasEngine.r.cpp
-        void _recreateAdapter();
-        void _recreateBackend();
+        ATLAS_ATTR_COLD void _recreateAdapter();
+        ATLAS_ATTR_COLD void _recreateBackend();
+        ATLAS_ATTR_COLD void _handleSwapChainUpdate();
+        void _createSwapChain();
+        void _resizeBuffers();
+        void _updateMatrixTransform();
+        void _waitUntilCanRender() noexcept;
+        void _present();
 
         static constexpr u16 u16min = 0x0000;
         static constexpr u16 u16max = 0xffff;

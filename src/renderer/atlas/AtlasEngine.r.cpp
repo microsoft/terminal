@@ -32,6 +32,11 @@ using namespace Microsoft::Console::Render::Atlas;
 [[nodiscard]] HRESULT AtlasEngine::Present() noexcept
 try
 {
+    if (!_p.dirtyRectInPx)
+    {
+        return S_OK;
+    }
+
     if (!_p.dxgi.adapter || !_p.dxgi.factory->IsCurrent())
     {
         _recreateAdapter();
@@ -42,11 +47,13 @@ try
         _recreateBackend();
     }
 
-    if (_p.dirtyRectInPx)
+    if (_p.swapChain.generation != _p.s.generation())
     {
-        _b->Render(_p);
+        _handleSwapChainUpdate();
     }
 
+    _b->Render(_p);
+    _present();
     return S_OK;
 }
 catch (const wil::ResultException& exception)
@@ -80,14 +87,11 @@ CATCH_RETURN()
 
 void AtlasEngine::WaitUntilCanRender() noexcept
 {
-    if (_b)
-    {
-        _b->WaitUntilCanRender();
-    }
     if constexpr (ATLAS_DEBUG_RENDER_DELAY)
     {
         Sleep(ATLAS_DEBUG_RENDER_DELAY);
     }
+    _waitUntilCanRender();
 }
 
 #pragma endregion
@@ -225,13 +229,17 @@ void AtlasEngine::_recreateBackend()
         d2dMode |= !options.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x;
     }
 
+    _p.swapChain = {};
+    _p.device = std::move(device);
+    _p.deviceContext = std::move(deviceContext);
+
     if (d2dMode)
     {
-        _b = std::make_unique<BackendD2D>(std::move(device), std::move(deviceContext));
+        _b = std::make_unique<BackendD2D>();
     }
     else
     {
-        _b = std::make_unique<BackendD3D>(std::move(device), std::move(deviceContext));
+        _b = std::make_unique<BackendD3D>(_p);
     }
 
     // !!! NOTE !!!
@@ -240,4 +248,179 @@ void AtlasEngine::_recreateBackend()
     // flow and so we have to manually recreate how AtlasEngine.cpp marks viewports as dirty here.
     // This ensures that the backends redraw their entire viewports whenever a new swap chain is created.
     _p.MarkAllAsDirty();
+}
+
+void AtlasEngine::_handleSwapChainUpdate()
+{
+    if (_p.swapChain.targetGeneration != _p.s->target.generation())
+    {
+        if (_p.swapChain.swapChain)
+        {
+            _b->ReleaseResources();
+            _p.deviceContext->ClearState();
+            _p.deviceContext->Flush();
+        }
+        _createSwapChain();
+    }
+    else if (_p.swapChain.targetSize != _p.s->targetSize)
+    {
+        _b->ReleaseResources();
+        _p.deviceContext->ClearState();
+        _resizeBuffers();
+    }
+
+    if (_p.swapChain.fontGeneration != _p.s->font.generation())
+    {
+        _updateMatrixTransform();
+    }
+
+    _p.swapChain.generation = _p.s.generation();
+}
+
+static constexpr DXGI_SWAP_CHAIN_FLAG swapChainFlags = ATLAS_DEBUG_DISABLE_FRAME_LATENCY_WAITABLE_OBJECT ? DXGI_SWAP_CHAIN_FLAG{} : DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+
+void AtlasEngine::_createSwapChain()
+{
+    _p.swapChain.swapChain.reset();
+    _p.swapChain.frameLatencyWaitableObject.reset();
+
+    DXGI_SWAP_CHAIN_DESC1 desc{
+        .Width = _p.s->targetSize.x,
+        .Height = _p.s->targetSize.y,
+        .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
+        .SampleDesc = { .Count = 1 },
+        .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
+        // Sometimes up to 2 buffers are locked, for instance during screen capture or when moving the window.
+        // 3 buffers seems to guarantee a stable framerate at display frequency at all times.
+        .BufferCount = 3,
+        .Scaling = DXGI_SCALING_NONE,
+        // DXGI_SWAP_EFFECT_FLIP_DISCARD is a mode that was created at a time were display drivers
+        // lacked support for Multiplane Overlays (MPO) and were copying buffers was expensive.
+        // This allowed DWM to quickly draw overlays (like gamebars) on top of rendered content.
+        // With faster GPU memory in general and with support for MPO in particular this isn't
+        // really an advantage anymore. Instead DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL allows for a
+        // more "intelligent" composition and display updates to occur like Panel Self Refresh
+        // (PSR) which requires dirty rectangles (Present1 API) to work correctly.
+        .SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL,
+        // If our background is opaque we can enable "independent" flips by setting DXGI_ALPHA_MODE_IGNORE.
+        // As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
+        .AlphaMode = _p.s->target->enableTransparentBackground ? DXGI_ALPHA_MODE_PREMULTIPLIED : DXGI_ALPHA_MODE_IGNORE,
+        .Flags = swapChainFlags,
+    };
+
+    wil::com_ptr<IDXGISwapChain1> swapChain1;
+
+    if (_p.s->target->hwnd)
+    {
+        desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+        THROW_IF_FAILED(_p.dxgi.factory->CreateSwapChainForHwnd(_p.device.get(), _p.s->target->hwnd, &desc, nullptr, nullptr, swapChain1.addressof()));
+    }
+    else
+    {
+        const auto module = GetModuleHandleW(L"dcomp.dll");
+        const auto DCompositionCreateSurfaceHandle = GetProcAddressByFunctionDeclaration(module, DCompositionCreateSurfaceHandle);
+        THROW_LAST_ERROR_IF(!DCompositionCreateSurfaceHandle);
+
+        // As per: https://docs.microsoft.com/en-us/windows/win32/api/dcomp/nf-dcomp-dcompositioncreatesurfacehandle
+        static constexpr DWORD COMPOSITIONSURFACE_ALL_ACCESS = 0x0003L;
+        THROW_IF_FAILED(DCompositionCreateSurfaceHandle(COMPOSITIONSURFACE_ALL_ACCESS, nullptr, _p.swapChain.handle.addressof()));
+        THROW_IF_FAILED(_p.dxgi.factory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(_p.device.get(), _p.swapChain.handle.get(), &desc, nullptr, swapChain1.addressof()));
+    }
+
+    _p.swapChain.swapChain = swapChain1.query<IDXGISwapChain2>();
+    _p.swapChain.frameLatencyWaitableObject.reset(_p.swapChain.swapChain->GetFrameLatencyWaitableObject());
+    _p.swapChain.targetGeneration = _p.s->target.generation();
+    _p.swapChain.fontGeneration = {};
+    _p.swapChain.targetSize = _p.s->targetSize;
+    _p.swapChain.waitForPresentation = true;
+
+    WaitUntilCanRender();
+
+    if (_p.swapChainChangedCallback)
+    {
+        try
+        {
+            _p.swapChainChangedCallback(_p.swapChain.handle.get());
+        }
+        CATCH_LOG()
+    }
+}
+
+void AtlasEngine::_resizeBuffers()
+{
+    THROW_IF_FAILED(_p.swapChain.swapChain->ResizeBuffers(0, _p.s->targetSize.x, _p.s->targetSize.y, DXGI_FORMAT_UNKNOWN, swapChainFlags));
+    _p.swapChain.targetSize = _p.s->targetSize;
+}
+
+void AtlasEngine::_updateMatrixTransform()
+{
+    if (!_p.s->target->hwnd)
+    {
+        // XAML's SwapChainPanel combines the worst of both worlds and always applies a transform
+        // to the swap chain to make it match the display scale. This undoes the damage.
+        const DXGI_MATRIX_3X2_F matrix{
+            ._11 = static_cast<f32>(USER_DEFAULT_SCREEN_DPI) / static_cast<f32>(_p.s->font->dpi),
+            ._22 = static_cast<f32>(USER_DEFAULT_SCREEN_DPI) / static_cast<f32>(_p.s->font->dpi),
+        };
+        THROW_IF_FAILED(_p.swapChain.swapChain->SetMatrixTransform(&matrix));
+    }
+    _p.swapChain.fontGeneration = _p.s->font.generation();
+}
+
+void AtlasEngine::_waitUntilCanRender() noexcept
+{
+    // IDXGISwapChain2::GetFrameLatencyWaitableObject returns an auto-reset event.
+    // Once we've waited on the event, waiting on it again will block until the timeout elapses.
+    // _waitForPresentation guards against this.
+    if constexpr (!ATLAS_DEBUG_DISABLE_FRAME_LATENCY_WAITABLE_OBJECT)
+    {
+        if (_p.swapChain.waitForPresentation)
+        {
+            WaitForSingleObjectEx(_p.swapChain.frameLatencyWaitableObject.get(), 100, true);
+            _p.swapChain.waitForPresentation = false;
+        }
+    }
+}
+
+void AtlasEngine::_present()
+{
+    const til::rect fullRect{ 0, 0, _p.swapChain.targetSize.x, _p.swapChain.targetSize.y };
+
+    DXGI_PRESENT_PARAMETERS params{};
+    RECT scrollRect{};
+    POINT scrollOffset{};
+
+    // Since rows might be taller than their cells, they might have drawn outside of the viewport.
+    auto dirtyRect = _p.dirtyRectInPx;
+    dirtyRect.left = std::max(dirtyRect.left, 0);
+    dirtyRect.top = std::max(dirtyRect.top, 0);
+    dirtyRect.right = std::min(dirtyRect.right, fullRect.right);
+    dirtyRect.bottom = std::min(dirtyRect.bottom, fullRect.bottom);
+
+    if constexpr (!ATLAS_DEBUG_SHOW_DIRTY)
+    {
+        if (dirtyRect != fullRect)
+        {
+            params.DirtyRectsCount = 1;
+            params.pDirtyRects = dirtyRect.as_win32_rect();
+
+            if (_p.scrollOffset)
+            {
+                const auto offsetInPx = _p.scrollOffset * _p.s->font->cellSize.y;
+                const auto width = _p.s->targetSize.x;
+                const auto height = _p.s->cellCount.y * _p.s->font->cellSize.y;
+                const auto top = std::max(0, offsetInPx);
+                const auto bottom = height + std::min(0, offsetInPx);
+
+                scrollRect = { 0, top, width, bottom };
+                scrollOffset = { 0, offsetInPx };
+
+                params.pScrollRect = &scrollRect;
+                params.pScrollOffset = &scrollOffset;
+            }
+        }
+    }
+
+    THROW_IF_FAILED(_p.swapChain.swapChain->Present1(1, 0, &params));
+    _p.swapChain.waitForPresentation = true;
 }

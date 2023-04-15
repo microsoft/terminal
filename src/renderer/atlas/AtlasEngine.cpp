@@ -5,6 +5,7 @@
 #include "AtlasEngine.h"
 
 #include "Backend.h"
+#include "DWriteTextAnalysis.h"
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
 // #### NOTE ####

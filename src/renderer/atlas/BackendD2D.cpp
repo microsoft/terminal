@@ -23,10 +23,12 @@ TIL_FAST_MATH_BEGIN
 
 using namespace Microsoft::Console::Render::Atlas;
 
-BackendD2D::BackendD2D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11DeviceContext2> deviceContext) noexcept :
-    _device{ std::move(device) },
-    _deviceContext{ std::move(deviceContext) }
+void BackendD2D::ReleaseResources() noexcept
 {
+    _renderTarget.reset();
+    _renderTarget4.reset();
+    // Ensure _handleSettingsUpdate() is called so that _renderTarget gets recreated.
+    _generation = {};
 }
 
 void BackendD2D::Render(RenderingPayload& p)
@@ -54,7 +56,6 @@ void BackendD2D::Render(RenderingPayload& p)
 #if ATLAS_DEBUG_DUMP_RENDER_TARGET
     _debugDumpRenderTarget(p);
 #endif
-    _swapChainManager.Present(p);
 }
 
 bool BackendD2D::RequiresContinuousRedraw() noexcept
@@ -62,28 +63,8 @@ bool BackendD2D::RequiresContinuousRedraw() noexcept
     return false;
 }
 
-void BackendD2D::WaitUntilCanRender() noexcept
-{
-    _swapChainManager.WaitUntilCanRender();
-}
-
 void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
 {
-    _swapChainManager.UpdateSwapChainSettings(
-        p,
-        _device.get(),
-        [this]() {
-            _renderTarget.reset();
-            _renderTarget4.reset();
-            _deviceContext->ClearState();
-            _deviceContext->Flush();
-        },
-        [this]() {
-            _renderTarget.reset();
-            _renderTarget4.reset();
-            _deviceContext->ClearState();
-        });
-
     const auto renderTargetChanged = !_renderTarget;
     const auto fontChanged = _fontGeneration != p.s->font.generation();
     const auto cursorChanged = _cursorGeneration != p.s->cursor.generation();
@@ -92,7 +73,8 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
     if (renderTargetChanged)
     {
         {
-            const auto surface = _swapChainManager.GetBuffer().query<IDXGISurface>();
+            wil::com_ptr<ID3D11Texture2D> buffer;
+            THROW_IF_FAILED(p.swapChain.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(buffer.addressof())));
 
             const D2D1_RENDER_TARGET_PROPERTIES props{
                 .type = D2D1_RENDER_TARGET_TYPE_DEFAULT,
@@ -101,7 +83,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
                 .dpiY = static_cast<f32>(p.s->font->dpi),
             };
             // ID2D1RenderTarget and ID2D1DeviceContext are the same and I'm tired of pretending they're not.
-            THROW_IF_FAILED(p.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, reinterpret_cast<ID2D1RenderTarget**>(_renderTarget.addressof())));
+            THROW_IF_FAILED(p.d2dFactory->CreateDxgiSurfaceRenderTarget(buffer.query<IDXGISurface>().get(), &props, reinterpret_cast<ID2D1RenderTarget**>(_renderTarget.addressof())));
             _renderTarget.query_to(_renderTarget4.addressof());
 
             _renderTarget->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
