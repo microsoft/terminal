@@ -914,7 +914,7 @@ namespace winrt::TerminalApp::implementation
                 }
             } while (focusedObject);
         }
-        
+
         return false;
     }
 
