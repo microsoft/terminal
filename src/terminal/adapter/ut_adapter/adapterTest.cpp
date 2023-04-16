@@ -1739,7 +1739,39 @@ public:
         _testGetSet->ValidateInputEvent(L"\033P0$r\033\\");
     }
 
-    TEST_METHOD(RequestModeTests)
+    TEST_METHOD(RequestStandardModeTests)
+    {
+        // The mode numbers below correspond to the ANSIStandardMode values
+        // in the ModeParams enum in DispatchTypes.hpp.
+
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{4, 20}")
+        END_TEST_METHOD_PROPERTIES()
+
+        VTInt modeNumber;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"modeNumber", modeNumber));
+        const auto mode = DispatchTypes::ANSIStandardMode(modeNumber);
+
+        // DISABLE_
+        Log::Comment(NoThrowString().Format(L"Setting standard mode %d", modeNumber));
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->SetMode(mode));
+        VERIFY_IS_TRUE(_pDispatch->RequestMode(mode));
+
+        wchar_t expectedResponse[20];
+        swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[%d;1$y", modeNumber);
+        _testGetSet->ValidateInputEvent(expectedResponse);
+
+        Log::Comment(NoThrowString().Format(L"Resetting standard mode %d", modeNumber));
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(mode));
+        VERIFY_IS_TRUE(_pDispatch->RequestMode(mode));
+
+        swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[%d;2$y", modeNumber);
+        _testGetSet->ValidateInputEvent(expectedResponse);
+    }
+
+    TEST_METHOD(RequestPrivateModeTests)
     {
         // The mode numbers below correspond to the DECPrivateMode values
         // in the ModeParams enum in DispatchTypes.hpp. We don't include
@@ -1747,7 +1779,7 @@ public:
         // and DECRQM would not then be applicable.
 
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{1, 3, 5, 6, 8, 12, 25, 40, 66, 67, 1000, 1002, 1003, 1004, 1005, 1006, 1007, 1049, 9001}")
+            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{1, 3, 5, 6, 7, 8, 12, 25, 40, 66, 67, 1000, 1002, 1003, 1004, 1005, 1006, 1007, 1049, 2004, 9001}")
         END_TEST_METHOD_PROPERTIES()
 
         VTInt modeNumber;
