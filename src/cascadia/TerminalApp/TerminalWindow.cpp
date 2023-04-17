@@ -900,12 +900,6 @@ namespace winrt::TerminalApp::implementation
                     if (!focusedObject)
                     {
                         focusedObject = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(focusedElement);
-
-                        // We were unable to find a focused object. Default to the xaml root so that the alt+space menu still works.
-                        if (!focusedObject)
-                        {
-                            focusedObject = _root.try_as<IInspectable>();
-                        }
                     }
                 }
                 else
@@ -914,7 +908,6 @@ namespace winrt::TerminalApp::implementation
                 }
             } while (focusedObject);
         }
-
         return false;
     }
 
