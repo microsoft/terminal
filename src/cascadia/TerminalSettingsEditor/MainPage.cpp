@@ -140,10 +140,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // now that the menuItems are repopulated,
         // refresh the current page using the breadcrumb data we collected before the refresh
-        auto menuItems{ _menuItemSource };
         if (const auto& crumb{ lastBreadcrumb.try_as<Breadcrumb>() })
         {
-            for (const auto& item : menuItems)
+            for (const auto& item : _menuItemSource)
             {
                 if (const auto& menuItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
                 {
@@ -183,7 +182,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Couldn't find the selected item, fallback to first menu item
         // This happens when the selected item was a profile which doesn't exist in the new configuration
         // We can use menuItemsSTL here because the only things they miss are profile entries.
-        const auto& firstItem{ menuItems.GetAt(0).as<MUX::Controls::NavigationViewItem>() };
+        const auto& firstItem{ _menuItemSource.GetAt(0).as<MUX::Controls::NavigationViewItem>() };
         SettingsNav().SelectedItem(firstItem);
         _Navigate(unbox_value<hstring>(firstItem.Tag()), BreadcrumbSubPage::None);
     }
@@ -582,9 +581,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         profileViewModel.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
         const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
 
-        if (const auto& navItems{ _menuItemSource })
+        if (_menuItemSource)
         {
-            navItems.InsertAt(index, navItem);
+            _menuItemSource.InsertAt(index, navItem);
         }
 
         // Select and navigate to the new profile
