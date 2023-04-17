@@ -118,6 +118,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ApplicationDisplayName();
         winrt::hstring ApplicationVersion();
 
+        CommandPalette LoadCommandPalette();
         winrt::fire_and_forget RequestQuit();
         winrt::fire_and_forget CloseWindow(bool bypassDialog);
 
@@ -274,6 +275,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::NewConnection_revoker _newConnectionRevoker;
 
+        __declspec(noinline) CommandPalette _loadCommandPaletteSlowPath();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
         void _ShowAboutDialog();
@@ -312,7 +314,6 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabIcon(TerminalTab& tab);
         void _UpdateTabView();
         void _UpdateTabWidthMode();
-        void _UpdateCommandsForPalette();
         void _SetBackgroundImage(const winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig& newAppearance);
 
         void _DuplicateFocusedTab();

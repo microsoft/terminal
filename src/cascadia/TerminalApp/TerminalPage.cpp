@@ -113,13 +113,14 @@ namespace winrt::TerminalApp::implementation
 
         _settings = settings;
 
-        // Make sure to _UpdateCommandsForPalette before
-        // _RefreshUIForSettingsReload. _UpdateCommandsForPalette will make
-        // sure the KeyChordText of Commands is updated, which needs to
-        // happen before the Settings UI is reloaded and tries to re-read
-        // those values.
-        _UpdateCommandsForPalette();
-        CommandPalette().SetActionMap(_settings.ActionMap());
+        // Make sure to call SetCommands before _RefreshUIForSettingsReload.
+        // SetCommands will make sure the KeyChordText of Commands is updated, which needs
+        // to happen before the Settings UI is reloaded and tries to re-read those values.
+        if (const auto p = CommandPaletteElement())
+        {
+            p.SetCommands(_settings.GlobalSettings().ActionMap().ExpandedCommands());
+            p.SetActionMap(_settings.ActionMap());
+        }
 
         if (needRefreshUI)
         {
@@ -255,20 +256,6 @@ namespace winrt::TerminalApp::implementation
         _CreateNewTabFlyout();
 
         _UpdateTabWidthMode();
-
-        // When the visibility of the command palette changes to "collapsed",
-        // the palette has been closed. Toss focus back to the currently active
-        // control.
-        CommandPalette().RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
-            if (CommandPalette().Visibility() == Visibility::Collapsed)
-            {
-                _FocusActiveControl(nullptr, nullptr);
-            }
-        });
-        CommandPalette().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
-        CommandPalette().CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
-        CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
-        CommandPalette().PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -685,7 +672,6 @@ namespace winrt::TerminalApp::implementation
     //   Notes link, send feedback link and privacy policy link.
     void TerminalPage::_ShowAboutDialog()
     {
-        AboutDialog().QueueUpdateCheck();
         _ShowDialogHelper(L"AboutDialog");
     }
 
@@ -1334,8 +1320,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CommandPaletteButtonOnClick(const IInspectable&,
                                                     const RoutedEventArgs&)
     {
-        CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
-        CommandPalette().Visibility(Visibility::Visible);
+        auto p = LoadCommandPalette();
+        p.EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
+        p.Visibility(Visibility::Visible);
     }
 
     // Method Description:
@@ -1351,7 +1338,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Called when the users pressed keyBindings while CommandPalette is open.
+    // - Called when the users pressed keyBindings while CommandPaletteElement is open.
     // - As of GH#8480, this is also bound to the TabRowControl's KeyUp event.
     //   That should only fire when focus is in the tab row, which is hard to
     //   do. Notably, that's possible:
@@ -1422,7 +1409,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        if (const auto p = CommandPalette(); p.Visibility() == Visibility::Visible && cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+        if (const auto p = CommandPaletteElement(); p.Visibility() == Visibility::Visible && cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
         {
             p.Visibility(Visibility::Collapsed);
         }
@@ -1746,6 +1733,40 @@ namespace winrt::TerminalApp::implementation
         }
         return nullptr;
     }
+
+    CommandPalette TerminalPage::LoadCommandPalette()
+    {
+        if (const auto p = CommandPaletteElement())
+        {
+            return p;
+        }
+
+        return _loadCommandPaletteSlowPath();
+    }
+
+    CommandPalette TerminalPage::_loadCommandPaletteSlowPath()
+    {
+        const auto p = FindName(L"CommandPaletteElement").as<CommandPalette>();
+
+        p.SetCommands(_settings.GlobalSettings().ActionMap().ExpandedCommands());
+        p.SetActionMap(_settings.ActionMap());
+
+        // When the visibility of the command palette changes to "collapsed",
+        // the palette has been closed. Toss focus back to the currently active control.
+        p.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            if (CommandPaletteElement().Visibility() == Visibility::Collapsed)
+            {
+                _FocusActiveControl(nullptr, nullptr);
+            }
+        });
+        p.DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+        p.CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
+        p.SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
+        p.PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
+
+        return p;
+    }
+
     // Method Description:
     // - Warn the user that they are about to close all open windows, then
     //   signal that we want to close everything.
@@ -3139,21 +3160,6 @@ namespace winrt::TerminalApp::implementation
                 break;
             }
         }
-    }
-
-    // Method Description:
-    // - Repopulates the list of commands in the command palette with the
-    //   current commands in the settings. Also updates the keybinding labels to
-    //   reflect any matching keybindings.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalPage::_UpdateCommandsForPalette()
-    {
-        // Update the command palette when settings reload
-        const auto& expanded{ _settings.GlobalSettings().ActionMap().ExpandedCommands() };
-        CommandPalette().SetCommands(expanded);
     }
 
     // Method Description:
@@ -4827,5 +4833,4 @@ namespace winrt::TerminalApp::implementation
         // _RemoveTab will make sure to null out the _stashed.draggedTab
         _RemoveTab(*_stashed.draggedTab);
     }
-
 }
