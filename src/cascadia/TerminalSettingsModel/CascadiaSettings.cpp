@@ -15,6 +15,7 @@
 #include <shellapi.h>
 #include <shlwapi.h>
 #include <til/latch.h>
+#include <til/string.h>
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -417,6 +418,7 @@ void CascadiaSettings::_validateSettings()
     _validateKeybindings();
     _validateColorSchemesInCommands();
     _validateThemeExists();
+    _validateProfileEnvironmentVariables();
 }
 
 // Method Description:
@@ -538,6 +540,30 @@ void CascadiaSettings::_validateMediaResources()
     if (invalidIcon)
     {
         _warnings.Append(SettingsLoadWarnings::InvalidIcon);
+    }
+}
+
+// Method Description:
+// - Checks if the profiles contain multiple environment variables with the same name, but different
+//   cases
+void CascadiaSettings::_validateProfileEnvironmentVariables()
+{
+    for (const auto& profile : _allProfiles)
+    {
+        std::set<std::wstring, til::wstring_case_insensitive_compare> envVarNames{};
+        if (profile.EnvironmentVariables() == nullptr)
+        {
+            continue;
+        }
+        for (const auto [key, value] : profile.EnvironmentVariables())
+        {
+            const auto iterator = envVarNames.insert(key.c_str());
+            if (!iterator.second)
+            {
+                _warnings.Append(SettingsLoadWarnings::InvalidProfileEnvironmentVariables);
+                return;
+            }
+        }
     }
 }
 

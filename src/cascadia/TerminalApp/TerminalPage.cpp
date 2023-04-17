@@ -245,7 +245,6 @@ namespace winrt::TerminalApp::implementation
         });
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
         _tabView.TabCloseRequested({ this, &TerminalPage::_OnTabCloseRequested });
-        _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
 
         _tabView.TabDragStarting({ this, &TerminalPage::_onTabDragStarting });
         _tabView.TabStripDragOver({ this, &TerminalPage::_onTabStripDragOver });
@@ -1216,7 +1215,8 @@ namespace winrt::TerminalApp::implementation
                                                                                  nullptr,
                                                                                  settings.InitialRows(),
                                                                                  settings.InitialCols(),
-                                                                                 winrt::guid());
+                                                                                 winrt::guid(),
+                                                                                 profile.Guid());
 
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
             {
@@ -1228,12 +1228,9 @@ namespace winrt::TerminalApp::implementation
 
         else
         {
-            // profile is guaranteed to exist here
-            auto guidWString = Utils::GuidToString(profile.Guid());
-
-            StringMap envMap{};
-            envMap.Insert(L"WT_PROFILE_ID", guidWString);
-            envMap.Insert(L"WSLENV", L"WT_PROFILE_ID");
+            const auto environment = settings.EnvironmentVariables() != nullptr ?
+                                         settings.EnvironmentVariables().GetView() :
+                                         nullptr;
 
             // Update the path to be relative to whatever our CWD is.
             //
@@ -1264,10 +1261,11 @@ namespace winrt::TerminalApp::implementation
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
                                                                                  newWorkingDirectory,
                                                                                  settings.StartingTitle(),
-                                                                                 envMap.GetView(),
+                                                                                 environment,
                                                                                  settings.InitialRows(),
                                                                                  settings.InitialCols(),
-                                                                                 winrt::guid());
+                                                                                 winrt::guid(),
+                                                                                 profile.Guid());
 
             valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
             valueSet.Insert(L"reloadEnvironmentVariables",
@@ -4721,6 +4719,8 @@ namespace winrt::TerminalApp::implementation
         co_await wil::resume_foreground(Dispatcher());
         if (const auto& page{ weakThis.get() })
         {
+            // `this` is safe to use
+            //
             // First we need to get the position in the List to drop to
             auto index = -1;
 
@@ -4740,8 +4740,8 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            // `this` is safe to use
-            const auto request = winrt::make_self<RequestReceiveContentArgs>(src, _WindowProperties.WindowId(), index);
+            const auto myId{ _WindowProperties.WindowId() };
+            const auto request = winrt::make_self<RequestReceiveContentArgs>(src, myId, index);
 
             // This will go up to the monarch, who will then dispatch the request
             // back down to the source TerminalPage, who will then perform a
