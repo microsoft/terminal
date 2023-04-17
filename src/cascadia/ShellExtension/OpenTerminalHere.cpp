@@ -44,6 +44,10 @@ try
         STARTUPINFOEX siEx{ 0 };
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
 
+        // Explicitly create the terminal window visible.
+        siEx.StartupInfo.dwFlags |= STARTF_USESHOWWINDOW;
+        siEx.StartupInfo.wShowWindow = SW_SHOWNORMAL;
+
         std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
         std::wstring cmdline;
         if (runElevated)
