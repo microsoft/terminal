@@ -31,7 +31,9 @@ namespace Microsoft.Terminal.TerminalConnection
                                                                       IMapView<String, String> environment,
                                                                       UInt32 rows,
                                                                       UInt32 columns,
-                                                                      Guid guid);
+                                                                      Guid guid,
+                                                                      Guid profileGuid);
+
         Windows.Foundation.Collections.ValueSet GetDeftermSettings();
     };
 }

@@ -52,7 +52,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                                          const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
                                                                          uint32_t rows,
                                                                          uint32_t columns,
-                                                                         const winrt::guid& guid);
+                                                                         const winrt::guid& guid,
+                                                                         const winrt::guid& profileGuid);
+
         Windows::Foundation::Collections::ValueSet GetDeftermSettings();
 
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
@@ -92,6 +94,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         bool _passthroughMode{};
         bool _inheritCursor{ false };
         bool _reloadEnvironmentVariables{};
+        guid _profileGuid{};
 
         struct StartupInfoFromDefTerm
         {
