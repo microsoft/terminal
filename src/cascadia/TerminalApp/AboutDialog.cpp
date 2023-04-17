@@ -29,6 +29,7 @@ namespace winrt::TerminalApp::implementation
     AboutDialog::AboutDialog()
     {
         InitializeComponent();
+        QueueUpdateCheck();
     }
 
     winrt::hstring AboutDialog::ApplicationDisplayName()

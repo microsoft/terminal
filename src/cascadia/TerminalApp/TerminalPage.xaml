@@ -97,7 +97,8 @@
         -->
 
         <local:AboutDialog x:Name="AboutDialog"
-                           Grid.Row="2" />
+                           Grid.Row="2"
+                           x:Load="False" />
 
         <ContentDialog x:Name="QuitDialog"
                        x:Uid="QuitDialog"
@@ -167,9 +168,10 @@
             </TextBlock>
         </ContentDialog>
 
-        <local:CommandPalette x:Name="CommandPalette"
+        <local:CommandPalette x:Name="CommandPaletteElement"
                               Grid.Row="2"
                               VerticalAlignment="Stretch"
+                              x:Load="False"
                               PreviewKeyDown="_KeyDownHandler"
                               Visibility="Collapsed" />
 

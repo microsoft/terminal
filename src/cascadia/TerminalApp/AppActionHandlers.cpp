@@ -613,10 +613,10 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<ToggleCommandPaletteArgs>())
         {
-            CommandPalette().EnableCommandPaletteMode(realArgs.LaunchMode());
-            CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
-                                            Visibility::Collapsed :
-                                            Visibility::Visible);
+            const auto p = LoadCommandPalette();
+            const auto v = p.Visibility() == Visibility::Visible ? Visibility::Collapsed : Visibility::Visible;
+            p.EnableCommandPaletteMode(realArgs.LaunchMode());
+            p.Visibility(v);
             args.Handled(true);
         }
     }
@@ -799,9 +799,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleTabSearch(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
-        CommandPalette().SetTabs(_tabs, _mruTabs);
-        CommandPalette().EnableTabSearchMode();
-        CommandPalette().Visibility(Visibility::Visible);
+        const auto p = LoadCommandPalette();
+        p.SetTabs(_tabs, _mruTabs);
+        p.EnableTabSearchMode();
+        p.Visibility(Visibility::Visible);
 
         args.Handled(true);
     }
