@@ -3381,5 +3381,4 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SearchMatch(false);
     }
 
->>>>>>> dev/migrie/b/cxn-restarting-attempt-1-backport
 }
