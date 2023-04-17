@@ -127,7 +127,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // will only fill that number of elements out of the current source.
         std::vector<IInspectable> menuItemsSTL(_originalNumItems, nullptr);
         _menuItemSource.GetMany(0, menuItemsSTL);
-        _menuItemSource.Clear();
         // now, just stick them back in.
         _menuItemSource.ReplaceAll(menuItemsSTL);
 
