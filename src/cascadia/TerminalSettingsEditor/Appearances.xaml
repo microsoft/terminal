@@ -212,7 +212,7 @@
                               IsEnabled="{x:Bind UsingMonospaceFont, Mode=OneWay}" />
                 </StackPanel>
             </local:SettingContainer>
-            <muxc:InfoBar x:Uid="Proflile_FontFace_ProportionalFontWarning"
+            <muxc:InfoBar x:Uid="Profile_FontFace_ProportionalFontWarning"
                           IsOpen="{x:Bind ShowProportionalFontWarning, Mode=OneWay}"
                           Severity="Warning"/>
 
