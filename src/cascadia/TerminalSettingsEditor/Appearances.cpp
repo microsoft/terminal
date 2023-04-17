@@ -186,7 +186,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 
     Appearances::Appearances() :
-        _ShowAllFonts{ false }
+        _ShowAllFonts{ false },
+        _ShowProportionalFontWarning{ false }
     {
         InitializeComponent();
 
@@ -315,6 +316,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto selectedItem{ e.AddedItems().GetAt(0) };
         const auto newFontFace{ unbox_value<Editor::Font>(selectedItem) };
         Appearance().FontFace(newFontFace.LocalizedName());
+        if (!UsingMonospaceFont())
+        {
+            ShowProportionalFontWarning(true);
+        }
+        else
+        {
+            ShowProportionalFontWarning(false);
+        }
     }
 
     void Appearances::_ViewModelChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*args*/)
@@ -376,6 +385,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentAdjustIndistinguishableColors" });
                 }
+                else if (settingName == L"ShowProportionalFontWarning")
+                {
+                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowProportionalFontWarning" });
+                }
                 // YOU THERE ADDING A NEW APPEARANCE SETTING
                 // Make sure you add a block like
                 //
@@ -407,6 +420,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"UsingMonospaceFont" });
             _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentIntenseTextStyle" });
             _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentAdjustIndistinguishableColors" });
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowProportionalFontWarning" });
+
         }
     }
 
@@ -487,4 +502,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // whereas SelectedItem identifies which one was selected by the user.
         return FontWeightComboBox().SelectedItem() == _CustomFontWeight;
     }
+
+    bool Appearances::ShowProportionalFontWarning() const noexcept
+    {
+        return _ShowProportionalFontWarning;
+    }
+
+    void Appearances::ShowProportionalFontWarning(const bool& value)
+    {
+        if (_ShowProportionalFontWarning != value)
+        {
+            _ShowProportionalFontWarning = value;
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowProportionalFontWarning" });
+        }
+    }
+
 }

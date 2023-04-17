@@ -179,11 +179,13 @@
             </local:SettingContainer>
 
             <!--  Font Face  -->
+
             <local:SettingContainer x:Uid="Profile_FontFace"
                                     ClearSettingValue="{x:Bind Appearance.ClearFontFace}"
                                     HasSettingValue="{x:Bind Appearance.HasFontFace, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.FontFaceOverrideSource, Mode=OneWay}"
                                     Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
+
                 <StackPanel Margin="0,8,0,0">
                     <!--
                         Binding the ItemsSource to a separate variable that switches between the
@@ -210,6 +212,10 @@
                               IsEnabled="{x:Bind UsingMonospaceFont, Mode=OneWay}" />
                 </StackPanel>
             </local:SettingContainer>
+            <muxc:InfoBar x:Uid="Proflile_FontFace_ProportionalFontWarning"
+                          IsOpen="{x:Bind ShowProportionalFontWarning, Mode=OneWay}"
+                          Severity="Warning"/>
+
 
             <!--  Font Size  -->
             <local:SettingContainer x:Uid="Profile_FontSize"
