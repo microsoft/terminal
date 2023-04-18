@@ -244,8 +244,8 @@
     <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
   </data>
   <data name="Globals_AlwaysShowTabs.HelpText" xml:space="preserve">
-    <value>When disabled, the tab bar will appear when a new tab is created.</value>
-    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header".</comment>
+    <value>When disabled, the tab bar will appear when a new tab is created. Cannot be disabled while "Hide the title bar" is On.</value>
+    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header". This setting cannot be disabled while "Globals_ShowTitlebar.Header" is enabled.</comment>
   </data>
   <data name="Globals_NewTabPosition.Header" xml:space="preserve">
     <value>Position of newly created tabs</value>
