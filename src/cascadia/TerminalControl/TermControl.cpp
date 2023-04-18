@@ -3017,20 +3017,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (lastHoveredCell)
             {
                 winrt::hstring uriText = _core.HoveredUriText();
+                if (uriText.empty())
+                {
+                    co_return;
+                }
+
                 try
                 {
                     // DisplayUri will filter out non-printable characters and confusables.
                     Windows::Foundation::Uri parsedUri{ uriText };
+                    if (!parsedUri)
+                    {
+                        co_return;
+                    }
                     uriText = parsedUri.DisplayUri();
-                }
-                catch (...)
-                {
-                    LOG_CAUGHT_EXCEPTION();
-                    uriText = {};
-                }
 
-                if (!uriText.empty())
-                {
                     const auto panel = SwapChainPanel();
                     const auto scale = panel.CompositionScaleX();
                     const auto offset = panel.ActualOffset();
@@ -3052,6 +3053,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), locationInDIPs.x - offset.x);
                     OverlayCanvas().SetTop(HyperlinkTooltipBorder(), locationInDIPs.y - offset.y);
                 }
+                CATCH_LOG();
             }
         }
     }

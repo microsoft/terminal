@@ -244,8 +244,8 @@
     <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
   </data>
   <data name="Globals_AlwaysShowTabs.HelpText" xml:space="preserve">
-    <value>When disabled, the tab bar will appear when a new tab is created.</value>
-    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header".</comment>
+    <value>When disabled, the tab bar will appear when a new tab is created. Cannot be disabled while "Hide the title bar" is On.</value>
+    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header". This setting cannot be disabled while "Globals_ShowTitlebar.Header" is enabled.</comment>
   </data>
   <data name="Globals_NewTabPosition.Header" xml:space="preserve">
     <value>Position of newly created tabs</value>
@@ -536,15 +536,27 @@
   </data>
   <data name="Globals_ThemeDark.Content" xml:space="preserve">
     <value>Dark</value>
-    <comment>An option to choose from for the "tab width mode" setting. When selected, the app is in dark theme and darker colors are used throughout the app.</comment>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in dark theme and darker colors are used throughout the app.</comment>
   </data>
   <data name="Globals_ThemeSystem.Content" xml:space="preserve">
     <value>Use Windows theme</value>
-    <comment>An option to choose from for the "tab width mode" setting. When selected, the app uses the theme selected in the Windows operating system.</comment>
+    <comment>An option to choose from for the "theme" setting. When selected, the app uses the theme selected in the Windows operating system.</comment>
   </data>
   <data name="Globals_ThemeLight.Content" xml:space="preserve">
     <value>Light</value>
-    <comment>An option to choose from for the "tab width mode" setting. When selected, the app is in light theme and lighter colors are used throughout the app.</comment>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in light theme and lighter colors are used throughout the app.</comment>
+  </data>
+  <data name="Globals_ThemeDarkLegacy.Content" xml:space="preserve">
+    <value>Dark (Legacy)</value>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in dark theme and darker colors are used throughout the app. This is an older version of the "dark" theme</comment>
+  </data>
+  <data name="Globals_ThemeSystemLegacy.Content" xml:space="preserve">
+    <value>Use Windows theme (Legacy)</value>
+    <comment>An option to choose from for the "theme" setting. When selected, the app uses the theme selected in the Windows operating system. This is an older version of the "Use Windows theme" theme</comment>
+  </data>
+  <data name="Globals_ThemeLightLegacy.Content" xml:space="preserve">
+    <value>Light (Legacy)</value>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in light theme and lighter colors are used throughout the app. This is an older version of the "light" theme</comment>
   </data>
   <data name="Globals_WordDelimiters.Header" xml:space="preserve">
     <value>Word delimiters</value>

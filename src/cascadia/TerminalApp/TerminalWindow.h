@@ -203,6 +203,8 @@ namespace winrt::TerminalApp::implementation
         // These are events that are handled by the TerminalPage, but are
         // exposed through the AppLogic. This macro is used to forward the event
         // directly to them.
+        FORWARDED_TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, Initialized);
+
         FORWARDED_TYPED_EVENT(SetTitleBarContent, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement, _root, SetTitleBarContent);
         FORWARDED_TYPED_EVENT(TitleChanged, winrt::Windows::Foundation::IInspectable, winrt::hstring, _root, TitleChanged);
         FORWARDED_TYPED_EVENT(LastTabClosed, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs, _root, LastTabClosed);
