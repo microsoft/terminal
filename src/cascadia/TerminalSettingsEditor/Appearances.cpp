@@ -502,18 +502,4 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return FontWeightComboBox().SelectedItem() == _CustomFontWeight;
     }
 
-    bool Appearances::ShowProportionalFontWarning() const noexcept
-    {
-        return _ShowProportionalFontWarning;
-    }
-
-    void Appearances::ShowProportionalFontWarning(const bool& value)
-    {
-        if (_ShowProportionalFontWarning != value)
-        {
-            _ShowProportionalFontWarning = value;
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowProportionalFontWarning" });
-        }
-    }
-
 }

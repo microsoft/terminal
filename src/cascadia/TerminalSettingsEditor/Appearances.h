@@ -113,9 +113,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool ShowAllFonts() const noexcept;
         void ShowAllFonts(const bool& value);
 
-        bool ShowProportionalFontWarning() const noexcept;
-        void ShowProportionalFontWarning(const bool& value);
-
         fire_and_forget BackgroundImage_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void BIAlignment_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void FontFace_SelectionChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e);
@@ -136,10 +133,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance().BackgroundImageStretchMode);
 
         GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance().IntenseTextStyle);
+        WINRT_OBSERVABLE_PROPERTY(bool, ShowProportionalFontWarning, _PropertyChangedHandlers, nullptr);
 
     private:
         bool _ShowAllFonts;
-        bool _ShowProportionalFontWarning;
         void _UpdateBIAlignmentControl(const int32_t val);
         std::array<Windows::UI::Xaml::Controls::Primitives::ToggleButton, 9> _BIAlignmentButtons;
 

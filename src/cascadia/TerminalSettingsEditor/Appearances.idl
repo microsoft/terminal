@@ -32,7 +32,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean UseDesktopBGImage;
         Boolean BackgroundImageSettingsVisible { get; };
 
-
         void ClearColorScheme();
         ColorSchemeViewModel CurrentColorScheme;
         Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> SchemesList;
