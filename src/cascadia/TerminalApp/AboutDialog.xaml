@@ -17,7 +17,8 @@
 
     <StackPanel Orientation="Vertical">
         <TextBlock IsTextSelectionEnabled="True">
-            <Run Text="{x:Bind ApplicationDisplayName}" AutomationProperties.HeadingLevel="1" /> <LineBreak />
+            <Run Text="{x:Bind ApplicationDisplayName}"
+                 AutomationProperties.HeadingLevel="1" /> <LineBreak />
             <Run x:Uid="AboutDialog_VersionLabel" />
             <Run Text="{x:Bind ApplicationVersion}" />
         </TextBlock>
