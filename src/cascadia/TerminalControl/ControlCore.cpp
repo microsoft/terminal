@@ -2188,34 +2188,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
         std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
         const auto& marks{ _terminal->GetScrollMarks() };
+
+        // Early return so we don't have to check for the validity of `nearest` below after the loop exits.
+        if (marks.empty())
+        {
+            return;
+        }
+
+        static constexpr til::point worst{ til::CoordTypeMax, til::CoordTypeMax };
+        til::point bestDistance{ worst };
+
         for (const auto& m : marks)
         {
-            // If this mark doesn't know anything about the position of its
-            // command, OR it does but thinks that it was empty, then just skip
-            // it.
             if (!m.HasCommand())
             {
                 continue;
             }
-            // If this mark is before/after the start of our search in the
-            // buffer, ...
 
-            const auto inTheRightDirection = (goUp && (m.commandEnd <= start)) || // prev
-                                             (!goUp && (m.end > start)); // next
-            // (If we're going down, we need to compare the end, not the
-            // commandEnd, to actually find the next one. Otherwise we'll just
-            // find the mark of the current selection again.
-            if (inTheRightDirection)
+            const auto distance = goUp ? start - m.end : m.end - start;
+            if ((distance > til::point{ 0, 0 }) && distance < bestDistance)
             {
-                // ... and we either haven't found a match, or the current nearest
-                // is after/before this mark in the buffer
-                if (!nearest.has_value() ||
-                    ((goUp && (*m.commandEnd > *nearest->commandEnd)) || // prev
-                     (!goUp && (m.end < *nearest->commandEnd)))) // next
-                {
-                    // stash this as the new match
-                    nearest = m;
-                }
+                nearest = m;
+                bestDistance = distance;
             }
         }
 
