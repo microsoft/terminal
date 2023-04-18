@@ -31,7 +31,9 @@ namespace winrt::TerminalApp::implementation
         _rootPane = rootPane;
         _activePane = nullptr;
 
-        auto firstId = _nextPaneId;
+        _closePaneMenuItem.Visibility(WUX::Visibility::Collapsed);
+
+        auto firstId = _nextPaneId; 
 
         _rootPane->WalkTree([&](std::shared_ptr<Pane> pane) {
             // update the IDs on each pane
@@ -531,6 +533,9 @@ namespace winrt::TerminalApp::implementation
         // either the first or second child, but this will always return the
         // original pane first.
         auto [original, newPane] = _activePane->Split(splitType, splitSize, pane);
+
+        // After split, Close Pane Menu Item should be visible
+        _closePaneMenuItem.Visibility(WUX::Visibility::Visible);
 
         // The active pane has an id if it is a leaf
         if (activePaneId)
@@ -1124,6 +1129,11 @@ namespace winrt::TerminalApp::implementation
                     tab->Content(tab->_rootPane->GetRootElement());
                     tab->ExitZoom();
                 }
+               
+                if (tab->GetLeafPaneCount() == 2)
+                {
+                    tab->_closePaneMenuItem.Visibility(WUX::Visibility::Collapsed);
+                }
 
                 if (auto pane = weakPane.lock())
                 {
@@ -1306,6 +1316,29 @@ namespace winrt::TerminalApp::implementation
             Automation::AutomationProperties::SetHelpText(splitTabMenuItem, splitTabToolTip);
         }
 
+        Controls::MenuFlyoutItem closePaneMenuItem = _closePaneMenuItem;
+        {
+            // "Close Pane"
+            Controls::FontIcon closeTabSymbol;
+            closeTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+            closeTabSymbol.Glyph(L"\xF246"); // ViewDashboard
+
+            closePaneMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->ClosePane();
+                }
+            });
+            closePaneMenuItem.Text(RS_(L"ClosePaneText"));
+            closePaneMenuItem.Icon(closeTabSymbol);
+
+            const auto closePaneToolTip = RS_(L"ClosePaneToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(closePaneMenuItem, box_value(closePaneToolTip));
+            Automation::AutomationProperties::SetHelpText(closePaneMenuItem, closePaneToolTip);
+
+        }
+
         Controls::MenuFlyoutItem exportTabMenuItem;
         {
             // "Export Tab"
@@ -1357,6 +1390,7 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Items().Append(renameTabMenuItem);
         contextMenuFlyout.Items().Append(duplicateTabMenuItem);
         contextMenuFlyout.Items().Append(splitTabMenuItem);
+        contextMenuFlyout.Items().Append(closePaneMenuItem);
         contextMenuFlyout.Items().Append(exportTabMenuItem);
         contextMenuFlyout.Items().Append(findMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
