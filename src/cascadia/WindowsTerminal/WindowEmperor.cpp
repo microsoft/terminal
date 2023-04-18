@@ -73,7 +73,15 @@ bool WindowEmperor::HandleCommandlineArgs()
     _buildArgsFromCommandline(args);
     auto cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
 
-    Remoting::CommandlineArgs eventArgs{ { args }, { cwd } };
+    // Get the requested initial state of the window from our startup info. For
+    // something like `start /min`, this will set the wShowWindow member to
+    // SW_SHOWMINIMIZED. We'll need to make sure is bubbled all the way through,
+    // so we can open a new window with the same state.
+    STARTUPINFOW si;
+    GetStartupInfoW(&si);
+    const auto showWindow = si.wShowWindow;
+
+    Remoting::CommandlineArgs eventArgs{ { args }, { cwd }, showWindow };
 
     const auto isolatedMode{ _app.Logic().IsolatedMode() };
 

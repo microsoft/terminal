@@ -26,6 +26,7 @@ namespace Microsoft.Terminal.Remoting
 
         String[] Commandline { get; };
         String CurrentDirectory { get; };
+        UInt32 ShowWindowCommand { get; };
 
         String Content { get; };
         Windows.Foundation.IReference<Windows.Foundation.Rect> InitialBounds { get; };

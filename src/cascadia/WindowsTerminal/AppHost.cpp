@@ -188,6 +188,8 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
             }
         }
 
+        _launchShowWindowCommand = windowArgs.ShowWindowCommand();
+
         // This is a fix for GH#12190 and hopefully GH#12169.
         //
         // If the commandline we were provided is going to result in us only
@@ -1247,7 +1249,12 @@ winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::
     // match the initial settings, and then call ShowWindow to finally make us
     // visible.
 
-    auto nCmdShow = SW_SHOW;
+    // Use the visibility that we were originally requested with as a base. We
+    // can't just use SW_SHOWDEFAULT, because that is set on a per-process
+    // basis. That means that a second window needs to have its STARTUPINFO's
+    // wShowCmd passed into the original process.
+    auto nCmdShow = _launchShowWindowCommand;
+
     if (WI_IsFlagSet(_launchMode, LaunchMode::MaximizedMode))
     {
         nCmdShow = SW_MAXIMIZE;
