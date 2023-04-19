@@ -7,6 +7,7 @@
 #include <Windows.ApplicationModel.AppExtensions.h>
 #include <winrt/ExtensionHost.h>
 #include "FooClass.h"
+#include <winrt/ExtensionComponent.h>
 
 using namespace winrt;
 using namespace Windows::UI::Xaml;
@@ -89,8 +90,9 @@ namespace winrt::ExtensionHost::implementation
             return;
 
         winrt::ExtensionHost::FooClass myFoo{};
-        auto wat = myFoo.MyProperty();
+        winrt::ExtensionComponent::Class bar;
+        auto wat = bar.MyProperty();
         wat *= 2;
-        myFoo.MyProperty();
+        myFoo.MyProperty(wat);
     }
 }
