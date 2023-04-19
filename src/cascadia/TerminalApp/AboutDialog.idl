@@ -13,7 +13,5 @@ namespace TerminalApp
         Boolean CheckingForUpdates { get; };
         Boolean UpdatesAvailable { get; };
         String PendingUpdateVersion { get; };
-
-        void QueueUpdateCheck();
     }
 }
