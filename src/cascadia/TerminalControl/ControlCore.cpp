@@ -2233,32 +2233,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
         std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
         const auto& marks{ _terminal->GetScrollMarks() };
+
+        static constexpr til::point worst{ til::CoordTypeMax, til::CoordTypeMax };
+        til::point bestDistance{ worst };
+
         for (const auto& m : marks)
         {
-            // If this mark doesn't know anything about the position of its
-            // output, OR it does but thinks that it was empty, then just skip
-            // it.
             if (!m.HasOutput())
             {
                 continue;
             }
-            // If this mark is before/after the start of our search in the buffer, ...
-            const auto inTheRightDirection = (goUp && (m.outputEnd <= start)) || // prev
-                                             (!goUp && (m.commandEnd > start)); // next
-            // (If we're going down, we need to compare the commandEnd, not the
-            // outputEnd, to actually find the next one. Otherwise we'll just
-            // find the mark of the current selection again.)
-            if (inTheRightDirection)
+
+            const auto distance = goUp ? start - *m.commandEnd : *m.commandEnd - start;
+            if ((distance > til::point{ 0, 0 }) && distance < bestDistance)
             {
-                // .. and we either haven't found a match, or the current
-                // nearest is after this mark in the buffer
-                if (!nearest.has_value() ||
-                    ((goUp && (*m.outputEnd > *nearest->outputEnd)) || // prev
-                     (!goUp && (*m.commandEnd < *nearest->outputEnd)))) // next
-                {
-                    // stash this as the new match
-                    nearest = m;
-                }
+                nearest = m;
+                bestDistance = distance;
             }
         }
 
