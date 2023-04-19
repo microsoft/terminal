@@ -66,5 +66,9 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSampleAppProvider);
 #include <winrt/Microsoft.Terminal.Control.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
+#include <winrt/Windows.ApplicationModel.h>
+#include <winrt/Windows.ApplicationModel.AppExtensions.h>
+#include <appmodel.h>
+
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"

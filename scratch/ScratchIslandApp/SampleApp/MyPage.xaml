@@ -23,8 +23,9 @@
             <TextBox x:Name="GuidInput"
                      Width="400"
                      PlaceholderText="{}{guid here}" />
-            <Button Grid.Row="0">
-                Create
+            <Button Grid.Row="0"
+                    Click="ClickHandler">
+                Do the thing
             </Button>
 
         </StackPanel>
