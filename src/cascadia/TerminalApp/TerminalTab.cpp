@@ -33,7 +33,7 @@ namespace winrt::TerminalApp::implementation
 
         _closePaneMenuItem.Visibility(WUX::Visibility::Collapsed);
 
-        auto firstId = _nextPaneId; 
+        auto firstId = _nextPaneId;
 
         _rootPane->WalkTree([&](std::shared_ptr<Pane> pane) {
             // update the IDs on each pane
@@ -1129,7 +1129,7 @@ namespace winrt::TerminalApp::implementation
                     tab->Content(tab->_rootPane->GetRootElement());
                     tab->ExitZoom();
                 }
-               
+
                 if (tab->GetLeafPaneCount() == 2)
                 {
                     tab->_closePaneMenuItem.Visibility(WUX::Visibility::Collapsed);
@@ -1336,7 +1336,6 @@ namespace winrt::TerminalApp::implementation
 
             WUX::Controls::ToolTipService::SetToolTip(closePaneMenuItem, box_value(closePaneToolTip));
             Automation::AutomationProperties::SetHelpText(closePaneMenuItem, closePaneToolTip);
-
         }
 
         Controls::MenuFlyoutItem exportTabMenuItem;
