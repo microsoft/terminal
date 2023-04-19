@@ -166,7 +166,7 @@ namespace winrt::SampleApp::implementation
         auto className = winrt::hstring{ L"ExtensionHost.FooClass" };
         const auto nameForAbi = static_cast<HSTRING>(winrt::get_abi(className));
         nameForAbi;
-        // hr = RoActivateInstance(nameForAbi, (::IInspectable**)winrt::put_abi(foo));
+        hr = RoActivateInstance(nameForAbi, (::IInspectable**)winrt::put_abi(foo));
 
         void* factory{ nullptr };
         hr = p(winrt::get_abi(className), &factory);

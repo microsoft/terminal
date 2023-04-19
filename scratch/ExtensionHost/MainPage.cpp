@@ -5,6 +5,8 @@
 
 #include <appmodel.h>
 #include <Windows.ApplicationModel.AppExtensions.h>
+#include <winrt/ExtensionHost.h>
+#include "FooClass.h"
 
 using namespace winrt;
 using namespace Windows::UI::Xaml;
@@ -85,5 +87,10 @@ namespace winrt::ExtensionHost::implementation
         LOG_IF_FAILED(hr);
         if (FAILED(hr))
             return;
+
+        winrt::ExtensionHost::FooClass myFoo{};
+        auto wat = myFoo.MyProperty();
+        wat *= 2;
+        myFoo.MyProperty();
     }
 }

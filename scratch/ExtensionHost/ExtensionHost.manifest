@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+    <file name="ExtensionHost.exe" hashalg="SHA1">
+        <activatableClass name="ExtensionHost.FooClass" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    </file>
+</assembly>
