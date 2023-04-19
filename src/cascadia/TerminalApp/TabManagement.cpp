@@ -600,13 +600,14 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            CommandPalette().SetTabs(_tabs, _mruTabs);
+            const auto p = LoadCommandPalette();
+            p.SetTabs(_tabs, _mruTabs);
 
             // Otherwise, set up the tab switcher in the selected mode, with
             // the given ordering, and make it visible.
-            CommandPalette().EnableTabSwitcherMode(index, tabSwitchMode);
-            CommandPalette().Visibility(Visibility::Visible);
-            CommandPalette().SelectNextItem(bMoveRight);
+            p.EnableTabSwitcherMode(index, tabSwitchMode);
+            p.Visibility(Visibility::Visible);
+            p.SelectNextItem(bMoveRight);
         }
     }
 
@@ -916,7 +917,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdatedSelectedTab(const winrt::TerminalApp::TabBase& tab)
     {
         // Unfocus all the tabs.
-        for (auto tab : _tabs)
+        for (const auto& tab : _tabs)
         {
             tab.Focus(FocusState::Unfocused);
         }
@@ -936,7 +937,8 @@ namespace winrt::TerminalApp::implementation
             // When the tab switcher is eventually dismissed, the focus will
             // get tossed back to the focused terminal control, so we don't
             // need to worry about focus getting lost.
-            if (CommandPalette().Visibility() != Visibility::Visible)
+            const auto p = CommandPaletteElement();
+            if (!p || p.Visibility() != Visibility::Visible)
             {
                 tab.Focus(FocusState::Programmatic);
                 _UpdateMRUTab(tab);
