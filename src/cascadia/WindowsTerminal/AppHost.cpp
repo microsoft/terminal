@@ -32,11 +32,11 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
                  winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
                  const Remoting::WindowManager& manager,
                  const Remoting::Peasant& peasant) noexcept :
+    _appLogic{ logic },
+    _windowLogic{ nullptr }, // don't make one, we're going to take a ref on app's
     _windowManager{ manager },
     _peasant{ peasant },
-    _appLogic{ logic }, // don't make one, we're going to take a ref on app's
-    _windowLogic{ nullptr },
-    _window{ nullptr }
+    _desktopManager{ winrt::try_create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager)) }
 {
     _HandleCommandlineArgs(args);
 
@@ -851,30 +851,39 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable send
     _windowLogic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
 }
 
-winrt::fire_and_forget AppHost::_WindowActivated(bool activated)
+void AppHost::_WindowActivated(bool activated)
 {
     _windowLogic.WindowActivated(activated);
 
-    if (!activated)
+    if (activated && _isWindowInitialized)
+    {
+        _peasantNotifyActivateWindow();
+    }
+}
+
+winrt::fire_and_forget AppHost::_peasantNotifyActivateWindow()
+{
+    const auto desktopManager = _desktopManager;
+    const auto peasant = _peasant;
+    const auto hwnd = _window->GetHandle();
+
+    co_await winrt::resume_background();
+
+    GUID currentDesktopGuid{};
+    if (FAILED_LOG(desktopManager->GetWindowDesktopId(hwnd, &currentDesktopGuid)))
     {
         co_return;
     }
 
-    co_await winrt::resume_background();
-
-    if (_peasant)
-    {
-        const auto currentDesktopGuid{ _CurrentDesktopGuid() };
-
-        // TODO: projects/5 - in the future, we'll want to actually get the
-        // desktop GUID in IslandWindow, and bubble that up here, then down to
-        // the Peasant. For now, we're just leaving space for it.
-        Remoting::WindowActivatedArgs args{ _peasant.GetID(),
-                                            (uint64_t)_window->GetHandle(),
-                                            currentDesktopGuid,
-                                            winrt::clock().now() };
-        _peasant.ActivateWindow(args);
-    }
+    // TODO: projects/5 - in the future, we'll want to actually get the
+    // desktop GUID in IslandWindow, and bubble that up here, then down to
+    // the Peasant. For now, we're just leaving space for it.
+    peasant.ActivateWindow({
+        peasant.GetID(),
+        reinterpret_cast<uint64_t>(hwnd),
+        currentDesktopGuid,
+        winrt::clock().now(),
+    });
 }
 
 // Method Description:
@@ -907,30 +916,6 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowL
     co_return layoutJson;
 }
 
-// Method Description:
-// - Helper to initialize our instance of IVirtualDesktopManager. If we already
-//   got one, then this will just return true. Otherwise, we'll try and init a
-//   new instance of one, and store that.
-// - This will return false if we weren't able to initialize one, which I'm not
-//   sure is actually possible.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff _desktopManager points to a non-null instance of IVirtualDesktopManager
-bool AppHost::_LazyLoadDesktopManager()
-{
-    if (_desktopManager == nullptr)
-    {
-        try
-        {
-            _desktopManager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
-        }
-        CATCH_LOG();
-    }
-
-    return _desktopManager != nullptr;
-}
-
 void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                             const Remoting::SummonWindowBehavior& args)
 {
@@ -938,7 +923,7 @@ void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*se
 
     if (args != nullptr && args.MoveToCurrentDesktop())
     {
-        if (_LazyLoadDesktopManager())
+        if (_desktopManager)
         {
             // First thing - make sure that we're not on the current desktop. If
             // we are, then don't call MoveWindowToDesktop. This is to mitigate
@@ -964,23 +949,6 @@ void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*se
             }
         }
     }
-}
-
-// Method Description:
-// - This gets the GUID of the desktop our window is currently on. It does NOT
-//   get the GUID of the desktop that's currently active.
-// Arguments:
-// - <none>
-// Return Value:
-// - the GUID of the desktop our window is currently on
-GUID AppHost::_CurrentDesktopGuid()
-{
-    GUID currentDesktopGuid{ 0 };
-    if (_LazyLoadDesktopManager())
-    {
-        LOG_IF_FAILED(_desktopManager->GetWindowDesktopId(_window->GetHandle(), &currentDesktopGuid));
-    }
-    return currentDesktopGuid;
 }
 
 // Method Description:
@@ -1264,8 +1232,9 @@ winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::
     // UI thread. This is shockingly load bearing - without this, then
     // sometimes, we'll _still_ show the HWND before the XAML island actually
     // paints.
-    co_await winrt::resume_background();
     co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher(), winrt::Windows::UI::Core::CoreDispatcherPriority::Low);
+
+    _isWindowInitialized = true;
     ShowWindow(_window->GetHandle(), nCmdShow);
 
     // If we didn't start the window hidden (in one way or another), then try to
@@ -1280,6 +1249,7 @@ winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::
     if (!noForeground)
     {
         SetForegroundWindow(_window->GetHandle());
+        _peasantNotifyActivateWindow();
     }
 }
 
