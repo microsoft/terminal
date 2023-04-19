@@ -113,10 +113,23 @@ namespace Microsoft.Terminal.Wpf
                 {
                     this.connection.TerminalOutput -= this.Connection_TerminalOutput;
                 }
-
+                this.Connection_TerminalOutput(this, new TerminalOutputEventArgs("\x001bc\x1b]104\x1b\\")); //reset console/clear screen - https://github.com/microsoft/terminal/pull/15062#issuecomment-1505654110
+                var wasNull = this.connection == null;
                 this.connection = value;
-                this.connection.TerminalOutput += this.Connection_TerminalOutput;
-                this.connection.Start();
+                if (this.connection != null)
+                {
+                    if (wasNull)
+                    {
+                         this.Connection_TerminalOutput(this, new TerminalOutputEventArgs("\x1b[?25h")); //show cursor
+                    }
+                    this.connection.TerminalOutput += this.Connection_TerminalOutput;
+                    this.connection.Start();
+                }
+                else
+                {
+                    this.Connection_TerminalOutput(this, new TerminalOutputEventArgs("\x1b[?25l")); //hide cursor
+                }
+                    
             }
         }
 

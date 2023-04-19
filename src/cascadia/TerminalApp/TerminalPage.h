@@ -180,7 +180,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(AlwaysOnTopChanged, IInspectable, IInspectable);
         TYPED_EVENT(RaiseVisualBell, IInspectable, IInspectable);
         TYPED_EVENT(SetTaskbarProgress, IInspectable, IInspectable);
-        TYPED_EVENT(Initialized, IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
+        TYPED_EVENT(Initialized, IInspectable, IInspectable);
         TYPED_EVENT(IdentifyWindowsRequested, IInspectable, IInspectable);
         TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
         TYPED_EVENT(SummonWindowRequested, IInspectable, IInspectable);
@@ -301,8 +301,6 @@ namespace winrt::TerminalApp::implementation
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _CommandPaletteButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
-        void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
-        void _SendFeedbackOnClick(const IInspectable& sender, const Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs& eventArgs);
 
         void _KeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
         static ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() noexcept;
@@ -414,12 +412,11 @@ namespace winrt::TerminalApp::implementation
 
         fire_and_forget _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
 
-        void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
-        void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);
+        void _TabDragStarted(const IInspectable& sender, const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& eventArgs);
+        void _TabDragCompleted(const IInspectable& sender, const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragCompletedEventArgs& eventArgs);
 
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
-        void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
         void _OnTabCloseRequested(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabCloseRequestedEventArgs& eventArgs);
         void _OnFirstLayout(const IInspectable& sender, const IInspectable& eventArgs);
         void _UpdatedSelectedTab(const winrt::TerminalApp::TabBase& tab);
@@ -447,7 +444,7 @@ namespace winrt::TerminalApp::implementation
 
         void _StartInboundListener();
 
-        void _CompleteInitialization();
+        winrt::fire_and_forget _CompleteInitialization();
 
         void _FocusActiveControl(IInspectable sender, IInspectable eventArgs);
 

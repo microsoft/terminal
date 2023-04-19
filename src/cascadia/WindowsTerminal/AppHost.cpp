@@ -60,8 +60,7 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
                          this,
                          std::placeholders::_1,
-                         std::placeholders::_2,
-                         std::placeholders::_3);
+                         std::placeholders::_2);
     _window->SetCreateCallback(pfn);
 
     // Event handlers:
@@ -88,13 +87,6 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
 
     _window->MakeWindow();
-
-    _GetWindowLayoutRequestedToken = _peasant.GetWindowLayoutRequested([this](auto&&,
-                                                                              const Remoting::GetWindowLayoutArgs& args) {
-        // The peasants are running on separate threads, so they'll need to
-        // swap what context they are in to the ui thread to get the actual layout.
-        args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
-    });
 }
 
 AppHost::~AppHost()
@@ -195,6 +187,8 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
                 }
             }
         }
+
+        _launchShowWindowCommand = windowArgs.ShowWindowCommand();
 
         // This is a fix for GH#12190 and hopefully GH#12169.
         //
@@ -339,6 +333,7 @@ void AppHost::Initialize()
 
     _window->UpdateSettingsRequested({ this, &AppHost::_requestUpdateSettings });
 
+    _revokers.Initialized = _windowLogic.Initialized(winrt::auto_revoke, { this, &AppHost::_WindowInitializedHandler });
     _revokers.RequestedThemeChanged = _windowLogic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
     _revokers.FullscreenChanged = _windowLogic.FullscreenChanged(winrt::auto_revoke, { this, &AppHost::_FullscreenChanged });
     _revokers.FocusModeChanged = _windowLogic.FocusModeChanged(winrt::auto_revoke, { this, &AppHost::_FocusModeChanged });
@@ -388,6 +383,23 @@ void AppHost::Initialize()
     _revokers.RequestMoveContent = _windowLogic.RequestMoveContent(winrt::auto_revoke, { this, &AppHost::_handleMoveContent });
     _revokers.RequestReceiveContent = _windowLogic.RequestReceiveContent(winrt::auto_revoke, { this, &AppHost::_handleReceiveContent });
     _revokers.SendContentRequested = _peasant.SendContentRequested(winrt::auto_revoke, { this, &AppHost::_handleSendContent });
+
+    // Add our GetWindowLayoutRequested handler AFTER the xaml island is
+    // started. Our _GetWindowLayoutAsync handler requires us to be able to work
+    // on our UI thread, which requires that we have a Dispatcher ready for us
+    // to move to. If we set up this callback in the ctor, then it is possible
+    // for there to be a time slice where
+    // * the monarch creates the peasant for us,
+    // * we get constructed (registering the callback)
+    // * then the monarch attempts to query all _peasants_ for their layout,
+    //   coming back to ask us even before XAML has been created.
+    _GetWindowLayoutRequestedToken = _peasant.GetWindowLayoutRequested([this](auto&&,
+                                                                              const Remoting::GetWindowLayoutArgs& args) {
+        // The peasants are running on separate threads, so they'll need to
+        // swap what context they are in to the ui thread to get the actual layout.
+        args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
+    });
+
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
     // it will accumulate an unbounded amount of queued animations while
@@ -511,11 +523,30 @@ LaunchPosition AppHost::_GetWindowLaunchPosition()
 }
 
 // Method Description:
+// - Callback for when the window is first being created (during WM_CREATE).
+//   Stash the proposed size for later. We'll need that once we're totally
+//   initialized, so that we can show the window in the right position *when we
+//   want to show it*. If we did the _initialResizeAndRepositionWindow work now,
+//   it would have no effect, because the window is not yet visible.
+// Arguments:
+// - hwnd: The HWND of the window we're about to create.
+// - proposedRect: The location and size of the window that we're about to
+//   create. We'll use this rect to determine which monitor the window is about
+//   to appear on.
+void AppHost::_HandleCreateWindow(const HWND /* hwnd */, const til::rect& proposedRect)
+{
+    // GH#11561: Hide the window until we're totally done being initialized.
+    // More commentary in TerminalPage::_CompleteInitialization
+    _initialResizeAndRepositionWindow(_window->GetHandle(), proposedRect, _launchMode);
+}
+
+// Method Description:
 // - Resize the window we're about to create to the appropriate dimensions, as
-//   specified in the settings. This will be called during the handling of
-//   WM_CREATE. We'll load the settings for the app, then get the proposed size
-//   of the terminal from the app. Using that proposed size, we'll resize the
-//   window we're creating, so that it'll match the values in the settings.
+//   specified in the settings. This is called once the app has finished it's
+//   initial setup, once we have created all the tabs, panes, etc. We'll load
+//   the settings for the app, then get the proposed size of the terminal from
+//   the app. Using that proposed size, we'll resize the window we're creating,
+//   so that it'll match the values in the settings.
 // Arguments:
 // - hwnd: The HWND of the window we're about to create.
 // - proposedRect: The location and size of the window that we're about to
@@ -524,7 +555,7 @@ LaunchPosition AppHost::_GetWindowLaunchPosition()
 // - launchMode: A LaunchMode enum reference that indicates the launch mode
 // Return Value:
 // - None
-void AppHost::_HandleCreateWindow(const HWND hwnd, til::rect proposedRect, LaunchMode& launchMode)
+void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect proposedRect, LaunchMode& launchMode)
 {
     launchMode = _windowLogic.GetLaunchMode();
 
@@ -1208,6 +1239,47 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
             nonClientWindow->SetTitlebarBackground(_windowLogic.TitlebarBrush());
             _updateTheme();
         }
+    }
+}
+
+winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                          const winrt::Windows::Foundation::IInspectable& /*arg*/)
+{
+    // GH#11561: We're totally done being initialized. Resize the window to
+    // match the initial settings, and then call ShowWindow to finally make us
+    // visible.
+
+    // Use the visibility that we were originally requested with as a base. We
+    // can't just use SW_SHOWDEFAULT, because that is set on a per-process
+    // basis. That means that a second window needs to have its STARTUPINFO's
+    // wShowCmd passed into the original process.
+    auto nCmdShow = _launchShowWindowCommand;
+
+    if (WI_IsFlagSet(_launchMode, LaunchMode::MaximizedMode))
+    {
+        nCmdShow = SW_MAXIMIZE;
+    }
+
+    // For inexplicable reasons, again, hop to the BG thread, then back to the
+    // UI thread. This is shockingly load bearing - without this, then
+    // sometimes, we'll _still_ show the HWND before the XAML island actually
+    // paints.
+    co_await winrt::resume_background();
+    co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher(), winrt::Windows::UI::Core::CoreDispatcherPriority::Low);
+    ShowWindow(_window->GetHandle(), nCmdShow);
+
+    // If we didn't start the window hidden (in one way or another), then try to
+    // pull ourselves to the foreground. Don't necessarily do a whole "summon",
+    // we don't really want to STEAL foreground if someone rightfully took it
+
+    const bool noForeground = nCmdShow == SW_SHOWMINIMIZED ||
+                              nCmdShow == SW_SHOWNOACTIVATE ||
+                              nCmdShow == SW_SHOWMINNOACTIVE ||
+                              nCmdShow == SW_SHOWNA ||
+                              nCmdShow == SW_FORCEMINIMIZE;
+    if (!noForeground)
+    {
+        SetForegroundWindow(_window->GetHandle());
     }
 }
 

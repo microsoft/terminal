@@ -5,12 +5,12 @@
 #include "ConptyConnection.h"
 
 #include <conpty-static.h>
+#include <til/string.h>
 #include <til/env.h>
 #include <winternl.h>
 
 #include "CTerminalHandoff.h"
 #include "LibraryResources.h"
-#include "../../types/inc/Environment.hpp"
 #include "../../types/inc/utils.hpp"
 
 #include "ConptyConnection.g.cpp"
@@ -84,31 +84,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         auto cmdline{ wil::ExpandEnvironmentStringsW<std::wstring>(_commandline.c_str()) }; // mutable copy -- required for CreateProcessW
 
-        Utils::EnvironmentVariableMapW environment;
+        til::env environment;
         auto zeroEnvMap = wil::scope_exit([&]() noexcept {
-            // Can't zero the keys, but at least we can zero the values.
-            for (auto& [name, value] : environment)
-            {
-                ::SecureZeroMemory(value.data(), value.size() * sizeof(decltype(value.begin())::value_type));
-            }
-
             environment.clear();
         });
 
         // Populate the environment map with the current environment.
         if (_reloadEnvironmentVariables)
         {
-            til::env refreshedEnvironment;
-            refreshedEnvironment.regenerate();
-
-            for (auto& [key, value] : refreshedEnvironment.as_map())
-            {
-                environment.try_emplace(key, std::move(value));
-            }
+            environment.regenerate();
         }
         else
         {
-            RETURN_IF_FAILED(Utils::UpdateEnvironmentMapW(environment));
+            environment = til::env::from_current_environment();
         }
 
         {
@@ -119,39 +107,45 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const auto guidSubStr = std::wstring_view{ wsGuid }.substr(1);
 
             // Ensure every connection has the unique identifier in the environment.
-            environment.insert_or_assign(L"WT_SESSION", guidSubStr.data());
+            environment.as_map().insert_or_assign(L"WT_SESSION", guidSubStr.data());
 
+            // The profile Guid does include the enclosing '{}'
+            const auto profileGuid{ Utils::GuidToString(_profileGuid) };
+            environment.as_map().insert_or_assign(L"WT_PROFILE_ID", profileGuid.data());
+
+            // WSLENV is a colon-delimited list of environment variables (+flags) that should appear inside WSL
+            // https://devblogs.microsoft.com/commandline/share-environment-vars-between-wsl-and-windows/
+            std::wstring wslEnv{ L"WT_SESSION:WT_PROFILE_ID:" };
             if (_environment)
             {
-                // add additional WT env vars like WT_SETTINGS, WT_DEFAULTS and WT_PROFILE_ID
-                for (auto item : _environment)
+                // Order the environment variable names so that resolution order is consistent
+                std::set<std::wstring, til::wstring_case_insensitive_compare> keys{};
+                for (const auto item : _environment)
+                {
+                    keys.insert(item.Key().c_str());
+                }
+                // add additional env vars
+                for (const auto& key : keys)
                 {
                     try
                     {
-                        auto key = item.Key();
                         // This will throw if the value isn't a string. If that
                         // happens, then just skip this entry.
-                        auto value = winrt::unbox_value<hstring>(item.Value());
+                        const auto value = winrt::unbox_value<hstring>(_environment.Lookup(key));
 
-                        // avoid clobbering WSLENV
-                        if (std::wstring_view{ key } == L"WSLENV")
-                        {
-                            auto current = environment[L"WSLENV"];
-                            value = current + L":" + value;
-                        }
-
-                        environment.insert_or_assign(key.c_str(), value.c_str());
+                        environment.set_user_environment_var(key.c_str(), value.c_str());
+                        // For each environment variable added to the environment, also add it to WSLENV
+                        wslEnv += key + L":";
                     }
                     CATCH_LOG();
                 }
             }
 
-            // WSLENV is a colon-delimited list of environment variables (+flags) that should appear inside WSL
-            // https://devblogs.microsoft.com/commandline/share-environment-vars-between-wsl-and-windows/
-
-            auto wslEnv = environment[L"WSLENV"];
-            wslEnv = L"WT_SESSION:" + wslEnv; // prepend WT_SESSION to make sure it's visible inside WSL.
-            environment.insert_or_assign(L"WSLENV", wslEnv);
+            // We want to prepend new environment variables to WSLENV - that way if a variable already
+            // exists in WSLENV but with a flag, the flag will be respected.
+            // (This behaviour was empirically observed)
+            wslEnv += environment.as_map()[L"WSLENV"];
+            environment.as_map().insert_or_assign(L"WSLENV", wslEnv);
         }
 
         std::vector<wchar_t> newEnvVars;
@@ -160,7 +154,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                newEnvVars.size() * sizeof(decltype(newEnvVars.begin())::value_type));
         });
 
-        RETURN_IF_FAILED(Utils::EnvironmentMapToEnvironmentStringsW(environment, newEnvVars));
+        RETURN_IF_FAILED(environment.to_environment_strings_w(newEnvVars));
 
         auto lpEnvironment = newEnvVars.empty() ? nullptr : newEnvVars.data();
 
@@ -244,7 +238,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                                                 const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
                                                                                 uint32_t rows,
                                                                                 uint32_t columns,
-                                                                                const winrt::guid& guid)
+                                                                                const winrt::guid& guid,
+                                                                                const winrt::guid& profileGuid)
     {
         Windows::Foundation::Collections::ValueSet vs{};
 
@@ -254,6 +249,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         vs.Insert(L"initialRows", Windows::Foundation::PropertyValue::CreateUInt32(rows));
         vs.Insert(L"initialCols", Windows::Foundation::PropertyValue::CreateUInt32(columns));
         vs.Insert(L"guid", Windows::Foundation::PropertyValue::CreateGuid(guid));
+        vs.Insert(L"profileGuid", Windows::Foundation::PropertyValue::CreateGuid(profileGuid));
 
         if (environment)
         {
@@ -288,6 +284,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
             _reloadEnvironmentVariables = winrt::unbox_value_or<bool>(settings.TryLookup(L"reloadEnvironmentVariables").try_as<Windows::Foundation::IPropertyValue>(),
                                                                       _reloadEnvironmentVariables);
+            _profileGuid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"profileGuid").try_as<Windows::Foundation::IPropertyValue>(), _profileGuid);
         }
 
         if (_guid == guid{})

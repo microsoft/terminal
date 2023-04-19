@@ -73,7 +73,15 @@ bool WindowEmperor::HandleCommandlineArgs()
     _buildArgsFromCommandline(args);
     auto cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
 
-    Remoting::CommandlineArgs eventArgs{ { args }, { cwd } };
+    // Get the requested initial state of the window from our startup info. For
+    // something like `start /min`, this will set the wShowWindow member to
+    // SW_SHOWMINIMIZED. We'll need to make sure is bubbled all the way through,
+    // so we can open a new window with the same state.
+    STARTUPINFOW si;
+    GetStartupInfoW(&si);
+    const auto showWindow = si.wShowWindow;
+
+    Remoting::CommandlineArgs eventArgs{ { args }, { cwd }, showWindow };
 
     const auto isolatedMode{ _app.Logic().IsolatedMode() };
 
@@ -169,18 +177,13 @@ void WindowEmperor::_windowStartedHandlerPostXAML(const std::shared_ptr<WindowTh
     sender->Logic().IsQuakeWindowChanged({ this, &WindowEmperor::_windowIsQuakeWindowChanged });
     sender->UpdateSettingsRequested({ this, &WindowEmperor::_windowRequestUpdateSettings });
 
-    // Summon the window to the foreground, since we might not _currently_ be in
+    // DON'T Summon the window to the foreground, since we might not _currently_ be in
     // the foreground, but we should act like the new window is.
     //
-    // TODO: GH#14957 - use AllowSetForeground from the original wt.exe instead
-    Remoting::SummonWindowSelectionArgs args{};
-    args.OnCurrentDesktop(false);
-    args.WindowID(sender->Peasant().GetID());
-    args.SummonBehavior().MoveToCurrentDesktop(false);
-    args.SummonBehavior().ToggleVisibility(false);
-    args.SummonBehavior().DropdownDuration(0);
-    args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
-    _manager.SummonWindow(args);
+    // If you summon here, the resulting code will call ShowWindow(SW_SHOW) on
+    // the Terminal window, making it visible BEFORE the XAML island is actually
+    // ready to be drawn. We want to wait till the app's Initialized event
+    // before we make the window visible.
 
     // Now that the window is ready to go, we can add it to our list of windows,
     // because we know it will be well behaved.
@@ -202,7 +205,13 @@ void WindowEmperor::_windowExitedHandler(uint64_t senderID)
                       return w->Peasant().GetID() == senderID;
                   });
 
-    if (_windowThreadInstances.fetch_sub(1, std::memory_order_relaxed) == 1)
+    // When we run out of windows, exit our process if and only if:
+    // * We're not allowed to run headless OR
+    // * we've explicitly been told to "quit", which should fully exit the Terminal.
+    const bool quitWhenLastWindowExits{ !_app.Logic().AllowHeadless() };
+    const bool noMoreWindows{ _windowThreadInstances.fetch_sub(1, std::memory_order_relaxed) == 1 };
+    if (noMoreWindows &&
+        (_quitting || quitWhenLastWindowExits))
     {
         _close();
     }
@@ -297,6 +306,8 @@ void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::II
 void WindowEmperor::_quitAllRequested(const winrt::Windows::Foundation::IInspectable&,
                                       const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args)
 {
+    _quitting = true;
+
     // Make sure that the current timer is destroyed so that it doesn't attempt
     // to run while we are in the middle of quitting.
     if (_getWindowLayoutThrottler.has_value())

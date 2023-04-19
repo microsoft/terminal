@@ -804,6 +804,7 @@ HIBYTE
 hicon
 HIDEWINDOW
 hinst
+Hirots
 HISTORYBUFS
 HISTORYNODUP
 HISTORYSIZE
@@ -2283,6 +2284,8 @@ xunit
 xutr
 XVIRTUALSCREEN
 XWalk
+xwwyzz
+xxyyzz
 yact
 YCast
 YCENTER
