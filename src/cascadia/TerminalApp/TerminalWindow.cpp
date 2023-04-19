@@ -3,16 +3,15 @@
 
 #include "pch.h"
 #include "TerminalWindow.h"
+
+#include "AppLogic.h"
 #include "../inc/WindowingBehavior.h"
+
+#include <LibraryResources.h>
+
 #include "TerminalWindow.g.cpp"
 #include "SettingsLoadEventArgs.g.cpp"
 #include "WindowProperties.g.cpp"
-
-#include <LibraryResources.h>
-#include <WtExeUtils.h>
-#include <wil/token_helpers.h>
-
-#include "../../types/inc/utils.hpp"
 
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -264,6 +263,8 @@ namespace winrt::TerminalApp::implementation
             {
                 _root->SetFullscreen(true);
             }
+
+            AppLogic::Current()->NotifyRootInitialized();
         });
         _root->Create();
 
