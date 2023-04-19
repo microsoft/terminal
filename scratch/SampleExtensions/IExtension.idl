@@ -1,0 +1,10 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace SampleExtensions
+{    
+    interface IExtension
+    {
+        Int32 DoTheThing();
+    };
+}

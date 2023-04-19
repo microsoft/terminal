@@ -1,0 +1,9 @@
+namespace SampleExtensions
+{
+    [default_interface]
+    runtimeclass Class
+    {
+        Class();
+        Int32 MyProperty;
+    }
+}

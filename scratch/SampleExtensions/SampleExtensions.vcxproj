@@ -6,9 +6,9 @@
     <CppWinRTRootNamespaceAutoMerge>true</CppWinRTRootNamespaceAutoMerge>
     <CppWinRTGenerateWindowsMetadata>true</CppWinRTGenerateWindowsMetadata>
     <MinimalCoreWin>true</MinimalCoreWin>
-    <ProjectGuid>{e1cf4226-b94e-4a86-b62f-02e1a2eb3a0d}</ProjectGuid>
-    <ProjectName>ExtensionComponent</ProjectName>
-    <RootNamespace>ExtensionComponent</RootNamespace>
+    <ProjectGuid>{cf317032-4253-4726-b4f5-6d5cea2e75d4}</ProjectGuid>
+    <ProjectName>SampleExtensions</ProjectName>
+    <RootNamespace>SampleExtensions</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>
@@ -17,7 +17,6 @@
     <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersion)' == '' ">10.0.22621.0</WindowsTargetPlatformVersion>
     <WindowsTargetPlatformMinVersion>10.0.17134.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
-  <Import Project="..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|ARM">
@@ -97,7 +96,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
-      <ModuleDefinitionFile>ExtensionComponent.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>SampleExtensions.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
@@ -131,59 +130,18 @@
   </ItemGroup>
   <ItemGroup>
     <Midl Include="Class.idl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ExtensionComponent.def" />
+    <Midl Include="IExtension.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="SampleExtensions.def" />
+  </ItemGroup>
+  <ItemGroup>
     <None Include="PropertySheet.props" />
     <Text Include="readme.txt">
       <DeploymentContent>false</DeploymentContent>
     </Text>
   </ItemGroup>
-
-
-  <!-- ========================== Other References ========================= -->
-  <ItemGroup>
-<!--     <Reference Include="SampleApp">
-      <HintPath>$(OpenConsoleCommonOutDir)\SampleAppLib\SampleApp.winmd</HintPath>
-      <HintPath>..\..\bin\x64\Debug\SampleAppLib\SampleApp.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference> -->
-    <Reference Include="SampleExtensions">
-      <!-- <HintPath>$(OpenConsoleCommonOutDir)\SampleAppLib\SampleApp.winmd</HintPath> -->
-      <!-- <HintPath>..\..\bin\x64\Debug\SampleAppLib\SampleApp.winmd</HintPath> -->
-      <HintPath>..\..\x64\Debug\SampleExtensions\SampleExtensions.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference>
-    <!-- <Reference Include="Microsoft.Terminal.Core">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
-      <HintPath>..\..\bin\x64\debug\TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference>
-    <Reference Include="Microsoft.Terminal.TerminalConnection">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
-      <HintPath>..\..\bin\x64\debug\TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference> -->
-<!--     <Reference Include="Microsoft.Terminal.Control">
-      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
-      <HintPath>..\..\bin\x64\debug\Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference> -->
-  </ItemGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\packages\Microsoft.Windows.CppWinRT.2.0.220531.1\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.220531.1\build\native\Microsoft.Windows.CppWinRT.targets')" />

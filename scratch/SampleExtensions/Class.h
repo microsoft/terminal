@@ -2,7 +2,7 @@
 
 #include "Class.g.h"
 
-namespace winrt::ExtensionComponent::implementation
+namespace winrt::SampleExtensions::implementation
 {
     struct Class : ClassT<Class>
     {
@@ -10,11 +10,10 @@ namespace winrt::ExtensionComponent::implementation
 
         int32_t MyProperty();
         void MyProperty(int32_t value);
-        int32_t DoTheThing() { return 101; }
     };
 }
 
-namespace winrt::ExtensionComponent::factory_implementation
+namespace winrt::SampleExtensions::factory_implementation
 {
     struct Class : ClassT<Class, implementation::Class>
     {

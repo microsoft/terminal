@@ -5,7 +5,8 @@
 #include "MyPage.h"
 #include <LibraryResources.h>
 #include "MyPage.g.cpp"
-#include "MySettings.h"
+#include <winrt/SampleExtensions.h>
+// #include "MySettings.h"
 
 using namespace std::chrono_literals;
 using namespace winrt::Microsoft::Terminal;
@@ -26,25 +27,25 @@ namespace winrt::SampleApp::implementation
 
     void MyPage::Create()
     {
-        auto settings = winrt::make_self<implementation::MySettings>();
+        // auto settings = winrt::make_self<implementation::MySettings>();
 
-        auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This TermControl is hosted in-proc...",
-                                                                                      winrt::hstring{},
-                                                                                      L"",
-                                                                                      nullptr,
-                                                                                      32,
-                                                                                      80,
-                                                                                      winrt::guid(),
-                                                                                      winrt::guid()) };
+        // auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This TermControl is hosted in-proc...",
+        //                                                                               winrt::hstring{},
+        //                                                                               L"",
+        //                                                                               nullptr,
+        //                                                                               32,
+        //                                                                               80,
+        //                                                                               winrt::guid(),
+        //                                                                               winrt::guid()) };
 
         // "Microsoft.Terminal.TerminalConnection.ConptyConnection"
-        winrt::hstring myClass{ winrt::name_of<TerminalConnection::ConptyConnection>() };
-        TerminalConnection::ConnectionInformation connectInfo{ myClass, connectionSettings };
+        // winrt::hstring myClass{ winrt::name_of<TerminalConnection::ConptyConnection>() };
+        // TerminalConnection::ConnectionInformation connectInfo{ myClass, connectionSettings };
 
-        TerminalConnection::ITerminalConnection conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectInfo) };
-        Control::TermControl control{ *settings, *settings, conn };
+        // TerminalConnection::ITerminalConnection conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectInfo) };
+        // Control::TermControl control{ *settings, *settings, conn };
 
-        InProcContent().Children().Append(control);
+        // InProcContent().Children().Append(control);
     }
 
     // Method Description:
@@ -61,7 +62,6 @@ namespace winrt::SampleApp::implementation
 
     static winrt::fire_and_forget _lookupCatalog() noexcept
     {
-        
         co_await winrt::resume_background();
         try
         {
@@ -79,7 +79,7 @@ namespace winrt::SampleApp::implementation
                 pfn;
 
                 auto hr = S_OK;
-                
+
                 LOG_IF_FAILED(hr);
                 if (FAILED(hr))
                     continue;
@@ -96,9 +96,6 @@ namespace winrt::SampleApp::implementation
                 LOG_IF_FAILED(hr);
                 if (FAILED(hr))
                     continue;
-
-
-
             }
         }
         catch (...)
@@ -168,9 +165,16 @@ namespace winrt::SampleApp::implementation
         nameForAbi;
         hr = RoActivateInstance(nameForAbi, (::IInspectable**)winrt::put_abi(foo));
 
+        if (foo)
+        {
+            if (const auto& ext{ foo.try_as<winrt::SampleExtensions::IExtension>() })
+            {
+                auto oneOhOne = ext.DoTheThing();
+                oneOhOne++;
+            }
+        }
         //void* factory{ nullptr };
         //hr = p(winrt::get_abi(className), &factory);
         //LOG_IF_FAILED(hr);
-
     }
 }
