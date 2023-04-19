@@ -61,6 +61,7 @@ namespace winrt::SampleApp::implementation
 
     static winrt::fire_and_forget _lookupCatalog() noexcept
     {
+        
         co_await winrt::resume_background();
         try
         {
@@ -76,6 +77,25 @@ namespace winrt::SampleApp::implementation
                 name;
                 auto pfn = extn.Package().Id().FamilyName();
                 pfn;
+
+                auto hr = S_OK;
+                
+                LOG_IF_FAILED(hr);
+                if (FAILED(hr))
+                    continue;
+
+                PWSTR id;
+                hr = TryCreatePackageDependency(nullptr, pfn.c_str(), PACKAGE_VERSION{}, PackageDependencyProcessorArchitectures_None, PackageDependencyLifetimeKind_Process, nullptr, CreatePackageDependencyOptions_None, &id);
+                LOG_IF_FAILED(hr);
+                if (FAILED(hr))
+                    continue;
+
+                PACKAGEDEPENDENCY_CONTEXT ctx;
+                PWSTR packageFullName;
+                hr = AddPackageDependency(id, 1, AddPackageDependencyOptions_None, &ctx, &packageFullName);
+                LOG_IF_FAILED(hr);
+                if (FAILED(hr))
+                    continue;
             }
         }
         catch (...)
@@ -113,20 +133,20 @@ namespace winrt::SampleApp::implementation
 
         _lookupCatalog();
         LOG_IF_FAILED(hr);
-        if (FAILED(hr))
-            return;
+        //if (FAILED(hr))
+        //    return;
 
-        PWSTR id;
-        hr = TryCreatePackageDependency(nullptr, L"pfn", PACKAGE_VERSION{}, PackageDependencyProcessorArchitectures_None, PackageDependencyLifetimeKind_Process, nullptr, CreatePackageDependencyOptions_None, &id);
-        LOG_IF_FAILED(hr);
-        if (FAILED(hr))
-            return;
+        //PWSTR id;
+        //hr = TryCreatePackageDependency(nullptr, L"pfn", PACKAGE_VERSION{}, PackageDependencyProcessorArchitectures_None, PackageDependencyLifetimeKind_Process, nullptr, CreatePackageDependencyOptions_None, &id);
+        //LOG_IF_FAILED(hr);
+        //if (FAILED(hr))
+        //    return;
 
-        PACKAGEDEPENDENCY_CONTEXT ctx;
-        PWSTR packageFullName;
-        hr = AddPackageDependency(id, 1, AddPackageDependencyOptions_None, &ctx, &packageFullName);
-        LOG_IF_FAILED(hr);
-        if (FAILED(hr))
-            return;
+        //PACKAGEDEPENDENCY_CONTEXT ctx;
+        //PWSTR packageFullName;
+        //hr = AddPackageDependency(id, 1, AddPackageDependencyOptions_None, &ctx, &packageFullName);
+        //LOG_IF_FAILED(hr);
+        //if (FAILED(hr))
+        //    return;
     }
 }
