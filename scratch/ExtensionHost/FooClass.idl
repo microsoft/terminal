@@ -1,0 +1,9 @@
+namespace ExtensionHost
+{
+    [default_interface]
+    runtimeclass FooClass 
+    {
+        FooClass();
+        Int32 MyProperty;
+    }
+}

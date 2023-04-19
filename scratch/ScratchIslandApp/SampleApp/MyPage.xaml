@@ -27,6 +27,10 @@
                     Click="ClickHandler">
                 Do the thing
             </Button>
+            <Button Grid.Row="0"
+                    Click="ActivateInstanceButtonHandler">
+                RoActivateInstance
+            </Button>
 
         </StackPanel>
 

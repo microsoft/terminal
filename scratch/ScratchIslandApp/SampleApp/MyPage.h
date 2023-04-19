@@ -18,6 +18,7 @@ namespace winrt::SampleApp::implementation
         hstring Title();
 
         void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        void ActivateInstanceButtonHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
 
     private:
         friend struct MyPageT<MyPage>; // for Xaml to bind events

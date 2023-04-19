@@ -96,6 +96,9 @@ namespace winrt::SampleApp::implementation
                 LOG_IF_FAILED(hr);
                 if (FAILED(hr))
                     continue;
+
+
+
             }
         }
         catch (...)
@@ -148,5 +151,26 @@ namespace winrt::SampleApp::implementation
         //LOG_IF_FAILED(hr);
         //if (FAILED(hr))
         //    return;
+    }
+    void MyPage::ActivateInstanceButtonHandler(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::RoutedEventArgs const&)
+    {
+        // auto hm = LoadPackagedLibrary(L"D:\\dev\\private\\OpenConsole\\x64\\Debug\\ExtensionHost\\AppX\\ExtensionHost.exe", 0);
+        auto hm = LoadLibrary(L"D:\\dev\\private\\OpenConsole\\x64\\Debug\\ExtensionHost\\AppX\\ExtensionHost.exe");
+        hm;
+        // using GetActivationFactoryPfn = int32_t(void*, void**);
+        typedef int32_t (*GetActivationFactoryPfn)(void*, void**);
+        std::function<int32_t(void*, void**)> p = (GetActivationFactoryPfn)GetProcAddress(hm, "DllGetActivationFactory");
+        p;
+        auto hr = S_OK;
+        Windows::Foundation::IInspectable foo{ nullptr };
+        auto className = winrt::hstring{ L"ExtensionHost.FooClass" };
+        const auto nameForAbi = static_cast<HSTRING>(winrt::get_abi(className));
+        nameForAbi;
+        // hr = RoActivateInstance(nameForAbi, (::IInspectable**)winrt::put_abi(foo));
+
+        void* factory{ nullptr };
+        hr = p(winrt::get_abi(className), &factory);
+        LOG_IF_FAILED(hr);
+
     }
 }
