@@ -228,8 +228,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         bool _showMarksInScrollbar{ false };
-        bool _useRightClickContextMenu{ false };
-        bool _rightClickPressed{ false };
 
         bool _isBackgroundLight{ false };
         bool _detached{ false };

@@ -545,8 +545,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // settings might be out-of-proc in the future
         auto settings{ _core.Settings() };
 
-        _useRightClickContextMenu = settings.RightClickContextMenu();
-
         // Apply padding as swapChainPanel's margin
         const auto newMargin = ParseThicknessFromPadding(settings.Padding());
         SwapChainPanel().Margin(newMargin);
