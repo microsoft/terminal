@@ -20,6 +20,24 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
+namespace
+{
+struct hash_winrt_object_as_pointer
+{
+    size_t operator()(const ::winrt::Windows::Foundation::IUnknown& value) const noexcept
+    {
+        const void* abi_value = get_abi(value.try_as<::winrt::Windows::Foundation::IUnknown>());
+        return std::hash<void*>{}(abi_value);
+    }
+};
+}
+
+namespace std
+{
+    template <> struct hash<::winrt::Windows::UI::Xaml::DataTemplate> : public hash_winrt_object_as_pointer {};
+    template <> struct hash<::winrt::Windows::UI::Xaml::Controls::Primitives::SelectorItem> : public hash_winrt_object_as_pointer {};
+}
+
 namespace winrt::TerminalApp::implementation
 {
     CommandPalette::CommandPalette() :
