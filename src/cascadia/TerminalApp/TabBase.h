@@ -69,7 +69,7 @@ namespace winrt::TerminalApp::implementation
         void _EnableCloseMenuItems();
         void _CloseTabsAfter();
         void _CloseOtherTabs();
-        winrt::fire_and_forget _UpdateSwitchToTabKeyChord();
+        void _UpdateSwitchToTabKeyChord();
         void _UpdateToolTip();
 
         void _RecalculateAndApplyTabColor();

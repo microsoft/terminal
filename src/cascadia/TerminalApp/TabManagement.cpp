@@ -600,13 +600,14 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            CommandPalette().SetTabs(_tabs, _mruTabs);
+            const auto p = LoadCommandPalette();
+            p.SetTabs(_tabs, _mruTabs);
 
             // Otherwise, set up the tab switcher in the selected mode, with
             // the given ordering, and make it visible.
-            CommandPalette().EnableTabSwitcherMode(index, tabSwitchMode);
-            CommandPalette().Visibility(Visibility::Visible);
-            CommandPalette().SelectNextItem(bMoveRight);
+            p.EnableTabSwitcherMode(index, tabSwitchMode);
+            p.Visibility(Visibility::Visible);
+            p.SelectNextItem(bMoveRight);
         }
     }
 
@@ -890,34 +891,6 @@ namespace winrt::TerminalApp::implementation
             co_await _HandleCloseTabRequested(tab);
         }
     }
-    // Method Description:
-    // - Responds to changes in the TabView's item list by changing the
-    //   tabview's visibility.
-    // - This method is also invoked when tabs are dragged / dropped as part of
-    //   tab reordering and this method hands that case as well in concert with
-    //   TabDragStarting and TabDragCompleted handlers that are set up in
-    //   TerminalPage::Create()
-    // Arguments:
-    // - sender: the control that originated this event
-    // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabItemsChanged(const IInspectable& /*sender*/, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs)
-    {
-        if (_rearranging)
-        {
-            if (eventArgs.CollectionChange() == Windows::Foundation::Collections::CollectionChange::ItemRemoved)
-            {
-                _rearrangeFrom = eventArgs.Index();
-            }
-
-            if (eventArgs.CollectionChange() == Windows::Foundation::Collections::CollectionChange::ItemInserted)
-            {
-                _rearrangeTo = eventArgs.Index();
-            }
-        }
-
-        CommandPalette().Visibility(Visibility::Collapsed);
-        _UpdateTabView();
-    }
 
     // Method Description:
     // - Additional responses to clicking on a TabView's item. Currently, just remove tab with middle click
@@ -944,7 +917,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdatedSelectedTab(const winrt::TerminalApp::TabBase& tab)
     {
         // Unfocus all the tabs.
-        for (auto tab : _tabs)
+        for (const auto& tab : _tabs)
         {
             tab.Focus(FocusState::Unfocused);
         }
@@ -964,7 +937,8 @@ namespace winrt::TerminalApp::implementation
             // When the tab switcher is eventually dismissed, the focus will
             // get tossed back to the focused terminal control, so we don't
             // need to worry about focus getting lost.
-            if (CommandPalette().Visibility() != Visibility::Visible)
+            const auto p = CommandPaletteElement();
+            if (!p || p.Visibility() != Visibility::Visible)
             {
                 tab.Focus(FocusState::Programmatic);
                 _UpdateMRUTab(tab);
@@ -1079,16 +1053,37 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_TabDragStarted(const IInspectable& /*sender*/,
-                                       const IInspectable& /*eventArgs*/)
+                                       const winrt::MUX::Controls::TabViewTabDragStartingEventArgs& eventArgs)
     {
         _rearranging = true;
         _rearrangeFrom = std::nullopt;
         _rearrangeTo = std::nullopt;
+
+        // Start tracking the index of the tab that is being dragged. In
+        // `_TabDragCompleted`, we'll use this to determine how to reorder our
+        // internal tabs list.
+        const auto& draggedTabViewItem{ eventArgs.Tab() };
+        uint32_t tabIndexFromControl{};
+        const auto tabItems{ _tabView.TabItems() };
+        if (tabItems.IndexOf(draggedTabViewItem, tabIndexFromControl))
+        {
+            // If IndexOf returns true, we've actually got an index
+            _rearrangeFrom = tabIndexFromControl;
+        }
     }
 
     void TerminalPage::_TabDragCompleted(const IInspectable& /*sender*/,
-                                         const IInspectable& /*eventArgs*/)
+                                         const winrt::MUX::Controls::TabViewTabDragCompletedEventArgs& eventArgs)
     {
+        const auto& draggedTabViewItem{ eventArgs.Tab() };
+
+        uint32_t tabIndexFromControl{};
+        const auto tabItems{ _tabView.TabItems() };
+        if (tabItems.IndexOf(draggedTabViewItem, tabIndexFromControl))
+        {
+            _rearrangeTo = tabIndexFromControl;
+        }
+
         auto& from{ _rearrangeFrom };
         auto& to{ _rearrangeTo };
 

@@ -672,6 +672,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FolderEntryInlin
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SelectOutputDirection)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "prev", ValueType::Previous },
+        pair_type{ "next", ValueType::Next },
+    };
+};
+
 template<>
 struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Microsoft::Terminal::Control::SelectionColor>
 {
