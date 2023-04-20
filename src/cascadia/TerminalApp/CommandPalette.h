@@ -18,8 +18,14 @@ struct hash_winrt_object_as_pointer
 
 namespace std
 {
-    template <> struct hash<::winrt::Windows::UI::Xaml::DataTemplate> : public hash_winrt_object_as_pointer {};
-    template <> struct hash<::winrt::Windows::UI::Xaml::Controls::Primitives::SelectorItem> : public hash_winrt_object_as_pointer {};
+    template<>
+    struct hash<::winrt::Windows::UI::Xaml::DataTemplate> : public hash_winrt_object_as_pointer
+    {
+    };
+    template<>
+    struct hash<::winrt::Windows::UI::Xaml::Controls::Primitives::SelectorItem> : public hash_winrt_object_as_pointer
+    {
+    };
 }
 
 // fwdecl unittest classes
