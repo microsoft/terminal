@@ -104,7 +104,8 @@
                        PrimaryButtonClick="_SendFeedbackOnClick">
             <StackPanel Orientation="Vertical">
                 <TextBlock IsTextSelectionEnabled="True">
-                    <Run Text="{x:Bind ApplicationDisplayName}" /> <LineBreak />
+                    <Run AutomationProperties.HeadingLevel="1"
+                         Text="{x:Bind ApplicationDisplayName}" /> <LineBreak />
                     <Run x:Uid="AboutDialog_VersionLabel" />
                     <Run Text="{x:Bind ApplicationVersion}" />
                 </TextBlock>
