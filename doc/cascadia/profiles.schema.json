@@ -2574,6 +2574,13 @@
           "default": false,
           "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
         },
+        "environment": {
+          "description": "Key-value pairs representing environment variables to set. Environment variable names are not case sensitive. You can reference existing environment variable names by enclosing them in literal percent characters (e.g. %PATH%).",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
         "experimental.autoMarkPrompts": {
           "default": false,
           "description": "When set to true, prompts will automatically be marked.",

@@ -36,7 +36,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         inline constexpr uint8_t F_ = 0b10; // stripped in clean_filename
         inline constexpr uint8_t _P = 0b01; // stripped in clean_path
         inline constexpr uint8_t FP = 0b11; // stripped in clean_filename and clean_path
-        static constexpr std::array<uint8_t, 128> pathFilter{ {
+        inline constexpr std::array<uint8_t, 128> pathFilter{ {
             // clang-format off
             __ /* NUL */, __ /* SOH */, __ /* STX */, __ /* ETX */, __ /* EOT */, __ /* ENQ */, __ /* ACK */, __ /* BEL */, __ /* BS  */, __ /* HT  */, __ /* LF  */, __ /* VT  */, __ /* FF  */, __ /* CR  */, __ /* SO  */, __ /* SI  */,
             __ /* DLE */, __ /* DC1 */, __ /* DC2 */, __ /* DC3 */, __ /* DC4 */, __ /* NAK */, __ /* SYN */, __ /* ETB */, __ /* CAN */, __ /* EM  */, __ /* SUB */, __ /* ESC */, __ /* FS  */, __ /* GS  */, __ /* RS  */, __ /* US  */,
@@ -342,4 +342,35 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     {
         return prefix_split<>(str, needle);
     }
+
+    //
+    // A case-insensitive wide-character map is used to store environment variables
+    // due to documented requirements:
+    //
+    //      "All strings in the environment block must be sorted alphabetically by name.
+    //      The sort is case-insensitive, Unicode order, without regard to locale.
+    //      Because the equal sign is a separator, it must not be used in the name of
+    //      an environment variable."
+    //      https://docs.microsoft.com/en-us/windows/desktop/ProcThread/changing-environment-variables
+    //
+    // - Returns CSTR_LESS_THAN, CSTR_EQUAL or CSTR_GREATER_THAN
+    [[nodiscard]] inline int compare_string_ordinal(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
+    {
+        const auto result = CompareStringOrdinal(
+            lhs.data(),
+            ::base::saturated_cast<int>(lhs.size()),
+            rhs.data(),
+            ::base::saturated_cast<int>(rhs.size()),
+            TRUE);
+        FAIL_FAST_LAST_ERROR_IF(!result);
+        return result;
+    }
+
+    struct wstring_case_insensitive_compare
+    {
+        [[nodiscard]] bool operator()(const std::wstring& lhs, const std::wstring& rhs) const noexcept
+        {
+            return compare_string_ordinal(lhs, rhs) == CSTR_LESS_THAN;
+        }
+    };
 }

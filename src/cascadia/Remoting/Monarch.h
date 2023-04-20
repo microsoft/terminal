@@ -46,7 +46,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _Id{ windowInfo.Id() ? windowInfo.Id().Value() : 0 }, // We'll use 0 as a sentinel, since no window will ever get to have that ID
             _WindowName{ windowInfo.WindowName() },
             _args{ command.Commandline() },
-            _CurrentDirectory{ command.CurrentDirectory() } {};
+            _CurrentDirectory{ command.CurrentDirectory() },
+            _ShowWindowCommand{ command.ShowWindowCommand() } {};
+
+        WindowRequestedArgs(const winrt::hstring& window, const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& bounds) :
+            _Id{ 0u },
+            _WindowName{ window },
+            _args{},
+            _CurrentDirectory{},
+            _Content{ content },
+            _InitialBounds{ bounds } {};
 
         void Commandline(const winrt::array_view<const winrt::hstring>& value) { _args = { value.begin(), value.end() }; };
         winrt::com_array<winrt::hstring> Commandline() { return winrt::com_array<winrt::hstring>{ _args.begin(), _args.end() }; }
@@ -54,6 +63,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         WINRT_PROPERTY(uint64_t, Id);
         WINRT_PROPERTY(winrt::hstring, WindowName);
         WINRT_PROPERTY(winrt::hstring, CurrentDirectory);
+        WINRT_PROPERTY(winrt::hstring, Content);
+        WINRT_PROPERTY(uint32_t, ShowWindowCommand, SW_NORMAL);
+        WINRT_PROPERTY(Windows::Foundation::IReference<Windows::Foundation::Rect>, InitialBounds);
 
     private:
         winrt::com_array<winrt::hstring> _args;
@@ -80,6 +92,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         bool DoesQuakeWindowExist();
         Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
         Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
+
+        void RequestMoveContent(winrt::hstring window, winrt::hstring content, uint32_t tabIndex, const Windows::Foundation::IReference<Windows::Foundation::Rect>& windowBounds);
+        void RequestSendContent(const Remoting::RequestReceiveContentArgs& args);
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
         TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);

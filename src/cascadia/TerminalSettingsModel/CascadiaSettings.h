@@ -105,6 +105,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::hstring DefaultSettingsPath();
         static winrt::hstring ApplicationDisplayName();
         static winrt::hstring ApplicationVersion();
+        static bool IsPortableMode();
         static void ExportFile(winrt::hstring path, winrt::hstring content);
 
         CascadiaSettings() noexcept = default;
@@ -161,6 +162,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _validateSettings();
         void _validateAllSchemesExist();
         void _validateMediaResources();
+        void _validateProfileEnvironmentVariables();
         void _validateKeybindings() const;
         void _validateColorSchemesInCommands() const;
         bool _hasInvalidColorScheme(const Model::Command& command) const;

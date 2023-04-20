@@ -54,7 +54,7 @@ namespace TerminalApp
         Boolean HasCommandlineArguments();
 
         Int32 SetStartupCommandline(String[] commands);
-
+        void SetStartupContent(String json, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
         Int32 ExecuteCommandline(String[] commands, String cwd);
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
@@ -114,6 +114,8 @@ namespace TerminalApp
         // information.
         void DismissDialog();
 
+        event Windows.Foundation.TypedEventHandler<Object, Object> Initialized;
+
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
@@ -136,5 +138,10 @@ namespace TerminalApp
 
         event Windows.Foundation.TypedEventHandler<Object, SettingsLoadEventArgs> SettingsChanged;
 
+        event Windows.Foundation.TypedEventHandler<Object, RequestMoveContentArgs> RequestMoveContent;
+        event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> RequestReceiveContent;
+
+        void AttachContent(String content, UInt32 tabIndex);
+        void SendContentToOther(RequestReceiveContentArgs args);
     }
 }

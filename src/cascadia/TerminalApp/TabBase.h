@@ -23,7 +23,7 @@ namespace winrt::TerminalApp::implementation
 
         void UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs);
         void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
-        virtual std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const = 0;
+        virtual std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions(const bool asContent = false) const = 0;
 
         virtual std::optional<winrt::Windows::UI::Color> GetTabColor();
         void ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& focused,
@@ -69,7 +69,7 @@ namespace winrt::TerminalApp::implementation
         void _EnableCloseMenuItems();
         void _CloseTabsAfter();
         void _CloseOtherTabs();
-        winrt::fire_and_forget _UpdateSwitchToTabKeyChord();
+        void _UpdateSwitchToTabKeyChord();
         void _UpdateToolTip();
 
         void _RecalculateAndApplyTabColor();
