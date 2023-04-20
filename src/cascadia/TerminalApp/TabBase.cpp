@@ -558,8 +558,13 @@ namespace winrt::TerminalApp::implementation
     // BODGY
     // - Toggles the requested theme of the tab view item,
     //   so that changes to the tab color are reflected immediately
-    // - Prior to MUX 2.8, we toggled the visual state here, but that seemingly
+    // - Prior to MUX 2.8, we only toggled the visual state here, but that seemingly
     //   doesn't work in 2.8.
+    // - Just changing the Theme also doesn't seem to work by itself - there
+    //   seems to be a way for the tab to set the deselected foreground onto
+    //   itself as it becomes selected. If the mouse isn't over the tab, that
+    //   can result in mismatched fg/bg's (see GH#15184). So that's right, we
+    //   need to do both.
     // Arguments:
     // - <none>
     // Return Value:
