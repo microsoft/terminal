@@ -45,7 +45,7 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="App.base.h" />
-    <!-- <ClInclude Include="MySettings.h" /> -->
+    <ClInclude Include="MySettings.h" />
     <ClInclude Include="MyPage.h">
       <DependentUpon>MyPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -60,7 +60,7 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="init.cpp" />
-    <!-- <ClCompile Include="MySettings.cpp" /> -->
+    <ClCompile Include="MySettings.cpp" />
     <ClCompile Include="MyPage.cpp">
       <DependentUpon>MyPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -85,7 +85,7 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
     <Midl Include="SampleAppLogic.idl" />
-    <!-- <Midl Include="MySettings.idl" /> -->
+    <Midl Include="MySettings.idl" />
     <Midl Include="IExtension.idl" />
     <Midl Include="MyPage.idl">
       <DependentUpon>MyPage.xaml</DependentUpon>
