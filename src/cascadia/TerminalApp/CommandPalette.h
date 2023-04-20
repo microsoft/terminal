@@ -7,6 +7,21 @@
 #include "CommandPalette.g.h"
 #include "AppCommandlineArgs.h"
 
+struct hash_winrt_object_as_pointer
+{
+    size_t operator()(const ::winrt::Windows::Foundation::IUnknown& value) const noexcept
+    {
+        void* const abi_value = winrt::get_abi(value.try_as<::winrt::Windows::Foundation::IUnknown>());
+        return std::hash<void*>{}(abi_value);
+    }
+};
+
+namespace std
+{
+    template <> struct hash<::winrt::Windows::UI::Xaml::DataTemplate> : public hash_winrt_object_as_pointer {};
+    template <> struct hash<::winrt::Windows::UI::Xaml::Controls::Primitives::SelectorItem> : public hash_winrt_object_as_pointer {};
+}
+
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
