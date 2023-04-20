@@ -57,6 +57,8 @@ namespace Microsoft.Terminal.Control
         void ClearMark();
         void ClearAllMarks();
         void ScrollToMark(ScrollToMarkDirection direction);
+        void SelectCommand(Boolean goUp);
+        void SelectOutput(Boolean goUp);
         IVector<ScrollMark> ScrollMarks { get; };
 
     };

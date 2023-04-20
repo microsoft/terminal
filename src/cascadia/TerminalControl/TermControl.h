@@ -81,6 +81,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ClearMark();
         void ClearAllMarks();
         void ScrollToMark(const Control::ScrollToMarkDirection& direction);
+        void SelectCommand(const bool goUp);
+        void SelectOutput(const bool goUp);
 
 #pragma endregion
 

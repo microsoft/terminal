@@ -1145,6 +1145,35 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleSelectCommand(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SelectCommandArgs>())
+            {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.SelectCommand(realArgs.Direction() == Settings::Model::SelectOutputDirection::Previous);
+                });
+                args.Handled(res);
+            }
+        }
+    }
+    void TerminalPage::_HandleSelectOutput(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SelectOutputArgs>())
+            {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.SelectOutput(realArgs.Direction() == Settings::Model::SelectOutputDirection::Previous);
+                });
+                args.Handled(res);
+            }
+        }
+    }
+
     void TerminalPage::_HandleMarkMode(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
