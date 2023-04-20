@@ -566,9 +566,22 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TabBase::_RefreshVisualState()
     {
+        const auto& item{ TabViewItem() };
+
         const auto& reqTheme = TabViewItem().RequestedTheme();
-        TabViewItem().RequestedTheme(ElementTheme::Light);
-        TabViewItem().RequestedTheme(ElementTheme::Dark);
-        TabViewItem().RequestedTheme(reqTheme);
+        item.RequestedTheme(ElementTheme::Light);
+        item.RequestedTheme(ElementTheme::Dark);
+        item.RequestedTheme(reqTheme);
+
+        if (TabViewItem().IsSelected())
+        {
+            VisualStateManager::GoToState(item, L"Normal", true);
+            VisualStateManager::GoToState(item, L"Selected", true);
+        }
+        else
+        {
+            VisualStateManager::GoToState(item, L"Selected", true);
+            VisualStateManager::GoToState(item, L"Normal", true);
+        }
     }
 }
