@@ -46,7 +46,6 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _circled(false),
     _firstPaint(true),
     _skipCursor(false),
-    _exitResult{ S_OK },
     _terminalOwner{ nullptr },
     _newBottomLine{ false },
     _deferredCursorPos{ INVALID_COORDS },
@@ -65,6 +64,40 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     // member is only defined when UNIT_TESTING is.
     _usingTestCallback = false;
 #endif
+
+    auto [producer, consumer] = til::spsc::channel<char>(4096);
+    _writer = std::move(producer);
+    _writerThread = std::thread([this, consumer = std::move(consumer)]() {
+        char buffer[4096];
+
+        for (;;)
+        {
+            auto [read, alive] = consumer.pop_n(til::spsc::block_initially, &buffer[0], 4096);
+            //display("WriteFile", { &buffer[0], read });
+            const auto fSuccess = WriteFile(_hFile.get(), &buffer[0], gsl::narrow_cast<DWORD>(read), nullptr, nullptr);
+
+            if (!fSuccess)
+            {
+                _hFile.reset();
+                alive = false;
+                if (_terminalOwner)
+                {
+                    _terminalOwner->CloseOutput();
+                }
+            }
+
+            if (!alive)
+            {
+                break;
+            }
+        }
+    });
+}
+
+VtEngine::~VtEngine()
+{
+    _writer.drop();
+    _writerThread.join();
 }
 
 // Method Description:
@@ -138,22 +171,9 @@ CATCH_RETURN();
 
 [[nodiscard]] HRESULT VtEngine::_Flush() noexcept
 {
-    if (_hFile)
-    {
-        auto fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
-        _buffer.clear();
-        if (!fSuccess)
-        {
-            _exitResult = HRESULT_FROM_WIN32(GetLastError());
-            _hFile.reset();
-            if (_terminalOwner)
-            {
-                _terminalOwner->CloseOutput();
-            }
-            return _exitResult;
-        }
-    }
-
+    //display("_Flush", _buffer);
+    _writer.push_n(til::spsc::block_forever, _buffer.data(), _buffer.size());
+    _buffer.clear();
     return S_OK;
 }
 

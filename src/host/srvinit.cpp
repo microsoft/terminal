@@ -511,21 +511,6 @@ try
 
     const auto serverProcess = GetCurrentProcess();
 
-    ::Microsoft::WRL::ComPtr<ITerminalHandoff2> handoff;
-
-    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                      "SrvInit_PrepareToCreateDelegationTerminal",
-                      TraceLoggingGuid(g.delegationPair.terminal, "TerminalClsid"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-    RETURN_IF_FAILED(CoCreateInstance(g.delegationPair.terminal, nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
-    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                      "SrvInit_CreatedDelegationTerminal",
-                      TraceLoggingGuid(g.delegationPair.terminal, "TerminalClsid"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
     // As a part of defterm handoff, we're gonna try to pull a lot of
     // information out of the link and startup info, so we can let the terminal
     // know these things as well.
@@ -586,6 +571,30 @@ try
 
     myStartupInfo.wShowWindow = settings.GetShowWindow();
 
+    // GH#13211 - Make sure we request win32input mode and that the terminal
+    // obeys the resizing quirk. Otherwise, defterm connections to the Terminal
+    // are going to have weird resizing, and aren't going to send full fidelity
+    // input messages.
+    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --resizeQuirk --win32input --signal {:#x}"), reinterpret_cast<int64_t>(signalPipeOurSide.release()));
+    ConsoleArguments consoleArgs(commandLine, inPipeOurSide.release(), outPipeOurSide.release());
+    RETURN_IF_FAILED(consoleArgs.ParseCommandline());
+    RETURN_IF_FAILED(ConsoleCreateIoThread(Server, &consoleArgs, driverInputEvent, connectMessage));
+
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_PrepareToCreateDelegationTerminal",
+                      TraceLoggingGuid(g.delegationPair.terminal, "TerminalClsid"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+    ::Microsoft::WRL::ComPtr<ITerminalHandoff2> handoff;
+    RETURN_IF_FAILED(CoCreateInstance(g.delegationPair.terminal, nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
+
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_CreatedDelegationTerminal",
+                      TraceLoggingGuid(g.delegationPair.terminal, "TerminalClsid"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
     RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
                                                   outPipeTheirSide.get(),
                                                   signalPipeTheirSide.get(),
@@ -599,21 +608,7 @@ try
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    inPipeTheirSide.reset();
-    outPipeTheirSide.reset();
-    signalPipeTheirSide.reset();
-
-    // GH#13211 - Make sure we request win32input mode and that the terminal
-    // obeys the resizing quirk. Otherwise, defterm connections to the Terminal
-    // are going to have weird resizing, and aren't going to send full fidelity
-    // input messages.
-    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --resizeQuirk --win32input --signal {:#x}"),
-                                         (int64_t)signalPipeOurSide.release());
-
-    ConsoleArguments consoleArgs(commandLine, inPipeOurSide.release(), outPipeOurSide.release());
-    RETURN_IF_FAILED(consoleArgs.ParseCommandline());
-
-    return ConsoleCreateIoThread(Server, &consoleArgs, driverInputEvent, connectMessage);
+    return S_OK;
 #endif // TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
 }
 CATCH_RETURN()

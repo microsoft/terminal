@@ -409,7 +409,8 @@ namespace til::spsc
     template<typename T>
     struct producer
     {
-        explicit producer(details::arc<T>* arc) noexcept :
+        producer() = default;
+        explicit constexpr producer(details::arc<T>* arc) noexcept :
             _arc(arc) {}
 
         producer<T>(const producer<T>&) = delete;
@@ -431,6 +432,15 @@ namespace til::spsc
         ~producer()
         {
             drop();
+        }
+
+        void drop()
+        {
+            if (_arc)
+            {
+                _arc->drop_producer();
+                _arc = nullptr;
+            }
         }
 
         // emplace constructs an item in-place at the end of the queue.
@@ -514,21 +524,14 @@ namespace til::spsc
         }
 
     private:
-        void drop()
-        {
-            if (_arc)
-            {
-                _arc->drop_producer();
-            }
-        }
-
         details::arc<T>* _arc = nullptr;
     };
 
     template<typename T>
     struct consumer
     {
-        explicit consumer(details::arc<T>* arc) noexcept :
+        consumer() = default;
+        explicit constexpr consumer(details::arc<T>* arc) noexcept :
             _arc(arc) {}
 
         consumer<T>(const consumer<T>&) = delete;
@@ -550,6 +553,15 @@ namespace til::spsc
         ~consumer()
         {
             drop();
+        }
+
+        void drop()
+        {
+            if (_arc)
+            {
+                _arc->drop_consumer();
+                _arc = nullptr;
+            }
         }
 
         // pop returns the next item in the queue, or std::nullopt if the producer is gone.
@@ -618,14 +630,6 @@ namespace til::spsc
         }
 
     private:
-        void drop()
-        {
-            if (_arc)
-            {
-                _arc->drop_consumer();
-            }
-        }
-
         details::arc<T>* _arc = nullptr;
     };
 

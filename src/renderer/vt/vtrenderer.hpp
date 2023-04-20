@@ -18,8 +18,8 @@ Author(s):
 #include "../inc/RenderEngineBase.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "tracing.hpp"
-#include <string>
-#include <functional>
+
+#include <til/spsc.h>
 
 // fwdecl unittest classes
 #ifdef UNIT_TESTING
@@ -46,6 +46,7 @@ namespace Microsoft::Console::Render
 
         VtEngine(_In_ wil::unique_hfile hPipe,
                  const Microsoft::Console::Types::Viewport initialViewport);
+        ~VtEngine() override;
 
         // IRenderEngine
         [[nodiscard]] HRESULT StartPaint() noexcept override;
@@ -95,6 +96,9 @@ namespace Microsoft::Console::Render
         wil::unique_hfile _hFile;
         std::string _buffer;
 
+        til::spsc::producer<char> _writer;
+        std::thread _writerThread;
+
         std::string _formatBuffer;
         std::string _conversionBuffer;
 
@@ -127,7 +131,6 @@ namespace Microsoft::Console::Render
         bool _newBottomLine;
         til::point _deferredCursorPos;
 
-        HRESULT _exitResult;
         Microsoft::Console::VirtualTerminal::VtIo* _terminalOwner;
 
         Microsoft::Console::VirtualTerminal::RenderTracing _trace;
