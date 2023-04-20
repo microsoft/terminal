@@ -21,6 +21,8 @@ namespace winrt
     namespace WUX = Windows::UI::Xaml;
 }
 
+#define ASSERT_UI_THREAD() assert(TabViewItem().Dispatcher().HasThreadAccess())
+
 namespace winrt::TerminalApp::implementation
 {
     WUX::FocusState TabBase::FocusState() const noexcept
@@ -32,6 +34,8 @@ namespace winrt::TerminalApp::implementation
     // - Prepares this tab for being removed from the UI hierarchy
     void TabBase::Shutdown()
     {
+        ASSERT_UI_THREAD();
+
         Content(nullptr);
         _ClosedHandlers(nullptr, nullptr);
     }
@@ -159,6 +163,8 @@ namespace winrt::TerminalApp::implementation
 
     void TabBase::UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs)
     {
+        ASSERT_UI_THREAD();
+
         TabViewIndex(idx);
         TabViewNumTabs(numTabs);
         _EnableCloseMenuItems();
@@ -167,11 +173,15 @@ namespace winrt::TerminalApp::implementation
 
     void TabBase::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
     {
+        ASSERT_UI_THREAD();
+
         _dispatch = dispatch;
     }
 
     void TabBase::SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
     {
+        ASSERT_UI_THREAD();
+
         _actionMap = actionMap;
         _UpdateSwitchToTabKeyChord();
     }
@@ -183,26 +193,18 @@ namespace winrt::TerminalApp::implementation
     // - keyChord - string representation of the key chord that switches to the current tab
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TabBase::_UpdateSwitchToTabKeyChord()
+    void TabBase::_UpdateSwitchToTabKeyChord()
     {
         const auto keyChord = _actionMap ? _actionMap.GetKeyBindingForAction(ShortcutAction::SwitchToTab, SwitchToTabArgs{ _TabViewIndex }) : nullptr;
         const auto keyChordText = keyChord ? KeyChordSerialization::ToString(keyChord) : L"";
 
         if (_keyChord == keyChordText)
         {
-            co_return;
+            return;
         }
 
         _keyChord = keyChordText;
-
-        auto weakThis{ get_weak() };
-
-        co_await wil::resume_foreground(TabViewItem().Dispatcher());
-
-        if (auto tab{ weakThis.get() })
-        {
-            _UpdateToolTip();
-        }
+        _UpdateToolTip();
     }
 
     // Method Description:
@@ -268,6 +270,8 @@ namespace winrt::TerminalApp::implementation
 
     std::optional<winrt::Windows::UI::Color> TabBase::GetTabColor()
     {
+        ASSERT_UI_THREAD();
+
         return std::nullopt;
     }
 
@@ -275,6 +279,8 @@ namespace winrt::TerminalApp::implementation
                              const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& unfocused,
                              const til::color& tabRowColor)
     {
+        ASSERT_UI_THREAD();
+
         _themeColor = focused;
         _unfocusedThemeColor = unfocused;
         _tabRowColor = tabRowColor;
@@ -292,49 +298,37 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TabBase::_RecalculateAndApplyTabColor()
     {
-        auto weakThis{ get_weak() };
+        // GetTabColor will return the color set by the color picker, or the
+        // color specified in the profile. If neither of those were set,
+        // then look to _themeColor to see if there's a value there.
+        // Otherwise, clear our color, falling back to the TabView defaults.
+        const auto currentColor = GetTabColor();
+        if (currentColor.has_value())
+        {
+            _ApplyTabColorOnUIThread(currentColor.value());
+        }
+        else if (_themeColor != nullptr)
+        {
+            // Safely get the active control's brush.
+            const Media::Brush terminalBrush{ _BackgroundBrush() };
 
-        TabViewItem().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis]() {
-            auto ptrTab = weakThis.get();
-            if (!ptrTab)
+            if (const auto themeBrush{ _themeColor.Evaluate(Application::Current().Resources(), terminalBrush, false) })
             {
-                return;
-            }
-
-            auto tab{ ptrTab };
-
-            // GetTabColor will return the color set by the color picker, or the
-            // color specified in the profile. If neither of those were set,
-            // then look to _themeColor to see if there's a value there.
-            // Otherwise, clear our color, falling back to the TabView defaults.
-            const auto currentColor = tab->GetTabColor();
-            if (currentColor.has_value())
-            {
-                tab->_ApplyTabColorOnUIThread(currentColor.value());
-            }
-            else if (tab->_themeColor != nullptr)
-            {
-                // Safely get the active control's brush.
-                const Media::Brush terminalBrush{ tab->_BackgroundBrush() };
-
-                if (const auto themeBrush{ tab->_themeColor.Evaluate(Application::Current().Resources(), terminalBrush, false) })
-                {
-                    // ThemeColor.Evaluate will get us a Brush (because the
-                    // TermControl could have an acrylic BG, for example). Take
-                    // that brush, and get the color out of it. We don't really
-                    // want to have the tab items themselves be acrylic.
-                    tab->_ApplyTabColorOnUIThread(til::color{ ThemeColor::ColorFromBrush(themeBrush) });
-                }
-                else
-                {
-                    tab->_ClearTabBackgroundColor();
-                }
+                // ThemeColor.Evaluate will get us a Brush (because the
+                // TermControl could have an acrylic BG, for example). Take
+                // that brush, and get the color out of it. We don't really
+                // want to have the tab items themselves be acrylic.
+                _ApplyTabColorOnUIThread(til::color{ ThemeColor::ColorFromBrush(themeBrush) });
             }
             else
             {
-                tab->_ClearTabBackgroundColor();
+                _ClearTabBackgroundColor();
             }
-        });
+        }
+        else
+        {
+            _ClearTabBackgroundColor();
+        }
     }
 
     // Method Description:
