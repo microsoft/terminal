@@ -1,21 +1,28 @@
+[CmdletBinding(DefaultParameterSetName = 'AppX')]
 Param(
-    [Parameter(Mandatory,
-      HelpMessage="Path to Terminal AppX")]
+    [Parameter(Mandatory, HelpMessage="Path to Terminal AppX", ParameterSetName = 'AppX')]
     [ValidateScript({Test-Path $_ -Type Leaf})]
     [string]
     $TerminalAppX,
 
-    [Parameter(Mandatory,
-      HelpMessage="Path to Xaml AppX")]
+    [Parameter(Mandatory, HelpMessage="Path to Terminal Layout Deployment", ParameterSetName='Layout')]
+    [ValidateScript({Test-Path $_ -Type Container})]
+    [string]
+    $TerminalLayout,
+
+    [Parameter(Mandatory, HelpMessage="Path to Xaml AppX", ParameterSetName='AppX')]
+    [Parameter(Mandatory, HelpMessage="Path to Xaml AppX", ParameterSetName='Layout')]
     [ValidateScript({Test-Path $_ -Type Leaf})]
     [string]
     $XamlAppX,
 
-    [Parameter(HelpMessage="Output Directory")]
+    [Parameter(HelpMessage="Output Directory", ParameterSetName='AppX')]
+    [Parameter(HelpMessage="Output Directory", ParameterSetName='Layout')]
     [string]
     $Destination = ".",
 
-    [Parameter(HelpMessage="Path to makeappx.exe")]
+    [Parameter(HelpMessage="Path to makeappx.exe", ParameterSetName='AppX')]
+    [Parameter(HelpMessage="Path to makeappx.exe", ParameterSetName='Layout')]
     [ValidateScript({Test-Path $_ -Type Leaf})]
     [string]
     $MakeAppxPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\MakeAppx.exe"
@@ -36,14 +43,17 @@ $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "tmp$([Convert]::ToString
 New-Item -ItemType Directory -Path $tempDir | Out-Null
 
 $XamlAppX = Get-Item $XamlAppX | Select-Object -Expand FullName
-$TerminalAppX = Get-Item $TerminalAppX | Select-Object -Expand FullName
 
 ########
 # Reading the AppX Manifest for preliminary info
 ########
 
-$appxManifestPath = Join-Path $tempDir AppxManifest.xml
-& tar.exe -x -f "$TerminalAppX" -C $tempDir AppxManifest.xml
+If ($TerminalAppX) {
+	$appxManifestPath = Join-Path $tempDir AppxManifest.xml
+	& tar.exe -x -f "$TerminalAppX" -C $tempDir AppxManifest.xml
+} ElseIf($TerminalLayout) {
+	$appxManifestPath = Join-Path $TerminalLayout AppxManifest.xml
+}
 $manifest = [xml](Get-Content $appxManifestPath)
 $pfn = $manifest.Package.Identity.Name
 $version = $manifest.Package.Identity.Version
@@ -57,13 +67,20 @@ $terminalDir = "terminal-{0}" -f ($version)
 ########
 
 $terminalAppPath = Join-Path $tempdir $terminalDir
-$xamlAppPath = Join-Path $tempdir "xaml"
-New-Item -ItemType Directory -Path $terminalAppPath | Out-Null
-New-Item -ItemType Directory -Path $xamlAppPath | Out-Null
-& $MakeAppxPath unpack /p $TerminalAppX /d $terminalAppPath /o | Out-Null
-If ($LASTEXITCODE -Ne 0) {
-    Throw "Unpacking $TerminalAppX failed"
+
+If ($TerminalAppX) {
+	$TerminalAppX = Get-Item $TerminalAppX | Select-Object -Expand FullName
+	New-Item -ItemType Directory -Path $terminalAppPath | Out-Null
+	& $MakeAppxPath unpack /p $TerminalAppX /d $terminalAppPath /o | Out-Null
+	If ($LASTEXITCODE -Ne 0) {
+	    Throw "Unpacking $TerminalAppX failed"
+	}
+} ElseIf ($TerminalLayout) {
+	Copy-Item -Recurse -Path $TerminalLayout -Destination $terminalAppPath
 }
+
+$xamlAppPath = Join-Path $tempdir "xaml"
+New-Item -ItemType Directory -Path $xamlAppPath | Out-Null
 & $MakeAppxPath unpack /p $XamlAppX /d $xamlAppPath /o | Out-Null
 If ($LASTEXITCODE -Ne 0) {
     Throw "Unpacking $XamlAppX failed"
@@ -105,13 +122,19 @@ $finalTerminalPriFile = Join-Path $terminalAppPath "resources.pri"
     -TerminalRoot $terminalAppPath `
     -XamlRoot $xamlAppPath `
     -OutputPath $finalTerminalPriFile `
-    -Verbose:$Verbose
+    -Verbose:$Verbose | Out-Host
 
 ########
 # Packaging
 ########
 
-New-Item -ItemType Directory -Path $Destination -ErrorAction:SilentlyContinue | Out-Null
-$outputZip = (Join-Path $Destination ("{0}.zip" -f ($distributionName)))
-& tar -c --format=zip -f $outputZip -C $tempDir $terminalDir
-Get-Item $outputZip
+If ($PSCmdlet.ParameterSetName -Eq "AppX") {
+	# We only produce a ZIP when we're combining two AppX directories.
+	New-Item -ItemType Directory -Path $Destination -ErrorAction:SilentlyContinue | Out-Null
+	$outputZip = (Join-Path $Destination ("{0}.zip" -f ($distributionName)))
+	& tar -c --format=zip -f $outputZip -C $tempDir $terminalDir
+	Remove-Item -Recurse -Force $tempDir -EA:SilentlyContinue
+	Get-Item $outputZip
+} ElseIf ($PSCmdlet.ParameterSetName -Eq "Layout") {
+	Get-Item $terminalAppPath
+}

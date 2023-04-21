@@ -666,7 +666,7 @@ std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromViewportPos
 // - Character events (e.g. WM_CHAR) are generally the best way to properly receive
 //   keyboard input on Windows though, as the OS is suited best at handling the
 //   translation of the current keyboard layout, dead keys, etc.
-//   As a result of this false is returned for all key events that contain characters.
+//   As a result of this false is returned for all key down events that contain characters.
 //   SendCharEvent may then be called with the data obtained from a character event.
 // - As a special case we'll always handle VK_TAB key events.
 //   This must be done due to TermControl::_KeyDownHandler (one of the callers)
@@ -728,15 +728,15 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     const auto isSuppressedAltGrAlias = !_altGrAliasing && states.IsAltPressed() && states.IsCtrlPressed() && !states.IsAltGrPressed();
     const auto ch = isSuppressedAltGrAlias ? UNICODE_NULL : _CharacterFromKeyEvent(vkey, sc, states);
 
-    // Delegate it to the character event handler if this key event can be
-    // mapped to one (see method description above). For Alt+key combinations
+    // Delegate it to the character event handler if this is a key down event that
+    // can be mapped to one (see method description above). For Alt+key combinations
     // we'll not receive another character event for some reason though.
     // -> Don't delegate the event if this is a Alt+key combination.
     //
     // As a special case we'll furthermore always handle VK_TAB
     // key events here instead of in Terminal::SendCharEvent.
     // See the method description for more information.
-    if (!isAltOnlyPressed && vkey != VK_TAB && ch != UNICODE_NULL)
+    if (keyDown && !isAltOnlyPressed && vkey != VK_TAB && ch != UNICODE_NULL)
     {
         return false;
     }
@@ -818,15 +818,8 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         MarkOutputStart();
     }
 
-    // Unfortunately, the UI doesn't give us both a character down and a
-    // character up event, only a character received event. So fake sending both
-    // to the terminal input translator. Unless it's in win32-input-mode, it'll
-    // ignore the keyup.
     const KeyEvent keyDown{ true, 1, vkey, scanCode, ch, states.Value() };
-    const KeyEvent keyUp{ false, 1, vkey, scanCode, ch, states.Value() };
-    const auto handledDown = _terminalInput->HandleKey(&keyDown);
-    const auto handledUp = _terminalInput->HandleKey(&keyUp);
-    return handledDown || handledUp;
+    return _terminalInput->HandleKey(&keyDown);
 }
 
 // Method Description:

@@ -43,6 +43,8 @@
 #include "ClearBufferArgs.g.cpp"
 #include "MultipleActionsArgs.g.cpp"
 #include "AdjustOpacityArgs.g.cpp"
+#include "SelectCommandArgs.g.cpp"
+#include "SelectOutputArgs.g.cpp"
 #include "ColorSelectionArgs.g.cpp"
 
 #include <LibraryResources.h>
@@ -969,5 +971,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 fmt::format(std::wstring_view{ str }, matchModeStr)
             };
         }
+    }
+
+    winrt::hstring SelectOutputArgs::GenerateName() const
+    {
+        switch (Direction())
+        {
+        case SelectOutputDirection::Next:
+            return RS_(L"SelectOutputNextCommandKey");
+        case SelectOutputDirection::Previous:
+            return RS_(L"SelectOutputPreviousCommandKey");
+        }
+        return L"";
+    }
+    winrt::hstring SelectCommandArgs::GenerateName() const
+    {
+        switch (Direction())
+        {
+        case SelectOutputDirection::Next:
+            return RS_(L"SelectCommandNextCommandKey");
+        case SelectOutputDirection::Previous:
+            return RS_(L"SelectCommandPreviousCommandKey");
+        }
+        return L"";
     }
 }

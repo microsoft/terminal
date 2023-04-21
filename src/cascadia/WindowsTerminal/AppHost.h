@@ -13,7 +13,7 @@ public:
             winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
             const winrt::Microsoft::Terminal::Remoting::WindowManager& manager,
             const winrt::Microsoft::Terminal::Remoting::Peasant& peasant) noexcept;
-    virtual ~AppHost();
+    ~AppHost();
 
     void AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
     void LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args);
@@ -37,11 +37,13 @@ private:
     winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
 
     winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
-
+    bool _isWindowInitialized = false;
     bool _useNonClientArea{ false };
     winrt::Microsoft::Terminal::Settings::Model::LaunchMode _launchMode{};
 
     std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;
+
+    uint32_t _launchShowWindowCommand{ SW_NORMAL };
 
     void _preInit();
 
@@ -68,7 +70,8 @@ private:
     void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,
                           const winrt::Windows::Foundation::IInspectable& arg);
     void _WindowMouseWheeled(const til::point coord, const int32_t delta);
-    winrt::fire_and_forget _WindowActivated(bool activated);
+    void _WindowActivated(bool activated);
+    winrt::fire_and_forget _peasantNotifyActivateWindow();
     void _WindowMoved();
 
     void _DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,

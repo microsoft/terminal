@@ -64,6 +64,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Boolean UsingMonospaceFont { get; };
         Boolean ShowAllFonts;
+        Boolean ShowProportionalFontWarning;
 
         IInspectable CurrentCursorShape;
         Boolean IsVintageCursor { get; };

@@ -307,6 +307,11 @@ void IslandWindow::Initialize()
     // stash the child interop handle so we can resize it when the main hwnd is resized
     interop->get_WindowHandle(&_interopWindowHandle);
 
+    // Immediately hide our XAML island hwnd. On earlier versions of Windows,
+    // this HWND could sometimes appear as an actual window in the taskbar
+    // without this!
+    ShowWindow(_interopWindowHandle, SW_HIDE);
+
     _rootGrid = winrt::Windows::UI::Xaml::Controls::Grid();
     _source.Content(_rootGrid);
 
