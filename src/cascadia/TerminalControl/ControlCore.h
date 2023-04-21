@@ -225,8 +225,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void OwningHwnd(uint64_t owner);
 
         void AnchorContextMenu(til::point viewportRelativeCharacterPosition);
-        void SelectCommandWithAnchor(const bool goUp, const til::point anchor);
-        void SelectOutputWithAnchor(const bool goUp, const til::point anchor);
+
         bool ShouldShowSelectCommand();
         bool ShouldShowSelectOutput();
 
@@ -360,6 +359,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _isBackgroundTransparent();
         void _focusChanged(bool focused);
+
+        bool _clickedOnMark(const til::point& pos, std::function<bool(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&)> filter);
 
         inline bool _IsClosing() const noexcept
         {

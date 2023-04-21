@@ -2186,10 +2186,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const til::point start = HasSelection() ? (goUp ? _terminal->GetSelectionAnchor() : _terminal->GetSelectionEnd()) :
                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
-        SelectCommandWithAnchor(goUp, start);
-    }
-    void ControlCore::SelectCommandWithAnchor(const bool goUp, const til::point start)
-    {
+
         std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
         const auto& marks{ _terminal->GetScrollMarks() };
 
@@ -2235,10 +2232,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const til::point start = HasSelection() ? (goUp ? _terminal->GetSelectionAnchor() : _terminal->GetSelectionEnd()) :
                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
-        SelectOutputWithAnchor(goUp, start);
-    }
-    void ControlCore::SelectOutputWithAnchor(const bool goUp, const til::point start)
-    {
+
         std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
         const auto& marks{ _terminal->GetScrollMarks() };
 
@@ -2374,18 +2368,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    // Method Description:
-    // * Don't show this if the click was on the _current_ selection
-    // * Don't show this if the click wasn't on a mark with at least a command
-    // * Otherwise yea, show it.
-    bool ControlCore::ShouldShowSelectCommand()
+    bool ControlCore::_clickedOnMark(
+        const til::point& pos,
+        std::function<bool(const DispatchTypes::ScrollMark&)> filter)
     {
-        // Relies on the anchor set in AnchorContextMenu
-
         // Don't show this if the click was on the selection
         if (_terminal->IsSelectionActive() &&
-            _terminal->GetSelectionAnchor() <= _contextMenuBufferPosition &&
-            _terminal->GetSelectionEnd() >= _contextMenuBufferPosition)
+            _terminal->GetSelectionAnchor() <= pos &&
+            _terminal->GetSelectionEnd() >= pos)
         {
             return false;
         }
@@ -2394,13 +2384,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto& marks{ _terminal->GetScrollMarks() };
         for (auto&& m : marks)
         {
-            if (!m.HasOutput())
+            if (filter && filter(m))
             {
                 continue;
             }
             const auto [start, end] = m.GetExtent();
-            if (start <= _contextMenuBufferPosition &&
-                end >= _contextMenuBufferPosition)
+            if (start <= pos &&
+                end >= pos)
             {
                 return true;
             }
@@ -2408,6 +2398,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Didn't click on a mark with a command - don't show.
         return false;
+    }
+
+    // Method Description:
+    // * Don't show this if the click was on the _current_ selection
+    // * Don't show this if the click wasn't on a mark with at least a command
+    // * Otherwise yea, show it.
+    bool ControlCore::ShouldShowSelectCommand()
+    {
+        // Relies on the anchor set in AnchorContextMenu
+        return _clickedOnMark(_contextMenuBufferPosition,
+                              [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasCommand(); });
     }
 
     // Method Description:
