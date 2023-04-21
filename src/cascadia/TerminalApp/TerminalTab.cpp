@@ -1053,6 +1053,11 @@ namespace winrt::TerminalApp::implementation
             _mruPanes.insert(_mruPanes.begin(), paneId.value());
         }
 
+        if (_rootPane->GetLeafPaneCount() == 1)
+        {
+            _closePaneMenuItem.Visibility(WUX::Visibility::Collapsed);
+        }
+
         _RecalculateAndApplyReadOnly();
 
         // Raise our own ActivePaneChanged event.
@@ -1128,11 +1133,6 @@ namespace winrt::TerminalApp::implementation
 
                     tab->Content(tab->_rootPane->GetRootElement());
                     tab->ExitZoom();
-                }
-
-                if (tab->GetLeafPaneCount() == 2)
-                {
-                    tab->_closePaneMenuItem.Visibility(WUX::Visibility::Collapsed);
                 }
 
                 if (auto pane = weakPane.lock())
@@ -1319,9 +1319,6 @@ namespace winrt::TerminalApp::implementation
         Controls::MenuFlyoutItem closePaneMenuItem = _closePaneMenuItem;
         {
             // "Close Pane"
-            Controls::FontIcon closeTabSymbol;
-            closeTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
-            closeTabSymbol.Glyph(L"\xF246"); // ViewDashboard
 
             closePaneMenuItem.Click([weakThis](auto&&, auto&&) {
                 if (auto tab{ weakThis.get() })
@@ -1330,7 +1327,6 @@ namespace winrt::TerminalApp::implementation
                 }
             });
             closePaneMenuItem.Text(RS_(L"ClosePaneText"));
-            closePaneMenuItem.Icon(closeTabSymbol);
 
             const auto closePaneToolTip = RS_(L"ClosePaneToolTip");
 
