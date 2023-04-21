@@ -777,61 +777,48 @@ namespace winrt::TerminalApp::implementation
 
         // add static items
         {
-            // GH#2455 - Make sure to try/catch calls to Application::Current,
-            // because that _won't_ be an instance of TerminalApp::App in the
-            // LocalTests
-            auto isUwp = false;
-            try
+            // Create the settings button.
+            auto settingsItem = WUX::Controls::MenuFlyoutItem{};
+            settingsItem.Text(RS_(L"SettingsMenuItem"));
+            const auto settingsToolTip = RS_(L"SettingsToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(settingsItem, box_value(settingsToolTip));
+            Automation::AutomationProperties::SetHelpText(settingsItem, settingsToolTip);
+
+            WUX::Controls::SymbolIcon ico{};
+            ico.Symbol(WUX::Controls::Symbol::Setting);
+            settingsItem.Icon(ico);
+
+            settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
+            newTabFlyout.Items().Append(settingsItem);
+
+            auto actionMap = _settings.ActionMap();
+            const auto settingsKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::OpenSettings, OpenSettingsArgs{ SettingsTarget::SettingsUI }) };
+            if (settingsKeyChord)
             {
-                isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+                _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
             }
-            CATCH_LOG();
 
-            if (!isUwp)
+            // Create the command palette button.
+            auto commandPaletteFlyout = WUX::Controls::MenuFlyoutItem{};
+            commandPaletteFlyout.Text(RS_(L"CommandPaletteMenuItem"));
+            const auto commandPaletteToolTip = RS_(L"CommandPaletteToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(commandPaletteFlyout, box_value(commandPaletteToolTip));
+            Automation::AutomationProperties::SetHelpText(commandPaletteFlyout, commandPaletteToolTip);
+
+            WUX::Controls::FontIcon commandPaletteIcon{};
+            commandPaletteIcon.Glyph(L"\xE945");
+            commandPaletteIcon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+            commandPaletteFlyout.Icon(commandPaletteIcon);
+
+            commandPaletteFlyout.Click({ this, &TerminalPage::_CommandPaletteButtonOnClick });
+            newTabFlyout.Items().Append(commandPaletteFlyout);
+
+            const auto commandPaletteKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::ToggleCommandPalette) };
+            if (commandPaletteKeyChord)
             {
-                // Create the settings button.
-                auto settingsItem = WUX::Controls::MenuFlyoutItem{};
-                settingsItem.Text(RS_(L"SettingsMenuItem"));
-                const auto settingsToolTip = RS_(L"SettingsToolTip");
-
-                WUX::Controls::ToolTipService::SetToolTip(settingsItem, box_value(settingsToolTip));
-                Automation::AutomationProperties::SetHelpText(settingsItem, settingsToolTip);
-
-                WUX::Controls::SymbolIcon ico{};
-                ico.Symbol(WUX::Controls::Symbol::Setting);
-                settingsItem.Icon(ico);
-
-                settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
-                newTabFlyout.Items().Append(settingsItem);
-
-                auto actionMap = _settings.ActionMap();
-                const auto settingsKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::OpenSettings, OpenSettingsArgs{ SettingsTarget::SettingsUI }) };
-                if (settingsKeyChord)
-                {
-                    _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
-                }
-
-                // Create the command palette button.
-                auto commandPaletteFlyout = WUX::Controls::MenuFlyoutItem{};
-                commandPaletteFlyout.Text(RS_(L"CommandPaletteMenuItem"));
-                const auto commandPaletteToolTip = RS_(L"CommandPaletteToolTip");
-
-                WUX::Controls::ToolTipService::SetToolTip(commandPaletteFlyout, box_value(commandPaletteToolTip));
-                Automation::AutomationProperties::SetHelpText(commandPaletteFlyout, commandPaletteToolTip);
-
-                WUX::Controls::FontIcon commandPaletteIcon{};
-                commandPaletteIcon.Glyph(L"\xE945");
-                commandPaletteIcon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
-                commandPaletteFlyout.Icon(commandPaletteIcon);
-
-                commandPaletteFlyout.Click({ this, &TerminalPage::_CommandPaletteButtonOnClick });
-                newTabFlyout.Items().Append(commandPaletteFlyout);
-
-                const auto commandPaletteKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::ToggleCommandPalette) };
-                if (commandPaletteKeyChord)
-                {
-                    _SetAcceleratorForMenuItem(commandPaletteFlyout, commandPaletteKeyChord);
-                }
+                _SetAcceleratorForMenuItem(commandPaletteFlyout, commandPaletteKeyChord);
             }
 
             // Create the about button.
@@ -3822,18 +3809,6 @@ namespace winrt::TerminalApp::implementation
     // - The OS-localized name for the TabletInputService
     winrt::hstring _getTabletServiceName()
     {
-        auto isUwp = false;
-        try
-        {
-            isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
-        }
-        CATCH_LOG();
-
-        if (isUwp)
-        {
-            return winrt::hstring{ TabletInputServiceKey };
-        }
-
         wil::unique_schandle hManager{ OpenSCManagerW(nullptr, nullptr, 0) };
 
         if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
