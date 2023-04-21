@@ -149,19 +149,33 @@ winrt::com_ptr<IShellLinkW> Jumplist::_createShellLink(const std::wstring_view n
     const auto module{ GetWtExePath() };
     THROW_IF_FAILED(sh->SetPath(module.data()));
     THROW_IF_FAILED(sh->SetArguments(args.data()));
+    auto propStore{ sh.as<IPropertyStore>() };
 
     PROPVARIANT titleProp;
     titleProp.vt = VT_LPWSTR;
     titleProp.pwszVal = const_cast<wchar_t*>(name.data());
 
-    PROPVARIANT iconProp;
-    iconProp.vt = VT_LPWSTR;
-    iconProp.pwszVal = const_cast<wchar_t*>(path.data());
+    // Check for a comma in the path. If we find one we have an indirect icon. Parse the path into a file path and index/id.
+    auto commaPosition = path.find(L",");
+    if (commaPosition != std::wstring_view::npos)
+    {
+        const std::wstring iconPath{ path.substr(0, commaPosition) };
 
-    auto propStore{ sh.as<IPropertyStore>() };
+        // We dont want the comma included so add 1 to its position
+        const std::wstring iconStr{ path.substr(commaPosition + 1, path.length() - commaPosition) };
+        const int iconNumber = std::stoi(iconStr);
+        THROW_IF_FAILED(sh->SetIconLocation(iconPath.data(), iconNumber));
+    }
+    else
+    {
+        PROPVARIANT iconProp;
+        iconProp.vt = VT_LPWSTR;
+        iconProp.pwszVal = const_cast<wchar_t*>(path.data());
+
+        THROW_IF_FAILED(propStore->SetValue(PKEY_AppUserModel_DestListLogoUri, iconProp));
+    }
+
     THROW_IF_FAILED(propStore->SetValue(PKEY_Title, titleProp));
-    THROW_IF_FAILED(propStore->SetValue(PKEY_AppUserModel_DestListLogoUri, iconProp));
-
     THROW_IF_FAILED(propStore->Commit());
 
     return sh;
