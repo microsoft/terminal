@@ -275,7 +275,7 @@ void ScreenBufferTests::SingleAlternateBufferCreationTest()
     VERIFY_IS_NULL(psiOriginal->_psiAlternateBuffer);
     VERIFY_IS_NULL(psiOriginal->_psiMainBuffer);
 
-    auto Status = psiOriginal->UseAlternateScreenBuffer();
+    auto Status = psiOriginal->UseAlternateScreenBuffer({});
     if (VERIFY_NT_SUCCESS(Status))
     {
         Log::Comment(L"First alternate buffer successfully created");
@@ -308,7 +308,7 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
         L"main buffer.");
 
     const auto psiOriginal = &gci.GetActiveOutputBuffer();
-    auto Status = psiOriginal->UseAlternateScreenBuffer();
+    auto Status = psiOriginal->UseAlternateScreenBuffer({});
     if (VERIFY_NT_SUCCESS(Status))
     {
         Log::Comment(L"First alternate buffer successfully created");
@@ -319,7 +319,7 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
         VERIFY_IS_NULL(psiOriginal->_psiMainBuffer);
         VERIFY_IS_NULL(psiFirstAlternate->_psiAlternateBuffer);
 
-        Status = psiFirstAlternate->UseAlternateScreenBuffer();
+        Status = psiFirstAlternate->UseAlternateScreenBuffer({});
         if (VERIFY_NT_SUCCESS(Status))
         {
             Log::Comment(L"Second alternate buffer successfully created");
@@ -353,7 +353,7 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
         L"Testing creating one alternate buffer, then creating another"
         L" alternate from the main, before returning to the main buffer.");
     const auto psiOriginal = &gci.GetActiveOutputBuffer();
-    auto Status = psiOriginal->UseAlternateScreenBuffer();
+    auto Status = psiOriginal->UseAlternateScreenBuffer({});
     if (VERIFY_NT_SUCCESS(Status))
     {
         Log::Comment(L"First alternate buffer successfully created");
@@ -364,7 +364,7 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
         VERIFY_IS_NULL(psiOriginal->_psiMainBuffer);
         VERIFY_IS_NULL(psiFirstAlternate->_psiAlternateBuffer);
 
-        Status = psiOriginal->UseAlternateScreenBuffer();
+        Status = psiOriginal->UseAlternateScreenBuffer({});
         if (VERIFY_NT_SUCCESS(Status))
         {
             Log::Comment(L"Second alternate buffer successfully created");
@@ -409,7 +409,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     mainCursor.SetBlinkingAllowed(mainCursorBlinking);
 
     Log::Comment(L"Switch to the alternate buffer.");
-    VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer());
+    VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer({}));
     auto& altBuffer = gci.GetActiveOutputBuffer();
     auto& altCursor = altBuffer.GetTextBuffer().GetCursor();
     auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
@@ -901,7 +901,7 @@ void ScreenBufferTests::TestAltBufferTabStops()
     _SetTabStops(mainBuffer, expectedStops, true);
     VERIFY_ARE_EQUAL(expectedStops, _GetTabStops(mainBuffer));
 
-    VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer());
+    VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer({}));
     auto& altBuffer = gci.GetActiveOutputBuffer();
     auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
 
@@ -2449,7 +2449,7 @@ void ScreenBufferTests::TestAltBufferCursorState()
     VERIFY_IS_NULL(original._psiAlternateBuffer);
     VERIFY_IS_NULL(original._psiMainBuffer);
 
-    auto Status = original.UseAlternateScreenBuffer();
+    auto Status = original.UseAlternateScreenBuffer({});
     if (VERIFY_NT_SUCCESS(Status))
     {
         Log::Comment(L"Alternate buffer successfully created");
@@ -2494,7 +2494,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
     VERIFY_IS_NULL(mainBuffer._psiAlternateBuffer);
     VERIFY_IS_NULL(mainBuffer._psiMainBuffer);
 
-    auto Status = mainBuffer.UseAlternateScreenBuffer();
+    auto Status = mainBuffer.UseAlternateScreenBuffer({});
     if (VERIFY_NT_SUCCESS(Status))
     {
         Log::Comment(L"Alternate buffer successfully created");
@@ -3079,7 +3079,7 @@ void ScreenBufferTests::SetGlobalColorTable()
 
     Log::Comment(NoThrowString().Format(L"Create an alt buffer"));
 
-    VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer());
+    VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer({}));
     auto& altBuffer = gci.GetActiveOutputBuffer();
     auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
 
@@ -3182,7 +3182,7 @@ void ScreenBufferTests::SetColorTableThreeDigits()
 
     Log::Comment(NoThrowString().Format(L"Create an alt buffer"));
 
-    VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer());
+    VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer({}));
     auto& altBuffer = gci.GetActiveOutputBuffer();
     auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
 
@@ -5800,7 +5800,7 @@ void ScreenBufferTests::RestoreDownAltBufferWithTerminalScrolling()
     VERIFY_IS_NULL(siMain._psiAlternateBuffer);
 
     Log::Comment(L"Create an alternate buffer");
-    if (VERIFY_NT_SUCCESS(siMain.UseAlternateScreenBuffer()))
+    if (VERIFY_NT_SUCCESS(siMain.UseAlternateScreenBuffer({})))
     {
         VERIFY_IS_NOT_NULL(siMain._psiAlternateBuffer);
         auto& altBuffer = *siMain._psiAlternateBuffer;
@@ -5965,7 +5965,7 @@ void ScreenBufferTests::ClearAlternateBuffer()
     VerifyText(siMain.GetTextBuffer());
 
     Log::Comment(L"Create an alternate buffer");
-    if (VERIFY_NT_SUCCESS(siMain.UseAlternateScreenBuffer()))
+    if (VERIFY_NT_SUCCESS(siMain.UseAlternateScreenBuffer({})))
     {
         VERIFY_IS_NOT_NULL(siMain._psiAlternateBuffer);
         auto& altBuffer = *siMain._psiAlternateBuffer;

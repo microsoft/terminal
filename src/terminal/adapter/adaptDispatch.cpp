@@ -1765,7 +1765,8 @@ void AdaptDispatch::_SetAlternateScreenBufferMode(const bool enable)
     if (enable)
     {
         CursorSaveState();
-        _api.UseAlternateScreenBuffer();
+        const auto& textBuffer = _api.GetTextBuffer();
+        _api.UseAlternateScreenBuffer(_GetEraseAttributes(textBuffer));
         _usingAltBuffer = true;
     }
     else
