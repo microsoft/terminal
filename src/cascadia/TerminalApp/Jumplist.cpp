@@ -162,9 +162,9 @@ winrt::com_ptr<IShellLinkW> Jumplist::_createShellLink(const std::wstring_view n
         const std::wstring iconPath{ path.substr(0, commaPosition) };
 
         // We dont want the comma included so add 1 to its position
-        const std::wstring iconStr{ path.substr(commaPosition + 1, path.length() - commaPosition) };
-        const int iconNumber = std::stoi(iconStr);
-        THROW_IF_FAILED(sh->SetIconLocation(iconPath.data(), iconNumber));
+        const std::wstring iconIndexString{ path.substr(commaPosition + 1, path.length() - commaPosition) };
+        const int iconIndex = std::stoi(iconIndexString);
+        THROW_IF_FAILED(sh->SetIconLocation(iconPath.data(), iconIndex));
     }
     else
     {
