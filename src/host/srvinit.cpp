@@ -475,20 +475,13 @@ try
     std::unique_ptr<IConsoleControl> remoteControl = std::make_unique<Microsoft::Console::Interactivity::RemoteConsoleControl>(hostSignalPipe);
     RETURN_IF_NTSTATUS_FAILED(ServiceLocator::SetConsoleControlInstance(std::move(remoteControl)));
 
-    wil::unique_handle signalPipeTheirSide;
-    wil::unique_handle signalPipeOurSide;
+    wil::unique_handle pipesOurSide[3];
+    wil::unique_handle pipesTheirSide[3];
 
-    wil::unique_handle inPipeTheirSide;
-    wil::unique_handle inPipeOurSide;
-
-    wil::unique_handle outPipeTheirSide;
-    wil::unique_handle outPipeOurSide;
-
-    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), nullptr, 0));
-
-    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(inPipeOurSide.addressof(), inPipeTheirSide.addressof(), nullptr, 0));
-
-    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(outPipeTheirSide.addressof(), outPipeOurSide.addressof(), nullptr, 0));
+    for (size_t i = 0; i < 3; ++i)
+    {
+        RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(pipesOurSide[i].addressof(), pipesTheirSide[i].addressof(), nullptr, 0));
+    }
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_ReceiveHandoff_OpenedPipes",
@@ -503,11 +496,13 @@ try
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
+    // TODO: don't create this
     wil::unique_handle refHandle;
     RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateClientHandle(refHandle.addressof(),
                                                                Server,
                                                                L"\\Reference",
                                                                FALSE));
+    //refHandle.release();
 
     const auto serverProcess = GetCurrentProcess();
 
@@ -575,8 +570,8 @@ try
     // obeys the resizing quirk. Otherwise, defterm connections to the Terminal
     // are going to have weird resizing, and aren't going to send full fidelity
     // input messages.
-    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --resizeQuirk --win32input --signal {:#x}"), reinterpret_cast<int64_t>(signalPipeOurSide.release()));
-    ConsoleArguments consoleArgs(commandLine, inPipeOurSide.release(), outPipeOurSide.release());
+    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --resizeQuirk --win32input --signal {:#x}"), reinterpret_cast<int64_t>(pipesOurSide[2].release()));
+    ConsoleArguments consoleArgs(commandLine, pipesOurSide[0].release(), pipesOurSide[1].release());
     RETURN_IF_FAILED(consoleArgs.ParseCommandline());
     RETURN_IF_FAILED(ConsoleCreateIoThread(Server, &consoleArgs, driverInputEvent, connectMessage));
 
@@ -586,7 +581,7 @@ try
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    ::Microsoft::WRL::ComPtr<ITerminalHandoff2> handoff;
+    ::Microsoft::WRL::ComPtr<ITerminalHandoff3> handoff;
     RETURN_IF_FAILED(CoCreateInstance(g.delegationPair.terminal, nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
@@ -595,13 +590,9 @@ try
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
-                                                  outPipeTheirSide.get(),
-                                                  signalPipeTheirSide.get(),
-                                                  refHandle.get(),
-                                                  serverProcess,
-                                                  clientProcess.get(),
-                                                  myStartupInfo));
+    const HANDLE processes[2]{ serverProcess, clientProcess.get() };
+    PTY_HANDOFF_RESPONSE response{};
+    RETURN_IF_FAILED(handoff->EstablishPtyHandoff(pipesTheirSide[0].addressof(), &processes[0], myStartupInfo, &response));
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_DelegateToTerminalSucceeded",

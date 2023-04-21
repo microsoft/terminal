@@ -38,11 +38,13 @@
       <HeaderFileName>IConsoleHandoff.h</HeaderFileName>
       <MinimumTargetSystem>NT100</MinimumTargetSystem>
       <OutputDirectory>$(IntDir)</OutputDirectory>
+      <WarningLevel>3</WarningLevel>
     </Midl>
     <Midl Include="ITerminalHandoff.idl">
       <HeaderFileName>ITerminalHandoff.h</HeaderFileName>
       <MinimumTargetSystem>NT100</MinimumTargetSystem>
       <OutputDirectory>$(IntDir)</OutputDirectory>
+      <WarningLevel>3</WarningLevel>
     </Midl>
   </ItemGroup>
   <ItemGroup>

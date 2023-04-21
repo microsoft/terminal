@@ -57,7 +57,7 @@ HRESULT CTerminalHandoff::s_StopListening()
 }
 
 // See s_StopListening()
-HRESULT CTerminalHandoff::s_StopListeningLocked()
+HRESULT CTerminalHandoff::s_StopListeningLocked() noexcept
 {
     RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _pfnHandoff);
 
@@ -73,90 +73,70 @@ HRESULT CTerminalHandoff::s_StopListeningLocked()
 }
 
 // Routine Description:
-// - Helper to duplicate a handle to ourselves so we can keep holding onto it
-//   after the caller frees the original one.
-// Arguments:
-// - in - Handle to duplicate
-// - out - Where to place the duplicated value
-// Return Value:
-// - S_OK or Win32 error from `::DuplicateHandle`
-static HRESULT _duplicateHandle(const HANDLE in, HANDLE& out) noexcept
-{
-    RETURN_IF_WIN32_BOOL_FALSE(::DuplicateHandle(GetCurrentProcess(), in, GetCurrentProcess(), &out, 0, FALSE, DUPLICATE_SAME_ACCESS));
-    return S_OK;
-}
-
-// Routine Description:
 // - Receives the terminal handoff via COM from the other process,
 //   duplicates handles as COM will free those given on the way out,
 //   then fires off an event notifying the rest of the terminal that
 //   a connection is on its way in.
 // Arguments:
-// - in - PTY input handle that we will read from
-// - out - PTY output handle that we will write to
-// - signal - PTY signal handle for out of band messaging
-// - ref - Client reference handle for console session so it stays alive until we let go
-// - server - PTY process handle to track for lifetime/cleanup
-// - client - Process handle to client so we can track its lifetime and exit appropriately
+// - pipes:
+//   0: in - PTY input handle that we will read from
+//   1: out - PTY output handle that we will write to
+//   2: signal - PTY signal handle for out of band messaging
+// - processes:
+//   0: server - PTY process handle to track for lifetime/cleanup
+//   1: client - Process handle to client so we can track its lifetime and exit appropriately
 // Return Value:
 // - E_NOT_VALID_STATE if a event handler is not registered before calling. `::DuplicateHandle`
 //   error codes if we cannot manage to make our own copy of handles to retain. Or S_OK/error
 //   from the registered handler event function.
-HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo)
+HRESULT CTerminalHandoff::EstablishPtyHandoff(const HANDLE* pipes, const HANDLE* processes, TERMINAL_STARTUP_INFO startupInfo, PTY_HANDOFF_RESPONSE* response) noexcept
+try
 {
-    try
-    {
-        std::unique_lock lock{ _mtx };
+    std::unique_lock lock{ _mtx };
 
-        // s_StopListeningLocked sets _pfnHandoff to nullptr.
-        // localPfnHandoff is tested for nullness below.
-#pragma warning(suppress : 26429) // Symbol '...' is never tested for nullness, it can be marked as not_null (f.23).
-        auto localPfnHandoff = _pfnHandoff;
-
+    const auto stopListeningOnExit = wil::scope_exit([]() {
         // Because we are REGCLS_SINGLEUSE... we need to `CoRevokeClassObject` after we handle this ONE call.
         // COM does not automatically clean that up for us. We must do it.
         LOG_IF_FAILED(s_StopListeningLocked());
+    });
 
-        // Report an error if no one registered a handoff function before calling this.
-        THROW_HR_IF_NULL(E_NOT_VALID_STATE, localPfnHandoff);
+    // Report an error if no one registered a handoff function before calling this.
+    THROW_HR_IF_NULL(E_NOT_VALID_STATE, _pfnHandoff);
 
-        // Duplicate the handles from what we received.
-        // The contract with COM specifies that any HANDLEs we receive from the caller belong
-        // to the caller and will be freed when we leave the scope of this method.
-        // Making our own duplicate copy ensures they hang around in our lifetime.
-        THROW_IF_FAILED(_duplicateHandle(in, in));
-        THROW_IF_FAILED(_duplicateHandle(out, out));
-        THROW_IF_FAILED(_duplicateHandle(signal, signal));
-        THROW_IF_FAILED(_duplicateHandle(ref, ref));
-        THROW_IF_FAILED(_duplicateHandle(server, server));
-        THROW_IF_FAILED(_duplicateHandle(client, client));
-
-        // Call registered handler from when we started listening.
-        THROW_IF_FAILED(localPfnHandoff(in, out, signal, ref, server, client, startupInfo));
-
-#pragma warning(suppress : 26477)
-        TraceLoggingWrite(
-            g_hTerminalConnectionProvider,
-            "ReceiveTerminalHandoff_Success",
-            TraceLoggingDescription("successfully received a terminal handoff"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-        return S_OK;
-    }
-    catch (...)
+    // If the client didn't specify a response object, that's fine. It'll work anyways and
+    // they just won't get any information from us. To avoid forcing our handoff callback
+    // target to check the pointer, we'll just use a temporary throw-away object here.
+    PTY_HANDOFF_RESPONSE tempResponse;
+    if (!response)
     {
-        const auto hr = wil::ResultFromCaughtException();
+        response = &tempResponse;
+    }
+
+    // Call registered handler from when we started listening.
+    THROW_IF_FAILED(_pfnHandoff(pipes, processes, startupInfo, *response));
 
 #pragma warning(suppress : 26477)
-        TraceLoggingWrite(
-            g_hTerminalConnectionProvider,
-            "ReceiveTerminalHandoff_Failed",
-            TraceLoggingDescription("failed while receiving a terminal handoff"),
-            TraceLoggingHResult(hr),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+    TraceLoggingWrite(
+        g_hTerminalConnectionProvider,
+        "ReceiveTerminalHandoff_Success",
+        TraceLoggingDescription("successfully received a terminal handoff"),
+        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-        return hr;
-    }
+    return S_OK;
+}
+catch (...)
+{
+    const auto hr = wil::ResultFromCaughtException();
+
+#pragma warning(suppress : 26477)
+    TraceLoggingWrite(
+        g_hTerminalConnectionProvider,
+        "ReceiveTerminalHandoff_Failed",
+        TraceLoggingDescription("failed while receiving a terminal handoff"),
+        TraceLoggingHResult(hr),
+        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+    return hr;
 }

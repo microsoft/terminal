@@ -12,15 +12,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct ConptyConnection : ConptyConnectionT<ConptyConnection>, ConnectionStateHolder<ConptyConnection>
     {
-        ConptyConnection(const HANDLE hSig,
-                         const HANDLE hIn,
-                         const HANDLE hOut,
-                         const HANDLE hRef,
-                         const HANDLE hServerProcess,
-                         const HANDLE hClientProcess,
-                         TERMINAL_STARTUP_INFO startupInfo);
-
         ConptyConnection() noexcept = default;
+        ConptyConnection(const HANDLE* pipes, const HANDLE* processes, const TERMINAL_STARTUP_INFO& startupInfo);
+
         void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
 
         static winrt::fire_and_forget final_release(std::unique_ptr<ConptyConnection> connection);
@@ -59,7 +53,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     private:
         static void closePseudoConsoleAsync(HPCON hPC) noexcept;
-        static HRESULT NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo) noexcept;
+        static HRESULT NewHandoff(const HANDLE* pipes, const HANDLE* processes, const TERMINAL_STARTUP_INFO& startupInfo, PTY_HANDOFF_RESPONSE& response) noexcept;
         static winrt::hstring _commandlineFromProcess(HANDLE process);
 
         HRESULT _LaunchAttachedClient() noexcept;

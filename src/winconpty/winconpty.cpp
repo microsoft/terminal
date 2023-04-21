@@ -589,7 +589,7 @@ extern "C" HRESULT WINAPI ConptyPackPseudoConsole(_In_ HANDLE hProcess,
     RETURN_HR_IF(E_INVALIDARG, nullptr == phPC);
     *phPC = nullptr;
     RETURN_HR_IF(E_INVALIDARG, !_HandleIsValid(hProcess));
-    RETURN_HR_IF(E_INVALIDARG, !_HandleIsValid(hRef));
+    RETURN_HR_IF(E_INVALIDARG, hRef == INVALID_HANDLE_VALUE);
     RETURN_HR_IF(E_INVALIDARG, !_HandleIsValid(hSignal));
 
     auto pPty = (PseudoConsole*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PseudoConsole));

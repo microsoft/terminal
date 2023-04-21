@@ -1,17 +1,15 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "oaidl.idl";
-import "ocidl.idl";
-
+import "unknwn.idl";
 
 typedef struct _TERMINAL_STARTUP_INFO
 {
     // In STARTUPINFO
-    BSTR pszTitle;
+    BSTR pbTitle;
 
     // Also wanted
-    BSTR pszIconPath;
+    BSTR pbIconPath;
     LONG iconIndex;
 
     // The rest of STARTUPINFO
@@ -26,6 +24,19 @@ typedef struct _TERMINAL_STARTUP_INFO
     WORD wShowWindow;
 } TERMINAL_STARTUP_INFO;
 
+// All of the following members are optional. When migrating from ITerminalHandoff2
+// or earlier, you _can_ choose to return an all-0 struct. It will work.
+typedef struct _PTY_HANDOFF_RESPONSE
+{
+    // Corresponds to ConptyResizePseudoConsole
+    DWORD dwXSize;
+    DWORD dwYSize;
+    // Corresponds to ConptyReparentPseudoConsole
+    HWND hParentWindow;
+    // Corresponds to ConptyShowHidePseudoConsole
+    BOOL bShow;
+} PTY_HANDOFF_RESPONSE;
+
 // LOAD BEARING!
 //
 // There is only ever one OpenConsoleProxy.dll loaded by COM for _ALL_ terminal
@@ -33,6 +44,7 @@ typedef struct _TERMINAL_STARTUP_INFO
 // versions of interfaces in the file here, even if the old version is no longer
 // in use.
 
+// The original prototype interface for handoff
 [
     object,
     uuid(59D55CCE-FC8A-48B4-ACE8-0A9286C6557F)
@@ -47,11 +59,15 @@ typedef struct _TERMINAL_STARTUP_INFO
                                 [in, system_handle(sh_process)] HANDLE client);
 };
 
+// This variant was added in v1.15.2874 when we noticed that we need the STARTUPINFO information to properly handle
+// .lnk files. It was previously assumed that this wouldn't be necessary, because we could just get the path out of
+// the PEB, but then noticed that this won't work, because the PEB contains the .exe path. Hindsight is 20/20.
 [
     object,
     uuid(AA6B364F-4A50-4176-9002-0AE755E7B5EF)
 ] interface ITerminalHandoff2 : IUnknown
 {
+    // DEPRECATED!
     HRESULT EstablishPtyHandoff([in, system_handle(sh_pipe)] HANDLE in,
                                 [in, system_handle(sh_pipe)] HANDLE out,
                                 [in, system_handle(sh_pipe)] HANDLE signal,
@@ -59,4 +75,27 @@ typedef struct _TERMINAL_STARTUP_INFO
                                 [in, system_handle(sh_process)] HANDLE server,
                                 [in, system_handle(sh_process)] HANDLE client,
                                 [in] TERMINAL_STARTUP_INFO startupInfo);
+};
+
+// This variant was added in $FUTURE_VER when we noticed that there's a race condition between OpenConsole
+// starting and the terminal calling ConptyResizePseudoConsole. If by that time the client application has
+// already called GetConsoleScreenBufferInfo to get the window size, it'll now assume the wrong size.
+//
+// It also drops the "ref" parameter, because we found that holding onto it is quite error prone.
+// Any reasonable terminal should call ConptyReleasePseudoConsole as soon as they can.
+//
+// Finally, it starts passing handles as arrays, because 7 parameters are a tad bit too much. I would've
+// preferred a "PTY_HANDOFF_REQUEST" struct with named parameters, but coming from the land of the free,
+// COM choose to remain severely restricted when it comes to what you can put into a struct. Why though.
+[
+    object,
+    uuid(77605BF7-D950-4013-9C37-E959E59B0D9D)
+]
+interface ITerminalHandoff3 : IUnknown
+{
+    HRESULT EstablishPtyHandoff(
+        [in, system_handle(sh_pipe), size_is(3)] const HANDLE* pipes,
+        [in, system_handle(sh_process), size_is(2)] const HANDLE* processes,
+        [in] TERMINAL_STARTUP_INFO startupInfo,
+        [out] PTY_HANDOFF_RESPONSE* response);
 };

@@ -26,27 +26,22 @@ Author(s):
 #define __CLSID_CTerminalHandoff "051F34EE-C1FD-4B19-AF75-9BA54648434C"
 #endif
 
-using NewHandoffFunction = HRESULT (*)(HANDLE, HANDLE, HANDLE, HANDLE, HANDLE, HANDLE, TERMINAL_STARTUP_INFO);
+using NewHandoffFunction = HRESULT (*)(const HANDLE* pipes, const HANDLE* processes, const TERMINAL_STARTUP_INFO& startupInfo, PTY_HANDOFF_RESPONSE& response);
 
 struct __declspec(uuid(__CLSID_CTerminalHandoff))
-    CTerminalHandoff : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::ClassicCom>, ITerminalHandoff2>
+    CTerminalHandoff : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::ClassicCom>, ITerminalHandoff3>
 {
-#pragma region ITerminalHandoff
-    STDMETHODIMP EstablishPtyHandoff(HANDLE in,
-                                     HANDLE out,
-                                     HANDLE signal,
-                                     HANDLE ref,
-                                     HANDLE server,
-                                     HANDLE client,
-                                     TERMINAL_STARTUP_INFO startupInfo) override;
-
-#pragma endregion
+    STDMETHODIMP EstablishPtyHandoff(
+        /* [size_is][system_handle][in] */ const HANDLE* pipes,
+        /* [size_is][system_handle][in] */ const HANDLE* processes,
+        /* [in] */ TERMINAL_STARTUP_INFO startupInfo,
+        /* [out] */ PTY_HANDOFF_RESPONSE* response) noexcept override;
 
     static HRESULT s_StartListening(NewHandoffFunction pfnHandoff);
     static HRESULT s_StopListening();
 
 private:
-    static HRESULT s_StopListeningLocked();
+    static HRESULT s_StopListeningLocked() noexcept;
 };
 
 // Disable warnings from the CoCreatableClass macro as the value it provides for

@@ -34,6 +34,14 @@ static constexpr auto _errorFormat = L"{0} ({0:#010x})"sv;
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
+    static HANDLE duplicateHandle(const HANDLE in)
+    {
+        HANDLE out;
+        const auto currentProcess = GetCurrentProcess();
+        THROW_IF_WIN32_BOOL_FALSE(::DuplicateHandle(currentProcess, in, currentProcess, &out, 0, FALSE, DUPLICATE_SAME_ACCESS));
+        return out;
+    }
+
     // Function Description:
     // - creates some basic anonymous pipes and passes them to CreatePseudoConsole
     // Arguments:
@@ -202,30 +210,24 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_RETURN();
 
-    ConptyConnection::ConptyConnection(const HANDLE hSig,
-                                       const HANDLE hIn,
-                                       const HANDLE hOut,
-                                       const HANDLE hRef,
-                                       const HANDLE hServerProcess,
-                                       const HANDLE hClientProcess,
-                                       TERMINAL_STARTUP_INFO startupInfo) :
+    ConptyConnection::ConptyConnection(const HANDLE* pipes, const HANDLE* processes, const TERMINAL_STARTUP_INFO& startupInfo) :
         _rows{ 25 },
         _cols{ 80 },
         _guid{ Utils::CreateGuid() },
-        _inPipe{ hIn },
-        _outPipe{ hOut }
+        _inPipe{ duplicateHandle(pipes[0]) },
+        _outPipe{ duplicateHandle(pipes[1]) }
     {
-        THROW_IF_FAILED(ConptyPackPseudoConsole(hServerProcess, hRef, hSig, &_hPC));
-        _piClient.hProcess = hClientProcess;
+        THROW_IF_FAILED(ConptyPackPseudoConsole(duplicateHandle(processes[0]), nullptr, duplicateHandle(pipes[2]), &_hPC));
+        _piClient.hProcess = duplicateHandle(processes[1]);
 
-        _startupInfo.title = winrt::hstring{ startupInfo.pszTitle, SysStringLen(startupInfo.pszTitle) };
-        _startupInfo.iconPath = winrt::hstring{ startupInfo.pszIconPath, SysStringLen(startupInfo.pszIconPath) };
+        _startupInfo.title = winrt::hstring{ startupInfo.pbTitle, SysStringLen(startupInfo.pbTitle) };
+        _startupInfo.iconPath = winrt::hstring{ startupInfo.pbIconPath, SysStringLen(startupInfo.pbIconPath) };
         _startupInfo.iconIndex = startupInfo.iconIndex;
         _startupInfo.showWindow = startupInfo.wShowWindow;
 
         try
         {
-            _commandline = _commandlineFromProcess(hClientProcess);
+            _commandline = _commandlineFromProcess(_piClient.hProcess);
         }
         CATCH_LOG()
     }
@@ -703,10 +705,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         ::ConptyClosePseudoConsoleTimeout(hPC, 0);
     }
 
-    HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo) noexcept
+    HRESULT ConptyConnection::NewHandoff(const HANDLE* pipes, const HANDLE* processes, const TERMINAL_STARTUP_INFO& startupInfo, PTY_HANDOFF_RESPONSE& response) noexcept
     try
     {
-        _newConnectionHandlers(winrt::make<ConptyConnection>(signal, in, out, ref, server, client, startupInfo));
+        response = {};
+        _newConnectionHandlers(winrt::make<ConptyConnection>(pipes, processes, startupInfo));
 
         return S_OK;
     }
