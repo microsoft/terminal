@@ -360,6 +360,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _isBackgroundTransparent();
         void _focusChanged(bool focused);
 
+        void _selectSpan(til::point_span s);
         bool _clickedOnMark(const til::point& pos, std::function<bool(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&)> filter);
 
         inline bool _IsClosing() const noexcept

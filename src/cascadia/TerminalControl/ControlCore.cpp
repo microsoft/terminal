@@ -2182,6 +2182,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void ControlCore::_selectSpan(til::point_span s)
+    {
+        const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
+        bufferSize.DecrementInBounds(s.end);
+
+        auto lock = _terminal->LockForWriting();
+        _terminal->SelectNewRegion(s.start, s.end);
+        _renderer->TriggerSelection();
+    }
+
     void ControlCore::SelectCommand(const bool goUp)
     {
         const til::point start = HasSelection() ? (goUp ? _terminal->GetSelectionAnchor() : _terminal->GetSelectionEnd()) :
@@ -2218,13 +2228,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto start = nearest->end;
             auto end = *nearest->commandEnd;
-
-            const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
-            bufferSize.DecrementInBounds(end);
-
-            auto lock = _terminal->LockForWriting();
-            _terminal->SelectNewRegion(start, end);
-            _renderer->TriggerSelection();
+            _selectSpan(til::point_span{ start, end });
         }
     }
 
@@ -2258,13 +2262,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto start = *nearest->commandEnd;
             auto end = *nearest->outputEnd;
-
-            const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
-            bufferSize.DecrementInBounds(end);
-
-            auto lock = _terminal->LockForWriting();
-            _terminal->SelectNewRegion(start, end);
-            _renderer->TriggerSelection();
+            _selectSpan(til::point_span{ start, end });
         }
     }
 
@@ -2328,13 +2326,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // Select the command
                 const auto start = m.end;
                 auto end = *m.commandEnd;
-
-                const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
-                bufferSize.DecrementInBounds(end);
-
-                auto lock = _terminal->LockForWriting();
-                _terminal->SelectNewRegion(start, end);
-                _renderer->TriggerSelection();
+                _selectSpan(til::point_span{ start, end });
                 return;
             }
         }
@@ -2356,13 +2348,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // Select the output
                 const auto start = *m.commandEnd;
                 auto end = *m.outputEnd;
-
-                const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
-                bufferSize.DecrementInBounds(end);
-
-                auto lock = _terminal->LockForWriting();
-                _terminal->SelectNewRegion(start, end);
-                _renderer->TriggerSelection();
+                _selectSpan(til::point_span{ start, end });
                 return;
             }
         }
@@ -2416,31 +2402,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     bool ControlCore::ShouldShowSelectOutput()
     {
         // Relies on the anchor set in AnchorContextMenu
-
-        // Don't show this if the click was on the selection
-        if (_terminal->IsSelectionActive() &&
-            _terminal->GetSelectionAnchor() <= _contextMenuBufferPosition &&
-            _terminal->GetSelectionEnd() >= _contextMenuBufferPosition)
-        {
-            return false;
-        }
-
-        // DO show this if the click was on a mark with output
-        const auto& marks{ _terminal->GetScrollMarks() };
-        for (auto&& m : marks)
-        {
-            if (!m.HasOutput())
-            {
-                continue;
-            }
-            const auto [start, end] = m.GetExtent();
-            if (start <= _contextMenuBufferPosition &&
-                end >= _contextMenuBufferPosition)
-            {
-                return true;
-            }
-        }
-        // Didn't click on a mark with output - don't show.
-        return false;
+        return _clickedOnMark(_contextMenuBufferPosition,
+                              [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasOutput(); });
     }
 }
