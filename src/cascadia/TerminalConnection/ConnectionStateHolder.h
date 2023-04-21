@@ -86,13 +86,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return _isStateOneOf(ConnectionState::Connected);
         }
 
-        void _resetConnectionState()
-        {
-            {
-                std::lock_guard<std::mutex> stateLock{ _stateMutex };
-                _connectionState = ConnectionState::NotConnected;
-            }
-        }
+        // void _resetConnectionState()
+        // {
+        //     {
+        //         std::lock_guard<std::mutex> stateLock{ _stateMutex };
+        //         _connectionState = ConnectionState::NotConnected;
+        //     }
+        // }
 
     private:
         std::atomic<ConnectionState> _connectionState{ ConnectionState::NotConnected };

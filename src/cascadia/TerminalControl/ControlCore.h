@@ -257,7 +257,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _closing{ false };
 
         TerminalConnection::ITerminalConnection _connection{ nullptr };
-        event_token _connectionOutputEventToken;
+        TerminalConnection::ITerminalConnection::TerminalOutput_revoker _connectionOutputEventRevoker;
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
         winrt::com_ptr<ControlSettings> _settings{ nullptr };
@@ -348,6 +348,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _isBackgroundTransparent();
         void _focusChanged(bool focused);
+
+        void _setConnection(const TerminalConnection::ITerminalConnection& connection);
 
         inline bool _IsClosing() const noexcept
         {
