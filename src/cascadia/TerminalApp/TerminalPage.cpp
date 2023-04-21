@@ -1408,7 +1408,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        if (const auto p = CommandPaletteElement(); p.Visibility() == Visibility::Visible && cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+        if (const auto p = CommandPaletteElement(); p && p.Visibility() == Visibility::Visible && cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
         {
             p.Visibility(Visibility::Collapsed);
         }
