@@ -174,9 +174,9 @@ namespace Microsoft::Console::Render::Atlas
     private:
         ATLAS_ATTR_COLD void _handleSettingsUpdate(const RenderingPayload& p);
         void _updateFontDependents(const RenderingPayload& p);
+        void _d2dRenderTargetUpdateFontSettings(const RenderingPayload& p) const noexcept;
         void _recreateCustomShader(const RenderingPayload& p);
         void _recreateCustomRenderTargetView(const RenderingPayload& p);
-        void _d2dRenderTargetUpdateFontSettings(const RenderingPayload& p) const noexcept;
         void _recreateBackgroundColorBitmap(const RenderingPayload& p);
         void _recreateConstBuffer(const RenderingPayload& p) const;
         void _setupDeviceContextState(const RenderingPayload& p);
@@ -186,6 +186,7 @@ namespace Microsoft::Console::Render::Atlas
         void _d2dBeginDrawing() noexcept;
         void _d2dEndDrawing();
         ATLAS_ATTR_COLD void _resetGlyphAtlas(const RenderingPayload& p);
+        ATLAS_ATTR_COLD void _resizeGlyphAtlas(const RenderingPayload& p, u16 u, u16 v);
         void _markStateChange(ID3D11BlendState* blendState);
         QuadInstance& _getLastQuad() noexcept;
         QuadInstance& _appendQuad();

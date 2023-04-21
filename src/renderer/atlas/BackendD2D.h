@@ -19,11 +19,10 @@ namespace Microsoft::Console::Render::Atlas
         ATLAS_ATTR_COLD void _handleSettingsUpdate(const RenderingPayload& p);
         void _drawBackground(const RenderingPayload& p) noexcept;
         void _drawText(RenderingPayload& p);
-        f32 _drawTextPrepareLineRendition(const RenderingPayload& p, f32 baselineY, LineRendition lineRendition) const noexcept;
-        void _drawTextResetLineRendition() const noexcept;
+        ATLAS_ATTR_COLD f32 _drawTextPrepareLineRendition(const RenderingPayload& p, const ShapedRow* row, f32 baselineY) const noexcept;
+        ATLAS_ATTR_COLD void _drawTextResetLineRendition(const ShapedRow* row) const noexcept;
         ATLAS_ATTR_COLD f32r _getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY);
-        void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
-        void _drawCursorWithColor(const RenderingPayload& p);
+        ATLAS_ATTR_COLD void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
         void _drawCursorPart1(const RenderingPayload& p);
         void _drawCursorPart2(const RenderingPayload& p);
         static void _drawCursor(const RenderingPayload& p, ID2D1RenderTarget* renderTarget, D2D1_RECT_F rect, ID2D1Brush* brush) noexcept;
@@ -31,7 +30,7 @@ namespace Microsoft::Console::Render::Atlas
         void _drawSelection(const RenderingPayload& p);
         void _debugShowDirty(const RenderingPayload& p);
         void _debugDumpRenderTarget(const RenderingPayload& p);
-        ATLAS_ATTR_COLD ID2D1SolidColorBrush* _brushWithColor(u32 color);
+        ID2D1SolidColorBrush* _brushWithColor(u32 color);
         ATLAS_ATTR_COLD ID2D1SolidColorBrush* _brushWithColorUpdate(u32 color);
         void _fillRectangle(const D2D1_RECT_F& rect, u32 color);
 

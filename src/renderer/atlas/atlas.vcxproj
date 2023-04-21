@@ -88,6 +88,9 @@
       <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+  </ItemGroup>
   <Import Project="$(SolutionDir)src\common.build.post.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
   <ItemDefinitionGroup>

@@ -183,24 +183,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
 
         if (row->lineRendition != LineRendition::SingleWidth)
         {
-            // If you print the top half of a double height row (DECDHL), the expectation is that only
-            // the top half is visible, which requires us to keep the clip rect at the bottom of the row.
-            // (Vice versa for the bottom half of a double height row.)
-            if (row->lineRendition >= LineRendition::DoubleHeightTop)
-            {
-                D2D1_RECT_F clipRect{ 0, 0, static_cast<f32>(p.s->targetSize.x), static_cast<f32>(p.s->targetSize.y) };
-                if (row->lineRendition == LineRendition::DoubleHeightTop)
-                {
-                    clipRect.bottom = static_cast<f32>(row->dirtyBottom);
-                }
-                else
-                {
-                    clipRect.top = static_cast<f32>(row->dirtyTop);
-                }
-                _renderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
-            }
-
-            baselineY = _drawTextPrepareLineRendition(p, baselineY, row->lineRendition);
+            baselineY = _drawTextPrepareLineRendition(p, row, baselineY);
         }
 
         for (const auto& m : row->mappings)
@@ -281,12 +264,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
 
         if (row->lineRendition != LineRendition::SingleWidth)
         {
-            _drawTextResetLineRendition();
-
-            if (row->lineRendition >= LineRendition::DoubleHeightTop)
-            {
-                _renderTarget->PopAxisAlignedClip();
-            }
+            _drawTextResetLineRendition(row);
         }
 
         if (p.invalidatedRows.contains(y))
@@ -305,8 +283,9 @@ void BackendD2D::_drawText(RenderingPayload& p)
     }
 }
 
-f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, f32 baselineY, LineRendition lineRendition) const noexcept
+f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, const ShapedRow* row, f32 baselineY) const noexcept
 {
+    const auto lineRendition = row->lineRendition;
     D2D1_MATRIX_3X2_F transform{
         .m11 = 2.0f,
         .m22 = 1.0f,
@@ -314,25 +293,42 @@ f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, f32 bas
 
     if (lineRendition >= LineRendition::DoubleHeightTop)
     {
+        D2D1_RECT_F clipRect{ 0, 0, static_cast<f32>(p.s->targetSize.x), static_cast<f32>(p.s->targetSize.y) };
+
         transform.m22 = 2.0f;
         transform.dy = -1.0f * (baselineY + p.s->font->descender);
 
+        // If you print the top half of a double height row (DECDHL), the expectation is that only
+        // the top half is visible, which requires us to keep the clip rect at the bottom of the row.
+        // (Vice versa for the bottom half of a double height row.)
         if (lineRendition == LineRendition::DoubleHeightTop)
         {
             const auto delta = static_cast<f32>(p.s->font->cellSize.y);
             baselineY += delta;
             transform.dy -= delta;
+            clipRect.bottom = static_cast<f32>(row->dirtyBottom);
         }
+        else
+        {
+            clipRect.top = static_cast<f32>(row->dirtyTop);
+        }
+
+        _renderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
     }
 
     _renderTarget->SetTransform(&transform);
     return baselineY;
 }
 
-void BackendD2D::_drawTextResetLineRendition() const noexcept
+void BackendD2D::_drawTextResetLineRendition(const ShapedRow* row) const noexcept
 {
     static constexpr D2D1_MATRIX_3X2_F identity{ .m11 = 1, .m22 = 1 };
     _renderTarget->SetTransform(&identity);
+
+    if (row->lineRendition >= LineRendition::DoubleHeightTop)
+    {
+        _renderTarget->PopAxisAlignedClip();
+    }
 }
 
 // Returns the theoretical/design design size of the given `DWRITE_GLYPH_RUN`, relative the the given baseline origin.

@@ -347,6 +347,13 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
     _softFontBitmap.reset();
 }
 
+void BackendD3D::_d2dRenderTargetUpdateFontSettings(const RenderingPayload& p) const noexcept
+{
+    const auto& font = *p.s->font;
+    _d2dRenderTarget->SetDpi(font.dpi, font.dpi);
+    _d2dRenderTarget->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(font.antialiasingMode));
+}
+
 void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
 {
     _customRenderTargetView.reset();
@@ -520,13 +527,6 @@ void BackendD3D::_recreateBackgroundColorBitmap(const RenderingPayload& p)
     THROW_IF_FAILED(p.device->CreateTexture2D(&desc, nullptr, _backgroundBitmap.addressof()));
     THROW_IF_FAILED(p.device->CreateShaderResourceView(_backgroundBitmap.get(), nullptr, _backgroundBitmapView.addressof()));
     _backgroundBitmapGeneration = {};
-}
-
-void BackendD3D::_d2dRenderTargetUpdateFontSettings(const RenderingPayload& p) const noexcept
-{
-    const auto& font = *p.s->font;
-    _d2dRenderTarget->SetDpi(font.dpi, font.dpi);
-    _d2dRenderTarget->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(font.antialiasingMode));
 }
 
 void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
@@ -720,69 +720,7 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
 
     if (u != _rectPacker.width || v != _rectPacker.height)
     {
-        _d2dRenderTarget.reset();
-        _d2dRenderTarget4.reset();
-        _glyphAtlas.reset();
-        _glyphAtlasView.reset();
-
-        {
-            const D3D11_TEXTURE2D_DESC desc{
-                .Width = u,
-                .Height = v,
-                .MipLevels = 1,
-                .ArraySize = 1,
-                .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
-                .SampleDesc = { 1, 0 },
-                .BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET,
-            };
-            THROW_IF_FAILED(p.device->CreateTexture2D(&desc, nullptr, _glyphAtlas.addressof()));
-            THROW_IF_FAILED(p.device->CreateShaderResourceView(_glyphAtlas.get(), nullptr, _glyphAtlasView.addressof()));
-        }
-
-        {
-            const auto surface = _glyphAtlas.query<IDXGISurface>();
-
-            static constexpr D2D1_RENDER_TARGET_PROPERTIES props{
-                .type = D2D1_RENDER_TARGET_TYPE_DEFAULT,
-                .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
-            };
-            // ID2D1RenderTarget and ID2D1DeviceContext are the same and I'm tired of pretending they're not.
-            THROW_IF_FAILED(p.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, reinterpret_cast<ID2D1RenderTarget**>(_d2dRenderTarget.addressof())));
-            _d2dRenderTarget.try_query_to(_d2dRenderTarget4.addressof());
-
-            _d2dRenderTarget->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
-            // We don't really use D2D for anything except DWrite, but it
-            // can't hurt to ensure that everything it does is pixel aligned.
-            _d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-            // Ensure that D2D uses the exact same gamma as our shader uses.
-            _d2dRenderTarget->SetTextRenderingParams(_textRenderingParams.get());
-
-            _d2dRenderTargetUpdateFontSettings(p);
-        }
-
-        // We have our own glyph cache so Direct2D's cache doesn't help much.
-        // This saves us 1MB of RAM, which is not much, but also not nothing.
-        {
-            wil::com_ptr<ID2D1Device> device;
-            _d2dRenderTarget4->GetDevice(device.addressof());
-
-            device->SetMaximumTextureMemory(0);
-            if (const auto device4 = device.try_query<ID2D1Device4>())
-            {
-                device4->SetMaximumColorGlyphCacheMemory(0);
-            }
-        }
-
-        {
-            static constexpr D2D1_COLOR_F color{ 1, 1, 1, 1 };
-            THROW_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(&color, nullptr, _emojiBrush.put()));
-            THROW_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(&color, nullptr, _brush.put()));
-        }
-
-        ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
-        p.deviceContext->PSSetShaderResources(0, 2, &resources[0]);
-
-        _rectPackerData = Buffer<stbrp_node>{ u };
+        _resizeGlyphAtlas(p, u, v);
     }
 
     stbrp_init_target(&_rectPacker, u, v, _rectPackerData.data(), _rectPackerData.size());
@@ -796,6 +734,73 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
     _d2dRenderTarget->Clear();
 
     _fontChangedResetGlyphAtlas = false;
+}
+
+void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const u16 v)
+{
+    _d2dRenderTarget.reset();
+    _d2dRenderTarget4.reset();
+    _glyphAtlas.reset();
+    _glyphAtlasView.reset();
+
+    {
+        const D3D11_TEXTURE2D_DESC desc{
+            .Width = u,
+            .Height = v,
+            .MipLevels = 1,
+            .ArraySize = 1,
+            .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
+            .SampleDesc = { 1, 0 },
+            .BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET,
+        };
+        THROW_IF_FAILED(p.device->CreateTexture2D(&desc, nullptr, _glyphAtlas.addressof()));
+        THROW_IF_FAILED(p.device->CreateShaderResourceView(_glyphAtlas.get(), nullptr, _glyphAtlasView.addressof()));
+    }
+
+    {
+        const auto surface = _glyphAtlas.query<IDXGISurface>();
+
+        static constexpr D2D1_RENDER_TARGET_PROPERTIES props{
+            .type = D2D1_RENDER_TARGET_TYPE_DEFAULT,
+            .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
+        };
+        // ID2D1RenderTarget and ID2D1DeviceContext are the same and I'm tired of pretending they're not.
+        THROW_IF_FAILED(p.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, reinterpret_cast<ID2D1RenderTarget**>(_d2dRenderTarget.addressof())));
+        _d2dRenderTarget.try_query_to(_d2dRenderTarget4.addressof());
+
+        _d2dRenderTarget->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
+        // We don't really use D2D for anything except DWrite, but it
+        // can't hurt to ensure that everything it does is pixel aligned.
+        _d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+        // Ensure that D2D uses the exact same gamma as our shader uses.
+        _d2dRenderTarget->SetTextRenderingParams(_textRenderingParams.get());
+
+        _d2dRenderTargetUpdateFontSettings(p);
+    }
+
+    // We have our own glyph cache so Direct2D's cache doesn't help much.
+    // This saves us 1MB of RAM, which is not much, but also not nothing.
+    {
+        wil::com_ptr<ID2D1Device> device;
+        _d2dRenderTarget4->GetDevice(device.addressof());
+
+        device->SetMaximumTextureMemory(0);
+        if (const auto device4 = device.try_query<ID2D1Device4>())
+        {
+            device4->SetMaximumColorGlyphCacheMemory(0);
+        }
+    }
+
+    {
+        static constexpr D2D1_COLOR_F color{ 1, 1, 1, 1 };
+        THROW_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(&color, nullptr, _emojiBrush.put()));
+        THROW_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(&color, nullptr, _brush.put()));
+    }
+
+    ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
+    p.deviceContext->PSSetShaderResources(0, 2, &resources[0]);
+
+    _rectPackerData = Buffer<stbrp_node>{ u };
 }
 
 void BackendD3D::_markStateChange(ID3D11BlendState* blendState)
