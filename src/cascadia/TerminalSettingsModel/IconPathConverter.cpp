@@ -297,8 +297,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (commaIndex != std::wstring::npos)
         {
             // Convert the string iconIndex to an int
-            const auto index = til::to_ulong(pathView.substr(commaIndex + 1));
-            if (index == til::to_ulong_error)
+            const auto indexString = pathView.substr(commaIndex + 1);
+            std::wstringstream stringStream;
+            stringStream << indexString;
+            int index = 0;
+            stringStream >> index;
+            if (index == 0)
             {
                 return std::nullopt;
             }
