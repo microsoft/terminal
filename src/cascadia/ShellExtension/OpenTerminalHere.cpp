@@ -115,7 +115,8 @@ HRESULT OpenTerminalHere::GetState(IShellItemArray* psiItemArray,
 
     SFGAOF attributes;
     const bool isFileSystemItem = psi && (psi->GetAttributes(SFGAO_FILESYSTEM, &attributes) == S_OK);
-    *pCmdState = isFileSystemItem ? ECS_ENABLED : ECS_HIDDEN;
+    const bool isCompressed = psi && (psi->GetAttributes(SFGAO_FOLDER | SFGAO_STREAM, &attributes) == S_OK);
+    *pCmdState = isFileSystemItem && !isCompressed ? ECS_ENABLED : ECS_HIDDEN;
 
     return S_OK;
 }
