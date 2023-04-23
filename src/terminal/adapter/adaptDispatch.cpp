@@ -3048,6 +3048,17 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         _api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
         return true;
+    case DispatchTypes::WindowManipulationType::Aaa:
+        //_api.GetTextBuffer().TriggerRedrawAll();
+    {
+        const auto viewport = _api.GetViewport();
+        const auto width = viewport.width();
+        const auto height = viewport.height();
+        const std::wstring wstr = fmt::format(L"\033[8;{};{}t", height, width);
+        std::wstring_view wstr_view(wstr);
+        _api.ReturnResponse(wstr_view);
+        return true;
+    }
     default:
         return false;
     }
