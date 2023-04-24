@@ -2309,54 +2309,56 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _contextMenuBufferPosition = _terminal->GetViewport().Origin() + viewportRelativeCharacterPosition;
     }
 
-    void ControlCore::ContextMenuSelectCommand()
+    void ControlCore::_contextMenuSelectMark(
+        const til::point& pos,
+        const std::function<bool(const DispatchTypes::ScrollMark&)>& filter,
+        const std::function<til::point_span(const DispatchTypes::ScrollMark&)>& getSpan)
     {
-        const auto& marks{ _terminal->GetScrollMarks() };
-        for (auto&& m : marks)
+        // Do nothing if the caller didn't give us a way to get the span to select for this mark.
+        if (!getSpan)
         {
-            if (!m.HasCommand())
-            {
-                continue;
-            }
-            // If they clicked _anywhere_ in the mark...
-            const auto [markStart, markEnd] = m.GetExtent();
-            if (markStart <= _contextMenuBufferPosition &&
-                markEnd >= _contextMenuBufferPosition)
-            {
-                // Select the command
-                const auto start = m.end;
-                auto end = *m.commandEnd;
-                _selectSpan(til::point_span{ start, end });
-                return;
-            }
+            return;
         }
-    }
-    void ControlCore::ContextMenuSelectOutput()
-    {
         const auto& marks{ _terminal->GetScrollMarks() };
         for (auto&& m : marks)
         {
-            if (!m.HasOutput())
+            // If the caller gave us a way to filter marks, check that now.
+            // This can be used to filter to only marks that have a command, or output.
+            if (filter && filter(m))
             {
                 continue;
             }
             // If they clicked _anywhere_ in the mark...
             const auto [markStart, markEnd] = m.GetExtent();
-            if (markStart <= _contextMenuBufferPosition &&
-                markEnd >= _contextMenuBufferPosition)
+            if (markStart <= pos &&
+                markEnd >= pos)
             {
-                // Select the output
-                const auto start = *m.commandEnd;
-                auto end = *m.outputEnd;
-                _selectSpan(til::point_span{ start, end });
+                // ... select the part of the mark the caller told us about.
+                _selectSpan(getSpan(m));
+                // And quick bail
                 return;
             }
         }
     }
 
+    void ControlCore::ContextMenuSelectCommand()
+    {
+        _contextMenuSelectMark(
+            _contextMenuBufferPosition,
+            [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasCommand(); },
+            [](const DispatchTypes::ScrollMark& m) { return til::point_span{ m.end, *m.commandEnd }; });
+    }
+    void ControlCore::ContextMenuSelectOutput()
+    {
+        _contextMenuSelectMark(
+            _contextMenuBufferPosition,
+            [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasOutput(); },
+            [](const DispatchTypes::ScrollMark& m) { return til::point_span{ *m.commandEnd, *m.outputEnd }; });
+    }
+
     bool ControlCore::_clickedOnMark(
         const til::point& pos,
-        std::function<bool(const DispatchTypes::ScrollMark&)> filter)
+        const std::function<bool(const DispatchTypes::ScrollMark&)>& filter)
     {
         // Don't show this if the click was on the selection
         if (_terminal->IsSelectionActive() &&

@@ -361,7 +361,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _focusChanged(bool focused);
 
         void _selectSpan(til::point_span s);
-        bool _clickedOnMark(const til::point& pos, std::function<bool(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&)> filter);
+
+        void _contextMenuSelectMark(
+            const til::point& pos,
+            const std::function<bool(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&)>& filter,
+            const std::function<til::point_span(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&)>& getSpan);
+
+        bool _clickedOnMark(const til::point& pos, const std::function<bool(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&)>& filter);
 
         inline bool _IsClosing() const noexcept
         {
