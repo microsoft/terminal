@@ -140,7 +140,7 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
     std::thread t([weakThis, window]() {
         try
         {
-            const auto cleanup = wil::scope_exit([&]() {
+            auto cleanup = wil::scope_exit([&]() {
                 if (auto self{ weakThis.lock() })
                 {
                     self->_windowExitedHandler(window->Peasant().GetID());
