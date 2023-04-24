@@ -156,7 +156,7 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
 
             window->RunMessagePump();
 
-            // Manually trigger the cleaup callback. This will ensure that we
+            // Manually trigger the cleanup callback. This will ensure that we
             // remove the window from our list of windows, before we release the
             // AppHost (and subsequently, the host's Logic() member that we use
             // elsewhere).
