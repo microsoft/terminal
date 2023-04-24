@@ -589,7 +589,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         {
             return outputEnd.has_value() && *outputEnd != *commandEnd;
         }
-        std::pair<til::point, til::point> GetExtent() const noexcept
+        std::pair<til::point, til::point> GetExtent() const
         {
             til::point realEnd{ til::coalesce_value(outputEnd, commandEnd, end) };
             return std::make_pair(til::point{ start }, realEnd);
