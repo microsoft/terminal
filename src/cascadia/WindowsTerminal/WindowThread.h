@@ -15,6 +15,7 @@ public:
     winrt::TerminalApp::TerminalWindow Logic();
     void CreateHost();
     int RunMessagePump();
+    void RundownForExit();
 
     winrt::Microsoft::Terminal::Remoting::Peasant Peasant();
 

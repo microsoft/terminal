@@ -155,6 +155,16 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
             }
 
             window->RunMessagePump();
+
+            // Manually trigger the cleaup callback. This will ensure that we
+            // remove the window from our list of windows, before we release the
+            // AppHost (and subsequently, the host's Logic() member that we use
+            // elsewhere).
+            cleanup.reset();
+
+            // Now that we no longer care about this thread's window, let it
+            // release it's app host and flush the rest of the XAML queue.
+            window->RundownForExit();
         }
         CATCH_LOG()
     });
