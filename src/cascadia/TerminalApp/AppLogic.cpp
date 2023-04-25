@@ -210,17 +210,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Called around the codebase to discover if this is a UWP where we need to turn off specific settings.
-    // Arguments:
-    // - <none> - reports internal state
-    // Return Value:
-    // - True if UWP, false otherwise.
-    bool AppLogic::IsUwp() const noexcept
-    {
-        return _isUwp;
-    }
-
-    // Method Description:
     // - Called around the codebase to discover if Terminal is running elevated
     // Arguments:
     // - <none> - reports internal state
@@ -233,18 +222,6 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::CanDragDrop() const noexcept
     {
         return _canDragDrop;
-    }
-
-    // Method Description:
-    // - Called by UWP context invoker to let us know that we may have to change some of our behaviors
-    //   for being a UWP
-    // Arguments:
-    // - <none> (sets to UWP = true, one way change)
-    // Return Value:
-    // - <none>
-    void AppLogic::RunAsUwp()
-    {
-        _isUwp = true;
     }
 
     // Method Description:
@@ -263,13 +240,6 @@ namespace winrt::TerminalApp::implementation
         WINRT_ASSERT(_loadedInitialSettings);
 
         _root->DialogPresenter(*this);
-
-        // In UWP mode, we cannot handle taking over the title bar for tabs,
-        // so this setting is overridden to false no matter what the preference is.
-        if (_isUwp)
-        {
-            _settings.GlobalSettings().ShowTabsInTitlebar(false);
-        }
 
         // Pay attention, that even if some command line arguments were parsed (like launch mode),
         // we will not use the startup actions from settings.
@@ -816,7 +786,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            auto newSettings = _isUwp ? CascadiaSettings::LoadUniversal() : CascadiaSettings::LoadAll();
+            auto newSettings = CascadiaSettings::LoadAll();
 
             if (newSettings.GetLoadingError())
             {

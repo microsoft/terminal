@@ -59,8 +59,6 @@ namespace winrt::TerminalApp::implementation
         STDMETHODIMP Initialize(HWND hwnd);
 
         void Create();
-        bool IsUwp() const noexcept;
-        void RunAsUwp();
         bool IsRunningElevated() const noexcept;
         bool CanDragDrop() const noexcept;
         void ReloadSettings();
@@ -149,7 +147,6 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(SystemMenuChangeRequested, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SystemMenuChangeArgs);
 
     private:
-        bool _isUwp{ false };
         bool _isElevated{ false };
         bool _canDragDrop{ false };
 

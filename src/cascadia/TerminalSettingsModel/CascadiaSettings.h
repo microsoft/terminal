@@ -99,7 +99,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         static Model::CascadiaSettings LoadDefaults();
         static Model::CascadiaSettings LoadAll();
-        static Model::CascadiaSettings LoadUniversal();
 
         static winrt::hstring SettingsPath();
         static winrt::hstring DefaultSettingsPath();
