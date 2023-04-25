@@ -251,8 +251,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Bubble this up, so our new control knows how big we want the font.
         _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, true);
 
-        // Turn the rendering back on now that we're ready to go.
-        _renderer->EnablePainting();
+        // The renderer will be re-enabled in Initialize
+
         _AttachedHandlers(*this, nullptr);
     }
 
