@@ -296,13 +296,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (commaIndex != std::wstring::npos)
         {
-            // Convert the string iconIndex to an int
-            const auto indexString = pathView.substr(commaIndex + 1);
-            std::wstringstream stringStream;
-            stringStream << indexString;
-            int index = 0;
-            stringStream >> index;
-            if (index == 0)
+            // Convert the string iconIndex to a signed int to support negative numbers which represent an Icon's ID.
+            const auto index{ til::to_int(pathView.substr(commaIndex + 1)) };
+            if (index == til::to_int_error)
             {
                 return std::nullopt;
             }
