@@ -533,7 +533,7 @@ CATCH_RETURN();
     // understand). We won't immediately _Flush to the terminal - that might
     // cause flickering (where we've buffered some state but not the whole
     // "frame" as specified by the app). We'll just immediately buffer this
-    // sequence, and fluch it when the render thread comes around to paint the
+    // sequence, and flush it when the render thread comes around to paint the
     // frame normally.
 
     return S_OK;
