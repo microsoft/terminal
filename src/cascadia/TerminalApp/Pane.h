@@ -241,11 +241,17 @@ private:
     std::weak_ptr<Pane> _parentChildPath{};
 
     bool _lastActive{ false };
-    winrt::event_token _connectionStateChangedToken{ 0 };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
-    winrt::event_token _warningBellToken{ 0 };
-    winrt::event_token _closeTerminalRequestedToken{ 0 };
+
+    struct ControlEventTokens
+    {
+        winrt::event_token _connectionStateChanged{ 0 };
+        winrt::event_token _warningBell{ 0 };
+        winrt::event_token _closeTerminalRequested{ 0 };
+    } _controlEvents;
+    void _setupControlEvents();
+    void _removeControlEvents();
 
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
