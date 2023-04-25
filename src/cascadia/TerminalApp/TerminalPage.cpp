@@ -2980,6 +2980,14 @@ namespace winrt::TerminalApp::implementation
             original->SetActive();
         }
 
+        resultPane->RestartTerminalRequested([this](const auto& pane) {
+            auto connection = _duplicateConnectionForRestart(pane);
+            if (connection)
+            {
+                pane->GetTerminalControl().ReplaceConnection(connection);
+            }
+        });
+
         return resultPane;
     }
 

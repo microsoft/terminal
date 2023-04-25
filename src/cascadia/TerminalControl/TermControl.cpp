@@ -104,6 +104,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.ConnectionStateChanged = _core.ConnectionStateChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleConnectionStateChanged });
         _revokers.ShowWindowChanged = _core.ShowWindowChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleShowWindowChanged });
         _revokers.CloseTerminalRequested = _core.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCloseTerminalRequested });
+        _revokers.RestartTerminalRequested = _core.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleRestartTerminalRequested });
 
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
 
@@ -260,6 +261,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     uint64_t TermControl::ContentId() const
     {
         return _interactivity.Id();
+    }
+
+    void TermControl::ReplaceConnection(const TerminalConnection::ITerminalConnection& newConnection)
+    {
+        _core.ReplaceConnection(newConnection);
     }
 
     void TermControl::_throttledUpdateScrollbar(const ScrollBarUpdate& update)

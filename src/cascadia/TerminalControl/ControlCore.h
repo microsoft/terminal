@@ -220,6 +220,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t OwningHwnd();
         void OwningHwnd(uint64_t owner);
 
+        void ReplaceConnection(const TerminalConnection::ITerminalConnection& connection);
+
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
 
@@ -248,6 +250,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(CloseTerminalRequested,    IInspectable, IInspectable);
+        TYPED_EVENT(RestartTerminalRequested,    IInspectable, IInspectable);
 
         TYPED_EVENT(Attached,                  IInspectable, IInspectable);
         // clang-format on
@@ -348,8 +351,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _isBackgroundTransparent();
         void _focusChanged(bool focused);
-
-        void _setConnection(const TerminalConnection::ITerminalConnection& connection);
 
         inline bool _IsClosing() const noexcept
         {
