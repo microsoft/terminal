@@ -235,10 +235,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _isBackgroundLight{ false };
         bool _detached{ false };
 
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalPrimaryElements{ nullptr };
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSecondaryElements{ nullptr };
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedPrimaryElements{ nullptr };
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedSecondaryElements{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalPrimaryElements{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalSecondaryElements{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedPrimaryElements{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedSecondaryElements{ nullptr };
 
         inline bool _IsClosing() const noexcept
         {
@@ -349,6 +349,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _PasteCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _CopyCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _SearchCommandHandler(const IInspectable& sender, const IInspectable& args);
+
+        void _SelectCommandHandler(const IInspectable& sender, const IInspectable& args);
+        void _SelectOutputHandler(const IInspectable& sender, const IInspectable& args);
 
         struct Revokers
         {
