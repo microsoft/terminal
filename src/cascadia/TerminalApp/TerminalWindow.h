@@ -65,8 +65,6 @@ namespace winrt::TerminalApp::implementation
 
         void Create();
 
-        bool IsUwp() const noexcept;
-
         void Quit();
 
         winrt::fire_and_forget UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
