@@ -18,9 +18,8 @@
 #endif
 
 // The following files are generated at build time into the "Generated Files" directory.
-// defaults(-universal).h is a file containing the default json settings in a std::string_view.
+// defaults.h is a file containing the default json settings in a std::string_view.
 #include "defaults.h"
-#include "defaults-universal.h"
 // userDefault.h is like the above, but with a default template for the user's settings.json.
 #include <LegacyProfileGeneratorNamespaces.h>
 
@@ -1028,17 +1027,6 @@ void CascadiaSettings::_researchOnLoad()
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
-}
-
-// Function Description:
-// - Loads a batch of settings curated for the Universal variant of the terminal app
-// Arguments:
-// - <none>
-// Return Value:
-// - a unique_ptr to a CascadiaSettings with the connection types and settings for Universal terminal
-Model::CascadiaSettings CascadiaSettings::LoadUniversal()
-{
-    return *winrt::make_self<CascadiaSettings>(std::string_view{}, DefaultUniversalJson);
 }
 
 // Function Description:
