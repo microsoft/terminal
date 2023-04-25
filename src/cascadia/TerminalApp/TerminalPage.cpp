@@ -3109,46 +3109,59 @@ namespace winrt::TerminalApp::implementation
         // Begin Theme handling
         _updateThemeColors();
 
+        const auto tab{ _GetFocusedTab() };
+        _updateTabsCloseButton(tab);
+    }
+
+    void TerminalPage::_updateTabsCloseButton(const winrt::TerminalApp::TabBase& focusedTab)
+    {
         // Update the state of the CloseButtonOverlayMode property of
         // our TabView, to match the tab.showCloseButton property in the theme.
         //
         // Also update every tab's individual IsClosable to match.
-        //
-        // This is basically the same as _updateTabCloseButton, but with some
-        // code moved around to better facilitate updating every tab view item
-        // at once
-        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
+        const auto theme = _settings.GlobalSettings().CurrentTheme();
+        const auto visibility = theme && theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
+
+        for (const auto& tab : _tabs)
         {
-            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
-
-            for (const auto& tab : _tabs)
-            {
-                switch (visibility)
-                {
-                case Settings::Model::TabCloseButtonVisibility::Never:
-                    tab.TabViewItem().IsClosable(false);
-                    break;
-                case Settings::Model::TabCloseButtonVisibility::Hover:
-                    tab.TabViewItem().IsClosable(true);
-                    break;
-                default:
-                    tab.TabViewItem().IsClosable(true);
-                    break;
-                }
-            }
-
             switch (visibility)
             {
             case Settings::Model::TabCloseButtonVisibility::Never:
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
+                tab.TabViewItem().IsClosable(false);
                 break;
             case Settings::Model::TabCloseButtonVisibility::Hover:
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
+                tab.TabViewItem().IsClosable(true);
                 break;
-            default:
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Always);
+            case Settings::Model::TabCloseButtonVisibility::ActiveOnly:
+            {
+                if (focusedTab && focusedTab == tab)
+                {
+                    tab.TabViewItem().IsClosable(true);
+                }
+                else
+                {
+                    tab.TabViewItem().IsClosable(false);
+                }
                 break;
             }
+            default:
+                tab.TabViewItem().IsClosable(true);
+                break;
+            }
+        }
+
+        switch (visibility)
+        {
+        case Settings::Model::TabCloseButtonVisibility::Never:
+            _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
+            break;
+        case Settings::Model::TabCloseButtonVisibility::Hover:
+            _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
+            break;
+        case Settings::Model::TabCloseButtonVisibility::ActiveOnly:
+        default:
+            _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Always);
+            break;
         }
     }
 
@@ -3669,9 +3682,6 @@ namespace winrt::TerminalApp::implementation
 
             auto tabViewItem = newTabImpl->TabViewItem();
             _tabView.TabItems().Append(tabViewItem);
-
-            // Update the state of the close button to match the current theme
-            _updateTabCloseButton(tabViewItem);
 
             tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 
@@ -4407,38 +4417,6 @@ namespace winrt::TerminalApp::implementation
         // In theory, it would be convenient to also change these for the
         // inactive tabs as well, but we're leaving that as a follow up.
         _SetNewTabButtonColor(bgColor, bgColor);
-    }
-
-    void TerminalPage::_updateTabCloseButton(const winrt::Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem)
-    {
-        // Update the state of the close button to match the current theme.
-        // IMPORTANT: Should be called AFTER the tab view item is added to the TabView.
-        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
-        {
-            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
-
-            // Update both the tab item's IsClosable, but also the TabView's
-            // CloseButtonOverlayMode here. Because the TabViewItem was created
-            // outside the context of the TabView, it doesn't get the
-            // CloseButtonOverlayMode assigned on creation. We have to update
-            // that property again here, when we add the tab, so that the
-            // TabView will re-apply the value.
-            switch (visibility)
-            {
-            case Settings::Model::TabCloseButtonVisibility::Never:
-                tabViewItem.IsClosable(false);
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
-                break;
-            case Settings::Model::TabCloseButtonVisibility::Hover:
-                tabViewItem.IsClosable(true);
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
-                break;
-            default:
-                tabViewItem.IsClosable(true);
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Always);
-                break;
-            }
-        }
     }
 
     // Function Description:
