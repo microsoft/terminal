@@ -223,7 +223,6 @@ void BackendD3D::Render(RenderingPayload& p)
     _drawBackground(p);
     _drawCursorBackground(p);
     _drawText(p);
-    //_drawCursorPart2(p);
     _drawSelection(p);
 #if ATLAS_DEBUG_SHOW_DIRTY
     _debugShowDirty(p);
@@ -806,7 +805,8 @@ BackendD3D::QuadInstance& BackendD3D::_appendQuad()
 
 void BackendD3D::_bumpInstancesSize()
 {
-    const auto newSize = std::max<size_t>(256, _instances.size() * 2);
+    auto newSize = std::max(_instancesCount, _instances.size() * 2);
+    newSize = std::max(size_t{ 256 }, newSize);
     Expects(newSize > _instances.size());
 
     // Our render loop heavily relies on memcpy() which is up to between 1.5x (Intel)
@@ -1023,7 +1023,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
 
         if (!row->gridLineRanges.empty())
         {
-            _drawGridlineRow(p, row, y);
+            _drawGridlines(p, y);
         }
 
         if (p.invalidatedRows.contains(y))
@@ -1484,8 +1484,10 @@ void BackendD3D::_splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasF
     }
 }
 
-void BackendD3D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y)
+void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
 {
+    const auto row = p.rows[y];
+
     const auto horizontalShift = static_cast<u8>(row->lineRendition != LineRendition::SingleWidth);
     const auto verticalShift = static_cast<u8>(row->lineRendition >= LineRendition::DoubleHeightTop);
 
@@ -1683,22 +1685,15 @@ void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
     for (const auto& c : _cursorRects)
     {
         _appendQuad() = {
-            .shadingType = ShadingType::SolidFill,
+            .shadingType = ShadingType::Cursor,
             .position = c.position,
             .size = c.size,
             .color = c.color,
         };
     }
-
-    if (cursorColor == 0xffffffff)
-    {
-        for (auto& c : _cursorRects)
-        {
-            c.color = 0xffffffff;
-        }
-    }
 }
 
+// TODO: _drawCursorInvert() only creates new quads and thus draws on top of the existing glyphs, making them too fat
 void BackendD3D::_drawCursorInvert()
 {
     // NOTE: _appendQuad() may reallocate the _instances vector. It's important to iterate
@@ -1718,28 +1713,29 @@ void BackendD3D::_drawCursorInvert()
             const auto& it = _instances[i];
             const auto shadingType = it.shadingType;
 
-            if (shadingType < ShadingType::TextGrayscale || shadingType > ShadingType::TextClearType)
+            if (shadingType >= ShadingType::TextGrayscale && shadingType <= ShadingType::SolidFill)
             {
-                continue;
-            }
+                const int instanceL = it.position.x;
+                const int instanceT = it.position.y;
+                const int instanceR = instanceL + it.size.x;
+                const int instanceB = instanceT + it.size.y;
 
-            const int instanceL = it.position.x;
-            const int instanceT = it.position.y;
-            const int instanceR = instanceL + it.size.x;
-            const int instanceB = instanceT + it.size.y;
-
-            if (instanceL < cursorR && cursorL < instanceR && instanceT < cursorB && cursorT < instanceB)
-            {
-                // The _instances vector is _huge_ (easily up to 100k items) whereas only 1-2 items will actually overlap
-                // with the cursor. --> Make this loop more compact by putting as much as possible into a function call.
-                _drawCursorInvertSlowPath(c, it);
+                if (instanceL < cursorR && cursorL < instanceR && instanceT < cursorB && cursorT < instanceB)
+                {
+                    // The _instances vector is _huge_ (easily up to 100k items) whereas only 1-2 items will actually overlap
+                    // with the cursor. --> Make this loop more compact by putting as much as possible into a function call.
+                    _drawCursorInvertSlowPath(c, i);
+                }
             }
         }
     }
 }
 
-void BackendD3D::_drawCursorInvertSlowPath(const CursorRect& c, const QuadInstance& it)
+void BackendD3D::_drawCursorInvertSlowPath(const CursorRect& c, size_t position)
 {
+    // NOTE: _bumpInstancesSize may reallocate below. Create a copy of `it` beforehand.
+    const auto it = _instances[position];
+
     const int cursorL = c.position.x;
     const int cursorT = c.position.y;
     const int cursorR = cursorL + c.size.x;
@@ -1750,14 +1746,69 @@ void BackendD3D::_drawCursorInvertSlowPath(const CursorRect& c, const QuadInstan
     const int instanceR = instanceL + it.size.x;
     const int instanceB = instanceT + it.size.y;
 
-    const auto l = std::max<int>(cursorL, instanceL);
-    const auto t = std::max<int>(cursorT, instanceT);
-    const auto w = std::min<int>(cursorR, instanceR) - l;
-    const auto h = std::min<int>(cursorB, instanceB) - t;
+    const auto l = std::max(cursorL, instanceL);
+    const auto t = std::max(cursorT, instanceT);
+    const auto r = std::min(cursorR, instanceR);
+    const auto b = std::min(cursorB, instanceB);
+
+    // Cut a hole into the original glyph and split it up. This ensures the original glyph
+    // doesn't dirty the cursor background with its un-inverted/reversed color.
+    rect<int> cutouts[4];
+    size_t cutoutCount = 0;
+    if (instanceT < t)
+    {
+        cutouts[cutoutCount++] = { instanceL, instanceT, instanceR, t };
+    }
+    if (b < instanceB)
+    {
+        cutouts[cutoutCount++] = { instanceL, b, instanceR, instanceB };
+    }
+    if (instanceL < l)
+    {
+        cutouts[cutoutCount++] = { instanceL, t, l, b };
+    }
+    if (r < instanceR)
+    {
+        cutouts[cutoutCount++] = { r, t, instanceR, b };
+    }
+
+    if (cutoutCount > 1)
+    {
+        const auto delta = cutoutCount - 1;
+
+        _instancesCount += delta;
+        if (_instancesCount >= _instances.size())
+        {
+            _bumpInstancesSize();
+        }
+
+        // Make place for cutoutCount-many items at position.
+        const auto src = _instances.data() + position;
+        memmove(src + delta, src, (_instancesCount - position) * sizeof(QuadInstance));
+    }
+
+    for (size_t i = 0; i < cutoutCount; ++i)
+    {
+        const auto& cutout = cutouts[i];
+        auto& target = _instances[position + i];
+        const auto w = cutout.right - cutout.left;
+        const auto h = cutout.bottom - cutout.top;
+        const auto u = it.texcoord.x + cutout.left - instanceL;
+        const auto v = it.texcoord.y + cutout.top - instanceT;
+
+        target = it;
+        target.position = { static_cast<i16>(cutout.left), static_cast<i16>(cutout.top) };
+        target.size = { static_cast<u16>(w), static_cast<u16>(h) };
+        target.texcoord = { static_cast<u16>(u), static_cast<u16>(v) };
+    }
+
+    const auto w = r - l;
+    const auto h = b - t;
     const auto u = it.texcoord.x + l - instanceL;
     const auto v = it.texcoord.y + t - instanceT;
+    auto& target = cutoutCount ? _appendQuad() : _instances[position];
 
-    _appendQuad() = {
+    target = {
         it.shadingType,
         { static_cast<i16>(l), static_cast<i16>(t) },
         { static_cast<u16>(w), static_cast<u16>(h) },

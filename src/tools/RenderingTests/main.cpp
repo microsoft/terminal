@@ -149,6 +149,8 @@ int main()
         };
         static constexpr VTAttributeTest vtAttributeTests[]{
             { L"ANSI escape SGR:", 0 },
+            { L"bold", 1 },
+            { L"faint", 2 },
             { L"italic", 3 },
             { L"underline", 4 },
             { L"reverse", 7 },

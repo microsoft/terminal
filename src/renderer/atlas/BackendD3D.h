@@ -65,6 +65,7 @@ namespace Microsoft::Console::Render::Atlas
             DottedLine = 4,
             DottedLineWide = 5,
             SolidFill = 6,
+            Cursor = 7,
         };
 
         // NOTE: Don't initialize any members in this struct. This ensures that no
@@ -207,10 +208,10 @@ namespace Microsoft::Console::Render::Atlas
         bool _drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         void _drawGlyphPrepareRetry(const RenderingPayload& p);
         void _splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
-        void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
+        void _drawGridlines(const RenderingPayload& p, u16 y);
         void _drawCursorBackground(const RenderingPayload& p);
         ATLAS_ATTR_COLD void _drawCursorInvert();
-        ATLAS_ATTR_COLD void _drawCursorInvertSlowPath(const CursorRect& c, const QuadInstance& it);
+        ATLAS_ATTR_COLD void _drawCursorInvertSlowPath(const CursorRect& c, size_t position);
         void _drawSelection(const RenderingPayload& p);
         void _executeCustomShader(RenderingPayload& p);
 

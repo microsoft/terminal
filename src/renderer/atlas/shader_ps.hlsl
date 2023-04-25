@@ -85,7 +85,6 @@ Output main(PSData data) : SV_Target
         weights = color.aaaa;
         break;
     }
-    case SHADING_TYPE_SOLID_FILL:
     default:
     {
         color = premultiplyColor(data.color);
