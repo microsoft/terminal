@@ -152,8 +152,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ClearMark();
         void ClearAllMarks();
         void ScrollToMark(const Control::ScrollToMarkDirection& direction);
+
         void SelectCommand(const bool goUp);
         void SelectOutput(const bool goUp);
+
+        void ContextMenuSelectCommand();
+        void ContextMenuSelectOutput();
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -219,6 +223,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         uint64_t OwningHwnd();
         void OwningHwnd(uint64_t owner);
+
+        void AnchorContextMenu(til::point viewportRelativeCharacterPosition);
+
+        bool ShouldShowSelectCommand();
+        bool ShouldShowSelectOutput();
 
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
@@ -304,6 +313,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<til::throttled_func_trailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
 
+        til::point _contextMenuBufferPosition{ 0, 0 };
+
         void _setupDispatcherAndCallbacks();
 
         bool _setFontSizeUnderLock(float fontSize);
@@ -348,6 +359,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _isBackgroundTransparent();
         void _focusChanged(bool focused);
+
+        void _selectSpan(til::point_span s);
+
+        void _contextMenuSelectMark(
+            const til::point& pos,
+            const std::function<bool(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&)>& filter,
+            const std::function<til::point_span(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&)>& getSpan);
+
+        bool _clickedOnMark(const til::point& pos, const std::function<bool(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&)>& filter);
 
         inline bool _IsClosing() const noexcept
         {

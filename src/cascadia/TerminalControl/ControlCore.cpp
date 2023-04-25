@@ -2182,10 +2182,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void ControlCore::_selectSpan(til::point_span s)
+    {
+        const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
+        bufferSize.DecrementInBounds(s.end);
+
+        auto lock = _terminal->LockForWriting();
+        _terminal->SelectNewRegion(s.start, s.end);
+        _renderer->TriggerSelection();
+    }
+
     void ControlCore::SelectCommand(const bool goUp)
     {
         const til::point start = HasSelection() ? (goUp ? _terminal->GetSelectionAnchor() : _terminal->GetSelectionEnd()) :
                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
+
         std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
         const auto& marks{ _terminal->GetScrollMarks() };
 
@@ -2217,13 +2228,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto start = nearest->end;
             auto end = *nearest->commandEnd;
-
-            const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
-            bufferSize.DecrementInBounds(end);
-
-            auto lock = _terminal->LockForWriting();
-            _terminal->SelectNewRegion(start, end);
-            _renderer->TriggerSelection();
+            _selectSpan(til::point_span{ start, end });
         }
     }
 
@@ -2231,6 +2236,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const til::point start = HasSelection() ? (goUp ? _terminal->GetSelectionAnchor() : _terminal->GetSelectionEnd()) :
                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
+
         std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
         const auto& marks{ _terminal->GetScrollMarks() };
 
@@ -2256,13 +2262,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto start = *nearest->commandEnd;
             auto end = *nearest->outputEnd;
-
-            const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
-            bufferSize.DecrementInBounds(end);
-
-            auto lock = _terminal->LockForWriting();
-            _terminal->SelectNewRegion(start, end);
-            _renderer->TriggerSelection();
+            _selectSpan(til::point_span{ start, end });
         }
     }
 
@@ -2300,5 +2300,111 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _renderer->TriggerRedrawAll();
             }
         }
+    }
+
+    void ControlCore::AnchorContextMenu(const til::point viewportRelativeCharacterPosition)
+    {
+        // viewportRelativeCharacterPosition is relative to the current
+        // viewport, so adjust for that:
+        _contextMenuBufferPosition = _terminal->GetViewport().Origin() + viewportRelativeCharacterPosition;
+    }
+
+    void ControlCore::_contextMenuSelectMark(
+        const til::point& pos,
+        const std::function<bool(const DispatchTypes::ScrollMark&)>& filter,
+        const std::function<til::point_span(const DispatchTypes::ScrollMark&)>& getSpan)
+    {
+        // Do nothing if the caller didn't give us a way to get the span to select for this mark.
+        if (!getSpan)
+        {
+            return;
+        }
+        const auto& marks{ _terminal->GetScrollMarks() };
+        for (auto&& m : marks)
+        {
+            // If the caller gave us a way to filter marks, check that now.
+            // This can be used to filter to only marks that have a command, or output.
+            if (filter && filter(m))
+            {
+                continue;
+            }
+            // If they clicked _anywhere_ in the mark...
+            const auto [markStart, markEnd] = m.GetExtent();
+            if (markStart <= pos &&
+                markEnd >= pos)
+            {
+                // ... select the part of the mark the caller told us about.
+                _selectSpan(getSpan(m));
+                // And quick bail
+                return;
+            }
+        }
+    }
+
+    void ControlCore::ContextMenuSelectCommand()
+    {
+        _contextMenuSelectMark(
+            _contextMenuBufferPosition,
+            [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasCommand(); },
+            [](const DispatchTypes::ScrollMark& m) { return til::point_span{ m.end, *m.commandEnd }; });
+    }
+    void ControlCore::ContextMenuSelectOutput()
+    {
+        _contextMenuSelectMark(
+            _contextMenuBufferPosition,
+            [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasOutput(); },
+            [](const DispatchTypes::ScrollMark& m) { return til::point_span{ *m.commandEnd, *m.outputEnd }; });
+    }
+
+    bool ControlCore::_clickedOnMark(
+        const til::point& pos,
+        const std::function<bool(const DispatchTypes::ScrollMark&)>& filter)
+    {
+        // Don't show this if the click was on the selection
+        if (_terminal->IsSelectionActive() &&
+            _terminal->GetSelectionAnchor() <= pos &&
+            _terminal->GetSelectionEnd() >= pos)
+        {
+            return false;
+        }
+
+        // DO show this if the click was on a mark with a command
+        const auto& marks{ _terminal->GetScrollMarks() };
+        for (auto&& m : marks)
+        {
+            if (filter && filter(m))
+            {
+                continue;
+            }
+            const auto [start, end] = m.GetExtent();
+            if (start <= pos &&
+                end >= pos)
+            {
+                return true;
+            }
+        }
+
+        // Didn't click on a mark with a command - don't show.
+        return false;
+    }
+
+    // Method Description:
+    // * Don't show this if the click was on the _current_ selection
+    // * Don't show this if the click wasn't on a mark with at least a command
+    // * Otherwise yea, show it.
+    bool ControlCore::ShouldShowSelectCommand()
+    {
+        // Relies on the anchor set in AnchorContextMenu
+        return _clickedOnMark(_contextMenuBufferPosition,
+                              [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasCommand(); });
+    }
+
+    // Method Description:
+    // * Same as ShouldShowSelectCommand, but with the mark needing output
+    bool ControlCore::ShouldShowSelectOutput()
+    {
+        // Relies on the anchor set in AnchorContextMenu
+        return _clickedOnMark(_contextMenuBufferPosition,
+                              [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasOutput(); });
     }
 }
