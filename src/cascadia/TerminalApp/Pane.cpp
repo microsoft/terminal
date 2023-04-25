@@ -104,15 +104,12 @@ Pane::Pane(std::shared_ptr<Pane> first,
 
 void Pane::_setupControlEvents()
 {
-    _controlEvents._connectionStateChanged = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
-    _controlEvents._warningBell = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
-    _controlEvents._closeTerminalRequested = _control.CloseTerminalRequested({ this, &Pane::_CloseTerminalRequestedHandler });
+    _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &Pane::_ControlConnectionStateChangedHandler });
+    _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { this, &Pane::_ControlWarningBellHandler });
+    _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { this, &Pane::_CloseTerminalRequestedHandler });
 }
 void Pane::_removeControlEvents()
 {
-    _control.ConnectionStateChanged(_controlEvents._connectionStateChanged);
-    _control.WarningBell(_controlEvents._warningBell);
-    _control.CloseTerminalRequested(_controlEvents._closeTerminalRequested);
     _controlEvents = {};
 }
 
