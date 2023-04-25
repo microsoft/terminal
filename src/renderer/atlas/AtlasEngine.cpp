@@ -87,75 +87,88 @@ try
         _api.invalidatedRows.start = std::min(_api.invalidatedRows.start, _p.s->cellCount.y);
         _api.invalidatedRows.end = clamp(_api.invalidatedRows.end, _api.invalidatedRows.start, _p.s->cellCount.y);
     }
+
+    const auto allInvalid = _api.invalidatedRows == range<u16>{ 0, _p.s->cellCount.y };
+
+    // Avoid scrolling if everything's invalid anyways. This isn't here for performance or correctness
+    // (the code also works without this), but rather because it helps me reason about the way this works.
+    // For instance it ensures we don't pass a scroll rect to Present1() when effectively nothing is scrolling.
+    if (allInvalid)
+    {
+        _api.scrollOffset = 0;
+    }
+    else
     {
         const auto limit = gsl::narrow_cast<i16>(_p.s->cellCount.y & 0x7fff);
-        _api.scrollOffset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
-    }
+        const auto offset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
 
-    // Scroll the buffer by the given offset and mark the newly uncovered rows as "invalid".
-    if (const auto offset = _api.scrollOffset)
-    {
-        const auto nothingInvalid = _api.invalidatedRows.start == _api.invalidatedRows.end;
+        _api.scrollOffset = offset;
 
-        if (offset < 0)
+        // Scroll the buffer by the given offset and mark the newly uncovered rows as "invalid".
+        if (offset)
         {
-            // scrollOffset/offset = -1
-            // +----------+    +----------+
-            // |          |    | xxxxxxxxx|
-            // | xxxxxxxxx| -> |xxxxxxx   |
-            // |xxxxxxx   |    |          |
-            // +----------+    +----------+
-            const u16 begRow = _p.s->cellCount.y + offset;
-            _api.invalidatedRows.start = nothingInvalid ? begRow : std::min(_api.invalidatedRows.start, begRow);
-            _api.invalidatedRows.end = _p.s->cellCount.y;
+            const auto nothingInvalid = _api.invalidatedRows.start == _api.invalidatedRows.end;
 
-            const auto dst = std::copy_n(_p.rows.begin() - offset, _p.rows.size() + offset, _p.rowsScratch.begin());
-            std::copy_n(_p.rows.begin(), -offset, dst);
-        }
-        else
-        {
-            // scrollOffset/offset = 1
-            // +----------+    +----------+
-            // | xxxxxxxxx|    |          |
-            // |xxxxxxx   | -> | xxxxxxxxx|
-            // |          |    |xxxxxxx   |
-            // +----------+    +----------+
-            const u16 endRow = offset;
-            _api.invalidatedRows.start = 0;
-            _api.invalidatedRows.end = nothingInvalid ? endRow : std::max(_api.invalidatedRows.end, endRow);
-
-            const auto dst = std::copy_n(_p.rows.end() - offset, offset, _p.rowsScratch.begin());
-            std::copy_n(_p.rows.begin(), _p.rows.size() - offset, dst);
-        }
-
-        std::swap(_p.rows, _p.rowsScratch);
-
-        // Scrolling the background bitmap is a lot easier because we can rely on memmove which works
-        // with both forwards and backwards copying. It's a mystery why the STL doesn't have this.
-        {
-            const auto srcOffset = std::max<ptrdiff_t>(0, -offset) * gsl::narrow_cast<ptrdiff_t>(_p.colorBitmapRowStride);
-            const auto dstOffset = std::max<ptrdiff_t>(0, offset) * gsl::narrow_cast<ptrdiff_t>(_p.colorBitmapRowStride);
-            const auto count = _p.colorBitmapDepthStride - std::max(srcOffset, dstOffset);
-            assert(dstOffset >= 0 && dstOffset + count <= _p.colorBitmapDepthStride);
-            assert(srcOffset >= 0 && srcOffset + count <= _p.colorBitmapDepthStride);
-
-            auto src = _p.colorBitmap.data() + srcOffset;
-            auto dst = _p.colorBitmap.data() + dstOffset;
-            const auto bytes = count * sizeof(u32);
-
-            for (size_t i = 0; i < 2; ++i)
+            if (offset < 0)
             {
-                // Avoid bumping the colorBitmapGeneration unless necessary. This approx. further halves
-                // the (already small) GPU load. This could easily be replaced with some custom SIMD
-                // to avoid going over the memory twice, but... that's a story for another day.
-                if (memcmp(dst, src, bytes) != 0)
-                {
-                    memmove(dst, src, bytes);
-                    _p.colorBitmapGenerations[i].bump();
-                }
+                // scrollOffset/offset = -1
+                // +----------+    +----------+
+                // |          |    | xxxxxxxxx|
+                // | xxxxxxxxx| -> |xxxxxxx   |
+                // |xxxxxxx   |    |          |
+                // +----------+    +----------+
+                const u16 begRow = _p.s->cellCount.y + offset;
+                _api.invalidatedRows.start = nothingInvalid ? begRow : std::min(_api.invalidatedRows.start, begRow);
+                _api.invalidatedRows.end = _p.s->cellCount.y;
 
-                src += _p.colorBitmapDepthStride;
-                dst += _p.colorBitmapDepthStride;
+                const auto dst = std::copy_n(_p.rows.begin() - offset, _p.rows.size() + offset, _p.rowsScratch.begin());
+                std::copy_n(_p.rows.begin(), -offset, dst);
+            }
+            else
+            {
+                // scrollOffset/offset = 1
+                // +----------+    +----------+
+                // | xxxxxxxxx|    |          |
+                // |xxxxxxx   | -> | xxxxxxxxx|
+                // |          |    |xxxxxxx   |
+                // +----------+    +----------+
+                const u16 endRow = offset;
+                _api.invalidatedRows.start = 0;
+                _api.invalidatedRows.end = nothingInvalid ? endRow : std::max(_api.invalidatedRows.end, endRow);
+
+                const auto dst = std::copy_n(_p.rows.end() - offset, offset, _p.rowsScratch.begin());
+                std::copy_n(_p.rows.begin(), _p.rows.size() - offset, dst);
+            }
+
+            std::swap(_p.rows, _p.rowsScratch);
+
+            // Scrolling the background bitmap is a lot easier because we can rely on memmove which works
+            // with both forwards and backwards copying. It's a mystery why the STL doesn't have this.
+            {
+                const auto srcOffset = std::max<ptrdiff_t>(0, -offset) * gsl::narrow_cast<ptrdiff_t>(_p.colorBitmapRowStride);
+                const auto dstOffset = std::max<ptrdiff_t>(0, offset) * gsl::narrow_cast<ptrdiff_t>(_p.colorBitmapRowStride);
+                const auto count = _p.colorBitmapDepthStride - std::max(srcOffset, dstOffset);
+                assert(dstOffset >= 0 && dstOffset + count <= _p.colorBitmapDepthStride);
+                assert(srcOffset >= 0 && srcOffset + count <= _p.colorBitmapDepthStride);
+
+                auto src = _p.colorBitmap.data() + srcOffset;
+                auto dst = _p.colorBitmap.data() + dstOffset;
+                const auto bytes = count * sizeof(u32);
+
+                for (size_t i = 0; i < 2; ++i)
+                {
+                    // Avoid bumping the colorBitmapGeneration unless necessary. This approx. further halves
+                    // the (already small) GPU load. This could easily be replaced with some custom SIMD
+                    // to avoid going over the memory twice, but... that's a story for another day.
+                    if (memcmp(dst, src, bytes) != 0)
+                    {
+                        memmove(dst, src, bytes);
+                        _p.colorBitmapGenerations[i].bump();
+                    }
+
+                    src += _p.colorBitmapDepthStride;
+                    dst += _p.colorBitmapDepthStride;
+                }
             }
         }
     }
@@ -177,7 +190,7 @@ try
     _p.cursorRect = {};
     _p.scrollOffset = _api.scrollOffset;
 
-    if (_api.invalidatedRows.start != _api.invalidatedRows.end)
+    if (_api.invalidatedRows.non_empty())
     {
         const auto deltaPx = _api.scrollOffset * _p.s->font->cellSize.y;
         const til::CoordType targetSizeX = _p.s->targetSize.x;
@@ -213,7 +226,7 @@ try
         // I feel a little bit like this is a hack, but I'm not sure how to better express this.
         // This ensures that we end up calling Present1() without dirty rects if the swap chain is
         // recreated/resized, because DXGI requires you to then call Present1() without dirty rects.
-        if (_api.invalidatedRows == range<u16>{ 0, _p.s->cellCount.y })
+        if (allInvalid)
         {
             _p.dirtyRectInPx.top = 0;
             _p.dirtyRectInPx.bottom = targetSizeY;

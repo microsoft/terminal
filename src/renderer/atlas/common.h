@@ -108,6 +108,16 @@ namespace Microsoft::Console::Render::Atlas
 
         ATLAS_POD_OPS(range)
 
+        constexpr bool empty() const noexcept
+        {
+            return start >= end;
+        }
+
+        constexpr bool non_empty() const noexcept
+        {
+            return start < end;
+        }
+
         constexpr bool contains(T v) const noexcept
         {
             return v >= start && v < end;

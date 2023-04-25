@@ -484,38 +484,17 @@ void BackendD2D::_drawCursorPart1(const RenderingPayload& p)
     }
 
     const auto cursorColor = p.s->cursor->cursorColor;
-    if (cursorColor == 0xffffffff)
+
+    if (cursorColor != 0xffffffff)
     {
-        const auto cursorSize = p.cursorRect.size();
-        if (cursorSize != _cursorBitmapSize)
-        {
-            _resizeCursorBitmap(p, cursorSize);
-        }
-
-        const auto backgroundBitmapOffset = p.cursorRect.top * p.colorBitmapRowStride;
-        const auto cellSizeX = static_cast<f32>(p.s->font->cellSize.x);
-        const auto cellSizeY = static_cast<f32>(p.s->font->cellSize.y);
-        const auto offsetX = p.cursorRect.left * cellSizeX;
-        const auto offsetY = p.cursorRect.top * cellSizeY;
-
-        D2D1_RECT_F srcRect{
-            .bottom = cursorSize.height * cellSizeY,
+        const D2D1_RECT_F rect{
+            static_cast<f32>(p.cursorRect.left * p.s->font->cellSize.x),
+            static_cast<f32>(p.cursorRect.top * p.s->font->cellSize.y),
+            static_cast<f32>(p.cursorRect.right * p.s->font->cellSize.x),
+            static_cast<f32>(p.cursorRect.bottom * p.s->font->cellSize.y),
         };
-        D2D1_RECT_F dstRect{
-            .top = offsetY,
-            .bottom = offsetY + srcRect.bottom,
-        };
-
-        for (til::CoordType x = 0; x < cursorSize.width; ++x)
-        {
-            const auto bg = p.backgroundBitmap[backgroundBitmapOffset + x];
-            const auto brush = _brushWithColor(bg ^ 0x3f3f3f);
-            srcRect.left = x * cellSizeX;
-            srcRect.right = srcRect.left + cellSizeX;
-            dstRect.left = srcRect.left + offsetX;
-            dstRect.right = srcRect.right + offsetX;
-            _renderTarget->FillOpacityMask(_cursorBitmap.get(), brush, &dstRect, &srcRect);
-        }
+        const auto brush = _brushWithColor(cursorColor);
+        _drawCursor(p, _renderTarget.get(), rect, brush);
     }
 }
 
@@ -526,26 +505,19 @@ void BackendD2D::_drawCursorPart2(const RenderingPayload& p)
         return;
     }
 
-    const auto cursorColor = p.s->cursor->cursorColor;
-    const D2D1_POINT_2F target{
-        static_cast<f32>(p.cursorRect.left * p.s->font->cellSize.x),
-        static_cast<f32>(p.cursorRect.top * p.s->font->cellSize.y),
-    };
+    if (p.s->cursor->cursorColor == 0xffffffff)
+    {
+        const auto cursorSize = p.cursorRect.size();
+        if (cursorSize != _cursorBitmapSize)
+        {
+            _resizeCursorBitmap(p, cursorSize);
+        }
 
-    if (cursorColor == 0xffffffff)
-    {
-        _renderTarget->DrawImage(_cursorBitmap.get(), &target, nullptr, D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR, D2D1_COMPOSITE_MODE_MASK_INVERT);
-    }
-    else
-    {
-        const D2D1_RECT_F rect{
-            target.x,
-            target.y,
-            static_cast<f32>(p.cursorRect.right * p.s->font->cellSize.x),
-            static_cast<f32>(p.cursorRect.bottom * p.s->font->cellSize.y),
+        const D2D1_POINT_2F target{
+            static_cast<f32>(p.cursorRect.left * p.s->font->cellSize.x),
+            static_cast<f32>(p.cursorRect.top * p.s->font->cellSize.y),
         };
-        const auto brush = _brushWithColor(cursorColor);
-        _drawCursor(p, _renderTarget.get(), rect, brush);
+        _renderTarget->DrawImage(_cursorBitmap.get(), &target, nullptr, D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR, D2D1_COMPOSITE_MODE_MASK_INVERT);
     }
 }
 

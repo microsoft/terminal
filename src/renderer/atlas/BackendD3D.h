@@ -172,6 +172,13 @@ namespace Microsoft::Console::Render::Atlas
         };
 
     private:
+        struct CursorRect
+        {
+            i16x2 position;
+            u16x2 size;
+            u32 color;
+        };
+
         ATLAS_ATTR_COLD void _handleSettingsUpdate(const RenderingPayload& p);
         void _updateFontDependents(const RenderingPayload& p);
         void _d2dRenderTargetUpdateFontSettings(const RenderingPayload& p) const noexcept;
@@ -187,7 +194,6 @@ namespace Microsoft::Console::Render::Atlas
         void _d2dEndDrawing();
         ATLAS_ATTR_COLD void _resetGlyphAtlas(const RenderingPayload& p);
         ATLAS_ATTR_COLD void _resizeGlyphAtlas(const RenderingPayload& p, u16 u, u16 v);
-        void _markStateChange(ID3D11BlendState* blendState);
         QuadInstance& _getLastQuad() noexcept;
         QuadInstance& _appendQuad();
         ATLAS_ATTR_COLD void _bumpInstancesSize();
@@ -202,8 +208,9 @@ namespace Microsoft::Console::Render::Atlas
         void _drawGlyphPrepareRetry(const RenderingPayload& p);
         void _splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
-        void _drawCursorPart1(const RenderingPayload& p);
-        void _drawCursorPart2(const RenderingPayload& p);
+        void _drawCursorBackground(const RenderingPayload& p);
+        ATLAS_ATTR_COLD void _drawCursorInvert();
+        ATLAS_ATTR_COLD void _drawCursorInvertSlowPath(const CursorRect& c, const QuadInstance& it);
         void _drawSelection(const RenderingPayload& p);
         void _executeCustomShader(RenderingPayload& p);
 
@@ -212,7 +219,6 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID3D11VertexShader> _vertexShader;
         wil::com_ptr<ID3D11PixelShader> _pixelShader;
         wil::com_ptr<ID3D11BlendState> _blendState;
-        wil::com_ptr<ID3D11BlendState> _blendStateInvert;
         wil::com_ptr<ID3D11Buffer> _vsConstantBuffer;
         wil::com_ptr<ID3D11Buffer> _psConstantBuffer;
         wil::com_ptr<ID3D11Buffer> _vertexBuffer;
@@ -221,17 +227,6 @@ namespace Microsoft::Console::Render::Atlas
         size_t _instanceBufferCapacity = 0;
         Buffer<QuadInstance, 32> _instances;
         size_t _instancesCount = 0;
-
-        // This allows us to batch inverted cursors into the same
-        // _instanceBuffer upload as the rest of all other instances.
-        struct StateChange
-        {
-            ID3D11BlendState* blendState;
-            size_t offset;
-        };
-        // 3 allows for 1 state change to _blendStateInvert, followed by 1 change back to _blendState,
-        // and finally 1 entry to signal the past-the-end size, as used by _flushQuads.
-        til::small_vector<StateChange, 3> _instancesStateChanges;
 
         wil::com_ptr<ID3D11RenderTargetView> _customRenderTargetView;
         wil::com_ptr<ID3D11Texture2D> _customOffscreenTexture;
@@ -276,12 +271,6 @@ namespace Microsoft::Console::Render::Atlas
 
         // An empty-box cursor spanning a wide glyph that has different
         // background colors on each side results in 6 lines being drawn.
-        struct CursorRect
-        {
-            i16x2 position;
-            u16x2 size;
-            u32 color;
-        };
         til::small_vector<CursorRect, 6> _cursorRects;
 
         bool _requiresContinuousRedraw = false;

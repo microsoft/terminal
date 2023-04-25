@@ -177,24 +177,6 @@ BackendD3D::BackendD3D(const RenderingPayload& p)
         THROW_IF_FAILED(p.device->CreateBlendState(&desc, _blendState.addressof()));
     }
 
-    {
-        static constexpr D3D11_BLEND_DESC desc{
-            .RenderTarget = { {
-                .BlendEnable = TRUE,
-                .SrcBlend = D3D11_BLEND_ONE,
-                .DestBlend = D3D11_BLEND_ONE,
-                .BlendOp = D3D11_BLEND_OP_SUBTRACT,
-                // In order for D3D to be okay with us using dual source blending in the shader, we need to use dual
-                // source blending in the blend state. Alternatively we could write an extra shader for these cursors.
-                .SrcBlendAlpha = D3D11_BLEND_SRC1_ALPHA,
-                .DestBlendAlpha = D3D11_BLEND_ZERO,
-                .BlendOpAlpha = D3D11_BLEND_OP_ADD,
-                .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL,
-            } },
-        };
-        THROW_IF_FAILED(p.device->CreateBlendState(&desc, _blendStateInvert.addressof()));
-    }
-
 #ifndef NDEBUG
     _sourceDirectory = std::filesystem::path{ __FILE__ }.parent_path();
     _sourceCodeWatcher = wil::make_folder_change_reader_nothrow(_sourceDirectory.c_str(), false, wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime, [this](wil::FolderChangeEvent, PCWSTR path) {
@@ -239,9 +221,9 @@ void BackendD3D::Render(RenderingPayload& p)
 #endif
 
     _drawBackground(p);
-    _drawCursorPart1(p);
+    _drawCursorBackground(p);
     _drawText(p);
-    _drawCursorPart2(p);
+    //_drawCursorPart2(p);
     _drawSelection(p);
 #if ATLAS_DEBUG_SHOW_DIRTY
     _debugShowDirty(p);
@@ -803,11 +785,6 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
     _rectPackerData = Buffer<stbrp_node>{ u };
 }
 
-void BackendD3D::_markStateChange(ID3D11BlendState* blendState)
-{
-    _instancesStateChanges.emplace_back(blendState, _instancesCount);
-}
-
 BackendD3D::QuadInstance& BackendD3D::_getLastQuad() noexcept
 {
     assert(_instancesCount != 0);
@@ -847,6 +824,11 @@ void BackendD3D::_flushQuads(const RenderingPayload& p)
         return;
     }
 
+    if (p.s->cursor->cursorColor == 0xffffffff && !_cursorRects.empty())
+    {
+        _drawCursorInvert();
+    }
+
     // TODO: Shrink instances buffer
     if (_instancesCount > _instanceBufferCapacity)
     {
@@ -879,24 +861,7 @@ void BackendD3D::_flushQuads(const RenderingPayload& p)
     //   Instead I found that packing instance data as tightly as possible made the biggest performance difference,
     //   and packing 16 bit integers with ID3D11InputLayout is quite a bit more convenient too.
 
-    // This will cause the loop below to emit one final DrawIndexedInstanced() for the remainder of instances.
-    _markStateChange(nullptr);
-
-    size_t previousOffset = 0;
-    for (const auto& state : _instancesStateChanges)
-    {
-        if (const auto count = state.offset - previousOffset)
-        {
-            p.deviceContext->DrawIndexedInstanced(6, count, 0, 0, previousOffset);
-        }
-        if (state.blendState)
-        {
-            p.deviceContext->OMSetBlendState(state.blendState, nullptr, 0xffffffff);
-        }
-        previousOffset = state.offset;
-    }
-
-    _instancesStateChanges.clear();
+    p.deviceContext->DrawIndexedInstanced(6, static_cast<UINT>(_instancesCount), 0, 0, 0);
     _instancesCount = 0;
 }
 
@@ -945,7 +910,6 @@ void BackendD3D::_drawBackground(const RenderingPayload& p)
         .shadingType = ShadingType::Background,
         .size = p.s->targetSize,
     };
-    _flushQuads(p);
 }
 
 void BackendD3D::_uploadBackgroundBitmap(const RenderingPayload& p)
@@ -1256,18 +1220,18 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const BackendD3D::AtlasFo
     // This calculates the black box of the glyph, or in other words,
     // it's extents/size relative to its baseline origin (at 0,0).
     //
-    //  box.top --------++-----######--+
+    // bounds.top ------++-----######--+
     //   (-7)           ||  ############
     //                  ||####      ####
     //                  |###       #####
-    //  baseline _____  |###      #####|
-    //   origin       \ |############# |
-    //  (= 0,0)        \||###########  |
+    //  baseline ______ |###      #####|
+    //   origin        \|############# |
+    //  (= 0,0)         \|###########  |
     //                  ++-------###---+
     //                  ##      ###    |
-    //  box.bottom -----+#########-----+
+    // bounds.bottom ---+#########-----+
     //    (+2)          |              |
-    //               box.left       box.right
+    //             bounds.left     bounds.right
     //                 (-1)           (+14)
     //
 
@@ -1625,7 +1589,7 @@ void BackendD3D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
     }
 }
 
-void BackendD3D::_drawCursorPart1(const RenderingPayload& p)
+void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
 {
     _cursorRects.clear();
 
@@ -1654,7 +1618,7 @@ void BackendD3D::_drawCursorPart1(const RenderingPayload& p)
             static_cast<u16>(p.s->font->cellSize.x * (x1 - x0)),
             p.s->font->cellSize.y,
         };
-        const auto color = cursorColor == 0xffffffff ? bg ^ 0x3f3f3f : cursorColor;
+        const auto color = cursorColor == 0xffffffff ? bg ^ 0xc0c0c0 : cursorColor;
         auto& c0 = _cursorRects.emplace_back(position, size, color);
 
         switch (static_cast<CursorType>(p.s->cursor->cursorType))
@@ -1716,35 +1680,6 @@ void BackendD3D::_drawCursorPart1(const RenderingPayload& p)
         }
     }
 
-    if (cursorColor == 0xffffffff)
-    {
-        for (auto& c : _cursorRects)
-        {
-            _appendQuad() = {
-                .shadingType = ShadingType::SolidFill,
-                .position = c.position,
-                .size = c.size,
-                .color = c.color,
-            };
-            c.color = 0xffffffff;
-        }
-    }
-}
-
-void BackendD3D::_drawCursorPart2(const RenderingPayload& p)
-{
-    if (_cursorRects.empty())
-    {
-        return;
-    }
-
-    const auto color = p.s->cursor->cursorColor;
-
-    if (color == 0xffffffff)
-    {
-        _markStateChange(_blendStateInvert.get());
-    }
-
     for (const auto& c : _cursorRects)
     {
         _appendQuad() = {
@@ -1755,10 +1690,80 @@ void BackendD3D::_drawCursorPart2(const RenderingPayload& p)
         };
     }
 
-    if (color == 0xffffffff)
+    if (cursorColor == 0xffffffff)
     {
-        _markStateChange(_blendState.get());
+        for (auto& c : _cursorRects)
+        {
+            c.color = 0xffffffff;
+        }
     }
+}
+
+void BackendD3D::_drawCursorInvert()
+{
+    // NOTE: _appendQuad() may reallocate the _instances vector. It's important to iterate
+    // by index, because pointers (or iterators) would get invalidated. It's also important
+    // to cache the original _instancesCount since it'll get changed with each append.
+    const auto instancesCount = _instancesCount;
+
+    for (const auto& c : _cursorRects)
+    {
+        const int cursorL = c.position.x;
+        const int cursorT = c.position.y;
+        const int cursorR = cursorL + c.size.x;
+        const int cursorB = cursorT + c.size.y;
+
+        for (size_t i = 0; i < instancesCount; ++i)
+        {
+            const auto& it = _instances[i];
+            const auto shadingType = it.shadingType;
+
+            if (shadingType < ShadingType::TextGrayscale || shadingType > ShadingType::TextClearType)
+            {
+                continue;
+            }
+
+            const int instanceL = it.position.x;
+            const int instanceT = it.position.y;
+            const int instanceR = instanceL + it.size.x;
+            const int instanceB = instanceT + it.size.y;
+
+            if (instanceL < cursorR && cursorL < instanceR && instanceT < cursorB && cursorT < instanceB)
+            {
+                // The _instances vector is _huge_ (easily up to 100k items) whereas only 1-2 items will actually overlap
+                // with the cursor. --> Make this loop more compact by putting as much as possible into a function call.
+                _drawCursorInvertSlowPath(c, it);
+            }
+        }
+    }
+}
+
+void BackendD3D::_drawCursorInvertSlowPath(const CursorRect& c, const QuadInstance& it)
+{
+    const int cursorL = c.position.x;
+    const int cursorT = c.position.y;
+    const int cursorR = cursorL + c.size.x;
+    const int cursorB = cursorT + c.size.y;
+
+    const int instanceL = it.position.x;
+    const int instanceT = it.position.y;
+    const int instanceR = instanceL + it.size.x;
+    const int instanceB = instanceT + it.size.y;
+
+    const auto l = std::max<int>(cursorL, instanceL);
+    const auto t = std::max<int>(cursorT, instanceT);
+    const auto w = std::min<int>(cursorR, instanceR) - l;
+    const auto h = std::min<int>(cursorB, instanceB) - t;
+    const auto u = it.texcoord.x + l - instanceL;
+    const auto v = it.texcoord.y + t - instanceT;
+
+    _appendQuad() = {
+        it.shadingType,
+        { static_cast<i16>(l), static_cast<i16>(t) },
+        { static_cast<u16>(w), static_cast<u16>(h) },
+        { static_cast<u16>(u), static_cast<u16>(v) },
+        it.color ^ 0x00c0c0c0,
+    };
 }
 
 void BackendD3D::_drawSelection(const RenderingPayload& p)
