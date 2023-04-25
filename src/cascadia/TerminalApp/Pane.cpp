@@ -41,9 +41,7 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
     _root.Children().Append(_borderFirst);
     _borderFirst.Child(_control);
 
-    _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
-    _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
-    _closeTerminalRequestedToken = _control.CloseTerminalRequested({ this, &Pane::_CloseTerminalRequestedHandler });
+    _setupControlEvents();
 
     // Register an event with the control to have it inform us when it gains focus.
     _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
@@ -102,6 +100,20 @@ Pane::Pane(std::shared_ptr<Pane> first,
         _FocusFirstChild();
         e.Handled(true);
     });
+}
+
+void Pane::_setupControlEvents()
+{
+    _controlEvents._connectionStateChanged = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
+    _controlEvents._warningBell = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+    _controlEvents._closeTerminalRequested = _control.CloseTerminalRequested({ this, &Pane::_CloseTerminalRequestedHandler });
+}
+void Pane::_removeControlEvents()
+{
+    _control.ConnectionStateChanged(_controlEvents._connectionStateChanged);
+    _control.WarningBell(_controlEvents._warningBell);
+    _control.CloseTerminalRequested(_controlEvents._closeTerminalRequested);
+    _controlEvents = {};
 }
 
 // Method Description:
@@ -1642,9 +1654,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _isDefTermSession = remainingChild->_isDefTermSession;
 
         // Add our new event handler before revoking the old one.
-        _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
-        _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
-        _closeTerminalRequestedToken = _control.CloseTerminalRequested({ this, &Pane::_CloseTerminalRequestedHandler });
+        _setupControlEvents();
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
@@ -1658,18 +1668,14 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
             closedChild->WalkTree([](auto p) {
                 if (p->_IsLeaf())
                 {
-                    p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
-                    p->_control.WarningBell(p->_warningBellToken);
-                    p->_control.CloseTerminalRequested(p->_closeTerminalRequestedToken);
+                    p->_removeControlEvents();
                 }
             });
         }
 
         closedChild->Closed(closedChildClosedToken);
         remainingChild->Closed(remainingChildClosedToken);
-        remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
-        remainingChild->_control.WarningBell(remainingChild->_warningBellToken);
-        remainingChild->_control.CloseTerminalRequested(remainingChild->_closeTerminalRequestedToken);
+        remainingChild->_removeControlEvents();
 
         // If we or either of our children was focused, we want to take that
         // focus from them.
@@ -1749,9 +1755,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
             closedChild->WalkTree([](auto p) {
                 if (p->_IsLeaf())
                 {
-                    p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
-                    p->_control.WarningBell(p->_warningBellToken);
-                    p->_control.CloseTerminalRequested(p->_closeTerminalRequestedToken);
+                    p->_removeControlEvents();
                 }
             });
         }
@@ -2506,12 +2510,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     if (_IsLeaf())
     {
         // revoke our handler - the child will take care of the control now.
-        _control.ConnectionStateChanged(_connectionStateChangedToken);
-        _connectionStateChangedToken.value = 0;
-        _control.WarningBell(_warningBellToken);
-        _warningBellToken.value = 0;
-        _control.CloseTerminalRequested(_closeTerminalRequestedToken);
-        _closeTerminalRequestedToken.value = 0;
+        _removeControlEvents();
 
         // Remove our old GotFocus handler from the control. We don't want the
         // control telling us that it's now focused, we want it telling its new
