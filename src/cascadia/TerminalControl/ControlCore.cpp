@@ -85,7 +85,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
 
-        ReplaceConnection(connection);
+        Connection(connection);
 
         _terminal->SetWriteInputCallback([this](std::wstring_view wstr) {
             _sendInputToConnection(wstr);
@@ -249,10 +249,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _AttachedHandlers(*this, nullptr);
     }
 
+    TerminalConnection::ITerminalConnection ControlCore::Connection()
+    {
+        return _connection;
+    }
+
     // Method Description:
     // - Setup our event handlers for this connection. If we've currently got a
     //   connection, then this'll revoke the existing connection's handlers.
-    void ControlCore::ReplaceConnection(const TerminalConnection::ITerminalConnection& newConnection)
+    void ControlCore::Connection(const TerminalConnection::ITerminalConnection& newConnection)
     {
         if (_connection)
         {
@@ -463,8 +468,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (ch == Enter)
             {
-                // _connection.Close();
-                // _connection.Start();
+                // Ask the hosting application to give us a new connection.
                 _RestartTerminalRequestedHandlers(*this, nullptr);
                 return true;
             }

@@ -224,7 +224,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t OwningHwnd();
         void OwningHwnd(uint64_t owner);
 
-        void ReplaceConnection(const TerminalConnection::ITerminalConnection& connection);
+        TerminalConnection::ITerminalConnection Connection();
+        void Connection(const TerminalConnection::ITerminalConnection& connection);
 
         void AnchorContextMenu(til::point viewportRelativeCharacterPosition);
 

@@ -2984,7 +2984,7 @@ namespace winrt::TerminalApp::implementation
             auto connection = _duplicateConnectionForRestart(pane);
             if (connection)
             {
-                pane->GetTerminalControl().ReplaceConnection(connection);
+                pane->GetTerminalControl().Connection(connection);
             }
         });
 

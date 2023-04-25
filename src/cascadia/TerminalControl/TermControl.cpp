@@ -263,9 +263,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _interactivity.Id();
     }
 
-    void TermControl::ReplaceConnection(const TerminalConnection::ITerminalConnection& newConnection)
+    TerminalConnection::ITerminalConnection TermControl::Connection()
     {
-        _core.ReplaceConnection(newConnection);
+        return _core.Connection();
+    }
+    void TermControl::Connection(const TerminalConnection::ITerminalConnection& newConnection)
+    {
+        _core.Connection(newConnection);
     }
 
     void TermControl::_throttledUpdateScrollbar(const ScrollBarUpdate& update)

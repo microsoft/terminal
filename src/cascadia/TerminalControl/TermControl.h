@@ -145,7 +145,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void Detach();
 
-        void ReplaceConnection(const TerminalConnection::ITerminalConnection& connection);
+        TerminalConnection::ITerminalConnection Connection();
+        void Connection(const TerminalConnection::ITerminalConnection& connection);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         // -------------------------------- WinRT Events ---------------------------------
