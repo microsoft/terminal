@@ -172,7 +172,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         VTParameters subspan(const size_t offset) const noexcept
         {
-            const auto subValues = _values.subspan(offset);
+            const auto subValues = _values.subspan(std::min(offset, _values.size()));
             return { subValues.data(), subValues.size() };
         }
 
