@@ -101,8 +101,7 @@ using namespace Microsoft::Console::Types;
     //
     // Instead, we'll leave this frame in _buffer, and just keep appending to
     // it as needed.
-    if (_noFlushOnEnd)
-        [[unlikely]]
+    if (_noFlushOnEnd) [[unlikely]]
     {
         _noFlushOnEnd = false;
     }
@@ -553,8 +552,7 @@ using namespace Microsoft::Console::Types;
     // Write the actual text string. If we're using a soft font, the character
     // set should have already been selected, so we just need to map our internal
     // representation back to ASCII (handled by the _WriteTerminalDrcs method).
-    if (_usingSoftFont)
-        [[unlikely]]
+    if (_usingSoftFont) [[unlikely]]
     {
         RETURN_IF_FAILED(VtEngine::_WriteTerminalDrcs({ _bufferLine.data(), cchActual }));
     }
