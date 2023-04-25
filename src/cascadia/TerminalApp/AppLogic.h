@@ -47,8 +47,6 @@ namespace winrt::TerminalApp::implementation
         AppLogic();
 
         void Create();
-        bool IsUwp() const noexcept;
-        void RunAsUwp();
         bool IsRunningElevated() const noexcept;
         bool CanDragDrop() const noexcept;
         void ReloadSettings();
@@ -79,7 +77,6 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs);
 
     private:
-        bool _isUwp{ false };
         bool _isElevated{ false };
         bool _canDragDrop{ false };
         std::atomic<bool> _notifyRootInitializedCalled{ false };

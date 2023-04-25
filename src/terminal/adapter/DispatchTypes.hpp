@@ -184,7 +184,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         VTParameters subspan(const size_t offset) const noexcept
         {
-            const auto subValues = _values.subspan(offset);
+            const auto subValues = _values.subspan(std::min(offset, _values.size()));
             return { subValues.data(), subValues.size() };
         }
 
@@ -588,6 +588,11 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         bool HasOutput() const noexcept
         {
             return outputEnd.has_value() && *outputEnd != *commandEnd;
+        }
+        std::pair<til::point, til::point> GetExtent() const
+        {
+            til::point realEnd{ til::coalesce_value(outputEnd, commandEnd, end) };
+            return std::make_pair(til::point{ start }, realEnd);
         }
     };
 }
