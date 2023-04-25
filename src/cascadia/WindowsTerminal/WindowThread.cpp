@@ -37,7 +37,11 @@ int WindowThread::RunMessagePump()
     // Enter the main window loop.
     const auto exitCode = _messagePump();
     // Here, the main window loop has exited.
+    return exitCode;
+}
 
+void WindowThread::RundownForExit()
+{
     _host = nullptr;
     // !! LOAD BEARING !!
     //
@@ -54,8 +58,6 @@ int WindowThread::RunMessagePump()
             ::DispatchMessageW(&msg);
         }
     }
-
-    return exitCode;
 }
 
 winrt::TerminalApp::TerminalWindow WindowThread::Logic()
