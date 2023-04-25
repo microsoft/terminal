@@ -367,7 +367,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             bool (*filter)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&),
             til::point_span (*getSpan)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&));
 
-        bool _clickedOnMark(const til::point& pos, bool(*filter)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&));
+        bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&));
 
         inline bool _IsClosing() const noexcept
         {
