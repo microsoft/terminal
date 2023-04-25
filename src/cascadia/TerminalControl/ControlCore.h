@@ -364,10 +364,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _contextMenuSelectMark(
             const til::point& pos,
-            const std::function<bool(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&)>& filter,
-            const std::function<til::point_span(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&)>& getSpan);
+            bool (*filter)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&),
+            til::point_span (*getSpan)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&));
 
-        bool _clickedOnMark(const til::point& pos, const std::function<bool(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&)>& filter);
+        bool _clickedOnMark(const til::point& pos, bool(*filter)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&));
 
         inline bool _IsClosing() const noexcept
         {
