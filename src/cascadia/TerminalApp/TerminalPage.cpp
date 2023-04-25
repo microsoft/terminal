@@ -924,6 +924,10 @@ namespace winrt::TerminalApp::implementation
         newTabFlyout.Opening([this](auto&&, auto&&) {
             _FocusCurrentTab(true);
         });
+        // Necessary for fly-out sub items to get focus on a tab before collapsing. Related to #15049
+        newTabFlyout.Closing([this](auto&&, auto&&) {
+            _FocusCurrentTab(true);
+        });
         _newTabButton.Flyout(newTabFlyout);
     }
 
