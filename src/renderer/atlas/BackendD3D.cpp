@@ -1794,6 +1794,14 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const RenderingPayload& p, cons
 #pragma warning(suppress : 26820) // This is a potentially expensive copy operation. Consider using a reference unless a copy is required (p.9).
     const auto it = _instances[offset];
 
+    // There's one special exception to the rule: Emojis. We currently don't really support inverting
+    // (or reversing) colored glyphs like that, so we can return early here and avoid cutting them up.
+    // It'd be too expensive to check for these rare glyph types inside the _drawCursorForeground() loop.
+    if (it.shadingType == ShadingType::TextPassthrough)
+    {
+        return 0;
+    }
+
     const int cursorL = c.position.x;
     const int cursorT = c.position.y;
     const int cursorR = cursorL + c.size.x;
