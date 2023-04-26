@@ -59,13 +59,22 @@ namespace Microsoft::Console::Render::Atlas
         {
             Default = 0,
             Background = 0,
+
+            // This block of values will be used for the TextDrawingFirst/Last range and need to stay together.
+            // This is used to quickly check if an instance is related to a "text drawing primitive".
             TextGrayscale = 1,
             TextClearType = 2,
             TextPassthrough = 3,
             DottedLine = 4,
             DottedLineWide = 5,
-            SolidFill = 6,
+            // All items starting here will be drawing as a solid RGBA color
+            SolidLine = 6,
+
             Cursor = 7,
+            Selection = 8,
+
+            TextDrawingFirst = TextGrayscale,
+            TextDrawingLast = SolidLine,
         };
 
         // NOTE: Don't initialize any members in this struct. This ensures that no
@@ -177,7 +186,8 @@ namespace Microsoft::Console::Render::Atlas
         {
             i16x2 position;
             u16x2 size;
-            u32 color;
+            u32 background;
+            u32 foreground;
         };
 
         ATLAS_ATTR_COLD void _handleSettingsUpdate(const RenderingPayload& p);
@@ -210,8 +220,8 @@ namespace Microsoft::Console::Render::Atlas
         void _splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         void _drawGridlines(const RenderingPayload& p, u16 y);
         void _drawCursorBackground(const RenderingPayload& p);
-        ATLAS_ATTR_COLD void _drawCursorInvert();
-        ATLAS_ATTR_COLD void _drawCursorInvertSlowPath(const CursorRect& c, size_t position);
+        ATLAS_ATTR_COLD void _drawCursorForeground(const RenderingPayload& p);
+        ATLAS_ATTR_COLD size_t _drawCursorForegroundSlowPath(const RenderingPayload& p, const CursorRect& c, size_t offset);
         void _drawSelection(const RenderingPayload& p);
         void _executeCustomShader(RenderingPayload& p);
 
@@ -273,6 +283,8 @@ namespace Microsoft::Console::Render::Atlas
         // An empty-box cursor spanning a wide glyph that has different
         // background colors on each side results in 6 lines being drawn.
         til::small_vector<CursorRect, 6> _cursorRects;
+        // The bounding rect of _cursorRects in pixels.
+        til::rect _cursorPosition;
 
         bool _requiresContinuousRedraw = false;
 

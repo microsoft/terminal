@@ -8,8 +8,6 @@
 #define SHADING_TYPE_TEXT_PASSTHROUGH   3
 #define SHADING_TYPE_DOTTED_LINE        4
 #define SHADING_TYPE_DOTTED_LINE_WIDE   5
-#define SHADING_TYPE_SOLID_FILL         6
-#define SHADING_TYPE_CURSOR             7
 // clang-format on
 
 struct VSData

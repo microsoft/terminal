@@ -824,9 +824,9 @@ void BackendD3D::_flushQuads(const RenderingPayload& p)
         return;
     }
 
-    if (p.s->cursor->cursorColor == 0xffffffff && !_cursorRects.empty())
+    if (!_cursorRects.empty())
     {
-        _drawCursorInvert();
+        _drawCursorForeground(p);
     }
 
     // TODO: Shrink instances buffer
@@ -1517,7 +1517,7 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         for (; posX < end; posX += textCellWidth)
         {
             _appendQuad() = {
-                .shadingType = ShadingType::SolidFill,
+                .shadingType = ShadingType::SolidLine,
                 .position = { static_cast<i16>(posX), rowTop },
                 .size = { width, p.s->font->cellSize.y },
                 .color = r.color,
@@ -1562,16 +1562,16 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         }
         if (r.lines.test(GridLines::Top))
         {
-            appendHorizontalLine(r, p.s->font->gridTop, ShadingType::SolidFill);
+            appendHorizontalLine(r, p.s->font->gridTop, ShadingType::SolidLine);
         }
         if (r.lines.test(GridLines::Bottom))
         {
-            appendHorizontalLine(r, p.s->font->gridBottom, ShadingType::SolidFill);
+            appendHorizontalLine(r, p.s->font->gridBottom, ShadingType::SolidLine);
         }
 
         if (r.lines.test(GridLines::Underline))
         {
-            appendHorizontalLine(r, p.s->font->underline, ShadingType::SolidFill);
+            appendHorizontalLine(r, p.s->font->underline, ShadingType::SolidLine);
         }
         if (r.lines.test(GridLines::HyperlinkUnderline))
         {
@@ -1581,12 +1581,12 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         {
             for (const auto pos : p.s->font->doubleUnderline)
             {
-                appendHorizontalLine(r, pos, ShadingType::SolidFill);
+                appendHorizontalLine(r, pos, ShadingType::SolidLine);
             }
         }
         if (r.lines.test(GridLines::Strikethrough))
         {
-            appendHorizontalLine(r, p.s->font->strikethrough, ShadingType::SolidFill);
+            appendHorizontalLine(r, p.s->font->strikethrough, ShadingType::SolidLine);
         }
     }
 }
@@ -1599,6 +1599,13 @@ void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
     {
         return;
     }
+
+    _cursorPosition = {
+        p.s->font->cellSize.x * p.cursorRect.left,
+        p.s->font->cellSize.y * p.cursorRect.top,
+        p.s->font->cellSize.x * p.cursorRect.right,
+        p.s->font->cellSize.y * p.cursorRect.bottom,
+    };
 
     const auto cursorColor = p.s->cursor->cursorColor;
     const auto offset = p.cursorRect.top * p.colorBitmapRowStride;
@@ -1620,8 +1627,10 @@ void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
             static_cast<u16>(p.s->font->cellSize.x * (x1 - x0)),
             p.s->font->cellSize.y,
         };
-        const auto color = cursorColor == 0xffffffff ? bg ^ 0xc0c0c0 : cursorColor;
-        auto& c0 = _cursorRects.emplace_back(position, size, color);
+        const auto isInverted = cursorColor == 0xffffffff;
+        const auto background = isInverted ? bg ^ 0xc0c0c0 : cursorColor;
+        const auto foreground = isInverted ? 0 : bg;
+        auto& c0 = _cursorRects.emplace_back(position, size, background, foreground);
 
         switch (static_cast<CursorType>(p.s->cursor->cursorType))
         {
@@ -1688,19 +1697,69 @@ void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
             .shadingType = ShadingType::Cursor,
             .position = c.position,
             .size = c.size,
-            .color = c.color,
+            .color = c.background,
         };
     }
 }
 
-// TODO: _drawCursorInvert() only creates new quads and thus draws on top of the existing glyphs, making them too fat
-void BackendD3D::_drawCursorInvert()
+void BackendD3D::_drawCursorForeground(const RenderingPayload& p)
 {
     // NOTE: _appendQuad() may reallocate the _instances vector. It's important to iterate
     // by index, because pointers (or iterators) would get invalidated. It's also important
     // to cache the original _instancesCount since it'll get changed with each append.
-    const auto instancesCount = _instancesCount;
+    auto instancesCount = _instancesCount;
+    size_t instancesOffset = 0;
 
+    assert(instancesCount != 0);
+
+    // All of the text drawing primitives are drawn as a single block, after drawing
+    // the background and cursor background and before drawing the selection overlay.
+    // To avoid having to check the shadingType in the loop below, we'll find the
+    // start and end of this "block" here in advance.
+    for (; instancesOffset < instancesCount; ++instancesOffset)
+    {
+        const auto shadingType = _instances[instancesOffset].shadingType;
+        if (shadingType >= ShadingType::TextDrawingFirst && shadingType <= ShadingType::TextDrawingLast)
+        {
+            break;
+        }
+    }
+    // We can also skip any instances (= any rows) at the beginning that are clearly not overlapping with
+    // the cursor. This reduces the the CPU cost of this function by roughly half (a few microseconds).
+    for (; instancesOffset < instancesCount; ++instancesOffset)
+    {
+        const auto& it = _instances[instancesOffset];
+        if ((it.position.y + it.size.y) > _cursorPosition.top)
+        {
+            break;
+        }
+    }
+
+    // Now do the same thing as above, but backwards from the end.
+    for (; instancesCount > instancesOffset; --instancesCount)
+    {
+        const auto shadingType = _instances[instancesCount - 1].shadingType;
+        if (shadingType >= ShadingType::TextDrawingFirst && shadingType <= ShadingType::TextDrawingLast)
+        {
+            break;
+        }
+    }
+    for (; instancesCount > instancesOffset; --instancesCount)
+    {
+        const auto& it = _instances[instancesCount - 1];
+        if (it.position.y < _cursorPosition.bottom)
+        {
+            break;
+        }
+    }
+
+    // For cursors with multiple rectangles this really isn't all that fast, because it iterates
+    // over the instances vector multiple times. But I also don't really care, because the
+    // double-underline and empty-box cursors are pretty annoying to deal with in any case.
+    //
+    // It would definitely help if instead of position & size QuadInstances would use left/top/right/bottom
+    // with f32, because then computing the intersection would be much faster via SIMD. But that would
+    // make the struct size larger and cost more power to transmit more data to the GPU. ugh.
     for (const auto& c : _cursorRects)
     {
         const int cursorL = c.position.x;
@@ -1708,33 +1767,32 @@ void BackendD3D::_drawCursorInvert()
         const int cursorR = cursorL + c.size.x;
         const int cursorB = cursorT + c.size.y;
 
-        for (size_t i = 0; i < instancesCount; ++i)
+        for (size_t i = instancesOffset; i < instancesCount; ++i)
         {
             const auto& it = _instances[i];
-            const auto shadingType = it.shadingType;
+            const int instanceL = it.position.x;
+            const int instanceT = it.position.y;
+            const int instanceR = instanceL + it.size.x;
+            const int instanceB = instanceT + it.size.y;
 
-            if (shadingType >= ShadingType::TextGrayscale && shadingType <= ShadingType::SolidFill)
+            if (instanceL < cursorR && instanceR > cursorL && instanceT < cursorB && instanceB > cursorT)
             {
-                const int instanceL = it.position.x;
-                const int instanceT = it.position.y;
-                const int instanceR = instanceL + it.size.x;
-                const int instanceB = instanceT + it.size.y;
-
-                if (instanceL < cursorR && cursorL < instanceR && instanceT < cursorB && cursorT < instanceB)
-                {
-                    // The _instances vector is _huge_ (easily up to 100k items) whereas only 1-2 items will actually overlap
-                    // with the cursor. --> Make this loop more compact by putting as much as possible into a function call.
-                    _drawCursorInvertSlowPath(c, i);
-                }
+                // The _instances vector is _huge_ (easily up to 50k items) whereas only 1-2 items will actually overlap
+                // with the cursor. --> Make this loop more compact by putting as much as possible into a function call.
+                const auto added = _drawCursorForegroundSlowPath(p, c, i);
+                i += added;
+                instancesCount += added;
             }
         }
     }
 }
 
-void BackendD3D::_drawCursorInvertSlowPath(const CursorRect& c, size_t position)
+size_t BackendD3D::_drawCursorForegroundSlowPath(const RenderingPayload& p, const CursorRect& c, size_t offset)
 {
-    // NOTE: _bumpInstancesSize may reallocate below. Create a copy of `it` beforehand.
-    const auto it = _instances[position];
+    // We won't die from copying 24 bytes. It simplifies the code below especially in
+    // respect to when/if we overwrite the _instances[offset] slot with a cutout.
+#pragma warning(suppress : 26820) // This is a potentially expensive copy operation. Consider using a reference unless a copy is required (p.9).
+    const auto it = _instances[offset];
 
     const int cursorL = c.position.x;
     const int cursorT = c.position.y;
@@ -1746,75 +1804,95 @@ void BackendD3D::_drawCursorInvertSlowPath(const CursorRect& c, size_t position)
     const int instanceR = instanceL + it.size.x;
     const int instanceB = instanceT + it.size.y;
 
-    const auto l = std::max(cursorL, instanceL);
-    const auto t = std::max(cursorT, instanceT);
-    const auto r = std::min(cursorR, instanceR);
-    const auto b = std::min(cursorB, instanceB);
+    const auto intersectionL = std::max(cursorL, instanceL);
+    const auto intersectionT = std::max(cursorT, instanceT);
+    const auto intersectionR = std::min(cursorR, instanceR);
+    const auto intersectionB = std::min(cursorB, instanceB);
 
-    // Cut a hole into the original glyph and split it up. This ensures the original glyph
-    // doesn't dirty the cursor background with its un-inverted/reversed color.
+    // We should only get called if there's actually an intersection.
+    assert(intersectionL < intersectionR && intersectionT < intersectionB);
+
+    // We need to ensure that the glyph doesn't "dirty" the cursor background with its un-inverted/un-reversed color.
+    // If it did, and we'd draw the inverted/reversed glyph on top, it would look smudged.
+    // As such, this cuts a cursor-sized hole into the original glyph and splits it up.
+    //
+    // > Always initialize an object
+    // I would pay money if this warning was a little smarter. The array can remain uninitialized,
+    // because it acts like a tiny small_vector, but without the assertions.
+#pragma warning(suppress : 26494) // Variable 'cutouts' is uninitialized. Always initialize an object (type.5).
     rect<int> cutouts[4];
     size_t cutoutCount = 0;
-    if (instanceT < t)
+
+    if (instanceT < intersectionT)
     {
-        cutouts[cutoutCount++] = { instanceL, instanceT, instanceR, t };
+        cutouts[cutoutCount++] = { instanceL, instanceT, instanceR, intersectionT };
     }
-    if (b < instanceB)
+    if (instanceB > intersectionB)
     {
-        cutouts[cutoutCount++] = { instanceL, b, instanceR, instanceB };
+        cutouts[cutoutCount++] = { instanceL, intersectionB, instanceR, instanceB };
     }
-    if (instanceL < l)
+    if (instanceL < intersectionL)
     {
-        cutouts[cutoutCount++] = { instanceL, t, l, b };
+        cutouts[cutoutCount++] = { instanceL, intersectionT, intersectionL, intersectionB };
     }
-    if (r < instanceR)
+    if (instanceR > intersectionR)
     {
-        cutouts[cutoutCount++] = { r, t, instanceR, b };
+        cutouts[cutoutCount++] = { intersectionR, intersectionT, instanceR, intersectionB };
     }
 
-    if (cutoutCount > 1)
-    {
-        const auto delta = cutoutCount - 1;
+    const auto addedInstances = cutoutCount ? cutoutCount - 1 : 0;
 
-        _instancesCount += delta;
+    // Make place for cutoutCount-many items at position.
+    // NOTE: _bumpInstancesSize() reallocates the vector and all references to _instances will now be invalid.
+    if (addedInstances)
+    {
+        const auto instancesCount = _instancesCount;
+
+        _instancesCount += addedInstances;
         if (_instancesCount >= _instances.size())
         {
             _bumpInstancesSize();
         }
 
-        // Make place for cutoutCount-many items at position.
-        const auto src = _instances.data() + position;
-        memmove(src + delta, src, (_instancesCount - position) * sizeof(QuadInstance));
+        const auto src = _instances.data() + offset;
+        const auto dst = src + addedInstances;
+        const auto count = instancesCount - offset;
+        assert(src >= _instances.begin() && (src + count) < _instances.end());
+        assert(dst >= _instances.begin() && (dst + count) < _instances.end());
+        memmove(dst, src, count * sizeof(QuadInstance));
     }
 
+    // Now that there's space we can write the glyph cutouts back into the instances vector.
     for (size_t i = 0; i < cutoutCount; ++i)
     {
         const auto& cutout = cutouts[i];
-        auto& target = _instances[position + i];
-        const auto w = cutout.right - cutout.left;
-        const auto h = cutout.bottom - cutout.top;
-        const auto u = it.texcoord.x + cutout.left - instanceL;
-        const auto v = it.texcoord.y + cutout.top - instanceT;
+        auto& target = _instances[offset + i];
 
-        target = it;
-        target.position = { static_cast<i16>(cutout.left), static_cast<i16>(cutout.top) };
-        target.size = { static_cast<u16>(w), static_cast<u16>(h) };
-        target.texcoord = { static_cast<u16>(u), static_cast<u16>(v) };
+        target.shadingType = it.shadingType;
+        target.position.x = static_cast<i16>(cutout.left);
+        target.position.y = static_cast<i16>(cutout.top);
+        target.size.x = static_cast<u16>(cutout.right - cutout.left);
+        target.size.y = static_cast<u16>(cutout.bottom - cutout.top);
+        target.texcoord.x = static_cast<u16>(it.texcoord.x + cutout.left - instanceL);
+        target.texcoord.y = static_cast<u16>(it.texcoord.y + cutout.top - instanceT);
+        target.color = it.color;
     }
 
-    const auto w = r - l;
-    const auto h = b - t;
-    const auto u = it.texcoord.x + l - instanceL;
-    const auto v = it.texcoord.y + t - instanceT;
-    auto& target = cutoutCount ? _appendQuad() : _instances[position];
+    const auto cursorColor = p.s->cursor->cursorColor;
+    // If the cursor covers the entire glyph (like, let's say, a full-box cursor with an ASCII character),
+    // we don't append a new quad, but rather reuse the one that already exists (cutoutCount == 0).
+    auto& target = cutoutCount ? _appendQuad() : _instances[offset];
 
-    target = {
-        it.shadingType,
-        { static_cast<i16>(l), static_cast<i16>(t) },
-        { static_cast<u16>(w), static_cast<u16>(h) },
-        { static_cast<u16>(u), static_cast<u16>(v) },
-        it.color ^ 0x00c0c0c0,
-    };
+    target.shadingType = it.shadingType;
+    target.position.x = static_cast<i16>(intersectionL);
+    target.position.y = static_cast<i16>(intersectionT);
+    target.size.x = static_cast<u16>(intersectionR - intersectionL);
+    target.size.y = static_cast<u16>(intersectionB - intersectionT);
+    target.texcoord.x = static_cast<u16>(it.texcoord.x + intersectionL - instanceL);
+    target.texcoord.y = static_cast<u16>(it.texcoord.y + intersectionT - instanceT);
+    target.color = cursorColor == 0xffffffff ? it.color ^ 0xc0c0c0 : c.foreground;
+
+    return addedInstances;
 }
 
 void BackendD3D::_drawSelection(const RenderingPayload& p)
@@ -1836,7 +1914,7 @@ void BackendD3D::_drawSelection(const RenderingPayload& p)
             else
             {
                 _appendQuad() = {
-                    .shadingType = ShadingType::SolidFill,
+                    .shadingType = ShadingType::Selection,
                     .position = {
                         p.s->font->cellSize.x * row->selectionFrom,
                         p.s->font->cellSize.y * y,
