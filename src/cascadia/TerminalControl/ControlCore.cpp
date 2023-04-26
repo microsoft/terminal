@@ -2352,8 +2352,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_contextMenuSelectMark(
         const til::point& pos,
-        const std::function<bool(const DispatchTypes::ScrollMark&)>& filter,
-        const std::function<til::point_span(const DispatchTypes::ScrollMark&)>& getSpan)
+        bool (*filter)(const DispatchTypes::ScrollMark&),
+        til::point_span (*getSpan)(const DispatchTypes::ScrollMark&))
     {
         // Do nothing if the caller didn't give us a way to get the span to select for this mark.
         if (!getSpan)
@@ -2399,7 +2399,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     bool ControlCore::_clickedOnMark(
         const til::point& pos,
-        const std::function<bool(const DispatchTypes::ScrollMark&)>& filter)
+        bool (*filter)(const DispatchTypes::ScrollMark&))
     {
         // Don't show this if the click was on the selection
         if (_terminal->IsSelectionActive() &&

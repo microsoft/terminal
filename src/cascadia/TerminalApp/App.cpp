@@ -57,7 +57,7 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            _isUwp = true;
+            FAIL_FAST_MSG("Terminal is not intended to run as a Universal Windows Application");
         }
     }
 

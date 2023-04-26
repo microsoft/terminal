@@ -247,10 +247,10 @@ private:
 
     struct ControlEventTokens
     {
-        winrt::event_token _connectionStateChanged{ 0 };
-        winrt::event_token _warningBell{ 0 };
-        winrt::event_token _closeTerminalRequested{ 0 };
-        winrt::event_token _RestartTerminalRequested{ 0 };
+        winrt::Microsoft::Terminal::Control::TermControl::ConnectionStateChanged_revoker _ConnectionStateChanged;
+        winrt::Microsoft::Terminal::Control::TermControl::WarningBell_revoker _WarningBell;
+        winrt::Microsoft::Terminal::Control::TermControl::CloseTerminalRequested_revoker _CloseTerminalRequested;
+        winrt::Microsoft::Terminal::Control::TermControl::RestartTerminalRequested_revoker _RestartTerminalRequested;
     } _controlEvents;
     void _setupControlEvents();
     void _removeControlEvents();
