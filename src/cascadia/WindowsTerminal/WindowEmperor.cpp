@@ -79,7 +79,7 @@ bool WindowEmperor::HandleCommandlineArgs()
     // so we can open a new window with the same state.
     STARTUPINFOW si;
     GetStartupInfoW(&si);
-    const auto showWindow = si.wShowWindow;
+    const uint32_t showWindow = WI_IsFlagSet(si.dwFlags, STARTF_USESHOWWINDOW) ? si.wShowWindow : SW_SHOW;
 
     Remoting::CommandlineArgs eventArgs{ { args }, { cwd }, showWindow };
 

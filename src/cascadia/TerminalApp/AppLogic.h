@@ -45,12 +45,12 @@ namespace winrt::TerminalApp::implementation
         static const Microsoft::Terminal::Settings::Model::CascadiaSettings CurrentAppSettings();
 
         AppLogic();
-        ~AppLogic() = default;
 
         void Create();
         bool IsRunningElevated() const noexcept;
         bool CanDragDrop() const noexcept;
         void ReloadSettings();
+        void NotifyRootInitialized();
 
         bool HasSettingsStartupActions() const noexcept;
 
@@ -79,6 +79,7 @@ namespace winrt::TerminalApp::implementation
     private:
         bool _isElevated{ false };
         bool _canDragDrop{ false };
+        std::atomic<bool> _notifyRootInitializedCalled{ false };
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
