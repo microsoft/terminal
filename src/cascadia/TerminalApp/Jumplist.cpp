@@ -170,6 +170,7 @@ winrt::com_ptr<IShellLinkW> Jumplist::_createShellLink(const std::wstring_view n
     }
     else if (til::ends_with(path, L"exe") || til::ends_with(path, L"dll"))
     {
+        // We have a binary path but no index/id. Default to 0
         THROW_IF_FAILED(sh->SetIconLocation(path.data(), 0));
     }
     else

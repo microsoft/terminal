@@ -381,13 +381,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // returns an error.
     constexpr int to_int(const std::wstring_view& str, unsigned long base = 0) noexcept
     {
+        auto result = to_ulong_error;
         const auto signPosition = str.find(L"-");
-        if (signPosition != std::wstring_view::npos)
+        const bool hasSign = signPosition != std::wstring_view::npos;
+        result = hasSign ? to_ulong(str.substr(signPosition + 1), base) : to_ulong(str, base);
+
+        // Check that result is valid and will fit in an int.
+        if (result == to_ulong_error || (result > INT_MAX))
         {
-            const auto result = to_ulong(str.substr(signPosition + 1), base);
-            return result == to_ulong_error ? to_int_error : result * -1;
+            return to_int_error;
         }
 
-        return to_ulong(str, base) == to_ulong_error ? to_int_error : to_ulong(str, base);
+        return hasSign ? result * -1 : result;
     }
 }
