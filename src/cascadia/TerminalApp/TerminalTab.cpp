@@ -1319,7 +1319,6 @@ namespace winrt::TerminalApp::implementation
         Controls::MenuFlyoutItem closePaneMenuItem = _closePaneMenuItem;
         {
             // "Close Pane"
-
             closePaneMenuItem.Click([weakThis](auto&&, auto&&) {
                 if (auto tab{ weakThis.get() })
                 {
