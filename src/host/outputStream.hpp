@@ -61,7 +61,7 @@ public:
     unsigned int GetConsoleOutputCP() const override;
 
     void SetBracketedPasteMode(const bool enabled) override;
-    std::optional<bool> GetBracketedPasteMode() const override;
+    bool GetBracketedPasteMode() const override;
     void CopyToClipboard(const std::wstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(const std::wstring_view uri) override;
@@ -80,5 +80,4 @@ public:
 
 private:
     Microsoft::Console::IIoProvider& _io;
-    bool _bracketedPasteMode{ false };
 };

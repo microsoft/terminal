@@ -119,7 +119,7 @@ void Terminal::SetBracketedPasteMode(const bool enabled) noexcept
     _bracketedPasteMode = enabled;
 }
 
-std::optional<bool> Terminal::GetBracketedPasteMode() const noexcept
+bool Terminal::GetBracketedPasteMode() const noexcept
 {
     return _bracketedPasteMode;
 }
