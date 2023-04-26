@@ -1280,7 +1280,7 @@ namespace winrt::TerminalApp::implementation
         {
             return nullptr;
         }
-
+        const auto& connection = control.Connection();
         auto profile{ pane->GetProfile() };
 
         TerminalSettingsCreateResult controlSettings{ nullptr };
@@ -1297,6 +1297,14 @@ namespace winrt::TerminalApp::implementation
             if (validWorkingDirectory)
             {
                 controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
+            }
+
+            // To facilitate restarting defterm connections: grab the original
+            // commandline out of the connection and shove that back into the
+            // settings.
+            if (const auto& conpty{ connection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                controlSettings.DefaultSettings().Commandline(conpty.Commandline());
             }
         }
 
