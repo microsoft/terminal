@@ -262,19 +262,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_connection)
         {
             _connectionOutputEventRevoker.revoke();
+
+            // Fire off a connection state changed notification, to let our hosting
+            // app know that we're in a different state now.
+            if (newConnection.State() != _connection.State())
+            {
+                _ConnectionStateChangedHandlers(*this, nullptr);
+            }
         }
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
         _connectionStateChangedRevoker = newConnection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
             _ConnectionStateChangedHandlers(*this, nullptr);
         });
-
-        // Fire off a connection state changed notification, to let our hosting
-        // app know that we're in a different state now.
-        if (newConnection.State() != _connection.State())
-        {
-            _ConnectionStateChangedHandlers(*this, nullptr);
-        }
 
         // Get our current size in rows/cols, and hook them up to
         // this connection too.
