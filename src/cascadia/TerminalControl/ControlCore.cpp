@@ -262,13 +262,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_connection)
         {
             _connectionOutputEventRevoker.revoke();
-
-            // Fire off a connection state changed notification, to let our hosting
-            // app know that we're in a different state now.
-            if (newConnection.State() != _connection.State())
-            {
-                _ConnectionStateChangedHandlers(*this, nullptr);
-            }
         }
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
@@ -290,9 +283,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             conpty.ReparentWindow(_owningHwnd);
         }
+        TerminalConnection::ConnectionState oldConnectionState{ TerminalConnection::ConnectionState::NotConnected };
         const bool replacing = _connection != nullptr;
         if (replacing)
         {
+            oldConnectionState = _connection.State();
             _connection.Close();
         }
         _connection = newConnection;
@@ -300,6 +295,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _connectionOutputEventRevoker = _connection.TerminalOutput(winrt::auto_revoke, { this, &ControlCore::_connectionOutputHandler });
         if (replacing)
         {
+            // Fire off a connection state changed notification, to let our hosting
+            // app know that we're in a different state now.
+            if (newConnection.State() != oldConnectionState)
+            {
+                _ConnectionStateChangedHandlers(*this, nullptr);
+            }
+
             _connection.Start();
         }
     }
