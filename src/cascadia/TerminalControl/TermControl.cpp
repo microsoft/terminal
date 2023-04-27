@@ -2512,7 +2512,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const til::point clientCursorPos{ terminalPos * fontSize };
 
         // Get scale factor for view
-        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+        const double scaleFactor = SwapChainPanel().CompositionScaleX();
 
         const til::point clientCursorInDips{ til::math::flooring, clientCursorPos.x / scaleFactor, clientCursorPos.y / scaleFactor };
 
