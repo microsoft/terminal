@@ -2503,6 +2503,40 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return flags;
     }
 
+    til::point TermControl::_toControlOrigin(const til::point& terminalPos)
+    {
+        // // Convert the terminal position in chars to a pixel position
+        // const til::size fontSize{ til::math::rounding, _core.FontSize() };
+        // const til::point inPixelsRelativeToViewport{ terminalPos * fontSize };
+        // // Now, to DIPs
+        // const auto scale = SwapChainPanel().CompositionScaleX();
+        // const til::point inDipsRelativeToViewport{ til::math::rounding, inPixelsRelativeToViewport.x / scale, inPixelsRelativeToViewport.y / scale };
+        // // Now, add padding
+        // const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+
+        // const til::point relativeToMarginInDips{
+        //     inDipsRelativeToViewport + marginsInDips
+        // };
+        // return relativeToMarginInDips;
+
+        const til::size fontSize{ til::math::flooring, CharacterDimensions() };
+
+        // Convert text buffer cursor position to client coordinate position
+        // within the window. This point is in _pixels_
+        const til::point clientCursorPos{ terminalPos * fontSize };
+
+        // Get scale factor for view
+        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+
+        const til::point clientCursorInDips{ til::math::flooring, clientCursorPos.x / scaleFactor, clientCursorPos.y / scaleFactor };
+
+        auto padding{ GetPadding() };
+        til::point relativeToOrigin{ til::math::flooring,
+                                     clientCursorInDips.x + padding.Left,
+                                     clientCursorInDips.y + padding.Top };
+        return relativeToOrigin;
+    }
+
     // Method Description:
     // - Gets the corresponding viewport pixel position for the cursor
     //    by excluding the padding.
@@ -3334,10 +3368,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_contextMenuHandler(IInspectable /*sender*/,
                                           Control::ContextMenuRequestedEventArgs args)
     {
-        Controls::Primitives::FlyoutShowOptions myOption{};
-        myOption.ShowMode(Controls::Primitives::FlyoutShowMode::Standard);
-        myOption.Placement(Controls::Primitives::FlyoutPlacementMode::TopEdgeAlignedLeft);
-
         // Position the menu where the pointer is. This was the best way I found how.
         const til::point absolutePointerPos{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
         const til::point absoluteWindowOrigin{ til::math::rounding,
@@ -3347,8 +3377,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const til::point controlOrigin{ til::math::flooring,
                                         this->TransformToVisual(nullptr).TransformPoint(Windows::Foundation::Point(0, 0)) };
 
-        const auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin).to_winrt_point();
-        myOption.Position(pos);
+        const auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin);
+        _showContextMenuAt(pos);
+    }
+
+    void TermControl::_showContextMenuAt(const til::point& controlRelativePos)
+    {
+        Controls::Primitives::FlyoutShowOptions myOption{};
+        myOption.ShowMode(Controls::Primitives::FlyoutShowMode::Standard);
+        myOption.Placement(Controls::Primitives::FlyoutPlacementMode::TopEdgeAlignedLeft);
+        myOption.Position(controlRelativePos.to_winrt_point());
 
         // The "Select command" and "Select output" buttons should only be
         // visible if shell integration is actually turned on.
@@ -3362,6 +3400,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         (_core.HasSelection() ? SelectionContextMenu() :
                                 ContextMenu())
             .ShowAt(*this, myOption);
+    }
+
+    void TermControl::ShowContextMenu()
+    {
+        const bool hasSelection = _core.HasSelection();
+        til::point cursorPos{
+            hasSelection ? _core.SelectionInfo().EndPos :
+                           _core.CursorPosition()
+        };
+        // Offset this position a bit:
+        // * {+0,+1} if there's a selection. The selection endpoint is already
+        //   exclusive, so add one row to align to the bottom of the selection
+        // * {+1,+1} if there's no selection, to be on the bottom-right corner of
+        //   the cursor position
+        cursorPos += til::point{ hasSelection ? 0 : 1, 1 };
+        _showContextMenuAt(_toControlOrigin(cursorPos));
     }
 
     void TermControl::_PasteCommandHandler(const IInspectable& /*sender*/,

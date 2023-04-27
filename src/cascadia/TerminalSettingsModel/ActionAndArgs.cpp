@@ -89,6 +89,7 @@ static constexpr std::string_view MarkModeKey{ "markMode" };
 static constexpr std::string_view ToggleBlockSelectionKey{ "toggleBlockSelection" };
 static constexpr std::string_view SwitchSelectionEndpointKey{ "switchSelectionEndpoint" };
 static constexpr std::string_view ColorSelectionKey{ "experimental.colorSelection" };
+static constexpr std::string_view ShowContextMenuKey{ "showContextMenu" };
 static constexpr std::string_view ExpandSelectionToWordKey{ "expandSelectionToWord" };
 
 static constexpr std::string_view ActionKey{ "action" };
@@ -417,6 +418,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::ToggleBlockSelection, RS_(L"ToggleBlockSelectionCommandKey") },
                 { ShortcutAction::SwitchSelectionEndpoint, RS_(L"SwitchSelectionEndpointCommandKey") },
                 { ShortcutAction::ColorSelection, MustGenerate },
+                { ShortcutAction::ShowContextMenu, RS_(L"ShowContextMenuCommandKey") },
                 { ShortcutAction::ExpandSelectionToWord, RS_(L"ExpandSelectionToWordCommandKey") },
             };
         }();
