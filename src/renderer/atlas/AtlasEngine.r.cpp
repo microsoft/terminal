@@ -120,8 +120,9 @@ void AtlasEngine::_recreateAdapter()
     static constexpr UINT flags = 0;
 #endif
 
-    // IID_PPV_ARGS doesn't work here for some reason.
-    auto hr = (CreateDXGIFactory2(flags, __uuidof(_p.dxgi.factory), _p.dxgi.factory.put_void()));
+// IID_PPV_ARGS doesn't work here for some reason.
+#pragma warning(suppress : 26496) // The variable 'hr' does not change after construction, mark it as const (con.4).
+    auto hr = CreateDXGIFactory2(flags, __uuidof(_p.dxgi.factory), _p.dxgi.factory.put_void());
 
 #ifndef NDEBUG
     // This might be due to missing the "Graphics debugger and GPU profiler for
@@ -200,7 +201,8 @@ void AtlasEngine::_recreateBackend()
         D3D_FEATURE_LEVEL_9_1,
     };
 
-    auto hr = (D3D11CreateDevice(
+#pragma warning(suppress : 26496) // The variable 'hr' does not change after construction, mark it as const (con.4).
+    auto hr = D3D11CreateDevice(
         /* pAdapter */ _p.dxgi.adapter.get(),
         /* DriverType */ D3D_DRIVER_TYPE_UNKNOWN,
         /* Software */ nullptr,
@@ -210,7 +212,7 @@ void AtlasEngine::_recreateBackend()
         /* SDKVersion */ D3D11_SDK_VERSION,
         /* ppDevice */ device0.put(),
         /* pFeatureLevel */ &featureLevel,
-        /* ppImmediateContext */ deviceContext0.put()));
+        /* ppImmediateContext */ deviceContext0.put());
 
 #ifndef NDEBUG
     if (hr == DXGI_ERROR_SDK_COMPONENT_MISSING)
@@ -220,7 +222,7 @@ void AtlasEngine::_recreateBackend()
         // you don't though - instead, disable debugging and try again.
         WI_ClearFlag(deviceFlags, D3D11_CREATE_DEVICE_DEBUG);
 
-        hr = (D3D11CreateDevice(
+        hr = D3D11CreateDevice(
             /* pAdapter */ _p.dxgi.adapter.get(),
             /* DriverType */ D3D_DRIVER_TYPE_UNKNOWN,
             /* Software */ nullptr,
@@ -230,7 +232,7 @@ void AtlasEngine::_recreateBackend()
             /* SDKVersion */ D3D11_SDK_VERSION,
             /* ppDevice */ device0.put(),
             /* pFeatureLevel */ &featureLevel,
-            /* ppImmediateContext */ deviceContext0.put()));
+            /* ppImmediateContext */ deviceContext0.put());
     }
 #endif
     THROW_IF_FAILED(hr);
