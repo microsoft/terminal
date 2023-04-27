@@ -269,6 +269,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _ConnectionStateChangedHandlers(*this, nullptr);
         });
 
+        // Fire off a connection state changed notification, to let our hosting
+        // app know that we're in a different state now.
+        if (newConnection.State() != _connection.State())
+        {
+            _ConnectionStateChangedHandlers(*this, nullptr);
+        }
+
         // Get our current size in rows/cols, and hook them up to
         // this connection too.
         {
