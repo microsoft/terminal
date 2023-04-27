@@ -259,11 +259,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   connection, then this'll revoke the existing connection's handlers.
     void ControlCore::Connection(const TerminalConnection::ITerminalConnection& newConnection)
     {
-        if (_connection)
+        const bool replacing = _connection != nullptr;
+        if (replacing)
         {
             _connectionOutputEventRevoker.revoke();
         }
-
+        // Bail early if we're not actually giving the Terminal a new connection
+        if (newConnection == nullptr)
+        {
+            if (replacing)
+            {
+                _connection.Close();
+                _ConnectionStateChangedHandlers(*this, nullptr);
+                _connection = nullptr;
+            }
+            return;
+        }
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
         _connectionStateChangedRevoker = newConnection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
             _ConnectionStateChangedHandlers(*this, nullptr);
@@ -284,7 +295,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             conpty.ReparentWindow(_owningHwnd);
         }
         TerminalConnection::ConnectionState oldConnectionState{ TerminalConnection::ConnectionState::NotConnected };
-        const bool replacing = _connection != nullptr;
         if (replacing)
         {
             oldConnectionState = _connection.State();
