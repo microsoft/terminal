@@ -120,8 +120,20 @@ void AtlasEngine::_recreateAdapter()
     static constexpr UINT flags = 0;
 #endif
 
-    // IID_PPV_ARGS doesn't work here for some reason.
-    THROW_IF_FAILED(CreateDXGIFactory2(flags, __uuidof(_p.dxgi.factory), _p.dxgi.factory.put_void()));
+// IID_PPV_ARGS doesn't work here for some reason.
+#pragma warning(suppress : 26496) // The variable 'hr' does not change after construction, mark it as const (con.4).
+    auto hr = CreateDXGIFactory2(flags, __uuidof(_p.dxgi.factory), _p.dxgi.factory.put_void());
+
+#ifndef NDEBUG
+    // This might be due to missing the "Graphics debugger and GPU profiler for
+    // DirectX" tools. Just as a sanity check, try again without
+    // `DXGI_CREATE_FACTORY_DEBUG`
+    if (FAILED(hr))
+    {
+        hr = CreateDXGIFactory2(0, __uuidof(_p.dxgi.factory), _p.dxgi.factory.put_void());
+    }
+#endif
+    THROW_IF_FAILED(hr);
 
     wil::com_ptr<IDXGIAdapter1> adapter;
     DXGI_ADAPTER_DESC1 desc{};
@@ -189,7 +201,8 @@ void AtlasEngine::_recreateBackend()
         D3D_FEATURE_LEVEL_9_1,
     };
 
-    THROW_IF_FAILED(D3D11CreateDevice(
+#pragma warning(suppress : 26496) // The variable 'hr' does not change after construction, mark it as const (con.4).
+    auto hr = D3D11CreateDevice(
         /* pAdapter */ _p.dxgi.adapter.get(),
         /* DriverType */ D3D_DRIVER_TYPE_UNKNOWN,
         /* Software */ nullptr,
@@ -199,7 +212,30 @@ void AtlasEngine::_recreateBackend()
         /* SDKVersion */ D3D11_SDK_VERSION,
         /* ppDevice */ device0.put(),
         /* pFeatureLevel */ &featureLevel,
-        /* ppImmediateContext */ deviceContext0.put()));
+        /* ppImmediateContext */ deviceContext0.put());
+
+#ifndef NDEBUG
+    if (hr == DXGI_ERROR_SDK_COMPONENT_MISSING)
+    {
+        // This might happen if you don't have "Graphics debugger and GPU
+        // profiler for DirectX" installed in VS. We shouln't just explode if
+        // you don't though - instead, disable debugging and try again.
+        WI_ClearFlag(deviceFlags, D3D11_CREATE_DEVICE_DEBUG);
+
+        hr = D3D11CreateDevice(
+            /* pAdapter */ _p.dxgi.adapter.get(),
+            /* DriverType */ D3D_DRIVER_TYPE_UNKNOWN,
+            /* Software */ nullptr,
+            /* Flags */ deviceFlags,
+            /* pFeatureLevels */ featureLevels.data(),
+            /* FeatureLevels */ gsl::narrow_cast<UINT>(featureLevels.size()),
+            /* SDKVersion */ D3D11_SDK_VERSION,
+            /* ppDevice */ device0.put(),
+            /* pFeatureLevel */ &featureLevel,
+            /* ppImmediateContext */ deviceContext0.put());
+    }
+#endif
+    THROW_IF_FAILED(hr);
 
     auto device = device0.query<ID3D11Device2>();
     auto deviceContext = deviceContext0.query<ID3D11DeviceContext2>();
