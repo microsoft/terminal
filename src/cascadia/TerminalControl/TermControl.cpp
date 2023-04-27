@@ -2505,20 +2505,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     til::point TermControl::_toControlOrigin(const til::point& terminalPos)
     {
-        // // Convert the terminal position in chars to a pixel position
-        // const til::size fontSize{ til::math::rounding, _core.FontSize() };
-        // const til::point inPixelsRelativeToViewport{ terminalPos * fontSize };
-        // // Now, to DIPs
-        // const auto scale = SwapChainPanel().CompositionScaleX();
-        // const til::point inDipsRelativeToViewport{ til::math::rounding, inPixelsRelativeToViewport.x / scale, inPixelsRelativeToViewport.y / scale };
-        // // Now, add padding
-        // const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-
-        // const til::point relativeToMarginInDips{
-        //     inDipsRelativeToViewport + marginsInDips
-        // };
-        // return relativeToMarginInDips;
-
         const til::size fontSize{ til::math::flooring, CharacterDimensions() };
 
         // Convert text buffer cursor position to client coordinate position
