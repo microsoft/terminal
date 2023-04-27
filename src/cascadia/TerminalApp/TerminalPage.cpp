@@ -246,6 +246,7 @@ namespace winrt::TerminalApp::implementation
         });
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
         _tabView.TabCloseRequested({ this, &TerminalPage::_OnTabCloseRequested });
+        _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
 
         _tabView.TabDragStarting({ this, &TerminalPage::_onTabDragStarting });
         _tabView.TabStripDragOver({ this, &TerminalPage::_onTabStripDragOver });
@@ -4704,8 +4705,6 @@ namespace winrt::TerminalApp::implementation
         co_await wil::resume_foreground(Dispatcher());
         if (const auto& page{ weakThis.get() })
         {
-            // `this` is safe to use
-            //
             // First we need to get the position in the List to drop to
             auto index = -1;
 
@@ -4725,8 +4724,8 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            const auto myId{ _WindowProperties.WindowId() };
-            const auto request = winrt::make_self<RequestReceiveContentArgs>(src, myId, index);
+            // `this` is safe to use
+            const auto request = winrt::make_self<RequestReceiveContentArgs>(src, _WindowProperties.WindowId(), index);
 
             // This will go up to the monarch, who will then dispatch the request
             // back down to the source TerminalPage, who will then perform a
