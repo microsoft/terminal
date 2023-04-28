@@ -257,11 +257,30 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Setup our event handlers for this connection. If we've currently got a
     //   connection, then this'll revoke the existing connection's handlers.
+    // - This will not call Start on the incoming connection. The caller should do that.
+    // - If the caller doesn't want the old connection to be closed, then they
+    //   should grab a reference to it before calling this (so that it doesn't
+    //   destruct, and close) during this call.
     void ControlCore::Connection(const TerminalConnection::ITerminalConnection& newConnection)
     {
-        if (_connection)
+        const bool replacing = _connection != nullptr;
+        TerminalConnection::ConnectionState oldConnectionState{ TerminalConnection::ConnectionState::NotConnected };
+
+        if (replacing)
         {
             _connectionOutputEventRevoker.revoke();
+            oldConnectionState = _connection.State();
+        }
+        // Bail early if we're not actually giving the Terminal a new connection
+        if (newConnection == nullptr)
+        {
+            if (replacing)
+            {
+                _connectionStateChangedRevoker.revoke();
+                _ConnectionStateChangedHandlers(*this, nullptr);
+                _connection = nullptr;
+            }
+            return;
         }
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
@@ -283,17 +302,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             conpty.ReparentWindow(_owningHwnd);
         }
-        const bool replacing = _connection != nullptr;
-        if (replacing)
-        {
-            _connection.Close();
-        }
+
         _connection = newConnection;
         // This event is explicitly revoked in the destructor: does not need weak_ref
         _connectionOutputEventRevoker = _connection.TerminalOutput(winrt::auto_revoke, { this, &ControlCore::_connectionOutputHandler });
+
         if (replacing)
         {
-            _connection.Start();
+            // Fire off a connection state changed notification, to let our hosting
+            // app know that we're in a different state now.
+            if (newConnection.State() != oldConnectionState)
+            {
+                _ConnectionStateChangedHandlers(*this, nullptr);
+            }
         }
     }
 
