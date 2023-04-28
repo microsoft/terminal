@@ -168,8 +168,8 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
     if (_peasant)
     {
         const auto& args{ _peasant.InitialArgs() };
-
-        if (!windowArgs.Content().empty())
+        const bool startedForContent = !windowArgs.Content().empty();
+        if (startedForContent)
         {
             _windowLogic.SetStartupContent(windowArgs.Content(), windowArgs.InitialBounds());
         }
@@ -220,7 +220,8 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
         // seemed to reorder bits of init so much that everything broke. So
         // we'll leave it here.
         const auto numPeasants = _windowManager.GetNumberOfPeasants();
-        if (numPeasants == 1)
+        // Don't attempt to session restore if we're just making a window for tear-out
+        if (!startedForContent && numPeasants == 1)
         {
             const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
             if (_appLogic.ShouldUsePersistedLayout() &&
