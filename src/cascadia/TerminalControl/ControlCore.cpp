@@ -263,58 +263,45 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   destruct, and close) during this call.
     void ControlCore::Connection(const TerminalConnection::ITerminalConnection& newConnection)
     {
-        const bool replacing = _connection != nullptr;
-        TerminalConnection::ConnectionState oldConnectionState{ TerminalConnection::ConnectionState::NotConnected };
+        auto oldState = ConnectionState(); // rely on ControlCore's automatic null handling
+        // revoke ALL old handlers immediately
 
-        if (replacing)
-        {
-            _connectionOutputEventRevoker.revoke();
-            oldConnectionState = _connection.State();
-        }
-        // Bail early if we're not actually giving the Terminal a new connection
-        if (newConnection == nullptr)
-        {
-            if (replacing)
-            {
-                _connectionStateChangedRevoker.revoke();
-                _ConnectionStateChangedHandlers(*this, nullptr);
-                _connection = nullptr;
-            }
-            return;
-        }
-
-        // Subscribe to the connection's disconnected event and call our connection closed handlers.
-        _connectionStateChangedRevoker = newConnection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
-            _ConnectionStateChangedHandlers(*this, nullptr);
-        });
-
-        // Get our current size in rows/cols, and hook them up to
-        // this connection too.
-        {
-            const auto vp = _terminal->GetViewport();
-            const auto width = vp.Width();
-            const auto height = vp.Height();
-
-            newConnection.Resize(height, width);
-        }
-        // Window owner too.
-        if (auto conpty{ newConnection.try_as<TerminalConnection::ConptyConnection>() })
-        {
-            conpty.ReparentWindow(_owningHwnd);
-        }
+        _connectionOutputEventRevoker.revoke();
+        _connectionStateChangedRevoker.revoke();
 
         _connection = newConnection;
-        // This event is explicitly revoked in the destructor: does not need weak_ref
-        _connectionOutputEventRevoker = _connection.TerminalOutput(winrt::auto_revoke, { this, &ControlCore::_connectionOutputHandler });
-
-        if (replacing)
+        if (_connection)
         {
-            // Fire off a connection state changed notification, to let our hosting
-            // app know that we're in a different state now.
-            if (newConnection.State() != oldConnectionState)
-            {
+            // Subscribe to the connection's disconnected event and call our connection closed handlers.
+            _connectionStateChangedRevoker = newConnection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
                 _ConnectionStateChangedHandlers(*this, nullptr);
+            });
+
+            // Get our current size in rows/cols, and hook them up to
+            // this connection too.
+            {
+                const auto vp = _terminal->GetViewport();
+                const auto width = vp.Width();
+                const auto height = vp.Height();
+
+                newConnection.Resize(height, width);
             }
+            // Window owner too.
+            if (auto conpty{ newConnection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                conpty.ReparentWindow(_owningHwnd);
+            }
+
+            // This event is explicitly revoked in the destructor: does not need weak_ref
+            _connectionOutputEventRevoker = _connection.TerminalOutput(winrt::auto_revoke, { this, &ControlCore::_connectionOutputHandler });
+        }
+
+        // Fire off a connection state changed notification, to let our hosting
+        // app know that we're in a different state now.
+        if (oldState != ConnectionState())
+        { // rely on the null handling again
+            // send the notification
+            _ConnectionStateChangedHandlers(*this, nullptr);
         }
     }
 
