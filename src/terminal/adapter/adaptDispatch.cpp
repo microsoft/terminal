@@ -3048,8 +3048,8 @@ bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt
 // Return value:
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                       const VTParameter parameter1,
-                                       const VTParameter parameter2)
+    const VTParameter parameter1,
+    const VTParameter parameter2)
 {
     // Other Window Manipulation functions:
     //  MSFT:13271098 - QueryViewport
@@ -3068,15 +3068,11 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         _api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
         return true;
-    case DispatchTypes::WindowManipulationType::Aaa:
-        //_api.GetTextBuffer().TriggerRedrawAll();
+    case DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters:
     {
-        const auto viewport = _api.GetViewport();
-        const auto width = viewport.width();
-        const auto height = viewport.height();
-        const std::wstring wstr = fmt::format(L"\033[8;{};{}t", height, width);
-        std::wstring_view wstr_view(wstr);
-        _api.ReturnResponse(wstr_view);
+        const til::rect viewport = _api.GetViewport();
+        const std::wstring textSize = fmt::format(L"\033[8;{};{}t", viewport.height(), viewport.width());
+        _api.ReturnResponse(std::wstring_view(textSize));
         return true;
     }
     default:

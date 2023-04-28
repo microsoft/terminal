@@ -467,7 +467,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         IconifyWindow = 2,
         RefreshWindow = 7,
         ResizeWindowInCharacters = 8,
-        Aaa = 18
+        ReportTextSizeInCharacters = 18
     };
 
     enum class CursorStyle : VTInt
