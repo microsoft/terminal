@@ -40,7 +40,7 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
 {
     _HandleCommandlineArgs(args);
 
-    _HandleSessionRestore(!args.Content().empty(););
+    _HandleSessionRestore(!args.Content().empty());
 
     // _HandleCommandlineArgs will create a _windowLogic
     _useNonClientArea = _windowLogic.GetShowTabsInTitlebar();
@@ -227,7 +227,6 @@ void AppHost::_HandleSessionRestore(const bool startedForContent)
 {
     const auto& args{ _peasant.InitialArgs() };
 
-    const bool startedForContent = !windowArgs.Content().empty();
     // This is logic that almost seems like it belongs on the WindowEmperor.
     // It probably does. However, it needs to muck with our own window so
     // much, that there was no reasonable way of moving this. Moving it also
