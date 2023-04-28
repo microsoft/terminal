@@ -425,6 +425,9 @@
   <data name="MovePaneCommandKey" xml:space="preserve">
     <value>Move pane</value>
   </data>
+  <data name="MovePaneToNewWindowCommandKey" xml:space="preserve">
+    <value>Move pane to new window</value>
+  </data>
   <data name="SplitPaneCommandKey" xml:space="preserve">
     <value>Split pane</value>
   </data>
