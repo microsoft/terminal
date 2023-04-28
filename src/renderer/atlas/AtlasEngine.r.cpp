@@ -457,6 +457,10 @@ void AtlasEngine::_present()
         }
     }
 
-    THROW_IF_FAILED(_p.swapChain.swapChain->Present1(1, 0, &params));
+    if (FAILED_LOG(_p.swapChain.swapChain->Present1(1, 0, &params)))
+    {
+        THROW_IF_FAILED(_p.swapChain.swapChain->Present(1, 0));
+    }
+
     _p.swapChain.waitForPresentation = true;
 }
