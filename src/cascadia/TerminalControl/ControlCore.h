@@ -224,6 +224,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t OwningHwnd();
         void OwningHwnd(uint64_t owner);
 
+        TerminalConnection::ITerminalConnection Connection();
+        void Connection(const TerminalConnection::ITerminalConnection& connection);
+
         void AnchorContextMenu(til::point viewportRelativeCharacterPosition);
 
         bool ShouldShowSelectCommand();
@@ -257,6 +260,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(CloseTerminalRequested,    IInspectable, IInspectable);
+        TYPED_EVENT(RestartTerminalRequested,    IInspectable, IInspectable);
 
         TYPED_EVENT(Attached,                  IInspectable, IInspectable);
         // clang-format on
@@ -266,7 +270,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _closing{ false };
 
         TerminalConnection::ITerminalConnection _connection{ nullptr };
-        event_token _connectionOutputEventToken;
+        TerminalConnection::ITerminalConnection::TerminalOutput_revoker _connectionOutputEventRevoker;
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
         winrt::com_ptr<ControlSettings> _settings{ nullptr };
