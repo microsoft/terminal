@@ -823,4 +823,8 @@
   <data name="ClosePaneToolTip" xml:space="preserve">
     <value>Close the active pane if multiple panes are present</value>
   </data>
+  <data name="TabColorClearButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.FullDescription" xml:space="preserve">
+    <value>Reset tab colour</value>
+    <comment>Text used to identify the reset button</comment>
+  </data>
 </root>
