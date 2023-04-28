@@ -107,6 +107,7 @@ void Pane::_setupControlEvents()
     _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &Pane::_ControlConnectionStateChangedHandler });
     _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { this, &Pane::_ControlWarningBellHandler });
     _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { this, &Pane::_CloseTerminalRequestedHandler });
+    _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { this, &Pane::_RestartTerminalRequestedHandler });
 }
 void Pane::_removeControlEvents()
 {
@@ -1101,6 +1102,16 @@ void Pane::_CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IIns
     }
 
     Close();
+}
+
+void Pane::_RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                            const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    if (!_IsLeaf())
+    {
+        return;
+    }
+    _RestartTerminalRequestedHandlers(shared_from_this());
 }
 
 winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)

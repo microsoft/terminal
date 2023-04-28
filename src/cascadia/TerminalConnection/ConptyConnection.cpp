@@ -282,6 +282,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             {
                 _passthroughMode = winrt::unbox_value_or<bool>(settings.TryLookup(L"passthroughMode").try_as<Windows::Foundation::IPropertyValue>(), _passthroughMode);
             }
+            _inheritCursor = winrt::unbox_value_or<bool>(settings.TryLookup(L"inheritCursor").try_as<Windows::Foundation::IPropertyValue>(), _inheritCursor);
             _reloadEnvironmentVariables = winrt::unbox_value_or<bool>(settings.TryLookup(L"reloadEnvironmentVariables").try_as<Windows::Foundation::IPropertyValue>(),
                                                                       _reloadEnvironmentVariables);
             _profileGuid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"profileGuid").try_as<Windows::Foundation::IPropertyValue>(), _profileGuid);
@@ -316,13 +317,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConptyConnection::Start()
     try
     {
-        bool usingExistingBuffer = false;
-        if (_isStateAtOrBeyond(ConnectionState::Closed))
-        {
-            _resetConnectionState();
-            usingExistingBuffer = true;
-        }
-
         _transitionToState(ConnectionState::Connecting);
 
         const til::size dimensions{ gsl::narrow<til::CoordType>(_cols), gsl::narrow<til::CoordType>(_rows) };
@@ -338,7 +332,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // PseudoConsole sends a clear screen VT code which our renderer
             // interprets into making all the previous lines be outside the
             // current viewport.
-            if (usingExistingBuffer)
+            if (_inheritCursor)
             {
                 flags |= PSEUDOCONSOLE_INHERIT_CURSOR;
             }

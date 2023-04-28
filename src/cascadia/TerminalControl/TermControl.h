@@ -145,6 +145,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void Detach();
 
+        TerminalConnection::ITerminalConnection Connection();
+        void Connection(const TerminalConnection::ITerminalConnection& connection);
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
@@ -160,6 +163,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         BUBBLED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(CloseTerminalRequested, IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(RestartTerminalRequested, IInspectable, IInspectable);
 
         BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
 
@@ -371,6 +375,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::ConnectionStateChanged_revoker ConnectionStateChanged;
             Control::ControlCore::ShowWindowChanged_revoker ShowWindowChanged;
             Control::ControlCore::CloseTerminalRequested_revoker CloseTerminalRequested;
+            Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
             // These are set up in _InitializeTerminal
             Control::ControlCore::RendererWarning_revoker RendererWarning;
             Control::ControlCore::SwapChainChanged_revoker SwapChainChanged;
