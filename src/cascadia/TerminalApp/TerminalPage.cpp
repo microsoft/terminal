@@ -1165,7 +1165,8 @@ namespace winrt::TerminalApp::implementation
     // Return value:
     // - the desired connection
     TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
-                                                                                        TerminalSettings settings)
+                                                                                        TerminalSettings settings,
+                                                                                        const bool inheritCursor)
     {
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
@@ -1248,6 +1249,11 @@ namespace winrt::TerminalApp::implementation
             valueSet.Insert(L"reloadEnvironmentVariables",
                             Windows::Foundation::PropertyValue::CreateBoolean(_settings.GlobalSettings().ReloadEnvironmentVariables()));
 
+            if (inheritCursor)
+            {
+                valueSet.Insert(L"inheritCursor", Windows::Foundation::PropertyValue::CreateBoolean(true));
+            }
+
             conhostConn.Initialize(valueSet);
 
             sessionGuid = conhostConn.Guid();
@@ -1265,6 +1271,44 @@ namespace winrt::TerminalApp::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
         return connection;
+    }
+
+    TerminalConnection::ITerminalConnection TerminalPage::_duplicateConnectionForRestart(std::shared_ptr<Pane> pane)
+    {
+        const auto& control{ pane->GetTerminalControl() };
+        if (control == nullptr)
+        {
+            return nullptr;
+        }
+        const auto& connection = control.Connection();
+        auto profile{ pane->GetProfile() };
+
+        TerminalSettingsCreateResult controlSettings{ nullptr };
+
+        if (profile)
+        {
+            // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
+            profile = GetClosestProfileForDuplicationOfProfile(profile);
+            controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
+
+            // Replace the Starting directory with the CWD, if given
+            const auto workingDirectory = control.WorkingDirectory();
+            const auto validWorkingDirectory = !workingDirectory.empty();
+            if (validWorkingDirectory)
+            {
+                controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
+            }
+
+            // To facilitate restarting defterm connections: grab the original
+            // commandline out of the connection and shove that back into the
+            // settings.
+            if (const auto& conpty{ connection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                controlSettings.DefaultSettings().Commandline(conpty.Commandline());
+            }
+        }
+
+        return _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings(), true);
     }
 
     // Method Description:
@@ -2893,7 +2937,7 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
-        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
+        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings(), false);
         if (existingConnection)
         {
             connection.Resize(controlSettings.DefaultSettings().InitialRows(), controlSettings.DefaultSettings().InitialCols());
@@ -2934,6 +2978,15 @@ namespace winrt::TerminalApp::implementation
             resultPane->ClearActive();
             original->SetActive();
         }
+
+        resultPane->RestartTerminalRequested([this](const auto& pane) {
+            auto connection = _duplicateConnectionForRestart(pane);
+            if (connection)
+            {
+                pane->GetTerminalControl().Connection(connection);
+                connection.Start();
+            }
+        });
 
         return resultPane;
     }
