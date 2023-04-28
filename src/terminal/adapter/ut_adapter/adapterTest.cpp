@@ -189,10 +189,10 @@ public:
         Log::Comment(L"SetBracketedPasteMode MOCK called...");
     }
 
-    std::optional<bool> GetBracketedPasteMode() const override
+    bool GetBracketedPasteMode() const override
     {
         Log::Comment(L"GetBracketedPasteMode MOCK called...");
-        return {};
+        return false;
     }
 
     void CopyToClipboard(const std::wstring_view /*content*/)
@@ -1534,7 +1534,7 @@ public:
         _testGetSet->PrepData();
         VERIFY_IS_TRUE(_pDispatch->DeviceAttributes());
 
-        auto pwszExpectedResponse = L"\x1b[?1;0c";
+        auto pwszExpectedResponse = L"\x1b[?61;1;6;7;22;23;24;28;32;42c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
         Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");

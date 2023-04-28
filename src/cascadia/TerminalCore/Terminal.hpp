@@ -121,7 +121,7 @@ public:
     void SetConsoleOutputCP(const unsigned int codepage) noexcept override;
     unsigned int GetConsoleOutputCP() const noexcept override;
     void SetBracketedPasteMode(const bool enabled) noexcept override;
-    std::optional<bool> GetBracketedPasteMode() const noexcept override;
+    bool GetBracketedPasteMode() const noexcept override;
     void CopyToClipboard(std::wstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(std::wstring_view uri) override;
