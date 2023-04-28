@@ -457,9 +457,16 @@ void AtlasEngine::_present()
         }
     }
 
-    if (FAILED_LOG(_p.swapChain.swapChain->Present1(1, 0, &params)))
+    if constexpr (Feature_AtlasEnginePresentFallback::IsEnabled())
     {
-        THROW_IF_FAILED(_p.swapChain.swapChain->Present(1, 0));
+        if (FAILED_LOG(_p.swapChain.swapChain->Present1(1, 0, &params)))
+        {
+            THROW_IF_FAILED(_p.swapChain.swapChain->Present(1, 0));
+        }
+    }
+    else
+    {
+        THROW_IF_FAILED(_p.swapChain.swapChain->Present1(1, 0, &params));
     }
 
     _p.swapChain.waitForPresentation = true;
