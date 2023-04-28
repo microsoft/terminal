@@ -3350,6 +3350,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin).to_winrt_point();
         myOption.Position(pos);
 
+        // The "Select command" and "Select output" buttons should only be
+        // visible if shell integration is actually turned on.
+        const auto shouldShowSelectCommand{ _core.ShouldShowSelectCommand() };
+        const auto shouldShowSelectOutput{ _core.ShouldShowSelectOutput() };
+        SelectCommandButton().Visibility(shouldShowSelectCommand ? Visibility::Visible : Visibility::Collapsed);
+        SelectOutputButton().Visibility(shouldShowSelectOutput ? Visibility::Visible : Visibility::Collapsed);
+        SelectCommandWithSelectionButton().Visibility(shouldShowSelectCommand ? Visibility::Visible : Visibility::Collapsed);
+        SelectOutputWithSelectionButton().Visibility(shouldShowSelectOutput ? Visibility::Visible : Visibility::Collapsed);
+
         (_core.HasSelection() ? SelectionContextMenu() :
                                 ContextMenu())
             .ShowAt(*this, myOption);
@@ -3375,7 +3384,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         ContextMenu().Hide();
         SelectionContextMenu().Hide();
-        SearchMatch(false);
+
+        // CreateSearchBoxControl will actually create the search box and
+        // pre-populate the box with the currently selected text.
+        CreateSearchBoxControl();
     }
 
+    void TermControl::_SelectCommandHandler(const IInspectable& /*sender*/,
+                                            const IInspectable& /*args*/)
+    {
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+        _core.ContextMenuSelectCommand();
+    }
+
+    void TermControl::_SelectOutputHandler(const IInspectable& /*sender*/,
+                                           const IInspectable& /*args*/)
+    {
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+        _core.ContextMenuSelectOutput();
+    }
 }

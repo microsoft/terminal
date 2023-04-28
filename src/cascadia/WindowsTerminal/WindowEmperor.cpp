@@ -79,7 +79,7 @@ bool WindowEmperor::HandleCommandlineArgs()
     // so we can open a new window with the same state.
     STARTUPINFOW si;
     GetStartupInfoW(&si);
-    const auto showWindow = si.wShowWindow;
+    const uint32_t showWindow = WI_IsFlagSet(si.dwFlags, STARTF_USESHOWWINDOW) ? si.wShowWindow : SW_SHOW;
 
     Remoting::CommandlineArgs eventArgs{ { args }, { cwd }, showWindow };
 
@@ -140,7 +140,7 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
     std::thread t([weakThis, window]() {
         try
         {
-            const auto cleanup = wil::scope_exit([&]() {
+            auto cleanup = wil::scope_exit([&]() {
                 if (auto self{ weakThis.lock() })
                 {
                     self->_windowExitedHandler(window->Peasant().GetID());
@@ -155,6 +155,16 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
             }
 
             window->RunMessagePump();
+
+            // Manually trigger the cleanup callback. This will ensure that we
+            // remove the window from our list of windows, before we release the
+            // AppHost (and subsequently, the host's Logic() member that we use
+            // elsewhere).
+            cleanup.reset();
+
+            // Now that we no longer care about this thread's window, let it
+            // release it's app host and flush the rest of the XAML queue.
+            window->RundownForExit();
         }
         CATCH_LOG()
     });
