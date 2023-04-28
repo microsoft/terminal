@@ -48,6 +48,8 @@ private:
     void _preInit();
 
     void _HandleCommandlineArgs(const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args);
+    void _HandleSessionRestore(const bool startedForContent);
+
     winrt::Microsoft::Terminal::Settings::Model::LaunchPosition _GetWindowLaunchPosition();
 
     void _HandleCreateWindow(const HWND hwnd, const til::rect& proposedRect);

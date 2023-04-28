@@ -40,6 +40,8 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
 {
     _HandleCommandlineArgs(args);
 
+    _HandleSessionRestore(!args.Content().empty(););
+
     // _HandleCommandlineArgs will create a _windowLogic
     _useNonClientArea = _windowLogic.GetShowTabsInTitlebar();
     if (_useNonClientArea)
@@ -214,63 +216,69 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
         _revokers.peasantDisplayWindowIdRequested = _peasant.DisplayWindowIdRequested(winrt::auto_revoke, { this, &AppHost::_DisplayWindowId });
         _revokers.peasantQuitRequested = _peasant.QuitRequested(winrt::auto_revoke, { this, &AppHost::_QuitRequested });
 
-        // This is logic that almost seems like it belongs on the WindowEmperor.
-        // It probably does. However, it needs to muck with our own window so
-        // much, that there was no reasonable way of moving this. Moving it also
-        // seemed to reorder bits of init so much that everything broke. So
-        // we'll leave it here.
-        const auto numPeasants = _windowManager.GetNumberOfPeasants();
-        // Don't attempt to session restore if we're just making a window for tear-out
-        if (!startedForContent && numPeasants == 1)
-        {
-            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-            if (_appLogic.ShouldUsePersistedLayout() &&
-                layouts &&
-                layouts.Size() > 0)
-            {
-                uint32_t startIdx = 0;
-                // We want to create a window for every saved layout.
-                // If we are the only window, and no commandline arguments were provided
-                // then we should just use the current window to load the first layout.
-                // Otherwise create this window normally with its commandline, and create
-                // a new window using the first saved layout information.
-                // The 2nd+ layout will always get a new window.
-                if (!_windowLogic.HasCommandlineArguments() &&
-                    !_appLogic.HasSettingsStartupActions())
-                {
-                    _windowLogic.SetPersistedLayoutIdx(startIdx);
-                    startIdx += 1;
-                }
-
-                // Create new windows for each of the other saved layouts.
-                for (const auto size = layouts.Size(); startIdx < size; startIdx += 1)
-                {
-                    auto newWindowArgs = fmt::format(L"{0} -w new -s {1}", args.Commandline()[0], startIdx);
-
-                    STARTUPINFO si;
-                    memset(&si, 0, sizeof(si));
-                    si.cb = sizeof(si);
-                    wil::unique_process_information pi;
-
-                    LOG_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
-                                                           newWindowArgs.data(),
-                                                           nullptr, // lpProcessAttributes
-                                                           nullptr, // lpThreadAttributes
-                                                           false, // bInheritHandles
-                                                           DETACHED_PROCESS | CREATE_UNICODE_ENVIRONMENT, // doCreationFlags
-                                                           nullptr, // lpEnvironment
-                                                           nullptr, // lpStartingDirectory
-                                                           &si, // lpStartupInfo
-                                                           &pi // lpProcessInformation
-                                                           ));
-                }
-            }
-        }
-
         _windowLogic.WindowName(_peasant.WindowName());
         _windowLogic.WindowId(_peasant.GetID());
 
         _revokers.AttachRequested = _peasant.AttachRequested(winrt::auto_revoke, { this, &AppHost::_handleAttach });
+    }
+}
+
+void AppHost::_HandleSessionRestore(const bool startedForContent)
+{
+    const auto& args{ _peasant.InitialArgs() };
+
+    const bool startedForContent = !windowArgs.Content().empty();
+    // This is logic that almost seems like it belongs on the WindowEmperor.
+    // It probably does. However, it needs to muck with our own window so
+    // much, that there was no reasonable way of moving this. Moving it also
+    // seemed to reorder bits of init so much that everything broke. So
+    // we'll leave it here.
+    const auto numPeasants = _windowManager.GetNumberOfPeasants();
+    // Don't attempt to session restore if we're just making a window for tear-out
+    if (!startedForContent && numPeasants == 1)
+    {
+        const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+        if (_appLogic.ShouldUsePersistedLayout() &&
+            layouts &&
+            layouts.Size() > 0)
+        {
+            uint32_t startIdx = 0;
+            // We want to create a window for every saved layout.
+            // If we are the only window, and no commandline arguments were provided
+            // then we should just use the current window to load the first layout.
+            // Otherwise create this window normally with its commandline, and create
+            // a new window using the first saved layout information.
+            // The 2nd+ layout will always get a new window.
+            if (!_windowLogic.HasCommandlineArguments() &&
+                !_appLogic.HasSettingsStartupActions())
+            {
+                _windowLogic.SetPersistedLayoutIdx(startIdx);
+                startIdx += 1;
+            }
+
+            // Create new windows for each of the other saved layouts.
+            for (const auto size = layouts.Size(); startIdx < size; startIdx += 1)
+            {
+                auto newWindowArgs = fmt::format(L"{0} -w new -s {1}", args.Commandline()[0], startIdx);
+
+                STARTUPINFO si;
+                memset(&si, 0, sizeof(si));
+                si.cb = sizeof(si);
+                wil::unique_process_information pi;
+
+                LOG_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
+                                                       newWindowArgs.data(),
+                                                       nullptr, // lpProcessAttributes
+                                                       nullptr, // lpThreadAttributes
+                                                       false, // bInheritHandles
+                                                       DETACHED_PROCESS | CREATE_UNICODE_ENVIRONMENT, // doCreationFlags
+                                                       nullptr, // lpEnvironment
+                                                       nullptr, // lpStartingDirectory
+                                                       &si, // lpStartupInfo
+                                                       &pi // lpProcessInformation
+                                                       ));
+            }
+        }
     }
 }
 
