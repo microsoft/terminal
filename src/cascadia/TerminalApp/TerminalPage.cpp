@@ -2984,6 +2984,7 @@ namespace winrt::TerminalApp::implementation
             if (connection)
             {
                 pane->GetTerminalControl().Connection(connection);
+                connection.Start();
             }
         });
 

@@ -71,7 +71,7 @@ namespace Microsoft.Terminal.Control
         void UpdateSettings(IControlSettings settings, IControlAppearance appearance);
         void ApplyAppearance(Boolean focused);
 
-        Microsoft.Terminal.TerminalConnection.ITerminalConnection Connection { get ; set; };
+        Microsoft.Terminal.TerminalConnection.ITerminalConnection Connection;
 
         IControlSettings Settings { get; };
         IControlAppearance FocusedAppearance { get; };
