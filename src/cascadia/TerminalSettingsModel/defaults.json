@@ -374,6 +374,7 @@
         { "command": "openSystemMenu", "keys": "alt+space" },
         { "command": "quit" },
         { "command": "restoreLastClosed"},
+        { "command": "displayTerminalCwd"},
 
         // Tab Management
         // "command": "closeTab" is unbound by default.

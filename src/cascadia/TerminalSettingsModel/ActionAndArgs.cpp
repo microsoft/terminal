@@ -72,6 +72,7 @@ static constexpr std::string_view IdentifyWindowKey{ "identifyWindow" };
 static constexpr std::string_view IdentifyWindowsKey{ "identifyWindows" };
 static constexpr std::string_view RenameWindowKey{ "renameWindow" };
 static constexpr std::string_view OpenWindowRenamerKey{ "openWindowRenamer" };
+static constexpr std::string_view DisplayWorkingDirectoryKey{ "displayTerminalCwd" };
 static constexpr std::string_view GlobalSummonKey{ "globalSummon" };
 static constexpr std::string_view QuakeModeKey{ "quakeMode" };
 static constexpr std::string_view FocusPaneKey{ "focusPane" };
@@ -401,6 +402,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::IdentifyWindows, RS_(L"IdentifyWindowsCommandKey") },
                 { ShortcutAction::RenameWindow, RS_(L"ResetWindowNameCommandKey") },
                 { ShortcutAction::OpenWindowRenamer, RS_(L"OpenWindowRenamerCommandKey") },
+                { ShortcutAction::DisplayWorkingDirectory, L"Display Terminal's CWD TODO! localize" },
                 { ShortcutAction::GlobalSummon, MustGenerate },
                 { ShortcutAction::QuakeMode, RS_(L"QuakeModeCommandKey") },
                 { ShortcutAction::FocusPane, MustGenerate },
