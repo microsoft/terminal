@@ -4067,6 +4067,33 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    winrt::fire_and_forget TerminalPage::ShowTerminalWorkingDirectory()
+    {
+        auto weakThis{ get_weak() };
+        co_await wil::resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            // If we haven't ever loaded the TeachingTip, then do so now and
+            // create the toast for it.
+            if (page->_windowCwdToast == nullptr)
+            {
+                if (auto tip{ page->FindName(L"WindowCwdToast").try_as<MUX::Controls::TeachingTip>() })
+                {
+                    page->_windowCwdToast = std::make_shared<Toast>(tip);
+                    // Make sure to use the weak ref when setting up this
+                    // callback.
+                    tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
+                }
+            }
+            _UpdateTeachingTipTheme(WindowCwdToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+
+            if (page->_windowCwdToast != nullptr)
+            {
+                page->_windowCwdToast->Open();
+            }
+        }
+    }
+
     // Method Description:
     // - Called when the user hits the "Ok" button on the WindowRenamer TeachingTip.
     // - Will raise an event that will bubble up to the monarch, asking if this
