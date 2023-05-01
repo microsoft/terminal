@@ -1264,7 +1264,7 @@ winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::
     // side effect of immediately dismissing the initial warning dialog, if
     // there were settings load warnings.
     //
-    // In Apphost::_WindowMoved, we'll make sure we're at least initialized
+    // In AppHost::_WindowMoved, we'll make sure we're at least initialized
     // before dismissing open dialogs.
     _isWindowInitialized = WindowInitializedState::Initialized;
 }
