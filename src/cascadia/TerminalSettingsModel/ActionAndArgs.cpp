@@ -90,6 +90,7 @@ static constexpr std::string_view ToggleBlockSelectionKey{ "toggleBlockSelection
 static constexpr std::string_view SwitchSelectionEndpointKey{ "switchSelectionEndpoint" };
 static constexpr std::string_view ColorSelectionKey{ "experimental.colorSelection" };
 static constexpr std::string_view ExpandSelectionToWordKey{ "expandSelectionToWord" };
+static constexpr std::string_view RestartConnectionKey{ "restartConnection" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -418,6 +419,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::SwitchSelectionEndpoint, RS_(L"SwitchSelectionEndpointCommandKey") },
                 { ShortcutAction::ColorSelection, MustGenerate },
                 { ShortcutAction::ExpandSelectionToWord, RS_(L"ExpandSelectionToWordCommandKey") },
+                { ShortcutAction::RestartConnection, RS_(L"RestartConnectionKey") },
             };
         }();
 

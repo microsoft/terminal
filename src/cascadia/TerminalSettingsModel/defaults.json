@@ -449,6 +449,7 @@
         { "command": { "action": "movePane", "index": 6 } },
         { "command": { "action": "movePane", "index": 7 } },
         { "command": { "action": "movePane", "index": 8 } },
+        { "command": "restartConnection" },
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },

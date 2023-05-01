@@ -1404,7 +1404,7 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Items().Append(renameTabMenuItem);
         contextMenuFlyout.Items().Append(duplicateTabMenuItem);
         contextMenuFlyout.Items().Append(splitTabMenuItem);
-        contextMenuFlyout.Items().Append(closePaneMenuItem);
+
         contextMenuFlyout.Items().Append(exportTabMenuItem);
         contextMenuFlyout.Items().Append(findMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
@@ -1423,7 +1423,9 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         });
-        _AppendCloseMenuItems(contextMenuFlyout);
+        auto closeSubMenu = _AppendCloseMenuItems(contextMenuFlyout);
+        closeSubMenu.Items().Append(closePaneMenuItem);
+
         TabViewItem().ContextFlyout(contextMenuFlyout);
     }
 

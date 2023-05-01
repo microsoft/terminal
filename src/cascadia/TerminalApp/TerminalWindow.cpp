@@ -239,6 +239,8 @@ namespace winrt::TerminalApp::implementation
         });
         _root->Create();
 
+        AppLogic::Current()->SettingsChanged({ get_weak(), &TerminalWindow::UpdateSettingsHandler });
+
         _RefreshThemeRoutine();
 
         auto args = winrt::make_self<SystemMenuChangeArgs>(RS_(L"SettingsMenuItem"),
