@@ -90,6 +90,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::wstring _u16Str{};
         std::array<char, 4096> _buffer{};
         bool _passthroughMode{};
+        bool _inheritCursor{ false };
         bool _reloadEnvironmentVariables{};
         guid _profileGuid{};
 
