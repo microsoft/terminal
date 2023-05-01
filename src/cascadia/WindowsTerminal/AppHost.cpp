@@ -1157,6 +1157,10 @@ void AppHost::_SystemMenuChangeRequested(const winrt::Windows::Foundation::IInsp
 // - <none>
 void AppHost::_WindowMoved()
 {
+    if (_isWindowInitialized < WindowInitializedState::Initialized)
+    {
+        return;
+    }
     if (_windowLogic)
     {
         // Ensure any open ContentDialog is dismissed.
@@ -1214,6 +1218,8 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
 winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                           const winrt::Windows::Foundation::IInspectable& /*arg*/)
 {
+    _isWindowInitialized = WindowInitializedState::Initializing;
+
     // GH#11561: We're totally done being initialized. Resize the window to
     // match the initial settings, and then call ShowWindow to finally make us
     // visible.
@@ -1235,7 +1241,6 @@ winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::
     // paints.
     co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher(), winrt::Windows::UI::Core::CoreDispatcherPriority::Low);
 
-    _isWindowInitialized = true;
     ShowWindow(_window->GetHandle(), nCmdShow);
 
     // If we didn't start the window hidden (in one way or another), then try to
@@ -1252,6 +1257,16 @@ winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::
         SetForegroundWindow(_window->GetHandle());
         _peasantNotifyActivateWindow();
     }
+
+    // Don't set our state to Initialized until after the call to ShowWindow.
+    // When we call ShowWindow, the OS will also send us a WM_MOVE, which we'll
+    // then use to try and dismiss an open dialog. This creates the unintended
+    // side effect of immediately dismissing the initial warning dialog, if
+    // there were settings load warnings.
+    //
+    // In Apphost::_WindowMoved, we'll make sure we're at least initialized
+    // before dismissing open dialogs.
+    _isWindowInitialized = WindowInitializedState::Initialized;
 }
 
 winrt::TerminalApp::TerminalWindow AppHost::Logic()
