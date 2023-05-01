@@ -48,7 +48,12 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring WindowNameForDisplay() const noexcept;
         bool IsQuakeWindow() const noexcept;
 
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, VirtualWorkingDirectory, _PropertyChangedHandlers, L"");
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+
+    public:
+        void SetInitialCwd(const winrt::hstring& cwd) { _VirtualWorkingDirectory = cwd; };
 
     private:
         winrt::hstring _WindowName{};
@@ -71,7 +76,7 @@ namespace winrt::TerminalApp::implementation
 
         bool HasCommandlineArguments() const noexcept;
 
-        int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
+        int32_t SetStartupCommandline(array_view<const winrt::hstring> actions, winrt::hstring cwd);
         void SetStartupContent(const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& contentBounds);
         int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
         void SetSettingsStartupArgs(const std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);

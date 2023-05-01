@@ -554,13 +554,24 @@ namespace winrt::TerminalApp::implementation
         // back once we're done. This looks weird though, because we have to set
         // up the scope_exit _first_. We'll release the scope_exit if we don't
         // actually need it.
-        auto originalCwd{ wil::GetCurrentDirectoryW<std::wstring>() };
-        auto restoreCwd = wil::scope_exit([&originalCwd]() {
+        // auto originalRealCwd{ wil::GetCurrentDirectoryW<std::wstring>() };
+
+        if (initial)
+        {
+            // _WindowProperties.VirtualWorkingDirectory(cwd.empty() ? originalRealCwd.c_str() : cwd.c_str());
+            LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(L"%SystemRoot%\\System32"));
+        }
+
+        auto originalVirtualCwd{ _WindowProperties.VirtualWorkingDirectory() };
+        auto restoreCwd = wil::scope_exit([&originalVirtualCwd, this /*&originalCwd, &initial*/]() {
             // ignore errors, we'll just power on through. We'd rather do
             // something rather than fail silently if the directory doesn't
             // actually exist.
-            LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(originalCwd.c_str()));
+            // LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(L"%SystemRoot%\\System32"));
+
+            _WindowProperties.VirtualWorkingDirectory(originalVirtualCwd);
         });
+
         if (cwd.empty())
         {
             restoreCwd.release();
@@ -570,8 +581,14 @@ namespace winrt::TerminalApp::implementation
             // ignore errors, we'll just power on through. We'd rather do
             // something rather than fail silently if the directory doesn't
             // actually exist.
-            LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(cwd.c_str()));
+            // LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(cwd.c_str()));
+            _WindowProperties.VirtualWorkingDirectory(cwd);
         }
+
+        // if (initial)
+        // {
+        //     _WindowProperties.VirtualWorkingDirectory(cwd.empty() ? originalCwd : cwd);
+        // }
 
         if (auto page{ weakThis.get() })
         {
@@ -1226,10 +1243,13 @@ namespace winrt::TerminalApp::implementation
             // process until later, on another thread, after we've already
             // restored the CWD to its original value.
             auto newWorkingDirectory{ settings.StartingDirectory() };
-            if (newWorkingDirectory.size() == 0 || newWorkingDirectory.size() == 1 &&
-                                                       !(newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/'))
+            const bool looksLikeLinux = newWorkingDirectory.size() == 1 &&
+                                        (newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/');
+            // if (newWorkingDirectory.size() == 0 || looksLikeLinux)
+            if (!looksLikeLinux)
             { // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
-                auto cwdString{ wil::GetCurrentDirectoryW<std::wstring>() };
+                // auto cwdString{ wil::GetCurrentDirectoryW<std::wstring>() };
+                auto cwdString{ _WindowProperties.VirtualWorkingDirectory().c_str() };
                 std::filesystem::path cwd{ cwdString };
                 cwd /= settings.StartingDirectory().c_str();
                 newWorkingDirectory = winrt::hstring{ cwd.wstring() };

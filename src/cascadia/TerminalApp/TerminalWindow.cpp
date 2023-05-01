@@ -1013,8 +1013,10 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - the result of the first command who's parsing returned a non-zero code,
     //   or 0. (see TerminalWindow::_ParseArgs)
-    int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args)
+    int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args, winrt::hstring cwd)
     {
+        _WindowProperties->SetInitialCwd(cwd);
+
         // This is called in AppHost::ctor(), before we've created the window
         // (or called TerminalWindow::Initialize)
         const auto result = _appArgs.ParseArgs(args);
@@ -1336,6 +1338,7 @@ namespace winrt::TerminalApp::implementation
             CATCH_LOG();
         }
     }
+
     uint64_t WindowProperties::WindowId() const noexcept
     {
         return _WindowId;
