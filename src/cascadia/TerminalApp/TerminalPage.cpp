@@ -1118,6 +1118,7 @@ namespace winrt::TerminalApp::implementation
 
             if (dispatchToElevatedWindow)
             {
+                newTerminalArgs.StartingDirectory(_evaluatePathForCwd(newTerminalArgs.StartingDirectory()));
                 _OpenElevatedWT(newTerminalArgs);
             }
             else
@@ -1156,6 +1157,23 @@ namespace winrt::TerminalApp::implementation
         {
             _RemoveTab(tab);
         }
+    }
+
+    winrt::hstring TerminalPage::_evaluatePathForCwd(const winrt::hstring& path)
+    {
+        auto resultPath{ path };
+        const bool looksLikeLinux = resultPath.size() == 1 &&
+                                    (resultPath[0] == L'~' || resultPath[0] == L'/');
+
+        // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
+        if (!looksLikeLinux)
+        {
+            auto cwdString{ _WindowProperties.VirtualWorkingDirectory().c_str() };
+            std::filesystem::path cwd{ cwdString };
+            cwd /= path.c_str();
+            resultPath = winrt::hstring{ cwd.wstring() };
+        }
+        return resultPath;
     }
 
     // Method Description:
@@ -1226,18 +1244,8 @@ namespace winrt::TerminalApp::implementation
             // construction, because the connection might not spawn the child
             // process until later, on another thread, after we've already
             // restored the CWD to its original value.
-            auto newWorkingDirectory{ settings.StartingDirectory() };
-            const bool looksLikeLinux = newWorkingDirectory.size() == 1 &&
-                                        (newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/');
-            // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
-            if (!looksLikeLinux)
-            {
-                const auto cwdString{ _WindowProperties.VirtualWorkingDirectory().c_str() };
-                std::filesystem::path cwd{ cwdString };
-                cwd /= settings.StartingDirectory().c_str();
-                newWorkingDirectory = winrt::hstring{ cwd.wstring() };
-            }
 
+            auto newWorkingDirectory{ _evaluatePathForCwd(settings.StartingDirectory()) };
             auto conhostConn = TerminalConnection::ConptyConnection();
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
                                                                                  newWorkingDirectory,
@@ -4229,6 +4237,9 @@ namespace winrt::TerminalApp::implementation
             // whatever the default profile's GUID is.
 
             newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+
+            newTerminalArgs.StartingDirectory(_evaluatePathForCwd(controlSettings.DefaultSettings().StartingDirectory()));
+
             _OpenElevatedWT(newTerminalArgs);
             return true;
         }
