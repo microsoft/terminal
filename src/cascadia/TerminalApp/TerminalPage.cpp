@@ -2979,16 +2979,18 @@ namespace winrt::TerminalApp::implementation
             original->SetActive();
         }
 
-        resultPane->RestartTerminalRequested([this](const auto& pane) {
-            auto connection = _duplicateConnectionForRestart(pane);
-            if (connection)
-            {
-                pane->GetTerminalControl().Connection(connection);
-                connection.Start();
-            }
-        });
+        resultPane->RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
 
         return resultPane;
+    }
+
+    void TerminalPage::_restartPaneConnection(const std::shared_ptr<Pane>& pane)
+    {
+        if (const auto& connection{ _duplicateConnectionForRestart(pane) })
+        {
+            pane->GetTerminalControl().Connection(connection);
+            connection.Start();
+        }
     }
 
     // Method Description:
