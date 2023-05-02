@@ -340,6 +340,14 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
     auto api = ServiceLocator::LocateGlobals().api;
     auto& screenInfo = _io.GetActiveOutputBuffer();
 
+    // We need to save the attributes separately, since the wAttributes field in
+    // CONSOLE_SCREEN_BUFFER_INFOEX is not capable of representing the extended
+    // attribute values, and can end up corrupting that data when restored.
+    const auto attributes = screenInfo.GetTextBuffer().GetCurrentAttributes();
+    const auto restoreAttributes = wil::scope_exit([&] {
+        screenInfo.GetTextBuffer().SetCurrentAttributes(attributes);
+    });
+
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     api->GetConsoleScreenBufferInfoExImpl(screenInfo, csbiex);
