@@ -37,7 +37,15 @@ private:
     winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
 
     winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
-    bool _isWindowInitialized = false;
+
+    enum WindowInitializedState : uint32_t
+    {
+        NotInitialized = 0,
+        Initializing = 1,
+        Initialized = 2,
+    };
+
+    WindowInitializedState _isWindowInitialized{ WindowInitializedState::NotInitialized };
     bool _useNonClientArea{ false };
     winrt::Microsoft::Terminal::Settings::Model::LaunchMode _launchMode{};
 
