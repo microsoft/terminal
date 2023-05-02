@@ -1020,19 +1020,19 @@ Microsoft::Console::Render::Renderer& TextBuffer::GetRenderer() noexcept
     return _renderer;
 }
 
+void TextBuffer::NotifyPaintFrame() noexcept
+{
+    if (_isActiveBuffer)
+    {
+        _renderer.NotifyPaintFrame();
+    }
+}
+
 void TextBuffer::TriggerRedraw(const Viewport& viewport)
 {
     if (_isActiveBuffer)
     {
         _renderer.TriggerRedraw(viewport);
-    }
-}
-
-void TextBuffer::TriggerRedrawCursor(const til::point position)
-{
-    if (_isActiveBuffer)
-    {
-        _renderer.TriggerRedrawCursor(&position);
     }
 }
 

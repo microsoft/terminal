@@ -64,42 +64,88 @@ Renderer::~Renderer()
 // - HRESULT S_OK, GDI error, Safe Math error, or state/argument errors.
 [[nodiscard]] HRESULT Renderer::PaintFrame()
 {
+    auto tries = maxRetriesForRenderEngine;
+    while (tries > 0)
+    {
+        if (_destructing)
+        {
+            return S_FALSE;
+        }
+
+        // BODGY: Optimally we would want to retry per engine, but that causes different
+        // problems (intermittent inconsistent states between text renderer and UIA output,
+        // not being able to lock the cursor location, etc.).
+        const auto hr = _PaintFrame();
+        if (SUCCEEDED(hr))
+        {
+            break;
+        }
+
+        LOG_HR_IF(hr, hr != E_PENDING);
+
+        if (--tries == 0)
+        {
+            // Stop trying.
+            _pThread->DisablePainting();
+            if (_pfnRendererEnteredErrorState)
+            {
+                _pfnRendererEnteredErrorState();
+            }
+            // If there's no callback, we still don't want to FAIL_FAST: the renderer going black
+            // isn't near as bad as the entire application aborting. We're a component. We shouldn't
+            // abort applications that host us.
+            return S_FALSE;
+        }
+
+        // Add a bit of backoff.
+        // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
+        Sleep(renderBackoffBaseTimeMilliseconds * (maxRetriesForRenderEngine - tries));
+    }
+
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT Renderer::_PaintFrame() noexcept
+{
+    {
+        _pData->LockConsole();
+        auto unlock = wil::scope_exit([&]() {
+            _pData->UnlockConsole();
+        });
+
+        // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
+        _CheckViewportAndScroll();
+
+        if (_currentCursorOptions)
+        {
+            const auto coord = _currentCursorOptions->coordCursor;
+            const auto& buffer = _pData->GetTextBuffer();
+            const auto lineRendition = buffer.GetLineRendition(coord.y);
+            const auto cursorWidth = _pData->IsCursorDoubleWidth() ? 2 : 1;
+
+            til::rect cursorRect{ coord.x, coord.y, coord.x + cursorWidth, coord.y + 1 };
+            cursorRect = BufferToScreenLine(cursorRect, lineRendition);
+
+            if (buffer.GetSize().TrimToViewport(&cursorRect))
+            {
+                FOREACH_ENGINE(pEngine)
+                {
+                    LOG_IF_FAILED(pEngine->InvalidateCursor(&cursorRect));
+                }
+            }
+        }
+
+        _currentCursorOptions = _GetCursorInfo();
+
+        FOREACH_ENGINE(pEngine)
+        {
+            RETURN_IF_FAILED(_PaintFrameForEngine(pEngine));
+        }
+    }
+
     FOREACH_ENGINE(pEngine)
     {
-        auto tries = maxRetriesForRenderEngine;
-        while (tries > 0)
-        {
-            if (_destructing)
-            {
-                return S_FALSE;
-            }
-
-            const auto hr = _PaintFrameForEngine(pEngine);
-            if (SUCCEEDED(hr))
-            {
-                break;
-            }
-
-            LOG_HR_IF(hr, hr != E_PENDING);
-
-            if (--tries == 0)
-            {
-                // Stop trying.
-                _pThread->DisablePainting();
-                if (_pfnRendererEnteredErrorState)
-                {
-                    _pfnRendererEnteredErrorState();
-                }
-                // If there's no callback, we still don't want to FAIL_FAST: the renderer going black
-                // isn't near as bad as the entire application aborting. We're a component. We shouldn't
-                // abort applications that host us.
-                return S_FALSE;
-            }
-
-            // Add a bit of backoff.
-            // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
-            Sleep(renderBackoffBaseTimeMilliseconds * (maxRetriesForRenderEngine - tries));
-        }
+        RETURN_IF_FAILED(pEngine->Present());
     }
 
     return S_OK;
@@ -109,14 +155,6 @@ Renderer::~Renderer()
 try
 {
     FAIL_FAST_IF_NULL(pEngine); // This is a programming error. Fail fast.
-
-    _pData->LockConsole();
-    auto unlock = wil::scope_exit([&]() {
-        _pData->UnlockConsole();
-    });
-
-    // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
-    _CheckViewportAndScroll();
 
     // Try to start painting a frame
     const auto hr = pEngine->StartPaint();
@@ -171,12 +209,6 @@ try
 
     // Force scope exit end paint to finish up collecting information and possibly painting
     endPaint.reset();
-
-    // Force scope exit unlock to let go of global lock so other threads can run
-    unlock.reset();
-
-    // Trigger out-of-lock presentation for renderers that can support it
-    RETURN_IF_FAILED(pEngine->Present());
 
     // As we leave the scope, EndPaint will be called (declared above)
     return S_OK;
@@ -256,47 +288,6 @@ void Renderer::TriggerRedraw(const til::point* const pcoord)
 }
 
 // Routine Description:
-// - Called when the cursor has moved in the buffer. Allows for RenderEngines to
-//      differentiate between cursor movements and other invalidates.
-//   Visual Renderers (ex GDI) should invalidate the position, while the VT
-//      engine ignores this. See MSFT:14711161.
-// Arguments:
-// - pcoord: The buffer-space position of the cursor.
-// Return Value:
-// - <none>
-void Renderer::TriggerRedrawCursor(const til::point* const pcoord)
-{
-    // We first need to make sure the cursor position is within the buffer,
-    // otherwise testing for a double width character can throw an exception.
-    const auto& buffer = _pData->GetTextBuffer();
-    if (buffer.GetSize().IsInBounds(*pcoord))
-    {
-        // We then calculate the region covered by the cursor. This requires
-        // converting the buffer coordinates to an equivalent range of screen
-        // cells for the cursor, taking line rendition into account.
-        const auto lineRendition = buffer.GetLineRendition(pcoord->y);
-        const auto cursorWidth = _pData->IsCursorDoubleWidth() ? 2 : 1;
-        til::inclusive_rect cursorRect = { pcoord->x, pcoord->y, pcoord->x + cursorWidth - 1, pcoord->y };
-        cursorRect = BufferToScreenLine(cursorRect, lineRendition);
-
-        // That region is then clipped within the viewport boundaries and we
-        // only trigger a redraw if the resulting region is not empty.
-        auto view = _pData->GetViewport();
-        auto updateRect = til::rect{ cursorRect };
-        if (view.TrimToViewport(&updateRect))
-        {
-            view.ConvertToOrigin(&updateRect);
-            FOREACH_ENGINE(pEngine)
-            {
-                LOG_IF_FAILED(pEngine->InvalidateCursor(&updateRect));
-            }
-
-            NotifyPaintFrame();
-        }
-    }
-}
-
-// Routine Description:
 // - Called when something that changes the output state has occurred and the entire frame is now potentially invalid.
 // - NOTE: Use sparingly. Try to reduce the refresh region where possible. Only use when a global state change has occurred.
 // Arguments:
@@ -336,6 +327,8 @@ void Renderer::TriggerTeardown() noexcept
     // We need to shut down the paint thread on teardown.
     _pThread->WaitForPaintCompletionAndDisable(INFINITE);
 
+    auto repaint = false;
+
     // Then walk through and do one final paint on the caller's thread.
     FOREACH_ENGINE(pEngine)
     {
@@ -343,10 +336,15 @@ void Renderer::TriggerTeardown() noexcept
         auto hr = pEngine->PrepareForTeardown(&fEngineRequestsRepaint);
         LOG_IF_FAILED(hr);
 
-        if (SUCCEEDED(hr) && fEngineRequestsRepaint)
-        {
-            LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
-        }
+        repaint |= SUCCEEDED(hr) && fEngineRequestsRepaint;
+    }
+
+    // BODGY: The only time repaint is true is when VtEngine is used.
+    // Coincidentally VtEngine always runs alone, so if repaint is true, there's only a single engine
+    // to repaint anyways and there's no danger is accidentally repainting an engine that didn't want to.
+    if (repaint)
+    {
+        LOG_IF_FAILED(_PaintFrame());
     }
 }
 
@@ -464,6 +462,7 @@ void Renderer::TriggerScroll(const til::point* const pcoordDelta)
 void Renderer::TriggerFlush(const bool circling)
 {
     const auto rects = _GetSelectionRects();
+    auto repaint = false;
 
     FOREACH_ENGINE(pEngine)
     {
@@ -473,10 +472,15 @@ void Renderer::TriggerFlush(const bool circling)
 
         LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
 
-        if (SUCCEEDED(hr) && fEngineRequestsRepaint)
-        {
-            LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
-        }
+        repaint |= SUCCEEDED(hr) && fEngineRequestsRepaint;
+    }
+
+    // BODGY: The only time repaint is true is when VtEngine is used.
+    // Coincidentally VtEngine always runs alone, so if repaint is true, there's only a single engine
+    // to repaint anyways and there's no danger is accidentally repainting an engine that didn't want to.
+    if (repaint)
+    {
+        LOG_IF_FAILED(_PaintFrame());
     }
 }
 
@@ -638,7 +642,6 @@ void Renderer::EnablePainting()
     // When the renderer is constructed, the initial viewport won't be available yet,
     // but once EnablePainting is called it should be safe to retrieve.
     _viewport = _pData->GetViewport();
-    _forceUpdateViewport = true;
 
     // When running the unit tests, we may be using a render without a render thread.
     if (_pThread)
@@ -1086,10 +1089,9 @@ bool Renderer::_isInHoveredInterval(const til::point coordTarget) const noexcept
 // - <none>
 void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 {
-    const auto cursorInfo = _GetCursorInfo();
-    if (cursorInfo.has_value())
+    if (_currentCursorOptions.has_value())
     {
-        LOG_IF_FAILED(pEngine->PaintCursor(cursorInfo.value()));
+        LOG_IF_FAILED(pEngine->PaintCursor(_currentCursorOptions.value()));
     }
 }
 
@@ -1107,7 +1109,7 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 [[nodiscard]] HRESULT Renderer::_PrepareRenderInfo(_In_ IRenderEngine* const pEngine)
 {
     RenderFrameInfo info;
-    info.cursorInfo = _GetCursorInfo();
+    info.cursorInfo = _currentCursorOptions;
     return pEngine->PrepareRenderInfo(info);
 }
 
@@ -1282,6 +1284,11 @@ void Renderer::_ScrollPreviousSelection(const til::point delta)
         {
             rc += delta;
         }
+
+        if (_currentCursorOptions)
+        {
+            _currentCursorOptions->coordCursor += delta;
+        }
     }
 }
 
@@ -1303,6 +1310,7 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
         if (!p)
         {
             p = pEngine;
+            _forceUpdateViewport = true;
             return;
         }
     }

@@ -18,8 +18,7 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bo
     _parameters{},
     _parameterLimitReached(false),
     _oscString{},
-    _cachedSequence{ std::nullopt },
-    _processingIndividually(false)
+    _cachedSequence{ std::nullopt }
 {
     _ActionClear();
 }
@@ -363,18 +362,6 @@ static constexpr bool _isPmIndicator(const wchar_t wch) noexcept
 static constexpr bool _isApcIndicator(const wchar_t wch) noexcept
 {
     return wch == L'_'; // 0x5F
-}
-
-// Routine Description:
-// - Determines if a character indicates an action that should be taken in the ground state -
-//     These are C0 characters and the C1 [single-character] CSI.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isActionableFromGround(const wchar_t wch) noexcept
-{
-    return (wch <= AsciiChars::US) || _isC1ControlCharacter(wch) || _isDelete(wch);
 }
 
 #pragma warning(pop)
@@ -1822,6 +1809,88 @@ bool StateMachine::FlushToTerminal()
 }
 
 // Routine Description:
+// - Determines if a character indicates an action that should be taken in the ground state -
+//     These are C0 characters and the C1 [single-character] CSI.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+static constexpr bool _isNonActionableFromGround(const wchar_t wch) noexcept
+{
+    return (static_cast<wchar_t>(wch - 0x20) < 0x5f) | (wch > 0x9f);
+}
+
+#include <DirectXMath.h>
+
+__declspec(noinline) static size_t scan(const wchar_t* data, size_t count, size_t i) noexcept
+{
+    auto p = data + i;
+
+#if defined(TIL_SSE_INTRINSICS)
+    for (const auto end = data + (count & ~size_t{ 7 }); p < end; p += 8)
+    {
+        const auto wch = _mm_loadu_epi16(p);
+        // Check for (wch >= 0x7f && wch <= 0x9f) by adding (0x10000-0x7f), which overflows to a
+        // negative number if wch >= 0x7f and then subtracting (0x9f-0x7f) with saturation to an
+        // unsigned number (= can't go lower than 0), which results in all numbers up to 0x9f to be 0.
+        auto a = _mm_subs_epu16(_mm_add_epi32(wch, _mm_set1_epi16(static_cast<short>(0xff81))), _mm_set1_epi16(0x20));
+        // Check for (wch < 0x20)
+        auto b = _mm_subs_epu16(wch, _mm_set1_epi16(0x1f));
+
+        const auto z = _mm_setzero_si128();
+        a = _mm_cmpeq_epi16(a, z);
+        b = _mm_cmpeq_epi16(b, z);
+
+        const auto c = _mm_or_epi32(a, b);
+        const auto mask = _mm_movemask_epi8(c);
+
+        if (mask)
+        {
+            unsigned long offset;
+            _BitScanForward(&offset, mask);
+            p += offset / 2;
+            return p - data;
+        }
+    }
+#elif defined(TIL_ARM_NEON_INTRINSICS)
+    for (const auto end = data + (count & ~size_t{ 7 }); p < end; p += 8)
+    {
+        const auto wch = vld1q_u16(p);
+        const auto a = vsubq_u16(wch, vdupq_n_u16(0x7f));
+        const auto b = vcleq_u16(wch, vdupq_n_u16(0x1f));
+        const auto c = vcleq_u16(wch, vdupq_n_u16(0x20));
+        const auto d = vorrq_u16(b, c);
+
+        auto mask = vgetq_lane_u64(d, 0);
+        while (mask) {
+            if (mask & 0xff) {
+                return p - data;
+            }
+
+            mask >>= 8;
+            p++;
+        }
+
+        mask = vgetq_lane_u64(d, 1);
+        while (mask) {
+            if (mask & 0xff) {
+                return p - data;
+            }
+
+            mask >>= 8;
+            p++;
+        }
+    }
+#endif
+
+    for (const auto end = data + count; p != end && _isNonActionableFromGround(*p); ++p)
+    {
+    }
+    return p - data;
+    //#endif
+}
+
+// Routine Description:
 // - Helper for entry to the state machine. Will take an array of characters
 //     and print as many as it can without encountering a character indicating
 //     a escape sequence, then feed characters into the state machine one at a
@@ -1832,79 +1901,53 @@ bool StateMachine::FlushToTerminal()
 // - <none>
 void StateMachine::ProcessString(const std::wstring_view string)
 {
-    size_t start = 0;
-    auto current = start;
-
+    size_t i = 0;
     _currentString = string;
     _runOffset = 0;
     _runSize = 0;
 
-    while (current < string.size())
+    if (_state != VTStates::Ground)
     {
-        // The run will be everything from the start INCLUDING the current one
-        // in case we process the current character and it turns into a passthrough
-        // fallback that picks up this _run inside `FlushToTerminal` above.
-        _runOffset = start;
-        _runSize = current - start + 1;
+        goto processStringLoopVtStart;
+    }
 
-        if (_processingIndividually)
+    while (i < string.size())
+    {
         {
-            // Note whether we're dealing with the last character in the buffer.
-            _processingLastCharacter = (current + 1 >= string.size());
+            _runOffset = i;
+
+            //for (; i < string.size() && _isNonActionableFromGround(til::at(string, i)); ++i)
+            //{
+            //}
+            i = scan(string.data(), string.size(), i);
+
+            _runSize = i - _runOffset;
+            if (_runSize)
+            {
+                _ActionPrintString(_CurrentRun());
+            }
+
+            _runOffset = i;
+            _runSize = 0;
+        }
+
+    processStringLoopVtStart:
+        if (i >= string.size())
+        {
+            break;
+        }
+        do
+        {
+            _runSize++;
+            _processingLastCharacter = i + 1 >= string.size();
             // If we're processing characters individually, send it to the state machine.
-            ProcessCharacter(til::at(string, current));
-            ++current;
-            if (_state == VTStates::Ground) // Then check if we're back at ground. If we are, the next character (pwchCurr)
-            { //   is the start of the next run of characters that might be printable.
-                _processingIndividually = false;
-                start = current;
-            }
-        }
-        else
-        {
-            if (_isActionableFromGround(til::at(string, current))) // If the current char is the start of an escape sequence, or should be executed in ground state...
-            {
-                if (_runSize > 0)
-                {
-                    // Because the run above is composed INCLUDING current, we must
-                    // trim it off here since we just determined it's actionable
-                    // and only pass through everything before it.
-                    _runSize -= 1;
-                    _ActionPrintString(_CurrentRun()); // ... print all the chars leading up to it as part of the run...
-                }
-
-                _processingIndividually = true; // begin processing future characters individually...
-                start = current;
-                continue;
-            }
-            else
-            {
-                ++current; // Otherwise, add this char to the current run to be printed.
-            }
-        }
+            ProcessCharacter(til::at(string, i));
+            ++i;
+        } while (i < string.size() && _state != VTStates::Ground);
     }
 
-    // When we leave the loop, current has been advanced to the length of the string itself
-    // (or one past the array index to the final char) so this `substr` operation doesn't +1
-    // to include the final character (unlike the one inside the top of the loop above.)
-    if (start < string.size())
-    {
-        _runOffset = start;
-        _runSize = std::string::npos;
-    }
-    else
-    {
-        _runSize = 0;
-    }
-
-    const auto run = _CurrentRun();
     // If we're at the end of the string and have remaining un-printed characters,
-    if (!_processingIndividually && !run.empty())
-    {
-        // print the rest of the characters in the string
-        _ActionPrintString(run);
-    }
-    else if (_processingIndividually)
+    if (_state != VTStates::Ground)
     {
         // One of the "weird things" in VT input is the case of something like
         // <kbd>alt+[</kbd>. In VT, that's encoded as `\x1b[`. However, that's
@@ -1924,6 +1967,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
         // last character of the string. For our previous `\x1b[` scenario, that
         // means we'll make sure to call `_ActionEscDispatch('[')`., which will
         // properly decode the string as <kbd>alt+[</kbd>.
+        const auto run = _CurrentRun();
 
         if (_isEngineForInput)
         {
@@ -1941,9 +1985,6 @@ void StateMachine::ProcessString(const std::wstring_view string)
             _processingLastCharacter = true;
             switch (_state)
             {
-            case VTStates::Ground:
-                _ActionExecute(*wchIter);
-                break;
             case VTStates::Escape:
             case VTStates::EscapeIntermediate:
                 _ActionEscDispatch(*wchIter);
@@ -1962,6 +2003,8 @@ void StateMachine::ProcessString(const std::wstring_view string)
             case VTStates::Ss3Entry:
             case VTStates::Ss3Param:
                 _ActionSs3Dispatch(*wchIter);
+                break;
+            default:
                 break;
             }
             // microsoft/terminal#2746: Make sure to return to the ground state

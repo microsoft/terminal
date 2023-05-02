@@ -238,15 +238,8 @@ try
     // This ensures that teardown is reentrant.
 
     // Shut down the renderer (and therefore the thread) before we implode
-    if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
-    {
-        if (auto localRenderer{ std::exchange(_renderer, nullptr) })
-        {
-            localRenderer->TriggerTeardown();
-            // renderer is destroyed
-        }
-        // renderEngine is destroyed
-    }
+    _renderer.reset();
+    _renderEngine.reset();
 
     if (auto localHwnd{ _hwnd.release() })
     {

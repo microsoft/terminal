@@ -50,7 +50,6 @@ namespace Microsoft::Console::Render
         void TriggerSystemRedraw(const til::rect* const prcDirtyClient);
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region);
         void TriggerRedraw(const til::point* const pcoord);
-        void TriggerRedrawCursor(const til::point* const pcoord);
         void TriggerRedrawAll(const bool backgroundChanged = false, const bool frameChanged = false);
         void TriggerTeardown() noexcept;
 
@@ -95,7 +94,8 @@ namespace Microsoft::Console::Render
     private:
         static GridLineSet s_GetGridlines(const TextAttribute& textAttribute) noexcept;
         static bool s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar);
-
+        
+        [[nodiscard]] HRESULT _PaintFrame() noexcept;
         [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept;
         bool _CheckViewportAndScroll();
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
@@ -125,6 +125,7 @@ namespace Microsoft::Console::Render
         uint16_t _hyperlinkHoveredId = 0;
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
         Microsoft::Console::Types::Viewport _viewport;
+         std::optional<CursorOptions> _currentCursorOptions;
         std::vector<Cluster> _clusterBuffer;
         std::vector<til::rect> _previousSelection;
         std::function<void()> _pfnBackgroundColorChanged;

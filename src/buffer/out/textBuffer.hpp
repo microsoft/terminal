@@ -147,8 +147,8 @@ public:
 
     Microsoft::Console::Render::Renderer& GetRenderer() noexcept;
 
+    void NotifyPaintFrame() noexcept;
     void TriggerRedraw(const Microsoft::Console::Types::Viewport& viewport);
-    void TriggerRedrawCursor(const til::point position);
     void TriggerRedrawAll();
     void TriggerScroll();
     void TriggerScroll(const til::point delta);

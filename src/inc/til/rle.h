@@ -401,6 +401,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return _runs;
         }
+        
+        container& runs() noexcept
+        {
+            return _runs;
+        }
 
         // Get the value at the position
         const_reference at(size_type position) const

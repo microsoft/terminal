@@ -5,6 +5,15 @@
 
 #define _TIL_INLINEPREFIX __declspec(noinline) inline
 
+// This is a copy of how DirectXMath.h determines _XM_SSE_INTRINSICS_ and _XM_ARM_NEON_INTRINSICS_.
+#if (defined(_M_IX86) || defined(_M_X64) || __i386__ || __x86_64__) && !defined(_M_HYBRID_X86_ARM64) && !defined(_M_ARM64EC)
+#define TIL_SSE_INTRINSICS
+#elif defined(_M_ARM) || defined(_M_ARM64) || defined(_M_HYBRID_X86_ARM64) || defined(_M_ARM64EC) || __arm__ || __aarch64__
+#define TIL_ARM_NEON_INTRINSICS
+#else
+#define TIL_NO_INTRINSICS
+#endif
+
 #include "til/at.h"
 #include "til/bitmap.h"
 #include "til/coalesce.h"
