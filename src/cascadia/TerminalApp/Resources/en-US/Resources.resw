@@ -795,4 +795,8 @@
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
     <value>Empty...</value>
   </data>
+  <data name="TabColorClearButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.FullDescription" xml:space="preserve">
+    <value>Reset tab color</value>
+    <comment>Text used to identify the reset button</comment>
+  </data>
 </root>
