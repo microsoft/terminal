@@ -182,7 +182,7 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
             fg != bg &&
             (_renderMode.test(Mode::AlwaysDistinguishableColors) || (fgTextColor.IsDefaultOrIndex16() && bgTextColor.IsDefaultOrIndex16())))
         {
-            fg = ColorFix::GetPerceivableColor(fg, bg, 0.25f);
+            fg = ColorFix::GetPerceivableColor(fg, bg, 0.5f * 0.5f);
         }
     }
 

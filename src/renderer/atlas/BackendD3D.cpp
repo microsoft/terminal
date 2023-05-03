@@ -1639,7 +1639,7 @@ void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
 
         // The legacy console used to invert colors by just doing `bg ^ 0xc0c0c0`. This resulted
         // in a minimum squared distance of just 0.029195 across all possible color combinations.
-        background = ColorFix::GetPerceivableColor(background, bg, 0.0625f);
+        background = ColorFix::GetPerceivableColor(background, bg, 0.25f * 0.25f);
 
         auto& c0 = _cursorRects.emplace_back(position, size, background, foreground);
 
@@ -1898,7 +1898,7 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const CursorRect& c, size_t off
     }
 
     auto color = c.foreground == 0xffffffff ? it.color ^ 0xffffff : c.foreground;
-    color = ColorFix::GetPerceivableColor(color, c.background, 0.25f);
+    color = ColorFix::GetPerceivableColor(color, c.background, 0.5f * 0.5f);
 
     // If the cursor covers the entire glyph (like, let's say, a full-box cursor with an ASCII character),
     // we don't append a new quad, but rather reuse the one that already exists (cutoutCount == 0).
