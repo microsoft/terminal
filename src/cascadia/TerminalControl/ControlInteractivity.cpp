@@ -27,6 +27,8 @@ static constexpr unsigned int MAX_CLICK_COUNT = 3;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    std::atomic<uint64_t> ControlInteractivity::_nextId{ 1 };
+
     static constexpr TerminalInput::MouseButtonState toInternalMouseState(const Control::MouseButtonState& state)
     {
         return TerminalInput::MouseButtonState{
@@ -44,7 +46,48 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastMouseClickPos{},
         _selectionNeedsToBeCopied{ false }
     {
+        _id = _nextId.fetch_add(1, std::memory_order_relaxed);
+
         _core = winrt::make_self<ControlCore>(settings, unfocusedAppearance, connection);
+
+        _core->Attached([weakThis = get_weak()](auto&&, auto&&) {
+            if (auto self{ weakThis.get() })
+            {
+                self->_AttachedHandlers(*self, nullptr);
+            }
+        });
+    }
+
+    uint64_t ControlInteractivity::Id()
+    {
+        return _id;
+    }
+
+    void ControlInteractivity::Detach()
+    {
+        if (_uiaEngine)
+        {
+            // There's a potential race here where we've removed the TermControl
+            // from the UI tree, but the UIA engine is in the middle of a paint,
+            // and the UIA engine will try to dispatch to the
+            // TermControlAutomationPeer, which (is now)/(will very soon be) gone.
+            //
+            // To alleviate, make sure to disable the UIA engine and remove it,
+            // and ALSO disable the renderer. Core.Detach will take care of the
+            // WaitForPaintCompletionAndDisable (which will stop the renderer
+            // after all current engines are done painting).
+            //
+            // Simply disabling the UIA engine is not enough, because it's
+            // possible that it had already started presenting here.
+            LOG_IF_FAILED(_uiaEngine->Disable());
+            _core->DetachUiaEngine(_uiaEngine.get());
+        }
+        _core->Detach();
+    }
+
+    void ControlInteractivity::AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    {
+        _core->AttachToNewControl(keyBindings);
     }
 
     // Method Description:
@@ -71,6 +114,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Control::ControlCore ControlInteractivity::Core()
     {
         return *_core;
+    }
+
+    void ControlInteractivity::Close()
+    {
+        _ClosedHandlers(*this, nullptr);
+        if (_core)
+        {
+            _core->Close();
+        }
     }
 
     // Method Description:
@@ -258,6 +310,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             if (_core->Settings().RightClickContextMenu())
             {
+                // Let the core know we're about to open a menu here. It has
+                // some separate conditional logic based on _where_ the user
+                // wanted to open the menu.
+                _core->AnchorContextMenu(terminalPosition);
+
                 auto contextArgs = winrt::make<ContextMenuRequestedEventArgs>(til::point{ pixelPosition }.to_winrt_point());
                 _ContextMenuRequestedHandlers(*this, contextArgs);
             }
@@ -658,7 +715,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     try
     {
         const auto autoPeer = winrt::make_self<implementation::InteractivityAutomationPeer>(this);
-
+        if (_uiaEngine)
+        {
+            _core->DetachUiaEngine(_uiaEngine.get());
+        }
         _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
         _core->AttachUiaEngine(_uiaEngine.get());
         return *autoPeer;

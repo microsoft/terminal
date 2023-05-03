@@ -240,4 +240,36 @@ Please either install the missing font or choose another one.</value>
     <value>Find</value>
     <comment>The tooltip for a button for searching for the selected text</comment>
   </data>
+  <data name="SelectCommandButton.Label" xml:space="preserve">
+    <value>Select command</value>
+    <comment>The label of a button for selecting all of the text of a command</comment>
+  </data>
+  <data name="SelectCommandButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Select command</value>
+    <comment>The tooltip for a button for selecting all of the text of a command</comment>
+  </data>
+  <data name="SelectOutputButton.Label" xml:space="preserve">
+    <value>Select output</value>
+    <comment>The label of a button for selecting all of a command's output</comment>
+  </data>
+  <data name="SelectOutputButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Select output</value>
+    <comment>The tooltip for a button for selecting all of a command's output</comment>
+  </data>
+  <data name="SelectCommandWithSelectionButton.Label" xml:space="preserve">
+    <value>Select command</value>
+    <comment>The label of a button for selecting all of the text of a command</comment>
+  </data>
+  <data name="SelectCommandWithSelectionButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Select command</value>
+    <comment>The tooltip for a button for selecting all of the text of a command</comment>
+  </data>
+  <data name="SelectOutputWithSelectionButton.Label" xml:space="preserve">
+    <value>Select output</value>
+    <comment>The label of a button for selecting all of a command's output</comment>
+  </data>
+  <data name="SelectOutputWithSelectionButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Select output</value>
+    <comment>The tooltip for a button for selecting all of a command's output</comment>
+  </data>
 </root>

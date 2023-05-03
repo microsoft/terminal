@@ -66,7 +66,6 @@
     X(winrt::Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr)                                                                           \
     X(winrt::hstring, Commandline)                                                                                                                       \
     X(winrt::hstring, StartingDirectory)                                                                                                                 \
-    X(winrt::hstring, EnvironmentVariables)                                                                                                              \
     X(winrt::Microsoft::Terminal::Control::ScrollbarState, ScrollState, winrt::Microsoft::Terminal::Control::ScrollbarState::Visible)                    \
     X(winrt::Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
     X(bool, ForceFullRepaintRendering, false)                                                                                                            \

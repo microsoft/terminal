@@ -85,6 +85,8 @@ namespace RemotingUnitTests
         winrt::hstring GetWindowLayout() DIE;
         void RequestQuitAll() DIE;
         void Quit() DIE;
+        void AttachContentToWindow(Remoting::AttachRequest) DIE;
+        void SendContent(winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs) DIE;
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, Remoting::WindowActivatedArgs);
         TYPED_EVENT(ExecuteCommandlineRequested, winrt::Windows::Foundation::IInspectable, Remoting::CommandlineArgs);
         TYPED_EVENT(IdentifyWindowsRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
@@ -96,6 +98,8 @@ namespace RemotingUnitTests
         TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, Remoting::GetWindowLayoutArgs);
+        TYPED_EVENT(AttachRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::AttachRequest);
+        TYPED_EVENT(SendContentRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs);
     };
 
     // Same idea.
@@ -114,6 +118,8 @@ namespace RemotingUnitTests
         bool DoesQuakeWindowExist() DIE;
         winrt::Windows::Foundation::Collections::IVectorView<Remoting::PeasantInfo> GetPeasantInfos() DIE;
         winrt::Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts() DIE;
+        void RequestMoveContent(winrt::hstring, winrt::hstring, uint32_t, winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Rect>) DIE;
+        void RequestSendContent(Remoting::RequestReceiveContentArgs) DIE;
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, Remoting::FindTargetWindowArgs);
         TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
@@ -425,7 +431,7 @@ namespace RemotingUnitTests
         m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
 
         std::vector<winrt::hstring> args{};
-        Remoting::CommandlineArgs eventArgs{ { args }, { L"" } };
+        Remoting::CommandlineArgs eventArgs{ { args }, { L"" }, SW_NORMAL };
 
         auto result = m0->ProposeCommandline(eventArgs);
         VERIFY_ARE_EQUAL(true, result.ShouldCreateWindow());
@@ -462,7 +468,7 @@ namespace RemotingUnitTests
         });
 
         std::vector<winrt::hstring> args{ L"1", L"arg[1]" };
-        Remoting::CommandlineArgs eventArgs{ { args }, { L"" } };
+        Remoting::CommandlineArgs eventArgs{ { args }, { L"" }, SW_NORMAL };
 
         auto result = m0->ProposeCommandline(eventArgs);
         VERIFY_ARE_EQUAL(false, result.ShouldCreateWindow());
@@ -483,7 +489,7 @@ namespace RemotingUnitTests
 
         {
             std::vector<winrt::hstring> args{ L"-1" };
-            Remoting::CommandlineArgs eventArgs{ { args }, { L"" } };
+            Remoting::CommandlineArgs eventArgs{ { args }, { L"" }, SW_NORMAL };
 
             auto result = m0->ProposeCommandline(eventArgs);
             VERIFY_ARE_EQUAL(true, result.ShouldCreateWindow());
@@ -491,7 +497,7 @@ namespace RemotingUnitTests
         }
         {
             std::vector<winrt::hstring> args{ L"-2" };
-            Remoting::CommandlineArgs eventArgs{ { args }, { L"" } };
+            Remoting::CommandlineArgs eventArgs{ { args }, { L"" }, SW_NORMAL };
 
             auto result = m0->ProposeCommandline(eventArgs);
             VERIFY_ARE_EQUAL(true, result.ShouldCreateWindow());
@@ -528,7 +534,7 @@ namespace RemotingUnitTests
                                                          winrt::clock().now() };
             p1->ActivateWindow(activatedArgs);
 
-            Remoting::CommandlineArgs eventArgs{ { p1Args }, { L"" } };
+            Remoting::CommandlineArgs eventArgs{ { p1Args }, { L"" }, SW_NORMAL };
 
             auto result = m0->ProposeCommandline(eventArgs);
             VERIFY_ARE_EQUAL(false, result.ShouldCreateWindow());
@@ -553,7 +559,7 @@ namespace RemotingUnitTests
             p2->ActivateWindow(activatedArgs);
 
             Log::Comment(L"Send a commandline to the current window, which should be p2");
-            Remoting::CommandlineArgs eventArgs{ { p2Args }, { L"" } };
+            Remoting::CommandlineArgs eventArgs{ { p2Args }, { L"" }, SW_NORMAL };
             auto result = m0->ProposeCommandline(eventArgs);
             VERIFY_ARE_EQUAL(false, result.ShouldCreateWindow());
             VERIFY_ARE_EQUAL(false, (bool)result.Id());
@@ -566,7 +572,7 @@ namespace RemotingUnitTests
             p1->ActivateWindow(activatedArgs);
 
             Log::Comment(L"Send a commandline to the current window, which should be p1 again");
-            Remoting::CommandlineArgs eventArgs{ { p1Args }, { L"" } };
+            Remoting::CommandlineArgs eventArgs{ { p1Args }, { L"" }, SW_NORMAL };
             auto result = m0->ProposeCommandline(eventArgs);
             VERIFY_ARE_EQUAL(false, result.ShouldCreateWindow());
             VERIFY_ARE_EQUAL(false, (bool)result.Id());
@@ -587,7 +593,7 @@ namespace RemotingUnitTests
 
         {
             std::vector<winrt::hstring> args{ L"2" };
-            Remoting::CommandlineArgs eventArgs{ { args }, { L"" } };
+            Remoting::CommandlineArgs eventArgs{ { args }, { L"" }, SW_NORMAL };
 
             auto result = m0->ProposeCommandline(eventArgs);
             VERIFY_ARE_EQUAL(true, result.ShouldCreateWindow());
@@ -596,7 +602,7 @@ namespace RemotingUnitTests
         }
         {
             std::vector<winrt::hstring> args{ L"10" };
-            Remoting::CommandlineArgs eventArgs{ { args }, { L"" } };
+            Remoting::CommandlineArgs eventArgs{ { args }, { L"" }, SW_NORMAL };
 
             auto result = m0->ProposeCommandline(eventArgs);
             VERIFY_ARE_EQUAL(true, result.ShouldCreateWindow());
@@ -642,7 +648,7 @@ namespace RemotingUnitTests
         {
             Log::Comment(L"Send a commandline to p2, who is still alive. We won't create a new window.");
 
-            Remoting::CommandlineArgs eventArgs{ { p2Args }, { L"" } };
+            Remoting::CommandlineArgs eventArgs{ { p2Args }, { L"" }, SW_NORMAL };
 
             auto result = m0->ProposeCommandline(eventArgs);
             VERIFY_ARE_EQUAL(false, result.ShouldCreateWindow());
@@ -650,7 +656,7 @@ namespace RemotingUnitTests
         }
         {
             Log::Comment(L"Send a commandline to p1, who is dead. We will create a new window.");
-            Remoting::CommandlineArgs eventArgs{ { p1Args }, { L"" } };
+            Remoting::CommandlineArgs eventArgs{ { p1Args }, { L"" }, SW_NORMAL };
 
             auto result = m0->ProposeCommandline(eventArgs);
             VERIFY_ARE_EQUAL(true, result.ShouldCreateWindow());
@@ -1353,7 +1359,7 @@ namespace RemotingUnitTests
         std::vector<winrt::hstring> p2Args{ L"two", L"this is for p2" };
 
         {
-            Remoting::CommandlineArgs eventArgs{ { p1Args }, { L"" } };
+            Remoting::CommandlineArgs eventArgs{ { p1Args }, { L"" }, SW_NORMAL };
             auto result = m0->ProposeCommandline(eventArgs);
             VERIFY_ARE_EQUAL(false, result.ShouldCreateWindow());
             VERIFY_ARE_EQUAL(false, (bool)result.Id()); // Casting to (bool) checks if the reference has a value
@@ -1362,7 +1368,7 @@ namespace RemotingUnitTests
 
         {
             Log::Comment(L"Send a commandline to \"two\", which should be p2");
-            Remoting::CommandlineArgs eventArgs{ { p2Args }, { L"" } };
+            Remoting::CommandlineArgs eventArgs{ { p2Args }, { L"" }, SW_NORMAL };
             auto result = m0->ProposeCommandline(eventArgs);
             VERIFY_ARE_EQUAL(false, result.ShouldCreateWindow());
             VERIFY_ARE_EQUAL(false, (bool)result.Id()); // Casting to (bool) checks if the reference has a value
@@ -1374,7 +1380,7 @@ namespace RemotingUnitTests
 
         {
             Log::Comment(L"Send a commandline to \"two\", who is now dead.");
-            Remoting::CommandlineArgs eventArgs{ { p2Args }, { L"" } };
+            Remoting::CommandlineArgs eventArgs{ { p2Args }, { L"" }, SW_NORMAL };
             auto result = m0->ProposeCommandline(eventArgs);
             VERIFY_ARE_EQUAL(true, result.ShouldCreateWindow());
             VERIFY_ARE_EQUAL(false, (bool)result.Id()); // Casting to (bool) checks if the reference has a value
@@ -2386,7 +2392,7 @@ namespace RemotingUnitTests
         VERIFY_ARE_EQUAL(p1->GetID(), m0->_mruPeasants[1].PeasantID());
 
         std::vector<winrt::hstring> commandlineArgs{ L"0", L"arg[1]" };
-        Remoting::CommandlineArgs eventArgs{ { commandlineArgs }, { L"" } };
+        Remoting::CommandlineArgs eventArgs{ { commandlineArgs }, { L"" }, SW_NORMAL };
 
         Log::Comment(L"When we attempt to send a commandline to the MRU window,"
                      L" we should find peasant 1 (who's name is \"one\"), not 2"
@@ -2571,7 +2577,7 @@ namespace RemotingUnitTests
         auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
 
         {
-            Remoting::CommandlineArgs args{ { L"wt.exe" }, { L"-Embedding" } };
+            Remoting::CommandlineArgs args{ { L"wt.exe" }, { L"-Embedding" }, SW_NORMAL };
             const auto result = m0->ProposeCommandline(args);
             auto shouldCreateWindow = result.ShouldCreateWindow();
             VERIFY_IS_TRUE(shouldCreateWindow);
@@ -2579,7 +2585,7 @@ namespace RemotingUnitTests
 
         auto m1 = make_self<DeadMonarch>();
         {
-            Remoting::CommandlineArgs args{ { L"wt.exe" }, { L"-Embedding" } };
+            Remoting::CommandlineArgs args{ { L"wt.exe" }, { L"-Embedding" }, SW_NORMAL };
 
             try
             {

@@ -50,6 +50,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     TermControl::TermControl(IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
+        TermControl{ winrt::make<implementation::ControlInteractivity>(settings, unfocusedAppearance, connection) }
+    {
+    }
+
+    TermControl::TermControl(Control::ControlInteractivity content) :
+        _interactivity{ content },
         _isInternalScrollBarUpdate{ false },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
@@ -61,34 +67,46 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         InitializeComponent();
 
-        _interactivity = winrt::make<implementation::ControlInteractivity>(settings, unfocusedAppearance, connection);
         _core = _interactivity.Core();
 
-        // These events might all be triggered by the connection, but that
-        // should be drained and closed before we complete destruction. So these
-        // are safe.
-        _core.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
-        _core.WarningBell({ this, &TermControl::_coreWarningBell });
-        _core.CursorPositionChanged({ this, &TermControl::_CursorPositionChanged });
-
         // This event is specifically triggered by the renderer thread, a BG thread. Use a weak ref here.
-        _core.RendererEnteredErrorState({ get_weak(), &TermControl::_RendererEnteredErrorState });
+        _revokers.RendererEnteredErrorState = _core.RendererEnteredErrorState(winrt::auto_revoke, { get_weak(), &TermControl::_RendererEnteredErrorState });
+
+        // IMPORTANT! Set this callback up sooner rather than later. If we do it
+        // after Enable, then it'll be possible to paint the frame once
+        // _before_ the warning handler is set up, and then warnings from
+        // the first paint will be ignored!
+        _revokers.RendererWarning = _core.RendererWarning(winrt::auto_revoke, { get_weak(), &TermControl::_RendererWarning });
+        // ALSO IMPORTANT: Make sure to set this callback up in the ctor, so
+        // that we won't miss any swap chain changes.
+        _revokers.SwapChainChanged = _core.SwapChainChanged(winrt::auto_revoke, { get_weak(), &TermControl::RenderEngineSwapChainChanged });
 
         // These callbacks can only really be triggered by UI interactions. So
         // they don't need weak refs - they can't be triggered unless we're
         // alive.
-        _core.BackgroundColorChanged({ this, &TermControl::_coreBackgroundColorChanged });
-        _core.FontSizeChanged({ this, &TermControl::_coreFontSizeChanged });
-        _core.TransparencyChanged({ this, &TermControl::_coreTransparencyChanged });
-        _core.RaiseNotice({ this, &TermControl::_coreRaisedNotice });
-        _core.HoveredHyperlinkChanged({ this, &TermControl::_hoveredHyperlinkChanged });
-        _core.FoundMatch({ this, &TermControl::_coreFoundMatch });
-        _core.UpdateSelectionMarkers({ this, &TermControl::_updateSelectionMarkers });
-        _core.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
-        _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
-        _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
+        _revokers.BackgroundColorChanged = _core.BackgroundColorChanged(winrt::auto_revoke, { get_weak(), &TermControl::_coreBackgroundColorChanged });
+        _revokers.FontSizeChanged = _core.FontSizeChanged(winrt::auto_revoke, { get_weak(), &TermControl::_coreFontSizeChanged });
+        _revokers.TransparencyChanged = _core.TransparencyChanged(winrt::auto_revoke, { get_weak(), &TermControl::_coreTransparencyChanged });
+        _revokers.RaiseNotice = _core.RaiseNotice(winrt::auto_revoke, { get_weak(), &TermControl::_coreRaisedNotice });
+        _revokers.HoveredHyperlinkChanged = _core.HoveredHyperlinkChanged(winrt::auto_revoke, { get_weak(), &TermControl::_hoveredHyperlinkChanged });
+        _revokers.FoundMatch = _core.FoundMatch(winrt::auto_revoke, { get_weak(), &TermControl::_coreFoundMatch });
+        _revokers.UpdateSelectionMarkers = _core.UpdateSelectionMarkers(winrt::auto_revoke, { get_weak(), &TermControl::_updateSelectionMarkers });
+        _revokers.coreOpenHyperlink = _core.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
+        _revokers.interactivityOpenHyperlink = _interactivity.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
+        _revokers.interactivityScrollPositionChanged = _interactivity.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
+        _revokers.ContextMenuRequested = _interactivity.ContextMenuRequested(winrt::auto_revoke, { get_weak(), &TermControl::_contextMenuHandler });
 
-        _interactivity.ContextMenuRequested({ this, &TermControl::_contextMenuHandler });
+        // "Bubbled" events - ones we want to handle, by raising our own event.
+        _revokers.CopyToClipboard = _core.CopyToClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCopyToClipboard });
+        _revokers.TitleChanged = _core.TitleChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleTitleChanged });
+        _revokers.TabColorChanged = _core.TabColorChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleTabColorChanged });
+        _revokers.TaskbarProgressChanged = _core.TaskbarProgressChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleSetTaskbarProgress });
+        _revokers.ConnectionStateChanged = _core.ConnectionStateChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleConnectionStateChanged });
+        _revokers.ShowWindowChanged = _core.ShowWindowChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleShowWindowChanged });
+        _revokers.CloseTerminalRequested = _core.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCloseTerminalRequested });
+        _revokers.RestartTerminalRequested = _core.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleRestartTerminalRequested });
+
+        _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -97,8 +115,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // in any layout change chain. That gives us great flexibility in finding the right point
             // at which to initialize our renderer (and our terminal).
             // Any earlier than the last layout update and we may not know the terminal's starting size.
-
-            if (_InitializeTerminal())
+            if (_InitializeTerminal(InitializeReason::Create))
             {
                 // Only let this succeed once.
                 _layoutUpdatedRevoker.revoke();
@@ -132,9 +149,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
+        // These events might all be triggered by the connection, but that
+        // should be drained and closed before we complete destruction. So these
+        // are safe.
+        //
+        // NOTE: _ScrollPositionChanged has to be registered after we set up the
+        // _updateScrollBar func. Otherwise, we could get a callback from an
+        // attached content before we set up the throttled func, and that'll A/V
+        _revokers.coreScrollPositionChanged = _core.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
+        _revokers.WarningBell = _core.WarningBell(winrt::auto_revoke, { get_weak(), &TermControl::_coreWarningBell });
+        _revokers.CursorPositionChanged = _core.CursorPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_CursorPositionChanged });
+
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
-        _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
+        _autoScrollTimer.Tick({ get_weak(), &TermControl::_UpdateAutoScroll });
 
         _ApplyUISettings();
 
@@ -190,6 +218,58 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
         });
+    }
+
+    // Function Description:
+    // - Static helper for building a new TermControl from an already existing
+    //   content. We'll attach the existing swapchain to this new control's
+    //   SwapChainPanel. The IKeyBindings might belong to a non-agile object on
+    //   a new thread, so we'll hook up the core to these new bindings.
+    // Arguments:
+    // - content: The preexisting ControlInteractivity to connect to.
+    // - keybindings: The new IKeyBindings instance to use for this control.
+    // Return Value:
+    // - The newly constructed TermControl.
+    Control::TermControl TermControl::NewControlByAttachingContent(Control::ControlInteractivity content,
+                                                                   const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    {
+        const auto term{ winrt::make_self<TermControl>(content) };
+        term->_initializeForAttach(keyBindings);
+        return *term;
+    }
+
+    void TermControl::_initializeForAttach(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    {
+        _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core.SwapChainHandle()));
+        _interactivity.AttachToNewControl(keyBindings);
+
+        // Initialize the terminal only once the swapchainpanel is loaded - that
+        //      way, we'll be able to query the real pixel size it got on layout
+        auto r = SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
+            // Replace the normal initialize routine with one that will allow up
+            // to complete initialization even though the Core was already
+            // initialized.
+            if (_InitializeTerminal(InitializeReason::Reattach))
+            {
+                // Only let this succeed once.
+                _layoutUpdatedRevoker.revoke();
+            }
+        });
+        _layoutUpdatedRevoker.swap(r);
+    }
+
+    uint64_t TermControl::ContentId() const
+    {
+        return _interactivity.Id();
+    }
+
+    TerminalConnection::ITerminalConnection TermControl::Connection()
+    {
+        return _core.Connection();
+    }
+    void TermControl::Connection(const TerminalConnection::ITerminalConnection& newConnection)
+    {
+        _core.Connection(newConnection);
     }
 
     void TermControl::_throttledUpdateScrollbar(const ScrollBarUpdate& update)
@@ -795,25 +875,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ConnectionState();
     }
 
-    winrt::fire_and_forget TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable args)
+    void TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable args)
     {
-        // This event is only registered during terminal initialization,
-        // so we don't need to check _initializedTerminal.
-        const auto weakThis{ get_weak() };
-
-        // Create a copy of the swap chain HANDLE in args, since we don't own that parameter.
-        // By the time we return from the co_await below, it might be deleted already.
-        winrt::handle handle;
-        const auto processHandle = GetCurrentProcess();
-        const auto sourceHandle = reinterpret_cast<HANDLE>(winrt::unbox_value<uint64_t>(args));
-        THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(processHandle, sourceHandle, processHandle, handle.put(), 0, FALSE, DUPLICATE_SAME_ACCESS));
-
-        co_await wil::resume_foreground(Dispatcher());
-
-        if (auto control{ weakThis.get() })
-        {
-            _AttachDxgiSwapChainToXaml(handle.get());
-        }
+        // This event comes in on the UI thread
+        HANDLE h = reinterpret_cast<HANDLE>(winrt::unbox_value<uint64_t>(args));
+        _AttachDxgiSwapChainToXaml(h);
     }
 
     // Method Description:
@@ -864,15 +930,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         nativePanel->SetSwapChainHandle(swapChainHandle);
     }
 
-    bool TermControl::_InitializeTerminal()
+    bool TermControl::_InitializeTerminal(const InitializeReason reason)
     {
         if (_initializedTerminal)
         {
             return false;
         }
 
-        const auto panelWidth = SwapChainPanel().ActualWidth();
-        const auto panelHeight = SwapChainPanel().ActualHeight();
+        const auto panelWidth = static_cast<float>(SwapChainPanel().ActualWidth());
+        const auto panelHeight = static_cast<float>(SwapChainPanel().ActualHeight());
         const auto panelScaleX = SwapChainPanel().CompositionScaleX();
         const auto panelScaleY = SwapChainPanel().CompositionScaleY();
 
@@ -884,31 +950,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
 
-        // IMPORTANT! Set this callback up sooner rather than later. If we do it
-        // after Enable, then it'll be possible to paint the frame once
-        // _before_ the warning handler is set up, and then warnings from
-        // the first paint will be ignored!
-        _core.RendererWarning({ get_weak(), &TermControl::_RendererWarning });
-
-        const auto coreInitialized = _core.Initialize(panelWidth,
-                                                      panelHeight,
-                                                      panelScaleX);
-        if (!coreInitialized)
+        // If we're re-attaching an existing content, then we want to proceed even though the Terminal was already initialized.
+        if (reason == InitializeReason::Create)
         {
-            return false;
+            const auto coreInitialized = _core.Initialize(panelWidth,
+                                                          panelHeight,
+                                                          panelScaleX);
+            if (!coreInitialized)
+            {
+                return false;
+            }
+            _interactivity.Initialize();
         }
-        _interactivity.Initialize();
+        else
+        {
+            _core.SizeOrScaleChanged(panelWidth, panelHeight, panelScaleX);
+        }
 
-        _core.SwapChainChanged({ get_weak(), &TermControl::RenderEngineSwapChainChanged });
         _core.EnablePainting();
 
         auto bufferHeight = _core.BufferHeight();
 
-        ScrollBar().Maximum(bufferHeight - bufferHeight);
+        ScrollBar().Maximum(0);
         ScrollBar().Minimum(0);
         ScrollBar().Value(0);
         ScrollBar().ViewportSize(bufferHeight);
-        ScrollBar().LargeChange(std::max(bufferHeight - 1, 0)); // scroll one "screenful" at a time when the scroll bar is clicked
+        ScrollBar().LargeChange(bufferHeight); // scroll one "screenful" at a time when the scroll bar is clicked
 
         // Set up blinking cursor
         int blinkTime = GetCaretBlinkTime();
@@ -1200,12 +1267,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return true;
         }
 
-        // TODO: GH#5000
-        // The Core owning the keybindings is weird. That's for sure. In the
-        // future, we may want to pass the keybindings into the control
-        // separately, so the control can have a pointer to an in-proc
-        // Keybindings object, rather than routing through the ControlCore.
-        // (see GH#5000)
         auto bindings = _core.Settings().KeyBindings();
         if (!bindings)
         {
@@ -1743,7 +1804,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#5421: Enable the UiaEngine before checking for the SearchBox
         // That way, new selections are notified to automation clients.
         // The _uiaEngine lives in _interactivity, so call into there to enable it.
-        _interactivity.GotFocus();
+
+        if (_interactivity)
+        {
+            _interactivity.GotFocus();
+        }
 
         // If the searchbox is focused, we don't want TSFInputControl to think
         // it has focus so it doesn't intercept IME input. We also don't want the
@@ -1798,7 +1863,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // This will disable the accessibility notifications, because the
         // UiaEngine lives in ControlInteractivity
-        _interactivity.LostFocus();
+        if (_interactivity)
+        {
+            _interactivity.LostFocus();
+        }
 
         if (TSFInputControl() != nullptr)
         {
@@ -2054,12 +2122,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _RestorePointerCursorHandlers(*this, nullptr);
 
+            _revokers = {};
+
             // Disconnect the TSF input control so it doesn't receive EditContext events.
             TSFInputControl().Close();
             _autoScrollTimer.Stop();
 
-            _core.Close();
+            if (!_detached)
+            {
+                _interactivity.Close();
+            }
         }
+    }
+    void TermControl::Detach()
+    {
+        _revokers = {};
+
+        Control::ControlInteractivity old{ nullptr };
+        std::swap(old, _interactivity);
+        old.Detach();
+
+        _detached = true;
     }
 
     // Method Description:
@@ -2172,7 +2255,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // instantiating a DxEngine/AtlasEngine.
         // GH#10211 - UNDER NO CIRCUMSTANCE should this fail. If it does, the
         // whole app will crash instantaneously on launch, which is no good.
-        double scale;
+        float scale;
         if (settings.UseAtlasEngine())
         {
             auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
@@ -2194,7 +2277,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // ComCtl scrollbars, but it's certainly close enough.
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
 
-        double width = cols * actualFontSize.width;
+        float width = cols * static_cast<float>(actualFontSize.width);
 
         // Reserve additional space if scrollbar is intended to be visible
         if (scrollState != ScrollbarState::Hidden)
@@ -2202,13 +2285,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             width += scrollbarSize;
         }
 
-        double height = rows * actualFontSize.height;
+        float height = rows * static_cast<float>(actualFontSize.height);
         const auto thickness = ParseThicknessFromPadding(padding);
         // GH#2061 - make sure to account for the size the padding _will be_ scaled to
-        width += scale * (thickness.Left + thickness.Right);
-        height += scale * (thickness.Top + thickness.Bottom);
+        width += scale * static_cast<float>(thickness.Left + thickness.Right);
+        height += scale * static_cast<float>(thickness.Top + thickness.Bottom);
 
-        return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
+        return { width, height };
     }
 
     // Method Description:
@@ -2238,20 +2321,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_initializedTerminal)
         {
             const auto fontSize = _core.FontSize();
-            double width = fontSize.Width;
-            double height = fontSize.Height;
+            auto width = fontSize.Width;
+            auto height = fontSize.Height;
             // Reserve additional space if scrollbar is intended to be visible
             if (_core.Settings().ScrollState() != ScrollbarState::Hidden)
             {
-                width += ScrollBar().ActualWidth();
+                width += static_cast<float>(ScrollBar().ActualWidth());
             }
 
             // Account for the size of any padding
             const auto padding = GetPadding();
-            width += padding.Left + padding.Right;
-            height += padding.Top + padding.Bottom;
+            width += static_cast<float>(padding.Left + padding.Right);
+            height += static_cast<float>(padding.Top + padding.Bottom);
 
-            return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
+            return { width, height };
         }
         else
         {
@@ -2290,7 +2373,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto gridSize = dimension - nonTerminalArea;
-        const auto cells = static_cast<int>(gridSize / fontDimension);
+        const auto cells = floor(gridSize / fontDimension);
         return cells * fontDimension + nonTerminalArea;
     }
 
@@ -2797,18 +2880,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     IControlSettings TermControl::Settings() const
     {
-        // TODO: GH#5000
-        // We still need this in a couple places:
-        // - Pane.cpp uses this for parsing out the StartingTitle, Commandline,
-        //   etc for Pane::GetTerminalArgsForPane.
-        // - TerminalTab::_CreateToolTipTitle uses the ProfileName for the
-        //   tooltip for the tab.
-        //
-        // These both happen on the UI thread right now. In the future, when we
-        // have to hop across the process boundary to get at the core settings,
-        // it may make sense to cache these values inside the TermControl
-        // itself, so it can do the hop once when it's first setup, rather than
-        // when it's needed by the UI thread.
         return _core.Settings();
     }
 
@@ -2926,6 +2997,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
+    // - Sets the read-only flag, raises event describing the value change
+    void TermControl::SetReadOnly(const bool readOnlyState)
+    {
+        _core.SetReadOnlyMode(readOnlyState);
+        _ReadOnlyChangedHandlers(*this, winrt::box_value(_core.IsInReadOnlyMode()));
+    }
+
+    // Method Description:
     // - Handle a mouse exited event, specifically clearing last hovered cell
     // and removing selection from hyper link if exists
     // Arguments:
@@ -2947,9 +3026,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto lastHoveredCell = _core.HoveredCell();
             if (lastHoveredCell)
             {
-                const auto uriText = _core.HoveredUriText();
-                if (!uriText.empty())
+                winrt::hstring uriText = _core.HoveredUriText();
+                if (uriText.empty())
                 {
+                    co_return;
+                }
+
+                try
+                {
+                    // DisplayUri will filter out non-printable characters and confusables.
+                    Windows::Foundation::Uri parsedUri{ uriText };
+                    if (!parsedUri)
+                    {
+                        co_return;
+                    }
+                    uriText = parsedUri.DisplayUri();
+
                     const auto panel = SwapChainPanel();
                     const auto scale = panel.CompositionScaleX();
                     const auto offset = panel.ActualOffset();
@@ -2971,6 +3063,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), locationInDIPs.x - offset.x);
                     OverlayCanvas().SetTop(HyperlinkTooltipBorder(), locationInDIPs.y - offset.y);
                 }
+                CATCH_LOG();
             }
         }
     }
@@ -2995,9 +3088,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                     // Ensure the marker is oriented properly
                     // (i.e. if start is at the beginning of the buffer, it should be flipped)
-                    auto transform{ marker.RenderTransform().as<Windows::UI::Xaml::Media::ScaleTransform>() };
-                    transform.ScaleX(std::abs(transform.ScaleX()) * (flipMarker ? -1.0 : 1.0));
-                    marker.RenderTransform(transform);
+                    //
+                    // Note - This RenderTransform might not be a
+                    // ScaleTransform, if we haven't had a _coreFontSizeChanged
+                    // handled yet, because that's the first place we set the
+                    // RenderTransform
+                    if (const auto& transform{ marker.RenderTransform().try_as<Windows::UI::Xaml::Media::ScaleTransform>() })
+                    {
+                        transform.ScaleX(std::abs(transform.ScaleX()) * (flipMarker ? -1.0 : 1.0));
+                        marker.RenderTransform(transform);
+                    }
 
                     // Compute the location of the top left corner of the cell in DIPS
                     auto terminalPos{ targetEnd ? markerData.EndPos : markerData.StartPos };
@@ -3226,6 +3326,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ScrollMarks();
     }
 
+    void TermControl::SelectCommand(const bool goUp)
+    {
+        _core.SelectCommand(goUp);
+    }
+
+    void TermControl::SelectOutput(const bool goUp)
+    {
+        _core.SelectOutput(goUp);
+    }
+
     void TermControl::ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Core::MatchMode matchMode)
     {
         _core.ColorSelection(fg, bg, matchMode);
@@ -3249,6 +3359,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin).to_winrt_point();
         myOption.Position(pos);
+
+        // The "Select command" and "Select output" buttons should only be
+        // visible if shell integration is actually turned on.
+        const auto shouldShowSelectCommand{ _core.ShouldShowSelectCommand() };
+        const auto shouldShowSelectOutput{ _core.ShouldShowSelectOutput() };
+        SelectCommandButton().Visibility(shouldShowSelectCommand ? Visibility::Visible : Visibility::Collapsed);
+        SelectOutputButton().Visibility(shouldShowSelectOutput ? Visibility::Visible : Visibility::Collapsed);
+        SelectCommandWithSelectionButton().Visibility(shouldShowSelectCommand ? Visibility::Visible : Visibility::Collapsed);
+        SelectOutputWithSelectionButton().Visibility(shouldShowSelectOutput ? Visibility::Visible : Visibility::Collapsed);
 
         (_core.HasSelection() ? SelectionContextMenu() :
                                 ContextMenu())
@@ -3275,7 +3394,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         ContextMenu().Hide();
         SelectionContextMenu().Hide();
-        SearchMatch(false);
+
+        // CreateSearchBoxControl will actually create the search box and
+        // pre-populate the box with the currently selected text.
+        CreateSearchBoxControl();
     }
 
+    void TermControl::_SelectCommandHandler(const IInspectable& /*sender*/,
+                                            const IInspectable& /*args*/)
+    {
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+        _core.ContextMenuSelectCommand();
+    }
+
+    void TermControl::_SelectOutputHandler(const IInspectable& /*sender*/,
+                                           const IInspectable& /*args*/)
+    {
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+        _core.ContextMenuSelectOutput();
+    }
 }

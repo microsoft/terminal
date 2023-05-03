@@ -2,6 +2,7 @@ aabbcc
 ABANDONFONT
 abbcc
 ABCDEFGHIJKLMNOPQRSTUVWXY
+ABCF
 abgr
 abi
 ABORTIFHUNG
@@ -37,6 +38,7 @@ ansicpg
 ANSISYS
 ANSISYSRC
 ANSISYSSC
+answerback
 antialiasing
 ANull
 anycpu
@@ -175,7 +177,6 @@ CConsole
 CConversion
 CCRT
 cdd
-CDeclaration
 CEdit
 CELLSIZE
 cfae
@@ -256,6 +257,7 @@ condrv
 conechokey
 conemu
 configurability
+confusables
 conhost
 conime
 conimeinfo
@@ -330,7 +332,7 @@ Cspace
 csrmsg
 CSRSS
 csrutil
-cstyle
+CSTYLE
 CSwitch
 CTerminal
 CText
@@ -407,6 +409,7 @@ DECAUPSS
 DECAWM
 DECBKM
 DECCARA
+DECCIR
 DECCKM
 DECCKSR
 DECCOLM
@@ -438,8 +441,10 @@ DECRLM
 DECRPM
 DECRQCRA
 DECRQM
+DECRQPSR
 DECRQSS
 DECRQTSR
+DECRSPS
 decrst
 DECSACE
 DECSASD
@@ -460,6 +465,7 @@ DECSTBM
 DECSTGLT
 DECSTR
 DECSWL
+DECTABSR
 DECTCEM
 DECXCPR
 DEFAPP
@@ -798,6 +804,7 @@ HIBYTE
 hicon
 HIDEWINDOW
 hinst
+Hirots
 HISTORYBUFS
 HISTORYNODUP
 HISTORYSIZE
@@ -809,6 +816,8 @@ hkl
 HKLM
 hlocal
 hlsl
+HMB
+HMK
 hmod
 hmodule
 hmon
@@ -1116,6 +1125,7 @@ Mip
 MMBB
 mmcc
 MMCPL
+MMIX
 mmsystem
 MNC
 MNOPQ
@@ -1764,6 +1774,7 @@ srv
 srvinit
 srvpipe
 ssa
+startdir
 STARTF
 STARTUPINFO
 STARTUPINFOEX
@@ -1773,6 +1784,7 @@ STARTWPARMS
 STARTWPARMSA
 STARTWPARMSW
 Statusline
+stb
 stdafx
 STDAPI
 stdc
@@ -1938,6 +1950,7 @@ trx
 tsattrs
 tsf
 tsgr
+tsm
 TStr
 TSTRFORMAT
 TSub

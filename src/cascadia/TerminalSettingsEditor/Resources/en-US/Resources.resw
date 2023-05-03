@@ -244,8 +244,8 @@
     <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
   </data>
   <data name="Globals_AlwaysShowTabs.HelpText" xml:space="preserve">
-    <value>When disabled, the tab bar will appear when a new tab is created.</value>
-    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header".</comment>
+    <value>When disabled, the tab bar will appear when a new tab is created. Cannot be disabled while "Hide the title bar" is On.</value>
+    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header". This setting cannot be disabled while "Globals_ShowTitlebar.Header" is enabled.</comment>
   </data>
   <data name="Globals_NewTabPosition.Header" xml:space="preserve">
     <value>Position of newly created tabs</value>
@@ -536,15 +536,27 @@
   </data>
   <data name="Globals_ThemeDark.Content" xml:space="preserve">
     <value>Dark</value>
-    <comment>An option to choose from for the "tab width mode" setting. When selected, the app is in dark theme and darker colors are used throughout the app.</comment>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in dark theme and darker colors are used throughout the app.</comment>
   </data>
   <data name="Globals_ThemeSystem.Content" xml:space="preserve">
     <value>Use Windows theme</value>
-    <comment>An option to choose from for the "tab width mode" setting. When selected, the app uses the theme selected in the Windows operating system.</comment>
+    <comment>An option to choose from for the "theme" setting. When selected, the app uses the theme selected in the Windows operating system.</comment>
   </data>
   <data name="Globals_ThemeLight.Content" xml:space="preserve">
     <value>Light</value>
-    <comment>An option to choose from for the "tab width mode" setting. When selected, the app is in light theme and lighter colors are used throughout the app.</comment>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in light theme and lighter colors are used throughout the app.</comment>
+  </data>
+  <data name="Globals_ThemeDarkLegacy.Content" xml:space="preserve">
+    <value>Dark (Legacy)</value>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in dark theme and darker colors are used throughout the app. This is an older version of the "dark" theme</comment>
+  </data>
+  <data name="Globals_ThemeSystemLegacy.Content" xml:space="preserve">
+    <value>Use Windows theme (Legacy)</value>
+    <comment>An option to choose from for the "theme" setting. When selected, the app uses the theme selected in the Windows operating system. This is an older version of the "Use Windows theme" theme</comment>
+  </data>
+  <data name="Globals_ThemeLightLegacy.Content" xml:space="preserve">
+    <value>Light (Legacy)</value>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in light theme and lighter colors are used throughout the app. This is an older version of the "light" theme</comment>
   </data>
   <data name="Globals_WordDelimiters.Header" xml:space="preserve">
     <value>Word delimiters</value>
@@ -1584,5 +1596,25 @@
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
     <value>Warn when closing more than one tab</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
+  </data>
+  <data name="Settings_PortableModeNote.Text" xml:space="preserve">
+    <value>Windows Terminal is running in portable mode.</value>
+    <comment>A disclaimer that indicates that Terminal is running in a mode that saves settings to a different folder.</comment>
+  </data>
+  <data name="Settings_PortableModeInfoLink.NavigateUri" xml:space="preserve">
+    <value>https://go.microsoft.com/fwlink/?linkid=2229086</value>
+    <comment>{Locked}</comment>
+  </data>
+  <data name="Settings_PortableModeInfoLinkTextRun.Text" xml:space="preserve">
+    <value>Learn more.</value>
+    <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
+  </data>
+	<data name="Profile_FontFace_ProportionalFontWarning.Title" xml:space="preserve">
+    <value>Warning:</value>
+    <comment>Title for the warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
+  </data>
+	<data name="Profile_FontFace_ProportionalFontWarning.Message" xml:space="preserve">
+    <value>Choosing a non-monospaced font will likely result in visual artifacts. Use at your own discretion.</value>
+    <comment>Warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
   </data>
 </root>

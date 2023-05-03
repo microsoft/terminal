@@ -41,9 +41,7 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
     _root.Children().Append(_borderFirst);
     _borderFirst.Child(_control);
 
-    _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
-    _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
-    _closeTerminalRequestedToken = _control.CloseTerminalRequested({ this, &Pane::_CloseTerminalRequestedHandler });
+    _setupControlEvents();
 
     // Register an event with the control to have it inform us when it gains focus.
     _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
@@ -104,14 +102,28 @@ Pane::Pane(std::shared_ptr<Pane> first,
     });
 }
 
+void Pane::_setupControlEvents()
+{
+    _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &Pane::_ControlConnectionStateChangedHandler });
+    _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { this, &Pane::_ControlWarningBellHandler });
+    _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { this, &Pane::_CloseTerminalRequestedHandler });
+    _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { this, &Pane::_RestartTerminalRequestedHandler });
+}
+void Pane::_removeControlEvents()
+{
+    _controlEvents = {};
+}
+
 // Method Description:
 // - Extract the terminal settings from the current (leaf) pane's control
 //   to be used to create an equivalent control
 // Arguments:
-// - <none>
+// - asContent: when true, we're trying to serialize this pane for moving across
+//   windows. In that case, we'll need to fill in the content guid for our new
+//   terminal args.
 // Return Value:
 // - Arguments appropriate for a SplitPane or NewTab action
-NewTerminalArgs Pane::GetTerminalArgsForPane() const
+NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
 {
     // Leaves are the only things that have controls
     assert(_IsLeaf());
@@ -156,6 +168,14 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     // object. That would work for schemes set by the Terminal, but not ones set
     // by VT, but that seems good enough.
 
+    // Only fill in the ContentId if absolutely needed. If you fill in a number
+    // here (even 0), we'll serialize that number, AND treat that action as an
+    // "attach existing" rather than a "create"
+    if (asContent)
+    {
+        args.ContentId(_control.ContentId());
+    }
+
     return args;
 }
 
@@ -167,35 +187,61 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
 // Arguments:
 // - currentId: the id to use for the current/first pane
 // - nextId: the id to use for a new pane if we split
+// - asContent: We're serializing this set of actions as content actions for
+//   moving to other windows, so we need to make sure to include ContentId's
+//   in the final actions.
+// - asMovePane: only used with asContent. When this is true, we're building
+//   these actions as a part of moving the pane to another window, but without
+//   the context of the hosting tab. In that case, we'll want to build a
+//   splitPane action even if we're just a single leaf, because there's no other
+//   parent to try and build an action for us.
 // Return Value:
 // - The state from building the startup actions, includes a vector of commands,
 //   the original root pane, the id of the focused pane, and the number of panes
 //   created.
-Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t nextId)
+Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId,
+                                                  uint32_t nextId,
+                                                  const bool asContent,
+                                                  const bool asMovePane)
 {
-    // if we are a leaf then all there is to do is defer to the parent.
-    if (_IsLeaf())
+    // Normally, if we're a leaf, return an empt set of actions, because the
+    // parent pane will build the SplitPane action for us. If we're building
+    // actions for a movePane action though, we'll still need to include
+    // ourselves.
+    if (!asMovePane && _IsLeaf())
     {
         if (_lastActive)
         {
-            return { {}, shared_from_this(), currentId, 0 };
+            // empty args, this is the first pane, currentId is
+            return { .args = {}, .firstPane = shared_from_this(), .focusedPaneId = currentId, .panesCreated = 0 };
         }
 
-        return { {}, shared_from_this(), std::nullopt, 0 };
+        return { .args = {}, .firstPane = shared_from_this(), .focusedPaneId = std::nullopt, .panesCreated = 0 };
     }
 
     auto buildSplitPane = [&](auto newPane) {
         ActionAndArgs actionAndArgs;
         actionAndArgs.Action(ShortcutAction::SplitPane);
-        const auto terminalArgs{ newPane->GetTerminalArgsForPane() };
+        const auto terminalArgs{ newPane->GetTerminalArgsForPane(asContent) };
         // When creating a pane the split size is the size of the new pane
         // and not position.
         const auto splitDirection = _splitState == SplitState::Horizontal ? SplitDirection::Down : SplitDirection::Right;
-        SplitPaneArgs args{ SplitType::Manual, splitDirection, 1. - _desiredSplitPosition, terminalArgs };
+        const auto splitSize = (asContent && _IsLeaf() ? .5 : 1. - _desiredSplitPosition);
+        SplitPaneArgs args{ SplitType::Manual, splitDirection, splitSize, terminalArgs };
         actionAndArgs.Args(args);
 
         return actionAndArgs;
     };
+
+    if (asContent && _IsLeaf())
+    {
+        return {
+            .args = { buildSplitPane(shared_from_this()) },
+            .firstPane = shared_from_this(),
+            .focusedPaneId = currentId,
+            .panesCreated = 1
+        };
+    }
 
     auto buildMoveFocus = [](auto direction) {
         MoveFocusArgs args{ direction };
@@ -223,7 +269,12 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
             focusedPaneId = nextId;
         }
 
-        return { { actionAndArgs }, _firstChild, focusedPaneId, 1 };
+        return {
+            .args = { actionAndArgs },
+            .firstPane = _firstChild,
+            .focusedPaneId = focusedPaneId,
+            .panesCreated = 1
+        };
     }
 
     // We now need to execute the commands for each side of the tree
@@ -260,7 +311,12 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
     // mutually exclusive.
     const auto focusedPaneId = firstState.focusedPaneId.has_value() ? firstState.focusedPaneId : secondState.focusedPaneId;
 
-    return { actions, firstState.firstPane, focusedPaneId, firstState.panesCreated + secondState.panesCreated + 1 };
+    return {
+        .args = { actions },
+        .firstPane = firstState.firstPane,
+        .focusedPaneId = focusedPaneId,
+        .panesCreated = firstState.panesCreated + secondState.panesCreated + 1
+    };
 }
 
 // Method Description:
@@ -1048,6 +1104,16 @@ void Pane::_CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IIns
     Close();
 }
 
+void Pane::_RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                            const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    if (!_IsLeaf())
+    {
+        return;
+    }
+    _RestartTerminalRequestedHandlers(shared_from_this());
+}
+
 winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
 {
     auto weakThis{ weak_from_this() };
@@ -1596,9 +1662,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _isDefTermSession = remainingChild->_isDefTermSession;
 
         // Add our new event handler before revoking the old one.
-        _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
-        _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
-        _closeTerminalRequestedToken = _control.CloseTerminalRequested({ this, &Pane::_CloseTerminalRequestedHandler });
+        _setupControlEvents();
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
@@ -1612,18 +1676,14 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
             closedChild->WalkTree([](auto p) {
                 if (p->_IsLeaf())
                 {
-                    p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
-                    p->_control.WarningBell(p->_warningBellToken);
-                    p->_control.CloseTerminalRequested(p->_closeTerminalRequestedToken);
+                    p->_removeControlEvents();
                 }
             });
         }
 
         closedChild->Closed(closedChildClosedToken);
         remainingChild->Closed(remainingChildClosedToken);
-        remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
-        remainingChild->_control.WarningBell(remainingChild->_warningBellToken);
-        remainingChild->_control.CloseTerminalRequested(remainingChild->_closeTerminalRequestedToken);
+        remainingChild->_removeControlEvents();
 
         // If we or either of our children was focused, we want to take that
         // focus from them.
@@ -1703,9 +1763,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
             closedChild->WalkTree([](auto p) {
                 if (p->_IsLeaf())
                 {
-                    p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
-                    p->_control.WarningBell(p->_warningBellToken);
-                    p->_control.CloseTerminalRequested(p->_closeTerminalRequestedToken);
+                    p->_removeControlEvents();
                 }
             });
         }
@@ -2460,12 +2518,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     if (_IsLeaf())
     {
         // revoke our handler - the child will take care of the control now.
-        _control.ConnectionStateChanged(_connectionStateChangedToken);
-        _connectionStateChangedToken.value = 0;
-        _control.WarningBell(_warningBellToken);
-        _warningBellToken.value = 0;
-        _control.CloseTerminalRequested(_closeTerminalRequestedToken);
-        _closeTerminalRequestedToken.value = 0;
+        _removeControlEvents();
 
         // Remove our old GotFocus handler from the control. We don't want the
         // control telling us that it's now focused, we want it telling its new

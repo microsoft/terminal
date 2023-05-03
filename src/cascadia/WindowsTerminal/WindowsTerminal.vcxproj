@@ -18,7 +18,6 @@
 
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
-    <TerminalVCRTForwarders>true</TerminalVCRTForwarders>
     <TerminalThemeHelpers>true</TerminalThemeHelpers>
     <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
@@ -78,9 +77,6 @@
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="WindowsTerminal.manifest" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <!-- Dependencies -->
   <ItemGroup>

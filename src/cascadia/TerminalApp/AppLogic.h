@@ -10,6 +10,7 @@
 #include "LanguageProfileNotifier.h"
 #include "AppCommandlineArgs.h"
 #include "TerminalWindow.h"
+#include "ContentManager.h"
 
 #include <inc/cppwinrt_utils.h>
 #include <ThrottledFunc.h>
@@ -44,14 +45,12 @@ namespace winrt::TerminalApp::implementation
         static const Microsoft::Terminal::Settings::Model::CascadiaSettings CurrentAppSettings();
 
         AppLogic();
-        ~AppLogic() = default;
 
         void Create();
-        bool IsUwp() const noexcept;
-        void RunAsUwp();
         bool IsRunningElevated() const noexcept;
         bool CanDragDrop() const noexcept;
         void ReloadSettings();
+        void NotifyRootInitialized();
 
         bool HasSettingsStartupActions() const noexcept;
 
@@ -66,18 +65,21 @@ namespace winrt::TerminalApp::implementation
 
         Microsoft::Terminal::Settings::Model::Theme Theme();
         bool IsolatedMode();
+        bool AllowHeadless();
         bool RequestsTrayIcon();
 
         TerminalApp::TerminalWindow CreateNewWindow();
+
+        winrt::TerminalApp::ContentManager ContentManager();
 
         TerminalApp::ParseCommandlineResult GetParseCommandlineMessage(array_view<const winrt::hstring> args);
 
         TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs);
 
     private:
-        bool _isUwp{ false };
         bool _isElevated{ false };
         bool _canDragDrop{ false };
+        std::atomic<bool> _notifyRootInitializedCalled{ false };
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
@@ -97,6 +99,8 @@ namespace winrt::TerminalApp::implementation
         // (C++ destroys members in reverse-declaration-order.)
         winrt::com_ptr<LanguageProfileNotifier> _languageProfileNotifier;
         wil::unique_folder_change_reader_nothrow _reader;
+
+        TerminalApp::ContentManager _contentManager{ winrt::make<implementation::ContentManager>() };
 
         static TerminalApp::FindTargetWindowResult _doFindTargetWindow(winrt::array_view<const hstring> args,
                                                                        const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);

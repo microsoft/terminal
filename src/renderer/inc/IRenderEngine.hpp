@@ -32,23 +32,23 @@ namespace Microsoft::Console::Render
         std::optional<CursorOptions> cursorInfo;
     };
 
+    enum class GridLines
+    {
+        None,
+        Top,
+        Bottom,
+        Left,
+        Right,
+        Underline,
+        DoubleUnderline,
+        Strikethrough,
+        HyperlinkUnderline
+    };
+    using GridLineSet = til::enumset<GridLines>;
+
     class __declspec(novtable) IRenderEngine
     {
     public:
-        enum class GridLines
-        {
-            None,
-            Top,
-            Bottom,
-            Left,
-            Right,
-            Underline,
-            DoubleUnderline,
-            Strikethrough,
-            HyperlinkUnderline
-        };
-        using GridLineSet = til::enumset<GridLines>;
-
 #pragma warning(suppress : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
         virtual ~IRenderEngine() = default;
 

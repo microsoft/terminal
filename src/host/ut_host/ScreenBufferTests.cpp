@@ -118,11 +118,12 @@ class ScreenBufferTests
 
     TEST_METHOD(EraseAllTests);
 
-    TEST_METHOD(OutputNULTest);
+    TEST_METHOD(InactiveControlCharactersTest);
 
     TEST_METHOD(VtResize);
     TEST_METHOD(VtResizeComprehensive);
     TEST_METHOD(VtResizeDECCOLM);
+    TEST_METHOD(VtResizePreservingAttributes);
 
     TEST_METHOD(VtSoftResetCursorPosition);
 
@@ -252,6 +253,7 @@ class ScreenBufferTests
     TEST_METHOD(TestDeferredMainBufferResize);
 
     TEST_METHOD(RectangularAreaOperations);
+    TEST_METHOD(CopyDoubleWidthRectangularArea);
 
     TEST_METHOD(DelayedWrapReset);
 };
@@ -1013,8 +1015,19 @@ void ScreenBufferTests::EraseAllTests()
         viewport.BottomInclusive()));
 }
 
-void ScreenBufferTests::OutputNULTest()
+void ScreenBufferTests::InactiveControlCharactersTest()
 {
+    // These are the control characters that don't write anything to the
+    // output buffer, and are expected not to move the cursor position.
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:ordinal", L"{0, 1, 2, 3, 4, 5, 6, 7, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31}")
+    END_TEST_METHOD_PROPERTIES()
+
+    unsigned ordinal;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"ordinal", ordinal));
+    const auto ch = static_cast<wchar_t>(ordinal);
+
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto& stateMachine = si.GetStateMachine();
@@ -1023,21 +1036,20 @@ void ScreenBufferTests::OutputNULTest()
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().y);
 
-    Log::Comment(NoThrowString().Format(
-        L"Writing a single NUL"));
-    stateMachine.ProcessString({ L"\0", 1 });
+    Log::Comment(L"Writing a single control character");
+    const auto singleChar = std::wstring(1, ch);
+    stateMachine.ProcessString(singleChar);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().y);
 
-    Log::Comment(NoThrowString().Format(
-        L"Writing many NULs"));
-    stateMachine.ProcessString({ L"\0\0\0\0\0\0\0\0", 8 });
+    Log::Comment(L"Writing many control characters");
+    const auto manyChars = std::wstring(8, ch);
+    stateMachine.ProcessString(manyChars);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().y);
 
-    Log::Comment(NoThrowString().Format(
-        L"Testing a single NUL followed by real text"));
-    stateMachine.ProcessString({ L"\0foo", 4 });
+    Log::Comment(L"Testing a single control character followed by real text");
+    stateMachine.ProcessString(singleChar + L"foo");
     VERIFY_ARE_EQUAL(3, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().y);
 
@@ -1045,9 +1057,8 @@ void ScreenBufferTests::OutputNULTest()
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(1, cursor.GetPosition().y);
 
-    Log::Comment(NoThrowString().Format(
-        L"Writing NULs in between other strings"));
-    stateMachine.ProcessString({ L"\0foo\0bar\0", 9 });
+    Log::Comment(L"Writing controls in between other strings");
+    stateMachine.ProcessString(singleChar + L"foo" + singleChar + L"bar" + singleChar);
     VERIFY_ARE_EQUAL(6, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(1, cursor.GetPosition().y);
 }
@@ -1228,6 +1239,28 @@ void ScreenBufferTests::VtResizeComprehensive()
     VERIFY_ARE_EQUAL(expectedViewHeight, newViewHeight);
 }
 
+til::rect _GetRelativeScrollMargins()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto viewport = si.GetViewport();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+    const auto savePos = cursor.GetPosition();
+
+    // We can't access the AdaptDispatch internals where the margins are stored,
+    // but we calculate their boundaries by using VT sequences to move down and
+    // up as far as possible, and read the cursor positions at the two limits.
+    stateMachine.ProcessString(L"\033[H\033[9999B");
+    const auto bottom = cursor.GetPosition().y - viewport.Top();
+    stateMachine.ProcessString(L"\033[9999A");
+    const auto top = cursor.GetPosition().y - viewport.Top();
+
+    cursor.SetPosition(savePos);
+    const auto noMargins = (top == 0 && bottom == viewport.Height() - 1);
+    return noMargins ? til::rect{} : til::rect{ 0, top, 0, bottom };
+}
+
 void ScreenBufferTests::VtResizeDECCOLM()
 {
     // Run this test in isolation - for one reason or another, this breaks other tests.
@@ -1251,13 +1284,13 @@ void ScreenBufferTests::VtResizeDECCOLM()
         return si.GetTextBuffer().GetCursor().GetPosition() - si.GetViewport().Origin();
     };
     auto areMarginsSet = [&]() {
-        const auto margins = si.GetRelativeScrollMargins();
-        return margins.BottomInclusive() > margins.Top();
+        const auto margins = _GetRelativeScrollMargins();
+        return margins.bottom > margins.top;
     };
 
     stateMachine.ProcessString(setInitialMargins);
     stateMachine.ProcessString(setInitialCursor);
-    auto initialMargins = si.GetRelativeScrollMargins();
+    auto initialMargins = _GetRelativeScrollMargins();
     auto initialCursorPosition = getRelativeCursorPosition();
 
     auto initialSbHeight = si.GetBufferSize().Height();
@@ -1274,7 +1307,7 @@ void ScreenBufferTests::VtResizeDECCOLM()
     auto newViewWidth = si.GetViewport().Width();
 
     VERIFY_IS_TRUE(areMarginsSet());
-    VERIFY_ARE_EQUAL(initialMargins, si.GetRelativeScrollMargins());
+    VERIFY_ARE_EQUAL(initialMargins, _GetRelativeScrollMargins());
     VERIFY_ARE_EQUAL(initialCursorPosition, getRelativeCursorPosition());
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
@@ -1310,7 +1343,7 @@ void ScreenBufferTests::VtResizeDECCOLM()
 
     stateMachine.ProcessString(setInitialMargins);
     stateMachine.ProcessString(setInitialCursor);
-    initialMargins = si.GetRelativeScrollMargins();
+    initialMargins = _GetRelativeScrollMargins();
     initialCursorPosition = getRelativeCursorPosition();
 
     initialSbHeight = newSbHeight;
@@ -1328,7 +1361,7 @@ void ScreenBufferTests::VtResizeDECCOLM()
     newViewWidth = si.GetViewport().Width();
 
     VERIFY_IS_TRUE(areMarginsSet());
-    VERIFY_ARE_EQUAL(initialMargins, si.GetRelativeScrollMargins());
+    VERIFY_ARE_EQUAL(initialMargins, _GetRelativeScrollMargins());
     VERIFY_ARE_EQUAL(initialCursorPosition, getRelativeCursorPosition());
     VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
     VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
@@ -1361,6 +1394,52 @@ void ScreenBufferTests::VtResizeDECCOLM()
     VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
     VERIFY_ARE_EQUAL(80, newSbWidth);
     VERIFY_ARE_EQUAL(80, newViewWidth);
+}
+
+void ScreenBufferTests::VtResizePreservingAttributes()
+{
+    // Run this test in isolation - for one reason or another, this breaks other tests.
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        TEST_METHOD_PROPERTY(L"Data:resizeType", L"{0, 1}")
+    END_TEST_METHOD_PROPERTIES()
+
+    unsigned resizeType;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"resizeType", resizeType));
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    // Set the attributes to something not supported by the legacy console.
+    auto testAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    testAttr.SetCrossedOut(true);
+    testAttr.SetDoublyUnderlined(true);
+    testAttr.SetItalic(true);
+    si.GetTextBuffer().SetCurrentAttributes(testAttr);
+
+    switch (resizeType)
+    {
+    case 0:
+        Log::Comment(L"Resize the screen with CSI 8 t");
+        stateMachine.ProcessString(L"\x1b[8;24;132t"); // Set width to 132
+        VERIFY_ARE_EQUAL(132, si.GetTextBuffer().GetSize().Width());
+        stateMachine.ProcessString(L"\x1b[8;24;80t"); // Set width to 80
+        VERIFY_ARE_EQUAL(80, si.GetTextBuffer().GetSize().Width());
+        break;
+    case 1:
+        Log::Comment(L"Resize the screen with DECCOLM");
+        stateMachine.ProcessString(L"\x1b[?40h"); // Allow DECCOLM
+        stateMachine.ProcessString(L"\x1b[?3h"); // Set width to 132
+        VERIFY_ARE_EQUAL(132, si.GetTextBuffer().GetSize().Width());
+        stateMachine.ProcessString(L"\x1b[?3l"); // Set width to 80
+        VERIFY_ARE_EQUAL(80, si.GetTextBuffer().GetSize().Width());
+        break;
+    }
+
+    Log::Comment(L"Attributes should be preserved after resize");
+    VERIFY_ARE_EQUAL(testAttr, si.GetTextBuffer().GetCurrentAttributes());
 }
 
 void ScreenBufferTests::VtSoftResetCursorPosition()
@@ -1648,6 +1727,7 @@ void ScreenBufferTests::VtNewlineOutsideMargins()
 
     Log::Comment(L"Reset viewport and apply DECSTBM margins");
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, { 0, viewportTop }, true));
+    si.UpdateBottom();
     stateMachine.ProcessString(L"\x1b[1;5r");
     // Make sure we clear the margins on exit so they can't break other tests.
     auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
@@ -5248,6 +5328,16 @@ void ScreenBufferTests::SetAutoWrapMode()
     // Content should be clamped to the line width, overwriting the last char.
     VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"abf", attributes));
     VERIFY_ARE_EQUAL(til::point(79, startLine), cursor.GetPosition());
+    // Writing a wide glyph into the last 2 columns and overwriting it with a narrow one.
+    cursor.SetPosition({ 80 - 3, startLine });
+    stateMachine.ProcessString(L"a\U0001F604b");
+    VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"a b", attributes));
+    VERIFY_ARE_EQUAL(til::point(79, startLine), cursor.GetPosition());
+    // Writing a wide glyph into the last column and overwriting it with a narrow one.
+    cursor.SetPosition({ 80 - 3, startLine });
+    stateMachine.ProcessString(L"ab\U0001F604c");
+    VERIFY_IS_TRUE(_ValidateLineContains({ 80 - 3, startLine }, L"abc", attributes));
+    VERIFY_ARE_EQUAL(til::point(79, startLine), cursor.GetPosition());
 
     Log::Comment(L"When DECAWM is set, output is wrapped again.");
     stateMachine.ProcessString(L"\x1b[?7h");
@@ -6338,17 +6428,17 @@ void ScreenBufferTests::CursorSaveRestore()
     // Verify home position inside margins, i.e. relative origin mode restored.
     VERIFY_ARE_EQUAL(til::point(0, 9), cursor.GetPosition());
 
-    Log::Comment(L"Clamp inside top margin.");
+    Log::Comment(L"Restore relative to new origin.");
     // Reset margins, with absolute origin, and set cursor position.
     stateMachine.ProcessString(L"\x1b[r");
     stateMachine.ProcessString(setDECOM);
-    cursor.SetPosition({ 5, 15 });
+    cursor.SetPosition({ 5, 5 });
     // Save state.
     stateMachine.ProcessString(saveCursor);
     // Set margins and restore state.
-    stateMachine.ProcessString(L"\x1b[20;25r");
+    stateMachine.ProcessString(L"\x1b[15;25r");
     stateMachine.ProcessString(restoreCursor);
-    // Verify Y position is clamped inside the top margin
+    // Verify Y position is now relative to new top margin
     VERIFY_ARE_EQUAL(til::point(5, 19), cursor.GetPosition());
 
     Log::Comment(L"Clamp inside bottom margin.");
@@ -6378,8 +6468,8 @@ void ScreenBufferTests::ScreenAlignmentPattern()
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     auto areMarginsSet = [&]() {
-        const auto margins = si.GetRelativeScrollMargins();
-        return margins.BottomInclusive() > margins.Top();
+        const auto margins = _GetRelativeScrollMargins();
+        return margins.bottom > margins.top;
     };
 
     Log::Comment(L"Set the initial buffer state.");
@@ -7546,6 +7636,57 @@ void ScreenBufferTests::RectangularAreaOperations()
     const auto bufferChars = std::wstring(targetArea.left, bufferChar);
     VERIFY_IS_TRUE(_ValidateLinesContain(targetArea.top, targetArea.bottom, bufferChars, bufferAttr));
     VERIFY_IS_TRUE(_ValidateLinesContain(targetArea.right, targetArea.top, targetArea.bottom, bufferChar, bufferAttr));
+}
+
+void ScreenBufferTests::CopyDoubleWidthRectangularArea()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& textBuffer = si.GetTextBuffer();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    // Fill the entire buffer with Zs. Blue on Green and Underlined.
+    const auto bufferChar = L'Z';
+    const auto bufferHeight = si.GetBufferSize().Height();
+    auto bufferAttr = TextAttribute{ FOREGROUND_BLUE | BACKGROUND_GREEN };
+    bufferAttr.SetUnderlined(true);
+    _FillLines(0, bufferHeight, bufferChar, bufferAttr);
+
+    // Fill the first three lines with Cs. Green on Red and Intense.
+    const auto copyChar = L'C';
+    auto copyAttr = TextAttribute{ FOREGROUND_GREEN | BACKGROUND_RED };
+    copyAttr.SetIntense(true);
+    _FillLines(0, 3, copyChar, copyAttr);
+
+    // Set the active attributes to Red on Blue;
+    auto activeAttr = TextAttribute{ FOREGROUND_RED | BACKGROUND_BLUE };
+    si.SetAttributes(activeAttr);
+
+    // Make the second line (offset 1) double width.
+    textBuffer.GetCursor().SetPosition({ 0, 1 });
+    textBuffer.SetCurrentLineRendition(LineRendition::DoubleWidth);
+
+    // Copy a segment of the top three lines with DECCRA.
+    stateMachine.ProcessString(L"\033[1;31;3;50;1;4;31;1$v");
+
+    Log::Comment(L"The first 30 columns of the target area should remain unchanged");
+    const auto thirtyBufferChars = std::wstring(30, bufferChar);
+    VERIFY_IS_TRUE(_ValidateLinesContain(3, 6, thirtyBufferChars, bufferAttr));
+
+    Log::Comment(L"The next 20 columns should contain the copied content");
+    const auto twentyCopyChars = std::wstring(20, copyChar);
+    VERIFY_IS_TRUE(_ValidateLineContains({ 30, 3 }, twentyCopyChars, copyAttr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 30, 5 }, twentyCopyChars, copyAttr));
+
+    Log::Comment(L"But the second target row ends after 10, because of the double-width source");
+    const auto tenCopyChars = std::wstring(10, copyChar);
+    VERIFY_IS_TRUE(_ValidateLineContains({ 30, 4 }, tenCopyChars, copyAttr));
+
+    Log::Comment(L"The subsequent columns in each row should remain unchanged");
+    VERIFY_IS_TRUE(_ValidateLineContains({ 50, 3 }, bufferChar, bufferAttr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 40, 4 }, bufferChar, bufferAttr));
+    VERIFY_IS_TRUE(_ValidateLineContains({ 50, 5 }, bufferChar, bufferAttr));
 }
 
 void ScreenBufferTests::DelayedWrapReset()
