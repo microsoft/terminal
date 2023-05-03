@@ -939,7 +939,7 @@ namespace winrt::TerminalApp::implementation
             {
                 tab.Focus(FocusState::Programmatic);
                 _UpdateMRUTab(tab);
-                _updateTabsCloseButton(tab);
+                _updateAllTabCloseButtons(tab);
             }
 
             tab.TabViewItem().StartBringIntoView();
@@ -1129,7 +1129,7 @@ namespace winrt::TerminalApp::implementation
             {
                 tab.Focus(FocusState::Programmatic);
                 _UpdateMRUTab(tab);
-                _updateTabsCloseButton(tab);
+                _updateAllTabCloseButtons(tab);
             }
         }
     }

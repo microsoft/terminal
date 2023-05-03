@@ -3109,16 +3109,15 @@ namespace winrt::TerminalApp::implementation
         // Begin Theme handling
         _updateThemeColors();
 
-        const auto tab{ _GetFocusedTab() };
-        _updateTabsCloseButton(tab);
+        _updateAllTabCloseButtons(_GetFocusedTab());
     }
 
-    void TerminalPage::_updateTabsCloseButton(const winrt::TerminalApp::TabBase& focusedTab)
+    void TerminalPage::_updateAllTabCloseButtons(const winrt::TerminalApp::TabBase& focusedTab)
     {
         // Update the state of the CloseButtonOverlayMode property of
         // our TabView, to match the tab.showCloseButton property in the theme.
         //
-        // Also update every tab's individual IsClosable to match.
+        // Also update every tab's individual IsClosable to match the same property.
         const auto theme = _settings.GlobalSettings().CurrentTheme();
         const auto visibility = theme && theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
 
