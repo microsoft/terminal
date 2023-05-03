@@ -9,7 +9,8 @@ namespace til
         class shared_mutex_guard
         {
         public:
-            shared_mutex_guard(T& data, std::shared_mutex& mutex) :
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'shared_mutex>()' which may throw exceptions (f.6).)
+            shared_mutex_guard(T& data, std::shared_mutex& mutex) noexcept :
                 _data{ data },
                 _lock{ mutex }
             {
@@ -21,17 +22,17 @@ namespace til
             shared_mutex_guard(shared_mutex_guard&&) = default;
             shared_mutex_guard& operator=(shared_mutex_guard&&) = default;
 
-            [[nodiscard]] constexpr T* operator->() const
+            [[nodiscard]] constexpr T* operator->() const noexcept
             {
                 return &_data;
             }
 
-            [[nodiscard]] constexpr T& operator*() const&
+            [[nodiscard]] constexpr T& operator*() const& noexcept
             {
                 return _data;
             }
 
-            [[nodiscard]] constexpr T&& operator*() const&&
+            [[nodiscard]] constexpr T&& operator*() const&& noexcept
             {
                 return std::move(_data);
             }

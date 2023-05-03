@@ -70,8 +70,9 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - flyout - the menu flyout to which the close items must be appended
     // Return Value:
-    // - <none>
-    void TabBase::_AppendCloseMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout)
+    // - the sub-item that we use for all the nested "close" entries. This
+    //   enables subclasses to add their own entries to this menu.
+    winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem TabBase::_AppendCloseMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout)
     {
         auto weakThis{ get_weak() };
 
@@ -120,15 +121,16 @@ namespace winrt::TerminalApp::implementation
         WUX::Controls::ToolTipService::SetToolTip(closeTabMenuItem, box_value(closeTabToolTip));
         Automation::AutomationProperties::SetHelpText(closeTabMenuItem, closeTabToolTip);
 
-        // GH#8238 append the close menu items to the flyout itself until crash in XAML is fixed
-        //Controls::MenuFlyoutSubItem closeSubMenu;
-        //closeSubMenu.Text(RS_(L"TabCloseSubMenu"));
-        //closeSubMenu.Items().Append(_closeTabsAfterMenuItem);
-        //closeSubMenu.Items().Append(_closeOtherTabsMenuItem);
-        //flyout.Items().Append(closeSubMenu);
-        flyout.Items().Append(_closeTabsAfterMenuItem);
-        flyout.Items().Append(_closeOtherTabsMenuItem);
+        // Create a sub-menu for our extended close items.
+        Controls::MenuFlyoutSubItem closeSubMenu;
+        closeSubMenu.Text(RS_(L"TabCloseSubMenu"));
+        closeSubMenu.Items().Append(_closeTabsAfterMenuItem);
+        closeSubMenu.Items().Append(_closeOtherTabsMenuItem);
+        flyout.Items().Append(closeSubMenu);
+
         flyout.Items().Append(closeTabMenuItem);
+
+        return closeSubMenu;
     }
 
     // Method Description:
