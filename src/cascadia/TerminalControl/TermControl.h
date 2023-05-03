@@ -322,7 +322,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static void _ClearKeyboardState(const WORD vkey, const WORD scanCode) noexcept;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
 
-        til::point _toControlOrigin(const til::point& terminalPosition);
+        til::point _toControlOrigin(const til::point terminalPosition);
         const til::point _toTerminalOrigin(winrt::Windows::Foundation::Point cursorPosition);
 
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;

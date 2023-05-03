@@ -2513,23 +2513,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return flags;
     }
 
-    til::point TermControl::_toControlOrigin(const til::point& terminalPos)
+    til::point TermControl::_toControlOrigin(const til::point terminalPos)
     {
-        const til::size fontSize{ til::math::flooring, CharacterDimensions() };
+        const auto fontSize{ CharacterDimensions() };
 
         // Convert text buffer cursor position to client coordinate position
         // within the window. This point is in _pixels_
-        const til::point clientCursorPos{ terminalPos * fontSize };
+        const double clientCursorPosX = terminalPos.x * fontSize.Width;
+        const double clientCursorPosY = terminalPos.y * fontSize.Height;
 
         // Get scale factor for view
         const double scaleFactor = SwapChainPanel().CompositionScaleX();
 
-        const til::point clientCursorInDips{ til::math::flooring, clientCursorPos.x / scaleFactor, clientCursorPos.y / scaleFactor };
+        const double clientCursorInDipsX = clientCursorPosX / scaleFactor;
+        const double clientCursorInDipsY = clientCursorPosY / scaleFactor;
 
         auto padding{ GetPadding() };
-        til::point relativeToOrigin{ til::math::flooring,
-                                     clientCursorInDips.x + padding.Left,
-                                     clientCursorInDips.y + padding.Top };
+        til::point relativeToOrigin{ til::math::rounding,
+                                     clientCursorInDipsX + padding.Left,
+                                     clientCursorInDipsY + padding.Top };
         return relativeToOrigin;
     }
 
