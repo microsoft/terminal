@@ -53,6 +53,7 @@ namespace winrt::TerminalApp::implementation
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
     public:
+        // Used for setting the initial CWD, before we have XAML set up for property change notifications.
         void SetInitialCwd(const winrt::hstring& cwd) { _VirtualWorkingDirectory = cwd; };
 
     private:

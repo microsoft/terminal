@@ -1010,6 +1010,7 @@ namespace winrt::TerminalApp::implementation
     //   returned.
     // Arguments:
     // - args: an array of strings to process as a commandline. These args can contain spaces
+    // - cwd: The CWD that this window should treat as its own "virtual" CWD
     // Return Value:
     // - the result of the first command who's parsing returned a non-zero code,
     //   or 0. (see TerminalWindow::_ParseArgs)
