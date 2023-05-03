@@ -56,10 +56,10 @@ void TilWinRtHelpersTests::TestPropertySimple()
     Foo(42);
     VERIFY_ARE_EQUAL(42, Foo());
 
-    Foo = Foo() - 5; // 37
+    Foo(Foo() - 5); // 37
     VERIFY_ARE_EQUAL(37, Foo());
 
-    Foo = Foo() + Bar(); // 48
+    Foo(Foo() + Bar()); // 48
     VERIFY_ARE_EQUAL(48, Foo());
 }
 
@@ -69,7 +69,7 @@ void TilWinRtHelpersTests::TestPropertyHString()
 
     VERIFY_ARE_EQUAL(L"Foo", Foo());
 
-    Foo = L"bar";
+    Foo(L"bar");
     VERIFY_ARE_EQUAL(L"bar", Foo());
 }
 
@@ -89,11 +89,11 @@ void TilWinRtHelpersTests::TestTruthiness()
     VERIFY_IS_FALSE(EmptyString);
     VERIFY_IS_FALSE(!EmptyString().empty());
 
-    Foo = true;
+    Foo(true);
     VERIFY_IS_TRUE(Foo());
     VERIFY_IS_TRUE(Foo);
 
-    Bar = 11;
+    Bar(11);
     VERIFY_IS_TRUE(Bar());
     VERIFY_IS_TRUE(Bar);
 
@@ -129,7 +129,7 @@ void TilWinRtHelpersTests::TestSimpleConstProperties()
     VERIFY_ARE_EQUAL(2, noTouching.Composed().second);
     VERIFY_ARE_EQUAL(L"", noTouching.MyString());
 
-    changeMe.Foo = 42;
+    changeMe.Foo(42);
     VERIFY_ARE_EQUAL(42, changeMe.Foo());
     // noTouching.Foo = 123; // will not compile
 
@@ -140,7 +140,7 @@ void TilWinRtHelpersTests::TestSimpleConstProperties()
     // VERIFY_ARE_EQUAL(5, changeMe.Composed().first);
     // noTouching.Composed().first = 0x0f; // will not compile
 
-    changeMe.MyString = L"Foo";
+    changeMe.MyString(L"Foo");
     VERIFY_ARE_EQUAL(L"Foo", changeMe.MyString());
     // noTouching.MyString = L"Bar"; // will not compile
 }
@@ -186,7 +186,7 @@ void TilWinRtHelpersTests::TestComposedConstProperties()
     VERIFY_ARE_EQUAL(2, noTouching.Composed().second);
     VERIFY_ARE_EQUAL(L"", noTouching.MyString());
 
-    changeMe.Foo = 42;
+    changeMe.Foo(42);
     VERIFY_ARE_EQUAL(42, changeMe.Foo());
     // noTouching.Foo = 123; // will not compile
 
@@ -199,13 +199,13 @@ void TilWinRtHelpersTests::TestComposedConstProperties()
     //     copy.first(5);
     //
     // Which rather seems like a foot gun.
-    changeMe.Composed().first = 5;
+    changeMe.Composed().first(5);
     VERIFY_ARE_EQUAL(3, changeMe.Composed().first());
 
     // IN PRACTICE, this shouldn't ever occur. Composed would be a WinRT type,
     // and you'd get a ref to it, rather than a copy.
 
-    changeMe.MyString = L"Foo";
+    changeMe.MyString(L"Foo");
     VERIFY_ARE_EQUAL(L"Foo", changeMe.MyString());
 }
 
