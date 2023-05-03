@@ -33,22 +33,25 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return _value;
         }
-        void operator()(const T& value)
+        void operator()(auto&& arg)
         {
-            _value = value;
+            _value = std::forward<decltype(arg)>(arg);
         }
         property<T>& operator=(const T& newValue)
         {
             _value = newValue;
             return *this;
         }
-        operator bool() const requires std::is_same_v<T, winrt::hstring>
+        operator bool() const noexcept
         {
-            return !_value.empty();
-        }
-        operator bool() const requires std::convertible_to<T, bool>
-        {
-            return _value;
+            if constexpr (std::is_same_v<T, winrt::hstring>)
+            {
+                return !_value.empty();
+            }
+            else
+            {
+                return _value;
+            }
         }
         bool operator==(const property<T>& other) const
         {
