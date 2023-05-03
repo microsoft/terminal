@@ -1229,6 +1229,7 @@ namespace winrt::TerminalApp::implementation
             auto newWorkingDirectory{ settings.StartingDirectory() };
             const bool looksLikeLinux = newWorkingDirectory.size() == 1 &&
                                         (newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/');
+
             // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
             if (!looksLikeLinux)
             {

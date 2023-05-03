@@ -402,7 +402,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::IdentifyWindows, RS_(L"IdentifyWindowsCommandKey") },
                 { ShortcutAction::RenameWindow, RS_(L"ResetWindowNameCommandKey") },
                 { ShortcutAction::OpenWindowRenamer, RS_(L"OpenWindowRenamerCommandKey") },
-                { ShortcutAction::DisplayWorkingDirectory, L"Display Terminal's CWD TODO! localize" },
+                { ShortcutAction::DisplayWorkingDirectory, RS_(L"DisplayWorkingDirectoryCommandKey") },
                 { ShortcutAction::GlobalSummon, MustGenerate },
                 { ShortcutAction::QuakeMode, RS_(L"QuakeModeCommandKey") },
                 { ShortcutAction::FocusPane, MustGenerate },

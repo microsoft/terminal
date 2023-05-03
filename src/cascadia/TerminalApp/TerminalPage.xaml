@@ -210,7 +210,6 @@
                          x:Uid="WindowCwdToast"
                          Title="{x:Bind WindowProperties.VirtualWorkingDirectory, Mode=OneWay}"
                          x:Load="False"
-                         IsLightDismissEnabled="True"
-                         Subtitle="{x:Bind WindowProperties.VirtualWorkingDirectory, Mode=OneWay}" />
+                         IsLightDismissEnabled="True" />
     </Grid>
 </Page>

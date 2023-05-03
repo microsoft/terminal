@@ -511,6 +511,9 @@
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>Rename window...</value>
   </data>
+  <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
+    <value>Display Terminal's working directory</value>
+  </data>
   <data name="GlobalSummonCommandKey" xml:space="preserve">
     <value>Show/Hide the Terminal window</value>
   </data>

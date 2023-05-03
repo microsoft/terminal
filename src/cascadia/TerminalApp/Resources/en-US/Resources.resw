@@ -700,9 +700,6 @@
   <data name="RenameFailedToast.Subtitle" xml:space="preserve">
     <value>Another window with that name already exists</value>
   </data>
-  <data name="WindowCwdToast.Subtitle" xml:space="preserve">
-    <value>This is the CWD of the Terminal window itself</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Maximize</value>
   </data>
