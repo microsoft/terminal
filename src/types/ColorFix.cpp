@@ -36,6 +36,8 @@ constexpr float saturate(float f) noexcept
     return f < 0 ? 0 : (f > 1 ? 1 : f);
 }
 
+// FP32 is the very epitome of defined behavior.
+#pragma warning(suppress : 26497) // You can attempt to make 'cbrtf_est' constexpr unless it contains any undefined behavior (f.4).)
 __forceinline float cbrtf_est(float a) noexcept
 {
     // We can't use std::bit_cast here, even though it exists exactly for this purpose.
