@@ -3048,8 +3048,8 @@ bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt
 // Return value:
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
-    const VTParameter parameter1,
-    const VTParameter parameter2)
+                                       const VTParameter parameter1,
+                                       const VTParameter parameter2)
 {
     // Other Window Manipulation functions:
     //  MSFT:13271098 - QueryViewport
