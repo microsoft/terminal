@@ -131,6 +131,8 @@ namespace Microsoft::Console::Render::Atlas
             std::vector<wchar_t> bufferLine;
             std::vector<u16> bufferLineColumn;
 
+            std::wstring userLocaleName;
+
             std::array<Buffer<DWRITE_FONT_AXIS_VALUE>, 4> textFormatAxes;
             std::vector<TextAnalysisSinkResult> analysisResults;
             Buffer<u16> clusterMap;

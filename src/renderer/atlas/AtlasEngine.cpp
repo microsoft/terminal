@@ -534,6 +534,17 @@ void AtlasEngine::_recreateFontDependentResources()
     _api.replacementCharacterGlyphIndex = 0;
     _api.replacementCharacterLookedUp = false;
 
+    {
+        wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
+
+        if (FAILED(GetUserDefaultLocaleName(&localeName[0], LOCALE_NAME_MAX_LENGTH)))
+        {
+            memcpy(&localeName[0], L"en-US", 12);
+        }
+
+        _api.userLocaleName = std::wstring{ &localeName[0] };
+    }
+
     if (_p.s->font->fontAxisValues.empty())
     {
         for (auto& axes : _api.textFormatAxes)
@@ -799,7 +810,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
                 /* isSideways          */ false,
                 /* isRightToLeft       */ 0,
                 /* scriptAnalysis      */ &a.analysis,
-                /* localeName          */ nullptr,
+                /* localeName          */ _api.userLocaleName.c_str(),
                 /* numberSubstitution  */ nullptr,
                 /* features            */ &features,
                 /* featureRangeLengths */ &featureRangeLengths,
@@ -851,7 +862,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
             /* isSideways          */ false,
             /* isRightToLeft       */ 0,
             /* scriptAnalysis      */ &a.analysis,
-            /* localeName          */ nullptr,
+            /* localeName          */ _api.userLocaleName.c_str(),
             /* features            */ &features,
             /* featureRangeLengths */ &featureRangeLengths,
             /* featureRanges       */ featureRanges,
