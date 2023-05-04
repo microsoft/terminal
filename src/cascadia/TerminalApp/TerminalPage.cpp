@@ -1113,12 +1113,12 @@ namespace winrt::TerminalApp::implementation
                 if (profile)
                 {
                     newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+                    newTerminalArgs.StartingDirectory(_evaluatePathForCwd(profile.EvaluatedStartingDirectory()));
                 }
             }
 
             if (dispatchToElevatedWindow)
             {
-                newTerminalArgs.StartingDirectory(_evaluatePathForCwd(newTerminalArgs.StartingDirectory()));
                 _OpenElevatedWT(newTerminalArgs);
             }
             else
@@ -1168,8 +1168,7 @@ namespace winrt::TerminalApp::implementation
         // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
         if (!looksLikeLinux)
         {
-            auto cwdString{ _WindowProperties.VirtualWorkingDirectory().c_str() };
-            std::filesystem::path cwd{ cwdString };
+            std::filesystem::path cwd{ std::wstring_view{ _WindowProperties.VirtualWorkingDirectory() } };
             cwd /= path.c_str();
             resultPath = winrt::hstring{ cwd.wstring() };
         }
