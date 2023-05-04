@@ -92,6 +92,8 @@ try
         const auto offset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
         const auto nothingInvalid = _api.invalidatedRows.start == _api.invalidatedRows.end;
 
+        _api.scrollOffset = offset;
+
         // Mark the newly scrolled in rows as invalidated
         if (offset < 0)
         {
