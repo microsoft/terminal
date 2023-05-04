@@ -9,6 +9,7 @@
 #include <array>
 #include <filesystem>
 #include <optional>
+#include <shared_mutex>
 #include <span>
 #include <sstream>
 #include <string_view>
@@ -20,8 +21,8 @@
 #include <d2d1_3.h>
 #include <d3d11_2.h>
 #include <d3dcompiler.h>
-#include <dwrite_3.h>
 #include <dcomp.h>
+#include <dwrite_3.h>
 #include <dxgi1_3.h>
 #include <dxgidebug.h>
 #include <VersionHelpers.h>
