@@ -82,7 +82,7 @@ bool TextColor::IsDefault() const noexcept
     return _meta == ColorType::IsDefault;
 }
 
-bool TextColor::IsDefaultOrIndex16() const noexcept
+bool TextColor::IsDefaultOrLegacy() const noexcept
 {
     return _meta != ColorType::IsRgb && _index < 16;
 }

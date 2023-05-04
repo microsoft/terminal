@@ -37,6 +37,8 @@ Revision History:
 #include "WexTestClass.h"
 #endif
 
+// The enum values being in this particular order allows the compiler to do some useful optimizations,
+// like simplifying `IsIndex16() || IsIndex256()` into a simple range check without branching.
 enum class ColorType : BYTE
 {
     IsDefault,
@@ -121,7 +123,7 @@ public:
     bool IsIndex16() const noexcept;
     bool IsIndex256() const noexcept;
     bool IsDefault() const noexcept;
-    bool IsDefaultOrIndex16() const noexcept;
+    bool IsDefaultOrLegacy() const noexcept;
     bool IsRgb() const noexcept;
 
     void SetColor(const COLORREF rgbColor) noexcept;
