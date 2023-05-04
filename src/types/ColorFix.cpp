@@ -36,24 +36,31 @@ constexpr float saturate(float f) noexcept
     return f < 0 ? 0 : (f > 1 ? 1 : f);
 }
 
-static float cbrtf_est(float a) noexcept
+__forceinline float cbrtf_est(float a) noexcept
 {
+    // We can't use std::bit_cast here, even though it exists exactly for this purpose.
+    // MSVC is dumb and introduces function calls to std::bit_cast<uint32_t, float>
+    // even at the highest optimization and inlining levels. What.
+    union FP32
+    {
+        uint32_t u;
+        float f;
+    };
+
     // http://metamerist.com/cbrt/cbrt.htm showed a great estimator for the cube root:
     //   float_as_uint32_t / 3 + 709921077
     // It's similar to the well known "fast inverse square root" trick. Lots of numbers around 709921077 perform
     // at least equally well to 709921077, and it is unknown how and why 709921077 was chosen specifically.
-    const auto x = std::bit_cast<float>(std::bit_cast<uint32_t>(a) / 3 + 709921077);
+    FP32 fp{ .f = a };
+    fp.u = fp.u / 3 + 709921077;
+    const auto x = fp.f;
 
-    // One round of Halley's method. It follows the Wikipedia article at
+    // One round of Newton's method. It follows the Wikipedia article at
     //   https://en.wikipedia.org/wiki/Cube_root#Numerical_methods
-    // For `a`s in the range between 0 and 1, this has a maximum error of 1.6e-5.
-    // Newton's method would've been sufficient for our needs as well, but strangely enough it
-    // ran a tiny bit slower in practice when compiled with MSVC. Given that the difference
-    // was <1ns I didn't try to figure out why and just used the more precise method.
-    const auto x3 = x * x * x;
-    const auto dividend = x * (x3 + a + a);
-    const auto divisor = x3 + x3 + a;
-    return dividend / divisor;
+    // For `a`s in the range between 0 and 1, this results in a maximum error of
+    // less than 6.7e-4f, which is not good, but good enough for us, because
+    // we're not an image editor. The benefit is that it's really fast.
+    return (1.0f / 3.0f) * (a / (x * x) + (x + x));
 }
 
 // This namespace contains functions and structures as defined by: https://bottosson.github.io/posts/oklab/
@@ -75,7 +82,7 @@ namespace oklab
         float b;
     };
 
-    static Lab linear_srgb_to_oklab(const RGB& c) noexcept
+    __forceinline Lab linear_srgb_to_oklab(const RGB& c) noexcept
     {
         const auto l = 0.4122214708f * c.r + 0.5363325363f * c.g + 0.0514459929f * c.b;
         const auto m = 0.2119034982f * c.r + 0.6806995451f * c.g + 0.1073969566f * c.b;
@@ -92,7 +99,7 @@ namespace oklab
         };
     }
 
-    static RGB oklab_to_linear_srgb(const Lab& c) noexcept
+    __forceinline RGB oklab_to_linear_srgb(const Lab& c) noexcept
     {
         const auto l_ = c.l + 0.3963377774f * c.a + 0.2158037573f * c.b;
         const auto m_ = c.l - 0.1055613458f * c.a - 0.0638541728f * c.b;
@@ -114,7 +121,7 @@ namespace oklab
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
 
-static oklab::RGB colorrefToLinear(COLORREF c) noexcept
+__forceinline oklab::RGB colorrefToLinear(COLORREF c) noexcept
 {
     const auto r = srgbToRgbLUT[(c >> 0) & 0xff];
     const auto g = srgbToRgbLUT[(c >> 8) & 0xff];
@@ -124,7 +131,7 @@ static oklab::RGB colorrefToLinear(COLORREF c) noexcept
 
 #pragma warning(pop)
 
-static COLORREF linearToColorref(const oklab::RGB& c) noexcept
+__forceinline COLORREF linearToColorref(const oklab::RGB& c) noexcept
 {
     auto r = saturate(c.r);
     auto g = saturate(c.g);
