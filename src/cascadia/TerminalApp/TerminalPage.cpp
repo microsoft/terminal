@@ -1232,9 +1232,13 @@ namespace winrt::TerminalApp::implementation
             // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
             if (!looksLikeLinux)
             {
-                const auto cwdString{ _WindowProperties.VirtualWorkingDirectory().c_str() };
+                const auto currentVirtualDir{ _WindowProperties.VirtualWorkingDirectory() };
+                const auto cwdString{ std::wstring_view{ currentVirtualDir } };
+                const auto requestedStartingDir{ settings.StartingDirectory() };
+
                 std::filesystem::path cwd{ cwdString };
-                cwd /= settings.StartingDirectory().c_str();
+                cwd /= std::wstring_view{ requestedStartingDir };
+
                 newWorkingDirectory = winrt::hstring{ cwd.wstring() };
             }
 
