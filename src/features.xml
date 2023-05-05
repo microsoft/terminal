@@ -126,17 +126,6 @@
     </feature>
 
     <feature>
-        <name>Feature_IsolatedMonarchMode</name>
-        <description>Enables a test flag for MSFT:38540483. When enabled, if we ever create a null Monarch, we'll stealthily try to fall back to an in-proc monarch instance.</description>
-        <stage>AlwaysEnabled</stage>
-        <!-- Did it this way instead of "release tokens" to ensure it will go into Windows Inbox -->
-        <alwaysDisabledBrandingTokens>
-            <brandingToken>Dev</brandingToken>
-            <brandingToken>Preview</brandingToken>
-        </alwaysDisabledBrandingTokens>
-    </feature>
-
-    <feature>
         <name>Feature_ScrollbarMarks</name>
         <description>Enables the experimental scrollbar marks feature.</description>
         <stage>AlwaysDisabled</stage>
