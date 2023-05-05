@@ -230,7 +230,7 @@ VtIo::VtIo() :
 
 bool VtIo::IsUsingVt() const
 {
-    return _objectsCreated;
+    return _initialized || _objectsCreated;
 }
 
 // Routine Description:
