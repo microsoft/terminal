@@ -1,0 +1,8 @@
+namespace ExtensionComponent
+{
+    [default_interface] runtimeclass ExtensionUserControl : Windows.UI.Xaml.Controls.UserControl
+    {
+        ExtensionUserControl();
+        Int32 MyValue;
+    }
+}

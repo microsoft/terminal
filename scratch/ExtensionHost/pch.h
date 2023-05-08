@@ -18,3 +18,5 @@
 #include <winrt/Windows.ApplicationModel.AppExtensions.h>
 
 #include <appmodel.h>
+
+#include <winrt/ExtensionComponent.h>

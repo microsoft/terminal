@@ -30,4 +30,7 @@
   <ItemGroup>
     <Text Include="readme.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <Page Include="ExtensionUserControl.xaml" />
+  </ItemGroup>
 </Project>

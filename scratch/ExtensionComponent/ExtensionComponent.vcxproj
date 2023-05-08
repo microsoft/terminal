@@ -115,12 +115,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ExtensionUserControl.xaml.h">
+      <DependentUpon>ExtensionUserControl.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Class.h">
       <DependentUpon>Class.idl</DependentUpon>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ExtensionUserControl.xaml.cpp">
+      <DependentUpon>ExtensionUserControl.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -131,6 +137,9 @@
   </ItemGroup>
   <ItemGroup>
     <Midl Include="Class.idl" />
+    <Midl Include="ExtensionUserControl.idl" >
+      <DependentUpon>ExtensionUserControl.xaml</DependentUpon>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <None Include="ExtensionComponent.def" />
@@ -142,11 +151,9 @@
       <DeploymentContent>false</DeploymentContent>
     </Text>
   </ItemGroup>
-
-
   <!-- ========================== Other References ========================= -->
   <ItemGroup>
-<!--     <Reference Include="SampleApp">
+    <!--     <Reference Include="SampleApp">
       <HintPath>$(OpenConsoleCommonOutDir)\SampleAppLib\SampleApp.winmd</HintPath>
       <HintPath>..\..\bin\x64\Debug\SampleAppLib\SampleApp.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
@@ -175,7 +182,7 @@
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference> -->
-<!--     <Reference Include="Microsoft.Terminal.Control">
+    <!--     <Reference Include="Microsoft.Terminal.Control">
       <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
       <HintPath>..\..\bin\x64\debug\Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
@@ -183,7 +190,11 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference> -->
   </ItemGroup>
-
+  <ItemGroup>
+    <Page Include="ExtensionUserControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.targets')" />
