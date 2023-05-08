@@ -87,6 +87,16 @@
     </feature>
 
     <feature>
+        <name>Feature_AtlasEnginePresentFallback</name>
+        <description>We don't feel super confident in our usage of the Present1 API, so this settings adds a fallback to Present on error</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Release</brandingToken>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
         <name>Feature_NearbyFontLoading</name>
         <description>Controls whether fonts in the same directory as the binary are used during rendering. Disabled for conhost so that it doesn't iterate the entire system32 directory.</description>
         <stage>AlwaysEnabled</stage>
