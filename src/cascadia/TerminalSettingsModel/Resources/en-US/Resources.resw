@@ -174,6 +174,9 @@
     <value>Move tab to window "{0}"</value>
     <comment>{0} will be replaced with a user-specified name of a window</comment>
   </data>
+  <data name="MoveTabToNewWindowCommandKey" xml:space="preserve">
+    <value>Move tab to a new window</value>
+  </data>
   <data name="MoveTabDirectionForward" xml:space="preserve">
     <value>forward</value>
   </data>
@@ -421,6 +424,9 @@
   </data>
   <data name="MovePaneCommandKey" xml:space="preserve">
     <value>Move pane</value>
+  </data>
+  <data name="MovePaneToNewWindowCommandKey" xml:space="preserve">
+    <value>Move pane to new window</value>
   </data>
   <data name="SplitPaneCommandKey" xml:space="preserve">
     <value>Split pane</value>
@@ -674,5 +680,20 @@
   </data>
   <data name="CloseOtherPanesCommandKey" xml:space="preserve">
     <value>Close all other panes</value>
+  </data>
+  <data name="RestartConnectionKey" xml:space="preserve">
+    <value>Restart connection</value>
+  </data>
+  <data name="SelectOutputNextCommandKey" xml:space="preserve">
+    <value>Select next command output</value>
+  </data>
+  <data name="SelectOutputPreviousCommandKey" xml:space="preserve">
+    <value>Select previous command output</value>
+  </data>
+  <data name="SelectCommandNextCommandKey" xml:space="preserve">
+    <value>Select next command</value>
+  </data>
+  <data name="SelectCommandPreviousCommandKey" xml:space="preserve">
+    <value>Select previous command</value>
   </data>
 </root>

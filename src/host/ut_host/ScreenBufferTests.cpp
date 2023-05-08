@@ -123,6 +123,7 @@ class ScreenBufferTests
     TEST_METHOD(VtResize);
     TEST_METHOD(VtResizeComprehensive);
     TEST_METHOD(VtResizeDECCOLM);
+    TEST_METHOD(VtResizePreservingAttributes);
 
     TEST_METHOD(VtSoftResetCursorPosition);
 
@@ -1393,6 +1394,52 @@ void ScreenBufferTests::VtResizeDECCOLM()
     VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
     VERIFY_ARE_EQUAL(80, newSbWidth);
     VERIFY_ARE_EQUAL(80, newViewWidth);
+}
+
+void ScreenBufferTests::VtResizePreservingAttributes()
+{
+    // Run this test in isolation - for one reason or another, this breaks other tests.
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        TEST_METHOD_PROPERTY(L"Data:resizeType", L"{0, 1}")
+    END_TEST_METHOD_PROPERTIES()
+
+    unsigned resizeType;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"resizeType", resizeType));
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    // Set the attributes to something not supported by the legacy console.
+    auto testAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    testAttr.SetCrossedOut(true);
+    testAttr.SetDoublyUnderlined(true);
+    testAttr.SetItalic(true);
+    si.GetTextBuffer().SetCurrentAttributes(testAttr);
+
+    switch (resizeType)
+    {
+    case 0:
+        Log::Comment(L"Resize the screen with CSI 8 t");
+        stateMachine.ProcessString(L"\x1b[8;24;132t"); // Set width to 132
+        VERIFY_ARE_EQUAL(132, si.GetTextBuffer().GetSize().Width());
+        stateMachine.ProcessString(L"\x1b[8;24;80t"); // Set width to 80
+        VERIFY_ARE_EQUAL(80, si.GetTextBuffer().GetSize().Width());
+        break;
+    case 1:
+        Log::Comment(L"Resize the screen with DECCOLM");
+        stateMachine.ProcessString(L"\x1b[?40h"); // Allow DECCOLM
+        stateMachine.ProcessString(L"\x1b[?3h"); // Set width to 132
+        VERIFY_ARE_EQUAL(132, si.GetTextBuffer().GetSize().Width());
+        stateMachine.ProcessString(L"\x1b[?3l"); // Set width to 80
+        VERIFY_ARE_EQUAL(80, si.GetTextBuffer().GetSize().Width());
+        break;
+    }
+
+    Log::Comment(L"Attributes should be preserved after resize");
+    VERIFY_ARE_EQUAL(testAttr, si.GetTextBuffer().GetCurrentAttributes());
 }
 
 void ScreenBufferTests::VtSoftResetCursorPosition()

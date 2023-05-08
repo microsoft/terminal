@@ -113,13 +113,14 @@ namespace winrt::TerminalApp::implementation
 
         _settings = settings;
 
-        // Make sure to _UpdateCommandsForPalette before
-        // _RefreshUIForSettingsReload. _UpdateCommandsForPalette will make
-        // sure the KeyChordText of Commands is updated, which needs to
-        // happen before the Settings UI is reloaded and tries to re-read
-        // those values.
-        _UpdateCommandsForPalette();
-        CommandPalette().SetActionMap(_settings.ActionMap());
+        // Make sure to call SetCommands before _RefreshUIForSettingsReload.
+        // SetCommands will make sure the KeyChordText of Commands is updated, which needs
+        // to happen before the Settings UI is reloaded and tries to re-read those values.
+        if (const auto p = CommandPaletteElement())
+        {
+            p.SetCommands(_settings.GlobalSettings().ActionMap().ExpandedCommands());
+            p.SetActionMap(_settings.ActionMap());
+        }
 
         if (needRefreshUI)
         {
@@ -254,20 +255,6 @@ namespace winrt::TerminalApp::implementation
         _CreateNewTabFlyout();
 
         _UpdateTabWidthMode();
-
-        // When the visibility of the command palette changes to "collapsed",
-        // the palette has been closed. Toss focus back to the currently active
-        // control.
-        CommandPalette().RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
-            if (CommandPalette().Visibility() == Visibility::Collapsed)
-            {
-                _FocusActiveControl(nullptr, nullptr);
-            }
-        });
-        CommandPalette().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
-        CommandPalette().CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
-        CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
-        CommandPalette().PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -684,7 +671,6 @@ namespace winrt::TerminalApp::implementation
     //   Notes link, send feedback link and privacy policy link.
     void TerminalPage::_ShowAboutDialog()
     {
-        AboutDialog().QueueUpdateCheck();
         _ShowDialogHelper(L"AboutDialog");
     }
 
@@ -791,61 +777,48 @@ namespace winrt::TerminalApp::implementation
 
         // add static items
         {
-            // GH#2455 - Make sure to try/catch calls to Application::Current,
-            // because that _won't_ be an instance of TerminalApp::App in the
-            // LocalTests
-            auto isUwp = false;
-            try
+            // Create the settings button.
+            auto settingsItem = WUX::Controls::MenuFlyoutItem{};
+            settingsItem.Text(RS_(L"SettingsMenuItem"));
+            const auto settingsToolTip = RS_(L"SettingsToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(settingsItem, box_value(settingsToolTip));
+            Automation::AutomationProperties::SetHelpText(settingsItem, settingsToolTip);
+
+            WUX::Controls::SymbolIcon ico{};
+            ico.Symbol(WUX::Controls::Symbol::Setting);
+            settingsItem.Icon(ico);
+
+            settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
+            newTabFlyout.Items().Append(settingsItem);
+
+            auto actionMap = _settings.ActionMap();
+            const auto settingsKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::OpenSettings, OpenSettingsArgs{ SettingsTarget::SettingsUI }) };
+            if (settingsKeyChord)
             {
-                isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+                _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
             }
-            CATCH_LOG();
 
-            if (!isUwp)
+            // Create the command palette button.
+            auto commandPaletteFlyout = WUX::Controls::MenuFlyoutItem{};
+            commandPaletteFlyout.Text(RS_(L"CommandPaletteMenuItem"));
+            const auto commandPaletteToolTip = RS_(L"CommandPaletteToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(commandPaletteFlyout, box_value(commandPaletteToolTip));
+            Automation::AutomationProperties::SetHelpText(commandPaletteFlyout, commandPaletteToolTip);
+
+            WUX::Controls::FontIcon commandPaletteIcon{};
+            commandPaletteIcon.Glyph(L"\xE945");
+            commandPaletteIcon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+            commandPaletteFlyout.Icon(commandPaletteIcon);
+
+            commandPaletteFlyout.Click({ this, &TerminalPage::_CommandPaletteButtonOnClick });
+            newTabFlyout.Items().Append(commandPaletteFlyout);
+
+            const auto commandPaletteKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::ToggleCommandPalette) };
+            if (commandPaletteKeyChord)
             {
-                // Create the settings button.
-                auto settingsItem = WUX::Controls::MenuFlyoutItem{};
-                settingsItem.Text(RS_(L"SettingsMenuItem"));
-                const auto settingsToolTip = RS_(L"SettingsToolTip");
-
-                WUX::Controls::ToolTipService::SetToolTip(settingsItem, box_value(settingsToolTip));
-                Automation::AutomationProperties::SetHelpText(settingsItem, settingsToolTip);
-
-                WUX::Controls::SymbolIcon ico{};
-                ico.Symbol(WUX::Controls::Symbol::Setting);
-                settingsItem.Icon(ico);
-
-                settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
-                newTabFlyout.Items().Append(settingsItem);
-
-                auto actionMap = _settings.ActionMap();
-                const auto settingsKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::OpenSettings, OpenSettingsArgs{ SettingsTarget::SettingsUI }) };
-                if (settingsKeyChord)
-                {
-                    _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
-                }
-
-                // Create the command palette button.
-                auto commandPaletteFlyout = WUX::Controls::MenuFlyoutItem{};
-                commandPaletteFlyout.Text(RS_(L"CommandPaletteMenuItem"));
-                const auto commandPaletteToolTip = RS_(L"CommandPaletteToolTip");
-
-                WUX::Controls::ToolTipService::SetToolTip(commandPaletteFlyout, box_value(commandPaletteToolTip));
-                Automation::AutomationProperties::SetHelpText(commandPaletteFlyout, commandPaletteToolTip);
-
-                WUX::Controls::FontIcon commandPaletteIcon{};
-                commandPaletteIcon.Glyph(L"\xE945");
-                commandPaletteIcon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
-                commandPaletteFlyout.Icon(commandPaletteIcon);
-
-                commandPaletteFlyout.Click({ this, &TerminalPage::_CommandPaletteButtonOnClick });
-                newTabFlyout.Items().Append(commandPaletteFlyout);
-
-                const auto commandPaletteKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::ToggleCommandPalette) };
-                if (commandPaletteKeyChord)
-                {
-                    _SetAcceleratorForMenuItem(commandPaletteFlyout, commandPaletteKeyChord);
-                }
+                _SetAcceleratorForMenuItem(commandPaletteFlyout, commandPaletteKeyChord);
             }
 
             // Create the about button.
@@ -873,6 +846,10 @@ namespace winrt::TerminalApp::implementation
         // e.g., the command palette will be dismissed by the menu,
         // and then closing the fly-out will move the focus to wrong location.
         newTabFlyout.Opening([this](auto&&, auto&&) {
+            _FocusCurrentTab(true);
+        });
+        // Necessary for fly-out sub items to get focus on a tab before collapsing. Related to #15049
+        newTabFlyout.Closing([this](auto&&, auto&&) {
             _FocusCurrentTab(true);
         });
         _newTabButton.Flyout(newTabFlyout);
@@ -1188,7 +1165,8 @@ namespace winrt::TerminalApp::implementation
     // Return value:
     // - the desired connection
     TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
-                                                                                        TerminalSettings settings)
+                                                                                        TerminalSettings settings,
+                                                                                        const bool inheritCursor)
     {
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
@@ -1271,6 +1249,11 @@ namespace winrt::TerminalApp::implementation
             valueSet.Insert(L"reloadEnvironmentVariables",
                             Windows::Foundation::PropertyValue::CreateBoolean(_settings.GlobalSettings().ReloadEnvironmentVariables()));
 
+            if (inheritCursor)
+            {
+                valueSet.Insert(L"inheritCursor", Windows::Foundation::PropertyValue::CreateBoolean(true));
+            }
+
             conhostConn.Initialize(valueSet);
 
             sessionGuid = conhostConn.Guid();
@@ -1288,6 +1271,44 @@ namespace winrt::TerminalApp::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
         return connection;
+    }
+
+    TerminalConnection::ITerminalConnection TerminalPage::_duplicateConnectionForRestart(std::shared_ptr<Pane> pane)
+    {
+        const auto& control{ pane->GetTerminalControl() };
+        if (control == nullptr)
+        {
+            return nullptr;
+        }
+        const auto& connection = control.Connection();
+        auto profile{ pane->GetProfile() };
+
+        TerminalSettingsCreateResult controlSettings{ nullptr };
+
+        if (profile)
+        {
+            // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
+            profile = GetClosestProfileForDuplicationOfProfile(profile);
+            controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
+
+            // Replace the Starting directory with the CWD, if given
+            const auto workingDirectory = control.WorkingDirectory();
+            const auto validWorkingDirectory = !workingDirectory.empty();
+            if (validWorkingDirectory)
+            {
+                controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
+            }
+
+            // To facilitate restarting defterm connections: grab the original
+            // commandline out of the connection and shove that back into the
+            // settings.
+            if (const auto& conpty{ connection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                controlSettings.DefaultSettings().Commandline(conpty.Commandline());
+            }
+        }
+
+        return _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings(), true);
     }
 
     // Method Description:
@@ -1333,8 +1354,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CommandPaletteButtonOnClick(const IInspectable&,
                                                     const RoutedEventArgs&)
     {
-        CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
-        CommandPalette().Visibility(Visibility::Visible);
+        auto p = LoadCommandPalette();
+        p.EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
+        p.Visibility(Visibility::Visible);
     }
 
     // Method Description:
@@ -1350,7 +1372,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Called when the users pressed keyBindings while CommandPalette is open.
+    // - Called when the users pressed keyBindings while CommandPaletteElement is open.
     // - As of GH#8480, this is also bound to the TabRowControl's KeyUp event.
     //   That should only fire when focus is in the tab row, which is hard to
     //   do. Notably, that's possible:
@@ -1421,7 +1443,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        if (const auto p = CommandPalette(); p.Visibility() == Visibility::Visible && cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+        if (const auto p = CommandPaletteElement(); p && p.Visibility() == Visibility::Visible && cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
         {
             p.Visibility(Visibility::Collapsed);
         }
@@ -1745,6 +1767,40 @@ namespace winrt::TerminalApp::implementation
         }
         return nullptr;
     }
+
+    CommandPalette TerminalPage::LoadCommandPalette()
+    {
+        if (const auto p = CommandPaletteElement())
+        {
+            return p;
+        }
+
+        return _loadCommandPaletteSlowPath();
+    }
+
+    CommandPalette TerminalPage::_loadCommandPaletteSlowPath()
+    {
+        const auto p = FindName(L"CommandPaletteElement").as<CommandPalette>();
+
+        p.SetCommands(_settings.GlobalSettings().ActionMap().ExpandedCommands());
+        p.SetActionMap(_settings.ActionMap());
+
+        // When the visibility of the command palette changes to "collapsed",
+        // the palette has been closed. Toss focus back to the currently active control.
+        p.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            if (CommandPaletteElement().Visibility() == Visibility::Collapsed)
+            {
+                _FocusActiveControl(nullptr, nullptr);
+            }
+        });
+        p.DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+        p.CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
+        p.SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
+        p.PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
+
+        return p;
+    }
+
     // Method Description:
     // - Warn the user that they are about to close all open windows, then
     //   signal that we want to close everything.
@@ -2881,7 +2937,7 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
-        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
+        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings(), false);
         if (existingConnection)
         {
             connection.Resize(controlSettings.DefaultSettings().InitialRows(), controlSettings.DefaultSettings().InitialCols());
@@ -2923,7 +2979,18 @@ namespace winrt::TerminalApp::implementation
             original->SetActive();
         }
 
+        resultPane->RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
+
         return resultPane;
+    }
+
+    void TerminalPage::_restartPaneConnection(const std::shared_ptr<Pane>& pane)
+    {
+        if (const auto& connection{ _duplicateConnectionForRestart(pane) })
+        {
+            pane->GetTerminalControl().Connection(connection);
+            connection.Start();
+        }
     }
 
     // Method Description:
@@ -3097,62 +3164,59 @@ namespace winrt::TerminalApp::implementation
         // Begin Theme handling
         _updateThemeColors();
 
+        _updateAllTabCloseButtons(_GetFocusedTab());
+    }
+
+    void TerminalPage::_updateAllTabCloseButtons(const winrt::TerminalApp::TabBase& focusedTab)
+    {
         // Update the state of the CloseButtonOverlayMode property of
         // our TabView, to match the tab.showCloseButton property in the theme.
         //
-        // Also update every tab's individual IsClosable to match.
-        //
-        // This is basically the same as _updateTabCloseButton, but with some
-        // code moved around to better facilitate updating every tab view item
-        // at once
-        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
+        // Also update every tab's individual IsClosable to match the same property.
+        const auto theme = _settings.GlobalSettings().CurrentTheme();
+        const auto visibility = theme && theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
+
+        for (const auto& tab : _tabs)
         {
-            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
-
-            for (const auto& tab : _tabs)
-            {
-                switch (visibility)
-                {
-                case Settings::Model::TabCloseButtonVisibility::Never:
-                    tab.TabViewItem().IsClosable(false);
-                    break;
-                case Settings::Model::TabCloseButtonVisibility::Hover:
-                    tab.TabViewItem().IsClosable(true);
-                    break;
-                default:
-                    tab.TabViewItem().IsClosable(true);
-                    break;
-                }
-            }
-
             switch (visibility)
             {
             case Settings::Model::TabCloseButtonVisibility::Never:
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
+                tab.TabViewItem().IsClosable(false);
                 break;
             case Settings::Model::TabCloseButtonVisibility::Hover:
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
+                tab.TabViewItem().IsClosable(true);
                 break;
+            case Settings::Model::TabCloseButtonVisibility::ActiveOnly:
+            {
+                if (focusedTab && focusedTab == tab)
+                {
+                    tab.TabViewItem().IsClosable(true);
+                }
+                else
+                {
+                    tab.TabViewItem().IsClosable(false);
+                }
+                break;
+            }
             default:
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Always);
+                tab.TabViewItem().IsClosable(true);
                 break;
             }
         }
-    }
 
-    // Method Description:
-    // - Repopulates the list of commands in the command palette with the
-    //   current commands in the settings. Also updates the keybinding labels to
-    //   reflect any matching keybindings.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalPage::_UpdateCommandsForPalette()
-    {
-        // Update the command palette when settings reload
-        const auto& expanded{ _settings.GlobalSettings().ActionMap().ExpandedCommands() };
-        CommandPalette().SetCommands(expanded);
+        switch (visibility)
+        {
+        case Settings::Model::TabCloseButtonVisibility::Never:
+            _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
+            break;
+        case Settings::Model::TabCloseButtonVisibility::Hover:
+            _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
+            break;
+        case Settings::Model::TabCloseButtonVisibility::ActiveOnly:
+        default:
+            _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Always);
+            break;
+        }
     }
 
     // Method Description:
@@ -3673,9 +3737,6 @@ namespace winrt::TerminalApp::implementation
             auto tabViewItem = newTabImpl->TabViewItem();
             _tabView.TabItems().Append(tabViewItem);
 
-            // Update the state of the close button to match the current theme
-            _updateTabCloseButton(tabViewItem);
-
             tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 
             // When the tab requests close, try to close it (prompt for approval, if required)
@@ -3816,18 +3877,6 @@ namespace winrt::TerminalApp::implementation
     // - The OS-localized name for the TabletInputService
     winrt::hstring _getTabletServiceName()
     {
-        auto isUwp = false;
-        try
-        {
-            isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
-        }
-        CATCH_LOG();
-
-        if (isUwp)
-        {
-            return winrt::hstring{ TabletInputServiceKey };
-        }
-
         wil::unique_schandle hManager{ OpenSCManagerW(nullptr, nullptr, 0) };
 
         if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
@@ -4424,38 +4473,6 @@ namespace winrt::TerminalApp::implementation
         _SetNewTabButtonColor(bgColor, bgColor);
     }
 
-    void TerminalPage::_updateTabCloseButton(const winrt::Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem)
-    {
-        // Update the state of the close button to match the current theme.
-        // IMPORTANT: Should be called AFTER the tab view item is added to the TabView.
-        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
-        {
-            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
-
-            // Update both the tab item's IsClosable, but also the TabView's
-            // CloseButtonOverlayMode here. Because the TabViewItem was created
-            // outside the context of the TabView, it doesn't get the
-            // CloseButtonOverlayMode assigned on creation. We have to update
-            // that property again here, when we add the tab, so that the
-            // TabView will re-apply the value.
-            switch (visibility)
-            {
-            case Settings::Model::TabCloseButtonVisibility::Never:
-                tabViewItem.IsClosable(false);
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
-                break;
-            case Settings::Model::TabCloseButtonVisibility::Hover:
-                tabViewItem.IsClosable(true);
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
-                break;
-            default:
-                tabViewItem.IsClosable(true);
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Always);
-                break;
-            }
-        }
-    }
-
     // Function Description:
     // - Attempts to load some XAML resources that Panes will need. This includes:
     //   * The Color they'll use for active Panes's borders - SystemAccentColor
@@ -4828,5 +4845,4 @@ namespace winrt::TerminalApp::implementation
         // _RemoveTab will make sure to null out the _stashed.draggedTab
         _RemoveTab(*_stashed.draggedTab);
     }
-
 }

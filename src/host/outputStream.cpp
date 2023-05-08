@@ -254,9 +254,7 @@ unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
 // - <none>
 void ConhostInternalGetSet::SetBracketedPasteMode(const bool enabled)
 {
-    // TODO GH#395: Bracketed Paste Mode is not yet supported in conhost, but we
-    // still keep track of the state so it can be reported by DECRQM.
-    _bracketedPasteMode = enabled;
+    ServiceLocator::LocateGlobals().getConsoleInformation().SetBracketedPasteMode(enabled);
 }
 
 // Routine Description:
@@ -264,12 +262,10 @@ void ConhostInternalGetSet::SetBracketedPasteMode(const bool enabled)
 // Arguments:
 // - <none>
 // Return Value:
-// - true if the mode is enabled, false if not, nullopt if unsupported.
-std::optional<bool> ConhostInternalGetSet::GetBracketedPasteMode() const
+// - true if the mode is enabled, false if not.
+bool ConhostInternalGetSet::GetBracketedPasteMode() const
 {
-    // TODO GH#395: Bracketed Paste Mode is not yet supported in conhost, so we
-    // only report the state if we're tracking it for conpty.
-    return IsConsolePty() ? std::optional{ _bracketedPasteMode } : std::nullopt;
+    return ServiceLocator::LocateGlobals().getConsoleInformation().GetBracketedPasteMode();
 }
 
 // Routine Description:
@@ -343,6 +339,14 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
 
     auto api = ServiceLocator::LocateGlobals().api;
     auto& screenInfo = _io.GetActiveOutputBuffer();
+
+    // We need to save the attributes separately, since the wAttributes field in
+    // CONSOLE_SCREEN_BUFFER_INFOEX is not capable of representing the extended
+    // attribute values, and can end up corrupting that data when restored.
+    const auto attributes = screenInfo.GetTextBuffer().GetCurrentAttributes();
+    const auto restoreAttributes = wil::scope_exit([&] {
+        screenInfo.GetTextBuffer().SetCurrentAttributes(attributes);
+    });
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);

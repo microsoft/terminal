@@ -65,7 +65,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual unsigned int GetConsoleOutputCP() const = 0;
 
         virtual void SetBracketedPasteMode(const bool enabled) = 0;
-        virtual std::optional<bool> GetBracketedPasteMode() const = 0;
+        virtual bool GetBracketedPasteMode() const = 0;
         virtual void CopyToClipboard(const std::wstring_view content) = 0;
         virtual void SetTaskbarProgress(const DispatchTypes::TaskbarState state, const size_t progress) = 0;
         virtual void SetWorkingDirectory(const std::wstring_view uri) = 0;

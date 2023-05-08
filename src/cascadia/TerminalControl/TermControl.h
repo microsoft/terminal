@@ -81,6 +81,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ClearMark();
         void ClearAllMarks();
         void ScrollToMark(const Control::ScrollToMarkDirection& direction);
+        void SelectCommand(const bool goUp);
+        void SelectOutput(const bool goUp);
 
 #pragma endregion
 
@@ -143,6 +145,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void Detach();
 
+        TerminalConnection::ITerminalConnection Connection();
+        void Connection(const TerminalConnection::ITerminalConnection& connection);
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
@@ -158,6 +163,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         BUBBLED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(CloseTerminalRequested, IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(RestartTerminalRequested, IInspectable, IInspectable);
 
         BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
 
@@ -230,10 +236,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _isBackgroundLight{ false };
         bool _detached{ false };
 
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalPrimaryElements{ nullptr };
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSecondaryElements{ nullptr };
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedPrimaryElements{ nullptr };
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedSecondaryElements{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalPrimaryElements{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalSecondaryElements{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedPrimaryElements{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedSecondaryElements{ nullptr };
 
         inline bool _IsClosing() const noexcept
         {
@@ -345,6 +351,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _CopyCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _SearchCommandHandler(const IInspectable& sender, const IInspectable& args);
 
+        void _SelectCommandHandler(const IInspectable& sender, const IInspectable& args);
+        void _SelectOutputHandler(const IInspectable& sender, const IInspectable& args);
+
         struct Revokers
         {
             Control::ControlCore::ScrollPositionChanged_revoker coreScrollPositionChanged;
@@ -366,6 +375,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::ConnectionStateChanged_revoker ConnectionStateChanged;
             Control::ControlCore::ShowWindowChanged_revoker ShowWindowChanged;
             Control::ControlCore::CloseTerminalRequested_revoker CloseTerminalRequested;
+            Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
             // These are set up in _InitializeTerminal
             Control::ControlCore::RendererWarning_revoker RendererWarning;
             Control::ControlCore::SwapChainChanged_revoker SwapChainChanged;
