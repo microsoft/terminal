@@ -29,21 +29,23 @@ namespace winrt::SampleApp::implementation
     {
         auto settings = winrt::make_self<implementation::MySettings>();
 
-        auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This TermControl is hosted in-proc...",
-                                                                                      winrt::hstring{},
-                                                                                      L"",
-                                                                                      nullptr,
-                                                                                      32,
-                                                                                      80,
-                                                                                      winrt::guid(),
-                                                                                      winrt::guid()) };
+        // auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This TermControl is hosted in-proc...",
+        //                                                                               winrt::hstring{},
+        //                                                                               L"",
+        //                                                                               nullptr,
+        //                                                                               32,
+        //                                                                               80,
+        //                                                                               winrt::guid(),
+        //                                                                               winrt::guid()) };
 
         // "Microsoft.Terminal.TerminalConnection.ConptyConnection"
-        winrt::hstring myClass{ winrt::name_of<TerminalConnection::ConptyConnection>() };
-        TerminalConnection::ConnectionInformation connectInfo{ myClass, connectionSettings };
+        winrt::hstring myClass{ winrt::name_of<TerminalConnection::EchoConnection>() };
+        TerminalConnection::ConnectionInformation connectInfo{ myClass, nullptr };
 
-        TerminalConnection::ITerminalConnection conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectInfo) };
-        Control::TermControl control{ *settings, *settings, conn };
+        _connection = TerminalConnection::ConnectionInformation::CreateConnection(connectInfo);
+        Control::TermControl control{ *settings, *settings, _connection };
+
+        // _connection.WriteInput(L"This is an in-proc echo connection!\r\n");
 
         InProcContent().Children().Append(control);
     }
@@ -60,7 +62,7 @@ namespace winrt::SampleApp::implementation
         return { L"Sample Application" };
     }
 
-    static winrt::fire_and_forget _lookupCatalog() noexcept
+    winrt::fire_and_forget MyPage::_lookupCatalog() noexcept
     {
         co_await winrt::resume_background();
         try
@@ -80,20 +82,33 @@ namespace winrt::SampleApp::implementation
 
                 LOG_IF_FAILED(hr);
                 if (FAILED(hr))
+                {
+                    _connection.WriteInput(L"wait what");
                     continue;
+                }
 
                 PWSTR id;
                 hr = TryCreatePackageDependency(nullptr, pfn.c_str(), PACKAGE_VERSION{}, PackageDependencyProcessorArchitectures_None, PackageDependencyLifetimeKind_Process, nullptr, CreatePackageDependencyOptions_None, &id);
                 LOG_IF_FAILED(hr);
                 if (FAILED(hr))
+                {
+                    _connection.WriteInput(L"Failed to create package dependency\r\n");
                     continue;
+                }
 
                 PACKAGEDEPENDENCY_CONTEXT ctx;
                 PWSTR packageFullName;
                 hr = AddPackageDependency(id, 1, AddPackageDependencyOptions_None, &ctx, &packageFullName);
                 LOG_IF_FAILED(hr);
                 if (FAILED(hr))
+                {
+                    _connection.WriteInput(L"Failed to add package dependency\r\n");
                     continue;
+                }
+
+                _connection.WriteInput(L"Successfully added package dependency to ");
+                _connection.WriteInput(pfn);
+                _connection.WriteInput(L"\r\n");
             }
         }
         catch (...)
@@ -124,6 +139,10 @@ namespace winrt::SampleApp::implementation
                 auto oneOhOne = ext.DoTheThing();
                 oneOhOne++;
             }
+        }
+        else
+        {
+            _connection.WriteInput(L"Failed to activate instance \r\n");
         }
     }
 }
