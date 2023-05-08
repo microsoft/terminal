@@ -214,9 +214,6 @@ namespace winrt::TerminalApp::implementation
         auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().InsertAt(insertPosition, tabViewItem);
 
-        // Update the state of the close button to match the current theme
-        _updateTabCloseButton(tabViewItem);
-
         // Set this tab's icon to the icon from the user's profile
         if (const auto profile{ newTabImpl->GetFocusedProfile() })
         {
@@ -970,6 +967,7 @@ namespace winrt::TerminalApp::implementation
             {
                 tab.Focus(FocusState::Programmatic);
                 _UpdateMRUTab(tab);
+                _updateAllTabCloseButtons(tab);
             }
 
             tab.TabViewItem().StartBringIntoView();
@@ -1138,6 +1136,7 @@ namespace winrt::TerminalApp::implementation
             {
                 tab.Focus(FocusState::Programmatic);
                 _UpdateMRUTab(tab);
+                _updateAllTabCloseButtons(tab);
             }
         }
     }

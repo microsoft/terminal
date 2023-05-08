@@ -596,11 +596,22 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         requestedWeight = DWRITE_FONT_WEIGHT_NORMAL;
     }
 
-    auto fontCollection = FontCache::GetCached();
+    wil::com_ptr<IDWriteFontCollection> fontCollection;
+    THROW_IF_FAILED(_p.dwriteFactory->GetSystemFontCollection(fontCollection.addressof(), FALSE));
 
     u32 index = 0;
     BOOL exists = false;
     THROW_IF_FAILED(fontCollection->FindFamilyName(requestedFaceName, &index, &exists));
+
+    if constexpr (Feature_NearbyFontLoading::IsEnabled())
+    {
+        if (!exists)
+        {
+            fontCollection = FontCache::GetCached();
+            THROW_IF_FAILED(fontCollection->FindFamilyName(requestedFaceName, &index, &exists));
+        }
+    }
+
     THROW_HR_IF(DWRITE_E_NOFONT, !exists);
 
     wil::com_ptr<IDWriteFontFamily> fontFamily;
