@@ -138,6 +138,9 @@ namespace winrt::SampleApp::implementation
             {
                 auto oneOhOne = ext.DoTheThing();
                 oneOhOne++;
+
+                auto fwe = ext.PaneContent();
+                OutOfProcContent().Children().Append(fwe);
             }
         }
         else

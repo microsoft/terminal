@@ -10,7 +10,8 @@ namespace winrt::ExtensionComponent::implementation
 
         int32_t MyProperty();
         void MyProperty(int32_t value);
-        int32_t DoTheThing() { return 101; }
+        int32_t DoTheThing();
+        winrt::Windows::UI::Xaml::FrameworkElement PaneContent();
     };
 }
 
