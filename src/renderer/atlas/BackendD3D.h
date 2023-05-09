@@ -220,8 +220,8 @@ namespace Microsoft::Console::Render::Atlas
         void _splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         void _drawGridlines(const RenderingPayload& p, u16 y);
         void _drawCursorBackground(const RenderingPayload& p);
-        ATLAS_ATTR_COLD void _drawCursorForeground(const RenderingPayload& p);
-        ATLAS_ATTR_COLD size_t _drawCursorForegroundSlowPath(const RenderingPayload& p, const CursorRect& c, size_t offset);
+        ATLAS_ATTR_COLD void _drawCursorForeground();
+        ATLAS_ATTR_COLD size_t _drawCursorForegroundSlowPath(const CursorRect& c, size_t offset);
         void _drawSelection(const RenderingPayload& p);
         void _executeCustomShader(RenderingPayload& p);
 
