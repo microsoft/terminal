@@ -26,7 +26,23 @@ namespace winrt::ExtensionComponent::implementation
         return 101;
     }
 
-    winrt::fire_and_forget _makeWebView(const WUX::Controls::StackPanel parent)
+    winrt::fire_and_forget Class::_webMessageReceived(const IInspectable& sender,
+                                                      const winrt::Microsoft::Web::WebView2::Core::CoreWebView2WebMessageReceivedEventArgs& args)
+    {
+        auto message{ args.TryGetWebMessageAsString() };
+        if (!message.empty())
+        {
+            auto uri = winrt::Windows::Foundation::Uri(message);
+            if (uri.SchemeName() == L"button")
+            {
+                //MyButtonHandler(uri);
+            }
+
+        }
+        co_return;
+    }
+
+    winrt::fire_and_forget Class::_makeWebView(const WUX::Controls::StackPanel parent)
     {
         winrt::MUX::Controls::WebView2 wv{ nullptr };
         wv = winrt::MUX::Controls::WebView2();
@@ -34,7 +50,22 @@ namespace winrt::ExtensionComponent::implementation
         wv.Height(300);
         parent.Children().Append(wv);
         co_await wv.EnsureCoreWebView2Async();
-        wv.CoreWebView2().Navigate(L"https://www.github.com/microsoft/terminal");
+
+        std::string page = R"_({
+<html>
+<body>
+<h1>My First Heading</h1>
+Hello world
+<button onclick="window.chrome.webview.postMessage('button://button_id')"> Click me</ button>
+</body>
+</html>
+    })_";
+
+        wv.WebMessageReceived({ this, &Class::_webMessageReceived });
+
+        // wv.CoreWebView2().Navigate(L"https://www.github.com/microsoft/terminal");
+        wv.CoreWebView2().NavigateToString(winrt::to_hstring(page));
+        
     }
 
     winrt::Windows::UI::Xaml::FrameworkElement Class::PaneContent()
