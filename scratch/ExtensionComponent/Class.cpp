@@ -33,12 +33,14 @@ namespace winrt::ExtensionComponent::implementation
         if (!message.empty())
         {
             auto uri = winrt::Windows::Foundation::Uri(message);
-            if (uri.SchemeName() == L"button")
+            if (uri.SchemeName() == L"sendinput")
             {
                 //MyButtonHandler(uri);
+                auto query = winrt::Windows::Foundation::WwwFormUrlDecoder(uri.Query());
+                query;
             }
-
         }
+
         co_return;
     }
 
@@ -51,21 +53,38 @@ namespace winrt::ExtensionComponent::implementation
         parent.Children().Append(wv);
         co_await wv.EnsureCoreWebView2Async();
 
-        std::string page = R"_({
+        std::string page = R"_(
 <html>
+
+
 <body>
 <h1>My First Heading</h1>
 Hello world
-<button onclick="window.chrome.webview.postMessage('button://button_id')"> Click me</ button>
+
+<form id="myForm">
+  <label for="myInput">Enter text:</label>
+  <input type="text" id="myInput" name="myInput">
+  <button type="submit" id="myButton">Submit</button>
+</form>
+
 </body>
+
+
+<script>
+document.getElementById("myForm").addEventListener("submit", function(event) {
+  event.preventDefault();
+  var input = document.getElementById("myInput").value;
+  window.chrome.webview.postMessage("sendInput://?text=" + encodeURIComponent(input));
+});
+</script>
+
 </html>
-    })_";
+    )_";
 
         wv.WebMessageReceived({ this, &Class::_webMessageReceived });
 
         // wv.CoreWebView2().Navigate(L"https://www.github.com/microsoft/terminal");
         wv.CoreWebView2().NavigateToString(winrt::to_hstring(page));
-        
     }
 
     winrt::Windows::UI::Xaml::FrameworkElement Class::PaneContent()
