@@ -78,37 +78,52 @@ namespace winrt::SampleApp::implementation
                 auto pfn = extn.Package().Id().FamilyName();
                 pfn;
 
-                auto hr = S_OK;
+                DynamicDependency dynDep{};
+                auto hr = dynDep.Create(extn);
 
                 LOG_IF_FAILED(hr);
                 if (FAILED(hr))
                 {
-                    _connection.WriteInput(L"wait what");
+                    _connection.WriteInput(L"Failed to create extension dependency\r\n");
                     continue;
                 }
 
-                PWSTR id;
-                hr = TryCreatePackageDependency(nullptr, pfn.c_str(), PACKAGE_VERSION{}, PackageDependencyProcessorArchitectures_None, PackageDependencyLifetimeKind_Process, nullptr, CreatePackageDependencyOptions_None, &id);
-                LOG_IF_FAILED(hr);
-                if (FAILED(hr))
+                auto f = dynDep.ResolveProperties();
+                bool result = co_await f;
+                if (result)
                 {
-                    _connection.WriteInput(L"Failed to create package dependency\r\n");
-                    continue;
+                    _connection.WriteInput(L"Successfully added package dependency to ");
+                    _connection.WriteInput(dynDep._pfn);
+                    _connection.WriteInput(L"\r\n");
+                    this->_extensions.push_back(std::move(dynDep));
                 }
-
-                PACKAGEDEPENDENCY_CONTEXT ctx;
-                PWSTR packageFullName;
-                hr = AddPackageDependency(id, 1, AddPackageDependencyOptions_None, &ctx, &packageFullName);
-                LOG_IF_FAILED(hr);
-                if (FAILED(hr))
+                else
                 {
-                    _connection.WriteInput(L"Failed to add package dependency\r\n");
-                    continue;
+                    _connection.WriteInput(L"Didnt find impelentation for ");
+                    _connection.WriteInput(dynDep._pfn);
+                    _connection.WriteInput(L"\r\n");
                 }
+                // PWSTR id;
+                // hr = TryCreatePackageDependency(nullptr, pfn.c_str(), PACKAGE_VERSION{}, PackageDependencyProcessorArchitectures_None, PackageDependencyLifetimeKind_Process, nullptr, CreatePackageDependencyOptions_None, &id);
+                // LOG_IF_FAILED(hr);
+                // if (FAILED(hr))
+                // {
+                //     _connection.WriteInput(L"Failed to create package dependency\r\n");
+                //     continue;
+                // }
+                // PACKAGEDEPENDENCY_CONTEXT ctx;
+                // PWSTR packageFullName;
+                // hr = AddPackageDependency(id, 1, AddPackageDependencyOptions_None, &ctx, &packageFullName);
+                // LOG_IF_FAILED(hr);
+                // if (FAILED(hr))
+                // {
+                //     _connection.WriteInput(L"Failed to add package dependency\r\n");
+                //     continue;
+                // }
 
-                _connection.WriteInput(L"Successfully added package dependency to ");
+                /*_connection.WriteInput(L"Successfully added package dependency to ");
                 _connection.WriteInput(pfn);
-                _connection.WriteInput(L"\r\n");
+                _connection.WriteInput(L"\r\n");*/
             }
         }
         catch (...)
