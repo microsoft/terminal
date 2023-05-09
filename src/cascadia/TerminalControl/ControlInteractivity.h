@@ -151,7 +151,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  const Core::Point terminalPosition,
                                  const bool isLeftButtonPressed);
 
-        void _hyperlinkHandler(const std::wstring_view uri);
+        void _hyperlinkHandler(const LinkData& uri);
         bool _canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
         bool _shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta);
 

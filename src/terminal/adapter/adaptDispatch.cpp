@@ -3076,7 +3076,7 @@ bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring
     const auto id = textBuffer.GetHyperlinkId(uri, params);
     attr.SetHyperlinkId(id);
     textBuffer.SetCurrentAttributes(attr);
-    textBuffer.AddHyperlinkToMap(uri, id);
+    textBuffer.AddHyperlinkToMap(LinkData{ std::wstring{ uri }, LinkType::Url }, id);
     return true;
 }
 
@@ -3331,6 +3331,51 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     return false;
 }
 
+bool AdaptDispatch::DoWtAction(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"a")
+    {
+        if (parts.size() < 2)
+        {
+            return false;
+        }
+        auto uri = til::at(parts, 1);
+        auto& textBuffer = _api.GetTextBuffer();
+        auto attr = textBuffer.GetCurrentAttributes();
+        const auto id = textBuffer.GetHyperlinkId(uri, {});
+        attr.SetHyperlinkId(id);
+        textBuffer.SetCurrentAttributes(attr);
+        textBuffer.AddHyperlinkToMap(LinkData{ std::wstring{ uri }, LinkType::SendInput }, id);
+        return true;
+    }
+    else if (action == L"/a")
+    {
+        auto& textBuffer = _api.GetTextBuffer();
+        auto attr = textBuffer.GetCurrentAttributes();
+        attr.SetHyperlinkId(0);
+        textBuffer.SetCurrentAttributes(attr);
+        return true;
+    }
+
+    return false;
+}
 // Method Description:
 // - DECDLD - Downloads one or more characters of a dynamically redefinable
 //   character set (DRCS) with a specified pixel pattern. The pixel array is

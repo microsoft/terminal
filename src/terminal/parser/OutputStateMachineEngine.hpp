@@ -212,6 +212,7 @@ namespace Microsoft::Console::VirtualTerminal
             ResetCursorColor = 112,
             FinalTermAction = 133,
             ITerm2Action = 1337,
+            WtAction = 9001,
         };
 
         bool _GetOscTitle(const std::wstring_view string,

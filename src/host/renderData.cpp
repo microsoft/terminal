@@ -297,7 +297,15 @@ const std::wstring_view RenderData::GetConsoleTitle() const noexcept
 const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.GetActiveOutputBuffer().GetTextBuffer().GetHyperlinkUriFromId(id);
+    const auto& linkData{ gci.GetActiveOutputBuffer().GetTextBuffer().GetHyperlinkUriFromId(id) };
+    if (linkData.IsUrl())
+    {
+        return linkData.payload;
+    }
+    else
+    {
+        return {};
+    }
 }
 
 // Method Description:

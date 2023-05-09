@@ -89,7 +89,15 @@ const bool Terminal::IsGridLineDrawingAllowed() noexcept
 
 const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(uint16_t id) const
 {
-    return _activeBuffer().GetHyperlinkUriFromId(id);
+    const auto& linkData{ _activeBuffer().GetHyperlinkUriFromId(id) };
+    if (linkData.IsUrl())
+    {
+        return linkData.payload;
+    }
+    else
+    {
+        return {};
+    }
 }
 
 const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uint16_t id) const

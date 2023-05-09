@@ -544,9 +544,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 // Ctrl + Enter --> Open URL
                 auto lock = _terminal->LockForReading();
-                if (const auto uri = _terminal->GetHyperlinkAtBufferPosition(_terminal->GetSelectionAnchor()); !uri.empty())
+                if (const auto uri = _terminal->GetHyperlinkAtBufferPosition(_terminal->GetSelectionAnchor()); !uri.payload.empty())
                 {
-                    _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
+                    _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri.payload }));
                 }
                 else
                 {
@@ -780,11 +780,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    winrt::hstring ControlCore::GetHyperlink(const Core::Point pos) const
+    LinkData ControlCore::GetHyperlink(const Core::Point pos) const
     {
         // Lock for the duration of our reads.
         auto lock = _terminal->LockForReading();
-        return winrt::hstring{ _terminal->GetHyperlinkAtViewportPosition(til::point{ pos }) };
+        // return winrt::hstring{ _terminal->GetHyperlinkAtViewportPosition(til::point{ pos }) };
+        return _terminal->GetHyperlinkAtViewportPosition(til::point{ pos });
     }
 
     winrt::hstring ControlCore::HoveredUriText() const
@@ -792,9 +793,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
         {
-            auto uri{ _terminal->GetHyperlinkAtViewportPosition(*_lastHoveredCell) };
-            uri.resize(std::min<size_t>(1024u, uri.size())); // Truncate for display
-            return winrt::hstring{ uri };
+            auto uriData{ _terminal->GetHyperlinkAtViewportPosition(*_lastHoveredCell) };
+            if (!uriData.IsUrl())
+                return {};
+            uriData.payload.resize(std::min<size_t>(1024u, uriData.payload.size())); // Truncate for display
+            return winrt::hstring{ uriData.payload };
         }
         return {};
     }

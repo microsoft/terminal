@@ -64,6 +64,20 @@ namespace Microsoft::Console::Render
     class Renderer;
 }
 
+enum class LinkType
+{
+    None = 0,
+    Url,
+    SendInput,
+};
+
+struct LinkData
+{
+    std::wstring payload;
+    LinkType type{ LinkType::None };
+    bool IsUrl() const { return type == LinkType::Url; };
+};
+
 class TextBuffer final
 {
 public:
@@ -167,8 +181,8 @@ public:
     const std::vector<til::inclusive_rect> GetTextRects(til::point start, til::point end, bool blockSelection, bool bufferCoordinates) const;
     std::vector<til::point_span> GetTextSpans(til::point start, til::point end, bool blockSelection, bool bufferCoordinates) const;
 
-    void AddHyperlinkToMap(std::wstring_view uri, uint16_t id);
-    std::wstring GetHyperlinkUriFromId(uint16_t id) const;
+    void AddHyperlinkToMap(LinkData uri, uint16_t id);
+    const LinkData& GetHyperlinkUriFromId(uint16_t id) const;
     uint16_t GetHyperlinkId(std::wstring_view uri, std::wstring_view id);
     void RemoveHyperlinkFromMap(uint16_t id) noexcept;
     std::wstring GetCustomIdFromId(uint16_t id) const;
@@ -242,7 +256,7 @@ private:
 
     Microsoft::Console::Render::Renderer& _renderer;
 
-    std::unordered_map<uint16_t, std::wstring> _hyperlinkMap;
+    std::unordered_map<uint16_t, LinkData> _hyperlinkMap;
     std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;
     uint16_t _currentHyperlinkId = 1;
 

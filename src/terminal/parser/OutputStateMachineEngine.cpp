@@ -943,6 +943,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         success = _dispatch->DoITerm2Action(string);
         break;
     }
+    case OscActionCodes::WtAction:
+    {
+        success = _dispatch->DoWtAction(string);
+        break;
+    }
     case OscActionCodes::FinalTermAction:
     {
         success = _dispatch->DoFinalTermAction(string);

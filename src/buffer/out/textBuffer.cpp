@@ -2637,9 +2637,9 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 // - Adds or updates a hyperlink in our hyperlink table
 // Arguments:
 // - The hyperlink URI, the hyperlink id (could be new or old)
-void TextBuffer::AddHyperlinkToMap(std::wstring_view uri, uint16_t id)
+void TextBuffer::AddHyperlinkToMap(LinkData data, uint16_t id)
 {
-    _hyperlinkMap[id] = uri;
+    _hyperlinkMap[id] = data;
 }
 
 // Method Description:
@@ -2648,7 +2648,7 @@ void TextBuffer::AddHyperlinkToMap(std::wstring_view uri, uint16_t id)
 // - The hyperlink ID
 // Return Value:
 // - The URI
-std::wstring TextBuffer::GetHyperlinkUriFromId(uint16_t id) const
+const LinkData& TextBuffer::GetHyperlinkUriFromId(uint16_t id) const
 {
     return _hyperlinkMap.at(id);
 }

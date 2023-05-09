@@ -255,16 +255,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto ctrlEnabled = modifiers.IsCtrlPressed();
 
         // GH#9396: we prioritize hyper-link over VT mouse events
-        auto hyperlink = _core->GetHyperlink(terminalPosition.to_core_point());
+        auto hyperlinkData = _core->GetHyperlink(terminalPosition.to_core_point());
         if (WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown) &&
             ctrlEnabled &&
-            !hyperlink.empty())
+            !hyperlinkData.payload.empty())
         {
             const auto clickCount = _numberOfClicks(pixelPosition, timestamp);
             // Handle hyper-link only on the first click to prevent multiple activations
             if (clickCount == 1)
             {
-                _hyperlinkHandler(hyperlink);
+                _hyperlinkHandler(hyperlinkData);
             }
         }
         else if (_canSendVTMouseInput(modifiers))
@@ -632,9 +632,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlInteractivity::_hyperlinkHandler(const std::wstring_view uri)
+    void ControlInteractivity::_hyperlinkHandler(const LinkData& uriData)
     {
-        _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
+        if (uriData.type == LinkType::Url)
+        {
+            _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uriData.payload }));
+        }
+        else if (uriData.type == LinkType::SendInput)
+        {
+            _sendPastedTextToConnection(uriData.payload);
+        }
     }
 
     bool ControlInteractivity::_canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)

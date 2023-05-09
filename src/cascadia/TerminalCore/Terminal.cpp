@@ -561,18 +561,28 @@ bool Terminal::ShouldSendAlternateScroll(const unsigned int uiButton,
 // - Given a coord, get the URI at that location
 // Arguments:
 // - The position relative to the viewport
-std::wstring Terminal::GetHyperlinkAtViewportPosition(const til::point viewportPos)
+LinkData Terminal::GetHyperlinkAtViewportPosition(const til::point viewportPos)
 {
     return GetHyperlinkAtBufferPosition(_ConvertToBufferCell(viewportPos));
 }
 
-std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
+LinkData Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
 {
     // Case 1: buffer position has a hyperlink stored in the buffer
     const auto attr = _activeBuffer().GetCellDataAt(bufferPos)->TextAttr();
     if (attr.IsHyperlink())
     {
-        return _activeBuffer().GetHyperlinkUriFromId(attr.GetHyperlinkId());
+        const auto& linkData{ _activeBuffer().GetHyperlinkUriFromId(attr.GetHyperlinkId()) };
+        return linkData;
+        // if (linkData.IsUrl())
+        // {
+        //     return linkData.payload;
+        // }
+        // else
+        // {
+        //     return {};
+        // }
+        // return _activeBuffer().GetHyperlinkUriFromId(attr.GetHyperlinkId());
     }
 
     // Case 2: buffer position may point to an auto-detected hyperlink
@@ -619,9 +629,9 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
         {
             uri += iter->Chars();
         }
-        return uri;
+        return LinkData{ uri, LinkType::Url };
     }
-    return {};
+    return LinkData{};
 }
 
 // Method Description:
