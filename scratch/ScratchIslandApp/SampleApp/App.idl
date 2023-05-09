@@ -14,5 +14,7 @@ namespace SampleApp
         SampleAppLogic Logic { get; };
 
         Boolean IsDisposed { get; };
+
+        void AddProvider(Windows.UI.Xaml.Markup.IXamlMetadataProvider provider);
     }
 }

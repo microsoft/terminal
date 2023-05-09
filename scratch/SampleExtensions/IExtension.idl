@@ -2,11 +2,11 @@
 // Licensed under the MIT license.
 
 namespace SampleExtensions
-{    
+{
     interface IExtension
     {
         Int32 DoTheThing();
+        Windows.UI.Xaml.Markup.IXamlMetadataProvider GetProvider();
         Windows.UI.Xaml.FrameworkElement PaneContent { get; };
-
     };
 }

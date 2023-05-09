@@ -21,20 +21,24 @@ namespace winrt::ExtensionComponent::implementation
 
     winrt::Windows::UI::Xaml::FrameworkElement Class::PaneContent()
     {
-        winrt::Windows::UI::Xaml::Controls::Button myButton{};
-        myButton.Content(winrt::box_value(L"This came from an extension"));
-        // Add an onclick handler to the button that sets the background of the button to a random color
-        myButton.Click([myButton](auto&&, auto&&) {
-            winrt::Windows::UI::Xaml::Media::SolidColorBrush brush{};
-            brush.Color(winrt::Windows::UI::ColorHelper::FromArgb(255, rand() % 255, rand() % 255, rand() % 255));
-            myButton.Background(brush);
-        });
-        return myButton;
+        // winrt::Windows::UI::Xaml::Controls::Button myButton{};
+        // myButton.Content(winrt::box_value(L"This came from an extension"));
+        // // Add an onclick handler to the button that sets the background of the button to a random color
+        // myButton.Click([myButton](auto&&, auto&&) {
+        //     winrt::Windows::UI::Xaml::Media::SolidColorBrush brush{};
+        //     brush.Color(winrt::Windows::UI::ColorHelper::FromArgb(255, rand() % 255, rand() % 255, rand() % 255));
+        //     myButton.Background(brush);
+        // });
+        // return myButton;
 
-        // // This may be hard to impossible, due to
-        // // https://github.com/microsoft/microsoft-ui-xaml/issues/6299
-        // winrt::ExtensionComponent::ExtensionUserControl myControl{};
-        // return myControl;
+        // This may be hard to impossible, due to
+        // https://github.com/microsoft/microsoft-ui-xaml/issues/6299
+        winrt::ExtensionComponent::ExtensionUserControl myControl{};
+        return myControl;
     }
 
+    winrt::Windows::UI::Xaml::Markup::IXamlMetadataProvider Class::GetProvider()
+    {
+        return winrt::ExtensionComponent::XamlMetaDataProvider();
+    }
 }

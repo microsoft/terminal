@@ -12,12 +12,15 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 
-namespace xaml = ::winrt::Windows::UI::Xaml;
-
 namespace winrt::SampleApp::implementation
 {
     App::App()
     {
+        // MANUALLY ADD ANY REFERENCED COMPONENTS XAMLMETADATAPROVIDERs HERE.
+        
+        this->AddOtherProvider(winrt::Microsoft::Terminal::Control::XamlMetaDataProvider());
+        // this->AddOtherProvider(ref new WindowsInternal::ComposableShell::Experiences::VolumeAndMedia::VolumeAndMedia_XamlTypeInfo::XamlMetaDataProvider());
+
         Initialize();
 
         // Disable XAML's automatic backplating of text when in High Contrast
@@ -26,12 +29,17 @@ namespace winrt::SampleApp::implementation
         HighContrastAdjustment(::winrt::Windows::UI::Xaml::ApplicationHighContrastAdjustment::None);
     }
 
+    void App::AddProvider(::winrt::Windows::UI::Xaml::Markup::IXamlMetadataProvider const& otherProvider)
+    {
+        this->AddOtherProvider(otherProvider);
+    }
+
     void App::Initialize()
     {
         const auto dispatcherQueue = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
         if (!dispatcherQueue)
         {
-            _windowsXamlManager = xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
+            _windowsXamlManager = Hosting::WindowsXamlManager::InitializeForCurrentThread();
         }
         else
         {
