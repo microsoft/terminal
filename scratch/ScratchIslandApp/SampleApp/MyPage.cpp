@@ -62,7 +62,7 @@ namespace winrt::SampleApp::implementation
         return { L"Sample Application" };
     }
 
-    winrt::fire_and_forget MyPage::_lookupCatalog() noexcept
+    winrt::Windows::Foundation::IAsyncAction MyPage::_lookupCatalog() noexcept
     {
         co_await winrt::resume_background();
         try
@@ -112,11 +112,18 @@ namespace winrt::SampleApp::implementation
     {
         _lookupCatalog();
     }
-    void MyPage::ActivateInstanceButtonHandler(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::RoutedEventArgs const&)
+    winrt::fire_and_forget MyPage::ActivateInstanceButtonHandler(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::RoutedEventArgs const&)
     {
+        if (_extensions.size() == 0)
+        {
+            co_await _lookupCatalog();
+        }
+        co_await winrt::resume_foreground(Dispatcher());
+
         auto hr = S_OK;
         Windows::Foundation::IInspectable foo{ nullptr };
-        auto className = winrt::hstring{ L"ExtensionComponent.Class" };
+        // auto className = winrt::hstring{ L"ExtensionComponent.Class" };
+        auto className = _extensions.at(0)._implementationClassName;
         const auto nameForAbi = static_cast<HSTRING>(winrt::get_abi(className));
         hr = RoActivateInstance(nameForAbi, (::IInspectable**)winrt::put_abi(foo));
 
