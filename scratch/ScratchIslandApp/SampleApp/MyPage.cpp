@@ -72,12 +72,6 @@ namespace winrt::SampleApp::implementation
             auto extnList = co_await findOperation;
             for (const auto& extn : extnList)
             {
-                extn;
-                auto name = extn.DisplayName();
-                name;
-                auto pfn = extn.Package().Id().FamilyName();
-                pfn;
-
                 DynamicDependency dynDep{};
                 auto hr = dynDep.Create(extn);
 
@@ -103,27 +97,6 @@ namespace winrt::SampleApp::implementation
                     _connection.WriteInput(dynDep._pfn);
                     _connection.WriteInput(L"\r\n");
                 }
-                // PWSTR id;
-                // hr = TryCreatePackageDependency(nullptr, pfn.c_str(), PACKAGE_VERSION{}, PackageDependencyProcessorArchitectures_None, PackageDependencyLifetimeKind_Process, nullptr, CreatePackageDependencyOptions_None, &id);
-                // LOG_IF_FAILED(hr);
-                // if (FAILED(hr))
-                // {
-                //     _connection.WriteInput(L"Failed to create package dependency\r\n");
-                //     continue;
-                // }
-                // PACKAGEDEPENDENCY_CONTEXT ctx;
-                // PWSTR packageFullName;
-                // hr = AddPackageDependency(id, 1, AddPackageDependencyOptions_None, &ctx, &packageFullName);
-                // LOG_IF_FAILED(hr);
-                // if (FAILED(hr))
-                // {
-                //     _connection.WriteInput(L"Failed to add package dependency\r\n");
-                //     continue;
-                // }
-
-                /*_connection.WriteInput(L"Successfully added package dependency to ");
-                _connection.WriteInput(pfn);
-                _connection.WriteInput(L"\r\n");*/
             }
         }
         catch (...)
@@ -162,5 +135,22 @@ namespace winrt::SampleApp::implementation
         {
             _connection.WriteInput(L"Failed to activate instance \r\n");
         }
+    }
+
+    winrt::fire_and_forget MyPage::MakeWebViewHandler(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::RoutedEventArgs const&)
+    {
+        winrt::MUX::Controls::WebView2 wv{ nullptr };
+        wv = winrt::MUX::Controls::WebView2();
+        wv.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
+        // wv.Width(256);
+        wv.Height(300);
+        OutOfProcContent().Children().Append(wv);
+
+        co_await wv.EnsureCoreWebView2Async();
+
+        // wv.NavigateToString(L"<html>hello world</html>");
+        //wv.Source(winrt::Windows::Foundation::Uri(L"https://www.bing.com"));
+        // wv.Navigate(winrt::Windows::Foundation::Uri(L"https://www.bing.com"));
+        wv.CoreWebView2().Navigate(L"https://www.bing.com");
     }
 }

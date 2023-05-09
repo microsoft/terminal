@@ -3,7 +3,7 @@
 
   <!--===============================================================================================================
     SPECIAL SAUCE
-    ===================================================================================================================  
+    ===================================================================================================================
     This section contains any special sauce needed to implement Global NuGet Management.-->
 
   <!--Since Global NuGet Management requires having a single [packages.config] file that's located in a special
@@ -58,7 +58,8 @@
       See Microsoft.UI.Xaml.Additional.targets for more info.
       Make sure to update WebView2PackageRoot above to match the WebView2 dependency version.
     -->
-    <Import Project="$(MSBuildThisFileDirectory)..\build\rules\Microsoft.UI.Xaml.Additional.targets" Condition="'$(TerminalMUX)' == 'true'" />
+    <!-- <Import Project="$(MSBuildThisFileDirectory)..\build\rules\Microsoft.UI.Xaml.Additional.targets" Condition="'$(TerminalMUX)' == 'true'" /> -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Web.WebView2.1.0.1661.34\build\native\Microsoft.Web.WebView2.targets" Condition="'$(TerminalMUX)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Web.WebView2.1.0.1661.34\build\native\Microsoft.Web.WebView2.targets')" />
 
     <!-- WIL (so widely used that this one does not have a TerminalWIL opt-in property; it is automatic) -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />

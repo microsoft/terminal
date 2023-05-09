@@ -31,6 +31,10 @@
                     Click="ActivateInstanceButtonHandler">
                 RoActivateInstance
             </Button>
+            <Button Grid.Row="0"
+                    Click="MakeWebViewHandler">
+                Make Webview
+            </Button>
 
         </StackPanel>
 
@@ -51,13 +55,13 @@
                   VerticalAlignment="Stretch"
                   Background="#ff0000" />
 
-            <Grid x:Name="OutOfProcContent"
-                  Grid.Column="1"
-                  Padding="16"
-                  HorizontalAlignment="Stretch"
-                  VerticalAlignment="Stretch"
-                  Background="#0000ff" />
-
+            <StackPanel x:Name="OutOfProcContent"
+                        Grid.Column="1"
+                        Padding="16"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Background="#0000ff"
+                        Orientation="Vertical" />
 
 
         </Grid>

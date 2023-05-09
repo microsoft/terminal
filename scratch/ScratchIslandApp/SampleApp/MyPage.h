@@ -43,7 +43,7 @@ namespace winrt::SampleApp::implementation
                 if (const auto& s{ properties.TryLookup(L"Implementation") })
                 {
                     // s is another property set, so look it up in that instead
-                    if (const auto& asSet {s.try_as<winrt::Windows::Foundation::Collections::IPropertySet>()})
+                    if (const auto& asSet{ s.try_as<winrt::Windows::Foundation::Collections::IPropertySet>() })
                     {
                         _implementationClassName = asSet.TryLookup(L"#text").as<winrt::hstring>();
                         co_return true;
@@ -54,10 +54,10 @@ namespace winrt::SampleApp::implementation
         }
         ~DynamicDependency() noexcept
         {
-             //if (_dependencyContext)
-             //{
-             //    RemovePackageDependency(_dependencyContext);
-             //}
+            //if (_dependencyContext)
+            //{
+            //    RemovePackageDependency(_dependencyContext);
+            //}
         }
     };
 
@@ -72,6 +72,7 @@ namespace winrt::SampleApp::implementation
 
         void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
         void ActivateInstanceButtonHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        winrt::fire_and_forget MakeWebViewHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
 
     private:
         friend struct MyPageT<MyPage>; // for Xaml to bind events
