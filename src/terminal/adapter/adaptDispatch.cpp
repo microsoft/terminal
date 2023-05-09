@@ -3059,11 +3059,8 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
         _api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
         return true;
     case DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters:
-    {
-        const std::wstring textSize = fmt::format(L"\033[8;{};{}t", _api.GetViewport().height(), _api.GetTextBuffer().GetSize().Width());
-        _api.ReturnResponse(std::wstring_view(textSize));
+        _api.ReturnResponse(fmt::format(L"\033[8;{};{}t", _api.GetViewport().height(), _api.GetTextBuffer().GetSize().Width()));
         return true;
-    }
     default:
         return false;
     }
