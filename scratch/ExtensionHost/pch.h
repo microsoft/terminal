@@ -19,4 +19,9 @@
 
 #include <appmodel.h>
 
+#include <winrt/Microsoft.UI.Xaml.Controls.h>
+#include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
+#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
+#include <winrt/Microsoft.Web.WebView2.Core.h>
+
 #include <winrt/ExtensionComponent.h>
