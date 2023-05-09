@@ -1,8 +1,5 @@
 #pragma once
 
-#include "XamlTypeInfo.xaml.g.h"
-#include "XamlMetaDataProvider.h"
-
 namespace winrt::SampleApp::implementation
 {
     template<typename D, typename... I>
@@ -12,38 +9,22 @@ namespace winrt::SampleApp::implementation
 
         IXamlType GetXamlType(::winrt::Windows::UI::Xaml::Interop::TypeName const& type)
         {
-            return AppProvider()->GetXamlType(type);
+            return _appProvider.GetXamlType(type);
         }
 
         IXamlType GetXamlType(::winrt::hstring const& fullName)
         {
-            return AppProvider()->GetXamlType(fullName);
+            return _appProvider.GetXamlType(fullName);
         }
 
         ::winrt::com_array<::winrt::Windows::UI::Xaml::Markup::XmlnsDefinition> GetXmlnsDefinitions()
         {
-            return AppProvider()->GetXmlnsDefinitions();
-        }
-        void AddOtherProvider(::winrt::Windows::UI::Xaml::Markup::IXamlMetadataProvider const& otherProvider)
-        {
-            // auto appProvider = winrt::make_self<XamlMetaDataProvider>();
-            AppProvider()->AddOtherProvider(otherProvider);
-            // _appProvider.AddOtherProvider(otherProvider);
+            return _appProvider.GetXmlnsDefinitions();
         }
 
     private:
         bool _contentLoaded{ false };
-
-        winrt::com_ptr<XamlMetaDataProvider> _appProvider;
-        winrt::com_ptr<XamlMetaDataProvider> AppProvider()
-        {
-            if (!_appProvider)
-            {
-                _appProvider = winrt::make_self<XamlMetaDataProvider>();
-            }
-            return _appProvider;
-        }
-
+        winrt::SampleApp::XamlMetaDataProvider _appProvider;
     };
 
     template<typename D, typename... I>

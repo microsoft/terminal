@@ -16,8 +16,6 @@
     -->
     <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
-
-    <XamlCodeGenerationControlFlags>DoNotGenerateOtherProviders</XamlCodeGenerationControlFlags>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Dependencies">

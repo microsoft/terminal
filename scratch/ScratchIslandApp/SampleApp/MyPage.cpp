@@ -151,8 +151,6 @@ namespace winrt::SampleApp::implementation
         {
             if (const auto& ext{ foo.try_as<winrt::SampleExtensions::IExtension>() })
             {
-                winrt::Windows::UI::Xaml::Application::Current().try_as<App>().AddProvider(ext.GetProvider());
-
                 auto oneOhOne = ext.DoTheThing();
                 oneOhOne++;
 
