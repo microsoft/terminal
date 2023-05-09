@@ -1,0 +1,5 @@
+write-host "`e[1;31mfatal`e[m: The current branch dev/migrie/fhl-clickable-send-input has no upstream branch."
+write-host "To push the current branch and set the remote as upstream, use"
+write-host ""
+write-host "   `e]9001;a;git push --set-upstream origin dev/migrie/fhl-clickable-send-input`e\git push --set-upstream origin dev/migrie/fhl-clickable-send-input`e]9001;/a;`e\"
+write-host ""
