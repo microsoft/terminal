@@ -1,0 +1,8 @@
+namespace ExtensionComponent
+{
+    [default_interface] runtimeclass ExtensionClass : SampleExtensions.IExtension
+    {
+        ExtensionClass();
+        Int32 MyProperty;
+    }
+}

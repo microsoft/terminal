@@ -1,6 +1,6 @@
 #include "pch.h"
-#include "Class.h"
-#include "Class.g.cpp"
+#include "ExtensionClass.h"
+#include "ExtensionClass.g.cpp"
 
 namespace winrt
 {
@@ -11,22 +11,22 @@ namespace winrt
 
 namespace winrt::ExtensionComponent::implementation
 {
-    int32_t Class::MyProperty()
+    int32_t ExtensionClass::MyProperty()
     {
         return 99;
     }
 
-    void Class::MyProperty(int32_t /* value */)
+    void ExtensionClass::MyProperty(int32_t /* value */)
     {
         throw hresult_not_implemented();
     }
 
-    int32_t Class::DoTheThing()
+    int32_t ExtensionClass::DoTheThing()
     {
         return 101;
     }
 
-    winrt::fire_and_forget Class::_webMessageReceived(const IInspectable& sender,
+    winrt::fire_and_forget ExtensionClass::_webMessageReceived(const IInspectable& sender,
                                                       const winrt::Microsoft::Web::WebView2::Core::CoreWebView2WebMessageReceivedEventArgs& args)
     {
         auto message{ args.TryGetWebMessageAsString() };
@@ -44,7 +44,7 @@ namespace winrt::ExtensionComponent::implementation
         co_return;
     }
 
-    winrt::fire_and_forget Class::_makeWebView(const WUX::Controls::StackPanel parent)
+    winrt::fire_and_forget ExtensionClass::_makeWebView(const WUX::Controls::StackPanel parent)
     {
         winrt::MUX::Controls::WebView2 wv{ nullptr };
         wv = winrt::MUX::Controls::WebView2();
@@ -81,13 +81,13 @@ document.getElementById("myForm").addEventListener("submit", function(event) {
 </html>
     )_";
 
-        wv.WebMessageReceived({ this, &Class::_webMessageReceived });
+        wv.WebMessageReceived({ this, &ExtensionClass::_webMessageReceived });
 
         // wv.CoreWebView2().Navigate(L"https://www.github.com/microsoft/terminal");
         wv.CoreWebView2().NavigateToString(winrt::to_hstring(page));
     }
 
-    winrt::Windows::UI::Xaml::FrameworkElement Class::PaneContent()
+    winrt::Windows::UI::Xaml::FrameworkElement ExtensionClass::PaneContent()
     {
         // winrt::Windows::UI::Xaml::Controls::Button myButton{};
         // myButton.Content(winrt::box_value(L"This came from an extension"));

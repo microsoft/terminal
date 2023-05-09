@@ -1,12 +1,12 @@
-﻿#pragma once
+#pragma once
 
-#include "Class.g.h"
+#include "ExtensionClass.g.h"
 
 namespace winrt::ExtensionComponent::implementation
 {
-    struct Class : ClassT<Class>
+    struct ExtensionClass : ExtensionClassT<ExtensionClass>
     {
-        Class() = default;
+        ExtensionClass() = default;
 
         int32_t MyProperty();
         void MyProperty(int32_t value);
@@ -22,7 +22,7 @@ namespace winrt::ExtensionComponent::implementation
 
 namespace winrt::ExtensionComponent::factory_implementation
 {
-    struct Class : ClassT<Class, implementation::Class>
+    struct ExtensionClass : ExtensionClassT<ExtensionClass, implementation::ExtensionClass>
     {
     };
 }

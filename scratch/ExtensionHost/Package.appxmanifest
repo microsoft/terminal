@@ -60,7 +60,7 @@
                 Description="This is my test extension"
                 PublicFolder="Public">
                 <uap3:Properties>
-                    <Implementation>ExtensionComponent.Class</Implementation>
+                    <Implementation>ExtensionComponent.ExtensionClass</Implementation>
                 </uap3:Properties>
             </uap3:AppExtension>
         </uap3:Extension>
