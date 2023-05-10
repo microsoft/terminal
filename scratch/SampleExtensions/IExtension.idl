@@ -2,11 +2,18 @@
 // Licensed under the MIT license.
 
 namespace SampleExtensions
-{    
+{
+    [default_interface]
+    runtimeclass SendInputArgs {
+        SendInputArgs(String input);
+        String Input { get; };
+    };
+
     interface IExtension
     {
         Int32 DoTheThing();
         Windows.UI.Xaml.FrameworkElement PaneContent { get; };
+        event Windows.Foundation.TypedEventHandler<Object, SendInputArgs> SendInputRequested;
 
     };
 }
