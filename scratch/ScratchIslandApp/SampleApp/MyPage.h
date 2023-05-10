@@ -61,6 +61,12 @@ namespace winrt::SampleApp::implementation
         }
     };
 
+    struct Extension
+    {
+        DynamicDependency app;
+        winrt::SampleExtensions::IExtension instance{ nullptr };
+    };
+
     struct MyPage : MyPageT<MyPage>
     {
     public:
@@ -72,6 +78,7 @@ namespace winrt::SampleApp::implementation
 
         void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
         winrt::fire_and_forget ActivateInstanceButtonHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        winrt::fire_and_forget SendInputHandler(Windows::Foundation::IInspectable const& sender, winrt::SampleExtensions::SendInputArgs args);
 
     private:
         friend struct MyPageT<MyPage>; // for Xaml to bind events
@@ -79,7 +86,7 @@ namespace winrt::SampleApp::implementation
 
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _connection{ nullptr };
 
-        std::vector<DynamicDependency> _extensions;
+        std::vector<Extension> _extensions;
     };
 }
 

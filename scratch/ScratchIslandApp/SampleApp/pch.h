@@ -72,5 +72,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSampleAppProvider);
 #include <winrt/Windows.ApplicationModel.AppExtensions.h>
 #include <appmodel.h>
 
+#include <winrt/SampleExtensions.h>
+
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"

@@ -51,6 +51,7 @@
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
   <ItemGroup>
     <ProjectReference Include="..\WindowExe\WindowExe.vcxproj" />
+    <ProjectReference Include="..\..\SampleExtensions\SampleExtensions.vcxproj" />
   </ItemGroup>
 
   <ItemGroup>

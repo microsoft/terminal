@@ -26,8 +26,8 @@ namespace winrt::ExtensionComponent::implementation
         return 101;
     }
 
-    winrt::fire_and_forget ExtensionClass::_webMessageReceived(const IInspectable& sender,
-                                                      const winrt::Microsoft::Web::WebView2::Core::CoreWebView2WebMessageReceivedEventArgs& args)
+    void ExtensionClass::_webMessageReceived(const IInspectable& sender,
+                                                               winrt::Microsoft::Web::WebView2::Core::CoreWebView2WebMessageReceivedEventArgs args)
     {
         auto message{ args.TryGetWebMessageAsString() };
         if (!message.empty())
@@ -37,11 +37,13 @@ namespace winrt::ExtensionComponent::implementation
             {
                 //MyButtonHandler(uri);
                 auto query = winrt::Windows::Foundation::WwwFormUrlDecoder(uri.Query());
-                query;
+                winrt::hstring asdf = query.First().Current().Value();
+                auto sendInput = winrt::SampleExtensions::SendInputArgs(asdf);
+                this->_SendInputRequestedHandlers(*this, sendInput);
             }
         }
 
-        co_return;
+        return;
     }
 
     winrt::fire_and_forget ExtensionClass::_makeWebView(const WUX::Controls::StackPanel parent)

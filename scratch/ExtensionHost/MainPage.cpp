@@ -90,7 +90,7 @@ namespace winrt::ExtensionHost::implementation
             return;
 
         winrt::ExtensionHost::FooClass myFoo{};
-        winrt::ExtensionComponent::Class bar;
+        winrt::ExtensionComponent::ExtensionClass bar;
         auto wat = bar.MyProperty();
         wat *= 2;
         myFoo.MyProperty(wat);

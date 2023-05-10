@@ -5,7 +5,6 @@
 #include "MyPage.h"
 #include <LibraryResources.h>
 #include "MyPage.g.cpp"
-#include <winrt/SampleExtensions.h>
 #include "MySettings.h"
 
 using namespace std::chrono_literals;
@@ -89,7 +88,8 @@ namespace winrt::SampleApp::implementation
                     _connection.WriteInput(L"Successfully added package dependency to ");
                     _connection.WriteInput(dynDep._pfn);
                     _connection.WriteInput(L"\r\n");
-                    this->_extensions.push_back(std::move(dynDep));
+
+                    this->_extensions.emplace_back(std::move(dynDep), nullptr);
                 }
                 else
                 {
@@ -112,6 +112,14 @@ namespace winrt::SampleApp::implementation
     {
         _lookupCatalog();
     }
+
+    winrt::fire_and_forget MyPage::SendInputHandler(Windows::Foundation::IInspectable const&, winrt::SampleExtensions::SendInputArgs args)
+    {
+        co_await winrt::resume_foreground(Dispatcher());
+        _connection.WriteInput(args.Input());
+        _connection.WriteInput(L"\r\n");
+    }
+
     winrt::fire_and_forget MyPage::ActivateInstanceButtonHandler(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::RoutedEventArgs const&)
     {
         if (_extensions.size() == 0)
@@ -122,8 +130,11 @@ namespace winrt::SampleApp::implementation
 
         auto hr = S_OK;
         Windows::Foundation::IInspectable foo{ nullptr };
+
+        auto& extension = _extensions.at(0);
+
         // auto className = winrt::hstring{ L"ExtensionComponent.Class" };
-        auto className = _extensions.at(0)._implementationClassName;
+        auto className = extension.app._implementationClassName;
         const auto nameForAbi = static_cast<HSTRING>(winrt::get_abi(className));
         hr = RoActivateInstance(nameForAbi, (::IInspectable**)winrt::put_abi(foo));
 
@@ -131,11 +142,15 @@ namespace winrt::SampleApp::implementation
         {
             if (const auto& ext{ foo.try_as<winrt::SampleExtensions::IExtension>() })
             {
-                auto oneOhOne = ext.DoTheThing();
+                extension.instance = ext;
+
+                auto oneOhOne = extension.instance.DoTheThing();
                 oneOhOne++;
 
-                auto fwe = ext.PaneContent();
+                auto fwe = extension.instance.PaneContent();
                 OutOfProcContent().Children().Append(fwe);
+
+                extension.instance.SendInputRequested({ get_weak(), &MyPage::SendInputHandler });
             }
         }
         else
