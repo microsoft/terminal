@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "DotnetWasdkApp (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "DotnetWasdkApp (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
