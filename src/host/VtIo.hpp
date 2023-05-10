@@ -63,7 +63,6 @@ namespace Microsoft::Console::VirtualTerminal
         VtIoMode _IoMode;
 
         bool _initialized;
-        bool _objectsCreated;
 
         bool _lookingForCursorPosition;
 
