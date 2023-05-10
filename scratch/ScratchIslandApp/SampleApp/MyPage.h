@@ -72,7 +72,6 @@ namespace winrt::SampleApp::implementation
 
         void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
         winrt::fire_and_forget ActivateInstanceButtonHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        winrt::fire_and_forget MakeWebViewHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
 
     private:
         friend struct MyPageT<MyPage>; // for Xaml to bind events

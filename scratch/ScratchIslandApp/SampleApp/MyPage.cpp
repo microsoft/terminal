@@ -143,22 +143,4 @@ namespace winrt::SampleApp::implementation
             _connection.WriteInput(L"Failed to activate instance \r\n");
         }
     }
-
-    winrt::fire_and_forget MyPage::MakeWebViewHandler(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::RoutedEventArgs const&)
-    {
-        co_return;
-        //winrt::MUX::Controls::WebView2 wv{ nullptr };
-        //wv = winrt::MUX::Controls::WebView2();
-        //wv.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
-        //// wv.Width(256);
-        //wv.Height(300);
-        //OutOfProcContent().Children().Append(wv);
-
-        //co_await wv.EnsureCoreWebView2Async();
-
-        //// wv.NavigateToString(L"<html>hello world</html>");
-        ////wv.Source(winrt::Windows::Foundation::Uri(L"https://www.bing.com"));
-        //// wv.Navigate(winrt::Windows::Foundation::Uri(L"https://www.bing.com"));
-        //wv.CoreWebView2().Navigate(L"https://www.bing.com");
-    }
 }

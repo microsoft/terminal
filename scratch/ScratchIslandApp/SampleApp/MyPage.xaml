@@ -31,10 +31,6 @@
                     Click="ActivateInstanceButtonHandler">
                 RoActivateInstance
             </Button>
-            <Button Grid.Row="0"
-                    Click="MakeWebViewHandler">
-                Make Webview
-            </Button>
 
         </StackPanel>
 
