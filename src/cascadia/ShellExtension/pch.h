@@ -21,13 +21,11 @@
 #undef GetCurrentTime
 #endif
 
-#include <unknwn.h>
-#include <wil/cppwinrt.h>
-#include <winrt/Windows.Foundation.h>
-#include <winrt/Windows.ApplicationModel.h>
+#include <winrt/base.h>
 
-#include <Shobjidl.h>
-#include <shlwapi.h>
+#include <Unknwn.h>
+#include <ShObjIdl.h>
+#include <Shlwapi.h>
 
 #include <wrl.h>
 #include <wrl/module.h>

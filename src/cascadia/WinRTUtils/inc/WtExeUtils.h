@@ -4,6 +4,7 @@ constexpr std::wstring_view WindowsTerminalExe{ L"WindowsTerminal.exe" };
 constexpr std::wstring_view LocalAppDataAppsPath{ L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\" };
 constexpr std::wstring_view ElevateShimExe{ L"elevate-shim.exe" };
 
+#ifdef WINRT_Windows_ApplicationModel_H
 _TIL_INLINEPREFIX bool IsPackaged()
 {
     static const auto isPackaged = []() -> bool {
@@ -105,6 +106,7 @@ _TIL_INLINEPREFIX const std::wstring& GetWtExePath()
     }();
     return exePath;
 }
+#endif
 
 // Method Description:
 // - Quotes and escapes the given string so that it can be used as a command-line arg.
@@ -114,10 +116,8 @@ _TIL_INLINEPREFIX const std::wstring& GetWtExePath()
 // - arg - the command-line argument to quote and escape.
 // Return Value:
 // - the quoted and escaped command-line argument.
-_TIL_INLINEPREFIX std::wstring QuoteAndEscapeCommandlineArg(const std::wstring_view& arg)
+inline void QuoteAndEscapeCommandlineArg(const std::wstring_view& arg, std::wstring& out)
 {
-    std::wstring out;
-    out.reserve(arg.size() + 2);
     out.push_back(L'"');
 
     size_t backslashes = 0;
@@ -140,5 +140,12 @@ _TIL_INLINEPREFIX std::wstring QuoteAndEscapeCommandlineArg(const std::wstring_v
 
     out.append(backslashes, L'\\');
     out.push_back(L'"');
+}
+
+_TIL_INLINEPREFIX std::wstring QuoteAndEscapeCommandlineArg(const std::wstring_view& arg)
+{
+    std::wstring out;
+    out.reserve(arg.size() + 2);
+    QuoteAndEscapeCommandlineArg(arg, out);
     return out;
 }
