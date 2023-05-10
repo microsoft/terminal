@@ -1296,6 +1296,8 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
 {
     winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Rect> windowBoundsReference{ nullptr };
 
+    const winrt::hstring& targetWindow{ args.Window() };
+
     if (args.WindowPosition() && _window)
     {
         // The WindowPosition is in DIPs. We need to convert it to pixels.
@@ -1351,7 +1353,7 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
         windowBoundsReference = inDips.to_winrt_rect();
     }
 
-    _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex(), windowBoundsReference);
+    _windowManager.RequestMoveContent(targetWindow, args.Content(), args.TabIndex(), windowBoundsReference);
 }
 
 void AppHost::_handleAttach(const winrt::Windows::Foundation::IInspectable& /*sender*/,
