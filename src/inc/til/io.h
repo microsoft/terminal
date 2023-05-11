@@ -54,7 +54,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         // Tries to read a file somewhat atomically without locking it.
         // Strips the UTF8 BOM if it exists.
-        _TIL_INLINEPREFIX std::string read_file_as_utf8_string(const std::filesystem::path& path, const bool elevatedOnly, FILETIME* lastWriteTime)
+        _TIL_INLINEPREFIX std::string read_file_as_utf8_string(const std::filesystem::path& path, const bool elevatedOnly = false, FILETIME* lastWriteTime = nullptr)
         {
             // From some casual observations we can determine that:
             // * ReadFile() always returns the requested amount of data (unless the file is smaller)
@@ -138,7 +138,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Same as read_file_as_utf8_string, but returns an empty optional, if the file couldn't be opened.
-        _TIL_INLINEPREFIX std::optional<std::string> read_file_as_utf8_string_if_exists(const std::filesystem::path& path, const bool elevatedOnly, FILETIME* lastWriteTime)
+        _TIL_INLINEPREFIX std::optional<std::string> read_file_as_utf8_string_if_exists(const std::filesystem::path& path, const bool elevatedOnly = false, FILETIME* lastWriteTime = nullptr)
         {
             try
             {
@@ -155,7 +155,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        _TIL_INLINEPREFIX void write_utf8_string_to_file(const std::filesystem::path& path, const std::string_view& content, const bool elevatedOnly, FILETIME* lastWriteTime)
+        _TIL_INLINEPREFIX void write_utf8_string_to_file(const std::filesystem::path& path, const std::string_view& content, const bool elevatedOnly = false, FILETIME* lastWriteTime = nullptr)
         {
             SECURITY_ATTRIBUTES sa;
             // stash the security descriptor here, so it will stay in context until
@@ -234,7 +234,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        _TIL_INLINEPREFIX void write_utf8_string_to_file_atomic(const std::filesystem::path& path, const std::string_view& content, FILETIME* lastWriteTime)
+        _TIL_INLINEPREFIX void write_utf8_string_to_file_atomic(const std::filesystem::path& path, const std::string_view& content, FILETIME* lastWriteTime = nullptr)
         {
             // GH#10787: rename() will replace symbolic links themselves and not the path they point at.
             // It's thus important that we first resolve them before generating temporary path.
