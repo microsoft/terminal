@@ -461,6 +461,8 @@ namespace winrt::TerminalApp::implementation
     // - tab: the tab to remove
     winrt::Windows::Foundation::IAsyncAction TerminalPage::_HandleCloseTabRequested(winrt::TerminalApp::TabBase tab)
     {
+        const auto strongThis = get_strong();
+
         if (tab.ReadOnly())
         {
             auto warningResult = co_await _ShowCloseReadOnlyDialog();
@@ -725,22 +727,16 @@ namespace winrt::TerminalApp::implementation
     // - tab: tab to focus.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_SetFocusedTab(const winrt::TerminalApp::TabBase tab)
+    void TerminalPage::_SetFocusedTab(const winrt::TerminalApp::TabBase tab)
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
         //          sometimes set focus to an incorrect tab after removing some tabs
-        auto weakThis{ get_weak() };
 
-        co_await wil::resume_foreground(_tabView.Dispatcher());
-
-        if (auto page{ weakThis.get() })
+        // Make sure the tab was not removed
+        uint32_t tabIndex{};
+        if (_tabs.IndexOf(tab, tabIndex))
         {
-            // Make sure the tab was not removed
-            uint32_t tabIndex{};
-            if (_tabs.IndexOf(tab, tabIndex))
-            {
-                _tabView.SelectedItem(tab.TabViewItem());
-            }
+            _tabView.SelectedItem(tab.TabViewItem());
         }
     }
 
@@ -754,6 +750,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (pane->ContainsReadOnly())
         {
+            const auto strongThis = get_strong();
             auto warningResult = co_await _ShowCloseReadOnlyDialog();
 
             // If the user didn't explicitly click on close tab - leave
@@ -815,6 +812,7 @@ namespace winrt::TerminalApp::implementation
 
             if (const auto pane{ terminalTab->GetActivePane() })
             {
+                const auto strongThis = get_strong();
                 if (co_await _PaneConfirmCloseReadOnly(pane))
                 {
                     _HandleClosePaneRequested(pane);
@@ -883,6 +881,8 @@ namespace winrt::TerminalApp::implementation
     // - tabs - tabs to remove
     winrt::fire_and_forget TerminalPage::_RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs)
     {
+        const auto strongThis = get_strong();
+
         for (auto& tab : tabs)
         {
             co_await _HandleCloseTabRequested(tab);

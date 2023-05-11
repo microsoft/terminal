@@ -40,9 +40,6 @@
     <ClInclude Include="GetWindowLayoutArgs.h">
       <DependentUpon>Peasant.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="QuitAllRequestedArgs.h">
-      <DependentUpon>Monarch.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="MonarchFactory.h" />
     <ClInclude Include="Peasant.h">
@@ -80,9 +77,6 @@
     </ClCompile>
     <ClCompile Include="GetWindowLayoutArgs.cpp">
       <DependentUpon>Peasant.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="QuitAllRequestedArgs.cpp">
-      <DependentUpon>Monarch.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

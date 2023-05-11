@@ -31,8 +31,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         static Control::TermControl NewControlByAttachingContent(Control::ControlInteractivity content, const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
-        winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings);
-        winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
+        void UpdateControlSettings(Control::IControlSettings settings);
+        void UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
         IControlSettings Settings() const;
 
         uint64_t ContentId() const;
@@ -99,11 +99,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void RenderEngineSwapChainChanged(IInspectable sender, IInspectable args);
         void _AttachDxgiSwapChainToXaml(HANDLE swapChainHandle);
-        winrt::fire_and_forget _RendererEnteredErrorState(IInspectable sender, IInspectable args);
+        void _RendererEnteredErrorState(IInspectable sender, IInspectable args);
 
         void _RenderRetryButton_Click(const IInspectable& button, const IInspectable& args);
-        winrt::fire_and_forget _RendererWarning(IInspectable sender,
-                                                Control::RendererWarningArgs args);
+        void _RendererWarning(IInspectable sender,
+                              Control::RendererWarningArgs args);
 
         void CreateSearchBoxControl();
 
@@ -260,11 +260,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _UpdateSettingsFromUIThread();
         void _UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance);
         void _ApplyUISettings();
-        winrt::fire_and_forget UpdateAppearance(Control::IControlAppearance newAppearance);
+        void UpdateAppearance(Control::IControlAppearance newAppearance);
         void _SetBackgroundImage(const IControlAppearance& newAppearance);
 
         void _InitializeBackgroundBrush();
-        winrt::fire_and_forget _coreBackgroundColorChanged(const IInspectable& sender, const IInspectable& args);
+        void _coreBackgroundColorChanged(const IInspectable& sender, const IInspectable& args);
         void _changeBackgroundColor(til::color bg);
         static bool _isColorLight(til::color bg) noexcept;
         void _changeBackgroundOpacity();
@@ -293,7 +293,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::fire_and_forget _DragDropHandler(Windows::Foundation::IInspectable sender, Windows::UI::Xaml::DragEventArgs e);
         void _DragOverHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::DragEventArgs& e);
 
-        winrt::fire_and_forget _HyperlinkHandler(Windows::Foundation::IInspectable sender, Control::OpenHyperlinkEventArgs e);
+        void _HyperlinkHandler(Windows::Foundation::IInspectable sender, Control::OpenHyperlinkEventArgs e);
 
         void _CursorTimerTick(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
         void _BlinkTimerTick(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
@@ -307,7 +307,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _TerminalTabColorChanged(const std::optional<til::color> color);
 
         void _ScrollPositionChanged(const IInspectable& sender, const Control::ScrollPositionChangedArgs& args);
-        winrt::fire_and_forget _CursorPositionChanged(const IInspectable& sender, const IInspectable& args);
+        void _CursorPositionChanged(const IInspectable& sender, const IInspectable& args);
 
         bool _CapturePointer(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         bool _ReleasePointerCapture(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
@@ -335,13 +335,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
 
-        winrt::fire_and_forget _hoveredHyperlinkChanged(IInspectable sender, IInspectable args);
-        winrt::fire_and_forget _updateSelectionMarkers(IInspectable sender, Control::UpdateSelectionMarkersEventArgs args);
+        void _hoveredHyperlinkChanged(IInspectable sender, IInspectable args);
+        void _updateSelectionMarkers(IInspectable sender, Control::UpdateSelectionMarkersEventArgs args);
 
         void _coreFontSizeChanged(const int fontWidth,
                                   const int fontHeight,
                                   const bool isInitialChange);
-        winrt::fire_and_forget _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
+        void _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
         void _coreFoundMatch(const IInspectable& sender, const Control::FoundResultsArgs& args);

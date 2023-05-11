@@ -942,16 +942,14 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.readOnlyToken = control.ReadOnlyChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
-            co_await wil::resume_foreground(dispatcher);
+        events.readOnlyToken = control.ReadOnlyChanged([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
                 tab->_RecalculateAndApplyReadOnly();
             }
         });
 
-        events.focusToken = control.FocusFollowMouseRequested([dispatcher, weakThis](auto&& sender, auto&&) -> winrt::fire_and_forget {
-            co_await wil::resume_foreground(dispatcher);
+        events.focusToken = control.FocusFollowMouseRequested([dispatcher, weakThis](auto&& sender, auto&&) {
             if (const auto tab{ weakThis.get() })
             {
                 if (tab->_focusState != FocusState::Unfocused)

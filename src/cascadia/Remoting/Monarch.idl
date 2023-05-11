@@ -45,11 +45,6 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.IReference<UInt64> WindowID;
     }
 
-    [default_interface] runtimeclass QuitAllRequestedArgs {
-        QuitAllRequestedArgs();
-        Windows.Foundation.IAsyncAction BeforeQuitAllAction;
-    }
-
     struct PeasantInfo
     {
         UInt64 Id;
@@ -81,7 +76,7 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
-        event Windows.Foundation.TypedEventHandler<Object, QuitAllRequestedArgs> QuitAllRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> QuitAllRequested;
 
         event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
     };

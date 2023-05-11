@@ -6,7 +6,6 @@
 #include "Monarch.h"
 #include "CommandlineArgs.h"
 #include "FindTargetWindowArgs.h"
-#include "QuitAllRequestedArgs.h"
 #include "ProposeCommandlineResult.h"
 
 #include "Monarch.g.cpp"
@@ -138,15 +137,17 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     winrt::fire_and_forget Monarch::_handleQuitAll(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                    const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
+        const auto weakThis = get_weak();
+        co_await winrt::resume_background();
+        const auto self = weakThis.get();
+        if (!self)
+        {
+            co_return;
+        }
+
         // Let the process hosting the monarch run any needed logic before
         // closing all windows.
-        auto args = winrt::make_self<implementation::QuitAllRequestedArgs>();
-        _QuitAllRequestedHandlers(*this, *args);
-
-        if (const auto action = args->BeforeQuitAllAction())
-        {
-            co_await action;
-        }
+        _QuitAllRequestedHandlers(*this, nullptr);
 
         _quitting.store(true);
         // Tell all peasants to exit.

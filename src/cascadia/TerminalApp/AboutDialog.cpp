@@ -77,7 +77,6 @@ namespace winrt::TerminalApp::implementation
 
     winrt::fire_and_forget AboutDialog::_queueUpdateCheck()
     {
-        auto strongThis = get_strong();
         auto now{ std::chrono::system_clock::now() };
         if (now - _lastUpdateCheck < std::chrono::days{ 1 })
         {
@@ -90,23 +89,39 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
-        co_await wil::resume_foreground(strongThis->Dispatcher());
         _SetPendingUpdateVersion({});
         CheckingForUpdates(true);
 
         try
         {
+            const auto dispatcher = Dispatcher();
+            const auto weakThis = get_weak();
+
 #ifdef WT_BRANDING_DEV
             // **DEV BRANDING**: Always sleep for three seconds and then report that
             // there is an update available. This lets us test the system.
             co_await winrt::resume_after(std::chrono::seconds{ 3 });
-            co_await wil::resume_foreground(strongThis->Dispatcher());
+            co_await wil::resume_foreground(dispatcher);
+
+            const auto strongThis = weakThis.get();
+            if (!strongThis)
+            {
+                co_return;
+            }
+
             _SetPendingUpdateVersion(L"X.Y.Z");
 #else // release build, likely has a store context
             if (auto storeContext{ winrt::Windows::Services::Store::StoreContext::GetDefault() })
             {
                 const auto updates = co_await storeContext.GetAppAndOptionalStorePackageUpdatesAsync();
-                co_await wil::resume_foreground(strongThis->Dispatcher());
+                co_await wil::resume_foreground(dispatcher);
+
+                const auto strongThis = weakThis.get();
+                if (!strongThis)
+                {
+                    co_return;
+                }
+
                 const auto numUpdates = updates.Size();
                 if (numUpdates > 0)
                 {
@@ -123,7 +138,6 @@ namespace winrt::TerminalApp::implementation
             // do nothing on failure
         }
 
-        co_await wil::resume_foreground(strongThis->Dispatcher());
         CheckingForUpdates(false);
     }
 }

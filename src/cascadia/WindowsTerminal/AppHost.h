@@ -92,16 +92,12 @@ private:
     void _HandleSummon(const winrt::Windows::Foundation::IInspectable& sender,
                        const winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior& args);
 
-    winrt::fire_and_forget _IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable sender,
-                                                     const winrt::Windows::Foundation::IInspectable args);
+    void _IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable sender,
+                                   const winrt::Windows::Foundation::IInspectable args);
     void _DisplayWindowId(const winrt::Windows::Foundation::IInspectable& sender,
                           const winrt::Windows::Foundation::IInspectable& args);
-    winrt::fire_and_forget _RenameWindowRequested(const winrt::Windows::Foundation::IInspectable sender,
-                                                  const winrt::TerminalApp::RenameWindowRequestedArgs args);
-
-    GUID _CurrentDesktopGuid();
-
-    bool _LazyLoadDesktopManager();
+    void _RenameWindowRequested(const winrt::Windows::Foundation::IInspectable sender,
+                                const winrt::TerminalApp::RenameWindowRequestedArgs args);
 
     void _HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::TerminalApp::SettingsLoadEventArgs& args);

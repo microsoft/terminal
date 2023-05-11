@@ -258,8 +258,6 @@ private:
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
 
-    std::shared_mutex _createCloseLock{};
-
     Borders _borders{ Borders::None };
 
     bool _zoomed{ false };
@@ -296,11 +294,11 @@ private:
                                             const PanePoint offset);
 
     void _CloseChild(const bool closeFirst, const bool isDetaching);
-    winrt::fire_and_forget _CloseChildRoutine(const bool closeFirst);
+    void _CloseChildRoutine(const bool closeFirst);
 
     void _Focus();
     void _FocusFirstChild();
-    void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+    winrt::fire_and_forget _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
     void _ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                     const winrt::Windows::Foundation::IInspectable& e);
     void _ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
@@ -320,7 +318,7 @@ private:
 
     SplitState _convertAutomaticOrDirectionalSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitDirection& splitType) const;
 
-    winrt::fire_and_forget _playBellSound(winrt::Windows::Foundation::Uri uri);
+    void _playBellSound(winrt::Windows::Foundation::Uri uri);
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split
