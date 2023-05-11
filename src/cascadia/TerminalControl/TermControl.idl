@@ -115,6 +115,8 @@ namespace Microsoft.Terminal.Control
 
         void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
 
+        void ShowContextMenu();
+
         void Detach();
     }
 }

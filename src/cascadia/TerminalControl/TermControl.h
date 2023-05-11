@@ -143,6 +143,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AdjustOpacity(const double opacity, const bool relative);
 
+        void ShowContextMenu();
+
         void Detach();
 
         TerminalConnection::ITerminalConnection Connection();
@@ -320,7 +322,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static void _ClearKeyboardState(const WORD vkey, const WORD scanCode) noexcept;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
 
+        til::point _toControlOrigin(const til::point terminalPosition);
         const til::point _toTerminalOrigin(winrt::Windows::Foundation::Point cursorPosition);
+
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
@@ -346,6 +350,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
 
         void _contextMenuHandler(IInspectable sender, Control::ContextMenuRequestedEventArgs args);
+        void _showContextMenuAt(const til::point& controlRelativePos);
 
         void _PasteCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _CopyCommandHandler(const IInspectable& sender, const IInspectable& args);
