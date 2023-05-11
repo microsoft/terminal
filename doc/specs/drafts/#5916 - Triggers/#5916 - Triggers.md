@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2022-09-07
-last updated: 2022-10-31
+last updated: 2023-05-11
 issue id: 5916
 ---
 
@@ -19,18 +19,16 @@ issue id: 5916
 
 ### User Stories
 
-[comment]: # List off the use cases where two users might want a feature to have different behavior based on user preference. Include links to issues that might be relevant.
+This is a collection of all the possible issues I found on this topic.
 
-
-TODO! Make sure all these threads are addressed:
-
-* [ ] [#5916]
-* [ ] [#8849]
-* [ ] [#7562]
-* [ ] [#8294]
-* [ ] [#2671]
-* [x] [#6969]
-* [ ] [#11901]
+* [x] [#5916] Triggers(Including Text Strings) and Actions (internal or external calls)
+* [x] [#8849] Allow "hyperlink" matching for arbitrary patterns and adding custom handlers
+* [x] [#7562] Allow more URI schemes
+* [x] [#2671] Feature Request: link generation for files + other data types
+      - This is a dupe of some of the above, honestly. Either [#5916] or [#8849]
+* [x] [#6969] Let terminal consumers provide click handlers and pattern recognizers for buffer text
+* [x] [#11901] IPv6 links can not be Ctrl+Clicked
+* [ ] [#8294] Add a setting to configure display of auto detected links, normally and on hover
 * [ ] Probably don't do this for the alt buffer? Make it per-trigger if they work in the alt buffer?
 
 ## Solution Design
@@ -38,80 +36,240 @@ TODO! Make sure all these threads are addressed:
 
 [TODO!]: # TODO! this was a draft from a comment. Polish.
 
-Could I be even crazier:
+Example JSON:
 
 ```jsonc
-{
-    "match": "[Ee][Rr][Rr][Oo][Rr]",
-    "action": "addMark",
-    "color": "#ff0000"
-},
-{
-    "match": "Terminate batch job \\(Y/N\\)",
-    "action": "sendInput",
-    "input": "y\r\n"
-},
-{
-    "match": "    git push --set-upstream origin ([^\\w]*)",
-    "action": "sendInput",
-    "input": "git push --set-upstream origin ${match[1]}\r"
-},
-{
-    "match": "'(.*)' is not recognized as an internal or external command,",
-    "action": "checkWinGet",
-    "commandline": "${match[1]}"
-},
-{
-    "match": "This will open a new Terminal tab",
-    "action": "newTab"
-},
+"triggers":[
+    {
+        "match": "[Ee][Rr][Rr][Oo][Rr]",
+        "action": "addMark",
+        "color": "#ff0000"
+    },
+    {
+        "match": "Terminate batch job \\(Y/N\\)",
+        "action": "sendInput",
+        "input": "y\r\n"
+    },
+    {
+        "match": {
+            "anchor": "bottom",
+            "offset": 4,
+            "length": 5,
+            "pattern": "    git push --set-upstream origin ([^\\w]*)",
+            "runOn": "mark"
+        },
+        "action": "sendInput",
+        "input": "git push --set-upstream origin ${match[1]}\r"
+    },
+    {
+        "match": "'(.*)' is not recognized as an internal or external command,",
+        "action": "checkWinGet",
+        "commandline": "${match[1]}"
+    },
+    {
+        "match": "This will open a new Terminal tab",
+        "action": "newTab"
+    },
+]
 ```
 
-`triggers` is an array of things. First we try to deserialize each thing as a
-`Control.Trigger`. There's only a few options, and fundamentally those are
-basically actions`.
-* `addMark`
-* `sendInput`
-* `experimental.colorSelection`
+`triggers` is an array of `Trigger` objects, which are a combination of an
+`ActionAndArgs`, a `Control.Matcher`, and a `Control.TriggerAction`.
 
-And we can _probably_ reuse some of the macros in `ActionArgs.h` to make
-deserializing to a `Control.Trigger` easy.
+```c#
+runtimeclass Terminal.Settings.Model.Trigger
+{
+    Int32 Id;
 
-`Control.Trigger`'s, when they are hit by the control, will be able to string
-replace their args themselves. The `git push` trigger above - when matched, the
-Core will call `Control.SendInputTrigger.Execute(ControlCore core, String[]
-matches)` (or something like that). `Execute` will be responsible for
-string-replacing anything it needs to.
+    Control.Matcher Matcher;
+    Control.TriggerAction ControlAction;
 
+    private String _actionJson;
+    Terminal.Settings.Model.ActionAndArgs ParseMatches(String[] matches);
+}
+```
 
-If We find that the `action` is NOT a `Control.Trigger`, then we'll make it into
-an `Settings.Model.Trigger`. We'll hang on to the JSON. When the trigger is hit
-by the control, it'll raise an event. The app will recieve the event, match it
-up to the trigger, and call `Model.Trigger.Parse(String[] matches) ->
-ActionAndArgs` which will do the string replace in the JSON itself. We'll then
-just take the _whole json_, and try to parse it literally as an `ActionAndArgs`.
+### Trigger matchers
 
-
-[TODO!]: # TODO! Notes from a vscode sync:
-
-* vvscode only runs matchers on prompt sequences, for perf. We'll need to be VERY explicit that anything else is highly detrimental to performance.
-
-* things to consider
+The `match` property is parsed as a `Control.Matcher`. This includes the
+following properties, which are heavily inspired by the matchers in VsCode.
 
 ```jsonc
-"matcher": {
+"match": {
     "anchor": "bottom",
     "offset": 0, // starting how many rows from the bottom
     "length": 5, // how many lines to match against
-    "pattern": "    git push --set-upstream origin ([^\\w]*)"
-},
-"action": { ... },
-"runOn": "everything|newline|mark"
+    "pattern": "    git push --set-upstream origin ([^\\w]*)",
+    "runOn": "everything|newline|mark"
+}
 ```
 
-To avoid running on every single everything. Prompts are probably close enough
-to frequent enough, and the anchor/offset/length give a subset of the buffer
-that can be used to run matches on
+* `"anchor"` (_default: `"bottom"`_) : Which part of the viewport to run the match against.
+  - VsCode has this, but I don't think we really do. I think we can just always say bottom.
+* `"offset"` (_default: `0`_) : Run the match starting how many rows from the anchor
+* `"length"` (_default: `1`_) : How many rows to include in the match
+* `"pattern"` (_required_) : The regex to run. If omitted / empty, this entire
+  trigger is ignored.
+* `"runOn"` (_default: `"newline"`_) : When to run this match.
+  * `"everything"`: On every print from the connection. High performance impact.
+  * `"newline"`: On every newline character from the connection. Medium
+    performance impact, depending on the workload.
+  * `"mark"`: Whenever a mark ([#11000]) is emitted to the terminal. With
+    `autoMarkPrompts`, this includes when the user presses <kbd>enter</kbd>.
+    This has a much smaller performance impact, assuming the user isn't marking
+    every line.
+
+`match` also accepts just a single string, to automatically assume default
+values for the other properties. For example, the JSON `"match":
+"[Ee][Rr][Rr][Oo][Rr]"` is evaluated as
+
+```jsonc
+"match": {
+    "anchor": "bottom",
+    "offset": 0,
+    "length": 1,
+    "pattern": "[Ee][Rr][Rr][Oo][Rr]",
+    "runOn": "newline"
+}
+```
+
+VsCode only runs matchers on prompt sequences, for performance reasons. We'll
+need to be VERY explicit that anything else is highly detrimental to
+performance. We really don't want these to necessarily be running on every
+single character the connection emits.
+
+Marks are preferable, because with shell integration, they'll bbe emitted on
+every prompt from the shell. Prompts are probably close enough to frequent
+enough, and the anchor/offset/length give a subset of the buffer that can be
+used to run matches on.
+
+### Trigger actions
+
+Triggers also contain the action that should be performed when a match is found.
+These actions are used internally by the control as a `Control.TriggerAction`.
+This allows the control to perform the action itself without going out to the
+app every time a match is found.
+
+```c#
+enum Terminal.Control.TriggerType {
+    CustomAction,
+
+    AddMark,
+    SendInput,
+    ColorSelection,
+    ClickableLink,
+    ClickableSendInput,
+}
+
+runtimeclass Terminal.Control.TriggerAction
+{
+    TriggerType Type;
+    TriggerArgs Args;
+}
+
+runtimeclass Terminal.Control.TriggerAndMatch
+{
+    Control.Matcher Matcher;
+    Control.TriggerAction Action;
+}
+
+runtimeclass Terminal.Control.CustomActionArgs
+{
+    UInt32 Index;
+    String[] matches;
+}
+```
+
+There are some built-in `Control.TriggerAction`s (which largely align with
+existing `ShortcutAction`s). The supported types of `Control.TriggerAction` the
+user can specify are:
+
+* `addMark`: Basically the same as the `addMark` action
+* `sendInput`: Basically the same as the `sendInput` action
+* `experimental.colorSelection`: Basically the same as the `sendInput` action
+* `clickableLink`: Turn the matched text into a clickable link. When the user
+  clicks that text, we'll attempt to `ShellExecute` that link, much like a URL.
+* `clickableSendInput`: Similarly, turn the matched text into a clickable region
+  which, when clicked, sends that text to the connection as input.
+
+However, if the JSON of the trigger doesn't evaluate as a
+`Control.TriggerAction`, we'll instead try to parse the json as a
+`ActionAndArgs`. If we find that, then we'll use a special
+`Control.TriggerAction` type:
+
+* `customAction`: This is an internal `TriggerAction` type. This is used to
+  allow the app to provide its own action handler. The control will raise a
+  `CustomAction` event, with args containing the index of the trigger that
+  matched, and the matching groups of the regex.
+
+`Control.Trigger`'s, when they are hit by the control, will be able to string
+replace their args themselves. For example:
+* The `git push` trigger above - when matched, the Core will call
+  `Control.SendInputTrigger.Execute(ControlCore core, String[] matches)` (or
+  something like that). `Execute` will be responsible for string-replacing
+  anything it needs to.
+
+For custom actions (READ: settings model `ShortcutAction`s, like `newTab`),
+we'll hang on to the JSON. When the trigger is hit by the control, it'll raise
+an event. The app will recieve the event, match it up to the trigger, and call
+`Model.Trigger.Parse(String[] matches) -> ActionAndArgs`. That will do the
+string replace in the JSON itself (similar to how we do iterable `Command`
+expansion). We'll then just take the _whole json_, and try to parse it literally
+as an `ActionAndArgs`. This does mean that we couldn't use `match` as a property
+for any other future actions.
+
+We can reuse some of the macros in `ActionArgs.h` to make
+deserializing to a `Control.Trigger` easy.
+
+#### Alternative JSON for consideration
+
+This one encapslates the actions into the `command` property of the
+`Terminal.Settings.Model.Trigger`. In this version, we don't need to try and
+reparse the entire JSON object as a `ActionAndArgs`. This will let future
+actions use the `match` property.
+
+```jsonc
+"triggers":[
+    {
+        "match": "[Ee][Rr][Rr][Oo][Rr]",
+        "command": {
+            "action": "addMark",
+            "color": "#ff0000"
+        },
+    },
+    {
+        "match": "Terminate batch job \\(Y/N\\)",
+        "command": {
+            "action": "sendInput",
+            "input": "y\r\n"
+        },
+    },
+    {
+        "match": {
+            "anchor": "bottom",
+            "offset": 4,
+            "length": 5,
+            "pattern": "    git push --set-upstream origin ([^\\w]*)",
+            "runOn": "mark"
+        },
+        "command": {
+            "action": "sendInput",
+            "input": "git push --set-upstream origin ${match[1]}\r"
+        },
+    },
+    {
+        "match": "'(.*)' is not recognized as an internal or external command,",
+        "command": {
+            "action": "checkWinGet",
+            "commandline": "${match[1]}"
+        },
+    },
+    {
+        "match": "This will open a new Terminal tab",
+        "command": "newTab"
+    },
+]
+```
 
 
 ### Turn text into clickable links
@@ -146,6 +304,19 @@ Challenges:
   matched a trigger, then run it back through the regex to split into matched
   parts, then parse what the target is.
 
+#### Clickable `sendInput`
+
+This is the same idea as above. We want users to be able to magicially turn regions of the buffer into interactive content. When clicking on that content, the text will get written to the input, rather than `ShellExecute`d.
+
+```jsonc
+{
+    "match": "    git push --set-upstream origin ([^\\w]*)",
+    "action": "clickableSendInput",
+    "input": "git push --set-upstream origin ${match[1]}"
+},
+````
+
+
 ### Disabling triggers
 
 Three main cases:
@@ -154,6 +325,9 @@ Three main cases:
 * If a fragment decides to add a trigger to a specific profile
 
 [TODO!]: # TODO!
+
+We'll just use `"id"` as a key in a map of triggers. Users can unbind them with
+`"id": "Terminal.builtInThing", match:""`. Just like global actions.
 
 ### Triggers for Terminal Control consumers
 
@@ -164,8 +338,9 @@ and recieve an event with the ID of the trigger.
 > * Consumers will provide a callback that is called with the clicked text as a parameter
 
 These are addressed generally by the rest of the spec. They could provide
-`CommandTriggers` via `ICoreSettings`. When we find the match, we'd raise an
-event with the index of that trigger, and the matches for that regex.
+`Control.TriggerAndMatch` via `ICoreSettings`. They can use the built-in control
+actions, or similar to the Windows Terminal, handle custom actions on the
+control's `CustomAction` event handler.
 
 ## Potential Issues
 
@@ -253,10 +428,13 @@ Clickable* with a string of input instead.
 
 ### iTerm2 trigger actions
 
-The following list was taken from the [iTerm2 docs]. I've added notes on ways we could implement similar functionality.
+The following list was taken from the [iTerm2 docs]. I've added notes on ways we
+could implement similar functionality. Where there's room for us to easily add
+new Control-level actions, I've added the enum name as a sub-point.
 
 * *Annotate*: Add a bookmark? ✅
 * *Bounce Dock Icon*: Visual, window bell? We don't have a manual action for something like this
+    * `Control.TriggerType.RaiseBell`
 * *Capture Output*: Not really a good analog. Maybe "add a bookmark", with a bookmark list pane.
 * *Highlight Text*: `experimental.colorSelection` above ✅
 * *Inject Data*: "Injects a string as though it had been received". This isn't `sendInput`, it's like `sendOutput`. Dangerous for the same reasons that `experimental.colorSelection` is - modifications only to the terminal-side of the conpty buffer.
@@ -264,23 +442,29 @@ The following list was taken from the [iTerm2 docs]. I've added notes on ways we
 * *Make Hyperlink*: `clickableLink` above ✅
 * *Open Password Manager*: Nothing similar.
 * *Post Notification*: Consider [#7718] - could absolutely be done.
+    * `Control.TriggerType.SendNotification`
 * *Prompt Detected*: `addMark(prompt)`, basically. ✅
 * *Report Directory*: "Tells iTerm2 what your current directory is". Kinda like `sendOutput`, but not that dangerous IMO.
+    * `Control.TriggerType.SetWorkingDirectory`
 * *Report User & Host*: Kinda the same as the above. We don't use these currently, but we may want to consider in the future.
 * *Ring Bell*: Plays the standard system bell sound once.
+    * `Control.TriggerType.RaiseBell`
 * *Run Command*: This seems dangerous if misused. Basically just `ShellExecute()` the command.
 * *Run Coprocess*: Definitely no precedent we have for this, and might require its own spec.
 * *Run Silent Coprocess*: same deal.
 * *Send Text*: `sendInput` ✅
 * *Set Mark*: `addMark` ✅
 * *Set Title*: Similar to the "Report Directory" above.
+    * `Control.TriggerType.SetTitle`
 * *Set User Variable*: Specifically tied to scripting, which we don't have.
 * *Show Alert*: Show a toast? [#8592]
+    * `Control.TriggerType.SendInAppToast`
 * *Stop Processing Triggers*: Definitely an interesting idea. Stop processing more triggers.
 
 Almost all these could be control-level actions that don't _need_ to cross out
 of the ControlCore (outside of existing concieved notions for crossing the
 boundary, like a visual bell or a notification).
+
 
 ### Footnotes
 
