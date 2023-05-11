@@ -140,10 +140,16 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
     std::thread t([weakThis, window]() {
         try
         {
-            auto cleanup = wil::scope_exit([&]() {
+            const auto decrementWindowCount = wil::scope_exit([&]() {
                 if (auto self{ weakThis.lock() })
                 {
-                    self->_windowExitedHandler(window->Peasant().GetID());
+                    self->_decrementWindowCount();
+                }
+            });
+            auto removeWindow = wil::scope_exit([&]() {
+                if (auto self{ weakThis.lock() })
+                {
+                    self->_removeWindow(window->PeasantID());
                 }
             });
 
@@ -160,7 +166,7 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
             // remove the window from our list of windows, before we release the
             // AppHost (and subsequently, the host's Logic() member that we use
             // elsewhere).
-            cleanup.reset();
+            removeWindow.reset();
 
             // Now that we no longer care about this thread's window, let it
             // release it's app host and flush the rest of the XAML queue.
@@ -204,17 +210,20 @@ void WindowEmperor::_windowStartedHandlerPostXAML(const std::shared_ptr<WindowTh
         lockedWindows->push_back(sender);
     }
 }
-void WindowEmperor::_windowExitedHandler(uint64_t senderID)
+
+void WindowEmperor::_removeWindow(uint64_t senderID)
 {
     auto lockedWindows{ _windows.lock() };
 
     // find the window in _windows who's peasant's Id matches the peasant's Id
     // and remove it
-    std::erase_if(*lockedWindows,
-                  [&](const auto& w) {
-                      return w->Peasant().GetID() == senderID;
-                  });
+    std::erase_if(*lockedWindows, [&](const auto& w) {
+        return w->PeasantID() == senderID;
+    });
+}
 
+void WindowEmperor::_decrementWindowCount()
+{
     // When we run out of windows, exit our process if and only if:
     // * We're not allowed to run headless OR
     // * we've explicitly been told to "quit", which should fully exit the Terminal.
@@ -226,6 +235,7 @@ void WindowEmperor::_windowExitedHandler(uint64_t senderID)
         _close();
     }
 }
+
 // Method Description:
 // - Set up all sorts of handlers now that we've determined that we're a process
 //   that will end up hosting the windows. These include:
