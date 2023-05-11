@@ -1148,16 +1148,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::_RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page)
-    {
-        co_await wil::resume_foreground(page->_tabView.Dispatcher());
-
-        if (auto tab{ _GetTabByTabViewItem(tabViewItem) })
-        {
-            _RemoveTab(tab);
-        }
-    }
-
     // Method Description:
     // - Creates a new connection based on the profile settings
     // Arguments:
@@ -3752,11 +3742,13 @@ namespace winrt::TerminalApp::implementation
             });
 
             // When the tab is closed, remove it from our list of tabs.
-            newTabImpl->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
-                if (auto page{ weakThis.get() })
+            newTabImpl->Closed([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+                const auto page = weakThis.get();
+                const auto tab = weakTab.get();
+
+                if (page && tab)
                 {
-                    page->_settingsTab = nullptr;
-                    page->_RemoveOnCloseRoutine(tabViewItem, page);
+                    page->_RemoveTab(*tab);
                 }
             });
 

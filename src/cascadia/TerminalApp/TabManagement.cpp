@@ -237,10 +237,13 @@ namespace winrt::TerminalApp::implementation
         });
 
         // When the tab is closed, remove it from our list of tabs.
-        newTabImpl->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
-            if (auto page{ weakThis.get() })
+        newTabImpl->Closed([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+            const auto page = weakThis.get();
+            const auto tab = weakTab.get();
+
+            if (page && tab)
             {
-                page->_RemoveOnCloseRoutine(tabViewItem, page);
+                page->_RemoveTab(*tab);
             }
         });
 
@@ -507,6 +510,11 @@ namespace winrt::TerminalApp::implementation
         if (_mruTabs.IndexOf(tab, mruIndex))
         {
             _mruTabs.RemoveAt(mruIndex);
+        }
+
+        if (tab == _settingsTab)
+        {
+            _settingsTab = nullptr;
         }
 
         if (_stashed.draggedTab && *_stashed.draggedTab == tab)

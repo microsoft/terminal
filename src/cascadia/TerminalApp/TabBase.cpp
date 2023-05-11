@@ -37,7 +37,6 @@ namespace winrt::TerminalApp::implementation
         ASSERT_UI_THREAD();
 
         Content(nullptr);
-        _ClosedHandlers(nullptr, nullptr);
     }
 
     // Method Description:
