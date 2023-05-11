@@ -50,7 +50,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                 return EqualSid(psidOwner, psidAdmins.get());
             }
-        }
+        } // details
 
         // Tries to read a file somewhat atomically without locking it.
         // Strips the UTF8 BOM if it exists.
@@ -267,7 +267,5 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // but it's pretty darn close to it, so... better than nothing.
             std::filesystem::rename(tmpPath, resolvedPath);
         }
-    }
-
-} // io
+    } // io
 } // til
