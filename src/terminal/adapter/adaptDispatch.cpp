@@ -3058,6 +3058,9 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         _api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
         return true;
+    case DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters:
+        _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[8;{};{}t"), _api.GetViewport().height(), _api.GetTextBuffer().GetSize().Width()));
+        return true;
     default:
         return false;
     }

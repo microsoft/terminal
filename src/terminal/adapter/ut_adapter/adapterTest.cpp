@@ -2852,6 +2852,14 @@ public:
         _pDispatch->_macroBuffer = nullptr;
     }
 
+    TEST_METHOD(WindowManipulationTypeTests)
+    {
+        _testGetSet->PrepData();
+        _pDispatch->WindowManipulation(DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters, NULL, NULL);
+        const std::wstring expectedResponse = fmt::format(L"\033[8;{};{}t", _testGetSet->GetViewport().height(), _testGetSet->GetTextBuffer().GetSize().Width());
+        _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+    }
+
 private:
     TerminalInput _terminalInput{ nullptr };
     std::unique_ptr<TestGetSet> _testGetSet;
