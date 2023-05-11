@@ -47,9 +47,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sample Application", "Sampl
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Extension App", "Extension App", "{CAD8C045-8805-4DBE-9028-994C86C60F7B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotnetWasdkApp", "scratch\DotnetWasdkApp\DotnetWasdkApp.csproj", "{69BDA742-A592-4A02-8EE9-BA47ABFA5887}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotnetWasdkApp", "scratch\DotnetWasdkApp\DotnetWasdkApp.csproj", "{69BDA742-A592-4A02-8EE9-BA47ABFA5887}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotnetWasdkComponent", "scratch\DotnetWasdkComponent\DotnetWasdkComponent.csproj", "{35573630-40E7-4428-89D1-E1D89DDA8787}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotnetWasdkComponent", "scratch\DotnetWasdkComponent\DotnetWasdkComponent.csproj", "{35573630-40E7-4428-89D1-E1D89DDA8787}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -551,8 +551,8 @@ Global
 		{35573630-40E7-4428-89D1-E1D89DDA8787}.Debug|ARM.Build.0 = Debug|Any CPU
 		{35573630-40E7-4428-89D1-E1D89DDA8787}.Debug|ARM64.ActiveCfg = Debug|Any CPU
 		{35573630-40E7-4428-89D1-E1D89DDA8787}.Debug|ARM64.Build.0 = Debug|Any CPU
-		{35573630-40E7-4428-89D1-E1D89DDA8787}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{35573630-40E7-4428-89D1-E1D89DDA8787}.Debug|x64.Build.0 = Debug|Any CPU
+		{35573630-40E7-4428-89D1-E1D89DDA8787}.Debug|x64.ActiveCfg = Debug|x64
+		{35573630-40E7-4428-89D1-E1D89DDA8787}.Debug|x64.Build.0 = Debug|x64
 		{35573630-40E7-4428-89D1-E1D89DDA8787}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{35573630-40E7-4428-89D1-E1D89DDA8787}.Debug|x86.Build.0 = Debug|Any CPU
 		{35573630-40E7-4428-89D1-E1D89DDA8787}.Fuzzing|Any CPU.ActiveCfg = Debug|Any CPU
