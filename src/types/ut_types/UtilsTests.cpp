@@ -33,6 +33,8 @@ class UtilsTests
     TEST_METHOD(TestTrimTrailingWhitespace);
     TEST_METHOD(TestDontTrimTrailingWhitespace);
 
+    TEST_METHOD(TestEvaluateStartingDirectory);
+
     void _VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue);
     void _VerifyXTermColorInvalid(const std::wstring_view wstr);
 };
@@ -545,4 +547,26 @@ void UtilsTests::TestDontTrimTrailingWhitespace()
     // We need to both
     // * trim when there's a tab followed by only whitespace
     // * not trim then there's a tab in the middle, and the string ends in whitespace
+}
+
+void UtilsTests::TestEvaluateStartingDirectory()
+{
+    // Continue on failures
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+    auto test = [](auto& expected, auto& cwd, auto& startingDir) {
+        VERIFY_ARE_EQUAL(expected, EvaluateStartingDirectory(cwd, startingDir));
+    };
+
+    {
+        std::wstring cwd = L"C:\\Windows\\System32";
+
+        test(L"C:\\Windows", cwd, L"C:\\Windows");
+        test(L"C:\\Windows\\System32\\System32", cwd, L".\\System32"); // ?
+        test(L"~", cwd, L"~");
+        test(L"~/dev", cwd, L"~/dev");
+        test(L"/", cwd, L"/");
+        test(L"/dev", cwd, L"/dev");
+        test(L"C:\\Windows\\System32\\dev", cwd, L"./dev");
+    }
 }

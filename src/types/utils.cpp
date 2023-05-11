@@ -828,3 +828,31 @@ std::wstring_view Utils::TrimPaste(std::wstring_view textView) noexcept
 
     return textView.substr(0, lastNonSpace + 1);
 }
+
+std::wstring Utils::EvaluateStartingDirectory(
+    std::wstring_view currentDirectory,
+    std::wstring_view startingDirectory)
+{
+    std::wstring resultPath{ startingDirectory };
+
+    const bool oldCondition =
+        startingDirectory.size() == 0 || startingDirectory.size() == 1 &&
+                                             !(startingDirectory[0] == L'~' || startingDirectory[0] == L'/');
+
+    oldCondition;
+
+    const bool newCondition =
+        !(resultPath.size() == 1 &&
+          (resultPath[0] == L'~' || resultPath[0] == L'/'));
+    newCondition;
+
+    // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
+    if (oldCondition)
+    // if (newCondition)
+    {
+        std::filesystem::path cwd{ currentDirectory };
+        cwd /= startingDirectory;
+        resultPath = cwd.wstring();
+    }
+    return resultPath;
+}
