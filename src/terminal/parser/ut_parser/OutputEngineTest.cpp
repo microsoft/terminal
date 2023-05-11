@@ -1009,7 +1009,6 @@ public:
         _cursorPosition{ false },
         _cursorSave{ false },
         _cursorLoad{ false },
-        _cursorVisible{ true },
         _eraseDisplay{ false },
         _eraseLine{ false },
         _insertCharacter{ false },
@@ -1025,13 +1024,9 @@ public:
         _vt52DeviceAttributes{ false },
         _requestTerminalParameters{ false },
         _reportingPermission{ (DispatchTypes::ReportingPermission)-1 },
-        _isAltBuffer{ false },
-        _cursorKeysMode{ false },
-        _cursorBlinking{ true },
-        _isInAnsiMode{ true },
-        _isScreenModeReversed{ false },
-        _isOriginModeRelative{ false },
-        _isAutoWrapEnabled{ true },
+        _modeType{ (DispatchTypes::ModeParams)-1 },
+        _modeTypes{},
+        _modeEnabled{ false },
         _warningBell{ false },
         _carriageReturn{ false },
         _lineFeed{ false },
@@ -1041,10 +1036,6 @@ public:
         _numTabs{ 0 },
         _tabClear{ false },
         _tabClearTypes{},
-        _isDECCOLMAllowed{ false },
-        _windowWidth{ 80 },
-        _bracketedPasteMode{ false },
-        _win32InputMode{ false },
         _setDefaultForeground(false),
         _defaultForegroundColor{ RGB(0, 0, 0) },
         _setDefaultBackground(false),
@@ -1184,12 +1175,6 @@ public:
         return true;
     }
 
-    bool CursorVisibility(const bool fIsVisible) noexcept override
-    {
-        _cursorVisible = fIsVisible;
-        return true;
-    }
-
     bool SetGraphicsRendition(const VTParameters options) noexcept override
     try
     {
@@ -1203,7 +1188,7 @@ public:
     }
     CATCH_LOG_RETURN_FALSE()
 
-    bool DeviceStatusReport(const DispatchTypes::StatusType statusType) noexcept override
+    bool DeviceStatusReport(const DispatchTypes::StatusType statusType, const VTParameter /*id*/) noexcept override
     {
         _deviceStatusReport = true;
         _statusReportType = statusType;
@@ -1249,53 +1234,11 @@ public:
 
     bool _ModeParamsHelper(_In_ DispatchTypes::ModeParams const param, const bool fEnable)
     {
-        auto fSuccess = false;
-        switch (param)
-        {
-        case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
-            // set - Enable Application Mode, reset - Numeric/normal mode
-            fSuccess = SetVirtualTerminalInputMode(fEnable);
-            break;
-        case DispatchTypes::ModeParams::DECANM_AnsiMode:
-            fSuccess = SetAnsiMode(fEnable);
-            break;
-        case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
-            fSuccess = SetColumns(static_cast<size_t>(fEnable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns));
-            break;
-        case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
-            fSuccess = SetScreenMode(fEnable);
-            break;
-        case DispatchTypes::ModeParams::DECOM_OriginMode:
-            // The cursor is also moved to the new home position when the origin mode is set or reset.
-            fSuccess = SetOriginMode(fEnable) && CursorPosition(1, 1);
-            break;
-        case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
-            fSuccess = SetAutoWrapMode(fEnable);
-            break;
-        case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-            fSuccess = EnableCursorBlinking(fEnable);
-            break;
-        case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
-            fSuccess = CursorVisibility(fEnable);
-            break;
-        case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
-            fSuccess = EnableDECCOLMSupport(fEnable);
-            break;
-        case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
-            fSuccess = fEnable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
-            break;
-        case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-            fSuccess = EnableXtermBracketedPasteMode(fEnable);
-            break;
-        case DispatchTypes::ModeParams::W32IM_Win32InputMode:
-            fSuccess = EnableWin32InputMode(fEnable);
-            break;
-        default:
-            // If no functions to call, overall dispatch was a failure.
-            fSuccess = false;
-            break;
-        }
-        return fSuccess;
+        _modeType = param;
+        _modeTypes.push_back(param);
+        _modeEnabled = fEnable;
+
+        return true;
     }
 
     bool SetMode(const DispatchTypes::ModeParams param) noexcept override
@@ -1308,57 +1251,9 @@ public:
         return _ModeParamsHelper(param, false);
     }
 
-    bool SetColumns(const VTInt uiColumns) noexcept override
-    {
-        _windowWidth = uiColumns;
-        return true;
-    }
-
-    bool SetVirtualTerminalInputMode(const bool fApplicationMode) noexcept
-    {
-        _cursorKeysMode = fApplicationMode;
-        return true;
-    }
-
-    bool EnableXtermBracketedPasteMode(const bool enable) noexcept
-    {
-        _bracketedPasteMode = enable;
-        return true;
-    }
-
-    bool EnableWin32InputMode(const bool enable) noexcept
-    {
-        _win32InputMode = enable;
-        return true;
-    }
-
-    bool EnableCursorBlinking(const bool bEnable) noexcept override
-    {
-        _cursorBlinking = bEnable;
-        return true;
-    }
-
     bool SetAnsiMode(const bool ansiMode) noexcept override
     {
-        _isInAnsiMode = ansiMode;
-        return true;
-    }
-
-    bool SetScreenMode(const bool reverseMode) noexcept override
-    {
-        _isScreenModeReversed = reverseMode;
-        return true;
-    }
-
-    bool SetOriginMode(const bool fRelativeMode) noexcept override
-    {
-        _isOriginModeRelative = fRelativeMode;
-        return true;
-    }
-
-    bool SetAutoWrapMode(const bool wrapAtEOL) noexcept override
-    {
-        _isAutoWrapEnabled = wrapAtEOL;
+        _ModeParamsHelper(DispatchTypes::DECANM_AnsiMode, ansiMode);
         return true;
     }
 
@@ -1400,25 +1295,6 @@ public:
         _tabClearTypes.push_back(clearType);
         return true;
     }
-
-    bool EnableDECCOLMSupport(const bool fEnabled) noexcept override
-    {
-        _isDECCOLMAllowed = fEnabled;
-        return true;
-    }
-
-    bool UseAlternateScreenBuffer() noexcept override
-    {
-        _isAltBuffer = true;
-        return true;
-    }
-
-    bool UseMainScreenBuffer() noexcept override
-    {
-        _isAltBuffer = false;
-        return true;
-    }
-
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override
     {
         _setColorTableEntry = true;
@@ -1494,7 +1370,6 @@ public:
     bool _cursorPosition;
     bool _cursorSave;
     bool _cursorLoad;
-    bool _cursorVisible;
     bool _eraseDisplay;
     bool _eraseLine;
     bool _insertCharacter;
@@ -1510,13 +1385,9 @@ public:
     bool _vt52DeviceAttributes;
     bool _requestTerminalParameters;
     DispatchTypes::ReportingPermission _reportingPermission;
-    bool _isAltBuffer;
-    bool _cursorKeysMode;
-    bool _cursorBlinking;
-    bool _isInAnsiMode;
-    bool _isScreenModeReversed;
-    bool _isOriginModeRelative;
-    bool _isAutoWrapEnabled;
+    DispatchTypes::ModeParams _modeType;
+    std::vector<DispatchTypes::ModeParams> _modeTypes;
+    bool _modeEnabled;
     bool _warningBell;
     bool _carriageReturn;
     bool _lineFeed;
@@ -1526,10 +1397,6 @@ public:
     size_t _numTabs;
     bool _tabClear;
     std::vector<DispatchTypes::TabClearType> _tabClearTypes;
-    bool _isDECCOLMAllowed;
-    size_t _windowWidth;
-    bool _bracketedPasteMode;
-    bool _win32InputMode;
     bool _setDefaultForeground;
     DWORD _defaultForegroundColor;
     bool _setDefaultBackground;
@@ -1805,24 +1672,6 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
     }
 
-    TEST_METHOD(TestCursorKeysMode)
-    {
-        auto dispatch = std::make_unique<StatefulDispatch>();
-        auto pDispatch = dispatch.get();
-        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
-        StateMachine mach(std::move(engine));
-
-        mach.ProcessString(L"\x1b[?1h");
-        VERIFY_IS_TRUE(pDispatch->_cursorKeysMode);
-
-        pDispatch->ClearState();
-
-        mach.ProcessString(L"\x1b[?1l");
-        VERIFY_IS_FALSE(pDispatch->_cursorKeysMode);
-
-        pDispatch->ClearState();
-    }
-
     TEST_METHOD(TestAnsiMode)
     {
         auto dispatch = std::make_unique<StatefulDispatch>();
@@ -1830,190 +1679,49 @@ class StateMachineExternalTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
+        pDispatch->_modeEnabled = true;
         mach.ProcessString(L"\x1b[?2l");
-        VERIFY_IS_FALSE(pDispatch->_isInAnsiMode);
+        VERIFY_ARE_EQUAL(DispatchTypes::DECANM_AnsiMode, pDispatch->_modeType);
+        VERIFY_IS_FALSE(pDispatch->_modeEnabled);
 
         pDispatch->ClearState();
-        pDispatch->_isInAnsiMode = false;
         mach.SetParserMode(StateMachine::Mode::Ansi, false);
 
         mach.ProcessString(L"\x1b<");
-        VERIFY_IS_TRUE(pDispatch->_isInAnsiMode);
+        VERIFY_ARE_EQUAL(DispatchTypes::DECANM_AnsiMode, pDispatch->_modeType);
+        VERIFY_IS_TRUE(pDispatch->_modeEnabled);
 
         pDispatch->ClearState();
     }
 
-    TEST_METHOD(TestSetNumberOfColumns)
+    TEST_METHOD(TestPrivateModes)
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{1, 3, 5, 6, 7, 12, 25, 40, 1049}")
+        END_TEST_METHOD_PROPERTIES()
+
+        VTInt modeNumber;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"modeNumber", modeNumber));
+
+        const auto modeType = DispatchTypes::DECPrivateMode(modeNumber);
+        const auto setModeSequence = wil::str_printf<std::wstring>(L"\x1b[?%dh", modeNumber);
+        const auto resetModeSequence = wil::str_printf<std::wstring>(L"\x1b[?%dl", modeNumber);
+
         auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
-        mach.ProcessString(L"\x1b[?3h");
-        VERIFY_ARE_EQUAL(pDispatch->_windowWidth, static_cast<size_t>(DispatchTypes::s_sDECCOLMSetColumns));
+        mach.ProcessString(setModeSequence);
+        VERIFY_ARE_EQUAL(modeType, pDispatch->_modeType);
+        VERIFY_IS_TRUE(pDispatch->_modeEnabled);
 
         pDispatch->ClearState();
+        pDispatch->_modeEnabled = true;
 
-        mach.ProcessString(L"\x1b[?3l");
-        VERIFY_ARE_EQUAL(pDispatch->_windowWidth, static_cast<size_t>(DispatchTypes::s_sDECCOLMResetColumns));
-
-        pDispatch->ClearState();
-    }
-
-    TEST_METHOD(TestScreenMode)
-    {
-        auto dispatch = std::make_unique<StatefulDispatch>();
-        auto pDispatch = dispatch.get();
-        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
-        StateMachine mach(std::move(engine));
-
-        mach.ProcessString(L"\x1b[?5h");
-        VERIFY_IS_TRUE(pDispatch->_isScreenModeReversed);
-
-        pDispatch->ClearState();
-        pDispatch->_isScreenModeReversed = true;
-
-        mach.ProcessString(L"\x1b[?5l");
-        VERIFY_IS_FALSE(pDispatch->_isScreenModeReversed);
-
-        pDispatch->ClearState();
-    }
-
-    TEST_METHOD(TestOriginMode)
-    {
-        auto dispatch = std::make_unique<StatefulDispatch>();
-        auto pDispatch = dispatch.get();
-        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
-        StateMachine mach(std::move(engine));
-
-        mach.ProcessString(L"\x1b[?6h");
-        VERIFY_IS_TRUE(pDispatch->_isOriginModeRelative);
-        VERIFY_IS_TRUE(pDispatch->_cursorPosition);
-        VERIFY_ARE_EQUAL(pDispatch->_line, 1u);
-        VERIFY_ARE_EQUAL(pDispatch->_column, 1u);
-
-        pDispatch->ClearState();
-        pDispatch->_isOriginModeRelative = true;
-
-        mach.ProcessString(L"\x1b[?6l");
-        VERIFY_IS_FALSE(pDispatch->_isOriginModeRelative);
-        VERIFY_IS_TRUE(pDispatch->_cursorPosition);
-        VERIFY_ARE_EQUAL(pDispatch->_line, 1u);
-        VERIFY_ARE_EQUAL(pDispatch->_column, 1u);
-
-        pDispatch->ClearState();
-    }
-
-    TEST_METHOD(TestAutoWrapMode)
-    {
-        auto dispatch = std::make_unique<StatefulDispatch>();
-        auto pDispatch = dispatch.get();
-        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
-        StateMachine mach(std::move(engine));
-
-        mach.ProcessString(L"\x1b[?7l");
-        VERIFY_IS_FALSE(pDispatch->_isAutoWrapEnabled);
-
-        pDispatch->ClearState();
-        pDispatch->_isAutoWrapEnabled = false;
-
-        mach.ProcessString(L"\x1b[?7h");
-        VERIFY_IS_TRUE(pDispatch->_isAutoWrapEnabled);
-
-        pDispatch->ClearState();
-    }
-
-    TEST_METHOD(TestCursorBlinking)
-    {
-        auto dispatch = std::make_unique<StatefulDispatch>();
-        auto pDispatch = dispatch.get();
-        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
-        StateMachine mach(std::move(engine));
-
-        mach.ProcessString(L"\x1b[?12h");
-        VERIFY_IS_TRUE(pDispatch->_cursorBlinking);
-
-        pDispatch->ClearState();
-
-        mach.ProcessString(L"\x1b[?12l");
-        VERIFY_IS_FALSE(pDispatch->_cursorBlinking);
-
-        pDispatch->ClearState();
-    }
-
-    TEST_METHOD(TestCursorVisibility)
-    {
-        auto dispatch = std::make_unique<StatefulDispatch>();
-        auto pDispatch = dispatch.get();
-        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
-        StateMachine mach(std::move(engine));
-
-        mach.ProcessString(L"\x1b[?25h");
-        VERIFY_IS_TRUE(pDispatch->_cursorVisible);
-
-        pDispatch->ClearState();
-
-        mach.ProcessString(L"\x1b[?25l");
-        VERIFY_IS_FALSE(pDispatch->_cursorVisible);
-
-        pDispatch->ClearState();
-    }
-
-    TEST_METHOD(TestAltBufferSwapping)
-    {
-        auto dispatch = std::make_unique<StatefulDispatch>();
-        auto pDispatch = dispatch.get();
-        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
-        StateMachine mach(std::move(engine));
-
-        mach.ProcessString(L"\x1b[?1049h");
-        VERIFY_IS_TRUE(pDispatch->_isAltBuffer);
-
-        pDispatch->ClearState();
-
-        mach.ProcessString(L"\x1b[?1049h");
-        VERIFY_IS_TRUE(pDispatch->_isAltBuffer);
-        mach.ProcessString(L"\x1b[?1049h");
-        VERIFY_IS_TRUE(pDispatch->_isAltBuffer);
-
-        pDispatch->ClearState();
-
-        mach.ProcessString(L"\x1b[?1049l");
-        VERIFY_IS_FALSE(pDispatch->_isAltBuffer);
-
-        pDispatch->ClearState();
-
-        mach.ProcessString(L"\x1b[?1049h");
-        VERIFY_IS_TRUE(pDispatch->_isAltBuffer);
-        mach.ProcessString(L"\x1b[?1049l");
-        VERIFY_IS_FALSE(pDispatch->_isAltBuffer);
-
-        pDispatch->ClearState();
-
-        mach.ProcessString(L"\x1b[?1049l");
-        VERIFY_IS_FALSE(pDispatch->_isAltBuffer);
-        mach.ProcessString(L"\x1b[?1049l");
-        VERIFY_IS_FALSE(pDispatch->_isAltBuffer);
-
-        pDispatch->ClearState();
-    }
-
-    TEST_METHOD(TestEnableDECCOLMSupport)
-    {
-        auto dispatch = std::make_unique<StatefulDispatch>();
-        auto pDispatch = dispatch.get();
-        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
-        StateMachine mach(std::move(engine));
-
-        mach.ProcessString(L"\x1b[?40h");
-        VERIFY_IS_TRUE(pDispatch->_isDECCOLMAllowed);
-
-        pDispatch->ClearState();
-        pDispatch->_isDECCOLMAllowed = true;
-
-        mach.ProcessString(L"\x1b[?40l");
-        VERIFY_IS_FALSE(pDispatch->_isDECCOLMAllowed);
+        mach.ProcessString(resetModeSequence);
+        VERIFY_ARE_EQUAL(modeType, pDispatch->_modeType);
+        VERIFY_IS_FALSE(pDispatch->_modeEnabled);
 
         pDispatch->ClearState();
     }
@@ -2025,20 +1733,18 @@ class StateMachineExternalTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
+        const auto expectedModes = std::vector{ DispatchTypes::DECSCNM_ScreenMode, DispatchTypes::DECCKM_CursorKeysMode, DispatchTypes::DECOM_OriginMode };
+
         mach.ProcessString(L"\x1b[?5;1;6h");
-        VERIFY_IS_TRUE(pDispatch->_isScreenModeReversed);
-        VERIFY_IS_TRUE(pDispatch->_cursorKeysMode);
-        VERIFY_IS_TRUE(pDispatch->_isOriginModeRelative);
+        VERIFY_IS_TRUE(pDispatch->_modeEnabled);
+        VERIFY_ARE_EQUAL(expectedModes, pDispatch->_modeTypes);
 
         pDispatch->ClearState();
-        pDispatch->_isScreenModeReversed = true;
-        pDispatch->_cursorKeysMode = true;
-        pDispatch->_isOriginModeRelative = true;
+        pDispatch->_modeEnabled = true;
 
         mach.ProcessString(L"\x1b[?5;1;6l");
-        VERIFY_IS_FALSE(pDispatch->_isScreenModeReversed);
-        VERIFY_IS_FALSE(pDispatch->_cursorKeysMode);
-        VERIFY_IS_FALSE(pDispatch->_isOriginModeRelative);
+        VERIFY_IS_FALSE(pDispatch->_modeEnabled);
+        VERIFY_ARE_EQUAL(expectedModes, pDispatch->_modeTypes);
 
         pDispatch->ClearState();
     }

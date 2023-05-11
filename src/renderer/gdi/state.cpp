@@ -215,7 +215,7 @@ GdiEngine::~GdiEngine()
 {
     XFORM lineTransform = {};
     // The X delta is to account for the horizontal viewport offset.
-    lineTransform.eDx = viewportLeft ? -1.0f * viewportLeft * _GetFontSize().X : 0.0f;
+    lineTransform.eDx = viewportLeft ? -1.0f * viewportLeft * _GetFontSize().width : 0.0f;
     switch (lineRendition)
     {
     case LineRendition::SingleWidth:
@@ -230,14 +230,14 @@ GdiEngine::~GdiEngine()
         lineTransform.eM11 = 2; // double width
         lineTransform.eM22 = 2; // double height
         // The Y delta is to negate the offset caused by the scaled height.
-        lineTransform.eDy = -1.0f * targetRow * _GetFontSize().Y;
+        lineTransform.eDy = -1.0f * targetRow * _GetFontSize().height;
         break;
     case LineRendition::DoubleHeightBottom:
         lineTransform.eM11 = 2; // double width
         lineTransform.eM22 = 2; // double height
         // The Y delta is to negate the offset caused by the scaled height.
         // An extra row is added because we need the bottom half of the line.
-        lineTransform.eDy = -1.0f * (targetRow + 1) * _GetFontSize().Y;
+        lineTransform.eDy = -1.0f * (targetRow + 1) * _GetFontSize().height;
         break;
     }
     // Return early if the new matrix is the same as the current transform.
@@ -387,7 +387,7 @@ GdiEngine::~GdiEngine()
 
     // However, we don't want the underline to extend past the bottom of the
     // cell, so we clamp the offset to fit just inside.
-    const auto maxUnderlineOffset = Font.GetSize().Y - _lineMetrics.underlineWidth;
+    const auto maxUnderlineOffset = Font.GetSize().height - _lineMetrics.underlineWidth;
     _lineMetrics.underlineOffset2 = std::min(_lineMetrics.underlineOffset2, maxUnderlineOffset);
 
     // But if the resulting gap isn't big enough even to register as a thicker
@@ -566,8 +566,8 @@ GdiEngine::~GdiEngine()
         // attention to the font previews to ensure that the font being selected by GDI is exactly the font requested --
         // some monospace fonts look very similar.
         LOGFONTW lf = { 0 };
-        lf.lfHeight = s_ScaleByDpi(coordFontRequested.Y, iDpi);
-        lf.lfWidth = s_ScaleByDpi(coordFontRequested.X, iDpi);
+        lf.lfHeight = s_ScaleByDpi(coordFontRequested.height, iDpi);
+        lf.lfWidth = s_ScaleByDpi(coordFontRequested.width, iDpi);
         lf.lfWeight = FontDesired.GetWeight();
 
         // If we're searching for Terminal, our supported Raster Font, then we must use OEM_CHARSET.
@@ -627,8 +627,8 @@ GdiEngine::~GdiEngine()
     RETURN_HR_IF(E_FAIL, !(GetTextExtentPoint32W(hdcTemp.get(), L"0", 1, &sz)));
 
     til::size coordFont;
-    coordFont.X = sz.cx;
-    coordFont.Y = sz.cy;
+    coordFont.width = sz.cx;
+    coordFont.height = sz.cy;
 
     // The extent point won't necessarily be perfect for the width, so get the ABC metrics for the 0 if possible to improve the measurement.
     // This will fail for non-TrueType fonts and we'll fall back to what GetTextExtentPoint said.
@@ -641,7 +641,7 @@ GdiEngine::~GdiEngine()
             // No negatives or zeros or we'll have bad character-to-pixel math later.
             if (abcTotal > 0)
             {
-                coordFont.X = abcTotal;
+                coordFont.width = abcTotal;
             }
         }
     }
@@ -662,9 +662,9 @@ GdiEngine::~GdiEngine()
         {
             coordFontRequested = coordFont;
         }
-        else if (coordFontRequested.X == 0)
+        else if (coordFontRequested.width == 0)
         {
-            coordFontRequested.X = s_ShrinkByDpi(coordFont.X, iDpi);
+            coordFontRequested.width = s_ShrinkByDpi(coordFont.width, iDpi);
         }
 
         Font.SetFromEngine(currentFaceName,

@@ -110,6 +110,7 @@ namespace Microsoft::Console::VirtualTerminal
             OSCSCB,
             XTPUSHSGR,
             XTPOPSGR,
+            DECRQM,
             DECCARA,
             DECRARA,
             DECCRA,
@@ -117,6 +118,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECERA,
             DECSERA,
             DECSACE,
+            DECINVM,
             DECAC,
             DECPS,
             // Only use this last enum as a count of the number of codes.

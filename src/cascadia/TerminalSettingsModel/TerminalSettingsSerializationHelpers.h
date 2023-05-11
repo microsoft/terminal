@@ -651,6 +651,27 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
     };
 };
 
+// Possible NewTabMenuEntryType values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntryType)
+{
+    JSON_MAPPINGS(5) = {
+        pair_type{ "profile", ValueType::Profile },
+        pair_type{ "separator", ValueType::Separator },
+        pair_type{ "folder", ValueType::Folder },
+        pair_type{ "remainingProfiles", ValueType::RemainingProfiles },
+        pair_type{ "matchProfiles", ValueType::MatchProfiles },
+    };
+};
+
+// Possible FolderEntryInlining values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FolderEntryInlining)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "never", ValueType::Never },
+        pair_type{ "auto", ValueType::Auto },
+    };
+};
+
 template<>
 struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Microsoft::Terminal::Control::SelectionColor>
 {

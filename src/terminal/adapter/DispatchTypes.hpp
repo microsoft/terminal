@@ -386,6 +386,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         OS_OperatingStatus = ANSIStandardStatus(5),
         CPR_CursorPositionReport = ANSIStandardStatus(6),
         ExCPR_ExtendedCursorPositionReport = DECPrivateStatus(6),
+        MSR_MacroSpaceReport = DECPrivateStatus(62),
+        MEM_MemoryChecksum = DECPrivateStatus(63),
     };
 
     using ANSIStandardMode = FlaggedEnumValue<0x00000000>;
@@ -403,6 +405,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ATT610_StartCursorBlink = DECPrivateMode(12),
         DECTCEM_TextCursorEnableMode = DECPrivateMode(25),
         XTERM_EnableDECCOLMSupport = DECPrivateMode(40),
+        DECNKM_NumericKeypadMode = DECPrivateMode(66),
         DECBKM_BackarrowKeyMode = DECPrivateMode(67),
         VT200_MOUSE_MODE = DECPrivateMode(1000),
         BUTTON_EVENT_MOUSE_MODE = DECPrivateMode(1002),
@@ -507,6 +510,18 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Size96 = 1
     };
 
+    enum class MacroDeleteControl : VTInt
+    {
+        DeleteId = 0,
+        DeleteAll = 1
+    };
+
+    enum class MacroEncoding : VTInt
+    {
+        Text = 0,
+        HexPair = 1
+    };
+
     enum class ReportFormat : VTInt
     {
         TerminalStateReport = 1,
@@ -530,6 +545,9 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         std::optional<til::color> color;
         til::point start;
         til::point end; // exclusive
+        std::optional<til::point> commandEnd;
+        std::optional<til::point> outputEnd;
+
         MarkCategory category{ MarkCategory::Info };
         // Other things we may want to think about in the future are listed in
         // GH#11000

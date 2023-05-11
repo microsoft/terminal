@@ -997,7 +997,7 @@ void InputEngineTest::AltIntermediateTest()
     VERIFY_IS_NOT_NULL(stateMachine);
     testState._stateMachine = stateMachine.get();
 
-    // Write a Alt+/, Ctrl+e pair to the input engine, then take it's output and
+    // Write a Alt+/, Ctrl+e pair to the input engine, then take its output and
     // run it through the terminalInput translator. We should get ^[/^E back
     // out.
     std::wstring seq = L"\x1b/";
@@ -1094,7 +1094,7 @@ std::wstring InputEngineTest::GenerateSgrMouseSequence(const CsiMouseButtonCodes
     const wchar_t prefixChar = direction[0];
     const wchar_t finalChar = direction[1];
 
-    return wil::str_printf_failfast<std::wstring>(L"\x1b[%c%d;%d;%d%c", prefixChar, static_cast<int>(actionCode), position.X, position.Y, finalChar);
+    return wil::str_printf_failfast<std::wstring>(L"\x1b[%c%d;%d;%d%c", prefixChar, static_cast<int>(actionCode), position.x, position.y, finalChar);
 }
 
 void InputEngineTest::VerifySGRMouseData(const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData)

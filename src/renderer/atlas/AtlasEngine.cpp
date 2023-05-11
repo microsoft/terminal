@@ -345,7 +345,7 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(gsl::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
 {
-    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.Y, 0, _api.cellCount.y));
+    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _api.cellCount.y));
 
     if (_api.lastPaintBufferLineCoord.y != y)
     {
@@ -364,17 +364,17 @@ try
     // preceding `Leading` character, we'll get called with a X coordinate of -1.
     //
     // This block can be removed after GH#13626 is merged.
-    if (coord.X < 0)
+    if (coord.x < 0)
     {
         size_t offset = 0;
         for (const auto& cluster : clusters)
         {
             offset++;
-            coord.X += cluster.GetColumns();
-            if (coord.X >= 0)
+            coord.x += cluster.GetColumns();
+            if (coord.x >= 0)
             {
-                _api.bufferLine.insert(_api.bufferLine.end(), coord.X, L' ');
-                _api.bufferLineColumn.insert(_api.bufferLineColumn.end(), coord.X, 0u);
+                _api.bufferLine.insert(_api.bufferLine.end(), coord.x, L' ');
+                _api.bufferLineColumn.insert(_api.bufferLineColumn.end(), coord.x, 0u);
                 break;
             }
         }
@@ -382,7 +382,7 @@ try
         clusters = clusters.subspan(offset);
     }
 
-    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.X, 0, _api.cellCount.x));
+    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x, 0, _api.cellCount.x));
 
     // Due to the current IRenderEngine interface (that wasn't refactored yet) we need to assemble
     // the current buffer line first as the remaining function operates on whole lines of text.
@@ -476,8 +476,8 @@ try
         const auto point = options.coordCursor;
         // TODO: options.coordCursor can contain invalid out of bounds coordinates when
         // the window is being resized and the cursor is on the last line of the viewport.
-        const auto x = gsl::narrow_cast<uint16_t>(clamp(point.X, 0, _r.cellCount.x - 1));
-        const auto y = gsl::narrow_cast<uint16_t>(clamp(point.Y, 0, _r.cellCount.y - 1));
+        const auto x = gsl::narrow_cast<uint16_t>(clamp(point.x, 0, _r.cellCount.x - 1));
+        const auto y = gsl::narrow_cast<uint16_t>(clamp(point.y, 0, _r.cellCount.y - 1));
         const auto cursorWidth = 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
         const auto right = gsl::narrow_cast<uint16_t>(clamp(x + cursorWidth, 0, _r.cellCount.x - 0));
         const auto bottom = gsl::narrow_cast<uint16_t>(y + 1);

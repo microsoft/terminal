@@ -530,11 +530,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
         break;
     case CsiActionCodes::DSR_DeviceStatusReport:
-        success = _dispatch->DeviceStatusReport(DispatchTypes::ANSIStandardStatus(parameters.at(0)));
+        success = _dispatch->DeviceStatusReport(DispatchTypes::ANSIStandardStatus(parameters.at(0)), parameters.at(1));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
         break;
     case CsiActionCodes::DSR_PrivateDeviceStatusReport:
-        success = _dispatch->DeviceStatusReport(DispatchTypes::DECPrivateStatus(parameters.at(0)));
+        success = _dispatch->DeviceStatusReport(DispatchTypes::DECPrivateStatus(parameters.at(0)), parameters.at(1));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
         break;
     case CsiActionCodes::DA_DeviceAttributes:
@@ -636,6 +636,14 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->PopGraphicsRendition();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::XTPOPSGR);
         break;
+    case CsiActionCodes::DECRQM_RequestMode:
+        success = _dispatch->RequestMode(DispatchTypes::ANSIStandardMode(parameters.at(0)));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQM);
+        break;
+    case CsiActionCodes::DECRQM_PrivateRequestMode:
+        success = _dispatch->RequestMode(DispatchTypes::DECPrivateMode(parameters.at(0)));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQM);
+        break;
     case CsiActionCodes::DECCARA_ChangeAttributesRectangularArea:
         success = _dispatch->ChangeAttributesRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.subspan(4));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECCARA);
@@ -663,6 +671,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::DECSACE_SelectAttributeChangeExtent:
         success = _dispatch->SelectAttributeChangeExtent(parameters.at(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSACE);
+        break;
+    case CsiActionCodes::DECINVM_InvokeMacro:
+        success = _dispatch->InvokeMacro(parameters.at(0).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECINVM);
         break;
     case CsiActionCodes::DECAC_AssignColor:
         success = _dispatch->AssignColor(parameters.at(0), parameters.at(1).value_or(0), parameters.at(2).value_or(0));
@@ -714,6 +726,9 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
                                           parameters.at(5),
                                           parameters.at(6),
                                           parameters.at(7));
+        break;
+    case DcsActionCodes::DECDMAC_DefineMacro:
+        handler = _dispatch->DefineMacro(parameters.at(0).value_or(0), parameters.at(1), parameters.at(2));
         break;
     case DcsActionCodes::DECRSTS_RestoreTerminalState:
         handler = _dispatch->RestoreTerminalState(parameters.at(0));

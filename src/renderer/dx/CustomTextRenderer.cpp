@@ -275,8 +275,8 @@ try
 
     // Create rectangular block representing where the cursor can fill.
     D2D1_RECT_F rect;
-    rect.left = options.coordCursor.X * drawingContext.cellSize.width;
-    rect.top = options.coordCursor.Y * drawingContext.cellSize.height;
+    rect.left = options.coordCursor.x * drawingContext.cellSize.width;
+    rect.top = options.coordCursor.y * drawingContext.cellSize.height;
     rect.right = rect.left + drawingContext.cellSize.width;
     rect.bottom = rect.top + drawingContext.cellSize.height;
 
