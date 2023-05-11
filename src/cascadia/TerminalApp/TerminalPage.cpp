@@ -420,7 +420,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             NewTerminalArgs args;
-            args.StartingDirectory(winrt::hstring{ path.wstring() });
+            args.StartingDirectory(winrt::hstring{ path.native() });
             this->_OpenNewTerminalViaDropdown(args);
 
             TraceLoggingWrite(
@@ -1188,7 +1188,7 @@ namespace winrt::TerminalApp::implementation
                 connection = TerminalConnection::ConptyConnection{};
             }
 
-            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
+            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.native(),
                                                                                  L".",
                                                                                  L"Azure",
                                                                                  nullptr,
@@ -1233,7 +1233,7 @@ namespace winrt::TerminalApp::implementation
                 auto cwdString{ wil::GetCurrentDirectoryW<std::wstring>() };
                 std::filesystem::path cwd{ cwdString };
                 cwd /= settings.StartingDirectory().c_str();
-                newWorkingDirectory = winrt::hstring{ cwd.wstring() };
+                newWorkingDirectory = winrt::hstring{ cwd.native() };
             }
 
             auto conhostConn = TerminalConnection::ConptyConnection();
