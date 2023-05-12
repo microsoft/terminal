@@ -71,7 +71,17 @@ bool WindowEmperor::HandleCommandlineArgs()
 {
     std::vector<winrt::hstring> args;
     _buildArgsFromCommandline(args);
-    auto cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
+    const auto cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
+
+    {
+        // ALWAYS change the _real_ CWD of the Terminal to system32, so that we
+        // don't lock the directory we were spawned in.
+        std::wstring system32{};
+        if (SUCCEEDED_LOG(wil::GetSystemDirectoryW<std::wstring>(system32)))
+        {
+            LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectoryW(system32.c_str()));
+        }
+    }
 
     // Get the requested initial state of the window from our startup info. For
     // something like `start /min`, this will set the wShowWindow member to

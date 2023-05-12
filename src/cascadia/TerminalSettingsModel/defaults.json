@@ -464,6 +464,7 @@
         { "command": "toggleBlockSelection" },
         { "command": "switchSelectionEndpoint" },
         { "command": "expandSelectionToWord" },
+        { "command": "showContextMenu", "keys": "menu" },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },

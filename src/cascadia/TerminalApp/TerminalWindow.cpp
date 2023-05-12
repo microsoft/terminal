@@ -870,10 +870,19 @@ namespace winrt::TerminalApp::implementation
                     {
                         focusedObject = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(focusedElement);
 
-                        // We were unable to find a focused object. Default to the xaml root so that the alt+space menu still works.
+                        // We were unable to find a focused object. Give the
+                        // TerminalPage one last chance to let the alt+space
+                        // menu still work.
+                        //
+                        // We return always, because the TerminalPage handler
+                        // will return false for just a bare `alt` press, and
+                        // don't want to go around the loop again.
                         if (!focusedObject)
                         {
-                            focusedObject = _root.try_as<IInspectable>();
+                            if (auto keyListener{ _root.try_as<IDirectKeyListener>() })
+                            {
+                                return keyListener.OnDirectKeyEvent(vkey, scanCode, down);
+                            }
                         }
                     }
                 }
@@ -1010,11 +1019,14 @@ namespace winrt::TerminalApp::implementation
     //   returned.
     // Arguments:
     // - args: an array of strings to process as a commandline. These args can contain spaces
+    // - cwd: The CWD that this window should treat as its own "virtual" CWD
     // Return Value:
     // - the result of the first command who's parsing returned a non-zero code,
     //   or 0. (see TerminalWindow::_ParseArgs)
-    int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args)
+    int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args, winrt::hstring cwd)
     {
+        _WindowProperties->SetInitialCwd(std::move(cwd));
+
         // This is called in AppHost::ctor(), before we've created the window
         // (or called TerminalWindow::Initialize)
         const auto result = _appArgs.ParseArgs(args);
@@ -1336,6 +1348,7 @@ namespace winrt::TerminalApp::implementation
             CATCH_LOG();
         }
     }
+
     uint64_t WindowProperties::WindowId() const noexcept
     {
         return _WindowId;

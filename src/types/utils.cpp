@@ -828,3 +828,27 @@ std::wstring_view Utils::TrimPaste(std::wstring_view textView) noexcept
 
     return textView.substr(0, lastNonSpace + 1);
 }
+
+std::wstring Utils::EvaluateStartingDirectory(
+    std::wstring_view currentDirectory,
+    std::wstring_view startingDirectory)
+{
+    std::wstring resultPath{ startingDirectory };
+
+    // We only want to resolve the new WD against the CWD if it doesn't look
+    // like a Linux path (see GH#592)
+
+    // Append only if it DOESN'T look like a linux-y path. A linux-y path starts
+    // with `~` or `/`.
+    const bool looksLikeLinux =
+        resultPath.size() >= 1 &&
+        (til::at(resultPath, 0) == L'~' || til::at(resultPath, 0) == L'/');
+
+    if (!looksLikeLinux)
+    {
+        std::filesystem::path cwd{ currentDirectory };
+        cwd /= startingDirectory;
+        resultPath = cwd.wstring();
+    }
+    return resultPath;
+}

@@ -678,6 +678,9 @@
   <data name="ExpandSelectionToWordCommandKey" xml:space="preserve">
     <value>Expand selection to word</value>
   </data>
+  <data name="ShowContextMenuCommandKey" xml:space="preserve">
+    <value>Show context menu</value>
+  </data>
   <data name="CloseOtherPanesCommandKey" xml:space="preserve">
     <value>Close all other panes</value>
   </data>
