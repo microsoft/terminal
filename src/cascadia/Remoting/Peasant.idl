@@ -10,7 +10,7 @@ namespace Microsoft.Terminal.Remoting
         CommandlineArgs(String[] args, String cwd, UInt32 showWindowCommand);
 
         String[] Commandline { get; set; };
-        String CurrentDirectory();
+        String CurrentDirectory { get; };
         UInt32 ShowWindowCommand { get; };
     };
 

@@ -32,6 +32,10 @@ if (%1) == (rel) (
     echo Manually building release
     set _LAST_BUILD_CONF=Release
 )
+if (%1) == (audit) (
+    echo Manually building audit mode
+    set _LAST_BUILD_CONF=AuditMode
+)
 if (%1) == (no_clean) (
     set _MSBUILD_TARGET=Build
 )
