@@ -276,6 +276,8 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _NewTerminalByDrop(const Windows::Foundation::IInspectable&, winrt::Windows::UI::Xaml::DragEventArgs e);
 
         __declspec(noinline) CommandPalette _loadCommandPaletteSlowPath();
+        bool _commandPaletteIs(winrt::Windows::UI::Xaml::Visibility visibility);
+
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
         void _ShowAboutDialog();
