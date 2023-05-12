@@ -851,7 +851,14 @@ namespace winrt::TerminalApp::implementation
         });
         // Necessary for fly-out sub items to get focus on a tab before collapsing. Related to #15049
         newTabFlyout.Closing([this](auto&&, auto&&) {
-            _FocusCurrentTab(true);
+            if (const auto p = CommandPaletteElement(); p && p.Visibility() == Visibility::Visible)
+            {
+                // Don't focus the terminal, that'll dismiss the command palette.
+            }
+            else
+            {
+                _FocusCurrentTab(true);
+            }
         });
         _newTabButton.Flyout(newTabFlyout);
     }
