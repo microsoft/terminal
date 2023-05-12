@@ -842,7 +842,7 @@ std::wstring Utils::EvaluateStartingDirectory(
     // with `~` or `/`.
     const bool looksLikeLinux =
         resultPath.size() >= 1 &&
-        (resultPath[0] == L'~' || resultPath[0] == L'/');
+        (til::at(resultPath, 0) == L'~' || til::at(resultPath, 0) == L'/');
 
     if (!looksLikeLinux)
     {
