@@ -40,7 +40,7 @@ namespace
                 modulePath.remove_filename();
                 std::wstring pathRootAsString{ modulePath.wstring() };
 
-                return Utils::CreateV5Uuid(processRootHashedGuidBase, std::as_bytes(std::span{ pathRootAsString }));
+                return Utils::CreateV5Uuid(processRootHashedGuidBase, gsl::as_bytes(gsl::make_span(pathRootAsString)));
             }();
             return processRootHashedGuid;
         }

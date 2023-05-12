@@ -6,6 +6,8 @@
 #include <fcntl.h>
 #include <iostream>
 
+#if 0 // We pulled in something that depends on std::span, which isn't in this branch.
+
 #define JAPANESE_CP 932u
 
 // CHAR_INFO's .Char member is a union of a wchar_t UnicodeChar and char AsciiChar.
@@ -2152,3 +2154,5 @@ void DbcsTests::TestInvalidTrailer()
 
     DbcsWriteRead::Verify(expected, output);
 }
+
+#endif
