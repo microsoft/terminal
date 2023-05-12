@@ -33,19 +33,23 @@ static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 static const int AnimationDurationInMilliseconds = 200;
 static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(AnimationDurationInMilliseconds)));
 
-Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFocused) :
-    _control{ control },
-    _lastActive{ lastFocused },
-    _profile{ profile }
+Pane::Pane(const IPaneContent& content, const bool lastFocused) :
+    _content{ content },
+    _lastActive{ lastFocused }
 {
     _root.Children().Append(_borderFirst);
-    _borderFirst.Child(_control);
 
-    _setupControlEvents();
+    const auto& control{ _content.GetRoot() };
+    _borderFirst.Child(control);
+
+    // _setupControlEvents();
 
     // Register an event with the control to have it inform us when it gains focus.
-    _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
-    _lostFocusRevoker = _control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
+    if (control)
+    {
+        _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
+        _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
+    }
 
     // When our border is tapped, make sure to transfer focus to our control.
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
@@ -102,17 +106,17 @@ Pane::Pane(std::shared_ptr<Pane> first,
     });
 }
 
-void Pane::_setupControlEvents()
-{
-    _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &Pane::_ControlConnectionStateChangedHandler });
-    _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { this, &Pane::_ControlWarningBellHandler });
-    _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { this, &Pane::_CloseTerminalRequestedHandler });
-    _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { this, &Pane::_RestartTerminalRequestedHandler });
-}
-void Pane::_removeControlEvents()
-{
-    _controlEvents = {};
-}
+// void Pane::_setupControlEvents()
+// {
+//     _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &Pane::_ControlConnectionStateChangedHandler });
+//     _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { this, &Pane::_ControlWarningBellHandler });
+//     _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { this, &Pane::_CloseTerminalRequestedHandler });
+//     _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { this, &Pane::_RestartTerminalRequestedHandler });
+// }
+// void Pane::_removeControlEvents()
+// {
+//     _controlEvents = {};
+// }
 
 // Method Description:
 // - Extract the terminal settings from the current (leaf) pane's control
@@ -128,12 +132,19 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
     // Leaves are the only things that have controls
     assert(_IsLeaf());
 
+    // TODO! this should be in the IPaneContent interface
+    if (const auto& terminalPane{ _getTerminalContent() }; !terminalPane)
+    {
+        return nullptr;
+    }
+    auto termControl{ _content.GetRoot().try_as<TermControl>() };
+
     NewTerminalArgs args{};
-    auto controlSettings = _control.Settings();
+    auto controlSettings = termControl.Settings();
 
     args.Profile(controlSettings.ProfileName());
     // If we know the user's working directory use it instead of the profile.
-    if (const auto dir = _control.WorkingDirectory(); !dir.empty())
+    if (const auto dir = termControl.WorkingDirectory(); !dir.empty())
     {
         args.StartingDirectory(dir);
     }
@@ -173,7 +184,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
     // "attach existing" rather than a "create"
     if (asContent)
     {
-        args.ContentId(_control.ContentId());
+        args.ContentId(termControl.ContentId());
     }
 
     return args;
@@ -1022,199 +1033,199 @@ Pane::PaneNeighborSearch Pane::_FindPaneAndNeighbor(const std::shared_ptr<Pane> 
     return { nullptr, nullptr, offset };
 }
 
-// Method Description:
-// - Called when our attached control is closed. Triggers listeners to our close
-//   event, if we're a leaf pane.
-// - If this was called, and we became a parent pane (due to work on another
-//   thread), this function will do nothing (allowing the control's new parent
-//   to handle the event instead).
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                                 const winrt::Windows::Foundation::IInspectable& /*args*/)
-{
-    std::unique_lock lock{ _createCloseLock };
-    // It's possible that this event handler started being executed, then before
-    // we got the lock, another thread created another child. So our control is
-    // actually no longer _our_ control, and instead could be a descendant.
-    //
-    // When the control's new Pane takes ownership of the control, the new
-    // parent will register its own event handler. That event handler will get
-    // fired after this handler returns, and will properly cleanup state.
-    if (!_IsLeaf())
-    {
-        return;
-    }
+// // Method Description:
+// // - Called when our attached control is closed. Triggers listeners to our close
+// //   event, if we're a leaf pane.
+// // - If this was called, and we became a parent pane (due to work on another
+// //   thread), this function will do nothing (allowing the control's new parent
+// //   to handle the event instead).
+// // Arguments:
+// // - <none>
+// // Return Value:
+// // - <none>
+// void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+//                                                  const winrt::Windows::Foundation::IInspectable& /*args*/)
+// {
+//     std::unique_lock lock{ _createCloseLock };
+//     // It's possible that this event handler started being executed, then before
+//     // we got the lock, another thread created another child. So our control is
+//     // actually no longer _our_ control, and instead could be a descendant.
+//     //
+//     // When the control's new Pane takes ownership of the control, the new
+//     // parent will register its own event handler. That event handler will get
+//     // fired after this handler returns, and will properly cleanup state.
+//     if (!_IsLeaf())
+//     {
+//         return;
+//     }
 
-    const auto newConnectionState = _control.ConnectionState();
-    const auto previousConnectionState = std::exchange(_connectionState, newConnectionState);
+//     const auto newConnectionState = _control.ConnectionState();
+//     const auto previousConnectionState = std::exchange(_connectionState, newConnectionState);
 
-    if (newConnectionState < ConnectionState::Closed)
-    {
-        // Pane doesn't care if the connection isn't entering a terminal state.
-        return;
-    }
+//     if (newConnectionState < ConnectionState::Closed)
+//     {
+//         // Pane doesn't care if the connection isn't entering a terminal state.
+//         return;
+//     }
 
-    if (previousConnectionState < ConnectionState::Connected && newConnectionState >= ConnectionState::Failed)
-    {
-        // A failure to complete the connection (before it has _connected_) is not covered by "closeOnExit".
-        // This is to prevent a misconfiguration (closeOnExit: always, startingDirectory: garbage) resulting
-        // in Terminal flashing open and immediately closed.
-        return;
-    }
+//     if (previousConnectionState < ConnectionState::Connected && newConnectionState >= ConnectionState::Failed)
+//     {
+//         // A failure to complete the connection (before it has _connected_) is not covered by "closeOnExit".
+//         // This is to prevent a misconfiguration (closeOnExit: always, startingDirectory: garbage) resulting
+//         // in Terminal flashing open and immediately closed.
+//         return;
+//     }
 
-    if (_profile)
-    {
-        if (_isDefTermSession && _profile.CloseOnExit() == CloseOnExitMode::Automatic)
-        {
-            // For 'automatic', we only care about the connection state if we were launched by Terminal
-            // Since we were launched via defterm, ignore the connection state (i.e. we treat the
-            // close on exit mode as 'always', see GH #13325 for discussion)
-            Close();
-        }
+//     if (_profile)
+//     {
+//         if (_isDefTermSession && _profile.CloseOnExit() == CloseOnExitMode::Automatic)
+//         {
+//             // For 'automatic', we only care about the connection state if we were launched by Terminal
+//             // Since we were launched via defterm, ignore the connection state (i.e. we treat the
+//             // close on exit mode as 'always', see GH #13325 for discussion)
+//             Close();
+//         }
 
-        const auto mode = _profile.CloseOnExit();
-        if ((mode == CloseOnExitMode::Always) ||
-            ((mode == CloseOnExitMode::Graceful || mode == CloseOnExitMode::Automatic) && newConnectionState == ConnectionState::Closed))
-        {
-            Close();
-        }
-    }
-}
+//         const auto mode = _profile.CloseOnExit();
+//         if ((mode == CloseOnExitMode::Always) ||
+//             ((mode == CloseOnExitMode::Graceful || mode == CloseOnExitMode::Automatic) && newConnectionState == ConnectionState::Closed))
+//         {
+//             Close();
+//         }
+//     }
+// }
 
-void Pane::_CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
-{
-    std::unique_lock lock{ _createCloseLock };
+// void Pane::_CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+//                                           const winrt::Windows::Foundation::IInspectable& /*args*/)
+// {
+//     std::unique_lock lock{ _createCloseLock };
 
-    // It's possible that this event handler started being executed, then before
-    // we got the lock, another thread created another child. So our control is
-    // actually no longer _our_ control, and instead could be a descendant.
-    //
-    // When the control's new Pane takes ownership of the control, the new
-    // parent will register its own event handler. That event handler will get
-    // fired after this handler returns, and will properly cleanup state.
-    if (!_IsLeaf())
-    {
-        return;
-    }
+//     // It's possible that this event handler started being executed, then before
+//     // we got the lock, another thread created another child. So our control is
+//     // actually no longer _our_ control, and instead could be a descendant.
+//     //
+//     // When the control's new Pane takes ownership of the control, the new
+//     // parent will register its own event handler. That event handler will get
+//     // fired after this handler returns, and will properly cleanup state.
+//     if (!_IsLeaf())
+//     {
+//         return;
+//     }
 
-    Close();
-}
+//     Close();
+// }
 
-void Pane::_RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                            const winrt::Windows::Foundation::IInspectable& /*args*/)
-{
-    if (!_IsLeaf())
-    {
-        return;
-    }
-    _RestartTerminalRequestedHandlers(shared_from_this());
-}
+// void Pane::_RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+//                                             const winrt::Windows::Foundation::IInspectable& /*args*/)
+// {
+//     if (!_IsLeaf())
+//     {
+//         return;
+//     }
+//     _RestartTerminalRequestedHandlers(shared_from_this());
+// }
 
-winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
-{
-    auto weakThis{ weak_from_this() };
+// winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
+// {
+//     auto weakThis{ weak_from_this() };
 
-    co_await wil::resume_foreground(_root.Dispatcher());
-    if (auto pane{ weakThis.lock() })
-    {
-        // BODGY
-        // GH#12258: We learned that if you leave the MediaPlayer open, and
-        // press the media keys (like play/pause), then the OS will _replay the
-        // bell_. So we have to re-create the MediaPlayer each time we want to
-        // play the bell, to make sure a subsequent play doesn't come through
-        // and reactivate the old one.
+//     co_await wil::resume_foreground(_root.Dispatcher());
+//     if (auto pane{ weakThis.lock() })
+//     {
+//         // BODGY
+//         // GH#12258: We learned that if you leave the MediaPlayer open, and
+//         // press the media keys (like play/pause), then the OS will _replay the
+//         // bell_. So we have to re-create the MediaPlayer each time we want to
+//         // play the bell, to make sure a subsequent play doesn't come through
+//         // and reactivate the old one.
 
-        if (!_bellPlayer)
-        {
-            // The MediaPlayer might not exist on Windows N SKU.
-            try
-            {
-                _bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
-            }
-            CATCH_LOG();
-        }
-        if (_bellPlayer)
-        {
-            const auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
-            const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
-            _bellPlayer.Source(item);
-            _bellPlayer.Play();
+//         if (!_bellPlayer)
+//         {
+//             // The MediaPlayer might not exist on Windows N SKU.
+//             try
+//             {
+//                 _bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+//             }
+//             CATCH_LOG();
+//         }
+//         if (_bellPlayer)
+//         {
+//             const auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
+//             const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
+//             _bellPlayer.Source(item);
+//             _bellPlayer.Play();
 
-            // This lambda will clean up the bell player when we're done with it.
-            auto weakThis2{ weak_from_this() };
-            _mediaEndedRevoker = _bellPlayer.MediaEnded(winrt::auto_revoke, [weakThis2](auto&&, auto&&) {
-                if (auto self{ weakThis2.lock() })
-                {
-                    if (self->_bellPlayer)
-                    {
-                        // We need to make sure clear out the current track
-                        // that's being played, again, so that the system can't
-                        // come through and replay it. In testing, we needed to
-                        // do this, closing the MediaPlayer alone wasn't good
-                        // enough.
-                        self->_bellPlayer.Pause();
-                        self->_bellPlayer.Source(nullptr);
-                        self->_bellPlayer.Close();
-                    }
-                    self->_mediaEndedRevoker.revoke();
-                    self->_bellPlayer = nullptr;
-                }
-            });
-        }
-    }
-}
+//             // This lambda will clean up the bell player when we're done with it.
+//             auto weakThis2{ weak_from_this() };
+//             _mediaEndedRevoker = _bellPlayer.MediaEnded(winrt::auto_revoke, [weakThis2](auto&&, auto&&) {
+//                 if (auto self{ weakThis2.lock() })
+//                 {
+//                     if (self->_bellPlayer)
+//                     {
+//                         // We need to make sure clear out the current track
+//                         // that's being played, again, so that the system can't
+//                         // come through and replay it. In testing, we needed to
+//                         // do this, closing the MediaPlayer alone wasn't good
+//                         // enough.
+//                         self->_bellPlayer.Pause();
+//                         self->_bellPlayer.Source(nullptr);
+//                         self->_bellPlayer.Close();
+//                     }
+//                     self->_mediaEndedRevoker.revoke();
+//                     self->_bellPlayer = nullptr;
+//                 }
+//             });
+//         }
+//     }
+// }
 
-// Method Description:
-// - Plays a warning note when triggered by the BEL control character,
-//   using the sound configured for the "Critical Stop" system event.`
-//   This matches the behavior of the Windows Console host.
-// - Will also flash the taskbar if the bellStyle setting for this profile
-//   has the 'visual' flag set
-// Arguments:
-// - <unused>
-void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                      const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
-{
-    if (!_IsLeaf())
-    {
-        return;
-    }
-    if (_profile)
-    {
-        // We don't want to do anything if nothing is set, so check for that first
-        if (static_cast<int>(_profile.BellStyle()) != 0)
-        {
-            if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
-            {
-                // Audible is set, play the sound
-                auto sounds{ _profile.BellSound() };
-                if (sounds && sounds.Size() > 0)
-                {
-                    winrt::hstring soundPath{ wil::ExpandEnvironmentStringsW<std::wstring>(sounds.GetAt(rand() % sounds.Size()).c_str()) };
-                    winrt::Windows::Foundation::Uri uri{ soundPath };
-                    _playBellSound(uri);
-                }
-                else
-                {
-                    const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-                    PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-                }
-            }
+// // Method Description:
+// // - Plays a warning note when triggered by the BEL control character,
+// //   using the sound configured for the "Critical Stop" system event.`
+// //   This matches the behavior of the Windows Console host.
+// // - Will also flash the taskbar if the bellStyle setting for this profile
+// //   has the 'visual' flag set
+// // Arguments:
+// // - <unused>
+// void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+//                                       const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+// {
+//     if (!_IsLeaf())
+//     {
+//         return;
+//     }
+//     if (_profile)
+//     {
+//         // We don't want to do anything if nothing is set, so check for that first
+//         if (static_cast<int>(_profile.BellStyle()) != 0)
+//         {
+//             if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
+//             {
+//                 // Audible is set, play the sound
+//                 auto sounds{ _profile.BellSound() };
+//                 if (sounds && sounds.Size() > 0)
+//                 {
+//                     winrt::hstring soundPath{ wil::ExpandEnvironmentStringsW<std::wstring>(sounds.GetAt(rand() % sounds.Size()).c_str()) };
+//                     winrt::Windows::Foundation::Uri uri{ soundPath };
+//                     _playBellSound(uri);
+//                 }
+//                 else
+//                 {
+//                     const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
+//                     PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+//                 }
+//             }
 
-            if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
-            {
-                _control.BellLightOn();
-            }
+//             if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
+//             {
+//                 _control.BellLightOn();
+//             }
 
-            // raise the event with the bool value corresponding to the taskbar flag
-            _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Taskbar));
-        }
-    }
-}
+//             // raise the event with the bool value corresponding to the taskbar flag
+//             _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Taskbar));
+//         }
+//     }
+// }
 
 // Event Description:
 // - Called when our control gains focus. We'll use this to trigger our GotFocus
@@ -1266,21 +1277,9 @@ void Pane::Shutdown()
     // modify our tree
     std::unique_lock lock{ _createCloseLock };
 
-    // Clear out our media player callbacks, and stop any playing media. This
-    // will prevent the callback from being triggered after we've closed, and
-    // also make sure that our sound stops when we're closed.
-    _mediaEndedRevoker.revoke();
-    if (_bellPlayer)
-    {
-        _bellPlayer.Pause();
-        _bellPlayer.Source(nullptr);
-        _bellPlayer.Close();
-    }
-    _bellPlayer = nullptr;
-
     if (_IsLeaf())
     {
-        _control.Close();
+        _content.Close();
     }
     else
     {
@@ -1335,7 +1334,14 @@ TermControl Pane::GetLastFocusedTerminalControl()
             {
                 if (p->_IsLeaf())
                 {
-                    return p->_control;
+                    if (const auto& terminalPane{ p->_content.try_as<TerminalPaneContent>() })
+                    {
+                        return terminalPane.GetTerminal();
+                    }
+                    else
+                    {
+                        return nullptr;
+                    }
                 }
                 pane = p;
             }
@@ -1343,7 +1349,15 @@ TermControl Pane::GetLastFocusedTerminalControl()
         }
         return _firstChild->GetLastFocusedTerminalControl();
     }
-    return _control;
+
+    if (const auto& terminalPane{ _content.try_as<TerminalPaneContent>() })
+    {
+        return terminalPane.GetTerminal();
+    }
+    else
+    {
+        return nullptr;
+    }
 }
 
 // Method Description:
@@ -1355,7 +1369,14 @@ TermControl Pane::GetLastFocusedTerminalControl()
 // - nullptr if this Pane is a parent, otherwise the TermControl of this Pane.
 TermControl Pane::GetTerminalControl()
 {
-    return _IsLeaf() ? _control : nullptr;
+    if (const auto& terminalPane{ _getTerminalContent() })
+    {
+        return terminalPane.GetTerminal();
+    }
+    else
+    {
+        return nullptr;
+    }
 }
 
 // Method Description:
@@ -1402,7 +1423,11 @@ void Pane::SetActive()
 Profile Pane::GetFocusedProfile()
 {
     auto lastFocused = GetActivePane();
-    return lastFocused ? lastFocused->_profile : nullptr;
+    if (const auto& terminalPane{ lastFocused->_getTerminalContent() })
+    {
+        return terminalPane.GetProfile();
+    }
+    return nullptr;
 }
 
 // Method Description:
@@ -1527,9 +1552,10 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Pr
 {
     assert(_IsLeaf());
 
-    _profile = profile;
-
-    _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+    if (const auto& terminalPane{ _getTerminalContent() })
+    {
+        return terminalPane.UpdateSettings(settings, profile);
+    }
 }
 
 // Method Description:
@@ -1615,7 +1641,7 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
 //   reattached to a tree somewhere as the control moves with the pane.
 // Return Value:
 // - <none>
-void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
+void Pane::_CloseChild(const bool closeFirst, const bool /*isDetaching*/)
 {
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
@@ -1655,35 +1681,16 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _borders = _GetCommonBorders();
 
         // take the control, profile, id and isDefTermSession of the pane that _wasn't_ closed.
-        _control = remainingChild->_control;
-        _connectionState = remainingChild->_connectionState;
-        _profile = remainingChild->_profile;
+        _content = remainingChild->_content;
         _id = remainingChild->Id();
-        _isDefTermSession = remainingChild->_isDefTermSession;
-
-        // Add our new event handler before revoking the old one.
-        _setupControlEvents();
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
         // closing. At this point, if the remaining child's control is closed,
         // they'll trigger only our event handler for the control's close.
 
-        // However, if we are detaching the pane we want to keep its control
-        // handlers since it is just getting moved.
-        if (!isDetaching)
-        {
-            closedChild->WalkTree([](auto p) {
-                if (p->_IsLeaf())
-                {
-                    p->_removeControlEvents();
-                }
-            });
-        }
-
         closedChild->Closed(closedChildClosedToken);
         remainingChild->Closed(remainingChildClosedToken);
-        remainingChild->_removeControlEvents();
 
         // If we or either of our children was focused, we want to take that
         // focus from them.
@@ -1703,7 +1710,8 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
 
         // Reattach the TermControl to our grid.
         _root.Children().Append(_borderFirst);
-        _borderFirst.Child(_control);
+        const auto& control{ _content.GetRoot() };
+        _borderFirst.Child(control);
 
         // Make sure to set our _splitState before focusing the control. If you
         // fail to do this, when the tab handles the GotFocus event and asks us
@@ -1712,14 +1720,17 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _splitState = SplitState::None;
 
         // re-attach our handler for the control's GotFocus event.
-        _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
-        _lostFocusRevoker = _control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
+        if (control)
+        {
+            _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
+            _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
+        }
 
         // If we're inheriting the "last active" state from one of our children,
         // focus our control now. This should trigger our own GotFocus event.
         if (usedToFocusClosedChildsTerminal || _lastActive)
         {
-            _control.Focus(FocusState::Programmatic);
+            _content.Focus();
 
             // See GH#7252
             // Manually fire off the GotFocus event. Typically, this is done
@@ -1758,15 +1769,6 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         // Remove the event handlers on the old children
         remainingChild->Closed(remainingChildClosedToken);
         closedChild->Closed(closedChildClosedToken);
-        if (!isDetaching)
-        {
-            closedChild->WalkTree([](auto p) {
-                if (p->_IsLeaf())
-                {
-                    p->_removeControlEvents();
-                }
-            });
-        }
 
         // Reset our UI:
         _root.Children().Clear();
@@ -1851,126 +1853,126 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
 
     if (auto pane{ weakThis.get() })
     {
-        // This will query if animations are enabled via the "Show animations in
-        // Windows" setting in the OS
-        winrt::Windows::UI::ViewManagement::UISettings uiSettings;
-        const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
-        const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
+        //// This will query if animations are enabled via the "Show animations in
+        //// Windows" setting in the OS
+        //winrt::Windows::UI::ViewManagement::UISettings uiSettings;
+        //const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
+        //const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
 
-        // GH#7252: If either child is zoomed, just skip the animation. It won't work.
-        const auto eitherChildZoomed = pane->_firstChild->_zoomed || pane->_secondChild->_zoomed;
+        //// GH#7252: If either child is zoomed, just skip the animation. It won't work.
+        //const auto eitherChildZoomed = pane->_firstChild->_zoomed || pane->_secondChild->_zoomed;
         // If animations are disabled, just skip this and go straight to
         // _CloseChild. Curiously, the pane opening animation doesn't need this,
         // and will skip straight to Completed when animations are disabled, but
         // this one doesn't seem to.
-        if (!animationsEnabledInOS || !animationsEnabledInApp || eitherChildZoomed)
-        {
-            pane->_CloseChild(closeFirst, false);
-            co_return;
-        }
+        // if (!animationsEnabledInOS || !animationsEnabledInApp || eitherChildZoomed)
+        // {
+        pane->_CloseChild(closeFirst, false);
+        co_return;
+        // }
 
-        // Setup the animation
+        // // Setup the animation
 
-        auto removedChild = closeFirst ? _firstChild : _secondChild;
-        auto remainingChild = closeFirst ? _secondChild : _firstChild;
-        const auto splitWidth = _splitState == SplitState::Vertical;
+        // auto removedChild = closeFirst ? _firstChild : _secondChild;
+        // auto remainingChild = closeFirst ? _secondChild : _firstChild;
+        // const auto splitWidth = _splitState == SplitState::Vertical;
 
-        Size removedOriginalSize{
-            ::base::saturated_cast<float>(removedChild->_root.ActualWidth()),
-            ::base::saturated_cast<float>(removedChild->_root.ActualHeight())
-        };
-        Size remainingOriginalSize{
-            ::base::saturated_cast<float>(remainingChild->_root.ActualWidth()),
-            ::base::saturated_cast<float>(remainingChild->_root.ActualHeight())
-        };
+        // Size removedOriginalSize{
+        //     ::base::saturated_cast<float>(removedChild->_root.ActualWidth()),
+        //     ::base::saturated_cast<float>(removedChild->_root.ActualHeight())
+        // };
+        // Size remainingOriginalSize{
+        //     ::base::saturated_cast<float>(remainingChild->_root.ActualWidth()),
+        //     ::base::saturated_cast<float>(remainingChild->_root.ActualHeight())
+        // };
 
-        // Remove both children from the grid
-        _borderFirst.Child(nullptr);
-        _borderSecond.Child(nullptr);
+        // // Remove both children from the grid
+        // _borderFirst.Child(nullptr);
+        // _borderSecond.Child(nullptr);
 
-        if (_splitState == SplitState::Vertical)
-        {
-            Controls::Grid::SetColumn(_borderFirst, 0);
-            Controls::Grid::SetColumn(_borderSecond, 1);
-        }
-        else if (_splitState == SplitState::Horizontal)
-        {
-            Controls::Grid::SetRow(_borderFirst, 0);
-            Controls::Grid::SetRow(_borderSecond, 1);
-        }
+        // if (_splitState == SplitState::Vertical)
+        // {
+        //     Controls::Grid::SetColumn(_borderFirst, 0);
+        //     Controls::Grid::SetColumn(_borderSecond, 1);
+        // }
+        // else if (_splitState == SplitState::Horizontal)
+        // {
+        //     Controls::Grid::SetRow(_borderFirst, 0);
+        //     Controls::Grid::SetRow(_borderSecond, 1);
+        // }
 
-        // Create the dummy grid. This grid will be the one we actually animate,
-        // in the place of the closed pane.
-        Controls::Grid dummyGrid;
-        // GH#603 - we can safely add a BG here, as the control is gone right
-        // away, to fill the space as the rest of the pane expands.
-        dummyGrid.Background(_themeResources.unfocusedBorderBrush);
-        // It should be the size of the closed pane.
-        dummyGrid.Width(removedOriginalSize.Width);
-        dummyGrid.Height(removedOriginalSize.Height);
+        // // Create the dummy grid. This grid will be the one we actually animate,
+        // // in the place of the closed pane.
+        // Controls::Grid dummyGrid;
+        // // GH#603 - we can safely add a BG here, as the control is gone right
+        // // away, to fill the space as the rest of the pane expands.
+        // dummyGrid.Background(_themeResources.unfocusedBorderBrush);
+        // // It should be the size of the closed pane.
+        // dummyGrid.Width(removedOriginalSize.Width);
+        // dummyGrid.Height(removedOriginalSize.Height);
 
-        _borderFirst.Child(closeFirst ? dummyGrid : remainingChild->GetRootElement());
-        _borderSecond.Child(closeFirst ? remainingChild->GetRootElement() : dummyGrid);
+        // _borderFirst.Child(closeFirst ? dummyGrid : remainingChild->GetRootElement());
+        // _borderSecond.Child(closeFirst ? remainingChild->GetRootElement() : dummyGrid);
 
-        // Set up the rows/cols as auto/auto, so they'll only use the size of
-        // the elements in the grid.
-        //
-        // * For the closed pane, we want to make that row/col "auto" sized, so
-        //   it takes up as much space as is available.
-        // * For the remaining pane, we'll make that row/col "*" sized, so it
-        //   takes all the remaining space. As the dummy grid is resized down,
-        //   the remaining pane will expand to take the rest of the space.
-        _root.ColumnDefinitions().Clear();
-        _root.RowDefinitions().Clear();
-        if (_splitState == SplitState::Vertical)
-        {
-            auto firstColDef = Controls::ColumnDefinition();
-            auto secondColDef = Controls::ColumnDefinition();
-            firstColDef.Width(!closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
-            secondColDef.Width(closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
-            _root.ColumnDefinitions().Append(firstColDef);
-            _root.ColumnDefinitions().Append(secondColDef);
-        }
-        else if (_splitState == SplitState::Horizontal)
-        {
-            auto firstRowDef = Controls::RowDefinition();
-            auto secondRowDef = Controls::RowDefinition();
-            firstRowDef.Height(!closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
-            secondRowDef.Height(closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
-            _root.RowDefinitions().Append(firstRowDef);
-            _root.RowDefinitions().Append(secondRowDef);
-        }
+        // // Set up the rows/cols as auto/auto, so they'll only use the size of
+        // // the elements in the grid.
+        // //
+        // // * For the closed pane, we want to make that row/col "auto" sized, so
+        // //   it takes up as much space as is available.
+        // // * For the remaining pane, we'll make that row/col "*" sized, so it
+        // //   takes all the remaining space. As the dummy grid is resized down,
+        // //   the remaining pane will expand to take the rest of the space.
+        // _root.ColumnDefinitions().Clear();
+        // _root.RowDefinitions().Clear();
+        // if (_splitState == SplitState::Vertical)
+        // {
+        //     auto firstColDef = Controls::ColumnDefinition();
+        //     auto secondColDef = Controls::ColumnDefinition();
+        //     firstColDef.Width(!closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
+        //     secondColDef.Width(closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
+        //     _root.ColumnDefinitions().Append(firstColDef);
+        //     _root.ColumnDefinitions().Append(secondColDef);
+        // }
+        // else if (_splitState == SplitState::Horizontal)
+        // {
+        //     auto firstRowDef = Controls::RowDefinition();
+        //     auto secondRowDef = Controls::RowDefinition();
+        //     firstRowDef.Height(!closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
+        //     secondRowDef.Height(closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
+        //     _root.RowDefinitions().Append(firstRowDef);
+        //     _root.RowDefinitions().Append(secondRowDef);
+        // }
 
-        // Animate the dummy grid from its current size down to 0
-        Media::Animation::DoubleAnimation animation{};
-        animation.Duration(AnimationDuration);
-        animation.From(splitWidth ? removedOriginalSize.Width : removedOriginalSize.Height);
-        animation.To(0.0);
-        // This easing is the same as the entrance animation.
-        animation.EasingFunction(Media::Animation::QuadraticEase{});
-        animation.EnableDependentAnimation(true);
+        // // Animate the dummy grid from its current size down to 0
+        // Media::Animation::DoubleAnimation animation{};
+        // animation.Duration(AnimationDuration);
+        // animation.From(splitWidth ? removedOriginalSize.Width : removedOriginalSize.Height);
+        // animation.To(0.0);
+        // // This easing is the same as the entrance animation.
+        // animation.EasingFunction(Media::Animation::QuadraticEase{});
+        // animation.EnableDependentAnimation(true);
 
-        Media::Animation::Storyboard s;
-        s.Duration(AnimationDuration);
-        s.Children().Append(animation);
-        s.SetTarget(animation, dummyGrid);
-        s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
+        // Media::Animation::Storyboard s;
+        // s.Duration(AnimationDuration);
+        // s.Children().Append(animation);
+        // s.SetTarget(animation, dummyGrid);
+        // s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
 
-        // Start the animation.
-        s.Begin();
+        // // Start the animation.
+        // s.Begin();
 
-        std::weak_ptr<Pane> weakThis{ shared_from_this() };
+        // std::weak_ptr<Pane> weakThis{ shared_from_this() };
 
-        // When the animation is completed, reparent the child's content up to
-        // us, and remove the child nodes from the tree.
-        animation.Completed([weakThis, closeFirst](auto&&, auto&&) {
-            if (auto pane{ weakThis.lock() })
-            {
-                // We don't need to manually undo any of the above trickiness.
-                // We're going to re-parent the child's content into us anyways
-                pane->_CloseChild(closeFirst, false);
-            }
-        });
+        // // When the animation is completed, reparent the child's content up to
+        // // us, and remove the child nodes from the tree.
+        // animation.Completed([weakThis, closeFirst](auto&&, auto&&) {
+        //     if (auto pane{ weakThis.lock() })
+        //     {
+        //         // We don't need to manually undo any of the above trickiness.
+        //         // We're going to re-parent the child's content into us anyways
+        //         pane->_CloseChild(closeFirst, false);
+        //     }
+        // });
     }
 }
 
@@ -2155,151 +2157,151 @@ void Pane::_ApplySplitDefinitions()
 //   have been set up.
 void Pane::_SetupEntranceAnimation()
 {
-    // This will query if animations are enabled via the "Show animations in
-    // Windows" setting in the OS
-    winrt::Windows::UI::ViewManagement::UISettings uiSettings;
-    const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
-    const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
+    // // This will query if animations are enabled via the "Show animations in
+    // // Windows" setting in the OS
+    // winrt::Windows::UI::ViewManagement::UISettings uiSettings;
+    // const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
+    // const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
 
-    const auto splitWidth = _splitState == SplitState::Vertical;
-    const auto totalSize = splitWidth ? _root.ActualWidth() : _root.ActualHeight();
-    // If we don't have a size yet, it's likely that we're in startup, or we're
-    // being executed as a sequence of actions. In that case, just skip the
-    // animation.
-    if (totalSize <= 0 || !animationsEnabledInOS || !animationsEnabledInApp)
-    {
-        return;
-    }
+    // const auto splitWidth = _splitState == SplitState::Vertical;
+    // const auto totalSize = splitWidth ? _root.ActualWidth() : _root.ActualHeight();
+    // // If we don't have a size yet, it's likely that we're in startup, or we're
+    // // being executed as a sequence of actions. In that case, just skip the
+    // // animation.
+    // if (totalSize <= 0 || !animationsEnabledInOS || !animationsEnabledInApp)
+    // {
+    //     return;
+    // }
 
-    // Use the unfocused border color as the pane background, so an actual color
-    // appears behind panes as we animate them sliding in.
-    //
-    // GH#603 - We set only the background of the new pane, while it animates
-    // in. Once the animation is done, we'll remove that background, so if the
-    // user wants vintage opacity, they'll be able to see what's under the
-    // window.
-    // * If we don't give it a background, then the BG will be entirely transparent.
-    // * If we give the parent (us) root BG a color, then a transparent pane
-    //   will flash opaque during the animation, then back to transparent, which
-    //   looks bad.
-    _secondChild->_root.Background(_themeResources.unfocusedBorderBrush);
+    // // Use the unfocused border color as the pane background, so an actual color
+    // // appears behind panes as we animate them sliding in.
+    // //
+    // // GH#603 - We set only the background of the new pane, while it animates
+    // // in. Once the animation is done, we'll remove that background, so if the
+    // // user wants vintage opacity, they'll be able to see what's under the
+    // // window.
+    // // * If we don't give it a background, then the BG will be entirely transparent.
+    // // * If we give the parent (us) root BG a color, then a transparent pane
+    // //   will flash opaque during the animation, then back to transparent, which
+    // //   looks bad.
+    // _secondChild->_root.Background(_themeResources.unfocusedBorderBrush);
 
-    const auto [firstSize, secondSize] = _CalcChildrenSizes(::base::saturated_cast<float>(totalSize));
+    // const auto [firstSize, secondSize] = _CalcChildrenSizes(::base::saturated_cast<float>(totalSize));
 
     // This is safe to capture this, because it's only being called in the
     // context of this method (not on another thread)
-    auto setupAnimation = [&](const auto& size, const bool isFirstChild) {
-        auto child = isFirstChild ? _firstChild : _secondChild;
-        auto childGrid = child->_root;
-        // If we are splitting a parent pane this may be null
-        auto control = child->_control;
-        // Build up our animation:
-        // * it'll take as long as our duration (200ms)
-        // * it'll change the value of our property from 0 to secondSize
-        // * it'll animate that value using a quadratic function (like f(t) = t^2)
-        // * IMPORTANT! We'll manually tell the animation that "yes we know what
-        //   we're doing, we want an animation here."
-        Media::Animation::DoubleAnimation animation{};
-        animation.Duration(AnimationDuration);
-        if (isFirstChild)
-        {
-            // If we're animating the first pane, the size should decrease, from
-            // the full size down to the given size.
-            animation.From(totalSize);
-            animation.To(size);
-        }
-        else
-        {
-            // Otherwise, we want to show the pane getting larger, so animate
-            // from 0 to the requested size.
-            animation.From(0.0);
-            animation.To(size);
-        }
-        animation.EasingFunction(Media::Animation::QuadraticEase{});
-        animation.EnableDependentAnimation(true);
+    // auto setupAnimation = [&](const auto& size, const bool isFirstChild) {
+    //     auto child = isFirstChild ? _firstChild : _secondChild;
+    //     auto childGrid = child->_root;
+    //     // If we are splitting a parent pane this may be null
+    //     auto control = child->_control;
+    //     // Build up our animation:
+    //     // * it'll take as long as our duration (200ms)
+    //     // * it'll change the value of our property from 0 to secondSize
+    //     // * it'll animate that value using a quadratic function (like f(t) = t^2)
+    //     // * IMPORTANT! We'll manually tell the animation that "yes we know what
+    //     //   we're doing, we want an animation here."
+    //     Media::Animation::DoubleAnimation animation{};
+    //     animation.Duration(AnimationDuration);
+    //     if (isFirstChild)
+    //     {
+    //         // If we're animating the first pane, the size should decrease, from
+    //         // the full size down to the given size.
+    //         animation.From(totalSize);
+    //         animation.To(size);
+    //     }
+    //     else
+    //     {
+    //         // Otherwise, we want to show the pane getting larger, so animate
+    //         // from 0 to the requested size.
+    //         animation.From(0.0);
+    //         animation.To(size);
+    //     }
+    //     animation.EasingFunction(Media::Animation::QuadraticEase{});
+    //     animation.EnableDependentAnimation(true);
 
-        // Now we're going to set up the Storyboard. This is a unit that uses the
-        // Animation from above, and actually applies it to a property.
-        // * we'll set it up for the same duration as the animation we have
-        // * Apply the animation to the grid of the new pane we're adding to the tree.
-        // * apply the animation to the Width or Height property.
-        Media::Animation::Storyboard s;
-        s.Duration(AnimationDuration);
-        s.Children().Append(animation);
-        s.SetTarget(animation, childGrid);
-        s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
+    //     // Now we're going to set up the Storyboard. This is a unit that uses the
+    //     // Animation from above, and actually applies it to a property.
+    //     // * we'll set it up for the same duration as the animation we have
+    //     // * Apply the animation to the grid of the new pane we're adding to the tree.
+    //     // * apply the animation to the Width or Height property.
+    //     Media::Animation::Storyboard s;
+    //     s.Duration(AnimationDuration);
+    //     s.Children().Append(animation);
+    //     s.SetTarget(animation, childGrid);
+    //     s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
 
-        // BE TRICKY:
-        // We're animating the width or height of our child pane's grid.
-        //
-        // We DON'T want to change the size of the control itself, because the
-        // terminal has to reflow the buffer every time the control changes size. So
-        // what we're going to do there is manually set the control's size to how
-        // big we _actually know_ the control will be.
-        //
-        // We're also going to be changing alignment of our child pane and the
-        // control. This way, we'll be able to have the control stick to the inside
-        // of the child pane's grid (the side that's moving), while we also have the
-        // pane's grid stick to "outside" of the grid (the side that's not moving)
-        if (splitWidth)
-        {
-            // If we're animating the first child, then stick to the top/left of
-            // the parent pane, otherwise use the bottom/right. This is always
-            // the "outside" of the parent pane.
-            childGrid.HorizontalAlignment(isFirstChild ? HorizontalAlignment::Left : HorizontalAlignment::Right);
-            if (control)
-            {
-                control.HorizontalAlignment(HorizontalAlignment::Left);
-                control.Width(isFirstChild ? totalSize : size);
-            }
+    //     // BE TRICKY:
+    //     // We're animating the width or height of our child pane's grid.
+    //     //
+    //     // We DON'T want to change the size of the control itself, because the
+    //     // terminal has to reflow the buffer every time the control changes size. So
+    //     // what we're going to do there is manually set the control's size to how
+    //     // big we _actually know_ the control will be.
+    //     //
+    //     // We're also going to be changing alignment of our child pane and the
+    //     // control. This way, we'll be able to have the control stick to the inside
+    //     // of the child pane's grid (the side that's moving), while we also have the
+    //     // pane's grid stick to "outside" of the grid (the side that's not moving)
+    //     if (splitWidth)
+    //     {
+    //         // If we're animating the first child, then stick to the top/left of
+    //         // the parent pane, otherwise use the bottom/right. This is always
+    //         // the "outside" of the parent pane.
+    //         childGrid.HorizontalAlignment(isFirstChild ? HorizontalAlignment::Left : HorizontalAlignment::Right);
+    //         if (control)
+    //         {
+    //             control.HorizontalAlignment(HorizontalAlignment::Left);
+    //             control.Width(isFirstChild ? totalSize : size);
+    //         }
 
-            // When the animation is completed, undo the trickiness from before, to
-            // restore the controls to the behavior they'd usually have.
-            animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
-                childGrid.Width(NAN);
-                childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
-                if (control)
-                {
-                    control.Width(NAN);
-                    control.HorizontalAlignment(HorizontalAlignment::Stretch);
-                }
-                root.Background(nullptr);
-            });
-        }
-        else
-        {
-            // If we're animating the first child, then stick to the top/left of
-            // the parent pane, otherwise use the bottom/right. This is always
-            // the "outside" of the parent pane.
-            childGrid.VerticalAlignment(isFirstChild ? VerticalAlignment::Top : VerticalAlignment::Bottom);
-            if (control)
-            {
-                control.VerticalAlignment(VerticalAlignment::Top);
-                control.Height(isFirstChild ? totalSize : size);
-            }
+    //         // When the animation is completed, undo the trickiness from before, to
+    //         // restore the controls to the behavior they'd usually have.
+    //         animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
+    //             childGrid.Width(NAN);
+    //             childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
+    //             if (control)
+    //             {
+    //                 control.Width(NAN);
+    //                 control.HorizontalAlignment(HorizontalAlignment::Stretch);
+    //             }
+    //             root.Background(nullptr);
+    //         });
+    //     }
+    //     else
+    //     {
+    //         // If we're animating the first child, then stick to the top/left of
+    //         // the parent pane, otherwise use the bottom/right. This is always
+    //         // the "outside" of the parent pane.
+    //         childGrid.VerticalAlignment(isFirstChild ? VerticalAlignment::Top : VerticalAlignment::Bottom);
+    //         if (control)
+    //         {
+    //             control.VerticalAlignment(VerticalAlignment::Top);
+    //             control.Height(isFirstChild ? totalSize : size);
+    //         }
 
-            // When the animation is completed, undo the trickiness from before, to
-            // restore the controls to the behavior they'd usually have.
-            animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
-                childGrid.Height(NAN);
-                childGrid.VerticalAlignment(VerticalAlignment::Stretch);
-                if (control)
-                {
-                    control.Height(NAN);
-                    control.VerticalAlignment(VerticalAlignment::Stretch);
-                }
-                root.Background(nullptr);
-            });
-        }
+    //         // When the animation is completed, undo the trickiness from before, to
+    //         // restore the controls to the behavior they'd usually have.
+    //         animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
+    //             childGrid.Height(NAN);
+    //             childGrid.VerticalAlignment(VerticalAlignment::Stretch);
+    //             if (control)
+    //             {
+    //                 control.Height(NAN);
+    //                 control.VerticalAlignment(VerticalAlignment::Stretch);
+    //             }
+    //             root.Background(nullptr);
+    //         });
+    //     }
 
-        // Start the animation.
-        s.Begin();
-    };
+    //     // Start the animation.
+    //     s.Begin();
+    // };
 
-    // TODO: GH#7365 - animating the first child right now doesn't _really_ do
-    // anything. We could do better though.
-    setupAnimation(firstSize, true);
-    setupAnimation(secondSize, false);
+    // // TODO: GH#7365 - animating the first child right now doesn't _really_ do
+    // // anything. We could do better though.
+    // setupAnimation(firstSize, true);
+    // setupAnimation(secondSize, false);
 }
 
 // Method Description:
@@ -2517,9 +2519,6 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
 
     if (_IsLeaf())
     {
-        // revoke our handler - the child will take care of the control now.
-        _removeControlEvents();
-
         // Remove our old GotFocus handler from the control. We don't want the
         // control telling us that it's now focused, we want it telling its new
         // parent.
@@ -2548,11 +2547,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     else
     {
         //   Move our control, guid, isDefTermSession into the first one.
-        _firstChild = std::make_shared<Pane>(_profile, _control);
-        _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
-        _profile = nullptr;
-        _control = { nullptr };
-        _firstChild->_isDefTermSession = _isDefTermSession;
+        _firstChild = std::make_shared<Pane>(_content);
+        _content = nullptr;
     }
 
     _splitState = actualSplitType;
@@ -2874,8 +2870,16 @@ float Pane::CalcSnappedDimension(const bool widthOrHeight, const float dimension
 //   If requested size is already snapped, then both returned values equal this value.
 Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
 {
+    // TODO!: Again, bad. We're special-casing that the content just so happens to have a TermControl
+    const auto& termControl{ _content.GetRoot().try_as<TermControl>() };
+
     if (_IsLeaf())
     {
+        if (!termControl)
+        {
+            return { dimension, dimension };
+        }
+
         // If we're a leaf pane, align to the grid of controlling terminal
 
         const auto minSize = _GetMinSize();
@@ -2886,7 +2890,7 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
             return { minDimension, minDimension };
         }
 
-        auto lower = _control.SnapDimensionToGrid(widthOrHeight, dimension);
+        auto lower = termControl.SnapDimensionToGrid(widthOrHeight, dimension);
         if (widthOrHeight)
         {
             lower += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
@@ -2906,7 +2910,7 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
         }
         else
         {
-            const auto cellSize = _control.CharacterDimensions();
+            const auto cellSize = termControl.CharacterDimensions();
             const auto higher = lower + (widthOrHeight ? cellSize.Width : cellSize.Height);
             return { lower, higher };
         }
@@ -2950,8 +2954,9 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
 // Return Value:
 // - <none>
 void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const
-{
-    if (_IsLeaf())
+{ // TODO!: Again, bad. We're special-casing that the content just so happens to have a TermControl
+    const auto& termControl{ _content.GetRoot().try_as<TermControl>() };
+    if (_IsLeaf() && termControl)
     {
         // We're a leaf pane, so just add one more row or column (unless isMinimumSize
         // is true, see below).
@@ -2966,9 +2971,18 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
         }
         else
         {
-            const auto cellSize = _control.CharacterDimensions();
+            const auto cellSize = termControl.CharacterDimensions();
             sizeNode.size += widthOrHeight ? cellSize.Width : cellSize.Height;
         }
+    }
+    else if (_IsLeaf())
+    {
+        // If we're a leaf that didn't have a TermControl, then just increment
+        // by one. We have to increment by _some_ value, because this is used in
+        // a while() loop to find the next bigger size we can snap to. But since
+        // a non-terminal control doesn't really care what size it's snapped to,
+        // we can just say "one pixel larger is the next snap point"
+        sizeNode.size += 1;
     }
     else
     {
@@ -3072,7 +3086,7 @@ Size Pane::_GetMinSize() const
 {
     if (_IsLeaf())
     {
-        auto controlSize = _control.MinimumSize();
+        auto controlSize = _content.MinSize();
         auto newWidth = controlSize.Width;
         auto newHeight = controlSize.Height;
 
@@ -3170,14 +3184,18 @@ int Pane::GetLeafPaneCount() const noexcept
 //   created via default handoff
 void Pane::FinalizeConfigurationGivenDefault()
 {
-    _isDefTermSession = true;
+    if (const auto& terminalPane{ _content.try_as<TerminalPaneContent>() })
+    {
+        terminalPane.FinalizeConfigurationGivenDefault();
+    }
+    // _isDefTermSession = true;
 }
 
 // Method Description:
 // - Returns true if the pane or one of its descendants is read-only
 bool Pane::ContainsReadOnly() const
 {
-    return _IsLeaf() ? _control.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
+    return _IsLeaf() ? _content.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
 }
 
 // Method Description:
@@ -3192,8 +3210,8 @@ void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& s
 {
     if (_IsLeaf())
     {
-        auto tbState{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>(_control.TaskbarState(),
-                                                                                    _control.TaskbarProgress()) };
+        auto tbState{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>(_content.TaskbarState(),
+                                                                                    _content.TaskbarProgress()) };
         states.push_back(tbState);
     }
     else

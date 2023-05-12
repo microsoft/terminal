@@ -1,0 +1,17 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "IPaneContent.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass TerminalPaneContent : IPaneContent
+    {
+        Microsoft.Terminal.Control.TermControl GetTerminal();
+
+        void UpdateSettings(const Microsoft.Terminal.Settings.Model.TerminalSettingsCreateResult settings,
+                            const Microsoft.Terminal.Settings.Model.Profile profile);
+
+        Microsoft.Terminal.Settings.Model.Profile GetProfile();
+    }
+}

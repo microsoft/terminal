@@ -1,0 +1,23 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    interface IPaneContent
+    {
+        Windows.UI.Xaml.FrameworkElement GetRoot();
+
+        Windows.Foundation.Size MinSize { get; };
+
+        String Title { get; };
+        UInt64 TaskbarState { get; };
+        UInt64 TaskbarProgress { get; };
+        Boolean ReadOnly { get; };
+
+        void Focus();
+
+        void Close();
+        // event CloseRequested(...);
+
+    };
+}

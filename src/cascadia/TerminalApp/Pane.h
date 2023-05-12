@@ -21,6 +21,7 @@
 #pragma once
 
 #include "TaskbarState.h"
+#include "TerminalPaneContent.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -60,8 +61,7 @@ struct PaneResources
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
-    Pane(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
-         const winrt::Microsoft::Terminal::Control::TermControl& control,
+    Pane(const winrt::TerminalApp::IPaneContent& content,
          const bool lastFocused = false);
 
     Pane(std::shared_ptr<Pane> first,
@@ -80,7 +80,11 @@ public:
     // - If this is a branch/root pane, return nullptr.
     winrt::Microsoft::Terminal::Settings::Model::Profile GetProfile() const
     {
-        return _profile;
+        if (const auto& c{ _content.try_as<winrt::TerminalApp::TerminalPaneContent>() })
+        {
+            return c.GetProfile();
+        }
+        return nullptr;
     }
 
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
@@ -232,10 +236,8 @@ private:
     std::shared_ptr<Pane> _secondChild{ nullptr };
     SplitState _splitState{ SplitState::None };
     float _desiredSplitPosition;
-    winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
-    winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
-    winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
-    bool _isDefTermSession{ false };
+
+    winrt::TerminalApp::IPaneContent _content{ nullptr };
 #pragma endregion
 
     std::optional<uint32_t> _id;
@@ -244,16 +246,6 @@ private:
     bool _lastActive{ false };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
-
-    struct ControlEventTokens
-    {
-        winrt::Microsoft::Terminal::Control::TermControl::ConnectionStateChanged_revoker _ConnectionStateChanged;
-        winrt::Microsoft::Terminal::Control::TermControl::WarningBell_revoker _WarningBell;
-        winrt::Microsoft::Terminal::Control::TermControl::CloseTerminalRequested_revoker _CloseTerminalRequested;
-        winrt::Microsoft::Terminal::Control::TermControl::RestartTerminalRequested_revoker _RestartTerminalRequested;
-    } _controlEvents;
-    void _setupControlEvents();
-    void _removeControlEvents();
 
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
@@ -264,13 +256,14 @@ private:
 
     bool _zoomed{ false };
 
-    winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
-    winrt::Windows::Media::Playback::MediaPlayer::MediaEnded_revoker _mediaEndedRevoker;
-
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
     bool _HasChild(const std::shared_ptr<Pane> child);
+    winrt::TerminalApp::TerminalPaneContent _getTerminalContent() const
+    {
+        return _IsLeaf() ? _content.try_as<winrt::TerminalApp::TerminalPaneContent>() : nullptr;
+    }
 
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                                                                    const float splitSize,
@@ -300,15 +293,15 @@ private:
 
     void _Focus();
     void _FocusFirstChild();
-    void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
-    void _ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& sender,
-                                    const winrt::Windows::Foundation::IInspectable& e);
+    // void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+    // void _ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& sender,
+    //                                 const winrt::Windows::Foundation::IInspectable& e);
     void _ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                  const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
     void _ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                   const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-    void _CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
-    void _RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+    // void _CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+    // void _RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
 
     std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
     SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
@@ -320,7 +313,7 @@ private:
 
     SplitState _convertAutomaticOrDirectionalSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitDirection& splitType) const;
 
-    winrt::fire_and_forget _playBellSound(winrt::Windows::Foundation::Uri uri);
+    // winrt::fire_and_forget _playBellSound(winrt::Windows::Foundation::Uri uri);
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split

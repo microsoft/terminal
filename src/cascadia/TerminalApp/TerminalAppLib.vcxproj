@@ -153,6 +153,9 @@
     <ClInclude Include="SettingsLoadEventArgs.h">
       <DependentUpon>TerminalWindow.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="TerminalPaneContent.h">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Toast.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
@@ -255,6 +258,9 @@
     <ClCompile Include="TerminalWindow.cpp">
       <DependentUpon>TerminalWindow.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="TerminalPaneContent.cpp">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
   </ItemGroup>
@@ -322,6 +328,8 @@
     </Midl>
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
+    <Midl Include="IPaneContent.idl" />
+    <Midl Include="TerminalPaneContent.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

@@ -2960,13 +2960,15 @@ namespace winrt::TerminalApp::implementation
 
         const auto control = _CreateNewControlAndContent(controlSettings, connection);
 
-        auto resultPane = std::make_shared<Pane>(profile, control);
+        auto terminalPane{ winrt::make<TerminalPaneContent>(profile, control) };
+        auto resultPane = std::make_shared<Pane>(terminalPane);
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
             auto newControl = _CreateNewControlAndContent(controlSettings, debugConnection);
             // Split (auto) with the debug tap.
-            auto debugPane = std::make_shared<Pane>(profile, newControl);
+            auto debugTerminalPane{ winrt::make<TerminalPaneContent>(profile, newControl) };
+            auto debugPane = std::make_shared<Pane>(debugTerminalPane);
 
             // Since we're doing this split directly on the pane (instead of going through TerminalTab,
             // we need to handle the panes 'active' states

@@ -507,7 +507,11 @@ namespace winrt::TerminalApp::implementation
             if (p->_IsLeaf())
             {
                 p->Id(_nextPaneId);
-                _AttachEventHandlersToControl(p->Id().value(), p->_control);
+                // TODO! this feels hacky
+                if (const auto& termPane{ p->_content.try_as<TerminalApp::TerminalPaneContent>() })
+                {
+                    _AttachEventHandlersToControl(p->Id().value(), termPane.GetTerminal());
+                }
                 _nextPaneId++;
             }
             return false;
@@ -616,7 +620,12 @@ namespace winrt::TerminalApp::implementation
             if (p->_IsLeaf())
             {
                 p->Id(_nextPaneId);
-                _AttachEventHandlersToControl(p->Id().value(), p->_control);
+
+                // TODO! this feels hacky
+                if (const auto& termPane{ p->_content.try_as<TerminalApp::TerminalPaneContent>() })
+                {
+                    _AttachEventHandlersToControl(p->Id().value(), termPane.GetTerminal());
+                }
                 _nextPaneId++;
             }
         });
