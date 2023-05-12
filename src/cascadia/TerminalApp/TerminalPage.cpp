@@ -851,11 +851,7 @@ namespace winrt::TerminalApp::implementation
         });
         // Necessary for fly-out sub items to get focus on a tab before collapsing. Related to #15049
         newTabFlyout.Closing([this](auto&&, auto&&) {
-            if (const auto p = CommandPaletteElement(); p && p.Visibility() == Visibility::Visible)
-            {
-                // Don't focus the terminal, that'll dismiss the command palette.
-            }
-            else
+            if (!_commandPaletteIs(Visibility::Visible))
             {
                 _FocusCurrentTab(true);
             }
@@ -1451,9 +1447,10 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        if (const auto p = CommandPaletteElement(); p && p.Visibility() == Visibility::Visible && cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+        if (_commandPaletteIs(Visibility::Visible) &&
+            cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
         {
-            p.Visibility(Visibility::Collapsed);
+            CommandPaletteElement().Visibility(Visibility::Collapsed);
         }
 
         // Let's assume the user has bound the dead key "^" to a sendInput command that sends "b".
@@ -1785,6 +1782,11 @@ namespace winrt::TerminalApp::implementation
 
         return _loadCommandPaletteSlowPath();
     }
+    bool TerminalPage::_commandPaletteIs(WUX::Visibility visibility)
+    {
+        const auto p = CommandPaletteElement();
+        return p && p.Visibility() == visibility;
+    }
 
     CommandPalette TerminalPage::_loadCommandPaletteSlowPath()
     {
@@ -1796,7 +1798,7 @@ namespace winrt::TerminalApp::implementation
         // When the visibility of the command palette changes to "collapsed",
         // the palette has been closed. Toss focus back to the currently active control.
         p.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
-            if (CommandPaletteElement().Visibility() == Visibility::Collapsed)
+            if (_commandPaletteIs(Visibility::Collapsed))
             {
                 _FocusActiveControl(nullptr, nullptr);
             }

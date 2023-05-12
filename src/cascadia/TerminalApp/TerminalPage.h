@@ -276,6 +276,8 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::NewConnection_revoker _newConnectionRevoker;
 
         __declspec(noinline) CommandPalette _loadCommandPaletteSlowPath();
+        bool _commandPaletteIs(winrt::Windows::UI::Xaml::Visibility visibility);
+
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
         void _ShowAboutDialog();
