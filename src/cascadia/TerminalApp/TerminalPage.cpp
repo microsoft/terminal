@@ -1227,21 +1227,12 @@ namespace winrt::TerminalApp::implementation
             // construction, because the connection might not spawn the child
             // process until later, on another thread, after we've already
             // restored the CWD to its original value.
-            auto newWorkingDirectory{ settings.StartingDirectory() };
-            const bool looksLikeLinux = newWorkingDirectory.size() == 1 &&
-                                        (newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/');
-            // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
-            if (!looksLikeLinux)
-            {
-                const auto currentVirtualDir{ _WindowProperties.VirtualWorkingDirectory() };
-                const auto cwdString{ std::wstring_view{ currentVirtualDir } };
-                const auto requestedStartingDir{ settings.StartingDirectory() };
-
-                std::filesystem::path cwd{ cwdString };
-                cwd /= std::wstring_view{ requestedStartingDir };
-
-                newWorkingDirectory = winrt::hstring{ cwd.wstring() };
-            }
+            const auto currentVirtualDir{ _WindowProperties.VirtualWorkingDirectory() };
+            const auto cwdString{ std::wstring_view{ currentVirtualDir } };
+            const auto requestedStartingDir{ settings.StartingDirectory() };
+            auto newWorkingDirectory = winrt::hstring{
+                Utils::EvaluateStartingDirectory(cwdString, std::wstring_view{ requestedStartingDir })
+            };
 
             auto conhostConn = TerminalConnection::ConptyConnection();
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),

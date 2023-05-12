@@ -835,32 +835,16 @@ std::wstring Utils::EvaluateStartingDirectory(
 {
     std::wstring resultPath{ startingDirectory };
 
-    const bool oldCondition =
-        startingDirectory.size() == 0 || startingDirectory.size() == 1 &&
-                                             !(startingDirectory[0] == L'~' || startingDirectory[0] == L'/');
-
-    oldCondition;
-
-    const bool newCondition =
-        !(resultPath.size() == 1 &&
-          (resultPath[0] == L'~' || resultPath[0] == L'/'));
-    newCondition;
-
     // We only want to resolve the new WD against the CWD if it doesn't look
     // like a Linux path (see GH#592)
 
-    // Append only if it DOESN'T look like a linux-y path.
-
-    const bool newest = !(
-        // the string is at least one char AND
-        //  that first char is `~` or `/`
+    // Append only if it DOESN'T look like a linux-y path. A linux-y path starts
+    // with `~` or `/`.
+    const bool looksLikeLinux =
         resultPath.size() >= 1 &&
-        (resultPath[0] == L'~' || resultPath[0] == L'/'));
+        (resultPath[0] == L'~' || resultPath[0] == L'/');
 
-    newest;
-    // if (oldCondition)
-    // if (newCondition)
-    if (newest)
+    if (!looksLikeLinux)
     {
         std::filesystem::path cwd{ currentDirectory };
         cwd /= startingDirectory;
