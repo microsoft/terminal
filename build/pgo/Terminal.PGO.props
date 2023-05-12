@@ -9,7 +9,7 @@
 
   <PropertyGroup>
     <!-- Optional, defaults to main.  Name of the branch which will be used for calculating branch point. -->
-    <PGOBranch>main</PGOBranch>
+    <PGOBranch>release-1.17</PGOBranch>
 
     <!-- Mandatory.  Name of the NuGet package which will contain PGO databases for consumption by build system. -->
     <PGOPackageName>Microsoft.Internal.Windows.Terminal.PGODatabase</PGOPackageName>
