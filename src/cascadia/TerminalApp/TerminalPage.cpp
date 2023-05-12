@@ -1195,7 +1195,7 @@ namespace winrt::TerminalApp::implementation
                 connection = TerminalConnection::ConptyConnection{};
             }
 
-            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
+            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.native(),
                                                                                  L".",
                                                                                  L"Azure",
                                                                                  nullptr,

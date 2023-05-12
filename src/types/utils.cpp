@@ -729,7 +729,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
             const auto terminator{ commandLine.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
             const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
             const std::filesystem::path executablePath{ commandLine.substr(start, terminator - start) };
-            const auto executableFilename{ executablePath.filename().wstring() };
+            const auto executableFilename{ executablePath.filename() };
             if (executableFilename == L"wsl" || executableFilename == L"wsl.exe")
             {
                 // We've got a WSL -- let's just make sure it's the right one.
@@ -784,7 +784,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
                 }
 
                 return {
-                    fmt::format(LR"("{}" --cd "{}" {})", executablePath.wstring(), mangledDirectory, arguments),
+                    fmt::format(LR"("{}" --cd "{}" {})", executablePath.native(), mangledDirectory, arguments),
                     std::wstring{}
                 };
             }
