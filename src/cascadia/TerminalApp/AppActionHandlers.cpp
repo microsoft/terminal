@@ -1248,4 +1248,14 @@ namespace winrt::TerminalApp::implementation
         }
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleShowContextMenu(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.ShowContextMenu();
+        }
+        args.Handled(true);
+    }
 }

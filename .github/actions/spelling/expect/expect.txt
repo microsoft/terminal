@@ -43,6 +43,7 @@ antialiasing
 ANull
 anycpu
 APARTMENTTHREADED
+APCA
 APCs
 APIENTRY
 apiset
@@ -194,6 +195,8 @@ chh
 chk
 CHT
 Cic
+cielab
+Cielab
 Clcompile
 CLE
 cleartype
@@ -584,6 +587,7 @@ ENU
 ENUMLOGFONT
 ENUMLOGFONTEX
 enumranges
+EOK
 eplace
 EPres
 EQU
@@ -1290,6 +1294,8 @@ OEMFONT
 OEMFORMAT
 OEMs
 offboarded
+oklab
+Oklab
 OLEAUT
 OLECHAR
 onecore
@@ -1770,6 +1776,8 @@ srcsrv
 SRCSRVTRG
 srctool
 srect
+srgb
+Srgb
 srv
 srvinit
 srvpipe

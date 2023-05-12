@@ -246,6 +246,7 @@ namespace winrt::TerminalApp::implementation
         });
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
         _tabView.TabCloseRequested({ this, &TerminalPage::_OnTabCloseRequested });
+        _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
 
         _tabView.TabDragStarting({ this, &TerminalPage::_onTabDragStarting });
         _tabView.TabStripDragOver({ this, &TerminalPage::_onTabStripDragOver });
@@ -1226,18 +1227,12 @@ namespace winrt::TerminalApp::implementation
             // construction, because the connection might not spawn the child
             // process until later, on another thread, after we've already
             // restored the CWD to its original value.
-            auto newWorkingDirectory{ settings.StartingDirectory() };
-            const bool looksLikeLinux = newWorkingDirectory.size() == 1 &&
-                                        (newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/');
-
-            // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
-            if (!looksLikeLinux)
-            {
-                const auto cwdString{ _WindowProperties.VirtualWorkingDirectory().c_str() };
-                std::filesystem::path cwd{ cwdString };
-                cwd /= settings.StartingDirectory().c_str();
-                newWorkingDirectory = winrt::hstring{ cwd.wstring() };
-            }
+            const auto currentVirtualDir{ _WindowProperties.VirtualWorkingDirectory() };
+            const auto cwdString{ std::wstring_view{ currentVirtualDir } };
+            const auto requestedStartingDir{ settings.StartingDirectory() };
+            auto newWorkingDirectory = winrt::hstring{
+                Utils::EvaluateStartingDirectory(cwdString, std::wstring_view{ requestedStartingDir })
+            };
 
             auto conhostConn = TerminalConnection::ConptyConnection();
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
@@ -3168,46 +3163,58 @@ namespace winrt::TerminalApp::implementation
         // Begin Theme handling
         _updateThemeColors();
 
+        _updateAllTabCloseButtons(_GetFocusedTab());
+    }
+
+    void TerminalPage::_updateAllTabCloseButtons(const winrt::TerminalApp::TabBase& focusedTab)
+    {
         // Update the state of the CloseButtonOverlayMode property of
         // our TabView, to match the tab.showCloseButton property in the theme.
         //
-        // Also update every tab's individual IsClosable to match.
-        //
-        // This is basically the same as _updateTabCloseButton, but with some
-        // code moved around to better facilitate updating every tab view item
-        // at once
-        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
+        // Also update every tab's individual IsClosable to match the same property.
+        const auto theme = _settings.GlobalSettings().CurrentTheme();
+        const auto visibility = theme && theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
+
+        for (const auto& tab : _tabs)
         {
-            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
-
-            for (const auto& tab : _tabs)
-            {
-                switch (visibility)
-                {
-                case Settings::Model::TabCloseButtonVisibility::Never:
-                    tab.TabViewItem().IsClosable(false);
-                    break;
-                case Settings::Model::TabCloseButtonVisibility::Hover:
-                    tab.TabViewItem().IsClosable(true);
-                    break;
-                default:
-                    tab.TabViewItem().IsClosable(true);
-                    break;
-                }
-            }
-
             switch (visibility)
             {
             case Settings::Model::TabCloseButtonVisibility::Never:
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
+                tab.TabViewItem().IsClosable(false);
                 break;
             case Settings::Model::TabCloseButtonVisibility::Hover:
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
+                tab.TabViewItem().IsClosable(true);
                 break;
-            default:
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Always);
+            case Settings::Model::TabCloseButtonVisibility::ActiveOnly:
+            {
+                if (focusedTab && focusedTab == tab)
+                {
+                    tab.TabViewItem().IsClosable(true);
+                }
+                else
+                {
+                    tab.TabViewItem().IsClosable(false);
+                }
                 break;
             }
+            default:
+                tab.TabViewItem().IsClosable(true);
+                break;
+            }
+        }
+
+        switch (visibility)
+        {
+        case Settings::Model::TabCloseButtonVisibility::Never:
+            _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
+            break;
+        case Settings::Model::TabCloseButtonVisibility::Hover:
+            _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
+            break;
+        case Settings::Model::TabCloseButtonVisibility::ActiveOnly:
+        default:
+            _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Always);
+            break;
         }
     }
 
@@ -3728,9 +3735,6 @@ namespace winrt::TerminalApp::implementation
 
             auto tabViewItem = newTabImpl->TabViewItem();
             _tabView.TabItems().Append(tabViewItem);
-
-            // Update the state of the close button to match the current theme
-            _updateTabCloseButton(tabViewItem);
 
             tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 
@@ -4495,38 +4499,6 @@ namespace winrt::TerminalApp::implementation
         _SetNewTabButtonColor(bgColor, bgColor);
     }
 
-    void TerminalPage::_updateTabCloseButton(const winrt::Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem)
-    {
-        // Update the state of the close button to match the current theme.
-        // IMPORTANT: Should be called AFTER the tab view item is added to the TabView.
-        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
-        {
-            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
-
-            // Update both the tab item's IsClosable, but also the TabView's
-            // CloseButtonOverlayMode here. Because the TabViewItem was created
-            // outside the context of the TabView, it doesn't get the
-            // CloseButtonOverlayMode assigned on creation. We have to update
-            // that property again here, when we add the tab, so that the
-            // TabView will re-apply the value.
-            switch (visibility)
-            {
-            case Settings::Model::TabCloseButtonVisibility::Never:
-                tabViewItem.IsClosable(false);
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
-                break;
-            case Settings::Model::TabCloseButtonVisibility::Hover:
-                tabViewItem.IsClosable(true);
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
-                break;
-            default:
-                tabViewItem.IsClosable(true);
-                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Always);
-                break;
-            }
-        }
-    }
-
     // Function Description:
     // - Attempts to load some XAML resources that Panes will need. This includes:
     //   * The Color they'll use for active Panes's borders - SystemAccentColor
@@ -4790,8 +4762,6 @@ namespace winrt::TerminalApp::implementation
         co_await wil::resume_foreground(Dispatcher());
         if (const auto& page{ weakThis.get() })
         {
-            // `this` is safe to use
-            //
             // First we need to get the position in the List to drop to
             auto index = -1;
 
@@ -4811,8 +4781,8 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            const auto myId{ _WindowProperties.WindowId() };
-            const auto request = winrt::make_self<RequestReceiveContentArgs>(src, myId, index);
+            // `this` is safe to use
+            const auto request = winrt::make_self<RequestReceiveContentArgs>(src, _WindowProperties.WindowId(), index);
 
             // This will go up to the monarch, who will then dispatch the request
             // back down to the source TerminalPage, who will then perform a
