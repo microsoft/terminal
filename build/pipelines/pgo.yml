@@ -18,6 +18,7 @@ stages:
       - template: ./templates/build-console-pgo.yml
         parameters:
           platform: x64
+          additionalBuildArguments: "/p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=Preview"
   - stage: Publish_PGO_Databases
     displayName: Publish PGO databases
     dependsOn: ['Build_x64']
