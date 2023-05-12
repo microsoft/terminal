@@ -202,6 +202,7 @@ class ScreenBufferTests
 
     TEST_METHOD(ScrollLines256Colors);
 
+    TEST_METHOD(SetLineFeedMode);
     TEST_METHOD(SetScreenMode);
     TEST_METHOD(SetOriginMode);
     TEST_METHOD(SetAutoWrapMode);
@@ -5201,6 +5202,28 @@ void ScreenBufferTests::ScrollLines256Colors()
         VERIFY_ARE_EQUAL(expectedAttr, iter01->TextAttr());
         VERIFY_ARE_EQUAL(expectedAttr, iter02->TextAttr());
     }
+}
+
+void ScreenBufferTests::SetLineFeedMode()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& terminalInput = gci.GetActiveInputBuffer()->GetTerminalInput();
+
+    // We need to start with newline auto return disabled for LNM to be active.
+    WI_SetFlag(si.OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
+    auto restoreMode = wil::scope_exit([&] { WI_ClearFlag(si.OutputMode, DISABLE_NEWLINE_AUTO_RETURN); });
+
+    Log::Comment(L"When LNM is set, newline auto return and line feed mode are enabled.");
+    stateMachine.ProcessString(L"\x1B[20h");
+    VERIFY_IS_TRUE(WI_IsFlagClear(si.OutputMode, DISABLE_NEWLINE_AUTO_RETURN));
+    VERIFY_IS_TRUE(terminalInput.GetInputMode(TerminalInput::Mode::LineFeed));
+
+    Log::Comment(L"When LNM is reset, newline auto return and line feed mode are disabled.");
+    stateMachine.ProcessString(L"\x1B[20l");
+    VERIFY_IS_FALSE(WI_IsFlagClear(si.OutputMode, DISABLE_NEWLINE_AUTO_RETURN));
+    VERIFY_IS_FALSE(terminalInput.GetInputMode(TerminalInput::Mode::LineFeed));
 }
 
 void ScreenBufferTests::SetScreenMode()
