@@ -429,7 +429,7 @@ namespace Microsoft::Console::Render::Atlas
 
     struct ShapedRow
     {
-        void clear(u16 y, u16 cellHeight) noexcept
+        void Clear(u16 y, u16 cellHeight) noexcept
         {
             mappings.clear();
             glyphIndices.clear();

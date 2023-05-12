@@ -10,6 +10,7 @@
 #include <shader_vs.h>
 
 #include "dwrite.h"
+#include "../../types/inc/ColorFix.hpp"
 
 #if ATLAS_DEBUG_SHOW_DIRTY || ATLAS_DEBUG_COLORIZE_GLYPH_ATLAS
 #include "colorbrewer.h"
@@ -826,7 +827,7 @@ void BackendD3D::_flushQuads(const RenderingPayload& p)
 
     if (!_cursorRects.empty())
     {
-        _drawCursorForeground(p);
+        _drawCursorForeground();
     }
 
     // TODO: Shrink instances buffer
@@ -1627,9 +1628,19 @@ void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
             static_cast<u16>(p.s->font->cellSize.x * (x1 - x0)),
             p.s->font->cellSize.y,
         };
-        const auto isInverted = cursorColor == 0xffffffff;
-        const auto background = isInverted ? bg ^ 0xc0c0c0 : cursorColor;
-        const auto foreground = isInverted ? 0 : bg;
+        auto background = cursorColor;
+        auto foreground = bg;
+
+        if (cursorColor == 0xffffffff)
+        {
+            background = bg ^ 0xffffff;
+            foreground = 0xffffffff;
+        }
+
+        // The legacy console used to invert colors by just doing `bg ^ 0xc0c0c0`. This resulted
+        // in a minimum squared distance of just 0.029195 across all possible color combinations.
+        background = ColorFix::GetPerceivableColor(background, bg, 0.25f * 0.25f);
+
         auto& c0 = _cursorRects.emplace_back(position, size, background, foreground);
 
         switch (static_cast<CursorType>(p.s->cursor->cursorType))
@@ -1702,7 +1713,7 @@ void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
     }
 }
 
-void BackendD3D::_drawCursorForeground(const RenderingPayload& p)
+void BackendD3D::_drawCursorForeground()
 {
     // NOTE: _appendQuad() may reallocate the _instances vector. It's important to iterate
     // by index, because pointers (or iterators) would get invalidated. It's also important
@@ -1779,7 +1790,7 @@ void BackendD3D::_drawCursorForeground(const RenderingPayload& p)
             {
                 // The _instances vector is _huge_ (easily up to 50k items) whereas only 1-2 items will actually overlap
                 // with the cursor. --> Make this loop more compact by putting as much as possible into a function call.
-                const auto added = _drawCursorForegroundSlowPath(p, c, i);
+                const auto added = _drawCursorForegroundSlowPath(c, i);
                 i += added;
                 instancesCount += added;
             }
@@ -1787,7 +1798,7 @@ void BackendD3D::_drawCursorForeground(const RenderingPayload& p)
     }
 }
 
-size_t BackendD3D::_drawCursorForegroundSlowPath(const RenderingPayload& p, const CursorRect& c, size_t offset)
+size_t BackendD3D::_drawCursorForegroundSlowPath(const CursorRect& c, size_t offset)
 {
     // We won't die from copying 24 bytes. It simplifies the code below especially in
     // respect to when/if we overwrite the _instances[offset] slot with a cutout.
@@ -1886,7 +1897,9 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const RenderingPayload& p, cons
         target.color = it.color;
     }
 
-    const auto cursorColor = p.s->cursor->cursorColor;
+    auto color = c.foreground == 0xffffffff ? it.color ^ 0xffffff : c.foreground;
+    color = ColorFix::GetPerceivableColor(color, c.background, 0.5f * 0.5f);
+
     // If the cursor covers the entire glyph (like, let's say, a full-box cursor with an ASCII character),
     // we don't append a new quad, but rather reuse the one that already exists (cutoutCount == 0).
     auto& target = cutoutCount ? _appendQuad() : _instances[offset];
@@ -1898,7 +1911,7 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const RenderingPayload& p, cons
     target.size.y = static_cast<u16>(intersectionB - intersectionT);
     target.texcoord.x = static_cast<u16>(it.texcoord.x + intersectionL - instanceL);
     target.texcoord.y = static_cast<u16>(it.texcoord.y + intersectionT - instanceT);
-    target.color = cursorColor == 0xffffffff ? it.color ^ 0xc0c0c0 : c.foreground;
+    target.color = color;
 
     return addedInstances;
 }

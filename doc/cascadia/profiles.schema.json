@@ -1741,7 +1741,8 @@
       "enum": [
         "always",
         "hover",
-        "never"
+        "never",
+        "activeOnly"
       ],
       "type": "string"
     },

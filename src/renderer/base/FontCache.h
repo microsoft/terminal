@@ -3,14 +3,30 @@
 
 #pragma once
 
+#include <til/mutex.h>
+
 namespace Microsoft::Console::Render::FontCache
 {
     namespace details
     {
-        inline const std::vector<wil::com_ptr<IDWriteFontFile>>& getNearbyFontFiles(IDWriteFactory5* factory5)
+        inline wil::com_ptr<IDWriteFontCollection> getFontCollection()
         {
-            static const auto fontFiles = [=]() {
-                std::vector<wil::com_ptr<IDWriteFontFile>> files;
+            wil::com_ptr<IDWriteFactory> factory;
+            THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(factory), reinterpret_cast<::IUnknown**>(factory.addressof())));
+
+            wil::com_ptr<IDWriteFontCollection> systemFontCollection;
+            THROW_IF_FAILED(factory->GetSystemFontCollection(systemFontCollection.addressof(), FALSE));
+
+            if constexpr (Feature_NearbyFontLoading::IsEnabled())
+            {
+                // IDWriteFactory5 is supported since Windows 10, build 15021.
+                const auto factory5 = factory.try_query<IDWriteFactory5>();
+                if (!factory5)
+                {
+                    return systemFontCollection;
+                }
+
+                std::vector<wil::com_ptr<IDWriteFontFile>> nearbyFontFiles;
 
                 const std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
                 const auto folder{ module.parent_path() };
@@ -22,35 +38,11 @@ namespace Microsoft::Console::Render::FontCache
                         wil::com_ptr<IDWriteFontFile> fontFile;
                         if (SUCCEEDED_LOG(factory5->CreateFontFileReference(p.path().c_str(), nullptr, fontFile.addressof())))
                         {
-                            files.emplace_back(std::move(fontFile));
+                            nearbyFontFiles.emplace_back(std::move(fontFile));
                         }
                     }
                 }
 
-                files.shrink_to_fit();
-                return files;
-            }();
-            return fontFiles;
-        }
-
-        inline wil::com_ptr<IDWriteFontCollection> getFontCollection(bool forceUpdate)
-        {
-            wil::com_ptr<IDWriteFactory> factory;
-            THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(factory), reinterpret_cast<::IUnknown**>(factory.addressof())));
-
-            wil::com_ptr<IDWriteFontCollection> systemFontCollection;
-            THROW_IF_FAILED(factory->GetSystemFontCollection(systemFontCollection.addressof(), forceUpdate));
-
-            if constexpr (Feature_NearbyFontLoading::IsEnabled())
-            {
-                // IDWriteFactory5 is supported since Windows 10, build 15021.
-                const auto factory5 = factory.try_query<IDWriteFactory5>();
-                if (!factory5)
-                {
-                    return systemFontCollection;
-                }
-
-                const auto& nearbyFontFiles = getNearbyFontFiles(factory5.get());
                 if (nearbyFontFiles.empty())
                 {
                     return systemFontCollection;
@@ -89,11 +81,13 @@ namespace Microsoft::Console::Render::FontCache
 
     inline wil::com_ptr<IDWriteFontCollection> GetCached()
     {
-        return details::getFontCollection(false);
-    }
+        static til::shared_mutex<wil::com_ptr<IDWriteFontCollection>> cachedCollection;
 
-    inline wil::com_ptr<IDWriteFontCollection> GetFresh()
-    {
-        return details::getFontCollection(true);
+        const auto guard = cachedCollection.lock();
+        if (!*guard)
+        {
+            *guard = details::getFontCollection();
+        }
+        return *guard;
     }
 }
