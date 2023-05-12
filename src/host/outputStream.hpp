@@ -38,12 +38,10 @@ public:
 
     void SetTextAttributes(const TextAttribute& attrs) override;
 
-    void SetAutoWrapMode(const bool wrapAtEOL) override;
-    bool GetAutoWrapMode() const override;
+    void SetSystemMode(const Mode mode, const bool enabled) override;
+    bool GetSystemMode(const Mode mode) const override;
 
     void WarningBell() override;
-
-    bool GetLineFeedMode() const override;
 
     void SetWindowTitle(const std::wstring_view title) override;
 
@@ -60,8 +58,6 @@ public:
     void SetConsoleOutputCP(const unsigned int codepage) override;
     unsigned int GetConsoleOutputCP() const override;
 
-    void SetBracketedPasteMode(const bool enabled) override;
-    bool GetBracketedPasteMode() const override;
     void CopyToClipboard(const std::wstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(const std::wstring_view uri) override;

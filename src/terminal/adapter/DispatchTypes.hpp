@@ -418,6 +418,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     enum ModeParams : VTInt
     {
         IRM_InsertReplaceMode = ANSIStandardMode(4),
+        LNM_LineFeedNewLineMode = ANSIStandardMode(20),
         DECCKM_CursorKeysMode = DECPrivateMode(1),
         DECANM_AnsiMode = DECPrivateMode(2),
         DECCOLM_SetNumberOfColumns = DECPrivateMode(3),

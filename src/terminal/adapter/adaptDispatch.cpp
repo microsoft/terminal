@@ -74,7 +74,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
     auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
     auto cursorPosition = cursor.GetPosition();
-    const auto wrapAtEOL = _api.GetAutoWrapMode();
+    const auto wrapAtEOL = _api.GetSystemMode(ITerminalApi::Mode::AutoWrap);
     const auto attributes = textBuffer.GetCurrentAttributes();
 
     // Turn off the cursor until we're done, so it isn't refreshed unnecessarily.
@@ -1696,6 +1696,15 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
         _modes.set(Mode::InsertReplace, enable);
         return true;
+    case DispatchTypes::ModeParams::LNM_LineFeedNewLineMode:
+        // VT apps expect that the system and input modes are the same, so if
+        // they become out of sync, we just act as if LNM mode isn't supported.
+        if (_api.GetSystemMode(ITerminalApi::Mode::LineFeed) == _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed))
+        {
+            _api.SetSystemMode(ITerminalApi::Mode::LineFeed, enable);
+            _terminalInput.SetInputMode(TerminalInput::Mode::LineFeed, enable);
+        }
+        return true;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, enable);
         return !_PassThroughInputModes();
@@ -1719,7 +1728,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         CursorPosition(1, 1);
         return true;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
-        _api.SetAutoWrapMode(enable);
+        _api.SetSystemMode(ITerminalApi::Mode::AutoWrap, enable);
         // Resetting DECAWM should also reset the delayed wrap flag.
         if (!enable)
         {
@@ -1771,7 +1780,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _SetAlternateScreenBufferMode(enable);
         return true;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-        _api.SetBracketedPasteMode(enable);
+        _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, enable);
         return !_api.IsConsolePty();
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::Win32, enable);
@@ -1820,6 +1829,14 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
     case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
         enabled = _modes.test(Mode::InsertReplace);
         break;
+    case DispatchTypes::ModeParams::LNM_LineFeedNewLineMode:
+        // VT apps expect that the system and input modes are the same, so if
+        // they become out of sync, we just act as if LNM mode isn't supported.
+        if (_api.GetSystemMode(ITerminalApi::Mode::LineFeed) == _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed))
+        {
+            enabled = _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed);
+        }
+        break;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::CursorKey);
         break;
@@ -1840,7 +1857,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         enabled = _modes.test(Mode::Origin);
         break;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
-        enabled = _api.GetAutoWrapMode();
+        enabled = _api.GetSystemMode(ITerminalApi::Mode::AutoWrap);
         break;
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat);
@@ -1889,7 +1906,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         enabled = _usingAltBuffer;
         break;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-        enabled = _api.GetBracketedPasteMode();
+        enabled = _api.GetSystemMode(ITerminalApi::Mode::BracketedPaste);
         break;
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Win32);
@@ -2203,7 +2220,7 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
     switch (lineFeedType)
     {
     case DispatchTypes::LineFeedType::DependsOnMode:
-        _DoLineFeed(textBuffer, _api.GetLineFeedMode(), false);
+        _DoLineFeed(textBuffer, _api.GetSystemMode(ITerminalApi::Mode::LineFeed), false);
         return true;
     case DispatchTypes::LineFeedType::WithoutReturn:
         _DoLineFeed(textBuffer, false, false);
@@ -2590,7 +2607,7 @@ bool AdaptDispatch::SoftReset()
 {
     _api.GetTextBuffer().GetCursor().SetIsVisible(true); // Cursor enabled.
     _modes.reset(Mode::InsertReplace, Mode::Origin); // Replace mode; Absolute cursor addressing.
-    _api.SetAutoWrapMode(true); // Wrap at end of line.
+    _api.SetSystemMode(ITerminalApi::Mode::AutoWrap, true); // Wrap at end of line.
     _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, false); // Normal characters.
     _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, false); // Numeric characters.
 
@@ -2663,11 +2680,20 @@ bool AdaptDispatch::HardReset()
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     CursorPosition(1, 1);
 
+    // We only reset the system line feed mode if the input mode is set. If it
+    // isn't set, that either means they're both reset, and there's nothing for
+    // us to do, or they're out of sync, which implies the system mode was set
+    // via the console API, so it's not our responsibility.
+    if (_terminalInput.GetInputMode(TerminalInput::Mode::LineFeed))
+    {
+        _api.SetSystemMode(ITerminalApi::Mode::LineFeed, false);
+    }
+
     // Reset input modes to their initial state
     _terminalInput.ResetInputModes();
 
     // Reset bracketed paste mode
-    _api.SetBracketedPasteMode(false);
+    _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, false);
 
     // Restore cursor blinking mode.
     _api.GetTextBuffer().GetCursor().SetBlinkingAllowed(true);
