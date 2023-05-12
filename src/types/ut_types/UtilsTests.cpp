@@ -558,15 +558,55 @@ void UtilsTests::TestEvaluateStartingDirectory()
         VERIFY_ARE_EQUAL(expected, EvaluateStartingDirectory(cwd, startingDir));
     };
 
+    // A NOTE: EvaluateStartingDirectory makes no attempt to cannonicalize the
+    // path. So if you do any sort of relative paths, it'll literally just
+    // append.
+
     {
         std::wstring cwd = L"C:\\Windows\\System32";
 
+        // Literally blank
+        test(L"C:\\Windows\\System32\\", cwd, L"");
+
+        // Absolute Windows path
         test(L"C:\\Windows", cwd, L"C:\\Windows");
-        test(L"C:\\Windows\\System32\\System32", cwd, L".\\System32"); // ?
+        test(L"C:/Users/migrie", cwd, L"C:/Users/migrie");
+
+        // Relative Windows path
+        test(L"C:\\Windows\\System32\\.", cwd, L"."); // ?
+        test(L"C:\\Windows\\System32\\.\\System32", cwd, L".\\System32"); // ?
+        test(L"C:\\Windows\\System32\\./dev", cwd, L"./dev");
+
+        // WSL '~' path
         test(L"~", cwd, L"~");
         test(L"~/dev", cwd, L"~/dev");
+
+        // WSL or Windows / path - this will ultimately be evaluated by the connection
         test(L"/", cwd, L"/");
         test(L"/dev", cwd, L"/dev");
-        test(L"C:\\Windows\\System32\\dev", cwd, L"./dev");
+    }
+
+    {
+        std::wstring cwd = L"C:/Users/migrie";
+
+        // Literally blank
+        test(L"C:/Users/migrie\\", cwd, L"");
+
+        // Absolute Windows path
+        test(L"C:\\Windows", cwd, L"C:\\Windows");
+        test(L"C:/Users/migrie", cwd, L"C:/Users/migrie");
+
+        // Relative Windows path
+        test(L"C:/Users/migrie\\.", cwd, L"."); // ?
+        test(L"C:/Users/migrie\\.\\System32", cwd, L".\\System32"); // ?
+        test(L"C:/Users/migrie\\./dev", cwd, L"./dev");
+
+        // WSL '~' path
+        test(L"~", cwd, L"~");
+        test(L"~/dev", cwd, L"~/dev");
+
+        // WSL or Windows / path - this will ultimately be evaluated by the connection
+        test(L"/", cwd, L"/");
+        test(L"/dev", cwd, L"/dev");
     }
 }
