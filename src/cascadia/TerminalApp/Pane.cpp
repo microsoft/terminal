@@ -1121,19 +1121,15 @@ winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
     co_await wil::resume_foreground(_root.Dispatcher());
     if (auto pane{ weakThis.lock() })
     {
-        // BODGY
-        // GH#12258: We learned that if you leave the MediaPlayer open, and
-        // press the media keys (like play/pause), then the OS will _replay the
-        // bell_. So we have to re-create the MediaPlayer each time we want to
-        // play the bell, to make sure a subsequent play doesn't come through
-        // and reactivate the old one.
-
-        if (!_bellPlayer)
+        if (!_bellPlayerCreated)
         {
             // The MediaPlayer might not exist on Windows N SKU.
             try
             {
+                _bellPlayerCreated = true;
                 _bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+                // GH#12258: The media keys (like play/pause) should have no effect on our bell sound.
+                _bellPlayer.CommandManager().IsEnabled(false);
             }
             CATCH_LOG();
         }
@@ -1143,27 +1139,6 @@ winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
             const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
             _bellPlayer.Source(item);
             _bellPlayer.Play();
-
-            // This lambda will clean up the bell player when we're done with it.
-            auto weakThis2{ weak_from_this() };
-            _mediaEndedRevoker = _bellPlayer.MediaEnded(winrt::auto_revoke, [weakThis2](auto&&, auto&&) {
-                if (auto self{ weakThis2.lock() })
-                {
-                    if (self->_bellPlayer)
-                    {
-                        // We need to make sure clear out the current track
-                        // that's being played, again, so that the system can't
-                        // come through and replay it. In testing, we needed to
-                        // do this, closing the MediaPlayer alone wasn't good
-                        // enough.
-                        self->_bellPlayer.Pause();
-                        self->_bellPlayer.Source(nullptr);
-                        self->_bellPlayer.Close();
-                    }
-                    self->_mediaEndedRevoker.revoke();
-                    self->_bellPlayer = nullptr;
-                }
-            });
         }
     }
 }
@@ -1269,14 +1244,14 @@ void Pane::Shutdown()
     // Clear out our media player callbacks, and stop any playing media. This
     // will prevent the callback from being triggered after we've closed, and
     // also make sure that our sound stops when we're closed.
-    _mediaEndedRevoker.revoke();
     if (_bellPlayer)
     {
         _bellPlayer.Pause();
         _bellPlayer.Source(nullptr);
         _bellPlayer.Close();
+        _bellPlayer = nullptr;
+        _bellPlayerCreated = false;
     }
-    _bellPlayer = nullptr;
 
     if (_IsLeaf())
     {
