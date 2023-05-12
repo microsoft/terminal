@@ -58,4 +58,6 @@ Copy-Item "build\Helix\EnsureMachineState.ps1" "$payloadDir"
 # Extract the unpackaged distribution of Windows Terminal to the payload directory,
 # where it will create a subdirectory named terminal-0.0.1.0
 # This is referenced in TerminalApp.cs later as part of the test harness.
-& tar -x -v -f "$repoDirectory\Artifacts\$ArtifactName\unpackaged\WindowsTerminalDev_0.0.1.0_x64.zip" -C "$payloadDir"
+## 1.17 HAX: Release Build
+& tar -x -v -f "$repoDirectory\Artifacts\$ArtifactName\unpackaged\Microsoft.WindowsTerminal_1.0.0.0_x64.zip" -C "$payloadDir"
+Move-Item "$payloadDir\terminal-*" "$payloadDir\terminal-0.0.1.0"
