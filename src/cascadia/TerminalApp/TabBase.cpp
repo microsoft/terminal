@@ -70,8 +70,9 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - flyout - the menu flyout to which the close items must be appended
     // Return Value:
-    // - <none>
-    void TabBase::_AppendCloseMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout)
+    // - the sub-item that we use for all the nested "close" entries. This
+    //   enables subclasses to add their own entries to this menu.
+    winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem TabBase::_AppendCloseMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout)
     {
         auto weakThis{ get_weak() };
 
@@ -120,15 +121,16 @@ namespace winrt::TerminalApp::implementation
         WUX::Controls::ToolTipService::SetToolTip(closeTabMenuItem, box_value(closeTabToolTip));
         Automation::AutomationProperties::SetHelpText(closeTabMenuItem, closeTabToolTip);
 
-        // GH#8238 append the close menu items to the flyout itself until crash in XAML is fixed
-        //Controls::MenuFlyoutSubItem closeSubMenu;
-        //closeSubMenu.Text(RS_(L"TabCloseSubMenu"));
-        //closeSubMenu.Items().Append(_closeTabsAfterMenuItem);
-        //closeSubMenu.Items().Append(_closeOtherTabsMenuItem);
-        //flyout.Items().Append(closeSubMenu);
-        flyout.Items().Append(_closeTabsAfterMenuItem);
-        flyout.Items().Append(_closeOtherTabsMenuItem);
+        // Create a sub-menu for our extended close items.
+        Controls::MenuFlyoutSubItem closeSubMenu;
+        closeSubMenu.Text(RS_(L"TabCloseSubMenu"));
+        closeSubMenu.Items().Append(_closeTabsAfterMenuItem);
+        closeSubMenu.Items().Append(_closeOtherTabsMenuItem);
+        flyout.Items().Append(closeSubMenu);
+
         flyout.Items().Append(closeTabMenuItem);
+
+        return closeSubMenu;
     }
 
     // Method Description:
@@ -558,17 +560,35 @@ namespace winrt::TerminalApp::implementation
     // BODGY
     // - Toggles the requested theme of the tab view item,
     //   so that changes to the tab color are reflected immediately
-    // - Prior to MUX 2.8, we toggled the visual state here, but that seemingly
+    // - Prior to MUX 2.8, we only toggled the visual state here, but that seemingly
     //   doesn't work in 2.8.
+    // - Just changing the Theme also doesn't seem to work by itself - there
+    //   seems to be a way for the tab to set the deselected foreground onto
+    //   itself as it becomes selected. If the mouse isn't over the tab, that
+    //   can result in mismatched fg/bg's (see GH#15184). So that's right, we
+    //   need to do both.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void TabBase::_RefreshVisualState()
     {
+        const auto& item{ TabViewItem() };
+
         const auto& reqTheme = TabViewItem().RequestedTheme();
-        TabViewItem().RequestedTheme(ElementTheme::Light);
-        TabViewItem().RequestedTheme(ElementTheme::Dark);
-        TabViewItem().RequestedTheme(reqTheme);
+        item.RequestedTheme(ElementTheme::Light);
+        item.RequestedTheme(ElementTheme::Dark);
+        item.RequestedTheme(reqTheme);
+
+        if (TabViewItem().IsSelected())
+        {
+            VisualStateManager::GoToState(item, L"Normal", true);
+            VisualStateManager::GoToState(item, L"Selected", true);
+        }
+        else
+        {
+            VisualStateManager::GoToState(item, L"Selected", true);
+            VisualStateManager::GoToState(item, L"Normal", true);
+        }
     }
 }

@@ -1381,16 +1381,36 @@ bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusTyp
 }
 
 // Routine Description:
-// - DA - Reports the identity of this Virtual Terminal machine to the caller.
-//      - In our case, we'll report back to acknowledge we understand, but reveal no "hardware" upgrades like physical terminals of old.
+// - DA - Reports the service class or conformance level that the terminal
+//   supports, and the set of implemented extensions.
 // Arguments:
 // - <none>
 // Return Value:
 // - True.
 bool AdaptDispatch::DeviceAttributes()
 {
-    // See: http://vt100.net/docs/vt100-ug/chapter3.html#DA
-    _api.ReturnResponse(L"\x1b[?1;0c");
+    // This first parameter of the response is 61, representing a conformance
+    // level of 1. The subsequent parameters identify the supported feature
+    // extensions.
+    //
+    // 1 = 132 column mode (ConHost only)
+    // 6 = Selective erase
+    // 7 = Soft fonts
+    // 22 = Color text
+    // 23 = Greek character sets
+    // 24 = Turkish character sets
+    // 28 = Rectangular area operations
+    // 32 = Text macros
+    // 42 = ISO Latin - 2 character set
+
+    if (_api.IsConsolePty())
+    {
+        _api.ReturnResponse(L"\x1b[?61;6;7;22;23;24;28;32;42c");
+    }
+    else
+    {
+        _api.ReturnResponse(L"\x1b[?61;1;6;7;22;23;24;28;32;42c");
+    }
     return true;
 }
 
@@ -2920,11 +2940,6 @@ bool AdaptDispatch::SetClipboard(const std::wstring_view content)
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
     _renderSettings.SetColorTableEntry(tableIndex, dwColor);
-    if (_renderSettings.GetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors))
-    {
-        // Re-calculate the adjusted colors now that one of the entries has been changed
-        _renderSettings.MakeAdjustedColorArray();
-    }
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
@@ -2990,11 +3005,6 @@ bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt
     case DispatchTypes::ColorItem::NormalText:
         _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, fgIndex);
         _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, bgIndex);
-        if (_renderSettings.GetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors))
-        {
-            // Re-calculate the adjusted colors now that these aliases have been changed
-            _renderSettings.MakeAdjustedColorArray();
-        }
         break;
     case DispatchTypes::ColorItem::WindowFrame:
         _renderSettings.SetColorAliasIndex(ColorAlias::FrameForeground, fgIndex);
@@ -3047,6 +3057,9 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
         return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         _api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
+        return true;
+    case DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters:
+        _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[8;{};{}t"), _api.GetViewport().height(), _api.GetTextBuffer().GetSize().Width()));
         return true;
     default:
         return false;

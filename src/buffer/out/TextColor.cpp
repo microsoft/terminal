@@ -64,7 +64,7 @@ bool TextColor::CanBeBrightened() const noexcept
 
 bool TextColor::IsLegacy() const noexcept
 {
-    return IsIndex16() || (IsIndex256() && _index < 16);
+    return (IsIndex16() || IsIndex256()) && _index < 16;
 }
 
 bool TextColor::IsIndex16() const noexcept
@@ -80,6 +80,11 @@ bool TextColor::IsIndex256() const noexcept
 bool TextColor::IsDefault() const noexcept
 {
     return _meta == ColorType::IsDefault;
+}
+
+bool TextColor::IsDefaultOrLegacy() const noexcept
+{
+    return _meta != ColorType::IsRgb && _index < 16;
 }
 
 bool TextColor::IsRgb() const noexcept

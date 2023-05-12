@@ -3,16 +3,15 @@
 
 #include "pch.h"
 #include "TerminalWindow.h"
+
+#include "AppLogic.h"
 #include "../inc/WindowingBehavior.h"
+
+#include <LibraryResources.h>
+
 #include "TerminalWindow.g.cpp"
 #include "SettingsLoadEventArgs.g.cpp"
 #include "WindowProperties.g.cpp"
-
-#include <LibraryResources.h>
-#include <WtExeUtils.h>
-#include <wil/token_helpers.h>
-
-#include "../../types/inc/utils.hpp"
 
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -190,35 +189,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Called around the codebase to discover if this is a UWP where we need to turn off specific settings.
-    // Arguments:
-    // - <none> - reports internal state
-    // Return Value:
-    // - True if UWP, false otherwise.
-    bool TerminalWindow::IsUwp() const noexcept
-    {
-        // use C++11 magic statics to make sure we only do this once.
-        // This won't change over the lifetime of the application
-
-        static const auto isUwp = []() {
-            // *** THIS IS A SINGLETON ***
-            auto result = false;
-
-            // GH#2455 - Make sure to try/catch calls to Application::Current,
-            // because that _won't_ be an instance of TerminalApp::App in the
-            // LocalTests
-            try
-            {
-                result = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
-            }
-            CATCH_LOG();
-            return result;
-        }();
-
-        return isUwp;
-    }
-
-    // Method Description:
     // - Build the UI for the terminal app. Before this method is called, it
     //   should not be assumed that the TerminalApp is usable. The Settings
     //   should be loaded before this is called, either with LoadSettings or
@@ -264,8 +234,12 @@ namespace winrt::TerminalApp::implementation
             {
                 _root->SetFullscreen(true);
             }
+
+            AppLogic::Current()->NotifyRootInitialized();
         });
         _root->Create();
+
+        AppLogic::Current()->SettingsChanged({ get_weak(), &TerminalWindow::UpdateSettingsHandler });
 
         _RefreshThemeRoutine();
 
@@ -533,11 +507,6 @@ namespace winrt::TerminalApp::implementation
     //   return true in that case, to be less noisy (though, that is unexpected)
     bool TerminalWindow::_IsKeyboardServiceEnabled()
     {
-        if (IsUwp())
-        {
-            return true;
-        }
-
         // If at any point we fail to open the service manager, the service,
         // etc, then just quick return true to disable the dialog. We'd rather
         // not be noisy with this dialog if we failed for some reason.
@@ -901,10 +870,19 @@ namespace winrt::TerminalApp::implementation
                     {
                         focusedObject = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(focusedElement);
 
-                        // We were unable to find a focused object. Default to the xaml root so that the alt+space menu still works.
+                        // We were unable to find a focused object. Give the
+                        // TerminalPage one last chance to let the alt+space
+                        // menu still work.
+                        //
+                        // We return always, because the TerminalPage handler
+                        // will return false for just a bare `alt` press, and
+                        // don't want to go around the loop again.
                         if (!focusedObject)
                         {
-                            focusedObject = _root.try_as<IInspectable>();
+                            if (auto keyListener{ _root.try_as<IDirectKeyListener>() })
+                            {
+                                return keyListener.OnDirectKeyEvent(vkey, scanCode, down);
+                            }
                         }
                     }
                 }
@@ -1041,11 +1019,14 @@ namespace winrt::TerminalApp::implementation
     //   returned.
     // Arguments:
     // - args: an array of strings to process as a commandline. These args can contain spaces
+    // - cwd: The CWD that this window should treat as its own "virtual" CWD
     // Return Value:
     // - the result of the first command who's parsing returned a non-zero code,
     //   or 0. (see TerminalWindow::_ParseArgs)
-    int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args)
+    int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args, winrt::hstring cwd)
     {
+        _WindowProperties->SetInitialCwd(std::move(cwd));
+
         // This is called in AppHost::ctor(), before we've created the window
         // (or called TerminalWindow::Initialize)
         const auto result = _appArgs.ParseArgs(args);
@@ -1367,6 +1348,7 @@ namespace winrt::TerminalApp::implementation
             CATCH_LOG();
         }
     }
+
     uint64_t WindowProperties::WindowId() const noexcept
     {
         return _WindowId;

@@ -763,15 +763,12 @@
   </data>
   <data name="AboutDialog_CheckingForUpdatesLabel.Text" xml:space="preserve">
     <value>Checking for updates...</value>
-    <comment></comment>
   </data>
   <data name="AboutDialog_UpdateAvailableLabel.Text" xml:space="preserve">
     <value>An update is available.</value>
-    <comment></comment>
   </data>
   <data name="AboutDialog_InstallUpdateButton.Content" xml:space="preserve">
     <value>Install now</value>
-    <comment></comment>
   </data>
   <data name="DuplicateRemainingProfilesEntry" xml:space="preserve">
     <value>The "newTabMenu" field contains more than one entry of type "remainingProfiles". Only the first one will be considered.</value>
@@ -819,5 +816,15 @@
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
     <value>Empty...</value>
+  </data>
+  <data name="ClosePaneText" xml:space="preserve">
+    <value>Close Pane</value>
+  </data>
+  <data name="ClosePaneToolTip" xml:space="preserve">
+    <value>Close the active pane if multiple panes are present</value>
+  </data>
+  <data name="TabColorClearButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.FullDescription" xml:space="preserve">
+    <value>Reset tab color</value>
+    <comment>Text used to identify the reset button</comment>
   </data>
 </root>

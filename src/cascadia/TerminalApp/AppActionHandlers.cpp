@@ -1228,4 +1228,27 @@ namespace winrt::TerminalApp::implementation
             args.Handled(handled);
         }
     }
+
+    void TerminalPage::_HandleRestartConnection(const IInspectable& /*sender*/,
+                                                const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            if (const auto activePane{ activeTab->GetActivePane() })
+            {
+                _restartPaneConnection(activePane);
+            }
+        }
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleShowContextMenu(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.ShowContextMenu();
+        }
+        args.Handled(true);
+    }
 }

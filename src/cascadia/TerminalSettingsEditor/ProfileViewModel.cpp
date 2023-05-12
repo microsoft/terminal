@@ -104,7 +104,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::vector<Editor::Font> monospaceFontList;
 
         // get the font collection; subscribe to updates
-        const auto fontCollection = ::Microsoft::Console::Render::FontCache::GetFresh();
+        wil::com_ptr<IDWriteFactory> factory;
+        THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(factory), reinterpret_cast<::IUnknown**>(factory.addressof())));
+
+        wil::com_ptr<IDWriteFontCollection> fontCollection;
+        THROW_IF_FAILED(factory->GetSystemFontCollection(fontCollection.addressof(), TRUE));
 
         for (UINT32 i = 0; i < fontCollection->GetFontFamilyCount(); ++i)
         {

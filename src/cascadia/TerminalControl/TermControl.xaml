@@ -37,6 +37,21 @@
                           x:Uid="PasteCommandButton"
                           Click="_PasteCommandHandler"
                           Icon="Paste" />
+            <mux:CommandBarFlyout.SecondaryCommands>
+                <AppBarButton x:Name="SelectCommandButton"
+                              x:Uid="SelectCommandButton"
+                              Click="_SelectCommandHandler">
+                    <AppBarButton.Icon>
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                  FontSize="11"
+                                  Glyph="&#xE756;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton x:Name="SelectOutputButton"
+                              x:Uid="SelectOutputButton"
+                              Click="_SelectOutputHandler"
+                              Icon="AlignLeft" />
+            </mux:CommandBarFlyout.SecondaryCommands>
         </mux:CommandBarFlyout>
 
         <mux:CommandBarFlyout x:Name="SelectionContextMenu">
@@ -53,6 +68,19 @@
                               x:Uid="SearchCommandButton"
                               Click="_SearchCommandHandler"
                               Icon="Find" />
+                <AppBarButton x:Name="SelectCommandWithSelectionButton"
+                              x:Uid="SelectCommandWithSelectionButton"
+                              Click="_SelectCommandHandler">
+                    <AppBarButton.Icon>
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                  FontSize="11"
+                                  Glyph="&#xE756;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton x:Name="SelectOutputWithSelectionButton"
+                              x:Uid="SelectOutputWithSelectionButton"
+                              Click="_SelectOutputHandler"
+                              Icon="AlignLeft" />
             </mux:CommandBarFlyout.SecondaryCommands>
         </mux:CommandBarFlyout>
 

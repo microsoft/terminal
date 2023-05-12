@@ -33,6 +33,8 @@ namespace winrt::TerminalApp::implementation
         _rootPane = rootPane;
         _activePane = nullptr;
 
+        _closePaneMenuItem.Visibility(WUX::Visibility::Collapsed);
+
         auto firstId = _nextPaneId;
 
         _rootPane->WalkTree([&](std::shared_ptr<Pane> pane) {
@@ -516,6 +518,9 @@ namespace winrt::TerminalApp::implementation
         // either the first or second child, but this will always return the
         // original pane first.
         auto [original, newPane] = _activePane->Split(splitType, splitSize, pane);
+
+        // After split, Close Pane Menu Item should be visible
+        _closePaneMenuItem.Visibility(WUX::Visibility::Visible);
 
         // The active pane has an id if it is a leaf
         if (activePaneId)
@@ -1071,6 +1076,11 @@ namespace winrt::TerminalApp::implementation
             _mruPanes.insert(_mruPanes.begin(), paneId.value());
         }
 
+        if (_rootPane->GetLeafPaneCount() == 1)
+        {
+            _closePaneMenuItem.Visibility(WUX::Visibility::Collapsed);
+        }
+
         _RecalculateAndApplyReadOnly();
 
         // Raise our own ActivePaneChanged event.
@@ -1326,6 +1336,23 @@ namespace winrt::TerminalApp::implementation
             Automation::AutomationProperties::SetHelpText(splitTabMenuItem, splitTabToolTip);
         }
 
+        Controls::MenuFlyoutItem closePaneMenuItem = _closePaneMenuItem;
+        {
+            // "Close Pane"
+            closePaneMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->ClosePane();
+                }
+            });
+            closePaneMenuItem.Text(RS_(L"ClosePaneText"));
+
+            const auto closePaneToolTip = RS_(L"ClosePaneToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(closePaneMenuItem, box_value(closePaneToolTip));
+            Automation::AutomationProperties::SetHelpText(closePaneMenuItem, closePaneToolTip);
+        }
+
         Controls::MenuFlyoutItem exportTabMenuItem;
         {
             // "Export Tab"
@@ -1377,6 +1404,7 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Items().Append(renameTabMenuItem);
         contextMenuFlyout.Items().Append(duplicateTabMenuItem);
         contextMenuFlyout.Items().Append(splitTabMenuItem);
+
         contextMenuFlyout.Items().Append(exportTabMenuItem);
         contextMenuFlyout.Items().Append(findMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
@@ -1395,7 +1423,9 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         });
-        _AppendCloseMenuItems(contextMenuFlyout);
+        auto closeSubMenu = _AppendCloseMenuItems(contextMenuFlyout);
+        closeSubMenu.Items().Append(closePaneMenuItem);
+
         TabViewItem().ContextFlyout(contextMenuFlyout);
     }
 
