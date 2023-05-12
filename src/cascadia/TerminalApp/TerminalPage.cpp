@@ -2090,6 +2090,13 @@ namespace winrt::TerminalApp::implementation
         const auto windowId{ args.Window() };
         if (!windowId.empty())
         {
+            // if the windowId is the same as our name, do nothing
+            if (windowId == WindowProperties().WindowName() ||
+                windowId == winrt::to_hstring(WindowProperties().WindowId()))
+            {
+                return true;
+            }
+
             if (const auto terminalTab{ _GetFocusedTabImpl() })
             {
                 auto startupActions = terminalTab->BuildStartupActions(true);
