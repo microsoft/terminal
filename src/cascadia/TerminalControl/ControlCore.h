@@ -266,7 +266,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // clang-format on
 
     private:
-        bool _initializedTerminal{ false };
+        struct SharedState
+        {
+            std::shared_ptr<ThrottledFuncTrailing<>> tsfTryRedrawCanvas;
+            std::unique_ptr<til::throttled_func_trailing<>> updatePatternLocations;
+            std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
+        };
+
+        std::atomic<bool> _initializedTerminal{ false };
         bool _closing{ false };
 
         TerminalConnection::ITerminalConnection _connection{ nullptr };
@@ -313,9 +320,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t _owningHwnd{ 0 };
 
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
-        std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
-        std::unique_ptr<til::throttled_func_trailing<>> _updatePatternLocations;
-        std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
+        til::shared_mutex<SharedState> _shared;
 
         til::point _contextMenuBufferPosition{ 0, 0 };
 
