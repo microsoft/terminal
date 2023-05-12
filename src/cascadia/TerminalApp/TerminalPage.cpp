@@ -238,12 +238,7 @@ namespace winrt::TerminalApp::implementation
                 page->_OpenNewTerminalViaDropdown(NewTerminalArgs());
             }
         });
-        _newTabButton.Drop([weakThis{ get_weak() }](const Windows::Foundation::IInspectable&, winrt::Windows::UI::Xaml::DragEventArgs e) {
-            if (auto page{ weakThis.get() })
-            {
-                page->NewTerminalByDrop(e);
-            }
-        });
+        _newTabButton.Drop({ get_weak(), &TerminalPage::_NewTerminalByDrop });
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
         _tabView.TabCloseRequested({ this, &TerminalPage::_OnTabCloseRequested });
         _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
@@ -402,35 +397,46 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
+    winrt::fire_and_forget TerminalPage::_NewTerminalByDrop(const Windows::Foundation::IInspectable&, winrt::Windows::UI::Xaml::DragEventArgs e)
+    try
     {
-        Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items;
-        try
+        const auto data = e.DataView();
+        if (!data.Contains(StandardDataFormats::StorageItems()))
         {
-            items = co_await e.DataView().GetStorageItemsAsync();
+            co_return;
         }
-        CATCH_LOG();
 
-        if (items.Size() == 1)
+        const auto weakThis = get_weak();
+        const auto items = co_await data.GetStorageItemsAsync();
+        const auto strongThis = weakThis.get();
+        if (!strongThis)
         {
-            std::filesystem::path path(items.GetAt(0).Path().c_str());
+            co_return;
+        }
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "NewTabByDragDrop",
+            TraceLoggingDescription("Event emitted when the user drag&drops onto the new tab button"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        for (const auto& item : items)
+        {
+            auto directory = item.Path();
+
+            std::filesystem::path path(std::wstring_view{ directory });
             if (!std::filesystem::is_directory(path))
             {
-                path = path.parent_path();
+                directory = winrt::hstring{ path.parent_path().native() };
             }
 
             NewTerminalArgs args;
-            args.StartingDirectory(winrt::hstring{ path.wstring() });
-            this->_OpenNewTerminalViaDropdown(args);
-
-            TraceLoggingWrite(
-                g_hTerminalAppProvider,
-                "NewTabByDragDrop",
-                TraceLoggingDescription("Event emitted when the user drag&drops onto the new tab button"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+            args.StartingDirectory(directory);
+            _OpenNewTerminalViaDropdown(args);
         }
     }
+    CATCH_LOG()
 
     // Method Description:
     // - This method is called once command palette action was chosen for dispatching
@@ -1699,7 +1705,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Helper to manually exit "zoom" when certain actions take place.
-    //   Anything that modifies the state of the pane tree should probably
+    //   Anythinwg that modifies the state of the pane tree should probably
     //   un-zoom the focused pane first, so that the user can see the full pane
     //   tree again. These actions include:
     //   * Splitting a new pane
