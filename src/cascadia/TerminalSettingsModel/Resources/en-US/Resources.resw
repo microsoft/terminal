@@ -512,7 +512,7 @@
     <value>Rename window...</value>
   </data>
   <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
-    <value>Display Terminal's working directory</value>
+    <value>Display Terminal's current working directory</value>
   </data>
   <data name="GlobalSummonCommandKey" xml:space="preserve">
     <value>Show/Hide the Terminal window</value>
