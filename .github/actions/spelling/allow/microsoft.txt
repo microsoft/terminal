@@ -59,12 +59,13 @@ PRIINFO
 propkey
 pscustomobject
 QWORD
+rdpclip
 regedit
 resfiles
 robocopy
 SACLs
-segoe
 sdkddkver
+segoe
 Shobjidl
 sid
 Skype
