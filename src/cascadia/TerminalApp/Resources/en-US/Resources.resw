@@ -282,6 +282,9 @@
     <value>Failed to parse "startupActions".</value>
     <comment>{Locked="\"startupActions\""}</comment>
   </data>
+  <data name="InvalidProfileEnvironmentVariables" xml:space="preserve">
+    <value>Found multiple environment variables with the same name in different cases (lower/upper) - only one value will be used.</value>
+  </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
   </data>
@@ -758,6 +761,15 @@
     <value>Suggestions found: {0}</value>
     <comment>{0} will be replaced with a number.</comment>
   </data>
+  <data name="AboutDialog_CheckingForUpdatesLabel.Text" xml:space="preserve">
+    <value>Checking for updates...</value>
+  </data>
+  <data name="AboutDialog_UpdateAvailableLabel.Text" xml:space="preserve">
+    <value>An update is available.</value>
+  </data>
+  <data name="AboutDialog_InstallUpdateButton.Content" xml:space="preserve">
+    <value>Install now</value>
+  </data>
   <data name="DuplicateRemainingProfilesEntry" xml:space="preserve">
     <value>The "newTabMenu" field contains more than one entry of type "remainingProfiles". Only the first one will be considered.</value>
     <comment>{Locked="newTabMenu"} {Locked="remainingProfiles"}</comment>
@@ -804,5 +816,15 @@
   </data>
   <data name="NewTabMenuFolderEmpty" xml:space="preserve">
     <value>Empty...</value>
+  </data>
+  <data name="ClosePaneText" xml:space="preserve">
+    <value>Close Pane</value>
+  </data>
+  <data name="ClosePaneToolTip" xml:space="preserve">
+    <value>Close the active pane if multiple panes are present</value>
+  </data>
+  <data name="TabColorClearButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.FullDescription" xml:space="preserve">
+    <value>Reset tab color</value>
+    <comment>Text used to identify the reset button</comment>
   </data>
 </root>

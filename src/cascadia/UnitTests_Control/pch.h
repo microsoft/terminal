@@ -46,6 +46,8 @@ Licensed under the MIT license.
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+#include <til/mutex.h>
+#include <til/winrt.h>
 
 #include "ThrottledFunc.h"
 

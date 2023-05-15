@@ -184,7 +184,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         VTParameters subspan(const size_t offset) const noexcept
         {
-            const auto subValues = _values.subspan(offset);
+            const auto subValues = _values.subspan(std::min(offset, _values.size()));
             return { subValues.data(), subValues.size() };
         }
 
@@ -418,6 +418,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     enum ModeParams : VTInt
     {
         IRM_InsertReplaceMode = ANSIStandardMode(4),
+        LNM_LineFeedNewLineMode = ANSIStandardMode(20),
         DECCKM_CursorKeysMode = DECPrivateMode(1),
         DECANM_AnsiMode = DECPrivateMode(2),
         DECCOLM_SetNumberOfColumns = DECPrivateMode(3),
@@ -468,6 +469,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         IconifyWindow = 2,
         RefreshWindow = 7,
         ResizeWindowInCharacters = 8,
+        ReportTextSizeInCharacters = 18
     };
 
     enum class CursorStyle : VTInt
@@ -581,5 +583,19 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         MarkCategory category{ MarkCategory::Info };
         // Other things we may want to think about in the future are listed in
         // GH#11000
+
+        bool HasCommand() const noexcept
+        {
+            return commandEnd.has_value() && *commandEnd != end;
+        }
+        bool HasOutput() const noexcept
+        {
+            return outputEnd.has_value() && *outputEnd != *commandEnd;
+        }
+        std::pair<til::point, til::point> GetExtent() const
+        {
+            til::point realEnd{ til::coalesce_value(outputEnd, commandEnd, end) };
+            return std::make_pair(til::point{ start }, realEnd);
+        }
     };
 }

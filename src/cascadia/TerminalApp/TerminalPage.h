@@ -15,9 +15,6 @@
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
-static constexpr uint32_t DefaultRowsToScroll{ 3 };
-static constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
-
 namespace TerminalAppLocalTests
 {
     class TabTests;
@@ -31,6 +28,9 @@ namespace Microsoft::Terminal::Core
 
 namespace winrt::TerminalApp::implementation
 {
+    inline constexpr uint32_t DefaultRowsToScroll{ 3 };
+    inline constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
+
     enum StartupState : int
     {
         NotInitialized = 0,
@@ -106,8 +106,6 @@ namespace winrt::TerminalApp::implementation
         void HandoffToElevated(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
         Microsoft::Terminal::Settings::Model::WindowLayout GetWindowLayout();
 
-        winrt::fire_and_forget NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e);
-
         hstring Title();
 
         void TitlebarClicked();
@@ -118,6 +116,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ApplicationDisplayName();
         winrt::hstring ApplicationVersion();
 
+        CommandPalette LoadCommandPalette();
         winrt::fire_and_forget RequestQuit();
         winrt::fire_and_forget CloseWindow(bool bypassDialog);
 
@@ -180,7 +179,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(AlwaysOnTopChanged, IInspectable, IInspectable);
         TYPED_EVENT(RaiseVisualBell, IInspectable, IInspectable);
         TYPED_EVENT(SetTaskbarProgress, IInspectable, IInspectable);
-        TYPED_EVENT(Initialized, IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
+        TYPED_EVENT(Initialized, IInspectable, IInspectable);
         TYPED_EVENT(IdentifyWindowsRequested, IInspectable, IInspectable);
         TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
         TYPED_EVENT(SummonWindowRequested, IInspectable, IInspectable);
@@ -274,6 +273,11 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::NewConnection_revoker _newConnectionRevoker;
 
+        winrt::fire_and_forget _NewTerminalByDrop(const Windows::Foundation::IInspectable&, winrt::Windows::UI::Xaml::DragEventArgs e);
+
+        __declspec(noinline) CommandPalette _loadCommandPaletteSlowPath();
+        bool _commandPaletteIs(winrt::Windows::UI::Xaml::Visibility visibility);
+
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
         void _ShowAboutDialog();
@@ -291,7 +295,12 @@ namespace winrt::TerminalApp::implementation
         void _OpenNewTabDropdown();
         HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
         void _CreateNewTabFromPane(std::shared_ptr<Pane> pane, uint32_t insertPosition = -1);
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
+
+        std::wstring _evaluatePathForCwd(std::wstring_view path);
+
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettings settings, const bool inheritCursor);
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _duplicateConnectionForRestart(std::shared_ptr<Pane> pane);
+        void _restartPaneConnection(const std::shared_ptr<Pane>& pane);
 
         winrt::fire_and_forget _OpenNewWindow(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
@@ -301,8 +310,6 @@ namespace winrt::TerminalApp::implementation
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _CommandPaletteButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
-        void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
-        void _SendFeedbackOnClick(const IInspectable& sender, const Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs& eventArgs);
 
         void _KeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
         static ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() noexcept;
@@ -314,7 +321,6 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabIcon(TerminalTab& tab);
         void _UpdateTabView();
         void _UpdateTabWidthMode();
-        void _UpdateCommandsForPalette();
         void _SetBackgroundImage(const winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig& newAppearance);
 
         void _DuplicateFocusedTab();
@@ -447,7 +453,7 @@ namespace winrt::TerminalApp::implementation
 
         void _StartInboundListener();
 
-        void _CompleteInitialization();
+        winrt::fire_and_forget _CompleteInitialization();
 
         void _FocusActiveControl(IInspectable sender, IInspectable eventArgs);
 
@@ -501,10 +507,10 @@ namespace winrt::TerminalApp::implementation
         static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
 
         void _updateThemeColors();
-        void _updateTabCloseButton(const winrt::Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
+        void _updateAllTabCloseButtons(const winrt::TerminalApp::TabBase& focusedTab);
         void _updatePaneResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
 
-        winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
+        void _ShowWindowChangedHandler(const IInspectable& sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
         winrt::fire_and_forget _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
         void _onTabDragStarting(const winrt::Microsoft::UI::Xaml::Controls::TabView& sender, const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& e);

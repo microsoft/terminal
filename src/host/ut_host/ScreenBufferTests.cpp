@@ -118,11 +118,12 @@ class ScreenBufferTests
 
     TEST_METHOD(EraseAllTests);
 
-    TEST_METHOD(OutputNULTest);
+    TEST_METHOD(InactiveControlCharactersTest);
 
     TEST_METHOD(VtResize);
     TEST_METHOD(VtResizeComprehensive);
     TEST_METHOD(VtResizeDECCOLM);
+    TEST_METHOD(VtResizePreservingAttributes);
 
     TEST_METHOD(VtSoftResetCursorPosition);
 
@@ -201,6 +202,7 @@ class ScreenBufferTests
 
     TEST_METHOD(ScrollLines256Colors);
 
+    TEST_METHOD(SetLineFeedMode);
     TEST_METHOD(SetScreenMode);
     TEST_METHOD(SetOriginMode);
     TEST_METHOD(SetAutoWrapMode);
@@ -1018,8 +1020,19 @@ void ScreenBufferTests::EraseAllTests()
         viewport.BottomInclusive()));
 }
 
-void ScreenBufferTests::OutputNULTest()
+void ScreenBufferTests::InactiveControlCharactersTest()
 {
+    // These are the control characters that don't write anything to the
+    // output buffer, and are expected not to move the cursor position.
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:ordinal", L"{0, 1, 2, 3, 4, 5, 6, 7, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31}")
+    END_TEST_METHOD_PROPERTIES()
+
+    unsigned ordinal;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"ordinal", ordinal));
+    const auto ch = static_cast<wchar_t>(ordinal);
+
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
     auto& stateMachine = si.GetStateMachine();
@@ -1028,21 +1041,20 @@ void ScreenBufferTests::OutputNULTest()
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().y);
 
-    Log::Comment(NoThrowString().Format(
-        L"Writing a single NUL"));
-    stateMachine.ProcessString({ L"\0", 1 });
+    Log::Comment(L"Writing a single control character");
+    const auto singleChar = std::wstring(1, ch);
+    stateMachine.ProcessString(singleChar);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().y);
 
-    Log::Comment(NoThrowString().Format(
-        L"Writing many NULs"));
-    stateMachine.ProcessString({ L"\0\0\0\0\0\0\0\0", 8 });
+    Log::Comment(L"Writing many control characters");
+    const auto manyChars = std::wstring(8, ch);
+    stateMachine.ProcessString(manyChars);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().y);
 
-    Log::Comment(NoThrowString().Format(
-        L"Testing a single NUL followed by real text"));
-    stateMachine.ProcessString({ L"\0foo", 4 });
+    Log::Comment(L"Testing a single control character followed by real text");
+    stateMachine.ProcessString(singleChar + L"foo");
     VERIFY_ARE_EQUAL(3, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().y);
 
@@ -1050,9 +1062,8 @@ void ScreenBufferTests::OutputNULTest()
     VERIFY_ARE_EQUAL(0, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(1, cursor.GetPosition().y);
 
-    Log::Comment(NoThrowString().Format(
-        L"Writing NULs in between other strings"));
-    stateMachine.ProcessString({ L"\0foo\0bar\0", 9 });
+    Log::Comment(L"Writing controls in between other strings");
+    stateMachine.ProcessString(singleChar + L"foo" + singleChar + L"bar" + singleChar);
     VERIFY_ARE_EQUAL(6, cursor.GetPosition().x);
     VERIFY_ARE_EQUAL(1, cursor.GetPosition().y);
 }
@@ -1388,6 +1399,52 @@ void ScreenBufferTests::VtResizeDECCOLM()
     VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
     VERIFY_ARE_EQUAL(80, newSbWidth);
     VERIFY_ARE_EQUAL(80, newViewWidth);
+}
+
+void ScreenBufferTests::VtResizePreservingAttributes()
+{
+    // Run this test in isolation - for one reason or another, this breaks other tests.
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        TEST_METHOD_PROPERTY(L"Data:resizeType", L"{0, 1}")
+    END_TEST_METHOD_PROPERTIES()
+
+    unsigned resizeType;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"resizeType", resizeType));
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    // Set the attributes to something not supported by the legacy console.
+    auto testAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    testAttr.SetCrossedOut(true);
+    testAttr.SetDoublyUnderlined(true);
+    testAttr.SetItalic(true);
+    si.GetTextBuffer().SetCurrentAttributes(testAttr);
+
+    switch (resizeType)
+    {
+    case 0:
+        Log::Comment(L"Resize the screen with CSI 8 t");
+        stateMachine.ProcessString(L"\x1b[8;24;132t"); // Set width to 132
+        VERIFY_ARE_EQUAL(132, si.GetTextBuffer().GetSize().Width());
+        stateMachine.ProcessString(L"\x1b[8;24;80t"); // Set width to 80
+        VERIFY_ARE_EQUAL(80, si.GetTextBuffer().GetSize().Width());
+        break;
+    case 1:
+        Log::Comment(L"Resize the screen with DECCOLM");
+        stateMachine.ProcessString(L"\x1b[?40h"); // Allow DECCOLM
+        stateMachine.ProcessString(L"\x1b[?3h"); // Set width to 132
+        VERIFY_ARE_EQUAL(132, si.GetTextBuffer().GetSize().Width());
+        stateMachine.ProcessString(L"\x1b[?3l"); // Set width to 80
+        VERIFY_ARE_EQUAL(80, si.GetTextBuffer().GetSize().Width());
+        break;
+    }
+
+    Log::Comment(L"Attributes should be preserved after resize");
+    VERIFY_ARE_EQUAL(testAttr, si.GetTextBuffer().GetCurrentAttributes());
 }
 
 void ScreenBufferTests::VtSoftResetCursorPosition()
@@ -5364,6 +5421,28 @@ void ScreenBufferTests::ScrollLines256Colors()
         VERIFY_ARE_EQUAL(expectedAttr, iter01->TextAttr());
         VERIFY_ARE_EQUAL(expectedAttr, iter02->TextAttr());
     }
+}
+
+void ScreenBufferTests::SetLineFeedMode()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& terminalInput = gci.GetActiveInputBuffer()->GetTerminalInput();
+
+    // We need to start with newline auto return disabled for LNM to be active.
+    WI_SetFlag(si.OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
+    auto restoreMode = wil::scope_exit([&] { WI_ClearFlag(si.OutputMode, DISABLE_NEWLINE_AUTO_RETURN); });
+
+    Log::Comment(L"When LNM is set, newline auto return and line feed mode are enabled.");
+    stateMachine.ProcessString(L"\x1B[20h");
+    VERIFY_IS_TRUE(WI_IsFlagClear(si.OutputMode, DISABLE_NEWLINE_AUTO_RETURN));
+    VERIFY_IS_TRUE(terminalInput.GetInputMode(TerminalInput::Mode::LineFeed));
+
+    Log::Comment(L"When LNM is reset, newline auto return and line feed mode are disabled.");
+    stateMachine.ProcessString(L"\x1B[20l");
+    VERIFY_IS_FALSE(WI_IsFlagClear(si.OutputMode, DISABLE_NEWLINE_AUTO_RETURN));
+    VERIFY_IS_FALSE(terminalInput.GetInputMode(TerminalInput::Mode::LineFeed));
 }
 
 void ScreenBufferTests::SetScreenMode()

@@ -214,6 +214,7 @@ userenv
 USEROBJECTFLAGS
 Viewbox
 virtualalloc
+vsnwprintf
 wcsstr
 wcstoui
 WDJ

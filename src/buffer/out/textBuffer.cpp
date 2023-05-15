@@ -13,75 +13,6 @@
 #include "../types/inc/convert.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 
-namespace
-{
-    struct BufferAllocator
-    {
-        BufferAllocator(til::size sz)
-        {
-            const auto w = gsl::narrow<uint16_t>(sz.width);
-            const auto h = gsl::narrow<uint16_t>(sz.height);
-
-            const auto charsBytes = w * sizeof(wchar_t);
-            // The ROW::_indices array stores 1 more item than the buffer is wide.
-            // That extra column stores the past-the-end _chars pointer.
-            const auto indicesBytes = w * sizeof(uint16_t) + sizeof(uint16_t);
-            const auto rowStride = charsBytes + indicesBytes;
-            // 65535*65535 cells would result in a charsAreaSize of 8GiB.
-            // --> Use uint64_t so that we can safely do our calculations even on x86.
-            const auto allocSize = gsl::narrow<size_t>(::base::strict_cast<uint64_t>(rowStride) * ::base::strict_cast<uint64_t>(h));
-
-            _buffer = wil::unique_virtualalloc_ptr<std::byte>{ static_cast<std::byte*>(VirtualAlloc(nullptr, allocSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE)) };
-            THROW_IF_NULL_ALLOC(_buffer);
-
-            _data = std::span{ _buffer.get(), allocSize }.begin();
-            _rowStride = rowStride;
-            _indicesOffset = charsBytes;
-            _width = w;
-            _height = h;
-        }
-
-        BufferAllocator& operator++() noexcept
-        {
-            _data += _rowStride;
-            return *this;
-        }
-
-        wchar_t* chars() const noexcept
-        {
-            return til::bit_cast<wchar_t*>(&*_data);
-        }
-
-        uint16_t* indices() const noexcept
-        {
-            return til::bit_cast<uint16_t*>(&*(_data + _indicesOffset));
-        }
-
-        uint16_t width() const noexcept
-        {
-            return _width;
-        }
-
-        uint16_t height() const noexcept
-        {
-            return _height;
-        }
-
-        wil::unique_virtualalloc_ptr<std::byte>&& take() noexcept
-        {
-            return std::move(_buffer);
-        }
-
-    private:
-        wil::unique_virtualalloc_ptr<std::byte> _buffer;
-        std::span<std::byte>::iterator _data;
-        size_t _rowStride;
-        size_t _indicesOffset;
-        uint16_t _width;
-        uint16_t _height;
-    };
-}
-
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
 
@@ -111,16 +42,7 @@ TextBuffer::TextBuffer(til::size screenBufferSize,
     // Guard against resizing the text buffer to 0 columns/rows, which would break being able to insert text.
     screenBufferSize.width = std::max(screenBufferSize.width, 1);
     screenBufferSize.height = std::max(screenBufferSize.height, 1);
-
-    BufferAllocator allocator{ screenBufferSize };
-
-    _storage.reserve(allocator.height());
-    for (til::CoordType i = 0; i < screenBufferSize.height; ++i, ++allocator)
-    {
-        _storage.emplace_back(allocator.chars(), allocator.indices(), allocator.width(), _currentAttributes);
-    }
-
-    _charBuffer = allocator.take();
+    _charBuffer = _allocateBuffer(screenBufferSize, _currentAttributes, _storage);
     _UpdateSize();
 }
 
@@ -350,10 +272,6 @@ bool TextBuffer::_AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribut
 // - false otherwise (out of memory)
 bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute)
 {
-    // This function corrects most errors. If this is false, we had an uncorrectable one which
-    // older versions of conhost simply let pass by unflinching.
-    LOG_HR_IF(E_NOT_VALID_STATE, !(_AssertValidDoubleByteSequence(dbcsAttribute))); // Shouldn't be uncorrectable sequences unless something is very wrong.
-
     auto fSuccess = true;
     // Now compensate if we don't have enough space for the upcoming double byte sequence
     // We only need to compensate for leading bytes
@@ -775,6 +693,37 @@ const Viewport TextBuffer::GetSize() const noexcept
     return _size;
 }
 
+wil::unique_virtualalloc_ptr<std::byte> TextBuffer::_allocateBuffer(til::size sz, const TextAttribute& attributes, std::vector<ROW>& rows)
+{
+    const auto w = gsl::narrow<uint16_t>(sz.width);
+    const auto h = gsl::narrow<uint16_t>(sz.height);
+
+    const auto charsBytes = w * sizeof(wchar_t);
+    // The ROW::_indices array stores 1 more item than the buffer is wide.
+    // That extra column stores the past-the-end _chars pointer.
+    const auto indicesBytes = w * sizeof(uint16_t) + sizeof(uint16_t);
+    const auto rowStride = charsBytes + indicesBytes;
+    // 65535*65535 cells would result in a charsAreaSize of 8GiB.
+    // --> Use uint64_t so that we can safely do our calculations even on x86.
+    const auto allocSize = gsl::narrow<size_t>(::base::strict_cast<uint64_t>(rowStride) * ::base::strict_cast<uint64_t>(h));
+
+    auto buffer = wil::unique_virtualalloc_ptr<std::byte>{ static_cast<std::byte*>(VirtualAlloc(nullptr, allocSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE)) };
+    THROW_IF_NULL_ALLOC(buffer);
+
+    auto data = std::span{ buffer.get(), allocSize }.begin();
+
+    rows.resize(h);
+    for (auto& row : rows)
+    {
+        const auto chars = til::bit_cast<wchar_t*>(&*data);
+        const auto indices = til::bit_cast<uint16_t*>(&*(data + charsBytes));
+        row = { chars, indices, w, attributes };
+        data += rowStride;
+    }
+
+    return buffer;
+}
+
 void TextBuffer::_UpdateSize()
 {
     _size = Viewport::FromDimensions({ _storage.at(0).size(), gsl::narrow<til::CoordType>(_storage.size()) });
@@ -1001,37 +950,55 @@ void TextBuffer::Reset()
 
     try
     {
-        BufferAllocator allocator{ newSize };
-
-        const auto currentSize = GetSize().Dimensions();
-        const auto attributes = GetCurrentAttributes();
-
         til::CoordType TopRow = 0; // new top row of the screen buffer
         if (newSize.height <= GetCursor().GetPosition().y)
         {
             TopRow = GetCursor().GetPosition().y - newSize.height + 1;
         }
-        const auto TopRowIndex = (GetFirstRowIndex() + TopRow) % currentSize.height;
+        const auto TopRowIndex = gsl::narrow_cast<size_t>(_firstRow + TopRow) % _storage.size();
 
-        // rotate rows until the top row is at index 0
-        std::rotate(_storage.begin(), _storage.begin() + TopRowIndex, _storage.end());
-        _SetFirstRowIndex(0);
+        std::vector<ROW> newStorage;
+        auto newBuffer = _allocateBuffer(newSize, _currentAttributes, newStorage);
 
-        // realloc in the Y direction
-        // remove rows if we're shrinking
-        _storage.resize(allocator.height());
-
-        // realloc in the X direction
-        for (auto& it : _storage)
+        // This basically imitates a std::rotate_copy(first, mid, last), but uses ROW::CopyRangeFrom() to do the copying.
         {
-            it.Resize(allocator.chars(), allocator.indices(), allocator.width(), attributes);
-            ++allocator;
+            const auto first = _storage.begin();
+            const auto last = _storage.end();
+            const auto mid = first + TopRowIndex;
+            auto dest = newStorage.begin();
+
+            std::span<ROW> sourceRanges[]{
+                { mid, last },
+                { first, mid },
+            };
+
+            // Ensure we don't copy more from `_storage` than fit into `newStorage`.
+            if (sourceRanges[0].size() > newStorage.size())
+            {
+                sourceRanges[0] = sourceRanges[0].subspan(0, newStorage.size());
+            }
+            if (const auto remaining = newStorage.size() - sourceRanges[0].size(); sourceRanges[1].size() > remaining)
+            {
+                sourceRanges[1] = sourceRanges[1].subspan(0, remaining);
+            }
+
+            for (const auto& sourceRange : sourceRanges)
+            {
+                for (const auto& oldRow : sourceRange)
+                {
+                    til::CoordType begin = 0;
+                    dest->CopyRangeFrom(0, til::CoordTypeMax, oldRow, begin, til::CoordTypeMax);
+                    dest->TransferAttributes(oldRow.Attributes(), newSize.width);
+                    ++dest;
+                }
+            }
         }
 
-        // Update the cached size value
-        _UpdateSize();
+        _charBuffer = std::move(newBuffer);
+        _storage = std::move(newStorage);
 
-        _charBuffer = allocator.take();
+        _SetFirstRowIndex(0);
+        _UpdateSize();
     }
     CATCH_RETURN();
 

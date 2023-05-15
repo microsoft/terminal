@@ -88,19 +88,6 @@ ROW::ROW(wchar_t* charsBuffer, uint16_t* charOffsetsBuffer, uint16_t rowWidth, c
     }
 }
 
-void swap(ROW& lhs, ROW& rhs) noexcept
-{
-    std::swap(lhs._charsBuffer, rhs._charsBuffer);
-    std::swap(lhs._charsHeap, rhs._charsHeap);
-    std::swap(lhs._chars, rhs._chars);
-    std::swap(lhs._charOffsets, rhs._charOffsets);
-    std::swap(lhs._attr, rhs._attr);
-    std::swap(lhs._columnCount, rhs._columnCount);
-    std::swap(lhs._lineRendition, rhs._lineRendition);
-    std::swap(lhs._wrapForced, rhs._wrapForced);
-    std::swap(lhs._doubleBytePadded, rhs._doubleBytePadded);
-}
-
 void ROW::SetWrapForced(const bool wrap) noexcept
 {
     _wrapForced = wrap;
@@ -152,78 +139,6 @@ void ROW::_init() noexcept
 {
     std::fill_n(_chars.begin(), _columnCount, UNICODE_SPACE);
     std::iota(_charOffsets.begin(), _charOffsets.end(), uint16_t{ 0 });
-}
-
-// Routine Description:
-// - resizes ROW to new width
-// Arguments:
-// - charsBuffer - a new backing buffer to use for _charsBuffer
-// - charOffsetsBuffer - a new backing buffer to use for _charOffsets
-// - rowWidth - the new width, in cells
-// - fillAttribute - the attribute to use for any newly added, trailing cells
-void ROW::Resize(wchar_t* charsBuffer, uint16_t* charOffsetsBuffer, uint16_t rowWidth, const TextAttribute& fillAttribute)
-{
-    // A default-constructed ROW has no cols/chars to copy.
-    // It can be detected by the lack of a _charsBuffer (among others).
-    //
-    // Otherwise, this block figures out how much we can copy into the new `rowWidth`.
-    uint16_t colsToCopy = 0;
-    uint16_t charsToCopy = 0;
-    if (_charsBuffer)
-    {
-        colsToCopy = std::min(rowWidth, _columnCount);
-        // Safety: colsToCopy is [0, _columnCount].
-        charsToCopy = _uncheckedCharOffset(colsToCopy);
-        // Safety: colsToCopy is [0, _columnCount] due to colsToCopy != 0.
-        for (; colsToCopy != 0 && _uncheckedIsTrailer(colsToCopy); --colsToCopy)
-        {
-        }
-    }
-
-    // If we grow the row width, we have to append a bunch of whitespace.
-    // `trailingWhitespace` stores that amount.
-    // Safety: The preceding block left colsToCopy in the range [0, rowWidth].
-    const uint16_t trailingWhitespace = rowWidth - colsToCopy;
-
-    // Allocate memory for the new `_chars` array.
-    // Use the provided charsBuffer if possible, otherwise allocate a `_charsHeap`.
-    std::unique_ptr<wchar_t[]> charsHeap;
-    std::span chars{ charsBuffer, rowWidth };
-    const std::span charOffsets{ charOffsetsBuffer, ::base::strict_cast<size_t>(rowWidth) + 1u };
-    if (const uint16_t charsCapacity = charsToCopy + trailingWhitespace; charsCapacity > rowWidth)
-    {
-        charsHeap = std::make_unique_for_overwrite<wchar_t[]>(charsCapacity);
-        chars = { charsHeap.get(), charsCapacity };
-    }
-
-    // Copy chars and charOffsets over.
-    {
-        const auto it = std::copy_n(_chars.begin(), charsToCopy, chars.begin());
-        std::fill_n(it, trailingWhitespace, L' ');
-    }
-    {
-        const auto it = std::copy_n(_charOffsets.begin(), colsToCopy, charOffsets.begin());
-        // The _charOffsets array is 1 wider than newWidth indicates.
-        // This is because the extra column contains the past-the-end index into _chars.
-        iota_n(it, trailingWhitespace + 1u, charsToCopy);
-    }
-
-    _charsBuffer = charsBuffer;
-    _charsHeap = std::move(charsHeap);
-    _chars = chars;
-    _charOffsets = charOffsets;
-    _columnCount = rowWidth;
-
-    // .resize_trailing_extent() doesn't work if the vector is empty,
-    // since there's no trailing item that could be extended.
-    if (_attr.empty())
-    {
-        _attr = { rowWidth, fillAttribute };
-    }
-    else
-    {
-        _attr.resize_trailing_extent(rowWidth);
-    }
 }
 
 void ROW::TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth)

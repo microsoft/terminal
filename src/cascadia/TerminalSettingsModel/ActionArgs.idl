@@ -80,6 +80,12 @@ namespace Microsoft.Terminal.Settings.Model
         Previous
     };
 
+    enum SelectOutputDirection
+    {
+        Previous = 0,
+        Next,
+    };
+
     enum CommandPaletteLaunchMode
     {
         Action = 0,
@@ -148,6 +154,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass CopyTextArgs : IActionArgs
     {
+        CopyTextArgs();
         Boolean SingleLine { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Control.CopyFormat> CopyFormatting { get; };
     };
@@ -388,4 +395,17 @@ namespace Microsoft.Terminal.Settings.Model
         Microsoft.Terminal.Control.SelectionColor Background;
         Microsoft.Terminal.Core.MatchMode MatchMode { get; };
     };
+
+    [default_interface] runtimeclass SelectCommandArgs : IActionArgs
+    {
+        SelectCommandArgs(SelectOutputDirection direction);
+        SelectOutputDirection Direction { get; };
+    }
+    [default_interface] runtimeclass SelectOutputArgs : IActionArgs
+    {
+        SelectOutputArgs(SelectOutputDirection direction);
+        SelectOutputDirection Direction { get; };
+    }
+
+
 }

@@ -17,8 +17,8 @@
 
 #include <til/ticket_lock.h>
 
-static constexpr std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
-static constexpr size_t TaskbarMinProgress{ 10 };
+inline constexpr std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
+inline constexpr size_t TaskbarMinProgress{ 10 };
 
 // You have to forward decl the ICoreSettings here, instead of including the header.
 // If you include the header, there will be compilation errors with other
@@ -111,17 +111,14 @@ public:
     til::rect GetViewport() const noexcept override;
     void SetViewportPosition(const til::point position) noexcept override;
     void SetTextAttributes(const TextAttribute& attrs) noexcept override;
-    void SetAutoWrapMode(const bool wrapAtEOL) noexcept override;
-    bool GetAutoWrapMode() const noexcept override;
+    void SetSystemMode(const Mode mode, const bool enabled) noexcept override;
+    bool GetSystemMode(const Mode mode) const noexcept override;
     void WarningBell() override;
-    bool GetLineFeedMode() const noexcept override;
     void SetWindowTitle(const std::wstring_view title) override;
     CursorType GetUserDefaultCursorStyle() const noexcept override;
     bool ResizeWindow(const til::CoordType width, const til::CoordType height) noexcept override;
     void SetConsoleOutputCP(const unsigned int codepage) noexcept override;
     unsigned int GetConsoleOutputCP() const noexcept override;
-    void SetBracketedPasteMode(const bool enabled) noexcept override;
-    std::optional<bool> GetBracketedPasteMode() const noexcept override;
     void CopyToClipboard(std::wstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(std::wstring_view uri) override;
@@ -320,10 +317,11 @@ private:
 
     CursorType _defaultCursorShape = CursorType::Legacy;
 
+    til::enumset<Mode> _systemMode{ Mode::AutoWrap };
+
     bool _snapOnInput = true;
     bool _altGrAliasing = true;
     bool _suppressApplicationTitle = false;
-    bool _bracketedPasteMode = false;
     bool _trimBlockSelection = false;
     bool _autoMarkPrompts = false;
 

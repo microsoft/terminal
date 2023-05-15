@@ -30,8 +30,8 @@ public:
     static constexpr const int topBorderVisibleHeight = 1;
 
     NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
-    virtual ~NonClientIslandWindow() override;
 
+    virtual void Close() override;
     void MakeWindow() noexcept override;
     virtual void OnSize(const UINT width, const UINT height) override;
 

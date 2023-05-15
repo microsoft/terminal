@@ -74,7 +74,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
     auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
     auto cursorPosition = cursor.GetPosition();
-    const auto wrapAtEOL = _api.GetAutoWrapMode();
+    const auto wrapAtEOL = _api.GetSystemMode(ITerminalApi::Mode::AutoWrap);
     const auto attributes = textBuffer.GetCurrentAttributes();
 
     const auto viewport = _api.GetViewport();
@@ -154,17 +154,25 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 
         if (isWrapping)
         {
+            // We want to wrap, but we failed to write even a single character into the row.
+            // ROW::Write() returns the lineWidth and leaves stringIterator untouched. To prevent a
+            // deadlock, because stringIterator never advances, we need to throw that glyph away.
+            //
+            // This can happen under two circumstances:
+            // * The glyph is wider than the buffer and can never be inserted in
+            //   the first place. There's no good way to detect this, so we check
+            //   whether the begin column is the left margin, which is the column
+            //   at which any legit insertion should work at a minimum.
+            // * The DECAWM Autowrap mode is disabled ("\x1b[?7l", !wrapAtEOL) and
+            //   we tried writing a wide glyph into the last column which can't work.
+            if (textPositionBefore == textPositionAfter && (state.columnBegin == 0 || !wrapAtEOL))
+            {
+                textBuffer.ConsumeGrapheme(state.text);
+            }
+
             if (wrapAtEOL)
             {
                 cursor.DelayEOLWrap();
-            }
-            else if (textPositionBefore == textPositionAfter)
-            {
-                // We want to wrap, but we're not allowed to and we failed to write even a single character into the row.
-                // This can only mean one thing! The DECAWM Autowrap mode is disabled ("\x1b[?7l") and we tried writing a
-                // wide glyph into the last column. ROW::Write() returns the lineWidth and leaves stringIterator untouched.
-                // To prevent a deadlock, because stringIterator never advances, we need to throw that glyph away.
-                textBuffer.ConsumeGrapheme(state.text);
             }
         }
     }
@@ -1464,16 +1472,36 @@ bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusTyp
 }
 
 // Routine Description:
-// - DA - Reports the identity of this Virtual Terminal machine to the caller.
-//      - In our case, we'll report back to acknowledge we understand, but reveal no "hardware" upgrades like physical terminals of old.
+// - DA - Reports the service class or conformance level that the terminal
+//   supports, and the set of implemented extensions.
 // Arguments:
 // - <none>
 // Return Value:
 // - True.
 bool AdaptDispatch::DeviceAttributes()
 {
-    // See: http://vt100.net/docs/vt100-ug/chapter3.html#DA
-    _api.ReturnResponse(L"\x1b[?1;0c");
+    // This first parameter of the response is 61, representing a conformance
+    // level of 1. The subsequent parameters identify the supported feature
+    // extensions.
+    //
+    // 1 = 132 column mode (ConHost only)
+    // 6 = Selective erase
+    // 7 = Soft fonts
+    // 22 = Color text
+    // 23 = Greek character sets
+    // 24 = Turkish character sets
+    // 28 = Rectangular area operations
+    // 32 = Text macros
+    // 42 = ISO Latin - 2 character set
+
+    if (_api.IsConsolePty())
+    {
+        _api.ReturnResponse(L"\x1b[?61;6;7;22;23;24;28;32;42c");
+    }
+    else
+    {
+        _api.ReturnResponse(L"\x1b[?61;1;6;7;22;23;24;28;32;42c");
+    }
     return true;
 }
 
@@ -1761,6 +1789,15 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
         _modes.set(Mode::InsertReplace, enable);
         return true;
+    case DispatchTypes::ModeParams::LNM_LineFeedNewLineMode:
+        // VT apps expect that the system and input modes are the same, so if
+        // they become out of sync, we just act as if LNM mode isn't supported.
+        if (_api.GetSystemMode(ITerminalApi::Mode::LineFeed) == _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed))
+        {
+            _api.SetSystemMode(ITerminalApi::Mode::LineFeed, enable);
+            _terminalInput.SetInputMode(TerminalInput::Mode::LineFeed, enable);
+        }
+        return true;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, enable);
         return !_PassThroughInputModes();
@@ -1784,7 +1821,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         CursorPosition(1, 1);
         return true;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
-        _api.SetAutoWrapMode(enable);
+        _api.SetSystemMode(ITerminalApi::Mode::AutoWrap, enable);
         // Resetting DECAWM should also reset the delayed wrap flag.
         if (!enable)
         {
@@ -1847,7 +1884,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _SetAlternateScreenBufferMode(enable);
         return true;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-        _api.SetBracketedPasteMode(enable);
+        _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, enable);
         return !_api.IsConsolePty();
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::Win32, enable);
@@ -1896,6 +1933,14 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
     case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
         enabled = _modes.test(Mode::InsertReplace);
         break;
+    case DispatchTypes::ModeParams::LNM_LineFeedNewLineMode:
+        // VT apps expect that the system and input modes are the same, so if
+        // they become out of sync, we just act as if LNM mode isn't supported.
+        if (_api.GetSystemMode(ITerminalApi::Mode::LineFeed) == _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed))
+        {
+            enabled = _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed);
+        }
+        break;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::CursorKey);
         break;
@@ -1916,7 +1961,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         enabled = _modes.test(Mode::Origin);
         break;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
-        enabled = _api.GetAutoWrapMode();
+        enabled = _api.GetSystemMode(ITerminalApi::Mode::AutoWrap);
         break;
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat);
@@ -1968,7 +2013,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         enabled = _usingAltBuffer;
         break;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-        enabled = _api.GetBracketedPasteMode();
+        enabled = _api.GetSystemMode(ITerminalApi::Mode::BracketedPaste);
         break;
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Win32);
@@ -2381,7 +2426,7 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
     switch (lineFeedType)
     {
     case DispatchTypes::LineFeedType::DependsOnMode:
-        _DoLineFeed(textBuffer, _api.GetLineFeedMode(), false);
+        _DoLineFeed(textBuffer, _api.GetSystemMode(ITerminalApi::Mode::LineFeed), false);
         return true;
     case DispatchTypes::LineFeedType::WithoutReturn:
         _DoLineFeed(textBuffer, false, false);
@@ -2786,7 +2831,7 @@ bool AdaptDispatch::SoftReset()
     // Replace mode; Absolute cursor addressing; Disallow left/right margins.
     _modes.reset(Mode::InsertReplace, Mode::Origin, Mode::AllowDECSLRM);
 
-    _api.SetAutoWrapMode(true); // Wrap at end of line.
+    _api.SetSystemMode(ITerminalApi::Mode::AutoWrap, true); // Wrap at end of line.
     _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, false); // Normal characters.
     _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, false); // Numeric characters.
 
@@ -2861,11 +2906,20 @@ bool AdaptDispatch::HardReset()
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     CursorPosition(1, 1);
 
+    // We only reset the system line feed mode if the input mode is set. If it
+    // isn't set, that either means they're both reset, and there's nothing for
+    // us to do, or they're out of sync, which implies the system mode was set
+    // via the console API, so it's not our responsibility.
+    if (_terminalInput.GetInputMode(TerminalInput::Mode::LineFeed))
+    {
+        _api.SetSystemMode(ITerminalApi::Mode::LineFeed, false);
+    }
+
     // Reset input modes to their initial state
     _terminalInput.ResetInputModes();
 
     // Reset bracketed paste mode
-    _api.SetBracketedPasteMode(false);
+    _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, false);
 
     // Restore cursor blinking mode.
     _api.GetTextBuffer().GetCursor().SetBlinkingAllowed(true);
@@ -3139,11 +3193,6 @@ bool AdaptDispatch::SetClipboard(const std::wstring_view content)
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
     _renderSettings.SetColorTableEntry(tableIndex, dwColor);
-    if (_renderSettings.GetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors))
-    {
-        // Re-calculate the adjusted colors now that one of the entries has been changed
-        _renderSettings.MakeAdjustedColorArray();
-    }
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
@@ -3209,11 +3258,6 @@ bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt
     case DispatchTypes::ColorItem::NormalText:
         _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, fgIndex);
         _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, bgIndex);
-        if (_renderSettings.GetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors))
-        {
-            // Re-calculate the adjusted colors now that these aliases have been changed
-            _renderSettings.MakeAdjustedColorArray();
-        }
         break;
     case DispatchTypes::ColorItem::WindowFrame:
         _renderSettings.SetColorAliasIndex(ColorAlias::FrameForeground, fgIndex);
@@ -3266,6 +3310,9 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
         return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         _api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
+        return true;
+    case DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters:
+        _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[8;{};{}t"), _api.GetViewport().height(), _api.GetTextBuffer().GetSize().Width()));
         return true;
     default:
         return false;
@@ -3391,6 +3438,18 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
             _api.SetWorkingDirectory(path);
             return true;
         }
+    }
+    // 12: "Let ConEmu treat current cursor position as prompt start"
+    //
+    // Based on the official conemu docs:
+    // * https://conemu.github.io/en/ShellWorkDir.html#connector-ps1
+    // * https://conemu.github.io/en/ShellWorkDir.html#PowerShell
+    //
+    // This seems like basically the same as 133;B - the end of the prompt, the start of the commandline.
+    else if (subParam == 12)
+    {
+        _api.MarkCommandStart();
+        return true;
     }
 
     return false;

@@ -821,7 +821,6 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
         // 1234123412341234
         static constexpr std::array<float, 2> hyperlinkDashes{ 1.f, 3.f };
         RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, hyperlinkDashes.data(), gsl::narrow_cast<UINT32>(hyperlinkDashes.size()), &_dashStrokeStyle));
-        _hyperlinkStrokeStyle = _dashStrokeStyle;
 
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
@@ -1723,7 +1722,7 @@ try
     };
 
     const auto DrawHyperlinkLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
-        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _hyperlinkStrokeStyle.Get());
+        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _dashStrokeStyle.Get());
     };
 
     // NOTE: Line coordinates are centered within the line, so they need to be
@@ -1978,11 +1977,6 @@ try
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
         _drawingContext->useBoldFont = textAttributes.IsIntense() && renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold);
         _drawingContext->useItalicFont = textAttributes.IsItalic();
-    }
-
-    if (textAttributes.IsHyperlink())
-    {
-        _hyperlinkStrokeStyle = (textAttributes.GetHyperlinkId() == _hyperlinkHoveredId) ? _strokeStyle : _dashStrokeStyle;
     }
 
     // Update pixel shader settings as background color might have changed

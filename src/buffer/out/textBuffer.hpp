@@ -219,6 +219,8 @@ public:
     interval_tree::IntervalTree<til::point, size_t> GetPatterns(const til::CoordType firstRow, const til::CoordType lastRow) const;
 
 private:
+    static wil::unique_virtualalloc_ptr<std::byte> _allocateBuffer(til::size sz, const TextAttribute& attributes, std::vector<ROW>& rows);
+
     void _UpdateSize();
     void _SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept;
     til::point _GetPreviousFromCursor() const noexcept;

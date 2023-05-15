@@ -104,6 +104,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.ConnectionStateChanged = _core.ConnectionStateChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleConnectionStateChanged });
         _revokers.ShowWindowChanged = _core.ShowWindowChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleShowWindowChanged });
         _revokers.CloseTerminalRequested = _core.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCloseTerminalRequested });
+        _revokers.RestartTerminalRequested = _core.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleRestartTerminalRequested });
 
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
 
@@ -260,6 +261,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     uint64_t TermControl::ContentId() const
     {
         return _interactivity.Id();
+    }
+
+    TerminalConnection::ITerminalConnection TermControl::Connection()
+    {
+        return _core.Connection();
+    }
+    void TermControl::Connection(const TerminalConnection::ITerminalConnection& newConnection)
+    {
+        _core.Connection(newConnection);
     }
 
     void TermControl::_throttledUpdateScrollbar(const ScrollBarUpdate& update)
@@ -927,8 +937,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
 
-        const auto panelWidth = SwapChainPanel().ActualWidth();
-        const auto panelHeight = SwapChainPanel().ActualHeight();
+        const auto panelWidth = static_cast<float>(SwapChainPanel().ActualWidth());
+        const auto panelHeight = static_cast<float>(SwapChainPanel().ActualHeight());
         const auto panelScaleX = SwapChainPanel().CompositionScaleX();
         const auto panelScaleY = SwapChainPanel().CompositionScaleY();
 
@@ -961,11 +971,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto bufferHeight = _core.BufferHeight();
 
-        ScrollBar().Maximum(bufferHeight - bufferHeight);
+        ScrollBar().Maximum(0);
         ScrollBar().Minimum(0);
         ScrollBar().Value(0);
         ScrollBar().ViewportSize(bufferHeight);
-        ScrollBar().LargeChange(std::max(bufferHeight - 1, 0)); // scroll one "screenful" at a time when the scroll bar is clicked
+        ScrollBar().LargeChange(bufferHeight); // scroll one "screenful" at a time when the scroll bar is clicked
 
         // Set up blinking cursor
         int blinkTime = GetCaretBlinkTime();
@@ -2245,7 +2255,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // instantiating a DxEngine/AtlasEngine.
         // GH#10211 - UNDER NO CIRCUMSTANCE should this fail. If it does, the
         // whole app will crash instantaneously on launch, which is no good.
-        double scale;
+        float scale;
         if (settings.UseAtlasEngine())
         {
             auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
@@ -2267,7 +2277,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // ComCtl scrollbars, but it's certainly close enough.
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
 
-        double width = cols * actualFontSize.width;
+        float width = cols * static_cast<float>(actualFontSize.width);
 
         // Reserve additional space if scrollbar is intended to be visible
         if (scrollState != ScrollbarState::Hidden)
@@ -2275,13 +2285,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             width += scrollbarSize;
         }
 
-        double height = rows * actualFontSize.height;
+        float height = rows * static_cast<float>(actualFontSize.height);
         const auto thickness = ParseThicknessFromPadding(padding);
         // GH#2061 - make sure to account for the size the padding _will be_ scaled to
-        width += scale * (thickness.Left + thickness.Right);
-        height += scale * (thickness.Top + thickness.Bottom);
+        width += scale * static_cast<float>(thickness.Left + thickness.Right);
+        height += scale * static_cast<float>(thickness.Top + thickness.Bottom);
 
-        return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
+        return { width, height };
     }
 
     // Method Description:
@@ -2311,20 +2321,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_initializedTerminal)
         {
             const auto fontSize = _core.FontSize();
-            double width = fontSize.Width;
-            double height = fontSize.Height;
+            auto width = fontSize.Width;
+            auto height = fontSize.Height;
             // Reserve additional space if scrollbar is intended to be visible
             if (_core.Settings().ScrollState() != ScrollbarState::Hidden)
             {
-                width += ScrollBar().ActualWidth();
+                width += static_cast<float>(ScrollBar().ActualWidth());
             }
 
             // Account for the size of any padding
             const auto padding = GetPadding();
-            width += padding.Left + padding.Right;
-            height += padding.Top + padding.Bottom;
+            width += static_cast<float>(padding.Left + padding.Right);
+            height += static_cast<float>(padding.Top + padding.Bottom);
 
-            return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
+            return { width, height };
         }
         else
         {
@@ -2363,7 +2373,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto gridSize = dimension - nonTerminalArea;
-        const auto cells = static_cast<int>(gridSize / fontDimension);
+        const auto cells = floor(gridSize / fontDimension);
         return cells * fontDimension + nonTerminalArea;
     }
 
@@ -2501,6 +2511,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         return flags;
+    }
+
+    til::point TermControl::_toControlOrigin(const til::point terminalPos)
+    {
+        const auto fontSize{ CharacterDimensions() };
+
+        // Convert text buffer cursor position to client coordinate position
+        // within the window. This point is in _pixels_
+        const double clientCursorPosX = terminalPos.x * fontSize.Width;
+        const double clientCursorPosY = terminalPos.y * fontSize.Height;
+
+        // Get scale factor for view
+        const double scaleFactor = SwapChainPanel().CompositionScaleX();
+
+        const double clientCursorInDipsX = clientCursorPosX / scaleFactor;
+        const double clientCursorInDipsY = clientCursorPosY / scaleFactor;
+
+        auto padding{ GetPadding() };
+        til::point relativeToOrigin{ til::math::rounding,
+                                     clientCursorInDipsX + padding.Left,
+                                     clientCursorInDipsY + padding.Top };
+        return relativeToOrigin;
     }
 
     // Method Description:
@@ -3016,9 +3048,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto lastHoveredCell = _core.HoveredCell();
             if (lastHoveredCell)
             {
-                const auto uriText = _core.HoveredUriText();
-                if (!uriText.empty())
+                winrt::hstring uriText = _core.HoveredUriText();
+                if (uriText.empty())
                 {
+                    co_return;
+                }
+
+                try
+                {
+                    // DisplayUri will filter out non-printable characters and confusables.
+                    Windows::Foundation::Uri parsedUri{ uriText };
+                    if (!parsedUri)
+                    {
+                        co_return;
+                    }
+                    uriText = parsedUri.DisplayUri();
+
                     const auto panel = SwapChainPanel();
                     const auto scale = panel.CompositionScaleX();
                     const auto offset = panel.ActualOffset();
@@ -3040,6 +3085,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), locationInDIPs.x - offset.x);
                     OverlayCanvas().SetTop(HyperlinkTooltipBorder(), locationInDIPs.y - offset.y);
                 }
+                CATCH_LOG();
             }
         }
     }
@@ -3302,6 +3348,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ScrollMarks();
     }
 
+    void TermControl::SelectCommand(const bool goUp)
+    {
+        _core.SelectCommand(goUp);
+    }
+
+    void TermControl::SelectOutput(const bool goUp)
+    {
+        _core.SelectOutput(goUp);
+    }
+
     void TermControl::ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Core::MatchMode matchMode)
     {
         _core.ColorSelection(fg, bg, matchMode);
@@ -3310,10 +3366,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_contextMenuHandler(IInspectable /*sender*/,
                                           Control::ContextMenuRequestedEventArgs args)
     {
-        Controls::Primitives::FlyoutShowOptions myOption{};
-        myOption.ShowMode(Controls::Primitives::FlyoutShowMode::Standard);
-        myOption.Placement(Controls::Primitives::FlyoutPlacementMode::TopEdgeAlignedLeft);
-
         // Position the menu where the pointer is. This was the best way I found how.
         const til::point absolutePointerPos{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
         const til::point absoluteWindowOrigin{ til::math::rounding,
@@ -3323,12 +3375,45 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const til::point controlOrigin{ til::math::flooring,
                                         this->TransformToVisual(nullptr).TransformPoint(Windows::Foundation::Point(0, 0)) };
 
-        const auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin).to_winrt_point();
-        myOption.Position(pos);
+        const auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin);
+        _showContextMenuAt(pos);
+    }
+
+    void TermControl::_showContextMenuAt(const til::point& controlRelativePos)
+    {
+        Controls::Primitives::FlyoutShowOptions myOption{};
+        myOption.ShowMode(Controls::Primitives::FlyoutShowMode::Standard);
+        myOption.Placement(Controls::Primitives::FlyoutPlacementMode::TopEdgeAlignedLeft);
+        myOption.Position(controlRelativePos.to_winrt_point());
+
+        // The "Select command" and "Select output" buttons should only be
+        // visible if shell integration is actually turned on.
+        const auto shouldShowSelectCommand{ _core.ShouldShowSelectCommand() };
+        const auto shouldShowSelectOutput{ _core.ShouldShowSelectOutput() };
+        SelectCommandButton().Visibility(shouldShowSelectCommand ? Visibility::Visible : Visibility::Collapsed);
+        SelectOutputButton().Visibility(shouldShowSelectOutput ? Visibility::Visible : Visibility::Collapsed);
+        SelectCommandWithSelectionButton().Visibility(shouldShowSelectCommand ? Visibility::Visible : Visibility::Collapsed);
+        SelectOutputWithSelectionButton().Visibility(shouldShowSelectOutput ? Visibility::Visible : Visibility::Collapsed);
 
         (_core.HasSelection() ? SelectionContextMenu() :
                                 ContextMenu())
             .ShowAt(*this, myOption);
+    }
+
+    void TermControl::ShowContextMenu()
+    {
+        const bool hasSelection = _core.HasSelection();
+        til::point cursorPos{
+            hasSelection ? _core.SelectionInfo().EndPos :
+                           _core.CursorPosition()
+        };
+        // Offset this position a bit:
+        // * {+0,+1} if there's a selection. The selection endpoint is already
+        //   exclusive, so add one row to align to the bottom of the selection
+        // * {+1,+1} if there's no selection, to be on the bottom-right corner of
+        //   the cursor position
+        cursorPos += til::point{ hasSelection ? 0 : 1, 1 };
+        _showContextMenuAt(_toControlOrigin(cursorPos));
     }
 
     void TermControl::_PasteCommandHandler(const IInspectable& /*sender*/,
@@ -3351,7 +3436,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         ContextMenu().Hide();
         SelectionContextMenu().Hide();
-        SearchMatch(false);
+
+        // CreateSearchBoxControl will actually create the search box and
+        // pre-populate the box with the currently selected text.
+        CreateSearchBoxControl();
     }
 
+    void TermControl::_SelectCommandHandler(const IInspectable& /*sender*/,
+                                            const IInspectable& /*args*/)
+    {
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+        _core.ContextMenuSelectCommand();
+    }
+
+    void TermControl::_SelectOutputHandler(const IInspectable& /*sender*/,
+                                           const IInspectable& /*args*/)
+    {
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+        _core.ContextMenuSelectOutput();
+    }
 }

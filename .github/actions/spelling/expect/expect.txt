@@ -38,10 +38,12 @@ ansicpg
 ANSISYS
 ANSISYSRC
 ANSISYSSC
+answerback
 antialiasing
 ANull
 anycpu
 APARTMENTTHREADED
+APCA
 APCs
 APIENTRY
 apiset
@@ -176,7 +178,6 @@ CConsole
 CConversion
 CCRT
 cdd
-CDeclaration
 CEdit
 CELLSIZE
 cfae
@@ -194,6 +195,8 @@ chh
 chk
 CHT
 Cic
+cielab
+Cielab
 Clcompile
 CLE
 cleartype
@@ -257,6 +260,7 @@ condrv
 conechokey
 conemu
 configurability
+confusables
 conhost
 conime
 conimeinfo
@@ -331,7 +335,7 @@ Cspace
 csrmsg
 CSRSS
 csrutil
-cstyle
+CSTYLE
 CSwitch
 CTerminal
 CText
@@ -583,6 +587,7 @@ ENU
 ENUMLOGFONT
 ENUMLOGFONTEX
 enumranges
+EOK
 eplace
 EPres
 EQU
@@ -803,6 +808,7 @@ HIBYTE
 hicon
 HIDEWINDOW
 hinst
+Hirots
 HISTORYBUFS
 HISTORYNODUP
 HISTORYSIZE
@@ -1123,6 +1129,7 @@ Mip
 MMBB
 mmcc
 MMCPL
+MMIX
 mmsystem
 MNC
 MNOPQ
@@ -1287,6 +1294,8 @@ OEMFONT
 OEMFORMAT
 OEMs
 offboarded
+oklab
+Oklab
 OLEAUT
 OLECHAR
 onecore
@@ -1767,6 +1776,8 @@ srcsrv
 SRCSRVTRG
 srctool
 srect
+srgb
+Srgb
 srv
 srvinit
 srvpipe
@@ -1781,6 +1792,7 @@ STARTWPARMS
 STARTWPARMSA
 STARTWPARMSW
 Statusline
+stb
 stdafx
 STDAPI
 stdc
@@ -2281,6 +2293,8 @@ xunit
 xutr
 XVIRTUALSCREEN
 XWalk
+xwwyzz
+xxyyzz
 yact
 YCast
 YCENTER
