@@ -54,6 +54,7 @@ public:
     virtual bool SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
     virtual bool SetAnsiMode(const bool ansiMode) = 0; // DECANM
     virtual bool SetTopBottomScrollingMargins(const VTInt topMargin, const VTInt bottomMargin) = 0; // DECSTBM
+    virtual bool SetLeftRightScrollingMargins(const VTInt leftMargin, const VTInt rightMargin) = 0; // DECSLRM
     virtual bool WarningBell() = 0; // BEL
     virtual bool CarriageReturn() = 0; // CR
     virtual bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) = 0; // IND, NEL, LF, FF, VT
