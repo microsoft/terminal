@@ -1123,6 +1123,7 @@ namespace winrt::TerminalApp::implementation
                 if (profile)
                 {
                     newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+                    newTerminalArgs.StartingDirectory(_evaluatePathForCwd(profile.EvaluatedStartingDirectory()));
                 }
             }
 
@@ -1166,6 +1167,11 @@ namespace winrt::TerminalApp::implementation
         {
             _RemoveTab(tab);
         }
+    }
+
+    std::wstring TerminalPage::_evaluatePathForCwd(const std::wstring_view path)
+    {
+        return Utils::EvaluateStartingDirectory(_WindowProperties.VirtualWorkingDirectory(), path);
     }
 
     // Method Description:
@@ -1236,13 +1242,7 @@ namespace winrt::TerminalApp::implementation
             // construction, because the connection might not spawn the child
             // process until later, on another thread, after we've already
             // restored the CWD to its original value.
-            const auto currentVirtualDir{ _WindowProperties.VirtualWorkingDirectory() };
-            const auto cwdString{ std::wstring_view{ currentVirtualDir } };
-            const auto requestedStartingDir{ settings.StartingDirectory() };
-            auto newWorkingDirectory = winrt::hstring{
-                Utils::EvaluateStartingDirectory(cwdString, std::wstring_view{ requestedStartingDir })
-            };
-
+            auto newWorkingDirectory{ _evaluatePathForCwd(settings.StartingDirectory()) };
             auto conhostConn = TerminalConnection::ConptyConnection();
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
                                                                                  newWorkingDirectory,
@@ -4255,6 +4255,9 @@ namespace winrt::TerminalApp::implementation
             // whatever the default profile's GUID is.
 
             newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+
+            newTerminalArgs.StartingDirectory(_evaluatePathForCwd(controlSettings.DefaultSettings().StartingDirectory()));
+
             _OpenElevatedWT(newTerminalArgs);
             return true;
         }
