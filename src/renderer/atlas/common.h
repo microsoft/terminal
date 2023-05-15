@@ -553,5 +553,4 @@ namespace Microsoft::Console::Render::Atlas
         virtual void Render(RenderingPayload& payload) = 0;
         virtual bool RequiresContinuousRedraw() noexcept = 0;
     };
-
 }
