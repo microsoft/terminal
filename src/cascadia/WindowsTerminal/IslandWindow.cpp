@@ -37,7 +37,16 @@ IslandWindow::IslandWindow() noexcept :
 
 IslandWindow::~IslandWindow()
 {
-    _source.Close();
+    Close();
+}
+
+void IslandWindow::Close()
+{
+    if (_source)
+    {
+        _source.Close();
+        _source = nullptr;
+    }
 }
 
 HWND IslandWindow::GetInteropHandle() const
@@ -87,17 +96,6 @@ void IslandWindow::MakeWindow() noexcept
                                 this));
 
     WINRT_ASSERT(_window);
-}
-
-// Method Description:
-// - Called when no tab is remaining to close the window.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void IslandWindow::Close()
-{
-    PostQuitMessage(0);
 }
 
 // Method Description:
