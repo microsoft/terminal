@@ -65,20 +65,6 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
                          std::placeholders::_2);
     _window->SetCreateCallback(pfn);
 
-    // Event handlers:
-    // MAKE SURE THEY ARE ALL:
-    // * winrt::auto_revoke
-    // * revoked manually in the dtor before the window is nulled out.
-    //
-    // If you don't, then it's possible for them to get triggered as the app is
-    // tearing down, after we've nulled out the window, during the dtor. That
-    // can cause unexpected AV's everywhere.
-    //
-    // _window callbacks don't need to be treated this way, because:
-    // * IslandWindow isn't a WinRT type (so it doesn't have neat revokers like this)
-    // * This particular bug scenario applies when we've already freed the window.
-    //
-    // (Most of these events are actually set up in AppHost::Initialize)
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->WindowMoved({ this, &AppHost::_WindowMoved });
@@ -89,21 +75,6 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
 
     _window->MakeWindow();
-}
-
-AppHost::~AppHost()
-{
-    // destruction order is important for proper teardown here
-
-    // revoke ALL our event handlers. There's a large class of bugs where we
-    // might get a callback to one of these when we call app.Close() below. Make
-    // sure to revoke these first, so we won't get any more callbacks, then null
-    // out the window, then close the app.
-    _revokers = {};
-
-    _showHideWindowThrottler.reset();
-
-    _window = nullptr;
 }
 
 bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
@@ -443,6 +414,15 @@ void AppHost::Initialize()
     _window->OnAppInitialized();
 }
 
+void AppHost::Close()
+{
+    // After calling _window->Close() we should avoid creating more WinUI related actions.
+    // I suspect WinUI wouldn't like that very much. As such unregister all event handlers first.
+    _revokers = {};
+    _showHideWindowThrottler.reset();
+    _window->Close();
+}
+
 // Method Description:
 // - Called every time when the active tab's title changes. We'll also fire off
 //   a window message so we can update the window's title on the main thread,
@@ -498,7 +478,7 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
     // event handler finishes.
     _windowManager.SignalClose(_peasant);
 
-    _window->Close();
+    PostQuitMessage(0);
 }
 
 LaunchPosition AppHost::_GetWindowLaunchPosition()
@@ -1110,10 +1090,7 @@ void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&
     // should prevent scenarios where the Terminal window state and PTY window
     // state get de-sync'd, and cause the window to minimize/restore constantly
     // in a loop.
-    if (_showHideWindowThrottler)
-    {
-        _showHideWindowThrottler->Run(args.ShowOrHide());
-    }
+    _showHideWindowThrottler->Run(args.ShowOrHide());
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,

@@ -13,11 +13,11 @@ public:
             winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
             const winrt::Microsoft::Terminal::Remoting::WindowManager& manager,
             const winrt::Microsoft::Terminal::Remoting::Peasant& peasant) noexcept;
-    ~AppHost();
 
     void AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
     void LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args);
     void Initialize();
+    void Close();
     bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
     void SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
 

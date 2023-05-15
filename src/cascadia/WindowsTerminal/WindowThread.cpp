@@ -42,7 +42,8 @@ int WindowThread::RunMessagePump()
 
 void WindowThread::RundownForExit()
 {
-    _host = nullptr;
+    _host->Close();
+
     // !! LOAD BEARING !!
     //
     // Make sure to finish pumping all the messages for our thread here. We
