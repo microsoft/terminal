@@ -25,7 +25,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 
     private:
-        Microsoft::Terminal::Control::TermControl _previewControl;
+        void _onProfilePropertyChanged(const IInspectable&, const PropertyChangedEventArgs&) const;
+
+        Microsoft::Terminal::Control::TermControl _previewControl{ nullptr };
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _AppearanceViewModelChangedRevoker;
         Editor::IHostedInWindow _windowRoot;
