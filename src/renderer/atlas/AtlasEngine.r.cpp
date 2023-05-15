@@ -32,11 +32,6 @@ using namespace Microsoft::Console::Render::Atlas;
 [[nodiscard]] HRESULT AtlasEngine::Present() noexcept
 try
 {
-    if (!_p.dirtyRectInPx)
-    {
-        return S_OK;
-    }
-
     if (!_p.dxgi.adapter || !_p.dxgi.factory->IsCurrent())
     {
         _recreateAdapter();
@@ -420,6 +415,12 @@ void AtlasEngine::_waitUntilCanRender() noexcept
 
 void AtlasEngine::_present()
 {
+    // Present1() dislikes being called with an empty dirty rect.
+    if (!_p.dirtyRectInPx)
+    {
+        return;
+    }
+
     const til::rect fullRect{ 0, 0, _p.swapChain.targetSize.x, _p.swapChain.targetSize.y };
 
     DXGI_PRESENT_PARAMETERS params{};
