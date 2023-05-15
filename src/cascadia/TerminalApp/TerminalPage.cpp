@@ -1166,13 +1166,9 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::hstring TerminalPage::_evaluatePathForCwd(const winrt::hstring& path)
+    std::wstring TerminalPage::_evaluatePathForCwd(const std::wstring_view path)
     {
-        const auto currentVirtualDir{ _WindowProperties.VirtualWorkingDirectory() };
-        const auto cwdString{ std::wstring_view{ currentVirtualDir } };
-        return winrt::hstring{
-            Utils::EvaluateStartingDirectory(cwdString, std::wstring_view{ path })
-        };
+        return Utils::EvaluateStartingDirectory(_WindowProperties.VirtualWorkingDirectory(), path);
     }
 
     // Method Description:
@@ -1705,7 +1701,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Helper to manually exit "zoom" when certain actions take place.
-    //   Anythinwg that modifies the state of the pane tree should probably
+    //   Anything that modifies the state of the pane tree should probably
     //   un-zoom the focused pane first, so that the user can see the full pane
     //   tree again. These actions include:
     //   * Splitting a new pane
