@@ -90,6 +90,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetAnsiMode(const bool ansiMode) override; // DECANM
         bool SetTopBottomScrollingMargins(const VTInt topMargin,
                                           const VTInt bottomMargin) override; // DECSTBM
+        bool SetLeftRightScrollingMargins(const VTInt leftMargin,
+                                          const VTInt rightMargin) override; // DECSLRM
         bool WarningBell() override; // BEL
         bool CarriageReturn() override; // CR
         bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) override; // IND, NEL, LF, FF, VT
@@ -163,6 +165,7 @@ namespace Microsoft::Console::VirtualTerminal
             Origin,
             Column,
             AllowDECCOLM,
+            AllowDECSLRM,
             RectangularChangeExtent
         };
         enum class ScrollDirection
@@ -201,6 +204,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _WriteToBuffer(const std::wstring_view string);
         std::pair<int, int> _GetVerticalMargins(const til::rect& viewport, const bool absolute) noexcept;
+        std::pair<int, int> _GetHorizontalMargins(const til::CoordType bufferWidth) noexcept;
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
         void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
@@ -217,7 +221,12 @@ namespace Microsoft::Console::VirtualTerminal
         void _ScrollMovement(const VTInt delta);
 
         void _DoSetTopBottomScrollingMargins(const VTInt topMargin,
-                                             const VTInt bottomMargin);
+                                             const VTInt bottomMargin,
+                                             const bool homeCursor = false);
+        void _DoSetLeftRightScrollingMargins(const VTInt leftMargin,
+                                             const VTInt rightMargin,
+                                             const bool homeCursor = false);
+
         void _DoLineFeed(TextBuffer& textBuffer, const bool withReturn, const bool wrapForced);
 
         void _OperatingStatus() const;
@@ -239,6 +248,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _ReportSGRSetting() const;
         void _ReportDECSTBMSetting();
+        void _ReportDECSLRMSetting();
         void _ReportDECSCASetting() const;
         void _ReportDECSACESetting() const;
         void _ReportDECACSetting(const VTInt itemNumber) const;
