@@ -538,11 +538,6 @@ namespace winrt::TerminalApp::implementation
     //   return true in that case, to be less noisy (though, that is unexpected)
     bool AppLogic::_IsKeyboardServiceEnabled()
     {
-        if (IsUwp())
-        {
-            return true;
-        }
-
         // If at any point we fail to open the service manager, the service,
         // etc, then just quick return true to disable the dialog. We'd rather
         // not be noisy with this dialog if we failed for some reason.
