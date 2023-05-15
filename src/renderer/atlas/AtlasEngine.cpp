@@ -705,7 +705,7 @@ void AtlasEngine::_flushBufferLine()
 
 void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32* mappedLength, IDWriteFontFace2** mappedFontFace) const
 {
-    TextAnalysisSource analysisSource{ text, textLength };
+    TextAnalysisSource analysisSource{ _api.userLocaleName.c_str(), text, textLength };
     const auto& textFormatAxis = _api.textFormatAxes[static_cast<size_t>(_api.attributes)];
 
     // We don't read from scale anyways.
@@ -760,7 +760,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
 {
     _api.analysisResults.clear();
 
-    TextAnalysisSource analysisSource{ _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
+    TextAnalysisSource analysisSource{ _api.userLocaleName.c_str(), _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
     TextAnalysisSink analysisSink{ _api.analysisResults };
     THROW_IF_FAILED(_p.textAnalyzer->AnalyzeScript(&analysisSource, idx, length, &analysisSink));
 
