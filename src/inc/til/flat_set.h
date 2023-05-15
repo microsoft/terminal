@@ -37,6 +37,30 @@ namespace til
     {
         static_assert(LoadFactor >= 2);
 
+        linear_flat_set() = default;
+
+        linear_flat_set(const linear_flat_set&) = delete;
+        linear_flat_set& operator=(const linear_flat_set&) = delete;
+
+        linear_flat_set(linear_flat_set&& other) noexcept :
+            _map{ std::move(other._map) },
+            _capacity{ std::exchange(other._capacity, 0) },
+            _load{ std::exchange(other._load, 0) },
+            _shift{ std::exchange(other._shift, initialShift) },
+            _mask{ std::exchange(other._mask, 0) }
+        {
+        }
+
+        linear_flat_set& operator=(linear_flat_set&& other) noexcept
+        {
+            _map = std::move(other._map);
+            _capacity = std::exchange(other._capacity, 0);
+            _load = std::exchange(other._load, 0);
+            _shift = std::exchange(other._shift, initialShift);
+            _mask = std::exchange(other._mask, 0);
+            return *this;
+        }
+
         bool empty() const noexcept
         {
             return _load == 0;
@@ -50,6 +74,15 @@ namespace til
         std::span<T> container() const noexcept
         {
             return { _map.get(), _capacity };
+        }
+
+        void clear() noexcept
+        {
+            if (_map)
+            {
+                std::fill_n(_map.get(), _capacity, T{});
+                _load = 0;
+            }
         }
 
         template<typename U>
@@ -128,12 +161,13 @@ namespace til
         }
 
         static constexpr auto digits = std::numeric_limits<size_t>::digits;
+        // This results in an initial capacity of 8 items, independent of the LoadFactor.
+        static constexpr auto initialShift = digits - LoadFactor - 1;
 
         std::unique_ptr<T[]> _map;
         size_t _capacity = 0;
         size_t _load = 0;
-        // This results in an initial capacity of 8 items, independent of the LoadFactor.
-        size_t _shift = digits - LoadFactor - 1;
+        size_t _shift = initialShift;
         size_t _mask = 0;
     };
 }

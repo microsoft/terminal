@@ -707,9 +707,16 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
 
     stbrp_init_target(&_rectPacker, u, v, _rectPackerData.data(), _rectPackerData.size());
 
+    // This is a little imperfect, because it only releases the memory of the glyph mappings, not the memory held by
+    // any DirectWrite fonts. On the other side, the amount of fonts on a system is always finite, where "finite"
+    // is pretty low, relatively speaking. Additionally this allows us to cache the boxGlyphs map indefinitely.
+    // It's not great, but it's not terrible.
     for (auto& slot : _glyphAtlasMap.container())
     {
-        slot.inner.reset();
+        if (slot.inner)
+        {
+            slot.inner->glyphs.clear();
+        }
     }
 
     _d2dBeginDrawing();

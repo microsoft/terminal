@@ -648,8 +648,11 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     auto advanceWidth = 0.5f * fontSizeInPx;
     {
         static constexpr u32 codePoint = '0';
+
         u16 glyphIndex;
-        if (SUCCEEDED(fontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex)))
+        THROW_IF_FAILED(fontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex));
+
+        if (glyphIndex)
         {
             DWRITE_GLYPH_METRICS glyphMetrics{};
             THROW_IF_FAILED(fontFace->GetDesignGlyphMetrics(&glyphIndex, 1, &glyphMetrics, FALSE));

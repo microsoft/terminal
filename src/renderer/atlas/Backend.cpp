@@ -4,8 +4,6 @@
 #include "pch.h"
 #include "Backend.h"
 
-#include <dwmapi.h>
-
 TIL_FAST_MATH_BEGIN
 
 // Disable a bunch of warnings which get in the way of writing performant code.
