@@ -10,11 +10,11 @@ using namespace ::winrt::Windows::Foundation;
 
 static constexpr std::wstring_view PreviewText{
     L"Windows Terminal\r\n"
-    L"C:\\> \e[93mgit\e[m diff\r\n"
-    L"\e[1mdiff --git a/hi b/hi\e[m\r\n"
-    L"\e[36m@@ -0,1 +0,1 @@\e[m\r\n"
-    L"\e[31m-    Windows Console\e[m\r\n"
-    L"\e[32m-    Windows Terminal!\e[m\r\n"
+    L"C:\\> \x1b[93mgit\x1b[m diff\r\n"
+    L"\x1b[1mdiff --git a/hi b/hi\x1b[m\r\n"
+    L"\x1b[36m@@ -0,1 +0,1 @@\x1b[m\r\n"
+    L"\x1b[31m-    Windows Console\x1b[m\r\n"
+    L"\x1b[32m-    Windows Terminal!\x1b[m\r\n"
 };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
