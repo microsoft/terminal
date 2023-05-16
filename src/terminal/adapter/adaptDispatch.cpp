@@ -1487,6 +1487,7 @@ bool AdaptDispatch::DeviceAttributes()
     // 1 = 132 column mode (ConHost only)
     // 6 = Selective erase
     // 7 = Soft fonts
+    // 21 = Horizontal scrolling
     // 22 = Color text
     // 23 = Greek character sets
     // 24 = Turkish character sets
@@ -1496,11 +1497,11 @@ bool AdaptDispatch::DeviceAttributes()
 
     if (_api.IsConsolePty())
     {
-        _api.ReturnResponse(L"\x1b[?61;6;7;22;23;24;28;32;42c");
+        _api.ReturnResponse(L"\x1b[?61;6;7;21;22;23;24;28;32;42c");
     }
     else
     {
-        _api.ReturnResponse(L"\x1b[?61;1;6;7;22;23;24;28;32;42c");
+        _api.ReturnResponse(L"\x1b[?61;1;6;7;21;22;23;24;28;32;42c");
     }
     return true;
 }
