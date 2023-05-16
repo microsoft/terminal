@@ -2534,8 +2534,8 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_background();
 
         {
-            // According to various reports on the internet, OpenClipboard might fail
-            // to acquire the internal lock over RDP, for instance due to rdpclip.exe.
+            // According to various reports on the internet, OpenClipboard might
+            // fail to acquire the internal lock, for instance due to rdpclip.exe.
             for (int attempts = 1;;)
             {
                 if (OpenClipboard(nullptr))
