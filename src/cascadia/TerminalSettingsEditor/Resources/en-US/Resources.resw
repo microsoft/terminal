@@ -1039,7 +1039,7 @@
     <comment>Header for a control to toggle changes in the app title.</comment>
   </data>
   <data name="Profile_SuppressApplicationTitle.HelpText" xml:space="preserve">
-    <value>Ignore application requests to change the title using OSC 2.</value>
+    <value>Ignore application requests to change the title (OSC 2).</value>
     <comment>A description for what the "suppress application title" setting does. Presented near "Profile_SuppressApplicationTitle". "OSC 2" is a technical term that is understood in the industry. {Locked="OSC 2"}</comment>
   </data>
   <data name="Profile_TabTitle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
