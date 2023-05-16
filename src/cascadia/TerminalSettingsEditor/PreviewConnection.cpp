@@ -15,7 +15,7 @@ static constexpr std::wstring_view PreviewText{
     L"\x1b[1m" L"diff --git a/win b/win\x1b[m\r\n"
     L"\x1b[36m@@ -1 +1 @@\x1b[m\r\n"
     L"\x1b[31m-    Windows Console\x1b[m\r\n"
-    L"\x1b[32m-    Windows Terminal!\x1b[m\r\n"
+    L"\x1b[32m+    Windows Terminal!\x1b[m\r\n"
     L"C:\\> \x1b[93mWrite-Host \x1b[36m\"\xd83e\xde9f!\"\x1b[1D\x1b[m"
 };
 // clang-format on
