@@ -2509,11 +2509,6 @@ namespace winrt::TerminalApp::implementation
         CATCH_LOG();
     }
 
-// The current UCRT has a neat AVX2 implementation for all of the various strlen() functions.
-// This greatly benefits _PasteFromClipboardHandler, where we're calling wcslen while holding a global
-// lock onto the clipboard. MSVC treats wcslen as a builtin and so we need to disable it explicitly.
-#pragma function(wcslen)
-
     // Function Description:
     // - This function is called when the `TermControl` requests that we send
     //   it the clipboard's content.
@@ -2525,45 +2520,36 @@ namespace winrt::TerminalApp::implementation
     // - Does some of this in a background thread, as to not hang/crash the UI thread.
     // Arguments:
     // - eventArgs: the PasteFromClipboard event sent from the TermControl
-    fire_and_forget TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/,
-                                                             const PasteFromClipboardEventArgs eventArgs)
+    fire_and_forget TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/, const PasteFromClipboardEventArgs eventArgs)
     try
     {
-        // Counterintuitively pasting the clipboard should block the UI thread, because that's
-        // actually the expectation of users: If you type something, paste and then type something again,
-        // text should be written in exactly that order, no matter how loaded the CPU is. See GH#15315.
-        assert(Dispatcher().HasThreadAccess());
-
-        if (!IsClipboardFormatAvailable(CF_UNICODETEXT))
-        {
-            co_return;
-        }
-
-        // The Win32 clipboard API allows us to synchronously retrieve the clipboard on the UI thread
-        // which is exactly what we want (see above). Additionally...
-        //
-        // The old Win32 clipboard API as used below is somewhere in the order of 1000x faster than the WinRT one,
-        // which has about the same latency as a fibre optics connection across the entire WA state.
-        // Don't use the WinRT clipboard API. RPC calls are not funny.
+        // The old Win32 clipboard API as used below is somewhere in the order of 300-1000x faster than
+        // the WinRT one on average, depending on CPU load. Don't use the WinRT clipboard API if you can.
+        const auto weakThis = get_weak();
+        const auto dispatcher = Dispatcher();
+        const auto globalSettings = _settings.GlobalSettings();
         winrt::hstring text;
-        {
-            // According to various reports on the internet, OpenClipboard might
-            // fail to acquire the internal lock over RDP, due to rdpclip.exe.
-            // I haven't seen this happen yet myself however.
-            for (int attempts = 0;;)
-            {
-                if (!OpenClipboard(nullptr))
-                {
-                    if (++attempts > 5)
-                    {
-                        co_return;
-                    }
 
-                    Sleep(5);
-                    continue;
+        // GetClipboardData might block for up to 30s for delay-rendered contents.
+        co_await winrt::resume_background();
+
+        {
+            // According to various reports on the internet, OpenClipboard might fail
+            // to acquire the internal lock over RDP, for instance due to rdpclip.exe.
+            for (int attempts = 1;;)
+            {
+                if (OpenClipboard(nullptr))
+                {
+                    break;
                 }
 
-                break;
+                if (attempts > 5)
+                {
+                    co_return;
+                }
+
+                attempts++;
+                Sleep(10 * attempts);
             }
 
             const auto clipboardCleanup = wil::scope_exit([]() {
@@ -2589,7 +2575,7 @@ namespace winrt::TerminalApp::implementation
             text = winrt::hstring{ str, gsl::narrow_cast<uint32_t>(wcslen(str)) };
         }
 
-        if (_settings.GlobalSettings().TrimPaste())
+        if (globalSettings.TrimPaste())
         {
             text = { Utils::TrimPaste(text) };
             if (text.empty())
@@ -2600,8 +2586,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // If the requesting terminal is in bracketed paste mode, then we don't need to warn about a multi-line paste.
-        auto warnMultiLine = _settings.GlobalSettings().WarnAboutMultiLinePaste() &&
-                             !eventArgs.BracketedPasteEnabled();
+        auto warnMultiLine = globalSettings.WarnAboutMultiLinePaste() && !eventArgs.BracketedPasteEnabled();
         if (warnMultiLine)
         {
             const auto isNewLineLambda = [](auto c) { return c == L'\n' || c == L'\r'; };
@@ -2610,44 +2595,50 @@ namespace winrt::TerminalApp::implementation
         }
 
         constexpr const std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
-        const auto warnLargeText = text.size() > minimumSizeForWarning &&
-                                   _settings.GlobalSettings().WarnAboutLargePaste();
+        const auto warnLargeText = text.size() > minimumSizeForWarning && globalSettings.WarnAboutLargePaste();
 
         if (warnMultiLine || warnLargeText)
         {
-            // We have to initialize the dialog here to be able to change the text of the text block within it
-            FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>();
-            ClipboardText().Text(text);
+            co_await wil::resume_foreground(dispatcher);
 
-            // The vertical offset on the scrollbar does not reset automatically, so reset it manually
-            ClipboardContentScrollViewer().ScrollToVerticalOffset(0);
-
-            auto warningResult = ContentDialogResult::Primary;
-            if (warnMultiLine)
+            if (const auto strongThis = weakThis.get())
             {
-                warningResult = co_await _ShowMultiLinePasteWarningDialog();
-            }
-            else if (warnLargeText)
-            {
-                warningResult = co_await _ShowLargePasteWarningDialog();
+                // We have to initialize the dialog here to be able to change the text of the text block within it
+                FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>();
+                ClipboardText().Text(text);
+
+                // The vertical offset on the scrollbar does not reset automatically, so reset it manually
+                ClipboardContentScrollViewer().ScrollToVerticalOffset(0);
+
+                auto warningResult = ContentDialogResult::Primary;
+                if (warnMultiLine)
+                {
+                    warningResult = co_await _ShowMultiLinePasteWarningDialog();
+                }
+                else if (warnLargeText)
+                {
+                    warningResult = co_await _ShowLargePasteWarningDialog();
+                }
+
+                // Clear the clipboard text so it doesn't lie around in memory
+                ClipboardText().Text(L"");
+
+                if (warningResult != ContentDialogResult::Primary)
+                {
+                    // user rejected the paste
+                    co_return;
+                }
             }
 
-            // Clear the clipboard text so it doesn't lie around in memory
-            ClipboardText().Text(L"");
-
-            if (warningResult != ContentDialogResult::Primary)
-            {
-                // user rejected the paste
-                co_return;
-            }
+            co_await winrt::resume_background();
         }
 
-        eventArgs.HandleClipboardData(text);
+        // This will end up calling ConptyConnection::WriteInput which calls WriteFile which may block for
+        // an indefinite amount of time. Avoid freezes and deadlocks by running this on a background thread.
+        assert(!dispatcher.HasThreadAccess());
+        eventArgs.HandleClipboardData(std::move(text));
     }
     CATCH_LOG();
-
-// See above where we explicitly asked the compiler to call wcslen for us.
-#pragma intrinsic(wcslen)
 
     void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
     {
