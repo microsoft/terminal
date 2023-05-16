@@ -53,10 +53,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void PreviewConnection::DisplayPowerlineGlyphs(bool d) noexcept
     {
-        std::swap(d, _displayPowerlineGlyphs);
         if (_displayPowerlineGlyphs != d)
         {
-            // If it changed, redraw
+            _displayPowerlineGlyphs = d;
             Start();
         }
     }
