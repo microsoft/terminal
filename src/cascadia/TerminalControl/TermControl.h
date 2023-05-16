@@ -165,6 +165,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, BackgroundBrush, _PropertyChangedHandlers, nullptr);
 
+    public:
+        til::property<bool> DisplayCursorWhileBlurred{ false };
+
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
 

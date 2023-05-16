@@ -874,7 +874,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // _cursorTimer doesn't exist, and it would never turn on the
             // cursor. To mitigate, we'll initialize the cursor's 'on' state
             // with `_focused` here.
-            _core.CursorOn(_focused);
+            _core.CursorOn(_focused || DisplayCursorWhileBlurred);
+            if (DisplayCursorWhileBlurred)
+            {
+                _cursorTimer->Start();
+            }
         }
         else
         {
@@ -1749,7 +1753,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             TSFInputControl().NotifyFocusLeave();
         }
 
-        if (_cursorTimer)
+        if (_cursorTimer && !DisplayCursorWhileBlurred)
         {
             _cursorTimer->Stop();
             _core.CursorOn(false);
