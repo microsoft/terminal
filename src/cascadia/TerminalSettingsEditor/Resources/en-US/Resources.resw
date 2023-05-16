@@ -823,7 +823,7 @@
     <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility only when the colors are part of this profile's color scheme's color table.</comment>
   </data>
   <data name="Profile_AdjustIndistinguishableColorsAlways.Content" xml:space="preserve">
-    <value>Always (More performance intensive)</value>
+    <value>Always</value>
     <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility.</comment>
   </data>
   <data name="Profile_CursorShapeBar.Content" xml:space="preserve">
@@ -963,7 +963,7 @@
     <comment>Header for a control to toggle if we should adjust the foreground color's lightness to make it more visible when necessary, based on the background color.</comment>
   </data>
   <data name="Profile_AdjustIndistinguishableColors.HelpText" xml:space="preserve">
-    <value>When enabled, enables automatic adjustment of indistinguishable colors, which will, only when necessary, adjust the foreground color's lightness to make it more visible (based on the background color).</value>
+    <value>Automatically brightens or darkens text to make it more visible. Even when enabled, this adjustment will only occur when a combination of foreground and background colors would result in poor contrast.</value>
     <comment>A description for what the "adjust indistinguishable colors" setting does. Presented near "Profile_AdjustIndistinguishableColors".</comment>
   </data>
   <data name="Profile_ScrollbarVisibility.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
