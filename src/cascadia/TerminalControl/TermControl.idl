@@ -111,6 +111,8 @@ namespace Microsoft.Terminal.Control
         // opacity set by the settings should call this instead.
         Double BackgroundOpacity { get; };
 
+        Boolean DisplayCursorWhileBlurred;
+
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
 
         void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
