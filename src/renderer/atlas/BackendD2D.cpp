@@ -27,6 +27,7 @@ void BackendD2D::ReleaseResources() noexcept
 {
     _renderTarget.reset();
     _renderTarget4.reset();
+    _renderTarget7.reset();
     // Ensure _handleSettingsUpdate() is called so that _renderTarget gets recreated.
     _generation = {};
 }
@@ -85,6 +86,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
             // ID2D1RenderTarget and ID2D1DeviceContext are the same and I'm tired of pretending they're not.
             THROW_IF_FAILED(p.d2dFactory->CreateDxgiSurfaceRenderTarget(buffer.query<IDXGISurface>().get(), &props, reinterpret_cast<ID2D1RenderTarget**>(_renderTarget.addressof())));
             _renderTarget.query_to(_renderTarget4.addressof());
+            _renderTarget.query_to(_renderTarget7.addressof());
 
             _renderTarget->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
             _renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
@@ -220,17 +222,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
                 if (glyphRun.fontFace)
                 {
                     D2D1_RECT_F bounds = GlyphRunEmptyBounds;
-
-                    if (const auto enumerator = TranslateColorGlyphRun(p.dwriteFactory4.get(), baselineOrigin, &glyphRun))
-                    {
-                        while (ColorGlyphRunMoveNext(enumerator.get()))
-                        {
-                            const auto colorGlyphRun = ColorGlyphRunGetCurrentRun(enumerator.get());
-                            ColorGlyphRunDraw(_renderTarget4.get(), _emojiBrush.get(), brush, colorGlyphRun);
-                            ColorGlyphRunAccumulateBounds(_renderTarget.get(), colorGlyphRun, bounds);
-                        }
-                    }
-                    else
+                    
                     {
                         _renderTarget->DrawGlyphRun(baselineOrigin, &glyphRun, brush, DWRITE_MEASURING_MODE_NATURAL);
                         GlyphRunAccumulateBounds(_renderTarget.get(), baselineOrigin, &glyphRun, bounds);

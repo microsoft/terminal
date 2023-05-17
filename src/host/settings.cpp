@@ -53,7 +53,7 @@ Settings::Settings() :
     _fUseWindowSizePixels(false),
     // window size pixels initialized below
     _fInterceptCopyPaste(0),
-    _fUseDx(UseDx::Disabled),
+    _fUseDx(UseDx::AtlasEngine),
     _fCopyColor(false)
 {
     _dwScreenBufferSize.X = 80;

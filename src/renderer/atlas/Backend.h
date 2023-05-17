@@ -77,9 +77,10 @@ namespace Microsoft::Console::Render::Atlas
     inline constexpr D2D1_RECT_F GlyphRunEmptyBounds{ 1e38f, 1e38f, -1e38f, -1e38f };
     void GlyphRunAccumulateBounds(const ID2D1DeviceContext* d2dRenderTarget, D2D1_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, D2D1_RECT_F& bounds);
 
-    wil::com_ptr<IDWriteColorGlyphRunEnumerator1> TranslateColorGlyphRun(IDWriteFactory4* dwriteFactory4, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun) noexcept;
+    wil::com_ptr<IDWriteColorGlyphRunEnumerator1> TranslateColorGlyphRun(IDWriteFactory4* dwriteFactory4, IDWriteFactory8* dwriteFactory8, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun);
+    void DrawColorGlyphRunEnumerator(ID2D1DeviceContext4* d2dRenderTarget4, ID2D1DeviceContext7* d2dRenderTarget7, IDWriteColorGlyphRunEnumerator1* enumerator, ID2D1SolidColorBrush* emojiBrush, ID2D1SolidColorBrush* foregroundBrush);
     bool ColorGlyphRunMoveNext(IDWriteColorGlyphRunEnumerator1* enumerator);
     const DWRITE_COLOR_GLYPH_RUN1* ColorGlyphRunGetCurrentRun(IDWriteColorGlyphRunEnumerator1* enumerator);
     void ColorGlyphRunAccumulateBounds(const ID2D1DeviceContext* d2dRenderTarget, const DWRITE_COLOR_GLYPH_RUN1* colorGlyphRun, D2D1_RECT_F& bounds);
-    void ColorGlyphRunDraw(ID2D1DeviceContext4* d2dRenderTarget4, ID2D1SolidColorBrush* emojiBrush, ID2D1SolidColorBrush* foregroundBrush, const DWRITE_COLOR_GLYPH_RUN1* colorGlyphRun) noexcept;
+    void ColorGlyphRunDraw(ID2D1DeviceContext4* d2dRenderTarget4, ID2D1DeviceContext7* d2dRenderTarget7, ID2D1SolidColorBrush* emojiBrush, ID2D1SolidColorBrush* foregroundBrush, const DWRITE_COLOR_GLYPH_RUN1* colorGlyphRun) noexcept;
 }

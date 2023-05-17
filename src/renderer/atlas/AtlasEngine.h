@@ -4,6 +4,7 @@
 #pragma once
 
 #include <dwrite_3.h>
+#include <d2d1_3.h>
 #include <d3d11_2.h>
 #include <dxgi1_3.h>
 

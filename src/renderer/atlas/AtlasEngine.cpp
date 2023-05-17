@@ -35,7 +35,8 @@ AtlasEngine::AtlasEngine()
 #endif
 
     THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(_p.dwriteFactory), reinterpret_cast<::IUnknown**>(_p.dwriteFactory.addressof())));
-    _p.dwriteFactory4 = _p.dwriteFactory.try_query<IDWriteFactory4>();
+    _p.dwriteFactory.try_query_to(_p.dwriteFactory4.addressof());
+    _p.dwriteFactory.try_query_to(_p.dwriteFactory8.addressof());
 
     THROW_IF_FAILED(_p.dwriteFactory->GetSystemFontFallback(_p.systemFontFallback.addressof()));
     _p.systemFontFallback1 = _p.systemFontFallback.try_query<IDWriteFontFallback1>();

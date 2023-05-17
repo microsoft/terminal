@@ -9,6 +9,8 @@
 #include <shader_ps.h>
 #include <shader_vs.h>
 
+#include <wincodec.h>
+
 #include "dwrite.h"
 #include "../../types/inc/ColorFix.hpp"
 
@@ -24,6 +26,7 @@ TIL_FAST_MATH_BEGIN
 
 // This code packs various data into smaller-than-int types to save both CPU and GPU memory. This warning would force
 // us to add dozens upon dozens of gsl::narrow_cast<>s throughout the file which is more annoying than helpful.
+#pragma warning(disable : 4100)
 #pragma warning(disable : 4242) // '=': conversion from '...' to '...', possible loss of data
 #pragma warning(disable : 4244) // 'initializing': conversion from '...' to '...', possible loss of data
 #pragma warning(disable : 4267) // 'argument': conversion from '...' to '...', possible loss of data
@@ -41,6 +44,149 @@ TIL_FAST_MATH_BEGIN
 #define ALLOW_UNINITIALIZED_END _Pragma("warning(pop)")
 
 using namespace Microsoft::Console::Render::Atlas;
+
+class SharedWicBitmap sealed : public IWICBitmap, public IWICBitmapLock
+{
+public:
+    static HRESULT Create(_In_ u32 width, _In_ u32 height, _In_ u32 stride, _In_ WICPixelFormatGUID const& pixelFormat, _In_opt_ u8* pBuffer, _Outptr_ SharedWicBitmap** ppWICBitmap)
+    {
+        if (pBuffer == nullptr)
+        {
+            const u32 size = stride * height;
+            pBuffer = new u8[size]{};
+        }
+
+        *ppWICBitmap = new SharedWicBitmap(width, height, stride, pixelFormat, pBuffer, pBuffer != nullptr);
+        return S_OK;
+    }
+
+    STDMETHODIMP QueryInterface(_In_ REFIID riid, _Outptr_ void** ppvObject) override
+    {
+        if (__uuidof(IUnknown) == riid)
+        {
+            *ppvObject = static_cast<IUnknown*>(static_cast<IWICBitmap*>(this));
+        }
+        else if (__uuidof(IWICBitmap) == riid)
+        {
+            *ppvObject = static_cast<IWICBitmap*>(this);
+        }
+        else if (__uuidof(IWICBitmapLock) == riid)
+        {
+            *ppvObject = static_cast<IWICBitmapLock*>(this);
+        }
+        else
+        {
+            *ppvObject = NULL;
+            return E_NOINTERFACE;
+        }
+
+        AddRef();
+
+        return S_OK;
+    }
+
+    ULONG STDMETHODCALLTYPE AddRef() override
+    {
+        return ++m_refCount;
+    }
+
+    ULONG STDMETHODCALLTYPE Release() override
+    {
+        u32 newRefCount = --m_refCount;
+        if (newRefCount == 0)
+        {
+            delete this;
+        }
+
+        return newRefCount;
+    }
+
+    STDMETHODIMP GetSize(_Out_ UINT* pWidth, _Out_ UINT* pHeight) override
+    {
+        *pWidth = m_width;
+        *pHeight = m_height;
+        return S_OK;
+    }
+
+    STDMETHODIMP GetStride(_Out_ UINT* pStride) override
+    {
+        *pStride = m_stride;
+        return S_OK;
+    }
+
+    STDMETHODIMP GetPixelFormat(_Out_ WICPixelFormatGUID* pPixelFormat) override
+    {
+        *pPixelFormat = m_pixelFormat;
+        return S_OK;
+    }
+
+    STDMETHODIMP GetResolution(_Out_ double* pDpiX, _Out_ double* pDpiY) override
+    {
+        *pDpiX = 96.0;
+        *pDpiY = 96.0;
+        return S_OK;
+    }
+
+    STDMETHODIMP SetResolution(double dpiX, double dpiY) override
+    {
+        assert(false);
+        return E_NOTIMPL;
+    }
+
+    STDMETHODIMP CopyPalette(_In_opt_ IWICPalette* pIPalette) override
+    {
+        assert(false);
+        return E_NOTIMPL;
+    }
+
+    STDMETHODIMP SetPalette(_In_opt_ IWICPalette* pIPalette) override
+    {
+        assert(false);
+        return E_NOTIMPL;
+    }
+
+    STDMETHODIMP CopyPixels(_In_opt_ const WICRect* prc, UINT cbStride, UINT cbBufferSize, _Out_writes_all_(cbBufferSize) BYTE* pbBuffer) override
+    {
+        assert(false);
+        return E_NOTIMPL;
+    }
+
+    STDMETHODIMP Lock(_In_opt_ const WICRect* prcLock, DWORD flags, _Outptr_result_maybenull_ IWICBitmapLock** ppILock) override
+    {
+        *ppILock = this;
+        AddRef();
+        return S_OK;
+    }
+
+    STDMETHODIMP GetDataPointer(_Out_ UINT* pcbBufferSize, _Outptr_result_buffer_all_maybenull_(*pcbBufferSize) BYTE** ppData) override
+    {
+        *pcbBufferSize = m_stride * m_height;
+        *ppData = m_pBuffer;
+        return S_OK;
+    }
+
+private:
+    u32 m_refCount;
+    u32 m_width;
+    u32 m_height;
+    u32 m_stride;
+    WICPixelFormatGUID m_pixelFormat;
+    u8* m_pBuffer;
+    bool m_usesSharedMemory;
+
+    SharedWicBitmap(_In_ u32 width, _In_ u32 height, _In_ u32 stride, _In_ WICPixelFormatGUID pixelFormat, _In_ u8* pBuffer, _In_ bool usesSharedMemory) :
+        m_refCount(1), m_width(width), m_height(height), m_stride(stride), m_pixelFormat(pixelFormat), m_pBuffer(pBuffer), m_usesSharedMemory(usesSharedMemory)
+    {
+    }
+
+    ~SharedWicBitmap()
+    {
+        if (!m_usesSharedMemory)
+        {
+            delete[] m_pBuffer;
+        }
+    }
+};
 
 template<>
 struct std::hash<u16>
@@ -190,6 +336,22 @@ BackendD3D::BackendD3D(const RenderingPayload& p)
         };
         THROW_IF_FAILED(p.device->CreateBlendState(&desc, _blendState.addressof()));
     }
+
+    SharedWicBitmap* pSharedWicBitmap = nullptr;
+    THROW_IF_FAILED(SharedWicBitmap::Create(1, 1, 4, GUID_WICPixelFormat8bppAlpha, nullptr, &pSharedWicBitmap));
+
+    const auto renderTargetProperties = D2D1::RenderTargetProperties(
+        D2D1_RENDER_TARGET_TYPE_SOFTWARE,
+        D2D1::PixelFormat(DXGI_FORMAT_A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
+        96.0f,
+        96.0f,
+        D2D1_RENDER_TARGET_USAGE_NONE,
+        D2D1_FEATURE_LEVEL_DEFAULT);
+
+    wil::com_ptr<ID2D1RenderTarget> renderTarget;
+    THROW_IF_FAILED(p.d2dFactory->CreateWicBitmapRenderTarget(pSharedWicBitmap, &renderTargetProperties, renderTarget.addressof()));
+    renderTarget.query_to(_d2dRenderTarget4WIC.addressof());
+    renderTarget.query_to(_d2dRenderTarget7WIC.addressof());
 
 #ifndef NDEBUG
     _sourceDirectory = std::filesystem::path{ __FILE__ }.parent_path();
@@ -742,6 +904,7 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
 {
     _d2dRenderTarget.reset();
     _d2dRenderTarget4.reset();
+    _d2dRenderTarget7.reset();
     _glyphAtlas.reset();
     _glyphAtlasView.reset();
 
@@ -769,6 +932,7 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
         // ID2D1RenderTarget and ID2D1DeviceContext are the same and I'm tired of pretending they're not.
         THROW_IF_FAILED(p.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, reinterpret_cast<ID2D1RenderTarget**>(_d2dRenderTarget.addressof())));
         _d2dRenderTarget.try_query_to(_d2dRenderTarget4.addressof());
+        _d2dRenderTarget.try_query_to(_d2dRenderTarget7.addressof());
 
         _d2dRenderTarget->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
         // We don't really use D2D for anything except DWrite, but it
@@ -1254,7 +1418,7 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
 #endif
 
     const auto lineRendition = static_cast<LineRendition>(fontFaceEntry.lineRendition);
-    const auto needsTransform = lineRendition != LineRendition::SingleWidth;
+    auto needsTransform = lineRendition != LineRendition::SingleWidth;
 
     static constexpr D2D1_MATRIX_3X2_F identityTransform{ .m11 = 1, .m22 = 1 };
     D2D1_MATRIX_3X2_F transform = identityTransform;
@@ -1298,24 +1462,39 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
         }
     });
 
+    auto enumerator = TranslateColorGlyphRun(p.dwriteFactory4.get(), p.dwriteFactory8.get(), {}, &glyphRun);
+    isColorGlyph = !!enumerator;
+
+    if (!enumerator)
     {
-        const auto enumerator = TranslateColorGlyphRun(p.dwriteFactory4.get(), {}, &glyphRun);
+        THROW_IF_FAILED(_d2dRenderTarget4->GetGlyphRunWorldBounds({}, &glyphRun, DWRITE_MEASURING_MODE_NATURAL, &bounds));
+    }
+    else
+    {
+        wil::com_ptr<ID2D1SolidColorBrush> emojiBrush;
+        wil::com_ptr<ID2D1SolidColorBrush> brush;
 
-        if (!enumerator)
-        {
-            THROW_IF_FAILED(_d2dRenderTarget->GetGlyphRunWorldBounds({}, &glyphRun, DWRITE_MEASURING_MODE_NATURAL, &bounds));
-        }
-        else
-        {
-            isColorGlyph = true;
-            _d2dRenderTarget4->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+        static constexpr D2D1_COLOR_F color{ 1, 1, 1, 1 };
+        THROW_IF_FAILED(_d2dRenderTarget4WIC->CreateSolidColorBrush(&color, nullptr, emojiBrush.put()));
+        THROW_IF_FAILED(_d2dRenderTarget4WIC->CreateSolidColorBrush(&color, nullptr, brush.put()));
 
-            while (ColorGlyphRunMoveNext(enumerator.get()))
-            {
-                const auto colorGlyphRun = ColorGlyphRunGetCurrentRun(enumerator.get());
-                ColorGlyphRunAccumulateBounds(_d2dRenderTarget.get(), colorGlyphRun, bounds);
-            }
-        }
+        wil::com_ptr<ID2D1CommandList> commandList;
+        THROW_IF_FAILED(_d2dRenderTarget4WIC->CreateCommandList(commandList.addressof()));
+
+        wil::com_ptr<ID2D1Image> previousTarget;
+        _d2dRenderTarget4WIC->GetTarget(previousTarget.addressof());
+
+        _d2dRenderTarget4WIC->SetTarget(commandList.get());
+        const auto cleanup = wil::scope_exit([&]() {
+            _d2dRenderTarget4WIC->SetTarget(previousTarget.get());
+        });
+
+        _d2dRenderTarget4WIC->BeginDraw();
+        DrawColorGlyphRunEnumerator(_d2dRenderTarget4WIC.get(), _d2dRenderTarget7WIC.get(), enumerator.get(), emojiBrush.get(), brush.get());
+        THROW_IF_FAILED(_d2dRenderTarget4WIC->EndDraw());
+
+        THROW_IF_FAILED(commandList->Close());
+        THROW_IF_FAILED(_d2dRenderTarget4WIC->GetImageWorldBounds(commandList.get(), &bounds));
     }
 
     // Overhangs for box glyphs can produce unsightly effects, where the antialiased edges of horizontal
@@ -1386,18 +1565,14 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
         _d2dRenderTarget->SetTransform(&transform);
     }
 
-    if (!isColorGlyph)
+    if (!enumerator)
     {
         _d2dRenderTarget->DrawGlyphRun(baselineOrigin, &glyphRun, _brush.get(), DWRITE_MEASURING_MODE_NATURAL);
     }
     else
     {
-        const auto enumerator = TranslateColorGlyphRun(p.dwriteFactory4.get(), baselineOrigin, &glyphRun);
-        while (ColorGlyphRunMoveNext(enumerator.get()))
-        {
-            const auto colorGlyphRun = ColorGlyphRunGetCurrentRun(enumerator.get());
-            ColorGlyphRunDraw(_d2dRenderTarget4.get(), _emojiBrush.get(), _brush.get(), colorGlyphRun);
-        }
+        enumerator = TranslateColorGlyphRun(p.dwriteFactory4.get(), p.dwriteFactory8.get(), baselineOrigin, &glyphRun);
+        DrawColorGlyphRunEnumerator(_d2dRenderTarget4.get(), _d2dRenderTarget7.get(), enumerator.get(), _emojiBrush.get(), _brush.get());
     }
 
     // Ligatures are drawn with strict cell-wise foreground color, while other text allows colors to overhang

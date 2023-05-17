@@ -263,9 +263,12 @@ namespace Microsoft::Console::Render::Atlas
         stbrp_context _rectPacker{};
         til::CoordType _ligatureOverhangTriggerLeft = 0;
         til::CoordType _ligatureOverhangTriggerRight = 0;
-
+        
         wil::com_ptr<ID2D1DeviceContext> _d2dRenderTarget;
         wil::com_ptr<ID2D1DeviceContext4> _d2dRenderTarget4; // Optional. Supported since Windows 10 14393.
+        wil::com_ptr<ID2D1DeviceContext7> _d2dRenderTarget7; // Optional. Supported since Windows 11 <unknown>. 25357 maybe?
+        wil::com_ptr<ID2D1DeviceContext4> _d2dRenderTarget4WIC;
+        wil::com_ptr<ID2D1DeviceContext7> _d2dRenderTarget7WIC;
         wil::com_ptr<ID2D1SolidColorBrush> _emojiBrush;
         wil::com_ptr<ID2D1SolidColorBrush> _brush;
         wil::com_ptr<ID2D1Bitmap1> _softFontBitmap;
