@@ -51,8 +51,7 @@ steps:
     pseudoSetting: Included
     localizationTarget: false
 
-- displayName: Move Loc files to the right places and commit them I guess?
-  pwsh: >-
+- pwsh: >-
     Remove-Item -EA:Ignore -R -Force Terminal.Internal
 
     $Files = Get-ChildItem . -R -Include 'ContextMenu.resw','Resources.resw' | ? FullName -Like '*en-US\*\*.resw'
@@ -70,3 +69,4 @@ steps:
     git commit -m "Localization Updates - $Now"
 
     git push origin HEAD:refs/heads/loc-update -f
+  displayName: Move Loc files to the right places and commit them I guess?
