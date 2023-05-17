@@ -47,16 +47,26 @@ steps:
      **\en-US\*.resw
      Terminal.Internal\PDPs\Stable\PDPs\en-us\PDP.xml
      Terminal.Internal\PDPs\Preview\PDPs\en-us\PDP.xml
-    outputDirectoryRoot: LocOutput
     appendRelativeDir: true
     pseudoSetting: Included
+    localizationTarget: false
 
-# Saving one of these makes it really easy to inspect the loc output...
-- powershell: 'tar czf LocOutput.tar.gz LocOutput'
-  displayName: 'Archive Loc Output for Submission'
+- displayName: Move Loc files to the right places and commit them I guess?
+  pwsh: >-
+    Remove-Item -EA:Ignore -R -Force Terminal.Internal
 
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact: LocOutput'
-  inputs:
-    PathtoPublish: LocOutput.tar.gz
-    ArtifactName: LocOutput
+    $Files = Get-ChildItem . -R -Include 'ContextMenu.resw','Resources.resw' | ? FullName -Like '*en-US\*\*.resw'
+
+    $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
+
+    & ./build/scripts/Copy-ContextMenuResourcesToCascadiaPackage.ps1
+
+    git add -A
+
+    git switch -c loc-update
+
+    $Now = Get-Date
+
+    git commit -m "Localization Updates - $Now"
+
+    git push origin HEAD:refs/heads/loc-update -f
