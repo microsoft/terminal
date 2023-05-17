@@ -188,6 +188,18 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        newTabImpl->MoveTabToNewWindowRequested([weakTab, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                MoveTabArgs args{ hstring{ L"new" }, MoveTabDirection::Forward };
+                page->_SetFocusedTab(*tab);
+                page->_MoveTab(args);
+            }
+        });
+
         newTabImpl->ExportTabRequested([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
