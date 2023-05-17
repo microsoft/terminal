@@ -60,7 +60,7 @@ steps:
 
     & ./build/scripts/Copy-ContextMenuResourcesToCascadiaPackage.ps1
 
-    git add -A
+    git add -A src
 
     git switch -c loc-update
 
