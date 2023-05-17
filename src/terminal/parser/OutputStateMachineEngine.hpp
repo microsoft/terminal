@@ -137,8 +137,8 @@ namespace Microsoft::Console::VirtualTerminal
             SGR_SetGraphicsRendition = VTID("m"),
             DSR_DeviceStatusReport = VTID("n"),
             DSR_PrivateDeviceStatusReport = VTID("?n"),
-            DECSTBM_SetScrollingRegion = VTID("r"),
-            ANSISYSSC_CursorSave = VTID("s"), // NOTE: Overlaps with DECLRMM/DECSLRM. Fix when/if implemented.
+            DECSTBM_SetTopBottomMargins = VTID("r"),
+            DECSLRM_SetLeftRightMargins = VTID("s"),
             DTTERM_WindowManipulation = VTID("t"), // NOTE: Overlaps with DECSLPP. Fix when/if implemented.
             ANSISYSRC_CursorRestore = VTID("u"),
             DECREQTPARM_RequestTerminalParameters = VTID("x"),
