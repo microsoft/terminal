@@ -66,6 +66,8 @@ steps:
 
     git add -A src
 
+    git status
+
     git switch -c loc-update
 
     $Now = Get-Date
