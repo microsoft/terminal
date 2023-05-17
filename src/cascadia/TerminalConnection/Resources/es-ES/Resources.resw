@@ -1,0 +1,223 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AzureCodeExpiry" xml:space="preserve">
+    <value>Este código expirará en 15 minutos.</value>
+  </data>
+  <data name="AzureEnterTenant" xml:space="preserve">
+    <value>Escribe el número de espacio empresarial que quieras.</value>
+  </data>
+  <data name="AzureNewLogin" xml:space="preserve">
+    <value>Escribe {0} para iniciar sesión con una cuenta nueva</value>
+    <comment>{0} will be replaced with the resource from AzureUserEntry_NewLogin; it is intended to be a single-character shorthand for "new account"</comment>
+  </data>
+  <data name="AzureRemoveStored" xml:space="preserve">
+    <value>Escribe {0} para quitar las configuraciones de conexión anteriores guardadas.</value>
+    <comment>{0} will be replaced with the resource from AzureUserEntry_RemoveStored; it is intended to be a single-character shorthand for "remove stored"</comment>
+  </data>
+  <data name="AzureInvalidAccessInput" xml:space="preserve">
+    <value>Escribe un número válido para tener acceso a la configuración de conexión almacenada, {0} para iniciar sesión con una nueva cuenta o {1} para quitar la configuración de conexión guardada.</value>
+    <comment>{0} will be replaced with the resource from AzureUserEntry_NewLogin, and {1} will be replaced with AzureUserEntry_RemoveStored. This is an error message, used after AzureNewLogin/AzureRemoveStored if the user enters an invalid value.</comment>
+  </data>
+  <data name="AzureNonNumberError" xml:space="preserve">
+    <value>Escribe un número.</value>
+  </data>
+  <data name="AzureNumOutOfBoundsError" xml:space="preserve">
+    <value>Número fuera de límites. Escribe un número válido.</value>
+  </data>
+  <data name="AzureNoTenants" xml:space="preserve">
+    <value>No se encontraron espacios empresariales.</value>
+  </data>
+  <data name="AzureNoCloudAccount" xml:space="preserve">
+    <value>Aún no has configurado tu cuenta de shell de nube. Ve a https://shell.azure.com para configurarla.</value>
+    <comment>{Locked="https://shell.azure.com"} This URL should not be localized. Everything else should.</comment>
+  </data>
+  <data name="AzureStorePrompt" xml:space="preserve">
+    <value>¿Quieres guardar esta configuración de conexión para inicios de sesión futuros? [{0}/{1}]</value>
+    <comment>{0} and {1} will be replaced with AzureUserEntry_Yes and AzureUserEntry_No. They are single-character shorthands for "yes" and "no" in this language.</comment>
+  </data>
+  <data name="AzureInvalidStoreInput" xml:space="preserve">
+    <value>Escribe {0} o {1}</value>
+    <comment>{0} and {1} will be replaced with AzureUserEntry_Yes and AzureUserEntry_No. This resource will be used as an error response after AzureStorePrompt.</comment>
+  </data>
+  <data name="AzureRequestingCloud" xml:space="preserve">
+    <value>Solicitando una instancia de shell en la nube...</value>
+  </data>
+  <data name="AzureSuccess" xml:space="preserve">
+    <value>Se realizó correctamente.</value>
+  </data>
+  <data name="AzureRequestingTerminal" xml:space="preserve">
+    <value>Solicitando una terminal (puede tardar un rato)...</value>
+  </data>
+  <data name="AzureTokensStored" xml:space="preserve">
+    <value>La configuración de la conexión se ha guardado para futuros inicios de sesión.</value>
+  </data>
+  <data name="AzureNoTokens" xml:space="preserve">
+    <value>No hay tokens para quitar.</value>
+  </data>
+  <data name="AzureTokensRemoved" xml:space="preserve">
+    <value>Se quitó la configuración de conexión guardada.</value>
+  </data>
+  <data name="AzureOldCredentialsFlushedMessage" xml:space="preserve">
+    <value>Parámetros de autenticación cambiados. Tendrás que volver a iniciar sesión.</value>
+  </data>
+  <data name="AzureUnknownTenantName" xml:space="preserve">
+    <value>&lt;nombre de espacio empresarial desconocido&gt;</value>
+  </data>
+  <data name="AzureIthTenant" xml:space="preserve">
+    <value>Espacio empresarial {0}: {1} ({2})</value>
+    <comment>{0} is the tenant's number, which the user will enter to connect to the tenant. {1} is the tenant's display name, which will be meaningful for the user. {2} is the tenant's internal ID number.</comment>
+  </data>
+  <data name="AzureSuccessfullyAuthenticated" xml:space="preserve">
+    <value>Autenticado.</value>
+  </data>
+  <data name="AzureUserEntry_NewLogin" xml:space="preserve">
+    <value>n</value>
+    <comment>This is shorthand for "new login". The user must enter this character to activate the New Login feature (AzureInvalidAccessInput, AzureNewLogin)</comment>
+  </data>
+  <data name="AzureUserEntry_RemoveStored" xml:space="preserve">
+    <value>r</value>
+    <comment>This is shorthand for "remove saved connections". The user must enter this character to activate the Remove Saved Logins feature (AzureRemoveStored, AzureInvalidAccessInput)</comment>
+  </data>
+  <data name="AzureUserEntry_Yes" xml:space="preserve">
+    <value>s</value>
+    <comment>This is shorthand for "yes". The user must enter this character to CONFIRM a prompt.</comment>
+  </data>
+  <data name="AzureUserEntry_No" xml:space="preserve">
+    <value>n</value>
+    <comment>This is shorthand for "no". The user must enter this character to DECLINE a prompt.</comment>
+  </data>
+  <data name="ProcessExited" xml:space="preserve">
+    <value>[proceso terminado con el código {0}]</value>
+    <comment>The first argument {0} is the error code of the process. When there is no error, the number ZERO will be displayed. </comment>
+  </data>
+  <data name="CtrlDToClose" xml:space="preserve">
+    <value>Ahora puede cerrar este terminal con Ctrl+D o presionar Entrar para reiniciar.</value>
+	  <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
+  </data>
+  <data name="ProcessFailedToLaunch" xml:space="preserve">
+    <value>[error {0} al iniciar `{1}']</value>
+    <comment>The first argument {0} is the error code. The second argument {1} is the user-specified path to a program.
+      If this string is broken to multiple lines, it will not be displayed properly.</comment>
+  </data>
+  <data name="BadPathText" xml:space="preserve">
+    <value>No se pudo obtener acceso al directorio inicial «{0}»</value>
+    <comment>The first argument {0} is a path to a directory on the filesystem, as provided by the user.</comment>
+  </data>
+</root>
