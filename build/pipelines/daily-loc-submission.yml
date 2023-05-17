@@ -60,6 +60,10 @@ steps:
 
     & ./build/scripts/Copy-ContextMenuResourcesToCascadiaPackage.ps1
 
+    git config --local user.email "consvc@microsoft.com"
+
+    git config --local user.name "Console Service Bot"
+
     git add -A src
 
     git switch -c loc-update
