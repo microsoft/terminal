@@ -827,10 +827,10 @@
     <value>Reset tab color</value>
     <comment>Text used to identify the reset button</comment>
   </data>
-    <data name="MoveTabToNewWindowText" xml:space="preserve">
+  <data name="MoveTabToNewWindowText" xml:space="preserve">
     <value>Move Tab to New Window</value>
   </data>
-  <data name="MoveTabtoNewWindowToolTip" xml:space="preserve">
-    <value>Moves tab to a new window using the active profile in the current directory</value>
+  <data name="MoveTabToNewWindowToolTip" xml:space="preserve">
+    <value>Moves tab to a new window </value>
   </data>
 </root>
