@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2022-09-07
-last updated: 2023-05-11
+last updated: 2023-05-17
 issue id: 5916
 ---
 
@@ -9,13 +9,22 @@ issue id: 5916
 
 ## Abstract
 
-[comment]: # Outline what this spec describes.
+This spec outines a mechanism by which users can define custom actions to run
+when a string of text is written to the Terminal. This lets users create
+powerful ways of automating their Terminal to match their own workflows. This
+same mechanism can be used by third-party applications to customize the way the
+terminal control automatically identifies links or other clickable regions of
+the buffer, and handle it in their own way.
 
 ## Background
 
 ### Inspiration
 
-[comment]: # Are there existing precedents for this type of configuration? These may be in the Terminal, or in other applications
+Much of this was heavily inspired by the [VsCode "auto replies"], as well as the
+[triggers in iTerm2]. VsCode is also working on a draft "[Quick Fix API]", from
+which a lot of inspiration was taken as far as crafting the `match` syntax. You
+can seen a sample of their syntax
+[here](https://github.com/microsoft/vscode/blob/4c6e0b5eee419550e31e386a0a5ca9840ac3280b/extensions/npm/package.json#L342-L354).
 
 ### User Stories
 
@@ -28,15 +37,26 @@ This is a collection of all the possible issues I found on this topic.
       - This is a dupe of some of the above, honestly. Either [#5916] or [#8849]
 * [x] [#6969] Let terminal consumers provide click handlers and pattern recognizers for buffer text
 * [x] [#11901] IPv6 links can not be Ctrl+Clicked
+* [x] Probably don't do this for the alt buffer? Make it per-trigger if they work in the alt buffer?
+
+Not addressed as a part of this spec:
+
 * [ ] [#8294] Add a setting to configure display of auto detected links, normally and on hover
-* [ ] Probably don't do this for the alt buffer? Make it per-trigger if they work in the alt buffer?
+
+We'll probably want to come back and seperately spec how users can control the
+appearance of both auto-detected clickable text, and links that are manually
+emitted to the Terminal (via OSC 8). This may be increasingly relevant, as this
+spec will introduce new ways for users to make text clickable.
 
 ## Solution Design
 
+To support "triggers", we'll add a new object to the profile settings called
+`triggers`. This is an array of objects that describe
 
-[TODO!]: # TODO! this was a draft from a comment. Polish.
+1. What string to match on for running the trigger
+2. What to do when that match is found.
 
-Example JSON:
+Let's start with an example blob of JSON:
 
 ```jsonc
 "triggers":[
@@ -76,16 +96,21 @@ Example JSON:
 `triggers` is an array of `Trigger` objects, which are a combination of an
 `ActionAndArgs`, a `Control.Matcher`, and a `Control.TriggerAction`.
 
+> **Note**
+> Interface and other types here are shown in C#, since that's fairly close to
+> MIDL3, which would be used for cross-component interfaces.
+
 ```c#
 runtimeclass Terminal.Settings.Model.Trigger
 {
-    Int32 Id;
+    String Id;
 
     Control.Matcher Matcher;
     Control.TriggerAction ControlAction;
 
-    private String _actionJson;
     Terminal.Settings.Model.ActionAndArgs ParseMatches(String[] matches);
+
+    private String _actionJson;
 }
 ```
 
@@ -100,7 +125,8 @@ following properties, which are heavily inspired by the matchers in VsCode.
     "offset": 0, // starting how many rows from the bottom
     "length": 5, // how many lines to match against
     "pattern": "    git push --set-upstream origin ([^\\w]*)",
-    "runOn": "everything|newline|mark"
+    "runOn": "everything|newline|mark",
+    "buffer": "main|alt|any"
 }
 ```
 
@@ -118,6 +144,10 @@ following properties, which are heavily inspired by the matchers in VsCode.
     `autoMarkPrompts`, this includes when the user presses <kbd>enter</kbd>.
     This has a much smaller performance impact, assuming the user isn't marking
     every line.
+* `"buffer"` (_default_: `"any"`): Configure which terminal buffer this trigger runs on.
+  * `main`: only run in the main buffer (e.g., most shells)
+  * `alt`: only run in the alternate screen buffer (e.g., `vim`, `tmux`, any full-screen application)
+  * `any`: Run in either buffer.
 
 `match` also accepts just a single string, to automatically assume default
 values for the other properties. For example, the JSON `"match":
@@ -165,6 +195,7 @@ runtimeclass Terminal.Control.TriggerAction
 {
     TriggerType Type;
     TriggerArgs Args;
+    internal void Execute(ControlCore core, String[] matches);
 }
 
 runtimeclass Terminal.Control.TriggerAndMatch
@@ -306,7 +337,9 @@ Challenges:
 
 #### Clickable `sendInput`
 
-This is the same idea as above. We want users to be able to magicially turn regions of the buffer into interactive content. When clicking on that content, the text will get written to the input, rather than `ShellExecute`d.
+This is the same idea as above. We want users to be able to magicially turn
+regions of the buffer into interactive content. When clicking on that content,
+the text will get written to the input, rather than `ShellExecute`d.
 
 ```jsonc
 {
@@ -316,18 +349,63 @@ This is the same idea as above. We want users to be able to magicially turn regi
 },
 ````
 
-
-### Disabling triggers
+### Layering & Disabling triggers
 
 Three main cases:
 * If we define a trigger in `defaults.json`, users should be able to disable it.
-* If a user puts a trigger into `profiles.defaults`, but doesn't want it to show up in a specific profile
+* If a user puts a trigger into `profiles.defaults`, but doesn't want it to show
+  up in a specific profile
 * If a fragment decides to add a trigger to a specific profile
 
-[TODO!]: # TODO!
+We actually _can't_ put triggers into `defaults.json`. For complicated reasons,
+we can't have a `profiles.defaults` block in `defaults.json`. This has caused
+issues in the past. So there's no way for the Terminal to pre-define triggers
+for all profiles in `defaults.json`. We could entertain the idea of a
+`defaults.json`-only global `triggers` property, that would work as the
+"default" triggers. I don't want to commit to that until we have more use cases
+for default triggers than just the URL detection one.
 
 We'll just use `"id"` as a key in a map of triggers. Users can unbind them with
-`"id": "Terminal.builtInThing", match:""`. Just like global actions.
+`"id": "Terminal.builtInThing", match:""`. Just like global actions. So a user can have:
+
+```json
+"profiles": {
+    "defaults": {
+
+        "triggers": [
+            {
+                "id": "my winget thing",
+                "match": "'(.*)' is not recognized as an internal or external command,",
+                "command": {
+                    "action": "checkWinGet",
+                    "commandline": "${match[1]}"
+                },
+            },
+
+        ]
+    },
+    "list": [
+        {
+            "name": "my profile",
+            "commandline": "wsl.exe",
+            "triggers": [
+                { "id": "my winget thing", "match":"" }
+
+            ]
+        }
+    ]
+}
+```
+
+Triggers do not support partial layering. In the previous example, doing something like:
+
+```json
+{ "id": "my winget thing", "command": "newTab" }
+```
+
+would not have created a trigger with the same regex match to perform a `newTab`
+action instead. That json in the profile would be treated as not having a
+`match`, and would then "unbind" the action from the defaults.
 
 ### Triggers for Terminal Control consumers
 
@@ -342,6 +420,8 @@ These are addressed generally by the rest of the spec. They could provide
 actions, or similar to the Windows Terminal, handle custom actions on the
 control's `CustomAction` event handler.
 
+
+
 ## Potential Issues
 
 <table>
@@ -349,6 +429,12 @@ control's `CustomAction` event handler.
 <tr><td><strong>Compatibility</strong></td><td>
 
 [comment]: # Will the proposed change break existing code/behaviors? If so, how, and is the breaking change "worth it"?
+
+How does someone turn off the built-in hyperlink detector? It _can't_ go in `defaults.json@profiles.defailts`
+
+Clickable links, sendInput get the same appearance treatment as auto-detected links (but not as manually emitted ones)
+
+
 
 </td></tr>
 
@@ -368,13 +454,12 @@ control's `CustomAction` event handler.
 
 [comment]: # TODO!
 
-Mildly worried here about the potential for community-driven tasks to have
-non-localized descriptions. We may need to accept a `description:{ en-us:"",
-pt-br:"", ...}`-style map of language->string descriptions.
-
 </td></tr>
 
 </table>
+
+* Q: What happens if multiple regexes match the same text
+  - A: We'll apply the regexes in the order they're defined in the JSON.
 
 [comment]: # If there are any other potential issues, make sure to include them here.
 
@@ -400,6 +485,8 @@ pt-br:"", ...}`-style map of language->string descriptions.
 
 ### Future Considerations
 
+<!-- This was originally in this doc, but I think that should be moved to it's own spec -->
+<!--
 #### Clickable sendInput
 
 There's already an existing standard for "this text is a hyperlink" - [OSC8].
@@ -422,7 +509,7 @@ like `echo foo ; rm -rf`.
 This seems like something that could get roped in with triggers. The [iTerm2
 docs] have a *Make Hyperlink* action, which can be used to turn regex-matched
 text into a hyperlink. We could always author our equivalent to allow for *Make
-Clickable* with a string of input instead.
+Clickable* with a string of input instead. -->
 
 ## Resources
 
@@ -482,4 +569,7 @@ boundary, like a visual bell or a notification).
 [#11901]: https://github.com/microsoft/terminal/issues/11901
 
 [OSC8]: https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
+[triggers in iTerm2]: https://iterm2.com/documentation-one-page.html#documentation-triggers.html
 [iTerm2 docs]: https://iterm2.com/documentation-one-page.html#documentation-triggers.html
+[VsCode "auto replies"]: https://code.visualstudio.com/docs/terminal/advanced#_auto-replies
+[Quick Fix API]: https://github.com/microsoft/vscode/blob/4c6e0b5eee419550e31e386a0a5ca9840ac3280b/src/vs/workbench/contrib/terminalContrib/quickFix/browser/terminalQuickFixService.ts#L80-L146
