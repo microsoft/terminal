@@ -2265,42 +2265,22 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
 // - S_OK
 [[nodiscard]] HRESULT SCREEN_INFORMATION::ClearBuffer()
 {
-    const auto oldCursorPos = _textBuffer->GetCursor().GetPosition();
-    auto sNewTop = oldCursorPos.y;
-
-    auto delta = (sNewTop + _viewport.Height()) - (GetBufferSize().Height());
-    for (auto i = 0; i < delta; i++)
+    // Rotate the buffer to bring the cursor row to the top of the viewport.
+    const auto cursorPos = _textBuffer->GetCursor().GetPosition();
+    for (auto i = 0; i < cursorPos.y; i++)
     {
         _textBuffer->IncrementCircularBuffer();
-        sNewTop--;
     }
 
-    const til::point coordNewOrigin{ 0, sNewTop };
-    RETURN_IF_FAILED(SetViewportOrigin(true, coordNewOrigin, true));
+    // Erase everything below that point.
+    RETURN_IF_FAILED(SetCursorPosition({ 0, 1 }, false));
+    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+    engine.Dispatch().EraseInDisplay(DispatchTypes::EraseType::ToEnd);
 
-    // SetViewportOrigin will only move the virtual bottom down, but in this
-    // case we need to reset it to the top, so we have to update it explicitly.
-    UpdateBottom();
-
-    // Place the cursor at the same x coord, on the row that's now the top
-    RETURN_IF_FAILED(SetCursorPosition({ oldCursorPos.x, sNewTop }, false));
-
-    // Update all the rows in the current viewport with the standard erase attributes,
-    // i.e. the current background color, but with no meta attributes set.
-    auto fillAttributes = GetAttributes();
-    fillAttributes.SetStandardErase();
-
-    // +1 on the y coord because we don't want to clear the attributes of the
-    // cursor row, the one we saved.
-    til::point fillPosition{ 0, _viewport.Top() + 1 };
-    auto fillLength = gsl::narrow<size_t>(_viewport.Height() * GetBufferSize().Width());
-    auto fillData = OutputCellIterator{ fillAttributes, fillLength };
-    Write(fillData, fillPosition, false);
+    // Restore the original cursor x offset, but now on the first row.
+    RETURN_IF_FAILED(SetCursorPosition({ cursorPos.x, 0 }, false));
 
     _textBuffer->TriggerRedrawAll();
-
-    // Also reset the line rendition for the erased rows.
-    _textBuffer->ResetLineRenditionRange(_viewport.Top(), _viewport.BottomExclusive());
 
     return S_OK;
 }
