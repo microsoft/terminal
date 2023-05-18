@@ -1349,7 +1349,7 @@ namespace winrt::TerminalApp::implementation
                     tab->_MoveTabToNewWindowRequestedHandlers();
                 }
             });
-            moveTabToNewWindowMenuItem.Text(RS_(L"MoveTabtoNewWindowText"));
+            moveTabToNewWindowMenuItem.Text(RS_(L"MoveTabToNewWindowText"));
             moveTabToNewWindowMenuItem.Icon(moveTabToNewWindowTabSymbol);
 
             const auto moveTabToNewWindowToolTip = RS_(L"MoveTabtoNewWindowToolTip");
