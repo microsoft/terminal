@@ -1352,7 +1352,7 @@ namespace winrt::TerminalApp::implementation
             moveTabToNewWindowMenuItem.Text(RS_(L"MoveTabToNewWindowText"));
             moveTabToNewWindowMenuItem.Icon(moveTabToNewWindowTabSymbol);
 
-            const auto moveTabToNewWindowToolTip = RS_(L"MoveTabtoNewWindowToolTip");
+            const auto moveTabToNewWindowToolTip = RS_(L"MoveTabToNewWindowToolTip");
 
             WUX::Controls::ToolTipService::SetToolTip(moveTabToNewWindowMenuItem, box_value(moveTabToNewWindowToolTip));
             Automation::AutomationProperties::SetHelpText(moveTabToNewWindowMenuItem, moveTabToNewWindowToolTip);
