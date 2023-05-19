@@ -31,7 +31,8 @@ static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
                  winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
                  const Remoting::WindowManager& manager,
-                 const Remoting::Peasant& peasant) noexcept :
+                 const Remoting::Peasant& peasant,
+                 std::unique_ptr<IslandWindow> window) noexcept :
     _appLogic{ logic },
     _windowLogic{ nullptr }, // don't make one, we're going to take a ref on app's
     _windowManager{ manager },
@@ -44,13 +45,21 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
 
     // _HandleCommandlineArgs will create a _windowLogic
     _useNonClientArea = _windowLogic.GetShowTabsInTitlebar();
-    if (_useNonClientArea)
+
+    if (window)
     {
-        _window = std::make_unique<NonClientIslandWindow>(_windowLogic.GetRequestedTheme());
+        _window = std::move(window);
     }
     else
     {
-        _window = std::make_unique<IslandWindow>();
+        if (_useNonClientArea)
+        {
+            _window = std::make_unique<NonClientIslandWindow>(_windowLogic.GetRequestedTheme());
+        }
+        else
+        {
+            _window = std::make_unique<IslandWindow>();
+        }
     }
 
     // Update our own internal state tracking if we're in quake mode or not.
@@ -65,16 +74,38 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
                          std::placeholders::_2);
     _window->SetCreateCallback(pfn);
 
-    _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
-    _window->WindowActivated({ this, &AppHost::_WindowActivated });
-    _window->WindowMoved({ this, &AppHost::_WindowMoved });
+    _windowCallbacks.MouseScrolled = _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
+    _windowCallbacks.WindowActivated = _window->WindowActivated({ this, &AppHost::_WindowActivated });
+    _windowCallbacks.WindowMoved = _window->WindowMoved({ this, &AppHost::_WindowMoved });
+    _windowCallbacks.ShouldExitFullscreen = _window->ShouldExitFullscreen({ &_windowLogic, &winrt::TerminalApp::TerminalWindow::RequestExitFullscreen });
 
-    _window->ShouldExitFullscreen({ &_windowLogic, &winrt::TerminalApp::TerminalWindow::RequestExitFullscreen });
+    // TODO! These call APIs that are re-entrant on the window message loop.
+    // If you call them in the ctor, then if we're being instantiated for a reheated thread, we'll deadlock.
+    // _window->SetAlwaysOnTop(_windowLogic.GetInitialAlwaysOnTop());
+    // _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
 
-    _window->SetAlwaysOnTop(_windowLogic.GetInitialAlwaysOnTop());
-    _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
+    if (_window->GetHandle() == nullptr)
+    {
+        _window->MakeWindow();
+    }
+    else
+    {
+        // _window->Microwave();
 
-    _window->MakeWindow();
+        //auto dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+        //dispatcher.TryEnqueue([this]() {
+        //    // TODO! obv these bounds are wrong
+        //    _HandleCreateWindow(_window->GetHandle(), til::rect{ 0, 0, 256, 256 });
+        //});
+
+        CREATESTRUCTW dumb{
+            .cy = 256,
+            .cx = 256,
+            .y = 0,
+            .x = 0,
+        };
+        PostMessageW(_window->GetHandle(), WM_CREATE, 0, (LPARAM)&dumb);
+    }
 }
 
 bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
@@ -297,7 +328,7 @@ void AppHost::Initialize()
 
     // Register the 'X' button of the window for a warning experience of multiple
     // tabs opened, this is consistent with Alt+F4 closing
-    _window->WindowCloseButtonClicked([this]() {
+    _windowCallbacks.WindowCloseButtonClicked = _window->WindowCloseButtonClicked([this]() {
         _CloseRequested(nullptr, nullptr);
     });
     // If the user requests a close in another way handle the same as if the 'X'
@@ -306,11 +337,11 @@ void AppHost::Initialize()
 
     // Add an event handler to plumb clicks in the titlebar area down to the
     // application layer.
-    _window->DragRegionClicked([this]() { _windowLogic.TitlebarClicked(); });
+    _windowCallbacks.DragRegionClicked = _window->DragRegionClicked([this]() { _windowLogic.TitlebarClicked(); });
 
-    _window->WindowVisibilityChanged([this](bool showOrHide) { _windowLogic.WindowVisibilityChanged(showOrHide); });
+    _windowCallbacks.WindowVisibilityChanged = _window->WindowVisibilityChanged([this](bool showOrHide) { _windowLogic.WindowVisibilityChanged(showOrHide); });
 
-    _window->UpdateSettingsRequested({ this, &AppHost::_requestUpdateSettings });
+    _windowCallbacks.UpdateSettingsRequested = _window->UpdateSettingsRequested({ this, &AppHost::_requestUpdateSettings });
 
     _revokers.Initialized = _windowLogic.Initialized(winrt::auto_revoke, { this, &AppHost::_WindowInitializedHandler });
     _revokers.RequestedThemeChanged = _windowLogic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
@@ -321,14 +352,14 @@ void AppHost::Initialize()
     _revokers.SystemMenuChangeRequested = _windowLogic.SystemMenuChangeRequested(winrt::auto_revoke, { this, &AppHost::_SystemMenuChangeRequested });
     _revokers.ChangeMaximizeRequested = _windowLogic.ChangeMaximizeRequested(winrt::auto_revoke, { this, &AppHost::_ChangeMaximizeRequested });
 
-    _window->MaximizeChanged([this](bool newMaximize) {
+    _windowCallbacks.MaximizeChanged = _window->MaximizeChanged([this](bool newMaximize) {
         if (_windowLogic)
         {
             _windowLogic.Maximized(newMaximize);
         }
     });
 
-    _window->AutomaticShutdownRequested([this]() {
+    _windowCallbacks.AutomaticShutdownRequested = _window->AutomaticShutdownRequested([this]() {
         // Raised when the OS is beginning an update of the app. We will quit,
         // to save our state, before the OS manually kills us.
         Remoting::WindowManager::RequestQuitAll(_peasant);
@@ -427,6 +458,36 @@ void AppHost::Close()
         _windowLogic.DismissDialog();
         _windowLogic = nullptr;
     }
+}
+
+[[nodiscard]] std::unique_ptr<IslandWindow> AppHost::Refrigerate()
+{
+    // After calling _window->Close() we should avoid creating more WinUI related actions.
+    // I suspect WinUI wouldn't like that very much. As such unregister all event handlers first.
+    _revokers = {};
+    _showHideWindowThrottler.reset();
+
+    // DO NOT CLOSE THE WINDOW
+    _window->Refrigerate();
+
+    _window->MouseScrolled(_windowCallbacks.MouseScrolled);
+    _window->WindowActivated(_windowCallbacks.WindowActivated);
+    _window->WindowMoved(_windowCallbacks.WindowMoved);
+    _window->ShouldExitFullscreen(_windowCallbacks.ShouldExitFullscreen);
+    _window->WindowCloseButtonClicked(_windowCallbacks.WindowCloseButtonClicked);
+    _window->DragRegionClicked(_windowCallbacks.DragRegionClicked);
+    _window->WindowVisibilityChanged(_windowCallbacks.WindowVisibilityChanged);
+    _window->UpdateSettingsRequested(_windowCallbacks.UpdateSettingsRequested);
+    _window->MaximizeChanged(_windowCallbacks.MaximizeChanged);
+    _window->AutomaticShutdownRequested(_windowCallbacks.AutomaticShutdownRequested);
+
+    if (_windowLogic)
+    {
+        _windowLogic.DismissDialog();
+        _windowLogic = nullptr;
+    }
+
+    return std::move(_window);
 }
 
 // Method Description:

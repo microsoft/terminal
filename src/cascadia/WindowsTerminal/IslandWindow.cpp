@@ -42,11 +42,22 @@ IslandWindow::~IslandWindow()
 
 void IslandWindow::Close()
 {
+    // auto a{ _source };
+    // winrt::detach_abi(_source);
     if (_source)
     {
         _source.Close();
         _source = nullptr;
     }
+}
+
+void IslandWindow::Refrigerate() noexcept
+{
+    _pfnCreateCallback = nullptr;
+    _pfnSnapDimensionCallback = nullptr;
+
+    _rootGrid.Children().Clear();
+    ShowWindow(_window.get(), SW_HIDE);
 }
 
 HWND IslandWindow::GetInteropHandle() const
@@ -295,38 +306,45 @@ LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
     return false;
 }
 
-void IslandWindow::Initialize()
+// return true if this was a "cold" initialize, that didn't start XAML before.
+bool IslandWindow::Initialize()
 {
-    _source = DesktopWindowXamlSource{};
-
-    auto interop = _source.as<IDesktopWindowXamlSourceNative>();
-    winrt::check_hresult(interop->AttachToWindow(_window.get()));
-
-    // stash the child interop handle so we can resize it when the main hwnd is resized
-    interop->get_WindowHandle(&_interopWindowHandle);
-
-    // Immediately hide our XAML island hwnd. On earlier versions of Windows,
-    // this HWND could sometimes appear as an actual window in the taskbar
-    // without this!
-    ShowWindow(_interopWindowHandle, SW_HIDE);
-
-    _rootGrid = winrt::Windows::UI::Xaml::Controls::Grid();
-    _source.Content(_rootGrid);
-
-    // initialize the taskbar object
-    if (auto taskbar = wil::CoCreateInstanceNoThrow<ITaskbarList3>(CLSID_TaskbarList))
+    if (!_source)
     {
-        if (SUCCEEDED(taskbar->HrInit()))
+        _source = DesktopWindowXamlSource{};
+
+        auto interop = _source.as<IDesktopWindowXamlSourceNative>();
+        winrt::check_hresult(interop->AttachToWindow(_window.get()));
+
+        // stash the child interop handle so we can resize it when the main hwnd is resized
+        interop->get_WindowHandle(&_interopWindowHandle);
+
+        // Immediately hide our XAML island hwnd. On earlier versions of Windows,
+        // this HWND could sometimes appear as an actual window in the taskbar
+        // without this!
+        ShowWindow(_interopWindowHandle, SW_HIDE);
+
+        _rootGrid = winrt::Windows::UI::Xaml::Controls::Grid();
+        _source.Content(_rootGrid);
+
+        // initialize the taskbar object
+        if (auto taskbar = wil::CoCreateInstanceNoThrow<ITaskbarList3>(CLSID_TaskbarList))
         {
-            _taskbar = std::move(taskbar);
+            if (SUCCEEDED(taskbar->HrInit()))
+            {
+                _taskbar = std::move(taskbar);
+            }
         }
+
+        _systemMenuNextItemId = IDM_SYSTEM_MENU_BEGIN;
+
+        // Enable vintage opacity by removing the XAML emergency backstop, GH#603.
+        // We don't really care if this failed or not.
+        TerminalTrySetTransparentBackground(true);
+
+        return true;
     }
-
-    _systemMenuNextItemId = IDM_SYSTEM_MENU_BEGIN;
-
-    // Enable vintage opacity by removing the XAML emergency backstop, GH#603.
-    // We don't really care if this failed or not.
-    TerminalTrySetTransparentBackground(true);
+    return false;
 }
 
 void IslandWindow::OnSize(const UINT width, const UINT height)

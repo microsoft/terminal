@@ -17,6 +17,12 @@ public:
     int RunMessagePump();
     void RundownForExit();
 
+    bool KeepWarm();
+    void Refrigerate();
+    void Microwave(
+        winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
+        winrt::Microsoft::Terminal::Remoting::Peasant peasant);
+
     uint64_t PeasantID();
 
     WINRT_CALLBACK(UpdateSettingsRequested, winrt::delegate<void()>);
@@ -29,6 +35,11 @@ private:
     winrt::Microsoft::Terminal::Remoting::WindowManager _manager{ nullptr };
 
     std::unique_ptr<::AppHost> _host{ nullptr };
+    winrt::event_token _UpdateSettingsRequestedToken;
+
+    std::unique_ptr<::IslandWindow> _warmWindow{ nullptr };
+    std::mutex _microwave;
+    std::condition_variable _microwaveGoButton;
 
     int _messagePump();
 };

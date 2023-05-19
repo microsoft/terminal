@@ -43,6 +43,8 @@ private:
     til::shared_mutex<std::vector<std::shared_ptr<WindowThread>>> _windows;
     std::atomic<uint32_t> _windowThreadInstances;
 
+    til::shared_mutex<std::vector<std::shared_ptr<WindowThread>>> _oldThreads;
+
     std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
 
     winrt::event_token _WindowCreatedToken;

@@ -129,7 +129,28 @@ void WindowEmperor::WaitForWindows()
 void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& args)
 {
     Remoting::Peasant peasant{ _manager.CreatePeasant(args) };
-    auto window{ std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant) };
+    std::shared_ptr<WindowThread> window{ nullptr };
+
+    {
+        auto fridge{ _oldThreads.lock() };
+        if (fridge->size() > 0)
+        {
+            window = fridge->back();
+            fridge->pop_back();
+        }
+    }
+    if (window)
+    {
+        _windowThreadInstances.fetch_add(1, std::memory_order_relaxed);
+
+        window->Microwave(args, peasant);
+        // This will unblock the event we're waiting on in KeepWarm, and the
+        // window thread (started below) will continue through it's loop
+        return;
+    }
+
+    window = std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant);
+
     std::weak_ptr<WindowEmperor> weakThis{ weak_from_this() };
 
     // Increment our count of window instances _now_, immediately. We're
@@ -150,7 +171,7 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
     std::thread t([weakThis, window]() {
         try
         {
-            const auto decrementWindowCount = wil::scope_exit([&]() {
+            auto decrementWindowCount = wil::scope_exit([&]() {
                 if (auto self{ weakThis.lock() })
                 {
                     self->_decrementWindowCount();
@@ -169,14 +190,27 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
             {
                 self->_windowStartedHandlerPostXAML(window);
             }
+            while (window->KeepWarm())
+            {
+                window->RunMessagePump();
 
-            window->RunMessagePump();
+                // Manually trigger the cleanup callback. This will ensure that we
+                // remove the window from our list of windows, before we release the
+                // AppHost (and subsequently, the host's Logic() member that we use
+                // elsewhere).
+                removeWindow.reset();
 
-            // Manually trigger the cleanup callback. This will ensure that we
-            // remove the window from our list of windows, before we release the
-            // AppHost (and subsequently, the host's Logic() member that we use
-            // elsewhere).
-            removeWindow.reset();
+                window->Refrigerate();
+                decrementWindowCount.reset();
+
+                if (auto self{ weakThis.lock() })
+                {
+                    auto fridge{ self->_oldThreads.lock() };
+                    fridge->push_back(window);
+                }
+
+                // TODO! we never re-establish the decrementWindowCount handler for this thread. 
+            }
 
             // Now that we no longer care about this thread's window, let it
             // release it's app host and flush the rest of the XAML queue.

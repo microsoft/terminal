@@ -12,12 +12,16 @@ public:
     AppHost(const winrt::TerminalApp::AppLogic& logic,
             winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
             const winrt::Microsoft::Terminal::Remoting::WindowManager& manager,
-            const winrt::Microsoft::Terminal::Remoting::Peasant& peasant) noexcept;
+            const winrt::Microsoft::Terminal::Remoting::Peasant& peasant,
+            std::unique_ptr<IslandWindow> window = nullptr) noexcept;
 
     void AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
     void LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args);
     void Initialize();
     void Close();
+
+    [[nodiscard]] std::unique_ptr<IslandWindow> Refrigerate();
+
     bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
     void SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
 
@@ -194,4 +198,24 @@ private:
         winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;
         winrt::Microsoft::Terminal::Remoting::Peasant::SendContentRequested_revoker SendContentRequested;
     } _revokers{};
+
+    // our IslandWindow is not a WinRT type. It can't make auto_revokers like
+    // the above. We also need to make sure to unregister ourself from the
+    // window when we refrigerate the window thread so that the window can later
+    // be re-used.
+    struct WindowRevokers
+    {
+        winrt::event_token MouseScrolled;
+        winrt::event_token WindowActivated;
+        winrt::event_token WindowMoved;
+        winrt::event_token ShouldExitFullscreen;
+        winrt::event_token WindowCloseButtonClicked;
+        winrt::event_token DragRegionClicked;
+        winrt::event_token WindowVisibilityChanged;
+        winrt::event_token UpdateSettingsRequested;
+        winrt::event_token MaximizeChanged;
+        winrt::event_token AutomaticShutdownRequested;
+        // LOAD BEARING!!
+        //If you add events here, make sure they're revokec in AppHost::Refrigerate
+    } _windowCallbacks{};
 };

@@ -40,7 +40,7 @@ public:
     virtual til::rect GetNonClientFrame(UINT dpi) const noexcept override;
     virtual til::size GetTotalNonClientExclusiveSize(UINT dpi) const noexcept override;
 
-    void Initialize() override;
+    bool Initialize() override;
 
     void OnAppInitialized() override;
     void SetContent(winrt::Windows::UI::Xaml::UIElement content) override;

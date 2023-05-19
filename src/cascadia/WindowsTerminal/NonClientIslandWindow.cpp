@@ -335,9 +335,9 @@ void NonClientIslandWindow::OnAppInitialized()
     IslandWindow::OnAppInitialized();
 }
 
-void NonClientIslandWindow::Initialize()
+bool NonClientIslandWindow::Initialize()
 {
-    IslandWindow::Initialize();
+    const bool coldInit = IslandWindow::Initialize();
 
     _UpdateFrameMargins();
 
@@ -367,6 +367,8 @@ void NonClientIslandWindow::Initialize()
     // then make sure to update its visual state to reflect if we're in the
     // maximized state on launch.
     _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
+
+    return coldInit;
 }
 
 // Method Description:
@@ -519,8 +521,8 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
         const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
 
         const auto state = _isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
-                           isIconified  ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
-                                          winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
+                                          isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                                        winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
 
         try
         {

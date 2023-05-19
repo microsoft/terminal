@@ -18,14 +18,23 @@ WindowThread::WindowThread(winrt::TerminalApp::AppLogic logic,
 
 void WindowThread::CreateHost()
 {
+    const bool coldStart = _warmWindow == nullptr;
     // Start the AppHost HERE, on the actual thread we want XAML to run on
-    _host = std::make_unique<::AppHost>(_appLogic,
-                                        _args,
-                                        _manager,
-                                        _peasant);
-    _host->UpdateSettingsRequested([this]() { _UpdateSettingsRequestedHandlers(); });
+    _host = !coldStart ? std::make_unique<::AppHost>(_appLogic,
+                                                     _args,
+                                                     _manager,
+                                                     _peasant,
+                                                     std::move(_warmWindow)) :
+                         std::make_unique<::AppHost>(_appLogic,
+                                                     _args,
+                                                     _manager,
+                                                     _peasant);
+    _UpdateSettingsRequestedToken = _host->UpdateSettingsRequested([this]() { _UpdateSettingsRequestedHandlers(); });
 
-    winrt::init_apartment(winrt::apartment_type::single_threaded);
+    if (coldStart)
+    {
+        winrt::init_apartment(winrt::apartment_type::single_threaded);
+    }
 
     // Initialize the xaml content. This must be called AFTER the
     // WindowsXamlManager is initialized.
@@ -42,6 +51,7 @@ int WindowThread::RunMessagePump()
 
 void WindowThread::RundownForExit()
 {
+    _host->UpdateSettingsRequested(_UpdateSettingsRequestedToken);
     _host->Close();
 
     // !! LOAD BEARING !!
@@ -58,6 +68,73 @@ void WindowThread::RundownForExit()
         {
             ::DispatchMessageW(&msg);
         }
+    }
+}
+bool WindowThread::KeepWarm()
+{
+    if (_host != nullptr)
+    {
+        return true;
+    }
+    // If we're refrigerated, then wait on the microwave signal, which will be
+    // raised when we get microwaved by another thread to reactivate us. .
+
+    if (_warmWindow != nullptr)
+    {
+        // DO THE THING
+        std::unique_lock lock(_microwave);
+        _microwaveGoButton.wait(lock);
+        const bool reheated = _host != nullptr;
+        if (reheated)
+        {
+            // Re-initialize the host here, on the window thread
+            _host->Initialize();
+        }
+        return reheated;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+void WindowThread::Refrigerate()
+{
+    _host->UpdateSettingsRequested(_UpdateSettingsRequestedToken);
+
+    // keep a reference to the HWND and DWXS alive.
+    _warmWindow = std::move(_host->Refrigerate());
+
+    // rundown remaining messages before dtoring the app host
+    {
+        MSG msg = {};
+        while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
+        {
+            ::DispatchMessageW(&msg);
+        }
+    }
+    _host = nullptr;
+}
+
+void WindowThread::Microwave(
+    winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
+    winrt::Microsoft::Terminal::Remoting::Peasant peasant)
+{
+    _peasant = std::move(peasant);
+    _args = std::move(args);
+    // CreateHost();
+    {
+        _host = std::make_unique<::AppHost>(_appLogic,
+                                            _args,
+                                            _manager,
+                                            _peasant,
+                                            std::move(_warmWindow));
+    }
+
+    // raise the signal
+    {
+        // std::unique_lock lock(_microwave);
+        _microwaveGoButton.notify_one();
     }
 }
 
