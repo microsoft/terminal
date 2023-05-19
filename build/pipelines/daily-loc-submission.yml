@@ -47,16 +47,31 @@ steps:
      **\en-US\*.resw
      Terminal.Internal\PDPs\Stable\PDPs\en-us\PDP.xml
      Terminal.Internal\PDPs\Preview\PDPs\en-us\PDP.xml
+    outputDirectoryRoot: LocOutput
     appendRelativeDir: true
     pseudoSetting: Included
     localizationTarget: false
 
 - pwsh: >-
-    Remove-Item -EA:Ignore -R -Force Terminal.Internal
+    Remove-Item -EA:Ignore -R -Force LocOutput\Terminal.Internal
 
-    $Files = Get-ChildItem . -R -Include 'ContextMenu.resw','Resources.resw' | ? FullName -Like '*en-US\*\*.resw'
+    $Files = Get-ChildItem LocOutput -R -Include 'ContextMenu.resw','Resources.resw' | ? FullName -Like '*en-US\*\*.resw'
 
     $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
+
+    Get-ChildItem LocOutput -R -Filter '*.resw' | % {
+
+      ((Get-Content $_.FullName) -join "`r`n") + "`r`n" | Set-Content -NoNewline $_.FullName
+
+    }
+
+    & tar.exe -c -f LocOutputMunged.tar -C LocOutput
+
+    & tar.exe -x -v -f LocOutputMunged.tar
+
+    rm LocOutputMunged.tar
+
+    rm -r -fo LocOutput
 
     & ./build/scripts/Copy-ContextMenuResourcesToCascadiaPackage.ps1
 
@@ -64,7 +79,7 @@ steps:
 
     git config --local user.name "Console Service Bot"
 
-    git add -A src
+    git add **/*.resw
 
     git status
 
