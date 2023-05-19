@@ -2572,7 +2572,9 @@ namespace winrt::TerminalApp::implementation
                 GlobalUnlock(data);
             });
 
-            text = winrt::hstring{ str, gsl::narrow_cast<uint32_t>(wcslen(str)) };
+            const auto maxLength = GlobalSize(data) / sizeof(wchar_t);
+            const auto length = wcsnlen(str, maxLength);
+            text = winrt::hstring{ str, gsl::narrow_cast<uint32_t>(length) };
         }
 
         if (globalSettings.TrimPaste())
