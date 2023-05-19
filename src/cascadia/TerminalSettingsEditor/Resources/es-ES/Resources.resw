@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -231,6 +231,10 @@
     <value>Idioma (requiere reiniciar)</value>
     <comment>The header for a control allowing users to choose the app's language.</comment>
   </data>
+  <data name="Globals_Language.HelpText" xml:space="preserve">
+    <value>Seleccionar un idioma para mostrarlo en la aplicación. Esto invalidará el idioma predeterminado de la interfaz de Windows.</value>
+    <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
+  </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
     <value>Usar los valores predeterminados del sistema</value>
     <comment>The app contains a control allowing users to choose the app's language. If this value is chosen, the language preference list of the system settings is used instead.</comment>
@@ -246,6 +250,10 @@
   <data name="Globals_NewTabPosition.Header" xml:space="preserve">
     <value>Posición de las pestañas recién creadas</value>
     <comment>Header for a control to select position of newly created tabs.</comment>
+  </data>
+  <data name="Globals_NewTabPosition.HelpText" xml:space="preserve">
+    <value>Especifica dónde aparecen las nuevas pestañas en la fila de pestañas.</value>
+    <comment>A description for what the "Position of newly created tabs" setting does.</comment>
   </data>
   <data name="Globals_NewTabPositionAfterLastTab.Content" xml:space="preserve">
     <value>Después de la última pestaña</value>
@@ -498,6 +506,10 @@
     <value>Modo de ancho de pestaña</value>
     <comment>Header for a control to choose how wide the tabs are.</comment>
   </data>
+  <data name="Globals_TabWidthMode.HelpText" xml:space="preserve">
+    <value>Compactar reducirá las pestañas inactivas al tamaño del icono.</value>
+    <comment>A description for what the "tab width mode" setting does. Presented near "Globals_TabWidthMode.Header". 'Compact' must match the value for &lt;Globals_TabWidthModeCompact.Content&gt;.</comment>
+  </data>
   <data name="Globals_TabWidthModeCompact.Content" xml:space="preserve">
     <value>Compacto</value>
     <comment>An option to choose from for the "tab width mode" setting. When selected, unselected tabs collapse to show only their icon. The selected tab adjusts to display the content within the tab.</comment>
@@ -509,6 +521,10 @@
   <data name="Globals_TabWidthModeTitleLength.Content" xml:space="preserve">
     <value>Longitud del título</value>
     <comment>An option to choose from for the "tab width mode" setting. When selected, each tab adjusts its width to the content within the tab.</comment>
+  </data>
+  <data name="Globals_Theme.Header" xml:space="preserve">
+    <value>Tema de la aplicación</value>
+    <comment>Header for a control to choose the theme colors used in the app.</comment>
   </data>
   <data name="Globals_ThemeDark.Content" xml:space="preserve">
     <value>Oscuro</value>
@@ -537,6 +553,10 @@
   <data name="Globals_WordDelimiters.Header" xml:space="preserve">
     <value>Delimitadores de palabras</value>
     <comment>Header for a control to determine what delimiters to use to identify separate words during word selection.</comment>
+  </data>
+  <data name="Globals_WordDelimiters.HelpText" xml:space="preserve">
+    <value>Estos símbolos se usarán al hacer doble clic en el texto en el terminal o al activar el "Modo marcar".</value>
+    <comment>A description for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header". "Mark" is used in the sense of "choosing something to interact with."</comment>
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Apariencia</value>
@@ -950,6 +970,10 @@
     <value>Efecto de terminal retro</value>
     <comment>Header for a control to toggle classic CRT display effects, which gives the terminal a retro look.</comment>
   </data>
+  <data name="Profile_RetroTerminalEffect.HelpText" xml:space="preserve">
+    <value>Muestra efectos del terminal de estilo retro, como texto brillante y líneas de exploración.</value>
+    <comment>A description for what the "retro terminal effects" setting does. Presented near "Profile_RetroTerminalEffect". "Retro" is a common English prefix that suggests a nostalgic, dated appearance.</comment>
+  </data>
   <data name="Profile_AdjustIndistinguishableColors.Header" xml:space="preserve">
     <value>Ajustar automáticamente la luminosidad del texto indistinguible</value>
     <comment>Header for a control to toggle if we should adjust the foreground color's lightness to make it more visible when necessary, based on the background color.</comment>
@@ -1345,6 +1369,10 @@
     <value>Navegación tradicional, sin ventanas separadas</value>
     <comment>An option to choose from for the "tab switcher mode" setting. The tab switcher overlay is hidden and does not appear in a separate window.</comment>
   </data>
+  <data name="Globals_CopyFormat.Header" xml:space="preserve">
+    <value>Formatos de texto para copiar en el Portapapeles</value>
+    <comment>Header for a control to select the format of copied text.</comment>
+  </data>
   <data name="Globals_CopyFormatNone.Content" xml:space="preserve">
     <value>Solo texto sin formato</value>
     <comment>An option to choose from for the "copy formatting" setting. Store only plain text data.</comment>
@@ -1524,6 +1552,10 @@
   <data name="Globals_AutoHideWindow.Header" xml:space="preserve">
     <value>Ocultar automáticamente la ventana</value>
     <comment>Header for a control to toggle the "Automatically hide window" setting. If enabled, the terminal will be hidden as soon as you switch to another window.</comment>
+  </data>
+  <data name="Globals_AutoHideWindow.HelpText" xml:space="preserve">
+    <value>Si se habilita, el terminal se ocultará en cuanto cambies a otra ventana.</value>
+    <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
   <data name="ColorScheme_DeleteDisclaimerInBox" xml:space="preserve">
     <value>Esta combinación de colores no se puede eliminar porque está incluida de manera predeterminada.</value>
