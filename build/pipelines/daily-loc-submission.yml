@@ -55,7 +55,7 @@ steps:
 - pwsh: >-
     Remove-Item -EA:Ignore -R -Force LocOutput\Terminal.Internal
 
-    $Files = Get-ChildItem LocOutput -R -Include 'ContextMenu.resw','Resources.resw' | ? FullName -Like '*en-US\*\*.resw'
+    $Files = Get-ChildItem LocOutput -R -Filter '*.resw' | ? FullName -Like '*en-US\*\*.resw'
 
     $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
 
@@ -65,7 +65,7 @@ steps:
 
     }
 
-    & tar.exe -c -f LocOutputMunged.tar -C LocOutput
+    & tar.exe -c -f LocOutputMunged.tar -C LocOutput .
 
     & tar.exe -x -v -f LocOutputMunged.tar
 
