@@ -421,6 +421,12 @@ void AppHost::Close()
     _revokers = {};
     _showHideWindowThrottler.reset();
     _window->Close();
+
+    if (_windowLogic)
+    {
+        _windowLogic.DismissDialog();
+        _windowLogic = nullptr;
+    }
 }
 
 // Method Description:
