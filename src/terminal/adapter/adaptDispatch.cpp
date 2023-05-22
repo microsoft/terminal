@@ -571,7 +571,7 @@ bool AdaptDispatch::CursorRestoreState()
 // - delta - Distance to move (positive is down, negative is up).
 // Return Value:
 // - <none>
-void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const int32_t delta)
+void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta)
 {
     const auto absoluteDelta = std::min(std::abs(delta), scrollRect.height());
     if (absoluteDelta < scrollRect.height())
@@ -627,7 +627,7 @@ void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rec
 // - delta - Distance to move (positive is right, negative is left).
 // Return Value:
 // - <none>
-void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const int32_t delta)
+void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta)
 {
     const auto absoluteDelta = std::min(std::abs(delta), scrollRect.width());
     if (absoluteDelta < scrollRect.width())
@@ -1694,7 +1694,7 @@ void AdaptDispatch::_ScrollMovement(const VTInt delta)
 // - True.
 bool AdaptDispatch::ScrollUp(const VTInt uiDistance)
 {
-    _ScrollMovement(-gsl::narrow_cast<int32_t>(uiDistance));
+    _ScrollMovement(-uiDistance);
     return true;
 }
 
@@ -1706,7 +1706,7 @@ bool AdaptDispatch::ScrollUp(const VTInt uiDistance)
 // - True.
 bool AdaptDispatch::ScrollDown(const VTInt uiDistance)
 {
-    _ScrollMovement(gsl::narrow_cast<int32_t>(uiDistance));
+    _ScrollMovement(uiDistance);
     return true;
 }
 
@@ -2052,7 +2052,7 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 // - delta - Number of lines to modify (positive if inserting, negative if deleting).
 // Return Value:
 // - <none>
-void AdaptDispatch::_InsertDeleteLineHelper(const int32_t delta)
+void AdaptDispatch::_InsertDeleteLineHelper(const VTInt delta)
 {
     const auto viewport = _api.GetViewport();
     auto& textBuffer = _api.GetTextBuffer();
@@ -2085,7 +2085,7 @@ void AdaptDispatch::_InsertDeleteLineHelper(const int32_t delta)
 // - True.
 bool AdaptDispatch::InsertLine(const VTInt distance)
 {
-    _InsertDeleteLineHelper(gsl::narrow_cast<int32_t>(distance));
+    _InsertDeleteLineHelper(distance);
     return true;
 }
 
@@ -2103,7 +2103,7 @@ bool AdaptDispatch::InsertLine(const VTInt distance)
 // - True.
 bool AdaptDispatch::DeleteLine(const VTInt distance)
 {
-    _InsertDeleteLineHelper(-gsl::narrow_cast<int32_t>(distance));
+    _InsertDeleteLineHelper(-distance);
     return true;
 }
 
@@ -2141,7 +2141,7 @@ void AdaptDispatch::_InsertDeleteColumnHelper(const VTInt delta)
 // - True.
 bool AdaptDispatch::InsertColumn(const VTInt distance)
 {
-    _InsertDeleteColumnHelper(gsl::narrow_cast<int32_t>(distance));
+    _InsertDeleteColumnHelper(distance);
     return true;
 }
 
@@ -2154,7 +2154,7 @@ bool AdaptDispatch::InsertColumn(const VTInt distance)
 // - True.
 bool AdaptDispatch::DeleteColumn(const VTInt distance)
 {
-    _InsertDeleteColumnHelper(-gsl::narrow_cast<int32_t>(distance));
+    _InsertDeleteColumnHelper(-distance);
     return true;
 }
 
