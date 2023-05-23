@@ -87,6 +87,7 @@ bool WindowThread::KeepWarm()
         const bool reheated = _host != nullptr;
         if (reheated)
         {
+            _UpdateSettingsRequestedToken = _host->UpdateSettingsRequested([this]() { _UpdateSettingsRequestedHandlers(); });
             // Re-initialize the host here, on the window thread
             _host->Initialize();
         }

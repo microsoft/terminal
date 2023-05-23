@@ -42,8 +42,6 @@ IslandWindow::~IslandWindow()
 
 void IslandWindow::Close()
 {
-    // auto a{ _source };
-    // winrt::detach_abi(_source);
     if (_source)
     {
         _source.Close();
@@ -311,63 +309,79 @@ bool IslandWindow::Initialize()
 {
     if (!_source)
     {
-        _source = DesktopWindowXamlSource{};
-
-        auto interop = _source.as<IDesktopWindowXamlSourceNative>();
-        winrt::check_hresult(interop->AttachToWindow(_window.get()));
-
-        // stash the child interop handle so we can resize it when the main hwnd is resized
-        interop->get_WindowHandle(&_interopWindowHandle);
-
-        // Immediately hide our XAML island hwnd. On earlier versions of Windows,
-        // this HWND could sometimes appear as an actual window in the taskbar
-        // without this!
-        ShowWindow(_interopWindowHandle, SW_HIDE);
-
-        _rootGrid = winrt::Windows::UI::Xaml::Controls::Grid();
-        _source.Content(_rootGrid);
-
-        // initialize the taskbar object
-        if (auto taskbar = wil::CoCreateInstanceNoThrow<ITaskbarList3>(CLSID_TaskbarList))
-        {
-            if (SUCCEEDED(taskbar->HrInit()))
-            {
-                _taskbar = std::move(taskbar);
-            }
-        }
-
-        _systemMenuNextItemId = IDM_SYSTEM_MENU_BEGIN;
-
-        // Enable vintage opacity by removing the XAML emergency backstop, GH#603.
-        // We don't really care if this failed or not.
-        TerminalTrySetTransparentBackground(true);
-
+        _coldInitialize();
         return true;
     }
     else
     {
-        // This was a "warm" initialize - we've already got an HWND, but it's most certainly at the wrong place.
-        // Manually ask how we want to be created?
-
-        if (_pfnCreateCallback)
-        {
-            til::rect rc{ GetWindowRect() };
-            _pfnCreateCallback(_window.get(), rc);
-        }
-        UpdateWindow(_window.get());
-        ForceResize();
-
-        // DONT do this
-        //
-        // The NCIW doesn't set the Width/Height members of the _rootGrid. If you set them here (via IslandWindow::OnSize), we'll never change them for a subsequent resize
-        // const auto size = GetPhysicalSize();
-        // this->IslandWindow::OnSize(size.width, size.height);
+        // This was a "warm" initialize - we've already got an HWND, but we need
+        // to move it to the new correct place, new size, and reset any leftover
+        // runtime state.
+        _warmInitialize();
     }
     return false;
 }
 
+// Method Description:
+// - Start this window for the first time. This will instantiate our XAML
+//   island, set up our root grid, and initialize some other members that only
+//   need to be initialized once.
+// - This should only be called once.
+void IslandWindow::_coldInitialize()
+{
+    _source = DesktopWindowXamlSource{};
+
+    auto interop = _source.as<IDesktopWindowXamlSourceNative>();
+    winrt::check_hresult(interop->AttachToWindow(_window.get()));
+
+    // stash the child interop handle so we can resize it when the main hwnd is resized
+    interop->get_WindowHandle(&_interopWindowHandle);
+
+    // Immediately hide our XAML island hwnd. On earlier versions of Windows,
+    // this HWND could sometimes appear as an actual window in the taskbar
+    // without this!
+    ShowWindow(_interopWindowHandle, SW_HIDE);
+
+    _rootGrid = winrt::Windows::UI::Xaml::Controls::Grid();
+    _source.Content(_rootGrid);
+
+    // initialize the taskbar object
+    if (auto taskbar = wil::CoCreateInstanceNoThrow<ITaskbarList3>(CLSID_TaskbarList))
+    {
+        if (SUCCEEDED(taskbar->HrInit()))
+        {
+            _taskbar = std::move(taskbar);
+        }
+    }
+
+    _systemMenuNextItemId = IDM_SYSTEM_MENU_BEGIN;
+
+    // Enable vintage opacity by removing the XAML emergency backstop, GH#603.
+    // We don't really care if this failed or not.
+    TerminalTrySetTransparentBackground(true);
+}
+void IslandWindow::_warmInitialize()
+{
+    // Manually ask how we want to be created?
+
+    if (_pfnCreateCallback)
+    {
+        til::rect rc{ GetWindowRect() };
+        _pfnCreateCallback(_window.get(), rc);
+    }
+    UpdateWindow(_window.get());
+    ForceResize();
+
+    // Don't call IslandWindow::OnSize - that will set the Width/Height members
+    // of the _rootGrid. However, NCIW doesn't use those! If you set them, here,
+    // the contents of the window will never resize.
+}
+
 void IslandWindow::OnSize(const UINT width, const UINT height)
 {
+    // NOTE: This _isn't_ called by NonClientIslandWindow::OnSize. The NCIW has
+    // very different logic for positioning the DWXS inside it's HWND.
+
     // update the interop window size
     SetWindowPos(_interopWindowHandle, nullptr, 0, 0, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
 

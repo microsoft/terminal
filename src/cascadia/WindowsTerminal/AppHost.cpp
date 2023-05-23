@@ -46,7 +46,8 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     // _HandleCommandlineArgs will create a _windowLogic
     _useNonClientArea = _windowLogic.GetShowTabsInTitlebar();
 
-    if (window)
+    const bool isWarmStart = window != nullptr;
+    if (isWarmStart)
     {
         _window = std::move(window);
     }
@@ -79,32 +80,9 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     _windowCallbacks.WindowMoved = _window->WindowMoved({ this, &AppHost::_WindowMoved });
     _windowCallbacks.ShouldExitFullscreen = _window->ShouldExitFullscreen({ &_windowLogic, &winrt::TerminalApp::TerminalWindow::RequestExitFullscreen });
 
-    // TODO! These call APIs that are re-entrant on the window message loop.
-    // If you call them in the ctor, then if we're being instantiated for a reheated thread, we'll deadlock.
-    // _window->SetAlwaysOnTop(_windowLogic.GetInitialAlwaysOnTop());
-    // _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
-
-    if (_window->GetHandle() == nullptr)
+    if (!isWarmStart)
     {
         _window->MakeWindow();
-    }
-    else
-    {
-        // _window->Microwave();
-
-        //auto dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
-        //dispatcher.TryEnqueue([this]() {
-        //    // TODO! obv these bounds are wrong
-        //    _HandleCreateWindow(_window->GetHandle(), til::rect{ 0, 0, 256, 256 });
-        //});
-
-        //CREATESTRUCTW dumb{
-        //    .cy = 256,
-        //    .cx = 256,
-        //    .y = 0,
-        //    .x = 0,
-        //};
-        //PostMessageW(_window->GetHandle(), WM_CREATE, 0, (LPARAM)&dumb);
     }
 }
 
@@ -313,6 +291,14 @@ void AppHost::Initialize()
         _windowLogic.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
     }
 
+    // These call APIs that are re-entrant on the window message loop. If
+    // you call them in the ctor, we might deadlock. The ctor for AppHost isn't
+    // always called on the window thread - for reheated windows, it could be
+    // called on a random COM thread.
+
+    _window->SetAlwaysOnTop(_windowLogic.GetInitialAlwaysOnTop());
+    _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
+
     // MORE EVENT HANDLERS HERE!
     // MAKE SURE THEY ARE ALL:
     // * winrt::auto_revoke
@@ -322,9 +308,10 @@ void AppHost::Initialize()
     // tearing down, after we've nulled out the window, during the dtor. That
     // can cause unexpected AV's everywhere.
     //
-    // _window callbacks don't need to be treated this way, because:
-    // * IslandWindow isn't a WinRT type (so it doesn't have neat revokers like this)
-    // * This particular bug scenario applies when we've already freed the window.
+    // _window callbacks are a little special:
+    // * IslandWindow isn't a WinRT type (so it doesn't have neat revokers like
+    //   this), so instead they go in their own special helper struct.
+    // * they all need to be manually revoked in .
 
     // Register the 'X' button of the window for a warning experience of multiple
     // tabs opened, this is consistent with Alt+F4 closing
@@ -451,6 +438,9 @@ void AppHost::Close()
     // I suspect WinUI wouldn't like that very much. As such unregister all event handlers first.
     _revokers = {};
     _showHideWindowThrottler.reset();
+
+    _revokeWindowCallbacks();
+
     _window->Close();
 
     if (_windowLogic)
@@ -458,6 +448,20 @@ void AppHost::Close()
         _windowLogic.DismissDialog();
         _windowLogic = nullptr;
     }
+}
+
+void AppHost::_revokeWindowCallbacks()
+{
+    _window->MouseScrolled(_windowCallbacks.MouseScrolled);
+    _window->WindowActivated(_windowCallbacks.WindowActivated);
+    _window->WindowMoved(_windowCallbacks.WindowMoved);
+    _window->ShouldExitFullscreen(_windowCallbacks.ShouldExitFullscreen);
+    _window->WindowCloseButtonClicked(_windowCallbacks.WindowCloseButtonClicked);
+    _window->DragRegionClicked(_windowCallbacks.DragRegionClicked);
+    _window->WindowVisibilityChanged(_windowCallbacks.WindowVisibilityChanged);
+    _window->UpdateSettingsRequested(_windowCallbacks.UpdateSettingsRequested);
+    _window->MaximizeChanged(_windowCallbacks.MaximizeChanged);
+    _window->AutomaticShutdownRequested(_windowCallbacks.AutomaticShutdownRequested);
 }
 
 [[nodiscard]] std::unique_ptr<IslandWindow> AppHost::Refrigerate()
@@ -470,16 +474,7 @@ void AppHost::Close()
     // DO NOT CLOSE THE WINDOW
     _window->Refrigerate();
 
-    _window->MouseScrolled(_windowCallbacks.MouseScrolled);
-    _window->WindowActivated(_windowCallbacks.WindowActivated);
-    _window->WindowMoved(_windowCallbacks.WindowMoved);
-    _window->ShouldExitFullscreen(_windowCallbacks.ShouldExitFullscreen);
-    _window->WindowCloseButtonClicked(_windowCallbacks.WindowCloseButtonClicked);
-    _window->DragRegionClicked(_windowCallbacks.DragRegionClicked);
-    _window->WindowVisibilityChanged(_windowCallbacks.WindowVisibilityChanged);
-    _window->UpdateSettingsRequested(_windowCallbacks.UpdateSettingsRequested);
-    _window->MaximizeChanged(_windowCallbacks.MaximizeChanged);
-    _window->AutomaticShutdownRequested(_windowCallbacks.AutomaticShutdownRequested);
+    _revokeWindowCallbacks();
 
     if (_windowLogic)
     {

@@ -59,6 +59,8 @@ private:
 
     void _preInit();
 
+    void _revokeWindowCallbacks();
+
     void _HandleCommandlineArgs(const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args);
     void _HandleSessionRestore(const bool startedForContent);
 
@@ -216,6 +218,6 @@ private:
         winrt::event_token MaximizeChanged;
         winrt::event_token AutomaticShutdownRequested;
         // LOAD BEARING!!
-        //If you add events here, make sure they're revokec in AppHost::Refrigerate
+        //If you add events here, make sure they're revokec in AppHost::_revokeWindowCallbacks
     } _windowCallbacks{};
 };

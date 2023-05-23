@@ -117,6 +117,9 @@ protected:
     RECT _rcWorkBeforeFullscreen{};
     UINT _dpiBeforeFullscreen{ 96 };
 
+    void _coldInitialize();
+    void _warmInititialize();
+
     virtual void _SetIsBorderless(const bool borderlessEnabled);
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);
     void _RestoreFullscreenPosition(const RECT& rcWork);
