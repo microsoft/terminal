@@ -344,6 +344,21 @@ bool IslandWindow::Initialize()
 
         return true;
     }
+    else
+    {
+        // This was a "warm" initialize - we've already got an HWND, but it's most certainly at the wrong place.
+        // Manually ask how we want to be created?
+
+        if (_pfnCreateCallback)
+        {
+            til::rect rc{ GetWindowRect() };
+            _pfnCreateCallback(_window.get(), rc);
+        }
+        UpdateWindow(_window.get());
+        ForceResize();
+        const auto size = GetPhysicalSize();
+        this->IslandWindow::OnSize(size.width, size.height);
+    }
     return false;
 }
 

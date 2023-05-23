@@ -98,13 +98,13 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
         //    _HandleCreateWindow(_window->GetHandle(), til::rect{ 0, 0, 256, 256 });
         //});
 
-        CREATESTRUCTW dumb{
-            .cy = 256,
-            .cx = 256,
-            .y = 0,
-            .x = 0,
-        };
-        PostMessageW(_window->GetHandle(), WM_CREATE, 0, (LPARAM)&dumb);
+        //CREATESTRUCTW dumb{
+        //    .cy = 256,
+        //    .cx = 256,
+        //    .y = 0,
+        //    .x = 0,
+        //};
+        //PostMessageW(_window->GetHandle(), WM_CREATE, 0, (LPARAM)&dumb);
     }
 }
 

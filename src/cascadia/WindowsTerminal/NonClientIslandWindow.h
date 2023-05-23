@@ -31,6 +31,8 @@ public:
 
     NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
 
+    void Refrigerate() noexcept override;
+
     virtual void Close() override;
     void MakeWindow() noexcept override;
     virtual void OnSize(const UINT width, const UINT height) override;
@@ -95,4 +97,14 @@ private:
     void _UpdateFrameMargins() const noexcept;
     void _UpdateMaximizedState();
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
+
+    struct Revokers
+    {
+        // winrt::Windows::UI::Xaml::Controls::Border::SizeChanged_revoker dragBar_SizeChanged;
+        // winrt::Windows::UI::Xaml::Controls::Grid::SizeChanged_revoker rootGrid_SizeChanged;
+        // winrt::TerminalApp::TitlebarControl::SizeChanged_revoker titlebar_Loaded;
+        winrt::event_token dragBar_SizeChanged;
+        winrt::event_token rootGrid_SizeChanged;
+        winrt::event_token titlebar_Loaded;
+    } _callbacks{};
 };

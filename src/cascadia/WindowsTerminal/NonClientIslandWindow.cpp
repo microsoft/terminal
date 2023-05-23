@@ -335,6 +335,14 @@ void NonClientIslandWindow::OnAppInitialized()
     IslandWindow::OnAppInitialized();
 }
 
+void NonClientIslandWindow::Refrigerate() noexcept
+{
+    IslandWindow::Refrigerate();
+    _dragBar.SizeChanged(_callbacks.dragBar_SizeChanged);
+    _rootGrid.SizeChanged(_callbacks.rootGrid_SizeChanged);
+    _titlebar.Loaded(_callbacks.titlebar_Loaded);
+}
+
 bool NonClientIslandWindow::Initialize()
 {
     const bool coldInit = IslandWindow::Initialize();
@@ -349,6 +357,7 @@ bool NonClientIslandWindow::Initialize()
     Controls::RowDefinition contentRow{};
     titlebarRow.Height(GridLengthHelper::Auto());
 
+    _rootGrid.RowDefinitions().Clear();
     _rootGrid.RowDefinitions().Append(titlebarRow);
     _rootGrid.RowDefinitions().Append(contentRow);
 
@@ -356,8 +365,12 @@ bool NonClientIslandWindow::Initialize()
     _titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
     _dragBar = _titlebar.DragBar();
 
-    _dragBar.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
-    _rootGrid.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
+    _callbacks.dragBar_SizeChanged = _dragBar.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
+
+    // if (coldInit)
+    {
+        _callbacks.rootGrid_SizeChanged = _rootGrid.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
+    }
 
     _rootGrid.Children().Append(_titlebar);
 
@@ -366,7 +379,7 @@ bool NonClientIslandWindow::Initialize()
     // GH#3440 - When the titlebar is loaded (officially added to our UI tree),
     // then make sure to update its visual state to reflect if we're in the
     // maximized state on launch.
-    _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
+    _callbacks.titlebar_Loaded = _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
 
     return coldInit;
 }
