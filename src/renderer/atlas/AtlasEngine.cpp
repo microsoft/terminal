@@ -218,9 +218,9 @@ try
         const til::CoordType targetSizeY = _p.s->targetSize.y;
 
         _p.dirtyRectInPx.left = 0;
-        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, _api.invalidatedRows.start * _p.s->font->cellSize.y);
+        _p.dirtyRectInPx.top = std::min<LONG>(_p.dirtyRectInPx.top, _api.invalidatedRows.start * _p.s->font->cellSize.y);
         _p.dirtyRectInPx.right = targetSizeX;
-        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _api.invalidatedRows.end * _p.s->font->cellSize.y);
+        _p.dirtyRectInPx.bottom = std::max<LONG>(_p.dirtyRectInPx.bottom, _api.invalidatedRows.end * _p.s->font->cellSize.y);
 
         for (auto y = _api.invalidatedRows.start; y < _api.invalidatedRows.end; ++y)
         {

@@ -293,7 +293,7 @@ namespace Microsoft::Console::Render::Atlas
         bool _requiresContinuousRedraw = false;
 
 #if ATLAS_DEBUG_SHOW_DIRTY
-        til::rect _presentRects[9]{};
+        i32r _presentRects[9]{};
         size_t _presentRectsPos = 0;
 #endif
 
