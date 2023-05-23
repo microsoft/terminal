@@ -356,8 +356,12 @@ bool IslandWindow::Initialize()
         }
         UpdateWindow(_window.get());
         ForceResize();
-        const auto size = GetPhysicalSize();
-        this->IslandWindow::OnSize(size.width, size.height);
+
+        // DONT do this
+        //
+        // The NCIW doesn't set the Width/Height members of the _rootGrid. If you set them here (via IslandWindow::OnSize), we'll never change them for a subsequent resize
+        // const auto size = GetPhysicalSize();
+        // this->IslandWindow::OnSize(size.width, size.height);
     }
     return false;
 }

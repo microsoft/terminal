@@ -381,6 +381,8 @@ bool NonClientIslandWindow::Initialize()
     // maximized state on launch.
     _callbacks.titlebar_Loaded = _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
 
+    _ResizeDragBarWindow();
+
     return coldInit;
 }
 
