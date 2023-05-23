@@ -70,20 +70,34 @@ void WindowThread::RundownForExit()
         }
     }
 }
+
+// Method Description:
+// - Check if we should keep this window alive, to try it's message loop again.
+//   If we were refrigerated for later, then this will block the thread on the
+//   _microwaveBuzzer. We'll sit there like that till the emperor decides if
+//   they want to re-use this window thread for a new window.
+// Return Value:
+// - true IFF we should enter this thread's message loop
+// INVARAINT: This must be called on our "ui thread", our window thread.
 bool WindowThread::KeepWarm()
 {
     if (_host != nullptr)
     {
+        // We're currently hot
         return true;
     }
+
     // If we're refrigerated, then wait on the microwave signal, which will be
-    // raised when we get microwaved by another thread to reactivate us. .
+    // raised when we get microwaved by another thread to reactivate us.
 
     if (_warmWindow != nullptr)
     {
-        // DO THE THING
         std::unique_lock lock(_microwave);
-        _microwaveGoButton.wait(lock);
+        _microwaveBuzzer.wait(lock);
+
+        // TODO! There probably needs to be a way for us to be closed and have
+        // that set the signal too (so that we drop out of this and return false
+        // and cleanup our window.)
         const bool reheated = _host != nullptr;
         if (reheated)
         {
@@ -123,20 +137,15 @@ void WindowThread::Microwave(
 {
     _peasant = std::move(peasant);
     _args = std::move(args);
-    // CreateHost();
-    {
-        _host = std::make_unique<::AppHost>(_appLogic,
-                                            _args,
-                                            _manager,
-                                            _peasant,
-                                            std::move(_warmWindow));
-    }
 
-    // raise the signal
-    {
-        // std::unique_lock lock(_microwave);
-        _microwaveGoButton.notify_one();
-    }
+    _host = std::make_unique<::AppHost>(_appLogic,
+                                        _args,
+                                        _manager,
+                                        _peasant,
+                                        std::move(_warmWindow));
+
+    // raise the signal to unblock KeepWarm and start the window message loop again.
+    _microwaveBuzzer.notify_one();
 }
 
 winrt::TerminalApp::TerminalWindow WindowThread::Logic()

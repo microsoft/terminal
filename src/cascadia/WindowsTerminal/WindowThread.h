@@ -39,7 +39,7 @@ private:
 
     std::unique_ptr<::IslandWindow> _warmWindow{ nullptr };
     std::mutex _microwave;
-    std::condition_variable _microwaveGoButton;
+    std::condition_variable _microwaveBuzzer;
 
     int _messagePump();
 };
