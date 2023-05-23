@@ -415,12 +415,6 @@ void AtlasEngine::_waitUntilCanRender() noexcept
 
 void AtlasEngine::_present()
 {
-    // Present1() dislikes being called with an empty dirty rect.
-    if (_p.dirtyRectInPx.empty())
-    {
-        return;
-    }
-
     const RECT fullRect{ 0, 0, _p.swapChain.targetSize.x, _p.swapChain.targetSize.y };
 
     DXGI_PRESENT_PARAMETERS params{};
@@ -434,6 +428,12 @@ void AtlasEngine::_present()
         .right = std::min<LONG>(_p.dirtyRectInPx.right, fullRect.right),
         .bottom = std::min<LONG>(_p.dirtyRectInPx.bottom, fullRect.bottom),
     };
+
+    // Present1() dislikes being called with an empty dirty rect.
+    if (dirtyRect.left >= dirtyRect.right || dirtyRect.top >= dirtyRect.bottom)
+    {
+        return;
+    }
 
     if constexpr (!ATLAS_DEBUG_SHOW_DIRTY)
     {

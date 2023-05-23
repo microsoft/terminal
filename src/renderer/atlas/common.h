@@ -533,8 +533,9 @@ namespace Microsoft::Console::Render::Atlas
         til::rect cursorRect;
         // The viewport/SwapChain area to be presented. In pixel.
         // NOTE:
-        //   This can not use til::rect, because til::rect is constrained to
-        //   positive coordinates only, but this one can go out of bounds.
+        //   This can not use til::rect, because til::rect generally expects positive coordinates only
+        //   (`operator!()` checks for negative values), whereas this one can go out of bounds,
+        //   whenever glyphs go out of bounds. `AtlasEngine::_present()` will clamp it.
         i32r dirtyRectInPx{};
         // In rows.
         range<u16> invalidatedRows{};
