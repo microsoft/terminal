@@ -171,12 +171,6 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
     std::thread t([weakThis, window]() {
         try
         {
-            auto decrementWindowCount = wil::scope_exit([&]() {
-                if (auto self{ weakThis.lock() })
-                {
-                    self->_decrementWindowCount();
-                }
-            });
             auto removeWindow = wil::scope_exit([&]() {
                 if (auto self{ weakThis.lock() })
                 {
@@ -192,6 +186,13 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
             }
             while (window->KeepWarm())
             {
+                auto decrementWindowCount = wil::scope_exit([&]() {
+                    if (auto self{ weakThis.lock() })
+                    {
+                        self->_decrementWindowCount();
+                    }
+                });
+
                 window->RunMessagePump();
 
                 // Manually trigger the cleanup callback. This will ensure that we
@@ -208,8 +209,6 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
                     auto fridge{ self->_oldThreads.lock() };
                     fridge->push_back(window);
                 }
-
-                // TODO! we never re-establish the decrementWindowCount handler for this thread. 
             }
 
             // Now that we no longer care about this thread's window, let it
