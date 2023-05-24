@@ -162,6 +162,10 @@ void AtlasEngine::_recreateAdapter()
 
 void AtlasEngine::_recreateBackend()
 {
+    // D3D11 defers the destruction of objects and only one swap chain can be associated with a
+    // HWND, IWindow, or composition surface at a time. --> Destroy it while we still have the old device.
+    _destroySwapChain();
+
     auto d2dMode = ATLAS_DEBUG_FORCE_D2D_MODE;
     auto deviceFlags =
         D3D11_CREATE_DEVICE_SINGLETHREADED
@@ -260,7 +264,6 @@ void AtlasEngine::_recreateBackend()
         d2dMode |= !options.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x;
     }
 
-    _p.swapChain = {};
     _p.device = std::move(device);
     _p.deviceContext = std::move(deviceContext);
 
@@ -285,18 +288,10 @@ void AtlasEngine::_handleSwapChainUpdate()
 {
     if (_p.swapChain.targetGeneration != _p.s->target.generation())
     {
-        if (_p.swapChain.swapChain)
-        {
-            _b->ReleaseResources();
-            _p.deviceContext->ClearState();
-            _p.deviceContext->Flush();
-        }
         _createSwapChain();
     }
     else if (_p.swapChain.targetSize != _p.s->targetSize)
     {
-        _b->ReleaseResources();
-        _p.deviceContext->ClearState();
         _resizeBuffers();
     }
 
@@ -312,8 +307,7 @@ static constexpr DXGI_SWAP_CHAIN_FLAG swapChainFlags = ATLAS_DEBUG_DISABLE_FRAME
 
 void AtlasEngine::_createSwapChain()
 {
-    _p.swapChain.swapChain.reset();
-    _p.swapChain.frameLatencyWaitableObject.reset();
+    _destroySwapChain();
 
     DXGI_SWAP_CHAIN_DESC1 desc{
         .Width = _p.s->targetSize.x,
@@ -361,7 +355,6 @@ void AtlasEngine::_createSwapChain()
     _p.swapChain.swapChain = swapChain1.query<IDXGISwapChain2>();
     _p.swapChain.frameLatencyWaitableObject.reset(_p.swapChain.swapChain->GetFrameLatencyWaitableObject());
     _p.swapChain.targetGeneration = _p.s->target.generation();
-    _p.swapChain.fontGeneration = {};
     _p.swapChain.targetSize = _p.s->targetSize;
     _p.swapChain.waitForPresentation = true;
 
@@ -377,8 +370,27 @@ void AtlasEngine::_createSwapChain()
     }
 }
 
+void AtlasEngine::_destroySwapChain()
+{
+    // D3D11 defers the destruction of objects and only one swap chain can be associated with a
+    // HWND, IWindow, or composition surface at a time. --> Force the destruction of all objects.
+    _p.swapChain = {};
+    if (_b)
+    {
+        _b->ReleaseResources();
+    }
+    if (_p.deviceContext)
+    {
+        _p.deviceContext->ClearState();
+        _p.deviceContext->Flush();
+    }
+}
+
 void AtlasEngine::_resizeBuffers()
 {
+    _b->ReleaseResources();
+    _p.deviceContext->ClearState();
+
     THROW_IF_FAILED(_p.swapChain.swapChain->ResizeBuffers(0, _p.s->targetSize.x, _p.s->targetSize.y, DXGI_FORMAT_UNKNOWN, swapChainFlags));
     _p.swapChain.targetSize = _p.s->targetSize;
 }
