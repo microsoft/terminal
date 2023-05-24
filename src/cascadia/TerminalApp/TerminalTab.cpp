@@ -907,24 +907,18 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_AttachEventHandlersToControl(const uint32_t paneId, const TermControl& control)
     {
-        auto weakThis{ get_weak() };
-        auto dispatcher = TabViewItem().Dispatcher();
         ControlEventTokens events{};
 
-        events.titleToken = control.TitleChanged({ weakThis, &TerminalTab::_controlTitleChanged });
-
-        events.colorToken = control.TabColorChanged({ weakThis, &TerminalTab::_controlTabColorChanged });
-
-        events.taskbarToken = control.SetTaskbarProgress({ weakThis, &TerminalTab::_controlSetTaskbarProgress });
-
-        events.readOnlyToken = control.ReadOnlyChanged({ weakThis, &TerminalTab::_controlReadOnlyChanged });
-
-        events.focusToken = control.FocusFollowMouseRequested({ weakThis, &TerminalTab::_controlFocusFollowMouseRequested });
+        events.titleToken = control.TitleChanged({ get_weak(), &TerminalTab::_controlTitleChanged });
+        events.colorToken = control.TabColorChanged({ get_weak(), &TerminalTab::_controlTabColorChanged });
+        events.taskbarToken = control.SetTaskbarProgress({ get_weak(), &TerminalTab::_controlSetTaskbarProgress });
+        events.readOnlyToken = control.ReadOnlyChanged({ get_weak(), &TerminalTab::_controlReadOnlyChanged });
+        events.focusToken = control.FocusFollowMouseRequested({ get_weak(), &TerminalTab::_controlFocusFollowMouseRequested });
 
         _controlEvents[paneId] = events;
     }
 
-    winrt::fire_and_forget TerminalTab::_controlTitleChanged(Windows::Foundation::IInspectable sender, Windows::Foundation::IInspectable e)
+    winrt::fire_and_forget TerminalTab::_controlTitleChanged(Windows::Foundation::IInspectable sender, Microsoft::Terminal::Control::TitleChangedEventArgs e)
     {
         auto weakThis{ get_weak() };
         auto dispatcher = TabViewItem().Dispatcher();
