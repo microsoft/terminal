@@ -37,6 +37,20 @@ WindowEmperor::WindowEmperor() noexcept :
     });
 
     _dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+
+    // BODGY
+    //
+    // There's a mysterious crash in XAML on Windows 10 if you just let the App
+    // get dtor'd. By all accounts, it doesn't make sense. To mitigate this, we
+    // need to intentionally leak a reference to our App. Crazily, if you just
+    // let the app get cleaned up with the rest of the process when the process
+    // exits, then it doesn't crash. But if you let it get explicitly dtor'd, it
+    // absolutely will crash on exit.
+    //
+    // GH#15410 has more details.
+
+    auto a{ _app };
+    ::winrt::detach_abi(a);
 }
 
 WindowEmperor::~WindowEmperor()
@@ -329,24 +343,6 @@ void WindowEmperor::_becomeMonarch()
     // We want at least some delay to prevent the first save from overwriting
     _getWindowLayoutThrottler.emplace(std::move(std::chrono::seconds(10)), std::move([this]() { _saveWindowLayoutsRepeat(); }));
     _getWindowLayoutThrottler.value()();
-
-    // BODGY
-    //
-    // We've got a weird crash that happens terribly inconsistently, but pretty
-    // readily on migrie's laptop, only in Debug mode. Apparently, there's some
-    // weird ref-counting magic that goes on during teardown, and our
-    // Application doesn't get closed quite right, which can cause us to crash
-    // into the debugger. This of course, only happens on exit, and happens
-    // somewhere in the XamlHost.dll code.
-    //
-    // Crazily, if we _manually leak the Application_ here, then the crash
-    // doesn't happen. This doesn't matter, because we really want the
-    // Application to live for _the entire lifetime of the process_, so the only
-    // time when this object would actually need to get cleaned up is _during
-    // exit_. So we can safely leak this Application object, and have it just
-    // get cleaned up normally when our process exits.
-    auto a{ _app };
-    ::winrt::detach_abi(a);
 }
 
 // sender and args are always nullptr
