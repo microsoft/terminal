@@ -472,6 +472,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void MainPage::OpenJsonFolderClicked(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+        
+            const auto target = SettingsTarget::SettingsFolder;
+            _OpenJsonHandlers(nullptr, target);
+        
+    }
     void MainPage::SaveButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _settingsClone.WriteSettingsToDisk();

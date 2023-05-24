@@ -1170,6 +1170,17 @@ winrt::hstring CascadiaSettings::SettingsPath()
     return winrt::hstring{ _settingsPath().native() };
 }
 
+// function Description:
+// Returns the full path where the settings.json file is located
+// Arguments:
+// - <none>
+// Return Value:
+// full path to settings folder
+winrt::hstring CascadiaSettings::SettingsFolderPath()
+{
+    return winrt::hstring{ GetBaseSettingsPath().native() };
+}
+
 bool CascadiaSettings::IsPortableMode()
 {
     return Model::IsPortableMode();

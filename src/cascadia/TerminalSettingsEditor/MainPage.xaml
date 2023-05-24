@@ -162,6 +162,16 @@
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE713;" />
                 </muxc:NavigationViewItem.Icon>
+                <muxc:NavigationViewItem.ContextFlyout>
+                    <MenuFlyout>
+                        <MenuFlyoutItem
+                                        x:Name="OpenJsonFolderNavItem"
+                                        Text="Open JSON folder"
+                                        ToolTipService.ToolTip="Open the folder holding your settings.json file."
+                                        Click="OpenJsonFolderClicked">
+                        </MenuFlyoutItem>
+                    </MenuFlyout>
+                </muxc:NavigationViewItem.ContextFlyout>
             </muxc:NavigationViewItem>
         </muxc:NavigationView.FooterMenuItems>
 
