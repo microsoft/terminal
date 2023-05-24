@@ -59,6 +59,25 @@ WindowEmperor::~WindowEmperor()
     _app = nullptr;
 }
 
+static bool IsWindows11()
+{
+    static const bool isWindows11 = []() {
+        OSVERSIONINFOEXW osver{};
+        osver.dwOSVersionInfoSize = sizeof(osver);
+        osver.dwBuildNumber = 22000;
+
+        DWORDLONG dwlConditionMask = 0;
+        VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+        if (VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE)
+        {
+            return true;
+        }
+        return false;
+    }();
+    return isWindows11;
+}
+
 void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
 {
     if (auto commandline{ GetCommandLineW() })
@@ -111,7 +130,8 @@ bool WindowEmperor::HandleCommandlineArgs()
 
     const auto result = _manager.ProposeCommandline(eventArgs, isolatedMode);
 
-    if (result.ShouldCreateWindow())
+    const bool makeWindow = result.ShouldCreateWindow();
+    if (makeWindow)
     {
         _createNewWindowThread(Remoting::WindowRequestedArgs{ result, eventArgs });
 
@@ -127,7 +147,7 @@ bool WindowEmperor::HandleCommandlineArgs()
         }
     }
 
-    return result.ShouldCreateWindow();
+    return makeWindow;
 }
 
 void WindowEmperor::WaitForWindows()
@@ -185,12 +205,6 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
     std::thread t([weakThis, window]() {
         try
         {
-            auto removeWindow = wil::scope_exit([&]() {
-                if (auto self{ weakThis.lock() })
-                {
-                    self->_removeWindow(window->PeasantID());
-                }
-            });
 
             window->CreateHost();
 
@@ -200,6 +214,23 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
             }
             while (window->KeepWarm())
             {
+                // Now that the window is ready to go, we can add it to our list of windows,
+                // because we know it will be well behaved.
+                //
+                // Be sure to only modify the list of windows under lock.
+
+                if (auto self{ weakThis.lock() })
+                {
+                    auto lockedWindows{ self->_windows.lock() };
+                    lockedWindows->push_back(window);
+                }
+                auto removeWindow = wil::scope_exit([&]() {
+                    if (auto self{ weakThis.lock() })
+                    {
+                        self->_removeWindow(window->PeasantID());
+                    }
+                });
+
                 auto decrementWindowCount = wil::scope_exit([&]() {
                     if (auto self{ weakThis.lock() })
                     {
@@ -215,13 +246,24 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
                 // elsewhere).
                 removeWindow.reset();
 
-                window->Refrigerate();
-                decrementWindowCount.reset();
+                // On Windows 11, we DONT want to refrigerate the window. There, we can just
+                // close it like normal.
+                // TODO!
 
-                if (auto self{ weakThis.lock() })
+                if (IsWindows11())
                 {
-                    auto fridge{ self->_oldThreads.lock() };
-                    fridge->push_back(window);
+                    decrementWindowCount.reset();
+                }
+                else
+                {
+                    window->Refrigerate();
+                    decrementWindowCount.reset();
+
+                    if (auto self{ weakThis.lock() })
+                    {
+                        auto fridge{ self->_oldThreads.lock() };
+                        fridge->push_back(window);
+                    }
                 }
             }
 
@@ -257,15 +299,6 @@ void WindowEmperor::_windowStartedHandlerPostXAML(const std::shared_ptr<WindowTh
     // the Terminal window, making it visible BEFORE the XAML island is actually
     // ready to be drawn. We want to wait till the app's Initialized event
     // before we make the window visible.
-
-    // Now that the window is ready to go, we can add it to our list of windows,
-    // because we know it will be well behaved.
-    //
-    // Be sure to only modify the list of windows under lock.
-    {
-        auto lockedWindows{ _windows.lock() };
-        lockedWindows->push_back(sender);
-    }
 }
 
 void WindowEmperor::_removeWindow(uint64_t senderID)
@@ -553,6 +586,15 @@ LRESULT WindowEmperor::_messageHandler(UINT const message, WPARAM const wParam, 
 
 winrt::fire_and_forget WindowEmperor::_close()
 {
+    {
+        auto fridge{ _oldThreads.lock() };
+        for (auto& window : *fridge)
+        {
+            window->ThrowAway();
+        }
+        fridge->clear();
+    }
+
     // Important! Switch back to the main thread for the emperor. That way, the
     // quit will go to the emperor's message pump.
     co_await wil::resume_foreground(_dispatcher);

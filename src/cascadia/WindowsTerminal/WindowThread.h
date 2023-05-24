@@ -22,6 +22,7 @@ public:
     void Microwave(
         winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
         winrt::Microsoft::Terminal::Remoting::Peasant peasant);
+    void ThrowAway();
 
     uint64_t PeasantID();
 
@@ -42,4 +43,5 @@ private:
     std::condition_variable _microwaveBuzzer;
 
     int _messagePump();
+    void _pumpRemainingXamlMessages();
 };
