@@ -42,6 +42,46 @@ IslandWindow::~IslandWindow()
 
 void IslandWindow::Close()
 {
+    static const bool isWindows11 = []() {
+        OSVERSIONINFOEXW osver{};
+        osver.dwOSVersionInfoSize = sizeof(osver);
+        osver.dwBuildNumber = 22000;
+
+        DWORDLONG dwlConditionMask = 0;
+        VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+        if (VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE)
+        {
+            return true;
+        }
+        return false;
+    }();
+
+    if (!isWindows11)
+    {
+        // BODGY
+        //  ____   ____  _____   _______     __
+        // |  _ \ / __ \|  __ \ / ____\ \   / /
+        // | |_) | |  | | |  | | |  __ \ \_/ /
+        // |  _ <| |  | | |  | | | |_ | \   /
+        // | |_) | |__| | |__| | |__| |  | |
+        // |____/ \____/|_____/ \_____|  |_|
+        //
+        // There's a bug in Windows 10 where closing a DesktopWindowXamlSource
+        // on any thread will free an internal static resource that's used by
+        // XAML for the entire process. This would result in closing window
+        // essentially causing the entire app to crash.
+        //
+        // To avoid this, leak the XAML island. We only need to leak this on
+        // Windows 10, since the bug is fixed in Windows 11.
+        //
+        // See GH #15384, MSFT:32109540
+        auto a{ _source };
+        winrt::detach_abi(_source);
+
+        // </BODGY>
+    }
+
     if (_source)
     {
         _source.Close();
