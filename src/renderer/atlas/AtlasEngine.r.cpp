@@ -334,6 +334,7 @@ void AtlasEngine::_createSwapChain()
     };
 
     wil::com_ptr<IDXGISwapChain1> swapChain1;
+    wil::unique_handle handle;
 
     if (_p.s->target->hwnd)
     {
@@ -348,11 +349,12 @@ void AtlasEngine::_createSwapChain()
 
         // As per: https://docs.microsoft.com/en-us/windows/win32/api/dcomp/nf-dcomp-dcompositioncreatesurfacehandle
         static constexpr DWORD COMPOSITIONSURFACE_ALL_ACCESS = 0x0003L;
-        THROW_IF_FAILED(DCompositionCreateSurfaceHandle(COMPOSITIONSURFACE_ALL_ACCESS, nullptr, _p.swapChain.handle.addressof()));
-        THROW_IF_FAILED(_p.dxgi.factory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(_p.device.get(), _p.swapChain.handle.get(), &desc, nullptr, swapChain1.addressof()));
+        THROW_IF_FAILED(DCompositionCreateSurfaceHandle(COMPOSITIONSURFACE_ALL_ACCESS, nullptr, handle.addressof()));
+        THROW_IF_FAILED(_p.dxgi.factory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(_p.device.get(), handle.get(), &desc, nullptr, swapChain1.addressof()));
     }
 
     _p.swapChain.swapChain = swapChain1.query<IDXGISwapChain2>();
+    _p.swapChain.handle = std::move(handle);
     _p.swapChain.frameLatencyWaitableObject.reset(_p.swapChain.swapChain->GetFrameLatencyWaitableObject());
     _p.swapChain.targetGeneration = _p.s->target.generation();
     _p.swapChain.targetSize = _p.s->targetSize;
@@ -372,17 +374,20 @@ void AtlasEngine::_createSwapChain()
 
 void AtlasEngine::_destroySwapChain()
 {
-    // D3D11 defers the destruction of objects and only one swap chain can be associated with a
-    // HWND, IWindow, or composition surface at a time. --> Force the destruction of all objects.
-    _p.swapChain = {};
-    if (_b)
+    if (_p.swapChain.swapChain)
     {
-        _b->ReleaseResources();
-    }
-    if (_p.deviceContext)
-    {
-        _p.deviceContext->ClearState();
-        _p.deviceContext->Flush();
+        // D3D11 defers the destruction of objects and only one swap chain can be associated with a
+        // HWND, IWindow, or composition surface at a time. --> Force the destruction of all objects.
+        _p.swapChain = {};
+        if (_b)
+        {
+            _b->ReleaseResources();
+        }
+        if (_p.deviceContext)
+        {
+            _p.deviceContext->ClearState();
+            _p.deviceContext->Flush();
+        }
     }
 }
 
