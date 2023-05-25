@@ -1163,7 +1163,7 @@ void AppHost::_updateFrameColor(const winrt::Windows::Foundation::IInspectable&,
 
     // Helper for converting a hue [0, 1) to an RGB value.
     // Credit to https://www.chilliant.com/rgb2hsv.html
-    static const auto HUEtoRGB = [&](const float H) -> til::color {
+    static const auto hueToRGB = [&](const float H) -> til::color {
         float R = abs(H * 6 - 3) - 1;
         float G = 2 - abs(H * 6 - 2);
         float B = 2 - abs(H * 6 - 4);
@@ -1178,7 +1178,7 @@ void AppHost::_updateFrameColor(const winrt::Windows::Foundation::IInspectable&,
     const std::chrono::duration<float> delta{ now - _started };
     const auto millis = delta.count() / 4; // divide by four, to make the effect slower. Otherwise it flashes way to fast.
 
-    const auto color = HUEtoRGB(fmod_1(millis));
+    const auto color = hueToRGB(fmod_1(millis));
     // Don't log this one. If it failed, chances are so will the next one, and
     // we really don't want to just log 60x/s
     _frameColorHelper(_window->GetHandle(), color);
@@ -1333,11 +1333,6 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
     }
     else if (e.PropertyName() == L"FrameBrush")
     {
-        // if (_useNonClientArea)
-        // {
-        //     auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
-        //     nonClientWindow->SetTitlebarBackground(_windowLogic.TitlebarBrush());
-        // }
         _updateTheme();
     }
 }
