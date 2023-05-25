@@ -166,12 +166,6 @@ namespace winrt::TerminalApp::implementation
         void _AttachEventHandlersToControl(const uint32_t paneId, const winrt::Microsoft::Terminal::Control::TermControl& control);
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
 
-        winrt::fire_and_forget _controlTitleChanged(Windows::Foundation::IInspectable sender, Microsoft::Terminal::Control::TitleChangedEventArgs e);
-        winrt::fire_and_forget _controlTabColorChanged(Windows::Foundation::IInspectable sender, Windows::Foundation::IInspectable e);
-        winrt::fire_and_forget _controlSetTaskbarProgress(Windows::Foundation::IInspectable sender, Windows::Foundation::IInspectable e);
-        winrt::fire_and_forget _controlReadOnlyChanged(Windows::Foundation::IInspectable sender, Windows::Foundation::IInspectable e);
-        winrt::fire_and_forget _controlFocusFollowMouseRequested(Windows::Foundation::IInspectable sender, Windows::Foundation::IInspectable e);
-
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
 
         winrt::hstring _GetActiveTitle() const;

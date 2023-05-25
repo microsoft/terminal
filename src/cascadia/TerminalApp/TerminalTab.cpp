@@ -907,77 +907,64 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_AttachEventHandlersToControl(const uint32_t paneId, const TermControl& control)
     {
+        auto weakThis{ get_weak() };
+        auto dispatcher = TabViewItem().Dispatcher();
         ControlEventTokens events{};
 
-        events.titleToken = control.TitleChanged({ get_weak(), &TerminalTab::_controlTitleChanged });
-        events.colorToken = control.TabColorChanged({ get_weak(), &TerminalTab::_controlTabColorChanged });
-        events.taskbarToken = control.SetTaskbarProgress({ get_weak(), &TerminalTab::_controlSetTaskbarProgress });
-        events.readOnlyToken = control.ReadOnlyChanged({ get_weak(), &TerminalTab::_controlReadOnlyChanged });
-        events.focusToken = control.FocusFollowMouseRequested({ get_weak(), &TerminalTab::_controlFocusFollowMouseRequested });
-
-        _controlEvents[paneId] = events;
-    }
-
-    winrt::fire_and_forget TerminalTab::_controlTitleChanged(Windows::Foundation::IInspectable sender, Microsoft::Terminal::Control::TitleChangedEventArgs e)
-    {
-        auto weakThis{ get_weak() };
-        auto dispatcher = TabViewItem().Dispatcher();
-        co_await wil::resume_foreground(dispatcher);
-        if (auto tab{ weakThis.get() })
-        {
-            // The title of the control changed, but not necessarily the title of the tab.
-            // Set the tab's text to the active panes' text.
-            tab->UpdateTitle();
-        }
-    }
-    winrt::fire_and_forget TerminalTab::_controlTabColorChanged(Windows::Foundation::IInspectable sender, Windows::Foundation::IInspectable e)
-    {
-        auto weakThis{ get_weak() };
-        auto dispatcher = TabViewItem().Dispatcher();
-        co_await wil::resume_foreground(dispatcher);
-        if (auto tab{ weakThis.get() })
-        {
-            // The control's tabColor changed, but it is not necessarily the
-            // active control in this tab. We'll just recalculate the
-            // current color anyways.
-            tab->_RecalculateAndApplyTabColor();
-        }
-    }
-    winrt::fire_and_forget TerminalTab::_controlSetTaskbarProgress(Windows::Foundation::IInspectable sender, Windows::Foundation::IInspectable e)
-    {
-        auto weakThis{ get_weak() };
-        auto dispatcher = TabViewItem().Dispatcher();
-        co_await wil::resume_foreground(dispatcher);
-        if (auto tab{ weakThis.get() })
-        {
-            tab->_UpdateProgressState();
-        }
-    }
-    winrt::fire_and_forget TerminalTab::_controlReadOnlyChanged(Windows::Foundation::IInspectable sender, Windows::Foundation::IInspectable e)
-    {
-        auto weakThis{ get_weak() };
-        auto dispatcher = TabViewItem().Dispatcher();
-        co_await wil::resume_foreground(dispatcher);
-        if (auto tab{ weakThis.get() })
-        {
-            tab->_RecalculateAndApplyReadOnly();
-        }
-    }
-    winrt::fire_and_forget TerminalTab::_controlFocusFollowMouseRequested(Windows::Foundation::IInspectable sender, Windows::Foundation::IInspectable e)
-    {
-        auto weakThis{ get_weak() };
-        auto dispatcher = TabViewItem().Dispatcher();
-        co_await wil::resume_foreground(dispatcher);
-        if (auto tab{ weakThis.get() })
-        {
-            if (tab->_focusState != FocusState::Unfocused)
+        events.titleToken = control.TitleChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+            co_await wil::resume_foreground(dispatcher);
+            // Check if Tab's lifetime has expired
+            if (auto tab{ weakThis.get() })
             {
-                if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
+                // The title of the control changed, but not necessarily the title of the tab.
+                // Set the tab's text to the active panes' text.
+                tab->UpdateTitle();
+            }
+        });
+
+        events.colorToken = control.TabColorChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+            co_await wil::resume_foreground(dispatcher);
+            if (auto tab{ weakThis.get() })
+            {
+                // The control's tabColor changed, but it is not necessarily the
+                // active control in this tab. We'll just recalculate the
+                // current color anyways.
+                tab->_RecalculateAndApplyTabColor();
+            }
+        });
+
+        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+            co_await wil::resume_foreground(dispatcher);
+            // Check if Tab's lifetime has expired
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_UpdateProgressState();
+            }
+        });
+
+        events.readOnlyToken = control.ReadOnlyChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+            co_await wil::resume_foreground(dispatcher);
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_RecalculateAndApplyReadOnly();
+            }
+        });
+
+        events.focusToken = control.FocusFollowMouseRequested([dispatcher, weakThis](auto sender, auto) -> winrt::fire_and_forget {
+            co_await wil::resume_foreground(dispatcher);
+            if (const auto tab{ weakThis.get() })
+            {
+                if (tab->_focusState != FocusState::Unfocused)
                 {
-                    termControl.Focus(FocusState::Pointer);
+                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
+                    {
+                        termControl.Focus(FocusState::Pointer);
+                    }
                 }
             }
-        }
+        });
+
+        _controlEvents[paneId] = events;
     }
 
     // Method Description:
