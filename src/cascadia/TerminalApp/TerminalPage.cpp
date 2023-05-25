@@ -4495,7 +4495,8 @@ namespace winrt::TerminalApp::implementation
         // inactive tabs as well, but we're leaving that as a follow up.
         _SetNewTabButtonColor(bgColor, bgColor);
 
-        // Third: the window frame:
+        // Third: the window frame. This is basically the same logic as the tab row background.
+        // We'll set our `FrameBrush` property, for the window to later use.
         const auto windowTheme{ theme.Window() };
         if (auto windowFrame{ windowTheme ? (_activated ? windowTheme.Frame() :
                                                           windowTheme.UnfocusedFrame()) :
@@ -4506,7 +4507,8 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            // Nothing was set in the theme - fall back to TODO!
+            // Nothing was set in the theme - fall back to null. The window will
+            // use that as an indication to use the default window frame.
             FrameBrush(nullptr);
         }
     }

@@ -28,7 +28,7 @@ using namespace std::chrono_literals;
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
 static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 
-constexpr const auto FrameUpdateInterval = std::chrono::milliseconds(8);
+constexpr const auto FrameUpdateInterval = std::chrono::milliseconds(16);
 
 AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
                  winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
@@ -1050,12 +1050,14 @@ void AppHost::_updateTheme()
 
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
+    const auto windowTheme{ theme.Window() };
+
     const auto b = _windowLogic.TitlebarBrush();
     const auto color = ThemeColor::ColorFromBrush(b);
     const auto colorOpacity = b ? color.A / 255.0 : 0.0;
     const auto brushOpacity = _opacityFromBrush(b);
     const auto opacity = std::min(colorOpacity, brushOpacity);
-    _window->UseMica(theme.Window() ? theme.Window().UseMica() : false, opacity);
+    _window->UseMica(windowTheme ? windowTheme.UseMica() : false, opacity);
 
     // This is a hack to make the window borders dark instead of light.
     // It must be done before WM_NCPAINT so that the borders are rendered with
@@ -1063,7 +1065,12 @@ void AppHost::_updateTheme()
     // For more information, see GH#6620.
     LOG_IF_FAILED(TerminalTrySetDarkTheme(_window->GetHandle(), _isActuallyDarkTheme(theme.RequestedTheme())));
 
-    if (const auto windowTheme{ theme.Window() })
+    // Update the window frame. If `rainbowFrame:true` is enabled, then that
+    // will be used. Otherwise we'll try to use the `FrameBrush` set in the
+    // terminal window, as that will have the right color for the ThemeColor for
+    // this setting. If that value is null, then revert to the default frame
+    // color.
+    if (windowTheme)
     {
         if (windowTheme.RainbowFrame())
         {
@@ -1079,6 +1086,7 @@ void AppHost::_updateTheme()
         else
         {
             _stopFrameTimer();
+            // DWMWA_COLOR_DEFAULT is the magic "reset to the default" value
             COLORREF defaultColor{ DWMWA_COLOR_DEFAULT };
             LOG_IF_FAILED(DwmSetWindowAttribute(_window->GetHandle(), DWMWA_BORDER_COLOR, &defaultColor, sizeof(color)));
         }
@@ -1087,6 +1095,11 @@ void AppHost::_updateTheme()
 
 void AppHost::_startFrameTimer()
 {
+    // Instantiate the frame color timer, if we haven't already. We'll only ever
+    // create one instance of this. We'll set up the callback for the timers as
+    // _updateFrameColor, which will actually handle setting the colors. If we
+    // already have a timer, just start that one.
+
     if (_frameTimer == nullptr)
     {
         _frameTimer = winrt::Windows::UI::Xaml::DispatcherTimer();
@@ -1095,6 +1108,7 @@ void AppHost::_startFrameTimer()
     }
     _frameTimer.Start();
 }
+
 void AppHost::_stopFrameTimer()
 {
     if (_frameTimer)
@@ -1102,6 +1116,10 @@ void AppHost::_stopFrameTimer()
         _frameTimer.Stop();
     }
 }
+
+// Method Description:
+// - Updates the color of the window frame to cycle through all the colors. This
+//   is called as the `_frameTimer` Tick callback, roughly 60 times per second.
 void AppHost::_updateFrameColor(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&)
 {
     // First, a couple helper functions:
@@ -1131,13 +1149,15 @@ void AppHost::_updateFrameColor(const winrt::Windows::Foundation::IInspectable&,
     // - Convert the time delta between when we were started and now, to a hue. This will cycle us through all the colors.
     // - Convert that hue to an RGB value.
     // - Set the frame's color to that RGB color.
-    auto now = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<float> delta{ now - _started };
-    auto millis = delta.count() / 4;
+    const auto now = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<float> delta{ now - _started };
+    const auto millis = delta.count() / 4; // divide by four, to make the effect slower. Otherwise it flashes way to fast.
 
-    auto color = HUEtoRGB(fmod_1(millis));
-    COLORREF ref{ color };
-    LOG_IF_FAILED(DwmSetWindowAttribute(_window->GetHandle(), DWMWA_BORDER_COLOR, &ref, sizeof(color)));
+    const auto color = HUEtoRGB(fmod_1(millis));
+    const COLORREF ref{ color };
+    // Don't log this one. If it failed, chances are so will the next one, and
+    // we really don't want to just log 60x/s
+    DwmSetWindowAttribute(_window->GetHandle(), DWMWA_BORDER_COLOR, &ref, sizeof(color));
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
