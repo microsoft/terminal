@@ -1044,6 +1044,32 @@ static bool _isActuallyDarkTheme(const auto requestedTheme)
     }
 }
 
+// DwmSetWindowAttribute(... DWMWA_BORDER_COLOR.. ) doesn't work on Windows 10,
+// but it _will_ spew to the debug console. This helper just no-ops the call on
+// Windows 10, so that we don't even get that spew
+void _frameColorHelper(const HWND h, const COLORREF color)
+{
+    static const bool isWindows11 = []() {
+        OSVERSIONINFOEXW osver{};
+        osver.dwOSVersionInfoSize = sizeof(osver);
+        osver.dwBuildNumber = 22000;
+
+        DWORDLONG dwlConditionMask = 0;
+        VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+        if (VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE)
+        {
+            return true;
+        }
+        return false;
+    }();
+
+    if (isWindows11)
+    {
+        LOG_IF_FAILED(DwmSetWindowAttribute(h, DWMWA_BORDER_COLOR, &color, sizeof(color)));
+    }
+}
+
 void AppHost::_updateTheme()
 {
     auto theme = _appLogic.Theme();
@@ -1081,14 +1107,13 @@ void AppHost::_updateTheme()
             _stopFrameTimer();
             const auto color = ThemeColor::ColorFromBrush(b);
             COLORREF ref{ til::color{ color } };
-            LOG_IF_FAILED(DwmSetWindowAttribute(_window->GetHandle(), DWMWA_BORDER_COLOR, &ref, sizeof(color)));
+            _frameColorHelper(_window->GetHandle(), ref);
         }
         else
         {
             _stopFrameTimer();
             // DWMWA_COLOR_DEFAULT is the magic "reset to the default" value
-            COLORREF defaultColor{ DWMWA_COLOR_DEFAULT };
-            LOG_IF_FAILED(DwmSetWindowAttribute(_window->GetHandle(), DWMWA_BORDER_COLOR, &defaultColor, sizeof(color)));
+            _frameColorHelper(_window->GetHandle(), DWMWA_COLOR_DEFAULT);
         }
     }
 }
@@ -1154,10 +1179,9 @@ void AppHost::_updateFrameColor(const winrt::Windows::Foundation::IInspectable&,
     const auto millis = delta.count() / 4; // divide by four, to make the effect slower. Otherwise it flashes way to fast.
 
     const auto color = HUEtoRGB(fmod_1(millis));
-    const COLORREF ref{ color };
     // Don't log this one. If it failed, chances are so will the next one, and
     // we really don't want to just log 60x/s
-    DwmSetWindowAttribute(_window->GetHandle(), DWMWA_BORDER_COLOR, &ref, sizeof(color));
+    _frameColorHelper(_window->GetHandle(), color);
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
