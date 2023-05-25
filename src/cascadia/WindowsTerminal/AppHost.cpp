@@ -38,6 +38,8 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     _peasant{ peasant },
     _desktopManager{ winrt::try_create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager)) }
 {
+    _started = std::chrono::high_resolution_clock::now();
+
     _HandleCommandlineArgs(args);
 
     _HandleSessionRestore(!args.Content().empty());
@@ -1054,6 +1056,51 @@ void AppHost::_updateTheme()
     // the correct theme.
     // For more information, see GH#6620.
     LOG_IF_FAILED(TerminalTrySetDarkTheme(_window->GetHandle(), _isActuallyDarkTheme(theme.RequestedTheme())));
+
+    if (const auto windowTheme{ theme.Window() })
+    {
+        if (windowTheme.RainbowFrame())
+        {
+            auto fmod_1 = [](const float x) -> float {
+                float integer = floor(x);
+                return x - integer;
+            };
+
+            auto saturateAndToColor = [](const float a, const float b, const float c) -> til::color {
+                return til::color{
+                    base::saturated_cast<uint8_t>(255.f * std::clamp(a, 0.f, 1.f)),
+                    base::saturated_cast<uint8_t>(255.f * std::clamp(b, 0.f, 1.f)),
+                    base::saturated_cast<uint8_t>(255.f * std::clamp(c, 0.f, 1.f))
+                };
+            };
+
+            // Helper for converting a hue [0, 1) to an RGB value.
+            // Credit to https://www.chilliant.com/rgb2hsv.html
+            auto HUEtoRGB = [&](const float H) -> til::color {
+                float R = abs(H * 6 - 3) - 1;
+                float G = 2 - abs(H * 6 - 2);
+                float B = 2 - abs(H * 6 - 4);
+                return saturateAndToColor(R, G, B);
+            };
+            auto now = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<float> delta{ now - _started };
+            auto millis = delta.count();
+
+            auto color = HUEtoRGB(fmod_1(millis));
+            COLORREF ref{ color };
+            LOG_IF_FAILED(DwmSetWindowAttribute(_window->GetHandle(), DWMWA_BORDER_COLOR, &ref, sizeof(color)));
+        }
+        else if (const auto b{ _windowLogic.FrameBrush() })
+        {
+            const auto color = ThemeColor::ColorFromBrush(b);
+            COLORREF ref{ til::color{ color } };
+            LOG_IF_FAILED(DwmSetWindowAttribute(_window->GetHandle(), DWMWA_BORDER_COLOR, &ref, sizeof(color)));
+        }
+        else
+        {
+            LOG_IF_FAILED(DwmSetWindowAttribute(_window->GetHandle(), DWMWA_BORDER_COLOR, nullptr, sizeof(color)));
+        }
+    }
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
@@ -1202,6 +1249,15 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
             nonClientWindow->SetTitlebarBackground(_windowLogic.TitlebarBrush());
             _updateTheme();
         }
+    }
+    else if (e.PropertyName() == L"FrameBrush")
+    {
+        // if (_useNonClientArea)
+        // {
+        //     auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
+        //     nonClientWindow->SetTitlebarBackground(_windowLogic.TitlebarBrush());
+        // }
+        _updateTheme();
     }
 }
 

@@ -50,6 +50,7 @@ private:
     winrt::Microsoft::Terminal::Settings::Model::LaunchMode _launchMode{};
 
     std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;
+    std::chrono::time_point<std::chrono::steady_clock> _started;
 
     uint32_t _launchShowWindowCommand{ SW_NORMAL };
 

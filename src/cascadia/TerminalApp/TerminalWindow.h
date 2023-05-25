@@ -127,7 +127,8 @@ namespace winrt::TerminalApp::implementation
         void WindowVisibilityChanged(const bool showOrHide);
 
         winrt::TerminalApp::TaskbarState TaskbarState();
-        winrt::Windows::UI::Xaml::Media::Brush TitlebarBrush();
+        winrt::Windows::UI::Xaml::Media::Brush TitlebarBrush() { return _root ? _root->TitlebarBrush() : nullptr; }
+        winrt::Windows::UI::Xaml::Media::Brush FrameBrush() { return _root ? _root->FrameBrush() : nullptr; }
         void WindowActivated(const bool activated);
 
         bool GetMinimizeToNotificationArea();

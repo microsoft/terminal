@@ -942,14 +942,6 @@ namespace winrt::TerminalApp::implementation
         return {};
     }
 
-    winrt::Windows::UI::Xaml::Media::Brush TerminalWindow::TitlebarBrush()
-    {
-        if (_root)
-        {
-            return _root->TitlebarBrush();
-        }
-        return { nullptr };
-    }
     void TerminalWindow::WindowActivated(const bool activated)
     {
         if (_root)
