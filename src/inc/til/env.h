@@ -315,8 +315,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                             {
                                 bool isPathVar = is_path_var(valueName);
 
-                                // On some systems we've seen that the Path variable is REG_SZ instead
-                                // of REG_EXPAND_SZ. We should always treat it as REG_EXPAND_SZ.
+                                // On some systems we've seen variables that are REG_SZ instead
+                                // of REG_EXPAND_SZ. We should always treat them as REG_EXPAND_SZ.
                                 if (isPathVar && type == REG_SZ)
                                 {
                                     type = REG_EXPAND_SZ;
