@@ -946,7 +946,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.focusToken = control.FocusFollowMouseRequested([dispatcher, weakThis](auto&& sender, auto&&) -> winrt::fire_and_forget {
+        events.focusToken = control.FocusFollowMouseRequested([dispatcher, weakThis](auto sender, auto) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             if (const auto tab{ weakThis.get() })
             {
