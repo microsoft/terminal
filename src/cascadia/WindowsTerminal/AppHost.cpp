@@ -28,6 +28,8 @@ using namespace std::chrono_literals;
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
 static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 
+constexpr const auto FrameUpdateInterval = std::chrono::milliseconds(8);
+
 AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
                  winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
                  const Remoting::WindowManager& manager,
@@ -421,6 +423,10 @@ void AppHost::Close()
     // After calling _window->Close() we should avoid creating more WinUI related actions.
     // I suspect WinUI wouldn't like that very much. As such unregister all event handlers first.
     _revokers = {};
+    if (_frameTimer)
+    {
+        _frameTimer.Tick(_frameTimerToken);
+    }
     _showHideWindowThrottler.reset();
     _window->Close();
 
@@ -1061,46 +1067,77 @@ void AppHost::_updateTheme()
     {
         if (windowTheme.RainbowFrame())
         {
-            auto fmod_1 = [](const float x) -> float {
-                float integer = floor(x);
-                return x - integer;
-            };
-
-            auto saturateAndToColor = [](const float a, const float b, const float c) -> til::color {
-                return til::color{
-                    base::saturated_cast<uint8_t>(255.f * std::clamp(a, 0.f, 1.f)),
-                    base::saturated_cast<uint8_t>(255.f * std::clamp(b, 0.f, 1.f)),
-                    base::saturated_cast<uint8_t>(255.f * std::clamp(c, 0.f, 1.f))
-                };
-            };
-
-            // Helper for converting a hue [0, 1) to an RGB value.
-            // Credit to https://www.chilliant.com/rgb2hsv.html
-            auto HUEtoRGB = [&](const float H) -> til::color {
-                float R = abs(H * 6 - 3) - 1;
-                float G = 2 - abs(H * 6 - 2);
-                float B = 2 - abs(H * 6 - 4);
-                return saturateAndToColor(R, G, B);
-            };
-            auto now = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<float> delta{ now - _started };
-            auto millis = delta.count();
-
-            auto color = HUEtoRGB(fmod_1(millis));
-            COLORREF ref{ color };
-            LOG_IF_FAILED(DwmSetWindowAttribute(_window->GetHandle(), DWMWA_BORDER_COLOR, &ref, sizeof(color)));
+            _startFrameTimer();
         }
         else if (const auto b{ _windowLogic.FrameBrush() })
         {
+            _stopFrameTimer();
             const auto color = ThemeColor::ColorFromBrush(b);
             COLORREF ref{ til::color{ color } };
             LOG_IF_FAILED(DwmSetWindowAttribute(_window->GetHandle(), DWMWA_BORDER_COLOR, &ref, sizeof(color)));
         }
         else
         {
-            LOG_IF_FAILED(DwmSetWindowAttribute(_window->GetHandle(), DWMWA_BORDER_COLOR, nullptr, sizeof(color)));
+            _stopFrameTimer();
+            COLORREF defaultColor{ DWMWA_COLOR_DEFAULT };
+            LOG_IF_FAILED(DwmSetWindowAttribute(_window->GetHandle(), DWMWA_BORDER_COLOR, &defaultColor, sizeof(color)));
         }
     }
+}
+
+void AppHost::_startFrameTimer()
+{
+    if (_frameTimer == nullptr)
+    {
+        _frameTimer = winrt::Windows::UI::Xaml::DispatcherTimer();
+        _frameTimer.Interval(FrameUpdateInterval);
+        _frameTimerToken = _frameTimer.Tick({ this, &AppHost::_updateFrameColor });
+    }
+    _frameTimer.Start();
+}
+void AppHost::_stopFrameTimer()
+{
+    if (_frameTimer)
+    {
+        _frameTimer.Stop();
+    }
+}
+void AppHost::_updateFrameColor(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&)
+{
+    // First, a couple helper functions:
+    static const auto fmod_1 = [](const float x) -> float {
+        float integer = floor(x);
+        return x - integer;
+    };
+
+    static const auto saturateAndToColor = [](const float a, const float b, const float c) -> til::color {
+        return til::color{
+            base::saturated_cast<uint8_t>(255.f * std::clamp(a, 0.f, 1.f)),
+            base::saturated_cast<uint8_t>(255.f * std::clamp(b, 0.f, 1.f)),
+            base::saturated_cast<uint8_t>(255.f * std::clamp(c, 0.f, 1.f))
+        };
+    };
+
+    // Helper for converting a hue [0, 1) to an RGB value.
+    // Credit to https://www.chilliant.com/rgb2hsv.html
+    static const auto HUEtoRGB = [&](const float H) -> til::color {
+        float R = abs(H * 6 - 3) - 1;
+        float G = 2 - abs(H * 6 - 2);
+        float B = 2 - abs(H * 6 - 4);
+        return saturateAndToColor(R, G, B);
+    };
+
+    // Now, the main body of work.
+    // - Convert the time delta between when we were started and now, to a hue. This will cycle us through all the colors.
+    // - Convert that hue to an RGB value.
+    // - Set the frame's color to that RGB color.
+    auto now = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<float> delta{ now - _started };
+    auto millis = delta.count() / 4;
+
+    auto color = HUEtoRGB(fmod_1(millis));
+    COLORREF ref{ color };
+    LOG_IF_FAILED(DwmSetWindowAttribute(_window->GetHandle(), DWMWA_BORDER_COLOR, &ref, sizeof(color)));
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,

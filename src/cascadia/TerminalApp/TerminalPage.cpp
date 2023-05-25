@@ -4490,14 +4490,18 @@ namespace winrt::TerminalApp::implementation
                 tabImpl->ThemeColor(tabBackground, tabUnfocusedBackground, bgColor);
             }
         }
+        // Update the new tab button to have better contrast with the new color.
+        // In theory, it would be convenient to also change these for the
+        // inactive tabs as well, but we're leaving that as a follow up.
+        _SetNewTabButtonColor(bgColor, bgColor);
 
         // Third: the window frame:
-        if (auto windowFrame{ theme.Window() ? (_activated ? theme.Window().Frame() :
-                                                             theme.Window().UnfocusedFrame()) :
-                                               ThemeColor{ nullptr } })
+        const auto windowTheme{ theme.Window() };
+        if (auto windowFrame{ windowTheme ? (_activated ? windowTheme.Frame() :
+                                                          windowTheme.UnfocusedFrame()) :
+                                            ThemeColor{ nullptr } })
         {
             const auto themeBrush{ windowFrame.Evaluate(res, terminalBrush, true) };
-            bgColor = ThemeColor::ColorFromBrush(themeBrush);
             FrameBrush(themeBrush);
         }
         else
@@ -4505,11 +4509,6 @@ namespace winrt::TerminalApp::implementation
             // Nothing was set in the theme - fall back to TODO!
             FrameBrush(nullptr);
         }
-
-        // Update the new tab button to have better contrast with the new color.
-        // In theory, it would be convenient to also change these for the
-        // inactive tabs as well, but we're leaving that as a follow up.
-        _SetNewTabButtonColor(bgColor, bgColor);
     }
 
     // Function Description:
