@@ -627,7 +627,8 @@ void BackendD2D::_debugShowDirty(const RenderingPayload& p)
 
     for (size_t i = 0; i < std::size(_presentRects); ++i)
     {
-        if (const auto& rect = _presentRects[i])
+        const auto& rect = _presentRects[(_presentRectsPos + i) % std::size(_presentRects)];
+        if (rect.non_empty())
         {
             const D2D1_RECT_F rectF{
                 static_cast<f32>(rect.left),

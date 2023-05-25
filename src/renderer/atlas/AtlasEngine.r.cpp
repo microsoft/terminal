@@ -415,31 +415,32 @@ void AtlasEngine::_waitUntilCanRender() noexcept
 
 void AtlasEngine::_present()
 {
-    // Present1() dislikes being called with an empty dirty rect.
-    if (!_p.dirtyRectInPx)
-    {
-        return;
-    }
-
-    const til::rect fullRect{ 0, 0, _p.swapChain.targetSize.x, _p.swapChain.targetSize.y };
+    const RECT fullRect{ 0, 0, _p.swapChain.targetSize.x, _p.swapChain.targetSize.y };
 
     DXGI_PRESENT_PARAMETERS params{};
     RECT scrollRect{};
     POINT scrollOffset{};
 
     // Since rows might be taller than their cells, they might have drawn outside of the viewport.
-    auto dirtyRect = _p.dirtyRectInPx;
-    dirtyRect.left = std::max(dirtyRect.left, 0);
-    dirtyRect.top = std::max(dirtyRect.top, 0);
-    dirtyRect.right = std::min(dirtyRect.right, fullRect.right);
-    dirtyRect.bottom = std::min(dirtyRect.bottom, fullRect.bottom);
+    RECT dirtyRect{
+        .left = std::max(_p.dirtyRectInPx.left, 0),
+        .top = std::max(_p.dirtyRectInPx.top, 0),
+        .right = std::min<LONG>(_p.dirtyRectInPx.right, fullRect.right),
+        .bottom = std::min<LONG>(_p.dirtyRectInPx.bottom, fullRect.bottom),
+    };
+
+    // Present1() dislikes being called with an empty dirty rect.
+    if (dirtyRect.left >= dirtyRect.right || dirtyRect.top >= dirtyRect.bottom)
+    {
+        return;
+    }
 
     if constexpr (!ATLAS_DEBUG_SHOW_DIRTY)
     {
-        if (dirtyRect != fullRect)
+        if (memcmp(&dirtyRect, &fullRect, sizeof(RECT)) != 0)
         {
             params.DirtyRectsCount = 1;
-            params.pDirtyRects = dirtyRect.as_win32_rect();
+            params.pDirtyRects = &dirtyRect;
 
             if (_p.scrollOffset)
             {
