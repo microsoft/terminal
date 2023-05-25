@@ -313,6 +313,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                             if (valueNameSize)
                             {
+                                bool isPathVar = is_path_var(valueName);
+
+                                // On some systems we've seen that the Path variable is REG_SZ instead
+                                // of REG_EXPAND_SZ. We should always treat it as REG_EXPAND_SZ.
+                                if (isPathVar && type == REG_SZ)
+                                {
+                                    type = REG_EXPAND_SZ;
+                                }
+
                                 std::wstring data;
                                 if (pass == 0 && (type == REG_SZ) && valueDataSize >= sizeof(wchar_t))
                                 {
@@ -335,7 +344,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                                 if (!data.empty())
                                 {
-                                    if (is_path_var(valueName))
+                                    if (isPathVar)
                                     {
                                         concat_var(valueName, std::move(data));
                                     }
