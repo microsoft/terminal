@@ -83,6 +83,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool ScrollDown(const VTInt distance) override; // SD
         bool InsertLine(const VTInt distance) override; // IL
         bool DeleteLine(const VTInt distance) override; // DL
+        bool InsertColumn(const VTInt distance) override; // DECIC
+        bool DeleteColumn(const VTInt distance) override; // DECDC
         bool SetMode(const DispatchTypes::ModeParams param) override; // SM, DECSET
         bool ResetMode(const DispatchTypes::ModeParams param) override; // RM, DECRST
         bool RequestMode(const DispatchTypes::ModeParams param) override; // DECRQM
@@ -96,6 +98,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool CarriageReturn() override; // CR
         bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) override; // IND, NEL, LF, FF, VT
         bool ReverseLineFeed() override; // RI
+        bool BackIndex() override; // DECBI
+        bool ForwardIndex() override; // DECFI
         bool SetWindowTitle(const std::wstring_view title) override; // OSCWindowTitle
         bool HorizontalTabSet() override; // HTS
         bool ForwardTab(const VTInt numTabs) override; // CHT, HT
@@ -218,6 +222,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
         void _InsertDeleteCharacterHelper(const VTInt delta);
         void _InsertDeleteLineHelper(const VTInt delta);
+        void _InsertDeleteColumnHelper(const VTInt delta);
         void _ScrollMovement(const VTInt delta);
 
         void _DoSetTopBottomScrollingMargins(const VTInt topMargin,
