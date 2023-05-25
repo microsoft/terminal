@@ -2042,10 +2042,11 @@ void BackendD3D::_debugShowDirty(const RenderingPayload& p)
 
     for (size_t i = 0; i < std::size(_presentRects); ++i)
     {
-        if (const auto& rect = _presentRects[i])
+        const auto& rect = _presentRects[(_presentRectsPos + i) % std::size(_presentRects)];
+        if (rect.non_empty())
         {
             _appendQuad() = {
-                .shadingType = ShadingType::SolidFill,
+                .shadingType = ShadingType::Selection,
                 .position = {
                     static_cast<i16>(rect.left),
                     static_cast<i16>(rect.top),
