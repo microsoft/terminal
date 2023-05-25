@@ -109,7 +109,7 @@ bool WindowEmperor::HandleCommandlineArgs()
         if (!res.Message.empty())
         {
             AppHost::s_DisplayMessageBox(res);
-            ExitThread(res.ExitCode);
+            ExitProcess(res.ExitCode);
         }
     }
 
