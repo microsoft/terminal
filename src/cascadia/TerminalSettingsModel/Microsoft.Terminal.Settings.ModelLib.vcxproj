@@ -327,7 +327,7 @@
 
   <!-- PowerShell version check, outputs error if the wrong version is installed. -->
   <Target Name="_WindowsPowershellVersionCheck" BeforeTargets="BeforeClCompile">
-    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Unrestricted &quot;&amp;&apos;$(OpenConsoleDir)\tools\WindowsCheckPSVersion.ps1&apos;&quot;" />
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Unrestricted -File &quot;$(OpenConsoleDir)\tools\WindowsCheckPSVersion.ps1&quot;" />
   </Target>
   <Target Name="_PowershellVersionCheck" BeforeTargets="BeforeClCompile">
     <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CheckPSVersion.ps1&quot;" />
