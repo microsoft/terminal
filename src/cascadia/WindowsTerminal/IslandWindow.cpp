@@ -90,7 +90,7 @@ void IslandWindow::Close()
     // something like ShowWindow, and have that come back on the IslandWindow
     // message loop, where it'll end up asking XAML something that XAML is no
     // longer able to answer.
-    SetWindowLongPtr(_window.get(), GWLP_USERDATA, nullptr);
+    SetWindowLongPtr(_window.get(), GWLP_USERDATA, (LONG_PTR)nullptr);
 
     if (_source)
     {
