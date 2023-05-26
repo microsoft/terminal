@@ -134,12 +134,12 @@ try
     //   the contents of the entire swap chain is redundant, but more importantly because the scroll rect
     //   is the subset of the contents that are being scrolled into. If you scroll the entire viewport
     //   then the scroll rect is empty, which Present1() will loudly complain about.
-    if (_api.invalidatedRows == range<u16>{ 0, _p.s->cellCount.y })
+    if (_p.invalidatedRows == range<u16>{ 0, _p.s->cellCount.y })
     {
         _p.MarkAllAsDirty();
     }
 
-    if (const auto offset = _api.scrollOffset)
+    if (const auto offset = _p.scrollOffset)
     {
         if (offset < 0)
         {
@@ -212,17 +212,17 @@ try
     // * Get the old dirty rect and mark that region as needing invalidation during the upcoming Present1(),
     //   because it'll now be replaced with something else (for instance nothing/whitespace).
     // * Clear() them to prepare them for the new incoming content from the TextBuffer.
-    if (_api.invalidatedRows.non_empty())
+    if (_p.invalidatedRows.non_empty())
     {
         const til::CoordType targetSizeX = _p.s->targetSize.x;
         const til::CoordType targetSizeY = _p.s->targetSize.y;
 
         _p.dirtyRectInPx.left = 0;
-        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, _api.invalidatedRows.start * _p.s->font->cellSize.y);
+        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, _p.invalidatedRows.start * _p.s->font->cellSize.y);
         _p.dirtyRectInPx.right = targetSizeX;
-        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _api.invalidatedRows.end * _p.s->font->cellSize.y);
+        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _p.invalidatedRows.end * _p.s->font->cellSize.y);
 
-        for (auto y = _api.invalidatedRows.start; y < _api.invalidatedRows.end; ++y)
+        for (auto y = _p.invalidatedRows.start; y < _p.invalidatedRows.end; ++y)
         {
             const auto r = _p.rows[y];
             const auto clampedTop = clamp(r->dirtyTop, 0, targetSizeY);
