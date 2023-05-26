@@ -313,7 +313,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                             if (valueNameSize)
                             {
-                                bool isPathVar = is_path_var(valueName);
+                                const bool isPathVar = is_path_var(valueName);
 
                                 // On some systems we've seen path variables that are REG_SZ instead
                                 // of REG_EXPAND_SZ. We should always treat them as REG_EXPAND_SZ.
