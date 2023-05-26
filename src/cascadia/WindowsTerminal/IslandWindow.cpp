@@ -82,6 +82,16 @@ void IslandWindow::Close()
         // </BODGY>
     }
 
+    // GH#15454: Unset the user data for the window. This will prevent future
+    // callbacks that come onto our window message loop from being sent to the
+    // IslandWindow (or other derived class's) implementation.
+    //
+    // Specifically, this prevents a pending coroutine from being able to call
+    // something like ShowWindow, and have that come back on the IslandWindow
+    // message loop, where it'll end up asking XAML something that XAML is no
+    // longer able to answer.
+    SetWindowLongPtr(_window.get(), GWLP_USERDATA, 0);
+
     if (_source)
     {
         _source.Close();
