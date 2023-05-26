@@ -4434,18 +4434,15 @@ namespace winrt::TerminalApp::implementation
 
         til::color bgColor = backgroundSolidBrush.Color();
 
-        const auto getTerminalBrush = [this]() -> Media::Brush {
-            if (const auto& control{ _GetActiveControl() })
-            {
-                return control.BackgroundBrush();
-            }
-            else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
-            {
-                return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
-            }
-            return nullptr;
-        };
-        const auto terminalBrush = getTerminalBrush();
+        Media::Brush terminalBrush{ nullptr };
+        if (const auto& control{ _GetActiveControl() })
+        {
+            terminalBrush = control.BackgroundBrush();
+        }
+        else if (const auto& settingsTab{ _GetFocusedTab().try_as<TerminalApp::SettingsTab>() })
+        {
+            terminalBrush = settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
+        }
 
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {

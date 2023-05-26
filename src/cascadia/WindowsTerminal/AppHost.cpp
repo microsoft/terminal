@@ -1148,11 +1148,6 @@ void AppHost::_stopFrameTimer()
 void AppHost::_updateFrameColor(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&)
 {
     // First, a couple helper functions:
-    static const auto fmod_1 = [](const float x) -> float {
-        float integer = floor(x);
-        return x - integer;
-    };
-
     static const auto saturateAndToColor = [](const float a, const float b, const float c) -> til::color {
         return til::color{
             base::saturated_cast<uint8_t>(255.f * std::clamp(a, 0.f, 1.f)),
@@ -1176,11 +1171,10 @@ void AppHost::_updateFrameColor(const winrt::Windows::Foundation::IInspectable&,
     // - Set the frame's color to that RGB color.
     const auto now = std::chrono::high_resolution_clock::now();
     const std::chrono::duration<float> delta{ now - _started };
-    const auto millis = delta.count() / 4; // divide by four, to make the effect slower. Otherwise it flashes way to fast.
+    const auto seconds = delta.count() / 4; // divide by four, to make the effect slower. Otherwise it flashes way to fast.
+    float ignored;
+    const auto color = hueToRGB(modf(seconds, &ignored));
 
-    const auto color = hueToRGB(fmod_1(millis));
-    // Don't log this one. If it failed, chances are so will the next one, and
-    // we really don't want to just log 60x/s
     _frameColorHelper(_window->GetHandle(), color);
 }
 

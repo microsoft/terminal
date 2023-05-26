@@ -1814,7 +1814,7 @@
           "type": "boolean",
           "default": false
         },
-        "rainbowFrame": {
+        "experimental.rainbowFrame": {
           "description": "When enabled, the frame of the window will cycle through all the colors. Enabling this will override the `frame` and `unfocusedFrame` settings.",
           "type": "boolean",
           "default": false
