@@ -186,6 +186,7 @@ class ScreenBufferTests
     TEST_METHOD(InsertReplaceMode);
     TEST_METHOD(InsertChars);
     TEST_METHOD(DeleteChars);
+    TEST_METHOD(HorizontalScrollOperations);
     TEST_METHOD(ScrollingWideCharsHorizontally);
 
     TEST_METHOD(EraseScrollbackTests);
@@ -4344,6 +4345,117 @@ void ScreenBufferTests::DeleteChars()
         VERIFY_IS_TRUE(_ValidateLineContains(deleteLine, L' ', expectedFillAttr),
                        L"A whole line of spaces was inserted from the right, erasing the line.");
     }
+}
+
+void ScreenBufferTests::HorizontalScrollOperations()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:op", L"{0, 1, 2, 3}")
+    END_TEST_METHOD_PROPERTIES();
+
+    enum Op : int
+    {
+        DECIC,
+        DECDC,
+        DECFI,
+        DECBI
+    } op;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"op", (int&)op));
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    // Set the buffer width to 40, with a centered viewport of 20.
+    const auto bufferWidth = 40;
+    const auto bufferHeight = si.GetBufferSize().Height();
+    const auto viewportStart = 10;
+    const auto viewportEnd = viewportStart + 20;
+    VERIFY_SUCCEEDED(si.ResizeScreenBuffer({ bufferWidth, bufferHeight }, false));
+    si.SetViewport(Viewport::FromExclusive({ viewportStart, 0, viewportEnd, 25 }), true);
+
+    // Set the margin area to columns 10 to 29 and rows 14 to 19 (zero based).
+    stateMachine.ProcessString(L"\x1b[?69h");
+    stateMachine.ProcessString(L"\x1b[11;30s");
+    stateMachine.ProcessString(L"\x1b[15;20r");
+    // Make sure we clear the margins on exit so they can't break other tests.
+    auto clearMargins = wil::scope_exit([&] {
+        stateMachine.ProcessString(L"\x1b[r");
+        stateMachine.ProcessString(L"\x1b[s");
+        stateMachine.ProcessString(L"\x1b[?69l");
+    });
+
+    // Fill the buffer with text. Red on Blue.
+    const auto bufferChars = L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn";
+    const auto bufferAttr = TextAttribute{ FOREGROUND_RED | BACKGROUND_BLUE };
+    _FillLines(0, 25, bufferChars, bufferAttr);
+
+    // Set the attributes that will be used to fill the revealed area.
+    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    fillAttr.SetCrossedOut(true);
+    fillAttr.SetReverseVideo(true);
+    fillAttr.SetUnderlined(true);
+    si.SetAttributes(fillAttr);
+    // But note that the meta attributes are expected to be cleared.
+    auto expectedFillAttr = fillAttr;
+    expectedFillAttr.SetStandardErase();
+
+    auto& cursor = si.GetTextBuffer().GetCursor();
+    switch (op)
+    {
+    case DECIC:
+        Log::Comment(L"Insert 4 columns in the middle of the margin area.");
+        cursor.SetPosition({ 20, 17 });
+        stateMachine.ProcessString(L"\x1b[4'}");
+        VERIFY_ARE_EQUAL(til::point(20, 17), cursor.GetPosition(), L"The cursor should not move.");
+        VERIFY_IS_TRUE(_ValidateLinesContain(10, 14, 20, L"KLMNOPQRST", bufferAttr),
+                       L"The margin area left of the cursor position should remain unchanged.");
+        VERIFY_IS_TRUE(_ValidateLinesContain(20, 14, 20, L"    ", expectedFillAttr),
+                       L"4 blank columns should be inserted at the cursor position.");
+        VERIFY_IS_TRUE(_ValidateLinesContain(24, 14, 20, L"UVWXYZ", bufferAttr),
+                       L"The area right of that should be scrolled right by 4 columns.");
+        break;
+    case DECDC:
+        Log::Comment(L"Delete 4 columns in the middle of the margin area.");
+        cursor.SetPosition({ 20, 17 });
+        stateMachine.ProcessString(L"\x1b[4'~");
+        VERIFY_ARE_EQUAL(til::point(20, 17), cursor.GetPosition(), L"The cursor should not move.");
+        VERIFY_IS_TRUE(_ValidateLinesContain(10, 14, 20, L"KLMNOPQRSTYZabcd", bufferAttr),
+                       L"The area right of the cursor position should be scrolled left by 4 columns.");
+        VERIFY_IS_TRUE(_ValidateLinesContain(26, 14, 20, L"    ", expectedFillAttr),
+                       L"4 blank columns should be inserted at the right of the margin area.");
+        break;
+    case DECFI:
+        Log::Comment(L"Forward index 4 times, 2 columns before the right margin.");
+        cursor.SetPosition({ 27, 17 });
+        stateMachine.ProcessString(L"\x1b\x39\x1b\x39\x1b\x39\x1b\x39");
+        VERIFY_ARE_EQUAL(til::point(29, 17), cursor.GetPosition(), L"The cursor should not pass the right margin.");
+        VERIFY_IS_TRUE(_ValidateLinesContain(10, 14, 20, L"MNOPQRSTUVWXYZabcd", bufferAttr),
+                       L"The margin area should scroll left by 2 columns.");
+        VERIFY_IS_TRUE(_ValidateLinesContain(28, 14, 20, L"  ", expectedFillAttr),
+                       L"2 blank columns should be inserted at the right of the margin area.");
+        break;
+    case DECBI:
+        Log::Comment(L"Back index 4 times, 2 columns before the left margin.");
+        cursor.SetPosition({ 12, 17 });
+        stateMachine.ProcessString(L"\x1b\x36\x1b\x36\x1b\x36\x1b\x36");
+        VERIFY_ARE_EQUAL(til::point(10, 17), cursor.GetPosition(), L"The cursor should not pass the left margin.");
+        VERIFY_IS_TRUE(_ValidateLinesContain(10, 14, 20, L"  ", expectedFillAttr),
+                       L"2 blank columns should be inserted at the left of the margin area.");
+        VERIFY_IS_TRUE(_ValidateLinesContain(12, 14, 20, L"KLMNOPQRSTUVWXYZab", bufferAttr),
+                       L"The rest of the margin area should scroll right by 2 columns.");
+        break;
+    }
+
+    VERIFY_IS_TRUE(_ValidateLinesContain(0, 14, bufferChars, bufferAttr),
+                   L"Content above the top margin should remain unchanged.");
+    VERIFY_IS_TRUE(_ValidateLinesContain(20, 25, bufferChars, bufferAttr),
+                   L"Content below the bottom margin should remain unchanged.");
+    VERIFY_IS_TRUE(_ValidateLinesContain(0, 14, 20, L"ABCDEFGHIJ", bufferAttr),
+                   L"Content before the left margin should remain unchanged.");
+    VERIFY_IS_TRUE(_ValidateLinesContain(30, 14, 20, L"efghijklmn", bufferAttr),
+                   L"Content beyond the right margin should remain unchanged.");
 }
 
 void ScreenBufferTests::ScrollingWideCharsHorizontally()

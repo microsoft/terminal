@@ -1145,6 +1145,11 @@ void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
 
 void BackendD3D::_initializeFontFaceEntry(AtlasFontFaceEntryInner& fontFaceEntry)
 {
+    if (!fontFaceEntry.fontFace)
+    {
+        return;
+    }
+
     ALLOW_UNINITIALIZED_BEGIN
     std::array<u32, 0x100> codepoints;
     std::array<u16, 0x100> indices;
@@ -2042,10 +2047,11 @@ void BackendD3D::_debugShowDirty(const RenderingPayload& p)
 
     for (size_t i = 0; i < std::size(_presentRects); ++i)
     {
-        if (const auto& rect = _presentRects[i])
+        const auto& rect = _presentRects[(_presentRectsPos + i) % std::size(_presentRects)];
+        if (rect.non_empty())
         {
             _appendQuad() = {
-                .shadingType = ShadingType::SolidFill,
+                .shadingType = ShadingType::Selection,
                 .position = {
                     static_cast<i16>(rect.left),
                     static_cast<i16>(rect.top),

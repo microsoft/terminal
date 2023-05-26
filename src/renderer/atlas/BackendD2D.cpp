@@ -538,6 +538,7 @@ void BackendD2D::_resizeCursorBitmap(const RenderingPayload& p, const til::size 
     cursorRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     cursorRenderTarget->BeginDraw();
+    cursorRenderTarget->Clear();
     {
         const D2D1_RECT_F rect{ 0, 0, sizeF.width, sizeF.height };
         const auto brush = _brushWithColor(0xffffffff);
@@ -627,7 +628,8 @@ void BackendD2D::_debugShowDirty(const RenderingPayload& p)
 
     for (size_t i = 0; i < std::size(_presentRects); ++i)
     {
-        if (const auto& rect = _presentRects[i])
+        const auto& rect = _presentRects[(_presentRectsPos + i) % std::size(_presentRects)];
+        if (rect.non_empty())
         {
             const D2D1_RECT_F rectF{
                 static_cast<f32>(rect.left),

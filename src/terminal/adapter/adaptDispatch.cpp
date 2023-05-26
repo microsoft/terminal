@@ -571,7 +571,7 @@ bool AdaptDispatch::CursorRestoreState()
 // - delta - Distance to move (positive is down, negative is up).
 // Return Value:
 // - <none>
-void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const int32_t delta)
+void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta)
 {
     const auto absoluteDelta = std::min(std::abs(delta), scrollRect.height());
     if (absoluteDelta < scrollRect.height())
@@ -627,7 +627,7 @@ void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rec
 // - delta - Distance to move (positive is right, negative is left).
 // Return Value:
 // - <none>
-void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const int32_t delta)
+void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta)
 {
     const auto absoluteDelta = std::min(std::abs(delta), scrollRect.width());
     if (absoluteDelta < scrollRect.width())
@@ -1487,6 +1487,7 @@ bool AdaptDispatch::DeviceAttributes()
     // 1 = 132 column mode (ConHost only)
     // 6 = Selective erase
     // 7 = Soft fonts
+    // 21 = Horizontal scrolling
     // 22 = Color text
     // 23 = Greek character sets
     // 24 = Turkish character sets
@@ -1496,11 +1497,11 @@ bool AdaptDispatch::DeviceAttributes()
 
     if (_api.IsConsolePty())
     {
-        _api.ReturnResponse(L"\x1b[?61;6;7;22;23;24;28;32;42c");
+        _api.ReturnResponse(L"\x1b[?61;6;7;21;22;23;24;28;32;42c");
     }
     else
     {
-        _api.ReturnResponse(L"\x1b[?61;1;6;7;22;23;24;28;32;42c");
+        _api.ReturnResponse(L"\x1b[?61;1;6;7;21;22;23;24;28;32;42c");
     }
     return true;
 }
@@ -1693,7 +1694,7 @@ void AdaptDispatch::_ScrollMovement(const VTInt delta)
 // - True.
 bool AdaptDispatch::ScrollUp(const VTInt uiDistance)
 {
-    _ScrollMovement(-gsl::narrow_cast<int32_t>(uiDistance));
+    _ScrollMovement(-uiDistance);
     return true;
 }
 
@@ -1705,7 +1706,7 @@ bool AdaptDispatch::ScrollUp(const VTInt uiDistance)
 // - True.
 bool AdaptDispatch::ScrollDown(const VTInt uiDistance)
 {
-    _ScrollMovement(gsl::narrow_cast<int32_t>(uiDistance));
+    _ScrollMovement(uiDistance);
     return true;
 }
 
@@ -2051,7 +2052,7 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 // - delta - Number of lines to modify (positive if inserting, negative if deleting).
 // Return Value:
 // - <none>
-void AdaptDispatch::_InsertDeleteLineHelper(const int32_t delta)
+void AdaptDispatch::_InsertDeleteLineHelper(const VTInt delta)
 {
     const auto viewport = _api.GetViewport();
     auto& textBuffer = _api.GetTextBuffer();
@@ -2084,7 +2085,7 @@ void AdaptDispatch::_InsertDeleteLineHelper(const int32_t delta)
 // - True.
 bool AdaptDispatch::InsertLine(const VTInt distance)
 {
-    _InsertDeleteLineHelper(gsl::narrow_cast<int32_t>(distance));
+    _InsertDeleteLineHelper(distance);
     return true;
 }
 
@@ -2102,7 +2103,58 @@ bool AdaptDispatch::InsertLine(const VTInt distance)
 // - True.
 bool AdaptDispatch::DeleteLine(const VTInt distance)
 {
-    _InsertDeleteLineHelper(-gsl::narrow_cast<int32_t>(distance));
+    _InsertDeleteLineHelper(-distance);
+    return true;
+}
+
+// Routine Description:
+// - Internal logic for adding or removing columns in the active screen buffer.
+// Parameters:
+// - delta - Number of columns to modify (positive if inserting, negative if deleting).
+// Return Value:
+// - <none>
+void AdaptDispatch::_InsertDeleteColumnHelper(const VTInt delta)
+{
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+
+    const auto& cursor = textBuffer.GetCursor();
+    const auto col = cursor.GetPosition().x;
+    const auto row = cursor.GetPosition().y;
+
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
+    if (row >= topMargin && row <= bottomMargin && col >= leftMargin && col <= rightMargin)
+    {
+        // We emulate inserting and deleting by scrolling the area between the cursor and the right margin.
+        _ScrollRectHorizontally(textBuffer, { col, topMargin, rightMargin + 1, bottomMargin + 1 }, delta);
+    }
+}
+
+// Routine Description:
+// - DECIC - This control function inserts one or more blank columns in the
+//    scrolling region, starting at the column that has the cursor.
+// Arguments:
+// - distance - number of columns to insert
+// Return Value:
+// - True.
+bool AdaptDispatch::InsertColumn(const VTInt distance)
+{
+    _InsertDeleteColumnHelper(distance);
+    return true;
+}
+
+// Routine Description:
+// - DECDC - This control function deletes one or more columns in the scrolling
+//    region, starting with the column that has the cursor.
+// Arguments:
+// - distance - number of columns to delete
+// Return Value:
+// - True.
+bool AdaptDispatch::DeleteColumn(const VTInt distance)
+{
+    _InsertDeleteColumnHelper(-distance);
     return true;
 }
 
@@ -2466,6 +2518,68 @@ bool AdaptDispatch::ReverseLineFeed()
     {
         // Otherwise we move the cursor up, but not past the top of the viewport.
         cursor.SetPosition(textBuffer.ClampPositionWithinLine({ cursorPosition.x, cursorPosition.y - 1 }));
+        _ApplyCursorMovementFlags(cursor);
+    }
+    return true;
+}
+
+// Routine Description:
+// - DECBI - Moves the cursor back one column, scrolling the screen
+//    horizontally if it reaches the left margin.
+// Arguments:
+// - None
+// Return Value:
+// - True.
+bool AdaptDispatch::BackIndex()
+{
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    const auto cursorPosition = cursor.GetPosition();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+
+    // If the cursor is at the left of the margin area, we shift the buffer right.
+    if (cursorPosition.x == leftMargin && cursorPosition.y >= topMargin && cursorPosition.y <= bottomMargin)
+    {
+        _ScrollRectHorizontally(textBuffer, { leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 }, 1);
+    }
+    // Otherwise we move the cursor left, but not past the start of the line.
+    else if (cursorPosition.x > 0)
+    {
+        cursor.SetXPosition(cursorPosition.x - 1);
+        _ApplyCursorMovementFlags(cursor);
+    }
+    return true;
+}
+
+// Routine Description:
+// - DECFI - Moves the cursor forward one column, scrolling the screen
+//    horizontally if it reaches the right margin.
+// Arguments:
+// - None
+// Return Value:
+// - True.
+bool AdaptDispatch::ForwardIndex()
+{
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    const auto cursorPosition = cursor.GetPosition();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+
+    // If the cursor is at the right of the margin area, we shift the buffer left.
+    if (cursorPosition.x == rightMargin && cursorPosition.y >= topMargin && cursorPosition.y <= bottomMargin)
+    {
+        _ScrollRectHorizontally(textBuffer, { leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 }, -1);
+    }
+    // Otherwise we move the cursor right, but not past the end of the line.
+    else if (cursorPosition.x < textBuffer.GetLineWidth(cursorPosition.y) - 1)
+    {
+        cursor.SetXPosition(cursorPosition.x + 1);
         _ApplyCursorMovementFlags(cursor);
     }
     return true;

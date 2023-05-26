@@ -950,7 +950,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.focusToken = control.FocusFollowMouseRequested([dispatcher, weakThis](auto&& sender, auto&&) -> winrt::fire_and_forget {
+        events.focusToken = control.FocusFollowMouseRequested([dispatcher, weakThis](auto sender, auto) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             if (const auto tab{ weakThis.get() })
             {
@@ -1336,6 +1336,28 @@ namespace winrt::TerminalApp::implementation
             Automation::AutomationProperties::SetHelpText(splitTabMenuItem, splitTabToolTip);
         }
 
+        Controls::MenuFlyoutItem moveTabToNewWindowMenuItem;
+        {
+            // "Move Tab to New Window Tab"
+            Controls::FontIcon moveTabToNewWindowTabSymbol;
+            moveTabToNewWindowTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+            moveTabToNewWindowTabSymbol.Glyph(L"\xE8A7");
+
+            moveTabToNewWindowMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_MoveTabToNewWindowRequestedHandlers();
+                }
+            });
+            moveTabToNewWindowMenuItem.Text(RS_(L"MoveTabToNewWindowText"));
+            moveTabToNewWindowMenuItem.Icon(moveTabToNewWindowTabSymbol);
+
+            const auto moveTabToNewWindowToolTip = RS_(L"MoveTabToNewWindowToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(moveTabToNewWindowMenuItem, box_value(moveTabToNewWindowToolTip));
+            Automation::AutomationProperties::SetHelpText(moveTabToNewWindowMenuItem, moveTabToNewWindowToolTip);
+        }
+
         Controls::MenuFlyoutItem closePaneMenuItem = _closePaneMenuItem;
         {
             // "Close Pane"
@@ -1404,7 +1426,7 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Items().Append(renameTabMenuItem);
         contextMenuFlyout.Items().Append(duplicateTabMenuItem);
         contextMenuFlyout.Items().Append(splitTabMenuItem);
-
+        contextMenuFlyout.Items().Append(moveTabToNewWindowMenuItem);
         contextMenuFlyout.Items().Append(exportTabMenuItem);
         contextMenuFlyout.Items().Append(findMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
