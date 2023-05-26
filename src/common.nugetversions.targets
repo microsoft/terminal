@@ -27,7 +27,7 @@
       Condition="'$(BuildingInsideVisualStudio)' == 'true'">
 
     <!--Have the [nuget.exe] tool do a restore on the global [packages.config] file for the repository.-->
-    <Exec Command="$(Terminal_NuGetEXE) install $(Terminal_GlobalPackagesConfigPath)" />
+    <Exec Command="$(Terminal_NuGetEXE) install &quot;$(Terminal_GlobalPackagesConfigPath)&quot;" />
 
     <!--Copy this version of [packages.config] to the output directory to allow us to skip this work in the future if nothing changed.-->
     <Copy SourceFiles="$(Terminal_GlobalPackagesConfigPath)"
