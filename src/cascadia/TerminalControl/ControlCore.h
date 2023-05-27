@@ -229,8 +229,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AnchorContextMenu(til::point viewportRelativeCharacterPosition);
 
-        bool ShouldShowSelectCommand();
-        bool ShouldShowSelectOutput();
+        ApplicableMenuActions GetApplicableMenuActions();
 
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());

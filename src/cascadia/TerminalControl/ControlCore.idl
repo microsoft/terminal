@@ -20,6 +20,11 @@ namespace Microsoft.Terminal.Control
         IsRightButtonDown = 0x4
     };
 
+    [flags] enum ApplicableMenuActions {
+        SelectCommand = 0x1,
+        SelectOutput = 0x2,
+    };
+
     enum ClearBufferType
     {
         Screen,
@@ -146,8 +151,9 @@ namespace Microsoft.Terminal.Control
 
         void ContextMenuSelectCommand();
         void ContextMenuSelectOutput();
-        Boolean ShouldShowSelectCommand();
-        Boolean ShouldShowSelectOutput();
+
+        // Implicit: requires AnchorContextMenu to be called beforehand to populate the menu location
+        ApplicableMenuActions GetApplicableMenuActions();
 
         // These events are called from some background thread
         event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;

@@ -2434,23 +2434,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return false;
     }
 
-    // Method Description:
-    // * Don't show this if the click was on the _current_ selection
-    // * Don't show this if the click wasn't on a mark with at least a command
-    // * Otherwise yea, show it.
-    bool ControlCore::ShouldShowSelectCommand()
+    ApplicableMenuActions ControlCore::GetApplicableMenuActions()
     {
+        ApplicableMenuActions r{};
         // Relies on the anchor set in AnchorContextMenu
-        return _clickedOnMark(_contextMenuBufferPosition,
-                              [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasCommand(); });
-    }
+        const auto clickedOnCommand = _clickedOnMark(_contextMenuBufferPosition,
+                                                     [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasCommand(); });
+        const auto clickedOnOutput = _clickedOnMark(_contextMenuBufferPosition,
+                                                    [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasOutput(); });
 
-    // Method Description:
-    // * Same as ShouldShowSelectCommand, but with the mark needing output
-    bool ControlCore::ShouldShowSelectOutput()
-    {
-        // Relies on the anchor set in AnchorContextMenu
-        return _clickedOnMark(_contextMenuBufferPosition,
-                              [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasOutput(); });
+        WI_UpdateFlag(r, ApplicableMenuActions::SelectCommand, clickedOnCommand);
+        WI_UpdateFlag(r, ApplicableMenuActions::SelectOutput, clickedOnOutput);
+        return r;
     }
 }
