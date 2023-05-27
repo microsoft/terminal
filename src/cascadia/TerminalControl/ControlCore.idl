@@ -20,7 +20,7 @@ namespace Microsoft.Terminal.Control
         IsRightButtonDown = 0x4
     };
 
-    [flags] enum ApplicableMenuActions {
+    [flags] enum MenuAction {
         SelectCommand = 0x1,
         SelectOutput = 0x2,
     };
@@ -149,11 +149,9 @@ namespace Microsoft.Terminal.Control
 
         void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
 
-        void ContextMenuSelectCommand();
-        void ContextMenuSelectOutput();
-
-        // Implicit: requires AnchorContextMenu to be called beforehand to populate the menu location
-        ApplicableMenuActions GetApplicableMenuActions();
+        MenuAction GetApplicableMenuActionsAtPosition(Microsoft.Terminal.Core.Point pos);
+        void ContextMenuSelectCommand(Microsoft.Terminal.Core.Point pos);
+        void ContextMenuSelectOutput(Microsoft.Terminal.Core.Point pos);
 
         // These events are called from some background thread
         event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;

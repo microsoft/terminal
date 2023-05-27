@@ -2348,13 +2348,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::AnchorContextMenu(const til::point viewportRelativeCharacterPosition)
-    {
-        // viewportRelativeCharacterPosition is relative to the current
-        // viewport, so adjust for that:
-        _contextMenuBufferPosition = _terminal->GetViewport().Origin() + viewportRelativeCharacterPosition;
-    }
-
     void ControlCore::_contextMenuSelectMark(
         const til::point& pos,
         bool (*filter)(const DispatchTypes::ScrollMark&),
@@ -2387,17 +2380,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::ContextMenuSelectCommand()
+    void ControlCore::ContextMenuSelectCommand(Core::Point viewportRelativeCharacterPosition)
     {
+        const auto contextMenuBufferPosition = _terminal->GetViewport().Origin() + til::point{ viewportRelativeCharacterPosition };
         _contextMenuSelectMark(
-            _contextMenuBufferPosition,
+            contextMenuBufferPosition,
             [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasCommand(); },
             [](const DispatchTypes::ScrollMark& m) { return til::point_span{ m.end, *m.commandEnd }; });
     }
-    void ControlCore::ContextMenuSelectOutput()
+    void ControlCore::ContextMenuSelectOutput(Core::Point viewportRelativeCharacterPosition)
     {
+        const auto contextMenuBufferPosition = _terminal->GetViewport().Origin() + til::point{ viewportRelativeCharacterPosition };
         _contextMenuSelectMark(
-            _contextMenuBufferPosition,
+            contextMenuBufferPosition,
             [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasOutput(); },
             [](const DispatchTypes::ScrollMark& m) { return til::point_span{ *m.commandEnd, *m.outputEnd }; });
     }
@@ -2434,17 +2429,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return false;
     }
 
-    ApplicableMenuActions ControlCore::GetApplicableMenuActions()
+    MenuAction ControlCore::GetApplicableMenuActionsAtPosition(Core::Point viewportRelativeCharacterPosition)
     {
-        ApplicableMenuActions r{};
+        const auto contextMenuBufferPosition = _terminal->GetViewport().Origin() + til::point{ viewportRelativeCharacterPosition };
+        MenuAction r{};
         // Relies on the anchor set in AnchorContextMenu
-        const auto clickedOnCommand = _clickedOnMark(_contextMenuBufferPosition,
+        const auto clickedOnCommand = _clickedOnMark(contextMenuBufferPosition,
                                                      [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasCommand(); });
-        const auto clickedOnOutput = _clickedOnMark(_contextMenuBufferPosition,
+        const auto clickedOnOutput = _clickedOnMark(contextMenuBufferPosition,
                                                     [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasOutput(); });
 
-        WI_UpdateFlag(r, ApplicableMenuActions::SelectCommand, clickedOnCommand);
-        WI_UpdateFlag(r, ApplicableMenuActions::SelectOutput, clickedOnOutput);
+        WI_UpdateFlag(r, MenuAction::SelectCommand, clickedOnCommand);
+        WI_UpdateFlag(r, MenuAction::SelectOutput, clickedOnOutput);
         return r;
     }
 }

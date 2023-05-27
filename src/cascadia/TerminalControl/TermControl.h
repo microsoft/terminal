@@ -228,6 +228,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
         bool _pointerPressedInBounds{ false };
 
+        winrt::Microsoft::Terminal::Core::Point _lastContextMenuTerminalPosition{};
+
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellDarkAnimation{ nullptr };
         Windows::UI::Xaml::DispatcherTimer _bellLightTimer{ nullptr };
