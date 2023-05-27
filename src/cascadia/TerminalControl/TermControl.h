@@ -363,6 +363,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _SelectCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _SelectOutputHandler(const IInspectable& sender, const IInspectable& args);
+        void _CopyLinkHandler(const IInspectable& sender, const IInspectable& args);
 
         struct Revokers
         {

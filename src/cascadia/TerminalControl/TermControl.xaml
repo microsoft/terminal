@@ -51,6 +51,10 @@
                               x:Uid="SelectOutputButton"
                               Click="_SelectOutputHandler"
                               Icon="AlignLeft" />
+                <AppBarButton x:Name="CopyLinkButton"
+                              x:Uid="CopyLinkButton"
+                              Click="_CopyLinkHandler"
+                              Icon="Link" />
             </mux:CommandBarFlyout.SecondaryCommands>
         </mux:CommandBarFlyout>
 
@@ -81,6 +85,10 @@
                               x:Uid="SelectOutputButton"
                               Click="_SelectOutputHandler"
                               Icon="AlignLeft" />
+                <AppBarButton x:Name="CopyLinkWithSelectionButton"
+                              x:Uid="CopyLinkButton"
+                              Click="_CopyLinkHandler"
+                              Icon="Link" />
             </mux:CommandBarFlyout.SecondaryCommands>
         </mux:CommandBarFlyout>
 

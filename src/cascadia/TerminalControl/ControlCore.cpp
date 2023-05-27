@@ -2441,6 +2441,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         WI_UpdateFlag(r, MenuAction::SelectCommand, clickedOnCommand);
         WI_UpdateFlag(r, MenuAction::SelectOutput, clickedOnOutput);
+        WI_UpdateFlag(r, MenuAction::CopyLink, !_terminal->GetHyperlinkAtBufferPosition(contextMenuBufferPosition).empty());
         return r;
     }
 }

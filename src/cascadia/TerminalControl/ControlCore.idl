@@ -23,6 +23,7 @@ namespace Microsoft.Terminal.Control
     [flags] enum MenuAction {
         SelectCommand = 0x1,
         SelectOutput = 0x2,
+        CopyLink = 0x4,
     };
 
     enum ClearBufferType
@@ -134,6 +135,7 @@ namespace Microsoft.Terminal.Control
         SelectionData SelectionInfo { get; };
         SelectionInteractionMode SelectionMode();
 
+        String GetHyperlink(Microsoft.Terminal.Core.Point pos);
         String HoveredUriText { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };
 

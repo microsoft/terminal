@@ -252,4 +252,12 @@ Please either install the missing font or choose another one.</value>
     <value>Select output</value>
     <comment>The tooltip for a button for selecting all of a command's output</comment>
   </data>
+  <data name="CopyLinkButton.Label" xml:space="preserve">
+    <value>Copy link</value>
+    <comment>The label of a button that copies the URL of a hyperlink</comment>
+  </data>
+  <data name="CopyLinkButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Copy link</value>
+    <comment>The tooltip for a button that copies the URL of a hyperlink</comment>
+  </data>
 </root>

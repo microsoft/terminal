@@ -3433,6 +3433,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SelectOutputButton().Visibility(applicabilityToVisibility(MenuAction::SelectOutput));
         SelectOutputWithSelectionButton().Visibility(applicabilityToVisibility(MenuAction::SelectOutput));
 
+        CopyLinkButton().Visibility(applicabilityToVisibility(MenuAction::CopyLink));
+        CopyLinkWithSelectionButton().Visibility(applicabilityToVisibility(MenuAction::CopyLink));
+
         (_core.HasSelection() ? SelectionContextMenu() :
                                 ContextMenu())
             .ShowAt(*this, myOption);
@@ -3495,5 +3498,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ContextMenu().Hide();
         SelectionContextMenu().Hide();
         _core.ContextMenuSelectOutput(_lastContextMenuTerminalPosition);
+    }
+
+    void TermControl::_CopyLinkHandler(const IInspectable& /*sender*/,
+                                           const IInspectable& /*args*/)
+    {
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+
+        auto link{ _core.GetHyperlink(_lastContextMenuTerminalPosition) };
+        if (link.empty())
+        {
+            // Nothing to do
+            return;
+        }
+
+        auto eventArgs{ winrt::make<CopyToClipboardEventArgs>(link) };
+        _CopyToClipboardHandlers(*this, eventArgs);
     }
 }
