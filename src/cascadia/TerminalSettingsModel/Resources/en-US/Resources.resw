@@ -699,4 +699,20 @@
   <data name="SelectCommandPreviousCommandKey" xml:space="preserve">
     <value>Select previous command</value>
   </data>
+  <data name="SearchForTextCommandKey" xml:space="preserve">
+    <value>Search online for selected text with '{0}'</value>
+    <comment>{0} will be replaced with a user-specified URL to a web page</comment>
+  </data>
+  <data name="SearchWebCommandKey" xml:space="preserve">
+    <value>Search for selected text</value>
+    <comment>This will open a web browser to search for some user-selected text</comment>
+  </data>
+  <data name="SearchGitHubCommandKey" xml:space="preserve">
+    <value>Search GitHub for selected text</value>
+    <comment>GitHub is the name of the website https://github.com/</comment>
+  </data>
+  <data name="SearchStackOverflowCommandKey" xml:space="preserve">
+    <value>Search StackOverflow for selected text</value>
+    <comment>StackOverflow is the name of the website https://stackoverflow.com/</comment>
+  </data>
 </root>
