@@ -2433,7 +2433,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto contextMenuBufferPosition = _terminal->GetViewport().Origin() + til::point{ viewportRelativeCharacterPosition };
         MenuAction r{};
-        // Relies on the anchor set in AnchorContextMenu
+
         const auto clickedOnCommand = _clickedOnMark(contextMenuBufferPosition,
                                                      [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasCommand(); });
         const auto clickedOnOutput = _clickedOnMark(contextMenuBufferPosition,
