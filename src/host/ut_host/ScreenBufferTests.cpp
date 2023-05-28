@@ -262,6 +262,8 @@ class ScreenBufferTests
     TEST_METHOD(CopyDoubleWidthRectangularArea);
 
     TEST_METHOD(DelayedWrapReset);
+
+    TEST_METHOD(EraseColorMode);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -8305,4 +8307,90 @@ void ScreenBufferTests::DelayedWrapReset()
         VERIFY_IS_FALSE(cursor.IsDelayedEOLWrap());
         VERIFY_ARE_EQUAL(expectedPos, actualPos);
     }
+}
+
+void ScreenBufferTests::EraseColorMode()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:op", L"{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19}")
+        TEST_METHOD_PROPERTY(L"Data:eraseMode", L"{false,true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool eraseMode;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"eraseMode", eraseMode));
+    int opIndex;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"op", opIndex));
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    WI_SetFlag(si.OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
+
+    const auto bufferWidth = si.GetBufferSize().Width();
+    const auto bufferHeight = si.GetBufferSize().Height();
+
+    // Set the viewport to 24 lines.
+    si.SetViewport(Viewport::FromDimensions({ 0, 0 }, { bufferWidth, 24 }), true);
+    const auto viewport = si.GetViewport();
+
+    // Fill the buffer with text. Red on Blue.
+    const auto bufferChars = L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn";
+    const auto bufferAttr = TextAttribute{ FOREGROUND_RED | BACKGROUND_BLUE };
+    _FillLines(0, bufferHeight, bufferChars, bufferAttr);
+
+    // Set the active attributes with a mix of color and meta attributes.
+    auto activeAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    activeAttr.SetCrossedOut(true);
+    activeAttr.SetReverseVideo(true);
+    activeAttr.SetUnderlined(true);
+    si.SetAttributes(activeAttr);
+
+    // By default, the meta attributes are expected to be cleared when erasing.
+    auto standardEraseAttr = activeAttr;
+    standardEraseAttr.SetStandardErase();
+
+    const struct
+    {
+        std::wstring_view name;
+        std::wstring_view sequence;
+        til::point startPos = {};
+        til::point erasePos = {};
+    } ops[] = {
+        { L"LF", L"\n", { 0, 23 }, { 0, 24 } }, // pans down on last row
+        { L"VT", L"\v", { 0, 23 }, { 0, 24 } }, // pans down on last row
+        { L"FF", L"\f", { 0, 23 }, { 0, 24 } }, // pans down on last row
+        { L"NEL", L"\033E", { 0, 23 }, { 0, 24 } }, // pans down on last row
+        { L"IND", L"\033D", { 0, 23 }, { 0, 24 } }, // pans down on last row
+        { L"RI", L"\033M" },
+        { L"DECBI", L"\033\066" },
+        { L"DECFI", L"\033\071", { 79, 0 }, { 79, 0 } }, // scrolls in last column
+        { L"DECIC", L"\033['}" },
+        { L"DECDC", L"\033['~", {}, { 79, 0 } }, // last column erased
+        { L"ICH", L"\033[@" },
+        { L"DCH", L"\033[P", {}, { 79, 0 } }, // last column erased
+        { L"IL", L"\033[L" },
+        { L"DL", L"\033[M", {}, { 0, 23 } }, // last row erased
+        { L"ECH", L"\033[X" },
+        { L"EL", L"\033[K" },
+        { L"ED", L"\033[J" },
+        { L"DECERA", L"\033[$z" },
+        { L"SU", L"\033[S", {}, { 0, 23 } }, // last row erased
+        { L"SD", L"\033[T" },
+    };
+    const auto& op = gsl::at(ops, opIndex);
+
+    si.GetTextBuffer().GetCursor().SetPosition(op.startPos);
+
+    Log::Comment(eraseMode ? L"Enable DECECM" : L"Disable DECECM");
+    stateMachine.ProcessString(eraseMode ? L"\033[?117h" : L"\033[?117l");
+
+    Log::Comment(NoThrowString().Format(L"Execute %s", op.name.data()));
+    stateMachine.ProcessString(op.sequence);
+
+    Log::Comment(L"Verify expected erase attributes");
+    const auto expectedEraseAttr = eraseMode ? TextAttribute{} : standardEraseAttr;
+    const auto cellData = si.GetCellDataAt(op.erasePos);
+    VERIFY_ARE_EQUAL(expectedEraseAttr, cellData->TextAttr());
+    VERIFY_ARE_EQUAL(L" ", cellData->Chars());
 }
