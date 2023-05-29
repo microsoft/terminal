@@ -71,7 +71,6 @@ VtIo::VtIo() :
 {
     _lookingForCursorPosition = pArgs->GetInheritCursor();
     _resizeQuirk = pArgs->IsResizeQuirkEnabled();
-    _win32InputMode = pArgs->IsWin32InputModeEnabled();
     _passthroughMode = pArgs->IsPassthroughMode();
 
     // If we were already given VT handles, set up the VT IO engine to use those.
@@ -269,10 +268,7 @@ bool VtIo::IsUsingVt() const
     // win32-input-mode from them. This will enable the connected terminal to
     // send us full INPUT_RECORDs as input. If the terminal doesn't understand
     // this sequence, it'll just ignore it.
-    if (_win32InputMode)
-    {
-        LOG_IF_FAILED(_pVtRenderEngine->RequestWin32Input());
-    }
+    LOG_IF_FAILED(_pVtRenderEngine->RequestWin32Input());
 
     // MSFT: 15813316
     // If the terminal application wants us to inherit the cursor position,

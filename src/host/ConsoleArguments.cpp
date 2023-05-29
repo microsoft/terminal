@@ -20,7 +20,6 @@ const std::wstring_view ConsoleArguments::WIDTH_ARG = L"--width";
 const std::wstring_view ConsoleArguments::HEIGHT_ARG = L"--height";
 const std::wstring_view ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
 const std::wstring_view ConsoleArguments::RESIZE_QUIRK = L"--resizeQuirk";
-const std::wstring_view ConsoleArguments::WIN32_INPUT_MODE = L"--win32input";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
@@ -515,9 +514,10 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
-        else if (arg == WIN32_INPUT_MODE)
+        else if (std::regex_match(arg, std::wregex(L"--[A-Za-z0-9]+")))
         {
-            _win32InputMode = true;
+            // Any other alphanumeric sequence starting with -- is likely
+            // an unrecognized argument that we need to ignore.
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
@@ -528,8 +528,6 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             break;
         }
         // TODO: handle the rest of the possible params (MSFT:13271366, MSFT:13631640)
-        // TODO: handle invalid args
-        //  e.g. "conhost --foo bar" should not make the clientCommandline "--foo bar"
         else
         {
             // If we encounter something that doesn't match one of our other
@@ -676,10 +674,6 @@ bool ConsoleArguments::GetInheritCursor() const
 bool ConsoleArguments::IsResizeQuirkEnabled() const
 {
     return _resizeQuirk;
-}
-bool ConsoleArguments::IsWin32InputModeEnabled() const
-{
-    return _win32InputMode;
 }
 
 #ifdef UNIT_TESTING
