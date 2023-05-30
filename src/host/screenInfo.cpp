@@ -47,7 +47,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _pAccessibilityNotifier{ pNotifier },
     _api{ *this },
     _stateMachine{ nullptr },
-    _scrollMargins{ Viewport::Empty() },
     _viewport(Viewport::Empty()),
     _psiAlternateBuffer{ nullptr },
     _psiMainBuffer{ nullptr },
@@ -58,10 +57,11 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _desiredFont{ fontInfo },
     _ignoreLegacyEquivalentVTAttributes{ false }
 {
-    // Check if VT mode is enabled. Note that this can be true w/o calling
-    // SetConsoleMode, if VirtualTerminalLevel is set to !=0 in the registry.
+    // Check if VT mode should be enabled by default. This can be true if
+    // VirtualTerminalLevel is set to !=0 in the registry, or when conhost
+    // is started in conpty mode.
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (gci.GetVirtTermLevel() != 0)
+    if (gci.GetDefaultVirtTermLevel() != 0)
     {
         OutputMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     }
@@ -125,7 +125,7 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
 
         const auto status = pScreen->_InitializeOutputStateMachine();
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             *ppScreen = pScreen;
         }
@@ -1561,7 +1561,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         status = NTSTATUS_FROM_HRESULT(ResizeTraditional(coordNewScreenSize));
     }
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         if (HasAccessibilityEventing())
         {
@@ -1798,37 +1798,6 @@ void SCREEN_INFORMATION::MakeCursorVisible(const til::point CursorPosition)
     }
 }
 
-// Method Description:
-// - Sets the scroll margins for this buffer.
-// Arguments:
-// - margins: The new values of the scroll margins, *relative to the viewport*
-void SCREEN_INFORMATION::SetScrollMargins(const Viewport margins)
-{
-    _scrollMargins = margins;
-}
-
-// Method Description:
-// - Returns the scrolling margins boundaries for this screen buffer, relative
-//      to the origin of the text buffer. Most callers will want the absolute
-//      positions of the margins, though they are set and stored relative to
-//      origin of the viewport.
-// Arguments:
-// - <none>
-Viewport SCREEN_INFORMATION::GetAbsoluteScrollMargins() const
-{
-    return _viewport.ConvertFromOrigin(_scrollMargins);
-}
-
-// Method Description:
-// - Returns the scrolling margins boundaries for this screen buffer, relative
-//      to the current viewport.
-// Arguments:
-// - <none>
-Viewport SCREEN_INFORMATION::GetRelativeScrollMargins() const
-{
-    return _scrollMargins;
-}
-
 // Routine Description:
 // - Retrieves the active buffer of this buffer. If this buffer has an
 //     alternate buffer, this is the alternate buffer. Otherwise, it is this buffer.
@@ -1900,7 +1869,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
                                                      GetPopupAttributes(),
                                                      Cursor::CURSOR_SMALL_SIZE,
                                                      ppsiNewScreenBuffer);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         // Update the alt buffer's cursor style, visibility, and position to match our own.
         auto& myCursor = GetTextBuffer().GetCursor();
@@ -1913,6 +1882,8 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
         auto altCursorPos = myCursor.GetPosition();
         altCursorPos.y -= GetVirtualViewport().Top();
         altCursor.SetPosition(altCursorPos);
+        // The alt buffer's output mode should match the main buffer.
+        createdBuffer->OutputMode = OutputMode;
 
         s_InsertScreenBuffer(createdBuffer);
 
@@ -2002,7 +1973,7 @@ void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
 
     SCREEN_INFORMATION* psiNewAltBuffer;
     auto Status = _CreateAltBuffer(&psiNewAltBuffer);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         // if this is already an alternate buffer, we want to make the new
         // buffer the alt on our main buffer, not on ourself, because there
@@ -2077,6 +2048,9 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetType());
         mainCursor.SetIsVisible(altCursor.IsVisible());
         mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
+
+        // Copy the alt buffer's output mode back to the main buffer.
+        psiMain->OutputMode = psiAlt->OutputMode;
 
         s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer
         // deleting the alt buffer will give the GetSet back to its main
@@ -2349,7 +2323,10 @@ void SCREEN_INFORMATION::SetTerminalConnection(_In_ VtEngine* const pTtyConnecti
     if (pTtyConnection)
     {
         engine.SetTerminalConnection(pTtyConnection,
-                                     std::bind(&StateMachine::FlushToTerminal, _stateMachine.get()));
+                                     [&stateMachine = *_stateMachine]() -> bool {
+                                         ServiceLocator::LocateGlobals().pRender->NotifyPaintFrame();
+                                         return stateMachine.FlushToTerminal();
+                                     });
     }
     else
     {
@@ -2633,34 +2610,6 @@ TextBufferCellIterator SCREEN_INFORMATION::GetCellDataAt(const til::point at, co
 void SCREEN_INFORMATION::UpdateBottom()
 {
     _virtualBottom = _viewport.BottomInclusive();
-}
-
-// Method Description:
-// - Initialize the row with the cursor on it to the standard erase attributes.
-//      This is executed when we move the cursor below the current viewport in
-//      VT mode. When that happens in a real terminal, the line is brand new,
-//      so it gets initialized for the first time with the current attributes.
-//      Our rows are usually pre-initialized, so re-initialize it here to
-//      emulate that behavior.
-// See MSFT:17415310.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void SCREEN_INFORMATION::InitializeCursorRowAttributes()
-{
-    if (_textBuffer)
-    {
-        const auto& cursor = _textBuffer->GetCursor();
-        auto& row = _textBuffer->GetRowByOffset(cursor.GetPosition().y);
-        // The VT standard requires that the new row is initialized with
-        // the current background color, but with no meta attributes set.
-        auto fillAttributes = GetAttributes();
-        fillAttributes.SetStandardErase();
-        row.SetAttrToEnd(0, fillAttributes);
-        // The row should also be single width to start with.
-        row.SetLineRendition(LineRendition::SingleWidth);
-    }
 }
 
 // Method Description:

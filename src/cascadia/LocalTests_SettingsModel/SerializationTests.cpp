@@ -165,7 +165,13 @@ namespace SettingsModelLocalTests
                 "historySize": 9001,
 
                 "closeOnExit": "graceful",
-                "experimental.retroTerminalEffect": false
+                "experimental.retroTerminalEffect": false,
+                "environment":
+                {
+                    "KEY_1": "VALUE_1",
+                    "KEY_2": "%KEY_1%",
+                    "KEY_3": "%PATH%"
+                }
             })" };
 
         static constexpr std::string_view smallProfileString{ R"(
@@ -406,6 +412,12 @@ namespace SettingsModelLocalTests
             "$schema" : "https://aka.ms/terminal-profiles-schema",
             "defaultProfile": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
             "disabledProfileSources": [ "Windows.Terminal.Wsl" ],
+            "newTabMenu":
+            [
+                {
+                    "type": "remainingProfiles"
+                }
+            ],
             "profiles": {
                 "defaults": {
                     "font": {

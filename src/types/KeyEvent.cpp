@@ -44,6 +44,14 @@ void KeyEvent::SetVirtualScanCode(const WORD virtualScanCode) noexcept
     _virtualScanCode = virtualScanCode;
 }
 
+void KeyEvent::SetCharData(const char character) noexcept
+{
+    // With MSVC char is signed by default and the conversion to wchar_t (unsigned) would turn negative
+    // chars into very large wchar_t values. While this doesn't pose a problem per se (even with such sign
+    // extension, the lower 8 bit stay the same), it makes debugging and reading key events more difficult.
+    _charData = til::as_unsigned(character);
+}
+
 void KeyEvent::SetCharData(const wchar_t character) noexcept
 {
     _charData = character;

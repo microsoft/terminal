@@ -261,26 +261,20 @@ bool RenderData::IsCursorDoubleWidth() const noexcept
 const bool RenderData::IsGridLineDrawingAllowed() noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    // If virtual terminal output is set, grid line drawing is a must. It is always allowed.
-    if (WI_IsFlagSet(gci.GetActiveOutputBuffer().OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    const auto outputMode = gci.GetActiveOutputBuffer().OutputMode;
+    // If virtual terminal output is set, grid line drawing is a must. It is also enabled
+    // if someone explicitly asked for worldwide line drawing.
+    if (WI_IsAnyFlagSet(outputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_LVB_GRID_WORLDWIDE))
     {
         return true;
     }
     else
     {
-        // If someone explicitly asked for worldwide line drawing, enable it.
-        if (gci.IsGridRenderingAllowedWorldwide())
-        {
-            return true;
-        }
-        else
-        {
-            // Otherwise, for compatibility reasons with legacy applications that used the additional CHAR_INFO bits by accident or for their own purposes,
-            // we must enable grid line drawing only in a DBCS output codepage. (Line drawing historically only worked in DBCS codepages.)
-            // The only known instance of this is Image for Windows by TeraByte, Inc. (TeraByte Unlimited) which used the bits accidentally and for no purpose
-            //   (according to the app developer) in conjunction with the Borland Turbo C cgscrn library.
-            return !!IsAvailableEastAsianCodePage(gci.OutputCP);
-        }
+        // Otherwise, for compatibility reasons with legacy applications that used the additional CHAR_INFO bits by accident or for their own purposes,
+        // we must enable grid line drawing only in a DBCS output codepage. (Line drawing historically only worked in DBCS codepages.)
+        // The only known instance of this is Image for Windows by TeraByte, Inc. (TeraByte Unlimited) which used the bits accidentally and for no purpose
+        //   (according to the app developer) in conjunction with the Borland Turbo C cgscrn library.
+        return !!IsAvailableEastAsianCodePage(gci.OutputCP);
     }
 }
 

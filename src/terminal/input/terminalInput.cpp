@@ -278,7 +278,7 @@ void TerminalInput::ForceDisableWin32InputMode(const bool win32InputMode) noexce
     _forceDisableWin32InputMode = win32InputMode;
 }
 
-static const gsl::span<const TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent,
+static const std::span<const TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent,
                                                         const bool ansiMode,
                                                         const bool cursorApplicationMode,
                                                         const bool keypadApplicationMode) noexcept
@@ -329,7 +329,7 @@ static const gsl::span<const TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent
 // Return Value:
 // - Has value if there was a match to a key translation.
 static std::optional<const TermKeyMap> _searchKeyMapping(const KeyEvent& keyEvent,
-                                                         gsl::span<const TermKeyMap> keyMapping) noexcept
+                                                         std::span<const TermKeyMap> keyMapping) noexcept
 {
     for (auto& map : keyMapping)
     {
@@ -492,7 +492,7 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
 // Return Value:
 // - True if there was a match to a key translation, and we successfully sent it to the input
 static bool _translateDefaultMapping(const KeyEvent& keyEvent,
-                                     const gsl::span<const TermKeyMap> keyMapping,
+                                     const std::span<const TermKeyMap> keyMapping,
                                      InputSender sender)
 {
     const auto match = _searchKeyMapping(keyEvent, keyMapping);
@@ -597,6 +597,15 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         {
             _SendInputSequence({ &seq, 1 });
         }
+        return true;
+    }
+
+    // When the Line Feed mode is set, a VK_RETURN key should send both CR and LF.
+    // When reset, we fall through to the default behavior, which is to send just
+    // CR, or when the Ctrl modifier is pressed, just LF.
+    if (keyEvent.GetVirtualKeyCode() == VK_RETURN && _inputMode.test(Mode::LineFeed))
+    {
+        _SendInputSequence(L"\r\n");
         return true;
     }
 

@@ -107,8 +107,7 @@
                         x:Uid="TabColorClearButton"
                         Grid.Column="0"
                         HorizontalAlignment="Stretch"
-                        Click="ClearColorButton_Click"
-                        Content="Reset" />
+                        Click="ClearColorButton_Click" />
                 <ToggleButton x:Name="CustomColorButton"
                               x:Uid="TabColorCustomButton"
                               Grid.Column="1"

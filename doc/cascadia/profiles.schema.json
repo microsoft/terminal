@@ -24,6 +24,13 @@
       "pattern": "^(-?\\d+)?(,\\s?(-?\\d+)?)?$",
       "type": "string"
     },
+    "CSSLengthPercentage": {
+      "pattern": "^[+-]?\\d+(?:\\.\\d+)?(?:%|ch|pt|px)?$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "DynamicProfileSource": {
       "enum": [
         "Windows.Terminal.Wsl",
@@ -252,7 +259,7 @@
           "default": "Campbell",
           "description": "Name of the scheme to use when the app is using dark theme",
           "type": "string"
-        },
+        }
       }
     },
     "FontConfig": {
@@ -314,6 +321,14 @@
             }
           },
           "additionalProperties": false
+        },
+        "cellWidth": {
+          "$ref": "#/$defs/CSSLengthPercentage",
+          "description": "Override the width of the terminal's cells. The override works similar to CSS' letter-spacing. It defaults to the natural glyph advance width of the primary font rounded to the nearest pixel."
+        },
+        "cellHeight": {
+          "$ref": "#/$defs/CSSLengthPercentage",
+          "description": "Override the height of the terminal's cells. The override works similar to CSS' line-height. Defaults to the sum of the natural glyph ascend, descend and line-gap of the primary font rounded to the nearest pixel. The default is usually quite close to setting this to 1.2."
         }
       },
       "type": "object"
@@ -1722,6 +1737,123 @@
         }
       ]
     },
+    "ShowCloseButton": {
+      "enum": [
+        "always",
+        "hover",
+        "never",
+        "activeOnly"
+      ],
+      "type": "string"
+    },
+    "ThemeColor": {
+      "description": "A special kind of color for use in themes. Can be an #rrggbb color, #rrggbbaa color, or a special value. 'accent' is evaluated as the user's selected Accent color in the OS, and 'terminalBackground' will be evaluated as the background color of the active terminal pane.",
+      "oneOf": [
+        {
+          "pattern": "^#[A-Fa-f0-9]{3}(?:[A-Fa-f0-9]{3}(?:[A-Fa-f0-9]{2})?)?$",
+          "type": "string",
+          "format": "color",
+          "default": "#000000ff"
+        },
+        {
+          "const": "accent",
+          "type": "string"
+        },
+        {
+          "const": "terminalBackground",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "TabTheme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the tabs",
+      "properties": {
+        "background": {
+          "description": "The color of a tab when it is the active tab",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "unfocusedBackground": {
+          "description": "The color of a tab when it is not the active tab",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "showCloseButton": {
+          "description": "Controls the visibility of the close button on the tab",
+          "$ref": "#/$defs/ShowCloseButton"
+        }
+      }
+    },
+    "TabRowTheme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the tab row",
+      "properties": {
+        "background": {
+          "description": "The color of the tab row when the window is the foreground window.",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "unfocusedBackground": {
+          "description": "The color of the tab row when the window is inactive",
+          "$ref": "#/$defs/ThemeColor"
+        }
+      }
+    },
+    "WindowTheme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the window itself",
+      "properties": {
+        "applicationTheme": {
+          "description": "Which UI theme the Terminal should use for controls",
+          "enum": [ "light", "dark", "system" ],
+          "type": "string"
+        },
+        "useMica": {
+          "description": "True if the Terminal should use a Mica backdrop for the window. This will apply underneath all controls (including the terminal panes and the titlebar)",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "Theme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the window. This controls things like the titlebar, the tabs, the application theme.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the theme. This will be displayed in the settings UI.",
+          "not": {
+            "enum": [ "light", "dark", "system" ]
+          }
+        },
+        "tab": {
+          "$ref": "#/$defs/TabTheme"
+        },
+        "tabRow": {
+          "$ref": "#/$defs/TabRowTheme"
+        },
+        "window": {
+          "$ref": "#/$defs/WindowTheme"
+        }
+      }
+    },
+    "ThemePair": {
+      "additionalProperties": false,
+      "description": "A pair of Theme names, to allow the Terminal to switch theme based on the OS theme",
+      "properties": {
+        "light": {
+          "type": "string",
+          "description": "The name of the theme to use when the OS is in Light theme",
+          "default": "light"
+        },
+        "dark": {
+          "type": "string",
+          "description": "The name of the theme to use when the OS is in Dark theme",
+          "default": "dark"
+        }
+      }
+    },
     "NewTabMenu": {
       "description": "Defines the order and structure of the 'new tab' menu. It can consist of e.g. profiles, folders, and separators.",
       "type": "array",
@@ -1961,6 +2093,11 @@
           "description": "When set to true, the terminal will focus the pane on mouse hover.",
           "type": "boolean"
         },
+        "compatibility.isolatedMode": {
+          "default": false,
+          "description": "When set to true, Terminal windows will not be able to interact with each other (including global hotkeys, tab drag/drop, running commandlines in existing windows, etc.). This is a compatibility escape hatch for users who are running into certain windowing issues.",
+          "type": "boolean"
+        },
         "copyFormatting": {
           "default": true,
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied.",
@@ -2031,6 +2168,11 @@
         "experimental.useBackgroundImageForWindow": {
           "default": false,
           "description": "When set to true, the background image for the currently focused profile is expanded to encompass the entire window, beneath other panes.",
+          "type": "boolean"
+        },
+        "compatibility.reloadEnvironmentVariables": {
+          "default": true,
+          "description": "When set to true, when opening a new tab or pane it will get reloaded environment variables.",
           "type": "boolean"
         },
         "initialCols": {
@@ -2132,14 +2274,23 @@
           "type": "string"
         },
         "theme": {
-          "default": "system",
-          "description": "Sets the theme of the application. The special value \"system\" refers to the active Windows system theme.",
-          "enum": [
-            "light",
-            "dark",
-            "system"
-          ],
-          "type": "string"
+          "default": "dark",
+          "description": "Sets the theme of the application. This value should be the name of one of the themes defined in `themes`. The Terminal also includes the themes `dark`, `light`, and `system`.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ThemePair"
+            }
+          ]
+        },
+        "themes": {
+          "description": "The list of available themes",
+          "items": {
+            "$ref": "#/$defs/Theme"
+          },
+          "type": "array"
         },
         "showTabsInTitlebar": {
           "default": true,
@@ -2423,6 +2574,13 @@
           "type": "boolean",
           "default": false,
           "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
+        },
+        "environment": {
+          "description": "Key-value pairs representing environment variables to set. Environment variable names are not case sensitive. You can reference existing environment variable names by enclosing them in literal percent characters (e.g. %PATH%).",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "experimental.autoMarkPrompts": {
           "default": false,

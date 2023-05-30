@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "Profiles_Advanced.h"
 #include "Profiles_Advanced.g.cpp"
+#include "ProfileViewModel.h"
 
 #include "EnumEntry.h"
 #include <LibraryResources.h>
@@ -20,8 +21,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Advanced::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        auto state{ e.Parameter().as<Editor::ProfilePageNavigationState>() };
-        _Profile = state.Profile();
+        _Profile = e.Parameter().as<Editor::ProfileViewModel>();
     }
 
     void Profiles_Advanced::OnNavigatedFrom(const NavigationEventArgs& /*e*/)

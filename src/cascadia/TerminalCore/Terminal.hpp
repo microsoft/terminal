@@ -17,8 +17,8 @@
 
 #include <til/ticket_lock.h>
 
-static constexpr std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
-static constexpr size_t TaskbarMinProgress{ 10 };
+inline constexpr std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
+inline constexpr size_t TaskbarMinProgress{ 10 };
 
 // You have to forward decl the ICoreSettings here, instead of including the header.
 // If you include the header, there will be compilation errors with other
@@ -105,26 +105,20 @@ public:
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
-    void PrintString(const std::wstring_view string) override;
     void ReturnResponse(const std::wstring_view response) override;
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() noexcept override;
     TextBuffer& GetTextBuffer() noexcept override;
     til::rect GetViewport() const noexcept override;
     void SetViewportPosition(const til::point position) noexcept override;
     void SetTextAttributes(const TextAttribute& attrs) noexcept override;
-    void SetAutoWrapMode(const bool wrapAtEOL) noexcept override;
-    bool GetAutoWrapMode() const noexcept override;
-    void SetScrollingRegion(const til::inclusive_rect& scrollMargins) noexcept override;
+    void SetSystemMode(const Mode mode, const bool enabled) noexcept override;
+    bool GetSystemMode(const Mode mode) const noexcept override;
     void WarningBell() override;
-    bool GetLineFeedMode() const noexcept override;
-    void LineFeed(const bool withReturn) override;
     void SetWindowTitle(const std::wstring_view title) override;
     CursorType GetUserDefaultCursorStyle() const noexcept override;
     bool ResizeWindow(const til::CoordType width, const til::CoordType height) noexcept override;
     void SetConsoleOutputCP(const unsigned int codepage) noexcept override;
     unsigned int GetConsoleOutputCP() const noexcept override;
-    void SetBracketedPasteMode(const bool enabled) noexcept override;
-    std::optional<bool> GetBracketedPasteMode() const noexcept override;
     void CopyToClipboard(std::wstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(std::wstring_view uri) override;
@@ -141,6 +135,7 @@ public:
     bool IsConsolePty() const noexcept override;
     bool IsVtInputEnabled() const noexcept override;
     void NotifyAccessibilityChange(const til::rect& changedRect) noexcept override;
+    void NotifyBufferRotation(const int delta) override;
 #pragma endregion
 
     void ClearMark();
@@ -284,7 +279,7 @@ public:
     void SelectHyperlink(const SearchDirection dir);
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
-    UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;
+    UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const noexcept;
     til::point SelectionStartForRendering() const;
     til::point SelectionEndForRendering() const;
     const SelectionEndpoint SelectionEndpointTarget() const noexcept;
@@ -322,10 +317,11 @@ private:
 
     CursorType _defaultCursorShape = CursorType::Legacy;
 
+    til::enumset<Mode> _systemMode{ Mode::AutoWrap };
+
     bool _snapOnInput = true;
     bool _altGrAliasing = true;
     bool _suppressApplicationTitle = false;
-    bool _bracketedPasteMode = false;
     bool _trimBlockSelection = false;
     bool _autoMarkPrompts = false;
 
@@ -412,7 +408,7 @@ private:
     static WORD _VirtualKeyFromCharacter(const wchar_t ch) noexcept;
     static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;
 
-    void _StoreKeyEvent(const WORD vkey, const WORD scanCode);
+    void _StoreKeyEvent(const WORD vkey, const WORD scanCode) noexcept;
     WORD _TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept;
 
     int _VisibleStartIndex() const noexcept;
@@ -421,9 +417,7 @@ private:
     Microsoft::Console::Types::Viewport _GetMutableViewport() const noexcept;
     Microsoft::Console::Types::Viewport _GetVisibleViewport() const noexcept;
 
-    void _WriteBuffer(const std::wstring_view& stringView);
-
-    void _AdjustCursorPosition(const til::point proposedPosition);
+    void _PreserveUserScrollOffset(const int viewportDelta) noexcept;
 
     void _NotifyScrollEvent() noexcept;
 

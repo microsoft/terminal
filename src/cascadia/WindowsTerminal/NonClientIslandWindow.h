@@ -30,8 +30,8 @@ public:
     static constexpr const int topBorderVisibleHeight = 1;
 
     NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
-    virtual ~NonClientIslandWindow() override;
 
+    virtual void Close() override;
     void MakeWindow() noexcept override;
     virtual void OnSize(const UINT width, const UINT height) override;
 
@@ -81,7 +81,6 @@ private:
     int _GetTopBorderHeight() const noexcept;
     LRESULT _dragBarNcHitTest(const til::point pointer);
 
-    [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
     [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnNcHitTest(POINT ptMouse) const noexcept;
     [[nodiscard]] LRESULT _OnPaint() noexcept;

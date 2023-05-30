@@ -15,7 +15,18 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Always,
         Hover,
-        Never
+        Never,
+        ActiveOnly
+    };
+
+    [default_interface] runtimeclass ThemePair
+    {
+        ThemePair();
+        ThemePair(String name);
+        ThemePair(String darkName, String lightName);
+
+        String DarkName;
+        String LightName;
     };
 
     runtimeclass ThemeColor
@@ -68,6 +79,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         // A helper for retrieving the RequestedTheme out of the window property
         Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
+        static Boolean IsSystemInDarkTheme();
 
     }
 }
