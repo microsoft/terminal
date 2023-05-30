@@ -100,6 +100,7 @@ namespace winrt::TerminalApp::implementation
         WINRT_CALLBACK(TabRaiseVisualBell, winrt::delegate<>);
         WINRT_CALLBACK(DuplicateRequested, winrt::delegate<>);
         WINRT_CALLBACK(SplitTabRequested, winrt::delegate<>);
+        WINRT_CALLBACK(MoveTabToNewWindowRequested, winrt::delegate<>);
         WINRT_CALLBACK(FindRequested, winrt::delegate<>);
         WINRT_CALLBACK(ExportTabRequested, winrt::delegate<>);
         WINRT_CALLBACK(ColorPickerRequested, winrt::delegate<>);

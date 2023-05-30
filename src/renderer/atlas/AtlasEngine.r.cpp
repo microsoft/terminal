@@ -162,6 +162,10 @@ void AtlasEngine::_recreateAdapter()
 
 void AtlasEngine::_recreateBackend()
 {
+    // D3D11 defers the destruction of objects and only one swap chain can be associated with a
+    // HWND, IWindow, or composition surface at a time. --> Destroy it while we still have the old device.
+    _destroySwapChain();
+
     auto d2dMode = ATLAS_DEBUG_FORCE_D2D_MODE;
     auto deviceFlags =
         D3D11_CREATE_DEVICE_SINGLETHREADED
@@ -260,7 +264,6 @@ void AtlasEngine::_recreateBackend()
         d2dMode |= !options.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x;
     }
 
-    _p.swapChain = {};
     _p.device = std::move(device);
     _p.deviceContext = std::move(deviceContext);
 
@@ -285,18 +288,10 @@ void AtlasEngine::_handleSwapChainUpdate()
 {
     if (_p.swapChain.targetGeneration != _p.s->target.generation())
     {
-        if (_p.swapChain.swapChain)
-        {
-            _b->ReleaseResources();
-            _p.deviceContext->ClearState();
-            _p.deviceContext->Flush();
-        }
         _createSwapChain();
     }
     else if (_p.swapChain.targetSize != _p.s->targetSize)
     {
-        _b->ReleaseResources();
-        _p.deviceContext->ClearState();
         _resizeBuffers();
     }
 
@@ -312,8 +307,7 @@ static constexpr DXGI_SWAP_CHAIN_FLAG swapChainFlags = ATLAS_DEBUG_DISABLE_FRAME
 
 void AtlasEngine::_createSwapChain()
 {
-    _p.swapChain.swapChain.reset();
-    _p.swapChain.frameLatencyWaitableObject.reset();
+    _destroySwapChain();
 
     DXGI_SWAP_CHAIN_DESC1 desc{
         .Width = _p.s->targetSize.x,
@@ -340,6 +334,7 @@ void AtlasEngine::_createSwapChain()
     };
 
     wil::com_ptr<IDXGISwapChain1> swapChain1;
+    wil::unique_handle handle;
 
     if (_p.s->target->hwnd)
     {
@@ -354,14 +349,14 @@ void AtlasEngine::_createSwapChain()
 
         // As per: https://docs.microsoft.com/en-us/windows/win32/api/dcomp/nf-dcomp-dcompositioncreatesurfacehandle
         static constexpr DWORD COMPOSITIONSURFACE_ALL_ACCESS = 0x0003L;
-        THROW_IF_FAILED(DCompositionCreateSurfaceHandle(COMPOSITIONSURFACE_ALL_ACCESS, nullptr, _p.swapChain.handle.addressof()));
-        THROW_IF_FAILED(_p.dxgi.factory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(_p.device.get(), _p.swapChain.handle.get(), &desc, nullptr, swapChain1.addressof()));
+        THROW_IF_FAILED(DCompositionCreateSurfaceHandle(COMPOSITIONSURFACE_ALL_ACCESS, nullptr, handle.addressof()));
+        THROW_IF_FAILED(_p.dxgi.factory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(_p.device.get(), handle.get(), &desc, nullptr, swapChain1.addressof()));
     }
 
     _p.swapChain.swapChain = swapChain1.query<IDXGISwapChain2>();
+    _p.swapChain.handle = std::move(handle);
     _p.swapChain.frameLatencyWaitableObject.reset(_p.swapChain.swapChain->GetFrameLatencyWaitableObject());
     _p.swapChain.targetGeneration = _p.s->target.generation();
-    _p.swapChain.fontGeneration = {};
     _p.swapChain.targetSize = _p.s->targetSize;
     _p.swapChain.waitForPresentation = true;
 
@@ -377,8 +372,30 @@ void AtlasEngine::_createSwapChain()
     }
 }
 
+void AtlasEngine::_destroySwapChain()
+{
+    if (_p.swapChain.swapChain)
+    {
+        // D3D11 defers the destruction of objects and only one swap chain can be associated with a
+        // HWND, IWindow, or composition surface at a time. --> Force the destruction of all objects.
+        _p.swapChain = {};
+        if (_b)
+        {
+            _b->ReleaseResources();
+        }
+        if (_p.deviceContext)
+        {
+            _p.deviceContext->ClearState();
+            _p.deviceContext->Flush();
+        }
+    }
+}
+
 void AtlasEngine::_resizeBuffers()
 {
+    _b->ReleaseResources();
+    _p.deviceContext->ClearState();
+
     THROW_IF_FAILED(_p.swapChain.swapChain->ResizeBuffers(0, _p.s->targetSize.x, _p.s->targetSize.y, DXGI_FORMAT_UNKNOWN, swapChainFlags));
     _p.swapChain.targetSize = _p.s->targetSize;
 }
@@ -415,31 +432,32 @@ void AtlasEngine::_waitUntilCanRender() noexcept
 
 void AtlasEngine::_present()
 {
-    // Present1() dislikes being called with an empty dirty rect.
-    if (!_p.dirtyRectInPx)
-    {
-        return;
-    }
-
-    const til::rect fullRect{ 0, 0, _p.swapChain.targetSize.x, _p.swapChain.targetSize.y };
+    const RECT fullRect{ 0, 0, _p.swapChain.targetSize.x, _p.swapChain.targetSize.y };
 
     DXGI_PRESENT_PARAMETERS params{};
     RECT scrollRect{};
     POINT scrollOffset{};
 
     // Since rows might be taller than their cells, they might have drawn outside of the viewport.
-    auto dirtyRect = _p.dirtyRectInPx;
-    dirtyRect.left = std::max(dirtyRect.left, 0);
-    dirtyRect.top = std::max(dirtyRect.top, 0);
-    dirtyRect.right = std::min(dirtyRect.right, fullRect.right);
-    dirtyRect.bottom = std::min(dirtyRect.bottom, fullRect.bottom);
+    RECT dirtyRect{
+        .left = std::max(_p.dirtyRectInPx.left, 0),
+        .top = std::max(_p.dirtyRectInPx.top, 0),
+        .right = std::min<LONG>(_p.dirtyRectInPx.right, fullRect.right),
+        .bottom = std::min<LONG>(_p.dirtyRectInPx.bottom, fullRect.bottom),
+    };
+
+    // Present1() dislikes being called with an empty dirty rect.
+    if (dirtyRect.left >= dirtyRect.right || dirtyRect.top >= dirtyRect.bottom)
+    {
+        return;
+    }
 
     if constexpr (!ATLAS_DEBUG_SHOW_DIRTY)
     {
-        if (dirtyRect != fullRect)
+        if (memcmp(&dirtyRect, &fullRect, sizeof(RECT)) != 0)
         {
             params.DirtyRectsCount = 1;
-            params.pDirtyRects = dirtyRect.as_win32_rect();
+            params.pDirtyRects = &dirtyRect;
 
             if (_p.scrollOffset)
             {

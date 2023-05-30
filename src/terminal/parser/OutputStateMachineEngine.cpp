@@ -209,6 +209,10 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         // This is the 7-bit string terminator, which is essentially a no-op.
         success = true;
         break;
+    case EscActionCodes::DECBI_BackIndex:
+        success = _dispatch->BackIndex();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECBI);
+        break;
     case EscActionCodes::DECSC_CursorSave:
         success = _dispatch->CursorSaveState();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSC);
@@ -216,6 +220,10 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
     case EscActionCodes::DECRC_CursorRestore:
         success = _dispatch->CursorRestoreState();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRC);
+        break;
+    case EscActionCodes::DECFI_ForwardIndex:
+        success = _dispatch->ForwardIndex();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECFI);
         break;
     case EscActionCodes::DECKPAM_KeypadApplicationMode:
         success = _dispatch->SetKeypadMode(true);
@@ -699,6 +707,14 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::DECSERA_SelectiveEraseRectangularArea:
         success = _dispatch->SelectiveEraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSERA);
+        break;
+    case CsiActionCodes::DECIC_InsertColumn:
+        success = _dispatch->InsertColumn(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECIC);
+        break;
+    case CsiActionCodes::DECDC_DeleteColumn:
+        success = _dispatch->DeleteColumn(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDC);
         break;
     case CsiActionCodes::DECSACE_SelectAttributeChangeExtent:
         success = _dispatch->SelectAttributeChangeExtent(parameters.at(0));

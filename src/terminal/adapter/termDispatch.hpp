@@ -44,6 +44,8 @@ public:
     bool ScrollDown(const VTInt /*distance*/) override { return false; } // SD
     bool InsertLine(const VTInt /*distance*/) override { return false; } // IL
     bool DeleteLine(const VTInt /*distance*/) override { return false; } // DL
+    bool InsertColumn(const VTInt /*distance*/) override { return false; } // DECIC
+    bool DeleteColumn(const VTInt /*distance*/) override { return false; } // DECDC
     bool SetKeypadMode(const bool /*applicationMode*/) override { return false; } // DECKPAM, DECKPNM
     bool SetAnsiMode(const bool /*ansiMode*/) override { return false; } // DECANM
     bool SetTopBottomScrollingMargins(const VTInt /*topMargin*/, const VTInt /*bottomMargin*/) override { return false; } // DECSTBM
@@ -52,6 +54,8 @@ public:
     bool CarriageReturn() override { return false; } // CR
     bool LineFeed(const DispatchTypes::LineFeedType /*lineFeedType*/) override { return false; } // IND, NEL, LF, FF, VT
     bool ReverseLineFeed() override { return false; } // RI
+    bool BackIndex() override { return false; } // DECBI
+    bool ForwardIndex() override { return false; } // DECFI
     bool SetWindowTitle(std::wstring_view /*title*/) override { return false; } // OscWindowTitle
     bool HorizontalTabSet() override { return false; } // HTS
     bool ForwardTab(const VTInt /*numTabs*/) override { return false; } // CHT, HT
