@@ -291,7 +291,7 @@ void AppHost::Initialize()
         _windowLogic.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
     }
 
-    // These call APIs that are re-entrant on the window message loop. If
+    // These call APIs that are reentrant on the window message loop. If
     // you call them in the ctor, we might deadlock. The ctor for AppHost isn't
     // always called on the window thread - for reheated windows, it could be
     // called on a random COM thread.
@@ -466,8 +466,8 @@ void AppHost::_revokeWindowCallbacks()
 
 // revoke our callbacks, discard our XAML content (TerminalWindow &
 // TerminalPage), and hand back our IslandWindow. This does _not_ close the XAML
-// island for this thread. We should not be re-used after this, and aour caller
-// can destruct us like they normaly would during a close. The returned
+// island for this thread. We should not be re-used after this, and our caller
+// can destruct us like they normally would during a close. The returned
 // IslandWindow will retain ownership of the DesktopWindowXamlSource, for later
 // reuse.
 [[nodiscard]] std::unique_ptr<IslandWindow> AppHost::Refrigerate()
