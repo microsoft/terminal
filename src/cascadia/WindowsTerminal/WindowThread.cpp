@@ -66,7 +66,7 @@ void WindowThread::RundownForExit()
     {
         // If we have a _warmWindow, we're a refrigerated thread without a
         // AppHost in control of the window. Manually close the window
-        // ourselves, to free the DWXS.
+        // ourselves, to free the DesktopWindowXamlSource.
         _warmWindow->Close();
     }
 
@@ -94,7 +94,7 @@ void WindowThread::ThrowAway()
 //   they want to re-use this window thread for a new window.
 // Return Value:
 // - true IFF we should enter this thread's message loop
-// INVARAINT: This must be called on our "ui thread", our window thread.
+// INVARIANT: This must be called on our "ui thread", our window thread.
 bool WindowThread::KeepWarm()
 {
     if (_host != nullptr)
@@ -104,7 +104,7 @@ bool WindowThread::KeepWarm()
     }
 
     // If we're refrigerated, then wait on the microwave signal, which will be
-    // raised when we get microwaved by another thread to reactivate us.
+    // raised when we get re-heated by another thread to reactivate us.
 
     if (_warmWindow != nullptr)
     {
@@ -139,10 +139,10 @@ void WindowThread::Refrigerate()
 {
     _host->UpdateSettingsRequested(_UpdateSettingsRequestedToken);
 
-    // keep a reference to the HWND and DWXS alive.
+    // keep a reference to the HWND and DesktopWindowXamlSource alive.
     _warmWindow = std::move(_host->Refrigerate());
 
-    // rundown remaining messages before dtoring the app host
+    // rundown remaining messages before destructing the app host
     _pumpRemainingXamlMessages();
     _host = nullptr;
 }

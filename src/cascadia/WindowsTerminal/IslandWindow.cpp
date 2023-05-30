@@ -423,14 +423,15 @@ void IslandWindow::_warmInitialize()
     ForceResize();
 
     // Don't call IslandWindow::OnSize - that will set the Width/Height members
-    // of the _rootGrid. However, NCIW doesn't use those! If you set them, here,
+    // of the _rootGrid. However, NonClientIslandWindow doesn't use those! If you set them, here,
     // the contents of the window will never resize.
 }
 
 void IslandWindow::OnSize(const UINT width, const UINT height)
 {
-    // NOTE: This _isn't_ called by NonClientIslandWindow::OnSize. The NCIW has
-    // very different logic for positioning the DWXS inside it's HWND.
+    // NOTE: This _isn't_ called by NonClientIslandWindow::OnSize. The
+    // NonClientIslandWindow has very different logic for positioning the
+    // DesktopWindowXamlSource inside it's HWND.
 
     // update the interop window size
     SetWindowPos(_interopWindowHandle, nullptr, 0, 0, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);

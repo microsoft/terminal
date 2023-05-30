@@ -218,6 +218,6 @@ private:
         winrt::event_token MaximizeChanged;
         winrt::event_token AutomaticShutdownRequested;
         // LOAD BEARING!!
-        //If you add events here, make sure they're revokec in AppHost::_revokeWindowCallbacks
+        //If you add events here, make sure they're revoked in AppHost::_revokeWindowCallbacks
     } _windowCallbacks{};
 };

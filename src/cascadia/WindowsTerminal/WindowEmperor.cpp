@@ -205,7 +205,6 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
     std::thread t([weakThis, window]() {
         try
         {
-
             window->CreateHost();
 
             if (auto self{ weakThis.lock() })
