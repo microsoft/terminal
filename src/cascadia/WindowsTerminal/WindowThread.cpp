@@ -83,7 +83,12 @@ void WindowThread::RundownForExit()
 
 void WindowThread::ThrowAway()
 {
-    // raise the signal to unblock KeepWarm. We won't have a host, so we'll drop out of the message loop to eventually RundownForExit.
+    // raise the signal to unblock KeepWarm. We won't have a host, so we'll drop
+    // out of the message loop to eventually RundownForExit.
+    //
+    // This should only be called when the app is fully quitting. After this is
+    // called on any thread, on win10, we won't be able to call into XAML
+    // anymore.
     _microwaveBuzzer.notify_one();
 }
 
@@ -111,9 +116,9 @@ bool WindowThread::KeepWarm()
         std::unique_lock lock(_microwave);
         _microwaveBuzzer.wait(lock);
 
-        // TODO! There probably needs to be a way for us to be closed and have
-        // that set the signal too (so that we drop out of this and return false
-        // and cleanup our window.)
+        // If ThrowAway() was called, then the buzzer will be signalled without
+        // setting a new _host. In that case, the app is quitting, for real. We
+        // just want to exit with false.
         const bool reheated = _host != nullptr;
         if (reheated)
         {

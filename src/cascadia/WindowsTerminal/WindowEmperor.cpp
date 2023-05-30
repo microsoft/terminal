@@ -583,6 +583,11 @@ LRESULT WindowEmperor::_messageHandler(UINT const message, WPARAM const wParam, 
     return DefWindowProc(_window.get(), message, wParam, lParam);
 }
 
+// Close the Terminal application. This will exit the main thread for the
+// emperor itself. We should probably only ever be called when we have no
+// windows left, and we don't want to keep running anymore. This will discard
+// all our refrigerated windows. If we try to use XAML on Windows 10 after this,
+// we'll undoubtably crash.
 winrt::fire_and_forget WindowEmperor::_close()
 {
     {
