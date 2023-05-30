@@ -366,11 +366,7 @@ bool NonClientIslandWindow::Initialize()
     _dragBar = _titlebar.DragBar();
 
     _callbacks.dragBar_SizeChanged = _dragBar.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
-
-    // if (coldInit)
-    {
-        _callbacks.rootGrid_SizeChanged = _rootGrid.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
-    }
+    _callbacks.rootGrid_SizeChanged = _rootGrid.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
 
     _rootGrid.Children().Append(_titlebar);
 
@@ -381,6 +377,10 @@ bool NonClientIslandWindow::Initialize()
     // maximized state on launch.
     _callbacks.titlebar_Loaded = _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
 
+    // LOAD BEARING: call _ResizeDragBarWindow to update the position of our
+    // XAML island to reflect our current bounds. In the case of a "warm init"
+    // (i.e. re-using an existing window), we need to manually update the
+    // island's position to fill the new window bounds.
     _ResizeDragBarWindow();
 
     return coldInit;

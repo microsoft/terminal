@@ -42,46 +42,6 @@ IslandWindow::~IslandWindow()
 
 void IslandWindow::Close()
 {
-    static const bool isWindows11 = []() {
-        OSVERSIONINFOEXW osver{};
-        osver.dwOSVersionInfoSize = sizeof(osver);
-        osver.dwBuildNumber = 22000;
-
-        DWORDLONG dwlConditionMask = 0;
-        VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
-
-        if (VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE)
-        {
-            return true;
-        }
-        return false;
-    }();
-
-    if (!isWindows11)
-    {
-        // BODGY
-        //  ____   ____  _____   _______     __
-        // |  _ \ / __ \|  __ \ / ____\ \   / /
-        // | |_) | |  | | |  | | |  __ \ \_/ /
-        // |  _ <| |  | | |  | | | |_ | \   /
-        // | |_) | |__| | |__| | |__| |  | |
-        // |____/ \____/|_____/ \_____|  |_|
-        //
-        // There's a bug in Windows 10 where closing a DesktopWindowXamlSource
-        // on any thread will free an internal static resource that's used by
-        // XAML for the entire process. This would result in closing window
-        // essentially causing the entire app to crash.
-        //
-        // To avoid this, leak the XAML island. We only need to leak this on
-        // Windows 10, since the bug is fixed in Windows 11.
-        //
-        // See GH #15384, MSFT:32109540
-        auto a{ _source };
-        winrt::detach_abi(_source);
-
-        // </BODGY>
-    }
-
     // GH#15454: Unset the user data for the window. This will prevent future
     // callbacks that come onto our window message loop from being sent to the
     // IslandWindow (or other derived class's) implementation.
@@ -99,8 +59,20 @@ void IslandWindow::Close()
     }
 }
 
+// Clear out any state that might be associated with this app instance, so that
+// we can later re-use this HWND for another instance.
+//
+// This doesn't actually close out our HWND or DesktopWindowXamlSource, but it
+// will remove all our content, and SW_HIDE the window, so it isn't accessible.
 void IslandWindow::Refrigerate() noexcept
 {
+    // Similar to in Close - unset our HWND's user data. We'll re-set this when
+    // we get re-heated, so that while we're refrigerated, we won't have
+    // unexpected callbacks into us while we don't have content.
+    //
+    // This pointer will get re-set in _warmInitialize
+    SetWindowLongPtr(_window.get(), GWLP_USERDATA, 0);
+
     _pfnCreateCallback = nullptr;
     _pfnSnapDimensionCallback = nullptr;
 
@@ -412,19 +384,22 @@ void IslandWindow::_coldInitialize()
 }
 void IslandWindow::_warmInitialize()
 {
-    // Manually ask how we want to be created?
+    // re-add the pointer to us to our HWND's user data, so that we can start
+    // getting window proc callbacks again.
+    _setupUserData();
 
+    // Manually ask how we want to be created.
     if (_pfnCreateCallback)
     {
         til::rect rc{ GetWindowRect() };
         _pfnCreateCallback(_window.get(), rc);
     }
-    UpdateWindow(_window.get());
-    ForceResize();
 
     // Don't call IslandWindow::OnSize - that will set the Width/Height members
     // of the _rootGrid. However, NonClientIslandWindow doesn't use those! If you set them, here,
     // the contents of the window will never resize.
+    UpdateWindow(_window.get());
+    ForceResize();
 }
 
 void IslandWindow::OnSize(const UINT width, const UINT height)

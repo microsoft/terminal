@@ -165,16 +165,23 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
     Remoting::Peasant peasant{ _manager.CreatePeasant(args) };
     std::shared_ptr<WindowThread> window{ nullptr };
 
-    {
+    // FIRST: Attempt to reheat an existing window that we refrigerated for
+    // later. If we have an existing unused window, then we don't need to create
+    // a new WindowThread & HWND for this request.
+    { // Add a scope to minimize lock duration.
         auto fridge{ _oldThreads.lock() };
         if (fridge->size() > 0)
         {
+            // Look at that, a refrigerated thread ready to be used. Let's use that!
             window = fridge->back();
             fridge->pop_back();
         }
     }
+
+    // Did we find one?
     if (window)
     {
+        // Cool! Let's increment the number of active windows, and re-heat it.
         _windowThreadInstances.fetch_add(1, std::memory_order_relaxed);
 
         window->Microwave(args, peasant);
@@ -182,6 +189,9 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
         // window thread (started below) will continue through it's loop
         return;
     }
+
+    // At this point, there weren't any pending refrigerated threads we could
+    // just use. That's fine. Let's just go create a new one.
 
     window = std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant);
 

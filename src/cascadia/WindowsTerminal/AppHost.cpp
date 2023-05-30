@@ -464,6 +464,12 @@ void AppHost::_revokeWindowCallbacks()
     _window->AutomaticShutdownRequested(_windowCallbacks.AutomaticShutdownRequested);
 }
 
+// revoke our callbacks, discard our XAML content (TerminalWindow &
+// TerminalPage), and hand back our IslandWindow. This does _not_ close the XAML
+// island for this thread. We should not be re-used after this, and aour caller
+// can destruct us like they normaly would during a close. The returned
+// IslandWindow will retain ownership of the DesktopWindowXamlSource, for later
+// reuse.
 [[nodiscard]] std::unique_ptr<IslandWindow> AppHost::Refrigerate()
 {
     // After calling _window->Close() we should avoid creating more WinUI related actions.
