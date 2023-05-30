@@ -1779,52 +1779,57 @@ void IslandWindow::SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotifica
 // Arguments:
 // - cursorX: the cursor's X position in screen coordinates
 // - cursorY: the cursor's Y position in screen coordinates
-void IslandWindow::OpenSystemMenu(const std::optional<int> mouseX, const std::optional<int> mouseY) const noexcept
+void IslandWindow::OpenSystemMenu(const std::optional<int> cursorX, const std::optional<int> cursorY) const noexcept
 {
-    const auto systemMenu = GetSystemMenu(_window.get(), FALSE);
+    if (const HMENU systemMenu = GetSystemMenu(_window.get(), FALSE))
+    {
+        WINDOWPLACEMENT placement;
+        if (GetWindowPlacement(_window.get(), &placement))
+        {
+            const bool isMaximized = placement.showCmd == SW_SHOWMAXIMIZED;
 
-    WINDOWPLACEMENT placement;
-    if (!GetWindowPlacement(_window.get(), &placement))
-    {
-        return;
-    }
-    const auto isMaximized = placement.showCmd == SW_SHOWMAXIMIZED;
+            // Update the options based on window state.
+            auto fnSetMenuItemState = [&](const UINT item, const bool enabled) -> BOOL {
+                MENUITEMINFO menuItemInfo;
+                menuItemInfo.cbSize = sizeof(MENUITEMINFO);
+                menuItemInfo.fMask = MIIM_STATE;
+                menuItemInfo.fType = MFT_STRING;
+                menuItemInfo.fState = enabled ? MF_ENABLED : MF_DISABLED;
+                return SetMenuItemInfo(systemMenu, item, FALSE, &menuItemInfo);
+            };
 
-    // Update the options based on window state.
-    MENUITEMINFO mii;
-    mii.cbSize = sizeof(MENUITEMINFO);
-    mii.fMask = MIIM_STATE;
-    mii.fType = MFT_STRING;
-    auto setState = [&](UINT item, bool enabled) {
-        mii.fState = enabled ? MF_ENABLED : MF_DISABLED;
-        SetMenuItemInfo(systemMenu, item, FALSE, &mii);
-    };
-    setState(SC_RESTORE, isMaximized);
-    setState(SC_MOVE, !isMaximized);
-    setState(SC_SIZE, !isMaximized);
-    setState(SC_MINIMIZE, true);
-    setState(SC_MAXIMIZE, !isMaximized);
-    setState(SC_CLOSE, true);
-    SetMenuDefaultItem(systemMenu, UINT_MAX, FALSE);
+            if (fnSetMenuItemState(SC_RESTORE, isMaximized) &&
+                fnSetMenuItemState(SC_MOVE, !isMaximized) &&
+                fnSetMenuItemState(SC_SIZE, !isMaximized) &&
+                fnSetMenuItemState(SC_MINIMIZE, true) &&
+                fnSetMenuItemState(SC_MAXIMIZE, !isMaximized) &&
+                fnSetMenuItemState(SC_CLOSE, true))
+            {
+                if (SetMenuDefaultItem(systemMenu, UINT_MAX, FALSE))
+                {
+                    std::optional<int> systemMenuX = cursorX;
+                    std::optional<int> systemMenuY = cursorY;
+                    if (!systemMenuX.has_value() || !systemMenuY.has_value())
+                    {
+                        RECT clientScreenRect;
+                        if (GetClientRect(GetHandle(), &clientScreenRect) && ClientToScreen(GetHandle(), reinterpret_cast<LPPOINT>(&clientScreenRect)))
+                        {
+                            systemMenuX = clientScreenRect.left;
+                            systemMenuY = clientScreenRect.top;
+                        }
+                    }
 
-    int xPos;
-    int yPos;
-    if (mouseX && mouseY)
-    {
-        xPos = mouseX.value();
-        yPos = mouseY.value();
-    }
-    else
-    {
-        RECT windowPos;
-        ::GetWindowRect(GetHandle(), &windowPos);
-        xPos = windowPos.left;
-        yPos = windowPos.top;
-    }
-    const auto ret = TrackPopupMenu(systemMenu, TPM_RETURNCMD, xPos, yPos, 0, _window.get(), nullptr);
-    if (ret != 0)
-    {
-        PostMessage(_window.get(), WM_SYSCOMMAND, ret, 0);
+                    if (systemMenuX.has_value() && systemMenuY.has_value())
+                    {
+                        const BOOL menuItemIdentifier = TrackPopupMenu(systemMenu, TPM_RETURNCMD, systemMenuX.value(), systemMenuY.value(), 0, _window.get(), nullptr);
+                        if (menuItemIdentifier != 0)
+                        {
+                            PostMessage(_window.get(), WM_SYSCOMMAND, menuItemIdentifier, 0);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
