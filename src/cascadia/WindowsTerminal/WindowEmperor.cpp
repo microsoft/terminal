@@ -245,13 +245,13 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
                 // elsewhere).
                 removeWindow.reset();
 
-                // On Windows 11, we DONT want to refrigerate the window. There, we can just
-                // close it like normal.
-                // TODO!
-
+                // On Windows 11, we DONT want to refrigerate the window. There,
+                // we can just close it like normal. Break out of the loop, so
+                // we don't try to put this window in the fridge.
                 if (IsWindows11())
                 {
                     decrementWindowCount.reset();
+                    break;
                 }
                 else
                 {
