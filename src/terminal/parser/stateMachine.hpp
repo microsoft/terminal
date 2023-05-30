@@ -15,7 +15,6 @@ Abstract:
 #pragma once
 
 #include "IStateMachineEngine.hpp"
-#include "telemetry.hpp"
 #include "tracing.hpp"
 #include <memory>
 
@@ -141,8 +140,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         template<typename TLambda>
         bool _SafeExecute(TLambda&& lambda);
-        template<typename TLambda>
-        bool _SafeExecuteWithLog(const wchar_t wch, TLambda&& lambda);
 
         void _ExecuteCsiCompleteCallback();
 

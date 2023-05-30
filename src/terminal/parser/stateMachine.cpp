@@ -447,7 +447,7 @@ void StateMachine::_ActionPrintString(const std::wstring_view string)
 void StateMachine::_ActionEscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"EscDispatch");
-    _trace.DispatchSequenceTrace(_SafeExecuteWithLog(wch, [=]() {
+    _trace.DispatchSequenceTrace(_SafeExecute([=]() {
         return _engine->ActionEscDispatch(_identifier.Finalize(wch));
     }));
 }
@@ -462,7 +462,7 @@ void StateMachine::_ActionEscDispatch(const wchar_t wch)
 void StateMachine::_ActionVt52EscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Vt52EscDispatch");
-    _trace.DispatchSequenceTrace(_SafeExecuteWithLog(wch, [=]() {
+    _trace.DispatchSequenceTrace(_SafeExecute([=]() {
         return _engine->ActionVt52EscDispatch(_identifier.Finalize(wch), { _parameters.data(), _parameters.size() });
     }));
 }
@@ -477,7 +477,7 @@ void StateMachine::_ActionVt52EscDispatch(const wchar_t wch)
 void StateMachine::_ActionCsiDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"CsiDispatch");
-    _trace.DispatchSequenceTrace(_SafeExecuteWithLog(wch, [=]() {
+    _trace.DispatchSequenceTrace(_SafeExecute([=]() {
         return _engine->ActionCsiDispatch(_identifier.Finalize(wch), { _parameters.data(), _parameters.size() });
     }));
 }
@@ -635,7 +635,7 @@ void StateMachine::_ActionOscPut(const wchar_t wch)
 void StateMachine::_ActionOscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"OscDispatch");
-    _trace.DispatchSequenceTrace(_SafeExecuteWithLog(wch, [=]() {
+    _trace.DispatchSequenceTrace(_SafeExecute([=]() {
         return _engine->ActionOscDispatch(wch, _oscParameter, _oscString);
     }));
 }
@@ -650,7 +650,7 @@ void StateMachine::_ActionOscDispatch(const wchar_t wch)
 void StateMachine::_ActionSs3Dispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Ss3Dispatch");
-    _trace.DispatchSequenceTrace(_SafeExecuteWithLog(wch, [=]() {
+    _trace.DispatchSequenceTrace(_SafeExecute([=]() {
         return _engine->ActionSs3Dispatch(wch, { _parameters.data(), _parameters.size() });
     }));
 }
@@ -666,7 +666,7 @@ void StateMachine::_ActionDcsDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"DcsDispatch");
 
-    const auto success = _SafeExecuteWithLog(wch, [=]() {
+    const auto success = _SafeExecute([=]() {
         _dcsStringHandler = _engine->ActionDcsDispatch(_identifier.Finalize(wch), { _parameters.data(), _parameters.size() });
         // If the returned handler is null, the sequence is not supported.
         return _dcsStringHandler != nullptr;
@@ -2061,17 +2061,6 @@ catch (...)
 {
     LOG_HR(wil::ResultFromCaughtException());
     return false;
-}
-
-template<typename TLambda>
-bool StateMachine::_SafeExecuteWithLog(const wchar_t wch, TLambda&& lambda)
-{
-    const bool success = _SafeExecute(std::forward<TLambda>(lambda));
-    if (!success)
-    {
-        TermTelemetry::Instance().LogFailed(wch);
-    }
-    return success;
 }
 
 void StateMachine::_ExecuteCsiCompleteCallback()
