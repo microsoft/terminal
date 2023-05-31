@@ -75,6 +75,7 @@ IConnection
 ICustom
 IDialog
 IDirect
+Idn
 IExplorer
 IFACEMETHOD
 IFile

@@ -221,6 +221,7 @@ cmt
 cmw
 cmyk
 CNL
+cnn
 cnt
 CNTRL
 Codeflow
@@ -260,7 +261,6 @@ condrv
 conechokey
 conemu
 configurability
-confusables
 conhost
 conime
 conimeinfo
@@ -813,7 +813,6 @@ HIBYTE
 hicon
 HIDEWINDOW
 hinst
-Hirots
 HISTORYBUFS
 HISTORYNODUP
 HISTORYSIZE
@@ -830,6 +829,8 @@ HMK
 hmod
 hmodule
 hmon
+homeglyphs
+homoglyph
 HORZ
 hostable
 hostlib
@@ -1287,7 +1288,6 @@ nullability
 nullness
 nullonfailure
 nullopts
-NULs
 numlock
 numpad
 NUMSCROLL
@@ -1776,7 +1776,6 @@ somefile
 SOURCEBRANCH
 sourced
 spammy
-spand
 SRCCODEPAGE
 SRCCOPY
 SRCINVERT
@@ -2302,7 +2301,6 @@ xunit
 xutr
 XVIRTUALSCREEN
 XWalk
-xwwyzz
 xxyyzz
 yact
 YCast
