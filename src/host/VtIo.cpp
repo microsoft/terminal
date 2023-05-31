@@ -25,7 +25,6 @@ using namespace Microsoft::Console::Interactivity;
 
 VtIo::VtIo() :
     _initialized(false),
-    _objectsCreated(false),
     _lookingForCursorPosition(false),
     _IoMode(VtIoMode::INVALID)
 {
@@ -224,13 +223,12 @@ VtIo::VtIo() :
     }
     CATCH_RETURN();
 
-    _objectsCreated = true;
     return S_OK;
 }
 
 bool VtIo::IsUsingVt() const
 {
-    return _objectsCreated;
+    return _initialized;
 }
 
 // Routine Description:
@@ -246,7 +244,7 @@ bool VtIo::IsUsingVt() const
 [[nodiscard]] HRESULT VtIo::StartIfNeeded()
 {
     // If we haven't been set up, do nothing (because there's nothing to start)
-    if (!_objectsCreated)
+    if (!_initialized)
     {
         return S_FALSE;
     }
@@ -514,7 +512,7 @@ void VtIo::EndResize()
 // - <none>
 void VtIo::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine)
 {
-    _objectsCreated = true;
+    _initialized = true;
     _pVtRenderEngine = std::move(vtRenderEngine);
 }
 #endif

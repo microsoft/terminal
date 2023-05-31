@@ -45,14 +45,12 @@ namespace winrt::TerminalApp::implementation
         static const Microsoft::Terminal::Settings::Model::CascadiaSettings CurrentAppSettings();
 
         AppLogic();
-        ~AppLogic() = default;
 
         void Create();
-        bool IsUwp() const noexcept;
-        void RunAsUwp();
         bool IsRunningElevated() const noexcept;
         bool CanDragDrop() const noexcept;
         void ReloadSettings();
+        void NotifyRootInitialized();
 
         bool HasSettingsStartupActions() const noexcept;
 
@@ -67,6 +65,7 @@ namespace winrt::TerminalApp::implementation
 
         Microsoft::Terminal::Settings::Model::Theme Theme();
         bool IsolatedMode();
+        bool AllowHeadless();
         bool RequestsTrayIcon();
 
         TerminalApp::TerminalWindow CreateNewWindow();
@@ -78,9 +77,9 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs);
 
     private:
-        bool _isUwp{ false };
         bool _isElevated{ false };
         bool _canDragDrop{ false };
+        std::atomic<bool> _notifyRootInitializedCalled{ false };
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 

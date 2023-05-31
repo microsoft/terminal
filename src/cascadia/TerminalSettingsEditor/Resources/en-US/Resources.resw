@@ -140,7 +140,7 @@
     <comment>This is the header for a control that allows the user to set the currently selected color scheme as their default.</comment>
   </data>
   <data name="ColorScheme_SetAsDefault.HelpText" xml:space="preserve">
-    <value>Apply this color scheme to all your profiles. This sets this color scheme in your 'Defaults' profile, it can still be overridden in each individual profile.</value>
+    <value>Apply this color scheme to all your profiles, by default. Individual profiles can still select their own color schemes.</value>
     <comment>A description explaining how this control changes the user's default color scheme.</comment>
   </data>
   <data name="ColorScheme_Rename.Header" xml:space="preserve">
@@ -232,8 +232,8 @@
     <comment>The header for a control allowing users to choose the app's language.</comment>
   </data>
   <data name="Globals_Language.HelpText" xml:space="preserve">
-    <value>Sets an override for the app's preferred language.</value>
-    <comment>A description explaining how this control changes the app's language.</comment>
+    <value>Selects a display language for the application. This will override your default Windows interface language.</value>
+    <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
   </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
     <value>Use system default</value>
@@ -244,15 +244,15 @@
     <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
   </data>
   <data name="Globals_AlwaysShowTabs.HelpText" xml:space="preserve">
-    <value>When disabled, the tab bar will appear when a new tab is created.</value>
-    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header".</comment>
+    <value>When disabled, the tab bar will appear when a new tab is created. Cannot be disabled while "Hide the title bar" is On.</value>
+    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header". This setting cannot be disabled while "Globals_ShowTitlebar.Header" is enabled.</comment>
   </data>
   <data name="Globals_NewTabPosition.Header" xml:space="preserve">
     <value>Position of newly created tabs</value>
     <comment>Header for a control to select position of newly created tabs.</comment>
   </data>
   <data name="Globals_NewTabPosition.HelpText" xml:space="preserve">
-    <value>Specifies where new tabs appear in the tab row</value>
+    <value>Specifies where new tabs appear in the tab row.</value>
     <comment>A description for what the "Position of newly created tabs" setting does.</comment>
   </data>
   <data name="Globals_NewTabPositionAfterLastTab.Content" xml:space="preserve">
@@ -450,10 +450,6 @@
     <value>Use acrylic material in the tab row</value>
     <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
-  <data name="Globals_AcrylicTabRow.HelpText" xml:space="preserve">
-    <value>When checked, the tab row will have the acrylic material.</value>
-    <comment>A description for the "Globals_AcrylicTabRow.Header" setting does. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
-  </data>
   <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
     <value>Use active terminal title as application title</value>
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
@@ -483,8 +479,8 @@
     <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
   </data>
   <data name="Globals_StartOnUserLogin.HelpText" xml:space="preserve">
-    <value>When enabled, this enables the launch of Terminal at machine startup.</value>
-    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header".</comment>
+    <value>Automatically launch Terminal when you log in to Windows.</value>
+    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header". {Locked="Windows"}</comment>
   </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>Centered</value>
@@ -511,7 +507,7 @@
     <comment>Header for a control to choose how wide the tabs are.</comment>
   </data>
   <data name="Globals_TabWidthMode.HelpText" xml:space="preserve">
-    <value>Compact will shrink unfocused tabs to the size of the icon.</value>
+    <value>Compact will shrink inactive tabs to the size of the icon.</value>
     <comment>A description for what the "tab width mode" setting does. Presented near "Globals_TabWidthMode.Header". 'Compact' must match the value for &lt;Globals_TabWidthModeCompact.Content&gt;.</comment>
   </data>
   <data name="Globals_TabWidthModeCompact.Content" xml:space="preserve">
@@ -527,32 +523,40 @@
     <comment>An option to choose from for the "tab width mode" setting. When selected, each tab adjusts its width to the content within the tab.</comment>
   </data>
   <data name="Globals_Theme.Header" xml:space="preserve">
-    <value>Theme</value>
+    <value>Application Theme</value>
     <comment>Header for a control to choose the theme colors used in the app.</comment>
-  </data>
-  <data name="Globals_Theme.HelpText" xml:space="preserve">
-    <value>Sets the theme of the application.</value>
-    <comment>A description for what the "theme" setting does. Presented near "Globals_Theme.Header".</comment>
   </data>
   <data name="Globals_ThemeDark.Content" xml:space="preserve">
     <value>Dark</value>
-    <comment>An option to choose from for the "tab width mode" setting. When selected, the app is in dark theme and darker colors are used throughout the app.</comment>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in dark theme and darker colors are used throughout the app.</comment>
   </data>
   <data name="Globals_ThemeSystem.Content" xml:space="preserve">
     <value>Use Windows theme</value>
-    <comment>An option to choose from for the "tab width mode" setting. When selected, the app uses the theme selected in the Windows operating system.</comment>
+    <comment>An option to choose from for the "theme" setting. When selected, the app uses the theme selected in the Windows operating system.</comment>
   </data>
   <data name="Globals_ThemeLight.Content" xml:space="preserve">
     <value>Light</value>
-    <comment>An option to choose from for the "tab width mode" setting. When selected, the app is in light theme and lighter colors are used throughout the app.</comment>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in light theme and lighter colors are used throughout the app.</comment>
+  </data>
+  <data name="Globals_ThemeDarkLegacy.Content" xml:space="preserve">
+    <value>Dark (Legacy)</value>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in dark theme and darker colors are used throughout the app. This is an older version of the "dark" theme</comment>
+  </data>
+  <data name="Globals_ThemeSystemLegacy.Content" xml:space="preserve">
+    <value>Use Windows theme (Legacy)</value>
+    <comment>An option to choose from for the "theme" setting. When selected, the app uses the theme selected in the Windows operating system. This is an older version of the "Use Windows theme" theme</comment>
+  </data>
+  <data name="Globals_ThemeLightLegacy.Content" xml:space="preserve">
+    <value>Light (Legacy)</value>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in light theme and lighter colors are used throughout the app. This is an older version of the "light" theme</comment>
   </data>
   <data name="Globals_WordDelimiters.Header" xml:space="preserve">
     <value>Word delimiters</value>
     <comment>Header for a control to determine what delimiters to use to identify separate words during word selection.</comment>
   </data>
   <data name="Globals_WordDelimiters.HelpText" xml:space="preserve">
-    <value>Symbols used to define boundaries between words.</value>
-    <comment>A description for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header".</comment>
+    <value>These symbols will be used when you double-click text in the terminal or activate "Mark mode".</value>
+    <comment>A description for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header". "Mark" is used in the sense of "choosing something to interact with."</comment>
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>
@@ -607,8 +611,8 @@
     <comment>Header for a control to toggle whether the app treats ctrl+alt as the AltGr (also known as the Alt Graph) modifier key found on keyboards. {Locked="AltGr"}</comment>
   </data>
   <data name="Profile_AltGrAliasing.HelpText" xml:space="preserve">
-    <value>By default Windows treats Ctrl+Alt as an alias for AltGr. When disabled, this behavior will be disabled.</value>
-    <comment>A description for what the "AltGr aliasing" setting does. Presented near "Profile_AltGrAliasing.Header".</comment>
+    <value>By default, Windows treats Ctrl+Alt as an alias for AltGr. This setting will override Windows' default behavior.</value>
+    <comment>A description for what the "AltGr aliasing" setting does. Presented near "Profile_AltGrAliasing.Header". {Locked="Windows"}</comment>
   </data>
   <data name="Profile_AntialiasingMode.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Text antialiasing</value>
@@ -774,10 +778,6 @@
     <value>Color scheme</value>
     <comment>Header for a control to select the scheme (or set) of colors used in the session. This is selected from a list of options managed by the user.</comment>
   </data>
-  <data name="Profile_ColorScheme.HelpText" xml:space="preserve">
-    <value>Name of the color scheme to use.</value>
-    <comment>A description for what the "color scheme" setting does. Presented near "Profile_ColorScheme".</comment>
-  </data>
   <data name="Profile_Commandline.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Command line</value>
     <comment>Name for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>
@@ -823,7 +823,7 @@
     <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility only when the colors are part of this profile's color scheme's color table.</comment>
   </data>
   <data name="Profile_AdjustIndistinguishableColorsAlways.Content" xml:space="preserve">
-    <value>Always (More performance intensive)</value>
+    <value>Always</value>
     <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility.</comment>
   </data>
   <data name="Profile_CursorShapeBar.Content" xml:space="preserve">
@@ -858,10 +858,6 @@
     <value>Font face</value>
     <comment>Name for a control to select the font for text in the app.</comment>
   </data>
-  <data name="Profile_FontFace.HelpText" xml:space="preserve">
-    <value>Name of the font face used in the profile.</value>
-    <comment>A description for what the "font face" setting does. Presented near "Profile_FontFace".</comment>
-  </data>
   <data name="Profile_FontSize.Header" xml:space="preserve">
     <value>Font size</value>
     <comment>Header for a control to determine the size of the text in the app.</comment>
@@ -883,7 +879,7 @@
     <comment>Header for a control that sets the text line height.</comment>
   </data>
   <data name="Profile_LineHeight.HelpText" xml:space="preserve">
-    <value>Sets the height of each line in the terminal as a multiple of the font size. The default depends on your font and is usually around 1.2.</value>
+    <value>Override the line height of the terminal. Measured as a multiple of the font size. The default value depends on your font and is usually around 1.2.</value>
     <comment>A description for what the "line height" setting does. Presented near "Profile_LineHeight".</comment>
   </data>
   <data name="Profile_LineHeightBox.PlaceholderText" xml:space="preserve">
@@ -975,15 +971,15 @@
     <comment>Header for a control to toggle classic CRT display effects, which gives the terminal a retro look.</comment>
   </data>
   <data name="Profile_RetroTerminalEffect.HelpText" xml:space="preserve">
-    <value>When enabled, enables retro terminal effects such as glowing text and scan lines.</value>
-    <comment>A description for what the "retro terminal effects" setting does. Presented near "Profile_RetroTerminalEffect".</comment>
+    <value>Show retro-style terminal effects such as glowing text and scan lines.</value>
+    <comment>A description for what the "retro terminal effects" setting does. Presented near "Profile_RetroTerminalEffect". "Retro" is a common English prefix that suggests a nostalgic, dated appearance.</comment>
   </data>
   <data name="Profile_AdjustIndistinguishableColors.Header" xml:space="preserve">
     <value>Automatically adjust lightness of indistinguishable text</value>
     <comment>Header for a control to toggle if we should adjust the foreground color's lightness to make it more visible when necessary, based on the background color.</comment>
   </data>
   <data name="Profile_AdjustIndistinguishableColors.HelpText" xml:space="preserve">
-    <value>When enabled, enables automatic adjustment of indistinguishable colors, which will, only when necessary, adjust the foreground color's lightness to make it more visible (based on the background color).</value>
+    <value>Automatically brightens or darkens text to make it more visible. Even when enabled, this adjustment will only occur when a combination of foreground and background colors would result in poor contrast.</value>
     <comment>A description for what the "adjust indistinguishable colors" setting does. Presented near "Profile_AdjustIndistinguishableColors".</comment>
   </data>
   <data name="Profile_ScrollbarVisibility.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -1043,8 +1039,8 @@
     <comment>Header for a control to toggle changes in the app title.</comment>
   </data>
   <data name="Profile_SuppressApplicationTitle.HelpText" xml:space="preserve">
-    <value>Use the tab title to override the default title of the tab and suppress any title change messages from the application.</value>
-    <comment>A description for what the "suppress application title" setting does. Presented near "Profile_SuppressApplicationTitle".</comment>
+    <value>Ignore application requests to change the title (OSC 2).</value>
+    <comment>A description for what the "suppress application title" setting does. Presented near "Profile_SuppressApplicationTitle". "OSC 2" is a technical term that is understood in the industry. {Locked="OSC 2"}</comment>
   </data>
   <data name="Profile_TabTitle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Tab title</value>
@@ -1083,7 +1079,7 @@
     <comment>A supplementary setting to the "background image" setting. When enabled, the OS desktop wallpaper is used as the background image. Presented near "Profile_BackgroundImage".</comment>
   </data>
   <data name="Profile_UseDesktopImage.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>When enabled, use the desktop wallpaper image as the background image for the terminal.</value>
+    <value>Use the desktop wallpaper image as the background image for the terminal.</value>
     <comment>A description for what the supplementary "use desktop image" setting does. Presented near "Profile_UseDesktopImage".</comment>
   </data>
   <data name="Settings_ResetSettingsButton.Content" xml:space="preserve">
@@ -1358,7 +1354,7 @@
     <comment>Header for a control to choose how the tab switcher operates.</comment>
   </data>
   <data name="Globals_TabSwitcherMode.HelpText" xml:space="preserve">
-    <value>Defines the terminal behavior when switching tabs with the keyboard.</value>
+    <value>Selects which interface will be used when you switch tabs using the keyboard.</value>
     <comment>A description for what the "tab switcher mode" setting does. Presented near "Globals_TabSwitcherMode.Header".</comment>
   </data>
   <data name="Globals_TabSwitcherModeMru.Content" xml:space="preserve">
@@ -1374,12 +1370,8 @@
     <comment>An option to choose from for the "tab switcher mode" setting. The tab switcher overlay is hidden and does not appear in a separate window.</comment>
   </data>
   <data name="Globals_CopyFormat.Header" xml:space="preserve">
-    <value>Text format when copying</value>
+    <value>Text formats to copy to the clipboard</value>
     <comment>Header for a control to select the format of copied text.</comment>
-  </data>
-  <data name="Globals_CopyFormat.HelpText" xml:space="preserve">
-    <value>Defines the type of formatting in which selected text is copied to your clipboard.</value>
-    <comment>A description for what the "copy formatting" setting does. Presented near "Globals_CopyFormat.Header".</comment>
   </data>
   <data name="Globals_CopyFormatNone.Content" xml:space="preserve">
     <value>Plain text only</value>
@@ -1559,10 +1551,10 @@
   </data>
   <data name="Globals_AutoHideWindow.Header" xml:space="preserve">
     <value>Automatically hide window</value>
-    <comment>Header for a control to toggle the "Automatically hide window" setting. If enabled, the window will be hidden as soon as it loses focus.</comment>
+    <comment>Header for a control to toggle the "Automatically hide window" setting. If enabled, the terminal will be hidden as soon as you switch to another window.</comment>
   </data>
   <data name="Globals_AutoHideWindow.HelpText" xml:space="preserve">
-    <value>If enabled, the window will be hidden as soon as it loses focus.</value>
+    <value>If enabled, the terminal will be hidden as soon as you switch to another window.</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
   <data name="ColorScheme_DeleteDisclaimerInBox" xml:space="preserve">
@@ -1596,5 +1588,13 @@
   <data name="Settings_PortableModeInfoLinkTextRun.Text" xml:space="preserve">
     <value>Learn more.</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
+  </data>
+	<data name="Profile_FontFace_ProportionalFontWarning.Title" xml:space="preserve">
+    <value>Warning:</value>
+    <comment>Title for the warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
+  </data>
+	<data name="Profile_FontFace_ProportionalFontWarning.Message" xml:space="preserve">
+    <value>Choosing a non-monospaced font will likely result in visual artifacts. Use at your own discretion.</value>
+    <comment>Warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
   </data>
 </root>

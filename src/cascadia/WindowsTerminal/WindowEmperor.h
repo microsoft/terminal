@@ -52,8 +52,11 @@ private:
 
     std::unique_ptr<NotificationIcon> _notificationIcon;
 
+    bool _quitting{ false };
+
     void _windowStartedHandlerPostXAML(const std::shared_ptr<WindowThread>& sender);
-    void _windowExitedHandler(uint64_t senderID);
+    void _removeWindow(uint64_t senderID);
+    void _decrementWindowCount();
 
     void _becomeMonarch();
     void _numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);

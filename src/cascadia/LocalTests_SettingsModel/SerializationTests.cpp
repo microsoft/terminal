@@ -165,7 +165,13 @@ namespace SettingsModelLocalTests
                 "historySize": 9001,
 
                 "closeOnExit": "graceful",
-                "experimental.retroTerminalEffect": false
+                "experimental.retroTerminalEffect": false,
+                "environment":
+                {
+                    "KEY_1": "VALUE_1",
+                    "KEY_2": "%KEY_1%",
+                    "KEY_3": "%PATH%"
+                }
             })" };
 
         static constexpr std::string_view smallProfileString{ R"(

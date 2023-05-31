@@ -94,7 +94,21 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_MoveCursor(_deferredCursorPos));
     }
 
-    RETURN_IF_FAILED(_Flush());
+    // If this frame was triggered because we encountered a VT sequence which
+    // required the buffered state to get printed, we don't want to flush this
+    // frame to the pipe. That might result in us rendering half the output of a
+    // particular frame (as emitted by the client).
+    //
+    // Instead, we'll leave this frame in _buffer, and just keep appending to
+    // it as needed.
+    if (_noFlushOnEnd) [[unlikely]]
+    {
+        _noFlushOnEnd = false;
+    }
+    else
+    {
+        RETURN_IF_FAILED(_Flush());
+    }
 
     return S_OK;
 }

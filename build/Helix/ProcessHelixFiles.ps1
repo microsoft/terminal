@@ -70,7 +70,7 @@ foreach ($testRun in $testRuns.value)
 
     foreach ($testResult in $testResults.value)
     {
-        $info = ConvertFrom-Json $testResult.comment
+        $info = ConvertFrom-Json ([System.Web.HttpUtility]::HtmlDecode($testResult.comment))
         $helixJobId = $info.HelixJobId
         $helixWorkItemName = $info.HelixWorkItemName
 

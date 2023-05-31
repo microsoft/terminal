@@ -27,7 +27,7 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
                                  IBindCtx* /*pBindContext*/)
 try
 {
-    const auto runElevated = IsControlPressed();
+    const auto runElevated = IsControlAndShiftPressed();
 
     wil::com_ptr_nothrow<IShellItem> psi;
     RETURN_IF_FAILED(GetBestLocationFromSelectionOrSite(psiItemArray, psi.put()));
@@ -43,6 +43,10 @@ try
         wil::unique_process_information _piClient;
         STARTUPINFOEX siEx{ 0 };
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
+
+        // Explicitly create the terminal window visible.
+        siEx.StartupInfo.dwFlags |= STARTF_USESHOWWINDOW;
+        siEx.StartupInfo.wShowWindow = SW_SHOWNORMAL;
 
         std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
         std::wstring cmdline;
@@ -115,7 +119,8 @@ HRESULT OpenTerminalHere::GetState(IShellItemArray* psiItemArray,
 
     SFGAOF attributes;
     const bool isFileSystemItem = psi && (psi->GetAttributes(SFGAO_FILESYSTEM, &attributes) == S_OK);
-    *pCmdState = isFileSystemItem ? ECS_ENABLED : ECS_HIDDEN;
+    const bool isCompressed = psi && (psi->GetAttributes(SFGAO_FOLDER | SFGAO_STREAM, &attributes) == S_OK);
+    *pCmdState = isFileSystemItem && !isCompressed ? ECS_ENABLED : ECS_HIDDEN;
 
     return S_OK;
 }
@@ -204,14 +209,14 @@ HRESULT OpenTerminalHere::GetBestLocationFromSelectionOrSite(IShellItemArray* ps
     return S_OK;
 }
 
-// This method checks if any of the ctrl keys are pressed during activation of the shell extension
-bool OpenTerminalHere::IsControlPressed()
+// Check is both ctrl and shift keys are pressed during activation of the shell extension
+bool OpenTerminalHere::IsControlAndShiftPressed()
 {
-    const auto ControlPressed = 1U;
+    short control = 0;
+    short shift = 0;
+    control = GetAsyncKeyState(VK_CONTROL);
+    shift = GetAsyncKeyState(VK_SHIFT);
 
-    const auto control = GetKeyState(VK_CONTROL);
-    const auto leftControl = GetKeyState(VK_LCONTROL);
-    const auto rightControl = GetKeyState(VK_RCONTROL);
-
-    return WI_IsFlagSet(control, ControlPressed) || WI_IsFlagSet(leftControl, ControlPressed) || WI_IsFlagSet(rightControl, ControlPressed);
+    // GetAsyncKeyState returns a value with the most significant bit set to 1 if the key is pressed. This is the sign bit.
+    return control < 0 && shift < 0;
 }
