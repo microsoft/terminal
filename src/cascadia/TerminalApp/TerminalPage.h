@@ -117,6 +117,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ApplicationVersion();
 
         CommandPalette LoadCommandPalette();
+        SuggestionsControl LoadSuggestionsUI();
+
         winrt::fire_and_forget RequestQuit();
         winrt::fire_and_forget CloseWindow(bool bypassDialog);
 
@@ -277,6 +279,8 @@ namespace winrt::TerminalApp::implementation
 
         __declspec(noinline) CommandPalette _loadCommandPaletteSlowPath();
         bool _commandPaletteIs(winrt::Windows::UI::Xaml::Visibility visibility);
+        __declspec(noinline) SuggestionsControl _loadSuggestionsElementSlowPath();
+        bool _suggestionsControlIs(winrt::Windows::UI::Xaml::Visibility visibility);
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 

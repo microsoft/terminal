@@ -175,10 +175,11 @@
                               PreviewKeyDown="_KeyDownHandler"
                               Visibility="Collapsed" />
 
-        <local:SuggestionsControl x:Name="SuggestionsUI"
+        <local:SuggestionsControl x:Name="SuggestionsElement"
                                   Grid.Row="2"
                                   HorizontalAlignment="Left"
                                   VerticalAlignment="Top"
+                                  x:Load="False"
                                   PreviewKeyDown="_KeyDownHandler"
                                   Visibility="Collapsed" />
 

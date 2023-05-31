@@ -252,22 +252,6 @@ namespace winrt::TerminalApp::implementation
 
         _UpdateTabWidthMode();
 
-        {
-            // TODO! Lazy load liike the command palette
-
-            const auto& sxnUi{ SuggestionsUI() };
-            // sxnUi.PositionManually(Windows::Foundation::Point{ 0, 0 }, Windows::Foundation::Size{ 200, 300 });
-            sxnUi.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
-                if (SuggestionsUI().Visibility() == Visibility::Collapsed)
-                {
-                    // SuggestionsPopup().IsOpen(false);
-                    _FocusActiveControl(nullptr, nullptr);
-                }
-            });
-            sxnUi.DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
-            sxnUi.PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
-        }
-
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
         // want to create an animation.
@@ -1472,11 +1456,10 @@ namespace winrt::TerminalApp::implementation
         {
             CommandPaletteElement().Visibility(Visibility::Collapsed);
         }
-        // TODO! same idea for lazy sxnui
-        if (const auto p = SuggestionsUI(); p.Visibility() == Visibility::Visible &&
-                                            cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+        if (_suggestionsControlIs(Visibility::Visible) &&
+            cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
         {
-            p.Visibility(Visibility::Collapsed);
+            SuggestionsElement().Visibility(Visibility::Collapsed);
         }
 
         // Let's assume the user has bound the dead key "^" to a sendInput command that sends "b".
@@ -1834,6 +1817,37 @@ namespace winrt::TerminalApp::implementation
         p.DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
         p.CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
         p.SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
+        p.PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
+
+        return p;
+    }
+
+    SuggestionsControl TerminalPage::LoadSuggestionsUI()
+    {
+        if (const auto p = SuggestionsElement())
+        {
+            return p;
+        }
+
+        return _loadSuggestionsElementSlowPath();
+    }
+    bool TerminalPage::_suggestionsControlIs(WUX::Visibility visibility)
+    {
+        const auto p = SuggestionsControl();
+        return p && p.Visibility() == visibility;
+    }
+
+    SuggestionsControl TerminalPage::_loadSuggestionsElementSlowPath()
+    {
+        const auto p = FindName(L"SuggestionsElement").as<SuggestionsControl>();
+
+        p.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            if (SuggestionsElement().Visibility() == Visibility::Collapsed)
+            {
+                _FocusActiveControl(nullptr, nullptr);
+            }
+        });
+        p.DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
         p.PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
 
         return p;
@@ -4619,7 +4633,10 @@ namespace winrt::TerminalApp::implementation
         }
         if (commandsCollection.Size() == 0)
         {
-            SuggestionsUI().Visibility(Visibility::Collapsed);
+            if (const auto p = SuggestionsElement())
+            {
+                p.Visibility(Visibility::Collapsed);
+            }
 
             co_return;
         }
@@ -4636,7 +4653,7 @@ namespace winrt::TerminalApp::implementation
         {
             co_return;
         }
-        const auto& sxnUi{ SuggestionsUI() };
+        const auto& sxnUi{ SuggestionsElement() };
 
         sxnUi.Mode(mode);
         sxnUi.SetCommands(commandsCollection);
