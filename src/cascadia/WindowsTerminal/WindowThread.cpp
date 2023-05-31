@@ -37,8 +37,13 @@ int WindowThread::RunMessagePump()
     // Enter the main window loop.
     const auto exitCode = _messagePump();
     // Here, the main window loop has exited.
+    return exitCode;
+}
 
-    _host = nullptr;
+void WindowThread::RundownForExit()
+{
+    _host->Close();
+
     // !! LOAD BEARING !!
     //
     // Make sure to finish pumping all the messages for our thread here. We
@@ -54,8 +59,6 @@ int WindowThread::RunMessagePump()
             ::DispatchMessageW(&msg);
         }
     }
-
-    return exitCode;
 }
 
 winrt::TerminalApp::TerminalWindow WindowThread::Logic()
@@ -126,7 +129,8 @@ int WindowThread::_messagePump()
     }
     return 0;
 }
-winrt::Microsoft::Terminal::Remoting::Peasant WindowThread::Peasant()
+
+uint64_t WindowThread::PeasantID()
 {
-    return _peasant;
+    return _peasant.GetID();
 }

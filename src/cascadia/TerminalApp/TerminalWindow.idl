@@ -53,7 +53,7 @@ namespace TerminalApp
 
         Boolean HasCommandlineArguments();
 
-        Int32 SetStartupCommandline(String[] commands);
+        Int32 SetStartupCommandline(String[] commands, String cwd);
         void SetStartupContent(String json, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
         Int32 ExecuteCommandline(String[] commands, String cwd);
         String ParseCommandlineMessage { get; };
@@ -113,6 +113,8 @@ namespace TerminalApp
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.
         void DismissDialog();
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> Initialized;
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;

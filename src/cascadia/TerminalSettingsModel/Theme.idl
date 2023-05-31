@@ -15,7 +15,8 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Always,
         Hover,
-        Never
+        Never,
+        ActiveOnly
     };
 
     [default_interface] runtimeclass ThemePair

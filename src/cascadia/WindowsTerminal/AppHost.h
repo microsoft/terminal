@@ -13,11 +13,11 @@ public:
             winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
             const winrt::Microsoft::Terminal::Remoting::WindowManager& manager,
             const winrt::Microsoft::Terminal::Remoting::Peasant& peasant) noexcept;
-    virtual ~AppHost();
 
     void AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
     void LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args);
     void Initialize();
+    void Close();
     bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
     void SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
 
@@ -38,16 +38,30 @@ private:
 
     winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
 
+    enum WindowInitializedState : uint32_t
+    {
+        NotInitialized = 0,
+        Initializing = 1,
+        Initialized = 2,
+    };
+
+    WindowInitializedState _isWindowInitialized{ WindowInitializedState::NotInitialized };
     bool _useNonClientArea{ false };
+    winrt::Microsoft::Terminal::Settings::Model::LaunchMode _launchMode{};
 
     std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;
+
+    uint32_t _launchShowWindowCommand{ SW_NORMAL };
 
     void _preInit();
 
     void _HandleCommandlineArgs(const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args);
+    void _HandleSessionRestore(const bool startedForContent);
+
     winrt::Microsoft::Terminal::Settings::Model::LaunchPosition _GetWindowLaunchPosition();
 
-    void _HandleCreateWindow(const HWND hwnd, til::rect proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
+    void _HandleCreateWindow(const HWND hwnd, const til::rect& proposedRect);
+
     void _UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::UI::Xaml::UIElement& arg);
     void _UpdateTheme(const winrt::Windows::Foundation::IInspectable&,
@@ -60,10 +74,14 @@ private:
                                   const winrt::Windows::Foundation::IInspectable& arg);
     void _AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable& sender,
                              const winrt::Windows::Foundation::IInspectable& arg);
+    winrt::fire_and_forget _WindowInitializedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                                     const winrt::Windows::Foundation::IInspectable& arg);
+
     void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,
                           const winrt::Windows::Foundation::IInspectable& arg);
     void _WindowMouseWheeled(const til::point coord, const int32_t delta);
-    winrt::fire_and_forget _WindowActivated(bool activated);
+    void _WindowActivated(bool activated);
+    winrt::fire_and_forget _peasantNotifyActivateWindow();
     void _WindowMoved();
 
     void _DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
@@ -116,7 +134,7 @@ private:
     void _PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                  const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
-    void _initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
+    void _initialResizeAndRepositionWindow(const HWND hwnd, til::rect proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
 
     void _handleMoveContent(const winrt::Windows::Foundation::IInspectable& sender,
                             winrt::TerminalApp::RequestMoveContentArgs args);
@@ -146,8 +164,10 @@ private:
         winrt::Microsoft::Terminal::Remoting::Peasant::SummonRequested_revoker peasantSummonRequested;
         winrt::Microsoft::Terminal::Remoting::Peasant::DisplayWindowIdRequested_revoker peasantDisplayWindowIdRequested;
         winrt::Microsoft::Terminal::Remoting::Peasant::QuitRequested_revoker peasantQuitRequested;
+
         winrt::Microsoft::Terminal::Remoting::Peasant::AttachRequested_revoker AttachRequested;
 
+        winrt::TerminalApp::TerminalWindow::Initialized_revoker Initialized;
         winrt::TerminalApp::TerminalWindow::CloseRequested_revoker CloseRequested;
         winrt::TerminalApp::TerminalWindow::RequestedThemeChanged_revoker RequestedThemeChanged;
         winrt::TerminalApp::TerminalWindow::FullscreenChanged_revoker FullscreenChanged;

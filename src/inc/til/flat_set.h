@@ -28,14 +28,43 @@ namespace til
     // A basic, hashmap with linear probing. A `LoadFactor` of 2 equals
     // a max. load of roughly 50% and a `LoadFactor` of 4 roughly 25%.
     //
+    // `GrowthExponent` controls how fast the set grows and corresponds to
+    // a rate of 2^GrowthExponent. In other words, a `GrowthExponent` of 3
+    // equals a growth rate of 8x every time the capacity has been reached.
+    //
     // It performs best with:
     // * small and cheap T
     // * >= 50% successful lookups
     // * <= 50% load factor (LoadFactor >= 2, which is the minimum anyways)
-    template<typename T, size_t LoadFactor = 2>
+    template<typename T, size_t LoadFactor = 2, size_t GrowthExponent = 1>
     struct linear_flat_set
     {
         static_assert(LoadFactor >= 2);
+        static_assert(GrowthExponent >= 1);
+
+        linear_flat_set() = default;
+
+        linear_flat_set(const linear_flat_set&) = delete;
+        linear_flat_set& operator=(const linear_flat_set&) = delete;
+
+        linear_flat_set(linear_flat_set&& other) noexcept :
+            _map{ std::move(other._map) },
+            _capacity{ std::exchange(other._capacity, 0) },
+            _load{ std::exchange(other._load, 0) },
+            _shift{ std::exchange(other._shift, initialShift) },
+            _mask{ std::exchange(other._mask, 0) }
+        {
+        }
+
+        linear_flat_set& operator=(linear_flat_set&& other) noexcept
+        {
+            _map = std::move(other._map);
+            _capacity = std::exchange(other._capacity, 0);
+            _load = std::exchange(other._load, 0);
+            _shift = std::exchange(other._shift, initialShift);
+            _mask = std::exchange(other._mask, 0);
+            return *this;
+        }
 
         bool empty() const noexcept
         {
@@ -50,6 +79,39 @@ namespace til
         std::span<T> container() const noexcept
         {
             return { _map.get(), _capacity };
+        }
+
+        void clear() noexcept
+        {
+            if (_map)
+            {
+                std::fill_n(_map.get(), _capacity, T{});
+                _load = 0;
+            }
+        }
+
+        template<typename U>
+        T* lookup(U&& key) const noexcept
+        {
+            if (!_map)
+            {
+                return nullptr;
+            }
+
+            const auto hash = ::std::hash<T>{}(key) >> _shift;
+
+            for (auto i = hash;; ++i)
+            {
+                auto& slot = _map[i & _mask];
+                if (!slot)
+                {
+                    return nullptr;
+                }
+                if (slot == key) [[likely]]
+                {
+                    return &slot;
+                }
+            }
         }
 
         template<typename U>
@@ -88,14 +150,15 @@ namespace til
     private:
         __declspec(noinline) void _bumpSize()
         {
+            // For instance at a GrowthExponent of 1:
             // A _shift of 0 would result in a newShift of 0xfffff...
             // A _shift of 1 would result in a newCapacity of 0
-            if (_shift < 2)
+            if (_shift <= GrowthExponent)
             {
                 throw std::bad_array_new_length{};
             }
 
-            const auto newShift = _shift - 1;
+            const auto newShift = _shift - GrowthExponent;
             const auto newCapacity = size_t{ 1 } << (digits - newShift);
             const auto newMask = newCapacity - 1;
             auto newMap = std::make_unique<T[]>(newCapacity);
@@ -128,12 +191,13 @@ namespace til
         }
 
         static constexpr auto digits = std::numeric_limits<size_t>::digits;
+        // This results in an initial capacity of 8 items, independent of the LoadFactor.
+        static constexpr auto initialShift = digits - LoadFactor - 1;
 
         std::unique_ptr<T[]> _map;
         size_t _capacity = 0;
         size_t _load = 0;
-        // This results in an initial capacity of 8 items, independent of the LoadFactor.
-        size_t _shift = digits - LoadFactor - 1;
+        size_t _shift = initialShift;
         size_t _mask = 0;
     };
 }

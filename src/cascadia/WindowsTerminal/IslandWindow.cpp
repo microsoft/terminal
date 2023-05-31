@@ -37,7 +37,66 @@ IslandWindow::IslandWindow() noexcept :
 
 IslandWindow::~IslandWindow()
 {
-    _source.Close();
+    Close();
+}
+
+void IslandWindow::Close()
+{
+    static const bool isWindows11 = []() {
+        OSVERSIONINFOEXW osver{};
+        osver.dwOSVersionInfoSize = sizeof(osver);
+        osver.dwBuildNumber = 22000;
+
+        DWORDLONG dwlConditionMask = 0;
+        VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+        if (VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE)
+        {
+            return true;
+        }
+        return false;
+    }();
+
+    if (!isWindows11)
+    {
+        // BODGY
+        //  ____   ____  _____   _______     __
+        // |  _ \ / __ \|  __ \ / ____\ \   / /
+        // | |_) | |  | | |  | | |  __ \ \_/ /
+        // |  _ <| |  | | |  | | | |_ | \   /
+        // | |_) | |__| | |__| | |__| |  | |
+        // |____/ \____/|_____/ \_____|  |_|
+        //
+        // There's a bug in Windows 10 where closing a DesktopWindowXamlSource
+        // on any thread will free an internal static resource that's used by
+        // XAML for the entire process. This would result in closing window
+        // essentially causing the entire app to crash.
+        //
+        // To avoid this, leak the XAML island. We only need to leak this on
+        // Windows 10, since the bug is fixed in Windows 11.
+        //
+        // See GH #15384, MSFT:32109540
+        auto a{ _source };
+        winrt::detach_abi(_source);
+
+        // </BODGY>
+    }
+
+    // GH#15454: Unset the user data for the window. This will prevent future
+    // callbacks that come onto our window message loop from being sent to the
+    // IslandWindow (or other derived class's) implementation.
+    //
+    // Specifically, this prevents a pending coroutine from being able to call
+    // something like ShowWindow, and have that come back on the IslandWindow
+    // message loop, where it'll end up asking XAML something that XAML is no
+    // longer able to answer.
+    SetWindowLongPtr(_window.get(), GWLP_USERDATA, 0);
+
+    if (_source)
+    {
+        _source.Close();
+        _source = nullptr;
+    }
 }
 
 HWND IslandWindow::GetInteropHandle() const
@@ -90,17 +149,6 @@ void IslandWindow::MakeWindow() noexcept
 }
 
 // Method Description:
-// - Called when no tab is remaining to close the window.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void IslandWindow::Close()
-{
-    PostQuitMessage(0);
-}
-
-// Method Description:
 // - Set a callback to be called when we process a WM_CREATE message. This gives
 //   the AppHost a chance to resize the window to the proper size.
 // Arguments:
@@ -111,7 +159,7 @@ void IslandWindow::Close()
 //        window.
 // Return Value:
 // - <none>
-void IslandWindow::SetCreateCallback(std::function<void(const HWND, const til::rect&, LaunchMode& launchMode)> pfn) noexcept
+void IslandWindow::SetCreateCallback(std::function<void(const HWND, const til::rect&)> pfn) noexcept
 {
     _pfnCreateCallback = pfn;
 }
@@ -153,19 +201,13 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     rc.right = rc.left + pcs->cx;
     rc.bottom = rc.top + pcs->cy;
 
-    auto launchMode = LaunchMode::DefaultMode;
     if (_pfnCreateCallback)
     {
-        _pfnCreateCallback(_window.get(), rc, launchMode);
+        _pfnCreateCallback(_window.get(), rc);
     }
 
-    auto nCmdShow = SW_SHOW;
-    if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
-    {
-        nCmdShow = SW_MAXIMIZE;
-    }
-
-    ShowWindow(_window.get(), nCmdShow);
+    // GH#11561: DO NOT call ShowWindow here. The AppHost will call ShowWindow
+    // once the app has completed its initialization.
 
     UpdateWindow(_window.get());
 
@@ -312,6 +354,11 @@ void IslandWindow::Initialize()
 
     // stash the child interop handle so we can resize it when the main hwnd is resized
     interop->get_WindowHandle(&_interopWindowHandle);
+
+    // Immediately hide our XAML island hwnd. On earlier versions of Windows,
+    // this HWND could sometimes appear as an actual window in the taskbar
+    // without this!
+    ShowWindow(_interopWindowHandle, SW_HIDE);
 
     _rootGrid = winrt::Windows::UI::Xaml::Controls::Grid();
     _source.Content(_rootGrid);

@@ -52,8 +52,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         TextColor AsTextColor() const noexcept;
 
-        WINRT_PROPERTY(til::color, Color);
-        WINRT_PROPERTY(bool, IsIndex16);
+        til::property<til::color> Color;
+        til::property<bool> IsIndex16;
     };
 
     struct ControlCore : ControlCoreT<ControlCore>
@@ -153,6 +153,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ClearAllMarks();
         void ScrollToMark(const Control::ScrollToMarkDirection& direction);
 
+        void SelectCommand(const bool goUp);
+        void SelectOutput(const bool goUp);
+
+        void ContextMenuSelectCommand();
+        void ContextMenuSelectOutput();
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -219,6 +224,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t OwningHwnd();
         void OwningHwnd(uint64_t owner);
 
+        TerminalConnection::ITerminalConnection Connection();
+        void Connection(const TerminalConnection::ITerminalConnection& connection);
+
+        void AnchorContextMenu(til::point viewportRelativeCharacterPosition);
+
+        bool ShouldShowSelectCommand();
+        bool ShouldShowSelectOutput();
+
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
 
@@ -249,16 +262,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(MenuChanged,               IInspectable, Control::MenuChangedEventArgs);
 
         TYPED_EVENT(CloseTerminalRequested,    IInspectable, IInspectable);
+        TYPED_EVENT(RestartTerminalRequested,    IInspectable, IInspectable);
 
         TYPED_EVENT(Attached,                  IInspectable, IInspectable);
         // clang-format on
 
     private:
-        bool _initializedTerminal{ false };
+        struct SharedState
+        {
+            std::shared_ptr<ThrottledFuncTrailing<>> tsfTryRedrawCanvas;
+            std::unique_ptr<til::throttled_func_trailing<>> updatePatternLocations;
+            std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
+        };
+
+        std::atomic<bool> _initializedTerminal{ false };
         bool _closing{ false };
 
         TerminalConnection::ITerminalConnection _connection{ nullptr };
-        event_token _connectionOutputEventToken;
+        TerminalConnection::ITerminalConnection::TerminalOutput_revoker _connectionOutputEventRevoker;
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
         winrt::com_ptr<ControlSettings> _settings{ nullptr };
@@ -301,9 +322,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t _owningHwnd{ 0 };
 
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
-        std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
-        std::unique_ptr<til::throttled_func_trailing<>> _updatePatternLocations;
-        std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
+        til::shared_mutex<SharedState> _shared;
+
+        til::point _contextMenuBufferPosition{ 0, 0 };
 
         void _setupDispatcherAndCallbacks();
 
@@ -352,6 +373,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _isBackgroundTransparent();
         void _focusChanged(bool focused);
+
+        void _selectSpan(til::point_span s);
+
+        void _contextMenuSelectMark(
+            const til::point& pos,
+            bool (*filter)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&),
+            til::point_span (*getSpan)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&));
+
+        bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&));
 
         inline bool _IsClosing() const noexcept
         {

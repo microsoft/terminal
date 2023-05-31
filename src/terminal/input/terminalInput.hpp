@@ -38,6 +38,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         enum class Mode : size_t
         {
+            LineFeed,
             Ansi,
             AutoRepeat,
             Keypad,
