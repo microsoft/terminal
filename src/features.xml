@@ -68,6 +68,15 @@
     </feature>
 
     <feature>
+        <name>Feature_LegacyConhost</name>
+        <description>conhost should support ForceV2=false, and try to load conhostv1.dll</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
         <name>Feature_AtlasEngine</name>
         <description>If enabled, AtlasEngine is used by default</description>
         <stage>AlwaysEnabled</stage>
@@ -75,6 +84,16 @@
             <brandingToken>Release</brandingToken>
             <brandingToken>WindowsInbox</brandingToken>
         </alwaysDisabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_AtlasEnginePresentFallback</name>
+        <description>We don't feel super confident in our usage of the Present1 API, so this settings adds a fallback to Present on error</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Release</brandingToken>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysEnabledBrandingTokens>
     </feature>
 
     <feature>
@@ -114,17 +133,6 @@
             <brandingToken>Dev</brandingToken>
 	    <!-- Unlike Feature_VtPassthroughMode, this is not enabled in Preview -->
         </alwaysEnabledBrandingTokens>
-    </feature>
-
-    <feature>
-        <name>Feature_IsolatedMonarchMode</name>
-        <description>Enables a test flag for MSFT:38540483. When enabled, if we ever create a null Monarch, we'll stealthily try to fall back to an in-proc monarch instance.</description>
-        <stage>AlwaysEnabled</stage>
-        <!-- Did it this way instead of "release tokens" to ensure it will go into Windows Inbox -->
-        <alwaysDisabledBrandingTokens>
-            <brandingToken>Dev</brandingToken>
-            <brandingToken>Preview</brandingToken>
-        </alwaysDisabledBrandingTokens>
     </feature>
 
     <feature>

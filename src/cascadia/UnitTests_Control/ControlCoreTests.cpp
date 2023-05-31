@@ -38,6 +38,9 @@ namespace ControlUnitTests
         TEST_METHOD(TestClearAll);
         TEST_METHOD(TestReadEntireBuffer);
 
+        TEST_METHOD(TestSelectCommandSimple);
+        TEST_METHOD(TestSelectOutputSimple);
+
         TEST_CLASS_SETUP(ModuleSetup)
         {
             winrt::init_apartment(winrt::apartment_type::single_threaded);
@@ -358,5 +361,142 @@ namespace ControlUnitTests
         VERIFY_ARE_EQUAL(L"This is some text\r\nwith varying amounts\r\nof whitespace\r\n",
                          core->ReadEntireBuffer());
     }
+    void _writePrompt(const winrt::com_ptr<MockConnection>& conn, const auto& path)
+    {
+        conn->WriteInput(L"\x1b]133;D\x7");
+        conn->WriteInput(L"\x1b]133;A\x7");
+        conn->WriteInput(L"\x1b]9;9;");
+        conn->WriteInput(path);
+        conn->WriteInput(L"\x7");
+        conn->WriteInput(L"PWSH ");
+        conn->WriteInput(path);
+        conn->WriteInput(L"> ");
+        conn->WriteInput(L"\x1b]133;B\x7");
+    }
 
+    void ControlCoreTests::TestSelectCommandSimple()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print some text");
+
+        _writePrompt(conn, L"C:\\Windows");
+        conn->WriteInput(L"Foo-bar");
+        conn->WriteInput(L"\x1b]133;C\x7");
+
+        conn->WriteInput(L"\r\n");
+        conn->WriteInput(L"This is some text     \r\n");
+        conn->WriteInput(L"with varying amounts  \r\n");
+        conn->WriteInput(L"of whitespace         \r\n");
+
+        _writePrompt(conn, L"C:\\Windows");
+
+        Log::Comment(L"Check the buffer contents");
+        const auto& buffer = core->_terminal->GetTextBuffer();
+        const auto& cursor = buffer.GetCursor();
+
+        {
+            const til::point expectedCursor{ 17, 4 };
+            VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+        }
+
+        VERIFY_IS_FALSE(core->HasSelection());
+        core->SelectCommand(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 17, 0 };
+            const til::point expectedEnd{ 23, 0 };
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+
+        core->_terminal->ClearSelection();
+        conn->WriteInput(L"Boo-far");
+        conn->WriteInput(L"\x1b]133;C\x7");
+
+        VERIFY_IS_FALSE(core->HasSelection());
+        {
+            const til::point expectedCursor{ 24, 4 };
+            VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+        }
+        VERIFY_IS_FALSE(core->HasSelection());
+        core->SelectCommand(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 17, 4 };
+            const til::point expectedEnd{ 23, 4 };
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+        core->SelectCommand(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 17, 0 };
+            const til::point expectedEnd{ 23, 0 };
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+        core->SelectCommand(false);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 17, 4 };
+            const til::point expectedEnd{ 23, 4 };
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+    }
+    void ControlCoreTests::TestSelectOutputSimple()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print some text");
+
+        _writePrompt(conn, L"C:\\Windows");
+        conn->WriteInput(L"Foo-bar");
+        conn->WriteInput(L"\x1b]133;C\x7");
+
+        conn->WriteInput(L"\r\n");
+        conn->WriteInput(L"This is some text     \r\n");
+        conn->WriteInput(L"with varying amounts  \r\n");
+        conn->WriteInput(L"of whitespace         \r\n");
+
+        _writePrompt(conn, L"C:\\Windows");
+
+        Log::Comment(L"Check the buffer contents");
+        const auto& buffer = core->_terminal->GetTextBuffer();
+        const auto& cursor = buffer.GetCursor();
+
+        {
+            const til::point expectedCursor{ 17, 4 };
+            VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
+        }
+
+        VERIFY_IS_FALSE(core->HasSelection());
+        core->SelectOutput(true);
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 24, 0 }; // The character after the prompt
+            const til::point expectedEnd{ 29, 3 }; // x = buffer.right
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+    }
 }

@@ -5,6 +5,7 @@
 
 #include <wil/token_helpers.h>
 #include <winternl.h>
+#include <til/string.h>
 
 #pragma warning(push)
 #pragma warning(disable : 26429) // Symbol '...' is never tested for nullness, it can be marked as not_null (f.23).
@@ -20,37 +21,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     namespace details
     {
-
-        //
-        // A case-insensitive wide-character map is used to store environment variables
-        // due to documented requirements:
-        //
-        //      "All strings in the environment block must be sorted alphabetically by name.
-        //      The sort is case-insensitive, Unicode order, without regard to locale.
-        //      Because the equal sign is a separator, it must not be used in the name of
-        //      an environment variable."
-        //      https://docs.microsoft.com/en-us/windows/desktop/ProcThread/changing-environment-variables
-        //
-        // - Returns CSTR_LESS_THAN, CSTR_EQUAL or CSTR_GREATER_THAN
-        [[nodiscard]] inline int compare_string_ordinal(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
-        {
-            const auto result = CompareStringOrdinal(
-                lhs.data(),
-                ::base::saturated_cast<int>(lhs.size()),
-                rhs.data(),
-                ::base::saturated_cast<int>(rhs.size()),
-                TRUE);
-            FAIL_FAST_LAST_ERROR_IF(!result);
-            return result;
-        }
-
-        struct wstring_case_insensitive_compare
-        {
-            [[nodiscard]] bool operator()(const std::wstring& lhs, const std::wstring& rhs) const noexcept
-            {
-                return compare_string_ordinal(lhs, rhs) == CSTR_LESS_THAN;
-            }
-        };
 
         namespace vars
         {
@@ -250,7 +220,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         friend class ::EnvTests;
 #endif
 
-        std::map<std::wstring, std::wstring, til::details::wstring_case_insensitive_compare> _envMap{};
+        std::map<std::wstring, std::wstring, til::wstring_case_insensitive_compare> _envMap{};
 
         // We make copies of the environment variable names to ensure they are null terminated.
         void get(wil::zwstring_view variable)
@@ -343,6 +313,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                             if (valueNameSize)
                             {
+                                const bool isPathVar = is_path_var(valueName);
+
+                                // On some systems we've seen path variables that are REG_SZ instead
+                                // of REG_EXPAND_SZ. We should always treat them as REG_EXPAND_SZ.
+                                if (isPathVar && type == REG_SZ)
+                                {
+                                    type = REG_EXPAND_SZ;
+                                }
+
                                 std::wstring data;
                                 if (pass == 0 && (type == REG_SZ) && valueDataSize >= sizeof(wchar_t))
                                 {
@@ -365,7 +344,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                                 if (!data.empty())
                                 {
-                                    if (is_path_var(valueName))
+                                    if (isPathVar)
                                     {
                                         concat_var(valueName, std::move(data));
                                     }
@@ -438,13 +417,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return expanded;
         }
 
-        void set_user_environment_var(std::wstring_view var, std::wstring_view value)
-        {
-            auto valueString = expand_environment_strings(value);
-            valueString = check_for_temp(var, valueString);
-            save_to_map(std::wstring{ var }, std::move(valueString));
-        }
-
         void concat_var(std::wstring var, std::wstring value)
         {
             if (const auto existing = _envMap.find(var); existing != _envMap.end())
@@ -475,8 +447,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             static constexpr std::wstring_view temp{ L"temp" };
             static constexpr std::wstring_view tmp{ L"tmp" };
-            if (til::details::compare_string_ordinal(var, temp) == CSTR_EQUAL ||
-                til::details::compare_string_ordinal(var, tmp) == CSTR_EQUAL)
+            if (til::compare_string_ordinal(var, temp) == CSTR_EQUAL ||
+                til::compare_string_ordinal(var, tmp) == CSTR_EQUAL)
             {
                 return til::details::wil_env::GetShortPathNameW<std::wstring, 256>(value.data());
             }
@@ -491,9 +463,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             static constexpr std::wstring_view path{ L"Path" };
             static constexpr std::wstring_view libPath{ L"LibPath" };
             static constexpr std::wstring_view os2LibPath{ L"Os2LibPath" };
-            return til::details::compare_string_ordinal(input, path) == CSTR_EQUAL ||
-                   til::details::compare_string_ordinal(input, libPath) == CSTR_EQUAL ||
-                   til::details::compare_string_ordinal(input, os2LibPath) == CSTR_EQUAL;
+            return til::compare_string_ordinal(input, path) == CSTR_EQUAL ||
+                   til::compare_string_ordinal(input, libPath) == CSTR_EQUAL ||
+                   til::compare_string_ordinal(input, os2LibPath) == CSTR_EQUAL;
         }
 
         static void strip_trailing_null(std::wstring& str) noexcept
@@ -531,6 +503,35 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         env(const wchar_t* block)
         {
             parse(block);
+        }
+
+        // Function Description:
+        // - Creates a new environment with the current process's unicode environment
+        //   variables.
+        // Return Value:
+        // - A new environment
+        static til::env from_current_environment()
+        {
+            LPWCH currentEnvVars{};
+            auto freeCurrentEnv = wil::scope_exit([&] {
+                if (currentEnvVars)
+                {
+                    FreeEnvironmentStringsW(currentEnvVars);
+                    currentEnvVars = nullptr;
+                }
+            });
+
+            currentEnvVars = ::GetEnvironmentStringsW();
+            THROW_HR_IF_NULL(E_OUTOFMEMORY, currentEnvVars);
+
+            return til::env{ currentEnvVars };
+        }
+
+        void set_user_environment_var(std::wstring_view var, std::wstring_view value)
+        {
+            auto valueString = expand_environment_strings(value);
+            valueString = check_for_temp(var, valueString);
+            save_to_map(std::wstring{ var }, std::move(valueString));
         }
 
         void regenerate()
@@ -571,6 +572,93 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             result.append(L"\0", 1);
             return result;
         }
+
+        void clear() noexcept
+        {
+            // Can't zero the keys, but at least we can zero the values.
+            for (auto& [name, value] : _envMap)
+            {
+                ::SecureZeroMemory(value.data(), value.size() * sizeof(decltype(value.begin())::value_type));
+            }
+
+            _envMap.clear();
+        }
+
+        // Function Description:
+        // - Creates a new environment block using the provided vector as appropriate
+        //   (resizing if needed) based on the current environment variable map
+        //   matching the format of GetEnvironmentStringsW.
+        // Arguments:
+        // - newEnvVars: The vector that will be used to create the new environment block.
+        // Return Value:
+        // - S_OK if we succeeded, or an appropriate HRESULT for failing
+        HRESULT to_environment_strings_w(std::vector<wchar_t>& newEnvVars)
+        try
+        {
+            // Clear environment block before use.
+            constexpr auto cbChar{ sizeof(decltype(newEnvVars.begin())::value_type) };
+
+            if (!newEnvVars.empty())
+            {
+                ::SecureZeroMemory(newEnvVars.data(), newEnvVars.size() * cbChar);
+            }
+
+            // Resize environment block to fit map.
+            size_t cchEnv{ 2 }; // For the block's double NULL-terminator.
+            for (const auto& [name, value] : _envMap)
+            {
+                // Final form of "name=value\0".
+                cchEnv += name.size() + 1 + value.size() + 1;
+            }
+            newEnvVars.resize(cchEnv);
+
+            // Ensure new block is wiped if we exit due to failure.
+            auto zeroNewEnv = wil::scope_exit([&]() noexcept {
+                ::SecureZeroMemory(newEnvVars.data(), newEnvVars.size() * cbChar);
+            });
+
+            // Transform each map entry and copy it into the new environment block.
+            auto pEnvVars{ newEnvVars.data() };
+            auto cbRemaining{ cchEnv * cbChar };
+            for (const auto& [name, value] : _envMap)
+            {
+                // Final form of "name=value\0" for every entry.
+                {
+                    const auto cchSrc{ name.size() };
+                    const auto cbSrc{ cchSrc * cbChar };
+                    RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, name.c_str(), cbSrc) != 0);
+                    pEnvVars += cchSrc;
+                    cbRemaining -= cbSrc;
+                }
+
+                RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, L"=", cbChar) != 0);
+                ++pEnvVars;
+                cbRemaining -= cbChar;
+
+                {
+                    const auto cchSrc{ value.size() };
+                    const auto cbSrc{ cchSrc * cbChar };
+                    RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, value.c_str(), cbSrc) != 0);
+                    pEnvVars += cchSrc;
+                    cbRemaining -= cbSrc;
+                }
+
+                RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, L"\0", cbChar) != 0);
+                ++pEnvVars;
+                cbRemaining -= cbChar;
+            }
+
+            // Environment block only has to be NULL-terminated, but double NULL-terminate anyway.
+            RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, L"\0\0", cbChar * 2) != 0);
+            cbRemaining -= cbChar * 2;
+
+            RETURN_HR_IF(E_UNEXPECTED, cbRemaining != 0);
+
+            zeroNewEnv.release(); // success; don't wipe new environment block on exit
+
+            return S_OK;
+        }
+        CATCH_RETURN();
 
         auto& as_map() noexcept
         {

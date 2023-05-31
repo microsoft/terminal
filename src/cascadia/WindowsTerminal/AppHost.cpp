@@ -32,13 +32,15 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
                  winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
                  const Remoting::WindowManager& manager,
                  const Remoting::Peasant& peasant) noexcept :
+    _appLogic{ logic },
+    _windowLogic{ nullptr }, // don't make one, we're going to take a ref on app's
     _windowManager{ manager },
     _peasant{ peasant },
-    _appLogic{ logic }, // don't make one, we're going to take a ref on app's
-    _windowLogic{ nullptr },
-    _window{ nullptr }
+    _desktopManager{ winrt::try_create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager)) }
 {
     _HandleCommandlineArgs(args);
+
+    _HandleSessionRestore(!args.Content().empty());
 
     // _HandleCommandlineArgs will create a _windowLogic
     _useNonClientArea = _windowLogic.GetShowTabsInTitlebar();
@@ -60,24 +62,9 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
                          this,
                          std::placeholders::_1,
-                         std::placeholders::_2,
-                         std::placeholders::_3);
+                         std::placeholders::_2);
     _window->SetCreateCallback(pfn);
 
-    // Event handlers:
-    // MAKE SURE THEY ARE ALL:
-    // * winrt::auto_revoke
-    // * revoked manually in the dtor before the window is nulled out.
-    //
-    // If you don't, then it's possible for them to get triggered as the app is
-    // tearing down, after we've nulled out the window, during the dtor. That
-    // can cause unexpected AV's everywhere.
-    //
-    // _window callbacks don't need to be treated this way, because:
-    // * IslandWindow isn't a WinRT type (so it doesn't have neat revokers like this)
-    // * This particular bug scenario applies when we've already freed the window.
-    //
-    // (Most of these events are actually set up in AppHost::Initialize)
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->WindowMoved({ this, &AppHost::_WindowMoved });
@@ -88,28 +75,6 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
 
     _window->MakeWindow();
-
-    _GetWindowLayoutRequestedToken = _peasant.GetWindowLayoutRequested([this](auto&&,
-                                                                              const Remoting::GetWindowLayoutArgs& args) {
-        // The peasants are running on separate threads, so they'll need to
-        // swap what context they are in to the ui thread to get the actual layout.
-        args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
-    });
-}
-
-AppHost::~AppHost()
-{
-    // destruction order is important for proper teardown here
-
-    // revoke ALL our event handlers. There's a large class of bugs where we
-    // might get a callback to one of these when we call app.Close() below. Make
-    // sure to revoke these first, so we won't get any more callbacks, then null
-    // out the window, then close the app.
-    _revokers = {};
-
-    _showHideWindowThrottler.reset();
-
-    _window = nullptr;
 }
 
 bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
@@ -176,14 +141,14 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
     if (_peasant)
     {
         const auto& args{ _peasant.InitialArgs() };
-
-        if (!windowArgs.Content().empty())
+        const bool startedForContent = !windowArgs.Content().empty();
+        if (startedForContent)
         {
             _windowLogic.SetStartupContent(windowArgs.Content(), windowArgs.InitialBounds());
         }
         else if (args)
         {
-            const auto result = _windowLogic.SetStartupCommandline(args.Commandline());
+            const auto result = _windowLogic.SetStartupCommandline(args.Commandline(), args.CurrentDirectory());
             const auto message = _windowLogic.ParseCommandlineMessage();
             if (!message.empty())
             {
@@ -195,6 +160,8 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
                 }
             }
         }
+
+        _launchShowWindowCommand = windowArgs.ShowWindowCommand();
 
         // This is a fix for GH#12190 and hopefully GH#12169.
         //
@@ -220,62 +187,68 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
         _revokers.peasantDisplayWindowIdRequested = _peasant.DisplayWindowIdRequested(winrt::auto_revoke, { this, &AppHost::_DisplayWindowId });
         _revokers.peasantQuitRequested = _peasant.QuitRequested(winrt::auto_revoke, { this, &AppHost::_QuitRequested });
 
-        // This is logic that almost seems like it belongs on the WindowEmperor.
-        // It probably does. However, it needs to muck with our own window so
-        // much, that there was no reasonable way of moving this. Moving it also
-        // seemed to reorder bits of init so much that everything broke. So
-        // we'll leave it here.
-        const auto numPeasants = _windowManager.GetNumberOfPeasants();
-        if (numPeasants == 1)
-        {
-            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-            if (_appLogic.ShouldUsePersistedLayout() &&
-                layouts &&
-                layouts.Size() > 0)
-            {
-                uint32_t startIdx = 0;
-                // We want to create a window for every saved layout.
-                // If we are the only window, and no commandline arguments were provided
-                // then we should just use the current window to load the first layout.
-                // Otherwise create this window normally with its commandline, and create
-                // a new window using the first saved layout information.
-                // The 2nd+ layout will always get a new window.
-                if (!_windowLogic.HasCommandlineArguments() &&
-                    !_appLogic.HasSettingsStartupActions())
-                {
-                    _windowLogic.SetPersistedLayoutIdx(startIdx);
-                    startIdx += 1;
-                }
-
-                // Create new windows for each of the other saved layouts.
-                for (const auto size = layouts.Size(); startIdx < size; startIdx += 1)
-                {
-                    auto newWindowArgs = fmt::format(L"{0} -w new -s {1}", args.Commandline()[0], startIdx);
-
-                    STARTUPINFO si;
-                    memset(&si, 0, sizeof(si));
-                    si.cb = sizeof(si);
-                    wil::unique_process_information pi;
-
-                    LOG_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
-                                                           newWindowArgs.data(),
-                                                           nullptr, // lpProcessAttributes
-                                                           nullptr, // lpThreadAttributes
-                                                           false, // bInheritHandles
-                                                           DETACHED_PROCESS | CREATE_UNICODE_ENVIRONMENT, // doCreationFlags
-                                                           nullptr, // lpEnvironment
-                                                           nullptr, // lpStartingDirectory
-                                                           &si, // lpStartupInfo
-                                                           &pi // lpProcessInformation
-                                                           ));
-                }
-            }
-        }
-
         _windowLogic.WindowName(_peasant.WindowName());
         _windowLogic.WindowId(_peasant.GetID());
 
         _revokers.AttachRequested = _peasant.AttachRequested(winrt::auto_revoke, { this, &AppHost::_handleAttach });
+    }
+}
+
+void AppHost::_HandleSessionRestore(const bool startedForContent)
+{
+    const auto& args{ _peasant.InitialArgs() };
+
+    // This is logic that almost seems like it belongs on the WindowEmperor.
+    // It probably does. However, it needs to muck with our own window so
+    // much, that there was no reasonable way of moving this. Moving it also
+    // seemed to reorder bits of init so much that everything broke. So
+    // we'll leave it here.
+    const auto numPeasants = _windowManager.GetNumberOfPeasants();
+    // Don't attempt to session restore if we're just making a window for tear-out
+    if (!startedForContent && numPeasants == 1)
+    {
+        const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+        if (_appLogic.ShouldUsePersistedLayout() &&
+            layouts &&
+            layouts.Size() > 0)
+        {
+            uint32_t startIdx = 0;
+            // We want to create a window for every saved layout.
+            // If we are the only window, and no commandline arguments were provided
+            // then we should just use the current window to load the first layout.
+            // Otherwise create this window normally with its commandline, and create
+            // a new window using the first saved layout information.
+            // The 2nd+ layout will always get a new window.
+            if (!_windowLogic.HasCommandlineArguments() &&
+                !_appLogic.HasSettingsStartupActions())
+            {
+                _windowLogic.SetPersistedLayoutIdx(startIdx);
+                startIdx += 1;
+            }
+
+            // Create new windows for each of the other saved layouts.
+            for (const auto size = layouts.Size(); startIdx < size; startIdx += 1)
+            {
+                auto newWindowArgs = fmt::format(L"{0} -w new -s {1}", args.Commandline()[0], startIdx);
+
+                STARTUPINFO si;
+                memset(&si, 0, sizeof(si));
+                si.cb = sizeof(si);
+                wil::unique_process_information pi;
+
+                LOG_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
+                                                       newWindowArgs.data(),
+                                                       nullptr, // lpProcessAttributes
+                                                       nullptr, // lpThreadAttributes
+                                                       false, // bInheritHandles
+                                                       DETACHED_PROCESS | CREATE_UNICODE_ENVIRONMENT, // doCreationFlags
+                                                       nullptr, // lpEnvironment
+                                                       nullptr, // lpStartingDirectory
+                                                       &si, // lpStartupInfo
+                                                       &pi // lpProcessInformation
+                                                       ));
+            }
+        }
     }
 }
 
@@ -339,6 +312,7 @@ void AppHost::Initialize()
 
     _window->UpdateSettingsRequested({ this, &AppHost::_requestUpdateSettings });
 
+    _revokers.Initialized = _windowLogic.Initialized(winrt::auto_revoke, { this, &AppHost::_WindowInitializedHandler });
     _revokers.RequestedThemeChanged = _windowLogic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
     _revokers.FullscreenChanged = _windowLogic.FullscreenChanged(winrt::auto_revoke, { this, &AppHost::_FullscreenChanged });
     _revokers.FocusModeChanged = _windowLogic.FocusModeChanged(winrt::auto_revoke, { this, &AppHost::_FocusModeChanged });
@@ -388,6 +362,23 @@ void AppHost::Initialize()
     _revokers.RequestMoveContent = _windowLogic.RequestMoveContent(winrt::auto_revoke, { this, &AppHost::_handleMoveContent });
     _revokers.RequestReceiveContent = _windowLogic.RequestReceiveContent(winrt::auto_revoke, { this, &AppHost::_handleReceiveContent });
     _revokers.SendContentRequested = _peasant.SendContentRequested(winrt::auto_revoke, { this, &AppHost::_handleSendContent });
+
+    // Add our GetWindowLayoutRequested handler AFTER the xaml island is
+    // started. Our _GetWindowLayoutAsync handler requires us to be able to work
+    // on our UI thread, which requires that we have a Dispatcher ready for us
+    // to move to. If we set up this callback in the ctor, then it is possible
+    // for there to be a time slice where
+    // * the monarch creates the peasant for us,
+    // * we get constructed (registering the callback)
+    // * then the monarch attempts to query all _peasants_ for their layout,
+    //   coming back to ask us even before XAML has been created.
+    _GetWindowLayoutRequestedToken = _peasant.GetWindowLayoutRequested([this](auto&&,
+                                                                              const Remoting::GetWindowLayoutArgs& args) {
+        // The peasants are running on separate threads, so they'll need to
+        // swap what context they are in to the ui thread to get the actual layout.
+        args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
+    });
+
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
     // it will accumulate an unbounded amount of queued animations while
@@ -421,6 +412,21 @@ void AppHost::Initialize()
     // set that content as well.
     _window->SetContent(_windowLogic.GetRoot());
     _window->OnAppInitialized();
+}
+
+void AppHost::Close()
+{
+    // After calling _window->Close() we should avoid creating more WinUI related actions.
+    // I suspect WinUI wouldn't like that very much. As such unregister all event handlers first.
+    _revokers = {};
+    _showHideWindowThrottler.reset();
+    _window->Close();
+
+    if (_windowLogic)
+    {
+        _windowLogic.DismissDialog();
+        _windowLogic = nullptr;
+    }
 }
 
 // Method Description:
@@ -478,7 +484,7 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
     // event handler finishes.
     _windowManager.SignalClose(_peasant);
 
-    _window->Close();
+    PostQuitMessage(0);
 }
 
 LaunchPosition AppHost::_GetWindowLaunchPosition()
@@ -511,11 +517,30 @@ LaunchPosition AppHost::_GetWindowLaunchPosition()
 }
 
 // Method Description:
+// - Callback for when the window is first being created (during WM_CREATE).
+//   Stash the proposed size for later. We'll need that once we're totally
+//   initialized, so that we can show the window in the right position *when we
+//   want to show it*. If we did the _initialResizeAndRepositionWindow work now,
+//   it would have no effect, because the window is not yet visible.
+// Arguments:
+// - hwnd: The HWND of the window we're about to create.
+// - proposedRect: The location and size of the window that we're about to
+//   create. We'll use this rect to determine which monitor the window is about
+//   to appear on.
+void AppHost::_HandleCreateWindow(const HWND /* hwnd */, const til::rect& proposedRect)
+{
+    // GH#11561: Hide the window until we're totally done being initialized.
+    // More commentary in TerminalPage::_CompleteInitialization
+    _initialResizeAndRepositionWindow(_window->GetHandle(), proposedRect, _launchMode);
+}
+
+// Method Description:
 // - Resize the window we're about to create to the appropriate dimensions, as
-//   specified in the settings. This will be called during the handling of
-//   WM_CREATE. We'll load the settings for the app, then get the proposed size
-//   of the terminal from the app. Using that proposed size, we'll resize the
-//   window we're creating, so that it'll match the values in the settings.
+//   specified in the settings. This is called once the app has finished it's
+//   initial setup, once we have created all the tabs, panes, etc. We'll load
+//   the settings for the app, then get the proposed size of the terminal from
+//   the app. Using that proposed size, we'll resize the window we're creating,
+//   so that it'll match the values in the settings.
 // Arguments:
 // - hwnd: The HWND of the window we're about to create.
 // - proposedRect: The location and size of the window that we're about to
@@ -524,7 +549,7 @@ LaunchPosition AppHost::_GetWindowLaunchPosition()
 // - launchMode: A LaunchMode enum reference that indicates the launch mode
 // Return Value:
 // - None
-void AppHost::_HandleCreateWindow(const HWND hwnd, til::rect proposedRect, LaunchMode& launchMode)
+void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect proposedRect, LaunchMode& launchMode)
 {
     launchMode = _windowLogic.GetLaunchMode();
 
@@ -820,30 +845,39 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable send
     _windowLogic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
 }
 
-winrt::fire_and_forget AppHost::_WindowActivated(bool activated)
+void AppHost::_WindowActivated(bool activated)
 {
     _windowLogic.WindowActivated(activated);
 
-    if (!activated)
+    if (activated && _isWindowInitialized)
+    {
+        _peasantNotifyActivateWindow();
+    }
+}
+
+winrt::fire_and_forget AppHost::_peasantNotifyActivateWindow()
+{
+    const auto desktopManager = _desktopManager;
+    const auto peasant = _peasant;
+    const auto hwnd = _window->GetHandle();
+
+    co_await winrt::resume_background();
+
+    GUID currentDesktopGuid{};
+    if (FAILED_LOG(desktopManager->GetWindowDesktopId(hwnd, &currentDesktopGuid)))
     {
         co_return;
     }
 
-    co_await winrt::resume_background();
-
-    if (_peasant)
-    {
-        const auto currentDesktopGuid{ _CurrentDesktopGuid() };
-
-        // TODO: projects/5 - in the future, we'll want to actually get the
-        // desktop GUID in IslandWindow, and bubble that up here, then down to
-        // the Peasant. For now, we're just leaving space for it.
-        Remoting::WindowActivatedArgs args{ _peasant.GetID(),
-                                            (uint64_t)_window->GetHandle(),
-                                            currentDesktopGuid,
-                                            winrt::clock().now() };
-        _peasant.ActivateWindow(args);
-    }
+    // TODO: projects/5 - in the future, we'll want to actually get the
+    // desktop GUID in IslandWindow, and bubble that up here, then down to
+    // the Peasant. For now, we're just leaving space for it.
+    peasant.ActivateWindow({
+        peasant.GetID(),
+        reinterpret_cast<uint64_t>(hwnd),
+        currentDesktopGuid,
+        winrt::clock().now(),
+    });
 }
 
 // Method Description:
@@ -876,30 +910,6 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowL
     co_return layoutJson;
 }
 
-// Method Description:
-// - Helper to initialize our instance of IVirtualDesktopManager. If we already
-//   got one, then this will just return true. Otherwise, we'll try and init a
-//   new instance of one, and store that.
-// - This will return false if we weren't able to initialize one, which I'm not
-//   sure is actually possible.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff _desktopManager points to a non-null instance of IVirtualDesktopManager
-bool AppHost::_LazyLoadDesktopManager()
-{
-    if (_desktopManager == nullptr)
-    {
-        try
-        {
-            _desktopManager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
-        }
-        CATCH_LOG();
-    }
-
-    return _desktopManager != nullptr;
-}
-
 void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                             const Remoting::SummonWindowBehavior& args)
 {
@@ -907,7 +917,7 @@ void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*se
 
     if (args != nullptr && args.MoveToCurrentDesktop())
     {
-        if (_LazyLoadDesktopManager())
+        if (_desktopManager)
         {
             // First thing - make sure that we're not on the current desktop. If
             // we are, then don't call MoveWindowToDesktop. This is to mitigate
@@ -933,23 +943,6 @@ void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*se
             }
         }
     }
-}
-
-// Method Description:
-// - This gets the GUID of the desktop our window is currently on. It does NOT
-//   get the GUID of the desktop that's currently active.
-// Arguments:
-// - <none>
-// Return Value:
-// - the GUID of the desktop our window is currently on
-GUID AppHost::_CurrentDesktopGuid()
-{
-    GUID currentDesktopGuid{ 0 };
-    if (_LazyLoadDesktopManager())
-    {
-        LOG_IF_FAILED(_desktopManager->GetWindowDesktopId(_window->GetHandle(), &currentDesktopGuid));
-    }
-    return currentDesktopGuid;
 }
 
 // Method Description:
@@ -1103,10 +1096,7 @@ void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&
     // should prevent scenarios where the Terminal window state and PTY window
     // state get de-sync'd, and cause the window to minimize/restore constantly
     // in a loop.
-    if (_showHideWindowThrottler)
-    {
-        _showHideWindowThrottler->Run(args.ShowOrHide());
-    }
+    _showHideWindowThrottler->Run(args.ShowOrHide());
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
@@ -1157,6 +1147,10 @@ void AppHost::_SystemMenuChangeRequested(const winrt::Windows::Foundation::IInsp
 // - <none>
 void AppHost::_WindowMoved()
 {
+    if (_isWindowInitialized < WindowInitializedState::Initialized)
+    {
+        return;
+    }
     if (_windowLogic)
     {
         // Ensure any open ContentDialog is dismissed.
@@ -1209,6 +1203,60 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
             _updateTheme();
         }
     }
+}
+
+winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                          const winrt::Windows::Foundation::IInspectable& /*arg*/)
+{
+    _isWindowInitialized = WindowInitializedState::Initializing;
+
+    // GH#11561: We're totally done being initialized. Resize the window to
+    // match the initial settings, and then call ShowWindow to finally make us
+    // visible.
+
+    // Use the visibility that we were originally requested with as a base. We
+    // can't just use SW_SHOWDEFAULT, because that is set on a per-process
+    // basis. That means that a second window needs to have its STARTUPINFO's
+    // wShowCmd passed into the original process.
+    auto nCmdShow = _launchShowWindowCommand;
+
+    if (WI_IsFlagSet(_launchMode, LaunchMode::MaximizedMode))
+    {
+        nCmdShow = SW_MAXIMIZE;
+    }
+
+    // For inexplicable reasons, again, hop to the BG thread, then back to the
+    // UI thread. This is shockingly load bearing - without this, then
+    // sometimes, we'll _still_ show the HWND before the XAML island actually
+    // paints.
+    co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher(), winrt::Windows::UI::Core::CoreDispatcherPriority::Low);
+
+    ShowWindow(_window->GetHandle(), nCmdShow);
+
+    // If we didn't start the window hidden (in one way or another), then try to
+    // pull ourselves to the foreground. Don't necessarily do a whole "summon",
+    // we don't really want to STEAL foreground if someone rightfully took it
+
+    const bool noForeground = nCmdShow == SW_SHOWMINIMIZED ||
+                              nCmdShow == SW_SHOWNOACTIVATE ||
+                              nCmdShow == SW_SHOWMINNOACTIVE ||
+                              nCmdShow == SW_SHOWNA ||
+                              nCmdShow == SW_FORCEMINIMIZE;
+    if (!noForeground)
+    {
+        SetForegroundWindow(_window->GetHandle());
+        _peasantNotifyActivateWindow();
+    }
+
+    // Don't set our state to Initialized until after the call to ShowWindow.
+    // When we call ShowWindow, the OS will also send us a WM_MOVE, which we'll
+    // then use to try and dismiss an open dialog. This creates the unintended
+    // side effect of immediately dismissing the initial warning dialog, if
+    // there were settings load warnings.
+    //
+    // In AppHost::_WindowMoved, we'll make sure we're at least initialized
+    // before dismissing open dialogs.
+    _isWindowInitialized = WindowInitializedState::Initialized;
 }
 
 winrt::TerminalApp::TerminalWindow AppHost::Logic()
