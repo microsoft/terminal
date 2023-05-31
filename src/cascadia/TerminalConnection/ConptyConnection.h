@@ -77,6 +77,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         guid _guid{}; // A unique session identifier for connected client
         hstring _clientName{}; // The name of the process hosted by this ConPTY connection (as of launch).
 
+        hstring _terminalCwd{};
+
         bool _receivedFirstByte{ false };
         std::chrono::high_resolution_clock::time_point _startTime{};
 

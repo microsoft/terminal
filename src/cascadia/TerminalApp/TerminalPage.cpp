@@ -1253,9 +1253,10 @@ namespace winrt::TerminalApp::implementation
                                                                                  winrt::guid(),
                                                                                  profile.Guid());
 
-            valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+            valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateString(_WindowProperties.VirtualWorkingDirectory()));
             valueSet.Insert(L"reloadEnvironmentVariables",
                             Windows::Foundation::PropertyValue::CreateBoolean(_settings.GlobalSettings().ReloadEnvironmentVariables()));
+            valueSet.Insert(L"terminalCwd", Windows::Foundation::PropertyValue::CreateString(_WindowProperties.VirtualWorkingDirectory()));
 
             if (inheritCursor)
             {

@@ -170,7 +170,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto [newCommandLine, newStartingDirectory] = Utils::MangleStartingDirectoryForWSL(cmdline, _startingDirectory);
         const auto startingDirectory = newStartingDirectory.size() > 0 ? newStartingDirectory.c_str() : nullptr;
 
-        RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
+        const auto succeeded = CreateProcessW(
             nullptr,
             newCommandLine.data(),
             nullptr, // lpProcessAttributes
@@ -181,7 +181,41 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             startingDirectory,
             &siEx.StartupInfo, // lpStartupInfo
             &_piClient // lpProcessInformation
-            ));
+        );
+        if (!succeeded)
+        {
+            const auto gle = GetLastError();
+            if (gle == ERROR_FILE_NOT_FOUND)
+            {
+                std::wstring system32{};
+                if (SUCCEEDED(wil::GetSystemDirectoryW<std::wstring>(system32)))
+                {
+                    // try again with the terminal's CWD changed
+                    if (SetCurrentDirectoryW(_terminalCwd.c_str()))
+                    {
+                        auto pop = wil::scope_exit([&]() {
+                            LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectoryW(system32.c_str()));
+                        });
+                        RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
+                            nullptr,
+                            newCommandLine.data(),
+                            nullptr, // lpProcessAttributes
+                            nullptr, // lpThreadAttributes
+                            false, // bInheritHandles
+                            EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT, // dwCreationFlags
+                            lpEnvironment, // lpEnvironment
+                            startingDirectory,
+                            &siEx.StartupInfo, // lpStartupInfo
+                            &_piClient // lpProcessInformation
+                            ));
+                    }
+                }
+            }
+            else
+            {
+                return HRESULT_FROM_WIN32(gle);
+            }
+        }
 
         DeleteProcThreadAttributeList(siEx.lpAttributeList);
 
@@ -286,6 +320,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _reloadEnvironmentVariables = winrt::unbox_value_or<bool>(settings.TryLookup(L"reloadEnvironmentVariables").try_as<Windows::Foundation::IPropertyValue>(),
                                                                       _reloadEnvironmentVariables);
             _profileGuid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"profileGuid").try_as<Windows::Foundation::IPropertyValue>(), _profileGuid);
+            _terminalCwd = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"terminalCwd").try_as<Windows::Foundation::IPropertyValue>(), _terminalCwd);
         }
 
         if (_guid == guid{})
