@@ -306,6 +306,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _TabColor = static_cast<winrt::Microsoft::Terminal::Core::Color>(colorRef);
         }
 
+        const auto profileEnvVars = profile.EnvironmentVariables();
+        if (profileEnvVars == nullptr)
+        {
+            _EnvironmentVariables = std::nullopt;
+        }
+        else
+        {
+            _EnvironmentVariables = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
+            for (const auto& [key, value] : profileEnvVars)
+            {
+                _EnvironmentVariables.value().Insert(key, value);
+            }
+        }
+
         _Elevate = profile.Elevate();
         _AutoMarkPrompts = Feature_ScrollbarMarks::IsEnabled() && profile.AutoMarkPrompts();
         _ShowMarks = Feature_ScrollbarMarks::IsEnabled() && profile.ShowMarks();

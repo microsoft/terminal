@@ -52,7 +52,6 @@ namespace Microsoft.Terminal.Control
 
         String Commandline { get; };
         String StartingDirectory { get; };
-        String EnvironmentVariables { get; };
 
         TextAntialiasingMode AntialiasingMode { get; };
 

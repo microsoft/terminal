@@ -74,15 +74,25 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
     auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
     auto cursorPosition = cursor.GetPosition();
-    const auto wrapAtEOL = _api.GetAutoWrapMode();
+    const auto wrapAtEOL = _api.GetSystemMode(ITerminalApi::Mode::AutoWrap);
     const auto attributes = textBuffer.GetCurrentAttributes();
+
+    const auto viewport = _api.GetViewport();
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(textBuffer.GetSize().Width());
+
+    auto lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
+    if (cursorPosition.x <= rightMargin && cursorPosition.y >= topMargin && cursorPosition.y <= bottomMargin)
+    {
+        lineWidth = std::min(lineWidth, rightMargin + 1);
+    }
 
     // Turn off the cursor until we're done, so it isn't refreshed unnecessarily.
     cursor.SetIsOn(false);
 
     RowWriteState state{
         .text = string,
-        .columnLimit = textBuffer.GetLineWidth(cursorPosition.y),
+        .columnLimit = lineWidth,
     };
 
     while (!state.text.empty())
@@ -98,7 +108,12 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
                 _DoLineFeed(textBuffer, true, true);
                 cursorPosition = cursor.GetPosition();
                 // We need to recalculate the width when moving to a new line.
-                state.columnLimit = textBuffer.GetLineWidth(cursorPosition.y);
+                lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
+                if (cursorPosition.y >= topMargin && cursorPosition.y <= bottomMargin)
+                {
+                    lineWidth = std::min(lineWidth, rightMargin + 1);
+                }
+                state.columnLimit = lineWidth;
             }
         }
 
@@ -139,17 +154,25 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 
         if (isWrapping)
         {
+            // We want to wrap, but we failed to write even a single character into the row.
+            // ROW::Write() returns the lineWidth and leaves stringIterator untouched. To prevent a
+            // deadlock, because stringIterator never advances, we need to throw that glyph away.
+            //
+            // This can happen under two circumstances:
+            // * The glyph is wider than the buffer and can never be inserted in
+            //   the first place. There's no good way to detect this, so we check
+            //   whether the begin column is the left margin, which is the column
+            //   at which any legit insertion should work at a minimum.
+            // * The DECAWM Autowrap mode is disabled ("\x1b[?7l", !wrapAtEOL) and
+            //   we tried writing a wide glyph into the last column which can't work.
+            if (textPositionBefore == textPositionAfter && (state.columnBegin == 0 || !wrapAtEOL))
+            {
+                textBuffer.ConsumeGrapheme(state.text);
+            }
+
             if (wrapAtEOL)
             {
                 cursor.DelayEOLWrap();
-            }
-            else if (textPositionBefore == textPositionAfter)
-            {
-                // We want to wrap, but we're not allowed to and we failed to write even a single character into the row.
-                // This can only mean one thing! The DECAWM Autowrap mode is disabled ("\x1b[?7l") and we tried writing a
-                // wide glyph into the last column. ROW::Write() returns the lineWidth and leaves stringIterator untouched.
-                // To prevent a deadlock, because stringIterator never advances, we need to throw that glyph away.
-                textBuffer.ConsumeGrapheme(state.text);
             }
         }
     }
@@ -271,6 +294,29 @@ std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const til::rect& viewport
 }
 
 // Routine Description:
+// - Returns the coordinates of the horizontal scroll margins.
+// Arguments:
+// - bufferWidth - The width of the buffer
+// Return Value:
+// - A std::pair containing the left and right coordinates (inclusive).
+std::pair<int, int> AdaptDispatch::_GetHorizontalMargins(const til::CoordType bufferWidth) noexcept
+{
+    // If the left is out of range, reset the margins completely.
+    const auto rightmostColumn = bufferWidth - 1;
+    if (_scrollMargins.left >= rightmostColumn)
+    {
+        _scrollMargins.left = _scrollMargins.right = 0;
+    }
+    // If margins aren't set, use the full extent of the buffer.
+    const auto marginsSet = _scrollMargins.left < _scrollMargins.right;
+    auto leftMargin = marginsSet ? _scrollMargins.left : 0;
+    auto rightMargin = marginsSet ? _scrollMargins.right : rightmostColumn;
+    // If the right is out of range, clamp it to the rightmost column.
+    rightMargin = std::min(rightMargin, rightmostColumn);
+    return { leftMargin, rightMargin };
+}
+
+// Routine Description:
 // - Generalizes cursor movement to a specific position, which can be absolute or relative.
 // Arguments:
 // - rowOffset - The row to move to
@@ -284,8 +330,10 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     const auto viewport = _api.GetViewport();
     auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
+    const auto bufferWidth = textBuffer.GetSize().Width();
     const auto cursorPosition = cursor.GetPosition();
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
 
     // For relative movement, the given offsets will be relative to
     // the current cursor position.
@@ -299,39 +347,54 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
         row = _modes.test(Mode::Origin) ? topMargin : viewport.top;
     }
 
-    // And if the column is absolute, it'll be relative to column 0.
+    // And if the column is absolute, it'll be relative to column 0,
+    // or the left margin, depending on the origin mode.
     // Horizontal positions are not affected by the viewport.
     if (colOffset.IsAbsolute)
     {
-        col = 0;
+        col = _modes.test(Mode::Origin) ? leftMargin : 0;
     }
 
     // Adjust the base position by the given offsets and clamp the results.
     // The row is constrained within the viewport's vertical boundaries,
     // while the column is constrained by the buffer width.
     row = std::clamp(row + rowOffset.Value, viewport.top, viewport.bottom - 1);
-    col = std::clamp(col + colOffset.Value, 0, textBuffer.GetSize().Width() - 1);
+    col = std::clamp(col + colOffset.Value, 0, bufferWidth - 1);
 
     // If the operation needs to be clamped inside the margins, or the origin
     // mode is relative (which always requires margin clamping), then the row
-    // may need to be adjusted further.
+    // and column may need to be adjusted further.
     if (clampInMargins || _modes.test(Mode::Origin))
     {
-        // See microsoft/terminal#2929 - If the cursor is _below_ the top
-        // margin, it should stay below the top margin. If it's _above_ the
-        // bottom, it should stay above the bottom. Cursor movements that stay
-        // outside the margins shouldn't necessarily be affected. For example,
-        // moving up while below the bottom margin shouldn't just jump straight
-        // to the bottom margin. See
-        // ScreenBufferTests::CursorUpDownOutsideMargins for a test of that
-        // behavior.
-        if (cursorPosition.y >= topMargin)
+        // Vertical margins only apply if the original position is inside the
+        // horizontal margins. Also, the cursor will only be clamped inside the
+        // top margin if it was already below the top margin to start with, and
+        // it will only be clamped inside the bottom margin if it was already
+        // above the bottom margin to start with.
+        if (cursorPosition.x >= leftMargin && cursorPosition.x <= rightMargin)
         {
-            row = std::max(row, topMargin);
+            if (cursorPosition.y >= topMargin)
+            {
+                row = std::max(row, topMargin);
+            }
+            if (cursorPosition.y <= bottomMargin)
+            {
+                row = std::min(row, bottomMargin);
+            }
         }
-        if (cursorPosition.y <= bottomMargin)
+        // Similarly, horizontal margins only apply if the new row is inside the
+        // vertical margins. And the cursor is only clamped inside the horizontal
+        // margins if it was already inside to start with.
+        if (row >= topMargin && row <= bottomMargin)
         {
-            row = std::min(row, bottomMargin);
+            if (cursorPosition.x >= leftMargin)
+            {
+                col = std::max(col, leftMargin);
+            }
+            if (cursorPosition.x <= rightMargin)
+            {
+                col = std::min(col, rightMargin);
+            }
         }
     }
 
@@ -440,6 +503,7 @@ bool AdaptDispatch::CursorSaveState()
     // Although if origin mode is set, the cursor is relative to the margin origin.
     if (_modes.test(Mode::Origin))
     {
+        cursorPosition.x -= _GetHorizontalMargins(textBuffer.GetSize().Width()).first;
         cursorPosition.y -= _GetVerticalMargins(viewport, false).first;
     }
 
@@ -507,19 +571,40 @@ bool AdaptDispatch::CursorRestoreState()
 // - delta - Distance to move (positive is down, negative is up).
 // Return Value:
 // - <none>
-void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const int32_t delta)
+void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta)
 {
     const auto absoluteDelta = std::min(std::abs(delta), scrollRect.height());
     if (absoluteDelta < scrollRect.height())
     {
-        // For now we're assuming the scrollRect is always the full width of the
-        // buffer, but this will likely need to be extended to support scrolling
-        // of arbitrary widths at some point in the future.
         const auto top = delta > 0 ? scrollRect.top : scrollRect.top + absoluteDelta;
+        const auto width = scrollRect.width();
         const auto height = scrollRect.height() - absoluteDelta;
         const auto actualDelta = delta > 0 ? absoluteDelta : -absoluteDelta;
-        textBuffer.ScrollRows(top, height, actualDelta);
-        textBuffer.TriggerRedraw(Viewport::FromExclusive(scrollRect));
+        if (width == textBuffer.GetSize().Width())
+        {
+            // If the scrollRect is the full width of the buffer, we can scroll
+            // more efficiently by rotating the row storage.
+            textBuffer.ScrollRows(top, height, actualDelta);
+            textBuffer.TriggerRedraw(Viewport::FromExclusive(scrollRect));
+        }
+        else
+        {
+            // Otherwise we have to move the content up or down by copying the
+            // requested buffer range one cell at a time.
+            const auto srcOrigin = til::point{ scrollRect.left, top };
+            const auto dstOrigin = til::point{ scrollRect.left, top + actualDelta };
+            const auto srcView = Viewport::FromDimensions(srcOrigin, width, height);
+            const auto dstView = Viewport::FromDimensions(dstOrigin, width, height);
+            const auto walkDirection = Viewport::DetermineWalkDirection(srcView, dstView);
+            auto srcPos = srcView.GetWalkOrigin(walkDirection);
+            auto dstPos = dstView.GetWalkOrigin(walkDirection);
+            do
+            {
+                const auto current = OutputCell(*textBuffer.GetCellDataAt(srcPos));
+                textBuffer.WriteLine(OutputCellIterator({ &current, 1 }), dstPos);
+                srcView.WalkInBounds(srcPos, walkDirection);
+            } while (dstView.WalkInBounds(dstPos, walkDirection));
+        }
     }
 
     // Rows revealed by the scroll are filled with standard erase attributes.
@@ -542,7 +627,7 @@ void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rec
 // - delta - Distance to move (positive is right, negative is left).
 // Return Value:
 // - <none>
-void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const int32_t delta)
+void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta)
 {
     const auto absoluteDelta = std::min(std::abs(delta), scrollRect.width());
     if (absoluteDelta < scrollRect.width())
@@ -589,13 +674,21 @@ void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::r
 // - <none>
 void AdaptDispatch::_InsertDeleteCharacterHelper(const VTInt delta)
 {
+    const auto viewport = _api.GetViewport();
     auto& textBuffer = _api.GetTextBuffer();
     const auto row = textBuffer.GetCursor().GetPosition().y;
-    const auto startCol = textBuffer.GetCursor().GetPosition().x;
-    const auto endCol = textBuffer.GetLineWidth(row);
-    _ScrollRectHorizontally(textBuffer, { startCol, row, endCol, row + 1 }, delta);
-    // The ICH and DCH controls are expected to reset the delayed wrap flag.
-    textBuffer.GetCursor().ResetDelayEOLWrap();
+    const auto col = textBuffer.GetCursor().GetPosition().x;
+    const auto lineWidth = textBuffer.GetLineWidth(row);
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto [leftMargin, rightMargin] = (row >= topMargin && row <= bottomMargin) ?
+                                               _GetHorizontalMargins(lineWidth) :
+                                               std::make_pair(0, lineWidth - 1);
+    if (col >= leftMargin && col <= rightMargin)
+    {
+        _ScrollRectHorizontally(textBuffer, { col, row, rightMargin + 1, row + 1 }, delta);
+        // The ICH and DCH controls are expected to reset the delayed wrap flag.
+        textBuffer.GetCursor().ResetDelayEOLWrap();
+    }
 }
 
 // Routine Description:
@@ -964,15 +1057,17 @@ til::rect AdaptDispatch::_CalculateRectArea(const VTInt top, const VTInt left, c
     // We start by calculating the margin offsets and maximum dimensions.
     // If the origin mode isn't set, we use the viewport extent.
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, false);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferSize.width);
     const auto yOffset = _modes.test(Mode::Origin) ? topMargin : 0;
     const auto yMaximum = _modes.test(Mode::Origin) ? bottomMargin + 1 : viewport.height();
-    const auto xMaximum = bufferSize.width;
+    const auto xOffset = _modes.test(Mode::Origin) ? leftMargin : 0;
+    const auto xMaximum = _modes.test(Mode::Origin) ? rightMargin + 1 : bufferSize.width;
 
     auto fillRect = til::inclusive_rect{};
-    fillRect.left = left;
+    fillRect.left = left + xOffset;
     fillRect.top = top + yOffset;
     // Right and bottom default to the maximum dimensions.
-    fillRect.right = (right ? right : xMaximum);
+    fillRect.right = (right ? right + xOffset : xMaximum);
     fillRect.bottom = (bottom ? bottom + yOffset : yMaximum);
 
     // We also clamp everything to the maximum dimensions, and subtract 1
@@ -1331,13 +1426,17 @@ bool AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt p
 // - True.
 bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 {
-    auto& textBuffer = _api.GetTextBuffer();
-    textBuffer.SetCurrentLineRendition(rendition);
-    // There is some variation in how this was handled by the different DEC
-    // terminals, but the STD 070 reference (on page D-13) makes it clear that
-    // the delayed wrap (aka the Last Column Flag) was expected to be reset when
-    // line rendition controls were executed.
-    textBuffer.GetCursor().ResetDelayEOLWrap();
+    // The line rendition can't be changed if left/right margins are allowed.
+    if (!_modes.test(Mode::AllowDECSLRM))
+    {
+        auto& textBuffer = _api.GetTextBuffer();
+        textBuffer.SetCurrentLineRendition(rendition);
+        // There is some variation in how this was handled by the different DEC
+        // terminals, but the STD 070 reference (on page D-13) makes it clear that
+        // the delayed wrap (aka the Last Column Flag) was expected to be reset when
+        // line rendition controls were executed.
+        textBuffer.GetCursor().ResetDelayEOLWrap();
+    }
     return true;
 }
 
@@ -1373,16 +1472,37 @@ bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusTyp
 }
 
 // Routine Description:
-// - DA - Reports the identity of this Virtual Terminal machine to the caller.
-//      - In our case, we'll report back to acknowledge we understand, but reveal no "hardware" upgrades like physical terminals of old.
+// - DA - Reports the service class or conformance level that the terminal
+//   supports, and the set of implemented extensions.
 // Arguments:
 // - <none>
 // Return Value:
 // - True.
 bool AdaptDispatch::DeviceAttributes()
 {
-    // See: http://vt100.net/docs/vt100-ug/chapter3.html#DA
-    _api.ReturnResponse(L"\x1b[?1;0c");
+    // This first parameter of the response is 61, representing a conformance
+    // level of 1. The subsequent parameters identify the supported feature
+    // extensions.
+    //
+    // 1 = 132 column mode (ConHost only)
+    // 6 = Selective erase
+    // 7 = Soft fonts
+    // 21 = Horizontal scrolling
+    // 22 = Color text
+    // 23 = Greek character sets
+    // 24 = Turkish character sets
+    // 28 = Rectangular area operations
+    // 32 = Text macros
+    // 42 = ISO Latin - 2 character set
+
+    if (_api.IsConsolePty())
+    {
+        _api.ReturnResponse(L"\x1b[?61;6;7;21;22;23;24;28;32;42c");
+    }
+    else
+    {
+        _api.ReturnResponse(L"\x1b[?61;1;6;7;21;22;23;24;28;32;42c");
+    }
     return true;
 }
 
@@ -1498,11 +1618,11 @@ void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
     cursorPosition.x++;
     cursorPosition.y++;
 
-    // If the origin mode is relative, line numbers start at top margin of the scrolling region.
+    // If the origin mode is set, the cursor is relative to the margin origin.
     if (_modes.test(Mode::Origin))
     {
-        const auto topMargin = _GetVerticalMargins(viewport, false).first;
-        cursorPosition.y -= topMargin;
+        cursorPosition.x -= _GetHorizontalMargins(textBuffer.GetSize().Width()).first;
+        cursorPosition.y -= _GetVerticalMargins(viewport, false).first;
     }
 
     // Now send it back into the input channel of the console.
@@ -1562,7 +1682,8 @@ void AdaptDispatch::_ScrollMovement(const VTInt delta)
     auto& textBuffer = _api.GetTextBuffer();
     const auto bufferWidth = textBuffer.GetSize().Width();
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
-    _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin + 1 }, delta);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
+    _ScrollRectVertically(textBuffer, { leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 }, delta);
 }
 
 // Routine Description:
@@ -1573,7 +1694,7 @@ void AdaptDispatch::_ScrollMovement(const VTInt delta)
 // - True.
 bool AdaptDispatch::ScrollUp(const VTInt uiDistance)
 {
-    _ScrollMovement(-gsl::narrow_cast<int32_t>(uiDistance));
+    _ScrollMovement(-uiDistance);
     return true;
 }
 
@@ -1585,7 +1706,7 @@ bool AdaptDispatch::ScrollUp(const VTInt uiDistance)
 // - True.
 bool AdaptDispatch::ScrollDown(const VTInt uiDistance)
 {
-    _ScrollMovement(gsl::narrow_cast<int32_t>(uiDistance));
+    _ScrollMovement(uiDistance);
     return true;
 }
 
@@ -1606,10 +1727,11 @@ void AdaptDispatch::_SetColumnMode(const bool enable)
         const auto viewportWidth = (enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
         _api.ResizeWindow(viewportWidth, viewportHeight);
         _modes.set(Mode::Column, enable);
-        _modes.reset(Mode::Origin);
+        _modes.reset(Mode::Origin, Mode::AllowDECSLRM);
         CursorPosition(1, 1);
         EraseInDisplay(DispatchTypes::EraseType::All);
         _DoSetTopBottomScrollingMargins(0, 0);
+        _DoSetLeftRightScrollingMargins(0, 0);
     }
 }
 
@@ -1668,6 +1790,15 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
         _modes.set(Mode::InsertReplace, enable);
         return true;
+    case DispatchTypes::ModeParams::LNM_LineFeedNewLineMode:
+        // VT apps expect that the system and input modes are the same, so if
+        // they become out of sync, we just act as if LNM mode isn't supported.
+        if (_api.GetSystemMode(ITerminalApi::Mode::LineFeed) == _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed))
+        {
+            _api.SetSystemMode(ITerminalApi::Mode::LineFeed, enable);
+            _terminalInput.SetInputMode(TerminalInput::Mode::LineFeed, enable);
+        }
+        return true;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, enable);
         return !_PassThroughInputModes();
@@ -1691,7 +1822,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         CursorPosition(1, 1);
         return true;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
-        _api.SetAutoWrapMode(enable);
+        _api.SetSystemMode(ITerminalApi::Mode::AutoWrap, enable);
         // Resetting DECAWM should also reset the delayed wrap flag.
         if (!enable)
         {
@@ -1716,6 +1847,17 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
         return !_PassThroughInputModes();
+    case DispatchTypes::ModeParams::DECLRMM_LeftRightMarginMode:
+        _modes.set(Mode::AllowDECSLRM, enable);
+        _DoSetLeftRightScrollingMargins(0, 0);
+        if (enable)
+        {
+            // If we've allowed left/right margins, we can't have line renditions.
+            const auto viewport = _api.GetViewport();
+            auto& textBuffer = _api.GetTextBuffer();
+            textBuffer.ResetLineRenditionRange(viewport.top, viewport.bottom);
+        }
+        return true;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enable);
         return !_PassThroughInputModes();
@@ -1743,7 +1885,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _SetAlternateScreenBufferMode(enable);
         return true;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-        _api.SetBracketedPasteMode(enable);
+        _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, enable);
         return !_api.IsConsolePty();
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::Win32, enable);
@@ -1792,6 +1934,14 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
     case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
         enabled = _modes.test(Mode::InsertReplace);
         break;
+    case DispatchTypes::ModeParams::LNM_LineFeedNewLineMode:
+        // VT apps expect that the system and input modes are the same, so if
+        // they become out of sync, we just act as if LNM mode isn't supported.
+        if (_api.GetSystemMode(ITerminalApi::Mode::LineFeed) == _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed))
+        {
+            enabled = _terminalInput.GetInputMode(TerminalInput::Mode::LineFeed);
+        }
+        break;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::CursorKey);
         break;
@@ -1812,7 +1962,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         enabled = _modes.test(Mode::Origin);
         break;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
-        enabled = _api.GetAutoWrapMode();
+        enabled = _api.GetSystemMode(ITerminalApi::Mode::AutoWrap);
         break;
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat);
@@ -1835,6 +1985,9 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         break;
     case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::BackarrowKey);
+        break;
+    case DispatchTypes::ModeParams::DECLRMM_LeftRightMarginMode:
+        enabled = _modes.test(Mode::AllowDECSLRM);
         break;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking);
@@ -1861,7 +2014,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         enabled = _usingAltBuffer;
         break;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-        enabled = _api.GetBracketedPasteMode();
+        enabled = _api.GetSystemMode(ITerminalApi::Mode::BracketedPaste);
         break;
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Win32);
@@ -1899,24 +2052,25 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 // - delta - Number of lines to modify (positive if inserting, negative if deleting).
 // Return Value:
 // - <none>
-void AdaptDispatch::_InsertDeleteLineHelper(const int32_t delta)
+void AdaptDispatch::_InsertDeleteLineHelper(const VTInt delta)
 {
     const auto viewport = _api.GetViewport();
     auto& textBuffer = _api.GetTextBuffer();
     const auto bufferWidth = textBuffer.GetSize().Width();
 
     auto& cursor = textBuffer.GetCursor();
+    const auto col = cursor.GetPosition().x;
     const auto row = cursor.GetPosition().y;
 
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
-    if (row >= topMargin && row <= bottomMargin)
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
+    if (row >= topMargin && row <= bottomMargin && col >= leftMargin && col <= rightMargin)
     {
         // We emulate inserting and deleting by scrolling the area between the cursor and the bottom margin.
-        _ScrollRectVertically(textBuffer, { 0, row, bufferWidth, bottomMargin + 1 }, delta);
+        _ScrollRectVertically(textBuffer, { leftMargin, row, rightMargin + 1, bottomMargin + 1 }, delta);
 
         // The IL and DL controls are also expected to move the cursor to the left margin.
-        // For now this is just column 0, since we don't yet support DECSLRM.
-        cursor.SetXPosition(0);
+        cursor.SetXPosition(leftMargin);
         _ApplyCursorMovementFlags(cursor);
     }
 }
@@ -1931,7 +2085,7 @@ void AdaptDispatch::_InsertDeleteLineHelper(const int32_t delta)
 // - True.
 bool AdaptDispatch::InsertLine(const VTInt distance)
 {
-    _InsertDeleteLineHelper(gsl::narrow_cast<int32_t>(distance));
+    _InsertDeleteLineHelper(distance);
     return true;
 }
 
@@ -1949,7 +2103,58 @@ bool AdaptDispatch::InsertLine(const VTInt distance)
 // - True.
 bool AdaptDispatch::DeleteLine(const VTInt distance)
 {
-    _InsertDeleteLineHelper(-gsl::narrow_cast<int32_t>(distance));
+    _InsertDeleteLineHelper(-distance);
+    return true;
+}
+
+// Routine Description:
+// - Internal logic for adding or removing columns in the active screen buffer.
+// Parameters:
+// - delta - Number of columns to modify (positive if inserting, negative if deleting).
+// Return Value:
+// - <none>
+void AdaptDispatch::_InsertDeleteColumnHelper(const VTInt delta)
+{
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+
+    const auto& cursor = textBuffer.GetCursor();
+    const auto col = cursor.GetPosition().x;
+    const auto row = cursor.GetPosition().y;
+
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
+    if (row >= topMargin && row <= bottomMargin && col >= leftMargin && col <= rightMargin)
+    {
+        // We emulate inserting and deleting by scrolling the area between the cursor and the right margin.
+        _ScrollRectHorizontally(textBuffer, { col, topMargin, rightMargin + 1, bottomMargin + 1 }, delta);
+    }
+}
+
+// Routine Description:
+// - DECIC - This control function inserts one or more blank columns in the
+//    scrolling region, starting at the column that has the cursor.
+// Arguments:
+// - distance - number of columns to insert
+// Return Value:
+// - True.
+bool AdaptDispatch::InsertColumn(const VTInt distance)
+{
+    _InsertDeleteColumnHelper(distance);
+    return true;
+}
+
+// Routine Description:
+// - DECDC - This control function deletes one or more columns in the scrolling
+//    region, starting with the column that has the cursor.
+// Arguments:
+// - distance - number of columns to delete
+// Return Value:
+// - True.
+bool AdaptDispatch::DeleteColumn(const VTInt distance)
+{
+    _InsertDeleteColumnHelper(-distance);
     return true;
 }
 
@@ -1980,10 +2185,12 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
 // Arguments:
 // - topMargin - the line number for the top margin.
 // - bottomMargin - the line number for the bottom margin.
+// - homeCursor - move the cursor to the home position.
 // Return Value:
 // - <none>
 void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
-                                                    const VTInt bottomMargin)
+                                                    const VTInt bottomMargin,
+                                                    const bool homeCursor)
 {
     // so notes time: (input -> state machine out -> adapter out -> conhost internal)
     // having only a top param is legal         ([3;r   -> 3,0   -> 3,h  -> 3,h,true)
@@ -2026,6 +2233,12 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
         }
         _scrollMargins.top = actualTop;
         _scrollMargins.bottom = actualBottom;
+        // If requested, we may also need to move the cursor to the home
+        // position, but only if the requested margins were valid.
+        if (homeCursor)
+        {
+            CursorPosition(1, 1);
+        }
     }
 }
 
@@ -2042,10 +2255,90 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
 bool AdaptDispatch::SetTopBottomScrollingMargins(const VTInt topMargin,
                                                  const VTInt bottomMargin)
 {
-    // When this is called, the cursor should also be moved to home.
-    // Other functions that only need to set/reset the margins should call _DoSetTopBottomScrollingMargins
-    _DoSetTopBottomScrollingMargins(topMargin, bottomMargin);
-    CursorPosition(1, 1);
+    _DoSetTopBottomScrollingMargins(topMargin, bottomMargin, true);
+    return true;
+}
+
+// Routine Description:
+// - DECSLRM - Set Scrolling Region
+// This control function sets the left and right margins for the current page.
+//  You cannot perform scrolling outside the margins.
+//  Default: Margins are at the page limits.
+// Arguments:
+// - leftMargin - the column number for the left margin.
+// - rightMargin - the column number for the right margin.
+// - homeCursor - move the cursor to the home position.
+// Return Value:
+// - <none>
+void AdaptDispatch::_DoSetLeftRightScrollingMargins(const VTInt leftMargin,
+                                                    const VTInt rightMargin,
+                                                    const bool homeCursor)
+{
+    til::CoordType actualLeft = leftMargin;
+    til::CoordType actualRight = rightMargin;
+
+    const auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    // The default left margin is column 1
+    if (actualLeft == 0)
+    {
+        actualLeft = 1;
+    }
+    // The default right margin is the buffer width
+    if (actualRight == 0)
+    {
+        actualRight = bufferWidth;
+    }
+    // The left margin must be less than the right margin, and the
+    // right margin must be less than or equal to the buffer width
+    if (actualLeft < actualRight && actualRight <= bufferWidth)
+    {
+        if (actualLeft == 1 && actualRight == bufferWidth)
+        {
+            // Client requests setting margins to the entire screen
+            //    - clear them instead of setting them.
+            actualLeft = 0;
+            actualRight = 0;
+        }
+        else
+        {
+            // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+            actualLeft -= 1;
+            actualRight -= 1;
+        }
+        _scrollMargins.left = actualLeft;
+        _scrollMargins.right = actualRight;
+        // If requested, we may also need to move the cursor to the home
+        // position, but only if the requested margins were valid.
+        if (homeCursor)
+        {
+            CursorPosition(1, 1);
+        }
+    }
+}
+
+// Routine Description:
+// - DECSLRM - Set Scrolling Region
+// This control function sets the left and right margins for the current page.
+//  You cannot perform scrolling outside the margins.
+//  Default: Margins are at the page limits.
+// Arguments:
+// - leftMargin - the column number for the left margin.
+// - rightMargin - the column number for the right margin.
+// Return Value:
+// - True.
+bool AdaptDispatch::SetLeftRightScrollingMargins(const VTInt leftMargin,
+                                                 const VTInt rightMargin)
+{
+    if (_modes.test(Mode::AllowDECSLRM))
+    {
+        _DoSetLeftRightScrollingMargins(leftMargin, rightMargin, true);
+    }
+    else
+    {
+        // When DECSLRM isn't allowed, `CSI s` is interpreted as ANSISYSSC.
+        CursorSaveState();
+    }
     return true;
 }
 
@@ -2085,9 +2378,10 @@ bool AdaptDispatch::CarriageReturn()
 void AdaptDispatch::_DoLineFeed(TextBuffer& textBuffer, const bool withReturn, const bool wrapForced)
 {
     const auto viewport = _api.GetViewport();
-    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
     const auto bufferWidth = textBuffer.GetSize().Width();
     const auto bufferHeight = textBuffer.GetSize().Height();
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
 
     auto& cursor = textBuffer.GetCursor();
     const auto currentPosition = cursor.GetPosition();
@@ -2097,18 +2391,30 @@ void AdaptDispatch::_DoLineFeed(TextBuffer& textBuffer, const bool withReturn, c
     // When explicitly moving down a row, clear the wrap status.
     textBuffer.GetRowByOffset(currentPosition.y).SetWrapForced(wrapForced);
 
-    if (currentPosition.y != bottomMargin)
+    // If a carriage return was requested, we move to the leftmost column or
+    // the left margin, depending on whether we started within the margins.
+    if (withReturn)
     {
-        // If we're not at the bottom margin then there's no scrolling,
-        // so we make sure we don't move past the bottom of the viewport.
+        const auto clampToMargin = currentPosition.y >= topMargin &&
+                                   currentPosition.y <= bottomMargin &&
+                                   currentPosition.x >= leftMargin;
+        newPosition.x = clampToMargin ? leftMargin : 0;
+    }
+
+    if (currentPosition.y != bottomMargin || newPosition.x < leftMargin || newPosition.x > rightMargin)
+    {
+        // If we're not at the bottom margin, or outside the horizontal margins,
+        // then there's no scrolling, so we make sure we don't move past the
+        // bottom of the viewport.
         newPosition.y = std::min(currentPosition.y + 1, viewport.bottom - 1);
         newPosition = textBuffer.ClampPositionWithinLine(newPosition);
     }
-    else if (topMargin > viewport.top)
+    else if (topMargin > viewport.top || leftMargin > 0 || rightMargin < bufferWidth - 1)
     {
-        // If the top margin isn't at the top of the viewport, then we're
-        // just scrolling the margin area and the cursor stays where it is.
-        _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin + 1 }, -1);
+        // If the top margin isn't at the top of the viewport, or the
+        // horizontal margins are set, then we're just scrolling the margin
+        // area and the cursor stays where it is.
+        _ScrollRectVertically(textBuffer, { leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 }, -1);
     }
     else if (viewport.bottom < bufferHeight)
     {
@@ -2155,9 +2461,6 @@ void AdaptDispatch::_DoLineFeed(TextBuffer& textBuffer, const bool withReturn, c
         }
     }
 
-    // If a carriage return was requested, we also move to the leftmost column.
-    newPosition.x = withReturn ? 0 : newPosition.x;
-
     cursor.SetPosition(newPosition);
     _ApplyCursorMovementFlags(cursor);
 }
@@ -2175,7 +2478,7 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
     switch (lineFeedType)
     {
     case DispatchTypes::LineFeedType::DependsOnMode:
-        _DoLineFeed(textBuffer, _api.GetLineFeedMode(), false);
+        _DoLineFeed(textBuffer, _api.GetSystemMode(ITerminalApi::Mode::LineFeed), false);
         return true;
     case DispatchTypes::LineFeedType::WithoutReturn:
         _DoLineFeed(textBuffer, false, false);
@@ -2201,19 +2504,82 @@ bool AdaptDispatch::ReverseLineFeed()
     auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
     const auto cursorPosition = cursor.GetPosition();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
 
     // If the cursor is at the top of the margin area, we shift the buffer
     // contents down, to emulate inserting a line at that point.
-    if (cursorPosition.y == topMargin)
+    if (cursorPosition.y == topMargin && cursorPosition.x >= leftMargin && cursorPosition.x <= rightMargin)
     {
-        const auto bufferWidth = textBuffer.GetSize().Width();
-        _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin + 1 }, 1);
+        _ScrollRectVertically(textBuffer, { leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 }, 1);
     }
     else if (cursorPosition.y > viewport.top)
     {
         // Otherwise we move the cursor up, but not past the top of the viewport.
         cursor.SetPosition(textBuffer.ClampPositionWithinLine({ cursorPosition.x, cursorPosition.y - 1 }));
+        _ApplyCursorMovementFlags(cursor);
+    }
+    return true;
+}
+
+// Routine Description:
+// - DECBI - Moves the cursor back one column, scrolling the screen
+//    horizontally if it reaches the left margin.
+// Arguments:
+// - None
+// Return Value:
+// - True.
+bool AdaptDispatch::BackIndex()
+{
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    const auto cursorPosition = cursor.GetPosition();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+
+    // If the cursor is at the left of the margin area, we shift the buffer right.
+    if (cursorPosition.x == leftMargin && cursorPosition.y >= topMargin && cursorPosition.y <= bottomMargin)
+    {
+        _ScrollRectHorizontally(textBuffer, { leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 }, 1);
+    }
+    // Otherwise we move the cursor left, but not past the start of the line.
+    else if (cursorPosition.x > 0)
+    {
+        cursor.SetXPosition(cursorPosition.x - 1);
+        _ApplyCursorMovementFlags(cursor);
+    }
+    return true;
+}
+
+// Routine Description:
+// - DECFI - Moves the cursor forward one column, scrolling the screen
+//    horizontally if it reaches the right margin.
+// Arguments:
+// - None
+// Return Value:
+// - True.
+bool AdaptDispatch::ForwardIndex()
+{
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    const auto cursorPosition = cursor.GetPosition();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+
+    // If the cursor is at the right of the margin area, we shift the buffer left.
+    if (cursorPosition.x == rightMargin && cursorPosition.y >= topMargin && cursorPosition.y <= bottomMargin)
+    {
+        _ScrollRectHorizontally(textBuffer, { leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 }, -1);
+    }
+    // Otherwise we move the cursor right, but not past the end of the line.
+    else if (cursorPosition.x < textBuffer.GetLineWidth(cursorPosition.y) - 1)
+    {
+        cursor.SetXPosition(cursorPosition.x + 1);
         _ApplyCursorMovementFlags(cursor);
     }
     return true;
@@ -2262,12 +2628,19 @@ bool AdaptDispatch::ForwardTab(const VTInt numTabs)
 {
     auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
-    const auto width = textBuffer.GetLineWidth(cursor.GetPosition().y);
     auto column = cursor.GetPosition().x;
+    const auto row = cursor.GetPosition().y;
+    const auto width = textBuffer.GetLineWidth(row);
     auto tabsPerformed = 0;
 
+    const auto viewport = _api.GetViewport();
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(width);
+    const auto clampToMargin = row >= topMargin && row <= bottomMargin && column <= rightMargin;
+    const auto maxColumn = clampToMargin ? rightMargin : width - 1;
+
     _InitTabStopsForWidth(width);
-    while (column + 1 < width && tabsPerformed < numTabs)
+    while (column < maxColumn && tabsPerformed < numTabs)
     {
         column++;
         if (til::at(_tabStopColumns, column))
@@ -2304,12 +2677,19 @@ bool AdaptDispatch::BackwardsTab(const VTInt numTabs)
 {
     auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
-    const auto width = textBuffer.GetLineWidth(cursor.GetPosition().y);
     auto column = cursor.GetPosition().x;
+    const auto row = cursor.GetPosition().y;
+    const auto width = textBuffer.GetLineWidth(row);
     auto tabsPerformed = 0;
 
+    const auto viewport = _api.GetViewport();
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(width);
+    const auto clampToMargin = row >= topMargin && row <= bottomMargin && column >= leftMargin;
+    const auto minColumn = clampToMargin ? leftMargin : 0;
+
     _InitTabStopsForWidth(width);
-    while (column > 0 && tabsPerformed < numTabs)
+    while (column > minColumn && tabsPerformed < numTabs)
     {
         column--;
         if (til::at(_tabStopColumns, column))
@@ -2561,13 +2941,18 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 bool AdaptDispatch::SoftReset()
 {
     _api.GetTextBuffer().GetCursor().SetIsVisible(true); // Cursor enabled.
-    _modes.reset(Mode::InsertReplace, Mode::Origin); // Replace mode; Absolute cursor addressing.
-    _api.SetAutoWrapMode(true); // Wrap at end of line.
+
+    // Replace mode; Absolute cursor addressing; Disallow left/right margins.
+    _modes.reset(Mode::InsertReplace, Mode::Origin, Mode::AllowDECSLRM);
+
+    _api.SetSystemMode(ITerminalApi::Mode::AutoWrap, true); // Wrap at end of line.
     _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, false); // Normal characters.
     _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, false); // Numeric characters.
 
     // Top margin = 1; bottom margin = page length.
     _DoSetTopBottomScrollingMargins(0, 0);
+    // Left margin = 1; right margin = page width.
+    _DoSetLeftRightScrollingMargins(0, 0);
 
     _termOutput = {}; // Reset all character set designations.
     if (_initialCodePage.has_value())
@@ -2635,11 +3020,20 @@ bool AdaptDispatch::HardReset()
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     CursorPosition(1, 1);
 
+    // We only reset the system line feed mode if the input mode is set. If it
+    // isn't set, that either means they're both reset, and there's nothing for
+    // us to do, or they're out of sync, which implies the system mode was set
+    // via the console API, so it's not our responsibility.
+    if (_terminalInput.GetInputMode(TerminalInput::Mode::LineFeed))
+    {
+        _api.SetSystemMode(ITerminalApi::Mode::LineFeed, false);
+    }
+
     // Reset input modes to their initial state
     _terminalInput.ResetInputModes();
 
     // Reset bracketed paste mode
-    _api.SetBracketedPasteMode(false);
+    _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, false);
 
     // Restore cursor blinking mode.
     _api.GetTextBuffer().GetCursor().SetBlinkingAllowed(true);
@@ -2690,10 +3084,11 @@ bool AdaptDispatch::ScreenAlignmentPattern()
     auto attr = textBuffer.GetCurrentAttributes();
     attr.SetStandardErase();
     _api.SetTextAttributes(attr);
-    // Reset the origin mode to absolute.
-    _modes.reset(Mode::Origin);
+    // Reset the origin mode to absolute, and disallow left/right margins.
+    _modes.reset(Mode::Origin, Mode::AllowDECSLRM);
     // Clear the scrolling margins.
     _DoSetTopBottomScrollingMargins(0, 0);
+    _DoSetLeftRightScrollingMargins(0, 0);
     // Set the cursor position to home.
     CursorPosition(1, 1);
 
@@ -2912,11 +3307,6 @@ bool AdaptDispatch::SetClipboard(const std::wstring_view content)
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
     _renderSettings.SetColorTableEntry(tableIndex, dwColor);
-    if (_renderSettings.GetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors))
-    {
-        // Re-calculate the adjusted colors now that one of the entries has been changed
-        _renderSettings.MakeAdjustedColorArray();
-    }
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
@@ -2982,11 +3372,6 @@ bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt
     case DispatchTypes::ColorItem::NormalText:
         _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, fgIndex);
         _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, bgIndex);
-        if (_renderSettings.GetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors))
-        {
-            // Re-calculate the adjusted colors now that these aliases have been changed
-            _renderSettings.MakeAdjustedColorArray();
-        }
         break;
     case DispatchTypes::ColorItem::WindowFrame:
         _renderSettings.SetColorAliasIndex(ColorAlias::FrameForeground, fgIndex);
@@ -3039,6 +3424,9 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
         return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         _api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
+        return true;
+    case DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters:
+        _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033[8;{};{}t"), _api.GetViewport().height(), _api.GetTextBuffer().GetSize().Width()));
         return true;
     default:
         return false;
@@ -3164,6 +3552,18 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
             _api.SetWorkingDirectory(path);
             return true;
         }
+    }
+    // 12: "Let ConEmu treat current cursor position as prompt start"
+    //
+    // Based on the official conemu docs:
+    // * https://conemu.github.io/en/ShellWorkDir.html#connector-ps1
+    // * https://conemu.github.io/en/ShellWorkDir.html#PowerShell
+    //
+    // This seems like basically the same as 133;B - the end of the prompt, the start of the commandline.
+    else if (subParam == 12)
+    {
+        _api.MarkCommandStart();
+        return true;
     }
 
     return false;
@@ -3590,6 +3990,9 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
             case VTID("r"):
                 _ReportDECSTBMSetting();
                 break;
+            case VTID("s"):
+                _ReportDECSLRMSetting();
+                break;
             case VTID("\"q"):
                 _ReportDECSCASetting();
                 break;
@@ -3715,6 +4118,30 @@ void AdaptDispatch::_ReportDECSTBMSetting()
 
     // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
     response.append(L"r\033\\"sv);
+    _api.ReturnResponse({ response.data(), response.size() });
+}
+
+// Method Description:
+// - Reports the DECSLRM margin range in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSLRMSetting()
+{
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 1 $ r.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r"sv);
+
+    const auto bufferWidth = _api.GetTextBuffer().GetSize().Width();
+    const auto [marginLeft, marginRight] = _GetHorizontalMargins(bufferWidth);
+    // VT origin is at 1,1 so we need to add 1 to these margins.
+    fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{}"), marginLeft + 1, marginRight + 1);
+
+    // The 's' indicates this is an DECSLRM response, and ST ends the sequence.
+    response.append(L"s\033\\"sv);
     _api.ReturnResponse({ response.data(), response.size() });
 }
 
@@ -3866,9 +4293,10 @@ void AdaptDispatch::_ReportCursorInformation()
     cursorPosition.x++;
     cursorPosition.y++;
 
-    // If the origin mode is relative, line numbers start at top of the scrolling region.
+    // If the origin mode is set, the cursor is relative to the margin origin.
     if (_modes.test(Mode::Origin))
     {
+        cursorPosition.x -= _GetHorizontalMargins(textBuffer.GetSize().Width()).first;
         cursorPosition.y -= _GetVerticalMargins(viewport, false).first;
     }
 

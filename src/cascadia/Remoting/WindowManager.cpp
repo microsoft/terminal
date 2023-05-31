@@ -41,9 +41,8 @@ namespace
                 // Make a temporary monarch CLSID based on the unpackaged install root
                 std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
                 modulePath.remove_filename();
-                std::wstring pathRootAsString{ modulePath.wstring() };
 
-                return Utils::CreateV5Uuid(processRootHashedGuidBase, std::as_bytes(std::span{ pathRootAsString }));
+                return Utils::CreateV5Uuid(processRootHashedGuidBase, std::as_bytes(std::span{ modulePath.native() }));
             }();
             return processRootHashedGuid;
         }
@@ -350,7 +349,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // If the name wasn't specified, this will be an empty string.
         p->WindowName(args.WindowName());
 
-        p->ExecuteCommandline(*winrt::make_self<CommandlineArgs>(args.Commandline(), args.CurrentDirectory()));
+        p->ExecuteCommandline(*winrt::make_self<CommandlineArgs>(args.Commandline(), args.CurrentDirectory(), args.ShowWindowCommand()));
 
         _monarch.AddPeasant(*p);
 

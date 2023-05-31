@@ -13,17 +13,14 @@ namespace Microsoft::Console::Render
     class DxFontInfo
     {
     public:
-        DxFontInfo() noexcept;
+        DxFontInfo(IDWriteFactory1* dwriteFactory);
 
-        DxFontInfo(std::wstring_view familyName,
-                   unsigned int weight,
-                   DWRITE_FONT_STYLE style,
-                   DWRITE_FONT_STRETCH stretch);
-
-        DxFontInfo(std::wstring_view familyName,
-                   DWRITE_FONT_WEIGHT weight,
-                   DWRITE_FONT_STYLE style,
-                   DWRITE_FONT_STRETCH stretch);
+        DxFontInfo(
+            IDWriteFactory1* dwriteFactory,
+            std::wstring_view familyName,
+            DWRITE_FONT_WEIGHT weight,
+            DWRITE_FONT_STYLE style,
+            DWRITE_FONT_STRETCH stretch);
 
         bool operator==(const DxFontInfo& other) const noexcept;
 
@@ -40,16 +37,17 @@ namespace Microsoft::Console::Render
         void SetStretch(const DWRITE_FONT_STRETCH stretch) noexcept;
 
         bool GetFallback() const noexcept;
+        IDWriteFontCollection* GetFontCollection() const noexcept;
 
         void SetFromEngine(const std::wstring_view familyName,
                            const DWRITE_FONT_WEIGHT weight,
                            const DWRITE_FONT_STYLE style,
                            const DWRITE_FONT_STRETCH stretch);
 
-        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> ResolveFontFaceWithFallback(IDWriteFontCollection* fontCollection, std::wstring& localeName);
+        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> ResolveFontFaceWithFallback(std::wstring& localeName);
 
     private:
-        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _FindFontFace(IDWriteFontCollection* fontCollection, std::wstring& localeName);
+        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _FindFontFace(std::wstring& localeName);
 
         [[nodiscard]] std::wstring _GetFontFamilyName(const gsl::not_null<IDWriteFontFamily*> fontFamily,
                                                       std::wstring& localeName);
@@ -65,6 +63,8 @@ namespace Microsoft::Console::Render
 
         // The stretch of the font is the spacing between each letter
         DWRITE_FONT_STRETCH _stretch;
+
+        wil::com_ptr<IDWriteFontCollection> _fontCollection;
 
         // Indicates whether we couldn't match the user request and had to choose from a hard-coded default list.
         bool _didFallback;

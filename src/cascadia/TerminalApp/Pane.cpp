@@ -41,10 +41,7 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
     _root.Children().Append(_borderFirst);
     _borderFirst.Child(_control);
 
-    _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
-    _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
-
-    _closeTerminalRequestedToken = _control.CloseTerminalRequested({ this, &Pane::_CloseTerminalRequestedHandler });
+    _setupControlEvents();
 
     // Register an event with the control to have it inform us when it gains focus.
     _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
@@ -103,6 +100,19 @@ Pane::Pane(std::shared_ptr<Pane> first,
         _FocusFirstChild();
         e.Handled(true);
     });
+}
+
+void Pane::_setupControlEvents()
+{
+    _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &Pane::_ControlConnectionStateChangedHandler });
+    _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { this, &Pane::_ControlWarningBellHandler });
+    _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { this, &Pane::_CloseTerminalRequestedHandler });
+    _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { this, &Pane::_RestartTerminalRequestedHandler });
+    _controlEvents._ReadOnlyChanged = _control.ReadOnlyChanged(winrt::auto_revoke, { this, &Pane::_ControlReadOnlyChangedHandler });
+}
+void Pane::_removeControlEvents()
+{
+    _controlEvents = {};
 }
 
 // Method Description:
@@ -1095,6 +1105,16 @@ void Pane::_CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IIns
     Close();
 }
 
+void Pane::_RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                            const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    if (!_IsLeaf())
+    {
+        return;
+    }
+    _RestartTerminalRequestedHandlers(shared_from_this());
+}
+
 winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
 {
     auto weakThis{ weak_from_this() };
@@ -1102,19 +1122,15 @@ winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
     co_await wil::resume_foreground(_root.Dispatcher());
     if (auto pane{ weakThis.lock() })
     {
-        // BODGY
-        // GH#12258: We learned that if you leave the MediaPlayer open, and
-        // press the media keys (like play/pause), then the OS will _replay the
-        // bell_. So we have to re-create the MediaPlayer each time we want to
-        // play the bell, to make sure a subsequent play doesn't come through
-        // and reactivate the old one.
-
-        if (!_bellPlayer)
+        if (!_bellPlayerCreated)
         {
             // The MediaPlayer might not exist on Windows N SKU.
             try
             {
+                _bellPlayerCreated = true;
                 _bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+                // GH#12258: The media keys (like play/pause) should have no effect on our bell sound.
+                _bellPlayer.CommandManager().IsEnabled(false);
             }
             CATCH_LOG();
         }
@@ -1124,27 +1140,6 @@ winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
             const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
             _bellPlayer.Source(item);
             _bellPlayer.Play();
-
-            // This lambda will clean up the bell player when we're done with it.
-            auto weakThis2{ weak_from_this() };
-            _mediaEndedRevoker = _bellPlayer.MediaEnded(winrt::auto_revoke, [weakThis2](auto&&, auto&&) {
-                if (auto self{ weakThis2.lock() })
-                {
-                    if (self->_bellPlayer)
-                    {
-                        // We need to make sure clear out the current track
-                        // that's being played, again, so that the system can't
-                        // come through and replay it. In testing, we needed to
-                        // do this, closing the MediaPlayer alone wasn't good
-                        // enough.
-                        self->_bellPlayer.Pause();
-                        self->_bellPlayer.Source(nullptr);
-                        self->_bellPlayer.Close();
-                    }
-                    self->_mediaEndedRevoker.revoke();
-                    self->_bellPlayer = nullptr;
-                }
-            });
         }
     }
 }
@@ -1250,14 +1245,14 @@ void Pane::Shutdown()
     // Clear out our media player callbacks, and stop any playing media. This
     // will prevent the callback from being triggered after we've closed, and
     // also make sure that our sound stops when we're closed.
-    _mediaEndedRevoker.revoke();
     if (_bellPlayer)
     {
         _bellPlayer.Pause();
         _bellPlayer.Source(nullptr);
         _bellPlayer.Close();
+        _bellPlayer = nullptr;
+        _bellPlayerCreated = false;
     }
-    _bellPlayer = nullptr;
 
     if (_IsLeaf())
     {
@@ -1644,10 +1639,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _isDefTermSession = remainingChild->_isDefTermSession;
 
         // Add our new event handler before revoking the old one.
-        _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
-        _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
-        _readOnlyChangedToken = _control.ReadOnlyChanged({ this, &Pane::_ControlReadOnlyChangedHandler });
-        _closeTerminalRequestedToken = _control.CloseTerminalRequested({ this, &Pane::_CloseTerminalRequestedHandler });
+        _setupControlEvents();
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
@@ -1661,20 +1653,14 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
             closedChild->WalkTree([](auto p) {
                 if (p->_IsLeaf())
                 {
-                    p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
-                    p->_control.WarningBell(p->_warningBellToken);
-                    p->_control.ReadOnlyChanged(p->_readOnlyChangedToken);
-                    p->_control.CloseTerminalRequested(p->_closeTerminalRequestedToken);
+                    p->_removeControlEvents();
                 }
             });
         }
 
         closedChild->Closed(closedChildClosedToken);
         remainingChild->Closed(remainingChildClosedToken);
-        remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
-        remainingChild->_control.WarningBell(remainingChild->_warningBellToken);
-        remainingChild->_control.ReadOnlyChanged(remainingChild->_readOnlyChangedToken);
-        remainingChild->_control.CloseTerminalRequested(remainingChild->_closeTerminalRequestedToken);
+        remainingChild->_removeControlEvents();
 
         // If we or either of our children was focused, we want to take that
         // focus from them.
@@ -1754,10 +1740,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
             closedChild->WalkTree([](auto p) {
                 if (p->_IsLeaf())
                 {
-                    p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
-                    p->_control.WarningBell(p->_warningBellToken);
-                    p->_control.ReadOnlyChanged(p->_readOnlyChangedToken);
-                    p->_control.CloseTerminalRequested(p->_closeTerminalRequestedToken);
+                    p->_removeControlEvents();
                 }
             });
         }
@@ -2512,12 +2495,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     if (_IsLeaf())
     {
         // revoke our handler - the child will take care of the control now.
-        _control.ConnectionStateChanged(_connectionStateChangedToken);
-        _connectionStateChangedToken.value = 0;
-        _control.WarningBell(_warningBellToken);
-        _warningBellToken.value = 0;
-        _control.CloseTerminalRequested(_closeTerminalRequestedToken);
-        _closeTerminalRequestedToken.value = 0;
+        _removeControlEvents();
 
         // Remove our old GotFocus handler from the control. We don't want the
         // control telling us that it's now focused, we want it telling its new

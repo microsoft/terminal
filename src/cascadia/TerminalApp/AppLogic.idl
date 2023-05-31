@@ -29,8 +29,6 @@ namespace TerminalApp
         // registered?" when it definitely is.
         void Create();
 
-        Boolean IsUwp();
-        void RunAsUwp();
         Boolean IsRunningElevated();
         Boolean CanDragDrop();
 

@@ -37,6 +37,20 @@ WindowEmperor::WindowEmperor() noexcept :
     });
 
     _dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+
+    // BODGY
+    //
+    // There's a mysterious crash in XAML on Windows 10 if you just let the App
+    // get dtor'd. By all accounts, it doesn't make sense. To mitigate this, we
+    // need to intentionally leak a reference to our App. Crazily, if you just
+    // let the app get cleaned up with the rest of the process when the process
+    // exits, then it doesn't crash. But if you let it get explicitly dtor'd, it
+    // absolutely will crash on exit.
+    //
+    // GH#15410 has more details.
+
+    auto a{ _app };
+    ::winrt::detach_abi(a);
 }
 
 WindowEmperor::~WindowEmperor()
@@ -71,9 +85,27 @@ bool WindowEmperor::HandleCommandlineArgs()
 {
     std::vector<winrt::hstring> args;
     _buildArgsFromCommandline(args);
-    auto cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
+    const auto cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
 
-    Remoting::CommandlineArgs eventArgs{ { args }, { cwd } };
+    {
+        // ALWAYS change the _real_ CWD of the Terminal to system32, so that we
+        // don't lock the directory we were spawned in.
+        std::wstring system32{};
+        if (SUCCEEDED_LOG(wil::GetSystemDirectoryW<std::wstring>(system32)))
+        {
+            LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectoryW(system32.c_str()));
+        }
+    }
+
+    // Get the requested initial state of the window from our startup info. For
+    // something like `start /min`, this will set the wShowWindow member to
+    // SW_SHOWMINIMIZED. We'll need to make sure is bubbled all the way through,
+    // so we can open a new window with the same state.
+    STARTUPINFOW si;
+    GetStartupInfoW(&si);
+    const uint32_t showWindow = WI_IsFlagSet(si.dwFlags, STARTF_USESHOWWINDOW) ? si.wShowWindow : SW_SHOW;
+
+    Remoting::CommandlineArgs eventArgs{ { args }, { cwd }, showWindow };
 
     const auto isolatedMode{ _app.Logic().IsolatedMode() };
 
@@ -91,7 +123,7 @@ bool WindowEmperor::HandleCommandlineArgs()
         if (!res.Message.empty())
         {
             AppHost::s_DisplayMessageBox(res);
-            ExitThread(res.ExitCode);
+            std::quick_exit(res.ExitCode);
         }
     }
 
@@ -132,10 +164,16 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
     std::thread t([weakThis, window]() {
         try
         {
-            const auto cleanup = wil::scope_exit([&]() {
+            const auto decrementWindowCount = wil::scope_exit([&]() {
                 if (auto self{ weakThis.lock() })
                 {
-                    self->_windowExitedHandler(window->Peasant().GetID());
+                    self->_decrementWindowCount();
+                }
+            });
+            auto removeWindow = wil::scope_exit([&]() {
+                if (auto self{ weakThis.lock() })
+                {
+                    self->_removeWindow(window->PeasantID());
                 }
             });
 
@@ -147,6 +185,16 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
             }
 
             window->RunMessagePump();
+
+            // Manually trigger the cleanup callback. This will ensure that we
+            // remove the window from our list of windows, before we release the
+            // AppHost (and subsequently, the host's Logic() member that we use
+            // elsewhere).
+            removeWindow.reset();
+
+            // Now that we no longer care about this thread's window, let it
+            // release it's app host and flush the rest of the XAML queue.
+            window->RundownForExit();
         }
         CATCH_LOG()
     });
@@ -186,17 +234,20 @@ void WindowEmperor::_windowStartedHandlerPostXAML(const std::shared_ptr<WindowTh
         lockedWindows->push_back(sender);
     }
 }
-void WindowEmperor::_windowExitedHandler(uint64_t senderID)
+
+void WindowEmperor::_removeWindow(uint64_t senderID)
 {
     auto lockedWindows{ _windows.lock() };
 
     // find the window in _windows who's peasant's Id matches the peasant's Id
     // and remove it
-    std::erase_if(*lockedWindows,
-                  [&](const auto& w) {
-                      return w->Peasant().GetID() == senderID;
-                  });
+    std::erase_if(*lockedWindows, [&](const auto& w) {
+        return w->PeasantID() == senderID;
+    });
+}
 
+void WindowEmperor::_decrementWindowCount()
+{
     // When we run out of windows, exit our process if and only if:
     // * We're not allowed to run headless OR
     // * we've explicitly been told to "quit", which should fully exit the Terminal.
@@ -208,6 +259,7 @@ void WindowEmperor::_windowExitedHandler(uint64_t senderID)
         _close();
     }
 }
+
 // Method Description:
 // - Set up all sorts of handlers now that we've determined that we're a process
 //   that will end up hosting the windows. These include:
@@ -258,24 +310,6 @@ void WindowEmperor::_becomeMonarch()
     // We want at least some delay to prevent the first save from overwriting
     _getWindowLayoutThrottler.emplace(std::move(std::chrono::seconds(10)), std::move([this]() { _saveWindowLayoutsRepeat(); }));
     _getWindowLayoutThrottler.value()();
-
-    // BODGY
-    //
-    // We've got a weird crash that happens terribly inconsistently, but pretty
-    // readily on migrie's laptop, only in Debug mode. Apparently, there's some
-    // weird ref-counting magic that goes on during teardown, and our
-    // Application doesn't get closed quite right, which can cause us to crash
-    // into the debugger. This of course, only happens on exit, and happens
-    // somewhere in the XamlHost.dll code.
-    //
-    // Crazily, if we _manually leak the Application_ here, then the crash
-    // doesn't happen. This doesn't matter, because we really want the
-    // Application to live for _the entire lifetime of the process_, so the only
-    // time when this object would actually need to get cleaned up is _during
-    // exit_. So we can safely leak this Application object, and have it just
-    // get cleaned up normally when our process exits.
-    auto a{ _app };
-    ::winrt::detach_abi(a);
 }
 
 // sender and args are always nullptr

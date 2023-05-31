@@ -20,7 +20,7 @@ public:
     virtual ~IslandWindow() override;
 
     virtual void MakeWindow() noexcept;
-    void Close();
+    virtual void Close();
     virtual void OnSize(const UINT width, const UINT height);
     HWND GetInteropHandle() const;
 
@@ -94,8 +94,8 @@ protected:
 
     HWND _interopWindowHandle;
 
-    winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source;
-    winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
+    winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source; // nulled in ctor
+    winrt::Windows::UI::Xaml::Controls::Grid _rootGrid; // nulled in ctor
     wil::com_ptr<ITaskbarList3> _taskbar;
 
     std::function<void(const HWND, const til::rect&)> _pfnCreateCallback;

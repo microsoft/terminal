@@ -114,40 +114,49 @@ void ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
 }
 
 // Routine Description:
-// - Sets the ENABLE_WRAP_AT_EOL_OUTPUT mode. This controls whether the cursor moves
-//     to the beginning of the next row when it reaches the end of the current row.
+// - Sets the state of one of the system modes.
 // Arguments:
-// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
+// - mode - The mode being updated.
+// - enabled - True to enable the mode, false to disable it.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::SetAutoWrapMode(const bool wrapAtEOL)
+void ConhostInternalGetSet::SetSystemMode(const Mode mode, const bool enabled)
 {
-    auto& outputMode = _io.GetActiveOutputBuffer().OutputMode;
-    WI_UpdateFlag(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT, wrapAtEOL);
+    switch (mode)
+    {
+    case Mode::AutoWrap:
+        WI_UpdateFlag(_io.GetActiveOutputBuffer().OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT, enabled);
+        break;
+    case Mode::LineFeed:
+        WI_UpdateFlag(_io.GetActiveOutputBuffer().OutputMode, DISABLE_NEWLINE_AUTO_RETURN, !enabled);
+        break;
+    case Mode::BracketedPaste:
+        ServiceLocator::LocateGlobals().getConsoleInformation().SetBracketedPasteMode(enabled);
+        break;
+    default:
+        THROW_HR(E_INVALIDARG);
+    }
 }
 
 // Routine Description:
-// - Retrieves the current state of ENABLE_WRAP_AT_EOL_OUTPUT mode.
+// - Retrieves the current state of one of the system modes.
 // Arguments:
-// - <none>
+// - mode - The mode being queried.
 // Return Value:
 // - true if the mode is enabled. false otherwise.
-bool ConhostInternalGetSet::GetAutoWrapMode() const
+bool ConhostInternalGetSet::GetSystemMode(const Mode mode) const
 {
-    const auto outputMode = _io.GetActiveOutputBuffer().OutputMode;
-    return WI_IsFlagSet(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
-}
-
-// Method Description:
-// - Retrieves the current Line Feed/New Line (LNM) mode.
-// Arguments:
-// - None
-// Return Value:
-// - true if a line feed also produces a carriage return. false otherwise.
-bool ConhostInternalGetSet::GetLineFeedMode() const
-{
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    return WI_IsFlagClear(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
+    switch (mode)
+    {
+    case Mode::AutoWrap:
+        return WI_IsFlagSet(_io.GetActiveOutputBuffer().OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
+    case Mode::LineFeed:
+        return WI_IsFlagClear(_io.GetActiveOutputBuffer().OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
+    case Mode::BracketedPaste:
+        return ServiceLocator::LocateGlobals().getConsoleInformation().GetBracketedPasteMode();
+    default:
+        THROW_HR(E_INVALIDARG);
+    }
 }
 
 // Routine Description:
@@ -246,33 +255,6 @@ unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
 }
 
 // Routine Description:
-// - Sets the XTerm bracketed paste mode. This controls whether pasted content is
-//     bracketed with control sequences to differentiate it from typed text.
-// Arguments:
-// - enable - set to true to enable bracketing, false to disable.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetBracketedPasteMode(const bool enabled)
-{
-    // TODO GH#395: Bracketed Paste Mode is not yet supported in conhost, but we
-    // still keep track of the state so it can be reported by DECRQM.
-    _bracketedPasteMode = enabled;
-}
-
-// Routine Description:
-// - Gets the current state of XTerm bracketed paste mode.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the mode is enabled, false if not, nullopt if unsupported.
-std::optional<bool> ConhostInternalGetSet::GetBracketedPasteMode() const
-{
-    // TODO GH#395: Bracketed Paste Mode is not yet supported in conhost, so we
-    // only report the state if we're tracking it for conpty.
-    return IsConsolePty() ? std::optional{ _bracketedPasteMode } : std::nullopt;
-}
-
-// Routine Description:
 // - Copies the given content to the clipboard.
 // Arguments:
 // - content - the text to be copied.
@@ -343,6 +325,14 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
 
     auto api = ServiceLocator::LocateGlobals().api;
     auto& screenInfo = _io.GetActiveOutputBuffer();
+
+    // We need to save the attributes separately, since the wAttributes field in
+    // CONSOLE_SCREEN_BUFFER_INFOEX is not capable of representing the extended
+    // attribute values, and can end up corrupting that data when restored.
+    const auto attributes = screenInfo.GetTextBuffer().GetCurrentAttributes();
+    const auto restoreAttributes = wil::scope_exit([&] {
+        screenInfo.GetTextBuffer().SetCurrentAttributes(attributes);
+    });
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);

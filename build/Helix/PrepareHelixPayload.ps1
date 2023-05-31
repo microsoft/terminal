@@ -59,3 +59,4 @@ Copy-Item "build\Helix\EnsureMachineState.ps1" "$payloadDir"
 # where it will create a subdirectory named terminal-0.0.1.0
 # This is referenced in TerminalApp.cs later as part of the test harness.
 & tar -x -v -f "$repoDirectory\Artifacts\$ArtifactName\unpackaged\WindowsTerminalDev_0.0.1.0_x64.zip" -C "$payloadDir"
+Copy-Item "res\fonts\*.ttf" "$payloadDir\terminal-0.0.1.0"

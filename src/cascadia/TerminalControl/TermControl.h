@@ -81,6 +81,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ClearMark();
         void ClearAllMarks();
         void ScrollToMark(const Control::ScrollToMarkDirection& direction);
+        void SelectCommand(const bool goUp);
+        void SelectOutput(const bool goUp);
 
 #pragma endregion
 
@@ -141,11 +143,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AdjustOpacity(const double opacity, const bool relative);
 
+<<<<<<< HEAD
         bool RawWriteKeyEvent(const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
         bool RawWriteChar(const wchar_t character, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
         void RawWriteString(const winrt::hstring& text);
+=======
+        void ShowContextMenu();
+>>>>>>> main
 
         void Detach();
+
+        TerminalConnection::ITerminalConnection Connection();
+        void Connection(const TerminalConnection::ITerminalConnection& connection);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         // -------------------------------- WinRT Events ---------------------------------
@@ -162,6 +171,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         BUBBLED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(CloseTerminalRequested, IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(RestartTerminalRequested, IInspectable, IInspectable);
 
         BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
 
@@ -179,6 +189,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // clang-format on
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, BackgroundBrush, _PropertyChangedHandlers, nullptr);
+
+    public:
+        til::property<bool> DisplayCursorWhileBlurred{ false };
 
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
@@ -236,10 +249,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _isBackgroundLight{ false };
         bool _detached{ false };
 
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalPrimaryElements{ nullptr };
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSecondaryElements{ nullptr };
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedPrimaryElements{ nullptr };
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedSecondaryElements{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalPrimaryElements{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalSecondaryElements{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedPrimaryElements{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedSecondaryElements{ nullptr };
 
         inline bool _IsClosing() const noexcept
         {
@@ -320,7 +333,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static void _ClearKeyboardState(const WORD vkey, const WORD scanCode) noexcept;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
 
+        til::point _toControlOrigin(const til::point terminalPosition);
         const til::point _toTerminalOrigin(winrt::Windows::Foundation::Point cursorPosition);
+
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
@@ -348,10 +363,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _pasteTextWithBroadcast(const winrt::hstring& text);
 
         void _contextMenuHandler(IInspectable sender, Control::ContextMenuRequestedEventArgs args);
+        void _showContextMenuAt(const til::point& controlRelativePos);
 
         void _PasteCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _CopyCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _SearchCommandHandler(const IInspectable& sender, const IInspectable& args);
+
+        void _SelectCommandHandler(const IInspectable& sender, const IInspectable& args);
+        void _SelectOutputHandler(const IInspectable& sender, const IInspectable& args);
 
         struct Revokers
         {
@@ -374,6 +393,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::ConnectionStateChanged_revoker ConnectionStateChanged;
             Control::ControlCore::ShowWindowChanged_revoker ShowWindowChanged;
             Control::ControlCore::CloseTerminalRequested_revoker CloseTerminalRequested;
+            Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
             // These are set up in _InitializeTerminal
             Control::ControlCore::RendererWarning_revoker RendererWarning;
             Control::ControlCore::SwapChainChanged_revoker SwapChainChanged;

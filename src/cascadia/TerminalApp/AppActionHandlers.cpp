@@ -613,10 +613,10 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<ToggleCommandPaletteArgs>())
         {
-            CommandPalette().EnableCommandPaletteMode(realArgs.LaunchMode());
-            CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
-                                            Visibility::Collapsed :
-                                            Visibility::Visible);
+            const auto p = LoadCommandPalette();
+            const auto v = p.Visibility() == Visibility::Visible ? Visibility::Collapsed : Visibility::Visible;
+            p.EnableCommandPaletteMode(realArgs.LaunchMode());
+            p.Visibility(v);
             args.Handled(true);
         }
     }
@@ -799,9 +799,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleTabSearch(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
-        CommandPalette().SetTabs(_tabs, _mruTabs);
-        CommandPalette().EnableTabSearchMode();
-        CommandPalette().Visibility(Visibility::Visible);
+        const auto p = LoadCommandPalette();
+        p.SetTabs(_tabs, _mruTabs);
+        p.EnableTabSearchMode();
+        p.Visibility(Visibility::Visible);
 
         args.Handled(true);
     }
@@ -1144,6 +1145,35 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleSelectCommand(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SelectCommandArgs>())
+            {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.SelectCommand(realArgs.Direction() == Settings::Model::SelectOutputDirection::Previous);
+                });
+                args.Handled(res);
+            }
+        }
+    }
+    void TerminalPage::_HandleSelectOutput(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SelectOutputArgs>())
+            {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.SelectOutput(realArgs.Direction() == Settings::Model::SelectOutputDirection::Previous);
+                });
+                args.Handled(res);
+            }
+        }
+    }
+
     void TerminalPage::_HandleMarkMode(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
@@ -1198,6 +1228,7 @@ namespace winrt::TerminalApp::implementation
             args.Handled(handled);
         }
     }
+
     void TerminalPage::_HandleToggleBroadcastInput(const IInspectable& /*sender*/,
                                                    const ActionEventArgs& args)
     {
@@ -1207,6 +1238,29 @@ namespace winrt::TerminalApp::implementation
             args.Handled(true);
         }
         // If the focused tab wasn't a TerminalTab, then leave handled=false
+    }
+
+    void TerminalPage::_HandleRestartConnection(const IInspectable& /*sender*/,
+                                                const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            if (const auto activePane{ activeTab->GetActivePane() })
+            {
+                _restartPaneConnection(activePane);
+            }
+        }
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleShowContextMenu(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.ShowContextMenu();
+        }
+        args.Handled(true);
     }
 
 }

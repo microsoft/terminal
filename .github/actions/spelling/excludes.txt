@@ -112,6 +112,7 @@
 ^src/tools/RenderingTests/main.cpp$
 ^src/tools/texttests/fira\.txt$
 ^src/tools/U8U16Test/(?:fr|ru|zh)\.txt$
+^src/types/ColorFix.cpp
 ^src/types/ut_types/UtilsTests.cpp$
 ^tools/ReleaseEngineering/ServicingPipeline.ps1$
 ignore$
