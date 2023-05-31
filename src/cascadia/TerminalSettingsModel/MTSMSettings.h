@@ -65,6 +65,7 @@ Author(s):
     X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                                                                         \
     X(bool, EnableShellCompletionMenu, "experimental.enableShellCompletionMenu", false)                                                                                                               \
     X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} })) \
+    X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
     X(bool, IsolatedMode, "compatibility.isolatedMode", false)
 
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
@@ -82,6 +83,7 @@ Author(s):
     X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Automatic)                                                                                 \
     X(hstring, TabTitle, "tabTitle")                                                                                                                           \
     X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \
+    X(IEnvironmentVariableMap, EnvironmentVariables, "environment", nullptr)                                                                                   \
     X(bool, UseAtlasEngine, "useAtlasEngine", Feature_AtlasEngine::IsEnabled())                                                                                \
     X(bool, RightClickContextMenu, "experimental.rightClickContextMenu", false)                                                                                \
     X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \

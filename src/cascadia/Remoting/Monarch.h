@@ -46,7 +46,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _Id{ windowInfo.Id() ? windowInfo.Id().Value() : 0 }, // We'll use 0 as a sentinel, since no window will ever get to have that ID
             _WindowName{ windowInfo.WindowName() },
             _args{ command.Commandline() },
-            _CurrentDirectory{ command.CurrentDirectory() } {};
+            _CurrentDirectory{ command.CurrentDirectory() },
+            _ShowWindowCommand{ command.ShowWindowCommand() } {};
 
         WindowRequestedArgs(const winrt::hstring& window, const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& bounds) :
             _Id{ 0u },
@@ -63,6 +64,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         WINRT_PROPERTY(winrt::hstring, WindowName);
         WINRT_PROPERTY(winrt::hstring, CurrentDirectory);
         WINRT_PROPERTY(winrt::hstring, Content);
+        WINRT_PROPERTY(uint32_t, ShowWindowCommand, SW_NORMAL);
         WINRT_PROPERTY(Windows::Foundation::IReference<Windows::Foundation::Rect>, InitialBounds);
 
     private:

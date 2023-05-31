@@ -43,6 +43,7 @@ antialiasing
 ANull
 anycpu
 APARTMENTTHREADED
+APCA
 APCs
 APIENTRY
 apiset
@@ -194,6 +195,8 @@ chh
 chk
 CHT
 Cic
+cielab
+Cielab
 Clcompile
 CLE
 cleartype
@@ -408,6 +411,7 @@ DECANM
 DECARM
 DECAUPSS
 DECAWM
+DECBI
 DECBKM
 DECCARA
 DECCIR
@@ -416,13 +420,16 @@ DECCKSR
 DECCOLM
 DECCRA
 DECCTR
+DECDC
 DECDHL
 decdld
 DECDMAC
 DECDWL
 DECEKBD
 DECERA
+DECFI
 DECFRA
+DECIC
 DECID
 DECINVM
 DECKPAM
@@ -569,6 +576,7 @@ EDITTEXT
 EDITUPDATE
 edputil
 Efast
+efghijklmn
 EHsc
 EINS
 EJO
@@ -585,6 +593,7 @@ ENU
 ENUMLOGFONT
 ENUMLOGFONTEX
 enumranges
+EOK
 eplace
 EPres
 EQU
@@ -805,6 +814,7 @@ HIBYTE
 hicon
 HIDEWINDOW
 hinst
+Hirots
 HISTORYBUFS
 HISTORYNODUP
 HISTORYSIZE
@@ -967,6 +977,8 @@ KLF
 KLMNO
 KLMNOPQRST
 KLMNOPQRSTQQQQQ
+KLMNOPQRSTUVWXY
+KLMNOPQRSTY
 KOK
 KPRIORITY
 KVM
@@ -1130,6 +1142,7 @@ mmsystem
 MNC
 MNOPQ
 MNOPQR
+MNOPQRSTUVWXY
 MODALFRAME
 MODERNCORE
 MONITORINFO
@@ -1290,6 +1303,8 @@ OEMFONT
 OEMFORMAT
 OEMs
 offboarded
+oklab
+Oklab
 OLEAUT
 OLECHAR
 onecore
@@ -1771,6 +1786,8 @@ srcsrv
 SRCSRVTRG
 srctool
 srect
+srgb
+Srgb
 srv
 srvinit
 srvpipe
@@ -1785,6 +1802,7 @@ STARTWPARMS
 STARTWPARMSA
 STARTWPARMSW
 Statusline
+stb
 stdafx
 STDAPI
 stdc
@@ -2036,6 +2054,7 @@ USRDLL
 utr
 UVWX
 UVWXY
+UVWXYZ
 uwa
 uwp
 uxtheme
@@ -2286,6 +2305,8 @@ xunit
 xutr
 XVIRTUALSCREEN
 XWalk
+xwwyzz
+xxyyzz
 yact
 YCast
 YCENTER
@@ -2295,7 +2316,9 @@ YOffset
 YSubstantial
 YVIRTUALSCREEN
 YWalk
+Zab
 zabcd
+Zabcdefghijklmn
 Zabcdefghijklmnopqrstuvwxyz
 ZCmd
 ZCtrl

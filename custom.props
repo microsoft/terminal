@@ -5,7 +5,7 @@
     <XesUseOneStoreVersioning>true</XesUseOneStoreVersioning>
     <XesBaseYearForStoreVersion>2023</XesBaseYearForStoreVersion>
     <VersionMajor>1</VersionMajor>
-    <VersionMinor>18</VersionMinor>
+    <VersionMinor>19</VersionMinor>
     <VersionInfoProductName>Windows Terminal</VersionInfoProductName>
   </PropertyGroup>
 </Project>

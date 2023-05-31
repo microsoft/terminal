@@ -149,6 +149,8 @@ int main()
         };
         static constexpr VTAttributeTest vtAttributeTests[]{
             { L"ANSI escape SGR:", 0 },
+            { L"bold", 1 },
+            { L"faint", 2 },
             { L"italic", 3 },
             { L"underline", 4 },
             { L"reverse", 7 },
@@ -172,11 +174,43 @@ int main()
 
     {
         printUTF16(
-            L"\x1B[3;5HDECDWL Double Width \U0001FAE0 A\u0353\u0353 B\u036F\u036F"
-            L"\x1B[4;5H\x1b#6DECDWL Double Width         \U0001FAE0 A\u0353\u0353 B\u036F\u036F"
-            L"\x1B[8;5HDECDHL Double Height \U0001F642\U0001F6C1 A\u0353\u0353 B\u036F\u036F X\u0353\u0353 Y\u036F\u036F"
-            L"\x1B[9;5H\x1b#3DECDHL Double Height Top    \U0001F642 A\u0353\u0353 B\u036F\u036F"
-            L"\x1B[10;5H\x1b#4DECDHL Double Height Bottom \U0001F6C1 X\u0353\u0353 Y\u036F\u036F");
+            L"\x1B[3;5HDECDWL Double Width \U0001FAE0 \x1B[45;92mA\u0353\u0353\x1B[m B\u036F\u036F"
+            L"\x1B[4;3H\x1b#6DECDWL Double Width         \U0001FAE0 \x1B[45;92mA\u0353\u0353\x1B[m B\u036F\u036F"
+            L"\x1B[7;5HDECDHL Double Height \U0001F952\U0001F6C1 A\u0353\u0353 \x1B[45;92mB\u036F\u036F\x1B[m \x1B[45;92mX\u0353\u0353\x1B[m Y\u036F\u036F"
+            L"\x1B[8;3H\x1b#3DECDHL Double Height Top    \U0001F952 A\u0353\u0353 \x1B[45;92mB\u036F\u036F\x1B[m"
+            L"\x1B[9;3H\x1b#4DECDHL Double Height Bottom \U0001F6C1 \x1B[45;92mX\u0353\u0353\x1B[m Y\u036F\u036F"
+            L"\x1B[13;5H\x1b]8;;https://example.com\x1b\\DECDxL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1B[3mitalic\x1b[m        \x1b[4munderline\x1b[m        \x1b[7mreverse\x1b[m"
+            L"\x1B[15;5H\x1b]8;;https://example.com\x1b\\DECDxL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1b[9mstrikethrough\x1b[m \x1b[21mdouble underline\x1b[m \x1b[53moverlined\x1b[m"
+            L"\x1B[17;3H\x1b#6\x1b]8;;https://vt100.net/docs/vt510-rm/DECDWL.html\x1b\\DECDWL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1B[3mitalic\x1b[m        \x1b[4munderline\x1b[m        \x1b[7mreverse\x1b[m"
+            L"\x1B[19;3H\x1b#6\x1b]8;;https://vt100.net/docs/vt510-rm/DECDWL.html\x1b\\DECDWL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1b[9mstrikethrough\x1b[m \x1b[21mdouble underline\x1b[m \x1b[53moverlined\x1b[m"
+            L"\x1B[21;3H\x1b#3\x1b]8;;https://vt100.net/docs/vt510-rm/DECDHL.html\x1b\\DECDHL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1B[3mitalic\x1b[m        \x1b[4munderline\x1b[m        \x1b[7mreverse\x1b[m"
+            L"\x1B[22;3H\x1b#4\x1b]8;;https://vt100.net/docs/vt510-rm/DECDHL.html\x1b\\DECDHL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1B[3mitalic\x1b[m        \x1b[4munderline\x1b[m        \x1b[7mreverse\x1b[m"
+            L"\x1B[24;3H\x1b#3\x1b]8;;https://vt100.net/docs/vt510-rm/DECDHL.html\x1b\\DECDHL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1b[9mstrikethrough\x1b[m \x1b[21mdouble underline\x1b[m \x1b[53moverlined\x1b[m"
+            L"\x1B[25;3H\x1b#4\x1b]8;;https://vt100.net/docs/vt510-rm/DECDHL.html\x1b\\DECDHL\x1b]8;;\x1b\\ <\x1B[45;92m!\x1B[m-- \x1b[9mstrikethrough\x1b[m \x1b[21mdouble underline\x1b[m \x1b[53moverlined\x1b[m");
+
+        static constexpr WORD attributes[]{
+            FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | COMMON_LVB_GRID_HORIZONTAL,
+            FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | COMMON_LVB_GRID_HORIZONTAL,
+            FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | COMMON_LVB_GRID_LVERTICAL,
+            FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | COMMON_LVB_GRID_LVERTICAL,
+            FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | COMMON_LVB_GRID_RVERTICAL,
+            FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | COMMON_LVB_GRID_RVERTICAL,
+            FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | COMMON_LVB_UNDERSCORE,
+            FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | COMMON_LVB_UNDERSCORE,
+        };
+
+        DWORD numberOfAttrsWritten;
+        DWORD offset = 0;
+
+        for (const auto r : { 12, 14, 16, 18, 20, 21, 23, 24 })
+        {
+            COORD coord;
+            coord.X = r > 14 ? 2 : 4;
+            coord.X += offset ? 2 : 0;
+            coord.Y = static_cast<SHORT>(r);
+            WriteConsoleOutputAttribute(outputHandle, &attributes[offset], 4, coord, &numberOfAttrsWritten);
+            offset = (offset + 4) & 7;
+        }
 
         wait();
         clear();

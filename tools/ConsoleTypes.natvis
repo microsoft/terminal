@@ -107,10 +107,9 @@
     </Type>
 
     <Type Name="til::generational&lt;*&gt;">
-        <DisplayString>{{ gen={_generation._value}, {_value} }}</DisplayString>
-        <Expand>
-            <ExpandedItem>_value</ExpandedItem>
-        </Expand>
+        <AlternativeType Name="$T1" />
+        <SmartPointer Usage="Minimal">&amp;_value</SmartPointer>
+        <DisplayString>{{ generation={_generation._value} }}</DisplayString>
     </Type>
 
     <Type Name="til::linear_flat_set&lt;*,*&gt;">
@@ -120,6 +119,34 @@
                 <Size>_capacity</Size>
                 <ValuePointer>_map._Mypair._Myval2</ValuePointer>
             </ArrayItems>
+        </Expand>
+    </Type>
+
+    <Type Name="Microsoft::Console::Render::Atlas::Buffer&lt;*&gt;">
+        <DisplayString>{{ size={_size} }}</DisplayString>
+        <Expand>
+            <Item Name="[size]" ExcludeView="simple">_size</Item>
+            <ArrayItems>
+                <Size>_size</Size>
+                <ValuePointer>_data</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
+
+    <Type Name="Microsoft::Console::Render::Atlas::ShapedRow">
+        <DisplayString>{{ dirtyTop={dirtyTop}, dirtyBottom={dirtyBottom} }}</DisplayString>
+    </Type>
+
+    <Type Name="Microsoft::Console::Render::Atlas::BackendD3D::AtlasGlyphEntry">
+        <DisplayString Condition="!_occupied">(empty)</DisplayString>
+        <DisplayString Condition="_occupied">{glyphIndex}</DisplayString>
+    </Type>
+
+    <Type Name="Microsoft::Console::Render::Atlas::BackendD3D::AtlasFontFaceEntry">
+        <DisplayString Condition="!_occupied">(empty)</DisplayString>
+        <DisplayString Condition="_occupied">{(void*)fontFace.m_ptr}, {lineRendition}</DisplayString>
+        <Expand>
+            <ExpandedItem>glyphs</ExpandedItem>
         </Expand>
     </Type>
 </AutoVisualizer>

@@ -600,6 +600,15 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         return true;
     }
 
+    // When the Line Feed mode is set, a VK_RETURN key should send both CR and LF.
+    // When reset, we fall through to the default behavior, which is to send just
+    // CR, or when the Ctrl modifier is pressed, just LF.
+    if (keyEvent.GetVirtualKeyCode() == VK_RETURN && _inputMode.test(Mode::LineFeed))
+    {
+        _SendInputSequence(L"\r\n");
+        return true;
+    }
+
     // Many keyboard layouts have an AltGr key, which makes widely used characters accessible.
     // For instance on a German keyboard layout "[" is written by pressing AltGr+8.
     // Furthermore Ctrl+Alt is traditionally treated as an alternative way to AltGr by Windows.
