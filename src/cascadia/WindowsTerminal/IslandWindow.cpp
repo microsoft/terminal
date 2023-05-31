@@ -1783,7 +1783,7 @@ void IslandWindow::SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotifica
 //   If this parameter is not provided, the method will default to displaying the menu at the top-left edge of the window's client area.
 // - yOffset: If provided, this value will be added to the cursor's Y position, moving the menu downward by the specified amount. This is
 //   useful, for example, when accounting for the height of a custom title bar.
-void IslandWindow::OpenSystemMenu(const std::optional<int> x, const std::optional<int> y, const std::optional<int> yOffset) const noexcept
+void IslandWindow::OpenSystemMenu(std::optional<int> x, std::optional<int> y, std::optional<int> yOffset) const noexcept
 {
     // Retrieve the system menu of the current window.
     if (const HMENU systemMenu = GetSystemMenu(_window.get(), FALSE); LOG_LAST_ERROR_IF_NULL(systemMenu))
@@ -1813,26 +1813,23 @@ void IslandWindow::OpenSystemMenu(const std::optional<int> x, const std::optiona
             {
                 if (!LOG_LAST_ERROR_IF(!SetMenuDefaultItem(systemMenu, UINT_MAX, FALSE)))
                 {
-                    std::optional<int> systemMenuX = x;
-                    std::optional<int> systemMenuY = y;
-
                     // If the caller didn't specify a position, use the top-left corner of the client area.
-                    if (!systemMenuX.has_value() || !systemMenuY.has_value())
+                    if (!x.has_value() || !y.has_value())
                     {
                         RECT clientScreenRect;
                         if (!LOG_LAST_ERROR_IF(!GetClientRect(GetHandle(), &clientScreenRect)) && LOG_IF_WIN32_BOOL_FALSE(ClientToScreen(GetHandle(), reinterpret_cast<LPPOINT>(&clientScreenRect))))
                         {
-                            systemMenuX = clientScreenRect.left;
-                            systemMenuY = clientScreenRect.top;
+                            x = clientScreenRect.left;
+                            y = clientScreenRect.top;
                         }
                     }
 
                     // Show the system menu. If a command is selected, send it to the window.
-                    if (systemMenuX.has_value() && systemMenuY.has_value())
+                    if (x.has_value() && y.has_value())
                     {
                         // yOffset is used to add some vertical padding to the position where the system menu will appear.
                         // This is especially useful when accounting for the height of a custom title bar, or for custom handling of Alt+Space case.
-                        const BOOL menuItemIdentifier = TrackPopupMenu(systemMenu, TPM_RETURNCMD, systemMenuX.value(), systemMenuY.value() + yOffset.value_or(0), 0, _window.get(), nullptr);
+                        const BOOL menuItemIdentifier = TrackPopupMenu(systemMenu, TPM_RETURNCMD, x.value(), y.value() + yOffset.value_or(0), 0, _window.get(), nullptr);
                         if (menuItemIdentifier != 0)
                         {
                             LOG_LAST_ERROR_IF(!PostMessage(_window.get(), WM_SYSCOMMAND, menuItemIdentifier, 0));
