@@ -1783,7 +1783,7 @@ void IslandWindow::SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotifica
 //   If this parameter is not provided, the method will default to displaying the menu at the top-left edge of the window's client area.
 // - yOffset: If provided, this value will be added to the cursor's Y position, moving the menu downward by the specified amount. This is
 //   useful, for example, when accounting for the height of a custom title bar.
-void IslandWindow::OpenSystemMenu(std::optional<int> x, std::optional<int> y, std::optional<int> yOffset) const noexcept
+void IslandWindow::OpenSystemMenu(std::optional<int> x, std::optional<int> y, const std::optional<int> yOffset) const noexcept
 {
     // Retrieve the system menu of the current window.
     if (const HMENU systemMenu = GetSystemMenu(_window.get(), FALSE); LOG_LAST_ERROR_IF_NULL(systemMenu))
