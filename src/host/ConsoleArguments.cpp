@@ -514,13 +514,6 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
-        else if (std::regex_match(arg, std::wregex(L"--[A-Za-z0-9]+")))
-        {
-            // Any other alphanumeric sequence starting with -- is likely
-            // an unrecognized argument that we need to ignore.
-            s_ConsumeArg(args, i);
-            hr = S_OK;
-        }
         else if (arg == CLIENT_COMMANDLINE_ARG)
         {
             // Everything after this is the explicit commandline
@@ -528,6 +521,8 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             break;
         }
         // TODO: handle the rest of the possible params (MSFT:13271366, MSFT:13631640)
+        // TODO: handle invalid args
+        //  e.g. "conhost --foo bar" should not make the clientCommandline "--foo bar"
         else
         {
             // If we encounter something that doesn't match one of our other
