@@ -217,11 +217,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     ControlCore::~ControlCore()
     {
         Close();
-
-        if (_renderer)
-        {
-            _renderer->TriggerTeardown();
-        }
     }
 
     void ControlCore::Detach()
