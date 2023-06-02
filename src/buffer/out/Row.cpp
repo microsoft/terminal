@@ -128,7 +128,9 @@ void ROW::Reset(const TextAttribute& attr)
 {
     _charsHeap.reset();
     _chars = { _charsBuffer, _columnCount };
-    _attr = { _columnCount, attr };
+    // Constructing and then moving objects into place isn't free.
+    // Modifying the existing object is _much_ faster.
+    *_attr.runs().unsafe_shrink_to_size(1) = til::rle_pair{ attr, _columnCount };
     _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
     _doubleBytePadded = false;
