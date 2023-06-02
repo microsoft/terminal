@@ -31,6 +31,7 @@ Revision History:
 #include "../audio/midi/MidiAudio.hpp"
 
 #include <til/ticket_lock.h>
+#include <tracy/Tracy.hpp>
 
 // clang-format off
 // Flags flags
@@ -152,6 +153,8 @@ public:
 
 private:
     til::recursive_ticket_lock _lock;
+    static constexpr tracy::SourceLocationData _lockLocation{ nullptr, "console lock", TracyFile, TracyLine, 0 };
+    tracy::LockableCtx _lockCtx{ &_lockLocation };
 
     std::wstring _Title;
     std::wstring _Prefix; // Eg Select, Mark - things that we manually prepend to the title.

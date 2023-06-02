@@ -59,7 +59,7 @@ namespace til
         struct recursive_ticket_lock_suspension
         {
             constexpr recursive_ticket_lock_suspension(recursive_ticket_lock& lock, uint32_t owner, uint32_t recursion) noexcept :
-                _lock{ lock },
+                _lock{ &lock },
                 _owner{ owner },
                 _recursion{ recursion }
             {
@@ -69,28 +69,50 @@ namespace til
             // This of course only works if the lock wasn't moved to another thread or something.
             recursive_ticket_lock_suspension(const recursive_ticket_lock_suspension&) = delete;
             recursive_ticket_lock_suspension& operator=(const recursive_ticket_lock_suspension&) = delete;
-            recursive_ticket_lock_suspension(recursive_ticket_lock_suspension&&) = delete;
-            recursive_ticket_lock_suspension& operator=(recursive_ticket_lock_suspension&&) = delete;
 
             ~recursive_ticket_lock_suspension()
+            {
+                _destroy();
+            }
+
+            recursive_ticket_lock_suspension(recursive_ticket_lock_suspension&& other) noexcept :
+                _lock{ std::exchange(other._lock, nullptr) },
+                _owner{ std::exchange(other._owner, 0) },
+                _recursion{ std::exchange(other._recursion, 0) }
+            {
+            }
+
+            recursive_ticket_lock_suspension& operator=(recursive_ticket_lock_suspension&& other) noexcept
+            {
+                if (this != &other)
+                {
+                    _destroy();
+                    _lock = std::exchange(other._lock, nullptr);
+                    _owner = std::exchange(other._owner, 0);
+                    _recursion = std::exchange(other._recursion, 0);
+                }
+                return *this;
+            }
+
+        private:
+            void _destroy() const noexcept
             {
                 if (_owner)
                 {
                     // If someone reacquired the lock on the current thread, we shouldn't lock it again.
-                    if (_lock._owner.load(std::memory_order_relaxed) != _owner)
+                    if (_lock->_owner.load(std::memory_order_relaxed) != _owner)
                     {
-                        _lock._lock.lock(); // lock-lock-lock lol
-                        _lock._owner.store(_owner, std::memory_order_relaxed);
+                        _lock->_lock.lock(); // lock-lock-lock lol
+                        _lock->_owner.store(_owner, std::memory_order_relaxed);
                     }
                     // ...but we should restore the original recursion count.
-                    _lock._recursion += _recursion;
+                    _lock->_recursion += _recursion;
                 }
             }
 
-        private:
             friend struct recursive_ticket_lock;
 
-            recursive_ticket_lock& _lock;
+            recursive_ticket_lock* _lock = nullptr;
             uint32_t _owner = 0;
             uint32_t _recursion = 0;
         };

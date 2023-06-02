@@ -26,13 +26,19 @@ bool CONSOLE_INFORMATION::IsConsoleLocked() const noexcept
 #pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
 void CONSOLE_INFORMATION::LockConsole() noexcept
 {
+    const auto runAfter = _lockCtx.BeforeLock();
     _lock.lock();
+    if (runAfter)
+    {
+        _lockCtx.AfterLock();
+    }
 }
 
 #pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
 void CONSOLE_INFORMATION::UnlockConsole() noexcept
 {
     _lock.unlock();
+    _lockCtx.AfterUnlock();
 }
 
 ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept

@@ -4,6 +4,8 @@
 #include "pch.h"
 #include "AtlasEngine.h"
 
+#include <tracy/Tracy.hpp>
+
 #include "BackendD2D.h"
 #include "BackendD3D.h"
 
@@ -49,6 +51,7 @@ try
 
     _b->Render(_p);
     _present();
+    FrameMark;
     return S_OK;
 }
 catch (const wil::ResultException& exception)

@@ -16,6 +16,7 @@
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
 #include <til/ticket_lock.h>
+#include <tracy/Tracy.hpp>
 
 inline constexpr std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
 inline constexpr size_t TaskbarMinProgress{ 10 };
@@ -85,9 +86,91 @@ public:
     // WritePastedText comes from our input and goes back to the PTY's input channel
     void WritePastedText(std::wstring_view stringView);
 
-    [[nodiscard]] std::unique_lock<til::recursive_ticket_lock> LockForReading();
-    [[nodiscard]] std::unique_lock<til::recursive_ticket_lock> LockForWriting();
-    til::recursive_ticket_lock_suspension SuspendLock() noexcept;
+    struct UniqueTicketLock
+    {
+        UniqueTicketLock(til::recursive_ticket_lock& lock, tracy::LockableCtx& ctx) :
+            _lock{ &lock },
+            _ctx{ &ctx },
+            _owns{ true }
+        {
+            const auto runAfter = _ctx->BeforeLock();
+            _lock->lock();
+            if (runAfter)
+            {
+                _ctx->AfterLock();
+            }
+            _owns = true;
+        }
+
+        UniqueTicketLock(UniqueTicketLock&& other) noexcept :
+            _lock{ std::exchange(other._lock, nullptr) },
+            _ctx{ std::exchange(other._ctx, nullptr) },
+            _owns{ std::exchange(other._owns, false) }
+        {
+        }
+
+        UniqueTicketLock& operator=(UniqueTicketLock&& other) noexcept
+        {
+            if (this != &other)
+            {
+                if (_owns)
+                {
+                    _lock->unlock();
+                    _ctx->AfterUnlock();
+                }
+
+                _lock = std::exchange(other._lock, nullptr);
+                _ctx = std::exchange(other._ctx, nullptr);
+                _owns = std::exchange(other._owns, false);
+            }
+            return *this;
+        }
+
+        ~UniqueTicketLock() noexcept
+        {
+            if (_owns)
+            {
+                _lock->unlock();
+                _ctx->AfterUnlock();
+            }
+        }
+
+    private:
+        til::recursive_ticket_lock* _lock = nullptr;
+        tracy::LockableCtx* _ctx = nullptr;
+        bool _owns = false;
+    };
+
+    struct TicketLockSuspension
+    {
+        TicketLockSuspension(til::recursive_ticket_lock& lock, tracy::LockableCtx& ctx) :
+            _ctx{ &ctx }
+        {
+            _suspension.emplace(lock.suspend());
+            _ctx->AfterUnlock();
+        }
+
+        ~TicketLockSuspension()
+        {
+            if (_suspension)
+            {
+                const auto runAfter = _ctx->BeforeLock();
+                _suspension.reset();
+                if (runAfter)
+                {
+                    _ctx->AfterLock();
+                }
+            }
+        }
+
+    private:
+        std::optional<til::recursive_ticket_lock_suspension> _suspension;
+        tracy::LockableCtx* _ctx = nullptr;
+    };
+
+    [[nodiscard]] UniqueTicketLock LockForReading();
+    [[nodiscard]] UniqueTicketLock LockForWriting();
+    TicketLockSuspension SuspendLock() noexcept;
 
     til::CoordType GetBufferHeight() const noexcept;
 
@@ -300,6 +383,8 @@ private:
     // But we can abuse the fact that the surrounding members rarely change and are huge
     // (std::function is like 64 bytes) to create some natural padding without wasting space.
     til::recursive_ticket_lock _readWriteLock;
+    static constexpr tracy::SourceLocationData _lockLocation{ nullptr, "terminal lock", TracyFile, TracyLine, 0 };
+    tracy::LockableCtx _lockCtx{ &_lockLocation };
 
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
     std::function<void()> _pfnCursorPositionChanged;

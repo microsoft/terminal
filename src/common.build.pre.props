@@ -125,11 +125,11 @@
           It's supposed to be fixed with VS 17.2.1 and 17.3.0 and later respectively.
       -->
       <DisableSpecificWarnings>4201;4312;4467;5105;26445;26813;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;TRACY_ENABLE;TRACY_ON_DEMAND;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\gsl\include;$(SolutionDir)\dep\Win32K;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\dynamic_bitset;$(SolutionDir)\oss\fmt\include;$(SolutionDir)\oss\interval_tree;$(SolutionDir)\oss\libpopcnt;$(SolutionDir)\oss\pcg\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\gsl\include;$(SolutionDir)\dep\Win32K;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\dynamic_bitset;$(SolutionDir)\oss\fmt\include;$(SolutionDir)\oss\interval_tree;$(SolutionDir)\oss\libpopcnt;$(SolutionDir)\oss\pcg\include;$(SolutionDir)\oss\tracy;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
