@@ -124,7 +124,7 @@ LineRendition ROW::GetLineRendition() const noexcept
 // - Attr - The default attribute (color) to fill
 // Return Value:
 // - <none>
-void ROW::Reset(const TextAttribute& attr)
+void ROW::Reset(const TextAttribute& attr) noexcept
 {
     _charsHeap.reset();
     _chars = { _charsBuffer, _columnCount };

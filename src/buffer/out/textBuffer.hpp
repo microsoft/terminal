@@ -138,7 +138,7 @@ public:
     til::point ScreenToBufferPosition(const til::point position) const noexcept;
     til::point BufferToScreenPosition(const til::point position) const noexcept;
 
-    void Reset();
+    void Reset() noexcept;
 
     [[nodiscard]] HRESULT ResizeTraditional(const til::size newSize) noexcept;
 
