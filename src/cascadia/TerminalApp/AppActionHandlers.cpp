@@ -1034,18 +1034,22 @@ namespace winrt::TerminalApp::implementation
                     if (termControl.HasSelection())
                     {
                         const auto selections{ termControl.SelectedText(true) };
-                        if (selections.Size() == 1) // TODO! should theoretically be able to work for multiple lines of selection
+
+                        // concatenate the selection into a single line
+                        auto searchText = std::accumulate(selections.begin(), selections.end(), std::wstring());
+
+                        // make it compact by replacing consecutive whitespaces with a single space
+                        searchText = std::regex_replace(searchText, std::wregex(LR"(\s+)"), L" ");
+
+                        if (realArgs.WrapWithQuotes())
                         {
-                            auto selectedText = selections.GetAt(0);
-                            if (realArgs.WrapWithQuotes())
-                            {
-                                selectedText = L"\"" + selectedText + L"\"";
-                            }
-                            const auto finalString = queryUrl + Windows::Foundation::Uri::EscapeComponent(selectedText);
-                            winrt::Microsoft::Terminal::Control::OpenHyperlinkEventArgs shortcut{ finalString };
-                            _OpenHyperlinkHandler(termControl, shortcut);
-                            args.Handled(true);
+                            searchText = L"\"" + searchText + L"\"";
                         }
+
+                        const auto finalString = queryUrl + Windows::Foundation::Uri::EscapeComponent(searchText);
+                        winrt::Microsoft::Terminal::Control::OpenHyperlinkEventArgs shortcut{ finalString };
+                        _OpenHyperlinkHandler(termControl, shortcut);
+                        args.Handled(true);
                     }
                 }
             }
