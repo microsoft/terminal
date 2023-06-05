@@ -25,10 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         winrt::hstring Name();
         void Name(winrt::hstring newName);
-        hstring ToString()
-        {
-            return Name();
-        }
+        hstring ToString();
 
         bool RequestRename(winrt::hstring newName);
 
