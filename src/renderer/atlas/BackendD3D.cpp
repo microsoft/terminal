@@ -782,6 +782,7 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
 
     // We have our own glyph cache so Direct2D's cache doesn't help much.
     // This saves us 1MB of RAM, which is not much, but also not nothing.
+    if (_d2dRenderTarget4)
     {
         wil::com_ptr<ID2D1Device> device;
         _d2dRenderTarget4->GetDevice(device.addressof());
@@ -1370,12 +1371,12 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
             static_cast<f32>(rect.x + rect.w) / transform.m11,
             static_cast<f32>(rect.y + rect.h) / transform.m22,
         };
-        _d2dRenderTarget4->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
+        _d2dRenderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
     }
     const auto boxGlyphCleanup = wil::scope_exit([&]() {
         if (isBoxGlyph)
         {
-            _d2dRenderTarget4->PopAxisAlignedClip();
+            _d2dRenderTarget->PopAxisAlignedClip();
         }
     });
 
