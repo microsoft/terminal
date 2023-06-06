@@ -4434,6 +4434,16 @@ namespace winrt::TerminalApp::implementation
 
         til::color bgColor = backgroundSolidBrush.Color();
 
+        Media::Brush terminalBrush{ nullptr };
+        if (const auto& control{ _GetActiveControl() })
+        {
+            terminalBrush = control.BackgroundBrush();
+        }
+        else if (const auto& settingsTab{ _GetFocusedTab().try_as<TerminalApp::SettingsTab>() })
+        {
+            terminalBrush = settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
+        }
+
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
             const auto acrylicBrush = Media::AcrylicBrush();
@@ -4448,18 +4458,6 @@ namespace winrt::TerminalApp::implementation
                                                                theme.TabRow().UnfocusedBackground()) :
                                                  ThemeColor{ nullptr } })
         {
-            const auto terminalBrush = [this]() -> Media::Brush {
-                if (const auto& control{ _GetActiveControl() })
-                {
-                    return control.BackgroundBrush();
-                }
-                else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
-                {
-                    return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
-                }
-                return nullptr;
-            }();
-
             const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
             bgColor = ThemeColor::ColorFromBrush(themeBrush);
             TitlebarBrush(themeBrush);
@@ -4489,11 +4487,27 @@ namespace winrt::TerminalApp::implementation
                 tabImpl->ThemeColor(tabBackground, tabUnfocusedBackground, bgColor);
             }
         }
-
         // Update the new tab button to have better contrast with the new color.
         // In theory, it would be convenient to also change these for the
         // inactive tabs as well, but we're leaving that as a follow up.
         _SetNewTabButtonColor(bgColor, bgColor);
+
+        // Third: the window frame. This is basically the same logic as the tab row background.
+        // We'll set our `FrameBrush` property, for the window to later use.
+        const auto windowTheme{ theme.Window() };
+        if (auto windowFrame{ windowTheme ? (_activated ? windowTheme.Frame() :
+                                                          windowTheme.UnfocusedFrame()) :
+                                            ThemeColor{ nullptr } })
+        {
+            const auto themeBrush{ windowFrame.Evaluate(res, terminalBrush, true) };
+            FrameBrush(themeBrush);
+        }
+        else
+        {
+            // Nothing was set in the theme - fall back to null. The window will
+            // use that as an indication to use the default window frame.
+            FrameBrush(nullptr);
+        }
     }
 
     // Function Description:
