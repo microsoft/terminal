@@ -79,8 +79,43 @@ public:
 #ifdef UNIT_TESTING
     void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);
 #endif
-
-private:
-    CONSOLE_INFORMATION ciConsoleInformation;
-    ApiRoutines defaultApiRoutines;
 };
+
+// Define inline functions outside the class declaration
+
+inline Globals::Globals()
+{
+    uiOEMCP = GetOEMCP();
+    uiWindowsCP = GetACP();
+    pDeviceComm = nullptr;
+    sVerticalScrollSize = 0;
+    sHorizontalScrollSize = 0;
+    dpi = USER_DEFAULT_SCREEN_DPI;
+    cursorPixelWidth = 1;
+    ntstatusConsoleInputInitStatus = 0;
+    dwInputThreadId = 0;
+    pRender = nullptr;
+    pFontDefaultList = nullptr;
+    api = nullptr;
+    handoffTarget = false;
+    defaultTerminalMarkerCheckRequired = false;
+}
+
+inline CONSOLE_INFORMATION& Globals::getConsoleInformation()
+{
+    return ciConsoleInformation;
+}
+
+inline bool Globals::IsHeadless() const
+{
+    // Add your implementation here
+    // Return whether the console is running in headless mode
+}
+
+#ifdef UNIT_TESTING
+inline void Globals::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine)
+{
+    // Add your implementation here
+    // Enable ConPTY mode for unit testing using the provided vtRenderEngine
+}
+#endif
