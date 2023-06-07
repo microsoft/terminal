@@ -749,7 +749,7 @@ namespace til
             _size = other._size;
         }
 
-        void _move_assign(small_vector& other)
+        void _move_assign(small_vector& other) noexcept
         {
             if (other._capacity == N)
             {
