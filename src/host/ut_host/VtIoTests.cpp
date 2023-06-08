@@ -325,7 +325,7 @@ public:
         return 12ul;
     }
 
-    bool IsCursorDoubleWidth() const noexcept override
+    bool IsCursorDoubleWidth() const override
     {
         return false;
     }

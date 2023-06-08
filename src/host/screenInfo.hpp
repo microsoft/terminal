@@ -157,7 +157,7 @@ public:
     InputBuffer* const GetActiveInputBuffer() const override;
 #pragma endregion
 
-    bool CursorIsDoubleWidth() const noexcept;
+    bool CursorIsDoubleWidth() const;
 
     DWORD OutputMode;
     WORD ResizingWindow; // > 0 if we should ignore WM_SIZE messages

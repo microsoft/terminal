@@ -60,6 +60,19 @@ struct RowWriteState
 class ROW final
 {
 public:
+    static constexpr size_t CalculateRowSize() noexcept
+    {
+        return sizeof(ROW);
+    }
+    static constexpr size_t CalculateCharsBufferSize(size_t columns) noexcept
+    {
+        return columns * sizeof(wchar_t);
+    }
+    static constexpr size_t CalculateCharOffsetsBufferSize(size_t columns) noexcept
+    {
+        return (columns + 1) * sizeof(uint16_t);
+    }
+
     ROW() = default;
     ROW(wchar_t* charsBuffer, uint16_t* charOffsetsBuffer, uint16_t rowWidth, const TextAttribute& fillAttribute);
 
@@ -78,6 +91,7 @@ public:
 
     void Reset(const TextAttribute& attr);
     void TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth);
+    void CopyFrom(const ROW& source);
 
     til::CoordType NavigateToPrevious(til::CoordType column) const noexcept;
     til::CoordType NavigateToNext(til::CoordType column) const noexcept;
@@ -88,7 +102,7 @@ public:
     void ReplaceAttributes(til::CoordType beginIndex, til::CoordType endIndex, const TextAttribute& newAttr);
     void ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars);
     void ReplaceText(RowWriteState& state);
-    til::CoordType CopyRangeFrom(til::CoordType columnBegin, til::CoordType columnLimit, const ROW& other, til::CoordType& otherBegin, til::CoordType otherLimit);
+    til::CoordType CopyTextFrom(til::CoordType columnBegin, til::CoordType columnLimit, const ROW& other, til::CoordType& otherBegin, til::CoordType otherLimit);
 
     til::small_rle<TextAttribute, uint16_t, 1>& Attributes() noexcept;
     const til::small_rle<TextAttribute, uint16_t, 1>& Attributes() const noexcept;
@@ -121,7 +135,7 @@ private:
         bool IsValid() const noexcept;
         void ReplaceCharacters(til::CoordType width) noexcept;
         void ReplaceText() noexcept;
-        void CopyRangeFrom(const std::span<const uint16_t>& charOffsets) noexcept;
+        void CopyTextFrom(const std::span<const uint16_t>& charOffsets) noexcept;
         void Finish();
 
         // Parent pointer.
