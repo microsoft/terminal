@@ -74,9 +74,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (_Profile && _Profile.DefaultAppearance())
         {
-            if (auto fontName = _Profile.DefaultAppearance().FontFace(); !fontName.empty())
+            if (const auto fontName = _Profile.DefaultAppearance().FontFace(); !fontName.empty())
             {
-                if (auto font = ProfileViewModel::FindFontWithLocalizedName(fontName))
+                if (const auto font = ProfileViewModel::FindFontWithLocalizedName(fontName))
                 {
                     return font.HasPowerlineCharacters();
                 }
