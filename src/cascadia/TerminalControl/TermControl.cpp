@@ -3044,7 +3044,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Attackers abuse Unicode characters that happen to look similar to ASCII characters. Cyrillic for instance has
     // its own glyphs for а, с, е, о, р, х, and у that look practically identical to their ASCII counterparts.
-    // This is called a "IDN homoglyph attack".
+    // This is called an "IDN homoglyph attack".
     //
     // But outright showing Punycode URIs only is similarly flawed as they can end up looking similar to valid ASCII URIs.
     // xn--cnn.com for instance looks confusingly similar to cnn.com, but actually represents U+407E.
