@@ -977,6 +977,7 @@ KVM
 langid
 LANGUAGELIST
 lasterror
+LASTEXITCODE
 lastexitcode
 LAYOUTRTL
 lbl
