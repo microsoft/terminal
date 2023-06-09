@@ -193,7 +193,7 @@ public:
 
     void MakeCursorVisible(const til::point CursorPosition);
 
-    [[nodiscard]] NTSTATUS UseAlternateScreenBuffer();
+    [[nodiscard]] NTSTATUS UseAlternateScreenBuffer(const TextAttribute& initAttributes);
     void UseMainScreenBuffer();
 
     SCREEN_INFORMATION& GetMainBuffer();
@@ -254,7 +254,8 @@ private:
     [[nodiscard]] NTSTATUS _InitializeOutputStateMachine();
     void _FreeOutputStateMachine();
 
-    [[nodiscard]] NTSTATUS _CreateAltBuffer(_Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer);
+    [[nodiscard]] NTSTATUS _CreateAltBuffer(const TextAttribute& initAttributes,
+                                            _Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer);
 
     bool _IsAltBuffer() const;
     bool _IsInPtyMode() const;

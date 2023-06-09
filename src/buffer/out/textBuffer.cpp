@@ -569,10 +569,10 @@ bool TextBuffer::NewlineCursor()
 //Routine Description:
 // - Increments the circular buffer by one. Circular buffer is represented by FirstRow variable.
 //Arguments:
-// - inVtMode - set to true in VT mode, so standard erase attributes are used for the new row.
+// - fillAttributes - the attributes with which the recycled row will be initialized.
 //Return Value:
 // - true if we successfully incremented the buffer.
-bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
+bool TextBuffer::IncrementCircularBuffer(const TextAttribute& fillAttributes)
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
@@ -585,13 +585,6 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
     _PruneHyperlinks();
 
     // Second, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
-    auto fillAttributes = _currentAttributes;
-    if (inVtMode)
-    {
-        // The VT standard requires that the new row is initialized with
-        // the current background color, but with no meta attributes set.
-        fillAttributes.SetStandardErase();
-    }
     GetRowByOffset(0).Reset(fillAttributes);
     {
         // Now proceed to increment.
@@ -851,7 +844,7 @@ void TextBuffer::SetCurrentAttributes(const TextAttribute& currentAttributes) no
     _currentAttributes = currentAttributes;
 }
 
-void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
+void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition, const TextAttribute& fillAttributes)
 {
     const auto cursorPosition = GetCursor().GetPosition();
     const auto rowIndex = cursorPosition.y;
@@ -865,11 +858,9 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
         if (lineRendition != LineRendition::SingleWidth)
         {
             const auto fillChar = L' ';
-            auto fillAttrs = GetCurrentAttributes();
-            fillAttrs.SetStandardErase();
             const auto fillOffset = GetLineWidth(rowIndex);
             const auto fillLength = gsl::narrow<size_t>(GetSize().Width() - fillOffset);
-            const OutputCellIterator fillData{ fillChar, fillAttrs, fillLength };
+            const OutputCellIterator fillData{ fillChar, fillAttributes, fillLength };
             row.WriteCells(fillData, fillOffset, false);
             // We also need to make sure the cursor is clamped within the new width.
             GetCursor().SetPosition(ClampPositionWithinLine(cursorPosition));

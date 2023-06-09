@@ -183,11 +183,13 @@ void ConhostInternalGetSet::SetWindowTitle(std::wstring_view title)
 // - Swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
 //     screen buffer and an alternate. This creates a new alternate, and switches to it.
 //     If there is an already existing alternate, it is discarded.
+// Arguments:
+// - attrs - the attributes the buffer is initialized with.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::UseAlternateScreenBuffer()
+void ConhostInternalGetSet::UseAlternateScreenBuffer(const TextAttribute& attrs)
 {
-    THROW_IF_NTSTATUS_FAILED(_io.GetActiveOutputBuffer().UseAlternateScreenBuffer());
+    THROW_IF_NTSTATUS_FAILED(_io.GetActiveOutputBuffer().UseAlternateScreenBuffer(attrs));
 }
 
 // Routine Description:

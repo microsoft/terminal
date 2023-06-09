@@ -564,6 +564,28 @@ bool AdaptDispatch::CursorRestoreState()
 }
 
 // Routine Description:
+// - Returns the attributes that should be used when erasing the buffer. When
+//   the Erase Color mode is set, we use the default attributes, but when reset,
+//   we use the active color attributes with the character attributes cleared.
+// Arguments:
+// - textBuffer - Target buffer that is being erased.
+// Return Value:
+// - The erase TextAttribute value.
+TextAttribute AdaptDispatch::_GetEraseAttributes(const TextBuffer& textBuffer) const noexcept
+{
+    if (_modes.test(Mode::EraseColor))
+    {
+        return {};
+    }
+    else
+    {
+        auto eraseAttributes = textBuffer.GetCurrentAttributes();
+        eraseAttributes.SetStandardErase();
+        return eraseAttributes;
+    }
+}
+
+// Routine Description:
 // - Scrolls an area of the buffer in a vertical direction.
 // Arguments:
 // - textBuffer - Target buffer to be scrolled.
@@ -611,8 +633,7 @@ void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rec
     auto eraseRect = scrollRect;
     eraseRect.top = delta > 0 ? scrollRect.top : (scrollRect.bottom - absoluteDelta);
     eraseRect.bottom = eraseRect.top + absoluteDelta;
-    auto eraseAttributes = textBuffer.GetCurrentAttributes();
-    eraseAttributes.SetStandardErase();
+    const auto eraseAttributes = _GetEraseAttributes(textBuffer);
     _FillRect(textBuffer, eraseRect, L' ', eraseAttributes);
 
     // Also reset the line rendition for the erased rows.
@@ -660,8 +681,7 @@ void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::r
     auto eraseRect = scrollRect;
     eraseRect.left = delta > 0 ? scrollRect.left : (scrollRect.right - absoluteDelta);
     eraseRect.right = eraseRect.left + absoluteDelta;
-    auto eraseAttributes = textBuffer.GetCurrentAttributes();
-    eraseAttributes.SetStandardErase();
+    const auto eraseAttributes = _GetEraseAttributes(textBuffer);
     _FillRect(textBuffer, eraseRect, L' ', eraseAttributes);
 }
 
@@ -760,8 +780,7 @@ bool AdaptDispatch::EraseCharacters(const VTInt numChars)
     // The ECH control is expected to reset the delayed wrap flag.
     textBuffer.GetCursor().ResetDelayEOLWrap();
 
-    auto eraseAttributes = textBuffer.GetCurrentAttributes();
-    eraseAttributes.SetStandardErase();
+    const auto eraseAttributes = _GetEraseAttributes(textBuffer);
     _FillRect(textBuffer, { startCol, row, endCol, row + 1 }, L' ', eraseAttributes);
 
     return true;
@@ -806,8 +825,7 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     // take care of that themselves when they set the cursor position.
     textBuffer.GetCursor().ResetDelayEOLWrap();
 
-    auto eraseAttributes = textBuffer.GetCurrentAttributes();
-    eraseAttributes.SetStandardErase();
+    const auto eraseAttributes = _GetEraseAttributes(textBuffer);
 
     // When erasing the display, every line that is erased in full should be
     // reset to single width. When erasing to the end, this could include
@@ -846,8 +864,7 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
     // The EL control is expected to reset the delayed wrap flag.
     textBuffer.GetCursor().ResetDelayEOLWrap();
 
-    auto eraseAttributes = textBuffer.GetCurrentAttributes();
-    eraseAttributes.SetStandardErase();
+    const auto eraseAttributes = _GetEraseAttributes(textBuffer);
     switch (eraseType)
     {
     case DispatchTypes::EraseType::FromBeginning:
@@ -1292,8 +1309,7 @@ bool AdaptDispatch::EraseRectangularArea(const VTInt top, const VTInt left, cons
 {
     auto& textBuffer = _api.GetTextBuffer();
     const auto eraseRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
-    auto eraseAttributes = textBuffer.GetCurrentAttributes();
-    eraseAttributes.SetStandardErase();
+    const auto eraseAttributes = _GetEraseAttributes(textBuffer);
     _FillRect(textBuffer, eraseRect, L' ', eraseAttributes);
     return true;
 }
@@ -1430,7 +1446,8 @@ bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
     if (!_modes.test(Mode::AllowDECSLRM))
     {
         auto& textBuffer = _api.GetTextBuffer();
-        textBuffer.SetCurrentLineRendition(rendition);
+        const auto eraseAttributes = _GetEraseAttributes(textBuffer);
+        textBuffer.SetCurrentLineRendition(rendition, eraseAttributes);
         // There is some variation in how this was handled by the different DEC
         // terminals, but the STD 070 reference (on page D-13) makes it clear that
         // the delayed wrap (aka the Last Column Flag) was expected to be reset when
@@ -1748,7 +1765,8 @@ void AdaptDispatch::_SetAlternateScreenBufferMode(const bool enable)
     if (enable)
     {
         CursorSaveState();
-        _api.UseAlternateScreenBuffer();
+        const auto& textBuffer = _api.GetTextBuffer();
+        _api.UseAlternateScreenBuffer(_GetEraseAttributes(textBuffer));
         _usingAltBuffer = true;
     }
     else
@@ -1857,6 +1875,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
             auto& textBuffer = _api.GetTextBuffer();
             textBuffer.ResetLineRenditionRange(viewport.top, viewport.bottom);
         }
+        return true;
+    case DispatchTypes::ModeParams::DECECM_EraseColorMode:
+        _modes.set(Mode::EraseColor, enable);
         return true;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enable);
@@ -1988,6 +2009,9 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         break;
     case DispatchTypes::ModeParams::DECLRMM_LeftRightMarginMode:
         enabled = _modes.test(Mode::AllowDECSLRM);
+        break;
+    case DispatchTypes::ModeParams::DECECM_EraseColorMode:
+        enabled = _modes.test(Mode::EraseColor);
         break;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking);
@@ -2427,15 +2451,14 @@ void AdaptDispatch::_DoLineFeed(TextBuffer& textBuffer, const bool withReturn, c
 
         // And if the bottom margin didn't cover the full viewport, we copy the
         // lower part of the viewport down so it remains static. But for a full
-        // pan we reset the newly revealed row with the current attributes.
+        // pan we reset the newly revealed row with the erase attributes.
         if (bottomMargin < viewport.bottom - 1)
         {
             _ScrollRectVertically(textBuffer, { 0, bottomMargin + 1, bufferWidth, viewport.bottom + 1 }, 1);
         }
         else
         {
-            auto eraseAttributes = textBuffer.GetCurrentAttributes();
-            eraseAttributes.SetStandardErase();
+            const auto eraseAttributes = _GetEraseAttributes(textBuffer);
             textBuffer.GetRowByOffset(newPosition.y).Reset(eraseAttributes);
         }
     }
@@ -2444,7 +2467,8 @@ void AdaptDispatch::_DoLineFeed(TextBuffer& textBuffer, const bool withReturn, c
         // If the viewport has reached the end of the buffer, we can't pan down,
         // so we cycle the row coordinates, which effectively scrolls the buffer
         // content up. In this case we don't need to move the cursor down.
-        textBuffer.IncrementCircularBuffer(true);
+        const auto eraseAttributes = _GetEraseAttributes(textBuffer);
+        textBuffer.IncrementCircularBuffer(eraseAttributes);
         _api.NotifyBufferRotation(1);
 
         // We trigger a scroll rather than a redraw, since that's more efficient,
@@ -3202,8 +3226,7 @@ bool AdaptDispatch::_EraseAll()
     cursor.SetHasMoved(true);
 
     // Erase all the rows in the current viewport.
-    auto eraseAttributes = textBuffer.GetCurrentAttributes();
-    eraseAttributes.SetStandardErase();
+    const auto eraseAttributes = _GetEraseAttributes(textBuffer);
     _FillRect(textBuffer, { 0, newViewportTop, bufferSize.Width(), newViewportBottom }, L' ', eraseAttributes);
 
     // Also reset the line rendition for the erased rows.
