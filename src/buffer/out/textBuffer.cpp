@@ -42,9 +42,165 @@ TextBuffer::TextBuffer(til::size screenBufferSize,
     // Guard against resizing the text buffer to 0 columns/rows, which would break being able to insert text.
     screenBufferSize.width = std::max(screenBufferSize.width, 1);
     screenBufferSize.height = std::max(screenBufferSize.height, 1);
-    _charBuffer = _allocateBuffer(screenBufferSize, _currentAttributes, _storage);
-    _UpdateSize();
+    _reserve(screenBufferSize, defaultAttributes);
 }
+
+TextBuffer::~TextBuffer()
+{
+    if (_buffer)
+    {
+        _destroy();
+    }
+}
+
+// I put these functions in a block at the start of the class, because they're the most
+// fundamental aspect of TextBuffer: It implements the basic gap buffer text storage.
+// It's also fairly tricky code.
+#pragma region buffer management
+#pragma warning(push)
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
+
+// MEM_RESERVEs memory sufficient to store height-many ROW structs,
+// as well as their ROW::_chars and ROW::_charOffsets buffers.
+//
+// We use explicit virtual memory allocations to not taint the general purpose allocator
+// with our huge allocation, as well as to be able to reduce the private working set of
+// the application by only committing what we actually need. This reduces conhost's
+// memory usage from ~7MB down to just ~2MB at startup in the general case.
+void TextBuffer::_reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes)
+{
+    const auto w = gsl::narrow<uint16_t>(screenBufferSize.width);
+    const auto h = gsl::narrow<uint16_t>(screenBufferSize.height);
+
+    constexpr auto rowSize = ROW::CalculateRowSize();
+    const auto charsBufferSize = ROW::CalculateCharsBufferSize(w);
+    const auto charOffsetsBufferSize = ROW::CalculateCharOffsetsBufferSize(w);
+    const auto rowStride = rowSize + charsBufferSize + charOffsetsBufferSize;
+    assert(rowStride % alignof(ROW) == 0);
+
+    // 65535*65535 cells would result in a allocSize of 8GiB.
+    // --> Use uint64_t so that we can safely do our calculations even on x86.
+    // We allocate 1 additional row, which will be used for GetScratchpadRow().
+    const auto rowCount = ::base::strict_cast<uint64_t>(h) + 1;
+    const auto allocSize = gsl::narrow<size_t>(rowCount * rowStride);
+
+    // NOTE: Modifications to this block of code might have to be mirrored over to ResizeTraditional().
+    // It constructs a temporary TextBuffer and then extracts the members below, overwriting itself.
+    _buffer = wil::unique_virtualalloc_ptr<std::byte>{
+        static_cast<std::byte*>(THROW_LAST_ERROR_IF_NULL(VirtualAlloc(nullptr, allocSize, MEM_RESERVE, PAGE_READWRITE)))
+    };
+    _bufferEnd = _buffer.get() + allocSize;
+    _commitWatermark = _buffer.get();
+    _initialAttributes = defaultAttributes;
+    _bufferRowStride = rowStride;
+    _bufferOffsetChars = rowSize;
+    _bufferOffsetCharOffsets = rowSize + charsBufferSize;
+    _width = w;
+    _height = h;
+}
+
+// MEM_COMMITs the memory and constructs all ROWs up to and including the given row pointer.
+// It's expected that the caller verifies the parameter. It goes hand in hand with _getRowByOffsetDirect().
+//
+// Declaring this function as noinline allows _getRowByOffsetDirect() to be inlined,
+// which improves overall TextBuffer performance by ~6%. And all it cost is this annotation.
+// The compiler doesn't understand the likelihood of our branches. (PGO does, but that's imperfect.)
+__declspec(noinline) void TextBuffer::_commit(const std::byte* row)
+{
+    const auto rowEnd = row + _bufferRowStride;
+    const auto remaining = gsl::narrow_cast<uintptr_t>(_bufferEnd - _commitWatermark);
+    const auto minimum = gsl::narrow_cast<uintptr_t>(rowEnd - _commitWatermark);
+    const auto ideal = minimum + _bufferRowStride * _commitReadAheadRowCount;
+    const auto size = std::min(remaining, ideal);
+
+    THROW_LAST_ERROR_IF_NULL(VirtualAlloc(_commitWatermark, size, MEM_COMMIT, PAGE_READWRITE));
+
+    _construct(_commitWatermark + size);
+}
+
+// Destructs and MEM_DECOMMITs all previously constructed ROWs.
+// You can use this (or rather the Reset() method) to fully clear the TextBuffer.
+void TextBuffer::_decommit() noexcept
+{
+    _destroy();
+    VirtualFree(_buffer.get(), 0, MEM_DECOMMIT);
+    _commitWatermark = _buffer.get();
+}
+
+// Constructs ROWs up to (excluding) the ROW pointed to by `until`.
+void TextBuffer::_construct(const std::byte* until) noexcept
+{
+    for (; _commitWatermark < until; _commitWatermark += _bufferRowStride)
+    {
+        const auto row = reinterpret_cast<ROW*>(_commitWatermark);
+        const auto chars = reinterpret_cast<wchar_t*>(_commitWatermark + _bufferOffsetChars);
+        const auto indices = reinterpret_cast<uint16_t*>(_commitWatermark + _bufferOffsetCharOffsets);
+        std::construct_at(row, chars, indices, _width, _initialAttributes);
+    }
+}
+
+// Destroys all previously constructed ROWs.
+// Be careful! This doesn't reset any of the members, in particular the _commitWatermark.
+void TextBuffer::_destroy() const noexcept
+{
+    for (auto it = _buffer.get(); it < _commitWatermark; it += _bufferRowStride)
+    {
+        std::destroy_at(reinterpret_cast<ROW*>(it));
+    }
+}
+
+// This function is "direct" because it trusts the caller to properly wrap the "offset"
+// parameter modulo the _height of the buffer, etc. But keep in mind that a offset=0
+// is the GetScratchpadRow() and not the GetRowByOffset(0). That one is offset=1.
+ROW& TextBuffer::_getRowByOffsetDirect(size_t offset)
+{
+    const auto row = _buffer.get() + _bufferRowStride * offset;
+    THROW_HR_IF(E_UNEXPECTED, row < _buffer.get() || row >= _bufferEnd);
+
+    if (row >= _commitWatermark)
+    {
+        _commit(row);
+    }
+
+    return *reinterpret_cast<ROW*>(row);
+}
+
+// Retrieves a row from the buffer by its offset from the first row of the text buffer
+// (what corresponds to the top row of the screen buffer).
+const ROW& TextBuffer::GetRowByOffset(const til::CoordType index) const
+{
+    // The const_cast is safe because "const" never had any meaning in C++ in the first place.
+#pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
+    return const_cast<TextBuffer*>(this)->GetRowByOffset(index);
+}
+
+// Retrieves a row from the buffer by its offset from the first row of the text buffer
+// (what corresponds to the top row of the screen buffer).
+ROW& TextBuffer::GetRowByOffset(const til::CoordType index)
+{
+    // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
+    auto offset = (_firstRow + index) % _height;
+
+    // Support negative wrap around. This way an index of -1 will
+    // wrap to _rowCount-1 and make implementing scrolling easier.
+    if (offset < 0)
+    {
+        offset += _height;
+    }
+
+    // We add 1 to the row offset, because row "0" is the one returned by GetScratchpadRow().
+    return _getRowByOffsetDirect(gsl::narrow_cast<size_t>(offset) + 1);
+}
+
+// Returns a row filled with whitespace and the current attributes, for you to freely use.
+ROW& TextBuffer::GetScratchpadRow()
+{
+    return _getRowByOffsetDirect(0);
+}
+
+#pragma warning(pop)
+#pragma endregion
 
 // Routine Description:
 // - Copies properties from another text buffer into this one.
@@ -66,35 +222,7 @@ void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer) noexcept
 // - Total number of rows in the buffer
 til::CoordType TextBuffer::TotalRowCount() const noexcept
 {
-    return gsl::narrow_cast<til::CoordType>(_storage.size());
-}
-
-// Routine Description:
-// - Retrieves a row from the buffer by its offset from the first row of the text buffer (what corresponds to
-// the top row of the screen buffer)
-// Arguments:
-// - Number of rows down from the first row of the buffer.
-// Return Value:
-// - const reference to the requested row. Asserts if out of bounds.
-const ROW& TextBuffer::GetRowByOffset(const til::CoordType index) const noexcept
-{
-    // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
-    const auto offsetIndex = gsl::narrow_cast<size_t>(_firstRow + index) % _storage.size();
-    return til::at(_storage, offsetIndex);
-}
-
-// Routine Description:
-// - Retrieves a row from the buffer by its offset from the first row of the text buffer (what corresponds to
-// the top row of the screen buffer)
-// Arguments:
-// - Number of rows down from the first row of the buffer.
-// Return Value:
-// - reference to the requested row. Asserts if out of bounds.
-ROW& TextBuffer::GetRowByOffset(const til::CoordType index) noexcept
-{
-    // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
-    const auto offsetIndex = gsl::narrow_cast<size_t>(_firstRow + index) % _storage.size();
-    return til::at(_storage, offsetIndex);
+    return _height;
 }
 
 // Routine Description:
@@ -483,7 +611,7 @@ bool TextBuffer::InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttr
 // - <none> - Always sets to wrap
 //Return Value:
 // - <none>
-void TextBuffer::_SetWrapOnCurrentRow() noexcept
+void TextBuffer::_SetWrapOnCurrentRow()
 {
     _AdjustWrapOnCurrentRow(true);
 }
@@ -495,7 +623,7 @@ void TextBuffer::_SetWrapOnCurrentRow() noexcept
 // - fSet - True if this row has a wrap. False otherwise.
 //Return Value:
 // - <none>
-void TextBuffer::_AdjustWrapOnCurrentRow(const bool fSet) noexcept
+void TextBuffer::_AdjustWrapOnCurrentRow(const bool fSet)
 {
     // The vertical position of the cursor represents the current row we're manipulating.
     const auto uiCurrentRowOffset = GetCursor().GetPosition().y;
@@ -651,7 +779,7 @@ til::point TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::C
 // Return Value:
 // - Coordinate position in screen coordinates of the character just before the cursor.
 // - NOTE: Will return 0,0 if already in the top left corner
-til::point TextBuffer::_GetPreviousFromCursor() const noexcept
+til::point TextBuffer::_GetPreviousFromCursor() const
 {
     auto coordPosition = GetCursor().GetPosition();
 
@@ -683,43 +811,7 @@ const til::CoordType TextBuffer::GetFirstRowIndex() const noexcept
 
 const Viewport TextBuffer::GetSize() const noexcept
 {
-    return _size;
-}
-
-wil::unique_virtualalloc_ptr<std::byte> TextBuffer::_allocateBuffer(til::size sz, const TextAttribute& attributes, std::vector<ROW>& rows)
-{
-    const auto w = gsl::narrow<uint16_t>(sz.width);
-    const auto h = gsl::narrow<uint16_t>(sz.height);
-
-    const auto charsBytes = w * sizeof(wchar_t);
-    // The ROW::_indices array stores 1 more item than the buffer is wide.
-    // That extra column stores the past-the-end _chars pointer.
-    const auto indicesBytes = w * sizeof(uint16_t) + sizeof(uint16_t);
-    const auto rowStride = charsBytes + indicesBytes;
-    // 65535*65535 cells would result in a charsAreaSize of 8GiB.
-    // --> Use uint64_t so that we can safely do our calculations even on x86.
-    const auto allocSize = gsl::narrow<size_t>(::base::strict_cast<uint64_t>(rowStride) * ::base::strict_cast<uint64_t>(h));
-
-    auto buffer = wil::unique_virtualalloc_ptr<std::byte>{ static_cast<std::byte*>(VirtualAlloc(nullptr, allocSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE)) };
-    THROW_IF_NULL_ALLOC(buffer);
-
-    auto data = std::span{ buffer.get(), allocSize }.begin();
-
-    rows.resize(h);
-    for (auto& row : rows)
-    {
-        const auto chars = til::bit_cast<wchar_t*>(&*data);
-        const auto indices = til::bit_cast<uint16_t*>(&*(data + charsBytes));
-        row = { chars, indices, w, attributes };
-        data += rowStride;
-    }
-
-    return buffer;
-}
-
-void TextBuffer::_UpdateSize()
-{
-    _size = Viewport::FromDimensions({ _storage.at(0).size(), gsl::narrow<til::CoordType>(_storage.size()) });
+    return Viewport::FromDimensions({ _width, _height });
 }
 
 void TextBuffer::_SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept
@@ -727,27 +819,21 @@ void TextBuffer::_SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept
     _firstRow = FirstRowIndex;
 }
 
-void TextBuffer::ScrollRows(const til::CoordType firstRow, const til::CoordType size, const til::CoordType delta)
+void TextBuffer::ScrollRows(const til::CoordType firstRow, til::CoordType size, const til::CoordType delta)
 {
-    // If we don't have to move anything, leave early.
     if (delta == 0)
     {
         return;
     }
 
-    // OK. We're about to play games by moving rows around within the deque to
-    // scroll a massive region in a faster way than copying things.
-    // To make this easier, first correct the circular buffer to have the first row be 0 again.
-    if (_firstRow != 0)
-    {
-        // Rotate the buffer to put the first row at the front.
-        std::rotate(_storage.begin(), _storage.begin() + _firstRow, _storage.end());
+    // Since the for() loop uses !=, we must ensure that size is positive.
+    // A negative size doesn't make any sense anyways.
+    size = std::max(0, size);
 
-        // The first row is now at the top.
-        _firstRow = 0;
-    }
+    til::CoordType y = 0;
+    til::CoordType end = 0;
+    til::CoordType step = 0;
 
-    // Rotate just the subsection specified
     if (delta < 0)
     {
         // The layout is like this:
@@ -757,33 +843,20 @@ void TextBuffer::ScrollRows(const til::CoordType firstRow, const til::CoordType 
         // | 0 begin
         // | 1
         // | 2
-        // | 3 A. begin + firstRow + delta (because delta is negative)
+        // | 3 A. firstRow + delta (because delta is negative)
         // | 4
-        // | 5 B. begin + firstRow
+        // | 5 B. firstRow
         // | 6
         // | 7
-        // | 8 C. begin + firstRow + size
+        // | 8 C. firstRow + size
         // | 9
         // | 10
         // | 11
         // - end
         // We want B to slide up to A (the negative delta) and everything from [B,C) to slide up with it.
-        // So the final layout will be
-        // --- (storage) ----
-        // | 0 begin
-        // | 1
-        // | 2
-        // | 5
-        // | 6
-        // | 7
-        // | 3
-        // | 4
-        // | 8
-        // | 9
-        // | 10
-        // | 11
-        // - end
-        std::rotate(_storage.begin() + firstRow + delta, _storage.begin() + firstRow, _storage.begin() + firstRow + size);
+        y = firstRow;
+        end = firstRow + size;
+        step = 1;
     }
     else
     {
@@ -796,31 +869,23 @@ void TextBuffer::ScrollRows(const til::CoordType firstRow, const til::CoordType 
         // | 2
         // | 3
         // | 4
-        // | 5 A. begin + firstRow
+        // | 5 A. firstRow
         // | 6
         // | 7
-        // | 8 B. begin + firstRow + size
+        // | 8 B. firstRow + size
         // | 9
-        // | 10 C. begin + firstRow + size + delta
+        // | 10 C. firstRow + size + delta
         // | 11
         // - end
         // We want B-1 to slide down to C-1 (the positive delta) and everything from [A, B) to slide down with it.
-        // So the final layout will be
-        // --- (storage) ----
-        // | 0 begin
-        // | 1
-        // | 2
-        // | 3
-        // | 4
-        // | 8
-        // | 9
-        // | 5
-        // | 6
-        // | 7
-        // | 10
-        // | 11
-        // - end
-        std::rotate(_storage.begin() + firstRow, _storage.begin() + firstRow + size, _storage.begin() + firstRow + size + delta);
+        y = firstRow + size - 1;
+        end = firstRow - 1;
+        step = -1;
+    }
+
+    for (; y != end; y += step)
+    {
+        GetRowByOffset(y + delta).CopyFrom(GetRowByOffset(y));
     }
 }
 
@@ -869,7 +934,7 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition, cons
     }
 }
 
-void TextBuffer::ResetLineRenditionRange(const til::CoordType startRow, const til::CoordType endRow) noexcept
+void TextBuffer::ResetLineRenditionRange(const til::CoordType startRow, const til::CoordType endRow)
 {
     for (auto row = startRow; row < endRow; row++)
     {
@@ -877,37 +942,37 @@ void TextBuffer::ResetLineRenditionRange(const til::CoordType startRow, const ti
     }
 }
 
-LineRendition TextBuffer::GetLineRendition(const til::CoordType row) const noexcept
+LineRendition TextBuffer::GetLineRendition(const til::CoordType row) const
 {
     return GetRowByOffset(row).GetLineRendition();
 }
 
-bool TextBuffer::IsDoubleWidthLine(const til::CoordType row) const noexcept
+bool TextBuffer::IsDoubleWidthLine(const til::CoordType row) const
 {
     return GetLineRendition(row) != LineRendition::SingleWidth;
 }
 
-til::CoordType TextBuffer::GetLineWidth(const til::CoordType row) const noexcept
+til::CoordType TextBuffer::GetLineWidth(const til::CoordType row) const
 {
     // Use shift right to quickly divide the width by 2 for double width lines.
     const auto scale = IsDoubleWidthLine(row) ? 1 : 0;
     return GetSize().Width() >> scale;
 }
 
-til::point TextBuffer::ClampPositionWithinLine(const til::point position) const noexcept
+til::point TextBuffer::ClampPositionWithinLine(const til::point position) const
 {
     const auto rightmostColumn = GetLineWidth(position.y) - 1;
     return { std::min(position.x, rightmostColumn), position.y };
 }
 
-til::point TextBuffer::ScreenToBufferPosition(const til::point position) const noexcept
+til::point TextBuffer::ScreenToBufferPosition(const til::point position) const
 {
     // Use shift right to quickly divide the X pos by 2 for double width lines.
     const auto scale = IsDoubleWidthLine(position.y) ? 1 : 0;
     return { position.x >> scale, position.y };
 }
 
-til::point TextBuffer::BufferToScreenPosition(const til::point position) const noexcept
+til::point TextBuffer::BufferToScreenPosition(const til::point position) const
 {
     // Use shift left to quickly multiply the X pos by 2 for double width lines.
     const auto scale = IsDoubleWidthLine(position.y) ? 1 : 0;
@@ -917,14 +982,10 @@ til::point TextBuffer::BufferToScreenPosition(const til::point position) const n
 // Routine Description:
 // - Resets the text contents of this buffer with the default character
 //   and the default current color attributes
-void TextBuffer::Reset()
+void TextBuffer::Reset() noexcept
 {
-    const auto attr = GetCurrentAttributes();
-
-    for (auto& row : _storage)
-    {
-        row.Reset(attr);
-    }
+    _decommit();
+    _initialAttributes = _currentAttributes;
 }
 
 // Routine Description:
@@ -941,55 +1002,34 @@ void TextBuffer::Reset()
 
     try
     {
-        til::CoordType TopRow = 0; // new top row of the screen buffer
-        if (newSize.height <= GetCursor().GetPosition().y)
+        TextBuffer newBuffer{ newSize, _currentAttributes, 0, false, _renderer };
+        const auto cursorRow = GetCursor().GetPosition().y;
+        const auto copyableRows = std::min<til::CoordType>(_height, newSize.height);
+        til::CoordType srcRow = 0;
+        til::CoordType dstRow = 0;
+
+        if (cursorRow >= newSize.height)
         {
-            TopRow = GetCursor().GetPosition().y - newSize.height + 1;
-        }
-        const auto TopRowIndex = gsl::narrow_cast<size_t>(_firstRow + TopRow) % _storage.size();
-
-        std::vector<ROW> newStorage;
-        auto newBuffer = _allocateBuffer(newSize, _currentAttributes, newStorage);
-
-        // This basically imitates a std::rotate_copy(first, mid, last), but uses ROW::CopyRangeFrom() to do the copying.
-        {
-            const auto first = _storage.begin();
-            const auto last = _storage.end();
-            const auto mid = first + TopRowIndex;
-            auto dest = newStorage.begin();
-
-            std::span<ROW> sourceRanges[]{
-                { mid, last },
-                { first, mid },
-            };
-
-            // Ensure we don't copy more from `_storage` than fit into `newStorage`.
-            if (sourceRanges[0].size() > newStorage.size())
-            {
-                sourceRanges[0] = sourceRanges[0].subspan(0, newStorage.size());
-            }
-            if (const auto remaining = newStorage.size() - sourceRanges[0].size(); sourceRanges[1].size() > remaining)
-            {
-                sourceRanges[1] = sourceRanges[1].subspan(0, remaining);
-            }
-
-            for (const auto& sourceRange : sourceRanges)
-            {
-                for (const auto& oldRow : sourceRange)
-                {
-                    til::CoordType begin = 0;
-                    dest->CopyRangeFrom(0, til::CoordTypeMax, oldRow, begin, til::CoordTypeMax);
-                    dest->TransferAttributes(oldRow.Attributes(), newSize.width);
-                    ++dest;
-                }
-            }
+            srcRow = cursorRow - newSize.height + 1;
         }
 
-        _charBuffer = std::move(newBuffer);
-        _storage = std::move(newStorage);
+        for (; dstRow < copyableRows; ++dstRow, ++srcRow)
+        {
+            newBuffer.GetRowByOffset(dstRow).CopyFrom(GetRowByOffset(srcRow));
+        }
+
+        // NOTE: Keep this in sync with _reserve().
+        _buffer = std::move(newBuffer._buffer);
+        _bufferEnd = newBuffer._bufferEnd;
+        _commitWatermark = newBuffer._commitWatermark;
+        _initialAttributes = newBuffer._initialAttributes;
+        _bufferRowStride = newBuffer._bufferRowStride;
+        _bufferOffsetChars = newBuffer._bufferOffsetChars;
+        _bufferOffsetCharOffsets = newBuffer._bufferOffsetCharOffsets;
+        _width = newBuffer._width;
+        _height = newBuffer._height;
 
         _SetFirstRowIndex(0);
-        _UpdateSize();
     }
     CATCH_RETURN();
 
@@ -1059,17 +1099,6 @@ void TextBuffer::TriggerNewTextNotification(const std::wstring_view newText)
     }
 }
 
-// Routine Description:
-// - Retrieves the first row from the underlying buffer.
-// Arguments:
-// - <none>
-// Return Value:
-//  - reference to the first row.
-ROW& TextBuffer::_GetFirstRow() noexcept
-{
-    return GetRowByOffset(0);
-}
-
 // Method Description:
 // - get delimiter class for buffer cell position
 // - used for double click selection and uia word navigation
@@ -1078,7 +1107,7 @@ ROW& TextBuffer::_GetFirstRow() noexcept
 // - wordDelimiters: the delimiters defined as a part of the DelimiterClass::DelimiterChar
 // Return Value:
 // - the delimiter class for the given char
-DelimiterClass TextBuffer::_GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const noexcept
+DelimiterClass TextBuffer::_GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const
 {
     return GetRowByOffset(pos.y).DelimiterClassAt(pos.x, wordDelimiters);
 }
@@ -1144,7 +1173,7 @@ til::point TextBuffer::GetWordStart(const til::point target, const std::wstring_
 // - wordDelimiters - what characters are we considering for the separation of words
 // Return Value:
 // - The til::point for the first character on the current/previous READABLE "word" (inclusive)
-til::point TextBuffer::_GetWordStartForAccessibility(const til::point target, const std::wstring_view wordDelimiters) const noexcept
+til::point TextBuffer::_GetWordStartForAccessibility(const til::point target, const std::wstring_view wordDelimiters) const
 {
     auto result = target;
     const auto bufferSize = GetSize();
@@ -1189,7 +1218,7 @@ til::point TextBuffer::_GetWordStartForAccessibility(const til::point target, co
 // - wordDelimiters - what characters are we considering for the separation of words
 // Return Value:
 // - The til::point for the first character on the current word or delimiter run (stopped by the left margin)
-til::point TextBuffer::_GetWordStartForSelection(const til::point target, const std::wstring_view wordDelimiters) const noexcept
+til::point TextBuffer::_GetWordStartForSelection(const til::point target, const std::wstring_view wordDelimiters) const
 {
     auto result = target;
     const auto bufferSize = GetSize();
@@ -1310,7 +1339,7 @@ til::point TextBuffer::_GetWordEndForAccessibility(const til::point target, cons
 // - wordDelimiters - what characters are we considering for the separation of words
 // Return Value:
 // - The til::point for the last character of the current word or delimiter run (stopped by right margin)
-til::point TextBuffer::_GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const noexcept
+til::point TextBuffer::_GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const
 {
     const auto bufferSize = GetSize();
 

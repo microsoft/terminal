@@ -82,10 +82,7 @@ ROW::ROW(wchar_t* charsBuffer, uint16_t* charOffsetsBuffer, uint16_t rowWidth, c
     _attr{ rowWidth, fillAttribute },
     _columnCount{ rowWidth }
 {
-    if (_chars.data())
-    {
-        _init();
-    }
+    _init();
 }
 
 void ROW::SetWrapForced(const bool wrap) noexcept
@@ -145,6 +142,15 @@ void ROW::TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& a
 {
     _attr = attr;
     _attr.resize_trailing_extent(gsl::narrow<uint16_t>(newWidth));
+}
+
+void ROW::CopyFrom(const ROW& source)
+{
+    til::CoordType begin = 0;
+    CopyTextFrom(0, til::CoordTypeMax, source, begin, til::CoordTypeMax);
+    TransferAttributes(source.Attributes(), _columnCount);
+    _lineRendition = source._lineRendition;
+    _wrapForced = source._wrapForced;
 }
 
 // Returns the previous possible cursor position, preceding the given column.
@@ -445,7 +451,7 @@ catch (...)
     charsConsumed = ch - chBeg;
 }
 
-til::CoordType ROW::CopyRangeFrom(til::CoordType columnBegin, til::CoordType columnLimit, const ROW& other, til::CoordType& otherBegin, til::CoordType otherLimit)
+til::CoordType ROW::CopyTextFrom(til::CoordType columnBegin, til::CoordType columnLimit, const ROW& other, til::CoordType& otherBegin, til::CoordType otherLimit)
 try
 {
     const auto otherColBeg = other._clampedColumnInclusive(otherBegin);
@@ -464,8 +470,11 @@ try
     }
 
     WriteHelper h{ *this, columnBegin, columnLimit, chars };
-    if (!h.IsValid())
+    // If we were to copy text from ourselves, we'd overwrite
+    // our _charOffsets and break Finish() which reads from it.
+    if (!h.IsValid() || this == &other)
     {
+        assert(false); // You probably shouldn't call this function in the first place.
         return h.colBeg;
     }
     // Any valid charOffsets array is at least 2 elements long (the 1st element is the start offset and the 2nd
@@ -477,7 +486,7 @@ try
         otherBegin = other.size();
         return h.colBeg;
     }
-    h.CopyRangeFrom(charOffsets);
+    h.CopyTextFrom(charOffsets);
     h.Finish();
 
     otherBegin += h.colEnd - h.colBeg;
@@ -489,7 +498,7 @@ catch (...)
     throw;
 }
 
-[[msvc::forceinline]] void ROW::WriteHelper::CopyRangeFrom(const std::span<const uint16_t>& charOffsets) noexcept
+[[msvc::forceinline]] void ROW::WriteHelper::CopyTextFrom(const std::span<const uint16_t>& charOffsets) noexcept
 {
     // Since our `charOffsets` input is already in columns (just like the `ROW::_charOffsets`),
     // we can directly look up the end char-offset, but...
