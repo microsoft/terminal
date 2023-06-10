@@ -60,17 +60,24 @@ struct RowWriteState
 class ROW final
 {
 public:
+    // The implicit agreement between ROW and TextBuffer is that TextBuffer supplies ROW with a charsBuffer of at
+    // least `columns * sizeof(wchar_t)` bytes and a charOffsetsBuffer of at least `(columns + 1) * sizeof(uint16_t)`
+    // bytes (see ROW::_charOffsets for why it needs space for 1 additional offset).
+    // These methods exists to make this agreement explicit and serve as a reminder.
+    //
+    // TextBuffer calculates the distance in bytes between two ROWs (_bufferRowStride) as the sum of these values.
+    // As such it's important that we return sizes with a minimum alignment of alignof(ROW).
     static constexpr size_t CalculateRowSize() noexcept
     {
         return sizeof(ROW);
     }
     static constexpr size_t CalculateCharsBufferSize(size_t columns) noexcept
     {
-        return columns * sizeof(wchar_t);
+        return (columns * sizeof(wchar_t) + 16) & ~15;
     }
     static constexpr size_t CalculateCharOffsetsBufferSize(size_t columns) noexcept
     {
-        return (columns + 1) * sizeof(uint16_t);
+        return (columns * sizeof(uint16_t) + 16) & ~15;
     }
 
     ROW() = default;

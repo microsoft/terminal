@@ -259,14 +259,61 @@ private:
     std::unordered_map<size_t, std::wstring> _idsAndPatterns;
     size_t _currentPatternId = 0;
 
+    // This block describes the state of the underlying virtual memory buffer that holds all ROWs, text and attributes.
+    // Initially memory is only allocated with MEM_RESERVE to reduce the private working set of conhost.
+    // ROWs are laid out like this in memory:
+    //   ROW                <-- sizeof(ROW), stores
+    //   (padding)
+    //   ROW::_charsBuffer  <-- _width * sizeof(wchar_t)
+    //   (padding)
+    //   ROW::_charOffsets  <-- (_width + 1) * sizeof(uint16_t)
+    //   (padding)
+    //   ...
+    // Padding may exist for alignment purposes.
+    //
+    // The base (start) address of the memory arena.
     wil::unique_virtualalloc_ptr<std::byte> _buffer;
+    // The past-the-end pointer of the memory arena.
     std::byte* _bufferEnd = nullptr;
+    // The range between _buffer (inclusive) and _commitWatermark (exclusive) is the range of
+    // memory that has already been committed via MEM_COMMIT and contains ready-to-use ROWs.
+    //
+    // The problem is that calling VirtualAlloc(MEM_COMMIT) on each ROW one by one is extremely expensive, which forces
+    // us to commit ROWs in batches and avoid calling it on already committed ROWs. Let's say we commit memory in
+    // batches of 128 ROWs. One option to know whether a ROW has already been committed is to allocate a vector<uint8_t>
+    // of size `(height + 127) / 128` and mark the corresponding slot as 1 if that 128-sized batch has been committed.
+    // That way we know not to commit it again. But ROWs aren't accessed randomly. Instead, they're usually accessed
+    // fairly linearly from row 1 to N. As such we can just commit ROWs up to the point of the highest accessed ROW
+    // plus some read-ahead of 128 ROWs. This is exactly what _commitWatermark stores: The highest accessed ROW plus
+    // some read-ahead. It's the amount of memory that has been committed and is ready to use.
+    //
+    // _commitWatermark will always be a multiple of _bufferRowStride away from _buffer.
+    // In other words, _commitWatermark itself will either point exactly onto the next ROW
+    // that should be committed or be equal to _bufferEnd when all ROWs are committed.
     std::byte* _commitWatermark = nullptr;
+    // This will MEM_COMMIT 128 rows more than we need, to avoid us from having to call VirtualAlloc too often.
+    // This equates to roughly the following commit chunk sizes at these column counts:
+    // *  80 columns (the usual minimum) =  60KB chunks,  4.1MB buffer at 9001 rows
+    // * 120 columns (the most common)   =  80KB chunks,  5.6MB buffer at 9001 rows
+    // * 400 columns (the usual maximum) = 220KB chunks, 15.5MB buffer at 9001 rows
+    // There's probably a better metric than this. (This comment was written when ROW had both,
+    // a _chars array containing text and a _charOffsets array contain column-to-text indices.)
+    static constexpr size_t _commitReadAheadRowCount = 128;
+    // Before TextBuffer was made to use virtual memory it initialized the entire memory arena with the initial
+    // attributes right away. To ensure it continues to work the way it used to, this stores these initial attributes.
     TextAttribute _initialAttributes;
+    // ROW ---------------+--+--+
+    // (padding)          |  |  v _bufferOffsetChars
+    // ROW::_charsBuffer  |  |
+    // (padding)          |  v _bufferOffsetCharOffsets
+    // ROW::_charOffsets  |
+    // (padding)          v _bufferRowStride
     size_t _bufferRowStride = 0;
     size_t _bufferOffsetChars = 0;
     size_t _bufferOffsetCharOffsets = 0;
+    // The width of the buffer in columns.
     uint16_t _width = 0;
+    // The height of the buffer in rows, excluding the scratchpad row.
     uint16_t _height = 0;
 
     TextAttribute _currentAttributes;

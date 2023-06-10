@@ -77,6 +77,8 @@ void TextBuffer::_reserve(til::size screenBufferSize, const TextAttribute& defau
     const auto charsBufferSize = ROW::CalculateCharsBufferSize(w);
     const auto charOffsetsBufferSize = ROW::CalculateCharOffsetsBufferSize(w);
     const auto rowStride = rowSize + charsBufferSize + charOffsetsBufferSize;
+    assert(rowStride % alignof(ROW) == 0);
+
     // 65535*65535 cells would result in a allocSize of 8GiB.
     // --> Use uint64_t so that we can safely do our calculations even on x86.
     // We allocate 1 additional row, which will be used for GetScratchpadRow().
@@ -109,14 +111,7 @@ __declspec(noinline) void TextBuffer::_commit(const std::byte* row)
     const auto rowEnd = row + _bufferRowStride;
     const auto remaining = gsl::narrow_cast<uintptr_t>(_bufferEnd - _commitWatermark);
     const auto minimum = gsl::narrow_cast<uintptr_t>(rowEnd - _commitWatermark);
-    // This will MEM_COMMIT 128 rows more than we need, to avoid us from having to call VirtualAlloc too often.
-    // This equates to roughly the following commit chunk sizes at these column counts:
-    // *  80 columns (the usual minimum) =  60KB chunks,  4.1MB buffer at 9001 rows
-    // * 120 columns (the most common)   =  80KB chunks,  5.6MB buffer at 9001 rows
-    // * 400 columns (the usual maximum) = 220KB chunks, 15.5MB buffer at 9001 rows
-    // There's probably a better metric than this. (This comment was written when ROW had both,
-    // an _chars array containing text and a _charOffsets array contain column-to-text indices.)
-    const auto ideal = minimum + _bufferRowStride * 128;
+    const auto ideal = minimum + _bufferRowStride * _commitReadAheadRowCount;
     const auto size = std::min(remaining, ideal);
 
     THROW_LAST_ERROR_IF_NULL(VirtualAlloc(_commitWatermark, size, MEM_COMMIT, PAGE_READWRITE));
@@ -201,9 +196,7 @@ ROW& TextBuffer::GetRowByOffset(const til::CoordType index)
 // Returns a row filled with whitespace and the current attributes, for you to freely use.
 ROW& TextBuffer::GetScratchpadRow()
 {
-    auto& row = _getRowByOffsetDirect(0);
-    row.Reset(_currentAttributes);
-    return row;
+    return _getRowByOffsetDirect(0);
 }
 
 #pragma warning(pop)
