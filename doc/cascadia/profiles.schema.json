@@ -421,6 +421,7 @@
         "scrollToMark",
         "clearMark",
         "clearAllMarks",
+        "searchWeb",
         "experimental.colorSelection",
         "unbound"
       ],
@@ -1709,6 +1710,34 @@
         }
       ]
     },
+    "SearchWebAction": {
+      "description": "Search online for selected text",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "searchWeb"
+            },
+            "queryUrl": {
+              "type": "string",
+              "description": "URL of the web page to launch (the selected text is appended to it)"
+            },
+            "wrapWithQuotes": {
+              "type": "boolean",
+              "default": true,
+              "description": "When true (default), the selected text is wrapped with quotes"
+            }
+          }
+        }
+      ],
+      "required": [
+        "queryUrl"
+      ]
+    },
     "AdjustOpacityAction": {
       "description": "Changes the opacity of the active Terminal window. If `relative` is specified, then this action will increase/decrease relative to the current opacity.",
       "allOf": [
@@ -2003,6 +2032,9 @@
             },
             {
               "$ref": "#/$defs/ColorSelectionAction"
+            },
+            {
+              "$ref": "#/$defs/SearchWebAction"
             },
             {
               "type": "null"
