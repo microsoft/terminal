@@ -116,7 +116,7 @@ public:
     bool NewlineCursor();
 
     // Scroll needs access to this to quickly rotate around the buffer.
-    bool IncrementCircularBuffer(const bool inVtMode = false);
+    bool IncrementCircularBuffer(const TextAttribute& fillAttributes = {});
 
     til::point GetLastNonSpaceCharacter(std::optional<const Microsoft::Console::Types::Viewport> viewOptional = std::nullopt) const;
 
@@ -135,7 +135,7 @@ public:
 
     void SetCurrentAttributes(const TextAttribute& currentAttributes) noexcept;
 
-    void SetCurrentLineRendition(const LineRendition lineRendition);
+    void SetCurrentLineRendition(const LineRendition lineRendition, const TextAttribute& fillAttributes);
     void ResetLineRenditionRange(const til::CoordType startRow, const til::CoordType endRow);
     LineRendition GetLineRendition(const til::CoordType row) const;
     bool IsDoubleWidthLine(const til::CoordType row) const;
