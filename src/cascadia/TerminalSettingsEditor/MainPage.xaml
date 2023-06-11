@@ -164,12 +164,9 @@
                 </muxc:NavigationViewItem.Icon>
                 <muxc:NavigationViewItem.ContextFlyout>
                     <MenuFlyout>
-                        <MenuFlyoutItem
-                                        x:Name="OpenJsonFolderNavItem"
-                                        Text="Open JSON folder"
-                                        ToolTipService.ToolTip="Open the folder holding your settings.json file."
-                                        Click="OpenJsonFolderClicked">
-                        </MenuFlyoutItem>
+                        <MenuFlyoutItem x:Name="OpenJsonFolderNavItem"
+                                        x:Uid="Nav_OpenJSONFolder"
+                                        Click="OpenJsonFolderClicked" />
                     </MenuFlyout>
                 </muxc:NavigationViewItem.ContextFlyout>
             </muxc:NavigationViewItem>

@@ -578,6 +578,10 @@
     <value>Open JSON file</value>
     <comment>Header for a menu item. This opens the JSON file that is used to log the app's settings.</comment>
   </data>
+	<data name="Nav_OpenJSONFolder.Content" xml:space="preserve">
+    <value>Open JSON Folder</value>
+    <comment>Header for a menu item. This opens the JSON Folder where the JSON file that is used to log the app's settings sits.</comment>
+  </data>
   <data name="Nav_ProfileDefaults.Content" xml:space="preserve">
     <value>Defaults</value>
     <comment>Header for the "defaults" menu item. This navigates to a page that lets you see and modify settings that affect profiles. This is the lowest layer of profile settings that all other profile settings are based on. If a profile doesn't define a setting, this page is responsible for figuring out what that setting is supposed to be.</comment>
@@ -1304,6 +1308,10 @@
   <data name="Nav_OpenJSON.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Open your settings.json file. Alt+Click to open your defaults.json file.</value>
     <comment>{Locked="settings.json"}, {Locked="defaults.json"}</comment>
+  </data>
+	<data name="Nav_OpenJSONFolder.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Open your settings.json folder.</value>
+    <comment>Label for button to JSON Folder.</comment>
   </data>
   <data name="Rename.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Rename</value>

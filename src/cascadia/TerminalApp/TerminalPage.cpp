@@ -2817,7 +2817,6 @@ namespace winrt::TerminalApp::implementation
                 }
             };
 
-           
             auto openFolder = [](const auto& filePath) {
                 HINSTANCE res = ShellExecute(nullptr, nullptr, filePath.c_str(), nullptr, nullptr, SW_SHOW);
                 if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
