@@ -1028,7 +1028,6 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& realArgs = args.ActionArgs().try_as<SearchForTextArgs>())
             {
-                const auto queryUrl = realArgs.QueryUrl();
                 if (const auto termControl{ _GetActiveControl() })
                 {
                     if (termControl.HasSelection())
@@ -1047,6 +1046,7 @@ namespace winrt::TerminalApp::implementation
                             searchText.push_back(L'"');
                         }
 
+                        const auto queryUrl = realArgs.QueryUrl().empty() ? _settings.GlobalSettings().SearchWebQueryUrlDefault() : realArgs.QueryUrl();
                         const auto finalString = queryUrl + Windows::Foundation::Uri::EscapeComponent(searchText);
                         winrt::Microsoft::Terminal::Control::OpenHyperlinkEventArgs shortcut{ finalString };
                         _OpenHyperlinkHandler(termControl, shortcut);
