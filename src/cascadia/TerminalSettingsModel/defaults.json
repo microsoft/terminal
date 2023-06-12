@@ -468,8 +468,6 @@
 
         // Web Search
         { "command": { "action": "searchWeb", "queryUrl": "https://www.bing.com/search?q=" }, "name": { "key": "SearchWebCommandKey" } },
-        { "command": { "action": "searchWeb", "queryUrl": "https://www.bing.com/search?q=site%3Agithub.com+" }, "name": { "key": "SearchGitHubCommandKey" } },
-        { "command": { "action": "searchWeb", "queryUrl": "https://www.bing.com/search?q=site%3Astackoverflow.com+" }, "name": { "key": "SearchStackOverflowCommandKey" } },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },

@@ -707,12 +707,4 @@
     <value>Search for selected text</value>
     <comment>This will open a web browser to search for some user-selected text</comment>
   </data>
-  <data name="SearchGitHubCommandKey" xml:space="preserve">
-    <value>Search GitHub for selected text</value>
-    <comment>GitHub is the name of the website https://github.com/</comment>
-  </data>
-  <data name="SearchStackOverflowCommandKey" xml:space="preserve">
-    <value>Search StackOverflow for selected text</value>
-    <comment>StackOverflow is the name of the website https://stackoverflow.com/</comment>
-  </data>
 </root>

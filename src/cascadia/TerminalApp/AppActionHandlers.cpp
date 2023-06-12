@@ -1043,7 +1043,8 @@ namespace winrt::TerminalApp::implementation
 
                         if (realArgs.WrapWithQuotes())
                         {
-                            searchText = L"\"" + searchText + L"\"";
+                            searchText.insert(searchText.begin(), L'"');
+                            searchText.push_back(L'"');
                         }
 
                         const auto finalString = queryUrl + Windows::Foundation::Uri::EscapeComponent(searchText);
