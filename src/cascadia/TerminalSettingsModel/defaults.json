@@ -467,7 +467,7 @@
         { "command": "showContextMenu", "keys": "menu" },
 
         // Web Search
-        { "command": { "action": "searchWeb", "queryUrl": "https://www.bing.com/search?q=" }, "name": { "key": "SearchWebCommandKey" } },
+        { "command": { "action": "searchWeb" }, "name": { "key": "SearchWebCommandKey" } },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },
