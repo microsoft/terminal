@@ -85,6 +85,7 @@ public:
 
     // row manipulation
     ROW& GetScratchpadRow();
+    ROW& GetScratchpadRow(const TextAttribute& attributes);
     const ROW& GetRowByOffset(til::CoordType index) const;
     ROW& GetRowByOffset(til::CoordType index);
 
@@ -98,6 +99,7 @@ public:
     // Text insertion functions
     static void ConsumeGrapheme(std::wstring_view& chars) noexcept;
     void WriteLine(til::CoordType row, bool wrapAtEOL, const TextAttribute& attributes, RowWriteState& state);
+    void FillRect(const til::rect& rect, const std::wstring_view& fill, const TextAttribute& attributes);
 
     OutputCellIterator Write(const OutputCellIterator givenIt);
 
