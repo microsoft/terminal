@@ -60,16 +60,19 @@ struct RowWriteState
 class ROW final
 {
 public:
-    // The implicit agreement between ROW and TextBuffer is that TextBuffer supplies ROW with a charsBuffer of at
-    // least `columns * sizeof(wchar_t)` bytes and a charOffsetsBuffer of at least `(columns + 1) * sizeof(uint16_t)`
-    // bytes (see ROW::_charOffsets for why it needs space for 1 additional offset).
+    // The implicit agreement between ROW and TextBuffer is that the `charsBuffer` and `charOffsetsBuffer`
+    // arrays have a minimum alignment of 16 Bytes and a size of `rowWidth+1`. The former is used to
+    // implement Reset() efficiently via SIMD and the latter is used to store the past-the-end offset
+    // into the `charsBuffer`. Even though the `charsBuffer` could be only `rowWidth` large we need them
+    // to be the same size so that the SIMD code can process both arrays in the same loop simultaneously.
+    // This wastes up to 5.8% memory but increases overall scrolling performance by around 40%.
     // These methods exists to make this agreement explicit and serve as a reminder.
     //
     // TextBuffer calculates the distance in bytes between two ROWs (_bufferRowStride) as the sum of these values.
     // As such it's important that we return sizes with a minimum alignment of alignof(ROW).
     static constexpr size_t CalculateRowSize() noexcept
     {
-        return sizeof(ROW);
+        return (sizeof(ROW) + 15) & ~15;
     }
     static constexpr size_t CalculateCharsBufferSize(size_t columns) noexcept
     {
