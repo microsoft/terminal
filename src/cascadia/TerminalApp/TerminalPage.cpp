@@ -2751,11 +2751,11 @@ namespace winrt::TerminalApp::implementation
     // - formats: dictate which formats need to be copied
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
+    bool TerminalPage::_CopyText(const bool dismissSelection, const bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         if (const auto& control{ _GetActiveControl() })
         {
-            return control.CopySelectionToClipboard(singleLine, formats);
+            return control.CopySelectionToClipboard(dismissSelection, singleLine, formats);
         }
         return false;
     }

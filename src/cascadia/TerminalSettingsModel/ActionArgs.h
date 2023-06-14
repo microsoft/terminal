@@ -99,8 +99,9 @@ private:                                                                    \
 // false, if we don't really care if the parameter is required or not.
 
 ////////////////////////////////////////////////////////////////////////////////
-#define COPY_TEXT_ARGS(X)                           \
-    X(bool, SingleLine, "singleLine", false, false) \
+#define COPY_TEXT_ARGS(X)                                        \
+    X(bool, DismissSelection, "dismissSelection", false, false)  \
+    X(bool, SingleLine, "singleLine", false, false)              \
     X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////

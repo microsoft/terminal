@@ -699,4 +699,12 @@
   <data name="SelectCommandPreviousCommandKey" xml:space="preserve">
     <value>Select previous command</value>
   </data>
+  <data name="DismissSelectionCommandKey" xml:space="preserve">
+    <value>DismissSelectionCommandKey</value>
+    <comment>DismissSelectionCommandKey</comment>
+  </data>
+  <data name="DismissSelectionFalseCommandKey" xml:space="preserve">
+    <value>DismissSelectionFalseCommandKey</value>
+    <comment>DismissSelectionFalseCommandKey</comment>
+  </data>
 </root>
