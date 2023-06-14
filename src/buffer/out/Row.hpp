@@ -26,6 +26,7 @@ Revision History:
 #include "OutputCell.hpp"
 #include "OutputCellIterator.hpp"
 
+class ROW;
 class TextBuffer;
 
 enum class DelimiterClass
@@ -43,7 +44,7 @@ struct RowWriteState
     // The column at which to start writing.
     til::CoordType columnBegin = 0; // IN
     // The first column which should not be written to anymore.
-    til::CoordType columnLimit = 0; // IN
+    til::CoordType columnLimit = til::CoordTypeMax; // IN
 
     // The column 1 past the last glyph that was successfully written into the row. If you need to call
     // ReplaceAttributes() to colorize the written range, etc., this is the columnEnd parameter you want.
@@ -55,6 +56,30 @@ struct RowWriteState
     // This is 1 past the last column that was modified and will be 1 past columnEnd if we overwrote
     // the leading half of a wide glyph and had to fill the trailing half with whitespace.
     til::CoordType columnEndDirty = 0; // OUT
+};
+
+struct RowCopyTextFromState
+{
+    // The row to copy text from.
+    const ROW& source; // IN
+    // The column at which to start writing.
+    til::CoordType columnBegin = 0; // IN
+    // The first column which should not be written to anymore.
+    til::CoordType columnLimit = til::CoordTypeMax; // IN
+    // The column at which to start reading from source.
+    til::CoordType sourceColumnBegin = 0; // IN
+    // The first column which should not be read from anymore.
+    til::CoordType sourceColumnLimit = til::CoordTypeMax; // IN
+
+    til::CoordType columnEnd = 0; // OUT
+    // The first column that got modified by this write operation. In case that the first glyph we write overwrites
+    // the trailing half of a wide glyph, leadingSpaces will be 1 and this value will be 1 less than colBeg.
+    til::CoordType columnBeginDirty = 0; // OUT
+    // This is 1 past the last column that was modified and will be 1 past columnEnd if we overwrote
+    // the leading half of a wide glyph and had to fill the trailing half with whitespace.
+    til::CoordType columnEndDirty = 0; // OUT
+    // This is 1 past the last column that was read from.
+    til::CoordType sourceColumnEnd = 0; // OUT
 };
 
 class ROW final
@@ -109,7 +134,7 @@ public:
     void ReplaceAttributes(til::CoordType beginIndex, til::CoordType endIndex, const TextAttribute& newAttr);
     void ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars);
     void ReplaceText(RowWriteState& state);
-    til::CoordType CopyTextFrom(til::CoordType columnBegin, til::CoordType columnLimit, const ROW& other, til::CoordType& otherBegin, til::CoordType otherLimit);
+    void CopyTextFrom(RowCopyTextFromState& state);
 
     til::small_rle<TextAttribute, uint16_t, 1>& Attributes() noexcept;
     const til::small_rle<TextAttribute, uint16_t, 1>& Attributes() const noexcept;

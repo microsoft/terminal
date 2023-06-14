@@ -15,6 +15,8 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
 
+static constexpr std::wstring_view whitespace{ L" " };
+
 AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) :
     _api{ api },
     _renderer{ renderer },
@@ -634,7 +636,7 @@ void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rec
     eraseRect.top = delta > 0 ? scrollRect.top : (scrollRect.bottom - absoluteDelta);
     eraseRect.bottom = eraseRect.top + absoluteDelta;
     const auto eraseAttributes = _GetEraseAttributes(textBuffer);
-    _FillRect(textBuffer, eraseRect, L' ', eraseAttributes);
+    _FillRect(textBuffer, eraseRect, whitespace, eraseAttributes);
 
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(eraseRect.top, eraseRect.bottom);
@@ -682,7 +684,7 @@ void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::r
     eraseRect.left = delta > 0 ? scrollRect.left : (scrollRect.right - absoluteDelta);
     eraseRect.right = eraseRect.left + absoluteDelta;
     const auto eraseAttributes = _GetEraseAttributes(textBuffer);
-    _FillRect(textBuffer, eraseRect, L' ', eraseAttributes);
+    _FillRect(textBuffer, eraseRect, whitespace, eraseAttributes);
 }
 
 // Routine Description:
@@ -746,19 +748,10 @@ bool AdaptDispatch::DeleteCharacter(const VTInt count)
 // - fillAttrs - Attributes to be written to the buffer.
 // Return Value:
 // - <none>
-void AdaptDispatch::_FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const wchar_t fillChar, const TextAttribute fillAttrs)
+void AdaptDispatch::_FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const std::wstring_view& fillChar, const TextAttribute& fillAttrs) const
 {
-    if (fillRect.left < fillRect.right && fillRect.top < fillRect.bottom)
-    {
-        const auto fillWidth = gsl::narrow_cast<size_t>(fillRect.right - fillRect.left);
-        const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillWidth };
-        const auto col = fillRect.left;
-        for (auto row = fillRect.top; row < fillRect.bottom; row++)
-        {
-            textBuffer.WriteLine(fillData, { col, row }, false);
-        }
-        _api.NotifyAccessibilityChange(fillRect);
-    }
+    textBuffer.FillRect(fillRect, fillChar, fillAttrs);
+    _api.NotifyAccessibilityChange(fillRect);
 }
 
 // Routine Description:
@@ -781,7 +774,7 @@ bool AdaptDispatch::EraseCharacters(const VTInt numChars)
     textBuffer.GetCursor().ResetDelayEOLWrap();
 
     const auto eraseAttributes = _GetEraseAttributes(textBuffer);
-    _FillRect(textBuffer, { startCol, row, endCol, row + 1 }, L' ', eraseAttributes);
+    _FillRect(textBuffer, { startCol, row, endCol, row + 1 }, whitespace, eraseAttributes);
 
     return true;
 }
@@ -836,14 +829,14 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     if (eraseType == DispatchTypes::EraseType::FromBeginning)
     {
         textBuffer.ResetLineRenditionRange(viewport.top, row);
-        _FillRect(textBuffer, { 0, viewport.top, bufferWidth, row }, L' ', eraseAttributes);
-        _FillRect(textBuffer, { 0, row, col + 1, row + 1 }, L' ', eraseAttributes);
+        _FillRect(textBuffer, { 0, viewport.top, bufferWidth, row }, whitespace, eraseAttributes);
+        _FillRect(textBuffer, { 0, row, col + 1, row + 1 }, whitespace, eraseAttributes);
     }
     if (eraseType == DispatchTypes::EraseType::ToEnd)
     {
         textBuffer.ResetLineRenditionRange(col > 0 ? row + 1 : row, viewport.bottom);
-        _FillRect(textBuffer, { col, row, bufferWidth, row + 1 }, L' ', eraseAttributes);
-        _FillRect(textBuffer, { 0, row + 1, bufferWidth, viewport.bottom }, L' ', eraseAttributes);
+        _FillRect(textBuffer, { col, row, bufferWidth, row + 1 }, whitespace, eraseAttributes);
+        _FillRect(textBuffer, { 0, row + 1, bufferWidth, viewport.bottom }, whitespace, eraseAttributes);
     }
 
     return true;
@@ -868,13 +861,13 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
     switch (eraseType)
     {
     case DispatchTypes::EraseType::FromBeginning:
-        _FillRect(textBuffer, { 0, row, col + 1, row + 1 }, L' ', eraseAttributes);
+        _FillRect(textBuffer, { 0, row, col + 1, row + 1 }, whitespace, eraseAttributes);
         return true;
     case DispatchTypes::EraseType::ToEnd:
-        _FillRect(textBuffer, { col, row, textBuffer.GetLineWidth(row), row + 1 }, L' ', eraseAttributes);
+        _FillRect(textBuffer, { col, row, textBuffer.GetLineWidth(row), row + 1 }, whitespace, eraseAttributes);
         return true;
     case DispatchTypes::EraseType::All:
-        _FillRect(textBuffer, { 0, row, textBuffer.GetLineWidth(row), row + 1 }, L' ', eraseAttributes);
+        _FillRect(textBuffer, { 0, row, textBuffer.GetLineWidth(row), row + 1 }, whitespace, eraseAttributes);
         return true;
     default:
         return false;
@@ -1270,7 +1263,7 @@ bool AdaptDispatch::CopyRectangularArea(const VTInt top, const VTInt left, const
 bool AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
 {
     auto& textBuffer = _api.GetTextBuffer();
-    auto fillRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
+    const auto fillRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
 
     // The standard only allows for characters in the range of the GL and GR
     // character set tables, but we also support additional Unicode characters
@@ -1282,14 +1275,8 @@ bool AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, c
     if (glChar || grChar || unicodeChar)
     {
         const auto fillChar = _termOutput.TranslateKey(gsl::narrow_cast<wchar_t>(charValue));
-        const auto fillAttributes = textBuffer.GetCurrentAttributes();
-        if (IsGlyphFullWidth(fillChar))
-        {
-            // If the fill char is full width, we need to halve the width of the
-            // fill area, otherwise it'll occupy twice as much space as expected.
-            fillRect.right = fillRect.left + fillRect.width() / 2;
-        }
-        _FillRect(textBuffer, fillRect, fillChar, fillAttributes);
+        const auto& fillAttributes = textBuffer.GetCurrentAttributes();
+        _FillRect(textBuffer, fillRect, { &fillChar, 1 }, fillAttributes);
     }
 
     return true;
@@ -1310,7 +1297,7 @@ bool AdaptDispatch::EraseRectangularArea(const VTInt top, const VTInt left, cons
     auto& textBuffer = _api.GetTextBuffer();
     const auto eraseRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
     const auto eraseAttributes = _GetEraseAttributes(textBuffer);
-    _FillRect(textBuffer, eraseRect, L' ', eraseAttributes);
+    _FillRect(textBuffer, eraseRect, whitespace, eraseAttributes);
     return true;
 }
 
@@ -3111,7 +3098,7 @@ bool AdaptDispatch::ScreenAlignmentPattern()
     const auto bufferWidth = textBuffer.GetSize().Dimensions().width;
 
     // Fill the screen with the letter E using the default attributes.
-    _FillRect(textBuffer, { 0, viewport.top, bufferWidth, viewport.bottom }, L'E', {});
+    _FillRect(textBuffer, { 0, viewport.top, bufferWidth, viewport.bottom }, L"E", {});
     // Reset the line rendition for all of these rows.
     textBuffer.ResetLineRenditionRange(viewport.top, viewport.bottom);
     // Reset the meta/extended attributes (but leave the colors unchanged).
@@ -3154,7 +3141,7 @@ bool AdaptDispatch::_EraseScrollback()
     // Scroll the viewport content to the top of the buffer.
     textBuffer.ScrollRows(top, height, -top);
     // Clear everything after the viewport.
-    _FillRect(textBuffer, { 0, height, bufferSize.width, bufferSize.height }, L' ', {});
+    _FillRect(textBuffer, { 0, height, bufferSize.width, bufferSize.height }, whitespace, {});
     // Also reset the line rendition for all of the cleared rows.
     textBuffer.ResetLineRenditionRange(height, bufferSize.height);
     // Move the viewport
@@ -3201,7 +3188,7 @@ bool AdaptDispatch::_EraseAll()
     // start of the buffer, then we shouldn't move down at all.
     const auto lastChar = textBuffer.GetLastNonSpaceCharacter();
     auto newViewportTop = lastChar == til::point{} ? 0 : lastChar.y + 1;
-    const auto newViewportBottom = newViewportTop + viewportHeight;
+    auto newViewportBottom = newViewportTop + viewportHeight;
     const auto delta = newViewportBottom - (bufferSize.Height());
     if (delta > 0)
     {
@@ -3211,6 +3198,7 @@ bool AdaptDispatch::_EraseAll()
         }
         _api.NotifyBufferRotation(delta);
         newViewportTop -= delta;
+        newViewportBottom -= delta;
         // We don't want to trigger a scroll in pty mode, because we're going to
         // pass through the ED sequence anyway, and this will just result in the
         // buffer being scrolled up by two pages instead of one.
@@ -3227,7 +3215,7 @@ bool AdaptDispatch::_EraseAll()
 
     // Erase all the rows in the current viewport.
     const auto eraseAttributes = _GetEraseAttributes(textBuffer);
-    _FillRect(textBuffer, { 0, newViewportTop, bufferSize.Width(), newViewportBottom }, L' ', eraseAttributes);
+    _FillRect(textBuffer, { 0, newViewportTop, bufferSize.Width(), newViewportBottom }, whitespace, eraseAttributes);
 
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(newViewportTop, newViewportBottom);

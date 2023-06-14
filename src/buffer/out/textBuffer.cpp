@@ -196,7 +196,15 @@ ROW& TextBuffer::GetRowByOffset(const til::CoordType index)
 // Returns a row filled with whitespace and the current attributes, for you to freely use.
 ROW& TextBuffer::GetScratchpadRow()
 {
-    return _getRowByOffsetDirect(0);
+    return GetScratchpadRow(_currentAttributes);
+}
+
+// Returns a row filled with whitespace and the given attributes, for you to freely use.
+ROW& TextBuffer::GetScratchpadRow(const TextAttribute& attributes)
+{
+    auto& r = _getRowByOffsetDirect(0);
+    r.Reset(attributes);
+    return r;
 }
 
 #pragma warning(pop)
@@ -429,10 +437,8 @@ void TextBuffer::ConsumeGrapheme(std::wstring_view& chars) noexcept
     chars = til::utf16_pop(chars);
 }
 
-// This function is intended for writing regular "lines" of text and only the `state.text` and`state.columnBegin`
-// fields are being used, whereas `state.columnLimit` is automatically overwritten by the line width of the given row.
-// This allows this function to automatically set the wrap-forced field of the row, which is also the return value.
-// The return value indicates to the caller whether the cursor should be moved to the next line.
+// This function is intended for writing regular "lines" of text as it'll set the wrap flag on the given row.
+// You can continue calling the function on the same row as long as state.columnEnd < state.columnLimit.
 void TextBuffer::WriteLine(til::CoordType row, bool wrapAtEOL, const TextAttribute& attributes, RowWriteState& state)
 {
     auto& r = GetRowByOffset(row);
@@ -446,6 +452,61 @@ void TextBuffer::WriteLine(til::CoordType row, bool wrapAtEOL, const TextAttribu
     }
 
     TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, state.columnEndDirty, row + 1 }));
+}
+
+// Fills an area of the buffer with a given fill character(s) and attributes.
+void TextBuffer::FillRect(const til::rect& rect, const std::wstring_view& fill, const TextAttribute& attributes)
+{
+    if (!rect || fill.empty())
+    {
+        return;
+    }
+
+    auto& scratchpad = GetScratchpadRow(attributes);
+
+    // The scratchpad row gets reset to whitespace by default, so there's no need to
+    // initialize it again. Filling with whitespace is the most common operation by far.
+    if (fill != L" ")
+    {
+        RowWriteState state{
+            .columnLimit = rect.right,
+            .columnEnd = rect.left,
+        };
+
+        // Fill the scratchpad row with consecutive copies of "fill" up to the amount we need.
+        //
+        // We don't just create a single string with N copies of "fill" and write that at once,
+        // because that might join neighboring combining marks unintentionally.
+        //
+        // Building the buffer this way is very wasteful and slow, but it's still 3x
+        // faster than what we had before and no one complained about that either.
+        // It's seldom used code and probably not worth optimizing for.
+        while (state.columnEnd < rect.right)
+        {
+            state.columnBegin = state.columnEnd;
+            state.text = fill;
+            scratchpad.ReplaceText(state);
+        }
+    }
+
+    // Fill the given rows with copies of the scratchpad row. That's a little
+    // slower when filling just a single row, but will be much faster for >1 rows.
+    {
+        RowCopyTextFromState state{
+            .source = scratchpad,
+            .columnBegin = rect.left,
+            .columnLimit = rect.right,
+            .sourceColumnBegin = rect.left,
+        };
+
+        for (auto y = rect.top; y < rect.bottom; ++y)
+        {
+            auto& r = GetRowByOffset(y);
+            r.CopyTextFrom(state);
+            r.ReplaceAttributes(rect.left, rect.right, attributes);
+            TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, y, state.columnEndDirty, y + 1 }));
+        }
+    }
 }
 
 // Routine Description:

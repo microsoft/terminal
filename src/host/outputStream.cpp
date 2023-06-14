@@ -406,7 +406,7 @@ bool ConhostInternalGetSet::IsVtInputEnabled() const
 void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRect)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
-    if (screenInfo.HasAccessibilityEventing())
+    if (screenInfo.HasAccessibilityEventing() && changedRect)
     {
         screenInfo.NotifyAccessibilityEventing(
             changedRect.left,

@@ -146,8 +146,8 @@ void ROW::TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& a
 
 void ROW::CopyFrom(const ROW& source)
 {
-    til::CoordType begin = 0;
-    CopyTextFrom(0, til::CoordTypeMax, source, begin, til::CoordTypeMax);
+    RowCopyTextFromState state{ .source = source };
+    CopyTextFrom(state);
     TransferAttributes(source.Attributes(), _columnCount);
     _lineRendition = source._lineRendition;
     _wrapForced = source._wrapForced;
@@ -451,46 +451,51 @@ catch (...)
     charsConsumed = ch - chBeg;
 }
 
-til::CoordType ROW::CopyTextFrom(til::CoordType columnBegin, til::CoordType columnLimit, const ROW& other, til::CoordType& otherBegin, til::CoordType otherLimit)
+void ROW::CopyTextFrom(RowCopyTextFromState& state)
 try
 {
-    const auto otherColBeg = other._clampedColumnInclusive(otherBegin);
-    const auto otherColLimit = other._clampedColumnInclusive(otherLimit);
-    std::span<uint16_t> charOffsets;
+    auto& source = state.source;
+    const auto sourceColBeg = source._clampedColumnInclusive(state.sourceColumnBegin);
+    const auto sourceColLimit = source._clampedColumnInclusive(state.sourceColumnLimit);
+    std::span<const uint16_t> charOffsets;
     std::wstring_view chars;
 
-    if (otherColBeg < otherColLimit)
+    if (sourceColBeg < sourceColLimit)
     {
-        charOffsets = other._charOffsets.subspan(otherColBeg, static_cast<size_t>(otherColLimit) - otherColBeg + 1);
+        charOffsets = source._charOffsets.subspan(sourceColBeg, static_cast<size_t>(sourceColLimit) - sourceColBeg + 1);
         const auto charsOffset = charOffsets.front() & CharOffsetsMask;
         // We _are_ using span. But C++ decided that string_view and span aren't convertible.
         // _chars is a std::span for performance and because it refers to raw, shared memory.
 #pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
-        chars = { other._chars.data() + charsOffset, other._chars.size() - charsOffset };
+        chars = { source._chars.data() + charsOffset, source._chars.size() - charsOffset };
     }
 
-    WriteHelper h{ *this, columnBegin, columnLimit, chars };
-    // If we were to copy text from ourselves, we'd overwrite
-    // our _charOffsets and break Finish() which reads from it.
-    if (!h.IsValid() || this == &other)
+    WriteHelper h{ *this, state.columnBegin, state.columnLimit, chars };
+
+    if (!h.IsValid() ||
+        // If we were to copy text from ourselves, we'd overwrite
+        // our _charOffsets and break Finish() which reads from it.
+        this == &state.source ||
+        // Any valid charOffsets array is at least 2 elements long (the 1st element is the start offset and the 2nd
+        // element is the length of the first glyph) and begins/ends with a non-trailer offset. We don't really
+        // need to test for the end offset, since `WriteHelper::WriteWithOffsets` already takes care of that.
+        charOffsets.size() < 2 || WI_IsFlagSet(charOffsets.front(), CharOffsetsTrailer))
     {
-        assert(false); // You probably shouldn't call this function in the first place.
-        return h.colBeg;
+        state.columnEnd = h.colBeg;
+        state.columnBeginDirty = h.colBeg;
+        state.columnEndDirty = h.colBeg;
+        state.sourceColumnEnd = source._columnCount;
+        return;
     }
-    // Any valid charOffsets array is at least 2 elements long (the 1st element is the start offset and the 2nd
-    // element is the length of the first glyph) and begins/ends with a non-trailer offset. We don't really
-    // need to test for the end offset, since `WriteHelper::WriteWithOffsets` already takes care of that.
-    if (charOffsets.size() < 2 || WI_IsFlagSet(charOffsets.front(), CharOffsetsTrailer))
-    {
-        assert(false);
-        otherBegin = other.size();
-        return h.colBeg;
-    }
+
     h.CopyTextFrom(charOffsets);
     h.Finish();
 
-    otherBegin += h.colEnd - h.colBeg;
-    return h.colEndDirty;
+    // state.columnEnd is computed identical to ROW::ReplaceText. Check it out for more information.
+    state.columnEnd = h.charsConsumed == chars.size() ? h.colEnd : h.colLimit;
+    state.columnBeginDirty = h.colBegDirty;
+    state.columnEndDirty = h.colEndDirty;
+    state.sourceColumnEnd = sourceColBeg + h.colEnd - h.colBeg;
 }
 catch (...)
 {
