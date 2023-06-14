@@ -4242,26 +4242,29 @@ namespace winrt::TerminalApp::implementation
                                      const TerminalSettingsCreateResult& controlSettings,
                                      const Profile& profile)
     {
-        // Try to handle auto-elevation
-        const auto requestedElevation = controlSettings.DefaultSettings().Elevate();
-        const auto currentlyElevated = IsRunningElevated();
-
-        // We aren't elevated, but we want to be.
-        if (requestedElevation && !currentlyElevated)
+        // When duplicating a tab there aren't any newTerminalArgs.
+        if (!newTerminalArgs)
         {
-            // Manually set the Profile of the NewTerminalArgs to the guid we've
-            // resolved to. If there was a profile in the NewTerminalArgs, this
-            // will be that profile's GUID. If there wasn't, then we'll use
-            // whatever the default profile's GUID is.
-
-            newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
-
-            newTerminalArgs.StartingDirectory(_evaluatePathForCwd(controlSettings.DefaultSettings().StartingDirectory()));
-
-            _OpenElevatedWT(newTerminalArgs);
-            return true;
+            return false;
         }
-        return false;
+        
+        const auto defaultSettings = controlSettings.DefaultSettings();
+        
+        // If we don't even want to elevate we can return early.
+        // If we're already elevated we can also return, because it doesn't get any more elevated than that.
+        if (!defaultSettings.Elevate() || IsRunningElevated())
+        {
+            return false;
+        }
+        
+        // Manually set the Profile of the NewTerminalArgs to the guid we've
+        // resolved to. If there was a profile in the NewTerminalArgs, this
+        // will be that profile's GUID. If there wasn't, then we'll use
+        // whatever the default profile's GUID is.
+        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+        newTerminalArgs.StartingDirectory(_evaluatePathForCwd(defaultSettings.StartingDirectory()));
+        _OpenElevatedWT(newTerminalArgs);
+        return true;
     }
 
     // Method Description:
