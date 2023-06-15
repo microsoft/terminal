@@ -75,6 +75,7 @@ IConnection
 ICustom
 IDialog
 IDirect
+Idn
 IExplorer
 IFACEMETHOD
 IFile
@@ -86,6 +87,7 @@ IObject
 iosfwd
 IPackage
 IPeasant
+isa
 ISetup
 isspace
 IStorage

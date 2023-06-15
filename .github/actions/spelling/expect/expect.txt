@@ -1,4 +1,5 @@
 aabbcc
+aarch
 ABANDONFONT
 abbcc
 ABCDEFGHIJKLMNOPQRSTUVWXY
@@ -157,7 +158,6 @@ capslock
 CARETBLINKINGENABLED
 CARRIAGERETURN
 cascadia
-castsi
 catid
 cazamor
 CBash
@@ -216,11 +216,11 @@ cmder
 CMDEXT
 cmh
 CMOUSEBUTTONS
-cmpeq
 cmt
 cmw
 cmyk
 CNL
+cnn
 cnt
 CNTRL
 Codeflow
@@ -260,7 +260,6 @@ condrv
 conechokey
 conemu
 configurability
-confusables
 conhost
 conime
 conimeinfo
@@ -424,6 +423,7 @@ DECDHL
 decdld
 DECDMAC
 DECDWL
+DECECM
 DECEKBD
 DECERA
 DECFI
@@ -439,6 +439,7 @@ DECMSR
 DECNKM
 DECNRCM
 DECOM
+decommit
 DECPCTERM
 DECPS
 DECRARA
@@ -813,7 +814,6 @@ HIBYTE
 hicon
 HIDEWINDOW
 hinst
-Hirots
 HISTORYBUFS
 HISTORYNODUP
 HISTORYSIZE
@@ -830,6 +830,8 @@ HMK
 hmod
 hmodule
 hmon
+homeglyphs
+homoglyph
 HORZ
 hostable
 hostlib
@@ -984,6 +986,7 @@ KVM
 langid
 LANGUAGELIST
 lasterror
+LASTEXITCODE
 lastexitcode
 LAYOUTRTL
 lbl
@@ -1020,7 +1023,6 @@ lnkd
 lnkfile
 LNM
 LOADONCALL
-loadu
 LOBYTE
 localappdata
 locsrc
@@ -1151,7 +1153,6 @@ MOUSEACTIVATE
 MOUSEFIRST
 MOUSEHWHEEL
 MOUSEMOVE
-movemask
 MOVESTART
 msb
 msctf
@@ -1287,7 +1288,6 @@ nullability
 nullness
 nullonfailure
 nullopts
-NULs
 numlock
 numpad
 NUMSCROLL
@@ -1776,7 +1776,6 @@ somefile
 SOURCEBRANCH
 sourced
 spammy
-spand
 SRCCODEPAGE
 SRCCOPY
 SRCINVERT
@@ -2302,7 +2301,6 @@ xunit
 xutr
 XVIRTUALSCREEN
 XWalk
-xwwyzz
 xxyyzz
 yact
 YCast

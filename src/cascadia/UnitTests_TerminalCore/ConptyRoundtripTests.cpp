@@ -1200,7 +1200,9 @@ void ConptyRoundtripTests::PassthroughHardReset()
     }
 
     // Write a Hard Reset VT sequence to the host, it should come through to the Terminal
+    // along with a DECSET sequence to re-enable win32 input and focus events.
     expectedOutput.push_back("\033c");
+    expectedOutput.push_back("\033[?9001;1004h");
     hostSm.ProcessString(L"\033c");
 
     const auto termSecondView = term->GetViewport();

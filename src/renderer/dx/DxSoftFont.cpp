@@ -23,17 +23,6 @@ constexpr size_t BITMAP_GRID_WIDTH = 12;
 constexpr size_t BITMAP_GRID_HEIGHT = 8;
 constexpr size_t PADDING = 2;
 
-constexpr auto ANTIALIASED_INTERPOLATION = D2D1_SCALE_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC;
-constexpr auto ALIASED_INTERPOLATION = D2D1_SCALE_INTERPOLATION_MODE_NEAREST_NEIGHBOR;
-
-DxSoftFont::DxSoftFont() noexcept :
-    _centeringHint{},
-    _interpolation{ ANTIALIASED_INTERPOLATION },
-    _colorMatrix{}
-{
-    _colorMatrix.m[0][3] = 1;
-}
-
 void DxSoftFont::SetFont(const std::span<const uint16_t> bitPattern,
                          const til::size sourceSize,
                          const til::size targetSize,
