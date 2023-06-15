@@ -9,6 +9,8 @@
 #include "textBuffer.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 
+extern "C" int __isa_available;
+
 // The STL is missing a std::iota_n analogue for std::iota, so I made my own.
 template<typename OutIt, typename Diff, typename T>
 constexpr OutIt iota_n(OutIt dest, Diff count, T val)
@@ -134,8 +136,117 @@ void ROW::Reset(const TextAttribute& attr)
 
 void ROW::_init() noexcept
 {
-    std::fill_n(_chars.begin(), _columnCount, UNICODE_SPACE);
+#pragma warning(push)
+#pragma warning(disable : 26462) // The value pointed to by '...' is assigned only once, mark it as a pointer to const (con.4).
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
+
+    // Fills _charsBuffer with whitespace and correspondingly _charOffsets
+    // with successive numbers from 0 to _columnCount+1.
+#if defined(TIL_SSE_INTRINSICS)
+    alignas(__m256i) static constexpr uint16_t whitespaceData[]{ 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20 };
+    alignas(__m256i) static constexpr uint16_t offsetsData[]{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+    alignas(__m256i) static constexpr uint16_t increment16Data[]{ 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16 };
+    alignas(__m128i) static constexpr uint16_t increment8Data[]{ 8, 8, 8, 8, 8, 8, 8, 8 };
+
+    // The AVX loop operates on 32 bytes at a minimum. Since _charsBuffer/_charOffsets uses 2 byte large
+    // wchar_t/uint16_t respectively, this translates to 16-element writes, which equals a _columnCount of 15,
+    // because it doesn't include the past-the-end char-offset as described in the _charOffsets member comment.
+    if (__isa_available >= __ISA_AVAILABLE_AVX2 && _columnCount >= 15)
+    {
+        auto chars = _charsBuffer;
+        auto charOffsets = _charOffsets.data();
+
+        // The backing buffer for both chars and charOffsets is guaranteed to be 16-byte aligned,
+        // but AVX operations are 32-byte large. As such, when we write out the last chunk, we
+        // have to align it to the ends of the 2 buffers. This results in a potential overlap of
+        // 16 bytes between the last write in the main loop below and the final write afterwards.
+        //
+        // An example:
+        // If you have a terminal between 16 and 23 columns the buffer has a size of 48 bytes.
+        // The main loop below will iterate once, as it writes out bytes 0-31 and then exits.
+        // The final write afterwards cannot write bytes 32-63 because that would write
+        // out of bounds. Instead it writes bytes 16-47, overwriting 16 overlapping bytes.
+        // This is better than branching and switching to SSE2, because both things are slow.
+        //
+        // Since we want to exit the main loop with at least 1 write left to do as the final write,
+        // we need to subtract 1 alignment from the buffer length (= 16 bytes). Since _columnCount is
+        // in wchar_t's we subtract -8. The same applies to the ~7 here vs ~15. If you squint slightly
+        // you'll see how this is effectively the inverse of what CalculateCharsBufferStride does.
+        const auto tailColumnOffset = gsl::narrow_cast<uint16_t>((_columnCount - 8u) & ~7);
+        const auto charsEndLoop = chars + tailColumnOffset;
+        const auto charOffsetsEndLoop = charOffsets + tailColumnOffset;
+
+        const auto whitespace = _mm256_load_si256(reinterpret_cast<const __m256i*>(&whitespaceData[0]));
+        auto offsetsLoop = _mm256_load_si256(reinterpret_cast<const __m256i*>(&offsetsData[0]));
+        const auto offsets = _mm256_add_epi16(offsetsLoop, _mm256_set1_epi16(tailColumnOffset));
+
+        if (chars < charsEndLoop)
+        {
+            const auto increment = _mm256_load_si256(reinterpret_cast<const __m256i*>(&increment16Data[0]));
+
+            do
+            {
+                _mm256_storeu_si256(reinterpret_cast<__m256i*>(chars), whitespace);
+                _mm256_storeu_si256(reinterpret_cast<__m256i*>(charOffsets), offsetsLoop);
+                offsetsLoop = _mm256_add_epi16(offsetsLoop, increment);
+                chars += 16;
+                charOffsets += 16;
+            } while (chars < charsEndLoop);
+        }
+
+        _mm256_storeu_si256(reinterpret_cast<__m256i*>(charsEndLoop), whitespace);
+        _mm256_storeu_si256(reinterpret_cast<__m256i*>(charOffsetsEndLoop), offsets);
+    }
+    else
+    {
+        auto chars = _charsBuffer;
+        auto charOffsets = _charOffsets.data();
+        const auto charsEnd = chars + _columnCount;
+
+        const auto whitespace = _mm_load_si128(reinterpret_cast<const __m128i*>(&whitespaceData[0]));
+        const auto increment = _mm_load_si128(reinterpret_cast<const __m128i*>(&increment8Data[0]));
+        auto offsets = _mm_load_si128(reinterpret_cast<const __m128i*>(&offsetsData[0]));
+
+        do
+        {
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(chars), whitespace);
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(charOffsets), offsets);
+            offsets = _mm_add_epi16(offsets, increment);
+            chars += 8;
+            charOffsets += 8;
+            // If _columnCount is something like 120, the actual backing buffer for charOffsets is 121 items large.
+            // --> The while loop uses <= to emit at least 1 more write.
+        } while (chars <= charsEnd);
+    }
+#elif defined(TIL_ARM_NEON_INTRINSICS)
+    alignas(uint16x8_t) static constexpr uint16_t offsetsData[]{ 0, 1, 2, 3, 4, 5, 6, 7 };
+
+    auto chars = _charsBuffer;
+    auto charOffsets = _charOffsets.data();
+    const auto charsEnd = chars + _columnCount;
+
+    const auto whitespace = vdupq_n_u16(L' ');
+    const auto increment = vdupq_n_u16(8);
+    auto offsets = vld1q_u16(&offsetsData[0]);
+
+    do
+    {
+        vst1q_u16(chars, whitespace);
+        vst1q_u16(charOffsets, offsets);
+        offsets = vaddq_u16(offsets, increment);
+        chars += 8;
+        charOffsets += 8;
+        // If _columnCount is something like 120, the actual backing buffer for charOffsets is 121 items large.
+        // --> The while loop uses <= to emit at least 1 more write.
+    } while (chars <= charsEnd);
+#else
+#error "Vectorizing this function improves overall performance by up to 40%. Don't remove this warning, just add the vectorized code."
+    std::fill_n(_charsBuffer, _columnCount, UNICODE_SPACE);
     std::iota(_charOffsets.begin(), _charOffsets.end(), uint16_t{ 0 });
+#endif
+
+#pragma warning(push)
 }
 
 void ROW::TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth)

@@ -1,4 +1,5 @@
 aabbcc
+aarch
 ABANDONFONT
 abbcc
 ABCDEFGHIJKLMNOPQRSTUVWXY
@@ -157,7 +158,6 @@ capslock
 CARETBLINKINGENABLED
 CARRIAGERETURN
 cascadia
-castsi
 catid
 cazamor
 CBash
@@ -216,7 +216,6 @@ cmder
 CMDEXT
 cmh
 CMOUSEBUTTONS
-cmpeq
 cmt
 cmw
 cmyk
@@ -1024,7 +1023,6 @@ lnkd
 lnkfile
 LNM
 LOADONCALL
-loadu
 LOBYTE
 localappdata
 locsrc
@@ -1155,7 +1153,6 @@ MOUSEACTIVATE
 MOUSEFIRST
 MOUSEHWHEEL
 MOUSEMOVE
-movemask
 MOVESTART
 msb
 msctf
