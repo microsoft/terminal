@@ -4247,16 +4247,16 @@ namespace winrt::TerminalApp::implementation
         {
             return false;
         }
-        
+
         const auto defaultSettings = controlSettings.DefaultSettings();
-        
+
         // If we don't even want to elevate we can return early.
         // If we're already elevated we can also return, because it doesn't get any more elevated than that.
         if (!defaultSettings.Elevate() || IsRunningElevated())
         {
             return false;
         }
-        
+
         // Manually set the Profile of the NewTerminalArgs to the guid we've
         // resolved to. If there was a profile in the NewTerminalArgs, this
         // will be that profile's GUID. If there wasn't, then we'll use
