@@ -1711,7 +1711,7 @@
       ]
     },
     "SearchWebAction": {
-      "description": "Search online for selected text",
+      "description": "Search the web for selected text",
       "allOf": [
         {
           "$ref": "#/$defs/ShortcutAction"
@@ -1724,12 +1724,7 @@
             },
             "queryUrl": {
               "type": "string",
-              "description": "URL of the web page to launch (the selected text is appended to it)"
-            },
-            "wrapWithQuotes": {
-              "type": "boolean",
-              "default": true,
-              "description": "When true (default), the selected text is wrapped with quotes"
+              "description": "URL of the web page to launch, %s is replaced with the selected text"
             }
           }
         }

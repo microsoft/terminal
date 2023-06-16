@@ -700,11 +700,11 @@
     <value>Select previous command</value>
   </data>
   <data name="SearchForTextCommandKey" xml:space="preserve">
-    <value>Search online for selected text with '{0}'</value>
+    <value>Search {0}</value>
     <comment>{0} will be replaced with a user-specified URL to a web page</comment>
   </data>
   <data name="SearchWebCommandKey" xml:space="preserve">
-    <value>Search for selected text</value>
+    <value>Search the web for selected text</value>
     <comment>This will open a web browser to search for some user-selected text</comment>
   </data>
 </root>

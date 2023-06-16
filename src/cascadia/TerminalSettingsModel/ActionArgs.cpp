@@ -770,7 +770,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"SearchForTextCommandKey")),
-                        QueryUrl().c_str())
+                        Windows::Foundation::Uri(QueryUrl()).Domain().c_str())
         };
     }
 

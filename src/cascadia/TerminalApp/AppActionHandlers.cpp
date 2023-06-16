@@ -1040,15 +1040,15 @@ namespace winrt::TerminalApp::implementation
                         // make it compact by replacing consecutive whitespaces with a single space
                         searchText = std::regex_replace(searchText, std::wregex(LR"(\s+)"), L" ");
 
-                        if (realArgs.WrapWithQuotes())
+                        std::wstring queryUrl = realArgs.QueryUrl().empty() ? _settings.GlobalSettings().SearchWebDefaultQueryUrl().c_str() : realArgs.QueryUrl().c_str();
+
+                        constexpr std::wstring_view queryToken{ L"%s" };
+                        if (const auto pos{ queryUrl.find(queryToken) }; pos != std::wstring_view::npos)
                         {
-                            searchText.insert(searchText.begin(), L'"');
-                            searchText.push_back(L'"');
+                            queryUrl.replace(pos, queryToken.length(), Windows::Foundation::Uri::EscapeComponent(searchText));
                         }
 
-                        const auto queryUrl = realArgs.QueryUrl().empty() ? _settings.GlobalSettings().SearchWebDefaultQueryUrl() : realArgs.QueryUrl();
-                        const auto finalString = queryUrl + Windows::Foundation::Uri::EscapeComponent(searchText);
-                        winrt::Microsoft::Terminal::Control::OpenHyperlinkEventArgs shortcut{ finalString };
+                        winrt::Microsoft::Terminal::Control::OpenHyperlinkEventArgs shortcut{ queryUrl };
                         _OpenHyperlinkHandler(termControl, shortcut);
                         args.Handled(true);
                     }
