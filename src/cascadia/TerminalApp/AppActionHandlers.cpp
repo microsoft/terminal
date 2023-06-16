@@ -1040,13 +1040,9 @@ namespace winrt::TerminalApp::implementation
                         // make it compact by replacing consecutive whitespaces with a single space
                         searchText = std::regex_replace(searchText, std::wregex(LR"(\s+)"), L" ");
 
-                        if (realArgs.WrapWithQuotes())
-                        {
-                            searchText.insert(searchText.begin(), L'"');
-                            searchText.push_back(L'"');
-                        }
-
                         const auto queryUrl = realArgs.QueryUrl().empty() ? _settings.GlobalSettings().SearchWebDefaultQueryUrl() : realArgs.QueryUrl();
+
+                        // TODO: replace %s with search text
                         const auto finalString = queryUrl + Windows::Foundation::Uri::EscapeComponent(searchText);
                         winrt::Microsoft::Terminal::Control::OpenHyperlinkEventArgs shortcut{ finalString };
                         _OpenHyperlinkHandler(termControl, shortcut);

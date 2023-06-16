@@ -230,8 +230,7 @@ private:                                                                    \
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SEARCH_FOR_TEXT_ARGS(X)                         \
-    X(winrt::hstring, QueryUrl, "queryUrl", false, L"") \
-    X(bool, WrapWithQuotes, "wrapWithQuotes", false, true)
+    X(winrt::hstring, QueryUrl, "queryUrl", false, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define GLOBAL_SUMMON_ARGS(X)                                                               \
