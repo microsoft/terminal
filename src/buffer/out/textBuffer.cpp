@@ -406,9 +406,8 @@ bool TextBuffer::_AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribut
 //Return Value:
 // - true if we successfully prepared the buffer and moved the cursor
 // - false otherwise (out of memory)
-bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute)
+void TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute)
 {
-    auto fSuccess = true;
     // Now compensate if we don't have enough space for the upcoming double byte sequence
     // We only need to compensate for leading bytes
     if (dbcsAttribute == DbcsAttribute::Leading)
@@ -424,10 +423,9 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
             row.SetDoubleBytePadded(true);
 
             // then move the cursor forward and onto the next row
-            fSuccess = IncrementCursor();
+            IncrementCursor();
         }
     }
-    return fSuccess;
 }
 
 void TextBuffer::ConsumeGrapheme(std::wstring_view& chars) noexcept
@@ -602,53 +600,37 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
 //Return Value:
 // - true if we successfully inserted the character
 // - false otherwise (out of memory)
-bool TextBuffer::InsertCharacter(const std::wstring_view chars,
+void TextBuffer::InsertCharacter(const std::wstring_view chars,
                                  const DbcsAttribute dbcsAttribute,
                                  const TextAttribute attr)
 {
     // Ensure consistent buffer state for double byte characters based on the character type we're about to insert
-    auto fSuccess = _PrepareForDoubleByteSequence(dbcsAttribute);
+    _PrepareForDoubleByteSequence(dbcsAttribute);
 
-    if (fSuccess)
+    // Get the current cursor position
+    const auto iRow = GetCursor().GetPosition().y; // row stored as logical position, not array position
+    const auto iCol = GetCursor().GetPosition().x; // column logical and array positions are equal.
+
+    // Get the row associated with the given logical position
+    auto& Row = GetRowByOffset(iRow);
+
+    // Store character and double byte data
+    switch (dbcsAttribute)
     {
-        // Get the current cursor position
-        const auto iRow = GetCursor().GetPosition().y; // row stored as logical position, not array position
-        const auto iCol = GetCursor().GetPosition().x; // column logical and array positions are equal.
-
-        // Get the row associated with the given logical position
-        auto& Row = GetRowByOffset(iRow);
-
-        // Store character and double byte data
-        try
-        {
-            switch (dbcsAttribute)
-            {
-            case DbcsAttribute::Leading:
-                Row.ReplaceCharacters(iCol, 2, chars);
-                break;
-            case DbcsAttribute::Trailing:
-                Row.ReplaceCharacters(iCol - 1, 2, chars);
-                break;
-            default:
-                Row.ReplaceCharacters(iCol, 1, chars);
-                break;
-            }
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
-            return false;
-        }
-
-        // Store color data
-        fSuccess = Row.SetAttrToEnd(iCol, attr);
-        if (fSuccess)
-        {
-            // Advance the cursor
-            fSuccess = IncrementCursor();
-        }
+    case DbcsAttribute::Leading:
+        Row.ReplaceCharacters(iCol, 2, chars);
+        break;
+    case DbcsAttribute::Trailing:
+        Row.ReplaceCharacters(iCol - 1, 2, chars);
+        break;
+    default:
+        Row.ReplaceCharacters(iCol, 1, chars);
+        break;
     }
-    return fSuccess;
+
+    // Store color data
+    Row.SetAttrToEnd(iCol, attr);
+    IncrementCursor();
 }
 
 //Routine Description:
@@ -660,9 +642,9 @@ bool TextBuffer::InsertCharacter(const std::wstring_view chars,
 //Return Value:
 // - true if we successfully inserted the character
 // - false otherwise (out of memory)
-bool TextBuffer::InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr)
+void TextBuffer::InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr)
 {
-    return InsertCharacter({ &wch, 1 }, dbcsAttribute, attr);
+    InsertCharacter({ &wch, 1 }, dbcsAttribute, attr);
 }
 
 //Routine Description:
@@ -701,7 +683,7 @@ void TextBuffer::_AdjustWrapOnCurrentRow(const bool fSet)
 //Return Value:
 // - true if we successfully moved the cursor.
 // - false otherwise (out of memory)
-bool TextBuffer::IncrementCursor()
+void TextBuffer::IncrementCursor()
 {
     // Cursor position is stored as logical array indices (starts at 0) for the window
     // Buffer Size is specified as the "length" of the array. It would say 80 for valid values of 0-79.
@@ -711,7 +693,6 @@ bool TextBuffer::IncrementCursor()
     // Move the cursor one position to the right
     GetCursor().IncrementXPosition(1);
 
-    auto fSuccess = true;
     // If we've passed the final valid column...
     if (GetCursor().GetPosition().x > iFinalColumnIndex)
     {
@@ -719,9 +700,8 @@ bool TextBuffer::IncrementCursor()
         _SetWrapOnCurrentRow();
 
         // Then move the cursor to a new line
-        fSuccess = NewlineCursor();
+        NewlineCursor();
     }
-    return fSuccess;
 }
 
 //Routine Description:
@@ -730,9 +710,8 @@ bool TextBuffer::IncrementCursor()
 // - <none>
 //Return Value:
 // - true if we successfully moved the cursor.
-bool TextBuffer::NewlineCursor()
+void TextBuffer::NewlineCursor()
 {
-    auto fSuccess = false;
     const auto iFinalRowIndex = GetSize().BottomInclusive();
 
     // Reset the cursor position to 0 and move down one line
@@ -746,13 +725,8 @@ bool TextBuffer::NewlineCursor()
         GetCursor().SetYPosition(iFinalRowIndex);
 
         // Instead increment the circular buffer to move us into the "oldest" row of the backing buffer
-        fSuccess = IncrementCircularBuffer();
+        IncrementCircularBuffer();
     }
-    else
-    {
-        fSuccess = true;
-    }
-    return fSuccess;
 }
 
 //Routine Description:
@@ -761,7 +735,7 @@ bool TextBuffer::NewlineCursor()
 // - fillAttributes - the attributes with which the recycled row will be initialized.
 //Return Value:
 // - true if we successfully incremented the buffer.
-bool TextBuffer::IncrementCircularBuffer(const TextAttribute& fillAttributes)
+void TextBuffer::IncrementCircularBuffer(const TextAttribute& fillAttributes)
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
@@ -786,7 +760,6 @@ bool TextBuffer::IncrementCircularBuffer(const TextAttribute& fillAttributes)
             _firstRow = 0;
         }
     }
-    return true;
 }
 
 //Routine Description:
@@ -2401,6 +2374,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                            TextBuffer& newBuffer,
                            const std::optional<Viewport> lastCharacterViewport,
                            std::optional<std::reference_wrapper<PositionInformation>> positionInfo)
+try
 {
     const auto& oldCursor = oldBuffer.GetCursor();
     auto& newCursor = newBuffer.GetCursor();
@@ -2417,7 +2391,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     auto fFoundCursorPos = false;
     auto foundOldMutable = false;
     auto foundOldVisible = false;
-    auto hr = S_OK;
     // Loop through all the rows of the old buffer and reprint them into the new buffer
     til::CoordType iOldRow = 0;
     for (; iOldRow < cOldRowsTotal; iOldRow++)
@@ -2473,20 +2446,12 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                 fFoundCursorPos = true;
             }
 
-            try
-            {
-                // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
-                const auto glyph = row.GlyphAt(iOldCol);
-                const auto dbcsAttr = row.DbcsAttrAt(iOldCol);
-                const auto textAttr = row.GetAttrByColumn(iOldCol);
+            // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
+            const auto glyph = row.GlyphAt(iOldCol);
+            const auto dbcsAttr = row.DbcsAttrAt(iOldCol);
+            const auto textAttr = row.GetAttrByColumn(iOldCol);
 
-                if (!newBuffer.InsertCharacter(glyph, dbcsAttr, textAttr))
-                {
-                    hr = E_OUTOFMEMORY;
-                    break;
-                }
-            }
-            CATCH_RETURN();
+            newBuffer.InsertCharacter(glyph, dbcsAttr, textAttr);
         }
 
         // GH#32: Copy the attributes from the rest of the row into this new buffer.
@@ -2519,16 +2484,9 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
              copyAttrCol < cOldColsTotal && newAttrColumn < newWidth;
              copyAttrCol++, newAttrColumn++)
         {
-            try
-            {
-                // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
-                const auto textAttr = row.GetAttrByColumn(copyAttrCol);
-                if (!newRow.SetAttrToEnd(newAttrColumn, textAttr))
-                {
-                    break;
-                }
-            }
-            CATCH_LOG(); // Not worth dying over.
+            // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
+            const auto textAttr = row.GetAttrByColumn(copyAttrCol);
+            newRow.SetAttrToEnd(newAttrColumn, textAttr);
         }
 
         // If we found the old row that the caller was interested in, set the
@@ -2555,61 +2513,58 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             }
         }
 
-        if (SUCCEEDED(hr))
+        // If we didn't have a full row to copy, insert a new
+        // line into the new buffer.
+        // Only do so if we were not forced to wrap. If we did
+        // force a word wrap, then the existing line break was
+        // only because we ran out of space.
+        if (iRight < cOldColsTotal && !row.WasWrapForced())
         {
-            // If we didn't have a full row to copy, insert a new
-            // line into the new buffer.
-            // Only do so if we were not forced to wrap. If we did
-            // force a word wrap, then the existing line break was
-            // only because we ran out of space.
-            if (iRight < cOldColsTotal && !row.WasWrapForced())
+            if (!fFoundCursorPos && (iRight == cOldCursorPos.x && iOldRow == cOldCursorPos.y))
             {
-                if (!fFoundCursorPos && (iRight == cOldCursorPos.x && iOldRow == cOldCursorPos.y))
+                cNewCursorPos = newCursor.GetPosition();
+                fFoundCursorPos = true;
+            }
+            // Only do this if it's not the final line in the buffer.
+            // On the final line, we want the cursor to sit
+            // where it is done printing for the cursor
+            // adjustment to follow.
+            if (iOldRow < cOldRowsTotal - 1)
+            {
+                newBuffer.NewlineCursor();
+            }
+            else
+            {
+                // If we are on the final line of the buffer, we have one more check.
+                // We got into this code path because we are at the right most column of a row in the old buffer
+                // that had a hard return (no wrap was forced).
+                // However, as we're inserting, the old row might have just barely fit into the new buffer and
+                // caused a new soft return (wrap was forced) putting the cursor at x=0 on the line just below.
+                // We need to preserve the memory of the hard return at this point by inserting one additional
+                // hard newline, otherwise we've lost that information.
+                // We only do this when the cursor has just barely poured over onto the next line so the hard return
+                // isn't covered by the soft one.
+                // e.g.
+                // The old line was:
+                // |aaaaaaaaaaaaaaaaaaa | with no wrap which means there was a newline after that final a.
+                // The cursor was here ^
+                // And the new line will be:
+                // |aaaaaaaaaaaaaaaaaaa| and show a wrap at the end
+                // |                   |
+                //  ^ and the cursor is now there.
+                // If we leave it like this, we've lost the newline information.
+                // So we insert one more newline so a continued reflow of this buffer by resizing larger will
+                // continue to look as the original output intended with the newline data.
+                // After this fix, it looks like this:
+                // |aaaaaaaaaaaaaaaaaaa| no wrap at the end (preserved hard newline)
+                // |                   |
+                //  ^ and the cursor is now here.
+                const auto coordNewCursor = newCursor.GetPosition();
+                if (coordNewCursor.x == 0 && coordNewCursor.y > 0)
                 {
-                    cNewCursorPos = newCursor.GetPosition();
-                    fFoundCursorPos = true;
-                }
-                // Only do this if it's not the final line in the buffer.
-                // On the final line, we want the cursor to sit
-                // where it is done printing for the cursor
-                // adjustment to follow.
-                if (iOldRow < cOldRowsTotal - 1)
-                {
-                    hr = newBuffer.NewlineCursor() ? hr : E_OUTOFMEMORY;
-                }
-                else
-                {
-                    // If we are on the final line of the buffer, we have one more check.
-                    // We got into this code path because we are at the right most column of a row in the old buffer
-                    // that had a hard return (no wrap was forced).
-                    // However, as we're inserting, the old row might have just barely fit into the new buffer and
-                    // caused a new soft return (wrap was forced) putting the cursor at x=0 on the line just below.
-                    // We need to preserve the memory of the hard return at this point by inserting one additional
-                    // hard newline, otherwise we've lost that information.
-                    // We only do this when the cursor has just barely poured over onto the next line so the hard return
-                    // isn't covered by the soft one.
-                    // e.g.
-                    // The old line was:
-                    // |aaaaaaaaaaaaaaaaaaa | with no wrap which means there was a newline after that final a.
-                    // The cursor was here ^
-                    // And the new line will be:
-                    // |aaaaaaaaaaaaaaaaaaa| and show a wrap at the end
-                    // |                   |
-                    //  ^ and the cursor is now there.
-                    // If we leave it like this, we've lost the newline information.
-                    // So we insert one more newline so a continued reflow of this buffer by resizing larger will
-                    // continue to look as the original output intended with the newline data.
-                    // After this fix, it looks like this:
-                    // |aaaaaaaaaaaaaaaaaaa| no wrap at the end (preserved hard newline)
-                    // |                   |
-                    //  ^ and the cursor is now here.
-                    const auto coordNewCursor = newCursor.GetPosition();
-                    if (coordNewCursor.x == 0 && coordNewCursor.y > 0)
+                    if (newBuffer.GetRowByOffset(coordNewCursor.y - 1).WasWrapForced())
                     {
-                        if (newBuffer.GetRowByOffset(coordNewCursor.y - 1).WasWrapForced())
-                        {
-                            hr = newBuffer.NewlineCursor() ? hr : E_OUTOFMEMORY;
-                        }
+                        newBuffer.NewlineCursor();
                     }
                 }
             }
@@ -2642,77 +2597,61 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         newRowY++;
     }
 
-    if (SUCCEEDED(hr))
-    {
-        // Finish copying remaining parameters from the old text buffer to the new one
-        newBuffer.CopyProperties(oldBuffer);
-        newBuffer.CopyHyperlinkMaps(oldBuffer);
-        newBuffer.CopyPatterns(oldBuffer);
+    // Finish copying remaining parameters from the old text buffer to the new one
+    newBuffer.CopyProperties(oldBuffer);
+    newBuffer.CopyHyperlinkMaps(oldBuffer);
+    newBuffer.CopyPatterns(oldBuffer);
 
-        // If we found where to put the cursor while placing characters into the buffer,
-        //   just put the cursor there. Otherwise we have to advance manually.
-        if (fFoundCursorPos)
+    // If we found where to put the cursor while placing characters into the buffer,
+    //   just put the cursor there. Otherwise we have to advance manually.
+    if (fFoundCursorPos)
+    {
+        newCursor.SetPosition(cNewCursorPos);
+    }
+    else
+    {
+        // Advance the cursor to the same offset as before
+        // get the number of newlines and spaces between the old end of text and the old cursor,
+        //   then advance that many newlines and chars
+        auto iNewlines = cOldCursorPos.y - cOldLastChar.y;
+        const auto iIncrements = cOldCursorPos.x - cOldLastChar.x;
+        const auto cNewLastChar = newBuffer.GetLastNonSpaceCharacter();
+
+        // If the last row of the new buffer wrapped, there's going to be one less newline needed,
+        //   because the cursor is already on the next line
+        if (newBuffer.GetRowByOffset(cNewLastChar.y).WasWrapForced())
         {
-            newCursor.SetPosition(cNewCursorPos);
+            iNewlines = std::max(iNewlines - 1, 0);
         }
         else
         {
-            // Advance the cursor to the same offset as before
-            // get the number of newlines and spaces between the old end of text and the old cursor,
-            //   then advance that many newlines and chars
-            auto iNewlines = cOldCursorPos.y - cOldLastChar.y;
-            const auto iIncrements = cOldCursorPos.x - cOldLastChar.x;
-            const auto cNewLastChar = newBuffer.GetLastNonSpaceCharacter();
-
-            // If the last row of the new buffer wrapped, there's going to be one less newline needed,
-            //   because the cursor is already on the next line
-            if (newBuffer.GetRowByOffset(cNewLastChar.y).WasWrapForced())
+            // if this buffer didn't wrap, but the old one DID, then the d(columns) of the
+            //   old buffer will be one more than in this buffer, so new need one LESS.
+            if (oldBuffer.GetRowByOffset(cOldLastChar.y).WasWrapForced())
             {
                 iNewlines = std::max(iNewlines - 1, 0);
             }
-            else
-            {
-                // if this buffer didn't wrap, but the old one DID, then the d(columns) of the
-                //   old buffer will be one more than in this buffer, so new need one LESS.
-                if (oldBuffer.GetRowByOffset(cOldLastChar.y).WasWrapForced())
-                {
-                    iNewlines = std::max(iNewlines - 1, 0);
-                }
-            }
+        }
 
-            for (auto r = 0; r < iNewlines; r++)
-            {
-                if (!newBuffer.NewlineCursor())
-                {
-                    hr = E_OUTOFMEMORY;
-                    break;
-                }
-            }
-            if (SUCCEEDED(hr))
-            {
-                for (auto c = 0; c < iIncrements - 1; c++)
-                {
-                    if (!newBuffer.IncrementCursor())
-                    {
-                        hr = E_OUTOFMEMORY;
-                        break;
-                    }
-                }
-            }
+        for (auto r = 0; r < iNewlines; r++)
+        {
+            newBuffer.NewlineCursor();
+        }
+        for (auto c = 0; c < iIncrements - 1; c++)
+        {
+            newBuffer.IncrementCursor();
         }
     }
 
-    if (SUCCEEDED(hr))
-    {
-        // Save old cursor size before we delete it
-        const auto ulSize = oldCursor.GetSize();
+    // Save old cursor size before we delete it
+    const auto ulSize = oldCursor.GetSize();
 
-        // Set size back to real size as it will be taking over the rendering duties.
-        newCursor.SetSize(ulSize);
-    }
+    // Set size back to real size as it will be taking over the rendering duties.
+    newCursor.SetSize(ulSize);
 
-    return hr;
+    return S_OK;
 }
+CATCH_RETURN()
 
 // Method Description:
 // - Adds or updates a hyperlink in our hyperlink table

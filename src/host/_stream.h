@@ -35,10 +35,7 @@ Arguments:
 
 Return Value:
 --*/
-[[nodiscard]] NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
-                                            _In_ til::point coordCursor,
-                                            const BOOL fKeepCursorVisible,
-                                            _Inout_opt_ til::CoordType* psScrollY);
+void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point coordCursor, const BOOL fKeepCursorVisible, _Inout_opt_ til::CoordType* psScrollY);
 
 /*++
 Routine Description:
