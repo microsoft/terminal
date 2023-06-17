@@ -245,10 +245,6 @@ jobs:
         TargetFolder: $(Build.ArtifactStagingDirectory)/appx
         OverWrite: true
         flattenFolders: true
-    - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
-      displayName: 'Generate SBOM manifest'
-      inputs:
-       BuildDropPath: '$(System.ArtifactsDirectory)/appx'
 
     - pwsh: |-
         $Package = (Get-ChildItem "$(Build.ArtifactStagingDirectory)/appx" -Recurse -Filter "Cascadia*.msix" | Select -First 1)
@@ -271,20 +267,28 @@ jobs:
         & "$(MakeAppxPath)" pack /h SHA256 /o /p $PackageFilename /d "$(Build.SourcesDirectory)\UnpackedTerminalPackage"
       displayName: Re-pack the new Terminal package after signing
 
-    - task: PublishBuildArtifacts@1
-      displayName: Publish Artifact (appx)
-      inputs:
-        PathtoPublish: $(Build.ArtifactStagingDirectory)/appx
-        ArtifactName: appx-$(BuildPlatform)-$(BuildConfiguration)
-
     - pwsh: |-
         $XamlAppxPath = (Get-Item "src\cascadia\CascadiaPackage\AppPackages\*\Dependencies\$(BuildPlatform)\Microsoft.UI.Xaml*.appx").FullName
-        & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 -TerminalAppX $(WindowsTerminalPackagePath) -XamlAppX $XamlAppxPath -Destination "$(Build.ArtifactStagingDirectory)/unpackaged"
+        & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 -TerminalAppX $(WindowsTerminalPackagePath) -XamlAppX $XamlAppxPath -Destination "$(Build.ArtifactStagingDirectory)/appx"
       displayName: Build Unpackaged Distribution
 
-    - publish: $(Build.ArtifactStagingDirectory)/unpackaged
-      artifact: unpackaged-$(BuildPlatform)-$(BuildConfiguration)
-      displayName: Publish Artifact (unpackaged)
+    - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
+      displayName: 'Generate SBOM manifest'
+      inputs:
+       BuildDropPath: '$(System.ArtifactsDirectory)/appx'
+
+    - task: DropValidatorTask@0
+      inputs:
+        BuildDropPath: '$(System.ArtifactsDirectory)/appx'
+        OutputPath: 'output.json'
+        ValidateSignature: true
+        Verbosity: 'Verbose'
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Artifact (Terminal app)
+      inputs:
+        PathtoPublish: $(Build.ArtifactStagingDirectory)/appx
+        ArtifactName: terminal-$(BuildPlatform)-$(BuildConfiguration)
 
   - ${{ if eq(parameters.buildConPTY, true) }}:
     - task: CopyFiles@2
@@ -355,10 +359,11 @@ jobs:
       inputs:
         disableOutputRedirect: true
     - ${{ each platform in parameters.buildPlatforms }}:
-      - task: DownloadBuildArtifacts@0
+      - task: DownloadBuildArtifacts@1
         displayName: Download Artifacts ${{ platform }}
         inputs:
-          artifactName: appx-${{ platform }}-Release
+          artifactName: terminal-${{ platform }}-Release
+          itemPattern: '**/*.msix'
     # Add 3000 to the major version component, but only for the bundle.
     # This is to ensure that it is newer than "2022.xx.yy.zz" or whatever the original bundle versions were before
     # we switched to uniform naming.
@@ -431,7 +436,7 @@ jobs:
       inputs:
         disableOutputRedirect: true
     - ${{ each platform in parameters.buildPlatforms }}:
-      - task: DownloadBuildArtifacts@0
+      - task: DownloadBuildArtifacts@1
         displayName: Download ${{ platform }} ConPTY binaries
         inputs:
           artifactName: conpty-dll-${{ platform }}-$(BuildConfiguration)
@@ -522,7 +527,7 @@ jobs:
       inputs:
         disableOutputRedirect: true
     - ${{ each platform in parameters.buildPlatforms }}:
-      - task: DownloadBuildArtifacts@0
+      - task: DownloadBuildArtifacts@1
         displayName: Download ${{ platform }} PublicTerminalCore
         inputs:
           artifactName: wpf-dll-${{ platform }}-$(BuildConfiguration)
@@ -621,12 +626,13 @@ jobs:
 
     - template: .\templates\restore-nuget-steps.yml
 
-    # Download the appx-PLATFORM-CONFIG-VERSION artifact for every platform/version combo
+    # Download the terminal-PLATFORM-CONFIG-VERSION artifact for every platform/version combo
     - ${{ each platform in parameters.buildPlatforms }}:
-      - task: DownloadBuildArtifacts@0
+      - task: DownloadBuildArtifacts@1
         displayName: Download Symbols ${{ platform }}
         inputs:
-          artifactName: appx-${{ platform }}-Release
+          artifactName: terminal-${{ platform }}-Release
+          itemPattern: '**/*.appxsym'
 
     # It seems easier to do this -- download every appxsym -- then enumerate all the PDBs in the build directory for the
     # public symbol push. Otherwise, we would have to list all of the PDB files one by one.
@@ -683,7 +689,7 @@ jobs:
       submodules: true
     - task: PkgESSetupBuild@12
       displayName: Package ES - Setup Build
-    - task: DownloadBuildArtifacts@0
+    - task: DownloadBuildArtifacts@1
       displayName: Download Build Artifacts
       inputs:
         artifactName: appxbundle-signed
