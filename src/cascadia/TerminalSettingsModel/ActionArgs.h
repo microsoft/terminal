@@ -100,7 +100,7 @@ private:                                                                    \
 
 ////////////////////////////////////////////////////////////////////////////////
 #define COPY_TEXT_ARGS(X)                                       \
-    X(bool, DismissSelection, "dismissSelection", false, false) \
+    X(bool, DismissSelection, "dismissSelection", false, true) \
     X(bool, SingleLine, "singleLine", false, false)             \
     X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", false, nullptr)
 

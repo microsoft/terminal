@@ -2747,6 +2747,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Copy text from the focused terminal to the Windows Clipboard
     // Arguments:
+    // - dismissSelection: if not enabled, copying text doesn't dismiss the selection
     // - singleLine: if enabled, copy contents as a single line of text
     // - formats: dictate which formats need to be copied
     // Return Value:
