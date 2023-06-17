@@ -302,7 +302,8 @@ static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& source
 bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
 {
     // Rotate the circular buffer around and wipe out the previous final line.
-    auto fSuccess = screenInfo.GetTextBuffer().IncrementCircularBuffer();
+    auto& buffer = screenInfo.GetTextBuffer();
+    auto fSuccess = buffer.IncrementCircularBuffer(buffer.GetCurrentAttributes());
     if (fSuccess)
     {
         // Trigger a graphical update if we're active.

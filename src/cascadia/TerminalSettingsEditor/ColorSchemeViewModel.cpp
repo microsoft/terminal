@@ -50,6 +50,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _Name;
     }
 
+    // This is used in the ComboBox and ListView.
+    // It's the only way to expose the name of the inner UI item so the ComboBox can do quick search
+    //  and screen readers can read the item out loud.
+    winrt::hstring ColorSchemeViewModel::ToString()
+    {
+        if (IsDefaultScheme())
+        {
+            return hstring{ fmt::format(L"{0} ({1})", Name(), RS_(L"ColorScheme_DefaultTag/Text")) };
+        }
+        return Name();
+    }
+
     bool ColorSchemeViewModel::IsDefaultScheme()
     {
         const auto defaultAppearance = _settings.ProfileDefaults().DefaultAppearance();

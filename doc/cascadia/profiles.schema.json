@@ -1813,6 +1813,19 @@
           "description": "True if the Terminal should use a Mica backdrop for the window. This will apply underneath all controls (including the terminal panes and the titlebar)",
           "type": "boolean",
           "default": false
+        },
+        "experimental.rainbowFrame": {
+          "description": "When enabled, the frame of the window will cycle through all the colors. Enabling this will override the `frame` and `unfocusedFrame` settings.",
+          "type": "boolean",
+          "default": false
+        },
+        "frame": {
+          "description": "The color of the window frame when the window is inactive. This only works on Windows 11",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "unfocusedFrame": {
+          "description": "The color of the window frame when the window is inactive. This only works on Windows 11",
+          "$ref": "#/$defs/ThemeColor"
         }
       }
     },

@@ -139,7 +139,7 @@ public:
         }
     }
 
-    void UseAlternateScreenBuffer() override
+    void UseAlternateScreenBuffer(const TextAttribute& /*attr*/) override
     {
         Log::Comment(L"UseAlternateScreenBuffer MOCK called...");
     }
@@ -1795,7 +1795,7 @@ public:
         // and DECRQM would not then be applicable.
 
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{1, 3, 5, 6, 7, 8, 12, 25, 40, 66, 67, 69, 1000, 1002, 1003, 1004, 1005, 1006, 1007, 1049, 2004, 9001}")
+            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{1, 3, 5, 6, 7, 8, 12, 25, 40, 66, 67, 69, 117, 1000, 1002, 1003, 1004, 1005, 1006, 1007, 1049, 2004, 9001}")
         END_TEST_METHOD_PROPERTIES()
 
         VTInt modeNumber;

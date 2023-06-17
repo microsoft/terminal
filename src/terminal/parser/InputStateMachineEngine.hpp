@@ -15,7 +15,6 @@ Author(s):
 --*/
 #pragma once
 
-#include "telemetry.hpp"
 #include "IStateMachineEngine.hpp"
 #include <functional>
 #include "../../types/inc/IInputEvent.hpp"
