@@ -273,11 +273,12 @@ jobs:
       displayName: Build Unpackaged Distribution
 
     - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
-      displayName: 'Generate SBOM manifest'
+      displayName: 'Generate SBOM manifest (application)'
       inputs:
        BuildDropPath: '$(System.ArtifactsDirectory)/appx'
 
     - task: DropValidatorTask@0
+      displayName: 'Validate application SBOM manifest'
       inputs:
         BuildDropPath: '$(System.ArtifactsDirectory)/appx'
         OutputPath: 'output.json'
@@ -362,8 +363,10 @@ jobs:
       - task: DownloadBuildArtifacts@1
         displayName: Download Artifacts ${{ platform }}
         inputs:
+          # Make sure to download the entire artifact, because it includes the SPDX SBOM
           artifactName: terminal-${{ platform }}-Release
-          itemPattern: '**/*.msix'
+          # Downloading to the source directory should ensure that the later SBOM generator can see the earlier SBOMs.
+          downloadPath: '$(Build.SourcesDirectory)/appx-artifacts'
     # Add 3000 to the major version component, but only for the bundle.
     # This is to ensure that it is newer than "2022.xx.yy.zz" or whatever the original bundle versions were before
     # we switched to uniform naming.
@@ -373,7 +376,7 @@ jobs:
         $Components[0] = ([int]$Components[0] + $VersionEpoch)
         $BundleVersion = $Components -Join "."
         New-Item -Type Directory "$(System.ArtifactsDirectory)\bundle"
-        .\build\scripts\Create-AppxBundle.ps1 -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\bundle\$(BundleStemName)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
+        .\build\scripts\Create-AppxBundle.ps1 -InputPath "$(Build.SourcesDirectory)/appx-artifacts" -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\bundle\$(BundleStemName)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
       displayName: Create WindowsTerminal*.msixbundle
     - task: EsrpCodeSigning@1
       displayName: Submit *.msixbundle to ESRP for code signing
@@ -409,6 +412,19 @@ jobs:
                   "ToolVersion": "1.0"
               }
           ]
+
+    - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
+      displayName: 'Generate SBOM manifest (bundle)'
+      inputs:
+       BuildDropPath: '$(System.ArtifactsDirectory)/bundle'
+
+    - task: DropValidatorTask@0
+      displayName: 'Validate bundle SBOM manifest'
+      inputs:
+        BuildDropPath: '$(System.ArtifactsDirectory)/bundle'
+        OutputPath: 'output.json'
+        ValidateSignature: true
+        Verbosity: 'Verbose'
 
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifact: appxbundle-signed'
