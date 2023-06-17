@@ -417,6 +417,7 @@ jobs:
       displayName: 'Generate SBOM manifest (bundle)'
       inputs:
        BuildDropPath: '$(System.ArtifactsDirectory)/bundle'
+       BuildComponentPath: '$(Build.SourcesDirectory)/appx-artifacts'
 
     - task: DropValidatorTask@0
       displayName: 'Validate bundle SBOM manifest'
