@@ -1024,35 +1024,42 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleSearchForText(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
-        if (args)
+        if (const auto termControl{ _GetActiveControl() })
         {
-            if (const auto& realArgs = args.ActionArgs().try_as<SearchForTextArgs>())
+            if (termControl.HasSelection())
             {
-                if (const auto termControl{ _GetActiveControl() })
+                const auto selections{ termControl.SelectedText(true) };
+
+                // concatenate the selection into a single line
+                auto searchText = std::accumulate(selections.begin(), selections.end(), std::wstring());
+
+                // make it compact by replacing consecutive whitespaces with a single space
+                searchText = std::regex_replace(searchText, std::wregex(LR"(\s+)"), L" ");
+
+                std::wstring queryUrl;
+                if (args)
                 {
-                    if (termControl.HasSelection())
+                    if (const auto& realArgs = args.ActionArgs().try_as<SearchForTextArgs>())
                     {
-                        const auto selections{ termControl.SelectedText(true) };
-
-                        // concatenate the selection into a single line
-                        auto searchText = std::accumulate(selections.begin(), selections.end(), std::wstring());
-
-                        // make it compact by replacing consecutive whitespaces with a single space
-                        searchText = std::regex_replace(searchText, std::wregex(LR"(\s+)"), L" ");
-
-                        std::wstring queryUrl = realArgs.QueryUrl().empty() ? _settings.GlobalSettings().SearchWebDefaultQueryUrl().c_str() : realArgs.QueryUrl().c_str();
-
-                        constexpr std::wstring_view queryToken{ L"%s" };
-                        if (const auto pos{ queryUrl.find(queryToken) }; pos != std::wstring_view::npos)
-                        {
-                            queryUrl.replace(pos, queryToken.length(), Windows::Foundation::Uri::EscapeComponent(searchText));
-                        }
-
-                        winrt::Microsoft::Terminal::Control::OpenHyperlinkEventArgs shortcut{ queryUrl };
-                        _OpenHyperlinkHandler(termControl, shortcut);
-                        args.Handled(true);
+                        queryUrl = realArgs.QueryUrl().c_str();
                     }
                 }
+
+                // use global default if query URL is unspecified
+                if (queryUrl.empty())
+                {
+                    queryUrl = _settings.GlobalSettings().SearchWebDefaultQueryUrl().c_str();
+                }
+
+                constexpr std::wstring_view queryToken{ L"%s" };
+                if (const auto pos{ queryUrl.find(queryToken) }; pos != std::wstring_view::npos)
+                {
+                    queryUrl.replace(pos, queryToken.length(), Windows::Foundation::Uri::EscapeComponent(searchText));
+                }
+
+                winrt::Microsoft::Terminal::Control::OpenHyperlinkEventArgs shortcut{ queryUrl };
+                _OpenHyperlinkHandler(termControl, shortcut);
+                args.Handled(true);
             }
         }
     }
