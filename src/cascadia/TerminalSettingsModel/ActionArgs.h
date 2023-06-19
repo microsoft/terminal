@@ -229,7 +229,7 @@ private:                                                                    \
     X(winrt::hstring, Name, "name", false, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
-#define SEARCH_FOR_TEXT_ARGS(X)                         \
+#define SEARCH_FOR_TEXT_ARGS(X) \
     X(winrt::hstring, QueryUrl, "queryUrl", false, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
