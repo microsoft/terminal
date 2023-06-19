@@ -64,6 +64,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool UseDesktopBGImage();
         void UseDesktopBGImage(const bool useDesktop);
         bool BackgroundImageSettingsVisible();
+        bool BackgroundImageCopyVisible();
+
 
         void ClearColorScheme();
         Editor::ColorSchemeViewModel CurrentColorScheme();
@@ -114,8 +116,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ShowAllFonts(const bool& value);
 
         fire_and_forget BackgroundImage_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
+        fire_and_forget BackgroundImageCopy_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void BIAlignment_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void FontFace_SelectionChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e);
+
 
         // manually bind FontWeight
         Windows::Foundation::IInspectable CurrentFontWeight() const;
