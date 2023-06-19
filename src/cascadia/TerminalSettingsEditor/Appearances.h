@@ -66,7 +66,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool BackgroundImageSettingsVisible();
         bool BackgroundImageCopyVisible();
 
-
         void ClearColorScheme();
         Editor::ColorSchemeViewModel CurrentColorScheme();
         void CurrentColorScheme(const Editor::ColorSchemeViewModel& val);

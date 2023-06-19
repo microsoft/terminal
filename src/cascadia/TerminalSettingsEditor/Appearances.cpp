@@ -19,7 +19,6 @@ using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::Storage;
 
-
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     AppearanceViewModel::AppearanceViewModel(const Model::AppearanceConfig& appearance) :
@@ -49,7 +48,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _lastBgImagePath = BackgroundImagePath();
         }
-
     }
 
     double AppearanceViewModel::LineHeight() const noexcept
