@@ -234,8 +234,8 @@ private:
     void _construct(const std::byte* until) noexcept;
     void _destroy() const noexcept;
     ROW& _getRowByOffsetDirect(size_t offset);
-    size_t _estimateOffsetOfLastCommittedRowDirect() const;
-    size_t _estimateOffsetOfLastCommittedRow() const;
+    size_t _estimateOffsetOfLastCommittedRowDirect() const noexcept;
+    size_t _estimateOffsetOfLastCommittedRow() const noexcept;
 
     void _SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept;
     til::point _GetPreviousFromCursor() const;

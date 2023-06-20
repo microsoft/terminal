@@ -168,7 +168,7 @@ ROW& TextBuffer::_getRowByOffsetDirect(size_t offset)
 
 // This function is "direct" because it trusts the caller to know that this row
 // could be the scratchpad row.
-size_t TextBuffer::_estimateOffsetOfLastCommittedRowDirect() const
+size_t TextBuffer::_estimateOffsetOfLastCommittedRowDirect() const noexcept
 {
     if (_commitWatermark == _buffer.get())
     {
@@ -177,16 +177,16 @@ size_t TextBuffer::_estimateOffsetOfLastCommittedRowDirect() const
         // will commit it.
         return 1;
     }
-    const auto lastRowOffset = static_cast<ptrdiff_t>((_commitWatermark - 1) - _buffer.get()) / _bufferRowStride;
+    const auto lastRowOffset = ((_commitWatermark - 1) - _buffer.get()) / _bufferRowStride;
     return gsl::narrow_cast<size_t>(lastRowOffset);
 }
 
 // Returns the "user-visible" index of the last committed row, which can be used
 // to short-circuit some algorithms that try to scan the entire buffer..
-size_t TextBuffer::_estimateOffsetOfLastCommittedRow() const
+size_t TextBuffer::_estimateOffsetOfLastCommittedRow() const noexcept
 {
     // Take into account the scratchpad row.
-    return ((_estimateOffsetOfLastCommittedRowDirect() + _height - 1) % _height);
+    return _estimateOffsetOfLastCommittedRowDirect() - 1;
 }
 
 // Retrieves a row from the buffer by its offset from the first row of the text buffer
