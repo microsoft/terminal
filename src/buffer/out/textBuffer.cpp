@@ -166,27 +166,20 @@ ROW& TextBuffer::_getRowByOffsetDirect(size_t offset)
     return *reinterpret_cast<ROW*>(row);
 }
 
-// This function is "direct" because it trusts the caller to know that this row
-// could be the scratchpad row.
-size_t TextBuffer::_estimateOffsetOfLastCommittedRowDirect() const noexcept
+// Returns the "user-visible" index of the last committed row, which can be used
+// to short-circuit some algorithms that try to scan the entire buffer.
+til::CoordType TextBuffer::_estimateOffsetOfLastCommittedRow() const noexcept
 {
     if (_commitWatermark == _buffer.get())
     {
         // Estimation failed. Act as though we have at least one non-scratchpad row committed.
         // The caller will be passing this offset back to GetRowByOffset or similar later, which
         // will commit it.
-        return 1;
+        return 0;
     }
     const auto lastRowOffset = ((_commitWatermark - 1) - _buffer.get()) / _bufferRowStride;
-    return gsl::narrow_cast<size_t>(lastRowOffset);
-}
-
-// Returns the "user-visible" index of the last committed row, which can be used
-// to short-circuit some algorithms that try to scan the entire buffer..
-size_t TextBuffer::_estimateOffsetOfLastCommittedRow() const noexcept
-{
     // Take into account the scratchpad row.
-    return _estimateOffsetOfLastCommittedRowDirect() - 1;
+    return gsl::narrow_cast<til::CoordType>(lastRowOffset - 1);
 }
 
 // Retrieves a row from the buffer by its offset from the first row of the text buffer
@@ -830,7 +823,7 @@ til::point TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::C
 
     til::point coordEndOfText;
     // Search the given viewport by starting at the bottom.
-    coordEndOfText.y = std::min(viewport.BottomInclusive(), gsl::narrow_cast<til::CoordType>(_estimateOffsetOfLastCommittedRow()));
+    coordEndOfText.y = std::min(viewport.BottomInclusive(), _estimateOffsetOfLastCommittedRow());
 
     const auto& currRow = GetRowByOffset(coordEndOfText.y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
