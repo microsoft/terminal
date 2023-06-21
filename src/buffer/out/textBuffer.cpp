@@ -168,18 +168,15 @@ ROW& TextBuffer::_getRowByOffsetDirect(size_t offset)
 
 // Returns the "user-visible" index of the last committed row, which can be used
 // to short-circuit some algorithms that try to scan the entire buffer.
+// Returns 0 if no rows are committed in.
 til::CoordType TextBuffer::_estimateOffsetOfLastCommittedRow() const noexcept
 {
-    if (_commitWatermark == _buffer.get())
-    {
-        // Estimation failed. Act as though we have at least one non-scratchpad row committed.
-        // The caller will be passing this offset back to GetRowByOffset or similar later, which
-        // will commit it.
-        return 0;
-    }
-    const auto lastRowOffset = ((_commitWatermark - 1) - _buffer.get()) / _bufferRowStride;
-    // Take into account the scratchpad row.
-    return gsl::narrow_cast<til::CoordType>(lastRowOffset - 1);
+    const auto lastRowOffset = (_commitWatermark - _buffer.get()) / _bufferRowStride;
+    // This subtracts 2 from the offset to account for the:
+    // * scratchpad row at offset 0, whereas regular rows start at offset 1.
+    // * fact that _commitWatermark points _past_ the last committed row,
+    //   but we want to return an index pointing at the last row.
+    return std::max(0, gsl::narrow_cast<til::CoordType>(lastRowOffset - 2));
 }
 
 // Retrieves a row from the buffer by its offset from the first row of the text buffer
