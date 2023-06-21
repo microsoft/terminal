@@ -35,6 +35,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
+        /*
+        const std::vector<winrt::hstring> KeyAlphaModeValues = { L"<escape>, <return>", L"<escape>", L"<return>", L"none" };
+
+        winrt::Windows::Foundation::IInspectable KeyAlphaModeList()
+        {
+            return (winrt::box_value(KeyAlphaModeValues));
+        }
+        */
+       
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, KeyAlphaMode);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, CopyOnSelect);

@@ -17,5 +17,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         INITIALIZE_BINDABLE_ENUM_SETTING(TabSwitcherMode, TabSwitcherMode, TabSwitcherMode, L"Globals_TabSwitcherMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(CopyFormat, CopyFormat, winrt::Microsoft::Terminal::Control::CopyFormat, L"Globals_CopyFormat", L"Content");
+
+        // INITIALIZE_BINDABLE_ENUM_SETTING(KeyAlphaMode, KeyAlphaMode, hstring, L"Globals_KeyAlphaMode", L"Content");
+        //= { L"<ComboBoxItem Content = \"<escape>, <return>\"/>", L"<ComboBoxItem Content = \"<escape>\" />", L"<ComboBoxItem Content = \"<return>\" />", L"<ComboBoxItem Content = \"None\" />" };
     }
 }

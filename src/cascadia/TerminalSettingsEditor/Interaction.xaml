@@ -96,13 +96,12 @@
                 <ComboBox
                     AutomationProperties.AccessibilityView="Content"
                     ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                    Style="{StaticResource ComboBoxSettingStyle}"
-                    SelectedItem="{x:Bind ViewModel.CurrentKeyAlphaMode, Mode=OneWay}" 
+                    SelectedItem="{x:Bind ViewModel.CurrentKeyAlphaMode, Mode=OneWay}"
                     SelectedValue="{x:Bind ViewModel.CurrentKeyAlphaMode, Mode=TwoWay}"
-                    >
-                    <ComboBoxItem Content="&lt;Escap&gt;, &lt;Return&gt;" />
-                    <ComboBoxItem Content="&lt;Escape&gt;" />
-                    <ComboBoxItem Content="&lt;Return&gt;" />
+                    Style="{StaticResource ComboBoxSettingStyle}">
+                    <ComboBoxItem Content="&lt;escap&gt;, &lt;return&gt;" />
+                    <ComboBoxItem Content="&lt;escape&gt;" />
+                    <ComboBoxItem Content="&lt;return&gt;" />
                     <ComboBoxItem Content="None" />
                 </ComboBox>
             </local:SettingContainer>
