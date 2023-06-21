@@ -4888,4 +4888,12 @@ namespace winrt::TerminalApp::implementation
         // _RemoveTab will make sure to null out the _stashed.draggedTab
         _RemoveTab(*_stashed.draggedTab);
     }
+
+    // return check key is in alphakey list or not
+    bool TerminalPage::IsKeyAlphaMode(WORD key)
+    {
+        auto keylist = _settings.GlobalSettings().KeyAlphaMode();
+
+        return ((key == VK_ESCAPE && wcsstr(keylist.c_str(), L"escape") || (key == VK_RETURN && wcsstr(keylist.c_str(), L"return"))));
+    }
 }

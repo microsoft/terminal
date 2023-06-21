@@ -107,6 +107,7 @@ namespace Microsoft::Console::Types
         Render::IRenderData* _pData{ nullptr };
 
         std::wstring _wordDelimiters{};
+        std::wstring _keyAlphaMode{};
 
     private:
         // this is used to prevent the object from
