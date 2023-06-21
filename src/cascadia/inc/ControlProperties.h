@@ -47,7 +47,8 @@
     X(winrt::hstring, StartingTitle)                                                                              \
     X(bool, DetectURLs, true)                                                                                     \
     X(bool, VtPassthrough, false)                                                                                 \
-    X(bool, AutoMarkPrompts)
+    X(bool, AutoMarkPrompts)											  \
+    X(winrt::hstring, KeyAlphaMode, DEFAULT_KEYALPHAMODE)
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.

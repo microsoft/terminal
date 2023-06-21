@@ -504,7 +504,7 @@ static bool _translateDefaultMapping(const KeyEvent& keyEvent,
 }
 
 // ------------
-// Switch IME state to alphanumeric /native mode
+// Switch IME state to alphanumeric/native mode
 // - It loads "IMM32.DLL" module dynamically.
 
 static HMODULE IMMDLL = 0;
@@ -517,6 +517,7 @@ static BOOL (*_ImmReleaseContext)(HWND, HIMC);
 
 void KeyInputAlphabetMode(BOOL bNative = false)
 {
+    // TODO: need check setting
     if (!IMMDLL)
     {
         IMMDLL = LoadLibrary(L"IMM32.DLL");

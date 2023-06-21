@@ -1589,12 +1589,24 @@
     <value>Learn more.</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
   </data>
-	<data name="Profile_FontFace_ProportionalFontWarning.Title" xml:space="preserve">
+  <data name="Profile_FontFace_ProportionalFontWarning.Title" xml:space="preserve">
     <value>Warning:</value>
     <comment>Title for the warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
   </data>
-	<data name="Profile_FontFace_ProportionalFontWarning.Message" xml:space="preserve">
+  <data name="Profile_FontFace_ProportionalFontWarning.Message" xml:space="preserve">
     <value>Choosing a non-monospaced font will likely result in visual artifacts. Use at your own discretion.</value>
     <comment>Warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
+  </data>
+  <data name="Globals_KeyAlphaMode.Header" xml:space="preserve">
+    <value>Keys to reset to alphabet input</value>
+    <comment>Label text for KeyAlphaMode combobox</comment>
+  </data>
+  <data name="Globals_KeyAlphaMode.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Switch IME mode to alphabet input</value>
+    <comment>Hovering tooltip for KeyAlphaMode combobox</comment>
+  </data>
+  <data name="Globals_KeyAlphaMode.HelpText" xml:space="preserve">
+    <value>&lt;escape&gt;, &lt;return&gt; reset keyboard IME to alphanumeric input mode</value>
+    <comment>Help text shown below KeyAlphaMode combobox label</comment>
   </data>
 </root>

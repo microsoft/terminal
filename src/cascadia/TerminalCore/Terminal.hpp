@@ -354,6 +354,7 @@ private:
     bool _selectionIsTargetingUrl = false;
     SelectionEndpoint _selectionEndpoint = SelectionEndpoint::None;
     bool _anchorInactiveSelectionEndpoint = false;
+    std::wstring _keyAlphaMode;
 #pragma endregion
 
     std::unique_ptr<TextBuffer> _mainBuffer;

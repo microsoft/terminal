@@ -40,4 +40,5 @@ constexpr auto DEFAULT_CURSOR_COLOR = COLOR_WHITE;
 constexpr COLORREF DEFAULT_CURSOR_HEIGHT = 25;
 
 const std::wstring DEFAULT_WORD_DELIMITERS{ L" ./\\()\"'-:,.;<>~!@#$%^&*|+=[]{}~?\u2502" };
+const std::wstring DEFAULT_KEYALPHAMODE { L"<escape>,<return>" };
 #pragma warning(pop)
