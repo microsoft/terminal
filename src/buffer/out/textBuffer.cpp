@@ -2635,7 +2635,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     // printable char gets reset. See GH #12567
     auto newRowY = newCursor.GetPosition().y + 1;
     const auto newHeight = newBuffer.GetSize().Height();
-    const auto oldHeight = oldBuffer.GetSize().Height();
+    const auto oldHeight = oldBuffer._estimateOffsetOfLastCommittedRow() + 1;
     for (;
          iOldRow < oldHeight && newRowY < newHeight;
          iOldRow++)
