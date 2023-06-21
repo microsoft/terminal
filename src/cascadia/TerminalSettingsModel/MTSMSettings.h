@@ -65,7 +65,8 @@ Author(s):
     X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                                                                         \
     X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} })) \
     X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
-    X(bool, IsolatedMode, "compatibility.isolatedMode", false)
+    X(bool, IsolatedMode, "compatibility.isolatedMode", false)                                                                                                                                        \
+    X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")
 
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
     X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \
