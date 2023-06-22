@@ -631,25 +631,35 @@ catch (...)
     const auto baseOffset = til::at(charOffsets, 0);
     const auto endOffset = til::at(charOffsets, colEndInput);
     const auto inToOutOffset = gsl::narrow_cast<uint16_t>(chBeg - baseOffset);
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+    const auto dst = row._charOffsets.data() + colEnd;
 
-    // Now with the `colEndInput` figured out, we can easily copy the `charOffsets` into the `_charOffsets`.
-    // It's possible to use SIMD for this loop for extra perf gains. Something like this for SSE2 (~8x faster):
-    //   const auto in = _mm_loadu_si128(...);
-    //   const auto off = _mm_and_epi32(in, _mm_set1_epi16(CharOffsetsMask));
-    //   const auto trailer  = _mm_and_epi32(in, _mm_set1_epi16(CharOffsetsTrailer));
-    //   const auto out = _mm_or_epi32(_mm_add_epi16(off, _mm_set1_epi16(inToOutOffset)), trailer);
-    //   _mm_store_si128(..., out);
-    for (uint16_t i = 0; i < colEndInput; ++i, ++colEnd)
-    {
-        const auto ch = til::at(charOffsets, i);
-        const auto off = ch & CharOffsetsMask;
-        const auto trailer = ch & CharOffsetsTrailer;
-        til::at(row._charOffsets, colEnd) = gsl::narrow_cast<uint16_t>((off + inToOutOffset) | trailer);
-    }
+    _copyOffsets(dst, charOffsets.data(), colEndInput, inToOutOffset);
 
+    colEnd += colEndInput;
     colEndDirty = gsl::narrow_cast<uint16_t>(colBeg + colEndDirtyInput);
     charsConsumed = endOffset - baseOffset;
 }
+
+#pragma warning(push)
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+[[msvc::forceinline]] void ROW::WriteHelper::_copyOffsets(uint16_t* __restrict dst, const uint16_t* __restrict src, uint16_t size, uint16_t offset) noexcept
+{
+    __assume(src != nullptr);
+    __assume(dst != nullptr);
+
+    // All tested compilers (including MSVC) will neatly unroll and vectorize
+    // this loop, which is why it's written in this particular way.
+    for (const auto end = src + size; src != end; ++src, ++dst)
+    {
+        const uint16_t ch = *src;
+        const uint16_t off = ch & CharOffsetsMask;
+        const uint16_t trailer = ch & CharOffsetsTrailer;
+        const uint16_t newOff = off + offset;
+        *dst = newOff | trailer;
+    }
+}
+#pragma warning(pop)
 
 [[msvc::forceinline]] void ROW::WriteHelper::Finish()
 {
