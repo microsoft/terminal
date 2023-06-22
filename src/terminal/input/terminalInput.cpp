@@ -875,7 +875,7 @@ std::wstring TerminalInput::_GenerateWin32KeySequence(const KeyEvent& key)
                        key.GetRepeatCount());
 }
 
-// Switch IME state to alphanumeric/native mode
+// GH#1304 - On <Escape> or <Return> key input, switch IME state to alphanumeic mode.
 // - It loads "IMM32.DLL" module dynamically.
 
 static HMODULE IMMDLL = 0;
