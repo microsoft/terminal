@@ -66,7 +66,7 @@ Author(s):
     X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} })) \
     X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
     X(bool, IsolatedMode, "compatibility.isolatedMode", false)                                                                                                                                        \
-    X(hstring, KeyAlphaMode, "keyAlphaMode", DEFAULT_KEYALPHAMODE)
+    X(bool, KeyAlphaMode, "keyAlphaMode", true)
 
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
     X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \
@@ -90,7 +90,7 @@ Author(s):
     X(bool, Elevate, "elevate", false)                                                                                                                         \
     X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
     X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)                                                                                            \
-    X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)                                                                                   
+    X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)
 
 // Intentionally omitted Profile settings:
 // * Name

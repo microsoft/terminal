@@ -20,32 +20,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(TabSwitcherMode, Model::TabSwitcherMode, _GlobalSettings.TabSwitcherMode);
         GETSET_BINDABLE_ENUM_SETTING(CopyFormat, winrt::Microsoft::Terminal::Control::CopyFormat, _GlobalSettings.CopyFormatting);
 
-    public:
-        winrt::Windows::Foundation::IInspectable CurrentKeyAlphaMode()
-        {
-            return (winrt::box_value(_GlobalSettings.KeyAlphaMode()));
-        }
-
-        void CurrentKeyAlphaMode(const winrt::Windows::Foundation::IInspectable& enumEntry)
-        {
-            if (auto ee = enumEntry.try_as<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>())
-            {
-                auto setting = winrt::unbox_value<winrt::hstring>(ee.EnumValue());
-                _GlobalSettings.KeyAlphaMode(setting);
-            }
-        }
-
-        /*
-        const std::vector<winrt::hstring> KeyAlphaModeValues = { L"<escape>, <return>", L"<escape>", L"<return>", L"none" };
-
-        winrt::Windows::Foundation::IInspectable KeyAlphaModeList()
-        {
-            return (winrt::box_value(KeyAlphaModeValues));
-        }
-        */
-       
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, KeyAlphaMode);
-
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, CopyOnSelect);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TrimBlockSelection);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TrimPaste);
@@ -54,6 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, DetectURLs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, WordDelimiters);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ConfirmCloseAllTabs);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, KeyAlphaMode);
 
     private:
         Model::GlobalAppSettings _GlobalSettings;

@@ -61,5 +61,6 @@ namespace Microsoft.Terminal.Control
         Boolean ShowMarks { get; };
         Boolean UseBackgroundImageForWindow { get; };
         Boolean RightClickContextMenu { get; };
+        Boolean KeyAlphaMode { get; };
     };
 }

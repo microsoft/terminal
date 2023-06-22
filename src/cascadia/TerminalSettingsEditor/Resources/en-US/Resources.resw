@@ -1598,15 +1598,15 @@
     <comment>Warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
   </data>
   <data name="Globals_KeyAlphaMode.Header" xml:space="preserve">
-    <value>Keys to reset to alphabet input</value>
-    <comment>Label text for KeyAlphaMode combobox</comment>
+    <value>Reset to alphabet keyborad on &lt;Escape&gt;, &lt;Return&gt; key</value>
+    <comment>Label text for KeyAlphaMode toggle switch</comment>
   </data>
   <data name="Globals_KeyAlphaMode.ToolTipService.ToolTip" xml:space="preserve">
     <value>Switch IME mode to alphabet input</value>
-    <comment>Hovering tooltip for KeyAlphaMode combobox</comment>
+    <comment>Hovering tooltip for KeyAlphaMode toggle switch</comment>
   </data>
   <data name="Globals_KeyAlphaMode.HelpText" xml:space="preserve">
-    <value>&lt;escape&gt;, &lt;return&gt; reset keyboard IME to alphanumeric input mode</value>
-    <comment>Help text shown below KeyAlphaMode combobox label</comment>
+    <value>&lt;Escape&gt;, &lt;Return&gt; reset keyboard IME to alphanumeric input mode</value>
+    <comment>Help text shown below KeyAlphaMode toggle switch</comment>
   </data>
 </root>

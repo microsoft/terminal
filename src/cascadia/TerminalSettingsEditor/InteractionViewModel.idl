@@ -17,10 +17,6 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentCopyFormat;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CopyFormatList { get; };
 
-	IInspectable CurrentKeyAlphaMode;
-        // Windows.Foundation.Collections.IObservableVector<String> KeyAlphaModeList { get; };
-	PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, KeyAlphaMode);
-
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, CopyOnSelect);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimBlockSelection);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimPaste);
@@ -29,5 +25,6 @@ namespace Microsoft.Terminal.Settings.Editor
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DetectURLs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, WordDelimiters);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ConfirmCloseAllTabs);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, KeyAlphaMode);
     }
 }

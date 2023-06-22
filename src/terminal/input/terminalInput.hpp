@@ -63,6 +63,8 @@ namespace Microsoft::Console::VirtualTerminal
         void ResetInputModes() noexcept;
         void ForceDisableWin32InputMode(const bool win32InputMode) noexcept;
 
+        void CheckAlphaMode(WORD key);
+
 #pragma region MouseInput
         // These methods are defined in mouseInput.cpp
 

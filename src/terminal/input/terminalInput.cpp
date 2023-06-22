@@ -503,46 +503,6 @@ static bool _translateDefaultMapping(const KeyEvent& keyEvent,
     return match.has_value();
 }
 
-// ------------
-// Switch IME state to alphanumeric/native mode
-// - It loads "IMM32.DLL" module dynamically.
-
-static HMODULE IMMDLL = 0;
-
-static HWND (*_ImmGetDefaultIMEWnd)(HWND);
-static HIMC (*_ImmGetContext)(HWND);
-static BOOL (*_ImmGetOpenStatus)(HIMC);
-static BOOL (*_ImmSetConversionStatus)(HIMC, DWORD, DWORD);
-static BOOL (*_ImmReleaseContext)(HWND, HIMC);
-
-void KeyInputAlphabetMode(BOOL bNative = false)
-{
-    // TODO: need check setting
-    if (!IMMDLL)
-    {
-        IMMDLL = LoadLibrary(L"IMM32.DLL");
-        if (!IMMDLL)
-            return;
-        _ImmGetDefaultIMEWnd    = (HWND (*)(HWND))  GetProcAddress(IMMDLL, "ImmGetDefaultIMEWnd");
-        _ImmGetContext          = (HIMC (*)(HWND))  GetProcAddress(IMMDLL, "ImmGetContext");
-        _ImmGetOpenStatus       = (BOOL (*)(HIMC))  GetProcAddress(IMMDLL, "ImmGetOpenStatus");
-        _ImmSetConversionStatus = (BOOL (*)(HIMC, DWORD, DWORD)) GetProcAddress(IMMDLL, "ImmSetConversionStatus");
-        _ImmReleaseContext      = (BOOL (*)(HWND, HIMC))  GetProcAddress(IMMDLL, "ImmReleaseContext");
-    }
-
-    auto hWnd = _ImmGetDefaultIMEWnd(HWND_DESKTOP);
-    HIMC hImc = _ImmGetContext(hWnd);
-    if (_ImmGetOpenStatus(hImc))
-    {
-        if (bNative)
-            _ImmSetConversionStatus(hImc, IME_CMODE_NATIVE, IME_SMODE_AUTOMATIC);
-        else 
-            _ImmSetConversionStatus(hImc, IME_CMODE_ALPHANUMERIC, IME_SMODE_NONE);
-        _ImmReleaseContext(hWnd, hImc);
-    }
-}
-// ------------
-
 // Routine Description:
 // - Sends the given input event to the shell.
 // - The caller should attempt to fill the char data in pInEvent if possible.
@@ -599,7 +559,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         auto key = keyEvent.GetCharData();
         if (keyEvent.IsKeyDown() && (key == VK_RETURN || key == VK_ESCAPE) &&!keyEvent.IsModifierPressed())
         {
-            KeyInputAlphabetMode();
+            CheckAlphaMode(key);
         }
 
         return true;
@@ -913,4 +873,46 @@ std::wstring TerminalInput::_GenerateWin32KeySequence(const KeyEvent& key)
                        key.IsKeyDown() ? 1 : 0,
                        key.GetActiveModifierKeys(),
                        key.GetRepeatCount());
+}
+
+// Switch IME state to alphanumeric/native mode
+// - It loads "IMM32.DLL" module dynamically.
+
+static HMODULE IMMDLL = 0;
+
+static HWND (*_ImmGetDefaultIMEWnd)(HWND);
+static HIMC (*_ImmGetContext)(HWND);
+static BOOL (*_ImmGetOpenStatus)(HIMC);
+static BOOL (*_ImmSetConversionStatus)(HIMC, DWORD, DWORD);
+static BOOL (*_ImmReleaseContext)(HWND, HIMC);
+
+void TerminalInput::CheckAlphaMode(WORD key)
+{
+    // check KeyAlphaMode setting and do IME reset.
+    // if (!ServiceLocator::LocateGlobals().KeyAlphaMode() || (key != VK_ESCAPE && key != VK_RETURN))
+    // TODO: Apply globals.KeyAlphaMode setting
+    if (key != VK_ESCAPE && key != VK_RETURN)
+        return;
+
+    if (!IMMDLL)
+    {
+        IMMDLL = LoadLibrary(L"IMM32.DLL");
+        if (!IMMDLL)
+            return;
+        _ImmGetDefaultIMEWnd = (HWND(*)(HWND))GetProcAddress(IMMDLL, "ImmGetDefaultIMEWnd");
+        _ImmGetContext = (HIMC(*)(HWND))GetProcAddress(IMMDLL, "ImmGetContext");
+        _ImmGetOpenStatus = (BOOL(*)(HIMC))GetProcAddress(IMMDLL, "ImmGetOpenStatus");
+        _ImmSetConversionStatus = (BOOL(*)(HIMC, DWORD, DWORD))GetProcAddress(IMMDLL, "ImmSetConversionStatus");
+        _ImmReleaseContext = (BOOL(*)(HWND, HIMC))GetProcAddress(IMMDLL, "ImmReleaseContext");
+    }
+
+    HWND hWnd = _ImmGetDefaultIMEWnd(HWND_DESKTOP);
+    HIMC hImc = _ImmGetContext(hWnd);
+    _ASSERT(hWnd && hImc);
+    if (_ImmGetOpenStatus(hImc))
+    {
+        _ImmSetConversionStatus(hImc, IME_CMODE_ALPHANUMERIC, IME_SMODE_NONE);
+        // _ImmSetConversionStatus(hImc, IME_CMODE_NATIVE, IME_SMODE_AUTOMATIC);
+    }
+    _ImmReleaseContext(hWnd, hImc);
 }

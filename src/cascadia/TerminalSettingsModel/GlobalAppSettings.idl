@@ -100,7 +100,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, EnableColorSelection);
         INHERITABLE_SETTING(Boolean, IsolatedMode);
         INHERITABLE_SETTING(Boolean, AllowHeadless);
-        INHERITABLE_SETTING(String, KeyAlphaMode);
+        INHERITABLE_SETTING(Boolean, KeyAlphaMode);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
