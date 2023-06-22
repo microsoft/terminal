@@ -39,10 +39,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 // - coordCursor - New location of cursor.
 // - fKeepCursorVisible - TRUE if changing window origin desirable when hit right edge
 // Return Value:
-[[nodiscard]] NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
-                                            _In_ til::point coordCursor,
-                                            const BOOL fKeepCursorVisible,
-                                            _Inout_opt_ til::CoordType* psScrollY)
+void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point coordCursor, const BOOL fKeepCursorVisible, _Inout_opt_ til::CoordType* psScrollY)
 {
     const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
     if (coordCursor.x < 0)
@@ -71,16 +68,10 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         }
     }
 
-    auto Status = STATUS_SUCCESS;
-
     if (coordCursor.y >= bufferSize.height)
     {
         // At the end of the buffer. Scroll contents of screen buffer so new position is visible.
-        FAIL_FAST_IF(!(coordCursor.y == bufferSize.height));
-        if (!StreamScrollRegion(screenInfo))
-        {
-            Status = STATUS_NO_MEMORY;
-        }
+        StreamScrollRegion(screenInfo);
 
         if (nullptr != psScrollY)
         {
@@ -90,28 +81,21 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
     }
 
     const auto cursorMovedPastViewport = coordCursor.y > screenInfo.GetViewport().BottomInclusive();
-    if (SUCCEEDED_NTSTATUS(Status))
+
+    // if at right or bottom edge of window, scroll right or down one char.
+    if (cursorMovedPastViewport)
     {
-        // if at right or bottom edge of window, scroll right or down one char.
-        if (cursorMovedPastViewport)
-        {
-            til::point WindowOrigin;
-            WindowOrigin.x = 0;
-            WindowOrigin.y = coordCursor.y - screenInfo.GetViewport().BottomInclusive();
-            Status = screenInfo.SetViewportOrigin(false, WindowOrigin, true);
-        }
+        til::point WindowOrigin;
+        WindowOrigin.x = 0;
+        WindowOrigin.y = coordCursor.y - screenInfo.GetViewport().BottomInclusive();
+        LOG_IF_FAILED(screenInfo.SetViewportOrigin(false, WindowOrigin, true));
     }
 
-    if (SUCCEEDED_NTSTATUS(Status))
+    if (fKeepCursorVisible)
     {
-        if (fKeepCursorVisible)
-        {
-            screenInfo.MakeCursorVisible(coordCursor);
-        }
-        Status = screenInfo.SetCursorPosition(coordCursor, !!fKeepCursorVisible);
+        screenInfo.MakeCursorVisible(coordCursor);
     }
-
-    return Status;
+    LOG_IF_FAILED(screenInfo.SetCursorPosition(coordCursor, !!fKeepCursorVisible));
 }
 
 // Routine Description:
@@ -180,7 +164,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                 CursorPosition.x = 0;
                 CursorPosition.y++;
 
-                Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
+                AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
 
                 CursorPosition = cursor.GetPosition();
             }
@@ -372,7 +356,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             // WCL-NOTE: wrong place (typically inside another character).
             CursorPosition.x = XPosition;
 
-            Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
+            AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
 
             // WCL-NOTE: If we have processed the entire input string during our "fast one-line print" handler,
             // WCL-NOTE: we are done as there is nothing more to do. Neat!
@@ -501,7 +485,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                     CursorPosition.x -= 1;
                     TempNumSpaces -= 1;
 
-                    Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
+                    AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                     if (dwFlags & WC_DESTRUCTIVE_BACKSPACE)
                     {
                         try
@@ -523,7 +507,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                 CursorPosition.x = 0;
                 OutputDebugStringA(("CONSRV: Ignoring backspace to previous line\n"));
             }
-            Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
+            AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
             if (dwFlags & WC_DESTRUCTIVE_BACKSPACE)
             {
                 try
@@ -548,7 +532,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                     // on the prev row if it was set
                     textBuffer.GetRowByOffset(CursorPosition.y).SetWrapForced(false);
 
-                    Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
+                    AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 }
             }
             // Notify accessibility to read the backspaced character.
@@ -598,7 +582,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             }
             CATCH_LOG();
 
-            Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
+            AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
             break;
         }
         case UNICODE_CARRIAGERETURN:
@@ -609,7 +593,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             pwchBuffer++;
             CursorPosition.x = 0;
             CursorPosition.y = cursor.GetPosition().y;
-            Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
+            AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
             break;
         }
         case UNICODE_LINEFEED:
@@ -632,7 +616,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                 textBuffer.GetRowByOffset(cursor.GetPosition().y).SetWrapForced(false);
             }
 
-            Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
+            AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
             break;
         }
         default:
@@ -678,7 +662,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                 // is too wide to fit on the current line).
                 Row.SetDoubleBytePadded(true);
 
-                Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
+                AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 continue;
             }
             break;

@@ -757,12 +757,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                 // adjust cursor position for WriteChars
                 _originalCursorPosition.y += ScrollY;
                 CursorPosition.y += ScrollY;
-                status = AdjustCursorPosition(_screenInfo, CursorPosition, TRUE, nullptr);
-                if (FAILED_NTSTATUS(status))
-                {
-                    _bytesRead = 0;
-                    return true;
-                }
+                AdjustCursorPosition(_screenInfo, CursorPosition, TRUE, nullptr);
             }
         }
     }

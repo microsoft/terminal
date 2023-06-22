@@ -435,10 +435,9 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const til::CoordType c
     return it;
 }
 
-bool ROW::SetAttrToEnd(const til::CoordType columnBegin, const TextAttribute attr)
+void ROW::SetAttrToEnd(const til::CoordType columnBegin, const TextAttribute attr)
 {
     _attr.replace(_clampedColumnInclusive(columnBegin), _attr.size(), attr);
-    return true;
 }
 
 void ROW::ReplaceAttributes(const til::CoordType beginIndex, const til::CoordType endIndex, const TextAttribute& newAttr)

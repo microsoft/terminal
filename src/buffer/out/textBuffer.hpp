@@ -112,13 +112,13 @@ public:
                                  const std::optional<bool> setWrap = std::nullopt,
                                  const std::optional<til::CoordType> limitRight = std::nullopt);
 
-    bool InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
-    bool InsertCharacter(const std::wstring_view chars, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
-    bool IncrementCursor();
-    bool NewlineCursor();
+    void InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
+    void InsertCharacter(const std::wstring_view chars, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
+    void IncrementCursor();
+    void NewlineCursor();
 
     // Scroll needs access to this to quickly rotate around the buffer.
-    bool IncrementCircularBuffer(const TextAttribute& fillAttributes = {});
+    void IncrementCircularBuffer(const TextAttribute& fillAttributes = {});
 
     til::point GetLastNonSpaceCharacter(std::optional<const Microsoft::Console::Types::Viewport> viewOptional = std::nullopt) const;
 
@@ -241,7 +241,7 @@ private:
     void _SetWrapOnCurrentRow();
     void _AdjustWrapOnCurrentRow(const bool fSet);
     // Assist with maintaining proper buffer state for Double Byte character sequences
-    bool _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);
+    void _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);
     bool _AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute);
     void _ExpandTextRow(til::inclusive_rect& selectionRow) const;
     DelimiterClass _GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const;
