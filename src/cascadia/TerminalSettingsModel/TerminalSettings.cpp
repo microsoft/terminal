@@ -347,7 +347,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _ForceVTInput = globalSettings.ForceVTInput();
         _TrimBlockSelection = globalSettings.TrimBlockSelection();
         _DetectURLs = globalSettings.DetectURLs();
-        _KeyAlphaMode = globalSettings.KeyAlphaMode();
     }
 
     // Method Description:

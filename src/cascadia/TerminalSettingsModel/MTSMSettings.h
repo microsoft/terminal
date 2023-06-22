@@ -67,7 +67,6 @@ Author(s):
     X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
     X(bool, IsolatedMode, "compatibility.isolatedMode", false)                                                                                                                                        \
     X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")                                                                                       \
-    X(hstring, KeyAlphaMode, "keyAlphaMode", DEFAULT_KEYALPHAMODE)
     X(bool, KeyAlphaMode, "keyAlphaMode", true)
 
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
@@ -92,7 +91,7 @@ Author(s):
     X(bool, Elevate, "elevate", false)                                                                                                                         \
     X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
     X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)                                                                                            \
-    X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)                                                                                   
+    X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)
 
 // Intentionally omitted Profile settings:
 // * Name

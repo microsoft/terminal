@@ -110,7 +110,6 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _startingTitle = settings.StartingTitle();
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
-    _keyAlphaMode = settings.KeyAlphaMode();
 
     _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
 

@@ -76,8 +76,6 @@ public:
     wil::unique_threadpool_wait handoffInboxConsoleExitWait;
     bool defaultTerminalMarkerCheckRequired = false;
 
-    std::vector<wchar_t> KeyAlphaMode;
-
 #ifdef UNIT_TESTING
     void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);
 #endif

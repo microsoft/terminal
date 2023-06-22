@@ -29,8 +29,6 @@ namespace Microsoft.Terminal.Core
 
         Boolean AutoMarkPrompts;
 
-	String KeyAlphaMode;
-
     };
 
 }
