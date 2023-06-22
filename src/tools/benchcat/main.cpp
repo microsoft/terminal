@@ -222,17 +222,23 @@ static char* buffer_append_string(char* dst, const char* src)
     return buffer_append(dst, src, strlen(src));
 }
 
-static char* buffer_append_number(char* dst, uint8_t val)
+char* buffer_append_number(char* dst, uint8_t val)
 {
-    if (val >= 100)
-    {
-        *dst++ = '0' + (val / 100);
-    }
     if (val >= 10)
     {
-        *dst++ = '0' + (val / 10);
+        if (val >= 100)
+        {
+            const uint8_t d = val / 100;
+            *dst++ = '0' + d;
+            val -= d * 100;
+        }
+
+        const uint8_t d = val / 10;
+        *dst++ = '0' + d;
+        val -= d * 10;
     }
-    *dst++ = '0' + (val % 10);
+
+    *dst++ = '0' + val;
     return dst;
 }
 
