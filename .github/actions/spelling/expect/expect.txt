@@ -49,6 +49,7 @@ APIENTRY
 apiset
 APPBARDATA
 appcontainer
+appdata
 appium
 appletname
 applets
