@@ -166,36 +166,31 @@ try
     static constexpr wchar_t tabSpaces[8]{ L' ', L' ', L' ', L' ', L' ', L' ', L' ', L' ' };
 
     UNREFERENCED_PARAMETER(sOriginalXPosition);
-    UNREFERENCED_PARAMETER(pwchBuffer);
-    UNREFERENCED_PARAMETER(pwchBufferBackupLimit);
 
     auto& textBuffer = screenInfo.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
-    const auto width = textBuffer.GetSize().Width();
-    const auto Attributes = textBuffer.GetCurrentAttributes();
-    const auto fKeepCursorVisible = WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE);
-    const auto fUnprocessed = WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT);
-    const auto fWrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
+    const auto keepCursorVisible = WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE);
+    const auto wrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
     auto it = pwchRealUnicode;
     const auto end = it + *pcb / sizeof(wchar_t);
-    size_t TempNumSpaces = 0;
+    size_t numSpaces = 0;
 
-    if (cursor.IsDelayedEOLWrap() && fWrapAtEOL)
+    if (cursor.IsDelayedEOLWrap() && wrapAtEOL)
     {
-        auto CursorPosition = cursor.GetPosition();
-        const auto delayedCursorPosition = cursor.GetDelayedAtPosition();
+        auto pos = cursor.GetPosition();
+        const auto delayed = cursor.GetDelayedAtPosition();
         cursor.ResetDelayEOLWrap();
-        if (delayedCursorPosition == CursorPosition)
+        if (delayed == pos)
         {
-            CursorPosition.x = 0;
-            CursorPosition.y++;
-            AdjustCursorPosition(screenInfo, CursorPosition, fKeepCursorVisible, psScrollY);
+            pos.x = 0;
+            pos.y++;
+            AdjustCursorPosition(screenInfo, pos, keepCursorVisible, psScrollY);
         }
     }
 
-    if (fUnprocessed)
+    if (WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
     {
-        TempNumSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { it, end });
+        numSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { it, end });
         it = end;
     }
 
@@ -204,7 +199,7 @@ try
         const auto nextControlChar = std::find_if(it, end, [](const auto& wch) { return !IS_GLYPH_CHAR(wch); });
         if (nextControlChar != it)
         {
-            TempNumSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { it, nextControlChar });
+            numSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { it, nextControlChar });
             it = nextControlChar;
         }
 
@@ -217,7 +212,7 @@ try
                 {
                     break;
                 }
-                TempNumSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { &tabSpaces[0], 1 });
+                numSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { &tabSpaces[0], 1 });
                 continue;
             case UNICODE_BELL:
                 if (WI_IsFlagSet(dwFlags, WC_INTERACTIVE))
@@ -228,29 +223,29 @@ try
                 continue;
             case UNICODE_BACKSPACE:
             {
-                auto CursorPosition = cursor.GetPosition();
+                auto pos = cursor.GetPosition();
 
                 if (WI_IsFlagClear(dwFlags, WC_INTERACTIVE))
                 {
-                    CursorPosition.x = textBuffer.GetRowByOffset(CursorPosition.y).NavigateToPrevious(CursorPosition.x);
-                    AdjustCursorPosition(screenInfo, CursorPosition, fKeepCursorVisible, psScrollY);
+                    pos.x = textBuffer.GetRowByOffset(pos.y).NavigateToPrevious(pos.x);
+                    AdjustCursorPosition(screenInfo, pos, keepCursorVisible, psScrollY);
                     continue;
                 }
 
                 const auto moveUp = [&]() {
-                    CursorPosition.x = -1;
-                    AdjustCursorPosition(screenInfo, CursorPosition, fKeepCursorVisible, psScrollY);
+                    pos.x = -1;
+                    AdjustCursorPosition(screenInfo, pos, keepCursorVisible, psScrollY);
 
                     const auto y = cursor.GetPosition().y;
                     auto& row = textBuffer.GetRowByOffset(y);
 
-                    CursorPosition.x = width;
-                    CursorPosition.y = y;
+                    pos.x = textBuffer.GetSize().RightExclusive();
+                    pos.y = y;
 
                     if (row.WasDoubleBytePadded())
                     {
-                        CursorPosition.x--;
-                        TempNumSpaces--;
+                        pos.x--;
+                        numSpaces--;
                     }
 
                     row.SetWrapForced(false);
@@ -259,7 +254,7 @@ try
 
                 // We have to move up early because the tab handling code below needs
                 // to be on the row of the tab already, so that we can call GetText().
-                if (CursorPosition.x == 0 && CursorPosition.y != 0)
+                if (pos.x == 0 && pos.y != 0)
                 {
                     moveUp();
                 }
@@ -268,13 +263,13 @@ try
 
                 if (pwchBuffer != pwchBufferBackupLimit)
                 {
-                    const auto LastChar = pwchBuffer[-1];
+                    const auto lastChar = pwchBuffer[-1];
 
                     // Deleting tabs is a bit tricky, because they have a variable width between 1 and 8 spaces,
                     // are stored as whitespace but are technically distinct from whitespace.
-                    if (LastChar == UNICODE_TAB)
+                    if (lastChar == UNICODE_TAB)
                     {
-                        const auto precedingText = textBuffer.GetRowByOffset(CursorPosition.y).GetText(CursorPosition.x - 8, CursorPosition.x);
+                        const auto precedingText = textBuffer.GetRowByOffset(pos.y).GetText(pos.x - 8, pos.x);
 
                         // First, we measure the amount of spaces that precede the cursor in the text buffer,
                         // which is generally the amount of spaces that we end up deleting. We do it this way,
@@ -294,17 +289,24 @@ try
                         // But there's a problem: When you print "  \t" it should delete 6 spaces and not 8.
                         // In other words, we shouldn't delete any actual preceding whitespaces. We can ask
                         // the "backup" buffer (= preceding text in the commandline) for this information.
+                        //
+                        // backupEnd points to the character immediately preceding the tab (LastChar).
                         const auto backupEnd = pwchBuffer - 1;
-                        const auto backupLimit = backupEnd - std::min<ptrdiff_t>(7, backupEnd - pwchBufferBackupLimit);
+                        // backupLimit points to how far back we need to search. Even if we have 9000 characters in our command line,
+                        // we'll only need to check a total of 8 whitespaces. "pwchBuffer - pwchBufferBackupLimit" will
+                        // always be at least 1 because that's the \t character in the backup buffer. In other words,
+                        // backupLimit will at a minimum be equal to backupEnd, or preced it by 7 more characters.
+                        const auto backupLimit = pwchBuffer - std::min<ptrdiff_t>(8, pwchBuffer - pwchBufferBackupLimit);
+                        // Now count how many spaces precede the \t character and remove them from the glyphCount.
                         auto backupBeg = backupEnd;
-                        for (; backupBeg != backupLimit && backupBeg[-1] == L' '; --backupBeg)
+                        for (; backupBeg != backupLimit && backupBeg[-1] == L' '; --backupBeg, --glyphCount)
                         {
                         }
                         glyphCount -= std::min(glyphCount - 1, gsl::narrow_cast<til::CoordType>(backupEnd - backupBeg));
                     }
                     // Control chars in interactive mode where previously written out
                     // as ^X for instance, so now we also need to delete 2 glyphs.
-                    else if (IS_CONTROL_CHAR(LastChar))
+                    else if (IS_CONTROL_CHAR(lastChar))
                     {
                         glyphCount = 2;
                     }
@@ -316,16 +318,16 @@ try
                     // we need to start off with overwriting the text with whitespace.
                     // It wouldn't make sense to check the cursor position again already.
                     {
-                        const auto previousColumn = CursorPosition.x;
-                        CursorPosition.x = textBuffer.GetRowByOffset(CursorPosition.y).NavigateToPrevious(previousColumn);
+                        const auto previousColumn = pos.x;
+                        pos.x = textBuffer.GetRowByOffset(pos.y).NavigateToPrevious(previousColumn);
 
                         RowWriteState state{
                             .text = { &tabSpaces[0], 8 },
-                            .columnBegin = CursorPosition.x,
+                            .columnBegin = pos.x,
                             .columnLimit = previousColumn,
                         };
-                        textBuffer.WriteLine(CursorPosition.y, fWrapAtEOL, Attributes, state);
-                        TempNumSpaces -= previousColumn - CursorPosition.x;
+                        textBuffer.WriteLine(pos.y, wrapAtEOL, textBuffer.GetCurrentAttributes(), state);
+                        numSpaces -= previousColumn - pos.x;
                     }
 
                     // The cursor movement logic is a little different for the last iteration, so we exit early here.
@@ -336,7 +338,7 @@ try
                     }
 
                     // Otherwise, in case we need to delete 2 or more glyphs, we need to check it again.
-                    if (CursorPosition.x == 0 && CursorPosition.y != 0)
+                    if (pos.x == 0 && pos.y != 0)
                     {
                         moveUp();
                     }
@@ -345,20 +347,20 @@ try
                 // After the last iteration the cursor might now be in the first column after a line
                 // that was previously padded with a whitespace in the last column due to a wide glyph.
                 // Now that the wide glyph is presumably gone, we can move up a line.
-                if (CursorPosition.x == 0 && CursorPosition.y != 0 && textBuffer.GetRowByOffset(CursorPosition.y - 1).WasDoubleBytePadded())
+                if (pos.x == 0 && pos.y != 0 && textBuffer.GetRowByOffset(pos.y - 1).WasDoubleBytePadded())
                 {
                     moveUp();
                 }
                 else
                 {
-                    AdjustCursorPosition(screenInfo, CursorPosition, fKeepCursorVisible, psScrollY);
+                    AdjustCursorPosition(screenInfo, pos, keepCursorVisible, psScrollY);
                 }
 
                 // Notify accessibility to read the backspaced character.
                 // See GH:12735, MSFT:31748387
                 if (screenInfo.HasAccessibilityEventing())
                 {
-                    if (auto pConsoleWindow = ServiceLocator::LocateConsoleWindow())
+                    if (const auto pConsoleWindow = ServiceLocator::LocateConsoleWindow())
                     {
                         LOG_IF_FAILED(pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId));
                     }
@@ -367,29 +369,29 @@ try
             }
             case UNICODE_TAB:
             {
-                auto CursorPosition = cursor.GetPosition();
-                const auto tabCount = gsl::narrow_cast<size_t>(NUMBER_OF_SPACES_IN_TAB(CursorPosition.x));
-                TempNumSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { &tabSpaces[0], tabCount });
+                const auto pos = cursor.GetPosition();
+                const auto tabCount = gsl::narrow_cast<size_t>(NUMBER_OF_SPACES_IN_TAB(pos.x));
+                numSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { &tabSpaces[0], tabCount });
                 continue;
             }
             case UNICODE_LINEFEED:
             {
-                auto CursorPosition = cursor.GetPosition();
+                auto pos = cursor.GetPosition();
                 if (WI_IsFlagClear(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN))
                 {
-                    CursorPosition.x = 0;
+                    pos.x = 0;
                 }
 
-                textBuffer.GetRowByOffset(CursorPosition.y).SetWrapForced(false);
-                CursorPosition.y = CursorPosition.y + 1;
-                AdjustCursorPosition(screenInfo, CursorPosition, fKeepCursorVisible, psScrollY);
+                textBuffer.GetRowByOffset(pos.y).SetWrapForced(false);
+                pos.y = pos.y + 1;
+                AdjustCursorPosition(screenInfo, pos, keepCursorVisible, psScrollY);
                 continue;
             }
             case UNICODE_CARRIAGERETURN:
             {
-                auto CursorPosition = cursor.GetPosition();
-                CursorPosition.x = 0;
-                AdjustCursorPosition(screenInfo, CursorPosition, fKeepCursorVisible, psScrollY);
+                auto pos = cursor.GetPosition();
+                pos.x = 0;
+                AdjustCursorPosition(screenInfo, pos, keepCursorVisible, psScrollY);
                 continue;
             }
             default:
@@ -399,19 +401,19 @@ try
             if (WI_IsFlagSet(dwFlags, WC_INTERACTIVE) && IS_CONTROL_CHAR(*it))
             {
                 const wchar_t wchs[2]{ L'^', static_cast<wchar_t>(*it + L'@') };
-                TempNumSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { &wchs[0], 2 });
+                numSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { &wchs[0], 2 });
             }
             else
             {
-                // TODO test
                 // As a special favor to incompetent apps that attempt to display control chars,
                 // convert to corresponding OEM Glyph Chars
                 const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
-                wchar_t buffer;
-                const auto result = MultiByteToWideChar(cp, MB_USEGLYPHCHARS, reinterpret_cast<LPCSTR>(it), 1, &buffer, 1);
+                const auto ch = gsl::narrow_cast<char>(*it);
+                wchar_t wch = 0;
+                const auto result = MultiByteToWideChar(cp, MB_USEGLYPHCHARS, &ch, 1, &wch, 1);
                 if (result == 1)
                 {
-                    TempNumSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { &buffer, 1 });
+                    numSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { &wch, 1 });
                 }
             }
         }
@@ -419,7 +421,7 @@ try
 
     if (pcSpaces)
     {
-        *pcSpaces = TempNumSpaces;
+        *pcSpaces = numSpaces;
     }
 
     return S_OK;

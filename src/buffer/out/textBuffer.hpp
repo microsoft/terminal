@@ -133,7 +133,7 @@ public:
 
     til::CoordType TotalRowCount() const noexcept;
 
-    [[nodiscard]] TextAttribute GetCurrentAttributes() const noexcept;
+    const TextAttribute& GetCurrentAttributes() const noexcept;
 
     void SetCurrentAttributes(const TextAttribute& currentAttributes) noexcept;
 
