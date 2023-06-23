@@ -4,6 +4,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{2C836962-9543-4CE5-B834-D28E1F124B66}</ProjectGuid>
+    <ProjectName>benchcat</ProjectName>
     <RootNamespace>benchcat</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <TargetName>bc</TargetName>
