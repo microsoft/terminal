@@ -2053,6 +2053,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto previous = std::exchange(_isReadOnly, false);
         const auto restore = wil::scope_exit([&]() { _isReadOnly = previous; });
         _terminal->FocusChanged(focused);
+        if (auto c{ _connection.try_as<TerminalConnection::ITerminalConnectionWithWindowAffinity>() })
+        {
+            c.Focused(focused);
+        }
     }
 
     bool ControlCore::_isBackgroundTransparent()

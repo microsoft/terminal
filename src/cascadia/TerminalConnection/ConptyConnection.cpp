@@ -347,9 +347,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(til::unwrap_coord_size(dimensions), flags, &_inPipe, &_outPipe, &_hPC));
 
-            if (_initialParentHwnd != 0)
+            if (_parentWindow != nullptr)
             {
-                THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), reinterpret_cast<HWND>(_initialParentHwnd)));
+                THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), _parentWindow));
             }
 
             // GH#12515: The conpty assumes it's hidden at the start. If we're visible, let it know now.
@@ -359,6 +359,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
 
             THROW_IF_FAILED(_LaunchAttachedClient());
+            Focused(_focused);
         }
         // But if it was an inbound handoff... attempt to synchronize the size of it with what our connection
         // window is expecting it to be on the first layout.
@@ -375,12 +376,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
             THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), til::unwrap_coord_size(dimensions)));
-            THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), reinterpret_cast<HWND>(_initialParentHwnd)));
+            THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), _parentWindow));
 
             if (_initialVisibility)
             {
                 THROW_IF_FAILED(ConptyShowHidePseudoConsole(_hPC.get(), _initialVisibility));
             }
+
+            Focused(_focused);
         }
 
         THROW_IF_FAILED(ConptyReleasePseudoConsole(_hPC.get()));
@@ -523,16 +526,40 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConptyConnection::ReparentWindow(const uint64_t newParent)
     {
         // If we haven't started connecting at all, stash this HWND to use once we have started.
+        _parentWindow = reinterpret_cast<HWND>(newParent);
         if (!_isStateAtOrBeyond(ConnectionState::Connecting))
         {
-            _initialParentHwnd = newParent;
+            return;
         }
+
         // Otherwise, just inform the conpty of the new owner window handle.
         // This shouldn't be hittable until GH#5000 / GH#1256, when it's
         // possible to reparent terminals to different windows.
-        else if (_isConnected())
+        if (_isConnected())
         {
-            THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), reinterpret_cast<HWND>(newParent)));
+            THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), _parentWindow));
+        }
+    }
+
+    void ConptyConnection::Focused(bool f)
+    {
+        static auto s = []() {
+            auto m = LoadLibraryExW(L"user32.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+            return GetProcAddressByFunctionDeclaration(m, SetAdditionalForegroundBoostProcesses);
+        }();
+
+        _focused = f;
+
+        if (!_parentWindow || !s)
+            return;
+
+        if (f)
+        {
+            LOG_LAST_ERROR_IF(!s(_parentWindow, 1, &_piClient.hProcess));
+        }
+        else
+        {
+            LOG_LAST_ERROR_IF(!s(_parentWindow, 0, &_piClient.hProcess));
         }
     }
 

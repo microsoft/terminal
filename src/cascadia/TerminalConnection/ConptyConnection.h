@@ -34,6 +34,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void ShowHide(const bool show);
 
         void ReparentWindow(const uint64_t newParent);
+        void Focused(bool f);
 
         winrt::guid Guid() const noexcept;
         winrt::hstring Commandline() const;
@@ -68,7 +69,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         til::CoordType _rows{};
         til::CoordType _cols{};
-        uint64_t _initialParentHwnd{ 0 };
+        HWND _parentWindow{};
+        bool _focused{};
         hstring _commandline{};
         hstring _startingDirectory{};
         hstring _startingTitle{};
