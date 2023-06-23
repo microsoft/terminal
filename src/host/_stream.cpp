@@ -165,8 +165,6 @@ try
 {
     static constexpr wchar_t tabSpaces[8]{ L' ', L' ', L' ', L' ', L' ', L' ', L' ', L' ' };
 
-    UNREFERENCED_PARAMETER(sOriginalXPosition);
-
     auto& textBuffer = screenInfo.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
     const auto keepCursorVisible = WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE);
@@ -252,8 +250,8 @@ try
                     row.SetDoubleBytePadded(false);
                 };
 
-                // We have to move up early because the tab handling code below needs
-                // to be on the row of the tab already, so that we can call GetText().
+                // We have to move up early because the tab handling code below needs to be on
+                // the row of the tab already, so that we can call GetText() for precedingText.
                 if (pos.x == 0 && pos.y != 0)
                 {
                     moveUp();
@@ -297,12 +295,28 @@ try
                         // always be at least 1 because that's the \t character in the backup buffer. In other words,
                         // backupLimit will at a minimum be equal to backupEnd, or preced it by 7 more characters.
                         const auto backupLimit = pwchBuffer - std::min<ptrdiff_t>(8, pwchBuffer - pwchBufferBackupLimit);
-                        // Now count how many spaces precede the \t character and remove them from the glyphCount.
+                        // Now count how many spaces precede the \t character. "backupEnd - backupBeg" will be the amount.
                         auto backupBeg = backupEnd;
                         for (; backupBeg != backupLimit && backupBeg[-1] == L' '; --backupBeg, --glyphCount)
                         {
                         }
-                        glyphCount -= std::min(glyphCount - 1, gsl::narrow_cast<til::CoordType>(backupEnd - backupBeg));
+
+                        // There's one final problem: A prompt like...
+                        //   fputs("foo: ", stdout);
+                        //   fgets(buffer, stdin);
+                        // ...has a trailing whitespace in front of our pwchBufferBackupLimit which we should not backspace over.
+                        // sOriginalXPosition stores the start of the prompt at the pwchBufferBackupLimit.
+                        if (backupBeg == pwchBufferBackupLimit)
+                        {
+                            glyphCount = pos.x - sOriginalXPosition;
+                        }
+
+                        // Now that we finally know how many columns precede the cursor we can
+                        // subtract the previously determined amount of ' ' from the '\t'.
+                        glyphCount -= gsl::narrow_cast<til::CoordType>(backupEnd - backupBeg);
+
+                        // Can the above code leave glyphCount <= 0? Let's just not find out!
+                        glyphCount = std::max(1, glyphCount);
                     }
                     // Control chars in interactive mode where previously written out
                     // as ^X for instance, so now we also need to delete 2 glyphs.
@@ -337,7 +351,7 @@ try
                         break;
                     }
 
-                    // Otherwise, in case we need to delete 2 or more glyphs, we need to check it again.
+                    // Otherwise, in case we need to delete 2 or more glyphs, we need to ensure we properly wrap lines back up.
                     if (pos.x == 0 && pos.y != 0)
                     {
                         moveUp();
