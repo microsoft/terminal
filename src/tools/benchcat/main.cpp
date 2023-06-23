@@ -6,6 +6,7 @@
 
 #include <Windows.h>
 #include <Shlwapi.h>
+#include <shellapi.h>
 #include <icu.h>
 
 #include <cstdint>
@@ -122,7 +123,7 @@ constexpr T clamp(T val, T min, T max)
     return val < min ? min : (val > max ? max : val);
 }
 
-static uint32_t parse_number(const char* str, const char** end) noexcept
+static uint32_t parse_number(const wchar_t* str, const wchar_t** end) noexcept
 {
     static constexpr uint32_t max = 0x0fffffff;
     uint32_t accumulator = 0;
@@ -150,47 +151,54 @@ static uint32_t parse_number(const char* str, const char** end) noexcept
     return accumulator;
 }
 
-static uint32_t parse_number_with_suffix(const char* str) noexcept
+static uint32_t parse_number_with_suffix(const wchar_t* str) noexcept
 {
-    const char* str_end = nullptr;
+    const wchar_t* str_end = nullptr;
     auto value = parse_number(str, &str_end);
 
-    if (*str_end)
+    if (str_end[0])
     {
-        if (strcmp(str_end, "k") == 0)
+        uint32_t mul = 1000;
+
+        if (str_end[1])
         {
-            value *= 1000;
+            mul = 1024;
+
+            if (str_end[1] != L'i')
+            {
+                value = 0;
+            }
         }
-        else if (strcmp(str_end, "Ki") == 0)
+
+        switch (*str_end)
         {
-            value *= 1024;
-        }
-        else if (strcmp(str_end, "M") == 0)
-        {
-            value *= 1000 * 1000;
-        }
-        else if (strcmp(str_end, "Mi") == 0)
-        {
-            value *= 1024 * 1024;
-        }
-        else if (strcmp(str_end, "G") == 0)
-        {
-            value *= 1000 * 1000 * 1000;
-        }
-        else if (strcmp(str_end, "Gi") == 0)
-        {
-            value *= 1024 * 1024 * 1024;
-        }
-        else
-        {
+        case L'g':
+        case L'G':
+            value *= mul;
+            [[fallthrough]];
+        case L'm':
+        case L'M':
+            value *= mul;
+            [[fallthrough]];
+        case L'k':
+        case L'K':
+            value *= mul;
+            break;
+        default:
             value = 0;
+            break;
         }
     }
 
     return value;
 }
 
-static const char* split_prefix(const char* str, const char* prefix) noexcept
+static bool has_suffix(const wchar_t* str, const wchar_t* suffix)
+{
+    return wcscmp(str, suffix) == 0;
+}
+
+static const wchar_t* split_prefix(const wchar_t* str, const wchar_t* prefix) noexcept
 {
     for (; *prefix; ++prefix, ++str)
     {
@@ -309,7 +317,34 @@ static int format(char* buffer, int size, const char* format, ...) noexcept
     return length;
 }
 
-static void eprintf(const char* format, ...) noexcept
+enum class VtMode
+{
+    Off,
+    On,
+    Italic,
+    Color
+};
+
+static HANDLE g_stdout;
+static HANDLE g_stderr;
+static UINT g_console_cp_old;
+static DWORD g_console_mode_old;
+static size_t g_large_page_minimum;
+
+[[noreturn]] static void clean_exit(UINT code)
+{
+    if (g_console_cp_old)
+    {
+        SetConsoleCP(g_console_cp_old);
+    }
+    if (g_console_mode_old)
+    {
+        SetConsoleMode(g_stdout, g_console_mode_old);
+    }
+    ExitProcess(code);
+}
+
+[[noreturn]] static void eprintf(const char* format, ...) noexcept
 {
     char buffer[1024];
 
@@ -320,76 +355,75 @@ static void eprintf(const char* format, ...) noexcept
 
     if (length > 0)
     {
-        WriteFile(GetStdHandle(STD_ERROR_HANDLE), buffer, length, nullptr, nullptr);
+        WriteFile(g_stderr, buffer, length, nullptr, nullptr);
     }
+
+    clean_exit(1);
 }
 
-static void print_last_error(const char* what) noexcept
+[[noreturn]] static void print_last_error(const char* what) noexcept
 {
     eprintf("\r\nfailed to %s with 0x%08lx\r\n", what, GetLastError());
 }
 
-static size_t acquire_lock_memory_privilege() noexcept
+static void acquire_lock_memory_privilege() noexcept
 {
     HANDLE token;
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &token))
     {
-        print_last_error("open process token");
-        return 0;
+        return;
     }
 
-    TOKEN_PRIVILEGES privileges{
-        .Privileges = {},
-    };
+    TOKEN_PRIVILEGES privileges{};
     privileges.PrivilegeCount = 1;
     privileges.Privileges[0].Luid = { 4, 0 }; // SE_LOCK_MEMORY_PRIVILEGE is a well known LUID and always {4, 0}
     privileges.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 
+    // AdjustTokenPrivileges can return true and still set the last error to ERROR_NOT_ALL_ASSIGNED. This API is nuts...
     const bool success = AdjustTokenPrivileges(token, FALSE, &privileges, 0, nullptr, nullptr);
-    if (!success)
+    if (success && GetLastError() == S_OK)
     {
-        print_last_error("adjust token privileges");
-        return 0;
+        g_large_page_minimum = GetLargePageMinimum();
     }
 
     CloseHandle(token);
-    return GetLargePageMinimum();
 }
-
-static size_t g_large_page_minimum = 0;
 
 static char* allocate(size_t size)
 {
-    char* address = nullptr;
     if (g_large_page_minimum)
     {
-        address = static_cast<char*>(VirtualAlloc(nullptr, (size + g_large_page_minimum - 1) & ~(g_large_page_minimum - 1), MEM_COMMIT | MEM_RESERVE | MEM_LARGE_PAGES, PAGE_READWRITE));
-    }
-    if (!address)
-    {
-        address = static_cast<char*>(VirtualAlloc(nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
-        if (!address)
+        const auto large_size = (size + g_large_page_minimum - 1) & ~(g_large_page_minimum - 1);
+        if (const auto address = static_cast<char*>(VirtualAlloc(nullptr, large_size, MEM_COMMIT | MEM_RESERVE | MEM_LARGE_PAGES, PAGE_READWRITE)))
         {
-            print_last_error("allocate memory");
-            ExitProcess(1);
+            return address;
         }
     }
-    return address;
+
+    if (const auto address = static_cast<char*>(VirtualAlloc(nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE)))
+    {
+        return address;
+    }
+
+    print_last_error("allocate memory");
 }
 
-enum class VtMode
+static BOOL WINAPI consoleCtrlHandler(DWORD)
 {
-    Off,
-    On,
-    Italic,
-    Color
-};
+    CancelIoEx(g_stdout, nullptr);
+    return TRUE;
+}
 
 int __stdcall main() noexcept
 {
+    g_stdout = GetStdHandle(STD_OUTPUT_HANDLE);
+    g_stderr = GetStdHandle(STD_OUTPUT_HANDLE);
+    g_console_cp_old = GetConsoleOutputCP();
+
+    SetConsoleCtrlHandler(consoleCtrlHandler, TRUE);
     SetConsoleOutputCP(CP_UTF8);
 
-    const char* path = nullptr;
+    const wchar_t* path = nullptr;
     uint32_t chunk_size = 128 * 1024;
     uint32_t repeat = 1;
     VtMode vt = VtMode::Off;
@@ -397,40 +431,28 @@ int __stdcall main() noexcept
     bool has_seed = false;
 
     {
-        const auto command_line = GetCommandLineA();
-
-        size_t argument_count = 0;
-        size_t character_count = 0;
-        ucrt::parse_command_line<char>(command_line, nullptr, nullptr, &argument_count, &character_count);
-
-        const auto buffer = ucrt::acrt_allocate_buffer_for_argv(argument_count, character_count, sizeof(char));
-        const auto first_argument = reinterpret_cast<char**>(buffer);
-        const auto first_string = reinterpret_cast<char*>(buffer + argument_count * sizeof(char*));
-        ucrt::parse_command_line(command_line, first_argument, first_string, &argument_count, &character_count);
-
-        const char** argv;
         int argc;
-        ucrt::common_configure_argv(&argv, &argc);
+        const auto argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 
         for (int i = 1; i < argc; ++i)
         {
-            if (const auto suffix = split_prefix(argv[i], "-c"))
+            if (const auto suffix = split_prefix(argv[i], L"-c"))
             {
                 // 1GiB is the maximum buffer size WriteFile seems to accept.
                 chunk_size = min<uint32_t>(parse_number_with_suffix(suffix), 1024 * 1024 * 1024);
             }
-            else if (const auto suffix = split_prefix(argv[i], "-r"))
+            else if (const auto suffix = split_prefix(argv[i], L"-r"))
             {
                 repeat = parse_number_with_suffix(suffix);
             }
-            else if (const auto suffix = split_prefix(argv[i], "-v"))
+            else if (const auto suffix = split_prefix(argv[i], L"-v"))
             {
                 vt = VtMode::On;
-                if (strcmp(suffix, "i") == 0)
+                if (has_suffix(suffix, L"i"))
                 {
                     vt = VtMode::Italic;
                 }
-                else if (strcmp(suffix, "c") == 0)
+                else if (has_suffix(suffix, L"c"))
                 {
                     vt = VtMode::Color;
                 }
@@ -439,7 +461,7 @@ int __stdcall main() noexcept
                     break;
                 }
             }
-            else if (strcmp(argv[i], "-s") == 0)
+            else if (has_suffix(argv[i], L"-s"))
             {
                 seed = parse_number_with_suffix(suffix);
                 has_seed = true;
@@ -467,25 +489,20 @@ int __stdcall main() noexcept
             "  -s{d}     RNG seed\r\n"
             "{d} are base-10 digits\r\n"
             "{u} are suffix units k, Ki, M, Mi, G, Gi\r\n");
-        ExitProcess(1);
     }
-
-    g_large_page_minimum = acquire_lock_memory_privilege();
 
     if (!has_seed && vt == VtMode::Color)
     {
-        const auto cryptbase = LoadLibraryExA("cryptbase.dll", nullptr, 0);
+        const auto cryptbase = LoadLibraryExW(L"cryptbase.dll", nullptr, 0);
         if (!cryptbase)
         {
             print_last_error("get handle to cryptbase.dll");
-            ExitProcess(1);
         }
 
         const auto RtlGenRandom = reinterpret_cast<BOOLEAN(APIENTRY*)(PVOID, ULONG)>(GetProcAddress(cryptbase, "SystemFunction036"));
         if (!RtlGenRandom)
         {
             print_last_error("get handle to RtlGenRandom");
-            ExitProcess(1);
         }
 
         RtlGenRandom(&seed, sizeof(seed));
@@ -494,11 +511,10 @@ int __stdcall main() noexcept
     pcg_engines::oneseq_dxsm_64_32 rng{ seed };
 
     const auto stdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    const auto file = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    const auto file = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (file == INVALID_HANDLE_VALUE)
     {
         print_last_error("open file");
-        ExitProcess(1);
     }
 
     size_t file_size = 0;
@@ -508,7 +524,6 @@ int __stdcall main() noexcept
         if (!GetFileSizeEx(file, &i))
         {
             print_last_error("open file");
-            ExitProcess(1);
         }
 
         file_size = static_cast<size_t>(i.QuadPart);
@@ -518,10 +533,11 @@ int __stdcall main() noexcept
         if (file_size == INVALID_FILE_SIZE)
         {
             print_last_error("open file");
-            ExitProcess(1);
         }
 #endif
     }
+
+    acquire_lock_memory_privilege();
 
     const auto file_data = allocate(file_size);
     auto stdout_size = file_size;
@@ -537,30 +553,7 @@ int __stdcall main() noexcept
             if (!ReadFile(file, read_data, read, &read, nullptr))
             {
                 print_last_error("read");
-                ExitProcess(1);
             }
-        }
-    }
-
-    DWORD console_mode_old = 0;
-    {
-        if (!GetConsoleMode(stdout, &console_mode_old))
-        {
-            print_last_error("get console mode");
-        }
-
-        console_mode_old |= ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT;
-
-        auto console_mode_new = console_mode_old;
-        console_mode_new &= ~(ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN);
-        if (vt != VtMode::Off)
-        {
-            console_mode_new |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-        }
-
-        if (!SetConsoleMode(stdout, console_mode_new))
-        {
-            print_last_error("set console mode");
         }
     }
 
@@ -616,6 +609,28 @@ int __stdcall main() noexcept
         break;
     }
 
+    {
+        DWORD mode = 0;
+        if (!GetConsoleMode(g_stdout, &mode))
+        {
+            print_last_error("get console mode");
+        }
+
+        g_console_mode_old = mode;
+
+        mode |= ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT;
+        mode &= ~(ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN);
+        if (vt != VtMode::Off)
+        {
+            mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        }
+
+        if (!SetConsoleMode(g_stdout, mode))
+        {
+            print_last_error("set console mode");
+        }
+    }
+
     LARGE_INTEGER frequency, beg, end;
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&beg);
@@ -631,7 +646,6 @@ int __stdcall main() noexcept
             if (!WriteFile(stdout, write_data, written, &written, nullptr))
             {
                 print_last_error("write");
-                ExitProcess(1);
             }
         }
     }
@@ -658,7 +672,7 @@ int __stdcall main() noexcept
 
     if (status_length <= 0)
     {
-        ExitProcess(1);
+        clean_exit(1);
     }
 
     char buffer[256];
@@ -673,6 +687,6 @@ int __stdcall main() noexcept
     buffer_end = buffer_append_long(buffer_end, &status[0], static_cast<size_t>(status_length));
     buffer_end = buffer_append_string(buffer_end, "\r\n");
 
-    WriteFile(GetStdHandle(STD_ERROR_HANDLE), &buffer[0], static_cast<DWORD>(buffer_end - &buffer[0]), nullptr, nullptr);
-    ExitProcess(0);
+    WriteFile(g_stderr, &buffer[0], static_cast<DWORD>(buffer_end - &buffer[0]), nullptr, nullptr);
+    clean_exit(0);
 }
