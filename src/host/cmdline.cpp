@@ -268,8 +268,7 @@ void RedrawCommandLine(COOKED_READ_DATA& cookedReadData)
         {
             CursorPosition.x++;
         }
-        Status = AdjustCursorPosition(cookedReadData.ScreenInfo(), CursorPosition, TRUE, nullptr);
-        FAIL_FAST_IF_NTSTATUS_FAILED(Status);
+        AdjustCursorPosition(cookedReadData.ScreenInfo(), CursorPosition, TRUE, nullptr);
     }
 }
 
@@ -1298,8 +1297,7 @@ til::point CommandLine::DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData
 
     if (UpdateCursorPosition && cookedReadData.IsEchoInput())
     {
-        Status = AdjustCursorPosition(cookedReadData.ScreenInfo(), cursorPosition, true, nullptr);
-        FAIL_FAST_IF_NTSTATUS_FAILED(Status);
+        AdjustCursorPosition(cookedReadData.ScreenInfo(), cursorPosition, true, nullptr);
     }
 
     return STATUS_SUCCESS;

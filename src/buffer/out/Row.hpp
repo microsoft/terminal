@@ -133,7 +133,7 @@ public:
 
     void ClearCell(til::CoordType column);
     OutputCellIterator WriteCells(OutputCellIterator it, til::CoordType columnBegin, std::optional<bool> wrap = std::nullopt, std::optional<til::CoordType> limitRight = std::nullopt);
-    bool SetAttrToEnd(til::CoordType columnBegin, TextAttribute attr);
+    void SetAttrToEnd(til::CoordType columnBegin, TextAttribute attr);
     void ReplaceAttributes(til::CoordType beginIndex, til::CoordType endIndex, const TextAttribute& newAttr);
     void ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars);
     void ReplaceText(RowWriteState& state);
@@ -171,6 +171,7 @@ private:
         void ReplaceCharacters(til::CoordType width) noexcept;
         void ReplaceText() noexcept;
         void CopyTextFrom(const std::span<const uint16_t>& charOffsets) noexcept;
+        static void _copyOffsets(uint16_t* dst, const uint16_t* src, uint16_t size, uint16_t offset) noexcept;
         void Finish();
 
         // Parent pointer.

@@ -2052,6 +2052,7 @@ vcpkg
 vcprintf
 vcxitems
 vec
+vectorize
 vectorized
 VERCTRL
 VERTBAR
