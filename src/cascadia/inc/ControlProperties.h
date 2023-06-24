@@ -47,8 +47,7 @@
     X(winrt::hstring, StartingTitle)                                                                              \
     X(bool, DetectURLs, true)                                                                                     \
     X(bool, VtPassthrough, false)                                                                                 \
-    X(bool, AutoMarkPrompts)											  \
-    X(bool, KeyAlphaMode, true)
+    X(bool, AutoMarkPrompts)
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.
@@ -74,4 +73,5 @@
     X(bool, UseAtlasEngine, false)                                                                                                                       \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, ShowMarks, false)                                                                                                                            \
-    X(bool, RightClickContextMenu, false)
+    X(bool, RightClickContextMenu, false)                                                                                                                \
+    X(bool, KeyAlphaMode, true)

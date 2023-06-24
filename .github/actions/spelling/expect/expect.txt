@@ -830,7 +830,6 @@ HMK
 hmod
 hmodule
 hmon
-homeglyphs
 homoglyph
 HORZ
 hostable
@@ -1326,13 +1325,6 @@ openps
 openvt
 ORIGINALFILENAME
 osc
-OSCBG
-OSCCT
-OSCFG
-OSCRCC
-OSCSCB
-OSCSCC
-OSCWT
 OSDEPENDSROOT
 OSG
 OSGENG
@@ -1885,7 +1877,6 @@ TEs
 testbuildplatform
 testcon
 testd
-testdlls
 testenv
 testlab
 testlist
@@ -1926,7 +1917,6 @@ TJson
 TLambda
 TLDP
 TLEN
-Tlgdata
 TMAE
 TMPF
 TMult
@@ -2301,7 +2291,6 @@ xunit
 xutr
 XVIRTUALSCREEN
 XWalk
-xxyyzz
 yact
 YCast
 YCENTER

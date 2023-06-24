@@ -17,6 +17,7 @@ charconv
 CLASSNOTAVAILABLE
 CLOSEAPP
 cmdletbinding
+CMODE
 COLORPROPERTY
 colspan
 COMDLG
@@ -54,6 +55,7 @@ GETMOUSEHOVERTIME
 Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
+HIMC
 hinternet
 HINTERNET
 hotkeys
@@ -81,7 +83,9 @@ IFACEMETHOD
 IFile
 IGraphics
 IInheritable
+Imc
 IMap
+IMMDLL
 IMonarch
 IObject
 iosfwd
@@ -106,7 +110,7 @@ localtime
 lround
 Lsa
 lsass
-LSHIFT
+LSHIFGT
 LTGRAY
 MAINWINDOW
 memchr
@@ -177,6 +181,7 @@ SHOWMINIMIZED
 SHOWTIP
 SINGLEUSE
 SIZENS
+SMODE
 smoothstep
 snprintf
 spsc
