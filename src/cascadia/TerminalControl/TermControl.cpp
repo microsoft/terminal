@@ -3510,7 +3510,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 }
 
-// GH#1304, PR#15590 - On <Escape> or <Enter> keypress, switch IME state to alphanumeric mode.
+// GH#1304, PR#15590 - On <Escape> or <Enter> keypress, restore IME state to alphanumeric mode.
 // - It loads "IMM32.DLL" module dynamically.
 
 static HMODULE IMM_DLL = nullptr;
