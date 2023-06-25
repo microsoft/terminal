@@ -145,7 +145,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
         RETURN_IF_FAILED(_SetReverseVideo(textAttributes.IsReverseVideo()));
         _lastTextAttributes.SetReverseVideo(textAttributes.IsReverseVideo());
     }
-    
+
     // Update underline color.
     if (textAttributes.GetUnderlineColor() != _lastTextAttributes.GetUnderlineColor())
     {
@@ -211,7 +211,6 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
     const auto b = GetBValue(color);
     return _WriteFormatted(FMT_COMPILE("\x1b[58;2;{};{};{}m"), r, g, b);
 }
-
 
 [[nodiscard]] HRESULT Xterm256Engine::_UnderlineDefaultColor() noexcept
 {

@@ -202,11 +202,12 @@ void TextAttribute::SetIndexedBackground(const BYTE bgIndex) noexcept
 }
 
 // Method description:
-// - No-op, underlines only support index256 and rgb coloring schemes. 
+// - No-op, underlines only support index256 and rgb coloring schemes.
 // Arguments:
 // - cIndex - index16 based color index.
 void TextAttribute::SetIndexedUnderlineColor(const BYTE /*cIndex*/) noexcept
-{}
+{
+}
 
 void TextAttribute::SetIndexedForeground256(const BYTE fgIndex) noexcept
 {

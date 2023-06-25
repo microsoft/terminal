@@ -266,7 +266,7 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
         return 1 + _SetRgbColorsHelper(options.subspan(optionIndex + 1), attr, TextProp::Underline);
     case UnderlineColorDefault:
         attr.SetDefaultUnderlineColor();
-        return 1; 
+        return 1;
     default:
         return 1;
     }
