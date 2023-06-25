@@ -554,7 +554,6 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     {
         const auto seq = _GenerateWin32KeySequence(keyEvent);
         _SendInputSequence(seq);
-
         return true;
     }
 

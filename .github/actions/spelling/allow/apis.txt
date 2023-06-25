@@ -85,7 +85,6 @@ IGraphics
 IInheritable
 Imc
 IMap
-IMMDLL
 IMonarch
 IObject
 iosfwd
@@ -110,7 +109,7 @@ localtime
 lround
 Lsa
 lsass
-LSHIFGT
+LSHIFT
 LTGRAY
 MAINWINDOW
 memchr
