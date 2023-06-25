@@ -41,6 +41,10 @@ namespace Microsoft::Console::Render
         friend class ::VtApiRoutines;
 
     private:
+        [[nodiscard]] HRESULT _Underline256Color(const BYTE index) noexcept;
+        [[nodiscard]] HRESULT _UnderlineRGBColor(const COLORREF color) noexcept;
+        [[nodiscard]] HRESULT _UnderlineDefaultColor() noexcept;
+        [[nodiscard]] HRESULT _RgbUpdateUnderlineDrawingBrushes(const TextColor ulColor) noexcept;
         [[nodiscard]] HRESULT _UpdateExtendedAttrs(const TextAttribute& textAttributes) noexcept;
         [[nodiscard]] HRESULT _UpdateHyperlinkAttr(const TextAttribute& textAttributes,
                                                    const gsl::not_null<IRenderData*> pData) noexcept;

@@ -296,7 +296,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         size_t _SetRgbColorsHelper(const VTParameters options,
                                    TextAttribute& attr,
-                                   const bool isForeground) noexcept;
+                                   const DispatchTypes::TextProp propType) noexcept;
         size_t _ApplyGraphicsOption(const VTParameters options,
                                     const size_t optionIndex,
                                     TextAttribute& attr) noexcept;

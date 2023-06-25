@@ -7,7 +7,7 @@
 
 // Keeping TextColor compact helps us keeping TextAttribute compact,
 // which in turn ensures that our buffer memory usage is low.
-static_assert(sizeof(TextAttribute) == 12);
+static_assert(sizeof(TextAttribute) == 16);
 static_assert(alignof(TextAttribute) == 2);
 // Ensure that we can memcpy() and memmove() the struct for performance.
 static_assert(std::is_trivially_copyable_v<TextAttribute>);
@@ -147,6 +147,11 @@ TextColor TextAttribute::GetBackground() const noexcept
     return _background;
 }
 
+TextColor TextAttribute::GetUnderlineColor() const noexcept
+{
+    return _underlineColor;
+}
+
 // Method description:
 // - Retrieves the hyperlink ID of the text
 // Return value:
@@ -166,6 +171,11 @@ void TextAttribute::SetBackground(const TextColor background) noexcept
     _background = background;
 }
 
+void TextAttribute::SetUnderlineColor(const TextColor color) noexcept
+{
+    _underlineColor = color;
+}
+
 void TextAttribute::SetForeground(const COLORREF rgbForeground) noexcept
 {
     _foreground = TextColor(rgbForeground);
@@ -174,6 +184,11 @@ void TextAttribute::SetForeground(const COLORREF rgbForeground) noexcept
 void TextAttribute::SetBackground(const COLORREF rgbBackground) noexcept
 {
     _background = TextColor(rgbBackground);
+}
+
+void TextAttribute::SetUnderlineColor(const COLORREF rgbColor) noexcept
+{
+    _underlineColor = TextColor(rgbColor);
 }
 
 void TextAttribute::SetIndexedForeground(const BYTE fgIndex) noexcept
@@ -186,6 +201,13 @@ void TextAttribute::SetIndexedBackground(const BYTE bgIndex) noexcept
     _background = TextColor(bgIndex, false);
 }
 
+// Method description:
+// - No-op, underlines only support index256 and rgb coloring schemes. 
+// Arguments:
+// - cIndex - index16 based color index.
+void TextAttribute::SetIndexedUnderlineColor(const BYTE /*cIndex*/) noexcept
+{}
+
 void TextAttribute::SetIndexedForeground256(const BYTE fgIndex) noexcept
 {
     _foreground = TextColor(fgIndex, true);
@@ -194,6 +216,11 @@ void TextAttribute::SetIndexedForeground256(const BYTE fgIndex) noexcept
 void TextAttribute::SetIndexedBackground256(const BYTE bgIndex) noexcept
 {
     _background = TextColor(bgIndex, true);
+}
+
+void TextAttribute::SetIndexedUnderlineColor256(const BYTE cIndex) noexcept
+{
+    _underlineColor = TextColor(cIndex, true);
 }
 
 void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept
@@ -372,6 +399,11 @@ void TextAttribute::SetDefaultForeground() noexcept
 void TextAttribute::SetDefaultBackground() noexcept
 {
     _background = TextColor();
+}
+
+void TextAttribute::SetDefaultUnderlineColor() noexcept
+{
+    _underlineColor = TextColor();
 }
 
 // Method description:

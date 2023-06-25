@@ -34,6 +34,7 @@ public:
         _attrs{ CharacterAttributes::Normal },
         _foreground{},
         _background{},
+        _underlineColor{},
         _hyperlinkId{ 0 }
     {
     }
@@ -42,6 +43,7 @@ public:
         _attrs{ gsl::narrow_cast<WORD>(wLegacyAttr & USED_META_ATTRS) },
         _foreground{ gsl::at(s_legacyForegroundColorMap, wLegacyAttr & FG_ATTRS) },
         _background{ gsl::at(s_legacyBackgroundColorMap, (wLegacyAttr & BG_ATTRS) >> 4) },
+        _underlineColor{},
         _hyperlinkId{ 0 }
     {
     }
@@ -51,6 +53,7 @@ public:
         _attrs{ CharacterAttributes::Normal },
         _foreground{ rgbForeground },
         _background{ rgbBackground },
+        _underlineColor{},
         _hyperlinkId{ 0 }
     {
     }
@@ -117,20 +120,26 @@ public:
 
     TextColor GetForeground() const noexcept;
     TextColor GetBackground() const noexcept;
+    TextColor GetUnderlineColor() const noexcept;
     uint16_t GetHyperlinkId() const noexcept;
     void SetForeground(const TextColor foreground) noexcept;
     void SetBackground(const TextColor background) noexcept;
+    void SetUnderlineColor(const TextColor color) noexcept;
     void SetForeground(const COLORREF rgbForeground) noexcept;
     void SetBackground(const COLORREF rgbBackground) noexcept;
+    void SetUnderlineColor(const COLORREF rgbColor) noexcept;
     void SetIndexedForeground(const BYTE fgIndex) noexcept;
     void SetIndexedBackground(const BYTE bgIndex) noexcept;
+    void SetIndexedUnderlineColor(const BYTE /*cIndex*/) noexcept;
     void SetIndexedForeground256(const BYTE fgIndex) noexcept;
     void SetIndexedBackground256(const BYTE bgIndex) noexcept;
+    void SetIndexedUnderlineColor256(const BYTE cIndex) noexcept;
     void SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept;
     void SetHyperlinkId(uint16_t id) noexcept;
 
     void SetDefaultForeground() noexcept;
     void SetDefaultBackground() noexcept;
+    void SetDefaultUnderlineColor() noexcept;
     void SetDefaultRenditionAttributes() noexcept;
 
     bool BackgroundIsDefault() const noexcept;
@@ -175,6 +184,7 @@ private:
     uint16_t _hyperlinkId; // sizeof: 2, alignof: 2
     TextColor _foreground; // sizeof: 4, alignof: 1
     TextColor _background; // sizeof: 4, alignof: 1
+    TextColor _underlineColor; // sizeof: 4, alignof: 1
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

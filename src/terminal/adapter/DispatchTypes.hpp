@@ -341,6 +341,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BackgroundDefault = 49,
         Overline = 53,
         NoOverline = 55,
+        UnderlineColor = 58,
+        UnderlineColorDefault = 59,
         BrightForegroundBlack = 90,
         BrightForegroundRed = 91,
         BrightForegroundGreen = 92,
@@ -364,6 +366,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Default = 0,
         Protected = 1,
         Unprotected = 2
+    };
+
+    enum class TextProp : VTInt
+    {
+        Foreground = 0,
+        Background = 1,
+        Underline = 2
     };
 
     // Many of these correspond directly to SGR parameters (the GraphicsOptions enum), but

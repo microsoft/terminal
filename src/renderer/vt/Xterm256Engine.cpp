@@ -103,6 +103,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
         RETURN_IF_FAILED(_SetUnderlined(true));
         _lastTextAttributes.SetUnderlined(true);
     }
+
     if (textAttributes.IsDoublyUnderlined() && !_lastTextAttributes.IsDoublyUnderlined())
     {
         RETURN_IF_FAILED(_SetDoublyUnderlined(true));
@@ -144,8 +145,77 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
         RETURN_IF_FAILED(_SetReverseVideo(textAttributes.IsReverseVideo()));
         _lastTextAttributes.SetReverseVideo(textAttributes.IsReverseVideo());
     }
+    
+    // Update underline color.
+    if (textAttributes.GetUnderlineColor() != _lastTextAttributes.GetUnderlineColor())
+    {
+        RETURN_IF_FAILED(_RgbUpdateUnderlineDrawingBrushes(textAttributes.GetUnderlineColor()));
+        _lastTextAttributes.SetUnderlineColor(textAttributes.GetUnderlineColor());
+    }
 
     return S_OK;
+}
+
+// Routine Description:
+// - Write a VT sequence to change the current color for underlines. Writes true RGB
+//      color sequences.
+// Arguments:
+// - ulColor: Underline color which needs to be applied.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT Xterm256Engine::_RgbUpdateUnderlineDrawingBrushes(const TextColor ulColor) noexcept
+{
+    if (ulColor.IsDefault())
+    {
+        RETURN_IF_FAILED(_UnderlineDefaultColor());
+    }
+    // index16 isn't supported.
+    else if (ulColor.IsIndex16())
+    {
+        return S_FALSE;
+    }
+    else if (ulColor.IsIndex256())
+    {
+        RETURN_IF_FAILED(_Underline256Color(ulColor.GetIndex()));
+    }
+    else if (ulColor.IsRgb())
+    {
+        RETURN_IF_FAILED(_UnderlineRGBColor(ulColor.GetRGB()));
+    }
+    return S_OK;
+}
+
+// Method Description:
+// - Formats and writes a sequence to change the current underline color to an
+//      indexed color from the 256-color table.
+// Arguments:
+// - index: color table index to emit as a VT sequence
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT Xterm256Engine::_Underline256Color(const BYTE index) noexcept
+{
+    return _WriteFormatted(FMT_COMPILE("\x1b[58;5;{}m"), index);
+}
+
+// Method Description:
+// - Formats and writes a sequence to change the current underline color to an
+//      RGB color.
+// Arguments:
+// - color: The color to emit a VT sequence for.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT Xterm256Engine::_UnderlineRGBColor(const COLORREF color) noexcept
+{
+    const auto r = GetRValue(color);
+    const auto g = GetGValue(color);
+    const auto b = GetBValue(color);
+    return _WriteFormatted(FMT_COMPILE("\x1b[58;2;{};{};{}m"), r, g, b);
+}
+
+
+[[nodiscard]] HRESULT Xterm256Engine::_UnderlineDefaultColor() noexcept
+{
+    return _Write("\x1b[59m");
 }
 
 // Routine Description:

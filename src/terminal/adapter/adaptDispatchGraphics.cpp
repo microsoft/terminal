@@ -13,20 +13,21 @@ using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::VirtualTerminal::DispatchTypes;
 
 // Routine Description:
-// - Helper to parse extended graphics options, which start with 38 (FG) or 48 (BG)
+// - Helper to parse extended graphics options, which start with 38 (FG) or 48 (BG) or 58 (underline)
 //     These options are followed by either a 2 (RGB) or 5 (xterm index)
 //      RGB sequences then take 3 MORE params to designate the R, G, B parts of the color
 //      Xterm index will use the param that follows to use a color from the preset 256 color xterm color table.
 // Arguments:
 // - options - An array of options that will be used to generate the RGB color
 // - attr - The attribute that will be updated with the parsed color.
-// - isForeground - Whether or not the parsed color is for the foreground.
+// - propType - text property to apply the parsed color on.
 // Return Value:
-// - The number of options consumed, not including the initial 38/48.
+// - The number of options consumed, not including the initial 38/48/58.
 size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
                                           TextAttribute& attr,
-                                          const bool isForeground) noexcept
+                                          TextProp propType) noexcept
 {
+    using enum TextProp;
     size_t optionsConsumed = 1;
     const DispatchTypes::GraphicsOptions typeOpt = options.at(0);
     if (typeOpt == DispatchTypes::GraphicsOptions::RGBColorOrFaint)
@@ -39,7 +40,18 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
         if (red <= 255 && green <= 255 && blue <= 255)
         {
             const auto rgbColor = RGB(red, green, blue);
-            attr.SetColor(rgbColor, isForeground);
+            switch (propType)
+            {
+            case Foreground:
+                attr.SetColor(rgbColor, true);
+                break;
+            case Background:
+                attr.SetColor(rgbColor, false);
+                break;
+            case Underline:
+                attr.SetUnderlineColor(rgbColor);
+                break;
+            }
         }
     }
     else if (typeOpt == DispatchTypes::GraphicsOptions::BlinkOrXterm256Index)
@@ -49,13 +61,17 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
         if (tableIndex <= 255)
         {
             const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);
-            if (isForeground)
+            switch (propType)
             {
+            case Foreground:
                 attr.SetIndexedForeground256(adjustedIndex);
-            }
-            else
-            {
+                break;
+            case Background:
                 attr.SetIndexedBackground256(adjustedIndex);
+                break;
+            case Underline:
+                attr.SetIndexedUnderlineColor256(adjustedIndex);
+                break;
             }
         }
     }
@@ -80,6 +96,7 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
     case Off:
         attr.SetDefaultForeground();
         attr.SetDefaultBackground();
+        attr.SetDefaultUnderlineColor();
         attr.SetDefaultRenditionAttributes();
         return 1;
     case ForegroundDefault:
@@ -242,9 +259,14 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
         attr.SetIndexedBackground(TextColor::BRIGHT_WHITE);
         return 1;
     case ForegroundExtended:
-        return 1 + _SetRgbColorsHelper(options.subspan(optionIndex + 1), attr, true);
+        return 1 + _SetRgbColorsHelper(options.subspan(optionIndex + 1), attr, TextProp::Foreground);
     case BackgroundExtended:
-        return 1 + _SetRgbColorsHelper(options.subspan(optionIndex + 1), attr, false);
+        return 1 + _SetRgbColorsHelper(options.subspan(optionIndex + 1), attr, TextProp::Background);
+    case UnderlineColor:
+        return 1 + _SetRgbColorsHelper(options.subspan(optionIndex + 1), attr, TextProp::Underline);
+    case UnderlineColorDefault:
+        attr.SetDefaultUnderlineColor();
+        return 1; 
     default:
         return 1;
     }
