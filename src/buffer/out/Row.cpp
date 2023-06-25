@@ -117,6 +117,12 @@ LineRendition ROW::GetLineRendition() const noexcept
     return _lineRendition;
 }
 
+uint16_t ROW::GetLineWidth() const noexcept
+{
+    const auto scale = _lineRendition != LineRendition::SingleWidth ? 1 : 0;
+    return _columnCount >> scale;
+}
+
 // Routine Description:
 // - Sets all properties of the ROW to default values
 // Arguments:

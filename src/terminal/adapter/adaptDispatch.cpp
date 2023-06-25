@@ -138,7 +138,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
         state.columnBegin = cursorPosition.x;
 
         const auto textPositionBefore = state.text.data();
-        textBuffer.WriteLine(cursorPosition.y, wrapAtEOL, attributes, state);
+        textBuffer.Write(cursorPosition.y, attributes, state);
         const auto textPositionAfter = state.text.data();
 
         if (state.columnBeginDirty != state.columnEndDirty)

@@ -101,37 +101,41 @@ void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point coordC
 // As the name implies, this writes text without processing its control characters.
 static size_t _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const DWORD dwFlags, til::CoordType* const psScrollY, const std::wstring_view& text)
 {
-    const auto fKeepCursorVisible = WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE);
-    const auto fWrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
+    const auto keepCursorVisible = WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE);
+    const auto wrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
     const auto hasAccessibilityEventing = screenInfo.HasAccessibilityEventing();
     auto& textBuffer = screenInfo.GetTextBuffer();
-    auto CursorPosition = textBuffer.GetCursor().GetPosition();
-    size_t TempNumSpaces = 0;
+    size_t numSpaces = 0;
 
     RowWriteState state{
         .text = text,
-        .columnLimit = til::CoordTypeMax,
+        .columnLimit = textBuffer.GetSize().RightExclusive(),
     };
 
     while (!state.text.empty())
     {
-        state.columnBegin = CursorPosition.x;
-        textBuffer.WriteLine(CursorPosition.y, fWrapAtEOL, textBuffer.GetCurrentAttributes(), state);
-        CursorPosition.x = state.columnEnd;
+        auto cursorPosition = textBuffer.GetCursor().GetPosition();
 
-        const auto spaces = gsl::narrow_cast<size_t>(state.columnEnd - state.columnBegin);
-        TempNumSpaces += spaces;
+        state.columnBegin = cursorPosition.x;
+        textBuffer.Write(cursorPosition.y, textBuffer.GetCurrentAttributes(), state);
+        cursorPosition.x = state.columnEnd;
 
-        if (hasAccessibilityEventing && spaces != 0)
+        numSpaces += gsl::narrow_cast<size_t>(state.columnEnd - state.columnBegin);
+
+        if (wrapAtEOL && state.columnEnd >= state.columnLimit)
         {
-            screenInfo.NotifyAccessibilityEventing(state.columnBegin, CursorPosition.y, state.columnEnd - 1, CursorPosition.y);
+            textBuffer.SetWrapForced(cursorPosition.y, true);
         }
 
-        AdjustCursorPosition(screenInfo, CursorPosition, fKeepCursorVisible, psScrollY);
-        CursorPosition = textBuffer.GetCursor().GetPosition();
+        if (hasAccessibilityEventing && state.columnEnd > state.columnBegin)
+        {
+            screenInfo.NotifyAccessibilityEventing(state.columnBegin, cursorPosition.y, state.columnEnd - 1, cursorPosition.y);
+        }
+
+        AdjustCursorPosition(screenInfo, cursorPosition, keepCursorVisible, psScrollY);
     }
 
-    return TempNumSpaces;
+    return numSpaces;
 }
 
 // Routine Description:
@@ -340,7 +344,7 @@ try
                             .columnBegin = pos.x,
                             .columnLimit = previousColumn,
                         };
-                        textBuffer.WriteLine(pos.y, wrapAtEOL, textBuffer.GetCurrentAttributes(), state);
+                        textBuffer.Write(pos.y, textBuffer.GetCurrentAttributes(), state);
                         numSpaces -= previousColumn - pos.x;
                     }
 

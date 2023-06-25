@@ -123,6 +123,7 @@ public:
     bool WasDoubleBytePadded() const noexcept;
     void SetLineRendition(const LineRendition lineRendition) noexcept;
     LineRendition GetLineRendition() const noexcept;
+    uint16_t GetLineWidth() const noexcept;
 
     void Reset(const TextAttribute& attr) noexcept;
     void TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth);
