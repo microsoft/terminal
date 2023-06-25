@@ -166,6 +166,19 @@ ROW& TextBuffer::_getRowByOffsetDirect(size_t offset)
     return *reinterpret_cast<ROW*>(row);
 }
 
+// Returns the "user-visible" index of the last committed row, which can be used
+// to short-circuit some algorithms that try to scan the entire buffer.
+// Returns 0 if no rows are committed in.
+til::CoordType TextBuffer::_estimateOffsetOfLastCommittedRow() const noexcept
+{
+    const auto lastRowOffset = (_commitWatermark - _buffer.get()) / _bufferRowStride;
+    // This subtracts 2 from the offset to account for the:
+    // * scratchpad row at offset 0, whereas regular rows start at offset 1.
+    // * fact that _commitWatermark points _past_ the last committed row,
+    //   but we want to return an index pointing at the last row.
+    return std::max(0, gsl::narrow_cast<til::CoordType>(lastRowOffset - 2));
+}
+
 // Retrieves a row from the buffer by its offset from the first row of the text buffer
 // (what corresponds to the top row of the screen buffer).
 const ROW& TextBuffer::GetRowByOffset(const til::CoordType index) const
@@ -780,7 +793,7 @@ til::point TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::C
 
     til::point coordEndOfText;
     // Search the given viewport by starting at the bottom.
-    coordEndOfText.y = viewport.BottomInclusive();
+    coordEndOfText.y = std::min(viewport.BottomInclusive(), _estimateOffsetOfLastCommittedRow());
 
     const auto& currRow = GetRowByOffset(coordEndOfText.y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
@@ -2577,7 +2590,7 @@ try
     // printable char gets reset. See GH #12567
     auto newRowY = newCursor.GetPosition().y + 1;
     const auto newHeight = newBuffer.GetSize().Height();
-    const auto oldHeight = oldBuffer.GetSize().Height();
+    const auto oldHeight = oldBuffer._estimateOffsetOfLastCommittedRow() + 1;
     for (;
          iOldRow < oldHeight && newRowY < newHeight;
          iOldRow++)
