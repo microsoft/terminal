@@ -283,8 +283,8 @@ static FormatResult format_size(LONGLONG value)
     }
     else
     {
-        result.integral = 0;
-        result.fractional = value;
+        result.integral = value;
+        result.fractional = 0;
         result.suffix = "";
     }
     return result;
