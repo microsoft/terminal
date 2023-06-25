@@ -293,7 +293,7 @@ try
                         // backupLimit points to how far back we need to search. Even if we have 9000 characters in our command line,
                         // we'll only need to check a total of 8 whitespaces. "pwchBuffer - pwchBufferBackupLimit" will
                         // always be at least 1 because that's the \t character in the backup buffer. In other words,
-                        // backupLimit will at a minimum be equal to backupEnd, or preced it by 7 more characters.
+                        // backupLimit will at a minimum be equal to backupEnd, or precede it by 7 more characters.
                         const auto backupLimit = pwchBuffer - std::min<ptrdiff_t>(8, pwchBuffer - pwchBufferBackupLimit);
                         // Now count how many spaces precede the \t character. "backupEnd - backupBeg" will be the amount.
                         auto backupBeg = backupEnd;
