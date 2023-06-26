@@ -96,7 +96,8 @@
 
             <!--  Restore keyboard IME to alphabet mode  -->
             <local:SettingContainer x:Uid="Globals_KeyAlphaMode">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.KeyAlphaMode, Mode=TwoWay}" Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <ToggleSwitch IsOn="{x:Bind ViewModel.KeyAlphaMode, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>

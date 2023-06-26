@@ -1158,9 +1158,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // GH#1304 - On <Escape> or <Enter> keypress, restore IME state to alphanumeric mode.
         extern void SetKeyAlphaMode() noexcept;
-        auto key = (WORD) e.Key();
-        if ((key == VK_RETURN || key == VK_ESCAPE) && !e.KeyStatus().IsExtendedKey
-            && Settings().KeyAlphaMode())
+        auto key = (WORD)e.Key();
+        if ((key == VK_RETURN || key == VK_ESCAPE) && !e.KeyStatus().IsExtendedKey && Settings().KeyAlphaMode())
         {
             SetKeyAlphaMode();
         }
@@ -3516,11 +3515,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 static HMODULE IMM_DLL = nullptr;
 static bool no_dll = false;
 
-static HWND (WINAPI *_ImmGetDefaultIMEWnd)(IN HWND);
-static HIMC (WINAPI *_ImmGetContext)(IN HWND);
-static BOOL (WINAPI *_ImmGetOpenStatus)(IN HIMC);
-static BOOL (WINAPI *_ImmSetConversionStatus)(IN HIMC, IN DWORD, IN DWORD);
-static BOOL (WINAPI *_ImmReleaseContext)(IN HWND, IN HIMC);
+static HWND(WINAPI* _ImmGetDefaultIMEWnd)(IN HWND);
+static HIMC(WINAPI* _ImmGetContext)(IN HWND);
+static BOOL(WINAPI* _ImmGetOpenStatus)(IN HIMC);
+static BOOL(WINAPI* _ImmSetConversionStatus)(IN HIMC, IN DWORD, IN DWORD);
+static BOOL(WINAPI* _ImmReleaseContext)(IN HWND, IN HIMC);
 
 // Reset keyboard IME to alphabet mode.
 void SetKeyAlphaMode() noexcept
@@ -3536,11 +3535,11 @@ void SetKeyAlphaMode() noexcept
             no_dll = true;
             return;
         }
-        _ImmGetDefaultIMEWnd = reinterpret_cast<HWND (WINAPI *)(HWND)>(GetProcAddress(IMM_DLL, "ImmGetDefaultIMEWnd"));
-        _ImmGetContext = reinterpret_cast<HIMC (WINAPI *)(HWND)>(GetProcAddress(IMM_DLL, "ImmGetContext"));
-        _ImmGetOpenStatus = reinterpret_cast<BOOL (WINAPI *)(HIMC)>(GetProcAddress(IMM_DLL, "ImmGetOpenStatus"));
-        _ImmSetConversionStatus = reinterpret_cast<BOOL (WINAPI *)(HIMC, DWORD, DWORD)>(GetProcAddress(IMM_DLL, "ImmSetConversionStatus"));
-        _ImmReleaseContext = reinterpret_cast<BOOL (WINAPI *)(HWND, HIMC)>(GetProcAddress(IMM_DLL, "ImmReleaseContext"));
+        _ImmGetDefaultIMEWnd = reinterpret_cast<HWND(WINAPI*)(HWND)>(GetProcAddress(IMM_DLL, "ImmGetDefaultIMEWnd"));
+        _ImmGetContext = reinterpret_cast<HIMC(WINAPI*)(HWND)>(GetProcAddress(IMM_DLL, "ImmGetContext"));
+        _ImmGetOpenStatus = reinterpret_cast<BOOL(WINAPI*)(HIMC)>(GetProcAddress(IMM_DLL, "ImmGetOpenStatus"));
+        _ImmSetConversionStatus = reinterpret_cast<BOOL(WINAPI*)(HIMC, DWORD, DWORD)>(GetProcAddress(IMM_DLL, "ImmSetConversionStatus"));
+        _ImmReleaseContext = reinterpret_cast<BOOL(WINAPI*)(HWND, HIMC)>(GetProcAddress(IMM_DLL, "ImmReleaseContext"));
     }
 
     HWND hWnd = _ImmGetDefaultIMEWnd(nullptr);
