@@ -81,6 +81,9 @@ public:
     size_t Write(_Inout_ std::unique_ptr<IInputEvent> inEvent);
     size_t Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
+    void WriteFocusEvent(bool focused) noexcept;
+    bool WriteMouseEvent(til::point position, unsigned int button, short keyState, short wheelDelta);
+
     bool IsInVirtualTerminalInputMode() const;
     Microsoft::Console::VirtualTerminal::TerminalInput& GetTerminalInput();
     void SetTerminalConnection(_In_ Microsoft::Console::Render::VtEngine* const pTtyConnection);

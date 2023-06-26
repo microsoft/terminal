@@ -682,6 +682,56 @@ size_t InputBuffer::Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEv
     }
 }
 
+// This can be considered a "privileged" variant of Write() which allows FOCUS_EVENTs to generate focus VT sequences.
+// If we didn't do this, someone could write a FOCUS_EVENT_RECORD with WriteConsoleInput, exit without flushing the
+// input buffer and the next application will suddenly get a "\x1b[I" sequence in their input. See GH#13238.
+void InputBuffer::WriteFocusEvent(bool focused) noexcept
+{
+    if (IsInVirtualTerminalInputMode())
+    {
+        _termInput.HandleFocus(focused);
+    }
+    else
+    {
+        // This is a mini-version of Write().
+        const auto wasEmpty = _storage.empty();
+        _storage.push_back(std::make_unique<FocusEvent>(focused));
+        if (wasEmpty)
+        {
+            ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
+        }
+        WakeUpReadersWaitingForData();
+    }
+}
+
+// Returns true when mouse input started. You should then capture the mouse and produce further events.
+bool InputBuffer::WriteMouseEvent(til::point position, const unsigned int button, const short keyState, const short wheelDelta)
+{
+    if (IsInVirtualTerminalInputMode())
+    {
+        // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
+        // "If the high-order bit is 1, the key is down; otherwise, it is up."
+        static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
+
+        const TerminalInput::MouseButtonState state{
+            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_LBUTTON), KeyPressed),
+            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_MBUTTON), KeyPressed),
+            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_RBUTTON), KeyPressed)
+        };
+
+        // GH#6401: VT applications should be able to receive mouse events from outside the
+        // terminal buffer. This is likely to happen when the user drags the cursor offscreen.
+        // We shouldn't throw away perfectly good events when they're offscreen, so we just
+        // clamp them to be within the range [(0, 0), (W, H)].
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.GetActiveOutputBuffer().GetViewport().ToOrigin().Clamp(position);
+
+        return _termInput.HandleMouse(position, button, keyState, wheelDelta, state);
+    }
+
+    return false;
+}
+
 // Routine Description:
 // - Coalesces input events and transfers them to storage queue.
 // Arguments:
