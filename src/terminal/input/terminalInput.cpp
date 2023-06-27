@@ -5,21 +5,11 @@
 #include "terminalInput.hpp"
 
 #include <til/unicode.h>
-#include <strsafe.h>
-
-#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
-#include <wil/Common.h>
 
 #include "../../interactivity/inc/VtApiRedirection.hpp"
 #include "../../inc/unicode.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
-
-TerminalInput::TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn) :
-    _leadingSurrogate{}
-{
-    _pfnWriteEvents = pfn;
-}
 
 struct TermKeyMap
 {
@@ -361,8 +351,6 @@ static std::optional<const TermKeyMap> _searchKeyMapping(const KeyEvent& keyEven
     return std::nullopt;
 }
 
-typedef std::function<void(const std::wstring_view)> InputSender;
-
 // Routine Description:
 // - Searches the s_modifierKeyMapping for a entry corresponding to this key event.
 //      Changes the second to last byte to correspond to the currently pressed modifier keys
@@ -372,135 +360,113 @@ typedef std::function<void(const std::wstring_view)> InputSender;
 // - sender - Function to use to dispatch translated event
 // Return Value:
 // - True if there was a match to a key translation, and we successfully modified and sent it to the input
-static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
+TerminalInput::OutputType TerminalInput::_searchWithModifier(const KeyEvent& keyEvent)
 {
-    auto success = false;
-
-    const auto match = _searchKeyMapping(keyEvent,
-                                         { s_modifierKeyMapping.data(), s_modifierKeyMapping.size() });
-    if (match)
+    if (const auto match = _searchKeyMapping(keyEvent, s_modifierKeyMapping))
     {
         const auto& v = match.value();
         if (!v.sequence.empty())
         {
-            std::wstring modified{ v.sequence }; // Make a copy so we can modify it.
             const auto shift = keyEvent.IsShiftPressed();
             const auto alt = keyEvent.IsAltPressed();
             const auto ctrl = keyEvent.IsCtrlPressed();
-            modified.at(modified.size() - 2) = L'1' + (shift ? 1 : 0) + (alt ? 2 : 0) + (ctrl ? 4 : 0);
-            sender(modified);
-            success = true;
+            StringType str{ v.sequence };
+            str.at(str.size() - 2) = L'1' + (shift ? 1 : 0) + (alt ? 2 : 0) + (ctrl ? 4 : 0);
+            return str;
         }
+    }
+
+    // We didn't find the key in the map of modified keys that need editing,
+    //      maybe it's in the other map of modified keys with sequences that
+    //      don't need editing before sending.
+    else if (const auto match2 = _searchKeyMapping(keyEvent, s_simpleModifiedKeyMapping))
+    {
+        // This mapping doesn't need to be changed at all.
+        return MakeOutput(match2->sequence);
     }
     else
     {
-        // We didn't find the key in the map of modified keys that need editing,
-        //      maybe it's in the other map of modified keys with sequences that
-        //      don't need editing before sending.
-        const auto match2 = _searchKeyMapping(keyEvent,
-                                              { s_simpleModifiedKeyMapping.data(), s_simpleModifiedKeyMapping.size() });
-        if (match2)
+        // One last check:
+        // * C-/ is supposed to be ^_ (the C0 character US)
+        // * C-? is supposed to be DEL
+        // * C-M-/ is supposed to be ^[^_
+        // * C-M-? is supposed to be ^[^?
+        //
+        // But this whole scenario is tricky. '/' is not the same VKEY on
+        // all keyboards. On USASCII keyboards, '/' and '?' share the _same_
+        // key. So we have to figure out the vkey at runtime, and we have to
+        // determine if the key that was pressed was '?' with some
+        // modifiers, or '/' with some modifiers.
+        //
+        // These translations are not in s_simpleModifiedKeyMapping, because
+        // the aforementioned fact that they aren't the same VKEY on all
+        // keyboards.
+        //
+        // See GH#3079 for details.
+        // Also see https://github.com/microsoft/terminal/pull/4947#issuecomment-600382856
+
+        // VkKeyScan will give us both the Vkey of the key needed for this
+        // character, and the modifiers the user might need to press to get
+        // this character.
+        const auto slashKeyScan = OneCoreSafeVkKeyScanW(L'/'); // On USASCII: 0x00bf
+        const auto questionMarkKeyScan = OneCoreSafeVkKeyScanW(L'?'); //On USASCII: 0x01bf
+
+        const auto slashVkey = LOBYTE(slashKeyScan);
+        const auto questionMarkVkey = LOBYTE(questionMarkKeyScan);
+
+        const auto ctrl = keyEvent.IsCtrlPressed();
+        const auto alt = keyEvent.IsAltPressed();
+        const auto shift = keyEvent.IsShiftPressed();
+
+        // From the KeyEvent we're translating, synthesize the equivalent VkKeyScan result
+        const auto vkey = keyEvent.GetVirtualKeyCode();
+        const short keyScanFromEvent = vkey |
+                                       (shift ? 0x100 : 0) |
+                                       (ctrl ? 0x200 : 0) |
+                                       (alt ? 0x400 : 0);
+
+        // Make sure the VKEY is an _exact_ match, and that the modifier
+        // bits also match. This handles the hypothetical case we get a
+        // keyscan back that's ctrl+alt+some_random_VK, and some_random_VK
+        // has bits that are a superset of the bits set for question mark.
+        const auto wasQuestionMark = vkey == questionMarkVkey && WI_AreAllFlagsSet(keyScanFromEvent, questionMarkKeyScan);
+        const auto wasSlash = vkey == slashVkey && WI_AreAllFlagsSet(keyScanFromEvent, slashKeyScan);
+
+        // If the key pressed was exactly the ? key, then try to send the
+        // appropriate sequence for a modified '?'. Otherwise, check if this
+        // was a modified '/' keypress. These mappings don't need to be
+        // changed at all.
+        if ((ctrl && alt) && wasQuestionMark)
         {
-            // This mapping doesn't need to be changed at all.
-            sender(match2.value().sequence);
-            success = true;
+            return MakeOutput(CTRL_ALT_QUESTIONMARK_SEQUENCE);
         }
-        else
+        else if (ctrl && wasQuestionMark)
         {
-            // One last check:
-            // * C-/ is supposed to be ^_ (the C0 character US)
-            // * C-? is supposed to be DEL
-            // * C-M-/ is supposed to be ^[^_
-            // * C-M-? is supposed to be ^[^?
-            //
-            // But this whole scenario is tricky. '/' is not the same VKEY on
-            // all keyboards. On USASCII keyboards, '/' and '?' share the _same_
-            // key. So we have to figure out the vkey at runtime, and we have to
-            // determine if the key that was pressed was '?' with some
-            // modifiers, or '/' with some modifiers.
-            //
-            // These translations are not in s_simpleModifiedKeyMapping, because
-            // the aforementioned fact that they aren't the same VKEY on all
-            // keyboards.
-            //
-            // See GH#3079 for details.
-            // Also see https://github.com/microsoft/terminal/pull/4947#issuecomment-600382856
-
-            // VkKeyScan will give us both the Vkey of the key needed for this
-            // character, and the modifiers the user might need to press to get
-            // this character.
-            const auto slashKeyScan = OneCoreSafeVkKeyScanW(L'/'); // On USASCII: 0x00bf
-            const auto questionMarkKeyScan = OneCoreSafeVkKeyScanW(L'?'); //On USASCII: 0x01bf
-
-            const auto slashVkey = LOBYTE(slashKeyScan);
-            const auto questionMarkVkey = LOBYTE(questionMarkKeyScan);
-
-            const auto ctrl = keyEvent.IsCtrlPressed();
-            const auto alt = keyEvent.IsAltPressed();
-            const auto shift = keyEvent.IsShiftPressed();
-
-            // From the KeyEvent we're translating, synthesize the equivalent VkKeyScan result
-            const auto vkey = keyEvent.GetVirtualKeyCode();
-            const short keyScanFromEvent = vkey |
-                                           (shift ? 0x100 : 0) |
-                                           (ctrl ? 0x200 : 0) |
-                                           (alt ? 0x400 : 0);
-
-            // Make sure the VKEY is an _exact_ match, and that the modifier
-            // bits also match. This handles the hypothetical case we get a
-            // keyscan back that's ctrl+alt+some_random_VK, and some_random_VK
-            // has bits that are a superset of the bits set for question mark.
-            const auto wasQuestionMark = vkey == questionMarkVkey && WI_AreAllFlagsSet(keyScanFromEvent, questionMarkKeyScan);
-            const auto wasSlash = vkey == slashVkey && WI_AreAllFlagsSet(keyScanFromEvent, slashKeyScan);
-
-            // If the key pressed was exactly the ? key, then try to send the
-            // appropriate sequence for a modified '?'. Otherwise, check if this
-            // was a modified '/' keypress. These mappings don't need to be
-            // changed at all.
-            if ((ctrl && alt) && wasQuestionMark)
-            {
-                sender(CTRL_ALT_QUESTIONMARK_SEQUENCE);
-                success = true;
-            }
-            else if (ctrl && wasQuestionMark)
-            {
-                sender(CTRL_QUESTIONMARK_SEQUENCE);
-                success = true;
-            }
-            else if ((ctrl && alt) && wasSlash)
-            {
-                sender(CTRL_ALT_SLASH_SEQUENCE);
-                success = true;
-            }
-            else if (ctrl && wasSlash)
-            {
-                sender(CTRL_SLASH_SEQUENCE);
-                success = true;
-            }
+            return MakeOutput(CTRL_QUESTIONMARK_SEQUENCE);
+        }
+        else if ((ctrl && alt) && wasSlash)
+        {
+            return MakeOutput(CTRL_ALT_SLASH_SEQUENCE);
+        }
+        else if (ctrl && wasSlash)
+        {
+            return MakeOutput(CTRL_SLASH_SEQUENCE);
         }
     }
 
-    return success;
+    return MakeUnhandled();
 }
 
-// Routine Description:
-// - Searches the input array of mappings, and sends it to the input if a match was found.
-// Arguments:
-// - keyEvent - Key event to translate
-// - keyMapping - Array of key mappings to search
-// - sender - Function to use to dispatch translated event
-// Return Value:
-// - True if there was a match to a key translation, and we successfully sent it to the input
-static bool _translateDefaultMapping(const KeyEvent& keyEvent,
-                                     const std::span<const TermKeyMap> keyMapping,
-                                     InputSender sender)
+TerminalInput::OutputType TerminalInput::MakeUnhandled() noexcept
 {
-    const auto match = _searchKeyMapping(keyEvent, keyMapping);
-    if (match)
-    {
-        sender(match->sequence);
-    }
-    return match.has_value();
+    return {};
+}
+
+TerminalInput::OutputType TerminalInput::MakeOutput(const std::wstring_view& str)
+{
+    StringType out;
+    out.append(str);
+    return out;
 }
 
 // Routine Description:
@@ -516,17 +482,17 @@ static bool _translateDefaultMapping(const KeyEvent& keyEvent,
 // - keyEvent - Key event to translate
 // Return Value:
 // - True if the event was handled.
-bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
+TerminalInput::OutputType TerminalInput::HandleKey(const IInputEvent* const pInEvent)
 {
     if (!pInEvent)
     {
-        return false;
+        return MakeUnhandled();
     }
 
     // On key presses, prepare to translate to VT compatible sequences
     if (pInEvent->EventType() != InputEventType::KeyEvent)
     {
-        return false;
+        return MakeUnhandled();
     }
 
     auto keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
@@ -536,9 +502,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     // Only do this if win32-input-mode support isn't manually disabled.
     if (_inputMode.test(Mode::Win32) && !_forceDisableWin32InputMode)
     {
-        const auto seq = _GenerateWin32KeySequence(keyEvent);
-        _SendInputSequence(seq);
-        return true;
+        return _GenerateWin32KeySequence(keyEvent);
     }
 
     // Check if this key matches the last recorded key code.
@@ -552,7 +516,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         {
             _lastVirtualKeyCode = std::nullopt;
         }
-        return false;
+        return MakeUnhandled();
     }
 
     // If this is a repeat of the last recorded key press, and Auto Repeat Mode
@@ -561,7 +525,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     {
         // Note that we must return true here to say we've handled the event,
         // otherwise the key press can still end up being submitted.
-        return true;
+        return MakeOutput({});
     }
     _lastVirtualKeyCode = keyEvent.GetVirtualKeyCode();
 
@@ -575,13 +539,12 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         // The Alt modifier adds an escape prefix.
         if (keyEvent.IsAltPressed())
         {
-            _SendEscapedInputSequence(seq);
+            return _SendEscapedInputSequence(seq);
         }
         else
         {
-            _SendInputSequence({ &seq, 1 });
+            return MakeOutput({ &seq, 1 });
         }
-        return true;
     }
 
     // When the Line Feed mode is set, a VK_RETURN key should send both CR and LF.
@@ -589,8 +552,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     // CR, or when the Ctrl modifier is pressed, just LF.
     if (keyEvent.GetVirtualKeyCode() == VK_RETURN && _inputMode.test(Mode::LineFeed))
     {
-        _SendInputSequence(L"\r\n");
-        return true;
+        return MakeOutput(L"\r\n");
     }
 
     // Many keyboard layouts have an AltGr key, which makes widely used characters accessible.
@@ -630,8 +592,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         {
             // Pressing the control key causes all bits but the 5 least
             // significant ones to be zeroed out (when using ASCII).
-            _SendEscapedInputSequence(ctrlAltChar & 0b11111);
-            return true;
+            return _SendEscapedInputSequence(ctrlAltChar & 0b11111);
         }
 
         // Currently, when we're called with Alt+Ctrl+@, ch will be 0, since Ctrl+@ equals a null byte.
@@ -639,27 +600,24 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         // -> Use the vkey to determine if Ctrl+@ is being pressed and produce ^[^@.
         if (ch == UNICODE_NULL && vkey == LOBYTE(OneCoreSafeVkKeyScanW(0)))
         {
-            _SendEscapedInputSequence(L'\0');
-            return true;
+            return _SendEscapedInputSequence(L'\0');
         }
     }
 
-    const auto senderFunc = [this](const std::wstring_view seq) noexcept {
-        _SendInputSequence(seq);
-    };
-
     // If a modifier key was pressed, then we need to try and send the modified sequence.
-    if (keyEvent.IsModifierPressed() && _searchWithModifier(keyEvent, senderFunc))
+    if (keyEvent.IsModifierPressed())
     {
-        return true;
+        if (auto out = _searchWithModifier(keyEvent))
+        {
+            return out;
+        }
     }
 
     // This section is similar to the Alt modifier section above,
     // but handles cases without Ctrl modifiers.
     if (keyEvent.IsAltPressed() && !keyEvent.IsCtrlPressed() && keyEvent.GetCharData() != 0)
     {
-        _SendEscapedInputSequence(keyEvent.GetCharData());
-        return true;
+        return _SendEscapedInputSequence(keyEvent.GetCharData());
     }
 
     // Pressing the control key causes all bits but the 5 least
@@ -680,8 +638,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         // -> Use the vkey to alternatively determine if Ctrl+@ is being pressed.
         if (ch == UNICODE_SPACE || (ch == UNICODE_NULL && vkey == LOBYTE(OneCoreSafeVkKeyScanW(0))))
         {
-            _SendNullInputSequence(keyEvent.GetActiveModifierKeys());
-            return true;
+            return _SendChar(0);
         }
 
         // Not all keyboard layouts contain mappings for Ctrl-key combinations.
@@ -696,8 +653,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
                 // Pressing the control key causes all bits but the 5 least
                 // significant ones to be zeroed out (when using ASCII).
                 mappedChar &= 0b11111;
-                _SendChar(mappedChar);
-                return true;
+                return _SendChar(mappedChar);
             }
         }
     }
@@ -706,29 +662,28 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     // These mappings will kick in no matter which modifiers are pressed and as such
     // must be checked last, or otherwise we'd override more complex key combinations.
     const auto mapping = _getKeyMapping(keyEvent, _inputMode.test(Mode::Ansi), _inputMode.test(Mode::CursorKey), _inputMode.test(Mode::Keypad));
-    if (_translateDefaultMapping(keyEvent, mapping, senderFunc))
+    if (const auto match = _searchKeyMapping(keyEvent, mapping))
     {
-        return true;
+        return MakeOutput(match->sequence);
     }
 
     // If all else fails we can finally try to send the character itself if there is any.
     if (keyEvent.GetCharData() != 0)
     {
-        _SendChar(keyEvent.GetCharData());
-        return true;
+        return _SendChar(keyEvent.GetCharData());
     }
 
-    return false;
+    return MakeUnhandled();
 }
 
-bool TerminalInput::HandleFocus(const bool focused) noexcept
+TerminalInput::OutputType TerminalInput::HandleFocus(const bool focused) const
 {
-    const auto enabled{ _inputMode.test(Mode::FocusEvent) };
-    if (enabled)
+    if (!_inputMode.test(Mode::FocusEvent))
     {
-        _SendInputSequence(focused ? L"\x1b[I" : L"\x1b[O");
+        return MakeUnhandled();
     }
-    return enabled;
+
+    return MakeOutput(focused ? L"\x1b[I" : L"\x1b[O");
 }
 
 // Routine Description:
@@ -736,30 +691,29 @@ bool TerminalInput::HandleFocus(const bool focused) noexcept
 // - Surrogate pairs are being aggregated by this function before being sent.
 // Arguments:
 // - ch: The UTF-16 character to send.
-void TerminalInput::_SendChar(const wchar_t ch)
+TerminalInput::OutputType TerminalInput::_SendChar(const wchar_t ch)
 {
+    StringType str;
+
     if (til::is_leading_surrogate(ch))
     {
         if (_leadingSurrogate.has_value())
         {
-            // we already were storing a leading surrogate but we got another one. Go ahead and send the
-            // saved surrogate piece and save the new one
-            const auto formatted = wil::str_printf<std::wstring>(L"%I32u", _leadingSurrogate.value());
-            _SendInputSequence(formatted);
+            str.push_back(_leadingSurrogate.value());
         }
-        // save the leading portion of a surrogate pair so that they can be sent at the same time
         _leadingSurrogate.emplace(ch);
     }
     else if (_leadingSurrogate.has_value())
     {
-        std::array<wchar_t, 2> wstr{ { _leadingSurrogate.value(), ch } };
-        _leadingSurrogate.reset();
-        _SendInputSequence({ wstr.data(), wstr.size() });
+        str.push_back(_leadingSurrogate.value());
+        str.push_back(ch);
     }
     else
     {
-        _SendInputSequence({ &ch, 1 });
+        str.push_back(ch);
     }
+
+    return str;
 }
 
 // Routine Description:
@@ -769,68 +723,28 @@ void TerminalInput::_SendChar(const wchar_t ch)
 // - wch - character to send to input paired with Esc
 // Return Value:
 // - None
-void TerminalInput::_SendEscapedInputSequence(const wchar_t wch) const
+TerminalInput::OutputType TerminalInput::_SendEscapedInputSequence(const wchar_t wch)
 {
-    try
-    {
-        std::deque<std::unique_ptr<IInputEvent>> inputEvents;
-        inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, L'\x1b', 0));
-        inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, wch, 0));
-        _pfnWriteEvents(inputEvents);
-    }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-    }
+    StringType str;
+    str.push_back(L'\x1b');
+    str.push_back(wch);
+    return str;
 }
-
-void TerminalInput::_SendNullInputSequence(const DWORD controlKeyState) const
-{
-    try
-    {
-        std::deque<std::unique_ptr<IInputEvent>> inputEvents;
-        inputEvents.push_back(std::make_unique<KeyEvent>(true,
-                                                         1ui16,
-                                                         LOBYTE(OneCoreSafeVkKeyScanW(0)),
-                                                         0ui16,
-                                                         L'\x0',
-                                                         controlKeyState));
-        _pfnWriteEvents(inputEvents);
-    }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-    }
-}
-
-void TerminalInput::_SendInputSequence(const std::wstring_view sequence) const noexcept
-{
-    if (!sequence.empty())
-    {
-        try
-        {
-            std::deque<std::unique_ptr<IInputEvent>> inputEvents;
-            for (const auto& wch : sequence)
-            {
-                inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, wch, 0));
-            }
-            _pfnWriteEvents(inputEvents);
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
-        }
-    }
-}
-
 // Method Description:
 // - Synthesize a win32-input-mode sequence for the given keyevent.
 // Arguments:
 // - key: the KeyEvent to serialize.
-// Return Value:
-// - the formatted string representation of this key
-std::wstring TerminalInput::_GenerateWin32KeySequence(const KeyEvent& key)
+TerminalInput::OutputType TerminalInput::_GenerateWin32KeySequence(const KeyEvent& key)
 {
+    // .uChar.UnicodeChar must be cast to an integer because we want its numerical value.
+    // Casting the rest to uint16_t as well doesn't hurt because that's MAX_PARAMETER_VALUE anyways.
+    const auto kd = gsl::narrow_cast<uint16_t>(key.IsKeyDown() ? 1 : 0);
+    const auto rc = gsl::narrow_cast<uint16_t>(key.GetRepeatCount());
+    const auto vk = gsl::narrow_cast<uint16_t>(key.GetVirtualKeyCode());
+    const auto sc = gsl::narrow_cast<uint16_t>(key.GetVirtualScanCode());
+    const auto uc = gsl::narrow_cast<uint16_t>(key.GetCharData());
+    const auto cs = gsl::narrow_cast<uint16_t>(key.GetActiveModifierKeys());
+
     // Sequences are formatted as follows:
     //
     // ^[ [ Vk ; Sc ; Uc ; Kd ; Cs ; Rc _
@@ -842,11 +756,5 @@ std::wstring TerminalInput::_GenerateWin32KeySequence(const KeyEvent& key)
     //      Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
     //      Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
     //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '1'.
-    return fmt::format(FMT_COMPILE(L"\x1b[{};{};{};{};{};{}_"),
-                       key.GetVirtualKeyCode(),
-                       key.GetVirtualScanCode(),
-                       static_cast<int>(key.GetCharData()),
-                       key.IsKeyDown() ? 1 : 0,
-                       key.GetActiveModifierKeys(),
-                       key.GetRepeatCount());
+    return fmt::format(FMT_COMPILE(L"\x1b[{};{};{};{};{};{}_"), vk, sc, uc, kd, cs, rc);
 }

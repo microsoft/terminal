@@ -26,13 +26,8 @@ using namespace Microsoft::Console;
 // - A new instance of InputBuffer
 InputBuffer::InputBuffer() :
     InputMode{ INPUT_BUFFER_DEFAULT_INPUT_MODE },
-    WaitQueue{},
-    _pTtyConnection(nullptr),
-    _termInput(std::bind(&InputBuffer::_HandleTerminalInputCallback, this, std::placeholders::_1))
+    _pTtyConnection(nullptr)
 {
-    // The _termInput's constructor takes a reference to this object's _HandleTerminalInputCallback.
-    // We need to use std::bind to create a reference to that function without a reference to this InputBuffer
-
     // initialize buffer header
     fInComposition = false;
 }
@@ -689,7 +684,10 @@ void InputBuffer::WriteFocusEvent(bool focused) noexcept
 {
     if (IsInVirtualTerminalInputMode())
     {
-        _termInput.HandleFocus(focused);
+        if (const auto out = _termInput.HandleFocus(focused))
+        {
+            _HandleTerminalInputCallback(*out);
+        }
     }
     else
     {
@@ -726,7 +724,11 @@ bool InputBuffer::WriteMouseEvent(til::point position, const unsigned int button
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.GetActiveOutputBuffer().GetViewport().ToOrigin().Clamp(position);
 
-        return _termInput.HandleMouse(position, button, keyState, wheelDelta, state);
+        if (const auto out = _termInput.HandleMouse(position, button, keyState, wheelDelta, state))
+        {
+            _HandleTerminalInputCallback(*out);
+            return true;
+        }
     }
 
     return false;
@@ -765,10 +767,9 @@ void InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>&
         inEvents.pop_front();
         if (vtInputMode)
         {
-            // GH#11682: TerminalInput::HandleKey can handle both KeyEvents and Focus events seamlessly
-            const auto handled = _termInput.HandleKey(inEvent.get());
-            if (handled)
+            if (const auto out = _termInput.HandleKey(inEvent.get()))
             {
+                _HandleTerminalInputCallback(*out);
                 eventsWritten++;
                 continue;
             }
@@ -994,16 +995,18 @@ bool InputBuffer::IsInVirtualTerminalInputMode() const
 // - inEvents - Series of input records to insert into the buffer
 // Return Value:
 // - <none>
-void InputBuffer::_HandleTerminalInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+void InputBuffer::_HandleTerminalInputCallback(const TerminalInput::StringType& text)
 {
     try
     {
-        // add all input events to the storage queue
-        while (!inEvents.empty())
+        if (text.empty())
         {
-            auto inEvent = std::move(inEvents.front());
-            inEvents.pop_front();
-            _storage.push_back(std::move(inEvent));
+            return;
+        }
+
+        for (const auto& wch : text)
+        {
+            _storage.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, wch, 0));
         }
 
         if (!_vtInputShouldSuppress)
