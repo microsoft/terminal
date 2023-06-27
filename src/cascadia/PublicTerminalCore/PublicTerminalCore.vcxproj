@@ -57,7 +57,8 @@
        instead of APISet forwarders for easier Windows 7 compatibility. -->
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>Uiautomationcore.lib;onecoreuap.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>delayimp.lib;Uiautomationcore.lib;onecoreuap.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>uiautomationcore.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
 </Project>
