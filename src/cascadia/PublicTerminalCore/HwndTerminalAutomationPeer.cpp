@@ -14,7 +14,7 @@ using namespace Microsoft::Console::Types;
 
 static constexpr wchar_t UNICODE_NEWLINE{ L'\n' };
 
-static int CheckDelayedProcException(int exception)
+static int CheckDelayedProcException(int exception) noexcept
 {
     if (exception == VcppException(ERROR_SEVERITY_ERROR, ERROR_PROC_NOT_FOUND))
     {
