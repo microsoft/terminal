@@ -328,14 +328,9 @@ void InputTest::TestFocusEvents()
         auto inputEvent = IInputEvent::Create(irTest);
         VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT from API was NOT handled.");
     }
-    {
-        auto inputEvent = std::make_unique<FocusEvent>(false);
-        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FocusEvent from any other source was NOT handled.");
-    }
-    {
-        auto inputEvent = std::make_unique<FocusEvent>(true);
-        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FocusEvent from any other source was NOT handled.");
-    }
+
+    VERIFY_ARE_EQUAL(false, pInput->HandleFocus(false), L"Verify FocusEvent from any other source was NOT handled.");
+    VERIFY_ARE_EQUAL(false, pInput->HandleFocus(true), L"Verify FocusEvent from any other source was NOT handled.");
 
     Log::Comment(L"Enable focus event handling");
 
@@ -351,16 +346,11 @@ void InputTest::TestFocusEvents()
         auto inputEvent = IInputEvent::Create(irTest);
         VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT from API was NOT handled.");
     }
-    {
-        s_expectedInput = L"\x1b[O";
-        auto inputEvent = std::make_unique<FocusEvent>(false);
-        VERIFY_ARE_EQUAL(true, pInput->HandleKey(inputEvent.get()), L"Verify FocusEvent from any other source was handled.");
-    }
-    {
-        s_expectedInput = L"\x1b[I";
-        auto inputEvent = std::make_unique<FocusEvent>(true);
-        VERIFY_ARE_EQUAL(true, pInput->HandleKey(inputEvent.get()), L"Verify FocusEvent from any other source was handled.");
-    }
+
+    s_expectedInput = L"\x1b[O";
+    VERIFY_ARE_EQUAL(true, pInput->HandleFocus(false), L"Verify FocusEvent from any other source was handled.");
+    s_expectedInput = L"\x1b[I";
+    VERIFY_ARE_EQUAL(true, pInput->HandleFocus(true), L"Verify FocusEvent from any other source was handled.");
 }
 
 void InputTest::TerminalInputModifierKeyTests()
