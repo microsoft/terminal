@@ -156,7 +156,7 @@ public:
     bool IsTrackingMouseInput() const noexcept;
     bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const noexcept;
 
-    void FocusChanged(const bool focused) noexcept override;
+    void FocusChanged(const bool focused) override;
 
     std::wstring GetHyperlinkAtViewportPosition(const til::point viewportPos);
     std::wstring GetHyperlinkAtBufferPosition(const til::point bufferPos);

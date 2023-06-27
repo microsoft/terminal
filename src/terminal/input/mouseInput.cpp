@@ -296,7 +296,8 @@ bool TerminalInput::IsTrackingMouseInput() const noexcept
 // - delta - the amount that the scroll wheel changed (should be 0 unless button is a WM_MOUSE*WHEEL)
 // - state - the state of the mouse buttons at this moment
 // Return value:
-// - true if the event was handled and we should stop event propagation to the default window handler.
+// - Returns an empty optional if we didn't handle the mouse event and the caller can opt to handle it in some other way.
+// - Returns a string if we successfully translated it into a VT input sequence.
 TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, const unsigned int button, const short modifierKeyState, const short delta, const MouseButtonState state)
 {
     if (Utils::Sign(delta) != Utils::Sign(_mouseInputState.accumulatedDelta))
@@ -334,7 +335,7 @@ TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, 
 
     if (ShouldSendAlternateScroll(button, delta))
     {
-        return _SendAlternateScroll(delta);
+        return _makeAlternateScrollOutput(delta);
     }
 
     if (IsTrackingMouseInput())
@@ -371,7 +372,6 @@ TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, 
                 _mouseInputState.lastButton = button;
             }
 
-            std::wstring sequence;
             if (_inputMode.test(Mode::Utf8MouseEncoding))
             {
                 return _GenerateUtf8Sequence(position, realButton, isHover, modifierKeyState, delta);
@@ -403,8 +403,6 @@ TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, 
 // - isHover - true if the sequence is generated in response to a mouse hover
 // - modifierKeyState - the modifier keys pressed with this button
 // - delta - the amount that the scroll wheel changed (should be 0 unless button is a WM_MOUSE*WHEEL)
-// Return value:
-// - The generated sequence. Will be empty if we couldn't generate.
 TerminalInput::OutputType TerminalInput::_GenerateDefaultSequence(const til::point position, const unsigned int button, const bool isHover, const short modifierKeyState, const short delta)
 {
     // In the default, non-extended encoding scheme, coordinates above 94 shouldn't be supported,
@@ -483,9 +481,6 @@ TerminalInput::OutputType TerminalInput::_GenerateUtf8Sequence(const til::point 
 // - delta - the amount that the scroll wheel changed (should be 0 unless button is a WM_MOUSE*WHEEL)
 // - ppwchSequence - On success, where to put the pointer to the generated sequence
 // - pcchLength - On success, where to put the length of the generated sequence
-// Return value:
-// - true if we were able to successfully generate a sequence.
-// On success, caller is responsible for delete[]ing *ppwchSequence.
 TerminalInput::OutputType TerminalInput::_GenerateSGRSequence(const til::point position, const unsigned int button, const bool isDown, const bool isHover, const short modifierKeyState, const short delta)
 {
     // Format for SGR events is:
@@ -515,9 +510,7 @@ bool TerminalInput::ShouldSendAlternateScroll(const unsigned int button, const s
 // - Sends a sequence to the input corresponding to cursor up / down depending on the sScrollDelta.
 // Parameters:
 // - delta: The scroll wheel delta of the input event
-// Return value:
-// True if the input sequence was sent successfully.
-TerminalInput::OutputType TerminalInput::_SendAlternateScroll(const short delta) const
+TerminalInput::OutputType TerminalInput::_makeAlternateScrollOutput(const short delta) const
 {
     if (delta > 0)
     {

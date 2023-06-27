@@ -803,7 +803,7 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
 // - focused: true if we're focused, false otherwise.
 // Return Value:
 // - none
-void Terminal::FocusChanged(const bool focused) noexcept
+void Terminal::FocusChanged(const bool focused)
 {
     _handleTerminalInputResult(_terminalInput.HandleFocus(focused));
 }

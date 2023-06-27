@@ -351,15 +351,8 @@ static std::optional<const TermKeyMap> _searchKeyMapping(const KeyEvent& keyEven
     return std::nullopt;
 }
 
-// Routine Description:
-// - Searches the s_modifierKeyMapping for a entry corresponding to this key event.
-//      Changes the second to last byte to correspond to the currently pressed modifier keys
-//      before sending to the input.
-// Arguments:
-// - keyEvent - Key event to translate
-// - sender - Function to use to dispatch translated event
-// Return Value:
-// - True if there was a match to a key translation, and we successfully modified and sent it to the input
+// Searches the s_modifierKeyMapping for a entry corresponding to this key event.
+// Changes the second to last byte to correspond to the currently pressed modifier keys.
 TerminalInput::OutputType TerminalInput::_searchWithModifier(const KeyEvent& keyEvent)
 {
     if (const auto match = _searchKeyMapping(keyEvent, s_modifierKeyMapping))
@@ -464,9 +457,7 @@ TerminalInput::OutputType TerminalInput::MakeUnhandled() noexcept
 
 TerminalInput::OutputType TerminalInput::MakeOutput(const std::wstring_view& str)
 {
-    StringType out;
-    out.append(str);
-    return out;
+    return { StringType{ str } };
 }
 
 // Routine Description:
@@ -481,7 +472,8 @@ TerminalInput::OutputType TerminalInput::MakeOutput(const std::wstring_view& str
 // Arguments:
 // - keyEvent - Key event to translate
 // Return Value:
-// - True if the event was handled.
+// - Returns an empty optional if we didn't handle the key event and the caller can opt to handle it in some other way.
+// - Returns a string if we successfully translated it into a VT input sequence.
 TerminalInput::OutputType TerminalInput::HandleKey(const IInputEvent* const pInEvent)
 {
     if (!pInEvent)
@@ -502,7 +494,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const IInputEvent* const pInE
     // Only do this if win32-input-mode support isn't manually disabled.
     if (_inputMode.test(Mode::Win32) && !_forceDisableWin32InputMode)
     {
-        return _GenerateWin32KeySequence(keyEvent);
+        return _makeWin32Output(keyEvent);
     }
 
     // Check if this key matches the last recorded key code.
@@ -523,8 +515,8 @@ TerminalInput::OutputType TerminalInput::HandleKey(const IInputEvent* const pInE
     // is disabled, then we should suppress this event.
     if (matchingLastKeyPress && !_inputMode.test(Mode::AutoRepeat))
     {
-        // Note that we must return true here to say we've handled the event,
-        // otherwise the key press can still end up being submitted.
+        // Note that we must return an empty string here to imply that we've handled
+        // the event, otherwise the key press can still end up being submitted.
         return MakeOutput({});
     }
     _lastVirtualKeyCode = keyEvent.GetVirtualKeyCode();
@@ -539,7 +531,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const IInputEvent* const pInE
         // The Alt modifier adds an escape prefix.
         if (keyEvent.IsAltPressed())
         {
-            return _SendEscapedInputSequence(seq);
+            return _makeEscapedOutput(seq);
         }
         else
         {
@@ -592,7 +584,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const IInputEvent* const pInE
         {
             // Pressing the control key causes all bits but the 5 least
             // significant ones to be zeroed out (when using ASCII).
-            return _SendEscapedInputSequence(ctrlAltChar & 0b11111);
+            return _makeEscapedOutput(ctrlAltChar & 0b11111);
         }
 
         // Currently, when we're called with Alt+Ctrl+@, ch will be 0, since Ctrl+@ equals a null byte.
@@ -600,7 +592,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const IInputEvent* const pInE
         // -> Use the vkey to determine if Ctrl+@ is being pressed and produce ^[^@.
         if (ch == UNICODE_NULL && vkey == LOBYTE(OneCoreSafeVkKeyScanW(0)))
         {
-            return _SendEscapedInputSequence(L'\0');
+            return _makeEscapedOutput(L'\0');
         }
     }
 
@@ -617,7 +609,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const IInputEvent* const pInE
     // but handles cases without Ctrl modifiers.
     if (keyEvent.IsAltPressed() && !keyEvent.IsCtrlPressed() && keyEvent.GetCharData() != 0)
     {
-        return _SendEscapedInputSequence(keyEvent.GetCharData());
+        return _makeEscapedOutput(keyEvent.GetCharData());
     }
 
     // Pressing the control key causes all bits but the 5 least
@@ -638,7 +630,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const IInputEvent* const pInE
         // -> Use the vkey to alternatively determine if Ctrl+@ is being pressed.
         if (ch == UNICODE_SPACE || (ch == UNICODE_NULL && vkey == LOBYTE(OneCoreSafeVkKeyScanW(0))))
         {
-            return _SendChar(0);
+            return _makeCharOutput(0);
         }
 
         // Not all keyboard layouts contain mappings for Ctrl-key combinations.
@@ -653,7 +645,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const IInputEvent* const pInE
                 // Pressing the control key causes all bits but the 5 least
                 // significant ones to be zeroed out (when using ASCII).
                 mappedChar &= 0b11111;
-                return _SendChar(mappedChar);
+                return _makeCharOutput(mappedChar);
             }
         }
     }
@@ -670,7 +662,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const IInputEvent* const pInE
     // If all else fails we can finally try to send the character itself if there is any.
     if (keyEvent.GetCharData() != 0)
     {
-        return _SendChar(keyEvent.GetCharData());
+        return _makeCharOutput(keyEvent.GetCharData());
     }
 
     return MakeUnhandled();
@@ -686,27 +678,28 @@ TerminalInput::OutputType TerminalInput::HandleFocus(const bool focused) const
     return MakeOutput(focused ? L"\x1b[I" : L"\x1b[O");
 }
 
-// Routine Description:
-// - Sends the given character to the shell.
-// - Surrogate pairs are being aggregated by this function before being sent.
-// Arguments:
-// - ch: The UTF-16 character to send.
-TerminalInput::OutputType TerminalInput::_SendChar(const wchar_t ch)
+// Turns the given character into OutputType.
+// If it encounters a surrogate pair, it'll buffer the leading character until a
+// trailing one has been received and then flush both of them simultaneously.
+// Surrogate pairs should always be handled as proper pairs after all.
+TerminalInput::OutputType TerminalInput::_makeCharOutput(const wchar_t ch)
 {
     StringType str;
 
     if (til::is_leading_surrogate(ch))
     {
-        if (_leadingSurrogate.has_value())
-        {
-            str.push_back(_leadingSurrogate.value());
-        }
         _leadingSurrogate.emplace(ch);
     }
-    else if (_leadingSurrogate.has_value())
+    else if (_leadingSurrogate)
     {
-        str.push_back(_leadingSurrogate.value());
-        str.push_back(ch);
+        const auto lead = *_leadingSurrogate;
+        _leadingSurrogate.reset();
+
+        if (til::is_trailing_surrogate(ch))
+        {
+            str.push_back(lead);
+            str.push_back(ch);
+        }
     }
     else
     {
@@ -716,25 +709,18 @@ TerminalInput::OutputType TerminalInput::_SendChar(const wchar_t ch)
     return str;
 }
 
-// Routine Description:
-// - Sends the given char as a sequence representing Alt+wch, also the same as
-//      Meta+wch.
-// Arguments:
-// - wch - character to send to input paired with Esc
-// Return Value:
-// - None
-TerminalInput::OutputType TerminalInput::_SendEscapedInputSequence(const wchar_t wch)
+// Sends the given char as a sequence representing Alt+wch, also the same as Meta+wch.
+TerminalInput::OutputType TerminalInput::_makeEscapedOutput(const wchar_t wch)
 {
     StringType str;
     str.push_back(L'\x1b');
     str.push_back(wch);
     return str;
 }
-// Method Description:
-// - Synthesize a win32-input-mode sequence for the given keyevent.
-// Arguments:
-// - key: the KeyEvent to serialize.
-TerminalInput::OutputType TerminalInput::_GenerateWin32KeySequence(const KeyEvent& key)
+
+// Turns an KEY_EVENT_RECORD into a win32-input-mode VT sequence.
+// It allows us to send KEY_EVENT_RECORD data losslessly to conhost.
+TerminalInput::OutputType TerminalInput::_makeWin32Output(const KeyEvent& key)
 {
     // .uChar.UnicodeChar must be cast to an integer because we want its numerical value.
     // Casting the rest to uint16_t as well doesn't hurt because that's MAX_PARAMETER_VALUE anyways.

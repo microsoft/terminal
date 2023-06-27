@@ -89,9 +89,9 @@ namespace Microsoft::Console::VirtualTerminal
         til::enumset<Mode> _inputMode{ Mode::Ansi, Mode::AutoRepeat };
         bool _forceDisableWin32InputMode{ false };
 
-        [[nodiscard]] OutputType _SendChar(wchar_t ch);
-        static [[nodiscard]] OutputType _SendEscapedInputSequence(wchar_t wch);
-        static [[nodiscard]] OutputType _GenerateWin32KeySequence(const KeyEvent& key);
+        [[nodiscard]] OutputType _makeCharOutput(wchar_t ch);
+        static [[nodiscard]] OutputType _makeEscapedOutput(wchar_t wch);
+        static [[nodiscard]] OutputType _makeWin32Output(const KeyEvent& key);
         static [[nodiscard]] OutputType _searchWithModifier(const KeyEvent& keyEvent);
 
 #pragma region MouseInputState Management
@@ -112,7 +112,7 @@ namespace Microsoft::Console::VirtualTerminal
         static [[nodiscard]] OutputType _GenerateUtf8Sequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
         static [[nodiscard]] OutputType _GenerateSGRSequence(til::point position, unsigned int button, bool isDown, bool isHover, short modifierKeyState, short delta);
 
-        [[nodiscard]] OutputType _SendAlternateScroll(short delta) const;
+        [[nodiscard]] OutputType _makeAlternateScrollOutput(short delta) const;
 
         static constexpr unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;
 #pragma endregion
