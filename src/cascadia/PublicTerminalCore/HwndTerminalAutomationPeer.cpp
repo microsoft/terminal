@@ -135,7 +135,7 @@ void HwndTerminalAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
 {
     if (_notificationsUnavailable) [[unlikely]]
     {
-        // What if you tried to notify, but God said no
+        // We failed to delay-load the notification function, so let's just skip the whole thing.
         return;
     }
 
