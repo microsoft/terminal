@@ -132,3 +132,17 @@ jobs:
         checkout: true
         spell_check_this: check-spelling/spell-check-this@prerelease
         task: ${{ needs.spelling.outputs.followup }}
+
+   name: Preview environment controller
+  # You may pin to the exact commit or the version.
+  # uses: cloudposse/github-action-preview-environment-controller@5e420e0d35e67928d21ec3f3efe3a5fa11a04bce
+  uses: cloudposse/github-action-preview-environment-controller@0.9.0
+  with:
+    # YAML formatted {environment}: {label} map 
+    env-label: # default is preview: deploy
+
+    # Existing PR labels
+    labels: # default is []
+    # Is PR open?
+    open: # default is true
+    
