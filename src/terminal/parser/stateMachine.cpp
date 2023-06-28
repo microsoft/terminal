@@ -1811,8 +1811,9 @@ bool StateMachine::FlushToTerminal()
 // Disable vectorization-unfriendly warnings.
 #pragma warning(push)
 #pragma warning(disable : 26429) // Symbol '...' is never tested for nullness, it can be marked as not_null (f.23).
-#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, gsl::narrow_cast or gsl::narrow (type.1).
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
 
 // Returns true for C0 characters and C1 [single-character] CSI.
 constexpr bool isActionableFromGround(const wchar_t wch) noexcept
