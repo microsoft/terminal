@@ -19,7 +19,10 @@ BBBBBBBB
 BBBBBCCC
 BBBBCCCCC
 BBGGRR
+<<<<<<< HEAD
 efg
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 EFG
 EFGh
 KLMNOQQQQQQQQQQ

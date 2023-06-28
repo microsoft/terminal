@@ -1,9 +1,15 @@
 aabbcc
+<<<<<<< HEAD
 aarch
 ABANDONFONT
 abbcc
 ABCDEFGHIJKLMNOPQRSTUVWXY
 ABCF
+=======
+ABANDONFONT
+abbcc
+ABCDEFGHIJKLMNOPQRSTUVWXY
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 abgr
 abi
 ABORTIFHUNG
@@ -39,7 +45,10 @@ ansicpg
 ANSISYS
 ANSISYSRC
 ANSISYSSC
+<<<<<<< HEAD
 answerback
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 antialiasing
 ANull
 anycpu
@@ -158,6 +167,10 @@ capslock
 CARETBLINKINGENABLED
 CARRIAGERETURN
 cascadia
+<<<<<<< HEAD
+=======
+castsi
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 catid
 cazamor
 CBash
@@ -178,6 +191,10 @@ CConsole
 CConversion
 CCRT
 cdd
+<<<<<<< HEAD
+=======
+CDeclaration
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 CEdit
 CELLSIZE
 cfae
@@ -195,8 +212,12 @@ chh
 chk
 CHT
 Cic
+<<<<<<< HEAD
 cielab
 Cielab
+=======
+CLA
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 Clcompile
 CLE
 cleartype
@@ -216,6 +237,10 @@ cmder
 CMDEXT
 cmh
 CMOUSEBUTTONS
+<<<<<<< HEAD
+=======
+cmpeq
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 cmt
 cmw
 cmyk
@@ -314,6 +339,10 @@ CPLINFO
 cplusplus
 CPPCORECHECK
 cppcorecheckrules
+<<<<<<< HEAD
+=======
+cpprest
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 cpprestsdk
 cppwinrt
 CProc
@@ -334,7 +363,11 @@ Cspace
 csrmsg
 CSRSS
 csrutil
+<<<<<<< HEAD
 CSTYLE
+=======
+cstyle
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 CSwitch
 CTerminal
 CText
@@ -409,37 +442,57 @@ DECANM
 DECARM
 DECAUPSS
 DECAWM
+<<<<<<< HEAD
 DECBI
 DECBKM
 DECCARA
 DECCIR
+=======
+DECBKM
+DECCARA
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 DECCKM
 DECCKSR
 DECCOLM
 DECCRA
 DECCTR
+<<<<<<< HEAD
 DECDC
 DECDHL
 decdld
 DECDMAC
+=======
+DECDHL
+decdld
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 DECDWL
 DECECM
 DECEKBD
 DECERA
+<<<<<<< HEAD
 DECFI
 DECFRA
 DECIC
+=======
+DECFRA
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 DECID
 DECINVM
 DECKPAM
 DECKPM
 DECKPNM
 DECLRMM
+<<<<<<< HEAD
 DECMSR
 DECNKM
 DECNRCM
 DECOM
 decommit
+=======
+DECNKM
+DECNRCM
+DECOM
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 DECPCTERM
 DECPS
 DECRARA
@@ -449,10 +502,15 @@ DECRLM
 DECRPM
 DECRQCRA
 DECRQM
+<<<<<<< HEAD
 DECRQPSR
 DECRQSS
 DECRQTSR
 DECRSPS
+=======
+DECRQSS
+DECRQTSR
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 decrst
 DECSACE
 DECSASD
@@ -549,6 +607,10 @@ DSSCL
 DSwap
 DTest
 DTTERM
+<<<<<<< HEAD
+=======
+DUMMYUNIONNAME
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 dup'ed
 dvi
 dwl
@@ -593,7 +655,10 @@ ENU
 ENUMLOGFONT
 ENUMLOGFONTEX
 enumranges
+<<<<<<< HEAD
 EOK
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 eplace
 EPres
 EQU
@@ -624,7 +689,10 @@ FACESIZE
 FAILIFTHERE
 fastlink
 fcharset
+<<<<<<< HEAD
 FDEA
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 fdw
 FECF
 FEEF
@@ -814,6 +882,10 @@ HIBYTE
 hicon
 HIDEWINDOW
 hinst
+<<<<<<< HEAD
+=======
+Hirots
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 HISTORYBUFS
 HISTORYNODUP
 HISTORYSIZE
@@ -825,6 +897,7 @@ hkl
 HKLM
 hlocal
 hlsl
+<<<<<<< HEAD
 HMB
 HMK
 hmod
@@ -832,11 +905,19 @@ hmodule
 hmon
 homeglyphs
 homoglyph
+=======
+hmod
+hmodule
+hmon
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 HORZ
 hostable
 hostlib
 HPA
+<<<<<<< HEAD
 hpcon
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 HPCON
 hpj
 HPR
@@ -918,6 +999,10 @@ INSERTMODE
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
 INTERNALNAME
+<<<<<<< HEAD
+=======
+inthread
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 intsafe
 INVALIDARG
 INVALIDATERECT
@@ -978,8 +1063,11 @@ KLF
 KLMNO
 KLMNOPQRST
 KLMNOPQRSTQQQQQ
+<<<<<<< HEAD
 KLMNOPQRSTUVWXY
 KLMNOPQRSTY
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 KOK
 KPRIORITY
 KVM
@@ -1138,7 +1226,10 @@ Mip
 MMBB
 mmcc
 MMCPL
+<<<<<<< HEAD
 MMIX
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 mmsystem
 MNC
 MNOPQ
@@ -1153,6 +1244,10 @@ MOUSEACTIVATE
 MOUSEFIRST
 MOUSEHWHEEL
 MOUSEMOVE
+<<<<<<< HEAD
+=======
+movemask
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 MOVESTART
 msb
 msctf
@@ -1283,11 +1378,19 @@ nturtl
 ntuser
 NTVDM
 ntverp
+<<<<<<< HEAD
+=======
+NTWIN
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 nugetversions
 nullability
 nullness
 nullonfailure
 nullopts
+<<<<<<< HEAD
+=======
+NULs
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 numlock
 numpad
 NUMSCROLL
@@ -1451,6 +1554,10 @@ PPEB
 ppf
 ppguid
 ppidl
+<<<<<<< HEAD
+=======
+pplx
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 PPROC
 ppropvar
 ppsi
@@ -1515,6 +1622,10 @@ ptrs
 ptsz
 PTYIn
 PUCHAR
+<<<<<<< HEAD
+=======
+PUNICODE
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 pwch
 PWDDMCONSOLECONTEXT
 pws
@@ -1576,6 +1687,10 @@ REGISTEROS
 REGISTERVDM
 regkey
 REGSTR
+<<<<<<< HEAD
+=======
+reingest
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 RELBINPATH
 remoting
 renamer
@@ -1587,7 +1702,10 @@ replatformed
 Replymessage
 repositorypath
 Requiresx
+<<<<<<< HEAD
 rerasterize
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 rescap
 Resequence
 RESETCONTENT
@@ -1776,6 +1894,10 @@ somefile
 SOURCEBRANCH
 sourced
 spammy
+<<<<<<< HEAD
+=======
+spand
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 SRCCODEPAGE
 SRCCOPY
 SRCINVERT
@@ -1789,7 +1911,10 @@ srv
 srvinit
 srvpipe
 ssa
+<<<<<<< HEAD
 startdir
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 STARTF
 STARTUPINFO
 STARTUPINFOEX
@@ -1873,7 +1998,10 @@ TDP
 TEAMPROJECT
 tearoff
 Teb
+<<<<<<< HEAD
 Techo
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 tellp
 teraflop
 terminalcore
@@ -1965,7 +2093,10 @@ trx
 tsattrs
 tsf
 tsgr
+<<<<<<< HEAD
 tsm
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 TStr
 TSTRFORMAT
 TSub
@@ -2051,7 +2182,10 @@ USRDLL
 utr
 UVWX
 UVWXY
+<<<<<<< HEAD
 UVWXYZ
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 uwa
 uwp
 uxtheme
@@ -2131,6 +2265,10 @@ WDDMCONSOLECONTEXT
 wdm
 webpage
 websites
+<<<<<<< HEAD
+=======
+websockets
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 wekyb
 wex
 wextest
@@ -2302,6 +2440,10 @@ xunit
 xutr
 XVIRTUALSCREEN
 XWalk
+<<<<<<< HEAD
+=======
+xwwyzz
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 xxyyzz
 yact
 YCast
@@ -2312,9 +2454,12 @@ YOffset
 YSubstantial
 YVIRTUALSCREEN
 YWalk
+<<<<<<< HEAD
 Zab
 zabcd
 Zabcdefghijklmn
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 Zabcdefghijklmnopqrstuvwxyz
 ZCmd
 ZCtrl

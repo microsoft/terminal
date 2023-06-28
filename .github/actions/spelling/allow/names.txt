@@ -1,6 +1,7 @@
 Anup
 arkthur
 austdi
+arkthur
 Ballmer
 bhoj
 Bhojwani
@@ -84,7 +85,10 @@ Thysell
 Walisch
 WDX
 Wellons
+<<<<<<< HEAD
 Westerman
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 Wirt
 Wojciech
 zadjii
