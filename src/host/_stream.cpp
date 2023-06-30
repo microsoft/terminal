@@ -177,6 +177,12 @@ try
     const auto end = it + *pcb / sizeof(wchar_t);
     size_t numSpaces = 0;
 
+    // In VT mode, when you have a 120-column terminal you can write 120 columns without the cursor wrapping.
+    // Whenever the cursor is in that 120th column IsDelayedEOLWrap() will return true. I'm not sure why the VT parts
+    // of the code base store this as a boolean. It's also unclear why we handle this here. The intention is likely
+    // so that when we exit VT mode and receive a write a potentially stored delayed wrap would still be handled.
+    // The way this code does it however isn't correct since it handles it like the old console APIs would and
+    // so writing a newline while being delay wrapped will print 2 newlines.
     if (cursor.IsDelayedEOLWrap() && wrapAtEOL)
     {
         auto pos = cursor.GetPosition();
@@ -190,6 +196,8 @@ try
         }
     }
 
+    // If ENABLE_PROCESSED_OUTPUT is set we search for C0 control characters and handle them like backspace, tab, etc.
+    // If it's not set, we can just straight up give everything to _writeCharsLegacyUnprocessed.
     if (WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
     {
         numSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { it, end });
@@ -322,7 +330,7 @@ try
                         // Can the above code leave glyphCount <= 0? Let's just not find out!
                         glyphCount = std::max(1, glyphCount);
                     }
-                    // Control chars in interactive mode where previously written out
+                    // Control chars in interactive mode were previously written out
                     // as ^X for instance, so now we also need to delete 2 glyphs.
                     else if (IS_CONTROL_CHAR(lastChar))
                     {
