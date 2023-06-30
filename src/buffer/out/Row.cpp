@@ -117,6 +117,12 @@ LineRendition ROW::GetLineRendition() const noexcept
     return _lineRendition;
 }
 
+uint16_t ROW::GetLineWidth() const noexcept
+{
+    const auto scale = _lineRendition != LineRendition::SingleWidth ? 1 : 0;
+    return _columnCount >> scale;
+}
+
 // Routine Description:
 // - Sets all properties of the ROW to default values
 // Arguments:
@@ -880,6 +886,17 @@ DbcsAttribute ROW::DbcsAttrAt(til::CoordType column) const noexcept
 std::wstring_view ROW::GetText() const noexcept
 {
     return { _chars.data(), _charSize() };
+}
+
+std::wstring_view ROW::GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept
+{
+    const til::CoordType columns = _columnCount;
+    const auto colBeg = std::max(0, std::min(columns, columnBegin));
+    const auto colEnd = std::max(colBeg, std::min(columns, columnEnd));
+    const size_t chBeg = _uncheckedCharOffset(gsl::narrow_cast<size_t>(colBeg));
+    const size_t chEnd = _uncheckedCharOffset(gsl::narrow_cast<size_t>(colEnd));
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+    return { _chars.data() + chBeg, chEnd - chBeg };
 }
 
 DelimiterClass ROW::DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept

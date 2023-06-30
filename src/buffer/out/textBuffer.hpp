@@ -98,7 +98,7 @@ public:
 
     // Text insertion functions
     static void ConsumeGrapheme(std::wstring_view& chars) noexcept;
-    void WriteLine(til::CoordType row, bool wrapAtEOL, const TextAttribute& attributes, RowWriteState& state);
+    void Write(til::CoordType row, const TextAttribute& attributes, RowWriteState& state);
     void FillRect(const til::rect& rect, const std::wstring_view& fill, const TextAttribute& attributes);
 
     OutputCellIterator Write(const OutputCellIterator givenIt);
@@ -133,10 +133,11 @@ public:
 
     til::CoordType TotalRowCount() const noexcept;
 
-    [[nodiscard]] TextAttribute GetCurrentAttributes() const noexcept;
+    const TextAttribute& GetCurrentAttributes() const noexcept;
 
     void SetCurrentAttributes(const TextAttribute& currentAttributes) noexcept;
 
+    void SetWrapForced(til::CoordType y, bool wrap);
     void SetCurrentLineRendition(const LineRendition lineRendition, const TextAttribute& fillAttributes);
     void ResetLineRenditionRange(const til::CoordType startRow, const til::CoordType endRow);
     LineRendition GetLineRendition(const til::CoordType row) const;

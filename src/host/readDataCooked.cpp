@@ -534,7 +534,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                               &NumToWrite,
                                               &NumSpaces,
                                               _originalCursorPosition.x,
-                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                              WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                               &ScrollY);
                     if (SUCCEEDED_NTSTATUS(status))
                     {
@@ -616,7 +616,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                                   &NumToWrite,
                                                   nullptr,
                                                   _originalCursorPosition.x,
-                                                  WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                  WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                   nullptr);
                         if (FAILED_NTSTATUS(status))
                         {
@@ -717,7 +717,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
             // write the new command line to the screen
             NumToWrite = _bytesRead;
 
-            DWORD dwFlags = WC_DESTRUCTIVE_BACKSPACE | WC_PRINTABLE_CONTROL_CHARS;
+            DWORD dwFlags = WC_INTERACTIVE;
             if (wch == UNICODE_CARRIAGERETURN)
             {
                 dwFlags |= WC_KEEP_CURSOR_VISIBLE;
@@ -782,7 +782,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                               &NumToWrite,
                                               nullptr,
                                               _originalCursorPosition.x,
-                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                              WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                               nullptr);
                     if (FAILED_NTSTATUS(status))
                     {
@@ -844,7 +844,7 @@ size_t COOKED_READ_DATA::Write(const std::wstring_view wstr)
                                                       &bytesInserted,
                                                       &NumSpaces,
                                                       OriginalCursorPosition().x,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                      WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                       &ScrollY));
         OriginalCursorPosition().y += ScrollY;
         VisibleCharCount() += NumSpaces;
