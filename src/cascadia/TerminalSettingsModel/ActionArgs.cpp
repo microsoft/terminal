@@ -187,15 +187,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         std::wstringstream ss;
 
-        if (DismissSelection())
-        {
-            ss << RS_(L"DismissSelectionCommandKey").c_str();
-        }
-        else
-        {
-            ss << RS_(L"DismissSelectionFalseCommandKey").c_str();
-        }
-
         if (SingleLine())
         {
             ss << RS_(L"CopyTextAsSingleLineCommandKey").c_str();
@@ -203,6 +194,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         else
         {
             ss << RS_(L"CopyTextCommandKey").c_str();
+        }
+
+        if (!DismissSelection())
+        {
+            ss << L", dismissSelection: false";
         }
 
         if (CopyFormatting())
