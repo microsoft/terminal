@@ -25,8 +25,6 @@ namespace Microsoft::Console::VirtualTerminal
         using StringType = std::wstring;
         using OutputType = std::optional<StringType>;
 
-        static_assert(StringType{} == StringType{});
-
         struct MouseButtonState
         {
             bool isLeftButtonDown;
