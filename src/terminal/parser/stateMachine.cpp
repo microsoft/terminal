@@ -1856,10 +1856,10 @@ static size_t findActionableFromGround(const wchar_t* data, size_t count) noexce
 
         // Check for (wch < 0x20)
         auto a = _mm_subs_epu16(wch, _mm_set1_epi16(0x1f));
-        // Check for "(wch >= 0x7f && wch <= 0x9f)" by adding 0x10000-0x7f, which overflows to a
+        // Check for "((wch - 0x7f) <= 0x20)" by adding 0x10000-0x7f, which overflows to a
         // negative number if "wch >= 0x7f" and then subtracting 0x9f-0x7f with saturation to an
         // unsigned number (= can't go lower than 0), which results in all numbers up to 0x9f to be 0.
-        auto b = _mm_subs_epu16(_mm_add_epi32(wch, _mm_set1_epi16(static_cast<short>(0xff81))), _mm_set1_epi16(0x20));
+        auto b = _mm_subs_epu16(_mm_add_epi16(wch, _mm_set1_epi16(static_cast<short>(0xff81))), _mm_set1_epi16(0x20));
         a = _mm_cmpeq_epi16(a, z);
         b = _mm_cmpeq_epi16(b, z);
 
