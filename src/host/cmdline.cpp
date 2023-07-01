@@ -251,7 +251,7 @@ void RedrawCommandLine(COOKED_READ_DATA& cookedReadData)
                                        &cookedReadData.BytesRead(),
                                        &cookedReadData.VisibleCharCount(),
                                        cookedReadData.OriginalCursorPosition().x,
-                                       WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                       WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                        &ScrollY);
         FAIL_FAST_IF_NTSTATUS_FAILED(Status);
 
@@ -291,7 +291,7 @@ void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ SHORT Index) /
                                                       &cookedReadData.BytesRead(),
                                                       &cookedReadData.VisibleCharCount(),
                                                       cookedReadData.OriginalCursorPosition().x,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                      WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                       &ScrollY));
         cookedReadData.OriginalCursorPosition().y += ScrollY;
     }
@@ -455,7 +455,7 @@ void CommandLine::_processHistoryCycling(COOKED_READ_DATA& cookedReadData,
                                                       &cookedReadData.BytesRead(),
                                                       &cookedReadData.VisibleCharCount(),
                                                       cookedReadData.OriginalCursorPosition().x,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                      WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                       &ScrollY));
         cookedReadData.OriginalCursorPosition().y += ScrollY;
     }
@@ -490,7 +490,7 @@ void CommandLine::_setPromptToOldestCommand(COOKED_READ_DATA& cookedReadData)
                                                           &cookedReadData.BytesRead(),
                                                           &cookedReadData.VisibleCharCount(),
                                                           cookedReadData.OriginalCursorPosition().x,
-                                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                          WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                           &ScrollY));
             cookedReadData.OriginalCursorPosition().y += ScrollY;
         }
@@ -526,7 +526,7 @@ void CommandLine::_setPromptToNewestCommand(COOKED_READ_DATA& cookedReadData)
                                                           &cookedReadData.BytesRead(),
                                                           &cookedReadData.VisibleCharCount(),
                                                           cookedReadData.OriginalCursorPosition().x,
-                                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                          WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                           &ScrollY));
             cookedReadData.OriginalCursorPosition().y += ScrollY;
         }
@@ -553,7 +553,7 @@ void CommandLine::DeletePromptAfterCursor(COOKED_READ_DATA& cookedReadData) noex
                                                       &cookedReadData.BytesRead(),
                                                       &cookedReadData.VisibleCharCount(),
                                                       cookedReadData.OriginalCursorPosition().x,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                      WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                       nullptr));
     }
 }
@@ -580,7 +580,7 @@ til::point CommandLine::_deletePromptBeforeCursor(COOKED_READ_DATA& cookedReadDa
                                                       &cookedReadData.BytesRead(),
                                                       &cookedReadData.VisibleCharCount(),
                                                       cookedReadData.OriginalCursorPosition().x,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                      WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                       nullptr));
     }
     return cookedReadData.OriginalCursorPosition();
@@ -869,7 +869,7 @@ til::point CommandLine::_moveCursorRight(COOKED_READ_DATA& cookedReadData) noexc
                                                               &CharsToWrite,
                                                               &NumSpaces,
                                                               cookedReadData.OriginalCursorPosition().x,
-                                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                              WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                               &ScrollY));
                 cookedReadData.OriginalCursorPosition().y += ScrollY;
                 cookedReadData.VisibleCharCount() += NumSpaces;
@@ -912,7 +912,7 @@ void CommandLine::_insertCtrlZ(COOKED_READ_DATA& cookedReadData) noexcept
                                                       &CharsToWrite,
                                                       &NumSpaces,
                                                       cookedReadData.OriginalCursorPosition().x,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                      WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                       &ScrollY));
         cookedReadData.OriginalCursorPosition().y += ScrollY;
         cookedReadData.VisibleCharCount() += NumSpaces;
@@ -962,7 +962,7 @@ void CommandLine::_fillPromptWithPreviousCommandFragment(COOKED_READ_DATA& cooke
                                                               &cchCount,
                                                               &NumSpaces,
                                                               cookedReadData.OriginalCursorPosition().x,
-                                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                              WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                               &ScrollY));
                 cookedReadData.OriginalCursorPosition().y += ScrollY;
                 cookedReadData.VisibleCharCount() += NumSpaces;
@@ -1007,7 +1007,7 @@ til::point CommandLine::_cycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& c
                                                               &cookedReadData.BytesRead(),
                                                               &cookedReadData.VisibleCharCount(),
                                                               cookedReadData.OriginalCursorPosition().x,
-                                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                              WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                               &ScrollY));
                 cookedReadData.OriginalCursorPosition().y += ScrollY;
                 cursorPosition.y += ScrollY;
@@ -1062,7 +1062,7 @@ til::point CommandLine::DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData
                                                           &cookedReadData.BytesRead(),
                                                           &cookedReadData.VisibleCharCount(),
                                                           cookedReadData.OriginalCursorPosition().x,
-                                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                          WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                           nullptr));
         }
 
