@@ -1,4 +1,5 @@
 aabbcc
+aarch
 ABANDONFONT
 abbcc
 ABCDEFGHIJKLMNOPQRSTUVWXY
@@ -104,6 +105,7 @@ bcx
 bcz
 BEFOREPARENT
 beginthread
+benchcat
 bgfx
 bgidx
 Bgk
@@ -157,7 +159,6 @@ capslock
 CARETBLINKINGENABLED
 CARRIAGERETURN
 cascadia
-castsi
 catid
 cazamor
 CBash
@@ -216,7 +217,6 @@ cmder
 CMDEXT
 cmh
 CMOUSEBUTTONS
-cmpeq
 cmt
 cmw
 cmyk
@@ -988,7 +988,6 @@ langid
 LANGUAGELIST
 lasterror
 LASTEXITCODE
-lastexitcode
 LAYOUTRTL
 lbl
 LBN
@@ -1024,7 +1023,6 @@ lnkd
 lnkfile
 LNM
 LOADONCALL
-loadu
 LOBYTE
 localappdata
 locsrc
@@ -1033,6 +1031,7 @@ LOGFONT
 LOGFONTA
 LOGFONTW
 logissue
+losslessly
 loword
 lparam
 LPCCH
@@ -1155,7 +1154,6 @@ MOUSEACTIVATE
 MOUSEFIRST
 MOUSEHWHEEL
 MOUSEMOVE
-movemask
 MOVESTART
 msb
 msctf
@@ -2065,6 +2063,7 @@ vcpkg
 vcprintf
 vcxitems
 vec
+vectorize
 vectorized
 VERCTRL
 VERTBAR

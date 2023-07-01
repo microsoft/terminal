@@ -299,33 +299,30 @@ static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& source
 // - screenInfo - reference to screen buffer info.
 // Return Value:
 // - true if we succeeded in scrolling the buffer, otherwise false (if we're out of memory)
-bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
+void StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
 {
     // Rotate the circular buffer around and wipe out the previous final line.
     auto& buffer = screenInfo.GetTextBuffer();
-    auto fSuccess = buffer.IncrementCircularBuffer(buffer.GetCurrentAttributes());
-    if (fSuccess)
+    buffer.IncrementCircularBuffer(buffer.GetCurrentAttributes());
+
+    // Trigger a graphical update if we're active.
+    if (screenInfo.IsActiveScreenBuffer())
     {
-        // Trigger a graphical update if we're active.
-        if (screenInfo.IsActiveScreenBuffer())
+        til::point coordDelta;
+        coordDelta.y = -1;
+
+        auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+        if (pNotifier)
         {
-            til::point coordDelta;
-            coordDelta.y = -1;
+            // Notify accessibility that a scroll has occurred.
+            pNotifier->NotifyConsoleUpdateScrollEvent(coordDelta.x, coordDelta.y);
+        }
 
-            auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-            if (pNotifier)
-            {
-                // Notify accessibility that a scroll has occurred.
-                pNotifier->NotifyConsoleUpdateScrollEvent(coordDelta.x, coordDelta.y);
-            }
-
-            if (ServiceLocator::LocateGlobals().pRender != nullptr)
-            {
-                ServiceLocator::LocateGlobals().pRender->TriggerScroll(&coordDelta);
-            }
+        if (ServiceLocator::LocateGlobals().pRender != nullptr)
+        {
+            ServiceLocator::LocateGlobals().pRender->TriggerScroll(&coordDelta);
         }
     }
-    return fSuccess;
 }
 
 // Routine Description:

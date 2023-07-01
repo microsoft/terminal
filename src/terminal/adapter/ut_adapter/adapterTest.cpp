@@ -396,7 +396,7 @@ public:
         if (fSuccess)
         {
             _testGetSet = std::move(api);
-            _terminalInput = TerminalInput{ nullptr };
+            _terminalInput = TerminalInput{};
             auto& renderer = _testGetSet->_renderer;
             auto& renderSettings = renderer._renderSettings;
             auto adapter = std::make_unique<AdaptDispatch>(*_testGetSet, renderer, renderSettings, _terminalInput);
@@ -2893,7 +2893,7 @@ public:
     }
 
 private:
-    TerminalInput _terminalInput{ nullptr };
+    TerminalInput _terminalInput;
     std::unique_ptr<TestGetSet> _testGetSet;
     AdaptDispatch* _pDispatch; // non-ownership pointer
     std::unique_ptr<StateMachine> _stateMachine;

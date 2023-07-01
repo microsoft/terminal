@@ -136,10 +136,10 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <ConformanceMode>true</ConformanceMode>
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <!-- /fp:contract used to default to on before VS 17.0. If enabled it allows FMA for floats. -->
-      <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:externConstexpr /Zc:lambda /Zc:throwingNew /fp:contract</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:externConstexpr /Zc:templateScope /Zc:throwingNew</AdditionalOptions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <ResourceCompile>

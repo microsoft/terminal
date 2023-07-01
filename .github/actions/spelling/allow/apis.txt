@@ -29,6 +29,7 @@ Dacl
 dataobject
 dcomp
 DERR
+delayimp
 dlldata
 DNE
 DONTADDTORECENT
@@ -87,6 +88,7 @@ IObject
 iosfwd
 IPackage
 IPeasant
+isa
 ISetup
 isspace
 IStorage
@@ -166,6 +168,7 @@ roundf
 RSHIFT
 SACL
 schandle
+SEH
 semver
 serializer
 SETVERSION
@@ -213,6 +216,7 @@ UOI
 UPDATEINIFILE
 userenv
 USEROBJECTFLAGS
+Vcpp
 Viewbox
 virtualalloc
 vsnwprintf

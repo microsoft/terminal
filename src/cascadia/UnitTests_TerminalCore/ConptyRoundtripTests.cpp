@@ -21,7 +21,7 @@
 #include "../host/readDataCooked.hpp"
 #include "../host/output.h"
 #include "../host/_stream.h" // For WriteCharsLegacy
-#include "../host/cmdline.h" // For WC_LIMIT_BACKSPACE
+#include "../host/cmdline.h" // For WC_INTERACTIVE
 #include "test/CommonState.hpp"
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
@@ -3422,7 +3422,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
         }
         else if (writingMethod == PrintWithWriteCharsLegacy)
         {
-            doWriteCharsLegacy(si, str, WC_LIMIT_BACKSPACE);
+            doWriteCharsLegacy(si, str, WC_INTERACTIVE);
         }
     };
 
