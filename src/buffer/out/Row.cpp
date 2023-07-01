@@ -564,7 +564,7 @@ catch (...)
     charsConsumed = ch - chBeg;
 }
 
-[[msvc::forceinline]] void ROW::WriteHelper::_replaceTextUnicode(size_t ch, std::wstring_view::const_iterator it)
+[[msvc::forceinline]] void ROW::WriteHelper::_replaceTextUnicode(size_t ch, std::wstring_view::const_iterator it) noexcept
 {
     const auto end = chars.end();
 
