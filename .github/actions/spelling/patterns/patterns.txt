@@ -27,6 +27,12 @@ ROY\sG\.\sBIV
 # Python stringprefix / binaryprefix
 \b(?:B|BR|Br|F|FR|Fr|R|RB|RF|Rb|Rf|U|UR|Ur|b|bR|br|f|fR|fr|r|rB|rF|rb|rf|u|uR|ur)'
 
+# SSE intrinsics like "_mm_subs_epu16"
+\b_mm(?:|256|512)_\w+\b
+
+# ARM NEON intrinsics like "vsubq_u16"
+\bv\w+_[fsu](?:8|16|32|64)\b
+
 # Automatically suggested patterns
 # hit-count: 3831 file-count: 582
 # IServiceProvider

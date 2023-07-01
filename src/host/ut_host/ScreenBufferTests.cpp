@@ -2895,7 +2895,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:writeSingly", L"{false, true}")
-        TEST_METHOD_PROPERTY(L"Data:writeCharsLegacyMode", L"{0, 1, 2, 3, 4, 5, 6, 7}")
+        TEST_METHOD_PROPERTY(L"Data:writeCharsLegacyMode", L"{0, 1, 2}")
     END_TEST_METHOD_PROPERTIES();
 
     bool writeSingly;

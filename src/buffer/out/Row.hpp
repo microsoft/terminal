@@ -85,16 +85,19 @@ struct RowCopyTextFromState
 class ROW final
 {
 public:
-    // The implicit agreement between ROW and TextBuffer is that TextBuffer supplies ROW with a charsBuffer of at
-    // least `columns * sizeof(wchar_t)` bytes and a charOffsetsBuffer of at least `(columns + 1) * sizeof(uint16_t)`
-    // bytes (see ROW::_charOffsets for why it needs space for 1 additional offset).
+    // The implicit agreement between ROW and TextBuffer is that the `charsBuffer` and `charOffsetsBuffer`
+    // arrays have a minimum alignment of 16 Bytes and a size of `rowWidth+1`. The former is used to
+    // implement Reset() efficiently via SIMD and the latter is used to store the past-the-end offset
+    // into the `charsBuffer`. Even though the `charsBuffer` could be only `rowWidth` large we need them
+    // to be the same size so that the SIMD code can process both arrays in the same loop simultaneously.
+    // This wastes up to 5.8% memory but increases overall scrolling performance by around 40%.
     // These methods exists to make this agreement explicit and serve as a reminder.
     //
     // TextBuffer calculates the distance in bytes between two ROWs (_bufferRowStride) as the sum of these values.
     // As such it's important that we return sizes with a minimum alignment of alignof(ROW).
     static constexpr size_t CalculateRowSize() noexcept
     {
-        return sizeof(ROW);
+        return (sizeof(ROW) + 15) & ~15;
     }
     static constexpr size_t CalculateCharsBufferSize(size_t columns) noexcept
     {
@@ -120,8 +123,9 @@ public:
     bool WasDoubleBytePadded() const noexcept;
     void SetLineRendition(const LineRendition lineRendition) noexcept;
     LineRendition GetLineRendition() const noexcept;
+    uint16_t GetLineWidth() const noexcept;
 
-    void Reset(const TextAttribute& attr);
+    void Reset(const TextAttribute& attr) noexcept;
     void TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth);
     void CopyFrom(const ROW& source);
 
@@ -130,7 +134,7 @@ public:
 
     void ClearCell(til::CoordType column);
     OutputCellIterator WriteCells(OutputCellIterator it, til::CoordType columnBegin, std::optional<bool> wrap = std::nullopt, std::optional<til::CoordType> limitRight = std::nullopt);
-    bool SetAttrToEnd(til::CoordType columnBegin, TextAttribute attr);
+    void SetAttrToEnd(til::CoordType columnBegin, TextAttribute attr);
     void ReplaceAttributes(til::CoordType beginIndex, til::CoordType endIndex, const TextAttribute& newAttr);
     void ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars);
     void ReplaceText(RowWriteState& state);
@@ -148,6 +152,7 @@ public:
     std::wstring_view GlyphAt(til::CoordType column) const noexcept;
     DbcsAttribute DbcsAttrAt(til::CoordType column) const noexcept;
     std::wstring_view GetText() const noexcept;
+    std::wstring_view GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept;
     DelimiterClass DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept;
 
     auto AttrBegin() const noexcept { return _attr.begin(); }
@@ -168,6 +173,7 @@ private:
         void ReplaceCharacters(til::CoordType width) noexcept;
         void ReplaceText() noexcept;
         void CopyTextFrom(const std::span<const uint16_t>& charOffsets) noexcept;
+        static void _copyOffsets(uint16_t* dst, const uint16_t* src, uint16_t size, uint16_t offset) noexcept;
         void Finish();
 
         // Parent pointer.

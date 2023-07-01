@@ -3335,6 +3335,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.Opacity();
     }
 
+    bool TermControl::HasSelection() const
+    {
+        return _core.HasSelection();
+    }
+    Windows::Foundation::Collections::IVector<winrt::hstring> TermControl::SelectedText(bool trimTrailingWhitespace) const
+    {
+        return _core.SelectedText(trimTrailingWhitespace);
+    }
+
     // Method Description:
     // - Called when the core raises a FoundMatch event. That's done in response
     //   to us starting a search query with ControlCore::Search.

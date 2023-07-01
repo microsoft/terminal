@@ -18,6 +18,7 @@
 #include <til/latch.h>
 
 #include "../../types/inc/utils.hpp"
+#include "App.h"
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
@@ -3722,6 +3723,15 @@ namespace winrt::TerminalApp::implementation
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
         if (!_settingsTab)
         {
+            if (auto app{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
+            {
+                if (auto appPrivate{ winrt::get_self<implementation::App>(app) })
+                {
+                    // Lazily load the Settings UI components so that we don't do it on startup.
+                    appPrivate->PrepareForSettingsUI();
+                }
+            }
+
             winrt::Microsoft::Terminal::Settings::Editor::MainPage sui{ _settings };
             if (_hostingHwnd)
             {
@@ -4242,26 +4252,29 @@ namespace winrt::TerminalApp::implementation
                                      const TerminalSettingsCreateResult& controlSettings,
                                      const Profile& profile)
     {
-        // Try to handle auto-elevation
-        const auto requestedElevation = controlSettings.DefaultSettings().Elevate();
-        const auto currentlyElevated = IsRunningElevated();
-
-        // We aren't elevated, but we want to be.
-        if (requestedElevation && !currentlyElevated)
+        // When duplicating a tab there aren't any newTerminalArgs.
+        if (!newTerminalArgs)
         {
-            // Manually set the Profile of the NewTerminalArgs to the guid we've
-            // resolved to. If there was a profile in the NewTerminalArgs, this
-            // will be that profile's GUID. If there wasn't, then we'll use
-            // whatever the default profile's GUID is.
-
-            newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
-
-            newTerminalArgs.StartingDirectory(_evaluatePathForCwd(controlSettings.DefaultSettings().StartingDirectory()));
-
-            _OpenElevatedWT(newTerminalArgs);
-            return true;
+            return false;
         }
-        return false;
+
+        const auto defaultSettings = controlSettings.DefaultSettings();
+
+        // If we don't even want to elevate we can return early.
+        // If we're already elevated we can also return, because it doesn't get any more elevated than that.
+        if (!defaultSettings.Elevate() || IsRunningElevated())
+        {
+            return false;
+        }
+
+        // Manually set the Profile of the NewTerminalArgs to the guid we've
+        // resolved to. If there was a profile in the NewTerminalArgs, this
+        // will be that profile's GUID. If there wasn't, then we'll use
+        // whatever the default profile's GUID is.
+        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+        newTerminalArgs.StartingDirectory(_evaluatePathForCwd(defaultSettings.StartingDirectory()));
+        _OpenElevatedWT(newTerminalArgs);
+        return true;
     }
 
     // Method Description:
@@ -4578,7 +4591,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_PopulateContextMenu(const IInspectable& sender,
-                                            const bool /*withSelection*/)
+                                            const bool withSelection)
     {
         // withSelection can be used to add actions that only appear if there's
         // selected text, like "search the web". In this initial draft, it's not
@@ -4633,6 +4646,11 @@ namespace winrt::TerminalApp::implementation
         if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
         {
             makeItem(RS_(L"PaneClose"), L"\xE89F", ActionAndArgs{ ShortcutAction::ClosePane, nullptr });
+        }
+
+        if (withSelection)
+        {
+            makeItem(RS_(L"SearchWebText"), L"\xF6FA", ActionAndArgs{ ShortcutAction::SearchForText, nullptr });
         }
 
         makeItem(RS_(L"TabClose"), L"\xE711", ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } });

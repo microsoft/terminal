@@ -40,6 +40,7 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass OpenHyperlinkEventArgs
     {
+        OpenHyperlinkEventArgs(String uri);
         String Uri { get; };
     }
 
