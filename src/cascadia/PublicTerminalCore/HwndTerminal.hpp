@@ -4,7 +4,7 @@
 #pragma once
 
 #include "../../renderer/base/Renderer.hpp"
-#include "../../renderer/dx/DxRenderer.hpp"
+#include "../../renderer/atlas/AtlasEngine.h"
 #include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../../types/IControlAccessibilityInfo.h"
@@ -79,7 +79,7 @@ private:
     std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
 
     std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
-    std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
+    std::unique_ptr<::Microsoft::Console::Render::AtlasEngine> _renderEngine;
     std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
     bool _focused{ false };
