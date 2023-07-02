@@ -5,6 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch IoT Edge Module (Python)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "env": {
+                "EdgeHubConnectionString": "${config:azure-iot-edge.EdgeHubConnectionString}",
+                "EdgeModuleCACertificateFile": "${config:azure-iot-edge.EdgeModuleCACertificateFile}"
+            },
+            "windows": {
+                "program": "${workspaceFolder}\\main.py"
+            }
+        },
+        {
             "name": "Debug OpenConsole by Launching (x64, debug)",
             "type": "cppvsdbg",
             "request": "launch",
