@@ -1,5 +1,0 @@
-{
-  "msbuild-sdks": {
-    "Microsoft.DotNet.Helix.Sdk": "6.0.0-beta.22525.5"
-  }
-}

@@ -8,11 +8,10 @@ Param(
     [switch]$recursive
 )
 
-$pdbStrPackage = ([xml](Get-Content "$SourceRoot\build\packages.config")).packages.package | Where-Object id -like "*PdbStr*"
-# This assumes that we rev PdbStr and SrcTool at the same time.
-$debugPackageVersions = $pdbStrPackage.version
-$srctoolExe = Join-Path $SourceRoot "packages" "Microsoft.Debugging.Tools.SrcTool.$debugPackageVersions" "content" "amd64" "srctool.exe"
-$pdbstrExe = Join-Path $SourceRoot "packages" "Microsoft.Debugging.Tools.PdbStr.$debugPackageVersions" "content" "amd64" "pdbstr.exe"
+$debuggerPath = (Get-ItemProperty -path "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows Kits\Installed Roots" -name WindowsDebuggersRoot10).WindowsDebuggersRoot10
+$srcsrvPath = Join-Path $debuggerPath "x64\srcsrv"
+$srctoolExe = Join-Path $srcsrvPath "srctool.exe"
+$pdbstrExe = Join-Path $srcsrvPath "pdbstr.exe"
 
 $fileTable = @{}
 foreach ($gitFile in & git ls-files)
@@ -24,7 +23,6 @@ $mappedFiles = New-Object System.Collections.ArrayList
 
 foreach ($file in (Get-ChildItem -r:$recursive "$SearchDir\*.pdb"))
 {
-    $mappedFiles = New-Object System.Collections.ArrayList
     Write-Verbose "Found $file"
 
     $ErrorActionPreference = "Continue" # Azure Pipelines defaults to "Stop", continue past errors in this script.
@@ -52,7 +50,7 @@ foreach ($file in (Get-ChildItem -r:$recursive "$SearchDir\*.pdb"))
             if ($relative)
             {
                 $mapping = $allFiles[$i] + "*$relative"
-                $ignore = $mappedFiles.Add($mapping)
+                $mappedFiles.Add($mapping)
 
                 Write-Verbose "Mapped path $($i): $mapping"
             }
@@ -80,26 +78,7 @@ $($mappedFiles -join "`r`n")
 SRCSRV: end ------------------------------------------------
 "@ | Set-Content $pdbstrFile
 
-    Write-Host
-    Write-Host
-    Write-Host (Get-Content $pdbstrFile)
-    Write-Host
-    Write-Host
-
-    Write-Host "$pdbstrExe -p:""$file"" -w -s:srcsrv -i:$pdbstrFile"
     & $pdbstrExe -p:"$file" -w -s:srcsrv -i:$pdbstrFile
-    Write-Host
-    Write-Host
-
-    Write-Host "$pdbstrExe -p:""$file"" -r -s:srcsrv"
-    & $pdbstrExe -p:"$file" -r -s:srcsrv
-    Write-Host
-    Write-Host
-
-    Write-Host "$srctoolExe $file"
-    & $srctoolExe "$file"
-    Write-Host
-    Write-Host
 }
 
 # Return with exit 0 to override any weird error code from other tools
