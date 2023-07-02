@@ -21,6 +21,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static Editor::Font _FontObjectForDWriteFont(IDWriteFontFamily* family);
+
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
 
@@ -118,12 +120,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 com_ptr<IDWriteFontFamily> fontFamily;
                 THROW_IF_FAILED(fontCollection->GetFontFamily(i, fontFamily.put()));
 
-                // get the font's localized names
-                com_ptr<IDWriteLocalizedStrings> localizedFamilyNames;
-                THROW_IF_FAILED(fontFamily->GetFamilyNames(localizedFamilyNames.put()));
-
                 // construct a font entry for tracking
-                if (const auto fontEntry{ _GetFont(localizedFamilyNames) })
+                if (const auto fontEntry{ _FontObjectForDWriteFont(fontFamily.get()) })
                 {
                     // check if the font is monospaced
                     try
@@ -159,7 +157,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
     CATCH_LOG();
 
-    Editor::Font ProfileViewModel::_GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames)
+    Editor::Font ProfileViewModel::FindFontWithLocalizedName(const winrt::hstring& name) noexcept
+    {
+        // look for the current font in our shown list of fonts
+        Editor::Font fallbackFont{ nullptr };
+        try
+        {
+            const auto& currentFontList{ CompleteFontList() };
+            for (const auto& font : currentFontList)
+            {
+                if (font.LocalizedName() == name)
+                {
+                    return font;
+                }
+                else if (font.LocalizedName() == L"Cascadia Mono")
+                {
+                    fallbackFont = font;
+                }
+            }
+        }
+        CATCH_LOG();
+
+        // we couldn't find the desired font, set to "Cascadia Mono" if we found that since it ships by default
+        return fallbackFont;
+    }
+
+    static Editor::Font _FontObjectForDWriteFont(IDWriteFontFamily* family)
     {
         // used for the font's name as an identifier (i.e. text block's font family property)
         std::wstring nameID;
@@ -168,6 +191,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // used for the font's localized name
         std::wstring localizedName;
         UINT32 localizedNameIndex;
+
+        // get the font's localized names
+        winrt::com_ptr<IDWriteLocalizedStrings> localizedFamilyNames;
+        THROW_IF_FAILED(family->GetFamilyNames(localizedFamilyNames.put()));
 
         // use our current locale to find the localized name
         auto exists{ FALSE };
@@ -211,7 +238,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (!nameID.empty() && !localizedName.empty())
         {
-            return make<Font>(nameID, localizedName);
+            return make<Font>(nameID, localizedName, family);
         }
         return nullptr;
     }

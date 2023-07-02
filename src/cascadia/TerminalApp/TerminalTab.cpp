@@ -1314,6 +1314,23 @@ namespace winrt::TerminalApp::implementation
             Automation::AutomationProperties::SetHelpText(duplicateTabMenuItem, duplicateTabToolTip);
         }
 
+        Controls::MenuFlyoutItem findMenuItem;
+        {
+            // "Find..."
+            Controls::FontIcon findSymbol;
+            findSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            findSymbol.Glyph(L"\xE721"); // Search
+
+            findMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_FindRequestedHandlers();
+                }
+            });
+            findMenuItem.Text(RS_(L"FindText"));
+            findMenuItem.Icon(findSymbol);
+        }
+
         Controls::MenuFlyoutItem splitTabMenuItem;
         {
             // "Split Tab"
@@ -1422,6 +1439,7 @@ namespace winrt::TerminalApp::implementation
         // Build the menu
         Controls::MenuFlyout contextMenuFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
+        Controls::MenuFlyoutSeparator menuSeparator2;
         contextMenuFlyout.Items().Append(chooseColorMenuItem);
         contextMenuFlyout.Items().Append(renameTabMenuItem);
         contextMenuFlyout.Items().Append(duplicateTabMenuItem);
@@ -1430,6 +1448,8 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Items().Append(exportTabMenuItem);
         contextMenuFlyout.Items().Append(findMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
+        contextMenuFlyout.Items().Append(findMenuItem);
+        contextMenuFlyout.Items().Append(menuSeparator2);
 
         // GH#5750 - When the context menu is dismissed with ESC, toss the focus
         // back to our control.
@@ -1763,4 +1783,15 @@ namespace winrt::TerminalApp::implementation
 
         return Title();
     }
+<<<<<<< HEAD
+=======
+
+    DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
+    DEFINE_EVENT(TerminalTab, ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
+    DEFINE_EVENT(TerminalTab, ColorCleared, _colorCleared, winrt::delegate<>);
+    DEFINE_EVENT(TerminalTab, TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
+    DEFINE_EVENT(TerminalTab, DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
+    DEFINE_EVENT(TerminalTab, FindRequested, _FindRequestedHandlers, winrt::delegate<>);
+    DEFINE_EVENT(TerminalTab, SplitTabRequested, _SplitTabRequestedHandlers, winrt::delegate<>);
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 }

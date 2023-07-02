@@ -603,11 +603,9 @@ try
     outPipeTheirSide.reset();
     signalPipeTheirSide.reset();
 
-    // GH#13211 - Make sure we request win32input mode and that the terminal
-    // obeys the resizing quirk. Otherwise, defterm connections to the Terminal
-    // are going to have weird resizing, and aren't going to send full fidelity
-    // input messages.
-    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --resizeQuirk --win32input --signal {:#x}"),
+    // GH#13211 - Make sure the terminal obeys the resizing quirk. Otherwise,
+    // defterm connections to the Terminal are going to have weird resizing.
+    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --resizeQuirk --signal {:#x}"),
                                          (int64_t)signalPipeOurSide.release());
 
     ConsoleArguments consoleArgs(commandLine, inPipeOurSide.release(), outPipeOurSide.release());

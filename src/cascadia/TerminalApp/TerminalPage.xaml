@@ -138,11 +138,13 @@
             </StackPanel>
         </ContentDialog>
 
-        <ContentDialog x:Name="LargePasteDialog"
-                       x:Uid="LargePasteDialog"
-                       Grid.Row="2"
-                       x:Load="False"
-                       DefaultButton="Primary" />
+        <ContentDialog
+            x:Load="False"
+            x:Name="CloseAllDialog"
+            x:Uid="CloseAllDialog"
+            DefaultButton="Primary"
+            PrimaryButtonClick="_CloseWarningPrimaryButtonOnClick">
+        </ContentDialog>
 
         <ContentDialog x:Name="ControlNoticeDialog"
                        x:Uid="ControlNoticeDialog"
@@ -168,42 +170,10 @@
             </TextBlock>
         </ContentDialog>
 
-        <local:CommandPalette x:Name="CommandPaletteElement"
-                              Grid.Row="2"
-                              VerticalAlignment="Stretch"
-                              x:Load="False"
-                              PreviewKeyDown="_KeyDownHandler"
-                              Visibility="Collapsed" />
-
-        <!--
-            A TeachingTip with IsLightDismissEnabled="True" will immediately
-            dismiss itself if the window is unfocused (In Xaml Islands). This is
-            tracked by MUX#4382
-        -->
-        <mux:TeachingTip x:Name="WindowIdToast"
-                         Title="{x:Bind WindowProperties.WindowIdForDisplay}"
-                         x:Load="False"
-                         IsLightDismissEnabled="True"
-                         Subtitle="{x:Bind WindowProperties.WindowNameForDisplay, Mode=OneWay}" />
-
-        <mux:TeachingTip x:Name="RenameFailedToast"
-                         x:Uid="RenameFailedToast"
-                         x:Load="False"
-                         IsLightDismissEnabled="True" />
-
-        <mux:TeachingTip x:Name="WindowRenamer"
-                         x:Uid="WindowRenamer"
-                         Title="{x:Bind WindowProperties.WindowIdForDisplay}"
-                         x:Load="False"
-                         ActionButtonClick="_WindowRenamerActionClick"
-                         ActionButtonStyle="{ThemeResource AccentButtonStyle}"
-                         IsLightDismissEnabled="True">
-            <mux:TeachingTip.Content>
-                <TextBox x:Name="WindowRenamerTextBox"
-                         KeyDown="_WindowRenamerKeyDown"
-                         KeyUp="_WindowRenamerKeyUp"
-                         Text="{x:Bind WindowProperties.WindowName, Mode=OneWay}" />
-            </mux:TeachingTip.Content>
-        </mux:TeachingTip>
+        <local:CommandPalette
+            x:Name="CommandPalette"
+            Grid.Row="1"
+            Visibility="Collapsed"
+            VerticalAlignment="Stretch" />
     </Grid>
 </Page>

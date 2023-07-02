@@ -304,6 +304,7 @@ cmpeq
 cmt
 cmyk
 CNL
+cnn
 cnt
 CNTRL
 codebase
@@ -345,7 +346,6 @@ conechokey
 conemu
 config
 configurability
-confusables
 conhost
 conhostv
 conime
@@ -1026,6 +1026,7 @@ hinst
 <<<<<<< HEAD
 =======
 Hirots
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 HISTORYBUFS
 HISTORYNODUP
 HISTORYSIZE
@@ -1291,7 +1292,7 @@ KX
 langid
 LANGUAGELIST
 lasterror
-lastexitcode
+LASTEXITCODE
 LAYOUTRTL
 LBN
 LBound
@@ -1333,7 +1334,6 @@ lnkd
 lnkfile
 LNM
 LOADONCALL
-loadu
 LOBYTE
 localappdata
 localhost
@@ -2262,6 +2262,8 @@ sourced
 SOURCESDIRECTORY
 SPACEBAR
 spammy
+<<<<<<< HEAD
+=======
 spand
 >>>>>>> upstream/cinnamon/fhl/find-contextmenu
 SRCCODEPAGE

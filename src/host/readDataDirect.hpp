@@ -33,8 +33,7 @@ class DirectReadData final : public ReadData
 public:
     DirectReadData(_In_ InputBuffer* const pInputBuffer,
                    _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                   const size_t eventReadCount,
-                   _In_ std::deque<std::unique_ptr<IInputEvent>> partialEvents);
+                   const size_t eventReadCount);
 
     DirectReadData(DirectReadData&&) = default;
 

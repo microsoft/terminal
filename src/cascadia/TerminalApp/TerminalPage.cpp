@@ -18,6 +18,7 @@
 #include <til/latch.h>
 
 #include "../../types/inc/utils.hpp"
+#include "App.h"
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
@@ -722,7 +723,7 @@ namespace winrt::TerminalApp::implementation
     //   all the tabs and shut down and app. If cancel is clicked, the dialog will close
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseWarningDialog()
+    void TerminalPage::_ShowCloseWarningDialog()
     {
         return _ShowDialogHelper(L"CloseAllDialog");
     }
@@ -756,6 +757,21 @@ namespace winrt::TerminalApp::implementation
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowLargePasteWarningDialog()
     {
         return _ShowDialogHelper(L"LargePasteDialog");
+    }
+
+    // Method Description:
+    // - Displays a dialog for warnings found while closing the terminal app
+    //   and the setting is true. Display messages to warn user
+    //   that their session is about to end, and once the user clicks the OK button,
+    //   shut down the app. If cancel is clicked, the dialog will close
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    void TerminalPage::_ShowCloseWarningDialog()
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            presenter.ShowDialog(FindName(L"CloseDialog").try_as<WUX::Controls::ContentDialog>());
+        }
     }
 
     // Method Description:
@@ -1985,54 +2001,13 @@ namespace winrt::TerminalApp::implementation
 
         if (!focusedTab)
         {
-            return false;
+            _ShowCloseWarningDialog();
         }
-
-        // If there was a windowId in the action, try to move it to the
-        // specified window instead of moving it in our tab row.
-        if (!windowId.empty())
-        {
-            if (const auto terminalTab{ _GetFocusedTabImpl() })
-            {
-                if (const auto pane{ terminalTab->GetActivePane() })
-                {
-                    auto startupActions = pane->BuildStartupActions(0, 1, true, true);
-                    _DetachPaneFromWindow(pane);
-                    _MoveContent(std::move(startupActions.args), args.Window(), args.TabIndex());
-                    focusedTab->DetachPane();
-                    return true;
-                }
-            }
-        }
-
-        // If we are trying to move from the current tab to the current tab do nothing.
-        if (_GetFocusedTabIndex() == tabIdx)
-        {
-            return false;
-        }
-
-        // Moving the pane from the current tab might close it, so get the next
-        // tab before its index changes.
-        if (_tabs.Size() > tabIdx)
-        {
-            auto targetTab = _GetTerminalTabImpl(_tabs.GetAt(tabIdx));
-            // if the selected tab is not a host of terminals (e.g. settings)
-            // don't attempt to add a pane to it.
-            if (!targetTab)
-            {
-                return false;
-            }
-            auto pane = focusedTab->DetachPane();
-            targetTab->AttachPane(pane);
-            _SetFocusedTab(*targetTab);
-        }
-        else
+        else if (_tabs.Size() > 1 && !_settings->GlobalSettings().ConfirmCloseAllTabs())
         {
             auto pane = focusedTab->DetachPane();
             _CreateNewTabFromPane(pane);
         }
-
-        return true;
     }
 
     // Detach a tree of panes from this terminal. Helper used for moving panes
@@ -2747,15 +2722,16 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Copy text from the focused terminal to the Windows Clipboard
     // Arguments:
+    // - dismissSelection: if not enabled, copying text doesn't dismiss the selection
     // - singleLine: if enabled, copy contents as a single line of text
     // - formats: dictate which formats need to be copied
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
+    bool TerminalPage::_CopyText(const bool dismissSelection, const bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         if (const auto& control{ _GetActiveControl() })
         {
-            return control.CopySelectionToClipboard(singleLine, formats);
+            return control.CopySelectionToClipboard(dismissSelection, singleLine, formats);
         }
         return false;
     }
@@ -3050,30 +3026,32 @@ namespace winrt::TerminalApp::implementation
         // in the modified settings; if it isn't (or isn't there),
         // set a new image source for the brush
 
-        auto brush = _tabContent.Background().try_as<Media::ImageBrush>();
-        Media::Imaging::BitmapImage imageSource = brush == nullptr ? nullptr : brush.ImageSource().try_as<Media::Imaging::BitmapImage>();
+    // Method Description:
+    // - Called when the primary button of the content dialog is clicked.
+    //   This calls _CloseAllTabs(), which closes all the tabs currently
+    //   opened and then the Terminal app. This method will be called if
+    //   the user confirms to close all the tabs.
+    // Arguments:
+    // - sender: unused
+    // - ContentDialogButtonClickEventArgs: unused
+    void TerminalPage::_CloseWarningPrimaryButtonOnClick(WUX::Controls::ContentDialog /* sender */,
+                                                         WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
+    {
+        _CloseAllTabs();
+    }
 
-        if (imageSource == nullptr ||
-            imageSource.UriSource() == nullptr ||
-            !imageSource.UriSource().Equals(imageUri))
-        {
-            Media::ImageBrush b{};
-            // Note that BitmapImage handles the image load asynchronously,
-            // which is especially important since the image
-            // may well be both large and somewhere out on the
-            // internet.
-            Media::Imaging::BitmapImage image(imageUri);
-            b.ImageSource(image);
-            _tabContent.Background(b);
-        }
-
-        // Pull this into a separate block. If the image didn't change, but the
-        // properties of the image did, we should still update them.
-        if (const auto newBrush{ _tabContent.Background().try_as<Media::ImageBrush>() })
-        {
-            newBrush.Stretch(newAppearance.BackgroundImageStretchMode());
-            newBrush.Opacity(newAppearance.BackgroundImageOpacity());
-        }
+    // Method Description:
+    // - Called when the primary button of the content dialog is clicked.
+    //   This calls _CloseFocusedTab(), which closes the focused tab, 
+    //  thus, the app will be closed. This method will be called if
+    //   the user confirms to end the session.
+    // Arguments:
+    // - sender: unused
+    // - ContentDialogButtonClickEventArgs: unused
+    void TerminalPage::_CloseWarningPrimaryButtonClick(WUX::Controls::ContentDialog /* sender */,
+                                                     WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs */)
+    {
+        _CloseFocusedTab();
     }
 
     // Method Description:
@@ -3722,6 +3700,15 @@ namespace winrt::TerminalApp::implementation
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
         if (!_settingsTab)
         {
+            if (auto app{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
+            {
+                if (auto appPrivate{ winrt::get_self<implementation::App>(app) })
+                {
+                    // Lazily load the Settings UI components so that we don't do it on startup.
+                    appPrivate->PrepareForSettingsUI();
+                }
+            }
+
             winrt::Microsoft::Terminal::Settings::Editor::MainPage sui{ _settings };
             if (_hostingHwnd)
             {
@@ -4242,26 +4229,29 @@ namespace winrt::TerminalApp::implementation
                                      const TerminalSettingsCreateResult& controlSettings,
                                      const Profile& profile)
     {
-        // Try to handle auto-elevation
-        const auto requestedElevation = controlSettings.DefaultSettings().Elevate();
-        const auto currentlyElevated = IsRunningElevated();
-
-        // We aren't elevated, but we want to be.
-        if (requestedElevation && !currentlyElevated)
+        // When duplicating a tab there aren't any newTerminalArgs.
+        if (!newTerminalArgs)
         {
-            // Manually set the Profile of the NewTerminalArgs to the guid we've
-            // resolved to. If there was a profile in the NewTerminalArgs, this
-            // will be that profile's GUID. If there wasn't, then we'll use
-            // whatever the default profile's GUID is.
-
-            newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
-
-            newTerminalArgs.StartingDirectory(_evaluatePathForCwd(controlSettings.DefaultSettings().StartingDirectory()));
-
-            _OpenElevatedWT(newTerminalArgs);
-            return true;
+            return false;
         }
-        return false;
+
+        const auto defaultSettings = controlSettings.DefaultSettings();
+
+        // If we don't even want to elevate we can return early.
+        // If we're already elevated we can also return, because it doesn't get any more elevated than that.
+        if (!defaultSettings.Elevate() || IsRunningElevated())
+        {
+            return false;
+        }
+
+        // Manually set the Profile of the NewTerminalArgs to the guid we've
+        // resolved to. If there was a profile in the NewTerminalArgs, this
+        // will be that profile's GUID. If there wasn't, then we'll use
+        // whatever the default profile's GUID is.
+        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+        newTerminalArgs.StartingDirectory(_evaluatePathForCwd(defaultSettings.StartingDirectory()));
+        _OpenElevatedWT(newTerminalArgs);
+        return true;
     }
 
     // Method Description:
@@ -4434,6 +4424,16 @@ namespace winrt::TerminalApp::implementation
 
         til::color bgColor = backgroundSolidBrush.Color();
 
+        Media::Brush terminalBrush{ nullptr };
+        if (const auto& control{ _GetActiveControl() })
+        {
+            terminalBrush = control.BackgroundBrush();
+        }
+        else if (const auto& settingsTab{ _GetFocusedTab().try_as<TerminalApp::SettingsTab>() })
+        {
+            terminalBrush = settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
+        }
+
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
             const auto acrylicBrush = Media::AcrylicBrush();
@@ -4448,18 +4448,6 @@ namespace winrt::TerminalApp::implementation
                                                                theme.TabRow().UnfocusedBackground()) :
                                                  ThemeColor{ nullptr } })
         {
-            const auto terminalBrush = [this]() -> Media::Brush {
-                if (const auto& control{ _GetActiveControl() })
-                {
-                    return control.BackgroundBrush();
-                }
-                else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
-                {
-                    return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
-                }
-                return nullptr;
-            }();
-
             const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
             bgColor = ThemeColor::ColorFromBrush(themeBrush);
             TitlebarBrush(themeBrush);
@@ -4489,11 +4477,27 @@ namespace winrt::TerminalApp::implementation
                 tabImpl->ThemeColor(tabBackground, tabUnfocusedBackground, bgColor);
             }
         }
-
         // Update the new tab button to have better contrast with the new color.
         // In theory, it would be convenient to also change these for the
         // inactive tabs as well, but we're leaving that as a follow up.
         _SetNewTabButtonColor(bgColor, bgColor);
+
+        // Third: the window frame. This is basically the same logic as the tab row background.
+        // We'll set our `FrameBrush` property, for the window to later use.
+        const auto windowTheme{ theme.Window() };
+        if (auto windowFrame{ windowTheme ? (_activated ? windowTheme.Frame() :
+                                                          windowTheme.UnfocusedFrame()) :
+                                            ThemeColor{ nullptr } })
+        {
+            const auto themeBrush{ windowFrame.Evaluate(res, terminalBrush, true) };
+            FrameBrush(themeBrush);
+        }
+        else
+        {
+            // Nothing was set in the theme - fall back to null. The window will
+            // use that as an indication to use the default window frame.
+            FrameBrush(nullptr);
+        }
     }
 
     // Function Description:
@@ -4564,7 +4568,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_PopulateContextMenu(const IInspectable& sender,
-                                            const bool /*withSelection*/)
+                                            const bool withSelection)
     {
         // withSelection can be used to add actions that only appear if there's
         // selected text, like "search the web". In this initial draft, it's not
@@ -4619,6 +4623,11 @@ namespace winrt::TerminalApp::implementation
         if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
         {
             makeItem(RS_(L"PaneClose"), L"\xE89F", ActionAndArgs{ ShortcutAction::ClosePane, nullptr });
+        }
+
+        if (withSelection)
+        {
+            makeItem(RS_(L"SearchWebText"), L"\xF6FA", ActionAndArgs{ ShortcutAction::SearchForText, nullptr });
         }
 
         makeItem(RS_(L"TabClose"), L"\xE711", ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } });

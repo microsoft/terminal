@@ -15,12 +15,12 @@ namespace Microsoft.Terminal.Wpf
         /// <summary>
         /// Cursor will be rendered as a blinking block.
         /// </summary>
-        BlinkingBlock = 0,
+        BlinkingBlock = 1,
 
         /// <summary>
         /// Currently identical to <see cref="CursorStyle.BlinkingBlock"/>
         /// </summary>
-        BlinkingBlockDefault = 1,
+        BlinkingBlockDefault = 0,
 
         /// <summary>
         /// Cursor will be rendered as a block that does not blink.

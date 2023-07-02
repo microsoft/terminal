@@ -188,6 +188,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+<<<<<<< HEAD
         newTabImpl->MoveTabToNewWindowRequested([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
@@ -212,14 +213,20 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
         newTabImpl->FindRequested([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
 
             if (page && tab)
             {
+<<<<<<< HEAD
                 page->_SetFocusedTab(*tab);
                 page->_Find(*tab);
+=======
+                page->_Find();
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
             }
         });
 

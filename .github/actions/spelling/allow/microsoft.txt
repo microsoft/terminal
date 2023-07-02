@@ -34,9 +34,6 @@ IVisual
 libucrt
 libucrtd
 LKG
-LOCKFILE
-Lxss
-makepri
 mfcribbon
 microsoft
 microsoftonline
@@ -59,8 +56,6 @@ PRIINFO
 propkey
 pscustomobject
 QWORD
-regedit
-resfiles
 robocopy
 SACLs
 segoe

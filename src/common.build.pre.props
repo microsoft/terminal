@@ -120,11 +120,12 @@
         C26445: Do not assign std::span or std::string_view to a reference. They are cheap to construct and are not owners of the underlying data. (gsl.view).
           Even for MSVC v19.32 this is actually far from true. Copying (as opposed to referencing) larger
           than register-sized structures is fairly expensive. Example: https://godbolt.org/z/oPco88PaP
-        C26813: Use 'bitwise and' to check if a flag is set.
-          The MSVC v19.31 toolset has a bug where a pointer to an enum is incorrectly flagged with C26813.
-          It's supposed to be fixed with VS 17.2.1 and 17.3.0 and later respectively.
+        C26434: Method 'A' hides a non-virtual method 'B' (c.128).
+        C26456: Operator 'A' hides a non-virtual operator 'B' (c.128)
+          I think these rules are for when you fully bought into OOP?
+          We didn't and it breaks WRL and large parts of conhost code.
       -->
-      <DisableSpecificWarnings>4201;4312;4467;5105;26445;26813;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4201;4312;4467;5105;26434;26445;26456;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
@@ -135,10 +136,10 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <ConformanceMode>true</ConformanceMode>
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <!-- /fp:contract used to default to on before VS 17.0. If enabled it allows FMA for floats. -->
-      <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:externConstexpr /Zc:lambda /Zc:throwingNew /fp:contract</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:externConstexpr /Zc:templateScope /Zc:throwingNew</AdditionalOptions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <ResourceCompile>

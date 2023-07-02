@@ -67,7 +67,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> RestartTerminalRequested;
 
-        Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
+        Boolean CopySelectionToClipboard(Boolean dismissSelection, Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
         void SelectAll();
         Boolean ToggleBlockSelection();

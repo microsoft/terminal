@@ -38,5 +38,7 @@ public:
     void NotifyNewOutput(std::wstring_view newOutput) override;
 #pragma endregion
 private:
+    void _tryNotify(BSTR string, BSTR activity);
     std::deque<wchar_t> _keyEvents;
+    bool _notificationsUnavailable{};
 };
