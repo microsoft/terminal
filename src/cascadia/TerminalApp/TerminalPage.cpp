@@ -723,7 +723,7 @@ namespace winrt::TerminalApp::implementation
     //   all the tabs and shut down and app. If cancel is clicked, the dialog will close
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseWarningDialog()
+    void TerminalPage::_ShowCloseWarningDialog()
     {
         return _ShowDialogHelper(L"CloseAllDialog");
     }
@@ -757,6 +757,21 @@ namespace winrt::TerminalApp::implementation
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowLargePasteWarningDialog()
     {
         return _ShowDialogHelper(L"LargePasteDialog");
+    }
+
+    // Method Description:
+    // - Displays a dialog for warnings found while closing the terminal app
+    //   and the setting is true. Display messages to warn user
+    //   that their session is about to end, and once the user clicks the OK button,
+    //   shut down the app. If cancel is clicked, the dialog will close
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    void TerminalPage::_ShowCloseWarningDialog()
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            presenter.ShowDialog(FindName(L"CloseDialog").try_as<WUX::Controls::ContentDialog>());
+        }
     }
 
     // Method Description:
@@ -1986,54 +2001,13 @@ namespace winrt::TerminalApp::implementation
 
         if (!focusedTab)
         {
-            return false;
+            _ShowCloseWarningDialog();
         }
-
-        // If there was a windowId in the action, try to move it to the
-        // specified window instead of moving it in our tab row.
-        if (!windowId.empty())
-        {
-            if (const auto terminalTab{ _GetFocusedTabImpl() })
-            {
-                if (const auto pane{ terminalTab->GetActivePane() })
-                {
-                    auto startupActions = pane->BuildStartupActions(0, 1, true, true);
-                    _DetachPaneFromWindow(pane);
-                    _MoveContent(std::move(startupActions.args), args.Window(), args.TabIndex());
-                    focusedTab->DetachPane();
-                    return true;
-                }
-            }
-        }
-
-        // If we are trying to move from the current tab to the current tab do nothing.
-        if (_GetFocusedTabIndex() == tabIdx)
-        {
-            return false;
-        }
-
-        // Moving the pane from the current tab might close it, so get the next
-        // tab before its index changes.
-        if (_tabs.Size() > tabIdx)
-        {
-            auto targetTab = _GetTerminalTabImpl(_tabs.GetAt(tabIdx));
-            // if the selected tab is not a host of terminals (e.g. settings)
-            // don't attempt to add a pane to it.
-            if (!targetTab)
-            {
-                return false;
-            }
-            auto pane = focusedTab->DetachPane();
-            targetTab->AttachPane(pane);
-            _SetFocusedTab(*targetTab);
-        }
-        else
+        else if (_tabs.Size() > 1 && !_settings->GlobalSettings().ConfirmCloseAllTabs())
         {
             auto pane = focusedTab->DetachPane();
             _CreateNewTabFromPane(pane);
         }
-
-        return true;
     }
 
     // Detach a tree of panes from this terminal. Helper used for moving panes
@@ -3052,30 +3026,32 @@ namespace winrt::TerminalApp::implementation
         // in the modified settings; if it isn't (or isn't there),
         // set a new image source for the brush
 
-        auto brush = _tabContent.Background().try_as<Media::ImageBrush>();
-        Media::Imaging::BitmapImage imageSource = brush == nullptr ? nullptr : brush.ImageSource().try_as<Media::Imaging::BitmapImage>();
+    // Method Description:
+    // - Called when the primary button of the content dialog is clicked.
+    //   This calls _CloseAllTabs(), which closes all the tabs currently
+    //   opened and then the Terminal app. This method will be called if
+    //   the user confirms to close all the tabs.
+    // Arguments:
+    // - sender: unused
+    // - ContentDialogButtonClickEventArgs: unused
+    void TerminalPage::_CloseWarningPrimaryButtonOnClick(WUX::Controls::ContentDialog /* sender */,
+                                                         WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
+    {
+        _CloseAllTabs();
+    }
 
-        if (imageSource == nullptr ||
-            imageSource.UriSource() == nullptr ||
-            !imageSource.UriSource().Equals(imageUri))
-        {
-            Media::ImageBrush b{};
-            // Note that BitmapImage handles the image load asynchronously,
-            // which is especially important since the image
-            // may well be both large and somewhere out on the
-            // internet.
-            Media::Imaging::BitmapImage image(imageUri);
-            b.ImageSource(image);
-            _tabContent.Background(b);
-        }
-
-        // Pull this into a separate block. If the image didn't change, but the
-        // properties of the image did, we should still update them.
-        if (const auto newBrush{ _tabContent.Background().try_as<Media::ImageBrush>() })
-        {
-            newBrush.Stretch(newAppearance.BackgroundImageStretchMode());
-            newBrush.Opacity(newAppearance.BackgroundImageOpacity());
-        }
+    // Method Description:
+    // - Called when the primary button of the content dialog is clicked.
+    //   This calls _CloseFocusedTab(), which closes the focused tab, 
+    //  thus, the app will be closed. This method will be called if
+    //   the user confirms to end the session.
+    // Arguments:
+    // - sender: unused
+    // - ContentDialogButtonClickEventArgs: unused
+    void TerminalPage::_CloseWarningPrimaryButtonClick(WUX::Controls::ContentDialog /* sender */,
+                                                     WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs */)
+    {
+        _CloseFocusedTab();
     }
 
     // Method Description:

@@ -2371,65 +2371,6 @@
           "default": true,
           "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
           "type": "boolean"
-        },
-        "useTabSwitcher": {
-          "default": true,
-          "description": "Deprecated. Please use \"tabSwitcherMode\" instead.",
-          "oneOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "enum": [
-                "mru",
-                "inOrder",
-                "disabled"
-              ],
-              "type": "string"
-            }
-          ],
-          "deprecated": true
-        },
-        "tabSwitcherMode": {
-          "default": "inOrder",
-          "description": "When set to \"true\" or \"mru\", the \"nextTab\" and \"prevTab\" commands will use the tab switcher UI, with most-recently-used ordering. When set to \"inOrder\", these actions will switch tabs in their current ordering. Set to \"false\" to disable the tab switcher.",
-          "oneOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "enum": [
-                "mru",
-                "inOrder",
-                "disabled"
-              ],
-              "type": "string"
-            }
-          ]
-        },
-        "windowingBehavior": {
-          "default": "useNew",
-          "description": "Controls how new terminal instances attach to existing windows. \"useNew\" will always create a new window. \"useExisting\" will create new tabs in the most recently used window on this virtual desktop, and \"useAnyExisting\" will create tabs in the most recent window on any desktop.",
-          "enum": [
-            "useNew",
-            "useExisting",
-            "useAnyExisting"
-          ],
-          "type": "string"
-        },
-        "newTabPosition": {
-          "default": "afterLastTab",
-          "description": "Position of newly created tabs. Possible values are \"afterLastTab\" and \"afterCurrentTab\".",
-          "enum": [
-            "afterLastTab",
-            "afterCurrentTab"
-          ],
-          "type": "string"
-        },
-        "autoHideWindow": {
-          "default": false,
-          "description": "If enabled, Terminal window will be hidden as soon as it loses focus.",
-          "type": "boolean"
         }
       },
       "required": [
@@ -2692,7 +2633,7 @@
               "minimum": 100,
               "type": "integer"
             }
-          ],
+          ]
           "deprecated": true
         },
         "intenseTextStyle": {
@@ -2705,7 +2646,6 @@
             "all"
           ],
           "type": "string"
-        },
         "foreground": {
           "$ref": "#/$defs/Color",
           "default": "#cccccc",
