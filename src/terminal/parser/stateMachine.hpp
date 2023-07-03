@@ -30,6 +30,7 @@ namespace Microsoft::Console::VirtualTerminal
     // are supported, but most modern terminal emulators will allow around twice
     // that number.
     constexpr size_t MAX_PARAMETER_COUNT = 32;
+    constexpr size_t MAX_SUBPARAMETER_COUNT = 32;
 
     class StateMachine final
     {
@@ -85,6 +86,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ActionVt52EscDispatch(const wchar_t wch);
         void _ActionCollect(const wchar_t wch) noexcept;
         void _ActionParam(const wchar_t wch);
+        void _ActionSubParam(const wchar_t wch);
         void _ActionCsiDispatch(const wchar_t wch);
         void _ActionOscParam(const wchar_t wch) noexcept;
         void _ActionOscPut(const wchar_t wch);
@@ -101,6 +103,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterEscapeIntermediate() noexcept;
         void _EnterCsiEntry();
         void _EnterCsiParam() noexcept;
+        void _EnterCsiSubParam() noexcept;
         void _EnterCsiIgnore() noexcept;
         void _EnterCsiIntermediate() noexcept;
         void _EnterOscParam() noexcept;
@@ -123,6 +126,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventCsiIntermediate(const wchar_t wch);
         void _EventCsiIgnore(const wchar_t wch);
         void _EventCsiParam(const wchar_t wch);
+        void _EventCsiSubParam(const wchar_t wch);
         void _EventOscParam(const wchar_t wch) noexcept;
         void _EventOscString(const wchar_t wch);
         void _EventOscTermination(const wchar_t wch);
@@ -152,6 +156,7 @@ namespace Microsoft::Console::VirtualTerminal
             CsiIntermediate,
             CsiIgnore,
             CsiParam,
+            CsiSubParam,
             OscParam,
             OscString,
             OscTermination,
@@ -191,6 +196,9 @@ namespace Microsoft::Console::VirtualTerminal
         VTIDBuilder _identifier;
         std::vector<VTParameter> _parameters;
         bool _parameterLimitReached;
+        std::vector<VTParameter> _subParameters;
+        std::vector<std::pair<BYTE /*range start*/, BYTE /*range end*/>> _subParametersRange;
+        bool _subParameterLimitReached;
 
         std::wstring _oscString;
         VTInt _oscParameter;
