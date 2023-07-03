@@ -502,7 +502,7 @@ void StateMachine::_ActionParam(const wchar_t wch)
         if (_parameters.empty())
         {
             _parameters.push_back({});
-            auto rangeStart = static_cast<BYTE>(_subParameters.size());
+            auto rangeStart = gsl::narrow<BYTE>(_subParameters.size());
             _subParametersRange.push_back({ rangeStart, rangeStart });
         }
 
@@ -522,7 +522,7 @@ void StateMachine::_ActionParam(const wchar_t wch)
             {
                 // Otherwise move to next param.
                 _parameters.push_back({});
-                auto rangeStart = static_cast<BYTE>(_subParameters.size());
+                auto rangeStart = gsl::narrow<BYTE>(_subParameters.size());
                 _subParametersRange.push_back({ rangeStart, rangeStart });
             }
         }
