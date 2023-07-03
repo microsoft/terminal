@@ -1,7 +1,6 @@
 /*++
 
-Copyright (c) 1985 - 1999, Microsoft Corporation.
-Licensed under the MIT license.
+Copyright (c) 1985 - 1999, Microsoft Corporation
 
 Module Name:
 

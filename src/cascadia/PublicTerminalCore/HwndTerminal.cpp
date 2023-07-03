@@ -204,7 +204,7 @@ HRESULT HwndTerminal::Initialize()
     RETURN_HR_IF_NULL(E_POINTER, localPointerToThread);
     RETURN_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
 
-    auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
+    auto dxEngine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
     RETURN_IF_FAILED(dxEngine->SetHwnd(_hwnd.get()));
     RETURN_IF_FAILED(dxEngine->Enable());
     _renderer->AddRenderEngine(dxEngine.get());

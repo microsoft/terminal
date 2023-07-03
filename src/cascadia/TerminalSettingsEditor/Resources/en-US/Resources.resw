@@ -710,6 +710,10 @@
     <value>Browse...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
+  <data name="Profile_BackgroundImageCopy.Content" xml:space="preserve">
+    <value>Copy Image to localappdata</value>
+    <comment>Button label that copies currently chosen file to settings directory.</comment>
+  </data>
   <data name="Profile_BackgroundImageOpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Background image opacity</value>
     <comment>Name for a control to choose the opacity of the image presented on the background of the app.</comment>
@@ -1589,11 +1593,11 @@
     <value>Learn more.</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
   </data>
-	<data name="Profile_FontFace_ProportionalFontWarning.Title" xml:space="preserve">
+  <data name="Profile_FontFace_ProportionalFontWarning.Title" xml:space="preserve">
     <value>Warning:</value>
     <comment>Title for the warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
   </data>
-	<data name="Profile_FontFace_ProportionalFontWarning.Message" xml:space="preserve">
+  <data name="Profile_FontFace_ProportionalFontWarning.Message" xml:space="preserve">
     <value>Choosing a non-monospaced font will likely result in visual artifacts. Use at your own discretion.</value>
     <comment>Warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
   </data>

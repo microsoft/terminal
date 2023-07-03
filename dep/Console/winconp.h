@@ -1,7 +1,3 @@
-/*++
-Copyright (c) Microsoft Corporation.
-Licensed under the MIT license.
---*/
 
 #ifndef _WINCONP_
 #define _WINCONP_

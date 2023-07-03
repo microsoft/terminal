@@ -1,144 +1,49 @@
-# This build should never run as CI or against a pull request.
 trigger: none
 pr: none
 
-pool:
-  name: WinDevPool-L
-  demands: ImageOverride -equals WinDevVS17-latest
-
-parameters:
-  - name: branding
-    displayName: "Branding (Build Type)"
-    type: string
-    default: Release
-    values:
-      - Release
-      - Preview
-  - name: buildTerminal
-    displayName: "Build Windows Terminal MSIX"
-    type: boolean
-    default: true
-  - name: runCompliance
-    displayName: "Run Compliance and Security Build"
-    type: boolean
-    default: true
-  - name: publishSymbolsToPublic
-    displayName: "Publish Symbols to MSDL"
-    type: boolean
-    default: true
-  - name: buildTerminalVPack
-    displayName: "Build Windows Terminal VPack"
-    type: boolean
-    default: false
-  - name: buildConPTY
-    displayName: "Build ConPTY NuGet"
-    type: boolean
-    default: false
-  - name: buildWPF
-    displayName: "Build Terminal WPF Control"
-    type: boolean
-    default: false
-  - name: pgoBuildMode
-    displayName: "PGO Build Mode"
-    type: string
-    default: Optimize
-    values:
-      - Optimize
-      - Instrument
-      - None
-  - name: buildConfigurations
-    type: object
-    default:
-      - Release
-  - name: buildPlatforms
-    type: object
-    default:
-      - x64
-      - x86
-      - arm64
-
 variables:
-  MakeAppxPath: 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\MakeAppx.exe'
-  TerminalInternalPackageVersion: "0.0.8"
-  # If we are building a branch called "release-*", change the NuGet suffix
-  # to "preview". If we don't do that, XES will set the suffix to "release1"
-  # because it truncates the value after the first period.
-  # We also want to disable the suffix entirely if we're Release branded while
-  # on a release branch.
-  # main is special, however. XES ignores main. Since we never produce actual
-  # shipping builds from main, we want to force it to have a beta label as
-  # well.
-  #
-  # In effect:
-  # BRANCH / BRANDING | Release                    | Preview
-  # ------------------|----------------------------|-----------------------------
-  # release-*         | 1.12.20220427              | 1.13.20220427-preview
-  # main              | 1.14.20220427-experimental | 1.14.20220427-experimental
-  # all others        | 1.14.20220427-mybranch     | 1.14.20220427-mybranch
-  ${{ if startsWith(variables['Build.SourceBranchName'], 'release-') }}:
-    ${{ if eq(parameters.branding, 'Release') }}:
-      NoNuGetPackBetaVersion: true
-    ${{ else }}:
-      NuGetPackBetaVersion: preview
-  ${{ elseif eq(variables['Build.SourceBranchName'], 'main') }}:
-    NuGetPackBetaVersion: experimental
+  baseYearForVersioning: 2019 # Used by build-console-int
+  versionMajor: 0
+  versionMinor: 1
 
-name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
-resources:
-  repositories:
-  - repository: self
-    type: git
-    ref: main
+# When we move off PackageES for Versioning, we'll need to switch
+# name to this format. For now, though, we need to use DayOfYear.Rev
+# to unique our builds, as mandated by PackageES's Setup task.
+# name: '$(versionMajor).$(versionMinor).$(DayOfYear)$(Rev:r).0'
+#
+# Build name/version number above must end with .0 to make the
+# store publication machinery happy.
+name: 'Terminal_$(date:yyMM).$(date:dd)$(rev:rrr)'
+
+# Build Arguments:
+#   WindowsTerminalOfficialBuild=[true,false]
+#     true - this is running on our build agent
+#     false - running locally
+#   WindowsTerminalBranding=[Dev,Preview,Release]
+#     <none>  - Development build resources (default)
+#     Preview - Preview build resources
+#     Release - regular build resources
 jobs:
-- job: Build
-  strategy:
-    matrix:
-      ${{ each config in parameters.buildConfigurations }}:
-        ${{ each platform in parameters.buildPlatforms }}:
-          ${{ config }}_${{ platform }}:
-            BuildConfiguration: ${{ config }}
-            BuildPlatform: ${{ platform }}
-  displayName: Build
-  timeoutInMinutes: 240
-  cancelTimeoutInMinutes: 1
-  steps:
-  - checkout: self
-    clean: true
-    submodules: true
-    persistCredentials: True
-  - task: PkgESSetupBuild@12
-    displayName: Package ES - Setup Build
-    inputs:
-      disableOutputRedirect: true
-  - task: PowerShell@2
-    displayName: Rationalize Build Platform
-    inputs:
-      targetType: inline
-      script: >-
-        $Arch = "$(BuildPlatform)"
+  - template: ./templates/build-console-audit-job.yml
+    parameters:
+      platform: x64
 
-        If ($Arch -Eq "x86") { $Arch = "Win32" }
+  - template: ./templates/build-console-int.yml
+    parameters:
+      platform: x64
+      additionalBuildArguments: /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=Preview
 
-        Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
-  - template: .\templates\restore-nuget-steps.yml
-  - task: UniversalPackages@0
-    displayName: Download terminal-internal Universal Package
-    inputs:
-      feedListDownload: 2b3f8893-a6e8-411f-b197-a9e05576da48
-      packageListDownload: e82d490c-af86-4733-9dc4-07b772033204
-      versionListDownload: $(TerminalInternalPackageVersion)
-  - task: TouchdownBuildTask@1
-    displayName: Download Localization Files
-    inputs:
-      teamId: 7105
-      authId: $(TouchdownAppId)
-      authKey: $(TouchdownAppKey)
-      resourceFilePath: >-
-        src\cascadia\TerminalApp\Resources\en-US\Resources.resw
+  - template: ./templates/build-console-int.yml
+    parameters:
+      platform: x86
+      additionalBuildArguments: /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=Preview
 
-        src\cascadia\TerminalApp\Resources\en-US\ContextMenu.resw
+  - template: ./templates/build-console-int.yml
+    parameters:
+      platform: arm64
+      additionalBuildArguments: /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=Preview
 
-        src\cascadia\TerminalControl\Resources\en-US\Resources.resw
+  - template: ./templates/check-formatting.yml
 
         src\cascadia\TerminalConnection\Resources\en-US\Resources.resw
 

@@ -17,6 +17,7 @@ using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Windows::Storage;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -58,7 +59,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // into the path TextBox, we properly update the checkbox and stored
                 // _lastBgImagePath. Without this, then we'll permanently hide the text
                 // box, prevent it from ever being changed again.
-                _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible");
+                _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible", L"BackgroundImageCopyVisible");
             }
         });
 
@@ -175,6 +176,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool AppearanceViewModel::BackgroundImageSettingsVisible()
     {
         return BackgroundImagePath() != L"";
+    }
+
+    bool AppearanceViewModel::BackgroundImageCopyVisible()
+    {
+        const auto& path = BackgroundImagePath();
+        return !path.starts_with(L"ms-appx:///") && !path.starts_with(L"ms-appdata:///") && !UseDesktopBGImage();
     }
 
     void AppearanceViewModel::ClearColorScheme()
@@ -440,6 +447,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             Appearance().BackgroundImagePath(file);
         }
+    }
+   
+    fire_and_forget Appearances::BackgroundImageCopy_Click(const IInspectable&, const RoutedEventArgs&) {
+        try
+        {
+            const auto dispatcher = Dispatcher();
+            const auto appearance = Appearance(); 
+
+            const auto imgPath = appearance.BackgroundImagePath();
+            const auto sourceFile = co_await StorageFile::GetFileFromPathAsync(imgPath);
+            const auto destFolder = co_await ApplicationData::Current().LocalFolder().CreateFolderAsync(L"BackgroundImage", CreationCollisionOption::OpenIfExists);
+            const auto destFile = co_await sourceFile.CopyAsync(destFolder, sourceFile.Name(), Windows::Storage::NameCollisionOption::GenerateUniqueName);
+            const auto newPath = destFile.Name();
+
+            co_await winrt::resume_foreground(dispatcher); 
+
+            appearance.BackgroundImagePath(L"ms-appdata:///local/BackgroundImage/" + newPath);
+
+
+        }
+        CATCH_LOG();
     }
 
     void Appearances::BIAlignment_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)

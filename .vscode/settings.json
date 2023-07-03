@@ -107,5 +107,9 @@
     },
     "search.exclude": {
         "**/packages/**": true
-    }
+    },
+    "codeium.enableSearch": true,
+    "CodeGPT.organizationId": "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",
+    "CodeGPT.query.language": "Thai",
+    "compile-hero.disable-compile-files-on-did-save-code": false
 }

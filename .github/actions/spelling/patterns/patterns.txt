@@ -27,12 +27,15 @@ ROY\sG\.\sBIV
 # Python stringprefix / binaryprefix
 \b(?:B|BR|Br|F|FR|Fr|R|RB|RF|Rb|Rf|U|UR|Ur|b|bR|br|f|fR|fr|r|rB|rF|rb|rf|u|uR|ur)'
 
+<<<<<<< HEAD
 # SSE intrinsics like "_mm_subs_epu16"
 \b_mm(?:|256|512)_\w+\b
 
 # ARM NEON intrinsics like "vsubq_u16"
 \bv\w+_[fsu](?:8|16|32|64)\b
 
+=======
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 # Automatically suggested patterns
 # hit-count: 3831 file-count: 582
 # IServiceProvider
@@ -41,7 +44,11 @@ ROY\sG\.\sBIV
 # hit-count: 71 file-count: 35
 # Compiler flags
 (?:^|[\t ,"'`=(])-[D](?=[A-Z]{2,}|[A-Z][a-z])
+<<<<<<< HEAD
 (?:^|[\t ,"'`=(])-[X](?!aml)(?=[A-Z]{2,}|[A-Z][a-z]|[a-z]{2,})
+=======
+(?:^|[\t ,"'`=(])-[X](?=[A-Z]{2,}|[A-Z][a-z]|[a-z]{2,})
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
 
 # hit-count: 41 file-count: 28
 # version suffix <word>v#

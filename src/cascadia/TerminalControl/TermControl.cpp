@@ -2066,10 +2066,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //     Windows Clipboard (CascadiaWin32:main.cpp).
     // - CopyOnSelect does NOT clear the selection
     // Arguments:
+    // - dismissSelection: dismiss the text selection after copy
     // - singleLine: collapse all of the text to one line
     // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
     //             if we should defer which formats are copied to the global setting
-    bool TermControl::CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
+    bool TermControl::CopySelectionToClipboard(bool dismissSelection, bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         if (_IsClosing())
         {
@@ -2077,7 +2078,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto successfulCopy = _interactivity.CopySelectionToClipboard(singleLine, formats);
-        _core.ClearSelection();
+
+        if (dismissSelection)
+        {
+            _core.ClearSelection();
+        }
+
         return successfulCopy;
     }
 

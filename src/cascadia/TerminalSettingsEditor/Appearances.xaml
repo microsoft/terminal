@@ -375,6 +375,11 @@
                                 Click="BackgroundImage_Click"
                                 IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
                                 Style="{StaticResource BrowseButtonStyle}" />
+                        <Button x:Uid="Profile_BackgroundImageCopy"
+                                Margin="0,10,10,0"
+                                Click="BackgroundImageCopy_Click"
+                                IsEnabled="{x:Bind Appearance.BackgroundImageCopyVisible, Mode=OneWay}"
+                                Style="{StaticResource BrowseButtonStyle}" />
                         <CheckBox x:Name="UseDesktopImageCheckBox"
                                   x:Uid="Profile_UseDesktopImage"
                                   Margin="0,5,0,0"

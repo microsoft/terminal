@@ -96,6 +96,7 @@ namespace winrt::TerminalApp::implementation
             return _tabStatus;
         }
 
+<<<<<<< HEAD
         WINRT_CALLBACK(ActivePaneChanged, winrt::delegate<>);
         WINRT_CALLBACK(TabRaiseVisualBell, winrt::delegate<>);
         WINRT_CALLBACK(DuplicateRequested, winrt::delegate<>);
@@ -104,6 +105,15 @@ namespace winrt::TerminalApp::implementation
         WINRT_CALLBACK(FindRequested, winrt::delegate<>);
         WINRT_CALLBACK(ExportTabRequested, winrt::delegate<>);
         WINRT_CALLBACK(ColorPickerRequested, winrt::delegate<>);
+=======
+        DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
+        DECLARE_EVENT(ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
+        DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
+        DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
+        DECLARE_EVENT(DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
+        DECLARE_EVENT(FindRequested, _FindRequestedHandlers, winrt::delegate<>);
+        DECLARE_EVENT(SplitTabRequested, _SplitTabRequestedHandlers, winrt::delegate<>);
+>>>>>>> upstream/cinnamon/fhl/find-contextmenu
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:

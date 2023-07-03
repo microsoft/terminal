@@ -5,40 +5,39 @@ steps:
 - checkout: self
   submodules: true
   clean: true
-  fetchDepth: 1
 
-- template: restore-nuget-steps.yml
-
-# The environment variable VCToolsInstallDir isn't defined on lab machines, so we need to retrieve it ourselves.
-- script: |
-    "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -Latest -requires Microsoft.Component.MSBuild -property InstallationPath > %TEMP%\vsinstalldir.txt
-    set /p _VSINSTALLDIR15=<%TEMP%\vsinstalldir.txt
-    del %TEMP%\vsinstalldir.txt
-    call "%_VSINSTALLDIR15%\Common7\Tools\VsDevCmd.bat"
-    echo VCToolsInstallDir = %VCToolsInstallDir%
-    echo ##vso[task.setvariable variable=VCToolsInstallDir]%VCToolsInstallDir%
-  displayName: 'Retrieve VC tools directory'
-
-- task: CmdLine@1
-  displayName: 'Display build machine environment variables'
+- task: NuGetToolInstaller@0
+  displayName: Ensure NuGet 4.8.1
   inputs:
-    filename: 'set'
+    versionSpec: 4.8.1
+
+- task: VisualStudioTestPlatformInstaller@1
+  displayName: Ensure VSTest Platform
+
+# In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
+# This should be `task: NuGetCommand@2`
+- task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
+  displayName: Restore NuGet packages
+  inputs:
+    command: restore
+    feedsToUse: config
+    configPath: NuGet.config
+    restoreSolution: OpenConsole.sln
+    restoreDirectory: '$(Build.SourcesDirectory)\packages'
 
 - task: VSBuild@1
   displayName: 'Build solution **\OpenConsole.sln'
   inputs:
     solution: '**\OpenConsole.sln'
+    vsVersion: 16.0
     platform: '$(BuildPlatform)'
     configuration: '$(BuildConfiguration)'
-    msbuildArgs: "${{ parameters.additionalBuildArguments }} /p:PGOBuildMode=$(PGOBuildMode) /bl:$(Build.SourcesDirectory)\\msbuild.binlog"
+    msbuildArgs: "${{ parameters.additionalBuildArguments }}"
     clean: true
     maximumCpuCount: true
 
 - task: PowerShell@2
   displayName: 'Check MSIX for common regressions'
-  # PGO runtime needs its own CRT and it's in the package for convenience.
-  # That will make this script mad so skip since we're not shipping the PGO Instrumentation one anyway.
-  condition: ne(variables['PGOBuildMode'], 'Instrument')
   inputs:
     targetType: inline
     script: |
@@ -47,7 +46,6 @@ steps:
 
 - task: powershell@2
   displayName: 'Source Index PDBs'
-  condition: ne(variables['PGOBuildMode'], 'Instrument')
   inputs:
     targetType: filePath
     filePath: build\scripts\Index-Pdbs.ps1
@@ -63,75 +61,38 @@ steps:
       If ($Arch -Eq "x86") { $Arch = "Win32" }
       Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
 
+- task: PowerShell@2
+  displayName: 'Run Unit Tests'
+  inputs:
+    targetType: filePath
+    filePath: build\scripts\Run-Tests.ps1
+    arguments: -MatchPattern '*unit.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
+  condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
+
+- task: PowerShell@2
+  displayName: 'Run Feature Tests (x64 only)'
+  inputs:
+    targetType: filePath
+    filePath: build\scripts\Run-Tests.ps1
+    arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
+  condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
+
 - task: CopyFiles@2
-  displayName: 'Copy *.msix to Artifacts'
+  displayName: 'Copy *.appx/*.msix to Artifacts (Non-PR builds only)'
   inputs:
     Contents: |
+     **/*.appx
      **/*.msix
      **/*.appxsym
+     !**/Microsoft.VCLibs*.appx
     TargetFolder: '$(Build.ArtifactStagingDirectory)/appx'
     OverWrite: true
     flattenFolders: true
-
-- pwsh: |-
-    $TerminalMsixPath = (Get-Item "$(Build.ArtifactStagingDirectory)\appx\Cascadia*.msix").FullName
-    $XamlAppxPath = (Get-Item "src\cascadia\CascadiaPackage\AppPackages\*\Dependencies\$(BuildPlatform)\Microsoft.UI.Xaml*.appx").FullName
-    & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 -TerminalAppX $TerminalMsixPath -XamlAppX $XamlAppxPath -Destination "$(Build.ArtifactStagingDirectory)/unpackaged"
-  displayName: Build Unpackaged Distribution
-
-- publish: $(Build.ArtifactStagingDirectory)/unpackaged
-  artifact: unpackaged-$(BuildPlatform)-$(BuildConfiguration)
-  displayName: Publish Artifact (unpackaged)
-
-- task: CopyFiles@2
-  displayName: 'Copy outputs needed for test runs to Artifacts'
-  inputs:
-    Contents: |
-     $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.exe
-     $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.dll
-     $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.xml
-     **/Microsoft.VCLibs.*.appx
-     **/*unit.test*.dll
-     **/*unit.test*.manifest
-     **/TestHostApp/*.exe
-     **/TestHostApp/*.dll
-     **/TestHostApp/*.xml
-     !**/*.pdb
-     !**/*.ipdb
-     !**/*.obj
-     !**/*.pch
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
-    OverWrite: true
-    flattenFolders: true
-  condition: succeeded()
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
 
 - task: PublishBuildArtifacts@1
-  displayName: 'Publish All Build Artifacts'
+  displayName: 'Publish Artifact (appx) (Non-PR builds only)'
   inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'
-
-- task: CopyFiles@2
-  displayName: 'Copy PGO databases needed for PGO instrumentation run'
-  inputs:
-    Contents: |
-     **/*.pgd
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/PGO/$(BuildPlatform)'
-    OverWrite: true
-    flattenFolders: true
-  condition: and(succeeded(), eq(variables['PGOBuildMode'], 'Instrument'))
-
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish All PGO Artifacts'
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/PGO'
-    ArtifactName: 'PGO'
-  condition: and(succeeded(), eq(variables['PGOBuildMode'], 'Instrument'))
-
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact: binlog'
-  condition: always()
-  continueOnError: True
-  inputs:
-    PathtoPublish: $(Build.SourcesDirectory)\msbuild.binlog
-    ArtifactName: binlog-$(BuildPlatform)
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/appx'
+    ArtifactName: 'appx-$(BuildConfiguration)'
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
