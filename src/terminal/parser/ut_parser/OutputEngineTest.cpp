@@ -437,8 +437,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._subParametersRange.size(), mach._parameters.size());
         VERIFY_IS_TRUE(
             (mach._subParametersRange.back().second == mach._subParameters.size() - 1) // lastIndex
-            || ( mach._subParametersRange.back().second == mach._subParameters.size()) // or lastIndex + 1
-        );  
+            || (mach._subParametersRange.back().second == mach._subParameters.size()) // or lastIndex + 1
+        );
     }
 
     TEST_METHOD(TestCsiMaxSubParamCount)
