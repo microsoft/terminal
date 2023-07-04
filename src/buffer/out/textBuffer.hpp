@@ -98,7 +98,7 @@ public:
 
     // Text insertion functions
     static void ConsumeGrapheme(std::wstring_view& chars) noexcept;
-    void WriteLine(til::CoordType row, bool wrapAtEOL, const TextAttribute& attributes, RowWriteState& state);
+    void Write(til::CoordType row, const TextAttribute& attributes, RowWriteState& state);
     void FillRect(const til::rect& rect, const std::wstring_view& fill, const TextAttribute& attributes);
 
     OutputCellIterator Write(const OutputCellIterator givenIt);
@@ -112,13 +112,13 @@ public:
                                  const std::optional<bool> setWrap = std::nullopt,
                                  const std::optional<til::CoordType> limitRight = std::nullopt);
 
-    bool InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
-    bool InsertCharacter(const std::wstring_view chars, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
-    bool IncrementCursor();
-    bool NewlineCursor();
+    void InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
+    void InsertCharacter(const std::wstring_view chars, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
+    void IncrementCursor();
+    void NewlineCursor();
 
     // Scroll needs access to this to quickly rotate around the buffer.
-    bool IncrementCircularBuffer(const TextAttribute& fillAttributes = {});
+    void IncrementCircularBuffer(const TextAttribute& fillAttributes = {});
 
     til::point GetLastNonSpaceCharacter(std::optional<const Microsoft::Console::Types::Viewport> viewOptional = std::nullopt) const;
 
@@ -133,10 +133,11 @@ public:
 
     til::CoordType TotalRowCount() const noexcept;
 
-    [[nodiscard]] TextAttribute GetCurrentAttributes() const noexcept;
+    const TextAttribute& GetCurrentAttributes() const noexcept;
 
     void SetCurrentAttributes(const TextAttribute& currentAttributes) noexcept;
 
+    void SetWrapForced(til::CoordType y, bool wrap);
     void SetCurrentLineRendition(const LineRendition lineRendition, const TextAttribute& fillAttributes);
     void ResetLineRenditionRange(const til::CoordType startRow, const til::CoordType endRow);
     LineRendition GetLineRendition(const til::CoordType row) const;
@@ -234,13 +235,14 @@ private:
     void _construct(const std::byte* until) noexcept;
     void _destroy() const noexcept;
     ROW& _getRowByOffsetDirect(size_t offset);
+    til::CoordType _estimateOffsetOfLastCommittedRow() const noexcept;
 
     void _SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept;
     til::point _GetPreviousFromCursor() const;
     void _SetWrapOnCurrentRow();
     void _AdjustWrapOnCurrentRow(const bool fSet);
     // Assist with maintaining proper buffer state for Double Byte character sequences
-    bool _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);
+    void _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);
     bool _AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute);
     void _ExpandTextRow(til::inclusive_rect& selectionRow) const;
     DelimiterClass _GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const;

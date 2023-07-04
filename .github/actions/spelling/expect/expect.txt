@@ -105,6 +105,7 @@ bcx
 bcz
 BEFOREPARENT
 beginthread
+benchcat
 bgfx
 bgidx
 Bgk
@@ -987,7 +988,6 @@ langid
 LANGUAGELIST
 lasterror
 LASTEXITCODE
-lastexitcode
 LAYOUTRTL
 lbl
 LBN
@@ -1031,6 +1031,7 @@ LOGFONT
 LOGFONTA
 LOGFONTW
 logissue
+losslessly
 loword
 lparam
 LPCCH
@@ -2062,6 +2063,7 @@ vcpkg
 vcprintf
 vcxitems
 vec
+vectorize
 vectorized
 VERCTRL
 VERTBAR

@@ -26,13 +26,8 @@ using namespace Microsoft::Console;
 // - A new instance of InputBuffer
 InputBuffer::InputBuffer() :
     InputMode{ INPUT_BUFFER_DEFAULT_INPUT_MODE },
-    WaitQueue{},
-    _pTtyConnection(nullptr),
-    _termInput(std::bind(&InputBuffer::_HandleTerminalInputCallback, this, std::placeholders::_1))
+    _pTtyConnection(nullptr)
 {
-    // The _termInput's constructor takes a reference to this object's _HandleTerminalInputCallback.
-    // We need to use std::bind to create a reference to that function without a reference to this InputBuffer
-
     // initialize buffer header
     fInComposition = false;
 }
@@ -682,6 +677,63 @@ size_t InputBuffer::Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEv
     }
 }
 
+// This can be considered a "privileged" variant of Write() which allows FOCUS_EVENTs to generate focus VT sequences.
+// If we didn't do this, someone could write a FOCUS_EVENT_RECORD with WriteConsoleInput, exit without flushing the
+// input buffer and the next application will suddenly get a "\x1b[I" sequence in their input. See GH#13238.
+void InputBuffer::WriteFocusEvent(bool focused) noexcept
+{
+    if (IsInVirtualTerminalInputMode())
+    {
+        if (const auto out = _termInput.HandleFocus(focused))
+        {
+            _HandleTerminalInputCallback(*out);
+        }
+    }
+    else
+    {
+        // This is a mini-version of Write().
+        const auto wasEmpty = _storage.empty();
+        _storage.push_back(std::make_unique<FocusEvent>(focused));
+        if (wasEmpty)
+        {
+            ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
+        }
+        WakeUpReadersWaitingForData();
+    }
+}
+
+// Returns true when mouse input started. You should then capture the mouse and produce further events.
+bool InputBuffer::WriteMouseEvent(til::point position, const unsigned int button, const short keyState, const short wheelDelta)
+{
+    if (IsInVirtualTerminalInputMode())
+    {
+        // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
+        // "If the high-order bit is 1, the key is down; otherwise, it is up."
+        static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
+
+        const TerminalInput::MouseButtonState state{
+            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_LBUTTON), KeyPressed),
+            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_MBUTTON), KeyPressed),
+            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_RBUTTON), KeyPressed)
+        };
+
+        // GH#6401: VT applications should be able to receive mouse events from outside the
+        // terminal buffer. This is likely to happen when the user drags the cursor offscreen.
+        // We shouldn't throw away perfectly good events when they're offscreen, so we just
+        // clamp them to be within the range [(0, 0), (W, H)].
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.GetActiveOutputBuffer().GetViewport().ToOrigin().Clamp(position);
+
+        if (const auto out = _termInput.HandleMouse(position, button, keyState, wheelDelta, state))
+        {
+            _HandleTerminalInputCallback(*out);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // Routine Description:
 // - Coalesces input events and transfers them to storage queue.
 // Arguments:
@@ -715,10 +767,9 @@ void InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>&
         inEvents.pop_front();
         if (vtInputMode)
         {
-            // GH#11682: TerminalInput::HandleKey can handle both KeyEvents and Focus events seamlessly
-            const auto handled = _termInput.HandleKey(inEvent.get());
-            if (handled)
+            if (const auto out = _termInput.HandleKey(inEvent.get()))
             {
+                _HandleTerminalInputCallback(*out);
                 eventsWritten++;
                 continue;
             }
@@ -944,16 +995,18 @@ bool InputBuffer::IsInVirtualTerminalInputMode() const
 // - inEvents - Series of input records to insert into the buffer
 // Return Value:
 // - <none>
-void InputBuffer::_HandleTerminalInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+void InputBuffer::_HandleTerminalInputCallback(const TerminalInput::StringType& text)
 {
     try
     {
-        // add all input events to the storage queue
-        while (!inEvents.empty())
+        if (text.empty())
         {
-            auto inEvent = std::move(inEvents.front());
-            inEvents.pop_front();
-            _storage.push_back(std::move(inEvent));
+            return;
+        }
+
+        for (const auto& wch : text)
+        {
+            _storage.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, wch, 0));
         }
 
         if (!_vtInputShouldSuppress)

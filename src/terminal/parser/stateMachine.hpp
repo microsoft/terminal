@@ -201,7 +201,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         // This is tracked per state machine instance so that separate calls to Process*
         //   can start and finish a sequence.
-        bool _processingIndividually;
         bool _processingLastCharacter;
 
         std::function<void()> _onCsiCompleteCallback;

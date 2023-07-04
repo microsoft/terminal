@@ -123,6 +123,7 @@ public:
     bool WasDoubleBytePadded() const noexcept;
     void SetLineRendition(const LineRendition lineRendition) noexcept;
     LineRendition GetLineRendition() const noexcept;
+    uint16_t GetLineWidth() const noexcept;
 
     void Reset(const TextAttribute& attr) noexcept;
     void TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth);
@@ -133,7 +134,7 @@ public:
 
     void ClearCell(til::CoordType column);
     OutputCellIterator WriteCells(OutputCellIterator it, til::CoordType columnBegin, std::optional<bool> wrap = std::nullopt, std::optional<til::CoordType> limitRight = std::nullopt);
-    bool SetAttrToEnd(til::CoordType columnBegin, TextAttribute attr);
+    void SetAttrToEnd(til::CoordType columnBegin, TextAttribute attr);
     void ReplaceAttributes(til::CoordType beginIndex, til::CoordType endIndex, const TextAttribute& newAttr);
     void ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars);
     void ReplaceText(RowWriteState& state);
@@ -151,6 +152,7 @@ public:
     std::wstring_view GlyphAt(til::CoordType column) const noexcept;
     DbcsAttribute DbcsAttrAt(til::CoordType column) const noexcept;
     std::wstring_view GetText() const noexcept;
+    std::wstring_view GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept;
     DelimiterClass DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept;
 
     auto AttrBegin() const noexcept { return _attr.begin(); }
@@ -171,6 +173,7 @@ private:
         void ReplaceCharacters(til::CoordType width) noexcept;
         void ReplaceText() noexcept;
         void CopyTextFrom(const std::span<const uint16_t>& charOffsets) noexcept;
+        static void _copyOffsets(uint16_t* dst, const uint16_t* src, uint16_t size, uint16_t offset) noexcept;
         void Finish();
 
         // Parent pointer.

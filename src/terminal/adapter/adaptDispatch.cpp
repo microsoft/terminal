@@ -138,8 +138,15 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
         state.columnBegin = cursorPosition.x;
 
         const auto textPositionBefore = state.text.data();
-        textBuffer.WriteLine(cursorPosition.y, wrapAtEOL, attributes, state);
+        textBuffer.Write(cursorPosition.y, attributes, state);
         const auto textPositionAfter = state.text.data();
+
+        // TODO: A row should not be marked as wrapped just because we wrote the last column.
+        // It should be marked whenever we write _past_ it (above, _DoLineFeed call). See GH#15602.
+        if (wrapAtEOL && state.columnEnd >= state.columnLimit)
+        {
+            textBuffer.SetWrapForced(cursorPosition.y, true);
+        }
 
         if (state.columnBeginDirty != state.columnEndDirty)
         {

@@ -29,6 +29,10 @@ namespace winrt::TerminalApp::implementation
 
     void App::Initialize()
     {
+        // LOAD BEARING
+        AddOtherProvider(winrt::Microsoft::Terminal::Control::XamlMetaDataProvider{});
+        AddOtherProvider(winrt::Microsoft::UI::Xaml::XamlTypeInfo::XamlControlsXamlMetaDataProvider{});
+
         const auto dispatcherQueue = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
         if (!dispatcherQueue)
         {
@@ -101,5 +105,13 @@ namespace winrt::TerminalApp::implementation
     {
         // We used to support a pure UWP version of the Terminal. This method
         // was only ever used to do UWP-specific setup of our App.
+    }
+
+    void App::PrepareForSettingsUI()
+    {
+        if (!std::exchange(_preparedForSettingsUI, true))
+        {
+            AddOtherProvider(winrt::Microsoft::Terminal::Settings::Editor::XamlMetaDataProvider{});
+        }
     }
 }
