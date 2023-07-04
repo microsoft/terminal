@@ -457,11 +457,8 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
         for (size_t i = 0; i < 100; i++)
         {
-            if (i > 0)
-            {
-                mach.ProcessCharacter(L':');
-                VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
-            }
+            mach.ProcessCharacter(L':');
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
             mach.ProcessCharacter(L'0' + i % 10);
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
         }
