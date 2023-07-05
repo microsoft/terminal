@@ -38,15 +38,10 @@ public:
 
     void SetTextAttributes(const TextAttribute& attrs) override;
 
-    void SetAutoWrapMode(const bool wrapAtEOL) override;
-    bool GetAutoWrapMode() const override;
-
-    void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override;
+    void SetSystemMode(const Mode mode, const bool enabled) override;
+    bool GetSystemMode(const Mode mode) const override;
 
     void WarningBell() override;
-
-    bool GetLineFeedMode() const override;
-    void LineFeed(const bool withReturn, const bool wrapForced) override;
 
     void SetWindowTitle(const std::wstring_view title) override;
 
@@ -63,8 +58,6 @@ public:
     void SetConsoleOutputCP(const unsigned int codepage) override;
     unsigned int GetConsoleOutputCP() const override;
 
-    void SetBracketedPasteMode(const bool enabled) override;
-    std::optional<bool> GetBracketedPasteMode() const override;
     void CopyToClipboard(const std::wstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(const std::wstring_view uri) override;
@@ -74,15 +67,15 @@ public:
     bool IsVtInputEnabled() const override;
 
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
+    void NotifyBufferRotation(const int delta) override;
 
     void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
     void MarkCommandStart() override;
     void MarkOutputStart() override;
     void MarkCommandFinish(std::optional<unsigned int> error) override;
 
-    void InvokeMenu(std::wstring_view menuJson, int32_t replaceLength) override;
+    void InvokeMenu(std::wstring_view menuJson, unsigned int replaceLength) override;
 
 private:
     Microsoft::Console::IIoProvider& _io;
-    bool _bracketedPasteMode{ false };
 };

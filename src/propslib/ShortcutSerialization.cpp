@@ -165,7 +165,7 @@ void ShortcutSerialization::s_SetLinkPropertyDwordValue(_Inout_ IPropertyStore* 
             NT_FE_CONSOLE_PROPS* pNtFEConsoleProps;
             if (SUCCEEDED(pConsoleLnkDataList->CopyDataBlock(NT_FE_CONSOLE_PROPS_SIG, reinterpret_cast<void**>(&pNtFEConsoleProps))))
             {
-                pNtFEConsoleProps->uCodePage = pStateInfo->CodePage;
+                pStateInfo->CodePage = pNtFEConsoleProps->uCodePage;
                 LocalFree(pNtFEConsoleProps);
             }
         }
@@ -243,13 +243,13 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
                                            const size_t cchShortcutTitle)
 {
     auto Status = (cchShortcutTitle > 0) ? STATUS_SUCCESS : STATUS_INVALID_PARAMETER_2;
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pwszShortcutTitle[0] = L'\0';
 
         WCHAR szTemp[MAX_PATH];
         Status = StringCchCopyW(szTemp, ARRAYSIZE(szTemp), pwszShortcutFilename);
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             // Now load the localized title for the shortcut
             IShellItem* psi;
@@ -268,11 +268,11 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
             }
         }
 
-        if (!NT_SUCCESS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             // default to an extension-free version of the filename passed in
             Status = StringCchCopyW(pwszShortcutTitle, cchShortcutTitle, pwszShortcutFilename);
-            if (NT_SUCCESS(Status))
+            if (SUCCEEDED_NTSTATUS(Status))
             {
                 // don't care if we can't remove the extension
                 (void)PathCchRemoveExtension(pwszShortcutTitle, cchShortcutTitle);

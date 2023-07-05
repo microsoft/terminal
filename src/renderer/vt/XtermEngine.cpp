@@ -526,18 +526,17 @@ CATCH_RETURN();
     RETURN_IF_FAILED(_fUseAsciiOnly ?
                          VtEngine::_WriteTerminalAscii(wstr) :
                          VtEngine::_WriteTerminalUtf8(wstr));
-    // GH#4106, GH#2011 - WriteTerminalW is only ever called by the
+    // GH#4106, GH#2011, GH#13710 - WriteTerminalW is only ever called by the
     // StateMachine, when we've encountered a string we don't understand. When
-    // this happens, we usually don't actually trigger another frame, but we
-    // _do_ want this string to immediately be sent to the terminal. Since we
-    // only flush our buffer on actual frames, this means that strings we've
-    // decided to pass through would have gotten buffered here until the next
-    // actual frame is triggered.
-    //
-    // To fix this, flush here, so this string is sent to the connected terminal
-    // application.
+    // this happens, we will trigger a new frame in the renderer, and
+    // immediately buffer this wstr (representing the sequence we didn't
+    // understand). We won't immediately _Flush to the terminal - that might
+    // cause flickering (where we've buffered some state but not the whole
+    // "frame" as specified by the app). We'll just immediately buffer this
+    // sequence, and flush it when the render thread comes around to paint the
+    // frame normally.
 
-    return _Flush();
+    return S_OK;
 }
 
 // Method Description:

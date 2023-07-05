@@ -81,7 +81,7 @@ static wchar_t* _ConsoleHostPath()
             // We tried the architecture infix version and failed, fall back to conhost.
             return _InboxConsoleHostPath();
         }
-        auto modulePathAsString{ modulePath.wstring() };
+        const auto& modulePathAsString = modulePath.native();
         return wil::make_process_heap_string_nothrow(modulePathAsString.data(), modulePathAsString.size());
 #endif // __INSIDE_WINDOWS
     }();

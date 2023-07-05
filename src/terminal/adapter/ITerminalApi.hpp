@@ -48,13 +48,17 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void SetTextAttributes(const TextAttribute& attrs) = 0;
 
-        virtual void SetAutoWrapMode(const bool wrapAtEOL) = 0;
-        virtual bool GetAutoWrapMode() const = 0;
+        enum class Mode : size_t
+        {
+            AutoWrap,
+            LineFeed,
+            BracketedPaste
+        };
 
-        virtual void SetScrollingRegion(const til::inclusive_rect& scrollMargins) = 0;
+        virtual void SetSystemMode(const Mode mode, const bool enabled) = 0;
+        virtual bool GetSystemMode(const Mode mode) const = 0;
+
         virtual void WarningBell() = 0;
-        virtual bool GetLineFeedMode() const = 0;
-        virtual void LineFeed(const bool withReturn, const bool wrapForced) = 0;
         virtual void SetWindowTitle(const std::wstring_view title) = 0;
         virtual void UseAlternateScreenBuffer() = 0;
         virtual void UseMainScreenBuffer() = 0;
@@ -66,8 +70,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void SetConsoleOutputCP(const unsigned int codepage) = 0;
         virtual unsigned int GetConsoleOutputCP() const = 0;
 
-        virtual void SetBracketedPasteMode(const bool enabled) = 0;
-        virtual std::optional<bool> GetBracketedPasteMode() const = 0;
         virtual void CopyToClipboard(const std::wstring_view content) = 0;
         virtual void SetTaskbarProgress(const DispatchTypes::TaskbarState state, const size_t progress) = 0;
         virtual void SetWorkingDirectory(const std::wstring_view uri) = 0;
@@ -77,12 +79,13 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool IsConsolePty() const = 0;
 
         virtual void NotifyAccessibilityChange(const til::rect& changedRect) = 0;
+        virtual void NotifyBufferRotation(const int delta) = 0;
 
         virtual void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) = 0;
         virtual void MarkCommandStart() = 0;
         virtual void MarkOutputStart() = 0;
         virtual void MarkCommandFinish(std::optional<unsigned int> error) = 0;
 
-        virtual void InvokeMenu(std::wstring_view menuJson, int32_t replaceLength) = 0;
+        virtual void InvokeMenu(std::wstring_view menuJson, unsigned int replaceLength) = 0;
     };
 }

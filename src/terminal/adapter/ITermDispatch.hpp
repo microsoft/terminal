@@ -51,13 +51,18 @@ public:
     virtual bool ScrollDown(const VTInt distance) = 0; // SD
     virtual bool InsertLine(const VTInt distance) = 0; // IL
     virtual bool DeleteLine(const VTInt distance) = 0; // DL
+    virtual bool InsertColumn(const VTInt distance) = 0; // DECIC
+    virtual bool DeleteColumn(const VTInt distance) = 0; // DECDC
     virtual bool SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
     virtual bool SetAnsiMode(const bool ansiMode) = 0; // DECANM
     virtual bool SetTopBottomScrollingMargins(const VTInt topMargin, const VTInt bottomMargin) = 0; // DECSTBM
+    virtual bool SetLeftRightScrollingMargins(const VTInt leftMargin, const VTInt rightMargin) = 0; // DECSLRM
     virtual bool WarningBell() = 0; // BEL
     virtual bool CarriageReturn() = 0; // CR
     virtual bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) = 0; // IND, NEL, LF, FF, VT
     virtual bool ReverseLineFeed() = 0; // RI
+    virtual bool BackIndex() = 0; // DECBI
+    virtual bool ForwardIndex() = 0; // DECFI
     virtual bool SetWindowTitle(std::wstring_view title) = 0; // OscWindowTitle
     virtual bool HorizontalTabSet() = 0; // HTS
     virtual bool ForwardTab(const VTInt numTabs) = 0; // CHT, HT
@@ -81,6 +86,7 @@ public:
     virtual bool EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECERA
     virtual bool SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECSERA
     virtual bool SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) = 0; // DECSACE
+    virtual bool RequestChecksumRectangularArea(const VTInt id, const VTInt page, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECRQCRA
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
     virtual bool SetLineRendition(const LineRendition rendition) = 0; // DECSWL, DECDWL, DECDHL
@@ -150,6 +156,9 @@ public:
     virtual StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) = 0; // DECRSTS
 
     virtual StringHandler RequestSetting() = 0; // DECRQSS
+
+    virtual bool RequestPresentationStateReport(const DispatchTypes::PresentationReportFormat format) = 0; // DECRQPSR
+    virtual StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat format) = 0; // DECRSPS
 
     virtual bool PlaySounds(const VTParameters parameters) = 0; // DECPS
 };

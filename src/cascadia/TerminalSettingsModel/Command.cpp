@@ -478,23 +478,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   appended to this vector.
     // Return Value:
     // - <none>
-    void Command::ExpandCommands(IMap<winrt::hstring, Model::Command> commands,
+    void Command::ExpandCommands(IMap<winrt::hstring, Model::Command>& commands,
                                  IVectorView<Model::Profile> profiles,
-                                 IVectorView<Model::ColorScheme> schemes,
-                                 IVector<SettingsLoadWarnings> warnings)
+                                 IVectorView<Model::ColorScheme> schemes)
     {
         std::vector<winrt::hstring> commandsToRemove;
         std::vector<Model::Command> commandsToAdd;
 
         // First, collect up all the commands that need replacing.
-        for (const auto& nameAndCmd : commands)
+        for (const auto& [name, command] : commands)
         {
-            auto cmd{ get_self<implementation::Command>(nameAndCmd.Value()) };
+            auto cmd{ get_self<implementation::Command>(command) };
 
-            auto newCommands = _expandCommand(cmd, profiles, schemes, warnings);
+            auto newCommands = _expandCommand(cmd, profiles, schemes);
             if (newCommands.size() > 0)
             {
-                commandsToRemove.push_back(nameAndCmd.Key());
+                commandsToRemove.push_back(name);
                 commandsToAdd.insert(commandsToAdd.end(), newCommands.begin(), newCommands.end());
             }
         }
@@ -529,21 +528,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Arguments:
     // - expandable: the Command to potentially turn into more commands
     // - profiles: A list of all the profiles that this command should be expanded on.
-    // - warnings: If there were any warnings during parsing, they'll be
-    //   appended to this vector.
     // Return Value:
     // - and empty vector if the command wasn't expandable, otherwise a list of
     //   the newly-created commands.
     std::vector<Model::Command> Command::_expandCommand(Command* const expandable,
                                                         IVectorView<Model::Profile> profiles,
-                                                        IVectorView<Model::ColorScheme> schemes,
-                                                        IVector<SettingsLoadWarnings>& warnings)
+                                                        IVectorView<Model::ColorScheme> schemes)
     {
         std::vector<Model::Command> newCommands;
 
         if (expandable->HasNestedCommands())
         {
-            ExpandCommands(expandable->_subcommands, profiles, schemes, warnings);
+            ExpandCommands(expandable->_subcommands, profiles, schemes);
         }
 
         if (expandable->_IterateOn == ExpandCommandType::None)
@@ -552,7 +548,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         std::string errs; // This string will receive any error text from failing to parse.
-        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
 
         // First, get a string for the original Json::Value
         auto oldJsonString = expandable->_originalJson.toStyledString();
@@ -564,18 +560,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const auto actualDataEnd = newJsonString.data() + newJsonString.size();
             if (!reader->parse(actualDataStart, actualDataEnd, &newJsonValue, &errs))
             {
-                warnings.Append(SettingsLoadWarnings::FailedToParseCommandJson);
                 // If we encounter a re-parsing error, just stop processing the rest of the commands.
                 return false;
             }
 
             // Pass the new json back though FromJson, to get the new expanded value.
-            std::vector<SettingsLoadWarnings> newWarnings;
-            if (auto newCmd{ Command::FromJson(newJsonValue, newWarnings) })
+            // FromJson requires that we pass in a vector to hang on to the
+            // warnings, but ultimately, we don't care about warnings during
+            // expansion.
+            std::vector<SettingsLoadWarnings> unused;
+            if (auto newCmd{ Command::FromJson(newJsonValue, unused) })
             {
                 newCommands.push_back(*newCmd);
             }
-            std::for_each(newWarnings.begin(), newWarnings.end(), [warnings](auto& warn) { warnings.Append(warn); });
             return true;
         };
 
@@ -730,8 +727,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return result;
     }
 
+    // Method description:
+    // * Convert the list of recent commands into a list of sendInput actions to
+    //   send those commands.
+    // * We'll give each command a "history" icon.
+    // * If directories is true, we'll prepend "cd " to each command, so that
+    //   the command will be run as a directory change instead.
     IVector<Model::Command> Command::HistoryToCommands(IVector<winrt::hstring> history,
-                                                       winrt::hstring /*currentCommandline*/,
+                                                       winrt::hstring currentCommandline,
                                                        bool directories)
     {
         std::wstring cdText = directories ? L"cd " : L"";
@@ -740,7 +743,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Use this map to discard duplicates.
         std::unordered_map<std::wstring_view, bool> foundCommands{};
 
-        auto backspaces = std::wstring(::base::saturated_cast<size_t>(0), L'\x7f');
+        auto backspaces = std::wstring(currentCommandline.size(), L'\x7f');
 
         auto createAction = [&](std::wstring_view line) {
             if (line.empty())
@@ -757,15 +760,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto command = winrt::make_self<Command>();
             command->_ActionAndArgs = actionAndArgs;
             command->_name = winrt::hstring{ line };
-            command->_iconPath = L"\ue81c"; // History icon
+            command->_iconPath = directories ?
+                                     L"\ue8da" : // OpenLocal (a folder with an arrow pointing up)
+                                     L"\ue81c"; // History icon
             result.Append(*command);
             foundCommands[line] = true;
         };
 
-        // iterate in reverse over the history, so that most recent commands are first
+        // Iterate in reverse over the history, so that most recent commands are first
         for (auto i = history.Size(); i > 0; i--)
         {
-            createAction(history.GetAt(i-1));
+            createAction(history.GetAt(i - 1));
         }
         return result;
     }

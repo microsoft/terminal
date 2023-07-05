@@ -13,6 +13,7 @@
 #include "ResizePaneArgs.g.cpp"
 #include "MoveFocusArgs.g.cpp"
 #include "MovePaneArgs.g.cpp"
+#include "MoveTabArgs.g.cpp"
 #include "SwapPaneArgs.g.cpp"
 #include "AdjustFontSizeArgs.g.cpp"
 #include "SendInputArgs.g.cpp"
@@ -28,7 +29,6 @@
 #include "CloseOtherTabsArgs.g.cpp"
 #include "CloseTabsAfterArgs.g.cpp"
 #include "CloseTabArgs.g.cpp"
-#include "MoveTabArgs.g.cpp"
 #include "ScrollToMarkArgs.g.cpp"
 #include "AddMarkArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
@@ -44,6 +44,8 @@
 #include "ClearBufferArgs.g.cpp"
 #include "MultipleActionsArgs.g.cpp"
 #include "AdjustOpacityArgs.g.cpp"
+#include "SelectCommandArgs.g.cpp"
+#include "SelectOutputArgs.g.cpp"
 #include "ColorSelectionArgs.g.cpp"
 
 #include <LibraryResources.h>
@@ -246,6 +248,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring MovePaneArgs::GenerateName() const
     {
+        if (!Window().empty())
+        {
+            // Special case for moving to a new window. We can just ignore the
+            // tab index, because it _doesn't matter_. There won't be any tabs
+            // in the new window, till we get there.
+            if (Window() == L"new")
+            {
+                return RS_(L"MovePaneToNewWindowCommandKey");
+            }
+            return winrt::hstring{
+                fmt::format(L"{}, window:{}, tab index:{}", RS_(L"MovePaneCommandKey"), Window(), TabIndex())
+            };
+        }
         return winrt::hstring{
             fmt::format(L"{}, tab index:{}", RS_(L"MovePaneCommandKey"), TabIndex())
         };
@@ -649,6 +664,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring MoveTabArgs::GenerateName() const
     {
+        if (!Window().empty())
+        {
+            if (Window() == L"new")
+            {
+                return RS_(L"MoveTabToNewWindowCommandKey");
+            }
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"MoveTabToWindowCommandKey")),
+                            Window())
+            };
+        }
+
         winrt::hstring directionString;
         switch (Direction())
         {
@@ -676,18 +703,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring SuggestionsArgs::GenerateName() const
     {
+        auto base{ RS_(L"SuggestionsCommandKey") };
         switch (Source())
         {
-        case SuggestionsSource::Tasks:
-            return L"Open tasks...";
         case SuggestionsSource::CommandHistory:
-            return L"Recent commands...";
-        case SuggestionsSource::DirectoryHistory:
-            return L"Recent directories...";
-            // case SuggestionsSource::Suggestions:
-            //     return L"Get suggestions...";
+            base = RS_(L"SuggestionsCommandHistoryCommandKey");
         }
-        return L"TODO!";
+
+        if (UseCommandline())
+        {
+            return winrt::hstring{
+                fmt::format(L"{}, useCommandline:true", std::wstring_view(base))
+            };
+        }
+        else
+        {
+            return base;
+        }
     }
 
     winrt::hstring FindMatchArgs::GenerateName() const
@@ -972,5 +1004,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 fmt::format(std::wstring_view{ str }, matchModeStr)
             };
         }
+    }
+
+    winrt::hstring SelectOutputArgs::GenerateName() const
+    {
+        switch (Direction())
+        {
+        case SelectOutputDirection::Next:
+            return RS_(L"SelectOutputNextCommandKey");
+        case SelectOutputDirection::Previous:
+            return RS_(L"SelectOutputPreviousCommandKey");
+        }
+        return L"";
+    }
+    winrt::hstring SelectCommandArgs::GenerateName() const
+    {
+        switch (Direction())
+        {
+        case SelectOutputDirection::Next:
+            return RS_(L"SelectCommandNextCommandKey");
+        case SelectOutputDirection::Previous:
+            return RS_(L"SelectCommandPreviousCommandKey");
+        }
+        return L"";
     }
 }

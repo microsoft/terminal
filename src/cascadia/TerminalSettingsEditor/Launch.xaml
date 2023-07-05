@@ -57,7 +57,7 @@
                                     <IconSourceElement Grid.Column="0"
                                                        Width="16"
                                                        Height="16"
-                                                       IconSource="{x:Bind Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
+                                                       IconSource="{x:Bind Icon, Converter={StaticResource IconSourceConverter}}" />
 
                                     <TextBlock Grid.Column="1"
                                                Text="{x:Bind Name}" />
@@ -104,7 +104,7 @@
                                                        Width="24"
                                                        Height="24"
                                                        VerticalAlignment="Center"
-                                                       IconSource="{x:Bind Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
+                                                       IconSource="{x:Bind Icon, Converter={StaticResource IconSourceConverter}}" />
 
                                     <TextBlock Grid.Row="0"
                                                Grid.Column="1"

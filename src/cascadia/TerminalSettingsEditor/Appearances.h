@@ -51,18 +51,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         AppearanceViewModel(const Model::AppearanceConfig& appearance);
 
-        void SetFontWeightFromDouble(double fontWeight)
-        {
-            FontWeight(winrt::Microsoft::Terminal::Settings::Editor::Converters::DoubleToFontWeight(fontWeight));
-        }
-        void SetBackgroundImageOpacityFromPercentageValue(double percentageValue)
-        {
-            BackgroundImageOpacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(percentageValue));
-        }
-        void SetBackgroundImagePath(winrt::hstring path)
-        {
-            BackgroundImagePath(path);
-        }
+        double LineHeight() const noexcept;
+        void LineHeight(const double value);
+        bool HasLineHeight() const;
+        void ClearLineHeight();
+        Model::FontConfig LineHeightOverrideSource() const;
+        void SetFontWeightFromDouble(double fontWeight);
+        void SetBackgroundImageOpacityFromPercentageValue(double percentageValue);
+        void SetBackgroundImagePath(winrt::hstring path);
 
         // background image
         bool UseDesktopBGImage();
@@ -134,10 +130,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
         WINRT_PROPERTY(Editor::ProfileViewModel, SourceProfile, nullptr);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
-
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance().BackgroundImageStretchMode);
 
         GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance().IntenseTextStyle);
+        WINRT_OBSERVABLE_PROPERTY(bool, ShowProportionalFontWarning, _PropertyChangedHandlers, nullptr);
 
     private:
         bool _ShowAllFonts;

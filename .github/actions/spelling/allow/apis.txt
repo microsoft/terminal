@@ -34,7 +34,6 @@ DNE
 DONTADDTORECENT
 DWMSBT
 DWMWA
-DWMWA
 DWORDLONG
 endfor
 ENDSESSION
@@ -160,6 +159,7 @@ rcx
 REGCLS
 RETURNCMD
 rfind
+RLO
 ROOTOWNER
 roundf
 RSHIFT
@@ -214,6 +214,7 @@ userenv
 USEROBJECTFLAGS
 Viewbox
 virtualalloc
+vsnwprintf
 wcsstr
 wcstoui
 WDJ
@@ -251,3 +252,4 @@ xtree
 xutility
 YIcon
 YMax
+zwstring

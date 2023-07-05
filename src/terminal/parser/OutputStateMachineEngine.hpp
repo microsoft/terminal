@@ -71,8 +71,10 @@ namespace Microsoft::Console::VirtualTerminal
 
         enum EscActionCodes : uint64_t
         {
+            DECBI_BackIndex = VTID("6"),
             DECSC_CursorSave = VTID("7"),
             DECRC_CursorRestore = VTID("8"),
+            DECFI_ForwardIndex = VTID("9"),
             DECKPAM_KeypadApplicationMode = VTID("="),
             DECKPNM_KeypadNumericMode = VTID(">"),
             IND_Index = VTID("D"),
@@ -137,8 +139,8 @@ namespace Microsoft::Console::VirtualTerminal
             SGR_SetGraphicsRendition = VTID("m"),
             DSR_DeviceStatusReport = VTID("n"),
             DSR_PrivateDeviceStatusReport = VTID("?n"),
-            DECSTBM_SetScrollingRegion = VTID("r"),
-            ANSISYSSC_CursorSave = VTID("s"), // NOTE: Overlaps with DECLRMM/DECSLRM. Fix when/if implemented.
+            DECSTBM_SetTopBottomMargins = VTID("r"),
+            DECSLRM_SetLeftRightMargins = VTID("s"),
             DTTERM_WindowManipulation = VTID("t"), // NOTE: Overlaps with DECSLPP. Fix when/if implemented.
             ANSISYSRC_CursorRestore = VTID("u"),
             DECREQTPARM_RequestTerminalParameters = VTID("x"),
@@ -154,11 +156,15 @@ namespace Microsoft::Console::VirtualTerminal
             DECCARA_ChangeAttributesRectangularArea = VTID("$r"),
             DECRARA_ReverseAttributesRectangularArea = VTID("$t"),
             DECCRA_CopyRectangularArea = VTID("$v"),
+            DECRQPSR_RequestPresentationStateReport = VTID("$w"),
             DECFRA_FillRectangularArea = VTID("$x"),
             DECERA_EraseRectangularArea = VTID("$z"),
             DECSERA_SelectiveEraseRectangularArea = VTID("${"),
             DECSCPP_SetColumnsPerPage = VTID("$|"),
+            DECIC_InsertColumn = VTID("'}"),
+            DECDC_DeleteColumn = VTID("'~"),
             DECSACE_SelectAttributeChangeExtent = VTID("*x"),
+            DECRQCRA_RequestChecksumRectangularArea = VTID("*y"),
             DECINVM_InvokeMacro = VTID("*z"),
             DECAC_AssignColor = VTID(",|"),
             DECPS_PlaySound = VTID(",~")
@@ -169,7 +175,8 @@ namespace Microsoft::Console::VirtualTerminal
             DECDLD_DownloadDRCS = VTID("{"),
             DECDMAC_DefineMacro = VTID("!z"),
             DECRSTS_RestoreTerminalState = VTID("$p"),
-            DECRQSS_RequestSetting = VTID("$q")
+            DECRQSS_RequestSetting = VTID("$q"),
+            DECRSPS_RestorePresentationState = VTID("$t"),
         };
 
         enum Vt52ActionCodes : uint64_t

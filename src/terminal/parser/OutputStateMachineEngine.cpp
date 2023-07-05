@@ -44,10 +44,10 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 {
     switch (wch)
     {
-    case AsciiChars::NUL:
-        // microsoft/terminal#1825 - VT applications expect to be able to write NUL
-        // and have _nothing_ happen. Filter the NULs here, so they don't fill the
-        // buffer with empty spaces.
+    case AsciiChars::ENQ:
+        // GH#11946: At some point we may want to add support for the VT
+        // answerback feature, which requires responding to an ENQ control
+        // with a user-defined reply, but until then we just ignore it.
         break;
     case AsciiChars::BEL:
         _dispatch->WarningBell();
@@ -79,8 +79,23 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
     case AsciiChars::SO:
         _dispatch->LockingShift(1);
         break;
-    default:
+    case AsciiChars::SUB:
+        // The SUB control is used to cancel a control sequence in the same
+        // way as CAN, but unlike CAN it also displays an error character,
+        // typically a reverse question mark.
+        _dispatch->Print(L'\u2E2E');
+        break;
+    case AsciiChars::DEL:
+        // The DEL control can sometimes be translated into a printable glyph
+        // if a 96-character set is designated, so we need to pass it through
+        // to the Print method. If not translated, it will be filtered out
+        // there.
         _dispatch->Print(wch);
+        break;
+    default:
+        // GH#1825, GH#10786: VT applications expect to be able to write other
+        // control characters and have _nothing_ happen. We filter out these
+        // characters here, so they don't fill the buffer.
         break;
     }
 
@@ -194,6 +209,10 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         // This is the 7-bit string terminator, which is essentially a no-op.
         success = true;
         break;
+    case EscActionCodes::DECBI_BackIndex:
+        success = _dispatch->BackIndex();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECBI);
+        break;
     case EscActionCodes::DECSC_CursorSave:
         success = _dispatch->CursorSaveState();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSC);
@@ -201,6 +220,10 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
     case EscActionCodes::DECRC_CursorRestore:
         success = _dispatch->CursorRestoreState();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRC);
+        break;
+    case EscActionCodes::DECFI_ForwardIndex:
+        success = _dispatch->ForwardIndex();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECFI);
         break;
     case EscActionCodes::DECKPAM_KeypadApplicationMode:
         success = _dispatch->SetKeypadMode(true);
@@ -476,8 +499,13 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->CursorPosition(parameters.at(0), parameters.at(1));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::CUP);
         break;
-    case CsiActionCodes::DECSTBM_SetScrollingRegion:
+    case CsiActionCodes::DECSTBM_SetTopBottomMargins:
         success = _dispatch->SetTopBottomScrollingMargins(parameters.at(0).value_or(0), parameters.at(1).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTBM);
+        break;
+    case CsiActionCodes::DECSLRM_SetLeftRightMargins:
+        // Note that this can also be ANSISYSSC, depending on the state of DECLRMM.
+        success = _dispatch->SetLeftRightScrollingMargins(parameters.at(0).value_or(0), parameters.at(1).value_or(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTBM);
         break;
     case CsiActionCodes::ICH_InsertCharacter:
@@ -573,12 +601,8 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->ScrollDown(parameters.at(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::SD);
         break;
-    case CsiActionCodes::ANSISYSSC_CursorSave:
-        success = parameters.empty() && _dispatch->CursorSaveState();
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSSC);
-        break;
     case CsiActionCodes::ANSISYSRC_CursorRestore:
-        success = parameters.empty() && _dispatch->CursorRestoreState();
+        success = _dispatch->CursorRestoreState();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSRC);
         break;
     case CsiActionCodes::IL_InsertLine:
@@ -668,6 +692,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->CopyRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.at(4), parameters.at(5), parameters.at(6), parameters.at(7));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECCRA);
         break;
+    case CsiActionCodes::DECRQPSR_RequestPresentationStateReport:
+        success = _dispatch->RequestPresentationStateReport(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQPSR);
+        break;
     case CsiActionCodes::DECFRA_FillRectangularArea:
         success = _dispatch->FillRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2), parameters.at(3).value_or(0), parameters.at(4).value_or(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECFRA);
@@ -680,9 +708,21 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->SelectiveEraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSERA);
         break;
+    case CsiActionCodes::DECIC_InsertColumn:
+        success = _dispatch->InsertColumn(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECIC);
+        break;
+    case CsiActionCodes::DECDC_DeleteColumn:
+        success = _dispatch->DeleteColumn(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDC);
+        break;
     case CsiActionCodes::DECSACE_SelectAttributeChangeExtent:
         success = _dispatch->SelectAttributeChangeExtent(parameters.at(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSACE);
+        break;
+    case CsiActionCodes::DECRQCRA_RequestChecksumRectangularArea:
+        success = _dispatch->RequestChecksumRectangularArea(parameters.at(0).value_or(0), parameters.at(1).value_or(0), parameters.at(2), parameters.at(3), parameters.at(4).value_or(0), parameters.at(5).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQCRA);
         break;
     case CsiActionCodes::DECINVM_InvokeMacro:
         success = _dispatch->InvokeMacro(parameters.at(0).value_or(0));
@@ -747,6 +787,9 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
         break;
     case DcsActionCodes::DECRQSS_RequestSetting:
         handler = _dispatch->RequestSetting();
+        break;
+    case DcsActionCodes::DECRSPS_RestorePresentationState:
+        handler = _dispatch->RestorePresentationState(parameters.at(0));
         break;
     default:
         handler = nullptr;

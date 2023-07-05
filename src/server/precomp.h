@@ -24,42 +24,16 @@ Abstract:
 #define NOMINMAX
 
 // Windows Header Files:
+#define WIN32_NO_STATUS
 #include <windows.h>
+#undef WIN32_NO_STATUS
 
-typedef long NTSTATUS;
-#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
-#define STATUS_SUCCESS ((DWORD)0x0)
-#define STATUS_UNSUCCESSFUL ((DWORD)0xC0000001L)
-#define STATUS_SHARING_VIOLATION ((NTSTATUS)0xC0000043L)
-#define STATUS_INSUFFICIENT_RESOURCES ((DWORD)0xC000009AL)
-#define STATUS_ILLEGAL_FUNCTION ((DWORD)0xC00000AFL)
-#define STATUS_PIPE_DISCONNECTED ((DWORD)0xC00000B0L)
-#define STATUS_BUFFER_TOO_SMALL ((DWORD)0xC0000023L)
-#define STATUS_NOT_FOUND ((NTSTATUS)0xC0000225L)
+#include <winternl.h>
 
-//
-// Map a WIN32 error value into an NTSTATUS
-// Note: This assumes that WIN32 errors fall in the range -32k to 32k.
-//
-
-#define FACILITY_NTWIN32 0x7
-
-#define __NTSTATUS_FROM_WIN32(x) ((NTSTATUS)(x) <= 0 ? ((NTSTATUS)(x)) : ((NTSTATUS)(((x)&0x0000FFFF) | (FACILITY_NTWIN32 << 16) | ERROR_SEVERITY_ERROR)))
-
-#ifdef INLINE_NTSTATUS_FROM_WIN32
-#ifndef __midl
-__inline NTSTATUS_FROM_WIN32(long x)
-{
-    return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(((x)&0x0000FFFF) | (FACILITY_NTWIN32 << 16) | ERROR_SEVERITY_ERROR);
-}
-#else
-#define NTSTATUS_FROM_WIN32(x) __NTSTATUS_FROM_WIN32(x)
-#endif
-#else
-#define NTSTATUS_FROM_WIN32(x) __NTSTATUS_FROM_WIN32(x)
-#endif
-
-//#include <ntstatus.h>
+#pragma warning(push)
+#pragma warning(disable : 4430) // Must disable 4430 "default int" warning for C++ because ntstatus.h is inflexible SDK definition.
+#include <ntstatus.h>
+#pragma warning(pop)
 
 #include <winioctl.h>
 #include <intsafe.h>

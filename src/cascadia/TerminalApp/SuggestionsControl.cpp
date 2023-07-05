@@ -95,9 +95,6 @@ namespace winrt::TerminalApp::implementation
             // stays "attached" to the cursor.
             if (Visibility() == Visibility::Visible && _direction == TerminalApp::SuggestionsDirection::BottomUp)
             {
-                // auto t = this->Translation();
-                // t.y = gsl::narrow_cast<float>(-ActualHeight());
-                // this->Translation(t);
                 auto m = this->Margin();
                 m.Top = (_anchor.Y - ActualHeight());
                 this->Margin(m);
@@ -265,7 +262,14 @@ namespace winrt::TerminalApp::implementation
 
         _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"SelectedItem" });
 
-        if (filteredCommand != nullptr)
+        // Make sure to not send the preview if we're collapsed. This can
+        // sometimes fire after we've been closed, which can trigger us to
+        // preview the action for the empty text (as we've cleared the search
+        // text as a part of closing).
+        const bool isVisible{ this->Visibility() == Visibility::Visible };
+
+        if (filteredCommand != nullptr &&
+            isVisible)
         {
             if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
@@ -851,10 +855,11 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // TODO! Do we want sorting in the palette? I have it disabled, so
-        // results are flitered, but still in the original order. This seems
-        // more correct, but I could be convinced otherwise.
-        // It could maybe be a setting.
+        // TODO (for discussion):
+        //
+        // Do we want sorting in the palette? I have it disabled, so results are
+        // filtered, but still in the original order. This seems more correct,
+        // but I could be convinced otherwise. It could maybe be a setting.
 
         // if (_mode == SuggestionsMode::Palette)
         // {
@@ -952,8 +957,6 @@ namespace winrt::TerminalApp::implementation
     {
         Visibility(Visibility::Collapsed);
 
-        _PreviewActionHandlers(*this, nullptr);
-
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _searchBox().Text(L"");
 
@@ -961,6 +964,8 @@ namespace winrt::TerminalApp::implementation
 
         ParentCommandName(L"");
         _currentNestedCommands.Clear();
+
+        _PreviewActionHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -1067,7 +1072,7 @@ namespace winrt::TerminalApp::implementation
         // Set the anchor below by a character height
         _anchor.Y += canOpenDownwards ? characterHeight : 0;
 
-        // First, position horizonally.
+        // First, position horizontally.
         //
         // We want to align the left edge of the text within the control to the
         // cursor position. We'll need to scoot a little to the left, to align
@@ -1095,5 +1100,14 @@ namespace winrt::TerminalApp::implementation
             newMargin.Top = (_anchor.Y - actualSize.height);
         }
         Margin(newMargin);
+    }
+
+    winrt::hstring SuggestionsControl::FilterText()
+    {
+        return _searchBox().Text();
+    }
+    void SuggestionsControl::FilterText(winrt::hstring filter)
+    {
+        _searchBox().Text(filter);
     }
 }

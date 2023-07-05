@@ -5,6 +5,7 @@
 
 #include "TitleChangedEventArgs.g.h"
 #include "CopyToClipboardEventArgs.g.h"
+#include "ContextMenuRequestedEventArgs.g.h"
 #include "PasteFromClipboardEventArgs.g.h"
 #include "OpenHyperlinkEventArgs.g.h"
 #include "NoticeEventArgs.g.h"
@@ -52,6 +53,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         hstring _html;
         hstring _rtf;
         Windows::Foundation::IReference<CopyFormat> _formats;
+    };
+
+    struct ContextMenuRequestedEventArgs : public ContextMenuRequestedEventArgsT<ContextMenuRequestedEventArgs>
+    {
+    public:
+        ContextMenuRequestedEventArgs(winrt::Windows::Foundation::Point pos) :
+            _Position(pos) {}
+
+        WINRT_PROPERTY(winrt::Windows::Foundation::Point, Position);
     };
 
     struct PasteFromClipboardEventArgs : public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
@@ -174,13 +184,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct MenuChangedEventArgs : public MenuChangedEventArgsT<MenuChangedEventArgs>
     {
     public:
-        MenuChangedEventArgs(const winrt::hstring menuJson, const int32_t replaceLength) :
+        MenuChangedEventArgs(const winrt::hstring menuJson, const unsigned int replaceLength) :
             _MenuJson(menuJson),
             _ReplacementLength(replaceLength)
         {
         }
 
         WINRT_PROPERTY(winrt::hstring, MenuJson, L"");
-        WINRT_PROPERTY(int32_t, ReplacementLength, 0);
+        WINRT_PROPERTY(uint32_t, ReplacementLength, 0);
     };
 }
