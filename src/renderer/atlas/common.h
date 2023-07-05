@@ -387,8 +387,8 @@ namespace Microsoft::Console::Render::Atlas
         til::generational<FontSettings> font;
         til::generational<CursorSettings> cursor;
         til::generational<MiscellaneousSettings> misc;
-        u16x2 targetSize{};
-        u16x2 cellCount{};
+        u16x2 targetSize{ 1, 1 };
+        u16x2 cellCount{ 1, 1 };
     };
 
     using GenerationalSettings = til::generational<Settings>;

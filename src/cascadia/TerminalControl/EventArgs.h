@@ -220,3 +220,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WINRT_PROPERTY(winrt::hstring, Text);
     };
 }
+
+namespace winrt::Microsoft::Terminal::Control::factory_implementation
+{
+    BASIC_FACTORY(OpenHyperlinkEventArgs);
+}

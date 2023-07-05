@@ -85,6 +85,7 @@
     ON_ALL_ACTIONS(IdentifyWindows)         \
     ON_ALL_ACTIONS(RenameWindow)            \
     ON_ALL_ACTIONS(OpenWindowRenamer)       \
+    ON_ALL_ACTIONS(SearchForText)           \
     ON_ALL_ACTIONS(GlobalSummon)            \
     ON_ALL_ACTIONS(QuakeMode)               \
     ON_ALL_ACTIONS(FocusPane)               \
@@ -119,6 +120,7 @@
     ON_ALL_ACTIONS_WITH_ARGS(CopyText)             \
     ON_ALL_ACTIONS_WITH_ARGS(ExecuteCommandline)   \
     ON_ALL_ACTIONS_WITH_ARGS(FindMatch)            \
+    ON_ALL_ACTIONS_WITH_ARGS(SearchForText)        \
     ON_ALL_ACTIONS_WITH_ARGS(GlobalSummon)         \
     ON_ALL_ACTIONS_WITH_ARGS(MoveFocus)            \
     ON_ALL_ACTIONS_WITH_ARGS(MovePane)             \

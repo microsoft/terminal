@@ -175,5 +175,20 @@ namespace WindowsTerminal.UIA.Tests
                 Globals.WaitForLongTimeout();
             }
         }
+
+        [TestMethod]
+        [TestProperty("IsPGO", "true")]
+        public void RunOpenSettingsUI()
+        {
+            using (TerminalApp app = new TerminalApp(TestContext))
+            {
+                var root = app.GetRoot();
+
+                root.SendKeys(Keys.LeftControl + ",");
+                Globals.WaitForTimeout();
+
+                Globals.WaitForLongTimeout();
+            }
+        }
     }
 }

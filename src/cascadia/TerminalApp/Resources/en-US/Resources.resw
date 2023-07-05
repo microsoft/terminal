@@ -214,6 +214,9 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>Split Pane</value>
   </data>
+  <data name="SearchWebText" xml:space="preserve">
+    <value>Web Search</value>
+  </data>  
   <data name="TabColorChoose" xml:space="preserve">
     <value>Color...</value>
   </data>
