@@ -38,6 +38,7 @@
 #include "PrevTabArgs.g.cpp"
 #include "NextTabArgs.g.cpp"
 #include "RenameWindowArgs.g.cpp"
+#include "SearchForTextArgs.g.cpp"
 #include "GlobalSummonArgs.g.cpp"
 #include "FocusPaneArgs.g.cpp"
 #include "ExportBufferArgs.g.cpp"
@@ -774,6 +775,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             };
         }
         return RS_(L"ResetWindowNameCommandKey");
+    }
+
+    winrt::hstring SearchForTextArgs::GenerateName() const
+    {
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"SearchForTextCommandKey")),
+                        Windows::Foundation::Uri(QueryUrl()).Domain().c_str())
+        };
     }
 
     winrt::hstring GlobalSummonArgs::GenerateName() const

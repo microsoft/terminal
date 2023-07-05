@@ -95,6 +95,7 @@ namespace TerminalApp
 
         TaskbarState TaskbarState{ get; };
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
+        Windows.UI.Xaml.Media.Brush FrameBrush { get; };
         void WindowActivated(Boolean activated);
 
         String GetWindowLayoutJson(Microsoft.Terminal.Settings.Model.LaunchPosition position);

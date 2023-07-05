@@ -406,7 +406,7 @@ CATCH_RETURN()
         // Get the features to apply to the font
         const auto& features = _fontRenderData->DefaultFontFeatures();
 #pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
-        DWRITE_TYPOGRAPHIC_FEATURES typographicFeatures = { const_cast<DWRITE_FONT_FEATURE*>(features.data()), gsl::narrow<uint32_t>(features.size()) };
+        const DWRITE_TYPOGRAPHIC_FEATURES typographicFeatures = { const_cast<DWRITE_FONT_FEATURE*>(features.data()), gsl::narrow<uint32_t>(features.size()) };
         DWRITE_TYPOGRAPHIC_FEATURES const* typographicFeaturesPointer = &typographicFeatures;
         const uint32_t fontFeatureLengths[] = { textLength };
 

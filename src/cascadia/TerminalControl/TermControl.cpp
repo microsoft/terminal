@@ -3044,56 +3044,85 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.ClearHoveredCell();
     }
 
-    winrt::fire_and_forget TermControl::_hoveredHyperlinkChanged(IInspectable /*sender*/,
-                                                                 IInspectable /*args*/)
+    // Attackers abuse Unicode characters that happen to look similar to ASCII characters. Cyrillic for instance has
+    // its own glyphs for а, с, е, о, р, х, and у that look practically identical to their ASCII counterparts.
+    // This is called an "IDN homoglyph attack".
+    //
+    // But outright showing Punycode URIs only is similarly flawed as they can end up looking similar to valid ASCII URIs.
+    // xn--cnn.com for instance looks confusingly similar to cnn.com, but actually represents U+407E.
+    //
+    // An optimal solution would detect any URI that contains homoglyphs and show them in their Punycode form.
+    // Such a detector however is not quite trivial and requires constant maintenance, which this project's
+    // maintainers aren't currently well equipped to handle. As such we do the next best thing and show the
+    // Punycode encoding side-by-side with the Unicode string for any IDN.
+    static winrt::hstring sanitizeURI(winrt::hstring uri)
     {
-        auto weakThis{ get_weak() };
-        co_await wil::resume_foreground(Dispatcher());
-        if (auto self{ weakThis.get() })
+        if (uri.empty())
         {
-            auto lastHoveredCell = _core.HoveredCell();
-            if (lastHoveredCell)
-            {
-                winrt::hstring uriText = _core.HoveredUriText();
-                if (uriText.empty())
-                {
-                    co_return;
-                }
-
-                try
-                {
-                    // DisplayUri will filter out non-printable characters and confusables.
-                    Windows::Foundation::Uri parsedUri{ uriText };
-                    if (!parsedUri)
-                    {
-                        co_return;
-                    }
-                    uriText = parsedUri.DisplayUri();
-
-                    const auto panel = SwapChainPanel();
-                    const auto scale = panel.CompositionScaleX();
-                    const auto offset = panel.ActualOffset();
-
-                    // Update the tooltip with the URI
-                    HoveredUri().Text(uriText);
-
-                    // Set the border thickness so it covers the entire cell
-                    const auto charSizeInPixels = CharacterDimensions();
-                    const auto htInDips = charSizeInPixels.Height / scale;
-                    const auto wtInDips = charSizeInPixels.Width / scale;
-                    const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
-                    HyperlinkTooltipBorder().BorderThickness(newThickness);
-
-                    // Compute the location of the top left corner of the cell in DIPS
-                    const til::point locationInDIPs{ _toPosInDips(lastHoveredCell.Value()) };
-
-                    // Move the border to the top left corner of the cell
-                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), locationInDIPs.x - offset.x);
-                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(), locationInDIPs.y - offset.y);
-                }
-                CATCH_LOG();
-            }
+            return uri;
         }
+
+        wchar_t punycodeBuffer[256];
+        wchar_t unicodeBuffer[256];
+
+        // These functions return int, but are documented to only return positive numbers.
+        // Better make sure though. It allows us to pass punycodeLength right into IdnToUnicode.
+        const auto punycodeLength = std::max(0, IdnToAscii(0, uri.data(), gsl::narrow<int>(uri.size()), &punycodeBuffer[0], 256));
+        const auto unicodeLength = std::max(0, IdnToUnicode(0, &punycodeBuffer[0], punycodeLength, &unicodeBuffer[0], 256));
+
+        if (punycodeLength <= 0 || unicodeLength <= 0)
+        {
+            return RS_(L"InvalidUri");
+        }
+
+        const std::wstring_view punycode{ &punycodeBuffer[0], gsl::narrow_cast<size_t>(punycodeLength) };
+        const std::wstring_view unicode{ &unicodeBuffer[0], gsl::narrow_cast<size_t>(unicodeLength) };
+
+        // IdnToAscii/IdnToUnicode return the input string as is if it's all
+        // plain ASCII. But we don't know if the input URI is Punycode or not.
+        // --> It's non-Punycode and ASCII if it round-trips.
+        if (uri == punycode && uri == unicode)
+        {
+            return uri;
+        }
+
+        return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}\n({})"), punycode, unicode) };
+    }
+
+    void TermControl::_hoveredHyperlinkChanged(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    {
+        const auto lastHoveredCell = _core.HoveredCell();
+        if (!lastHoveredCell)
+        {
+            return;
+        }
+
+        const auto uriText = sanitizeURI(_core.HoveredUriText());
+        if (uriText.empty())
+        {
+            return;
+        }
+
+        const auto panel = SwapChainPanel();
+        const auto scale = panel.CompositionScaleX();
+        const auto offset = panel.ActualOffset();
+
+        // Update the tooltip with the URI
+        HoveredUri().Text(uriText);
+
+        // Set the border thickness so it covers the entire cell
+        const auto charSizeInPixels = CharacterDimensions();
+        const auto htInDips = charSizeInPixels.Height / scale;
+        const auto wtInDips = charSizeInPixels.Width / scale;
+        const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
+        HyperlinkTooltipBorder().BorderThickness(newThickness);
+
+        // Compute the location of the top left corner of the cell in DIPS
+        const til::point locationInDIPs{ _toPosInDips(lastHoveredCell.Value()) };
+
+        // Move the border to the top left corner of the cell
+        OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), locationInDIPs.x - offset.x);
+        OverlayCanvas().SetTop(HyperlinkTooltipBorder(), locationInDIPs.y - offset.y);
     }
 
     winrt::fire_and_forget TermControl::_updateSelectionMarkers(IInspectable /*sender*/, Control::UpdateSelectionMarkersEventArgs args)
@@ -3310,6 +3339,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     double TermControl::BackgroundOpacity() const
     {
         return _core.Opacity();
+    }
+
+    bool TermControl::HasSelection() const
+    {
+        return _core.HasSelection();
+    }
+    Windows::Foundation::Collections::IVector<winrt::hstring> TermControl::SelectedText(bool trimTrailingWhitespace) const
+    {
+        return _core.SelectedText(trimTrailingWhitespace);
     }
 
     // Method Description:

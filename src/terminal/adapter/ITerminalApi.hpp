@@ -60,7 +60,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void WarningBell() = 0;
         virtual void SetWindowTitle(const std::wstring_view title) = 0;
-        virtual void UseAlternateScreenBuffer() = 0;
+        virtual void UseAlternateScreenBuffer(const TextAttribute& attrs) = 0;
         virtual void UseMainScreenBuffer() = 0;
 
         virtual CursorType GetUserDefaultCursorStyle() const = 0;

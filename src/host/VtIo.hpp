@@ -67,7 +67,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool _lookingForCursorPosition;
 
         bool _resizeQuirk{ false };
-        bool _win32InputMode{ false };
         bool _passthroughMode{ false };
         bool _closeEventSent{ false };
 
