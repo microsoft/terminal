@@ -131,18 +131,8 @@ void DeleteCommandLine(COOKED_READ_DATA& cookedReadData, const bool fUpdateField
 void RedrawCommandLine(COOKED_READ_DATA& cookedReadData);
 
 // Values for WriteChars(), WriteCharsLegacy() dwFlags
-#define WC_DESTRUCTIVE_BACKSPACE 0x01
+#define WC_INTERACTIVE 0x01
 #define WC_KEEP_CURSOR_VISIBLE 0x02
-#define WC_PRINTABLE_CONTROL_CHARS 0x04
-
-// This is no longer necessary. The buffer will always be Unicode. We don't need to perform special work to check if we're in a raster font
-// and convert the entire buffer to match (and all insertions).
-//#define WC_FALSIFY_UNICODE       0x08
-
-#define WC_LIMIT_BACKSPACE 0x10
-//#define WC_NONDESTRUCTIVE_TAB    0x20  -  This is not needed anymore, because the VT code handles tabs internally now.
-//#define WC_NEWLINE_SAVE_X        0x40  -  This has been replaced with an output mode flag instead as it's line discipline behavior that may not necessarily be coupled with VT.
-//#define WC_DELAY_EOL_WRAP        0x80  -  This is not needed anymore, because the AdaptDispatch class handles all VT output.
 
 // Word delimiters
 bool IsWordDelim(const wchar_t wch);

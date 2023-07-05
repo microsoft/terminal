@@ -195,6 +195,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(RequestReceiveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestReceiveContentArgs);
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, FrameBrush, _PropertyChangedHandlers, nullptr);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events

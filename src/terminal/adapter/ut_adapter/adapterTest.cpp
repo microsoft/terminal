@@ -139,7 +139,7 @@ public:
         }
     }
 
-    void UseAlternateScreenBuffer() override
+    void UseAlternateScreenBuffer(const TextAttribute& /*attr*/) override
     {
         Log::Comment(L"UseAlternateScreenBuffer MOCK called...");
     }
@@ -400,7 +400,7 @@ public:
         if (fSuccess)
         {
             _testGetSet = std::move(api);
-            _terminalInput = TerminalInput{ nullptr };
+            _terminalInput = TerminalInput{};
             auto& renderer = _testGetSet->_renderer;
             auto& renderSettings = renderer._renderSettings;
             auto adapter = std::make_unique<AdaptDispatch>(*_testGetSet, renderer, renderSettings, _terminalInput);
@@ -1799,7 +1799,7 @@ public:
         // and DECRQM would not then be applicable.
 
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{1, 3, 5, 6, 7, 8, 12, 25, 40, 66, 67, 69, 1000, 1002, 1003, 1004, 1005, 1006, 1007, 1049, 2004, 9001}")
+            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{1, 3, 5, 6, 7, 8, 12, 25, 40, 66, 67, 69, 117, 1000, 1002, 1003, 1004, 1005, 1006, 1007, 1049, 2004, 9001}")
         END_TEST_METHOD_PROPERTIES()
 
         VTInt modeNumber;
@@ -2897,7 +2897,7 @@ public:
     }
 
 private:
-    TerminalInput _terminalInput{ nullptr };
+    TerminalInput _terminalInput;
     std::unique_ptr<TestGetSet> _testGetSet;
     AdaptDispatch* _pDispatch; // non-ownership pointer
     std::unique_ptr<StateMachine> _stateMachine;

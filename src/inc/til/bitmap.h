@@ -351,20 +351,26 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             void set(const til::point pt)
             {
-                THROW_HR_IF(E_INVALIDARG, !_rc.contains(pt));
-                _runs.reset(); // reset cached runs on any non-const method
-
-                _bits.set(_rc.index_of(pt));
+                if (_rc.contains(pt))
+                {
+                    _runs.reset(); // reset cached runs on any non-const method
+                    _bits.set(_rc.index_of(pt));
+                }
             }
 
-            void set(const til::rect& rc)
+            void set(til::rect rc)
             {
-                THROW_HR_IF(E_INVALIDARG, !_rc.contains(rc));
                 _runs.reset(); // reset cached runs on any non-const method
 
-                for (auto row = rc.top; row < rc.bottom; ++row)
+                rc &= _rc;
+
+                const auto width = rc.width();
+                const auto stride = _rc.width();
+                auto idx = _rc.index_of({ rc.left, rc.top });
+
+                for (auto row = rc.top; row < rc.bottom; ++row, idx += stride)
                 {
-                    _bits.set(_rc.index_of(til::point{ rc.left, row }), rc.width(), true);
+                    _bits.set(idx, width, true);
                 }
             }
 
