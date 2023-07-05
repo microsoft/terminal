@@ -194,3 +194,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WINRT_PROPERTY(uint32_t, ReplacementLength, 0);
     };
 }
+
+namespace winrt::Microsoft::Terminal::Control::factory_implementation
+{
+    BASIC_FACTORY(OpenHyperlinkEventArgs);
+}

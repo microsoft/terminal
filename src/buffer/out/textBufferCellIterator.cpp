@@ -287,7 +287,7 @@ ptrdiff_t TextBufferCellIterator::operator-(const TextBufferCellIterator& it)
 // - Sets the coordinate position that this iterator will inspect within the text buffer on dereference.
 // Arguments:
 // - newPos - The new coordinate position.
-void TextBufferCellIterator::_SetPos(const til::point newPos) noexcept
+void TextBufferCellIterator::_SetPos(const til::point newPos)
 {
     if (newPos.y != _pos.y)
     {
@@ -315,7 +315,7 @@ void TextBufferCellIterator::_SetPos(const til::point newPos) noexcept
 // - pos - Position inside screen buffer bounds to retrieve row
 // Return Value:
 // - Pointer to the underlying CharRow structure
-const ROW* TextBufferCellIterator::s_GetRow(const TextBuffer& buffer, const til::point pos) noexcept
+const ROW* TextBufferCellIterator::s_GetRow(const TextBuffer& buffer, const til::point pos)
 {
     return &buffer.GetRowByOffset(pos.y);
 }

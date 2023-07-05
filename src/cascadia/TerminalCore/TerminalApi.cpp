@@ -185,7 +185,7 @@ void Terminal::PlayMidiNote(const int noteNumber, const int velocity, const std:
     _pfnPlayMidiNote(noteNumber, velocity, duration);
 }
 
-void Terminal::UseAlternateScreenBuffer()
+void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
 {
     // the new alt buffer is exactly the size of the viewport.
     _altBufferSize = _mutableViewport.Dimensions();
@@ -197,7 +197,7 @@ void Terminal::UseAlternateScreenBuffer()
 
     // Create a new alt buffer
     _altBuffer = std::make_unique<TextBuffer>(_altBufferSize,
-                                              TextAttribute{},
+                                              attrs,
                                               cursorSize,
                                               true,
                                               _mainBuffer->GetRenderer());
@@ -223,7 +223,7 @@ void Terminal::UseAlternateScreenBuffer()
 
     // GH#3321: Make sure we let the TerminalInput know that we switched
     // buffers. This might affect how we interpret certain mouse events.
-    _terminalInput->UseAlternateScreenBuffer();
+    _terminalInput.UseAlternateScreenBuffer();
 
     // Update scrollbars
     _NotifyScrollEvent();
@@ -277,7 +277,7 @@ void Terminal::UseMainScreenBuffer()
 
     // GH#3321: Make sure we let the TerminalInput know that we switched
     // buffers. This might affect how we interpret certain mouse events.
-    _terminalInput->UseMainScreenBuffer();
+    _terminalInput.UseMainScreenBuffer();
 
     // Update scrollbars
     _NotifyScrollEvent();

@@ -130,8 +130,6 @@ namespace Microsoft.Terminal.Control
         void Search(String text, Boolean goForward, Boolean caseSensitive);
         Microsoft.Terminal.Core.Color BackgroundColor { get; };
 
-        Boolean HasSelection { get; };
-        IVector<String> SelectedText(Boolean trimTrailingWhitespace);
         SelectionData SelectionInfo { get; };
         SelectionInteractionMode SelectionMode();
 

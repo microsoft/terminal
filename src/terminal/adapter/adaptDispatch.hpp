@@ -172,6 +172,7 @@ namespace Microsoft::Console::VirtualTerminal
             Column,
             AllowDECCOLM,
             AllowDECSLRM,
+            EraseColor,
             RectangularChangeExtent
         };
         enum class ScrollDirection
@@ -213,13 +214,14 @@ namespace Microsoft::Console::VirtualTerminal
         std::pair<int, int> _GetHorizontalMargins(const til::CoordType bufferWidth) noexcept;
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
-        void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
+        void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const std::wstring_view& fillChar, const TextAttribute& fillAttrs) const;
         void _SelectiveEraseRect(TextBuffer& textBuffer, const til::rect& eraseRect);
         void _ChangeRectAttributes(TextBuffer& textBuffer, const til::rect& changeRect, const ChangeOps& changeOps);
         void _ChangeRectOrStreamAttributes(const til::rect& changeArea, const ChangeOps& changeOps);
         til::rect _CalculateRectArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const til::size bufferSize);
         bool _EraseScrollback();
         bool _EraseAll();
+        TextAttribute _GetEraseAttributes(const TextBuffer& textBuffer) const noexcept;
         void _ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
         void _ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
         void _InsertDeleteCharacterHelper(const VTInt delta);

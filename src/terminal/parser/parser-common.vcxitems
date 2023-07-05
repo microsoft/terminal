@@ -6,7 +6,6 @@
   <ItemGroup>
     <ClCompile Include="..\OutputStateMachineEngine.cpp" />
     <ClCompile Include="..\stateMachine.cpp" />
-    <ClCompile Include="..\telemetry.cpp" />
     <ClCompile Include="..\tracing.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -19,7 +18,6 @@
     <ClInclude Include="..\stateMachine.hpp" />
     <ClInclude Include="..\IStateMachineEngine.hpp" />
     <ClInclude Include="..\OutputStateMachineEngine.hpp" />
-    <ClInclude Include="..\telemetry.hpp" />
     <ClInclude Include="..\tracing.hpp" />
     <ClInclude Include="..\base64.hpp" />
   </ItemGroup>

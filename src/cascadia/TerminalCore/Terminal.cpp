@@ -21,35 +21,9 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 
-static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
-{
-    std::wstring wstr = L"";
-    for (const auto& ev : inEventsToWrite)
-    {
-        if (ev->EventType() == InputEventType::KeyEvent)
-        {
-            const auto& k = static_cast<KeyEvent&>(*ev);
-            const auto wch = k.GetCharData();
-            wstr += wch;
-        }
-    }
-    return wstr;
-}
-
 #pragma warning(suppress : 26455) // default constructor is throwing, too much effort to rearrange at this time.
 Terminal::Terminal()
 {
-    auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
-        if (!_pfnWriteInput)
-        {
-            return;
-        }
-        const auto wstr = _KeyEventsToText(inEventsToWrite);
-        _pfnWriteInput(wstr);
-    };
-
-    _terminalInput = std::make_unique<TerminalInput>(passAlongInput);
-
     _renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, RGB(255, 255, 255));
     _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, RGB(0, 0, 0));
 }
@@ -64,7 +38,7 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
     const UINT cursorSize = 12;
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, renderer);
 
-    auto dispatch = std::make_unique<AdaptDispatch>(*this, renderer, _renderSettings, *_terminalInput);
+    auto dispatch = std::make_unique<AdaptDispatch>(*this, renderer, _renderSettings, _terminalInput);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 
@@ -111,7 +85,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
 
-    _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
+    _terminalInput.ForceDisableWin32InputMode(settings.ForceVTInput());
 
     if (settings.TabColor() == nullptr)
     {
@@ -540,7 +514,7 @@ void Terminal::TrySnapOnInput()
 // - true, if we are tracking mouse input. False, otherwise
 bool Terminal::IsTrackingMouseInput() const noexcept
 {
-    return _terminalInput->IsTrackingMouseInput();
+    return _terminalInput.IsTrackingMouseInput();
 }
 
 // Routine Description:
@@ -554,7 +528,7 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 bool Terminal::ShouldSendAlternateScroll(const unsigned int uiButton,
                                          const int32_t delta) const noexcept
 {
-    return _terminalInput->ShouldSendAlternateScroll(uiButton, ::base::saturated_cast<short>(delta));
+    return _terminalInput.ShouldSendAlternateScroll(uiButton, ::base::saturated_cast<short>(delta));
 }
 
 // Method Description:
@@ -741,7 +715,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     }
 
     const KeyEvent keyEv{ keyDown, 1, vkey, sc, ch, states.Value() };
-    return _terminalInput->HandleKey(&keyEv);
+    return _handleTerminalInputResult(_terminalInput.HandleKey(&keyEv));
 }
 
 // Method Description:
@@ -765,7 +739,7 @@ bool Terminal::SendMouseEvent(til::point viewportPos, const unsigned int uiButto
     // We shouldn't throw away perfectly good events when they're offscreen, so we just
     // clamp them to be within the range [(0, 0), (W, H)].
     _GetMutableViewport().ToOrigin().Clamp(viewportPos);
-    return _terminalInput->HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta, state);
+    return _handleTerminalInputResult(_terminalInput.HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta, state));
 }
 
 // Method Description:
@@ -818,7 +792,7 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     }
 
     const KeyEvent keyDown{ true, 1, vkey, scanCode, ch, states.Value() };
-    return _terminalInput->HandleKey(&keyDown);
+    return _handleTerminalInputResult(_terminalInput.HandleKey(&keyDown));
 }
 
 // Method Description:
@@ -829,9 +803,9 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
 // - focused: true if we're focused, false otherwise.
 // Return Value:
 // - none
-void Terminal::FocusChanged(const bool focused) noexcept
+void Terminal::FocusChanged(const bool focused)
 {
-    _terminalInput->HandleFocus(focused);
+    _handleTerminalInputResult(_terminalInput.HandleFocus(focused));
 }
 
 // Method Description:
@@ -953,6 +927,20 @@ catch (...)
 {
     LOG_CAUGHT_EXCEPTION();
     return UNICODE_INVALID;
+}
+
+[[maybe_unused]] bool Terminal::_handleTerminalInputResult(TerminalInput::OutputType&& out) const
+{
+    if (out)
+    {
+        const auto& str = *out;
+        if (_pfnWriteInput && !str.empty())
+        {
+            _pfnWriteInput(str);
+        }
+        return true;
+    }
+    return false;
 }
 
 // Method Description:
