@@ -862,7 +862,7 @@ til::size NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const 
 // - The height of title bar in physical pixels.
 [[nodiscard]] float NonClientIslandWindow::GetTitleBarPhysicalRenderHeight() const noexcept
 {
-    const float titleBarRenderedHeightDeviceIndependentUnits = _titlebar.Visibility() == Visibility::Visible ? _titlebar.RenderSize().Height: 0;
+    const float titleBarRenderedHeightDeviceIndependentUnits = _titlebar.Visibility() == Visibility::Visible ? _titlebar.RenderSize().Height : 0;
     const float titleBarPhysicalHeight = titleBarRenderedHeightDeviceIndependentUnits * GetCurrentDpiScale();
     return titleBarPhysicalHeight;
 }

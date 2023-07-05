@@ -1772,7 +1772,7 @@ void IslandWindow::SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotifica
 
 // Method Description:
 // - Displays the system menu of the window.
-// - The system menu, typically appearing when the user performs an Alt+Space keystroke or 
+// - The system menu, typically appearing when the user performs an Alt+Space keystroke or
 //   right-clicks on the title bar, provides system commands such as Minimize, Maximize, and Close.
 // - Prior to displaying the menu, the method updates the availability of commands like "Maximize" and
 //   "Restore" based on the current state of the window, graying out options that are not applicable.
