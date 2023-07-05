@@ -149,13 +149,13 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // - CONSOLE_STATUS_WAIT - If we didn't have enough data or needed to
 // block, this will be returned along with context in *ppWaiter.
 // - Or an out of memory/math/string error message in NTSTATUS format.
-[[nodiscard]] static NTSTATUS _DoGetConsoleInput(InputBuffer& inputBuffer,
-                                                 std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                 const size_t eventReadCount,
-                                                 INPUT_READ_HANDLE_DATA& readHandleState,
-                                                 const bool IsUnicode,
-                                                 const bool IsPeek,
-                                                 std::unique_ptr<IWaitRoutine>& waiter) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleInputImpl(IConsoleInputObject& inputBuffer,
+                                                       InputEventQueue& outEvents,
+                                                       const size_t eventReadCount,
+                                                       INPUT_READ_HANDLE_DATA& readHandleState,
+                                                       const bool IsUnicode,
+                                                       const bool IsPeek,
+                                                       std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     try
     {
@@ -182,173 +182,9 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             // to the read data object and send it back up to the server.
             waiter = std::make_unique<DirectReadData>(&inputBuffer,
                                                       &readHandleState,
-                                                      eventReadCount,
-                                                      std::move(outEvents));
+                                                      eventReadCount);
         }
         return Status;
-    }
-    catch (...)
-    {
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-    }
-}
-
-// Routine Description:
-// - Retrieves input records from the given input object and returns them to the client.
-// - The peek version will NOT remove records when it copies them out.
-// - The A version will convert to W using the console's current Input codepage (see SetConsoleCP)
-// Arguments:
-// - context - The input buffer to take records from to return to the client
-// - outEvents - storage location for read events
-// - eventsToRead - The number of input events to read
-// - readHandleState - A structure that will help us maintain
-// some input context across various calls on the same input
-// handle. Primarily used to restore the "other piece" of partially
-// returned strings (because client buffer wasn't big enough) on the
-// next call.
-// - waiter - If we have to wait (not enough data to fill client
-// buffer), this contains context that will allow the server to
-// restore this call later.
-[[nodiscard]] HRESULT ApiRoutines::PeekConsoleInputAImpl(IConsoleInputObject& context,
-                                                         std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                         const size_t eventsToRead,
-                                                         INPUT_READ_HANDLE_DATA& readHandleState,
-                                                         std::unique_ptr<IWaitRoutine>& waiter) noexcept
-{
-    try
-    {
-        auto Status = _DoGetConsoleInput(context,
-                                         outEvents,
-                                         eventsToRead,
-                                         readHandleState,
-                                         false,
-                                         true,
-                                         waiter);
-        if (CONSOLE_STATUS_WAIT == Status)
-        {
-            return HRESULT_FROM_NT(Status);
-        }
-        RETURN_NTSTATUS(Status);
-    }
-    CATCH_RETURN();
-}
-
-// Routine Description:
-// - Retrieves input records from the given input object and returns them to the client.
-// - The peek version will NOT remove records when it copies them out.
-// - The W version accepts UCS-2 formatted characters (wide characters)
-// Arguments:
-// - context - The input buffer to take records from to return to the client
-// - outEvents - storage location for read events
-// - eventsToRead - The number of input events to read
-// - readHandleState - A structure that will help us maintain
-// some input context across various calls on the same input
-// handle. Primarily used to restore the "other piece" of partially
-// returned strings (because client buffer wasn't big enough) on the
-// next call.
-// - waiter - If we have to wait (not enough data to fill client
-// buffer), this contains context that will allow the server to
-// restore this call later.
-[[nodiscard]] HRESULT ApiRoutines::PeekConsoleInputWImpl(IConsoleInputObject& context,
-                                                         std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                         const size_t eventsToRead,
-                                                         INPUT_READ_HANDLE_DATA& readHandleState,
-                                                         std::unique_ptr<IWaitRoutine>& waiter) noexcept
-{
-    try
-    {
-        auto Status = _DoGetConsoleInput(context,
-                                         outEvents,
-                                         eventsToRead,
-                                         readHandleState,
-                                         true,
-                                         true,
-                                         waiter);
-        if (CONSOLE_STATUS_WAIT == Status)
-        {
-            return HRESULT_FROM_NT(Status);
-        }
-        RETURN_NTSTATUS(Status);
-    }
-    CATCH_RETURN();
-}
-
-// Routine Description:
-// - Retrieves input records from the given input object and returns them to the client.
-// - The read version WILL remove records when it copies them out.
-// - The A version will convert to W using the console's current Input codepage (see SetConsoleCP)
-// Arguments:
-// - context - The input buffer to take records from to return to the client
-// - outEvents - storage location for read events
-// - eventsToRead - The number of input events to read
-// - readHandleState - A structure that will help us maintain
-// some input context across various calls on the same input
-// handle. Primarily used to restore the "other piece" of partially
-// returned strings (because client buffer wasn't big enough) on the
-// next call.
-// - waiter - If we have to wait (not enough data to fill client
-// buffer), this contains context that will allow the server to
-// restore this call later.
-[[nodiscard]] HRESULT ApiRoutines::ReadConsoleInputAImpl(IConsoleInputObject& context,
-                                                         std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                         const size_t eventsToRead,
-                                                         INPUT_READ_HANDLE_DATA& readHandleState,
-                                                         std::unique_ptr<IWaitRoutine>& waiter) noexcept
-{
-    try
-    {
-        auto Status = _DoGetConsoleInput(context,
-                                         outEvents,
-                                         eventsToRead,
-                                         readHandleState,
-                                         false,
-                                         false,
-                                         waiter);
-        if (CONSOLE_STATUS_WAIT == Status)
-        {
-            return HRESULT_FROM_NT(Status);
-        }
-        RETURN_NTSTATUS(Status);
-    }
-    CATCH_RETURN();
-}
-
-// Routine Description:
-// - Retrieves input records from the given input object and returns them to the client.
-// - The read version WILL remove records when it copies them out.
-// - The W version accepts UCS-2 formatted characters (wide characters)
-// Arguments:
-// - context - The input buffer to take records from to return to the client
-// - outEvents - storage location for read events
-// - eventsToRead - The number of input events to read
-// - readHandleState - A structure that will help us maintain
-// some input context across various calls on the same input
-// handle. Primarily used to restore the "other piece" of partially
-// returned strings (because client buffer wasn't big enough) on the
-// next call.
-// - waiter - If we have to wait (not enough data to fill client
-// buffer), this contains context that will allow the server to
-// restore this call later.
-[[nodiscard]] HRESULT ApiRoutines::ReadConsoleInputWImpl(IConsoleInputObject& context,
-                                                         std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                         const size_t eventsToRead,
-                                                         INPUT_READ_HANDLE_DATA& readHandleState,
-                                                         std::unique_ptr<IWaitRoutine>& waiter) noexcept
-{
-    try
-    {
-        auto Status = _DoGetConsoleInput(context,
-                                         outEvents,
-                                         eventsToRead,
-                                         readHandleState,
-                                         true,
-                                         false,
-                                         waiter);
-        if (CONSOLE_STATUS_WAIT == Status)
-        {
-            return HRESULT_FROM_NT(Status);
-        }
-        RETURN_NTSTATUS(Status);
     }
     CATCH_RETURN();
 }

@@ -24,8 +24,6 @@
 #include "../buffer/out/search.h"
 #include "../buffer/out/TextColor.h"
 
-#include <til/ticket_lock.h>
-
 namespace ControlUnitTests
 {
     class ControlCoreTests;
@@ -145,6 +143,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int ViewHeight() const;
         int BufferHeight() const;
 
+        bool HasSelection() const;
+        Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
+
         bool BracketedPasteEnabled() const noexcept;
 
         Windows::Foundation::Collections::IVector<Control::ScrollMark> ScrollMarks() const;
@@ -188,9 +189,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const;
         Core::Point CursorPosition() const;
 
-        bool HasSelection() const;
         bool CopyOnSelect() const;
-        Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
         Control::SelectionData SelectionInfo() const;
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);

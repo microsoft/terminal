@@ -101,6 +101,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, EnableShellCompletionMenu);
         INHERITABLE_SETTING(Boolean, IsolatedMode);
         INHERITABLE_SETTING(Boolean, AllowHeadless);
+        INHERITABLE_SETTING(String, SearchWebDefaultQueryUrl);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);

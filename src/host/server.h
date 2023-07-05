@@ -117,7 +117,7 @@ public:
     void SetActiveOutputBuffer(SCREEN_INFORMATION& screenBuffer);
     bool HasActiveOutputBuffer() const;
 
-    InputBuffer* const GetActiveInputBuffer() const;
+    InputBuffer* const GetActiveInputBuffer() const override;
 
     bool IsInVtIoMode() const;
     bool HasPendingCookedRead() const noexcept;
