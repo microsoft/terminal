@@ -92,11 +92,8 @@ static constexpr std::string_view SwitchSelectionEndpointKey{ "switchSelectionEn
 static constexpr std::string_view ColorSelectionKey{ "experimental.colorSelection" };
 static constexpr std::string_view ShowContextMenuKey{ "showContextMenu" };
 static constexpr std::string_view ExpandSelectionToWordKey{ "expandSelectionToWord" };
-<<<<<<< HEAD
-static constexpr std::string_view ToggleBroadcastInputKey{ "toggleBroadcastInput" };
-=======
 static constexpr std::string_view RestartConnectionKey{ "restartConnection" };
->>>>>>> main
+static constexpr std::string_view ToggleBroadcastInputKey{ "toggleBroadcastInput" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -427,11 +424,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::ColorSelection, MustGenerate },
                 { ShortcutAction::ShowContextMenu, RS_(L"ShowContextMenuCommandKey") },
                 { ShortcutAction::ExpandSelectionToWord, RS_(L"ExpandSelectionToWordCommandKey") },
-<<<<<<< HEAD
-                { ShortcutAction::ToggleBroadcastInput, RS_(L"ToggleBroadcastInputCommandKey") },
-=======
                 { ShortcutAction::RestartConnection, RS_(L"RestartConnectionKey") },
->>>>>>> main
+                { ShortcutAction::ToggleBroadcastInput, RS_(L"ToggleBroadcastInputCommandKey") },
             };
         }();
 
