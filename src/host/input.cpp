@@ -195,8 +195,7 @@ void HandleFocusEvent(const BOOL fSetFocus)
 
     try
     {
-        const auto EventsWritten = gci.pInputBuffer->Write(std::make_unique<FocusEvent>(!!fSetFocus));
-        FAIL_FAST_IF(EventsWritten != 1);
+        gci.pInputBuffer->WriteFocusEvent(fSetFocus);
     }
     catch (...)
     {

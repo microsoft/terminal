@@ -420,14 +420,19 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::SetWindowSize(const til::size pixels) noexcept
 {
-    u16x2 newSize;
-    RETURN_IF_FAILED(vec2_narrow(pixels.width, pixels.height, newSize));
+    // When Win+D is pressed, `GetClientRect` returns {0,0}.
+    // There's probably more situations in which our callers may pass us invalid data.
+    if (!pixels)
+    {
+        return S_OK;
+    }
 
-    // At the time of writing:
-    // When Win+D is pressed, `TriggerRedrawCursor` is called and a render pass is initiated.
-    // As conhost is in the background, GetClientRect will return {0,0} and we'll get called with {0,0}.
-    // This isn't a valid value for _api.sizeInPixel and would crash _recreateSizeDependentResources().
-    if (_api.s->targetSize != newSize && newSize != u16x2{})
+    const u16x2 newSize{
+        gsl::narrow_cast<u16>(clamp<til::CoordType>(pixels.width, 1, u16max)),
+        gsl::narrow_cast<u16>(clamp<til::CoordType>(pixels.height, 1, u16max)),
+    };
+
+    if (_api.s->targetSize != newSize)
     {
         _api.s.write()->targetSize = newSize;
     }
