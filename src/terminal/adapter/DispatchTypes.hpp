@@ -197,7 +197,7 @@ namespace Microsoft::Console::VirtualTerminal
             // because we store their indexes in subParamRanges. So we pass
             // _subParams as is and create new span for others.
             const auto newParamsSpan = _params.subspan(std::min(offset, _params.size()));
-            const auto newSubParamRangesSpan = _subParamRanges.subspan(std::min(offset, _params.size()));
+            const auto newSubParamRangesSpan = _subParamRanges.subspan(std::min(offset, _subParamRanges.size()));
             return { newParamsSpan.data(), newParamsSpan.size(), _subParams.data(), _subParams.size(), newSubParamRangesSpan.data(), newSubParamRangesSpan.size() };
         }
 
