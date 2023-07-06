@@ -1416,13 +1416,7 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
     // Set the windows to animation begin state before restore.
     wil::unique_hrgn rgn{ CreateRectRgn(0, 0, 0, 0) };
     SetWindowRgn(_interopWindowHandle, rgn.get(), true);
-//    LONG_PTR style = GetWindowLongPtr(_interopWindowHandle, GWL_STYLE);
-  //  SetWindowLongPtr(_interopWindowHandle, GWL_STYLE, style & ~WS_CAPTION & ~WS_THICKFRAME);
-    LONG lExStyle = GetWindowLong(_interopWindowHandle, GWL_EXSTYLE);
-    SetWindowLongPtr(_interopWindowHandle, GWL_EXSTYLE, ((lExStyle | WS_EX_LAYERED)| WS_EX_TOOLWINDOW) & WS_EX_APPWINDOW);
-    SetLayeredWindowAttributes(_interopWindowHandle, 0, 100, LWA_ALPHA);
 
-    SetWindowPos(_interopWindowHandle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     // First, restore the window. SetWindowPlacement has a fun undocumented
     // piece of functionality where it will restore the window position
     // _without_ the animation, so use that instead of ShowWindow(SW_RESTORE).
