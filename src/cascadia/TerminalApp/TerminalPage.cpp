@@ -4680,7 +4680,7 @@ namespace winrt::TerminalApp::implementation
         {
             co_return;
         }
-        const auto& sxnUi{ SuggestionsElement() };
+        const auto& sxnUi{ LoadSuggestionsUI() };
 
         sxnUi.Mode(mode);
         sxnUi.SetCommands(commandsCollection);
