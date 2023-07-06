@@ -197,7 +197,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::vector<VTParameter> _parameters;
         bool _parameterLimitReached;
         std::vector<VTParameter> _subParameters;
-        std::vector<std::pair<BYTE /*range start*/, BYTE /*range end*/>> _subParametersRange;
+        std::vector<std::pair<BYTE /*range start*/, BYTE /*range end*/>> _subParameterRanges;
         bool _subParameterLimitReached;
 
         std::wstring _oscString;

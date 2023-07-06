@@ -169,7 +169,7 @@ static constexpr bool _isSubParameterDelimiter(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character is "control sequence" beginning indicator.
+// - Determines if a character is a "control sequence" beginning indicator.
 //   This immediately follows an escape and signifies a varying length control sequence.
 // Arguments:
 // - wch - Character to check.
@@ -466,7 +466,7 @@ void StateMachine::_ActionCsiDispatch(const wchar_t wch)
     _trace.TraceOnAction(L"CsiDispatch");
     _trace.DispatchSequenceTrace(_SafeExecute([=]() {
         return _engine->ActionCsiDispatch(_identifier.Finalize(wch),
-                                          { _parameters.data(), _parameters.size(), _subParameters.data(), _subParameters.size(), _subParametersRange.data(), _subParametersRange.size() });
+                                          { _parameters.data(), _parameters.size(), _subParameters.data(), _subParameters.size(), _subParameterRanges.data(), _subParameterRanges.size() });
     }));
 }
 
@@ -502,8 +502,8 @@ void StateMachine::_ActionParam(const wchar_t wch)
         if (_parameters.empty())
         {
             _parameters.push_back({});
-            auto rangeStart = gsl::narrow<BYTE>(_subParameters.size());
-            _subParametersRange.push_back({ rangeStart, rangeStart });
+            const auto rangeStart = gsl::narrow<BYTE>(_subParameters.size());
+            _subParameterRanges.push_back({ rangeStart, rangeStart });
         }
 
         // On a delimiter, increase the number of params we've seen.
@@ -522,8 +522,8 @@ void StateMachine::_ActionParam(const wchar_t wch)
             {
                 // Otherwise move to next param.
                 _parameters.push_back({});
-                auto rangeStart = gsl::narrow<BYTE>(_subParameters.size());
-                _subParametersRange.push_back({ rangeStart, rangeStart });
+                const auto rangeStart = gsl::narrow<BYTE>(_subParameters.size());
+                _subParameterRanges.push_back({ rangeStart, rangeStart });
             }
         }
         else
@@ -568,7 +568,7 @@ void StateMachine::_ActionSubParam(const wchar_t wch)
                 // Otherwise move to next sub-param.
                 _subParameters.push_back({});
                 // increment current range's end index.
-                _subParametersRange.back().second++;
+                _subParameterRanges.back().second++;
             }
         }
         else
@@ -599,7 +599,7 @@ void StateMachine::_ActionClear()
     _parameterLimitReached = false;
 
     _subParameters.clear();
-    _subParametersRange.clear();
+    _subParameterRanges.clear();
     _subParameterLimitReached = false;
 
     _oscString.clear();

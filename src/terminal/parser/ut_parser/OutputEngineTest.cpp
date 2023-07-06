@@ -429,15 +429,15 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_IS_FALSE(mach._subParameters.at(1).has_value());
         VERIFY_ARE_EQUAL(mach._subParameters.at(2), 8);
 
-        VERIFY_ARE_EQUAL(mach._subParametersRange.at(0).first, 0);
-        VERIFY_ARE_EQUAL(mach._subParametersRange.at(0).second, 0);
-        VERIFY_ARE_EQUAL(mach._subParametersRange.at(1).first, 0);
-        VERIFY_ARE_EQUAL(mach._subParametersRange.at(1).second, 3);
+        VERIFY_ARE_EQUAL(mach._subParameterRanges.at(0).first, 0);
+        VERIFY_ARE_EQUAL(mach._subParameterRanges.at(0).second, 0);
+        VERIFY_ARE_EQUAL(mach._subParameterRanges.at(1).first, 0);
+        VERIFY_ARE_EQUAL(mach._subParameterRanges.at(1).second, 3);
 
-        VERIFY_ARE_EQUAL(mach._subParametersRange.size(), mach._parameters.size());
+        VERIFY_ARE_EQUAL(mach._subParameterRanges.size(), mach._parameters.size());
         VERIFY_IS_TRUE(
-            (mach._subParametersRange.back().second == mach._subParameters.size() - 1) // lastIndex
-            || (mach._subParametersRange.back().second == mach._subParameters.size()) // or lastIndex + 1
+            (mach._subParameterRanges.back().second == mach._subParameters.size() - 1) // lastIndex
+            || (mach._subParameterRanges.back().second == mach._subParameters.size()) // or lastIndex + 1
         );
     }
 

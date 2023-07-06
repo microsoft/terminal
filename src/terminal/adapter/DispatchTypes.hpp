@@ -162,14 +162,14 @@ namespace Microsoft::Console::VirtualTerminal
         constexpr VTParameters(const VTParameter* paramsPtr, const size_t paramsCount) noexcept :
             _params{ paramsPtr, paramsCount },
             _subParams{},
-            _subParamsRange{}
+            _subParamRanges{}
         {
         }
 
-        constexpr VTParameters(const VTParameter* paramsPtr, const size_t paramsCount, const VTParameter* subParamsPtr, const size_t subParamsCount, const std::pair<BYTE, BYTE>* subParamsRangePtr, const size_t subParamsRangeCount) noexcept :
+        constexpr VTParameters(const VTParameter* paramsPtr, const size_t paramsCount, const VTParameter* subParamsPtr, const size_t subParamsCount, const std::pair<BYTE, BYTE>* subParamRangesPtr, const size_t subParamRangesCount) noexcept :
             _params{ paramsPtr, paramsCount },
             _subParams{ subParamsPtr, subParamsCount },
-            _subParamsRange{ subParamsRangePtr, subParamsRangeCount }
+            _subParamRanges{ subParamRangesPtr, subParamRangesCount }
         {
         }
 
@@ -194,23 +194,23 @@ namespace Microsoft::Console::VirtualTerminal
         VTParameters subspan(const size_t offset) const noexcept
         {
             // We need sub parameters to always be in their original index
-            // because we store their indexes in subParamsRange. So we pass
+            // because we store their indexes in subParamRanges. So we pass
             // _subParams as is and create new span for others.
             const auto newParamsSpan = _params.subspan(std::min(offset, _params.size()));
-            const auto newSubParamsRangeSpan = _subParamsRange.subspan(std::min(offset, _params.size()));
-            return { newParamsSpan.data(), newParamsSpan.size(), _subParams.data(), _subParams.size(), newSubParamsRangeSpan.data(), newSubParamsRangeSpan.size() };
+            const auto newSubParamRangesSpan = _subParamRanges.subspan(std::min(offset, _params.size()));
+            return { newParamsSpan.data(), newParamsSpan.size(), _subParams.data(), _subParams.size(), newSubParamRangesSpan.data(), newSubParamRangesSpan.size() };
         }
 
         std::span<const VTParameter> subParamsFor(const size_t index) const noexcept
         {
             // If the parameter index is out of range, we return a sub-parameters span with no values.
-            if (index >= _subParamsRange.size())
+            if (index >= _subParamRanges.size())
             {
                 return std::span<const VTParameter>{};
             }
             else
             {
-                const auto& range = til::at(_subParamsRange, index);
+                const auto& range = til::at(_subParamRanges, index);
                 return _subParams.subspan(range.first, range.second - range.first);
             }
         }
@@ -241,7 +241,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         std::span<const VTParameter> _params;
         std::span<const VTParameter> _subParams;
-        std::span<const std::pair<BYTE, BYTE>> _subParamsRange;
+        std::span<const std::pair<BYTE, BYTE>> _subParamRanges;
     };
 
     // FlaggedEnumValue is a convenience class that produces enum values (of a specified size)
