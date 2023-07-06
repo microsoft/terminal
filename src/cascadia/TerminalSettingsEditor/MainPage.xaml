@@ -137,7 +137,8 @@
             <muxc:NavigationViewItem x:Uid="Nav_Compatibility"
                                      Tag="Compatibility_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE7F8;" />
+                    <!--  DeveloperTools  -->
+                    <FontIcon Glyph="&#xEC7A;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 

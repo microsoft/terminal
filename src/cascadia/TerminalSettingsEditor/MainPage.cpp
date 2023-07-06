@@ -6,7 +6,7 @@
 #include "MainPage.g.cpp"
 #include "Launch.h"
 #include "Interaction.h"
-#include "Rendering.h"
+#include "Compatibility.h"
 #include "CompatibilityViewModel.h"
 #include "Actions.h"
 #include "ProfileViewModel.h"
@@ -361,7 +361,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == compatibilityTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<CompatibilityViewModel>(_settingsClone));
+            contentFrame().Navigate(xaml_typename<Editor::Compatibility>(), winrt::make<CompatibilityViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Compatibility/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }

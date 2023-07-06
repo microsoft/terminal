@@ -5,9 +5,9 @@ import "CompatibilityViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    [default_interface] runtimeclass Rendering : Windows.UI.Xaml.Controls.Page
+    [default_interface] runtimeclass Compatibility : Windows.UI.Xaml.Controls.Page
     {
-        Rendering();
+        Compatibility();
         CompatibilityViewModel ViewModel { get; };
     }
 }

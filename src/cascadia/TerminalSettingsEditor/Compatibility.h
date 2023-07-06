@@ -3,14 +3,14 @@
 
 #pragma once
 
-#include "Rendering.g.h"
+#include "Compatibility.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    struct Rendering : public HasScrollViewer<Rendering>, RenderingT<Rendering>
+    struct Compatibility : public HasScrollViewer<Compatibility>, CompatibilityT<Compatibility>
     {
-        Rendering();
+        Compatibility();
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
@@ -21,5 +21,5 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
-    BASIC_FACTORY(Rendering);
+    BASIC_FACTORY(Compatibility);
 }
