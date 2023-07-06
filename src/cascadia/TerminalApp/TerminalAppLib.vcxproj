@@ -16,6 +16,11 @@
     -->
     <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+    <!--
+      Disable automatic provider generation so that we can control when they initialize.
+      We do this so we can delay the Settings UI DLL loading until absolutely necessary.
+    -->
+    <XamlCodeGenerationControlFlags>DoNotGenerateOtherProviders</XamlCodeGenerationControlFlags>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>

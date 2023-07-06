@@ -693,7 +693,6 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
 
     const auto minAreaByFont = cellArea * 95; // Covers all printable ASCII characters
     const auto minAreaByGrowth = static_cast<u32>(_rectPacker.width) * _rectPacker.height * 2;
-    const auto min = std::max(minArea, std::max(minAreaByFont, minAreaByGrowth));
 
     // It's hard to say what the max. size of the cache should be. Optimally I think we should use as much
     // memory as is available, but the rendering code in this project is a big mess and so integrating
@@ -702,7 +701,9 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
     // we're locked into a state, where on every render pass we're starting with a half full atlas, drawing once,
     // filling it with the remaining half and drawing again, requiring two rendering passes on each frame.
     const auto maxAreaByFont = targetArea + targetArea / 4;
-    const auto area = std::min(maxArea, std::min(maxAreaByFont, min));
+
+    auto area = std::min(maxAreaByFont, std::max(minAreaByFont, minAreaByGrowth));
+    area = clamp(area, minArea, maxArea);
 
     // This block of code calculates the size of a power-of-2 texture that has an area larger than the given `area`.
     // For instance, for an area of 985x1946 = 1916810 it would result in a u/v of 2048x1024 (area = 2097152).
@@ -782,6 +783,7 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
 
     // We have our own glyph cache so Direct2D's cache doesn't help much.
     // This saves us 1MB of RAM, which is not much, but also not nothing.
+    if (_d2dRenderTarget4)
     {
         wil::com_ptr<ID2D1Device> device;
         _d2dRenderTarget4->GetDevice(device.addressof());
@@ -1370,12 +1372,12 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
             static_cast<f32>(rect.x + rect.w) / transform.m11,
             static_cast<f32>(rect.y + rect.h) / transform.m22,
         };
-        _d2dRenderTarget4->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
+        _d2dRenderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
     }
     const auto boxGlyphCleanup = wil::scope_exit([&]() {
         if (isBoxGlyph)
         {
-            _d2dRenderTarget4->PopAxisAlignedClip();
+            _d2dRenderTarget->PopAxisAlignedClip();
         }
     });
 

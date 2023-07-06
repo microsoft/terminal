@@ -325,15 +325,20 @@ HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const 
     {
         return E_INVALIDARG;
     }
+
     // sneaky way to pack a short and a uint64_t in a relatively literal way.
 #pragma pack(push, 1)
     struct _signal
     {
         const unsigned short id;
         const uint64_t hwnd;
-    } data{ PTY_SIGNAL_REPARENT_WINDOW, (uint64_t)(newParent) };
+    };
 #pragma pack(pop)
 
+    const _signal data{
+        PTY_SIGNAL_REPARENT_WINDOW,
+        (uint64_t)(newParent),
+    };
     const auto fSuccess = WriteFile(pPty->hSignal, &data, sizeof(data), nullptr, nullptr);
 
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
