@@ -932,19 +932,38 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _ExpandedCommandsCache;
     }
 
-    winrt::Windows::Foundation::Collections::IVector<Model::Command> _filterToSendInput(Windows::Foundation::Collections::IMapView<hstring, Model::Command> nameMap)
+    IVector<Model::Command> _filterToSendInput(IMapView<hstring, Model::Command> nameMap,
+                                               winrt::hstring currentCommandline)
     {
         auto innerResult = winrt::single_threaded_vector<Model::Command>();
+
+        auto backspaces = std::wstring(currentCommandline.size(), L'\x7f');
+
+        auto createInputAction = [&](const Model::Command& command) -> Model::Command {
+            winrt::com_ptr<implementation::Command> cmdImpl;
+            cmdImpl.copy_from(winrt::get_self<implementation::Command>(command));
+
+            const auto inArgs{ command.ActionAndArgs().Args().try_as<Model::SendInputArgs>() };
+
+            Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}", backspaces, inArgs.Input()) } };
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
+
+            auto copy = cmdImpl->Copy();
+            copy->ActionAndArgs(actionAndArgs);
+
+            return *copy;
+        };
+
         for (auto&& [name, command] : nameMap)
         {
             if (!command.HasNestedCommands() &&
                 command.ActionAndArgs().Action() == ShortcutAction::SendInput)
             {
-                innerResult.Append(command);
+                innerResult.Append(createInputAction(command));
             }
             else if (command.HasNestedCommands())
             {
-                auto results = _filterToSendInput(command.NestedCommands());
+                auto results = _filterToSendInput(command.NestedCommands(), currentCommandline);
                 if (results.Size() > 0)
                 {
                     // for( auto&& cmd : results)
@@ -954,15 +973,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                     // This command did have at least one sendInput under it
                     innerResult.Append(command);
-                    // TODO! add a copy of the action that only has SendInputs in it
+                    // TODO! Create a new temp Command, which is a copy of this Command that only has SendInputs in it
                 }
             }
         }
         return innerResult;
     }
 
-    winrt::Windows::Foundation::Collections::IVector<Model::Command> ActionMap::FilterToSendInput()
+    IVector<Model::Command> ActionMap::FilterToSendInput(
+        winrt::hstring currentCommandline)
     {
-        return _filterToSendInput(NameMap());
+        return _filterToSendInput(NameMap(), currentCommandline);
     }
 }

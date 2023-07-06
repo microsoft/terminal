@@ -1257,17 +1257,30 @@ namespace winrt::TerminalApp::implementation
                 const auto source = realArgs.Source();
                 const auto commandsCollection = winrt::single_threaded_vector<Command>();
                 Control::CommandHistoryContext context{ nullptr };
+                winrt::hstring currentCommandline = L"";
+
                 if (const auto& control{ _GetActiveControl() })
                 {
                     context = control.CommandHistory();
+
+                    if (context && realArgs.UseCommandline())
+                    {
+                        currentCommandline = context.CurrentCommandline();
+                    }
                 }
 
                 // Aggregate all the commands from the different sources that the user selected
                 if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
                 {
-                    // TODO! Tasks with useCommandline is wacky. We don't remove the filter text from the command. We should do that.
-                    // TODO! Tasks with NESTED commands and useCommandline is even wackier, cause the filter text gets cleared on navigating to a sub-command. hmm.
-                    const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput();
+                    // TODO! Tasks with NESTED commands and useCommandline is
+                    // even wackier, cause the filter text gets cleared on
+                    // navigating to a sub-command. hmm.
+                    //  * if we useCommandline, and trim that from each of the
+                    //    commands, and start with that filtered, then that'll
+                    //    pre-filter the top level to "git", then not filter the
+                    //    second tier, but it will remove teh text... yea that's
+                    //    a good idea.
+                    const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(currentCommandline);
                     for (const auto& t : tasks)
                     {
                         commandsCollection.Append(t);
@@ -1279,7 +1292,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (context)
                     {
-                        const auto recentCommands = Command::HistoryToCommands(context.History(), context.CurrentCommandline(), false);
+                        const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false);
                         for (const auto& t : recentCommands)
                         {
                             commandsCollection.Append(t);
@@ -1289,7 +1302,7 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 // Open the palette with all these commands in it.
-                _OpenSuggestions(commandsCollection, SuggestionsMode::Palette, context.CurrentCommandline());
+                _OpenSuggestions(commandsCollection, SuggestionsMode::Palette, currentCommandline);
                 args.Handled(true);
             }
         }
