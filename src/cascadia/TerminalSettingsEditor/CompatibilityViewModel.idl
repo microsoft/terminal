@@ -11,8 +11,14 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         CompatibilityViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
+        Boolean ShellCompletionMenuAvailable { get; };
+
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, UseAtlasEngine);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ForceFullRepaintRendering);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SoftwareRendering);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ReloadEnvironmentVariables);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AllowHeadless);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, IsolatedMode);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, EnableShellCompletionMenu);
     }
 }

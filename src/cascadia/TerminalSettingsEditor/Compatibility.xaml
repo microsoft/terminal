@@ -20,7 +20,7 @@
 
     <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel Style="{StaticResource SettingsStackStyle}">
-            <TextBlock x:Uid="Globals_RenderingDisclaimer"
+            <TextBlock x:Uid="Globals_CompatibilityDisclaimer"
                        Style="{StaticResource DisclaimerStyle}" />
 
             <!--  AtlasEngine  -->
@@ -40,6 +40,32 @@
                 <ToggleSwitch IsOn="{x:Bind ViewModel.SoftwareRendering, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
+
+            <!--  Environment reloading  -->
+            <local:SettingContainer x:Uid="Globals_ReloadEnvironmentVariables">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ReloadEnvironmentVariables, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Headless mode  -->
+            <local:SettingContainer x:Uid="Globals_AllowHeadless">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.AllowHeadless, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Isolated Mode mode  -->
+            <local:SettingContainer x:Uid="Globals_IsolatedMode">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.IsolatedMode, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Shell Completions  -->
+            <local:SettingContainer x:Uid="Globals_EnableShellCompletionMenu"
+                                    Visibility="{x:Bind ViewModel.ShellCompletionMenuAvailable}">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.EnableShellCompletionMenu, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
         </StackPanel>
     </ScrollViewer>
 </Page>

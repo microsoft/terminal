@@ -438,6 +438,10 @@
     <value>These settings may be useful for troubleshooting an issue, however they will impact your performance.</value>
     <comment>A disclaimer presented at the top of a page.</comment>
   </data>
+  <data name="Globals_CompatibilityDisclaimer.Text" xml:space="preserve">
+    <value>These settings may be useful for troubleshooting an issue. However, you may experience unexpected behaviors.</value>
+    <comment>A disclaimer presented at the top of a page.</comment>
+  </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>Hide the title bar (requires relaunch)</value>
     <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
@@ -557,6 +561,38 @@
   <data name="Globals_WordDelimiters.HelpText" xml:space="preserve">
     <value>These symbols will be used when you double-click text in the terminal or activate "Mark mode".</value>
     <comment>A description for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header". "Mark" is used in the sense of "choosing something to interact with."</comment>
+  </data>
+  <data name="Globals_ReloadEnvironmentVariables.Header" xml:space="preserve">
+    <value>Automatically reload environment variables</value>
+    <comment>Header for a control how environment variables are initialized for connections.</comment>
+  </data>
+  <data name="Globals_ReloadEnvironmentVariables.HelpText" xml:space="preserve">
+    <value>When enabled, the Terminal will always generate a fresh environment variable block for new tabs and panes.</value>
+    <comment>A description for what the "reload environment variables" setting does. Presented near "Globals_ReloadEnvironmentVariables.Header".</comment>
+  </data>
+  <data name="Globals_AllowHeadless.Header" xml:space="preserve">
+    <value>Allow the Terminal to keep running without a window</value>
+    <comment>Header for a control that allows the Terminal to run in the background.</comment>
+  </data>
+  <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
+    <value>When enabled, the Terminal process will continue to run in the background, even after closing the last Terminal window.</value>
+    <comment>A description for what the "Allow the Terminal to keep running without a window" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
+  </data>
+  <data name="Globals_IsolatedMode.Header" xml:space="preserve">
+    <value>Use isolated window processes</value>
+    <comment>Header for a control that enables a mode where windows cannot communicate with each other, for debugging</comment>
+  </data>
+  <data name="Globals_IsolatedMode.HelpText" xml:space="preserve">
+    <value>When enabled, each Terminal window will run in its own process. You won't be able to drag/drop tabs into other windows. Other features may also break unexpectedly.</value>
+    <comment>A description for what the "Use isolated window processes" setting does. Presented near "Globals_IsolatedMode.Header".</comment>
+  </data>
+  <data name="Globals_EnableShellCompletionMenu.Header" xml:space="preserve">
+    <value>Enable experimental shell completions support</value>
+    <comment>Header for a control that enables an experimental new protocol for the Terminal</comment>
+  </data>
+  <data name="Globals_EnableShellCompletionMenu.HelpText" xml:space="preserve">
+    <value>This enables support for an experimental shell completion protocol. This protocol is subject to change in the future.</value>
+    <comment>A description for what the "Enable experimental shell completions support" setting does. Presented near "Globals_EnableShellCompletionMenu.Header".</comment>
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>

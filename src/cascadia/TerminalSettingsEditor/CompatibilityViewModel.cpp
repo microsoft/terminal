@@ -14,4 +14,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settings{ std::move(settings) }
     {
     }
+
+    bool CompatibilityViewModel::ShellCompletionMenuAvailable() const noexcept
+    {
+        return Feature_ShellCompletions::IsEnabled();
+    }
 }
