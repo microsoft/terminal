@@ -891,6 +891,7 @@ namespace winrt::TerminalApp::implementation
             control.SetTaskbarProgress(events.taskbarToken);
             control.ReadOnlyChanged(events.readOnlyToken);
             control.FocusFollowMouseRequested(events.focusToken);
+
             control.KeySent(events.keySentToken);
             control.CharSent(events.charSentToken);
             control.StringSent(events.stringSentToken);
@@ -916,7 +917,7 @@ namespace winrt::TerminalApp::implementation
         auto dispatcher = TabViewItem().Dispatcher();
         ControlEventTokens events{};
 
-        events.titleToken = control.TitleChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+        events.titleToken = control.TitleChanged([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
@@ -927,7 +928,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.colorToken = control.TabColorChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+        events.colorToken = control.TabColorChanged([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             if (auto tab{ weakThis.get() })
             {
@@ -938,7 +939,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
@@ -947,7 +948,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.readOnlyToken = control.ReadOnlyChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+        events.readOnlyToken = control.ReadOnlyChanged([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             if (auto tab{ weakThis.get() })
             {
@@ -964,45 +965,6 @@ namespace winrt::TerminalApp::implementation
                     if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
                     {
                         termControl.Focus(FocusState::Pointer);
-                    }
-                }
-            }
-        });
-
-        events.keySentToken = control.KeySent([weakThis](auto&& sender, auto&& e) {
-            if (const auto tab{ weakThis.get() })
-            {
-                if (tab->_tabStatus.IsInputBroadcastActive())
-                {
-                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
-                    {
-                        tab->_rootPane->BroadcastKey(termControl, e.VKey(), e.ScanCode(), e.Modifiers(), e.KeyDown());
-                    }
-                }
-            }
-        });
-
-        events.charSentToken = control.CharSent([weakThis](auto&& sender, auto&& e) {
-            if (const auto tab{ weakThis.get() })
-            {
-                if (tab->_tabStatus.IsInputBroadcastActive())
-                {
-                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
-                    {
-                        tab->_rootPane->BroadcastChar(termControl, e.Character(), e.ScanCode(), e.Modifiers());
-                    }
-                }
-            }
-        });
-
-        events.stringSentToken = control.StringSent([weakThis](auto&& sender, auto&& e) {
-            if (const auto tab{ weakThis.get() })
-            {
-                if (tab->_tabStatus.IsInputBroadcastActive())
-                {
-                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
-                    {
-                        tab->_rootPane->BroadcastString(termControl, e.Text());
                     }
                 }
             }
@@ -1813,6 +1775,82 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::ToggleBroadcastInput()
     {
         _tabStatus.IsInputBroadcastActive(!_tabStatus.IsInputBroadcastActive());
-        _rootPane->EnableBroadcast(_tabStatus.IsInputBroadcastActive());
+
+        const bool isBroadcasting = _tabStatus.IsInputBroadcastActive();
+        _rootPane->EnableBroadcast(isBroadcasting);
+
+        auto weakThis{ get_weak() };
+
+        // When we chage the state of broadcasting, add or remove event handlers
+        // appropriately, so that controls won't be propogating events
+        // needlessly if no one is listening.
+
+        _rootPane->WalkTree([&](const auto& p) {
+            
+            const auto paneId = p->Id();
+            if (!paneId.has_value()) {
+                return;
+            }
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                auto it = _controlEvents.find(*paneId);
+                if (it != _controlEvents.end())
+                {
+                    auto& events = it->second;
+
+                    if (isBroadcasting)
+                    {
+                        // ADD EVENT HANDLERS HERE
+                        events.keySentToken = control.KeySent([weakThis](auto&& sender, auto&& e) {
+                            if (const auto tab{ weakThis.get() })
+                            {
+                                if (tab->_tabStatus.IsInputBroadcastActive())
+                                {
+                                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
+                                    {
+                                        tab->_rootPane->BroadcastKey(termControl, e.VKey(), e.ScanCode(), e.Modifiers(), e.KeyDown());
+                                    }
+                                }
+                            }
+                        });
+
+                        events.charSentToken = control.CharSent([weakThis](auto&& sender, auto&& e) {
+                            if (const auto tab{ weakThis.get() })
+                            {
+                                if (tab->_tabStatus.IsInputBroadcastActive())
+                                {
+                                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
+                                    {
+                                        tab->_rootPane->BroadcastChar(termControl, e.Character(), e.ScanCode(), e.Modifiers());
+                                    }
+                                }
+                            }
+                        });
+
+                        events.stringSentToken = control.StringSent([weakThis](auto&& sender, auto&& e) {
+                            if (const auto tab{ weakThis.get() })
+                            {
+                                if (tab->_tabStatus.IsInputBroadcastActive())
+                                {
+                                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
+                                    {
+                                        tab->_rootPane->BroadcastString(termControl, e.Text());
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    else
+                    {
+                        // REVOKE EVENT HANDLERS
+
+                        control.KeySent(events.keySentToken);
+                        control.CharSent(events.charSentToken);
+                        control.StringSent(events.stringSentToken);
+                    }
+                }
+            }
+        });
     }
 }

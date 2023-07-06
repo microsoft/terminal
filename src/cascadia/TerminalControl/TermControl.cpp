@@ -524,7 +524,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::SendInput(const winrt::hstring& wstr)
     {
-        _StringSentHandlers(*this, winrt::make<StringSentEventArgs>(wstr));
+        // only broadcast if there's an actual listener. Saves the overhead of some object creation.
+        if (_StringSentHandlers)
+        {
+            _StringSentHandlers(*this, winrt::make<StringSentEventArgs>(wstr));
+        }
 
         RawWriteString(wstr);
     }
@@ -1086,8 +1090,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Broadcast the character to all listeners
-        auto charSentArgs = winrt::make<CharSentEventArgs>(ch, scanCode, modifiers);
-        _CharSentHandlers(*this, charSentArgs);
+        // only broadcast if there's an actual listener. Saves the overhead of some object creation.
+        if (_CharSentHandlers)
+        {
+            auto charSentArgs = winrt::make<CharSentEventArgs>(ch, scanCode, modifiers);
+            _CharSentHandlers(*this, charSentArgs);
+        }
 
         const auto handled = RawWriteChar(ch, scanCode, modifiers);
 
@@ -1354,8 +1362,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                        const bool keyDown)
     {
         // Broadcast the key  to all listeners
-        auto keySentArgs = winrt::make<KeySentEventArgs>(vkey, scanCode, modifiers, keyDown);
-        _KeySentHandlers(*this, keySentArgs);
+        // only broadcast if there's an actual listener. Saves the overhead of some object creation.
+        if (_KeySentHandlers)
+        {
+            auto keySentArgs = winrt::make<KeySentEventArgs>(vkey, scanCode, modifiers, keyDown);
+            _KeySentHandlers(*this, keySentArgs);
+        }
 
         return RawWriteKeyEvent(vkey, scanCode, modifiers, keyDown);
     }
@@ -2845,7 +2857,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::_pasteTextWithBroadcast(const winrt::hstring& text)
     {
-        _StringSentHandlers(*this, winrt::make<StringSentEventArgs>(text));
+        // only broadcast if there's an actual listener. Saves the overhead of some object creation.
+        if (_StringSentHandlers)
+        {
+            _StringSentHandlers(*this, winrt::make<StringSentEventArgs>(text));
+        }
         _core.PasteText(text);
     }
 

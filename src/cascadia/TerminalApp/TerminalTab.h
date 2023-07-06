@@ -134,6 +134,7 @@ namespace winrt::TerminalApp::implementation
             winrt::event_token taskbarToken;
             winrt::event_token readOnlyToken;
             winrt::event_token focusToken;
+
             winrt::event_token keySentToken;
             winrt::event_token charSentToken;
             winrt::event_token stringSentToken;
