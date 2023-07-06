@@ -7,7 +7,7 @@
 #include "Launch.h"
 #include "Interaction.h"
 #include "Rendering.h"
-#include "RenderingViewModel.h"
+#include "CompatibilityViewModel.h"
 #include "Actions.h"
 #include "ProfileViewModel.h"
 #include "GlobalAppearance.h"

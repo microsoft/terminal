@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "RenderingViewModel.h"
+#include "CompatibilityViewModel.h"
 #include "CompatibilityViewModel.g.cpp"
 
 using namespace winrt::Windows::Foundation;

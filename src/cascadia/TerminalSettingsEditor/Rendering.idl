@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "RenderingViewModel.idl";
+import "CompatibilityViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {

@@ -90,8 +90,8 @@
       <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
-    <ClInclude Include="RenderingViewModel.h">
-      <DependentUpon>RenderingViewModel.idl</DependentUpon>
+    <ClInclude Include="CompatibilityViewModel.h">
+      <DependentUpon>CompatibilityViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="InteractionViewModel.h">
@@ -233,8 +233,8 @@
       <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
-    <ClCompile Include="RenderingViewModel.cpp">
-      <DependentUpon>RenderingViewModel.idl</DependentUpon>
+    <ClCompile Include="CompatibilityViewModel.cpp">
+      <DependentUpon>CompatibilityViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="InteractionViewModel.cpp">
@@ -322,7 +322,7 @@
     <Midl Include="ProfileViewModel.idl" />
     <Midl Include="ColorSchemeViewModel.idl" />
     <Midl Include="ColorSchemesPageViewModel.idl" />
-    <Midl Include="RenderingViewModel.idl" />
+    <Midl Include="CompatibilityViewModel.idl" />
     <Midl Include="InteractionViewModel.idl" />
     <Midl Include="GlobalAppearanceViewModel.idl" />
     <Midl Include="LaunchViewModel.idl" />
