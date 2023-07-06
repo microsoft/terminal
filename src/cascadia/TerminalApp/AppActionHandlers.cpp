@@ -1259,45 +1259,48 @@ namespace winrt::TerminalApp::implementation
                 Control::CommandHistoryContext context{ nullptr };
                 winrt::hstring currentCommandline = L"";
 
-                if (const auto& control{ _GetActiveControl() })
+                // If the user wanted to use the current commandline to filter results,
+                //    OR they wanted command history (or some other source that
+                //       requires context from the control)
+                // then get that here.
+                const bool shouldGetContext = realArgs.UseCommandline() ||
+                                              WI_IsFlagSet(source, SuggestionsSource::CommandHistory);
+                if (shouldGetContext)
                 {
-                    context = control.CommandHistory();
-
-                    if (context && realArgs.UseCommandline())
+                    if (const auto& control{ _GetActiveControl() })
                     {
-                        currentCommandline = context.CurrentCommandline();
+                        context = control.CommandHistory();
+                        if (context)
+                        {
+                            currentCommandline = context.CurrentCommandline();
+                        }
                     }
                 }
 
-                // Aggregate all the commands from the different sources that the user selected
+                // Aggregate all the commands from the different sources that
+                // the user selected.
+
+                // Tasks are all the sendInput commands the user has saved in
+                // their settings file. Ask the ActionMap for those.
                 if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
                 {
-                    // TODO! Tasks with NESTED commands and useCommandline is
-                    // even wackier, cause the filter text gets cleared on
-                    // navigating to a sub-command. hmm.
-                    //  * if we useCommandline, and trim that from each of the
-                    //    commands, and start with that filtered, then that'll
-                    //    pre-filter the top level to "git", then not filter the
-                    //    second tier, but it will remove teh text... yea that's
-                    //    a good idea.
                     const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(currentCommandline);
                     for (const auto& t : tasks)
                     {
                         commandsCollection.Append(t);
                     }
-                    // commandsCollection.AddAll(tasks);
                 }
 
-                if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory))
+                // Command History comes from the commands in the buffer,
+                // assuming the user has enabled shell integration. Get those
+                // from the active control.
+                if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory) &&
+                    context != nullptr)
                 {
-                    if (context)
+                    const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false);
+                    for (const auto& t : recentCommands)
                     {
-                        const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false);
-                        for (const auto& t : recentCommands)
-                        {
-                            commandsCollection.Append(t);
-                        }
-                        // commandsCollection.AddAll(recentCommands);
+                        commandsCollection.Append(t);
                     }
                 }
 

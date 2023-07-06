@@ -52,6 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool HasNestedCommands() const;
         bool IsNestedCommand() const noexcept;
         Windows::Foundation::Collections::IMapView<winrt::hstring, Model::Command> NestedCommands() const;
+        void NestedCommands(const Windows::Foundation::Collections::IVectorView<Model::Command>& nested);
 
         bool HasName() const noexcept;
         hstring Name() const noexcept;

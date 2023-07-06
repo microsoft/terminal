@@ -935,17 +935,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     IVector<Model::Command> _filterToSendInput(IMapView<hstring, Model::Command> nameMap,
                                                winrt::hstring currentCommandline)
     {
-        auto innerResult = winrt::single_threaded_vector<Model::Command>();
+        auto results = winrt::single_threaded_vector<Model::Command>();
 
         auto backspaces = std::wstring(currentCommandline.size(), L'\x7f');
 
+        // Helper to clone a sendInput command into a new Command, with the
+        // input trimmed to account for the currentCommandline
         auto createInputAction = [&](const Model::Command& command) -> Model::Command {
             winrt::com_ptr<implementation::Command> cmdImpl;
             cmdImpl.copy_from(winrt::get_self<implementation::Command>(command));
 
             const auto inArgs{ command.ActionAndArgs().Args().try_as<Model::SendInputArgs>() };
 
-            Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}", backspaces, inArgs.Input()) } };
+            Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}", backspaces, inArgs ? inArgs.Input() : L"") } };
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
 
             auto copy = cmdImpl->Copy();
@@ -954,30 +956,39 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return *copy;
         };
 
+        // iterate over all the commands in all our actions...
         for (auto&& [name, command] : nameMap)
         {
+            // If this is not a nested command, and it's a sendInput command...
             if (!command.HasNestedCommands() &&
                 command.ActionAndArgs().Action() == ShortcutAction::SendInput)
             {
-                innerResult.Append(createInputAction(command));
+                // copy it into the results.
+                results.Append(createInputAction(command));
             }
+            // If this is nested...
             else if (command.HasNestedCommands())
             {
-                auto results = _filterToSendInput(command.NestedCommands(), currentCommandline);
-                if (results.Size() > 0)
-                {
-                    // for( auto&& cmd : results)
-                    // {
-                    //     innerResult.Append(cmd);
-                    // }
+                // Look for any sendInput commands nested underneath us
+                auto innerResults = _filterToSendInput(command.NestedCommands(), currentCommandline);
 
+                if (innerResults.Size() > 0)
+                {
                     // This command did have at least one sendInput under it
-                    innerResult.Append(command);
-                    // TODO! Create a new temp Command, which is a copy of this Command that only has SendInputs in it
+
+                    // Create a new Command, which is a copy of this Command,
+                    // which only has SendInputs in it
+                    winrt::com_ptr<implementation::Command> cmdImpl;
+                    cmdImpl.copy_from(winrt::get_self<implementation::Command>(command));
+                    auto copy = cmdImpl->Copy();
+                    copy->NestedCommands(innerResults.GetView());
+
+                    results.Append(*copy);
                 }
             }
         }
-        return innerResult;
+
+        return results;
     }
 
     IVector<Model::Command> ActionMap::FilterToSendInput(

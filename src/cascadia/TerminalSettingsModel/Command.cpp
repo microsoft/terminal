@@ -64,6 +64,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _subcommands ? _subcommands.GetView() : nullptr;
     }
 
+    void Command::NestedCommands(const Windows::Foundation::Collections::IVectorView<Model::Command>& nested)
+    {
+        _subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+
+        for (const auto& n : nested)
+        {
+            _subcommands.Insert(n.Name(), n);
+        }
+    }
+
     // Function Description:
     // - reports if the current command has nested commands
     // - This CANNOT detect { "name": "foo", "commands": null }
