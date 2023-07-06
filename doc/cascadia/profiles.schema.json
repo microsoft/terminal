@@ -799,6 +799,11 @@
               "default": false,
               "description": "If true, the copied content will be copied as a single line (even if there are hard line breaks present in the text). If false, newlines persist from the selected text."
             },
+            "dismissSelection": {
+              "type": "boolean",
+              "default": true,
+              "description": "If false, the copied content will be copied and the selection will not be dismissed. If true, the selection will be dismissed."
+            },
             "copyFormatting": {
               "default": null,
               "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied. Not setting this value inherits the behavior of the `copyFormatting` global setting.",
