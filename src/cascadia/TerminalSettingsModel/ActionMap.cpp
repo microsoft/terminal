@@ -931,4 +931,38 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         return _ExpandedCommandsCache;
     }
+
+    winrt::Windows::Foundation::Collections::IVector<Model::Command> _filterToSendInput(Windows::Foundation::Collections::IMapView<hstring, Model::Command> nameMap)
+    {
+        auto innerResult = winrt::single_threaded_vector<Model::Command>();
+        for (auto&& [name, command] : nameMap)
+        {
+            if (!command.HasNestedCommands() &&
+                command.ActionAndArgs().Action() == ShortcutAction::SendInput)
+            {
+                innerResult.Append(command);
+            }
+            else if (command.HasNestedCommands())
+            {
+                auto results = _filterToSendInput(command.NestedCommands());
+                if (results.Size() > 0)
+                {
+                    // for( auto&& cmd : results)
+                    // {
+                    //     innerResult.Append(cmd);
+                    // }
+
+                    // This command did have at least one sendInput under it
+                    innerResult.Append(command);
+                    // TODO! add a copy of the action that only has SendInputs in it
+                }
+            }
+        }
+        return innerResult;
+    }
+
+    winrt::Windows::Foundation::Collections::IVector<Model::Command> ActionMap::FilterToSendInput()
+    {
+        return _filterToSendInput(NameMap());
+    }
 }

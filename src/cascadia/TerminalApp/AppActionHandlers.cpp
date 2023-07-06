@@ -1256,25 +1256,37 @@ namespace winrt::TerminalApp::implementation
             {
                 const auto source = realArgs.Source();
                 const auto commandsCollection = winrt::single_threaded_vector<Command>();
+                Control::CommandHistoryContext context{ nullptr };
+                if (const auto& control{ _GetActiveControl() })
+                {
+                    context = control.CommandHistory();
+                }
 
                 // Aggregate all the commands from the different sources that the user selected
                 if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
                 {
                     const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput();
-                    commandsCollection.AddAll(tasks);
+                    for (const auto& t : tasks)
+                    {
+                        commandsCollection.Append(t);
+                    }
+                    // commandsCollection.AddAll(tasks);
                 }
                 if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory))
                 {
-                    if (const auto& control{ _GetActiveControl() })
+                    if (context)
                     {
-                        const auto context = control.CommandHistory();
                         const auto recentCommands = Command::HistoryToCommands(context.History(), context.CurrentCommandline(), false);
-                        commandsCollection.AddAll(recentCommands);
+                        for (const auto& t : recentCommands)
+                        {
+                            commandsCollection.Append(t);
+                        }
+                        // commandsCollection.AddAll(recentCommands);
                     }
                 }
 
                 // Open the palette with all these commands in it.
-                _OpenSuggestions(commandsCollection, SuggestionsMode::Palette);
+                _OpenSuggestions(commandsCollection, SuggestionsMode::Palette, context.CurrentCommandline());
                 args.Handled(true);
             }
         }
