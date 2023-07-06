@@ -3,14 +3,14 @@
 
 #pragma once
 
-#include "RenderingViewModel.g.h"
+#include "CompatibilityViewModel.g.h"
 #include "ViewModelHelpers.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    struct RenderingViewModel : RenderingViewModelT<RenderingViewModel>, ViewModelHelper<RenderingViewModel>
+    struct CompatibilityViewModel : CompatibilityViewModelT<CompatibilityViewModel>, ViewModelHelper<CompatibilityViewModel>
     {
-        explicit RenderingViewModel(Model::CascadiaSettings settings) noexcept;
+        explicit CompatibilityViewModel(Model::CascadiaSettings settings) noexcept;
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.ProfileDefaults(), UseAtlasEngine);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.GlobalSettings(), ForceFullRepaintRendering);
@@ -23,5 +23,5 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
-    BASIC_FACTORY(RenderingViewModel);
+    BASIC_FACTORY(CompatibilityViewModel);
 }

@@ -586,6 +586,10 @@
     <value>Rendering</value>
     <comment>Header for the "rendering" menu item. This navigates to a page that lets you see and modify settings related to the app's rendering of text in the terminal.</comment>
   </data>
+  <data name="Nav_Compatibility.Content" xml:space="preserve">
+    <value>Compatibility</value>
+    <comment>Header for the "compatibility" menu item. This navigates to a page that lets you see and modify settings related to backwards-compatibility</comment>
+  </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
     <value>Actions</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>

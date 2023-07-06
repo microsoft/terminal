@@ -7,9 +7,9 @@ import "EnumEntry.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass RenderingViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    runtimeclass CompatibilityViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        RenderingViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        CompatibilityViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, UseAtlasEngine);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ForceFullRepaintRendering);
