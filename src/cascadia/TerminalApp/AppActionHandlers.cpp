@@ -1265,6 +1265,8 @@ namespace winrt::TerminalApp::implementation
                 // Aggregate all the commands from the different sources that the user selected
                 if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
                 {
+                    // TODO! Tasks with useCommandline is wacky. We don't remove the filter text from the command. We should do that.
+                    // TODO! Tasks with NESTED commands and useCommandline is even wackier, cause the filter text gets cleared on navigating to a sub-command. hmm.
                     const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput();
                     for (const auto& t : tasks)
                     {
@@ -1272,6 +1274,7 @@ namespace winrt::TerminalApp::implementation
                     }
                     // commandsCollection.AddAll(tasks);
                 }
+
                 if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory))
                 {
                     if (context)
