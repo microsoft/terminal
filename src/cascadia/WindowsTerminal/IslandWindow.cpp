@@ -1373,7 +1373,7 @@ void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool
 
     // Do at most dropdownDuration frames. After that, just bail straight to the
     // final state.
-    for (uint32_t i = 0; i < dropdownDuration; i++)
+    for (uint32_t i = 0; i < dropdownDuration * 10; i++)
     {
         const auto end = std::chrono::system_clock::now();
         const auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -1397,8 +1397,11 @@ void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool
         // weird stutter, and causes the animation to not be as smooth.
     }
 
-    // Reset the window.
-    SetWindowRgn(_interopWindowHandle, nullptr, true);
+    // Drop down reset the window here.
+    if (down)
+    {
+        SetWindowRgn(_interopWindowHandle, nullptr, true);
+    }
 }
 
 void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
@@ -1410,6 +1413,16 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
     // foreground window.
     const auto oldForegroundWindow = GetForegroundWindow();
 
+    // Set the windows to animation begin state before restore.
+    wil::unique_hrgn rgn{ CreateRectRgn(0, 0, 0, 0) };
+    SetWindowRgn(_interopWindowHandle, rgn.get(), true);
+//    LONG_PTR style = GetWindowLongPtr(_interopWindowHandle, GWL_STYLE);
+  //  SetWindowLongPtr(_interopWindowHandle, GWL_STYLE, style & ~WS_CAPTION & ~WS_THICKFRAME);
+    LONG lExStyle = GetWindowLong(_interopWindowHandle, GWL_EXSTYLE);
+    SetWindowLongPtr(_interopWindowHandle, GWL_EXSTYLE, ((lExStyle | WS_EX_LAYERED)| WS_EX_TOOLWINDOW) & WS_EX_APPWINDOW);
+    SetLayeredWindowAttributes(_interopWindowHandle, 0, 100, LWA_ALPHA);
+
+    SetWindowPos(_interopWindowHandle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     // First, restore the window. SetWindowPlacement has a fun undocumented
     // piece of functionality where it will restore the window position
     // _without_ the animation, so use that instead of ShowWindow(SW_RESTORE).
@@ -1444,6 +1457,9 @@ void IslandWindow::_slideUpWindow(const uint32_t dropdownDuration)
     GetWindowPlacement(_window.get(), &wpc);
     wpc.showCmd = SW_MINIMIZE;
     SetWindowPlacement(_window.get(), &wpc);
+
+    // Reset the windows after sliding up.
+    SetWindowRgn(_interopWindowHandle, nullptr, true);
 }
 
 // Method Description:
