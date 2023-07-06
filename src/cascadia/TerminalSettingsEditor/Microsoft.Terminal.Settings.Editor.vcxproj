@@ -122,8 +122,8 @@
       <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
-    <ClInclude Include="Rendering.h">
-      <DependentUpon>Rendering.xaml</DependentUpon>
+    <ClInclude Include="Compatibility.h">
+      <DependentUpon>Compatibility.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="SettingContainer.h">
       <DependentUpon>SettingContainer.idl</DependentUpon>
@@ -175,7 +175,7 @@
     <Page Include="Appearances.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Rendering.xaml">
+    <Page Include="Compatibility.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="SettingContainerStyle.xaml">
@@ -265,8 +265,8 @@
       <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
-    <ClCompile Include="Rendering.cpp">
-      <DependentUpon>Rendering.xaml</DependentUpon>
+    <ClCompile Include="Compatibility.cpp">
+      <DependentUpon>Compatibility.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="SettingContainer.cpp">
       <DependentUpon>SettingContainer.idl</DependentUpon>
@@ -312,8 +312,8 @@
       <DependentUpon>Interaction.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="Rendering.idl">
-      <DependentUpon>Rendering.xaml</DependentUpon>
+    <Midl Include="Compatibility.idl">
+      <DependentUpon>Compatibility.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="MainPage.idl">
