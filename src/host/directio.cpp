@@ -25,105 +25,6 @@
 using namespace Microsoft::Console::Types;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-class CONSOLE_INFORMATION;
-
-// Routine Description:
-// - converts non-unicode InputEvents to unicode InputEvents
-// Arguments:
-// inEvents - InputEvents to convert
-// partialEvent - on output, will contain a partial dbcs byte char
-// data if the last event in inEvents is a dbcs lead byte
-// Return Value:
-// - inEvents will contain unicode InputEvents
-// - partialEvent may contain a partial dbcs KeyEvent
-void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
-                     _Out_ std::unique_ptr<IInputEvent>& partialEvent)
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    std::deque<std::unique_ptr<IInputEvent>> outEvents;
-
-    while (!inEvents.empty())
-    {
-        auto currentEvent = std::move(inEvents.front());
-        inEvents.pop_front();
-
-        if (currentEvent->EventType() != InputEventType::KeyEvent)
-        {
-            outEvents.push_back(std::move(currentEvent));
-        }
-        else
-        {
-            const auto keyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
-
-            std::wstring outWChar;
-            auto hr = S_OK;
-
-            // convert char data to unicode
-            if (IsDBCSLeadByteConsole(static_cast<char>(keyEvent->GetCharData()), &gci.CPInfo))
-            {
-                if (inEvents.empty())
-                {
-                    // we ran out of data and have a partial byte leftover
-                    partialEvent = std::move(currentEvent);
-                    break;
-                }
-
-                // get the 2nd byte and convert to unicode
-                const auto keyEventEndByte = static_cast<const KeyEvent* const>(inEvents.front().get());
-                inEvents.pop_front();
-
-                char inBytes[] = {
-                    static_cast<char>(keyEvent->GetCharData()),
-                    static_cast<char>(keyEventEndByte->GetCharData())
-                };
-                try
-                {
-                    outWChar = ConvertToW(gci.CP, { inBytes, ARRAYSIZE(inBytes) });
-                }
-                catch (...)
-                {
-                    hr = wil::ResultFromCaughtException();
-                }
-            }
-            else
-            {
-                char inBytes[] = {
-                    static_cast<char>(keyEvent->GetCharData())
-                };
-                try
-                {
-                    outWChar = ConvertToW(gci.CP, { inBytes, ARRAYSIZE(inBytes) });
-                }
-                catch (...)
-                {
-                    hr = wil::ResultFromCaughtException();
-                }
-            }
-
-            // push unicode key events back out
-            if (SUCCEEDED(hr) && outWChar.size() > 0)
-            {
-                auto unicodeKeyEvent = *keyEvent;
-                for (const auto wch : outWChar)
-                {
-                    try
-                    {
-                        unicodeKeyEvent.SetCharData(wch);
-                        outEvents.push_back(std::make_unique<KeyEvent>(unicodeKeyEvent));
-                    }
-                    catch (...)
-                    {
-                        LOG_HR(wil::ResultFromCaughtException());
-                    }
-                }
-            }
-        }
-    }
-
-    inEvents.swap(outEvents);
-    return;
-}
-
 // Routine Description:
 // - This routine reads or peeks input events.  In both cases, the events
 //   are copied to the user's buffer.  In the read case they are removed
@@ -237,35 +138,92 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                                           const std::span<const INPUT_RECORD> buffer,
                                                           size_t& written,
                                                           const bool append) noexcept
+try
 {
     written = 0;
+
+    if (buffer.empty())
+    {
+        return S_OK;
+    }
 
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    try
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    til::small_vector<INPUT_RECORD, 16> events;
+
+    // Check out the loop below. When a previous call ended on a leading DBCS we store it for
+    // the next call to WriteConsoleInputAImpl to join it with the now available trailing DBCS.
+    if (context.IsWritePartialByteSequenceAvailable())
     {
-        auto events = IInputEvent::Create(buffer);
+        auto lead = context.FetchWritePartialByteSequence(false)->ToInputRecord();
+        const auto& trail = buffer.front();
 
-        // add partial byte event if necessary
-        if (context.IsWritePartialByteSequenceAvailable())
+        if (trail.EventType == KEY_EVENT)
         {
-            events.push_front(context.FetchWritePartialByteSequence(false));
+            const char narrow[2]{
+                lead.Event.KeyEvent.uChar.AsciiChar,
+                trail.Event.KeyEvent.uChar.AsciiChar,
+            };
+            wchar_t wide[2];
+            const auto length = MultiByteToWideChar(gci.CP, 0, &narrow[0], 2, &wide[0], 2);
+
+            for (int i = 0; i < length; i++)
+            {
+                lead.Event.KeyEvent.uChar.UnicodeChar = wide[i];
+                events.push_back(lead);
+            }
         }
-
-        // convert to unicode if necessary
-        std::unique_ptr<IInputEvent> partialEvent;
-        EventsToUnicode(events, partialEvent);
-
-        if (partialEvent.get())
-        {
-            context.StoreWritePartialByteSequence(std::move(partialEvent));
-        }
-
-        return _WriteConsoleInputWImplHelper(context, events, written, append);
     }
-    CATCH_RETURN();
+
+    for (auto it = buffer.begin(), end = buffer.end(); it != end; ++it)
+    {
+        if (it->EventType != KEY_EVENT)
+        {
+            events.push_back(*it);
+            continue;
+        }
+
+        auto lead = *it;
+        char narrow[2]{ lead.Event.KeyEvent.uChar.AsciiChar };
+        int narrowLength = 1;
+
+        if (IsDBCSLeadByteConsole(lead.Event.KeyEvent.uChar.AsciiChar, &gci.CPInfo))
+        {
+            ++it;
+            if (it == end)
+            {
+                // Missing trailing DBCS -> Store the lead for the next call to WriteConsoleInputAImpl.
+                context.StoreWritePartialByteSequence(IInputEvent::Create(lead));
+                break;
+            }
+
+            const auto& trail = *it;
+            if (trail.EventType != KEY_EVENT)
+            {
+                // Invalid input -> Skip.
+                continue;
+            }
+
+            narrow[1] = trail.Event.KeyEvent.uChar.AsciiChar;
+            narrowLength = 2;
+        }
+
+        wchar_t wide[2];
+        const auto length = MultiByteToWideChar(gci.CP, 0, &narrow[0], narrowLength, &wide[0], 2);
+
+        for (int i = 0; i < length; i++)
+        {
+            lead.Event.KeyEvent.uChar.UnicodeChar = wide[i];
+            events.push_back(lead);
+        }
+    }
+
+    auto result = IInputEvent::Create(std::span{events.data(), events.size()});
+    return _WriteConsoleInputWImplHelper(context, result, written, append);
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Writes events to the input buffer
