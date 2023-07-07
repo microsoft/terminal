@@ -93,10 +93,7 @@ try
 #endif
 
     // TODO GH10001: Replace me with REP
-    {
-        auto buffer{ _buffer.lock() };
-        buffer->append(n, c);
-    }
+    _buffer.append(n, c);
     return S_OK;
 }
 CATCH_RETURN();
@@ -132,8 +129,7 @@ CATCH_RETURN();
 
     try
     {
-        auto buffer{ _buffer.lock() };
-        buffer->append(str);
+        _buffer.append(str);
 
         return S_OK;
     }
@@ -144,12 +140,8 @@ CATCH_RETURN();
 {
     if (_hFile)
     {
-        bool fSuccess = false;
-        {
-            auto buffer{ _buffer.lock() };
-            fSuccess = !!WriteFile(_hFile.get(), buffer->data(), gsl::narrow_cast<DWORD>(buffer->size()), nullptr, nullptr);
-            buffer->clear();
-        }
+        auto fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
+        _buffer.clear();
         if (!fSuccess)
         {
             _exitResult = HRESULT_FROM_WIN32(GetLastError());
