@@ -123,11 +123,7 @@ private:
                       _Out_ size_t& eventsWritten,
                       _Out_ bool& setWaitEvent);
 
-    bool _CanCoalesce(const KeyEvent& a, const KeyEvent& b) const noexcept;
-    bool _CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-    bool _CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-    void _HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-
+    bool _CoalesceEvent(const std::unique_ptr<IInputEvent>& inEvent) const noexcept;
     void _HandleTerminalInputCallback(const Microsoft::Console::VirtualTerminal::TerminalInput::StringType& text);
 
 #ifdef UNIT_TESTING
