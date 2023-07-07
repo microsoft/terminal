@@ -20,6 +20,7 @@ Author(s):
 #include "tracing.hpp"
 #include <string>
 #include <functional>
+#include <til/mutex.h>
 
 // fwdecl unittest classes
 #ifdef UNIT_TESTING
@@ -93,7 +94,7 @@ namespace Microsoft::Console::Render
 
     protected:
         wil::unique_hfile _hFile;
-        std::string _buffer;
+        til::shared_mutex<std::string> _buffer;
 
         std::string _formatBuffer;
         std::string _conversionBuffer;

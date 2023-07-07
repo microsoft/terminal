@@ -94,22 +94,6 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_MoveCursor(_deferredCursorPos));
     }
 
-    // If this frame was triggered because we encountered a VT sequence which
-    // required the buffered state to get printed, we don't want to flush this
-    // frame to the pipe. That might result in us rendering half the output of a
-    // particular frame (as emitted by the client).
-    //
-    // Instead, we'll leave this frame in _buffer, and just keep appending to
-    // it as needed.
-    if (_noFlushOnEnd) [[unlikely]]
-    {
-        _noFlushOnEnd = false;
-    }
-    else
-    {
-        RETURN_IF_FAILED(_Flush());
-    }
-
     return S_OK;
 }
 
@@ -122,8 +106,23 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - S_FALSE since we do nothing.
 [[nodiscard]] HRESULT VtEngine::Present() noexcept
-{
-    return S_FALSE;
+{ // If this frame was triggered because we encountered a VT sequence which
+    // required the buffered state to get printed, we don't want to flush this
+    // frame to the pipe. That might result in us rendering half the output of a
+    // particular frame (as emitted by the client).
+    //
+    // Instead, we'll leave this frame in _buffer, and just keep appending to
+    // it as needed.
+    if (_noFlushOnEnd)
+        [[unlikely]]
+        {
+            _noFlushOnEnd = false;
+        }
+    else
+    {
+        RETURN_IF_FAILED(_Flush());
+    }
+    return S_OK;
 }
 
 [[nodiscard]] HRESULT VtEngine::ResetLineTransform() noexcept
@@ -552,10 +551,11 @@ using namespace Microsoft::Console::Types;
     // Write the actual text string. If we're using a soft font, the character
     // set should have already been selected, so we just need to map our internal
     // representation back to ASCII (handled by the _WriteTerminalDrcs method).
-    if (_usingSoftFont) [[unlikely]]
-    {
-        RETURN_IF_FAILED(VtEngine::_WriteTerminalDrcs({ _bufferLine.data(), cchActual }));
-    }
+    if (_usingSoftFont)
+        [[unlikely]]
+        {
+            RETURN_IF_FAILED(VtEngine::_WriteTerminalDrcs({ _bufferLine.data(), cchActual }));
+        }
     else
     {
         RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8({ _bufferLine.data(), cchActual }));

@@ -112,7 +112,10 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         // by prepending a cursor off.
         if (_lastCursorIsVisible != Tribool::False)
         {
-            _buffer.insert(0, "\x1b[?25l");
+            {
+                auto buffer{ _buffer.lock() };
+                buffer->insert(0, "\x1b[?25l");
+            }
             _lastCursorIsVisible = Tribool::False;
         }
         // If the cursor was NOT previously visible, then that's fine! we don't
