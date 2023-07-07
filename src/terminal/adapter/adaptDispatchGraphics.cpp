@@ -21,7 +21,7 @@ using namespace Microsoft::Console::VirtualTerminal::DispatchTypes;
 // - True, if it accepts sub parameters, or else False.
 bool AdaptDispatch::_CanAcceptSubParam(const VTInt /* param */) const noexcept
 {
-    // This is how we would've implemented it if we had sub parameters.
+    // This is how we would have implemented it if we had sub parameters.
     /*  
     using enum DispatchTypes::GraphicsOptionsWithSubParams;
     switch (param)
