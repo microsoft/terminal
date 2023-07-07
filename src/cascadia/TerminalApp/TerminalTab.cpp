@@ -14,6 +14,7 @@ using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Control;
+using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
 using namespace winrt::Windows::System;
@@ -889,6 +890,7 @@ namespace winrt::TerminalApp::implementation
             control.TitleChanged(events.titleToken);
             control.TabColorChanged(events.colorToken);
             control.SetTaskbarProgress(events.taskbarToken);
+            control.ConnectionStateChanged(events.stateToken);
             control.ReadOnlyChanged(events.readOnlyToken);
             control.FocusFollowMouseRequested(events.focusToken);
 
@@ -945,6 +947,14 @@ namespace winrt::TerminalApp::implementation
             if (auto tab{ weakThis.get() })
             {
                 tab->_UpdateProgressState();
+            }
+        });
+
+        events.stateToken = control.ConnectionStateChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+            co_await wil::resume_foreground(dispatcher);
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_UpdateConnectionClosedState();
             }
         });
 
@@ -1054,6 +1064,26 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Set an indicator on the tab if any pane is in a closed connection state
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalTab::_UpdateConnectionClosedState()
+    {
+        ASSERT_UI_THREAD();
+
+        if (_rootPane)
+        {
+            const bool isClosed = _rootPane->WalkTree([&](const auto& p) {
+                return p->GetConnectionState() >= ConnectionState::Closed;
+            });
+
+            _tabStatus.IsConnectionClosed(isClosed);
+        }
+    }
+
+    // Method Description:
     // - Mark the given pane as the active pane in this tab. All other panes
     //   will be marked as inactive. We'll also update our own UI state to
     //   reflect this newly active pane.
@@ -1071,6 +1101,7 @@ namespace winrt::TerminalApp::implementation
         // Update our own title text to match the newly-active pane.
         UpdateTitle();
         _UpdateProgressState();
+        _UpdateConnectionClosedState();
 
         // We need to move the pane to the top of our mru list
         // If its already somewhere in the list, remove it first

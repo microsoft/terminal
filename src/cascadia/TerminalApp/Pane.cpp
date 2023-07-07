@@ -1382,6 +1382,18 @@ Profile Pane::GetFocusedProfile()
 }
 
 // Method Description:
+// - Gets the connection state of this pane. If this Pane is not a leaf this will
+//   return NotConnected.
+// Arguments:
+// - <none>
+// Return Value:
+// - The connection state of this Pane.
+winrt::Microsoft::Terminal::TerminalConnection::ConnectionState Pane::GetConnectionState() const
+{
+    return _connectionState;
+}
+
+// Method Description:
 // - Returns true if this pane was the last pane to be focused in a tree of panes.
 // Arguments:
 // - <none>

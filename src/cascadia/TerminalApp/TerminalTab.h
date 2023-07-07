@@ -132,6 +132,7 @@ namespace winrt::TerminalApp::implementation
             winrt::event_token titleToken;
             winrt::event_token colorToken;
             winrt::event_token taskbarToken;
+            winrt::event_token stateToken;
             winrt::event_token readOnlyToken;
             winrt::event_token focusToken;
 
@@ -179,6 +180,8 @@ namespace winrt::TerminalApp::implementation
         void _RecalculateAndApplyReadOnly();
 
         void _UpdateProgressState();
+
+        void _UpdateConnectionClosedState();
 
         void _DuplicateTab();
 
