@@ -1,14 +1,23 @@
-
 ---
 author: Mike Griese
 created on: 2022-02-16
-last updated: 2023-02-16
+last updated: 2023-07-07
 issue id: TODO!
 ---
 
-# Shell Completions
+# Shell Completions Protocol
 
 ## Abstract
+
+> Note:
+>
+> This is a draft document - mainly just notes from early iterations on the
+> [Suggestions UI]. The protocol laid out in this version of the doc is very
+> much not finalized.
+>
+> It is included with the remainder of my North Star docs, because it was always
+> a part of that story. As we iterate on this protocol, we'll revise this doc
+> with the final protocol.
 
 ## Background
 ### Inspiration
@@ -35,7 +44,7 @@ where
 
 #### Example JSON blobs
 
-Typed text: ```Get-M```
+* Typed text: ```Get-M```
 
 ```jsonc
 [
@@ -62,7 +71,7 @@ Typed text: ```Get-M```
 
 ```
 
-Typed text: ```Get-Module ```
+* Typed text: ```Get-Module ```
 
 ```json
 [
@@ -122,8 +131,10 @@ function Send-Completions {
 
 ### Segoe Fluent Icons
 
-    https://github.com/PowerShell/PowerShellEditorServices/pull/1738
+See: https://github.com/PowerShell/PowerShellEditorServices/pull/1738
 
+| Name                | val | Icon ideas            | description
+| ------------------- | --- | --------------------- | --------------
 | Text                | 0   |                       | An unknown result type, kept as text only.
 | History             | 1   |e81c    History        | A history result type like the items out of get-history.
 | Command             | 2   |ecaa   AppIconDefault  | A command result type like the items out of get-command.
@@ -147,7 +158,7 @@ The following XAML produces a menu that looks like the following:
 
 I included a scrollviewer, because I couldn't seem to find a way to get the tooltip to be wider. I'm sure there's better ways of styling it in real code (vs just in XAML studio).
 
-````xml
+```xml
 <muxc:TeachingTip x:Name="MyTooltip"
                   IsOpen="True"
                   MinWidth="900"
@@ -211,3 +222,5 @@ needs of the Command Palette.
 </td></tr>
 
 </table>
+
+[Suggestions UI]: ./Suggestions-UI.md

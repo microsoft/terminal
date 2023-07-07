@@ -454,6 +454,16 @@ even wrong responses can be valuable. They can help to inspire human creativity.
 A wrong response might help point the user in the direction of the correct
 solution.
 
+## Addenda: Command-line North Star
+
+This document is solely Terminal-oriented. Everything in here is features that
+the Terminal can provide to improve the developer experience on Windows. What's
+not covered at all are ways we can improve the commandline tooling itself on
+Windows. Things like adding more built-in commandline utilities. Updating
+existing ones (`tar`, `curl`). There's no discussion of improvements to our
+shell offerings (`cmd` or PowerShell). This is another valuable discussion we
+should have, but I feel it warrants its own doc.
+
 ## Addenda: Shell Integration metrics from VsCode
 
 In the first month that Shell Integration was enabled by default for all VsCode users:

@@ -7,6 +7,16 @@ issue id: 1595
 
 # Windows Terminal - Tasks
 
+> Note:
+>
+> This is a draft document. This doc largely predates the creation of the
+> [Suggestions UI]. Many of the elements of this doc need to be updated to
+> reflect newer revisions to the Suggestions UI.
+>
+> It is included with the remainder of my North Star docs, because it was always
+> a part of that story. A future revision will come through to polish this doc
+> into a final form.
+
 ## Abstract
 
 The command line is a highly powerful tool. However, it's power is dependent on
@@ -115,25 +125,32 @@ It will delight developers.
 
 Some examples from VsCode, Warp. These are meant to be illustrative of what
 these menus already look like in the wild:
+
 ![](img/vscode-tasks-000.gif)
+
 ![](img/warp-workflows-000.gif)
 
 
 The following gif was a prototype of [shell-driven autocompletion]. This was
 more for suggestions from the shell, to the Terminal, but is helpful for
 visualizing what this might look like in the Windows Terminal.
+
 ![](img/shell-autocomplete-jul-2022-000.gif)
 
 A prototype of the recent commands UI, powered by shell integration:
+
 ![](img/command-history-suggestions.gif)
 
 A prototype of the tasks UI, powered by the user's settings:
+
 ![](img/tasks-suggestions.gif)
 
 A prototype of saving a command directly to the user's settings, then invoking it via the tasks UI
+
 ![](img/save-command.gif)
 
 A prototype of reading tasks from the CWD
+
 ![](img/tasks-from-cwd.gif)
 
 <hr> <!-- end of onepager -->
