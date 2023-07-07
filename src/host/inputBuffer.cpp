@@ -735,6 +735,19 @@ bool InputBuffer::WriteMouseEvent(til::point position, const unsigned int button
     return false;
 }
 
+// Ctrl-S is traditionally considered an alias for the pause key.
+// This returns true if it's either of the two.
+static bool IsPauseKey(const KEY_EVENT_RECORD& event)
+{
+    if (event.wVirtualKeyCode == VK_PAUSE)
+    {
+        return true;
+    }
+
+    const auto ctrlButNotAlt = WI_IsAnyFlagSet(event.dwControlKeyState, CTRL_PRESSED) && WI_AreAllFlagsClear(event.dwControlKeyState, ALT_PRESSED);
+    return ctrlButNotAlt && event.wVirtualKeyCode == L'S';
+}
+
 // Routine Description:
 // - Coalesces input events and transfers them to storage queue.
 // Arguments:
@@ -770,7 +783,7 @@ void InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>&
                 continue;
             }
             // intercept control-s
-            if (WI_IsFlagSet(InputMode, ENABLE_LINE_INPUT) && static_cast<const KeyEvent*>(inEvent.get())->GetVirtualKeyCode() == VK_PAUSE)
+            if (WI_IsFlagSet(InputMode, ENABLE_LINE_INPUT) && IsPauseKey(inEvent->ToInputRecord().Event.KeyEvent))
             {
                 WI_SetFlag(gci.Flags, CONSOLE_SUSPENDED);
                 continue;
