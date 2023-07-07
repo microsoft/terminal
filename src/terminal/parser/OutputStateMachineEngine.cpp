@@ -1105,7 +1105,7 @@ bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view strin
 }
 
 // Routine Description:
-// - Takes a sequence id (parameter) and determines if it accepts sub parameters.
+// - Takes a sequence id ("final byte") and determines if it accepts sub parameters.
 // Arguments:
 // - id - The sequence id to check for.
 // Return Value:
