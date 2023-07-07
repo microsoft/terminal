@@ -16,6 +16,11 @@
     -->
     <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+    <!--
+      Disable automatic provider generation so that we can control when they initialize.
+      We do this so we can delay the Settings UI DLL loading until absolutely necessary.
+    -->
+    <XamlCodeGenerationControlFlags>DoNotGenerateOtherProviders</XamlCodeGenerationControlFlags>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
@@ -36,6 +41,9 @@
   </ItemGroup>
   <!-- When we add other user controls, they should go in here as so: -->
   <ItemGroup>
+    <Page Include="AboutDialog.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MinMaxCloseControl.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -132,11 +140,23 @@
     <ClInclude Include="AppKeyBindings.h">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="AboutDialog.h">
+      <DependentUpon>AboutDialog.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="App.h">
       <DependentUpon>App.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="AppLogic.h">
       <DependentUpon>AppLogic.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ContentManager.h">
+      <DependentUpon>TerminalPage.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TerminalWindow.h">
+      <DependentUpon>TerminalWindow.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SettingsLoadEventArgs.h">
+      <DependentUpon>TerminalWindow.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Toast.h" />
   </ItemGroup>
@@ -222,6 +242,9 @@
     <ClCompile Include="ShortcutActionDispatch.cpp">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="AboutDialog.cpp">
+      <DependentUpon>AboutDialog.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="App.cpp">
       <DependentUpon>App.xaml</DependentUpon>
     </ClCompile>
@@ -230,6 +253,12 @@
     </ClCompile>
     <ClCompile Include="AppLogic.cpp">
       <DependentUpon>AppLogic.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ContentManager.cpp">
+      <DependentUpon>TerminalPage.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TerminalWindow.cpp">
+      <DependentUpon>TerminalWindow.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
@@ -241,6 +270,9 @@
     <Midl Include="ActionPaletteItem.idl" />
     <Midl Include="CommandLinePaletteItem.idl" />
     <Midl Include="IDirectKeyListener.idl" />
+    <Midl Include="AboutDialog.idl">
+      <DependentUpon>AboutDialog.xaml</DependentUpon>
+    </Midl>
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
@@ -252,6 +284,7 @@
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
     <Midl Include="AppLogic.idl" />
+    <Midl Include="TerminalWindow.idl" />
     <Midl Include="MinMaxCloseControl.idl">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -300,7 +333,6 @@
     <PRIResource Include="Resources\en-US\Resources.resw" />
     <PRIResource Include="Resources\en-US\ContextMenu.resw" />
     <OCResourceDirectory Include="Resources" />
-    <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>

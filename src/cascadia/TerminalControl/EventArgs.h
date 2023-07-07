@@ -5,6 +5,7 @@
 
 #include "TitleChangedEventArgs.g.h"
 #include "CopyToClipboardEventArgs.g.h"
+#include "ContextMenuRequestedEventArgs.g.h"
 #include "PasteFromClipboardEventArgs.g.h"
 #include "OpenHyperlinkEventArgs.g.h"
 #include "NoticeEventArgs.g.h"
@@ -51,6 +52,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         hstring _html;
         hstring _rtf;
         Windows::Foundation::IReference<CopyFormat> _formats;
+    };
+
+    struct ContextMenuRequestedEventArgs : public ContextMenuRequestedEventArgsT<ContextMenuRequestedEventArgs>
+    {
+    public:
+        ContextMenuRequestedEventArgs(winrt::Windows::Foundation::Point pos) :
+            _Position(pos) {}
+
+        WINRT_PROPERTY(winrt::Windows::Foundation::Point, Position);
     };
 
     struct PasteFromClipboardEventArgs : public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
@@ -169,4 +179,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         WINRT_PROPERTY(bool, ClearMarkers, false);
     };
+}
+
+namespace winrt::Microsoft::Terminal::Control::factory_implementation
+{
+    BASIC_FACTORY(OpenHyperlinkEventArgs);
 }

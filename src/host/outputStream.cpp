@@ -114,90 +114,49 @@ void ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
 }
 
 // Routine Description:
-// - Sets the ENABLE_WRAP_AT_EOL_OUTPUT mode. This controls whether the cursor moves
-//     to the beginning of the next row when it reaches the end of the current row.
+// - Sets the state of one of the system modes.
 // Arguments:
-// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
+// - mode - The mode being updated.
+// - enabled - True to enable the mode, false to disable it.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::SetAutoWrapMode(const bool wrapAtEOL)
+void ConhostInternalGetSet::SetSystemMode(const Mode mode, const bool enabled)
 {
-    auto& outputMode = _io.GetActiveOutputBuffer().OutputMode;
-    WI_UpdateFlag(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT, wrapAtEOL);
+    switch (mode)
+    {
+    case Mode::AutoWrap:
+        WI_UpdateFlag(_io.GetActiveOutputBuffer().OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT, enabled);
+        break;
+    case Mode::LineFeed:
+        WI_UpdateFlag(_io.GetActiveOutputBuffer().OutputMode, DISABLE_NEWLINE_AUTO_RETURN, !enabled);
+        break;
+    case Mode::BracketedPaste:
+        ServiceLocator::LocateGlobals().getConsoleInformation().SetBracketedPasteMode(enabled);
+        break;
+    default:
+        THROW_HR(E_INVALIDARG);
+    }
 }
 
 // Routine Description:
-// - Retrieves the current state of ENABLE_WRAP_AT_EOL_OUTPUT mode.
+// - Retrieves the current state of one of the system modes.
 // Arguments:
-// - <none>
+// - mode - The mode being queried.
 // Return Value:
 // - true if the mode is enabled. false otherwise.
-bool ConhostInternalGetSet::GetAutoWrapMode() const
+bool ConhostInternalGetSet::GetSystemMode(const Mode mode) const
 {
-    const auto outputMode = _io.GetActiveOutputBuffer().OutputMode;
-    return WI_IsFlagSet(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
-}
-
-// Routine Description:
-// - Sets the top and bottom scrolling margins for the current page. This creates
-//     a subsection of the screen that scrolls when input reaches the end of the
-//     region, leaving the rest of the screen untouched.
-// Arguments:
-// - scrollMargins - A rect who's Top and Bottom members will be used to set
-//     the new values of the top and bottom margins. If (0,0), then the margins
-//     will be disabled. NOTE: This is a rect in the case that we'll need the
-//     left and right margins in the future.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetScrollingRegion(const til::inclusive_rect& scrollMargins)
-{
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    auto srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
-    srScrollMargins.top = scrollMargins.top;
-    srScrollMargins.bottom = scrollMargins.bottom;
-    screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
-}
-
-// Method Description:
-// - Retrieves the current Line Feed/New Line (LNM) mode.
-// Arguments:
-// - None
-// Return Value:
-// - true if a line feed also produces a carriage return. false otherwise.
-bool ConhostInternalGetSet::GetLineFeedMode() const
-{
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    return WI_IsFlagClear(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
-}
-
-// Routine Description:
-// - Performs a line feed, possibly preceded by carriage return.
-// Arguments:
-// - withReturn - Set to true if a carriage return should be performed as well.
-// - wrapForced - Set to true is the line feed was the result of the line wrapping.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::LineFeed(const bool withReturn, const bool wrapForced)
-{
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    auto& textBuffer = screenInfo.GetTextBuffer();
-    auto cursorPosition = textBuffer.GetCursor().GetPosition();
-
-    // If the line was forced to wrap, set the wrap status.
-    // When explicitly moving down a row, clear the wrap status.
-    textBuffer.GetRowByOffset(cursorPosition.y).SetWrapForced(wrapForced);
-
-    cursorPosition.y += 1;
-    if (withReturn)
+    switch (mode)
     {
-        cursorPosition.x = 0;
+    case Mode::AutoWrap:
+        return WI_IsFlagSet(_io.GetActiveOutputBuffer().OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
+    case Mode::LineFeed:
+        return WI_IsFlagClear(_io.GetActiveOutputBuffer().OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
+    case Mode::BracketedPaste:
+        return ServiceLocator::LocateGlobals().getConsoleInformation().GetBracketedPasteMode();
+    default:
+        THROW_HR(E_INVALIDARG);
     }
-    else
-    {
-        cursorPosition = textBuffer.ClampPositionWithinLine(cursorPosition);
-    }
-
-    THROW_IF_NTSTATUS_FAILED(AdjustCursorPosition(screenInfo, cursorPosition, FALSE, nullptr));
 }
 
 // Routine Description:
@@ -224,11 +183,13 @@ void ConhostInternalGetSet::SetWindowTitle(std::wstring_view title)
 // - Swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
 //     screen buffer and an alternate. This creates a new alternate, and switches to it.
 //     If there is an already existing alternate, it is discarded.
+// Arguments:
+// - attrs - the attributes the buffer is initialized with.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::UseAlternateScreenBuffer()
+void ConhostInternalGetSet::UseAlternateScreenBuffer(const TextAttribute& attrs)
 {
-    THROW_IF_NTSTATUS_FAILED(_io.GetActiveOutputBuffer().UseAlternateScreenBuffer());
+    THROW_IF_NTSTATUS_FAILED(_io.GetActiveOutputBuffer().UseAlternateScreenBuffer(attrs));
 }
 
 // Routine Description:
@@ -293,33 +254,6 @@ void ConhostInternalGetSet::SetConsoleOutputCP(const unsigned int codepage)
 unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
 {
     return ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
-}
-
-// Routine Description:
-// - Sets the XTerm bracketed paste mode. This controls whether pasted content is
-//     bracketed with control sequences to differentiate it from typed text.
-// Arguments:
-// - enable - set to true to enable bracketing, false to disable.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetBracketedPasteMode(const bool enabled)
-{
-    // TODO GH#395: Bracketed Paste Mode is not yet supported in conhost, but we
-    // still keep track of the state so it can be reported by DECRQM.
-    _bracketedPasteMode = enabled;
-}
-
-// Routine Description:
-// - Gets the current state of XTerm bracketed paste mode.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the mode is enabled, false if not, nullopt if unsupported.
-std::optional<bool> ConhostInternalGetSet::GetBracketedPasteMode() const
-{
-    // TODO GH#395: Bracketed Paste Mode is not yet supported in conhost, so we
-    // only report the state if we're tracking it for conpty.
-    return IsConsolePty() ? std::optional{ _bracketedPasteMode } : std::nullopt;
 }
 
 // Routine Description:
@@ -394,6 +328,14 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
     auto api = ServiceLocator::LocateGlobals().api;
     auto& screenInfo = _io.GetActiveOutputBuffer();
 
+    // We need to save the attributes separately, since the wAttributes field in
+    // CONSOLE_SCREEN_BUFFER_INFOEX is not capable of representing the extended
+    // attribute values, and can end up corrupting that data when restored.
+    const auto attributes = screenInfo.GetTextBuffer().GetCurrentAttributes();
+    const auto restoreAttributes = wil::scope_exit([&] {
+        screenInfo.GetTextBuffer().SetCurrentAttributes(attributes);
+    });
+
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     api->GetConsoleScreenBufferInfoExImpl(screenInfo, csbiex);
@@ -464,13 +406,32 @@ bool ConhostInternalGetSet::IsVtInputEnabled() const
 void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRect)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
-    if (screenInfo.HasAccessibilityEventing())
+    if (screenInfo.HasAccessibilityEventing() && changedRect)
     {
         screenInfo.NotifyAccessibilityEventing(
             changedRect.left,
             changedRect.top,
             changedRect.right - 1,
             changedRect.bottom - 1);
+    }
+}
+
+// Routine Description:
+// - Implements conhost-specific behavior when the buffer is rotated.
+// Arguments:
+// - delta - the number of cycles that the buffer has rotated.
+// Return value:
+// - <none>
+void ConhostInternalGetSet::NotifyBufferRotation(const int delta)
+{
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    if (screenInfo.IsActiveScreenBuffer())
+    {
+        auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+        if (pNotifier)
+        {
+            pNotifier->NotifyConsoleUpdateScrollEvent(0, -delta);
+        }
     }
 }
 

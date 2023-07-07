@@ -41,7 +41,7 @@ namespace Microsoft::Console::Render
                                                    const til::CoordType targetRow,
                                                    const til::CoordType viewportLeft) noexcept override;
 
-        [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept override;
+        [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
 
         [[nodiscard]] HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept override;
 

@@ -42,10 +42,14 @@ std::wstring VsDevCmdGenerator::GetProfileCommandLine(const VsSetupConfiguration
     commandLine.reserve(256);
     commandLine.append(LR"(cmd.exe /k ")");
     commandLine.append(GetDevCmdScriptPath(instance));
+    // The "-startdir" parameter will prevent "vsdevcmd" from automatically
+    // setting the shell path so the path in the profile will be used instead.
 #if defined(_M_ARM64)
-    commandLine.append(LR"(" -arch=arm64 -host_arch=x64)");
+    commandLine.append(LR"(" -startdir=none -arch=arm64 -host_arch=x64)");
 #elif defined(_M_AMD64)
-    commandLine.append(LR"(" -arch=x64 -host_arch=x64)");
+    commandLine.append(LR"(" -startdir=none -arch=x64 -host_arch=x64)");
+#else
+    commandLine.append(LR"(" -startdir=none)");
 #endif
     return commandLine;
 }

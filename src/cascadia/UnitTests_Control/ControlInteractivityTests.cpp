@@ -1033,8 +1033,9 @@ namespace ControlUnitTests
                                       cursorPosition1.to_core_point());
 
         Log::Comment(L" --- Resize the terminal to be 10 columns wider ---");
-        const auto newSizeInDips{ til::size{ 40, 20 } * fontSize };
-        core->SizeChanged(newSizeInDips.width, newSizeInDips.height);
+        const auto newWidth = 40.0f * fontSize.width;
+        const auto newHeight = 20.0f * fontSize.height;
+        core->SizeChanged(newWidth, newHeight);
 
         Log::Comment(L" --- Click on a spot that's NOW INSIDE the buffer ---");
         // (32 + 35 + 1) = 68 = 'D'

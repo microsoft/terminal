@@ -151,47 +151,15 @@
     const auto pInputReadHandleData = pHandleData->GetClientInput();
 
     std::unique_ptr<IWaitRoutine> waiter;
-    HRESULT hr;
-    std::deque<std::unique_ptr<IInputEvent>> outEvents;
-    const auto eventsToRead = cRecords;
-    if (a->Unicode)
-    {
-        if (fIsPeek)
-        {
-            hr = m->_pApiRoutines->PeekConsoleInputWImpl(*pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         *pInputReadHandleData,
-                                                         waiter);
-        }
-        else
-        {
-            hr = m->_pApiRoutines->ReadConsoleInputWImpl(*pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         *pInputReadHandleData,
-                                                         waiter);
-        }
-    }
-    else
-    {
-        if (fIsPeek)
-        {
-            hr = m->_pApiRoutines->PeekConsoleInputAImpl(*pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         *pInputReadHandleData,
-                                                         waiter);
-        }
-        else
-        {
-            hr = m->_pApiRoutines->ReadConsoleInputAImpl(*pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         *pInputReadHandleData,
-                                                         waiter);
-        }
-    }
+    InputEventQueue outEvents;
+    auto hr = m->_pApiRoutines->GetConsoleInputImpl(
+        *pInputBuffer,
+        outEvents,
+        cRecords,
+        *pInputReadHandleData,
+        a->Unicode,
+        fIsPeek,
+        waiter);
 
     // We must return the number of records in the message payload (to alert the client)
     // as well as in the message headers (below in SetReplyInformation) to alert the driver.
@@ -270,13 +238,8 @@
     // Get output parameter buffer.
     PVOID pvBuffer;
     ULONG cbBufferSize;
-    // TODO: This is dumb. We should find out how much we need, not guess.
-    // If the request is not in Unicode mode, we must allocate an output buffer that is twice as big as the actual caller buffer.
-    RETURN_IF_FAILED(m->GetAugmentedOutputBuffer((a->Unicode != FALSE) ? 1 : 2,
-                                                 &pvBuffer,
-                                                 &cbBufferSize));
+    RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBufferSize));
 
-    // TODO: This is also rather strange and will also probably make more sense if we stop guessing that we need 2x buffer to convert.
     // This might need to go on the other side of the fence (inside host) because the server doesn't know what we're going to do with initial num bytes.
     // (This restriction exists because it's going to copy initial into the final buffer, but we don't know that.)
     RETURN_HR_IF(E_INVALIDARG, a->InitialNumBytes > cbBufferSize);

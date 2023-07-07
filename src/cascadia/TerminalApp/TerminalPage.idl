@@ -5,11 +5,38 @@ import "IDirectKeyListener.idl";
 
 namespace TerminalApp
 {
-    delegate void LastTabClosedEventArgs();
+    [default_interface] runtimeclass ContentManager
+    {
+        Microsoft.Terminal.Control.ControlInteractivity CreateCore(Microsoft.Terminal.Control.IControlSettings settings,
+                                                                   Microsoft.Terminal.Control.IControlAppearance unfocusedAppearance,
+                                                                   Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+
+        Microsoft.Terminal.Control.ControlInteractivity TryLookupCore(UInt64 id);
+        void Detach(Microsoft.Terminal.Control.TermControl control);
+    }
+
+    [default_interface] runtimeclass LastTabClosedEventArgs
+    {
+        Boolean ClearPersistedState { get; };
+    };
 
     [default_interface] runtimeclass RenameWindowRequestedArgs
     {
         String ProposedName { get; };
+    };
+    [default_interface] runtimeclass RequestMoveContentArgs
+    {
+        String Window { get; };
+        String Content { get; };
+        UInt32 TabIndex { get; };
+        Windows.Foundation.IReference<Windows.Foundation.Point> WindowPosition { get; };
+    };
+    [default_interface] runtimeclass RequestReceiveContentArgs {
+        RequestReceiveContentArgs(UInt64 src, UInt64 tgt, UInt32 tabIndex);
+
+        UInt64 SourceWindow { get; };
+        UInt64 TargetWindow { get; };
+        UInt32 TabIndex { get; };
     };
 
     interface IDialogPresenter
@@ -17,9 +44,21 @@ namespace TerminalApp
         Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
     };
 
+    [default_interface] runtimeclass WindowProperties : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String WindowName { get; };
+        UInt64 WindowId { get; };
+        String WindowNameForDisplay { get; };
+        String WindowIdForDisplay { get; };
+
+        String VirtualWorkingDirectory { get; set; };
+
+        Boolean IsQuakeWindow();
+    };
+
     [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener
     {
-        TerminalPage();
+        TerminalPage(WindowProperties properties, ContentManager manager);
 
         // XAML bound properties
         String ApplicationDisplayName { get; };
@@ -29,13 +68,9 @@ namespace TerminalApp
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
 
+        WindowProperties WindowProperties { get; };
         void IdentifyWindow();
-        String WindowName;
-        UInt64 WindowId;
-        String WindowNameForDisplay { get; };
-        String WindowIdForDisplay { get; };
         void RenameFailed();
-        Boolean IsQuakeWindow();
 
         // We cannot use the default XAML APIs because we want to make sure
         // that there's only one application-global dialog visible at a time,
@@ -48,6 +83,7 @@ namespace TerminalApp
 
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
         void WindowActivated(Boolean activated);
+        void SendContentToOther(RequestReceiveContentArgs args);
 
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
@@ -55,14 +91,17 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> Initialized;
+        event Windows.Foundation.TypedEventHandler<Object, Object> Initialized;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
         event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.ShowWindowArgs> ShowWindowChanged;
+
+        event Windows.Foundation.TypedEventHandler<Object, RequestMoveContentArgs> RequestMoveContent;
+        event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> RequestReceiveContent;
     }
 }

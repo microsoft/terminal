@@ -632,26 +632,19 @@ class BitmapTests
         _checkBits(expectedSet, bitmap);
     }
 
-    TEST_METHOD(SetResetExceptions)
+    TEST_METHOD(SetResetOutOfBounds)
     {
         til::bitmap map{ til::size{ 4, 4 } };
         Log::Comment(L"1.) SetPoint out of bounds.");
-        {
-            auto fn = [&]() {
-                map.set(til::point{ 10, 10 });
-            };
-
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
-        }
+        map.set(til::point{ 10, 10 });
 
         Log::Comment(L"2.) SetRectangle out of bounds.");
-        {
-            auto fn = [&]() {
-                map.set(til::rect{ til::point{ 2, 2 }, til::size{ 10, 10 } });
-            };
+        map.set(til::rect{ til::point{ 2, 2 }, til::size{ 10, 10 } });
 
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
-        }
+        const auto runs = map.runs();
+        VERIFY_ARE_EQUAL(2u, runs.size());
+        VERIFY_ARE_EQUAL(til::rect(2, 2, 4, 3), runs[0]);
+        VERIFY_ARE_EQUAL(til::rect(2, 3, 4, 4), runs[1]);
     }
 
     TEST_METHOD(Resize)

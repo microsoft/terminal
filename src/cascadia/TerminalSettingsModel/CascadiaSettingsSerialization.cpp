@@ -18,9 +18,8 @@
 #endif
 
 // The following files are generated at build time into the "Generated Files" directory.
-// defaults(-universal).h is a file containing the default json settings in a std::string_view.
+// defaults.h is a file containing the default json settings in a std::string_view.
 #include "defaults.h"
-#include "defaults-universal.h"
 // userDefault.h is like the above, but with a default template for the user's settings.json.
 #include <LegacyProfileGeneratorNamespaces.h>
 
@@ -52,6 +51,18 @@ static constexpr std::string_view ThemesKey{ "themes" };
 constexpr std::wstring_view systemThemeName{ L"system" };
 constexpr std::wstring_view darkThemeName{ L"dark" };
 constexpr std::wstring_view lightThemeName{ L"light" };
+constexpr std::wstring_view legacySystemThemeName{ L"legacySystem" };
+constexpr std::wstring_view legacyDarkThemeName{ L"legacyDark" };
+constexpr std::wstring_view legacyLightThemeName{ L"legacyLight" };
+
+static constexpr std::array builtinThemes{
+    systemThemeName,
+    lightThemeName,
+    darkThemeName,
+    legacySystemThemeName,
+    legacyLightThemeName,
+    legacyDarkThemeName,
+};
 
 static constexpr std::wstring_view jsonExtension{ L".json" };
 static constexpr std::wstring_view FragmentsSubDirectory{ L"\\Fragments" };
@@ -500,7 +511,7 @@ Json::Value SettingsLoader::_parseJSON(const std::string_view& content)
 {
     Json::Value json;
     std::string errs;
-    const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+    const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
 
     if (!reader->parse(content.data(), content.data() + content.size(), &json, &errs))
     {
@@ -562,8 +573,10 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
         {
             if (const auto theme = Theme::FromJson(themeJson))
             {
+                const auto& name{ theme->Name() };
+
                 if (origin != OriginTag::InBox &&
-                    (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName))
+                    (std::ranges::find(builtinThemes, name) != builtinThemes.end()))
                 {
                     // If the theme didn't come from the in-box themes, and its
                     // name was one of the reserved names, then just ignore it.
@@ -822,7 +835,7 @@ try
     // read settings.json from the Release stable file path if it exists.
     // Otherwise use default settings file provided from original settings file
     bool releaseSettingExists = false;
-    if (firstTimeSetup)
+    if (firstTimeSetup && !IsPortableMode())
     {
 #if defined(WT_BRANDING_PREVIEW)
         {
@@ -953,10 +966,16 @@ void CascadiaSettings::_researchOnLoad()
         // light: 1
         // dark: 2
         // a custom theme: 3
-        const auto themeChoice = themeInUse == L"system" ? 0 :
-                                 themeInUse == L"light"  ? 1 :
-                                 themeInUse == L"dark"   ? 2 :
-                                                           3;
+        // system (legacy): 4
+        // light (legacy): 5
+        // dark (legacy): 6
+        const auto themeChoice = themeInUse == L"system"       ? 0 :
+                                 themeInUse == L"light"        ? 1 :
+                                 themeInUse == L"dark"         ? 2 :
+                                 themeInUse == L"legacyDark"   ? 4 :
+                                 themeInUse == L"legacyLight"  ? 5 :
+                                 themeInUse == L"legacySystem" ? 6 :
+                                                                 3;
 
         TraceLoggingWrite(
             g_hSettingsModelProvider,
@@ -1008,17 +1027,6 @@ void CascadiaSettings::_researchOnLoad()
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
-}
-
-// Function Description:
-// - Loads a batch of settings curated for the Universal variant of the terminal app
-// Arguments:
-// - <none>
-// Return Value:
-// - a unique_ptr to a CascadiaSettings with the connection types and settings for Universal terminal
-Model::CascadiaSettings CascadiaSettings::LoadUniversal()
-{
-    return *winrt::make_self<CascadiaSettings>(std::string_view{}, DefaultUniversalJson);
 }
 
 // Function Description:
@@ -1110,6 +1118,8 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _resolveDefaultProfile();
     _resolveNewTabMenuProfiles();
     _validateSettings();
+
+    ExpandCommands();
 }
 
 // Method Description:
@@ -1158,6 +1168,11 @@ winrt::hstring CascadiaSettings::_calculateHash(std::string_view settings, const
 winrt::hstring CascadiaSettings::SettingsPath()
 {
     return winrt::hstring{ _settingsPath().native() };
+}
+
+bool CascadiaSettings::IsPortableMode()
+{
+    return Model::IsPortableMode();
 }
 
 winrt::hstring CascadiaSettings::DefaultSettingsPath()
@@ -1257,7 +1272,8 @@ Json::Value CascadiaSettings::ToJson() const
         // Ignore the built in themes, when serializing the themes back out. We
         // don't want to re-include them in the user settings file.
         const auto theme{ winrt::get_self<Theme>(entry.Value()) };
-        if (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName)
+        const auto& name{ theme->Name() };
+        if (std::ranges::find(builtinThemes, name) != builtinThemes.end())
         {
             continue;
         }

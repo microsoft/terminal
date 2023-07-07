@@ -1,0 +1,62 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<ContentDialog x:Class="TerminalApp.AboutDialog"
+               xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+               xmlns:local="using:TerminalApp"
+               xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+               xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+               x:Uid="AboutDialog"
+               DefaultButton="Close"
+               PrimaryButtonClick="_SendFeedbackOnClick"
+               Style="{StaticResource DefaultContentDialogStyle}"
+               mc:Ignorable="d">
+
+    <StackPanel Orientation="Vertical">
+        <TextBlock IsTextSelectionEnabled="True">
+            <Run AutomationProperties.HeadingLevel="1"
+                 Text="{x:Bind ApplicationDisplayName}" /> <LineBreak />
+            <Run x:Uid="AboutDialog_VersionLabel" />
+            <Run Text="{x:Bind ApplicationVersion}" />
+        </TextBlock>
+
+        <StackPanel Orientation="Vertical">
+            <StackPanel Padding="0,4,0,4"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Visibility="{x:Bind CheckingForUpdates, Mode=OneWay}">
+                <mux:ProgressRing Width="16"
+                                  Height="16"
+                                  IsActive="True"
+                                  IsIndeterminate="True" />
+                <TextBlock x:Uid="AboutDialog_CheckingForUpdatesLabel"
+                           Padding="4,0,0,0" />
+            </StackPanel>
+            <StackPanel Padding="0,4,0,4"
+                        VerticalAlignment="Center"
+                        Orientation="Vertical"
+                        Visibility="{x:Bind UpdatesAvailable, Mode=OneWay}">
+                <TextBlock IsTextSelectionEnabled="False">
+                    <Run x:Uid="AboutDialog_UpdateAvailableLabel" />
+                </TextBlock>
+                <!-- <Button x:Uid="AboutDialog_InstallUpdateButton"
+                        Margin="0" />-->
+            </StackPanel>
+        </StackPanel>
+
+        <HyperlinkButton x:Uid="AboutDialog_SourceCodeLink"
+                         NavigateUri="https://go.microsoft.com/fwlink/?linkid=2203152" />
+        <HyperlinkButton x:Uid="AboutDialog_DocumentationLink"
+                         NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125416" />
+        <HyperlinkButton x:Uid="AboutDialog_ReleaseNotesLink"
+                         NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125417" />
+        <HyperlinkButton x:Uid="AboutDialog_PrivacyPolicyLink"
+                         NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125418" />
+        <HyperlinkButton x:Uid="AboutDialog_ThirdPartyNoticesLink"
+                         Click="_ThirdPartyNoticesOnClick" />
+    </StackPanel>
+</ContentDialog>
+

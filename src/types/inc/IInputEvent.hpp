@@ -64,6 +64,8 @@ public:
 
 inline IInputEvent::~IInputEvent() = default;
 
+using InputEventQueue = std::deque<std::unique_ptr<IInputEvent>>;
+
 #ifdef UNIT_TESTING
 std::wostream& operator<<(std::wostream& stream, const IInputEvent* pEvent);
 #endif
@@ -513,14 +515,12 @@ class FocusEvent : public IInputEvent
 {
 public:
     constexpr FocusEvent(const FOCUS_EVENT_RECORD& record) :
-        _focus{ !!record.bSetFocus },
-        _cameFromApi{ true }
+        _focus{ !!record.bSetFocus }
     {
     }
 
     constexpr FocusEvent(const bool focus) :
-        _focus{ focus },
-        _cameFromApi{ false }
+        _focus{ focus }
     {
     }
 
@@ -540,15 +540,8 @@ public:
 
     void SetFocus(const bool focus) noexcept;
 
-    // BODGY - see FocusEvent.cpp for details.
-    constexpr bool CameFromApi() const noexcept
-    {
-        return _cameFromApi;
-    }
-
 private:
     bool _focus;
-    bool _cameFromApi;
 
 #ifdef UNIT_TESTING
     friend std::wostream& operator<<(std::wostream& stream, const FocusEvent* const pFocusEvent);

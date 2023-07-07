@@ -78,6 +78,8 @@ ok'd
 overlined
 pipeline
 postmodern
+Powerline
+powerline
 ptys
 qof
 qps
@@ -101,6 +103,7 @@ TLDR
 tokenizes
 tonos
 toolset
+truthiness
 tshe
 ubuntu
 uiatextrange

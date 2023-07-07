@@ -47,7 +47,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _pAccessibilityNotifier{ pNotifier },
     _api{ *this },
     _stateMachine{ nullptr },
-    _scrollMargins{ Viewport::Empty() },
     _viewport(Viewport::Empty()),
     _psiAlternateBuffer{ nullptr },
     _psiMainBuffer{ nullptr },
@@ -126,7 +125,7 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
 
         const auto status = pScreen->_InitializeOutputStateMachine();
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             *ppScreen = pScreen;
         }
@@ -1562,7 +1561,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         status = NTSTATUS_FROM_HRESULT(ResizeTraditional(coordNewScreenSize));
     }
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         if (HasAccessibilityEventing())
         {
@@ -1799,37 +1798,6 @@ void SCREEN_INFORMATION::MakeCursorVisible(const til::point CursorPosition)
     }
 }
 
-// Method Description:
-// - Sets the scroll margins for this buffer.
-// Arguments:
-// - margins: The new values of the scroll margins, *relative to the viewport*
-void SCREEN_INFORMATION::SetScrollMargins(const Viewport margins)
-{
-    _scrollMargins = margins;
-}
-
-// Method Description:
-// - Returns the scrolling margins boundaries for this screen buffer, relative
-//      to the origin of the text buffer. Most callers will want the absolute
-//      positions of the margins, though they are set and stored relative to
-//      origin of the viewport.
-// Arguments:
-// - <none>
-Viewport SCREEN_INFORMATION::GetAbsoluteScrollMargins() const
-{
-    return _viewport.ConvertFromOrigin(_scrollMargins);
-}
-
-// Method Description:
-// - Returns the scrolling margins boundaries for this screen buffer, relative
-//      to the current viewport.
-// Arguments:
-// - <none>
-Viewport SCREEN_INFORMATION::GetRelativeScrollMargins() const
-{
-    return _scrollMargins;
-}
-
 // Routine Description:
 // - Retrieves the active buffer of this buffer. If this buffer has an
 //     alternate buffer, this is the alternate buffer. Otherwise, it is this buffer.
@@ -1879,20 +1847,16 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
 //     machine with the main buffer it belongs to.
 // TODO: MSFT:19817348 Don't create alt screenbuffer's via an out SCREEN_INFORMATION**
 // Parameters:
+// - initAttributes - the attributes the buffer is initialized with.
 // - ppsiNewScreenBuffer - a pointer to receive the newly created buffer.
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]] NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer)
+[[nodiscard]] NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(const TextAttribute& initAttributes, _Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer)
 {
     // Create new screen buffer.
     auto WindowSize = _viewport.Dimensions();
 
     const auto& existingFont = GetCurrentFont();
-
-    // The buffer needs to be initialized with the standard erase attributes,
-    // i.e. the current background color, but with no meta attributes set.
-    auto initAttributes = GetAttributes();
-    initAttributes.SetStandardErase();
 
     auto Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
                                                      existingFont,
@@ -1901,7 +1865,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
                                                      GetPopupAttributes(),
                                                      Cursor::CURSOR_SMALL_SIZE,
                                                      ppsiNewScreenBuffer);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         // Update the alt buffer's cursor style, visibility, and position to match our own.
         auto& myCursor = GetTextBuffer().GetCursor();
@@ -1993,10 +1957,10 @@ void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
 //     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
 //     existing alternate, it is discarded. This allows applications to retain one HANDLE, and switch which buffer it points to seamlessly.
 // Parameters:
-// - None
+// - initAttributes - the attributes the buffer is initialized with.
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]] NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
+[[nodiscard]] NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer(const TextAttribute& initAttributes)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& siMain = GetMainBuffer();
@@ -2004,8 +1968,8 @@ void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
     _handleDeferredResize(siMain);
 
     SCREEN_INFORMATION* psiNewAltBuffer;
-    auto Status = _CreateAltBuffer(&psiNewAltBuffer);
-    if (NT_SUCCESS(Status))
+    auto Status = _CreateAltBuffer(initAttributes, &psiNewAltBuffer);
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         // if this is already an alternate buffer, we want to make the new
         // buffer the alt on our main buffer, not on ourself, because there
@@ -2301,42 +2265,22 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
 // - S_OK
 [[nodiscard]] HRESULT SCREEN_INFORMATION::ClearBuffer()
 {
-    const auto oldCursorPos = _textBuffer->GetCursor().GetPosition();
-    auto sNewTop = oldCursorPos.y;
-
-    auto delta = (sNewTop + _viewport.Height()) - (GetBufferSize().Height());
-    for (auto i = 0; i < delta; i++)
+    // Rotate the buffer to bring the cursor row to the top of the viewport.
+    const auto cursorPos = _textBuffer->GetCursor().GetPosition();
+    for (auto i = 0; i < cursorPos.y; i++)
     {
         _textBuffer->IncrementCircularBuffer();
-        sNewTop--;
     }
 
-    const til::point coordNewOrigin{ 0, sNewTop };
-    RETURN_IF_FAILED(SetViewportOrigin(true, coordNewOrigin, true));
+    // Erase everything below that point.
+    RETURN_IF_FAILED(SetCursorPosition({ 0, 1 }, false));
+    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+    engine.Dispatch().EraseInDisplay(DispatchTypes::EraseType::ToEnd);
 
-    // SetViewportOrigin will only move the virtual bottom down, but in this
-    // case we need to reset it to the top, so we have to update it explicitly.
-    UpdateBottom();
-
-    // Place the cursor at the same x coord, on the row that's now the top
-    RETURN_IF_FAILED(SetCursorPosition({ oldCursorPos.x, sNewTop }, false));
-
-    // Update all the rows in the current viewport with the standard erase attributes,
-    // i.e. the current background color, but with no meta attributes set.
-    auto fillAttributes = GetAttributes();
-    fillAttributes.SetStandardErase();
-
-    // +1 on the y coord because we don't want to clear the attributes of the
-    // cursor row, the one we saved.
-    til::point fillPosition{ 0, _viewport.Top() + 1 };
-    auto fillLength = gsl::narrow<size_t>(_viewport.Height() * GetBufferSize().Width());
-    auto fillData = OutputCellIterator{ fillAttributes, fillLength };
-    Write(fillData, fillPosition, false);
+    // Restore the original cursor x offset, but now on the first row.
+    RETURN_IF_FAILED(SetCursorPosition({ cursorPos.x, 0 }, false));
 
     _textBuffer->TriggerRedrawAll();
-
-    // Also reset the line rendition for the erased rows.
-    _textBuffer->ResetLineRenditionRange(_viewport.Top(), _viewport.BottomExclusive());
 
     return S_OK;
 }
@@ -2355,7 +2299,10 @@ void SCREEN_INFORMATION::SetTerminalConnection(_In_ VtEngine* const pTtyConnecti
     if (pTtyConnection)
     {
         engine.SetTerminalConnection(pTtyConnection,
-                                     std::bind(&StateMachine::FlushToTerminal, _stateMachine.get()));
+                                     [&stateMachine = *_stateMachine]() -> bool {
+                                         ServiceLocator::LocateGlobals().pRender->NotifyPaintFrame();
+                                         return stateMachine.FlushToTerminal();
+                                     });
     }
     else
     {
@@ -2642,34 +2589,6 @@ void SCREEN_INFORMATION::UpdateBottom()
 }
 
 // Method Description:
-// - Initialize the row with the cursor on it to the standard erase attributes.
-//      This is executed when we move the cursor below the current viewport in
-//      VT mode. When that happens in a real terminal, the line is brand new,
-//      so it gets initialized for the first time with the current attributes.
-//      Our rows are usually pre-initialized, so re-initialize it here to
-//      emulate that behavior.
-// See MSFT:17415310.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void SCREEN_INFORMATION::InitializeCursorRowAttributes()
-{
-    if (_textBuffer)
-    {
-        const auto& cursor = _textBuffer->GetCursor();
-        auto& row = _textBuffer->GetRowByOffset(cursor.GetPosition().y);
-        // The VT standard requires that the new row is initialized with
-        // the current background color, but with no meta attributes set.
-        auto fillAttributes = GetAttributes();
-        fillAttributes.SetStandardErase();
-        row.SetAttrToEnd(0, fillAttributes);
-        // The row should also be single width to start with.
-        row.SetLineRendition(LineRendition::SingleWidth);
-    }
-}
-
-// Method Description:
 // - Returns the "virtual" Viewport - the viewport with its bottom at
 //      `_virtualBottom`. For VT operations, this is essentially the mutable
 //      section of the buffer.
@@ -2690,7 +2609,7 @@ Viewport SCREEN_INFORMATION::GetVirtualViewport() const noexcept
 // - <none>
 // Return Value:
 // - true if the character at the cursor's current position is wide
-bool SCREEN_INFORMATION::CursorIsDoubleWidth() const noexcept
+bool SCREEN_INFORMATION::CursorIsDoubleWidth() const
 {
     const auto& buffer = GetTextBuffer();
     const auto position = buffer.GetCursor().GetPosition();

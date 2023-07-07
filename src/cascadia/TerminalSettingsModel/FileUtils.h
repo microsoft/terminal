@@ -3,6 +3,7 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Model
 {
+    bool IsPortableMode();
     std::filesystem::path GetBaseSettingsPath();
     std::filesystem::path GetReleaseSettingsPath();
     std::string ReadUTF8File(const std::filesystem::path& path, const bool elevatedOnly = false, FILETIME* lastWriteTime = nullptr);

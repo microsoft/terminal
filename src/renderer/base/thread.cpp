@@ -169,6 +169,11 @@ DWORD WINAPI RenderThread::_ThreadProc()
 {
     while (_fKeepRunning)
     {
+        // Between waiting on _hEvent and calling PaintFrame() there should be a minimal delay,
+        // so that a key press progresses to a drawing operation as quickly as possible.
+        // As such, we wait for the renderer to complete _before_ waiting on _hEvent.
+        _pRenderer->WaitUntilCanRender();
+
         WaitForSingleObject(_hPaintEnabledEvent, INFINITE);
 
         if (!_fNextFrameRequested.exchange(false, std::memory_order_acq_rel))
@@ -209,10 +214,7 @@ DWORD WINAPI RenderThread::_ThreadProc()
         }
 
         ResetEvent(_hPaintCompletedEvent);
-
-        _pRenderer->WaitUntilCanRender();
         LOG_IF_FAILED(_pRenderer->PaintFrame());
-
         SetEvent(_hPaintCompletedEvent);
     }
 

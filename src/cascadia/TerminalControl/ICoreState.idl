@@ -45,6 +45,9 @@ namespace Microsoft.Terminal.Control
         Int32 ViewHeight { get; };
         Int32 BufferHeight { get; };
 
+        Boolean HasSelection { get; };
+        IVector<String> SelectedText(Boolean trimTrailingWhitespace);
+
         Boolean BracketedPasteEnabled { get; };
 
         Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
@@ -57,6 +60,8 @@ namespace Microsoft.Terminal.Control
         void ClearMark();
         void ClearAllMarks();
         void ScrollToMark(ScrollToMarkDirection direction);
+        void SelectCommand(Boolean goUp);
+        void SelectOutput(Boolean goUp);
         IVector<ScrollMark> ScrollMarks { get; };
 
     };
