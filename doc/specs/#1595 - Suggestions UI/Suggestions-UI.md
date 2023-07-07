@@ -100,10 +100,13 @@ what the UI would look like.
 ![](shell-autocomplete-july-2022-000.gif)
 
 An prototype of the recent commands UI, powered by shell integration:
+
 ![](command-history-suggestions.gif)
 
 An prototype of the tasks UI, powered by the user's settings:
+
 ![](tasks-suggestions.gif)
+
 (admittedly, the `TeachingTip` needs better placement).
 
 In general, the Suggestions UI will present a list of elements to select from,
@@ -219,7 +222,7 @@ different set of actions.
   named `.wt.json`. For more details, see the [Tasks] spec.
 * `Microsoft.Terminal.Extensions.BufferComplete`: As an example, this
   demonstrates how an action might be authored to reference a suggestion source
-  from an extension.
+  from an extension[[1](#footnote-1)].
 
 Each of these different sources will build a different set of `Command`s,
 primarily populated with `sendInput` actions. We'll load those `Command`s into
@@ -227,12 +230,12 @@ the Suggestions UI control, and open it at the text cursor.
 
 To drill in on a single example - the `commandHistory` source. In that
 particular case, the TerminalPage will query the active TermControl for a list
-of it's recent commands. If it knows these (via shell integration), then the
+of its recent commands. If it knows these (via shell integration), then the
 TerminalPage will use that list of commands to build a list of `sendInput`
 actions. Those will then get fed to the suggestions UI.
 
 Not listed above is [shell-driven autocompletion]. These aren't something that
-the Terminal can invoke all on it's own - these are something the shell would
+the Terminal can invoke all on its own - these are something the shell would
 need to invoke themselves.
 
 #### Pre-populate the current commandline context
@@ -260,6 +263,7 @@ start searching for recent commands that started with `git c`.
 #### Default actions
 
 I propose adding the following actions to the Terminal by default:
+
 ```json
 { "command": { "action":"suggestions", "source": "commandHistory", "useCommandline": true } },
 { "command": { "action":"suggestions", "source": "directoryHistory" } },
@@ -470,6 +474,7 @@ display with the Suggestions UI. This flyout will only appear if there's more
 information provided to the Terminal.
 
 This might be in the form of a `TeachingTip`, as in this example:
+
 ![](tasks-suggestions.gif)
 
 Actions in the settings could also accept an optional `description` property, to
@@ -515,7 +520,7 @@ Suggestions UI
 
 > **Note**
 > _I'm not sure we really want to put this in this spec or not, hence
-> why it's in the "Future considerations" section. I think it's worth
+> why it is in the "Future considerations" section. I think it is worth
 > mentioning. This might be better served in the [shell integration] doc._
 
 We'll probably want a way for recent commands to be saved across sessions. That way, your `cmd.exe` command history could persist across sessions. We'd need:
@@ -645,7 +650,10 @@ fully up to date.
 
 ### Footnotes
 
-<a name="footnote-1"><a>[1]:
+<a name="footnote-1"><a>[1]: Obviously, we're not having a real discussion about
+extensions in this doc. This example is solely to show that there's room for
+extensions to work with the "source" property in this design. What the final
+shape of extensions will be is very much still to be determined.
 
 
 [Fig]: https://github.com/withfig/autocomplete
