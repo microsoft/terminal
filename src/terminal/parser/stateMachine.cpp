@@ -466,7 +466,7 @@ void StateMachine::_ActionCsiDispatch(const wchar_t wch)
     _trace.TraceOnAction(L"CsiDispatch");
     _trace.DispatchSequenceTrace(_SafeExecute([=]() {
         return _engine->ActionCsiDispatch(_identifier.Finalize(wch),
-                                          { _parameters.data(), _parameters.size(), _subParameters.data(), _subParameters.size(), _subParameterRanges.data(), _subParameterRanges.size() });
+                                          { _parameters, _subParameters, _subParameterRanges });
     }));
 }
 

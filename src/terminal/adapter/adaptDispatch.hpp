@@ -294,12 +294,16 @@ namespace Microsoft::Console::VirtualTerminal
 
         SgrStack _sgrStack;
 
+        bool _CanAcceptSubParam(const VTInt param) const noexcept;
         size_t _SetRgbColorsHelper(const VTParameters options,
                                    TextAttribute& attr,
                                    const bool isForeground) noexcept;
         size_t _ApplyGraphicsOption(const VTParameters options,
                                     const size_t optionIndex,
                                     TextAttribute& attr) noexcept;
+        void _ApplyGraphicsOptionSubParam(const VTParameter option,
+                                          const std::span<const VTParameter> subParams,
+                                          TextAttribute& attr) noexcept;
         void _ApplyGraphicsOptions(const VTParameters options,
                                    TextAttribute& attr) noexcept;
 

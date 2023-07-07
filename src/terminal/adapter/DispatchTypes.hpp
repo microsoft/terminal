@@ -166,10 +166,12 @@ namespace Microsoft::Console::VirtualTerminal
         {
         }
 
-        constexpr VTParameters(const VTParameter* paramsPtr, const size_t paramsCount, const VTParameter* subParamsPtr, const size_t subParamsCount, const std::pair<BYTE, BYTE>* subParamRangesPtr, const size_t subParamRangesCount) noexcept :
-            _params{ paramsPtr, paramsCount },
-            _subParams{ subParamsPtr, subParamsCount },
-            _subParamRanges{ subParamRangesPtr, subParamRangesCount }
+        constexpr VTParameters(const std::span<const VTParameter> params,
+                               const std::span<const VTParameter> subParams = {},
+                               const std::span<const std::pair<BYTE, BYTE>> subParamRanges = {}) noexcept :
+            _params{ params },
+            _subParams{ subParams },
+            _subParamRanges{ subParamRanges }
         {
         }
 
@@ -198,20 +200,37 @@ namespace Microsoft::Console::VirtualTerminal
             // _subParams as is and create new span for others.
             const auto newParamsSpan = _params.subspan(std::min(offset, _params.size()));
             const auto newSubParamRangesSpan = _subParamRanges.subspan(std::min(offset, _subParamRanges.size()));
-            return { newParamsSpan.data(), newParamsSpan.size(), _subParams.data(), _subParams.size(), newSubParamRangesSpan.data(), newSubParamRangesSpan.size() };
+            return { newParamsSpan, _subParams, newSubParamRangesSpan };
         }
 
         std::span<const VTParameter> subParamsFor(const size_t index) const noexcept
         {
-            // If the parameter index is out of range, we return a sub-parameters span with no values.
-            if (index >= _subParamRanges.size())
-            {
-                return std::span<const VTParameter>{};
-            }
-            else
+            if (index < _subParamRanges.size())
             {
                 const auto& range = til::at(_subParamRanges, index);
                 return _subParams.subspan(range.first, range.second - range.first);
+            }
+            else
+            {
+                return std::span<const VTParameter>{};
+            }
+        }
+
+        bool hasSubParams() const noexcept
+        {
+            return !_subParams.empty();
+        }
+
+        bool hasSubParamsFor(const size_t index) const noexcept
+        {
+            if (index < _subParamRanges.size())
+            {
+                const auto& range = til::at(_subParamRanges, index);
+                return ((range.second - range.first) > range.first);
+            }
+            else
+            {
+                return false;
             }
         }
 
@@ -386,6 +405,15 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BrightBackgroundMagenta = 105,
         BrightBackgroundCyan = 106,
         BrightBackgroundWhite = 107,
+    };
+
+    // we use this in VT parser to indicate that the GraphicsOptions (parameter)
+    // accepts sub-parameters.
+    enum GraphicsOptionsWithSubParams : VTInt
+    {
+#ifdef UNIT_TESTING
+        TestOption = 12345,
+#endif
     };
 
     enum LogicalAttributeOptions : VTInt
