@@ -1873,6 +1873,12 @@ void IslandWindow::RemoveFromSystemMenu(const winrt::hstring& itemLabel)
     _systemMenuItems.erase(it->first);
 }
 
+void IslandWindow::UseDarkTheme(const bool v)
+{
+    const BOOL attribute = v ? TRUE : FALSE;
+    std::ignore = DwmSetWindowAttribute(GetHandle(), DWMWA_USE_IMMERSIVE_DARK_MODE, &attribute, sizeof(attribute));
+}
+
 void IslandWindow::UseMica(const bool newValue, const double /*titlebarOpacity*/)
 {
     // This block of code enables Mica for our window. By all accounts, this
@@ -1907,7 +1913,7 @@ void IslandWindow::UseMica(const bool newValue, const double /*titlebarOpacity*/
     // the darkness of our window. However, we're keeping this call to prevent
     // the window from appearing as a white rectangle for a frame before we load
     // the rest of the settings.
-    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), true));
+    UseDarkTheme(true);
 
     return TRUE;
 }

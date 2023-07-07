@@ -1047,7 +1047,7 @@ void AppHost::_updateTheme()
     // It must be done before WM_NCPAINT so that the borders are rendered with
     // the correct theme.
     // For more information, see GH#6620.
-    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window->GetHandle(), _isActuallyDarkTheme(theme.RequestedTheme())));
+    _window->UseDarkTheme(_isActuallyDarkTheme(theme.RequestedTheme()));
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
