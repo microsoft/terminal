@@ -226,7 +226,7 @@ namespace Microsoft::Console::VirtualTerminal
             if (index < _subParamRanges.size())
             {
                 const auto& range = til::at(_subParamRanges, index);
-                return ((range.second - range.first) > range.first);
+                return range.second > range.first;
             }
             else
             {
