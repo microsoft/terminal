@@ -1064,9 +1064,7 @@ namespace winrt::TerminalApp::implementation
         // and rely on the base class to show our menu.
         profileMenuItem.ContextRequested([profileMenuItem](auto&&, auto&&) {
             WUX::Controls::Primitives::FlyoutBase::ShowAttachedFlyout(profileMenuItem);
-
         });
-
 
         return profileMenuItem;
     }
@@ -4923,7 +4921,6 @@ namespace winrt::TerminalApp::implementation
         WUX::Controls::MenuFlyout profileMenuItemFlyout{};
         profileMenuItemFlyout.Placement(WUX::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedRight);
 
-
         // Create the menu item and an icon to use in the menu
         WUX::Controls::MenuFlyoutItem runAsAdminItem{};
         WUX::Controls::FontIcon adminShieldIcon{};
@@ -4933,8 +4930,8 @@ namespace winrt::TerminalApp::implementation
 
         runAsAdminItem.Icon(adminShieldIcon);
         runAsAdminItem.Text(RS_(L"RunAsAdminFlyout/Text"));
-        
-        // Click handler for the flyout item       
+
+        // Click handler for the flyout item
         runAsAdminItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
