@@ -255,7 +255,7 @@ namespace Microsoft::Console::VirtualTerminal
         }
 
     private:
-        static constexpr VTParameter defaultParameter;
+        static constexpr VTParameter defaultParameter{};
         static constexpr std::span defaultParameters{ &defaultParameter, 1 };
 
         std::span<const VTParameter> _params;
