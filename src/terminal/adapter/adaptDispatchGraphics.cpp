@@ -13,32 +13,6 @@ using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::VirtualTerminal::DispatchTypes;
 
 // Routine Description:
-// - This returns false until we have something meaningful to do with sub parameters.
-// - Takes the parameter and determines if it accepts sub parameters.
-// Arguments:
-// - parameter - the parameter to check for.
-// Return Value:
-// - True, if it accepts sub parameters, or else False.
-bool AdaptDispatch::_CanAcceptSubParam(const VTInt /* param */) const noexcept
-{
-    // This is how we would have implemented it if we had sub parameters.
-    /*  
-    using enum DispatchTypes::GraphicsOptionsWithSubParams;
-    switch (param)
-    {
-    case ForegroundExtended:
-    case BackgroundExtended:
-    case UnderlineExtended:
-    case UnderlineColor:
-        return true;
-    default:
-        return false;
-    }
-*/
-    return false;
-}
-
-// Routine Description:
 // - Helper to parse extended graphics options, which start with 38 (FG) or 48 (BG)
 //     These options are followed by either a 2 (RGB) or 5 (xterm index)
 //      RGB sequences then take 3 MORE params to designate the R, G, B parts of the color
@@ -288,6 +262,9 @@ void AdaptDispatch::_ApplyGraphicsOptionSubParam(const VTParameter /* option */,
                                                  const std::span<const VTParameter> /* subParam */,
                                                  TextAttribute& /* attr */) noexcept
 {
+    // here, we apply our "best effort" rule, while handling sub params if we don't
+    // recognise the parameter substring (parameter and it's sub parameters) then
+    // we should just skip over them.
 }
 
 // Routine Description:
@@ -301,25 +278,12 @@ void AdaptDispatch::_ApplyGraphicsOptionSubParam(const VTParameter /* option */,
 void AdaptDispatch::_ApplyGraphicsOptions(const VTParameters options,
                                           TextAttribute& attr) noexcept
 {
-    // Save the current attribute so we can restore it later.
-    const auto currentAttr = attr;
     for (size_t i = 0; i < options.size();)
     {
-        // We must discard the changes applied to the attr if we encounter
-        // sub parameters to a parameter which doesn't accept them. This is to
-        // ensure that we never interpret a sequence ignoring the sub parameters.
         if (options.hasSubParamsFor(i))
         {
-            if (_CanAcceptSubParam(options.at(i)))
-            {
-                _ApplyGraphicsOptionSubParam(options.at(i), options.subParamsFor(i), attr);
-                i += 1;
-            }
-            else
-            {
-                attr = currentAttr;
-                break;
-            }
+            _ApplyGraphicsOptionSubParam(options.at(i), options.subParamsFor(i), attr);
+            i += 1;
         }
         else
         {
