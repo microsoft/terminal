@@ -96,6 +96,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _ActionClear();
         void _ActionIgnore() noexcept;
+        void _ActionParamIgnore() noexcept;
         void _ActionInterrupt();
 
         void _EnterGround() noexcept;
@@ -103,6 +104,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterEscapeIntermediate() noexcept;
         void _EnterCsiEntry();
         void _EnterCsiParam() noexcept;
+        void _EnterCsiParamIgnore() noexcept;
         void _EnterCsiSubParam() noexcept;
         void _EnterCsiIgnore() noexcept;
         void _EnterCsiIntermediate() noexcept;
@@ -125,6 +127,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventCsiEntry(const wchar_t wch);
         void _EventCsiIntermediate(const wchar_t wch);
         void _EventCsiIgnore(const wchar_t wch);
+        void _EventCsiParamIgnore(const wchar_t wch);
         void _EventCsiParam(const wchar_t wch);
         void _EventCsiSubParam(const wchar_t wch);
         void _EventOscParam(const wchar_t wch) noexcept;
@@ -141,6 +144,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventSosPmApcString(const wchar_t wch) noexcept;
 
         void _AccumulateTo(const wchar_t wch, VTInt& value) noexcept;
+        bool _CanHandleSubParam() noexcept;
 
         template<typename TLambda>
         bool _SafeExecute(TLambda&& lambda);
@@ -157,6 +161,7 @@ namespace Microsoft::Console::VirtualTerminal
             CsiIgnore,
             CsiParam,
             CsiSubParam,
+            CsiParamIgnore,
             OscParam,
             OscString,
             OscTermination,

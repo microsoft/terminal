@@ -17,6 +17,7 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bo
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
     _parameters{},
     _parameterLimitReached(false),
+    _subParameterLimitReached(false),
     _oscString{},
     _cachedSequence{ std::nullopt }
 {
@@ -538,8 +539,10 @@ void StateMachine::_ActionParam(const wchar_t wch)
 }
 
 // Routine Description:
-// - Triggers the SubParam action to indicate that the state machine should store this character as a part of a sub-parameter
-//   to a control sequence.
+// - Triggers the SubParam action to indicate that the state machine should 
+//   store this character as a part of a sub-parameter to a control sequence.
+// - Assumes that enough checks have been made to handle a new sub parameter,
+//   for eg., checking if sub parameter limit is not reached.
 // Arguments:
 // - wch - Character to dispatch.
 // Return Value:
@@ -547,38 +550,20 @@ void StateMachine::_ActionParam(const wchar_t wch)
 void StateMachine::_ActionSubParam(const wchar_t wch)
 {
     _trace.TraceOnAction(L"SubParam");
-
-    // Once we've reached the sub-parameter limit, additional sub-parameters are ignored.
-    if (!_subParameterLimitReached)
+    if (_isSubParameterDelimiter(wch))
     {
-        // On a delimiter, increase the number of sub-params we've seen.
-        // "Empty" sub-params should still count as a sub-param -
-        //      eg "\x1b[38:2::m" should be three sub-params
-        if (_isSubParameterDelimiter(wch))
-        {
-            // If we receive a delimiter after we've already accumulated the
-            // maximum allowed sub-parameters, then we need to set a flag to
-            // indicate that further sub-parameter characters should be ignored.
-            if (_subParameters.size() >= MAX_SUBPARAMETER_COUNT)
-            {
-                _subParameterLimitReached = true;
-            }
-            else
-            {
-                // Otherwise move to next sub-param.
-                _subParameters.push_back({});
-                // increment current range's end index.
-                _subParameterRanges.back().second++;
-            }
-        }
-        else
-        {
-            // Accumulate the character given into the last (current) sub-parameter.
-            // If the value hasn't been initialized yet, it'll start as 0.
-            auto currentParameter = _subParameters.back().value_or(0);
-            _AccumulateTo(wch, currentParameter);
-            _subParameters.back() = currentParameter;
-        }
+        // Otherwise move to next sub-param.
+        _subParameters.push_back({});
+        // increment current range's end index.
+        _subParameterRanges.back().second++;
+    }
+    else
+    {
+        // Accumulate the character given into the last (current) sub-parameter.
+        // If the value hasn't been initialized yet, it'll start as 0.
+        auto currentSubParameter = _subParameters.back().value_or(0);
+        _AccumulateTo(wch, currentSubParameter);
+        _subParameters.back() = currentSubParameter;
     }
 }
 
@@ -613,13 +598,26 @@ void StateMachine::_ActionClear()
 // Routine Description:
 // - Triggers the Ignore action to indicate that the state machine should eat this character and say nothing.
 // Arguments:
-// - wch - Character to dispatch.
+// - <none>
 // Return Value:
 // - <none>
 void StateMachine::_ActionIgnore() noexcept
 {
     // do nothing.
     _trace.TraceOnAction(L"Ignore");
+}
+
+// Routine Description:
+// - Triggers the ParamIgnore action to indicate that the state machine should eat this character and say nothing.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void StateMachine::_ActionParamIgnore() noexcept
+{
+    _trace.TraceOnAction(L"ParamIgnore");
+    _parameters.pop_back();
+    _subParameterRanges.pop_back();
 }
 
 // Routine Description:
@@ -830,6 +828,22 @@ void StateMachine::_EnterCsiIgnore() noexcept
 {
     _state = VTStates::CsiIgnore;
     _trace.TraceStateChange(L"CsiIgnore");
+}
+
+// Routine Description:
+// - Moves the state machine into the CsiParamIgnore state.
+//   This state is entered:
+//   1. When we couldn't handle a character in CSI sequence because sub parameter limit is reached,
+//      indicating we should ignore the parameter along with its sub parameter(s).
+//      (From CsiParam, CsiSubParam states.)
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void StateMachine::_EnterCsiParamIgnore() noexcept
+{
+    _state = VTStates::CsiParamIgnore;
+    _trace.TraceStateChange(L"CsiParamIgnore");
 }
 
 // Routine Description:
@@ -1311,6 +1325,54 @@ void StateMachine::_EventCsiIgnore(const wchar_t wch)
 }
 
 // Routine Description:
+// - Processes a character event into an Action that occurs while in the CsiParamIgnore state.
+//   Events in this state will:
+//   1. Ignore C0 control characters
+//   2. Ignore Delete characters
+//   3. Ignore Intermediate characters
+//   4. Store parameter data
+//   5. Ignore sub parameter data
+//   6. Ignore intermediate invalid characters
+//   7. Return to Ground
+// Arguments:
+// - wch - Character that triggered the event
+// Return Value:
+// - <none>
+void StateMachine::_EventCsiParamIgnore(const wchar_t wch)
+{
+    _trace.TraceOnEvent(L"CsiParamIgnore");
+    if (_isC0Code(wch))
+    {
+        _ActionIgnore();
+    }
+    else if (_isDelete(wch))
+    {
+        _ActionIgnore();
+    }
+    else if (_isParameterDelimiter(wch))
+    {
+        _ActionParam(wch);
+        _EnterCsiParam();
+    }
+    else if (_isNumericParamValue(wch) || _isSubParameterDelimiter(wch))
+    {
+        _ActionIgnore();
+    }
+    else if (_isIntermediate(wch))
+    {
+        _ActionIgnore();
+    }
+    else if (_isIntermediateInvalid(wch))
+    {
+        _ActionIgnore();
+    }
+    else
+    {
+        _EnterGround();
+    }
+}
+
+// Routine Description:
 // - Processes a character event into an Action that occurs while in the CsiParam state.
 //   Events in this state will:
 //   1. Execute C0 control characters
@@ -1318,7 +1380,9 @@ void StateMachine::_EventCsiIgnore(const wchar_t wch)
 //   3. Collect Intermediate characters
 //   4. Begin to ignore all remaining parameters when an invalid character is detected (CsiIgnore)
 //   5. Store parameter data
-//   6. Store sub parameter data
+//   6. Handle sub parameter:
+//      6.1. Store the sub param if the sub parameter limit is not reached.
+//      6.2. Else, ignore the latest parameter and its sub parameter(s) by entering CsiParamIgnore.
 //   7. Dispatch a control sequence with parameters for action
 // Arguments:
 // - wch - Character that triggered the event
@@ -1341,8 +1405,16 @@ void StateMachine::_EventCsiParam(const wchar_t wch)
     }
     else if (_isSubParameterDelimiter(wch))
     {
-        _ActionSubParam(wch);
-        _EnterCsiSubParam();
+        if (_CanHandleSubParam())
+        {
+            _ActionSubParam(wch);
+            _EnterCsiSubParam();
+        }
+        else
+        {
+            _ActionParamIgnore();
+            _EnterCsiParamIgnore();
+        }
     }
     else if (_isIntermediate(wch))
     {
@@ -1366,11 +1438,14 @@ void StateMachine::_EventCsiParam(const wchar_t wch)
 //   Events in this state will:
 //   1. Execute C0 control characters
 //   2. Ignore Delete characters
-//   3. Store sub parameter data
-//   4. Store parameter data
-//   5. Collect Intermediate characters for parameter.
-//   6. Begin to ignore all remaining parameters when an invalid character is detected (CsiIgnore)
-//   7. Dispatch a control sequence with parameters for action
+//   3. Store sub parameter digit.
+//   4. Handle new sub param:
+//      4.1. Store the sub param if the sub parameter limit is not reached.
+//      4.2. Else, ignore the latest parameter and its sub parameter(s) by entering CsiParamIgnore.
+//   5. Store parameter data
+//   6. Collect Intermediate characters for parameter.
+//   7. Begin to ignore all remaining parameters when an invalid character is detected (CsiIgnore)
+//   8. Dispatch a control sequence with parameters for action
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
@@ -1386,9 +1461,22 @@ void StateMachine::_EventCsiSubParam(const wchar_t wch)
     {
         _ActionIgnore();
     }
-    else if (_isNumericParamValue(wch) || _isSubParameterDelimiter(wch))
+    else if (_isNumericParamValue(wch))
     {
         _ActionSubParam(wch);
+    }
+    else if (_isSubParameterDelimiter(wch))
+    {
+        if (_CanHandleSubParam())
+        {
+            _ActionSubParam(wch);
+            _EnterCsiSubParam();
+        }
+        else
+        {
+            _ActionParamIgnore();
+            _EnterCsiParamIgnore();
+        }
     }
     else if (_isParameterDelimiter(wch))
     {
@@ -1864,6 +1952,8 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
             return _EventCsiParam(wch);
         case VTStates::CsiSubParam:
             return _EventCsiSubParam(wch);
+        case VTStates::CsiParamIgnore:
+            return _EventCsiParamIgnore(wch);
         case VTStates::OscParam:
             return _EventOscParam(wch);
         case VTStates::OscString:
@@ -2155,6 +2245,8 @@ void StateMachine::ProcessString(const std::wstring_view string)
             case VTStates::CsiIntermediate:
             case VTStates::CsiIgnore:
             case VTStates::CsiParam:
+            case VTStates::CsiSubParam:
+            case VTStates::CsiParamIgnore:
                 _ActionCsiDispatch(*wchIter);
                 break;
             case VTStates::OscParam:
@@ -2248,6 +2340,13 @@ void StateMachine::_AccumulateTo(const wchar_t wch, VTInt& value) noexcept
     {
         value = MAX_PARAMETER_VALUE;
     }
+}
+
+bool StateMachine::_CanHandleSubParam() noexcept
+{
+    // Lazily check if limit is reached.
+    _subParameterLimitReached = _subParameterLimitReached || (_subParameters.size() >= MAX_SUBPARAMETER_COUNT);
+    return !_subParameterLimitReached;
 }
 
 template<typename TLambda>
