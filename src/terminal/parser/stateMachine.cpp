@@ -16,10 +16,13 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bo
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
     _parameters{},
+    _subParameters{},
+    _subParameterRanges{},
     _parameterLimitReached(false),
     _subParameterLimitReached(false),
     _oscString{},
-    _cachedSequence{ std::nullopt }
+    _cachedSequence{ std::nullopt },
+    _isParameterOmitted{false}
 {
     _ActionClear();
 }
@@ -467,7 +470,7 @@ void StateMachine::_ActionCsiDispatch(const wchar_t wch)
     _trace.TraceOnAction(L"CsiDispatch");
     _trace.DispatchSequenceTrace(_SafeExecute([=]() {
         return _engine->ActionCsiDispatch(_identifier.Finalize(wch),
-                                          { _parameters, _subParameters, _subParameterRanges });
+                                          { _parameters, _subParameters, _subParameterRanges, _isParameterOmitted  });
     }));
 }
 
@@ -582,6 +585,7 @@ void StateMachine::_ActionClear()
 
     _parameters.clear();
     _parameterLimitReached = false;
+    _isParameterOmitted = false;
 
     _subParameters.clear();
     _subParameterRanges.clear();
@@ -616,6 +620,7 @@ void StateMachine::_ActionIgnore() noexcept
 void StateMachine::_ActionParamIgnore() noexcept
 {
     _trace.TraceOnAction(L"ParamIgnore");
+    _isParameterOmitted = false;
     _parameters.pop_back();
     _subParameterRanges.pop_back();
 }

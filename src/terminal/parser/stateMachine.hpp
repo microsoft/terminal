@@ -205,6 +205,13 @@ namespace Microsoft::Console::VirtualTerminal
         std::vector<std::pair<BYTE /*range start*/, BYTE /*range end*/>> _subParameterRanges;
         bool _subParameterLimitReached;
 
+        // This flag is used to indicate that some parameters were omitted by the
+        // parser. This could happen if the parser was unable to parse all of the
+        // sub parameters for a given parameter. 
+        // Sequences that are sensitive to parameter omission can use this flag
+        // to determine if any parameters were omitted.
+        bool _isParameterOmitted;
+
         std::wstring _oscString;
         VTInt _oscParameter;
 

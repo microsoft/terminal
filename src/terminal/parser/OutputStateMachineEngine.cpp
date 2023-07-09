@@ -417,7 +417,7 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTPara
 bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameters parameters)
 {
     // Bail out if we receive subparameters, but we don't accept them in the sequence.
-    if (parameters.hasSubParams() && !_CanSeqAcceptSubParam(id)) [[unlikely]]
+    if (parameters.hasSubParams() && !_CanSeqAcceptSubParam(id, parameters)) [[unlikely]]
     {
         return false;
     }
@@ -1110,9 +1110,22 @@ bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view strin
 // - id - The sequence id to check for.
 // Return Value:
 // - True, if it accepts sub parameters or else False.
-bool OutputStateMachineEngine::_CanSeqAcceptSubParam(const VTID id) noexcept
+bool OutputStateMachineEngine::_CanSeqAcceptSubParam(const VTID id, const VTParameters& parameters) noexcept
 {
-    return id == CsiActionCodes::SGR_SetGraphicsRendition;
+    switch (id)
+    {
+    case SGR_SetGraphicsRendition:
+        return true;
+    case DECCARA_ChangeAttributesRectangularArea:
+    case DECRARA_ReverseAttributesRectangularArea:
+        return !parameters.isParameterOmitted()
+               && !parameters.hasSubParamsFor(0) 
+               && !parameters.hasSubParamsFor(1)
+               && !parameters.hasSubParamsFor(2)
+               && !parameters.hasSubParamsFor(3);
+    default:
+        return false;
+    }
 }
 
 // Method Description:

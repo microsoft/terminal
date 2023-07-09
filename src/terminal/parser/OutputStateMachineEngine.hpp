@@ -236,7 +236,7 @@ namespace Microsoft::Console::VirtualTerminal
                              std::wstring& params,
                              std::wstring& uri) const;
 
-        bool _CanSeqAcceptSubParam(const VTID id) noexcept;
+        bool _CanSeqAcceptSubParam(const VTID id, const VTParameters& parameters) noexcept;
 
         void _ClearLastChar() noexcept;
     };
