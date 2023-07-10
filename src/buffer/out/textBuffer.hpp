@@ -292,6 +292,7 @@ private:
     til::point _GetWordEndForAccessibility(const til::point target, const std::wstring_view wordDelimiters, const til::point limit) const;
     til::point _GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const;
     void _PruneHyperlinks();
+    void _trimMarksOutsideBuffer();
 
     static void _AppendRTFText(std::ostringstream& contentBuilder, const std::wstring_view& text);
 

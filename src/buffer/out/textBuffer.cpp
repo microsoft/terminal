@@ -2660,6 +2660,9 @@ try
     // Set size back to real size as it will be taking over the rendering duties.
     newCursor.SetSize(ulSize);
 
+    newBuffer._marks = oldBuffer._marks;
+    newBuffer._trimMarksOutsideBuffer();
+
     return S_OK;
 }
 CATCH_RETURN()
@@ -2918,9 +2921,17 @@ void TextBuffer::ScrollMarks(const int delta)
             (*mark.outputEnd).y += delta;
         }
     }
+    _trimMarksOutsideBuffer();
+}
 
+void TextBuffer::_trimMarksOutsideBuffer()
+{
+    const auto height = GetSize().Height();
     _marks.erase(std::remove_if(_marks.begin(),
                                 _marks.end(),
-                                [](const auto& m) { return m.start.y < 0; }),
+                                [height](const auto& m) {
+                                    return (m.start.y < 0) ||
+                                           (m.start.y >= height);
+                                }),
                  _marks.end());
 }
