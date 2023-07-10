@@ -198,7 +198,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     TraceLoggingWrite(g_hRemotingProvider,
                                       "WindowManager_IntentionallyIsolated",
                                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                                      TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
                 }
 
                 if (!_monarch)
@@ -213,7 +214,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     TraceLoggingWrite(g_hRemotingProvider,
                                       "WindowManager_FailedToCoCreate",
                                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                                      TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
                 }
                 _createCallbacks();
 
@@ -290,7 +292,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                   "WindowManager_proposeToMonarch_unexpectedExceptionFromKing",
                                   TraceLoggingInt32(attempts, "attempts", "How many times we've tried"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                                  TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
                 LOG_CAUGHT_EXCEPTION();
                 attempts++;
 
@@ -305,7 +308,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     TraceLoggingWrite(g_hRemotingProvider,
                                       "WindowManager_TooManyAttempts_NullMonarchIsolateMode",
                                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                                      TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
                     // Set the monarch to null, so that we'll create a new one
                     // (or just generally check if we need to even make a window
@@ -328,7 +332,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     TraceLoggingWrite(g_hRemotingProvider,
                                       "WindowManager_proposeToMonarch_tryAgain",
                                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                                      TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
                 }
             }
         }

@@ -119,7 +119,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_AddPeasant_Failed",
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
             // We can only get into this try/catch if the peasant died on us. So
             // the return value doesn't _really_ matter. They're not about to
@@ -163,7 +164,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               "Monarch_handleQuitAll_Failed",
                               TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not close"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         };
 
         _forEachPeasant(callback, onError);
@@ -324,7 +326,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               "Monarch_lookupPeasantIdForName_Failed",
                               TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not get the name of"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         };
 
         _forEachPeasant(callback, onError);
@@ -379,7 +382,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_HandleActivatePeasant_Failed",
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
     }
 
@@ -510,7 +514,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_getMostRecentPeasantID_NoPeasants",
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
             return 0;
         }
 
@@ -547,7 +552,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                                      "We thought this peasant was the MRU one, but it was actually already dead."),
                                   TraceLoggingGuid(mruWindowArgs.DesktopID(), "desktopGuid", "The GUID of the desktop the window is on"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                                  TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
                 // We'll go through the loop again. We removed the current one
                 // at positionInList, so the next one in positionInList will be
                 // a new, different peasant.
@@ -624,7 +630,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_getMostRecentPeasantID_NotFound",
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
 
         return result;
@@ -757,7 +764,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                                       "succeeded",
                                                       "true if we successfully dispatched the commandline to the peasant"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                                  TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
                 return *result;
             }
             else if (windowID > 0)
@@ -790,7 +798,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           "Monarch_ProposeCommandline_NewWindow",
                           TraceLoggingInt64(targetWindow, "targetWindow", "The provided ID"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                          TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
         // In this case, no usable ID was provided. Return { true, nullopt }
         auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true);
@@ -823,7 +832,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               "Monarch_identifyWindows_Failed",
                               TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not identify"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         };
 
         _forEachPeasant(callback, onError);
@@ -875,7 +885,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_renameRequested_Failed",
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
     }
 
@@ -947,7 +958,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                   TraceLoggingUInt64(windowId, "peasantID", "The id of the window we tried to summon"),
                                   TraceLoggingBoolean(args.OnCurrentDesktop(), "OnCurrentDesktop", "true iff the window needs to be on the current virtual desktop"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                                  TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
             }
         }
         catch (...)
@@ -957,7 +969,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               "Monarch_SummonWindow_Failed",
                               TraceLoggingWideString(searchedForName.c_str(), "searchedForName", "The name of the window we tried to summon"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
     }
 
@@ -985,7 +998,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               "Monarch_identifyWindows_Failed",
                               TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not identify"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         };
 
         _forEachPeasant(func, onError);
@@ -1010,7 +1024,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               "Monarch_DoesQuakeWindowExist_Failed",
                               TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not ask for its name"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         };
 
         _forEachPeasant(func, onError);
@@ -1030,7 +1045,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               "Monarch_SummonAll_Failed",
                               TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not summon"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         };
 
         _forEachPeasant(func, onError);
@@ -1053,7 +1069,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               "Monarch_GetAllWindowLayouts_Failed",
                               TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not get a window layout from"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         };
         _forEachPeasant(callback, onError);
 
@@ -1069,7 +1086,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           "Monarch_MoveContent_Requested",
                           TraceLoggingWideString(window.c_str(), "window", "The name of the window we tried to move to"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                          TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
         uint64_t windowId = _lookupPeasantIdForName(window);
         if (windowId == 0)
@@ -1081,7 +1099,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "Monarch_MoveContent_FailedToParseId",
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                                  TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
             }
             else
             {
@@ -1128,7 +1147,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingUInt64(args.SourceWindow(), "source", "The window which started the drag"),
                           TraceLoggingUInt64(args.TargetWindow(), "target", "The window which was the target of the drop"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                          TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
         if (auto senderPeasant{ _getPeasant(args.SourceWindow()) })
         {
@@ -1148,7 +1168,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_SendContent_NoWindow",
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
     }
 }

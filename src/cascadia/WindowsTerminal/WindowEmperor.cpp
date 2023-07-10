@@ -380,7 +380,8 @@ winrt::Windows::Foundation::IAsyncAction WindowEmperor::_saveWindowLayouts()
                               "AppHost_SaveWindowLayouts_Failed",
                               TraceLoggingDescription("An error occurred when collecting or writing window state"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
     }
 
@@ -406,7 +407,8 @@ winrt::fire_and_forget WindowEmperor::_saveWindowLayoutsRepeat()
                           "AppHost_requestGetLayout",
                           TraceLoggingDescription("Logged when triggering a throttled write of the window state"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                          TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
         _getWindowLayoutThrottler.value()();
     }

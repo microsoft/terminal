@@ -749,7 +749,8 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             "EndSession",
             TraceLoggingDescription("Emitted when the OS has sent a WM_ENDSESSION"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
         _AutomaticShutdownRequestedHandlers();
         return true;
