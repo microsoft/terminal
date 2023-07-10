@@ -559,7 +559,6 @@ void StateMachine::_ActionSubParam(const wchar_t wch)
             _parameters.push_back({});
             const auto rangeStart = gsl::narrow<BYTE>(_subParameters.size());
             _subParameterRanges.push_back({ rangeStart, rangeStart });
-
         }
 
         // On a delimiter, increase the number of sub params we've seen.
