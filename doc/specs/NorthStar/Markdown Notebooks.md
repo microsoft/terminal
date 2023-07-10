@@ -7,6 +7,16 @@ issue id: n/a
 
 # Markdown Notebooks in the Terminal
 
+> Note:
+>
+> This is a draft document. It's mainly ideating on a novel way of interacting
+> with the Terminal. There's still a long gap between this and real shipping
+> code, however.
+>
+> It is included with the remainder of my North Star docs, because it was always
+> a part of that story. As we iterate on this protocol, we'll revise this doc
+> with the final protocol.
+
 ## Abstract
 
 "Terminal Notebooks" would allow developers to combine documentation and code in
