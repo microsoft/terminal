@@ -162,19 +162,16 @@ namespace Microsoft::Console::VirtualTerminal
         constexpr VTParameters(const VTParameter* paramsPtr, const size_t paramsCount) noexcept :
             _params{ paramsPtr, paramsCount },
             _subParams{},
-            _subParamRanges{},
-            _isParameterOmitted{ false }
+            _subParamRanges{}
         {
         }
 
         constexpr VTParameters(const std::span<const VTParameter> params,
                                const std::span<const VTParameter> subParams,
-                               const std::span<const std::pair<BYTE, BYTE>> subParamRanges,
-                               const bool isParamOmitted) noexcept :
+                               const std::span<const std::pair<BYTE, BYTE>> subParamRanges) noexcept :
             _params{ params },
             _subParams{ subParams },
-            _subParamRanges{ subParamRanges },
-            _isParameterOmitted{ isParamOmitted }
+            _subParamRanges{ subParamRanges }
         {
         }
 
@@ -203,7 +200,7 @@ namespace Microsoft::Console::VirtualTerminal
             // _subParams as is and create new span for others.
             const auto newParamsSpan = _params.subspan(std::min(offset, _params.size()));
             const auto newSubParamRangesSpan = _subParamRanges.subspan(std::min(offset, _subParamRanges.size()));
-            return { newParamsSpan, _subParams, newSubParamRangesSpan, _isParameterOmitted };
+            return { newParamsSpan, _subParams, newSubParamRangesSpan };
         }
 
         std::span<const VTParameter> subParamsFor(const size_t index) const noexcept
@@ -237,11 +234,6 @@ namespace Microsoft::Console::VirtualTerminal
             }
         }
 
-        bool isParameterOmitted() const noexcept
-        {
-            return _isParameterOmitted;
-        }
-
         template<typename T>
         bool for_each(const T&& predicate) const
         {
@@ -269,7 +261,6 @@ namespace Microsoft::Console::VirtualTerminal
         std::span<const VTParameter> _params;
         std::span<const VTParameter> _subParams;
         std::span<const std::pair<BYTE, BYTE>> _subParamRanges;
-        bool _isParameterOmitted;
     };
 
     // FlaggedEnumValue is a convenience class that produces enum values (of a specified size)

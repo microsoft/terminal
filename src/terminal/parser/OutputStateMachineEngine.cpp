@@ -1118,8 +1118,7 @@ bool OutputStateMachineEngine::_CanSeqAcceptSubParam(const VTID id, const VTPara
         return true;
     case DECCARA_ChangeAttributesRectangularArea:
     case DECRARA_ReverseAttributesRectangularArea:
-        return !parameters.isParameterOmitted()
-               && !parameters.hasSubParamsFor(0) 
+        return !parameters.hasSubParamsFor(0) 
                && !parameters.hasSubParamsFor(1)
                && !parameters.hasSubParamsFor(2)
                && !parameters.hasSubParamsFor(3);

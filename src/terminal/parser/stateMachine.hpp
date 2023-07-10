@@ -96,7 +96,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _ActionClear();
         void _ActionIgnore() noexcept;
-        void _ActionParamIgnore() noexcept;
         void _ActionInterrupt();
 
         void _EnterGround() noexcept;
@@ -104,7 +103,6 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterEscapeIntermediate() noexcept;
         void _EnterCsiEntry();
         void _EnterCsiParam() noexcept;
-        void _EnterCsiParamIgnore() noexcept;
         void _EnterCsiSubParam() noexcept;
         void _EnterCsiIgnore() noexcept;
         void _EnterCsiIntermediate() noexcept;
@@ -127,7 +125,6 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventCsiEntry(const wchar_t wch);
         void _EventCsiIntermediate(const wchar_t wch);
         void _EventCsiIgnore(const wchar_t wch);
-        void _EventCsiParamIgnore(const wchar_t wch);
         void _EventCsiParam(const wchar_t wch);
         void _EventCsiSubParam(const wchar_t wch);
         void _EventOscParam(const wchar_t wch) noexcept;
@@ -144,7 +141,6 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventSosPmApcString(const wchar_t wch) noexcept;
 
         void _AccumulateTo(const wchar_t wch, VTInt& value) noexcept;
-        bool _CanHandleSubParam() noexcept;
 
         template<typename TLambda>
         bool _SafeExecute(TLambda&& lambda);
@@ -200,17 +196,9 @@ namespace Microsoft::Console::VirtualTerminal
 
         VTIDBuilder _identifier;
         std::vector<VTParameter> _parameters;
-        bool _parameterLimitReached;
+        bool _parameterLimitOverflowed;
         std::vector<VTParameter> _subParameters;
         std::vector<std::pair<BYTE /*range start*/, BYTE /*range end*/>> _subParameterRanges;
-        bool _subParameterLimitReached;
-
-        // This flag is used to indicate that some parameters were omitted by the
-        // parser. This could happen if the parser was unable to parse all of the
-        // sub parameters for a given parameter. 
-        // Sequences that are sensitive to parameter omission can use this flag
-        // to determine if any parameters were omitted.
-        bool _isParameterOmitted;
 
         std::wstring _oscString;
         VTInt _oscParameter;
