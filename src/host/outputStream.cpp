@@ -435,7 +435,7 @@ void ConhostInternalGetSet::NotifyBufferRotation(const int delta)
     }
 }
 
-void ConhostInternalGetSet::MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/)
+void ConhostInternalGetSet::MarkPrompt(const ::ScrollMark& /*mark*/)
 {
     // Not implemented for conhost.
 }

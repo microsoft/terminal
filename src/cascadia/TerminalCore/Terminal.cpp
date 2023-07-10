@@ -1344,7 +1344,7 @@ void Terminal::_updateUrlDetection()
 }
 
 // NOTE: This is the version of AddMark that comes from the UI. The VT api call into this too.
-void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
+void Terminal::AddMark(const ScrollMark& mark,
                        const til::point& start,
                        const til::point& end,
                        const bool fromUi)
@@ -1354,7 +1354,7 @@ void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes:
         return;
     }
 
-    DispatchTypes::ScrollMark m = mark;
+    ScrollMark m = mark;
     m.start = start;
     m.end = end;
 
@@ -1403,17 +1403,17 @@ void Terminal::ClearAllMarks() noexcept
     _NotifyScrollEvent();
 }
 
-const std::vector<DispatchTypes::ScrollMark>& Terminal::GetScrollMarks() const noexcept
+const std::vector<ScrollMark>& Terminal::GetScrollMarks() const noexcept
 {
     // TODO: GH#11000 - when the marks are stored per-buffer, get rid of this.
     // We want to return _no_ marks when we're in the alt buffer, to effectively
     // hide them. We need to return a reference, so we can't just ctor an empty
     // list here just for when we're in the alt buffer.
-    static const std::vector<DispatchTypes::ScrollMark> _altBufferMarks{};
+    static const std::vector<ScrollMark> _altBufferMarks{};
     return _inAltBuffer() ? _altBufferMarks : _activeBuffer().GetMarks();
 }
 
-til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) const
+til::color Terminal::GetColorForMark(const ScrollMark& mark) const
 {
     if (mark.color.has_value())
     {
@@ -1422,24 +1422,24 @@ til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::
 
     switch (mark.category)
     {
-    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Prompt:
+    case MarkCategory::Prompt:
     {
         return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
     }
-    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Error:
+    case MarkCategory::Error:
     {
         return _renderSettings.GetColorTableEntry(TextColor::BRIGHT_RED);
     }
-    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Warning:
+    case MarkCategory::Warning:
     {
         return _renderSettings.GetColorTableEntry(TextColor::BRIGHT_YELLOW);
     }
-    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Success:
+    case MarkCategory::Success:
     {
         return _renderSettings.GetColorTableEntry(TextColor::BRIGHT_GREEN);
     }
     default:
-    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Info:
+    case MarkCategory::Info:
     {
         return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
     }

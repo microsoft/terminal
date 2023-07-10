@@ -2870,20 +2870,21 @@ PointTree TextBuffer::GetPatterns(const til::CoordType firstRow, const til::Coor
     return result;
 }
 
-std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& TextBuffer::GetMarks()
+std::vector<ScrollMark>& TextBuffer::GetMarks()
 {
     return _marks;
 }
-const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& TextBuffer::GetMarks() const
+const std::vector<ScrollMark>& TextBuffer::GetMarks() const
 {
     return _marks;
 }
 
+// Remove all marks between `start` & `end`, inclusive.
 void TextBuffer::ClearMarksInRange(
     const til::point start,
     const til::point end)
 {
-    auto inRange = [&start, &end](const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& m) {
+    auto inRange = [&start, &end](const ScrollMark& m) {
         return (m.start >= start && m.start <= end) ||
                (m.end >= start && m.end <= end);
     };
@@ -2898,11 +2899,13 @@ void TextBuffer::ClearAllMarks() noexcept
     _marks.clear();
 }
 
+// Adjust all the marks in the y-direction by `delta`. Positive values move the
+// marks down (the positive y direction). Negative values move up. This will
+// trim marks that are no longer have a start in the bounds of the buffer
 void TextBuffer::ScrollMarks(const int delta)
 {
     for (auto& mark : _marks)
     {
-        // Move the mark up
         mark.start.y += delta;
 
         // If the mark had sub-regions, then move those pointers too

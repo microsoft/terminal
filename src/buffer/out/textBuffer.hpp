@@ -64,43 +64,40 @@ namespace Microsoft::Console::Render
     class Renderer;
 }
 
-namespace Microsoft::Console::VirtualTerminal::DispatchTypes
+enum class MarkCategory : size_t
 {
-    enum class MarkCategory : size_t
-    {
-        Prompt = 0,
-        Error = 1,
-        Warning = 2,
-        Success = 3,
-        Info = 4
-    };
-    struct ScrollMark
-    {
-        std::optional<til::color> color;
-        til::point start;
-        til::point end; // exclusive
-        std::optional<til::point> commandEnd;
-        std::optional<til::point> outputEnd;
+    Prompt = 0,
+    Error = 1,
+    Warning = 2,
+    Success = 3,
+    Info = 4
+};
+struct ScrollMark
+{
+    std::optional<til::color> color;
+    til::point start;
+    til::point end; // exclusive
+    std::optional<til::point> commandEnd;
+    std::optional<til::point> outputEnd;
 
-        MarkCategory category{ MarkCategory::Info };
-        // Other things we may want to think about in the future are listed in
-        // GH#11000
+    MarkCategory category{ MarkCategory::Info };
+    // Other things we may want to think about in the future are listed in
+    // GH#11000
 
-        bool HasCommand() const noexcept
-        {
-            return commandEnd.has_value() && *commandEnd != end;
-        }
-        bool HasOutput() const noexcept
-        {
-            return outputEnd.has_value() && *outputEnd != *commandEnd;
-        }
-        std::pair<til::point, til::point> GetExtent() const
-        {
-            til::point realEnd{ til::coalesce_value(outputEnd, commandEnd, end) };
-            return std::make_pair(til::point{ start }, realEnd);
-        }
-    };
-}
+    bool HasCommand() const noexcept
+    {
+        return commandEnd.has_value() && *commandEnd != end;
+    }
+    bool HasOutput() const noexcept
+    {
+        return outputEnd.has_value() && *outputEnd != *commandEnd;
+    }
+    std::pair<til::point, til::point> GetExtent() const
+    {
+        til::point realEnd{ til::coalesce_value(outputEnd, commandEnd, end) };
+        return std::make_pair(til::point{ start }, realEnd);
+    }
+};
 
 class TextBuffer final
 {
@@ -266,8 +263,8 @@ public:
     void CopyPatterns(const TextBuffer& OtherBuffer);
     interval_tree::IntervalTree<til::point, size_t> GetPatterns(const til::CoordType firstRow, const til::CoordType lastRow) const;
 
-    std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& GetMarks();
-    const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& GetMarks() const;
+    std::vector<ScrollMark>& GetMarks();
+    const std::vector<ScrollMark>& GetMarks() const;
     void ClearMarksInRange(const til::point start, const til::point end);
     void ClearAllMarks() noexcept;
     void ScrollMarks(const int delta);
@@ -371,7 +368,7 @@ private:
 
     bool _isActiveBuffer = false;
 
-    std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark> _marks;
+    std::vector<ScrollMark> _marks;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

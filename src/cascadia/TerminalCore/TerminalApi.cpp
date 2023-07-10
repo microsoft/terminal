@@ -291,7 +291,7 @@ void Terminal::UseMainScreenBuffer()
 }
 
 // NOTE: This is the version of AddMark that comes from VT
-void Terminal::MarkPrompt(const DispatchTypes::ScrollMark& mark)
+void Terminal::MarkPrompt(const ScrollMark& mark)
 {
     static bool logged = false;
     if (!logged)
@@ -309,7 +309,7 @@ void Terminal::MarkPrompt(const DispatchTypes::ScrollMark& mark)
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
     AddMark(mark, cursorPos, cursorPos, false);
 
-    if (mark.category == DispatchTypes::MarkCategory::Prompt)
+    if (mark.category == MarkCategory::Prompt)
     {
         _currentPromptState = PromptState::Prompt;
     }
@@ -333,8 +333,8 @@ void Terminal::MarkCommandStart()
         // then abandon the current state, and just insert a new Prompt mark that
         // start's & ends here, and got to State::Command.
 
-        DispatchTypes::ScrollMark mark;
-        mark.category = DispatchTypes::MarkCategory::Prompt;
+        ScrollMark mark;
+        mark.category = MarkCategory::Prompt;
         AddMark(mark, cursorPos, cursorPos, false);
     }
     _activeBuffer().GetMarks().back().end = cursorPos;
@@ -359,8 +359,8 @@ void Terminal::MarkOutputStart()
         // then abandon the current state, and just insert a new Prompt mark that
         // start's & ends here, and the command ends here, and go to State::Output.
 
-        DispatchTypes::ScrollMark mark;
-        mark.category = DispatchTypes::MarkCategory::Prompt;
+        ScrollMark mark;
+        mark.category = MarkCategory::Prompt;
         AddMark(mark, cursorPos, cursorPos, false);
     }
     _activeBuffer().GetMarks().back().commandEnd = cursorPos;
@@ -370,12 +370,12 @@ void Terminal::MarkOutputStart()
 void Terminal::MarkCommandFinish(std::optional<unsigned int> error)
 {
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
-    auto category = DispatchTypes::MarkCategory::Prompt;
+    auto category = MarkCategory::Prompt;
     if (error.has_value())
     {
         category = *error == 0u ?
-                       DispatchTypes::MarkCategory::Success :
-                       DispatchTypes::MarkCategory::Error;
+                       MarkCategory::Success :
+                       MarkCategory::Error;
     }
 
     if ((_currentPromptState == PromptState::Output) &&
@@ -393,8 +393,8 @@ void Terminal::MarkCommandFinish(std::optional<unsigned int> error)
         // ends here, and the command ends here, AND the output ends here. and
         // go to State::Output.
 
-        DispatchTypes::ScrollMark mark;
-        mark.category = DispatchTypes::MarkCategory::Prompt;
+        ScrollMark mark;
+        mark.category = MarkCategory::Prompt;
         AddMark(mark, cursorPos, cursorPos, false);
         _activeBuffer().GetMarks().back().commandEnd = cursorPos;
     }

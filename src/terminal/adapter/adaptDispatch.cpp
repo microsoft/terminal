@@ -3643,8 +3643,8 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 
     if (action == L"SetMark")
     {
-        DispatchTypes::ScrollMark mark;
-        mark.category = DispatchTypes::MarkCategory::Prompt;
+        ScrollMark mark;
+        mark.category = MarkCategory::Prompt;
         _api.MarkPrompt(mark);
         return true;
     }
@@ -3691,8 +3691,8 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         case L'A': // FTCS_PROMPT
         {
             // Simply just mark this line as a prompt line.
-            DispatchTypes::ScrollMark mark;
-            mark.category = DispatchTypes::MarkCategory::Prompt;
+            ScrollMark mark;
+            mark.category = MarkCategory::Prompt;
             _api.MarkPrompt(mark);
             return true;
         }

@@ -564,39 +564,4 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     constexpr VTInt s_sDECCOLMSetColumns = 132;
     constexpr VTInt s_sDECCOLMResetColumns = 80;
 
-    // enum class MarkCategory : size_t
-    // {
-    //     Prompt = 0,
-    //     Error = 1,
-    //     Warning = 2,
-    //     Success = 3,
-    //     Info = 4
-    // };
-
-    // struct ScrollMark
-    // {
-    //     std::optional<til::color> color;
-    //     til::point start;
-    //     til::point end; // exclusive
-    //     std::optional<til::point> commandEnd;
-    //     std::optional<til::point> outputEnd;
-
-    //     MarkCategory category{ MarkCategory::Info };
-    //     // Other things we may want to think about in the future are listed in
-    //     // GH#11000
-
-    //     bool HasCommand() const noexcept
-    //     {
-    //         return commandEnd.has_value() && *commandEnd != end;
-    //     }
-    //     bool HasOutput() const noexcept
-    //     {
-    //         return outputEnd.has_value() && *outputEnd != *commandEnd;
-    //     }
-    //     std::pair<til::point, til::point> GetExtent() const
-    //     {
-    //         til::point realEnd{ til::coalesce_value(outputEnd, commandEnd, end) };
-    //         return std::make_pair(til::point{ start }, realEnd);
-    //     }
-    // };
 }
