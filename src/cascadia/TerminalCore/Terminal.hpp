@@ -393,7 +393,6 @@ private:
     };
     std::optional<KeyEventCodes> _lastKeyEventCodes;
 
-    std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark> _scrollMarks;
     enum class PromptState : uint32_t
     {
         None = 0,

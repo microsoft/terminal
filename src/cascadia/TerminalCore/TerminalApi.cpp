@@ -320,7 +320,7 @@ void Terminal::MarkCommandStart()
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
 
     if ((_currentPromptState == PromptState::Prompt) &&
-        (_scrollMarks.size() > 0))
+        (_activeBuffer().GetMarks().size() > 0))
     {
         // We were in the right state, and there's a previous mark to work
         // with.
@@ -337,7 +337,7 @@ void Terminal::MarkCommandStart()
         mark.category = DispatchTypes::MarkCategory::Prompt;
         AddMark(mark, cursorPos, cursorPos, false);
     }
-    _scrollMarks.back().end = cursorPos;
+    _activeBuffer().GetMarks().back().end = cursorPos;
     _currentPromptState = PromptState::Command;
 }
 
@@ -346,7 +346,7 @@ void Terminal::MarkOutputStart()
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
 
     if ((_currentPromptState == PromptState::Command) &&
-        (_scrollMarks.size() > 0))
+        (_activeBuffer().GetMarks().size() > 0))
     {
         // We were in the right state, and there's a previous mark to work
         // with.
@@ -363,7 +363,7 @@ void Terminal::MarkOutputStart()
         mark.category = DispatchTypes::MarkCategory::Prompt;
         AddMark(mark, cursorPos, cursorPos, false);
     }
-    _scrollMarks.back().commandEnd = cursorPos;
+    _activeBuffer().GetMarks().back().commandEnd = cursorPos;
     _currentPromptState = PromptState::Output;
 }
 
@@ -379,7 +379,7 @@ void Terminal::MarkCommandFinish(std::optional<unsigned int> error)
     }
 
     if ((_currentPromptState == PromptState::Output) &&
-        (_scrollMarks.size() > 0))
+        (_activeBuffer().GetMarks().size() > 0))
     {
         // We were in the right state, and there's a previous mark to work
         // with.
@@ -396,10 +396,10 @@ void Terminal::MarkCommandFinish(std::optional<unsigned int> error)
         DispatchTypes::ScrollMark mark;
         mark.category = DispatchTypes::MarkCategory::Prompt;
         AddMark(mark, cursorPos, cursorPos, false);
-        _scrollMarks.back().commandEnd = cursorPos;
+        _activeBuffer().GetMarks().back().commandEnd = cursorPos;
     }
-    _scrollMarks.back().outputEnd = cursorPos;
-    _scrollMarks.back().category = category;
+    _activeBuffer().GetMarks().back().outputEnd = cursorPos;
+    _activeBuffer().GetMarks().back().category = category;
     _currentPromptState = PromptState::None;
 }
 
@@ -458,10 +458,10 @@ void Terminal::NotifyBufferRotation(const int delta)
     // manually erase our pattern intervals since the locations have changed now
     _patternIntervalTree = {};
 
-    const auto hasScrollMarks = _scrollMarks.size() > 0;
+    const auto hasScrollMarks = _activeBuffer().GetMarks().size() > 0;
     if (hasScrollMarks)
     {
-        for (auto& mark : _scrollMarks)
+        for (auto& mark : _activeBuffer().GetMarks())
         {
             // Move the mark up
             mark.start.y -= delta;
@@ -477,10 +477,10 @@ void Terminal::NotifyBufferRotation(const int delta)
             }
         }
 
-        _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
-                                          _scrollMarks.end(),
-                                          [](const auto& m) { return m.start.y < 0; }),
-                           _scrollMarks.end());
+        _activeBuffer().GetMarks().erase(std::remove_if(_activeBuffer().GetMarks().begin(),
+                                                        _activeBuffer().GetMarks().end(),
+                                                        [](const auto& m) { return m.start.y < 0; }),
+                                         _activeBuffer().GetMarks().end());
     }
 
     const auto oldScrollOffset = _scrollOffset;

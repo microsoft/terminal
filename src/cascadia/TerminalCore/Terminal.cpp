@@ -1360,11 +1360,11 @@ void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes:
 
     if (fromUi)
     {
-        _scrollMarks.insert(_scrollMarks.begin(), m);
+        _activeBuffer().GetMarks().insert(_activeBuffer().GetMarks().begin(), m);
     }
     else
     {
-        _scrollMarks.push_back(m);
+        _activeBuffer().GetMarks().push_back(m);
     }
 
     // Tell the control that the scrollbar has somehow changed. Used as a
@@ -1394,10 +1394,10 @@ void Terminal::ClearMark()
                (m.end >= start && m.end <= end);
     };
 
-    _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
-                                      _scrollMarks.end(),
-                                      inSelection),
-                       _scrollMarks.end());
+    _activeBuffer().GetMarks().erase(std::remove_if(_activeBuffer().GetMarks().begin(),
+                                                    _activeBuffer().GetMarks().end(),
+                                                    inSelection),
+                                     _activeBuffer().GetMarks().end());
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
@@ -1405,7 +1405,7 @@ void Terminal::ClearMark()
 }
 void Terminal::ClearAllMarks() noexcept
 {
-    _scrollMarks.clear();
+    _activeBuffer().GetMarks().clear();
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
     _NotifyScrollEvent();
@@ -1418,7 +1418,7 @@ const std::vector<DispatchTypes::ScrollMark>& Terminal::GetScrollMarks() const n
     // hide them. We need to return a reference, so we can't just ctor an empty
     // list here just for when we're in the alt buffer.
     static const std::vector<DispatchTypes::ScrollMark> _altBufferMarks{};
-    return _inAltBuffer() ? _altBufferMarks : _scrollMarks;
+    return _inAltBuffer() ? _altBufferMarks : _activeBuffer().GetMarks();
 }
 
 til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) const

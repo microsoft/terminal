@@ -2869,3 +2869,12 @@ PointTree TextBuffer::GetPatterns(const til::CoordType firstRow, const til::Coor
     PointTree result(std::move(intervals));
     return result;
 }
+
+std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& TextBuffer::GetMarks()
+{
+    return _marks;
+}
+const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& TextBuffer::GetMarks() const
+{
+    return _marks;
+}
