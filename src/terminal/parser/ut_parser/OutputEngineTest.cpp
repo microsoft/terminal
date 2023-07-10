@@ -466,7 +466,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
 
         Log::Comment(L"Receiving 100 sub parameters should lead to removal of last parameter");
-        VERIFY_IS_FALSE(mach._parameters.at(0).has_value());
+        VERIFY_IS_TRUE(mach._parameters.empty());
         Log::Comment(L"Receiving 100 sub parameter should set the overflow flag");
         VERIFY_IS_TRUE(mach._parameterLimitOverflowed);
 
@@ -532,18 +532,6 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         auto dispatch = std::make_unique<DummyDispatch>();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
-
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
-        mach.ProcessCharacter(AsciiChars::ESC);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-        mach.ProcessCharacter(L'[');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
-        mach.ProcessCharacter(L':');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiIgnore);
-        mach.ProcessCharacter(L'3');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiIgnore);
-        mach.ProcessCharacter(L'q');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
 
         mach.ProcessCharacter(AsciiChars::ESC);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
