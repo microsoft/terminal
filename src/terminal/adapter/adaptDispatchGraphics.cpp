@@ -269,7 +269,6 @@ void AdaptDispatch::_ApplyGraphicsOptionSubParam(const VTParameter /* option */,
 
 // Routine Description:
 // - Helper to apply a number of graphic rendition options to an attribute.
-// - Applies the changes iff all the options are valid.
 // Arguments:
 // - options - An array of options that will be applied in sequence.
 // - attr - The attribute that will be updated with the applied options.
