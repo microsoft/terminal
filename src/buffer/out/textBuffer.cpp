@@ -2897,3 +2897,27 @@ void TextBuffer::ClearAllMarks() noexcept
 {
     _marks.clear();
 }
+
+void TextBuffer::ScrollMarks(const int delta)
+{
+    for (auto& mark : _marks)
+    {
+        // Move the mark up
+        mark.start.y += delta;
+
+        // If the mark had sub-regions, then move those pointers too
+        if (mark.commandEnd.has_value())
+        {
+            (*mark.commandEnd).y += delta;
+        }
+        if (mark.outputEnd.has_value())
+        {
+            (*mark.outputEnd).y += delta;
+        }
+    }
+
+    _marks.erase(std::remove_if(_marks.begin(),
+                                _marks.end(),
+                                [](const auto& m) { return m.start.y < 0; }),
+                 _marks.end());
+}

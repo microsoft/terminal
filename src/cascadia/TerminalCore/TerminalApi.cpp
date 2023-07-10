@@ -462,26 +462,7 @@ void Terminal::NotifyBufferRotation(const int delta)
     const auto hasScrollMarks = marks.size() > 0;
     if (hasScrollMarks)
     {
-        for (auto& mark : marks)
-        {
-            // Move the mark up
-            mark.start.y -= delta;
-
-            // If the mark had sub-regions, then move those pointers too
-            if (mark.commandEnd.has_value())
-            {
-                (*mark.commandEnd).y -= delta;
-            }
-            if (mark.outputEnd.has_value())
-            {
-                (*mark.outputEnd).y -= delta;
-            }
-        }
-
-        marks.erase(std::remove_if(marks.begin(),
-                                   marks.end(),
-                                   [](const auto& m) { return m.start.y < 0; }),
-                    marks.end());
+        _activeBuffer().ScrollMarks(-delta);
     }
 
     const auto oldScrollOffset = _scrollOffset;

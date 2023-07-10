@@ -3145,6 +3145,12 @@ bool AdaptDispatch::_EraseScrollback()
     auto& cursor = textBuffer.GetCursor();
     const auto row = cursor.GetPosition().y;
 
+    // Scroll all the marks up. This will trim ones that are now "outside" the buffer
+    textBuffer.ScrollMarks(-top);
+    // Also clear all the marks below the new viewport position.
+    textBuffer.ClearMarksInRange(til::point{ 0, height },
+                                 til::point{ bufferSize.width, bufferSize.height });
+
     // Scroll the viewport content to the top of the buffer.
     textBuffer.ScrollRows(top, height, -top);
     // Clear everything after the viewport.
@@ -3226,6 +3232,10 @@ bool AdaptDispatch::_EraseAll()
 
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(newViewportTop, newViewportBottom);
+
+    // Clear any marks that remain below the start of the
+    textBuffer.ClearMarksInRange(til::point{ 0, newViewportTop },
+                                 til::point{ bufferSize.Width(), bufferSize.Height() });
 
     // GH#5683 - If this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this ED sequence to the connected
