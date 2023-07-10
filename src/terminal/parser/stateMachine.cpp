@@ -2170,7 +2170,6 @@ void StateMachine::ProcessString(const std::wstring_view string)
             case VTStates::CsiIgnore:
             case VTStates::CsiParam:
             case VTStates::CsiSubParam:
-            case VTStates::CsiParamIgnore:
                 _ActionCsiDispatch(*wchIter);
                 break;
             case VTStates::OscParam:

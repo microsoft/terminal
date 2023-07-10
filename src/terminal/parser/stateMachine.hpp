@@ -157,7 +157,6 @@ namespace Microsoft::Console::VirtualTerminal
             CsiIgnore,
             CsiParam,
             CsiSubParam,
-            CsiParamIgnore,
             OscParam,
             OscString,
             OscTermination,
