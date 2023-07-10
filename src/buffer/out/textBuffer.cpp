@@ -2878,3 +2878,22 @@ const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark
 {
     return _marks;
 }
+
+void TextBuffer::ClearMarksInRange(
+    const til::point start,
+    const til::point end)
+{
+    auto inRange = [&start, &end](const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& m) {
+        return (m.start >= start && m.start <= end) ||
+               (m.end >= start && m.end <= end);
+    };
+
+    _marks.erase(std::remove_if(_marks.begin(),
+                                _marks.end(),
+                                inRange),
+                 _marks.end());
+}
+void TextBuffer::ClearAllMarks() noexcept
+{
+    _marks.clear();
+}

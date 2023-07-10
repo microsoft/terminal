@@ -1389,15 +1389,7 @@ void Terminal::ClearMark()
         start = til::point{ GetSelectionAnchor() };
         end = til::point{ GetSelectionEnd() };
     }
-    auto inSelection = [&start, &end](const DispatchTypes::ScrollMark& m) {
-        return (m.start >= start && m.start <= end) ||
-               (m.end >= start && m.end <= end);
-    };
-
-    _activeBuffer().GetMarks().erase(std::remove_if(_activeBuffer().GetMarks().begin(),
-                                                    _activeBuffer().GetMarks().end(),
-                                                    inSelection),
-                                     _activeBuffer().GetMarks().end());
+    _activeBuffer().ClearMarksInRange(start, end);
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
@@ -1405,7 +1397,7 @@ void Terminal::ClearMark()
 }
 void Terminal::ClearAllMarks() noexcept
 {
-    _activeBuffer().GetMarks().clear();
+    _activeBuffer().ClearAllMarks();
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
     _NotifyScrollEvent();

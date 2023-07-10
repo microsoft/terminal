@@ -268,6 +268,8 @@ public:
 
     std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& GetMarks();
     const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& GetMarks() const;
+    void ClearMarksInRange(const til::point start, const til::point end);
+    void ClearAllMarks() noexcept;
 
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);

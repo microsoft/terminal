@@ -458,10 +458,11 @@ void Terminal::NotifyBufferRotation(const int delta)
     // manually erase our pattern intervals since the locations have changed now
     _patternIntervalTree = {};
 
-    const auto hasScrollMarks = _activeBuffer().GetMarks().size() > 0;
+    auto& marks{ _activeBuffer().GetMarks() };
+    const auto hasScrollMarks = marks.size() > 0;
     if (hasScrollMarks)
     {
-        for (auto& mark : _activeBuffer().GetMarks())
+        for (auto& mark : marks)
         {
             // Move the mark up
             mark.start.y -= delta;
@@ -477,10 +478,10 @@ void Terminal::NotifyBufferRotation(const int delta)
             }
         }
 
-        _activeBuffer().GetMarks().erase(std::remove_if(_activeBuffer().GetMarks().begin(),
-                                                        _activeBuffer().GetMarks().end(),
-                                                        [](const auto& m) { return m.start.y < 0; }),
-                                         _activeBuffer().GetMarks().end());
+        marks.erase(std::remove_if(marks.begin(),
+                                   marks.end(),
+                                   [](const auto& m) { return m.start.y < 0; }),
+                    marks.end());
     }
 
     const auto oldScrollOffset = _scrollOffset;
