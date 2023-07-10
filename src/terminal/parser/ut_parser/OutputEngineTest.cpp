@@ -465,7 +465,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L'J');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
 
-        Log::Comment(L"Recieving 100 sub parameters should lead to removal of last parameter");
+        Log::Comment(L"Receiving 100 sub parameters should lead to removal of last parameter");
         VERIFY_IS_FALSE(mach._parameters.at(0).has_value());
         Log::Comment(L"Receiving 100 sub parameter should set the overflow flag");
         VERIFY_IS_TRUE(mach._parameterLimitOverflowed);
