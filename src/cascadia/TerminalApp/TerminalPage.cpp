@@ -4664,8 +4664,7 @@ namespace winrt::TerminalApp::implementation
                                             const bool withSelection)
     {
         // withSelection can be used to add actions that only appear if there's
-        // selected text, like "search the web". In this initial draft, it's not
-        // actually augmented by the TerminalPage, so it's left commented out.
+        // selected text, like "search the web"
 
         const auto& menu{ sender.try_as<MUX::Controls::CommandBarFlyout>() };
         if (!menu)
@@ -4716,6 +4715,11 @@ namespace winrt::TerminalApp::implementation
         if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
         {
             makeItem(RS_(L"PaneClose"), L"\xE89F", ActionAndArgs{ ShortcutAction::ClosePane, nullptr });
+        }
+
+        if (const auto& control{ _GetActiveControl() }; control.ConnectionState() >= ConnectionState::Closed)
+        {
+            makeItem(RS_(L"RestartConnectionText"), L"\xE72C", ActionAndArgs{ ShortcutAction::RestartConnection, nullptr });
         }
 
         if (withSelection)
