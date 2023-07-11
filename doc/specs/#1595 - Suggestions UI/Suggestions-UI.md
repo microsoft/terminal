@@ -1,7 +1,7 @@
 ---
 author: Mike Griese
 created on: 2022-08-22
-last updated: 2023-02-17
+last updated: 2023-07-11
 issue id: 1595
 ---
 
@@ -99,11 +99,11 @@ what the UI would look like.
 
 ![](shell-autocomplete-july-2022-000.gif)
 
-An prototype of the recent commands UI, powered by shell integration:
+A prototype of the recent commands UI, powered by shell integration:
 
 ![](command-history-suggestions.gif)
 
-An prototype of the tasks UI, powered by the user's settings:
+A prototype of the tasks UI, powered by the user's settings:
 
 ![](tasks-suggestions.gif)
 
@@ -147,9 +147,10 @@ differentiate "use this suggestion" vs tab for "tab expand what I'm typing at
 the prompt". We should probably preserve this behavior.
 
 We probably don't want to provide different experiences for the **menu** version
-won't be pressing tab to tab-complete at the shell (the focus is out of the of
-the Suggestions UI vs. the **palette** version. In the palette version, the user
-terminal and into the Suggestions UI).
+of the Suggestions UI vs. the **palette** version. In the palette version, the
+user won't be pressing tab to tab-complete at the shell - the focus is out of
+the of terminal and in the Suggestions UI. With the menu version, the focus is
+still "in the terminal", and users would expect tab to tab-complete.
 
 We will want to make sure that there's some semblance of consistency across our
 implementation for the Suggestions UI, our own Command Palette, VsCode's
@@ -166,7 +167,7 @@ intellisense and their own implementation of shell-completions in the Terminal.
 #### Fork the Command Palette
 
 We're largely going to start with the Command Palette to build the Suggestions
-UI. The Command Palette is already a control we've built for displaying a
+UI[[1](#footnote-1)]. The Command Palette is already a control we've built for displaying a
 transient list of commands and dispatching them to the rest of the app.
 
 Currently, the Command Palette is a single static control, at the top-center of
@@ -222,7 +223,7 @@ different set of actions.
   named `.wt.json`. For more details, see the [Tasks] spec.
 * `Microsoft.Terminal.Extensions.BufferComplete`: As an example, this
   demonstrates how an action might be authored to reference a suggestion source
-  from an extension[[1](#footnote-1)].
+  from an extension[[2](#footnote-2)].
 
 Each of these different sources will build a different set of `Command`s,
 primarily populated with `sendInput` actions. We'll load those `Command`s into
@@ -245,11 +246,11 @@ has [shell integration] enabled for their shell. They want to open the
 Suggestions UI filtered to their recent history, but starting with what they've
 already typed. To support this scenario, we'll add an additional property:
 
-* `"useCommandline"`: `bool`
+* `"useCommandline"`: `bool` (**default**: `true`)
   * `true`: the current commandline the user has typed will pre-populate the
     filter of the Suggestions UI. This requires that the user has enabled shell
     integration in their shell's config.
-  * `false`: the filter will start empty.
+  * `false`: the filter will start empty, regardless of what the user has typed.
 
 With that setting, the user can achieve their desired UX with the following action:
 
@@ -259,6 +260,11 @@ With that setting, the user can achieve their desired UX with the following acti
 
 Now, when they type `git c` and invoke the Suggestions UI, they can immediately
 start searching for recent commands that started with `git c`.
+
+The primary use case for `useCommandline: false` was for `"nesting": "source"`.
+When filtering a list of ["Tasks...", "Recent commands...", "Recent
+directories...", "Docker...", "Git..."], then there's minimal value to start by
+filtering to "git c".
 
 #### Default actions
 
@@ -335,7 +341,7 @@ needs of the Command Palette.
 * [ ] Disable sorting on the `SuggestionsControl` - elements should presumably be pre-sorted by the source. 
 * [ ] Expose the recent commands as a accessor on `TermControl`
 * [ ] Add a `suggestions` action which accepts a single option `recentCommands`. These should be fed in MRU order to the `SuggestionsControl`.
-* [ ] Expose the recent directories as a accessor on `TermControl`, and add a `recentDirectories` source. 
+* [ ] Expose the recent directories as an accessor on `TermControl`, and add a `recentDirectories` source.
 
 ### 🚶 Walk
 
@@ -475,7 +481,7 @@ information provided to the Terminal.
 
 This might be in the form of a `TeachingTip`, as in this example:
 
-![](tasks-suggestions.gif)
+![TeachingTip with description](https://user-images.githubusercontent.com/18356694/222244568-243a6482-92d9-4c3c-bffc-54ad97f01f69.gif)
 
 Actions in the settings could also accept an optional `description` property, to
 specify the string that would be presented in that flyout.
@@ -483,7 +489,7 @@ specify the string that would be presented in that flyout.
 #### Pre-filtering the UI & filter by source
 
 > **Note**: _This is a brainstorm I considered while writing this spec. I would
-> not not include it in the v1 of this spec. Rather, I'd like to leave it for
+> not include it in the v1 of this spec. Rather, I'd like to leave it for
 > where we might go with this UX in the future._
 
 Do want to support different _types_ of nesting? So instead of just the default,
@@ -650,7 +656,12 @@ fully up to date.
 
 ### Footnotes
 
-<a name="footnote-1"><a>[1]: Obviously, we're not having a real discussion about
+<a name="footnote-1"><a>[1]: We've had discussion in the past ([#7285]) about
+possibly creating a more abstract "Live filtering list view" to replace the
+Command Palette. We could most certainly use that here too. We've decided to
+initially go with a fork for now.
+
+<a name="footnote-2"><a>[2]: Obviously, we're not having a real discussion about
 extensions in this doc. This example is solely to show that there's room for
 extensions to work with the "source" property in this design. What the final
 shape of extensions will be is very much still to be determined.
@@ -667,6 +678,8 @@ shape of extensions will be is very much still to be determined.
 [#10436]: https://github.com/microsoft/terminal/issues/10436
 [#12927]: https://github.com/microsoft/terminal/issues/12927
 [#12863]: https://github.com/microsoft/terminal/issues/12863
+[#7285]: https://github.com/microsoft/terminal/issues/7285
+[#14939]: https://github.com/microsoft/terminal/issues/7285
 
 [#keep]: https://github.com/zadjii/keep
 [VsCode Tasks]: https://github.com/microsoft/terminal/blob/main/.vscode/tasks.json
