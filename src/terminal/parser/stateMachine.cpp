@@ -575,7 +575,7 @@ void StateMachine::_ActionSubParam(const wchar_t wch)
             // should be ignored.
             if (_subParameterCounter >= MAX_SUBPARAMETER_COUNT)
             {
-                _parameterLimitOverflowed = true;
+                _subParameterLimitOverflowed = true;
             }
             else
             {
