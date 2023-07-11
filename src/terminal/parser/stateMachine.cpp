@@ -19,6 +19,8 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bo
     _subParameters{},
     _subParameterRanges{},
     _parameterLimitOverflowed(false),
+    _subParameterLimitOverflowed(false),
+    _subParameterCounter(0),
     _oscString{},
     _cachedSequence{ std::nullopt }
 {
@@ -524,6 +526,7 @@ void StateMachine::_ActionParam(const wchar_t wch)
             {
                 // Otherwise move to next param.
                 _parameters.push_back({});
+                _subParameterCounter = 0;
                 const auto rangeStart = gsl::narrow<BYTE>(_subParameters.size());
                 _subParameterRanges.push_back({ rangeStart, rangeStart });
             }
@@ -550,8 +553,8 @@ void StateMachine::_ActionSubParam(const wchar_t wch)
 {
     _trace.TraceOnAction(L"SubParam");
 
-    // Once we've reached the parameter limit, sub parameters are ignored.
-    if (!_parameterLimitOverflowed)
+    // Once we've reached the sub parameter limit, sub parameters are ignored.
+    if (!_subParameterLimitOverflowed)
     {
         // If we have no parameters and we're about to add a sub parameter, add an empty parameter here.
         if (_parameters.empty())
@@ -567,15 +570,12 @@ void StateMachine::_ActionSubParam(const wchar_t wch)
         if (_isSubParameterDelimiter(wch))
         {
             // If we receive a delimiter after we've already accumulated the
-            // maximum allowed sub parameters, then we need to set a flag to
-            // indicate that further sub parameter characters should be ignored.
-            // Similarly, we need to remove the last parameter so it isn't interpreted
-            // by the engine.
-            if (_subParameters.size() >= MAX_SUBPARAMETER_COUNT)
+            // maximum allowed sub parameters for the parameter, then we need to
+            // set a flag to indicate that further sub parameter characters
+            // should be ignored.
+            if (_subParameterCounter >= MAX_SUBPARAMETER_COUNT)
             {
                 _parameterLimitOverflowed = true;
-                _parameters.pop_back();
-                _subParameterRanges.pop_back();
             }
             else
             {
@@ -583,6 +583,8 @@ void StateMachine::_ActionSubParam(const wchar_t wch)
                 _subParameters.push_back({});
                 // increment current range's end index.
                 _subParameterRanges.back().second++;
+                // increment counter
+                _subParameterCounter++;
             }
         }
         else
@@ -614,6 +616,8 @@ void StateMachine::_ActionClear()
 
     _subParameters.clear();
     _subParameterRanges.clear();
+    _subParameterCounter = 0;
+    _subParameterLimitOverflowed = false;
 
     _oscString.clear();
     _oscParameter = 0;

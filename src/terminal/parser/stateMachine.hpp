@@ -30,7 +30,12 @@ namespace Microsoft::Console::VirtualTerminal
     // are supported, but most modern terminal emulators will allow around twice
     // that number.
     constexpr size_t MAX_PARAMETER_COUNT = 32;
-    constexpr size_t MAX_SUBPARAMETER_COUNT = 32;
+
+    // Sub parameter limit for each parameter.
+    constexpr size_t MAX_SUBPARAMETER_COUNT = 6;
+    // we limit ourself to 256 sub parameters because we use bytes to store
+    // the their indexes.
+    static_assert(MAX_PARAMETER_COUNT * MAX_SUBPARAMETER_COUNT <= 256);
 
     class StateMachine final
     {
@@ -198,6 +203,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool _parameterLimitOverflowed;
         std::vector<VTParameter> _subParameters;
         std::vector<std::pair<BYTE /*range start*/, BYTE /*range end*/>> _subParameterRanges;
+        bool _subParameterLimitOverflowed;
+        BYTE _subParameterCounter;
 
         std::wstring _oscString;
         VTInt _oscParameter;
