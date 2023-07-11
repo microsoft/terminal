@@ -7,7 +7,7 @@ issue id: 1595
 
 # Windows Terminal - Tasks
 
-> Note:
+> **Note**:
 >
 > This is a draft document. This doc largely predates the creation of the
 > [Suggestions UI]. Many of the elements of this doc need to be updated to
@@ -19,7 +19,7 @@ issue id: 1595
 
 ## Abstract
 
-The command line is a highly powerful tool. However, it's power is dependent on
+The command line is a highly powerful tool. However, its power is dependent on
 the user's knowledge of the specific commands, flags and parameters needed to
 perform tasks from the command-line. For simple everyday commands, this might not
 be so hard. For longer commands, or ones used less frequently, there's quite a
@@ -30,6 +30,12 @@ recalled by the user simply thinking **"what do I want to do"**, rather than
 "how do I do it".
 
 ## Background
+
+
+> **Note**:
+>
+> This largely builds off of work in the [Suggestions UI], for displaying these
+> tasks to the user. Make sure to read that spec first.
 
 ### Inspiration
 
@@ -42,7 +48,7 @@ directly tied to shell integration (that menu is populated from commands that
 they know were run in the shell). In the absence of shell integration though, it
 should be able to save these commands to a menu manually.
 
-It's hard to say that the ultimate vision here isn't partially inspired by the
+It is hard to say that the ultimate vision here isn't partially inspired by the
 "[workflows]" of [Warp], or by [Fig]. These are modern tools that seek to
 augment the command-line experience, by making the command-line more
 approachable. Warp quite clearly has the same concept in "workflows" - scripts
@@ -58,7 +64,13 @@ support for starting processes, with a set of args. These args can also be
 picked at runtime, and custom sets of arguments can be specified for individual
 arguments.
 
-We've had verbatim feedback that developers already attempt to record useful commandlines in various different ways - in OneNotes, in shell scripts, in aliases. Sharing these Providing a unified way to easily store, browse, and use these command lines should be valuable to developers already doing this. Furthermore, developers often share these commands with the rest of their teams. A static file in
+We've had verbatim feedback that developers already attempt to record useful
+commandlines in various different ways - in OneNotes, in shell scripts, in
+aliases. Sharing these Providing a unified way to easily store, browse, and use
+these command lines should be valuable to developers already doing this.
+Furthermore, developers often share these commands with the rest of their teams.
+A static file in their project containing commands for the whole team seems like
+a simple solution to this problem.
 
 ### User Stories
 
@@ -66,15 +78,15 @@ Story |  Size | Description
 --|-----------|--
 A | 🐣 Crawl  | Users can bring up a menu of command line tasks and quickly execute them
 B | 🐣 Crawl  | Fragment apps can provide tasks to a users settings
-C | 🚶 Walk   | Tasks can have promptable sections of input
 D | 🚶 Walk   | The user can save commands straight to their settings with a `wt` command
 E | 🚶 Walk   | Users can have different tasks enabled for different profiles(/shells?)
 F | 🏃‍♂️ Run    | The terminal can automatically look for command fragments in the tree of the CWD
 H | 🏃‍♂️ Run    | Tasks are filterable by tool (`git`, `docker`, etc.)
 I | 🏃‍♂️ Run    | ? Tasks can both be atomic  _tasks_ and longer scripts. Tasks can be sent straightaway to the Terminal, while the longer scripts are more for reference (ex: [winget script]).
 J | 🏃‍♂️ Run    | Tasks can be filtered by text the user has already typed
-K | 🚀 Sprint | Community tasks are hosted in a public GH repo
-L | 🚀 Sprint | A simple UX (either web or in Terminal) is exposed for interacting with public GH repo of tasks
+K | 🚀 Sprint | Tasks can have promptable sections of input
+L | 🚀 Sprint | Community tasks are hosted in a public GH repo
+M | 🚀 Sprint | A simple UX (either web or in Terminal) is exposed for interacting with public GH repo of tasks
 
 ### Elevator Pitch
 
@@ -123,13 +135,16 @@ It will delight developers.
 
 ### UI/UX Design
 
-Some examples from VsCode, Warp. These are meant to be illustrative of what
-these menus already look like in the wild:
+For the most part, we'll be using the [Suggestions UI] to display tasks to the
+user. This is a text cursor-relative UI surface that can quickly display actions
+to the user, in the context of what they're working on.
+
+The following are some examples from VsCode, Warp. These are meant to be
+illustrative of what these menus already look like in the wild:
 
 ![](img/vscode-tasks-000.gif)
 
 ![](img/warp-workflows-000.gif)
-
 
 The following gif was a prototype of [shell-driven autocompletion]. This was
 more for suggestions from the shell, to the Terminal, but is helpful for
@@ -168,7 +183,7 @@ What info do we all want for these tasks?
   - ex: `nuget push -apikey az -source TerminalDependencies ${path-to-nuget-package}`
   - how do we specify these as promptable sections without stomping on all sorts
     of other shells syntaxes?
-* ~Maybe metadata about the command that it's used for? e.g. `git`, `docker`?~
+* ~Maybe metadata about the command that it is used for? e.g. `git`, `docker`?~
   - This can probably be figured out from the first word of the command
 * What shell it should be used for?
   - CMD, pwsh seem like clear choices.
@@ -182,26 +197,6 @@ What info do we all want for these tasks?
     is just a string of text for the commandline, you gotta know which shell to
     use it with"
 
-[TODO!]: # TODO! ---------------------------------------------------------------
-How do we want to represent this?
-* snippets of JSON with `sendInput` actions is easy for the Terminal to understand.
-* They are probably not that user friendly outside of Windows Terminal.
-  Consider, users are gonna stick these JSON blobs in the root of their repo.
-  Theoretically other tools should use them too. Is our json actions syntax what
-  we'd really want to saddle people with?
-* JSON is not super friendly to command-lines - since everything's gotta be
-  encapsulated as a string, then you've got to escape characters (esp quotes
-  `"`) for JSON strings
-  - on the other hand, embedding tabs `\t`, newlines `\r`, escape characters, is fairly
-    straightforward.
-* Anything that's not JSON blobs will require a lot of spec'ing to come up with
-  a standard, and more expensive implementation Terminal-side
-* How do we want this to play with longer workflows? E.g. our familiar [winget script]
-* Markdown [Notebooks] seems relevant here, but probably not best for annotating
-  specific commands that we want the Terminal to pick up on. A
-  `.terminal-tasks.md` seems simple enough to look for, but embedding metadata
-  about which shell, what text should be prompted for, descriptions, that does
-  seem harder.
 
 #### Layering actions
 
@@ -313,10 +308,34 @@ Still gross, but at least maintainable.
 
 YAML or something else might make more sense here.
 
-#### Per-project commands stored on the file system
+#### Per-project tasks(`.wt.json`?)
 
-In addition to tasks stored in the user's `settings.json`, we also want to provide users with a way to store commands relative to their
+In addition to tasks stored in the user's `settings.json`, we also want to provide users with a way to store commands relative to their projects. These can be checked in to source control repositories alongside code. When the
 
+[TODO!]: # TODO! ---------------------------------------------------------------
+How do we want to represent this?
+* snippets of JSON with `sendInput` actions is easy for the Terminal to understand.
+* They are probably not that user friendly outside of Windows Terminal.
+  Consider, users are gonna stick these JSON blobs in the root of their repo.
+  Theoretically other tools should use them too. Is our json actions syntax what
+  we'd really want to saddle people with?
+* JSON is not super friendly to command-lines - since everything's gotta be
+  encapsulated as a string, then you've got to escape characters (esp quotes
+  `"`) for JSON strings
+  - on the other hand, embedding tabs `\t`, newlines `\r`, escape characters, is fairly
+    straightforward.
+* Anything that's not JSON blobs will require a lot of spec'ing to come up with
+  a standard, and more expensive implementation Terminal-side
+  * For what it is worth, [Warp] uses .yaml files for their "workflows"[[1](#footnote-1)]. As an
+    example, see
+    [`clone_all_repos_in_org.yaml`](https://github.com/warpdotdev/workflows/blob/main/specs/git/clone_all_repos_in_org.yaml)
+  * Yaml does have the neat benefit of not needing too much command-line escaping
+* How do we want this to play with longer workflows? E.g. our familiar [winget script]
+* Markdown [Notebooks] seems relevant here, but probably not best for annotating
+  specific commands that we want the Terminal to pick up on. A
+  `.terminal-tasks.md` seems simple enough to look for, but embedding metadata
+  about which shell, what text should be prompted for, descriptions, that does
+  seem harder.
 ##### File name
 
 In my original prototype, I used `.wt.json` as the filename for a
@@ -328,17 +347,14 @@ file. Perhaps the `.` prefix isn't necessary. Would `wt.json` be too silly?
 
 ##### Save to project on the commandline
 
+As an example implementation, see [these
+commits](https://github.com/microsoft/terminal/compare/6f5b9fb...1cde67ac466e19394eea1eb3a41405513d160a6f).
+
 `wt save --local commandline...`?
 `wt save --settings commandline...`?
 `wt save --file [path to file] commandline...`?
 
-#### Community tasks from extensions
-
-[TODO!]: # TODO! ---------------------------------------------------------------
-
-Fragment extensions. Case in point: https://github.com/abduvik/just-enough-series/tree/master/courses/docker+docker-compose
-
-#### Shell escaping commandlines
+##### Shell escaping commandlines
 
 Something like `wt save ping 8.8.8.8 > foo.txt` isn't going to work the way
 users want. The shell is gonna get the first crack at parsing that commandline,
@@ -349,6 +365,13 @@ and is going to try and redirect the _output of `wt`_ to `foo.txt`.
 [TODO!]: # TODO! ---------------------------------------------------------------
 
 Is there a better way to escape, like `wt save "ping 8.8.8.8 > foo.txt"` or something?
+
+#### Community tasks from extensions
+
+[TODO!]: # TODO! ---------------------------------------------------------------
+
+Fragment extensions. Case in point: https://github.com/abduvik/just-enough-series/tree/master/courses/docker+docker-compose
+
 
 ## Tenents
 
@@ -400,6 +423,7 @@ pt-br:"", ...}`-style map of language->string descriptions.
 * [ ] The terminal can look for a settings file of tasks in a profile's `startingDirectory`
 * [ ] [#5790] - profile specific actions
 * [ ] [#12927]
+* [ ] [#12857] Ability to save selected text as a `sendInput` action
 
 ### 🏃‍♂️ Run
 * [ ] When the user `cd`s to a directory (with shell integration enabled), the terminal can load the tasks from that directory tree
@@ -433,7 +457,36 @@ Longer workflows might be best exposed as [Notebooks].
 
 ### Footnotes
 
-<a name="footnote-1"><a>[1]:
+<a name="footnote-1"><a>[1]: We may want to straight up just seemlessly support that syntax. The commands are all licensed under Apache 2.0. Converting them to WT-compatible json is fairly trivial:
+
+```python
+import yaml
+import json
+
+def parse_yaml_files(directory):
+    json_data = {}
+    json_data["name"] = f"{directory} tasks..."
+    json_data["commands"] = []
+
+    for filename in os.listdir(directory):
+        if filename.endswith(".yaml") or filename.endswith(".yml"):
+            file_path = os.path.join(directory, filename)
+            with open(file_path, 'r') as file:
+                try:
+                    yaml_data = yaml.safe_load(file)
+                    new_obj = {}
+                    command = {}
+                    command["input"] = yaml_data["command"]
+                    command["action"] ="sendInput"
+
+                    new_obj["command"]=command
+                    new_obj["name"] = yaml_data["name"]
+                    new_obj["description"] = yaml_data["description"]
+                    json_data["commands"].append(new_obj)
+                except yaml.YAMLError as e:
+                    print(f"Error parsing {filename}: {e}")
+    json.dump(data, file, indent=4)
+```
 
 
 [Fig]: https://github.com/withfig/autocomplete
@@ -446,6 +499,7 @@ Longer workflows might be best exposed as [Notebooks].
 [#3121]: https://github.com/microsoft/terminal/issues/3121
 [#10436]: https://github.com/microsoft/terminal/issues/10436
 [#12927]: https://github.com/microsoft/terminal/issues/12927
+[#12857]: https://github.com/microsoft/terminal/issues/12857
 [#5790]: https://github.com/microsoft/terminal/issues/5790
 [Notebooks]: ./Markdown%20Notebooks.md
 [Terminal North Star]: ./Terminal-North-Star.md
