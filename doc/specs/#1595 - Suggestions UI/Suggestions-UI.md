@@ -361,7 +361,7 @@ needs of the Command Palette.
 
 ### 🚀 Sprint
 
-The two "sprint" tasks here are much more aspirational than the other listed
+The two "sprint" tasks here are much more ambitious than the other listed
 scenarios, so breaking them down to atomic tasks sees less reasonable. We'd have
 to spend a considerable amount more time figuring out _how_ to do each of these
 first. 
