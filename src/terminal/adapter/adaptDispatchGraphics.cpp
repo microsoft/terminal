@@ -64,6 +64,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
 
 // Routine Description:
 // - Helper to apply a single graphic rendition option to an attribute.
+// - Calls appropriate helper to apply the option with sub parameters when necessary.
 // Arguments:
 // - options - An array of options.
 // - optionIndex - The start index of the option that will be applied.
@@ -75,6 +76,14 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
                                            TextAttribute& attr) noexcept
 {
     const GraphicsOptions opt = options.at(optionIndex);
+
+    if (options.hasSubParamsFor(optionIndex))
+    {
+        const auto subParams = options.subParamsFor(optionIndex);
+        _ApplyGraphicsOptionSubParam(opt, subParams, attr);
+        return 1;
+    }
+
     switch (opt)
     {
     case Off:
@@ -279,15 +288,7 @@ void AdaptDispatch::_ApplyGraphicsOptions(const VTParameters options,
 {
     for (size_t i = 0; i < options.size();)
     {
-        if (options.hasSubParamsFor(i))
-        {
-            _ApplyGraphicsOptionSubParam(options.at(i), options.subParamsFor(i), attr);
-            i += 1;
-        }
-        else
-        {
-            i += _ApplyGraphicsOption(options, i, attr);
-        }
+        i += _ApplyGraphicsOption(options, i, attr);
     }
 }
 
