@@ -170,10 +170,10 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
     // a new WindowThread & HWND for this request.
     { // Add a scope to minimize lock duration.
         auto fridge{ _oldThreads.lock() };
-        if (fridge->size() > 0)
+        if (!fridge->empty())
         {
             // Look at that, a refrigerated thread ready to be used. Let's use that!
-            window = fridge->back();
+            window = std::move(fridge->back());
             fridge->pop_back();
         }
     }
