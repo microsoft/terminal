@@ -30,9 +30,12 @@ Terminal::Terminal()
 
 void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer& renderer)
 {
-    _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
+    _visibleWidth = viewportSize.width;
+    auto realWidth = std::max(_visibleWidth, _minWidth);
+
+    _mutableViewport = Viewport::FromDimensions({ 0, 0 }, { realWidth, viewportSize.height });
     _scrollbackLines = scrollbackLines;
-    const til::size bufferSize{ viewportSize.width,
+    const til::size bufferSize{ realWidth,
                                 Utils::ClampToShortMax(viewportSize.height + scrollbackLines, 1) };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
@@ -1053,7 +1056,7 @@ Viewport Terminal::_GetVisibleViewport() const noexcept
     const auto size{ _inAltBuffer() ? _altBufferSize :
                                       _mutableViewport.Dimensions() };
     return Viewport::FromDimensions(origin,
-                                    size);
+                                    { _visibleWidth, size.height });
 }
 
 void Terminal::_PreserveUserScrollOffset(const int viewportDelta) noexcept

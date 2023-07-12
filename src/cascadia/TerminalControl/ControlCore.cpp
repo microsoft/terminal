@@ -355,9 +355,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetSelectionBackground(til::color{ _settings->SelectionBackground() });
 
             const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
-            const auto width = vp.Width();
-            const auto height = vp.Height();
-            _connection.Resize(height, width);
+            const auto visibleWidth = vp.Width();
+            const auto visibleHeight = vp.Height();
+            // _connection.Resize(height, width);
 
             if (_owningHwnd != 0)
             {
@@ -368,11 +368,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             // Override the default width and height to match the size of the swapChainPanel
-            _settings->InitialCols(width);
-            _settings->InitialRows(height);
+            _settings->InitialCols(visibleWidth);
+            _settings->InitialRows(visibleHeight);
 
             _terminal->CreateFromSettings(*_settings, *_renderer);
-
+            const auto realSize{ _terminal->GetRealViewportSize() };
+            _connection.Resize(realSize.height, realSize.width);
             // IMPORTANT! Set this callback up sooner than later. If we do it
             // after Enable, then it'll be possible to paint the frame once
             // _before_ the warning handler is set up, and then warnings from
@@ -1447,10 +1448,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                             viewHeight,
                                                             bufferSize) };
 
-        if (_inUnitTests) [[unlikely]]
-        {
-            _ScrollPositionChangedHandlers(*this, update);
-        }
+        if (_inUnitTests)
+            [[unlikely]]
+            {
+                _ScrollPositionChangedHandlers(*this, update);
+            }
         else
         {
             const auto shared = _shared.lock_shared();
