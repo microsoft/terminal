@@ -4,6 +4,7 @@
 #include "precomp.h"
 #include "terminalInput.hpp"
 
+#include "../types/inc/IInputEvent.hpp"
 #include "../types/inc/utils.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;

@@ -16,8 +16,6 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
-#pragma hdrstop
-
 using Microsoft::Console::Interactivity::ServiceLocator;
 
 // Routine Description:
@@ -56,57 +54,50 @@ using Microsoft::Console::Interactivity::ServiceLocator;
         *pdwKeyState = 0;
     }
 
-    NTSTATUS Status;
     for (;;)
     {
-        std::unique_ptr<IInputEvent> inputEvent;
-        Status = pInputBuffer->Read(inputEvent,
-                                    false, // peek
-                                    Wait,
-                                    true, // unicode
-                                    true); // stream
-
+        InputEventQueue events;
+        const auto Status = pInputBuffer->Read(events, 1, false, Wait, true, true);
         if (FAILED_NTSTATUS(Status))
         {
             return Status;
         }
-        else if (inputEvent.get() == nullptr)
+        if (events.empty())
         {
-            FAIL_FAST_IF(Wait);
+            assert(!Wait);
             return STATUS_UNSUCCESSFUL;
         }
 
-        if (inputEvent->EventType() == InputEventType::KeyEvent)
+        const auto& Event = events[0];
+        if (Event.EventType == KEY_EVENT)
         {
-            auto keyEvent = std::unique_ptr<KeyEvent>(static_cast<KeyEvent*>(inputEvent.release()));
-
             auto commandLineEditKey = false;
             if (pCommandLineEditingKeys)
             {
-                commandLineEditKey = keyEvent->IsCommandLineEditingKey();
+                commandLineEditKey = IsCommandLineEditingKey(Event.Event.KeyEvent);
             }
             else if (pPopupKeys)
             {
-                commandLineEditKey = keyEvent->IsPopupKey();
+                commandLineEditKey = IsCommandLinePopupKey(Event.Event.KeyEvent);
             }
 
             if (pdwKeyState)
             {
-                *pdwKeyState = keyEvent->GetActiveModifierKeys();
+                *pdwKeyState = Event.Event.KeyEvent.dwControlKeyState;
             }
 
-            if (keyEvent->GetCharData() != 0 && !commandLineEditKey)
+            if (Event.Event.KeyEvent.uChar.UnicodeChar != 0 && !commandLineEditKey)
             {
                 // chars that are generated using alt + numpad
-                if (!keyEvent->IsKeyDown() && keyEvent->GetVirtualKeyCode() == VK_MENU)
+                if (!Event.Event.KeyEvent.bKeyDown && Event.Event.KeyEvent.wVirtualKeyCode == VK_MENU)
                 {
-                    if (keyEvent->IsAltNumpadSet())
+                    if (WI_IsFlagSet(Event.Event.KeyEvent.dwControlKeyState, ALTNUMPAD_BIT))
                     {
-                        if (HIBYTE(keyEvent->GetCharData()))
+                        if (HIBYTE(Event.Event.KeyEvent.uChar.UnicodeChar))
                         {
-                            char chT[2] = {
-                                static_cast<char>(HIBYTE(keyEvent->GetCharData())),
-                                static_cast<char>(LOBYTE(keyEvent->GetCharData())),
+                            const char chT[2] = {
+                                static_cast<char>(HIBYTE(Event.Event.KeyEvent.uChar.UnicodeChar)),
+                                static_cast<char>(LOBYTE(Event.Event.KeyEvent.uChar.UnicodeChar)),
                             };
                             *pwchOut = CharToWchar(chT, 2);
                         }
@@ -115,64 +106,54 @@ using Microsoft::Console::Interactivity::ServiceLocator;
                             // Because USER doesn't know our codepage,
                             // it gives us the raw OEM char and we
                             // convert it to a Unicode character.
-                            char chT = LOBYTE(keyEvent->GetCharData());
+                            char chT = LOBYTE(Event.Event.KeyEvent.uChar.UnicodeChar);
                             *pwchOut = CharToWchar(&chT, 1);
                         }
                     }
                     else
                     {
-                        *pwchOut = keyEvent->GetCharData();
+                        *pwchOut = Event.Event.KeyEvent.uChar.UnicodeChar;
                     }
                     return STATUS_SUCCESS;
                 }
+
                 // Ignore Escape and Newline chars
-                else if (keyEvent->IsKeyDown() &&
-                         (WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
-                          (keyEvent->GetVirtualKeyCode() != VK_ESCAPE &&
-                           keyEvent->GetCharData() != UNICODE_LINEFEED)))
+                if (Event.Event.KeyEvent.bKeyDown &&
+                    (WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
+                     (Event.Event.KeyEvent.wVirtualKeyCode != VK_ESCAPE &&
+                      Event.Event.KeyEvent.uChar.UnicodeChar != UNICODE_LINEFEED)))
                 {
-                    *pwchOut = keyEvent->GetCharData();
+                    *pwchOut = Event.Event.KeyEvent.uChar.UnicodeChar;
                     return STATUS_SUCCESS;
                 }
             }
 
-            if (keyEvent->IsKeyDown())
+            if (Event.Event.KeyEvent.bKeyDown)
             {
                 if (pCommandLineEditingKeys && commandLineEditKey)
                 {
                     *pCommandLineEditingKeys = true;
-                    *pwchOut = static_cast<wchar_t>(keyEvent->GetVirtualKeyCode());
+                    *pwchOut = static_cast<wchar_t>(Event.Event.KeyEvent.wVirtualKeyCode);
                     return STATUS_SUCCESS;
                 }
-                else if (pPopupKeys && commandLineEditKey)
+
+                if (pPopupKeys && commandLineEditKey)
                 {
                     *pPopupKeys = true;
-                    *pwchOut = static_cast<char>(keyEvent->GetVirtualKeyCode());
+                    *pwchOut = static_cast<char>(Event.Event.KeyEvent.wVirtualKeyCode);
                     return STATUS_SUCCESS;
                 }
-                else
+
+                const auto zeroKey = OneCoreSafeVkKeyScanW(0);
+
+                if (LOBYTE(zeroKey) == Event.Event.KeyEvent.wVirtualKeyCode &&
+                    WI_IsAnyFlagSet(Event.Event.KeyEvent.dwControlKeyState, ALT_PRESSED) == WI_IsFlagSet(zeroKey, 0x400) &&
+                    WI_IsAnyFlagSet(Event.Event.KeyEvent.dwControlKeyState, CTRL_PRESSED) == WI_IsFlagSet(zeroKey, 0x200) &&
+                    WI_IsAnyFlagSet(Event.Event.KeyEvent.dwControlKeyState, SHIFT_PRESSED) == WI_IsFlagSet(zeroKey, 0x100))
                 {
-                    const auto zeroVkeyData = OneCoreSafeVkKeyScanW(0);
-                    const auto zeroVKey = LOBYTE(zeroVkeyData);
-                    const auto zeroControlKeyState = HIBYTE(zeroVkeyData);
-
-                    try
-                    {
-                        // Convert real Windows NT modifier bit into bizarre Console bits
-                        auto consoleModKeyState = FromVkKeyScan(zeroControlKeyState);
-
-                        if (zeroVKey == keyEvent->GetVirtualKeyCode() &&
-                            keyEvent->DoActiveModifierKeysMatch(consoleModKeyState))
-                        {
-                            // This really is the character 0x0000
-                            *pwchOut = keyEvent->GetCharData();
-                            return STATUS_SUCCESS;
-                        }
-                    }
-                    catch (...)
-                    {
-                        LOG_HR(wil::ResultFromCaughtException());
-                    }
+                    // This really is the character 0x0000
+                    *pwchOut = Event.Event.KeyEvent.uChar.UnicodeChar;
+                    return STATUS_SUCCESS;
                 }
             }
         }

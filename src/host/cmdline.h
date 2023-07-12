@@ -141,3 +141,6 @@ bool IsWordDelim(const std::wstring_view charData);
 bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...);
 
 void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ SHORT Index);
+
+bool IsCommandLinePopupKey(const KEY_EVENT_RECORD& event);
+bool IsCommandLineEditingKey(const KEY_EVENT_RECORD& event);
