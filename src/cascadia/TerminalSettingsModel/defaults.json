@@ -316,6 +316,36 @@
                 "background": "terminalBackground",
                 "unfocusedBackground": "#00000000"
             }
+        },
+        {
+            "name": "legacyDark",
+            "tab": {
+                "background": null,
+                "unfocusedBackground": null
+            },
+            "window": {
+                "applicationTheme": "dark"
+            }
+        },
+        {
+            "name": "legacyLight",
+            "tab": {
+                "background": null,
+                "unfocusedBackground": null
+            },
+            "window": {
+                "applicationTheme": "light"
+            }
+        },
+        {
+            "name": "legacySystem",
+            "tab": {
+                "background": null,
+                "unfocusedBackground": null
+            },
+            "window": {
+                "applicationTheme": "system"
+            },
         }
     ],
     "actions":
@@ -375,6 +405,7 @@
         { "command": { "action": "switchToTab", "index": 6 }, "keys": "ctrl+alt+7" },
         { "command": { "action": "switchToTab", "index": 7 }, "keys": "ctrl+alt+8" },
         { "command": { "action": "switchToTab", "index": 4294967295 }, "keys": "ctrl+alt+9" },
+        { "command": { "action": "moveTab", "window": "new" }, },
 
         // Pane Management
         { "command": "closeOtherPanes" },
@@ -408,6 +439,8 @@
         { "command": "togglePaneZoom" },
         { "command": "toggleSplitOrientation" },
         { "command": "toggleReadOnlyMode" },
+        { "command": "enableReadOnlyMode" },
+        { "command": "disableReadOnlyMode" },
         { "command": { "action": "movePane", "index": 0 } },
         { "command": { "action": "movePane", "index": 1 } },
         { "command": { "action": "movePane", "index": 2 } },
@@ -417,6 +450,8 @@
         { "command": { "action": "movePane", "index": 6 } },
         { "command": { "action": "movePane", "index": 7 } },
         { "command": { "action": "movePane", "index": 8 } },
+        { "command": { "action": "movePane", "window": "new" }, },
+        { "command": "restartConnection" },
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
@@ -429,6 +464,7 @@
         { "command": "toggleBlockSelection" },
         { "command": "switchSelectionEndpoint" },
         { "command": "expandSelectionToWord" },
+        { "command": "showContextMenu", "keys": "menu" },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },

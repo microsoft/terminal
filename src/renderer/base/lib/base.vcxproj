@@ -11,6 +11,7 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
+    <ClCompile Include="..\CSSLengthPercentage.cpp" />
     <ClCompile Include="..\FontInfo.cpp" />
     <ClCompile Include="..\FontInfoBase.cpp" />
     <ClCompile Include="..\FontInfoDesired.cpp" />
@@ -25,6 +26,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\Cluster.hpp" />
+    <ClInclude Include="..\..\inc\CSSLengthPercentage.h" />
     <ClInclude Include="..\..\inc\FontInfo.hpp" />
     <ClInclude Include="..\..\inc\FontInfoBase.hpp" />
     <ClInclude Include="..\..\inc\FontInfoDesired.hpp" />

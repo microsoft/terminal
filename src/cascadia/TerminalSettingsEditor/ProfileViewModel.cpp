@@ -104,7 +104,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::vector<Editor::Font> monospaceFontList;
 
         // get the font collection; subscribe to updates
-        const auto fontCollection = ::Microsoft::Console::Render::FontCache::GetFresh();
+        wil::com_ptr<IDWriteFactory> factory;
+        THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(factory), reinterpret_cast<::IUnknown**>(factory.addressof())));
+
+        wil::com_ptr<IDWriteFontCollection> fontCollection;
+        THROW_IF_FAILED(factory->GetSystemFontCollection(fontCollection.addressof(), TRUE));
 
         for (UINT32 i = 0; i < fontCollection->GetFontFamilyCount(); ++i)
         {
@@ -248,7 +252,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.UnfocusedAppearance().try_as<AppearanceConfig>());
         _unfocusedAppearanceViewModel.SchemesList(DefaultAppearance().SchemesList());
-        _unfocusedAppearanceViewModel.WindowRoot(DefaultAppearance().WindowRoot());
 
         _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");
     }
@@ -350,14 +353,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _DeleteProfileHandlers(*this, *deleteProfileArgs);
     }
 
-    void ProfileViewModel::SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList, Editor::IHostedInWindow windowRoot)
+    void ProfileViewModel::SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList)
     {
         DefaultAppearance().SchemesList(schemesList);
-        DefaultAppearance().WindowRoot(windowRoot);
         if (UnfocusedAppearance())
         {
             UnfocusedAppearance().SchemesList(schemesList);
-            UnfocusedAppearance().WindowRoot(windowRoot);
         }
     }
 }

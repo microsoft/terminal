@@ -653,9 +653,18 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const std::span<const std::b
     return EndianSwap(newGuid);
 }
 
-bool Utils::IsElevated()
+// * Elevated users cannot use the modern drag drop experience. This is
+//   specifically normal users running the Terminal as admin
+// * The Default Administrator, who does not have a split token, CAN drag drop
+//   perfectly fine. So in that case, we want to return false.
+// * This has to be kept separate from IsRunningElevated, which is exclusively
+//   used for "is this instance running as admin".
+bool Utils::CanUwpDragDrop()
 {
-    static auto isElevated = []() {
+    // There's a lot of wacky double negatives here so that the logic is
+    // basically the same as IsRunningElevated, but the end result semantically
+    // makes sense as "CanDragDrop".
+    static auto isDragDropBroken = []() {
         try
         {
             wil::unique_handle processToken{ GetCurrentProcessToken() };
@@ -670,8 +679,30 @@ bool Utils::IsElevated()
                 //
                 // See GH#7754, GH#11096
                 return false;
+                // drag drop is _not_ broken -> they _can_ drag drop
             }
 
+            // If they are running admin, they cannot drag drop.
+            return wil::test_token_membership(nullptr, SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            // This failed? That's very peculiar indeed. Let's err on the side
+            // of "drag drop is broken", just in case.
+            return true;
+        }
+    }();
+
+    return !isDragDropBroken;
+}
+
+// See CanUwpDragDrop, GH#13928 for why this is different.
+bool Utils::IsRunningElevated()
+{
+    static auto isElevated = []() {
+        try
+        {
             return wil::test_token_membership(nullptr, SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
         }
         catch (...)
@@ -698,7 +729,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
             const auto terminator{ commandLine.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
             const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
             const std::filesystem::path executablePath{ commandLine.substr(start, terminator - start) };
-            const auto executableFilename{ executablePath.filename().wstring() };
+            const auto executableFilename{ executablePath.filename() };
             if (executableFilename == L"wsl" || executableFilename == L"wsl.exe")
             {
                 // We've got a WSL -- let's just make sure it's the right one.
@@ -753,7 +784,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
                 }
 
                 return {
-                    fmt::format(LR"("{}" --cd "{}" {})", executablePath.wstring(), mangledDirectory, arguments),
+                    fmt::format(LR"("{}" --cd "{}" {})", executablePath.native(), mangledDirectory, arguments),
                     std::wstring{}
                 };
             }
@@ -796,4 +827,28 @@ std::wstring_view Utils::TrimPaste(std::wstring_view textView) noexcept
     }
 
     return textView.substr(0, lastNonSpace + 1);
+}
+
+std::wstring Utils::EvaluateStartingDirectory(
+    std::wstring_view currentDirectory,
+    std::wstring_view startingDirectory)
+{
+    std::wstring resultPath{ startingDirectory };
+
+    // We only want to resolve the new WD against the CWD if it doesn't look
+    // like a Linux path (see GH#592)
+
+    // Append only if it DOESN'T look like a linux-y path. A linux-y path starts
+    // with `~` or `/`.
+    const bool looksLikeLinux =
+        resultPath.size() >= 1 &&
+        (til::at(resultPath, 0) == L'~' || til::at(resultPath, 0) == L'/');
+
+    if (!looksLikeLinux)
+    {
+        std::filesystem::path cwd{ currentDirectory };
+        cwd /= startingDirectory;
+        resultPath = cwd.wstring();
+    }
+    return resultPath;
 }

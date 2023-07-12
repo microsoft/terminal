@@ -56,15 +56,10 @@ parameters:
       - x64
       - x86
       - arm64
-  - name: buildWindowsVersions
-    type: object
-    default:
-      - Win10
-      - Win11
 
 variables:
   MakeAppxPath: 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\MakeAppx.exe'
-  TerminalInternalPackageVersion: "0.0.7"
+  TerminalInternalPackageVersion: "0.0.8"
   # If we are building a branch called "release-*", change the NuGet suffix
   # to "preview". If we don't do that, XES will set the suffix to "release1"
   # because it truncates the value after the first period.
@@ -87,13 +82,6 @@ variables:
       NuGetPackBetaVersion: preview
   ${{ elseif eq(variables['Build.SourceBranchName'], 'main') }}:
     NuGetPackBetaVersion: experimental
-  # The NuGet packages have to use *somebody's* DLLs. We used to force them to
-  # use the Win10 build outputs, but if there isn't a Win10 build we should use
-  # the Win11 one.
-  ${{ if containsValue(parameters.buildWindowsVersions, 'Win10') }}:
-    TerminalBestVersionForNuGetPackages: Win10
-  ${{ else }}:
-    TerminalBestVersionForNuGetPackages: Win11
 
 name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
 resources:
@@ -107,11 +95,9 @@ jobs:
     matrix:
       ${{ each config in parameters.buildConfigurations }}:
         ${{ each platform in parameters.buildPlatforms }}:
-          ${{ each windowsVersion in parameters.buildWindowsVersions }}:
-            ${{ config }}_${{ platform }}_${{ windowsVersion }}:
-              BuildConfiguration: ${{ config }}
-              BuildPlatform: ${{ platform }}
-              TerminalTargetWindowsVersion: ${{ windowsVersion }}
+          ${{ config }}_${{ platform }}:
+            BuildConfiguration: ${{ config }}
+            BuildPlatform: ${{ platform }}
   displayName: Build
   timeoutInMinutes: 240
   cancelTimeoutInMinutes: 1
@@ -185,10 +171,6 @@ jobs:
       arguments: -MarkdownNoticePath .\NOTICE.md -OutputPath .\src\cascadia\CascadiaPackage\NOTICE.html
       pwsh: true
   - ${{ if eq(parameters.buildTerminal, true) }}:
-    - pwsh: |-
-        ./build/scripts/Patch-ManifestsToWindowsVersion.ps1 -NewWindowsVersion "10.0.22000.0"
-      displayName: Update manifest target version to Win11 (if necessary)
-      condition: and(succeeded(), eq(variables['TerminalTargetWindowsVersion'], 'Win11'))
     - task: VSBuild@1
       displayName: Build solution **\OpenConsole.sln
       condition: true
@@ -205,7 +187,7 @@ jobs:
       continueOnError: True
       inputs:
         PathtoPublish: $(Build.SourcesDirectory)\msbuild.binlog
-        ArtifactName: binlog-$(BuildPlatform)-$(TerminalTargetWindowsVersion)
+        ArtifactName: binlog-$(BuildPlatform)
     - task: PowerShell@2
       displayName: Check MSIX for common regressions
       inputs:
@@ -254,16 +236,12 @@ jobs:
       arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
   - ${{ if eq(parameters.buildTerminal, true) }}:
     - task: CopyFiles@2
-      displayName: Copy *.appx/*.msix to Artifacts
+      displayName: Copy *.msix and symbols to Artifacts
       inputs:
         Contents: >-
-          **/*.appx
-
           **/*.msix
 
           **/*.appxsym
-
-          !**/Microsoft.VCLibs*.appx
         TargetFolder: $(Build.ArtifactStagingDirectory)/appx
         OverWrite: true
         flattenFolders: true
@@ -297,7 +275,17 @@ jobs:
       displayName: Publish Artifact (appx)
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/appx
-        ArtifactName: appx-$(BuildPlatform)-$(BuildConfiguration)-$(TerminalTargetWindowsVersion)
+        ArtifactName: appx-$(BuildPlatform)-$(BuildConfiguration)
+
+    - pwsh: |-
+        $XamlAppxPath = (Get-Item "src\cascadia\CascadiaPackage\AppPackages\*\Dependencies\$(BuildPlatform)\Microsoft.UI.Xaml*.appx").FullName
+        & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 -TerminalAppX $(WindowsTerminalPackagePath) -XamlAppX $XamlAppxPath -Destination "$(Build.ArtifactStagingDirectory)/unpackaged"
+      displayName: Build Unpackaged Distribution
+
+    - publish: $(Build.ArtifactStagingDirectory)/unpackaged
+      artifact: unpackaged-$(BuildPlatform)-$(BuildConfiguration)
+      displayName: Publish Artifact (unpackaged)
+
   - ${{ if eq(parameters.buildConPTY, true) }}:
     - task: CopyFiles@2
       displayName: Copy ConPTY to Artifacts
@@ -315,7 +303,7 @@ jobs:
       displayName: Publish Artifact (ConPTY)
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/conpty
-        ArtifactName: conpty-dll-$(BuildPlatform)-$(BuildConfiguration)-$(TerminalTargetWindowsVersion)
+        ArtifactName: conpty-dll-$(BuildPlatform)-$(BuildConfiguration)
   - ${{ if eq(parameters.buildWPF, true) }}:
     - task: CopyFiles@2
       displayName: Copy PublicTerminalCore.dll to Artifacts
@@ -329,7 +317,7 @@ jobs:
       displayName: Publish Artifact (PublicTerminalCore)
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/wpf
-        ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)-$(TerminalTargetWindowsVersion)
+        ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)
 
   - task: PublishSymbols@2
     displayName: Publish symbols path
@@ -347,11 +335,6 @@ jobs:
 
 - ${{ if eq(parameters.buildTerminal, true) }}:
   - job: BundleAndSign
-    strategy:
-      matrix:
-        ${{ each windowsVersion in parameters.buildWindowsVersions }}:
-          ${{ windowsVersion }}:
-            TerminalTargetWindowsVersion: ${{ windowsVersion }}
     displayName: Create and sign AppX/MSIX bundles
     variables:
       ${{ if eq(parameters.branding, 'Release') }}:
@@ -373,9 +356,9 @@ jobs:
         disableOutputRedirect: true
     - ${{ each platform in parameters.buildPlatforms }}:
       - task: DownloadBuildArtifacts@0
-        displayName: Download Artifacts ${{ platform }} $(TerminalTargetWindowsVersion)
+        displayName: Download Artifacts ${{ platform }}
         inputs:
-          artifactName: appx-${{ platform }}-Release-$(TerminalTargetWindowsVersion)
+          artifactName: appx-${{ platform }}-Release
     # Add 3000 to the major version component, but only for the bundle.
     # This is to ensure that it is newer than "2022.xx.yy.zz" or whatever the original bundle versions were before
     # we switched to uniform naming.
@@ -385,7 +368,7 @@ jobs:
         $Components[0] = ([int]$Components[0] + $VersionEpoch)
         $BundleVersion = $Components -Join "."
         New-Item -Type Directory "$(System.ArtifactsDirectory)\bundle"
-        .\build\scripts\Create-AppxBundle.ps1 -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\bundle\$(BundleStemName)_$(TerminalTargetWindowsVersion)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
+        .\build\scripts\Create-AppxBundle.ps1 -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\bundle\$(BundleStemName)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
       displayName: Create WindowsTerminal*.msixbundle
     - task: EsrpCodeSigning@1
       displayName: Submit *.msixbundle to ESRP for code signing
@@ -426,7 +409,7 @@ jobs:
       displayName: 'Publish Artifact: appxbundle-signed'
       inputs:
         PathtoPublish: $(System.ArtifactsDirectory)\bundle
-        ArtifactName: appxbundle-signed-$(TerminalTargetWindowsVersion)
+        ArtifactName: appxbundle-signed
 
 - ${{ if eq(parameters.buildConPTY, true) }}:
   - job: PackageAndSignConPTY
@@ -451,7 +434,7 @@ jobs:
       - task: DownloadBuildArtifacts@0
         displayName: Download ${{ platform }} ConPTY binaries
         inputs:
-          artifactName: conpty-dll-${{ platform }}-$(BuildConfiguration)-$(TerminalBestVersionForNuGetPackages)
+          artifactName: conpty-dll-${{ platform }}-$(BuildConfiguration)
           downloadPath: bin\${{ platform }}\$(BuildConfiguration)\
           extractTars: false
     - task: PowerShell@2
@@ -542,7 +525,7 @@ jobs:
       - task: DownloadBuildArtifacts@0
         displayName: Download ${{ platform }} PublicTerminalCore
         inputs:
-          artifactName: wpf-dll-${{ platform }}-$(BuildConfiguration)-$(TerminalBestVersionForNuGetPackages)
+          artifactName: wpf-dll-${{ platform }}-$(BuildConfiguration)
           itemPattern: '**/*.dll'
           downloadPath: bin\${{ platform }}\$(BuildConfiguration)\
           extractTars: false
@@ -640,11 +623,10 @@ jobs:
 
     # Download the appx-PLATFORM-CONFIG-VERSION artifact for every platform/version combo
     - ${{ each platform in parameters.buildPlatforms }}:
-      - ${{ each windowsVersion in parameters.buildWindowsVersions }}:
-        - task: DownloadBuildArtifacts@0
-          displayName: Download Symbols ${{ platform }} ${{ windowsVersion }}
-          inputs:
-            artifactName: appx-${{ platform }}-Release-${{ windowsVersion }}
+      - task: DownloadBuildArtifacts@0
+        displayName: Download Symbols ${{ platform }}
+        inputs:
+          artifactName: appx-${{ platform }}-Release
 
     # It seems easier to do this -- download every appxsym -- then enumerate all the PDBs in the build directory for the
     # public symbol push. Otherwise, we would have to list all of the PDB files one by one.
@@ -704,7 +686,7 @@ jobs:
     - task: DownloadBuildArtifacts@0
       displayName: Download Build Artifacts
       inputs:
-        artifactName: appxbundle-signed-Win11
+        artifactName: appxbundle-signed
         extractTars: false
     - task: PowerShell@2
       displayName: Rename and stage packages for vpack
@@ -713,7 +695,7 @@ jobs:
         script: >-
           # Rename to known/fixed name for Windows build system
 
-          Get-ChildItem Microsoft.WindowsTerminal_Win11_*.msixbundle | Rename-Item -NewName { 'Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle' }
+          Get-ChildItem Microsoft.WindowsTerminal_*.msixbundle | Rename-Item -NewName { 'Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle' }
 
 
           # Create vpack directory and place item inside
@@ -721,13 +703,13 @@ jobs:
           mkdir WindowsTerminal.app
 
           mv Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle .\WindowsTerminal.app\
-        workingDirectory: $(System.ArtifactsDirectory)\appxbundle-signed-Win11
+        workingDirectory: $(System.ArtifactsDirectory)\appxbundle-signed
     - task: PkgESVPack@12
       displayName: 'Package ES - VPack'
       env:
         SYSTEM_ACCESSTOKEN: $(System.AccessToken)
       inputs:
-        sourceDirectory: $(System.ArtifactsDirectory)\appxbundle-signed-Win11\WindowsTerminal.app
+        sourceDirectory: $(System.ArtifactsDirectory)\appxbundle-signed\WindowsTerminal.app
         description: VPack for the Windows Terminal Application
         pushPkgName: WindowsTerminal.app
         owner: conhost

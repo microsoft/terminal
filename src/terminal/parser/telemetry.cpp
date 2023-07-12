@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include <precomp.h>
+#include "precomp.h"
 
 #include "telemetry.hpp"
 
@@ -219,8 +219,10 @@ void TermTelemetry::WriteFinalTraceLog() const
                                       TraceLoggingUInt32(_uiTimesUsed[EL], "EL"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECSEL], "DECSEL"),
                                       TraceLoggingUInt32(_uiTimesUsed[SGR], "SGR"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECBI], "DECBI"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECSC], "DECSC"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECRC], "DECRC"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECFI], "DECFI"),
                                       TraceLoggingUInt32(_uiTimesUsed[SM], "SM"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECSET], "DECSET"),
                                       TraceLoggingUInt32(_uiTimesUsed[RM], "RM"),
@@ -241,9 +243,9 @@ void TermTelemetry::WriteFinalTraceLog() const
                                       TraceLoggingUInt32(_uiTimesUsed[DL], "DL"),
                                       TraceLoggingUInt32(_uiTimesUsed[SU], "SU"),
                                       TraceLoggingUInt32(_uiTimesUsed[SD], "SD"),
-                                      TraceLoggingUInt32(_uiTimesUsed[ANSISYSSC], "ANSISYSSC"),
                                       TraceLoggingUInt32(_uiTimesUsed[ANSISYSRC], "ANSISYSRC"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECSTBM], "DECSTBM"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECSLRM], "DECSLRM"),
                                       TraceLoggingUInt32(_uiTimesUsed[NEL], "NEL"),
                                       TraceLoggingUInt32(_uiTimesUsed[IND], "IND"),
                                       TraceLoggingUInt32(_uiTimesUsed[RI], "RI"),
@@ -289,10 +291,14 @@ void TermTelemetry::WriteFinalTraceLog() const
                                       TraceLoggingUInt32(_uiTimesUsed[DECCARA], "DECCARA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECRARA], "DECRARA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECCRA], "DECCRA"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECRQPSR], "DECRQPSR"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECFRA], "DECFRA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECERA], "DECERA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECSERA], "DECSERA"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECIC], "DECIC"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECDC], "DECDC"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECSACE], "DECSACE"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECRQCRA], "DECRQCRA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECINVM], "DECINVM"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECAC], "DECAC"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECPS], "DECPS"),

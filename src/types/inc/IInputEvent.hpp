@@ -64,6 +64,8 @@ public:
 
 inline IInputEvent::~IInputEvent() = default;
 
+using InputEventQueue = std::deque<std::unique_ptr<IInputEvent>>;
+
 #ifdef UNIT_TESTING
 std::wostream& operator<<(std::wostream& stream, const IInputEvent* pEvent);
 #endif

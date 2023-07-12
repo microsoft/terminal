@@ -81,7 +81,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             try
             {
                 winrt::Windows::Foundation::Uri iconUri{ path };
-                BitmapIconSource<TIconSource>::type iconSource;
+                typename BitmapIconSource<TIconSource>::type iconSource;
                 // Make sure to set this to false, so we keep the RGB data of the
                 // image. Otherwise, the icon will be white for all the
                 // non-transparent pixels in the image.
@@ -93,6 +93,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return nullptr;
+    }
+
+    _TIL_INLINEPREFIX winrt::hstring _expandIconPath(hstring iconPath)
+    {
+        if (iconPath.empty())
+        {
+            return iconPath;
+        }
+        winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(iconPath.c_str()) };
+        return envExpandedPath;
     }
 
     // Method Description:
@@ -129,7 +139,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 try
                 {
-                    FontIconSource<TIconSource>::type icon;
+                    typename FontIconSource<TIconSource>::type icon;
                     const auto ch = iconPath[0];
 
                     // The range of MDL2 Icons isn't explicitly defined, but
@@ -160,22 +170,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // Swapping between nullptr IconSources and non-null IconSources causes a crash
             // to occur, but swapping between IconSources with a null source and non-null IconSources
             // work perfectly fine :shrug:.
-            BitmapIconSource<TIconSource>::type icon;
+            typename BitmapIconSource<TIconSource>::type icon;
             icon.UriSource(nullptr);
             iconSource = icon;
         }
 
         return iconSource;
-    }
-
-    static winrt::hstring _expandIconPath(hstring iconPath)
-    {
-        if (iconPath.empty())
-        {
-            return iconPath;
-        }
-        winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(iconPath.c_str()) };
-        return envExpandedPath;
     }
 
     // Method Description:
@@ -296,9 +296,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (commaIndex != std::wstring::npos)
         {
-            // Convert the string iconIndex to an int
-            const auto index = til::to_ulong(pathView.substr(commaIndex + 1));
-            if (index == til::to_ulong_error)
+            // Convert the string iconIndex to a signed int to support negative numbers which represent an Icon's ID.
+            const auto index{ til::to_int(pathView.substr(commaIndex + 1)) };
+            if (index == til::to_int_error)
             {
                 return std::nullopt;
             }

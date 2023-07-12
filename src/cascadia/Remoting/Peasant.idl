@@ -7,10 +7,11 @@ namespace Microsoft.Terminal.Remoting
     runtimeclass CommandlineArgs
     {
         CommandlineArgs();
-        CommandlineArgs(String[] args, String cwd);
+        CommandlineArgs(String[] args, String cwd, UInt32 showWindowCommand);
 
         String[] Commandline { get; set; };
-        String CurrentDirectory();
+        String CurrentDirectory { get; };
+        UInt32 ShowWindowCommand { get; };
     };
 
     runtimeclass RenameRequestArgs
@@ -43,7 +44,6 @@ namespace Microsoft.Terminal.Remoting
         ToMouse,
     };
 
-
     [default_interface] runtimeclass SummonWindowBehavior {
         SummonWindowBehavior();
         Boolean MoveToCurrentDesktop;
@@ -51,6 +51,18 @@ namespace Microsoft.Terminal.Remoting
         UInt32 DropdownDuration;
         MonitorBehavior ToMonitor;
     }
+
+    [default_interface] runtimeclass AttachRequest {
+        String Content { get; };
+        UInt32 TabIndex { get; };
+    }
+    [default_interface] runtimeclass RequestReceiveContentArgs {
+        RequestReceiveContentArgs(UInt64 src, UInt64 tgt, UInt32 tabIndex);
+
+        UInt64 SourceWindow { get; };
+        UInt64 TargetWindow { get; };
+        UInt32 TabIndex { get; };
+    };
 
     interface IPeasant
     {
@@ -70,11 +82,15 @@ namespace Microsoft.Terminal.Remoting
         void RequestIdentifyWindows(); // Tells us to raise a IdentifyWindowsRequested
         void RequestRename(RenameRequestArgs args); // Tells us to raise a RenameRequested
         void Summon(SummonWindowBehavior behavior);
+
         void RequestShowNotificationIcon();
         void RequestHideNotificationIcon();
         void RequestQuitAll();
         void Quit();
         String GetWindowLayout();
+
+        void AttachContentToWindow(AttachRequest request);
+        void SendContent(RequestReceiveContentArgs args);
 
         event Windows.Foundation.TypedEventHandler<Object, WindowActivatedArgs> WindowActivated;
         event Windows.Foundation.TypedEventHandler<Object, CommandlineArgs> ExecuteCommandlineRequested;
@@ -82,11 +98,16 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> DisplayWindowIdRequested;
         event Windows.Foundation.TypedEventHandler<Object, RenameRequestArgs> RenameRequested;
         event Windows.Foundation.TypedEventHandler<Object, SummonWindowBehavior> SummonRequested;
+
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, GetWindowLayoutArgs> GetWindowLayoutRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitAllRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, AttachRequest> AttachRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> SendContentRequested;
     };
 
     [default_interface] runtimeclass Peasant : IPeasant

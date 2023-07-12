@@ -1657,12 +1657,10 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
-        mach.ProcessCharacter(AsciiChars::ESC);
-        mach.ProcessCharacter(L'[');
-        mach.ProcessCharacter(L's');
-        VERIFY_IS_TRUE(pDispatch->_cursorSave);
-
-        pDispatch->ClearState();
+        // Note that CSI s is dispatched as SetLeftRightScrollingMargins rather
+        // than CursorSaveState, so we don't test that here. The CursorSaveState
+        // will only be triggered by this sequence (in AdaptDispatch) when the
+        // Left-Right-Margin mode (DECLRMM) is disabled.
 
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');

@@ -37,12 +37,14 @@ Revision History:
 #include "WexTestClass.h"
 #endif
 
+// The enum values being in this particular order allows the compiler to do some useful optimizations,
+// like simplifying `IsIndex16() || IsIndex256()` into a simple range check without branching.
 enum class ColorType : BYTE
 {
-    IsIndex256 = 0x0,
-    IsIndex16 = 0x1,
-    IsDefault = 0x2,
-    IsRgb = 0x3
+    IsDefault,
+    IsIndex16,
+    IsIndex256,
+    IsRgb
 };
 
 enum class ColorAlias : size_t
@@ -121,6 +123,7 @@ public:
     bool IsIndex16() const noexcept;
     bool IsIndex256() const noexcept;
     bool IsDefault() const noexcept;
+    bool IsDefaultOrLegacy() const noexcept;
     bool IsRgb() const noexcept;
 
     void SetColor(const COLORREF rgbColor) noexcept;
