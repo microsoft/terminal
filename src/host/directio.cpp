@@ -220,7 +220,7 @@ try
         }
     }
 
-    auto result = IInputEvent::Create(std::span{events.data(), events.size()});
+    auto result = IInputEvent::Create(std::span{ events.data(), events.size() });
     return _WriteConsoleInputWImplHelper(context, result, written, append);
 }
 CATCH_RETURN();
