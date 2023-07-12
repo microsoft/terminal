@@ -9,7 +9,7 @@ issue id: 5916
 
 ## Abstract
 
-This spec outines a mechanism by which users can define custom actions to run
+This spec outlines a mechanism by which users can define custom actions to run
 when a string of text is written to the Terminal. This lets users create
 powerful ways of automating their Terminal to match their own workflows. This
 same mechanism can be used by third-party applications to customize the way the
@@ -43,7 +43,7 @@ Not addressed as a part of this spec:
 
 * [ ] [#8294] Add a setting to configure display of auto detected links, normally and on hover
 
-We'll probably want to come back and seperately spec how users can control the
+We'll probably want to come back and separately spec how users can control the
 appearance of both auto-detected clickable text, and links that are manually
 emitted to the Terminal (via OSC 8). This may be increasingly relevant, as this
 spec will introduce new ways for users to make text clickable.
@@ -188,7 +188,7 @@ need to be VERY explicit that anything else is highly detrimental to
 performance. We really don't want these to necessarily be running on every
 single character the connection emits.
 
-Marks are preferable, because with shell integration, they'll bbe emitted on
+Marks are preferable, because with shell integration, they'll be emitted on
 every prompt from the shell. Prompts are probably close enough to frequent
 enough, and the anchor/offset/length give a subset of the buffer that can be
 used to run matches on.
@@ -262,7 +262,7 @@ replace their args themselves. For example:
 
 For custom actions (READ: settings model `ShortcutAction`s, like `newTab`),
 we'll hang on to the JSON. When the trigger is hit by the control, it'll raise
-an event. The app will recieve the event, match it up to the trigger, and call
+an event. The app will receive the event, match it up to the trigger, and call
 `Model.Trigger.Parse(String[] matches) -> ActionAndArgs`. That will do the
 string replace in the JSON itself (similar to how we do iterable `Command`
 expansion). We'll then just take the _whole json_, and try to parse it literally
@@ -274,9 +274,9 @@ deserializing to a `Control.Trigger` easy.
 
 #### Alternative JSON for consideration
 
-This one encapslates the actions into the `command` property of the
+This one encapsulates the actions into the `command` property of the
 `Terminal.Settings.Model.Trigger`. In this version, we don't need to try and
-reparse the entire JSON object as a `ActionAndArgs`. This will let future
+re-parse the entire JSON object as a `ActionAndArgs`. This will let future
 actions use the `match` property.
 
 ```jsonc
@@ -357,7 +357,7 @@ Challenges:
 
 #### Clickable `sendInput`
 
-This is the same idea as above. We want users to be able to magicially turn
+This is the same idea as above. We want users to be able to magically turn
 regions of the buffer into interactive content. When clicking on that content,
 the text will get written to the input, rather than `ShellExecute`d.
 
@@ -430,7 +430,7 @@ action instead. That json in the profile would be treated as not having a
 ### Triggers for Terminal Control consumers
 
 Case in point: [#6969]. Visual Studio would like to supply their own trigger,
-and recieve an event with the ID of the trigger.
+and receive an event with the ID of the trigger.
 
 > * Consumers of the terminal must be able to provide a pattern that will identify regions of clickable text
 > * Consumers will provide a callback that is called with the clicked text as a parameter
@@ -556,14 +556,14 @@ new Control-level actions, I've added the enum name as a sub-point.
 * *Post Notification*: Consider [#7718] - could absolutely be done.
     * `Control.TriggerType.SendNotification`
 * *Prompt Detected*: `addMark(prompt)`, basically. ✅
-* *Report Directory*: "Tells iTerm2 what your current directory is". Kinda like `sendOutput`, but not that dangerous IMO.
+* *Report Directory*: "Tells iTerm2 what your current directory is". Kinda like `sendOutput`, but not that dangerous in my opinion.
     * `Control.TriggerType.SetWorkingDirectory`
 * *Report User & Host*: Kinda the same as the above. We don't use these currently, but we may want to consider in the future.
 * *Ring Bell*: Plays the standard system bell sound once.
     * `Control.TriggerType.RaiseBell`
 * *Run Command*: This seems dangerous if misused. Basically just `ShellExecute()` the command.
-* *Run Coprocess*: Definitely no precedent we have for this, and might require its own spec.
-* *Run Silent Coprocess*: same deal.
+* *Run Co-process*: Definitely no precedent we have for this, and might require its own spec.
+* *Run Silent Co-process*: same deal.
 * *Send Text*: `sendInput` ✅
 * *Set Mark*: `addMark` ✅
 * *Set Title*: Similar to the "Report Directory" above.
@@ -574,7 +574,7 @@ new Control-level actions, I've added the enum name as a sub-point.
 * *Stop Processing Triggers*: Definitely an interesting idea. Stop processing more triggers.
 
 Almost all these could be control-level actions that don't _need_ to cross out
-of the ControlCore (outside of existing concieved notions for crossing the
+of the ControlCore (outside of existing conceived notions for crossing the
 boundary, like a visual bell or a notification).
 
 
