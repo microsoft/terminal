@@ -111,7 +111,7 @@ not understanding these sequences originally.
 The relevant FinalTerm sequences for marking up the prompt are as follows.
 
 
-![image](ftcs-diagram.png)
+![image](FTCS-diagram.png)
 
 * **FTCS_PROMPT**: `OSC 133 ; A ST`
   - The start of a prompt. Internally, this sets a marker in the buffer
@@ -377,7 +377,7 @@ consider what the UX is like for this.
 There was originally some discussion as to whether this is a design that should
 be unified with generic pattern matchers. Something like the URL detection,
 which identifies part of the buffer and then "marks" it. Prototypes for both of
-these features are going in very different dirrections, however. Likely best to
+these features are going in very different directions, however. Likely best to
 leave them separate.
 
 ## Resources
@@ -408,8 +408,8 @@ Not necessarily marks related, but could happily leverage this functionality.
   - discusses auto-marked lines on `enter`/`^C`/`^D`
   - allows bookmarking lines with selection
   - bookmarks can have a name (maybe not super important)
-* [howtogeek.com/256548/how-to-use-marks-in-os-xs-terminal-for-easier-navigation](https://www.howtogeek.com/256548/how-to-use-marks-in-os-xs-terminal-for-easier-navigation/)
-* [scriptingosx.com/2017/03/terminal-the-marks-the-spot](https://scriptingosx.com/2017/03/terminal-the-marks-the-spot/)
+* [How to Use Marks in OS X’s Terminal for Easier Navigation](https://www.howtogeek.com/256548/how-to-use-marks-in-os-xs-terminal-for-easier-navigation/)
+* [Terminal: The ‘\[‘ Marks the Spot](https://scriptingosx.com/2017/03/terminal-the-marks-the-spot/)
 * Thread with VsCode (xterm.js) implementation notes: https://github.com/microsoft/terminal/issues/1527#issuecomment-1076455642
 * [xterm.js prompt markup sequences](https://github.com/microsoft/vscode/blob/39cc1e1c42b2e53e83b1846c2857ca194848cc1d/src/vs/workbench/contrib/terminal/browser/xterm/shellIntegrationAddon.ts#L50-L52)
 * [VsCode command tracking release notes](https://code.visualstudio.com/updates/v1_22#_command-tracking), also [Terminal shell integration](https://code.visualstudio.com/updates/v1_65#_terminal-shell-integration)
@@ -426,7 +426,7 @@ Not necessarily marks related, but could happily leverage this functionality.
 but you'd be mistaken.
 
 An average device right now (I mean something that was alright about 5 years
-ago, like an 8700k with regular DDR4) does about 4GB/s of random, uncached
+ago, like an 8700k with regular DDR4) does about 4GB/s of random, un-cached
 memory access. While low-end devices are probably a bit slower, I think 4GB/s is
 a good estimate regardless. That's because non-random memory access is way way
 faster than that at around 20GB/s (DDR4 2400 - what most laptops had for the
