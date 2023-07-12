@@ -527,6 +527,7 @@ void StateMachine::_ActionParam(const wchar_t wch)
                 // Otherwise move to next param.
                 _parameters.push_back({});
                 _subParameterCounter = 0;
+                _subParameterLimitOverflowed = false;
                 const auto rangeStart = gsl::narrow<BYTE>(_subParameters.size());
                 _subParameterRanges.push_back({ rangeStart, rangeStart });
             }
