@@ -25,6 +25,6 @@ namespace Microsoft.Terminal.Settings.Editor
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DetectURLs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, WordDelimiters);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ConfirmCloseAllTabs);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, KeyAlphaMode);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlphaKbdOnEscKey);
     }
 }

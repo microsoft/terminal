@@ -101,7 +101,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, IsolatedMode);
         INHERITABLE_SETTING(Boolean, AllowHeadless);
         INHERITABLE_SETTING(String, SearchWebDefaultQueryUrl);
-        INHERITABLE_SETTING(Boolean, KeyAlphaMode);
+        INHERITABLE_SETTING(Boolean, AlphaKbdOnEscKey);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);

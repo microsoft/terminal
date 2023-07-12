@@ -103,7 +103,7 @@ namespace SettingsModelLocalTests
                 "experimental.rendering.forceFullRepaint": false,
                 "experimental.rendering.software": false,
 
-                "keyAlphaMode": true,
+                "alphaKbdOnEscKey": true,
 
                 "actions": []
             })" };

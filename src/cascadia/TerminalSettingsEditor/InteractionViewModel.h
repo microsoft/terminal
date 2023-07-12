@@ -28,7 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, DetectURLs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, WordDelimiters);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ConfirmCloseAllTabs);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, KeyAlphaMode);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AlphaKbdOnEscKey);
 
     private:
         Model::GlobalAppSettings _GlobalSettings;

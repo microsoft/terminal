@@ -112,7 +112,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBright);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, Core::AdjustTextMode::Never);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, KeyAlphaMode, true);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, AlphaKbdOnEscKey, true);
 
         // ------------------------ End of Core Settings -----------------------
 

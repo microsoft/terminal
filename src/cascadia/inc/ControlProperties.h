@@ -74,4 +74,4 @@
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, ShowMarks, false)                                                                                                                            \
     X(bool, RightClickContextMenu, false)                                                                                                                \
-    X(bool, KeyAlphaMode, true)
+    X(bool, AlphaKbdOnEscKey, true)

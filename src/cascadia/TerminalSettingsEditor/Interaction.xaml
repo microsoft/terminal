@@ -95,8 +95,8 @@
             </local:SettingContainer>
 
             <!--  Restore keyboard IME to alphabet mode  -->
-            <local:SettingContainer x:Uid="Globals_KeyAlphaMode">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.KeyAlphaMode, Mode=TwoWay}"
+            <local:SettingContainer x:Uid="Globals_AlphaKbdOnEscKey">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.AlphaKbdOnEscKey, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
         </StackPanel>
