@@ -287,12 +287,13 @@ public:
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
 #pragma endregion
 
-    til::CoordType _minWidth = 500;
+    til::CoordType _minWidth = 128;
     til::CoordType _visibleWidth;
     til::size GetRealViewportSize()
     {
         const auto mutableView{ _GetMutableViewport() };
-        return til::size{ std::min(_minWidth, mutableView.Width()), mutableView.Height() };
+        // return til::size{ std::min(_minWidth, mutableView.Width()), mutableView.Height() };
+        return til::size{ mutableView.Width(), mutableView.Height() };
     }
 
 private:

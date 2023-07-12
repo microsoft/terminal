@@ -230,11 +230,18 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
 //      appropriate HRESULT for failing to resize.
 [[nodiscard]] HRESULT Terminal::UserResize(const til::size viewportSize) noexcept
 {
-    const auto oldDimensions = _GetMutableViewport().Dimensions();
-    if (viewportSize == oldDimensions)
+    const auto oldBackingDimensions = _GetMutableViewport().Dimensions();
+    const auto oldVisibleDimensions = _GetVisibleViewport().Dimensions();
+    if (oldVisibleDimensions == viewportSize)
     {
         return S_FALSE;
     }
+
+    // const auto oldDimensions = _GetMutableViewport().Dimensions();
+    // if (viewportSize == oldDimensions)
+    // {
+    //     return S_FALSE;
+    // }
 
     // Shortcut: if we're in the alt buffer, just resize the
     // alt buffer and put off resizing the main buffer till we switch back. Fortunately, this is easy. We don't need to
@@ -242,6 +249,8 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
     // any scrollback, so we just need to resize it and presto, we're done.
     if (_inAltBuffer())
     {
+        // TODO! deal with the alt buffer
+
         // stash this resize for the future.
         _deferredResize = viewportSize;
 
@@ -262,10 +271,16 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
         return S_OK;
     }
 
-    const auto dx = viewportSize.width - oldDimensions.width;
-    const auto newBufferHeight = std::clamp(viewportSize.height + _scrollbackLines, 0, SHRT_MAX);
+    const til::size newRealSize{ std::max(viewportSize.width, _minWidth), viewportSize.height };
+    if (newRealSize == oldBackingDimensions)
+    {
+        return S_FALSE;
+    }
 
-    til::size bufferSize{ viewportSize.width, newBufferHeight };
+    const auto dx = newRealSize.width - oldBackingDimensions.width;
+    const auto newBufferHeight = std::clamp(newRealSize.height + _scrollbackLines, 0, SHRT_MAX);
+
+    til::size bufferSize{ newRealSize.width, newBufferHeight };
 
     // This will be used to determine where the viewport should be in the new buffer.
     const auto oldViewportTop = _mutableViewport.Top();
@@ -368,7 +383,7 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
 
     const auto maxRow = std::max(newLastChar.y, newCursorPos.y);
 
-    const auto proposedTopFromLastLine = maxRow - viewportSize.height + 1;
+    const auto proposedTopFromLastLine = maxRow - newRealSize.height + 1;
     const auto proposedTopFromScrollback = newViewportTop;
 
     auto proposedTop = std::max(proposedTopFromLastLine,
@@ -389,7 +404,7 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
     // this proposed top position.
     if (proposedTop == proposedTopFromScrollback)
     {
-        const auto proposedViewFromTop = Viewport::FromDimensions({ 0, proposedTopFromScrollback }, viewportSize);
+        const auto proposedViewFromTop = Viewport::FromDimensions({ 0, proposedTopFromScrollback }, newRealSize);
         if (maxRow < proposedViewFromTop.BottomInclusive())
         {
             if (dx < 0 && proposedTop > 0)
@@ -410,7 +425,7 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
     // If the new bottom would be higher than the last row of text, then we
     // definitely want to use the last row of text to determine where the
     // viewport should be.
-    const auto proposedViewFromTop = Viewport::FromDimensions({ 0, proposedTopFromScrollback }, viewportSize);
+    const auto proposedViewFromTop = Viewport::FromDimensions({ 0, proposedTopFromScrollback }, newRealSize);
     if (maxRow > proposedViewFromTop.BottomInclusive())
     {
         proposedTop = proposedTopFromLastLine;
@@ -422,14 +437,14 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
 
     // If the new bottom would be below the bottom of the buffer, then slide the
     // top up so that we'll still fit within the buffer.
-    const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+    const auto newView = Viewport::FromDimensions({ 0, proposedTop }, newRealSize);
     const auto proposedBottom = newView.BottomExclusive();
     if (proposedBottom > bufferSize.height)
     {
         proposedTop = ::base::ClampSub(proposedTop, ::base::ClampSub(proposedBottom, bufferSize.height));
     }
 
-    _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
+    _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, newRealSize);
 
     _mainBuffer.swap(newTextBuffer);
 
@@ -442,6 +457,8 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
     // If the old scrolloffset was 0, then we weren't scrolled back at all
     // before, and shouldn't be now either.
     _scrollOffset = originalOffsetWasZero ? 0 : static_cast<int>(::base::ClampSub(_mutableViewport.Top(), newVisibleTop));
+
+    _visibleWidth = viewportSize.width;
 
     // GH#5029 - make sure to InvalidateAll here, so that we'll paint the entire visible viewport.
     try
