@@ -30,6 +30,7 @@ Dacl
 dataobject
 dcomp
 DERR
+delayimp
 dlldata
 DNE
 DONTADDTORECENT
@@ -170,6 +171,7 @@ roundf
 RSHIFT
 SACL
 schandle
+SEH
 semver
 serializer
 SETVERSION
@@ -218,6 +220,7 @@ UOI
 UPDATEINIFILE
 userenv
 USEROBJECTFLAGS
+Vcpp
 Viewbox
 virtualalloc
 vsnwprintf

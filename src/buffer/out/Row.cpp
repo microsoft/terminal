@@ -117,6 +117,12 @@ LineRendition ROW::GetLineRendition() const noexcept
     return _lineRendition;
 }
 
+uint16_t ROW::GetLineWidth() const noexcept
+{
+    const auto scale = _lineRendition != LineRendition::SingleWidth ? 1 : 0;
+    return _columnCount >> scale;
+}
+
 // Routine Description:
 // - Sets all properties of the ROW to default values
 // Arguments:
@@ -538,28 +544,87 @@ catch (...)
 
 [[msvc::forceinline]] void ROW::WriteHelper::ReplaceText() noexcept
 {
+    // This function starts with a fast-pass for ASCII. ASCII is still predominant in technical areas.
+    //
+    // We can infer the "end" from the amount of columns we're given (colLimit - colBeg),
+    // because ASCII is always 1 column wide per character.
+    auto it = chars.begin();
+    const auto end = it + std::min<size_t>(chars.size(), colLimit - colBeg);
     size_t ch = chBeg;
 
-    for (const auto& s : til::utf16_iterator{ chars })
+    while (it != end)
     {
-        const auto wide = til::at(s, 0) < 0x80 ? false : IsGlyphFullWidth(s);
-        const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + 1u + wide);
+        if (*it >= 0x80) [[unlikely]]
+        {
+            _replaceTextUnicode(ch, it);
+            return;
+        }
+
+        til::at(row._charOffsets, colEnd) = gsl::narrow_cast<uint16_t>(ch);
+        ++colEnd;
+        ++ch;
+        ++it;
+    }
+
+    colEndDirty = colEnd;
+    charsConsumed = ch - chBeg;
+}
+
+[[msvc::forceinline]] void ROW::WriteHelper::_replaceTextUnicode(size_t ch, std::wstring_view::const_iterator it) noexcept
+{
+    const auto end = chars.end();
+
+    while (it != end)
+    {
+        unsigned int width = 1;
+        auto ptr = &*it;
+        const auto wch = *ptr;
+        size_t advance = 1;
+
+        ++it;
+
+        // Even in our slow-path we can avoid calling IsGlyphFullWidth if the current character is ASCII.
+        // It also allows us to skip the surrogate pair decoding at the same time.
+        if (wch >= 0x80)
+        {
+            if (til::is_surrogate(wch))
+            {
+                if (it != end && til::is_leading_surrogate(wch) && til::is_trailing_surrogate(*it))
+                {
+                    advance = 2;
+                    ++it;
+                }
+                else
+                {
+                    ptr = &UNICODE_REPLACEMENT;
+                }
+            }
+
+            width = IsGlyphFullWidth({ ptr, advance }) + 1u;
+        }
+
+        const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
         if (colEndNew > colLimit)
         {
             colEndDirty = colLimit;
-            break;
+            charsConsumed = ch - chBeg;
+            return;
         }
 
+        // Fill our char-offset buffer with 1 entry containing the mapping from the
+        // current column (colEnd) to the start of the glyph in the string (ch)...
         til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch);
-        if (wide)
+        // ...followed by 0-N entries containing an indication that the
+        // columns are just a wide-glyph extension of the preceding one.
+        while (colEnd < colEndNew)
         {
             til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch | CharOffsetsTrailer);
         }
 
-        colEndDirty = colEnd;
-        ch += s.size();
+        ch += advance;
     }
 
+    colEndDirty = colEnd;
     charsConsumed = ch - chBeg;
 }
 
@@ -880,6 +945,17 @@ DbcsAttribute ROW::DbcsAttrAt(til::CoordType column) const noexcept
 std::wstring_view ROW::GetText() const noexcept
 {
     return { _chars.data(), _charSize() };
+}
+
+std::wstring_view ROW::GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept
+{
+    const til::CoordType columns = _columnCount;
+    const auto colBeg = std::max(0, std::min(columns, columnBegin));
+    const auto colEnd = std::max(colBeg, std::min(columns, columnEnd));
+    const size_t chBeg = _uncheckedCharOffset(gsl::narrow_cast<size_t>(colBeg));
+    const size_t chEnd = _uncheckedCharOffset(gsl::narrow_cast<size_t>(colEnd));
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+    return { _chars.data() + chBeg, chEnd - chBeg };
 }
 
 DelimiterClass ROW::DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept

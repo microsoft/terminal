@@ -1,22 +1,5 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
-Module Name:
-- Row.hpp
-
-Abstract:
-- data structure for information associated with one row of screen buffer
-
-Author(s):
-- Michael Niksa (miniksa) 10-Apr-2014
-- Paul Campbell (paulcam) 10-Apr-2014
-
-Revision History:
-- From components of output.h/.c
-  by Therese Stowell (ThereseS) 1990-1991
-- Pulled into its own file from textBuffer.hpp/cpp (AustDi, 2017)
---*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 
@@ -123,6 +106,7 @@ public:
     bool WasDoubleBytePadded() const noexcept;
     void SetLineRendition(const LineRendition lineRendition) noexcept;
     LineRendition GetLineRendition() const noexcept;
+    uint16_t GetLineWidth() const noexcept;
 
     void Reset(const TextAttribute& attr) noexcept;
     void TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth);
@@ -151,6 +135,7 @@ public:
     std::wstring_view GlyphAt(til::CoordType column) const noexcept;
     DbcsAttribute DbcsAttrAt(til::CoordType column) const noexcept;
     std::wstring_view GetText() const noexcept;
+    std::wstring_view GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept;
     DelimiterClass DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept;
 
     auto AttrBegin() const noexcept { return _attr.begin(); }
@@ -170,6 +155,7 @@ private:
         bool IsValid() const noexcept;
         void ReplaceCharacters(til::CoordType width) noexcept;
         void ReplaceText() noexcept;
+        void _replaceTextUnicode(size_t ch, std::wstring_view::const_iterator it) noexcept;
         void CopyTextFrom(const std::span<const uint16_t>& charOffsets) noexcept;
         static void _copyOffsets(uint16_t* dst, const uint16_t* src, uint16_t size, uint16_t offset) noexcept;
         void Finish();

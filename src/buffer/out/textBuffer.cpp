@@ -450,18 +450,11 @@ void TextBuffer::ConsumeGrapheme(std::wstring_view& chars) noexcept
 
 // This function is intended for writing regular "lines" of text as it'll set the wrap flag on the given row.
 // You can continue calling the function on the same row as long as state.columnEnd < state.columnLimit.
-void TextBuffer::WriteLine(til::CoordType row, bool wrapAtEOL, const TextAttribute& attributes, RowWriteState& state)
+void TextBuffer::Write(til::CoordType row, const TextAttribute& attributes, RowWriteState& state)
 {
     auto& r = GetRowByOffset(row);
-
     r.ReplaceText(state);
     r.ReplaceAttributes(state.columnBegin, state.columnEnd, attributes);
-
-    if (state.columnEnd >= state.columnLimit)
-    {
-        r.SetWrapForced(wrapAtEOL);
-    }
-
     TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, state.columnEndDirty, row + 1 }));
 }
 
@@ -946,7 +939,7 @@ const Cursor& TextBuffer::GetCursor() const noexcept
     return _cursor;
 }
 
-[[nodiscard]] TextAttribute TextBuffer::GetCurrentAttributes() const noexcept
+const TextAttribute& TextBuffer::GetCurrentAttributes() const noexcept
 {
     return _currentAttributes;
 }
@@ -954,6 +947,11 @@ const Cursor& TextBuffer::GetCursor() const noexcept
 void TextBuffer::SetCurrentAttributes(const TextAttribute& currentAttributes) noexcept
 {
     _currentAttributes = currentAttributes;
+}
+
+void TextBuffer::SetWrapForced(const til::CoordType y, bool wrap)
+{
+    GetRowByOffset(y).SetWrapForced(wrap);
 }
 
 void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition, const TextAttribute& fillAttributes)

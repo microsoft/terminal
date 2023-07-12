@@ -24,8 +24,6 @@
 #include "../buffer/out/search.h"
 #include "../buffer/out/TextColor.h"
 
-#include <til/ticket_lock.h>
-
 namespace ControlUnitTests
 {
     class ControlCoreTests;

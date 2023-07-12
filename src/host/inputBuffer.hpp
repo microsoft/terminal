@@ -81,6 +81,9 @@ public:
     size_t Write(_Inout_ std::unique_ptr<IInputEvent> inEvent);
     size_t Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
+    void WriteFocusEvent(bool focused) noexcept;
+    bool WriteMouseEvent(til::point position, unsigned int button, short keyState, short wheelDelta);
+
     bool IsInVirtualTerminalInputMode() const;
     Microsoft::Console::VirtualTerminal::TerminalInput& GetTerminalInput();
     void SetTerminalConnection(_In_ Microsoft::Console::Render::VtEngine* const pTtyConnection);
@@ -120,12 +123,8 @@ private:
                       _Out_ size_t& eventsWritten,
                       _Out_ bool& setWaitEvent);
 
-    bool _CanCoalesce(const KeyEvent& a, const KeyEvent& b) const noexcept;
-    bool _CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-    bool _CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-    void _HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-
-    void _HandleTerminalInputCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+    bool _CoalesceEvent(const std::unique_ptr<IInputEvent>& inEvent) const noexcept;
+    void _HandleTerminalInputCallback(const Microsoft::Console::VirtualTerminal::TerminalInput::StringType& text);
 
 #ifdef UNIT_TESTING
     friend class InputBufferTests;
