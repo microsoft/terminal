@@ -53,9 +53,9 @@ marking a region of text in the buffer with a special meaning.
 
 The Terminal provides a way for command line shells to semantically mark parts
 of the command-line output. By marking up parts of the output, the Terminal can
-provide richer experiences. The Terminal will know where each command starts and stops,
-what the actual command was and what the output of that command is. This allows
-the terminal to expose quick actions for:
+provide richer experiences. The Terminal will know where each command starts and
+stops, what the actual command was and what the output of that command is. This
+allows the terminal to expose quick actions for:
 
 * Quickly navigating the history by scrolling between commands
 * Re-running a previous command in the history
@@ -68,7 +68,8 @@ the terminal to expose quick actions for:
 
 ### User Stories
 
-This is a bit of a unusual section, as this feature was already partially implemented when this spec was written
+This is a bit of a unusual section, as this feature was already partially
+implemented when this spec was written.
 
 Story |  Size | Description
 --|-----------|--
@@ -78,7 +79,7 @@ C | ✅ Done   | The user can manually add marks to the buffer
 D | ✅ Done   | The shell can emit different marks to differentiate between prompt, command, and output
 E | 🐣 Crawl  | Clearing the buffer clears marks
 F | 🐣 Crawl  | Marks stay in the same place you'd expect after resizing the buffer.
-G | 🐣 Crawl  | Users can perform an action to select the previous command's output
+G | ✅ Done   | Users can perform an action to select the previous command's output
 H | 🚶 Walk   | The find dialog can display marks on the scrollbar indicating the position of search matches
 I | 🏃‍♂️ Run    | The terminal can display icons in the gutter, with quick actions for that command (re-run, copy output, etc)
 J | 🏃‍♂️ Run    | The terminal can display a faint horizontal separator between commands in the buffer.
@@ -107,12 +108,15 @@ not understanding these sequences originally.
 
 #### FinalTerm sequences
 
-The relevant FinalTerm sequences for marking up the prompt are as follows:
+The relevant FinalTerm sequences for marking up the prompt are as follows.
+
+
+![image](ftcs-diagram.png)
 
 * **FTCS_PROMPT**: `OSC 133 ; A ST`
-  - The start of a prompt. Does nothing all on it's own. Internally, this sets a
-    marker in the buffer indicating we started a prompt at the current cursor
-    position, and that marker will be used when we get a **FTCS_COMMAND_START**
+  - The start of a prompt. Internally, this sets a marker in the buffer
+    indicating we started a prompt at the current cursor position, and that
+    marker will be used when we get a **FTCS_COMMAND_START**
 * **FTCS_COMMAND_START**: `OSC 133 ; B ST`
   - The start of a commandline (READ: the end of the prompt). When it follows a
     **FTCS_PROMPT**, it creates a mark in the buffer from the location of the
@@ -131,8 +135,9 @@ and the `[Ps]` parameter determines the category.
 
 This whole sequence will get turned into a single mark.
 
-When we get the **FTCS_COMMAND_FINISHED**, set the category of the prompt mark that preceded it, so that the `prompt` becomes an `error` or a `success`.
-![image](https://user-images.githubusercontent.com/18356694/170084383-a1a7b0eb-8d6d-4be8-9472-f9a482e72f22.png)
+When we get the **FTCS_COMMAND_FINISHED**, set the category of the prompt mark
+that preceded it, so that the `prompt` becomes an `error` or a `success`.
+
 
 ### Buffer implementation
 
@@ -151,10 +156,9 @@ prompt should be connected to its subsequent command and output, s.t. we can
 * re-run command
 
 easily. Supposedly, we could do this by iterating through the whole buffer to
-find the previous/next {whatever}, but that feels prohibitively expensive.
-Additionally, the prompt needs to be able to contain the status / category, and
-a `133;D` needs to be able to change the category of the previous
-prompt/command.
+find the previous/next {whatever}[[1](#footnote-1)]. Additionally, the prompt
+needs to be able to contain the status / category, and a `133;D` needs to be
+able to change the category of the previous prompt/command.
 
 If we instead do a single mark for each command, from `133;A` to `133;A`, and
 have sub-points for elements within the command
@@ -166,7 +170,7 @@ have sub-points for elements within the command
   of the mark to the current position. It also updates the category of the mark,
   if needed.
 
-Each command then only shows up as a single pip on the scrollbar. Jumping
+Each command then only shows up as a single mark on the scrollbar. Jumping
 between commands is easy, `scrollToMark` operates on `mark.start`, which is
 where the prompt started. "Bookmarks", i.e. things started by the user wouldn't
 have `commandStart` or `outputStart` in them. Getting the text of the command,
@@ -174,7 +178,8 @@ of the output is easy - it's just the text between sub-points.
 
 Reflow still sucks though - we'd need to basically iterate over all the marks as
 we're reflowing, to make sure we put them into the right place in the new
-buffer. That is super annoying.
+buffer. This is annoying and tedious, but shouldn't realistically be a
+performance problem.
 
 #### Cmd.exe considerations
 
@@ -182,42 +187,16 @@ buffer. That is super annoying.
 hooks that other shells do, that might allow for us to emit the
 **FTCS_COMMAND_EXECUTED** sequence. However, cmd.exe also doesn't allow
 multiline prompts, so we can be relatively certain that when the user presses
-<kbd>enter</kbd>, that's the end of the prompt. We may want to add a setting to
-auto-mark <kbd>enter</kbd> as the _end of the prompt_. We've already got that setting,
-with `autoMarkPrompts`. That would at least allow cmd.exe to emit a
-{command finished}{prompt start}{prompt...}{command start} in the prompt, and
-have us add the command executed. That's not perfect (we wouldn't be able to get
-error information), but it does work well enough. 
+<kbd>enter</kbd>, that's the end of the prompt. We will treat the
+`autoMarkPrompts` setting (which auto-marks <kbd>enter</kbd>) as the _end of the
+prompt_. That would at least allow cmd.exe to emit a {command finished}{prompt
+start}{prompt...}{command start} in the prompt, and have us add the command
+executed. It is not perfect (we wouldn't be able to get error information), but
+it does work well enough.
 
 ```cmd
-TODO! Mike add a sample PROMPT that uses these marks approproately. 
+PROMPT $e]133;D$e\$e]133;A$e\$e]9;9;$P$e\%PROMPT%$e]133;B$e\
 ```
-
-### Gutter icons
-
-VsCode implements a set of gutter icons to the left of the buffer lines, to
-provide a UI element for exposing some quick actions to perform, powered by
-shell integration.
-
-Gutter icons don't need to implement app-level actions at all. They _should_ be
-part of the control. At least, part of the UWP `TermControl`. These are some
-basic "actions" we could add to that menu. Since these are all attached to a
-mark anyways, we already know what mark the user interacted with, and where the
-start/end already is.
-* Copy command
-* Copy output
-* re-run command
-
-To allow comments in marks (ala "bookmarks"), we can use
-the gutter flyout to display the comment, and have the tooltip display that
-comment.
-
-### Showing the gutter
-
-> **warning**: TODO!, for discussion: how do we really want to do this? Just
-> stick it in the margin/padding? Or have it be a separate space in the "buffer"
-> If it's in the buffer itself, we can render it with the renderer, which by all
-> accounts, we probably should.
 
 ## Settings proposals
 
@@ -247,8 +226,6 @@ region that means something to the user.
       colorize it. 
 * [ ] `scrollToMark`
   - [x] `direction`: `["first", "previous", "next", "last"]`  (in [#12948])
-  - [ ] `select`: `bool`, default false. Select the text of the mark when it's scrolled to
-    - This might be better served by `selectCommand` / `selectOutput`, below. 
   - [ ] [#13455] - `highlight`: `bool`, default false. Display a temporary
     highlight around the mark when scrolling to it. ("Highlight" != "select")
     - If the mark has prompt/command/output sections, only select the prompt and command.
@@ -264,24 +241,21 @@ region that means something to the user.
 * [x] `clearMark`: Remove any marks in the selected region (or at the cursor
   position)  (in [#12948])
 * [x] `clearAllMarks`: Remove all the marks from the buffer.  (in [#12948])
-* [ ] `addBookmark`: This one's basically just `addMark`, but opens a prompt
-  (like the window renamer) to add some text as a comment. Automatically
-  populated with the selected text (if there was some).
-  - A dedicated transient pane for displaying non-terminal content might be
-    useful for such a thing...
+
 
 #### Selecting commands & output
 
-_Inspired by a long weekend of manually copying .csv output from the Terminal to a spreadsheet, only to discover that we rejected [#4588] some years ago._
+_Inspired by a long weekend of manually copying .csv output from the Terminal to
+a spreadsheet, only to discover that we rejected [#4588] some years ago._
 
-* [ ] `selectCommand(direction=[prev, next])`: Starting at the selection start,
-  (or the cursor if there's no selection), select the command that starts
-  before/after this point (exclusive).  Probably shouldn't wrap around the
-  buffer.
+* [x] `selectCommand(direction=[prev, next])`: Starting at the active selection
+  anchor, (or the cursor if there's no selection), select the command that
+  starts before/after this point (exclusive).  Probably shouldn't wrap around
+  the buffer.
   * Since this will create a selection including the start of the command,
     performing this again will select the _next_ command (in whatever
     direction).
-* [ ] `selectOutput(direction=[prev, next])`: same as above, but with command outputs.
+* [x] `selectOutput(direction=[prev, next])`: same as above, but with command outputs.
 
 A convenient workflow might be a `multipleActions([selectOutput(prev),
 copy()])`, to quickly select the previous commands output.
@@ -289,7 +263,7 @@ copy()])`, to quickly select the previous commands output.
 ### Per-profile settings
 
 * [x] `autoMarkPrompts`: `bool`, default `false`.  (in [#12948])
-* [ ] `showFindMatchesOnScrollbar`: `bool`, default `false`.
+* [ ] `showFindMatchesOnScrollbar`: `bool`, default `true`.
 * [ ] `showMarksOnScrollbar`: `bool` or `flags({categories}...)` 
   * As an example: `"showMarksOnScrollbar": ["error", "success"]`).
   * Controls if marks should be displayed on the scrollbar. 
@@ -302,6 +276,15 @@ copy()])`, to quickly select the previous commands output.
 
 ## UX Design
 
+An example of what colored marks look like:
+
+![Select the entire output of a command](https://user-images.githubusercontent.com/18356694/207696859-a227abe2-ccd4-4b81-8a2c-8a22219cd0dd.gif)
+
+This gif demos both prompt marks and marks for search results:
+
+![](https://user-images.githubusercontent.com/18356694/191330278-3f6bc207-1bd5-4ebd-bb0e-1f84b0170f49.gif)
+
+
 ### Gutter icons
 
 ![](vscode-shell-integration-gutter-mark.png)
@@ -309,16 +292,14 @@ _An example of what the icons in the VsCode gutter look like_
 
 ### Multiple marks on the same line
 
-When it comes to displaying marks on the scrollbar, or in the margins, the relative priority of these marks matters. Marks are given the following priority, with errors being the highest priority.
+When it comes to displaying marks on the scrollbar, or in the margins, the
+relative priority of these marks matters. Marks are given the following
+priority, with errors being the highest priority.
 * Error
 * Warning
 * Success
 * Prompt
 * Info (default)
-
-### Scroll to mark highlighting
-
-[#13455] - how does this work with FTCS sequences? TODO!
 
 ## Work needed to get marks to v1
 
@@ -343,14 +324,61 @@ When it comes to displaying marks on the scrollbar, or in the margins, the relat
 * Should the height of a mark on the scrollbar be dependent on font size &
   buffer height? I think I've got it set to like, a static 2dip, but maybe it
   should represent the actual height of the row (down to a min 1dip)
+* [#13455] - highlight a mark when scrolled to with the `scrollToMark` action.
+  This is left as a future consideration to figure out what kind of UI we want
+  here. Do we want to highlight
+  - the prompt?
+  - the whole row of the prompt?
+  - the prompt and the command?
+  - The whole prompt & command & output?
+* an `addBookmark` action: This one's basically just `addMark`, but opens a prompt
+  (like the window renamer) to add some text as a comment. Automatically
+  populated with the selected text (if there was some).
+  - A dedicated transient pane for displaying non-terminal content might be
+    useful for such a thing.
+  - This might just make more sense as a parameter to `addMark`.
+* Other ideas for `addMark` parameters:
+  - `icon`: This would require us to better figure out how we display gutter
+    icons. This would probably be like, a _shape_ rather than an arbitrary
+    image.
+  - `note`: a note to stick on the mark, as a comment. Might be more valuable
+    with something like `addBookmark`.
+
+### Gutter icons
+
+VsCode implements a set of gutter icons to the left of the buffer lines, to
+provide a UI element for exposing some quick actions to perform, powered by
+shell integration.
+
+Gutter icons don't need to implement app-level actions at all. They _should_ be
+part of the control. At least, part of the UWP `TermControl`. These are some
+basic "actions" we could add to that menu. Since these are all attached to a
+mark anyways, we already know what mark the user interacted with, and where the
+start/end already is.
+* Copy command
+* Copy output
+* Re-run command
+* Save as task
+* Explain this (for errors)
+
+To allow comments in marks (ala "bookmarks"), we can use
+the gutter flyout to display the comment, and have the tooltip display that
+comment.
+
+This is being left as a future consideration for now. We need to really sit and
+consider what the UX is like for this.
+* Do we just stick the gutter icons in the margin/padding?
+* Have it be a separate space in the "buffer"
+  - If it's in the buffer itself, we can render it with the renderer, which by
+    all accounts, we probably should.
 
 ### Rejected ideas
 
 There was originally some discussion as to whether this is a design that should
-be unified with generic patter matchers. Something like the URL detection, which
-identifies part of the buffer and then "marks" it. Prototypes for both of these
-features are going in very different dirrections, however. Likely best to leave
-them separate.
+be unified with generic pattern matchers. Something like the URL detection,
+which identifies part of the buffer and then "marks" it. Prototypes for both of
+these features are going in very different dirrections, however. Likely best to
+leave them separate.
 
 ## Resources
 ### Other related issues
@@ -394,8 +422,23 @@ Not necessarily marks related, but could happily leverage this functionality.
 
 ### Footnotes
 
-<a name="footnote-1"><a>[1]:
+<a name="footnote-1"><a>[1]: Intuitively, this feels prohibitively expensive,
+but you'd be mistaken.
 
+An average device right now (I mean something that was alright about 5 years
+ago, like an 8700k with regular DDR4) does about 4GB/s of random, uncached
+memory access. While low-end devices are probably a bit slower, I think 4GB/s is
+a good estimate regardless. That's because non-random memory access is way way
+faster than that at around 20GB/s (DDR4 2400 - what most laptops had for the
+last decade).
+
+Assuming a 120 column * 32k line buffer (our current maximum), the buffer would
+be about 21MB large. Going through the entire buffer linearly at 20GB/s would
+take just 1ms (including all text and metadata). If we assume that each row has
+a mark, that marks are 36 byte large and assuming the worst case of random
+access, we can go through all 32k within about 0.3ms.
+
+_(Thanks lhecker for these notes)_
 
 
 [#1527]: https://github.com/microsoft/terminal/issues/1527
