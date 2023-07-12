@@ -456,10 +456,10 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L'[');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
         for (size_t nParam = 0; nParam < 2; nParam++)
         {
-            mach.ProcessCharacter(L'[');
-            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
             mach.ProcessCharacter(L'3');
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
             for (size_t i = 0; i < 100; i++)
@@ -471,6 +471,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             }
             Log::Comment(L"Receiving 100 sub parameters should set the overflow flag");
             VERIFY_IS_TRUE(mach._subParameterLimitOverflowed);
+            mach.ProcessCharacter(L';');
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+            VERIFY_IS_FALSE(mach._subParameterLimitOverflowed);
         }
         mach.ProcessCharacter(L'J');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
@@ -478,14 +481,14 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         Log::Comment(L"Only MAX_SUBPARAMETER_COUNT (6) sub parameters should be stored for each parameter");
         VERIFY_ARE_EQUAL(mach._subParameters.size(), 12u);
 
-        for (size_t nParam = 0; nParam < 2; nParam++)
+        // Verify that first 6 sub parameters are stored for each parameter.
+        // subParameters = { 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5 }
+        for (size_t i = 0; i < 12 ; i++)
         {
-            for (size_t i = nParam * MAX_SUBPARAMETER_COUNT; i < (nParam + 1) * MAX_SUBPARAMETER_COUNT; i++)
-            {
-                VERIFY_IS_TRUE(mach._subParameters.at(i).has_value());
-                VERIFY_ARE_EQUAL(mach._subParameters.at(i).value(), gsl::narrow_cast<VTInt>(i % 10));
-            }
+            VERIFY_IS_TRUE(mach._subParameters.at(i).has_value());
+            VERIFY_ARE_EQUAL(mach._subParameters.at(i).value(), gsl::narrow_cast<VTInt>(i % 6));
         }
+
         auto firstRange = mach._subParameterRanges.at(0);
         auto secondRange = mach._subParameterRanges.at(1);
         VERIFY_ARE_EQUAL(firstRange.first, 0);
