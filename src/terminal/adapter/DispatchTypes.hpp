@@ -152,6 +152,48 @@ namespace Microsoft::Console::VirtualTerminal
         VTInt _value;
     };
 
+    class VTSubParameters
+    {
+    public:
+        constexpr VTSubParameters() noexcept
+        {
+        }
+        
+        constexpr VTSubParameters(const std::span<const VTParameter> subParams) noexcept :
+            _subParams{ subParams }
+        {
+        }
+
+        constexpr VTParameter at(const size_t index) const noexcept
+        {
+            return til::at(_subParams, index);
+        }
+
+        VTSubParameters subspan(const size_t offset, const size_t count) const noexcept
+        {
+            const auto subParamsSpan = _subParams.subspan(offset, count);
+            return { subParamsSpan };
+        }
+
+        bool empty() const noexcept
+        {
+            return _subParams.empty();
+        }
+
+        size_t size() const noexcept
+        {
+            return _subParams.size();
+        }
+
+        constexpr operator std::span<const VTParameter>() const noexcept
+        {
+            return _subParams;
+        }
+
+    private:
+        std::span<const VTParameter> _subParams;
+    };
+
     class VTParameters
     {
     public:
@@ -200,10 +242,10 @@ namespace Microsoft::Console::VirtualTerminal
             // _subParams as is and create new span for others.
             const auto newParamsSpan = _params.subspan(std::min(offset, _params.size()));
             const auto newSubParamRangesSpan = _subParamRanges.subspan(std::min(offset, _subParamRanges.size()));
-            return { newParamsSpan, _subParams, newSubParamRangesSpan };
+            return { newParamsSpan, _subParams , newSubParamRangesSpan };
         }
 
-        std::span<const VTParameter> subParamsFor(const size_t index) const noexcept
+        VTSubParameters subParamsFor(const size_t index) const noexcept
         {
             if (index < _subParamRanges.size())
             {
@@ -212,7 +254,7 @@ namespace Microsoft::Console::VirtualTerminal
             }
             else
             {
-                return std::span<const VTParameter>{};
+                return VTSubParameters{};
             }
         }
 
@@ -259,7 +301,7 @@ namespace Microsoft::Console::VirtualTerminal
         static constexpr std::span defaultParameters{ &defaultParameter, 1 };
 
         std::span<const VTParameter> _params;
-        std::span<const VTParameter> _subParams;
+        VTSubParameters _subParams;
         std::span<const std::pair<BYTE, BYTE>> _subParamRanges;
     };
 

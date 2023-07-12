@@ -301,7 +301,7 @@ namespace Microsoft::Console::VirtualTerminal
                                     const size_t optionIndex,
                                     TextAttribute& attr) noexcept;
         void _ApplyGraphicsOptionSubParam(const VTParameter option,
-                                          const std::span<const VTParameter> subParams,
+                                          const VTSubParameters subParams,
                                           TextAttribute& attr) noexcept;
         void _ApplyGraphicsOptions(const VTParameters options,
                                    TextAttribute& attr) noexcept;

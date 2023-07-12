@@ -268,7 +268,7 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
 // Return Value:
 // - <None>
 void AdaptDispatch::_ApplyGraphicsOptionSubParam(const VTParameter /* option */,
-                                                 const std::span<const VTParameter> /* subParam */,
+                                                 const VTSubParameters /* subParam */,
                                                  TextAttribute& /* attr */) noexcept
 {
     // here, we apply our "best effort" rule, while handling sub params if we don't
