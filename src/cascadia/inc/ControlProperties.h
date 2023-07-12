@@ -73,5 +73,5 @@
     X(bool, UseAtlasEngine, false)                                                                                                                       \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, ShowMarks, false)                                                                                                                            \
-    X(bool, RightClickContextMenu, false)                                                                                                                \
-    X(bool, AlphaKbdOnEscKey, true)
+    X(bool, AlphaKbdOnEscKey, true)                                                                                                                      \
+    X(bool, RightClickContextMenu, false)
