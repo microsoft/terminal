@@ -28,6 +28,8 @@ using namespace std::chrono_literals;
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
 static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 
+constexpr const auto FrameUpdateInterval = std::chrono::milliseconds(16);
+
 AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
                  winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
                  const Remoting::WindowManager& manager,
@@ -38,6 +40,8 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     _peasant{ peasant },
     _desktopManager{ winrt::try_create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager)) }
 {
+    _started = std::chrono::high_resolution_clock::now();
+
     _HandleCommandlineArgs(args);
 
     _HandleSessionRestore(!args.Content().empty());
@@ -419,6 +423,10 @@ void AppHost::Close()
     // After calling _window->Close() we should avoid creating more WinUI related actions.
     // I suspect WinUI wouldn't like that very much. As such unregister all event handlers first.
     _revokers = {};
+    if (_frameTimer)
+    {
+        _frameTimer.Tick(_frameTimerToken);
+    }
     _showHideWindowThrottler.reset();
     _window->Close();
 
@@ -1036,24 +1044,138 @@ static bool _isActuallyDarkTheme(const auto requestedTheme)
     }
 }
 
+// DwmSetWindowAttribute(... DWMWA_BORDER_COLOR.. ) doesn't work on Windows 10,
+// but it _will_ spew to the debug console. This helper just no-ops the call on
+// Windows 10, so that we don't even get that spew
+void _frameColorHelper(const HWND h, const COLORREF color)
+{
+    static const bool isWindows11 = []() {
+        OSVERSIONINFOEXW osver{};
+        osver.dwOSVersionInfoSize = sizeof(osver);
+        osver.dwBuildNumber = 22000;
+
+        DWORDLONG dwlConditionMask = 0;
+        VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+        if (VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE)
+        {
+            return true;
+        }
+        return false;
+    }();
+
+    if (isWindows11)
+    {
+        LOG_IF_FAILED(DwmSetWindowAttribute(h, DWMWA_BORDER_COLOR, &color, sizeof(color)));
+    }
+}
+
 void AppHost::_updateTheme()
 {
     auto theme = _appLogic.Theme();
 
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
+    const auto windowTheme{ theme.Window() };
+
     const auto b = _windowLogic.TitlebarBrush();
     const auto color = ThemeColor::ColorFromBrush(b);
     const auto colorOpacity = b ? color.A / 255.0 : 0.0;
     const auto brushOpacity = _opacityFromBrush(b);
     const auto opacity = std::min(colorOpacity, brushOpacity);
-    _window->UseMica(theme.Window() ? theme.Window().UseMica() : false, opacity);
+    _window->UseMica(windowTheme ? windowTheme.UseMica() : false, opacity);
 
     // This is a hack to make the window borders dark instead of light.
     // It must be done before WM_NCPAINT so that the borders are rendered with
     // the correct theme.
     // For more information, see GH#6620.
-    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window->GetHandle(), _isActuallyDarkTheme(theme.RequestedTheme())));
+    _window->UseDarkTheme(_isActuallyDarkTheme(theme.RequestedTheme()));
+
+    // Update the window frame. If `rainbowFrame:true` is enabled, then that
+    // will be used. Otherwise we'll try to use the `FrameBrush` set in the
+    // terminal window, as that will have the right color for the ThemeColor for
+    // this setting. If that value is null, then revert to the default frame
+    // color.
+    if (windowTheme)
+    {
+        if (windowTheme.RainbowFrame())
+        {
+            _startFrameTimer();
+        }
+        else if (const auto b{ _windowLogic.FrameBrush() })
+        {
+            _stopFrameTimer();
+            const auto color = ThemeColor::ColorFromBrush(b);
+            COLORREF ref{ til::color{ color } };
+            _frameColorHelper(_window->GetHandle(), ref);
+        }
+        else
+        {
+            _stopFrameTimer();
+            // DWMWA_COLOR_DEFAULT is the magic "reset to the default" value
+            _frameColorHelper(_window->GetHandle(), DWMWA_COLOR_DEFAULT);
+        }
+    }
+}
+
+void AppHost::_startFrameTimer()
+{
+    // Instantiate the frame color timer, if we haven't already. We'll only ever
+    // create one instance of this. We'll set up the callback for the timers as
+    // _updateFrameColor, which will actually handle setting the colors. If we
+    // already have a timer, just start that one.
+
+    if (_frameTimer == nullptr)
+    {
+        _frameTimer = winrt::Windows::UI::Xaml::DispatcherTimer();
+        _frameTimer.Interval(FrameUpdateInterval);
+        _frameTimerToken = _frameTimer.Tick({ this, &AppHost::_updateFrameColor });
+    }
+    _frameTimer.Start();
+}
+
+void AppHost::_stopFrameTimer()
+{
+    if (_frameTimer)
+    {
+        _frameTimer.Stop();
+    }
+}
+
+// Method Description:
+// - Updates the color of the window frame to cycle through all the colors. This
+//   is called as the `_frameTimer` Tick callback, roughly 60 times per second.
+void AppHost::_updateFrameColor(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&)
+{
+    // First, a couple helper functions:
+    static const auto saturateAndToColor = [](const float a, const float b, const float c) -> til::color {
+        return til::color{
+            base::saturated_cast<uint8_t>(255.f * std::clamp(a, 0.f, 1.f)),
+            base::saturated_cast<uint8_t>(255.f * std::clamp(b, 0.f, 1.f)),
+            base::saturated_cast<uint8_t>(255.f * std::clamp(c, 0.f, 1.f))
+        };
+    };
+
+    // Helper for converting a hue [0, 1) to an RGB value.
+    // Credit to https://www.chilliant.com/rgb2hsv.html
+    static const auto hueToRGB = [&](const float H) -> til::color {
+        float R = abs(H * 6 - 3) - 1;
+        float G = 2 - abs(H * 6 - 2);
+        float B = 2 - abs(H * 6 - 4);
+        return saturateAndToColor(R, G, B);
+    };
+
+    // Now, the main body of work.
+    // - Convert the time delta between when we were started and now, to a hue. This will cycle us through all the colors.
+    // - Convert that hue to an RGB value.
+    // - Set the frame's color to that RGB color.
+    const auto now = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<float> delta{ now - _started };
+    const auto seconds = delta.count() / 4; // divide by four, to make the effect slower. Otherwise it flashes way to fast.
+    float ignored;
+    const auto color = hueToRGB(modf(seconds, &ignored));
+
+    _frameColorHelper(_window->GetHandle(), color);
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
@@ -1202,6 +1324,10 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
             nonClientWindow->SetTitlebarBackground(_windowLogic.TitlebarBrush());
             _updateTheme();
         }
+    }
+    else if (e.PropertyName() == L"FrameBrush")
+    {
+        _updateTheme();
     }
 }
 

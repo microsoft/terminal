@@ -210,6 +210,7 @@
                                 Visibility="{x:Bind IsDefaultScheme, Mode=OneWay}">
                             <TextBlock x:Uid="ColorScheme_DefaultTag"
                                        Grid.Column="1"
+                                       AutomationProperties.AccessibilityView="Raw"
                                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                         </Border>
                     </Grid>

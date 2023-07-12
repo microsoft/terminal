@@ -178,6 +178,10 @@
   <data name="HowToOpenRun.Text" xml:space="preserve">
     <value>Ctrl+Click to follow link</value>
   </data>
+  <data name="InvalidUri" xml:space="preserve">
+    <value>Invalid URI</value>
+    <comment>Whenever we encounter an invalid URI or URL we show this string as a warning.</comment>
+  </data>
   <data name="NoticeFontNotFound" xml:space="preserve">
     <value>Unable to find the selected font "{0}".
 

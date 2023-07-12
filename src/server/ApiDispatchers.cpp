@@ -151,47 +151,15 @@
     const auto pInputReadHandleData = pHandleData->GetClientInput();
 
     std::unique_ptr<IWaitRoutine> waiter;
-    HRESULT hr;
-    std::deque<std::unique_ptr<IInputEvent>> outEvents;
-    const auto eventsToRead = cRecords;
-    if (a->Unicode)
-    {
-        if (fIsPeek)
-        {
-            hr = m->_pApiRoutines->PeekConsoleInputWImpl(*pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         *pInputReadHandleData,
-                                                         waiter);
-        }
-        else
-        {
-            hr = m->_pApiRoutines->ReadConsoleInputWImpl(*pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         *pInputReadHandleData,
-                                                         waiter);
-        }
-    }
-    else
-    {
-        if (fIsPeek)
-        {
-            hr = m->_pApiRoutines->PeekConsoleInputAImpl(*pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         *pInputReadHandleData,
-                                                         waiter);
-        }
-        else
-        {
-            hr = m->_pApiRoutines->ReadConsoleInputAImpl(*pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         *pInputReadHandleData,
-                                                         waiter);
-        }
-    }
+    InputEventQueue outEvents;
+    auto hr = m->_pApiRoutines->GetConsoleInputImpl(
+        *pInputBuffer,
+        outEvents,
+        cRecords,
+        *pInputReadHandleData,
+        a->Unicode,
+        fIsPeek,
+        waiter);
 
     // We must return the number of records in the message payload (to alert the client)
     // as well as in the message headers (below in SetReplyInformation) to alert the driver.

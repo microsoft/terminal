@@ -18,9 +18,6 @@
     <ClCompile Include="..\stateMachine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\telemetry.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\tracing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -36,9 +33,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\stateMachine.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\telemetry.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\termDispatch.hpp">

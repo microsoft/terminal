@@ -33,7 +33,6 @@ SOURCES = \
     ..\stateMachine.cpp \
     ..\InputStateMachineEngine.cpp \
     ..\OutputStateMachineEngine.cpp \
-    ..\telemetry.cpp \
     ..\tracing.cpp \
     ..\base64.cpp \
 
