@@ -1,0 +1,751 @@
+id: 
+name: GitOps.PullRequestIssueManagement
+description: GitOps.PullRequestIssueManagement primitive
+owner: 
+resource: repository
+disabled: false
+where: 
+configuration:
+  resourceManagementConfiguration:
+    scheduledSearches:
+    - description: 
+      frequencies:
+      - hourly:
+          hour: 3
+      filters:
+      - isIssue
+      - isOpen
+      - hasLabel:
+          label: Needs-Author-Feedback
+      - hasLabel:
+          label: No-Recent-Activity
+      - noActivitySince:
+          days: 3
+      actions:
+      - closeIssue
+    - description: 
+      frequencies:
+      - hourly:
+          hour: 3
+      filters:
+      - isIssue
+      - isOpen
+      - hasLabel:
+          label: Needs-Author-Feedback
+      - noActivitySince:
+          days: 4
+      - isNotLabeledWith:
+          label: No-Recent-Activity
+      actions:
+      - addLabel:
+          label: No-Recent-Activity
+      - addReply:
+          reply: This issue has been automatically marked as stale because it has been marked as requiring author feedback but has not had any activity for **4 days**. It will be closed if no further activity occurs **within 3 days of this comment**.
+    - description: 
+      frequencies:
+      - hourly:
+          hour: 3
+      filters:
+      - isIssue
+      - isOpen
+      - hasLabel:
+          label: Resolution-Duplicate
+      - noActivitySince:
+          days: 1
+      actions:
+      - addReply:
+          reply: This issue has been marked as duplicate and has not had any activity for **1 day**. It will be closed for housekeeping purposes.
+      - closeIssue
+    - description: 
+      frequencies:
+      - hourly:
+          hour: 3
+      filters:
+      - isPullRequest
+      - isOpen
+      - hasLabel:
+          label: Needs-Author-Feedback
+      - hasLabel:
+          label: No-Recent-Activity
+      - noActivitySince:
+          days: 7
+      actions:
+      - closeIssue
+    - description: 
+      frequencies:
+      - hourly:
+          hour: 3
+      filters:
+      - isPullRequest
+      - isOpen
+      - hasLabel:
+          label: Needs-Author-Feedback
+      - noActivitySince:
+          days: 7
+      - isNotLabeledWith:
+          label: No-Recent-Activity
+      actions:
+      - addLabel:
+          label: No-Recent-Activity
+      - addReply:
+          reply: This pull request has been automatically marked as stale because it has been marked as requiring author feedback but has not had any activity for **7 days**. It will be closed if no further activity occurs **within 7 days of this comment**.
+    eventResponderTasks:
+    - if:
+      - payloadType: Issues
+      - or:
+        - and:
+          - isAction:
+              action: Opened
+          - not:
+              hasLabel:
+                label: ⛺ Reserved
+      then:
+      - addLabel:
+          label: Needs-Triage
+      description: 
+    - if:
+      - payloadType: Issue_Comment
+      - isAction:
+          action: Created
+      - isActivitySender:
+          issueAuthor: True
+      - hasLabel:
+          label: Needs-Author-Feedback
+      then:
+      - addLabel:
+          label: Needs-Attention
+      - removeLabel:
+          label: Needs-Author-Feedback
+      description: 
+    - if:
+      - payloadType: Issues
+      - not:
+          isAction:
+            action: Closed
+      - hasLabel:
+          label: No-Recent-Activity
+      then:
+      - removeLabel:
+          label: No-Recent-Activity
+      description: 
+    - if:
+      - payloadType: Issue_Comment
+      - hasLabel:
+          label: No-Recent-Activity
+      then:
+      - removeLabel:
+          label: No-Recent-Activity
+      description: 
+    - if:
+      - payloadType: Pull_Request_Review
+      - isAction:
+          action: Submitted
+      - isReviewState:
+          reviewState: Changes_requested
+      then:
+      - addLabel:
+          label: Needs-Author-Feedback
+      description: 
+    - if:
+      - payloadType: Pull_Request
+      - isActivitySender:
+          issueAuthor: True
+      - not:
+          isAction:
+            action: Closed
+      - hasLabel:
+          label: Needs-Author-Feedback
+      then:
+      - removeLabel:
+          label: Needs-Author-Feedback
+      description: 
+    - if:
+      - payloadType: Issue_Comment
+      - isActivitySender:
+          issueAuthor: True
+      - hasLabel:
+          label: Needs-Author-Feedback
+      then:
+      - removeLabel:
+          label: Needs-Author-Feedback
+      description: 
+    - if:
+      - payloadType: Pull_Request_Review
+      - isActivitySender:
+          issueAuthor: True
+      - hasLabel:
+          label: Needs-Author-Feedback
+      then:
+      - removeLabel:
+          label: Needs-Author-Feedback
+      description: 
+    - if:
+      - payloadType: Pull_Request
+      - not:
+          isAction:
+            action: Closed
+      - hasLabel:
+          label: No-Recent-Activity
+      then:
+      - removeLabel:
+          label: No-Recent-Activity
+      description: 
+    - if:
+      - payloadType: Issue_Comment
+      - hasLabel:
+          label: No-Recent-Activity
+      then:
+      - removeLabel:
+          label: No-Recent-Activity
+      description: 
+    - if:
+      - payloadType: Pull_Request_Review
+      - hasLabel:
+          label: No-Recent-Activity
+      then:
+      - removeLabel:
+          label: No-Recent-Activity
+      description: 
+    - if:
+      - payloadType: Pull_Request
+      - hasLabel:
+          label: AutoMerge
+      then:
+      - enableAutoMerge:
+          mergeMethod: Squash
+      description: 
+    - if:
+      - payloadType: Pull_Request
+      - labelRemoved:
+          label: AutoMerge
+      then:
+      - disableAutoMerge
+      description: 
+    - if:
+      - payloadType: Issues
+      - or:
+        - and:
+          - isLabeled
+          - hasLabel:
+              label: Mass-Chaos
+        - isOpen
+        - isLabeled
+      - not:
+          hasLabel:
+            label: Needs-Tag-Fix
+      - or:
+        - and:
+          - not:
+              hasLabel:
+                label: Area-Accessibility
+          - not:
+              hasLabel:
+                label: Area-Build
+          - not:
+              hasLabel:
+                label: Area-Extensibility
+          - not:
+              hasLabel:
+                label: Area-Fonts
+          - not:
+              hasLabel:
+                label: Area-Input
+          - not:
+              hasLabel:
+                label: Area-Interaction
+          - not:
+              hasLabel:
+                label: Area-Interop
+          - not:
+              hasLabel:
+                label: Area-Output
+          - not:
+              hasLabel:
+                label: Area-Performance
+          - not:
+              hasLabel:
+                label: Area-Rendering
+          - not:
+              hasLabel:
+                label: Area-Server
+          - not:
+              hasLabel:
+                label: Area-Settings
+          - not:
+              hasLabel:
+                label: Area-TerminalConnection
+          - not:
+              hasLabel:
+                label: Area-TerminalControl
+          - not:
+              hasLabel:
+                label: Area-User Interface
+          - not:
+              hasLabel:
+                label: Area-VT
+          - not:
+              hasLabel:
+                label: Area-CodeHealth
+          - not:
+              hasLabel:
+                label: Area-Quality
+          - not:
+              hasLabel:
+                label: Area-AzureShell
+          - not:
+              hasLabel:
+                label: Area-Schema
+          - not:
+              hasLabel:
+                label: Area-Commandline
+          - not:
+              hasLabel:
+                label: Area-ShellExtension
+          - not:
+              hasLabel:
+                label: Area-WPFControl
+          - not:
+              hasLabel:
+                label: Area-Settings UI
+          - not:
+              hasLabel:
+                label: Area-DefApp
+          - not:
+              hasLabel:
+                label: Area-Remoting
+          - not:
+              hasLabel:
+                label: Area-Windowing
+          - not:
+              hasLabel:
+                label: Area-Theming
+          - not:
+              hasLabel:
+                label: Area-Localization
+        - and:
+          - not:
+              hasLabel:
+                label: Issue-Bug
+          - not:
+              hasLabel:
+                label: Issue-Docs
+          - not:
+              hasLabel:
+                label: Issue-Feature
+          - not:
+              hasLabel:
+                label: Issue-Question
+          - not:
+              hasLabel:
+                label: Issue-Samples
+          - not:
+              hasLabel:
+                label: Issue-Task
+          - not:
+              hasLabel:
+                label: Issue-Scenario
+        - and:
+          - not:
+              hasLabel:
+                label: Product-Cmd.exe
+          - not:
+              hasLabel:
+                label: Product-Colortool
+          - not:
+              hasLabel:
+                label: Product-Conhost
+          - not:
+              hasLabel:
+                label: Product-Conpty
+          - not:
+              hasLabel:
+                label: Product-Meta
+          - not:
+              hasLabel:
+                label: Product-Powershell
+          - not:
+              hasLabel:
+                label: Product-Terminal
+          - not:
+              hasLabel:
+                label: Product-WSL
+        - and:
+          - not: isOpen
+          - and:
+            - not:
+                hasLabel:
+                  label: Resolution-Answered
+            - not:
+                hasLabel:
+                  label: Resolution-By-Design
+            - not:
+                hasLabel:
+                  label: Resolution-Duplicate
+            - not:
+                hasLabel:
+                  label: Resolution-External
+            - not:
+                hasLabel:
+                  label: Resolution-Fix-Available
+            - not:
+                hasLabel:
+                  label: Resolution-Fix-Committed
+            - not:
+                hasLabel:
+                  label: Resolution-Won't-Fix
+      - not:
+          hasLabel:
+            label: Needs-Triage
+      - not:
+          hasLabel:
+            label: Resolution-Duplicate
+      - not:
+          hasLabel:
+            label: ⛺ Reserved
+      - not:
+          hasLabel:
+            label: Tracking-External
+      then:
+      - addLabel:
+          label: Needs-Tag-Fix
+      description: 
+    - if:
+      - payloadType: Issues
+      - and:
+        - isLabeled
+        - hasLabel:
+            label: Needs-Tag-Fix
+      - and:
+        - or:
+          - hasLabel:
+              label: Area-Accessibility
+          - hasLabel:
+              label: Area-Build
+          - hasLabel:
+              label: Area-Extensibility
+          - hasLabel:
+              label: Area-Fonts
+          - hasLabel:
+              label: Area-Input
+          - hasLabel:
+              label: Area-Interaction
+          - hasLabel:
+              label: Area-Interop
+          - hasLabel:
+              label: Area-Output
+          - hasLabel:
+              label: Area-Performance
+          - hasLabel:
+              label: Area-Rendering
+          - hasLabel:
+              label: Area-Server
+          - hasLabel:
+              label: Area-Settings
+          - hasLabel:
+              label: Area-TerminalConnection
+          - hasLabel:
+              label: Area-TerminalControl
+          - hasLabel:
+              label: Area-User Interface
+          - hasLabel:
+              label: Area-VT
+          - hasLabel:
+              label: Area-CodeHealth
+          - hasLabel:
+              label: Area-Quality
+          - hasLabel:
+              label: Area-Schema
+          - hasLabel:
+              label: Area-AzureShell
+          - hasLabel:
+              label: Area-Commandline
+          - hasLabel:
+              label: Area-ShellExtension
+          - hasLabel:
+              label: Area-WPFControl
+          - hasLabel:
+              label: Area-Settings UI
+          - hasLabel:
+              label: Area-DefApp
+          - hasLabel:
+              label: Area-Localization
+          - hasLabel:
+              label: Area-Windowing
+          - hasLabel:
+              label: Area-Theming
+          - hasLabel:
+              label: Area-AtlasEngine
+          - hasLabel:
+              label: Area-CmdPal
+        - or:
+          - hasLabel:
+              label: Issue-Bug
+          - hasLabel:
+              label: Issue-Docs
+          - hasLabel:
+              label: Issue-Feature
+          - hasLabel:
+              label: Issue-Question
+          - hasLabel:
+              label: Issue-Samples
+          - hasLabel:
+              label: Issue-Task
+          - hasLabel:
+              label: Issue-Scenario
+        - or:
+          - hasLabel:
+              label: Product-Cmd.exe
+          - hasLabel:
+              label: Product-Colortool
+          - hasLabel:
+              label: Product-Conhost
+          - hasLabel:
+              label: Product-Conpty
+          - hasLabel:
+              label: Product-Meta
+          - hasLabel:
+              label: Product-Powershell
+          - hasLabel:
+              label: Product-Terminal
+          - hasLabel:
+              label: Product-WSL
+        - or:
+          - isOpen
+          - and:
+            - not: isOpen
+            - or:
+              - hasLabel:
+                  label: Resolution-Answered
+              - hasLabel:
+                  label: Resolution-By-Design
+              - hasLabel:
+                  label: Resolution-Duplicate
+              - hasLabel:
+                  label: Resolution-External
+              - hasLabel:
+                  label: Resolution-Fix-Available
+              - hasLabel:
+                  label: Resolution-Fix-Committed
+              - hasLabel:
+                  label: Resolution-Won't-Fix
+              - hasLabel:
+                  label: Tracking-External
+      then:
+      - removeLabel:
+          label: Needs-Tag-Fix
+      description: 
+    - if:
+      - payloadType: Pull_Request
+      then:
+      - inPrLabel:
+          label: In-PR
+      description: 
+    - if:
+      - payloadType: Issues
+      - hasLabel:
+          label: Needs-Tag-Fix
+      - hasLabel:
+          label: Resolution-Duplicate
+      then:
+      - removeLabel:
+          label: Needs-Tag-Fix
+      description: 
+    - if:
+      - payloadType: Issues
+      - or:
+        - titleContains:
+            pattern: ^\s*Bug Report \(IF I DO NOT CHANGE THIS THE ISSUE WILL BE AUTO-CLOSED\)\s*$
+            isRegex: True
+        - titleContains:
+            pattern: ^\s*Bug Report\s*$
+            isRegex: True
+      - or:
+        - isAction:
+            action: Opened
+        - isAction:
+            action: Reopened
+      - not:
+          activitySenderHasPermission:
+            permission: Write
+      - not:
+          activitySenderHasPermission:
+            permission: Admin
+      then:
+      - closeIssue
+      - addLabel:
+          label: Needs-Author-Feedback
+      - addReply:
+          reply: Hi! Thanks for attempting to open an issue. Unfortunately, your title wasn't changed from the original template which makes it very hard for us to track and triage. You are welcome to fix up the title and try again with a new issue.
+      description: 
+    - if:
+      - payloadType: Issues
+      - or:
+        - isAction:
+            action: Opened
+        - isAction:
+            action: Reopened
+      - or:
+        - not:
+            bodyContains:
+              pattern: .+
+              isRegex: True
+      then:
+      - closeIssue
+      - addLabel:
+          label: Needs-Author-Feedback
+      - addReply:
+          reply: "Hi! Thanks for attempting to open an issue. Unfortunately, you didn't write anything in the body which makes it impossible to understand your concern. You are welcome to fix up the issue and try again by opening another issue with the body filled out. "
+      description: 
+    - if:
+      - payloadType: Pull_Request
+      - isLabeled
+      - hasLabel:
+          label: Needs-Second
+      - isOpen
+      then:
+      - requestReview:
+          reviewer: zadjii-msft
+      - requestReview:
+          reviewer: PankajBhojwani
+      - requestReview:
+          reviewer: carlos-zamora
+      - requestReview:
+          reviewer: dhowett
+      - requestReview:
+          reviewer: lhecker
+      description: 
+    - if:
+      - payloadType: Pull_Request_Review
+      - not: isOpen
+      - hasLabel:
+          label: Needs-Second
+      then:
+      - removeLabel:
+          label: Needs-Second
+      description: 
+    - if:
+      - payloadType: Issues
+      - hasLabel:
+          label: In-PR
+      - hasLabel:
+          label: Help Wanted
+      - isLabeled
+      then:
+      - removeLabel:
+          label: Help-Wanted
+      description: 
+    - if:
+      - payloadType: Issue_Comment
+      - commentContains:
+          pattern: '\/dup(licate|e)?(\s+of)?\s+\#[\d]+'
+          isRegex: True
+      - or:
+        - activitySenderHasPermission:
+            permission: Admin
+        - activitySenderHasPermission:
+            permission: Write
+      then:
+      - addReply:
+          reply: Hi! We've identified this issue as a duplicate of another one that already exists on this Issue Tracker. This specific instance is being closed in favor of tracking the concern over on the referenced thread. Thanks for your report!
+      - closeIssue
+      - removeLabel:
+          label: Needs-Triage
+      - addLabel:
+          label: Resolution-Duplicate
+      - removeLabel:
+          label: Needs-Tag-Fix
+      - removeLabel:
+          label: Needs-Attention
+      - removeLabel:
+          label: Needs-Author-Feedback
+      - removeLabel:
+          label: Needs-Repro
+      - removeLabel:
+          label: Needs-Second
+      description: 
+    - if:
+      - payloadType: Issue_Comment
+      - commentContains:
+          pattern: '\/feedback'
+          isRegex: True
+      - or:
+        - activitySenderHasPermission:
+            permission: Admin
+        - activitySenderHasPermission:
+            permission: Write
+      then:
+      - addReply:
+          reply: >2-
+
+            Hi there!<br><br>Can you please send us feedback with the [Feedback Hub](https://support.microsoft.com/en-us/windows/send-feedback-to-microsoft-with-the-feedback-hub-app-f59187f8-8739-22d6-ba93-f66612949332) with this issue? Make sure to click the "Start recording" button, then reproduce the issue before submitting the feedback. Once it's submitted, paste the link here so we can more easily find your crash information on the back end?<br><br>Thanks!<br><br>![image](https://user-images.githubusercontent.com/18356694/140811502-a068f78b-89d2-4587-925a-73e19652b830.png)<br><br>![image](https://user-images.githubusercontent.com/18356694/140811557-cdc22a0f-fa6a-4f6a-953e-73b51f5548a3.png)<br><br>![image](https://user-images.githubusercontent.com/18221333/62478649-6de55400-b760-11e9-806e-5aab7e085a9f.png)
+      - addLabel:
+          label: Needs-Author-Feedback
+      description: 
+    - if:
+      - payloadType: Issue_Comment
+      then:
+      - cleanEmailReply
+      description: 
+    - if:
+      - payloadType: Pull_Request
+      then:
+      - labelSync:
+          pattern: Issue-
+      - labelSync:
+          pattern: Area-
+      - labelSync:
+          pattern: Priority-
+      - labelSync:
+          pattern: Product-
+      - labelSync:
+          pattern: Severity-
+      - labelSync:
+          pattern: Impact-
+      description: 
+    - if:
+      - payloadType: Issue_Comment
+      - commentContains:
+          pattern: '\/dup(licate|e)?(\s+of)?\s+https'
+          isRegex: True
+      - or:
+        - activitySenderHasPermission:
+            permission: Admin
+        - activitySenderHasPermission:
+            permission: Write
+      then:
+      - addReply:
+          reply: Hi! We've identified this issue as a duplicate of one that exists on somebody else's Issue Tracker. Please make sure you subscribe to the referenced external issue for future updates. Thanks for your report!
+      - closeIssue
+      - removeLabel:
+          label: Needs-Triage
+      - addLabel:
+          label: Resolution-External
+      - removeLabel:
+          label: Needs-Attention
+      - removeLabel:
+          label: Needs-Author-Feedback
+      - removeLabel:
+          label: Needs-Bisect
+      - removeLabel:
+          label: Needs-Repro
+      - removeLabel:
+          label: Needs-Second
+      description: 
+    - if:
+      - payloadType: Issue_Comment
+      - commentContains:
+          pattern: /?
+          isRegex: False
+      - or:
+        - activitySenderHasPermission:
+            permission: Admin
+        - activitySenderHasPermission:
+            permission: Write
+      then:
+      - removeLabel:
+          label: Needs-Attention
+      - addLabel:
+          label: Needs-Author-Feedback
+      description: 
+onFailure: 
+onSuccess: 
