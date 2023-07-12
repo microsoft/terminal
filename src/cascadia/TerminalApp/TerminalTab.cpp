@@ -1781,14 +1781,14 @@ namespace winrt::TerminalApp::implementation
 
         auto weakThis{ get_weak() };
 
-        // When we chage the state of broadcasting, add or remove event handlers
-        // appropriately, so that controls won't be propogating events
+        // When we change the state of broadcasting, add or remove event
+        // handlers appropriately, so that controls won't be propagating events
         // needlessly if no one is listening.
 
         _rootPane->WalkTree([&](const auto& p) {
-            
             const auto paneId = p->Id();
-            if (!paneId.has_value()) {
+            if (!paneId.has_value())
+            {
                 return;
             }
             if (const auto& control{ p->GetTerminalControl() })
