@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2022-09-07
-last updated: 2023-05-17
+last updated: 2023-07-12
 issue id: 5916
 ---
 
@@ -47,6 +47,26 @@ We'll probably want to come back and seperately spec how users can control the
 appearance of both auto-detected clickable text, and links that are manually
 emitted to the Terminal (via OSC 8). This may be increasingly relevant, as this
 spec will introduce new ways for users to make text clickable.
+
+## UX / UI Design
+
+These are some prototypes from initial investigations in the space. The settings
+in these gifs are not up to the current spec.
+
+![gh-5916-prototype-000](https://user-images.githubusercontent.com/18356694/185226626-c723be0d-501c-40f1-9b2f-f017932ea4fe.gif)
+
+_fig 1: a `sendInput` trigger that sends "y" any time that "Terminate batch job" is written to the Terminal_
+
+
+![image](https://user-images.githubusercontent.com/18356694/185231958-46c73bcc-4ef4-4dfe-a631-593649a64b75.png)
+
+_fig 2: A trigger that adds a red error mark whenever an app writes "error" to the Terminal_
+
+
+![gh-5916-prototype-001](https://user-images.githubusercontent.com/18356694/185247128-b3b5c88a-e46c-4a9c-8a03-fd45b00ebc70.gif)
+
+_fig 3: A sendInput trigger which sends some of the matched text_
+
 
 ## Solution Design
 
@@ -420,39 +440,62 @@ These are addressed generally by the rest of the spec. They could provide
 actions, or similar to the Windows Terminal, handle custom actions on the
 control's `CustomAction` event handler.
 
-
-
 ## Potential Issues
 
 <table>
 
 <tr><td><strong>Compatibility</strong></td><td>
 
-[comment]: # Will the proposed change break existing code/behaviors? If so, how, and is the breaking change "worth it"?
+How does someone turn off the built-in hyperlink detector? Currently, the
+Terminal has a global setting `experimental.detectURLs` to enable auto-detection
+of URLs. That should theoretically be replaced with an equivalent setting:
 
-How does someone turn off the built-in hyperlink detector? It _can't_ go in `defaults.json@profiles.defailts`
+```json
+"triggers": [
+    {
+        "match": "(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])",
+        "action": "clickableLink",
+        "target": "https://example.com/tasks/${match[1]}"
+    },
+]
+```
 
-Clickable links, sendInput get the same appearance treatment as auto-detected links (but not as manually emitted ones)
+However, as mentioned before, this _can't_ go in
+`defaults.json@profiles.defaults`. We could:
 
+* Promote the global `experimental.detectURLs` to a fully fledged setting
+  `detectURLs`. This would automatically insert this trigger into the list of
+  triggers whenever it is enabled. We could make it a per-profile setting. We'll
+  just always add it at the end of their list of triggers when creating settings
+  for the profile.
+* Alternatively, implicitly have a "hardcoded default" trigger with the id of
+  `"Microsoft.Terminal.DetectUrls"`. That would let folks opt-out with
+  ```json
+  { "id": "Microsoft.Terminal.DetectUrls", "match":"" }
+  ```
 
 
 </td></tr>
 
 <tr><td><strong>Accessibility</strong></td><td>
 
-[comment]: # TODO!
+Clickable links and sendInput will get the same appearance treatment as
+auto-detected links (but not as manually emitted ones). They'll have the same
+accessibility properties as clickable text does today.
+
+Otherwise, no accessibility changes expected.
 
 </td></tr>
 
 <tr><td><strong>Sustainability</strong></td><td>
 
-[comment]: # TODO!
+No sustainability changes expected.
 
 </td></tr>
 
 <tr><td><strong>Localization</strong></td><td>
 
-[comment]: # TODO!
+No localization concerns here.
 
 </td></tr>
 
@@ -461,29 +504,11 @@ Clickable links, sendInput get the same appearance treatment as auto-detected li
 * Q: What happens if multiple regexes match the same text
   - A: We'll apply the regexes in the order they're defined in the JSON.
 
-[comment]: # If there are any other potential issues, make sure to include them here.
-
-## Implementation Plan
-
-### 🐣 Crawl
-* [ ]
-
-### 🚶 Walk
-* [ ]
-
-### 🏃‍♂️ Run
-* [ ]
-
-### 🚀 Sprint
-* [ ]
-
-
-## Conclusion
-
-[comment]: # Of the above proposals, which should we decide on, and why?
-
 
 ### Future Considerations
+
+* The "iTerm2 trigger actions" listed below are a great list of potential
+  follow-up ways these could be used.
 
 <!-- This was originally in this doc, but I think that should be moved to it's own spec -->
 <!--
@@ -567,6 +592,7 @@ boundary, like a visual bell or a notification).
 [#2671]: https://github.com/microsoft/terminal/issues/2671
 [#6969]: https://github.com/microsoft/terminal/issues/6969
 [#11901]: https://github.com/microsoft/terminal/issues/11901
+[#11000]: https://github.com/microsoft/terminal/issues/11000
 
 [OSC8]: https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
 [triggers in iTerm2]: https://iterm2.com/documentation-one-page.html#documentation-triggers.html
