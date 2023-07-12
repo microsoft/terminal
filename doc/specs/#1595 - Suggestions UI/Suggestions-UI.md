@@ -358,7 +358,7 @@ needs of the Command Palette.
 
 The Terminal will have no way to localize suggestions that are provided via
 [shell-driven autocompletion]. These are just verbatim strings that the shell
-told us to use. We don't consider this to be something to worry abbout, however.
+told us to use. We don't consider this to be something to worry about, however.
 This is no different than the fact that Terminal cannot localize the `Get-Help`
 (or any other) output of PowerShell.
 
