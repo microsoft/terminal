@@ -483,7 +483,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
         // Verify that first 6 sub parameters are stored for each parameter.
         // subParameters = { 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5 }
-        for (size_t i = 0; i < 12 ; i++)
+        for (size_t i = 0; i < 12; i++)
         {
             VERIFY_IS_TRUE(mach._subParameters.at(i).has_value());
             VERIFY_ARE_EQUAL(mach._subParameters.at(i).value(), gsl::narrow_cast<VTInt>(i % 6));

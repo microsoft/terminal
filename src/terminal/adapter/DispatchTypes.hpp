@@ -158,7 +158,7 @@ namespace Microsoft::Console::VirtualTerminal
         constexpr VTSubParameters() noexcept
         {
         }
-        
+
         constexpr VTSubParameters(const std::span<const VTParameter> subParams) noexcept :
             _subParams{ subParams }
         {
@@ -242,7 +242,7 @@ namespace Microsoft::Console::VirtualTerminal
             // _subParams as is and create new span for others.
             const auto newParamsSpan = _params.subspan(std::min(offset, _params.size()));
             const auto newSubParamRangesSpan = _subParamRanges.subspan(std::min(offset, _subParamRanges.size()));
-            return { newParamsSpan, _subParams , newSubParamRangesSpan };
+            return { newParamsSpan, _subParams, newSubParamRangesSpan };
         }
 
         VTSubParameters subParamsFor(const size_t index) const noexcept
