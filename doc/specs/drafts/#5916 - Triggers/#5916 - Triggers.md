@@ -51,7 +51,7 @@ spec will introduce new ways for users to make text clickable.
 ## UX / UI Design
 
 These are some prototypes from initial investigations in the space. The settings
-in these gifs are not up to the current spec.
+in these are not up to the current spec.
 
 ![gh-5916-prototype-000](https://user-images.githubusercontent.com/18356694/185226626-c723be0d-501c-40f1-9b2f-f017932ea4fe.gif)
 

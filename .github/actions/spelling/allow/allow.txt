@@ -84,6 +84,7 @@ ptys
 qof
 qps
 rclt
+regexes
 reimplementation
 reserialization
 reserialize
