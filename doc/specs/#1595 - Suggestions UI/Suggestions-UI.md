@@ -46,19 +46,19 @@ requests all into the unified design below.
 
 ### User Stories
 
-Story |  Size | Description
---|-----------|--
-  | 🐣 Crawl  | The user can bring up the Suggestions UI with recent commands, powered by shell integration
-  | 🐣 Crawl  | [#12863] The user can bring up the Suggestions UI with recent directories, powered by shell integration
-  | 🚶 Walk   | The user can bring up the Suggestions UI with tasks from their settings
-  | 🚶 Walk   | CLI apps can invoke the Suggestions UI with a new VT sequence
-  | 🚶 Walk   | The Suggestions UI can be opened using the current typed commandline as a filter
-  | 🚶 Walk   | Recent commands and directories are stored in `state.json`, across sessions
-  | 🏃‍♂️ Run    | Suggestions can have descriptions presented in / alongside the UI
-  | 🏃‍♂️ Run    | The Suggestions UI can be opened without any nesting
-  | 🏃‍♂️ Run    | The Suggestions UI can be opened, nested by `source` of the suggestion
-  | 🚀 Sprint | Extensions can provide suggestion sources for the Suggestions UI
-  | 🚀 Sprint | The Suggestions UI can be opened in "inline" mode, only showing the text of the first suggestion 
+  Size     |  Description
+-----------|--
+ 🐣 Crawl  | The user can bring up the Suggestions UI with recent commands, powered by shell integration
+ 🐣 Crawl  | [#12863] The user can bring up the Suggestions UI with recent directories, powered by shell integration
+ 🚶 Walk   | The user can bring up the Suggestions UI with tasks from their settings
+ 🚶 Walk   | CLI apps can invoke the Suggestions UI with a new VT sequence
+ 🚶 Walk   | The Suggestions UI can be opened using the current typed commandline as a filter
+ 🚶 Walk   | Recent commands and directories are stored in `state.json`, across sessions
+ 🏃‍♂️ Run    | Suggestions can have descriptions presented in / alongside the UI
+ 🏃‍♂️ Run    | The Suggestions UI can be opened without any nesting
+ 🏃‍♂️ Run    | The Suggestions UI can be opened, nested by `source` of the suggestion
+ 🚀 Sprint | Extensions can provide suggestion sources for the Suggestions UI
+ 🚀 Sprint | The Suggestions UI can be opened in "inline" mode, only showing the text of the first suggestion
 
 ### Elevator Pitch
 
@@ -107,7 +107,8 @@ A prototype of the tasks UI, powered by the user's settings:
 
 ![](tasks-suggestions.gif)
 
-(admittedly, the `TeachingTip` needs better placement).
+(admittedly, the `TeachingTip` in that gif is a prototype and was later replaced
+with a better version.)
 
 In general, the Suggestions UI will present a list of elements to select from,
 near the text cursor. This control might be contain a text box for filtering
@@ -288,6 +289,34 @@ These actions are colloquially:
 
 This should cover most of the basic use cases for suggestions. 
 
+#### Who owns this menu?
+
+There was some discussion of who should own the suggestions menu. The control
+itself? Or the app hosting the control?
+
+A main argument for hosting this UI in the control itself is that any consumer
+of the `TermControl` should be able to display the [shell-driven autocompletion]
+menu. And they should get the UI from us "for free". Consumers shouldn't need to
+reimplement it themselves. In this scenarioThis probably could be done without
+many changes
+* Instead of operating on `Command`s and actions from the terminal settings,
+  the control could just know that all the entries in the menu are "send
+  input" "actions".
+* The control could offer a method to manually invoke the Suggestions UI for a
+  list of {suggestion, name, description} objects.
+* The app layer could easily translate between sendInput actions and these
+  pseudo-actions.
+
+A big argument in favor of having the app layer host the control: Consider an
+app like Visual Studio. When they embed the control, they'll want to style the
+shell-completions UI in their own way. They already have their own intellisense
+menu, and their own UI paradigm.
+
+For now, we'll leave this as something that's owned by the app layer. When we
+get around to finalizing the [shell-driven autocompletion] design, we can
+iterate on ideas for supporting both consumers that want to use a pre-built
+suggestions control, or consumers who want to bring their own.
+
 ## Tenets
 
 <table>
@@ -327,11 +356,21 @@ No sustainability changes expected.
 The localization needs of the Suggestions UI will be effectively the same as the
 needs of the Command Palette.
 
+The Terminal will have no way to localize suggestions that are provided via
+[shell-driven autocompletion]. These are just verbatim strings that the shell
+told us to use. We don't consider this to be something to worry abbout, however.
+This is no different than the fact that Terminal cannot localize the `Get-Help`
+(or any other) output of PowerShell.
+
 </td></tr>
 
 </table>
 
 ## Implementation Plan
+
+This is more of an informative outline, rather than a normative one. Many of the
+things from Crawl, Walk, and Run are all already in PRs as of the time of this
+spec's review.
 
 ### 🐣 Crawl
 
@@ -437,25 +476,15 @@ Here's a sample json schema for the settings discussed here.
     suggestions.
 * If the user hasn't enabled shell completion, we could add text to the
   `commandHistory` or `directoryHistory` menus to inform the user how they could
-  go enable shell integration.
+  go enable shell integration. We already have a docs page dedicated to this, so
+  we could start by linking to that page. More notes on this in [Automatic shell
+  integration](#Automatic-shell-integration).
 * Maybe there could be a per-profile setting for automatic suggestions after
   some timeout. Like, as you type, a menu version of the Suggestions UI appears.
   So you could just start typing `git c`, and it would automatically give you a
   menu with suggestions, implicitly using the typed command as the "filter".
   * Maybe we could do this as an `implicit` property on the `suggestions` action
-* It might make sense in the future to have the Suggestions UI exposed as an
-  element of the `TermControl` itself, rather than an element of the
-  `TerminalPage`. Especially when we consider [shell-driven autocompletion].
-  That seems like a scenario that the `TermControl` should expose for all
-  consumers of the control, without them manually needing to write their own UI
-  element to manage it. This probably could be done without many changes 
-  * Instead of operating on `Command`s and actions from the terminal settings,
-    the control could just know that all the entries in the menu are "send
-    input" "actions".  
-  * The control could offer a method to manually invoke the Suggestions UI for a
-    list of {suggestion, name, description} objects. 
-  * The app layer could easily translate between sendInput actions and these
-    pseudo-actions.
+
 
 #### Description Tooltips
 
@@ -485,6 +514,19 @@ This might be in the form of a `TeachingTip`, as in this example:
 
 Actions in the settings could also accept an optional `description` property, to
 specify the string that would be presented in that flyout.
+
+#### Automatic shell integration
+
+A large portion of these features all rely on shell integration being enabled by
+the user. However, this is not a trivial thing for the Terminal to do on behalf
+of the user. Shell integration relies on changes to the user's shell config. If
+the Terminal were to try and configure those itself, we may accidentally destroy
+configuration that the user has already set up. Hence why the Terminal can't
+just have a "Light up all the bells and whistles" toggle in the Settings UI.
+
+This is a non-trivial problem to solve, so it is being left as a future
+consideration. It deserves its own spec to sort out how we should expose this to
+users and safely implement it.
 
 #### Pre-filtering the UI & filter by source
 
