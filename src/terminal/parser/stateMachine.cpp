@@ -506,7 +506,7 @@ void StateMachine::_ActionParam(const wchar_t wch)
         if (_parameters.empty())
         {
             _parameters.push_back({});
-            const auto rangeStart = gsl::narrow<BYTE>(_subParameters.size());
+            const auto rangeStart = gsl::narrow_cast<BYTE>(_subParameters.size());
             _subParameterRanges.push_back({ rangeStart, rangeStart });
         }
 
@@ -528,7 +528,7 @@ void StateMachine::_ActionParam(const wchar_t wch)
                 _parameters.push_back({});
                 _subParameterCounter = 0;
                 _subParameterLimitOverflowed = false;
-                const auto rangeStart = gsl::narrow<BYTE>(_subParameters.size());
+                const auto rangeStart = gsl::narrow_cast<BYTE>(_subParameters.size());
                 _subParameterRanges.push_back({ rangeStart, rangeStart });
             }
         }
@@ -561,7 +561,7 @@ void StateMachine::_ActionSubParam(const wchar_t wch)
         if (_parameters.empty())
         {
             _parameters.push_back({});
-            const auto rangeStart = gsl::narrow<BYTE>(_subParameters.size());
+            const auto rangeStart = gsl::narrow_cast<BYTE>(_subParameters.size());
             _subParameterRanges.push_back({ rangeStart, rangeStart });
         }
 
