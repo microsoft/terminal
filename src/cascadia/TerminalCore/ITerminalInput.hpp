@@ -22,6 +22,7 @@ namespace Microsoft::Terminal::Core
 
         [[nodiscard]] virtual HRESULT UserResize(const til::size size) noexcept = 0;
         virtual void UserScrollViewport(const int viewTop) = 0;
+        virtual void UserScrollViewportHorizontally(const int viewLeft) = 0;
         virtual int GetScrollOffset() = 0;
 
         virtual void TrySnapOnInput() = 0;

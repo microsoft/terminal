@@ -1671,6 +1671,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             update.newValue.reset();
         });
     }
+    void TermControl::_HorizontalScrollbarChangeHandler(const Windows::Foundation::IInspectable& /*sender*/,
+                                                        const Controls::Primitives::RangeBaseValueChangedEventArgs& args)
+    {
+        if (_isInternalScrollBarUpdate || _IsClosing())
+        {
+            // The update comes from ourselves, more specifically from the
+            // terminal. So we don't have to update the terminal because it
+            // already knows.
+            return;
+        }
+
+        const auto newValue = args.NewValue();
+        newValue;
+        _interactivity.UpdateHorizontalScrollbar(newValue);
+
+        // // User input takes priority over terminal events so cancel
+        // // any pending scroll bar update if the user scrolls.
+        // _updateScrollBar->ModifyPending([](auto& update) {
+        //     update.newValue.reset();
+        // });
+    }
 
     // Method Description:
     // - captures the pointer so that none of the other XAML elements respond to pointer events

@@ -632,6 +632,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void ControlInteractivity::UpdateHorizontalScrollbar(const double newValue)
+    {
+        // Set this as the new value of our internal scrollbar representation.
+        // We're doing this so we can accumulate fractional amounts of a row to
+        // scroll each time the mouse scrolls.
+        _internalHorizontalScrollbarPosition = std::clamp<double>(newValue, 0.0, _core->BufferWidth());
+        auto viewLeft = ::base::saturated_cast<int>(::std::round(_internalHorizontalScrollbarPosition));
+        if (viewLeft != _core->HorizontalScrollOffset())
+        {
+            _core->UserScrollViewportHorizontally(viewLeft);
+
+            // _core->ScrollOffset() is now set to newValue
+            _HorizontalScrollPositionChangedHandlers(*this,
+                                                     winrt::make<ScrollPositionChangedArgs>(_core->HorizontalScrollOffset(),
+                                                                                            _core->ViewWidth(),
+                                                                                            _core->BufferWidth()));
+        }
+    }
+
     void ControlInteractivity::_hyperlinkHandler(const std::wstring_view uri)
     {
         _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));

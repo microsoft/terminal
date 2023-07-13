@@ -139,9 +139,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         TerminalConnection::ConnectionState ConnectionState() const;
 
+        // Vertical scrolling
         int ScrollOffset();
         int ViewHeight() const;
         int BufferHeight() const;
+
+        // Horizontal scrolling
+        int HorizontalScrollOffset();
+        int ViewWidth() const;
+        int BufferWidth() const;
 
         bool HasSelection() const;
         Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
@@ -175,6 +181,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                             const short wheelDelta,
                             const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
         void UserScrollViewport(const int viewTop);
+        void UserScrollViewportHorizontally(const int viewLeft);
 
         void ClearBuffer(Control::ClearBufferType clearType);
 

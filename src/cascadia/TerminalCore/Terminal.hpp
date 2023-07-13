@@ -150,6 +150,7 @@ public:
 
     [[nodiscard]] HRESULT UserResize(const til::size viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
+    void UserScrollViewportHorizontally(const int viewLeft) override;
     int GetScrollOffset() noexcept override;
 
     void TrySnapOnInput() override;
@@ -289,6 +290,7 @@ public:
 
     til::CoordType _minWidth = 128;
     til::CoordType _visibleWidth;
+    til::CoordType _horizontalOffset = 0;
     til::size GetRealViewportSize()
     {
         const auto mutableView{ _GetMutableViewport() };

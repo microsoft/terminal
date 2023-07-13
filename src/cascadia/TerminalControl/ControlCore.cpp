@@ -660,6 +660,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void ControlCore::UserScrollViewportHorizontally(const int viewLeft)
+    {
+        // Clear the regex pattern tree so the renderer does not try to render them while scrolling
+        _terminal->ClearPatternTree();
+
+        // This is a scroll event that wasn't initiated by the terminal
+        //      itself - it was initiated by the mouse wheel, or the scrollbar.
+        _terminal->UserScrollViewportHorizontally(viewLeft);
+
+        const auto shared = _shared.lock_shared();
+        if (shared->updatePatternLocations)
+        {
+            (*shared->updatePatternLocations)();
+        }
+    }
+
     void ControlCore::AdjustOpacity(const double adjustment)
     {
         if (adjustment == 0)
@@ -1391,6 +1407,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     int ControlCore::BufferHeight() const
     {
         return _terminal->GetBufferHeight();
+    }
+
+    int ControlCore::HorizontalScrollOffset()
+    {
+        return _terminal->_horizontalOffset;
+    }
+    int ControlCore::ViewWidth() const
+    {
+        return _terminal->_visibleWidth;
+    }
+    int ControlCore::BufferWidth() const
+    {
+        return _terminal->GetRealViewportSize().width;
     }
 
     void ControlCore::_terminalWarningBell()

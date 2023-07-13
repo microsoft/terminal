@@ -1260,7 +1260,13 @@
                   PointerReleased="_PointerReleasedHandler"
                   Visibility="Visible">
 
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
                 <SwapChainPanel x:Name="SwapChainPanel"
+                                Grid.Row="0"
                                 CompositionScaleChanged="_SwapChainScaleChanged"
                                 SizeChanged="_SwapChainSizeChanged">
                     <Canvas x:Name="OverlayCanvas"
@@ -1297,12 +1303,27 @@
                     ensures that it's always aligned w/ the scrollbar
                 -->
                 <local:SearchBoxControl x:Name="SearchBox"
+                                        Grid.Row="0"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Top"
                                         x:Load="False"
                                         Closed="_CloseSearchBoxControl"
                                         Search="_Search"
                                         Visibility="Collapsed" />
+
+                <ScrollBar x:Name="HorizontalScrollBar"
+                           Grid.Row="1"
+                           HorizontalAlignment="Stretch"
+                           VerticalAlignment="Bottom"
+                           IndicatorMode="MouseIndicator"
+                           IsTabStop="False"
+                           LargeChange="4"
+                           Maximum="1"
+                           Orientation="Horizontal"
+                           SmallChange="1"
+                           Style="{StaticResource ForkedScrollbarTemplate}"
+                           ValueChanged="_HorizontalScrollbarChangeHandler"
+                           ViewportSize="10" />
             </Grid>
 
             <ScrollBar x:Name="ScrollBar"

@@ -79,6 +79,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         const Control::MouseButtonState state);
 
         void UpdateScrollbar(const double newValue);
+        void UpdateHorizontalScrollbar(const double newValue);
 
 #pragma endregion
 
@@ -94,6 +95,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
         TYPED_EVENT(ScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
+        TYPED_EVENT(HorizontalScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
         TYPED_EVENT(ContextMenuRequested, IInspectable, Control::ContextMenuRequestedEventArgs);
 
         TYPED_EVENT(Attached, IInspectable, IInspectable);
@@ -112,6 +114,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::com_ptr<ControlCore> _core{ nullptr };
         unsigned int _rowsToScroll;
         double _internalScrollbarPosition{ 0.0 };
+        double _internalHorizontalScrollbarPosition{ 0.0 };
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.

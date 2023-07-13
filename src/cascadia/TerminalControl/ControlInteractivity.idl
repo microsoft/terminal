@@ -65,6 +65,7 @@ namespace Microsoft.Terminal.Control
                            MouseButtonState state);
 
         void UpdateScrollbar(Double newValue);
+        void UpdateHorizontalScrollbar(Double newValue);
 
         Boolean ManglePathsForWsl { get; };
 
