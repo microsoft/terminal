@@ -329,12 +329,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 drawPip(m.Start.Y, false, brush);
             }
 
-            auto searchMatches{ _core.MatchRows() };
+            const auto searchMatches{ _core.MatchRows() };
             if (searchMatches.Size() > 0 && _searchBox->Visibility() == Visibility::Visible)
             {
-                auto fgColor{ _core.ForegroundColor() };
+                const til::color fgColor{ _core.ForegroundColor() };
                 Media::SolidColorBrush searchMarkBrush{};
-                searchMarkBrush.Color(static_cast<til::color>(fgColor));
+                searchMarkBrush.Color(fgColor);
                 for (const auto m : searchMatches)
                 {
                     drawPip(m, true, searchMarkBrush);
