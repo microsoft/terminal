@@ -509,7 +509,7 @@ CATCH_RETURN()
     clipRect.top = origin.y + drawingContext->topClipOffset;
     clipRect.bottom = origin.y + drawingContext->cellSize.height - drawingContext->bottomClipOffset;
     clipRect.left = 0;
-    clipRect.right = drawingContext->targetSize.width;
+    clipRect.right = origin.x + drawingContext->targetSize.width;
 
     // If we already have a clip rectangle, check if it different than the previous one.
     if (_clipRect.has_value())
