@@ -49,7 +49,7 @@ using namespace Microsoft::Console::Interactivity;
     // TODO: MSFT 9355013: This needs to be resolved. We increment it once with no handle to ensure it's never cleaned up
     // and one always exists for the renderer (and potentially other functions.)
     // It's currently a load-bearing piece of code. http://osgvsowi/9355013
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         gci.ScreenBuffers[0].IncrementOriginalScreenBuffer();
     }
@@ -299,33 +299,30 @@ static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& source
 // - screenInfo - reference to screen buffer info.
 // Return Value:
 // - true if we succeeded in scrolling the buffer, otherwise false (if we're out of memory)
-bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
+void StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
 {
     // Rotate the circular buffer around and wipe out the previous final line.
-    const auto inVtMode = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-    auto fSuccess = screenInfo.GetTextBuffer().IncrementCircularBuffer(inVtMode);
-    if (fSuccess)
+    auto& buffer = screenInfo.GetTextBuffer();
+    buffer.IncrementCircularBuffer(buffer.GetCurrentAttributes());
+
+    // Trigger a graphical update if we're active.
+    if (screenInfo.IsActiveScreenBuffer())
     {
-        // Trigger a graphical update if we're active.
-        if (screenInfo.IsActiveScreenBuffer())
+        til::point coordDelta;
+        coordDelta.y = -1;
+
+        auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+        if (pNotifier)
         {
-            til::point coordDelta;
-            coordDelta.y = -1;
+            // Notify accessibility that a scroll has occurred.
+            pNotifier->NotifyConsoleUpdateScrollEvent(coordDelta.x, coordDelta.y);
+        }
 
-            auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-            if (pNotifier)
-            {
-                // Notify accessibility that a scroll has occurred.
-                pNotifier->NotifyConsoleUpdateScrollEvent(coordDelta.x, coordDelta.y);
-            }
-
-            if (ServiceLocator::LocateGlobals().pRender != nullptr)
-            {
-                ServiceLocator::LocateGlobals().pRender->TriggerScroll(&coordDelta);
-            }
+        if (ServiceLocator::LocateGlobals().pRender != nullptr)
+        {
+            ServiceLocator::LocateGlobals().pRender->TriggerScroll(&coordDelta);
         }
     }
-    return fSuccess;
 }
 
 // Routine Description:

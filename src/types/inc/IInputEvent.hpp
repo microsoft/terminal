@@ -41,7 +41,7 @@ class IInputEvent
 {
 public:
     static std::unique_ptr<IInputEvent> Create(const INPUT_RECORD& record);
-    static std::deque<std::unique_ptr<IInputEvent>> Create(gsl::span<const INPUT_RECORD> records);
+    static std::deque<std::unique_ptr<IInputEvent>> Create(std::span<const INPUT_RECORD> records);
     static std::deque<std::unique_ptr<IInputEvent>> Create(const std::deque<INPUT_RECORD>& records);
 
     static std::vector<INPUT_RECORD> ToInputRecords(const std::deque<std::unique_ptr<IInputEvent>>& events);
@@ -63,6 +63,8 @@ public:
 };
 
 inline IInputEvent::~IInputEvent() = default;
+
+using InputEventQueue = std::deque<std::unique_ptr<IInputEvent>>;
 
 #ifdef UNIT_TESTING
 std::wostream& operator<<(std::wostream& stream, const IInputEvent* pEvent);
@@ -290,6 +292,7 @@ public:
     void SetRepeatCount(const WORD repeatCount) noexcept;
     void SetVirtualKeyCode(const WORD virtualKeyCode) noexcept;
     void SetVirtualScanCode(const WORD virtualScanCode) noexcept;
+    void SetCharData(const char character) noexcept;
     void SetCharData(const wchar_t character) noexcept;
 
     void SetActiveModifierKeys(const DWORD activeModifierKeys) noexcept;
@@ -512,14 +515,12 @@ class FocusEvent : public IInputEvent
 {
 public:
     constexpr FocusEvent(const FOCUS_EVENT_RECORD& record) :
-        _focus{ !!record.bSetFocus },
-        _cameFromApi{ true }
+        _focus{ !!record.bSetFocus }
     {
     }
 
     constexpr FocusEvent(const bool focus) :
-        _focus{ focus },
-        _cameFromApi{ false }
+        _focus{ focus }
     {
     }
 
@@ -539,15 +540,8 @@ public:
 
     void SetFocus(const bool focus) noexcept;
 
-    // BODGY - see FocusEvent.cpp for details.
-    constexpr bool CameFromApi() const noexcept
-    {
-        return _cameFromApi;
-    }
-
 private:
     bool _focus;
-    bool _cameFromApi;
 
 #ifdef UNIT_TESTING
     friend std::wostream& operator<<(std::wostream& stream, const FocusEvent* const pFocusEvent);

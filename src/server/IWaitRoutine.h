@@ -37,6 +37,11 @@ public:
 
     virtual ~IWaitRoutine() = default;
 
+    IWaitRoutine(const IWaitRoutine&) = delete;
+    IWaitRoutine(IWaitRoutine&&) = delete;
+    IWaitRoutine& operator=(const IWaitRoutine&) & = delete;
+    IWaitRoutine& operator=(IWaitRoutine&&) & = delete;
+
     virtual void MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer) = 0;
 
     virtual bool Notify(const WaitTerminationReason TerminationReason,

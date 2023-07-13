@@ -19,6 +19,7 @@ SOURCES = \
     CoalesceTests.cpp \
     ColorTests.cpp \
     EnumSetTests.cpp \
+    EnvTests.cpp \
     HashTests.cpp \
     MathTests.cpp \
     mutex.cpp \

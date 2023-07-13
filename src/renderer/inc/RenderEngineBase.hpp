@@ -30,7 +30,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT NotifyNewText(const std::wstring_view newText) noexcept override;
 
-        [[nodiscard]] HRESULT UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+        [[nodiscard]] HRESULT UpdateSoftFont(const std::span<const uint16_t> bitPattern,
                                              const til::size cellSize,
                                              const size_t centeringHint) noexcept override;
 
@@ -41,7 +41,7 @@ namespace Microsoft::Console::Render
                                                    const til::CoordType targetRow,
                                                    const til::CoordType viewportLeft) noexcept override;
 
-        [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept override;
+        [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
 
         [[nodiscard]] HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept override;
 

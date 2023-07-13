@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/component-detection-manifest.json",
+  "Registrations": [
+    {
+      "component": {
+        "type": "git",
+        "git": {
+          "repositoryUrl": "https://github.com/nothings/stb",
+          "commitHash": "5736b15f7ea0ffb08dd38af21067c314d6a3aae9"
+        }
+      }
+    }
+  ],
+  "Version": 1
+}

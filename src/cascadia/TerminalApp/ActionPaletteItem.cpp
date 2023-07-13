@@ -24,27 +24,5 @@ namespace winrt::TerminalApp::implementation
         Name(command.Name());
         KeyChordText(command.KeyChordText());
         Icon(command.IconPath());
-
-        _commandChangedRevoker = command.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& sender, auto& e) {
-            auto item{ weakThis.get() };
-            auto senderCommand{ sender.try_as<Microsoft::Terminal::Settings::Model::Command>() };
-
-            if (item && senderCommand)
-            {
-                auto changedProperty = e.PropertyName();
-                if (changedProperty == L"Name")
-                {
-                    item->Name(senderCommand.Name());
-                }
-                else if (changedProperty == L"KeyChordText")
-                {
-                    item->KeyChordText(senderCommand.KeyChordText());
-                }
-                else if (changedProperty == L"IconPath")
-                {
-                    item->Icon(senderCommand.IconPath());
-                }
-            }
-        });
     }
 }

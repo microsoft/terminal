@@ -24,6 +24,13 @@
       "pattern": "^(-?\\d+)?(,\\s?(-?\\d+)?)?$",
       "type": "string"
     },
+    "CSSLengthPercentage": {
+      "pattern": "^[+-]?\\d+(?:\\.\\d+)?(?:%|ch|pt|px)?$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "DynamicProfileSource": {
       "enum": [
         "Windows.Terminal.Wsl",
@@ -314,6 +321,14 @@
             }
           },
           "additionalProperties": false
+        },
+        "cellWidth": {
+          "$ref": "#/$defs/CSSLengthPercentage",
+          "description": "Override the width of the terminal's cells. The override works similar to CSS' letter-spacing. It defaults to the natural glyph advance width of the primary font rounded to the nearest pixel."
+        },
+        "cellHeight": {
+          "$ref": "#/$defs/CSSLengthPercentage",
+          "description": "Override the height of the terminal's cells. The override works similar to CSS' line-height. Defaults to the sum of the natural glyph ascend, descend and line-gap of the primary font rounded to the nearest pixel. The default is usually quite close to setting this to 1.2."
         }
       },
       "type": "object"
@@ -406,6 +421,7 @@
         "scrollToMark",
         "clearMark",
         "clearAllMarks",
+        "searchWeb",
         "experimental.colorSelection",
         "unbound"
       ],
@@ -782,6 +798,11 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the copied content will be copied as a single line (even if there are hard line breaks present in the text). If false, newlines persist from the selected text."
+            },
+            "dismissSelection": {
+              "type": "boolean",
+              "default": true,
+              "description": "If false, the copied content will be copied and the selection will not be dismissed. If true, the selection will be dismissed."
             },
             "copyFormatting": {
               "default": null,
@@ -1694,6 +1715,29 @@
         }
       ]
     },
+    "SearchWebAction": {
+      "description": "Search the web for selected text",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "searchWeb"
+            },
+            "queryUrl": {
+              "type": "string",
+              "description": "URL of the web page to launch, %s is replaced with the selected text"
+            }
+          }
+        }
+      ],
+      "required": [
+        "queryUrl"
+      ]
+    },
     "AdjustOpacityAction": {
       "description": "Changes the opacity of the active Terminal window. If `relative` is specified, then this action will increase/decrease relative to the current opacity.",
       "allOf": [
@@ -1726,7 +1770,8 @@
       "enum": [
         "always",
         "hover",
-        "never"
+        "never",
+        "activeOnly"
       ],
       "type": "string"
     },
@@ -1797,6 +1842,19 @@
           "description": "True if the Terminal should use a Mica backdrop for the window. This will apply underneath all controls (including the terminal panes and the titlebar)",
           "type": "boolean",
           "default": false
+        },
+        "experimental.rainbowFrame": {
+          "description": "When enabled, the frame of the window will cycle through all the colors. Enabling this will override the `frame` and `unfocusedFrame` settings.",
+          "type": "boolean",
+          "default": false
+        },
+        "frame": {
+          "description": "The color of the window frame when the window is inactive. This only works on Windows 11",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "unfocusedFrame": {
+          "description": "The color of the window frame when the window is inactive. This only works on Windows 11",
+          "$ref": "#/$defs/ThemeColor"
         }
       }
     },
@@ -1807,7 +1865,7 @@
         "name": {
           "type": "string",
           "description": "The name of the theme. This will be displayed in the settings UI.",
-          "not": { 
+          "not": {
             "enum": [ "light", "dark", "system" ]
           }
         },
@@ -1976,6 +2034,9 @@
               "$ref": "#/$defs/ColorSelectionAction"
             },
             {
+              "$ref": "#/$defs/SearchWebAction"
+            },
+            {
               "type": "null"
             }
           ]
@@ -2077,6 +2138,11 @@
           "description": "When set to true, the terminal will focus the pane on mouse hover.",
           "type": "boolean"
         },
+        "compatibility.isolatedMode": {
+          "default": false,
+          "description": "When set to true, Terminal windows will not be able to interact with each other (including global hotkeys, tab drag/drop, running commandlines in existing windows, etc.). This is a compatibility escape hatch for users who are running into certain windowing issues.",
+          "type": "boolean"
+        },
         "copyFormatting": {
           "default": true,
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied.",
@@ -2147,6 +2213,11 @@
         "experimental.useBackgroundImageForWindow": {
           "default": false,
           "description": "When set to true, the background image for the currently focused profile is expanded to encompass the entire window, beneath other panes.",
+          "type": "boolean"
+        },
+        "compatibility.reloadEnvironmentVariables": {
+          "default": true,
+          "description": "When set to true, when opening a new tab or pane it will get reloaded environment variables.",
           "type": "boolean"
         },
         "initialCols": {
@@ -2548,6 +2619,13 @@
           "type": "boolean",
           "default": false,
           "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
+        },
+        "environment": {
+          "description": "Key-value pairs representing environment variables to set. Environment variable names are not case sensitive. You can reference existing environment variable names by enclosing them in literal percent characters (e.g. %PATH%).",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "experimental.autoMarkPrompts": {
           "default": false,

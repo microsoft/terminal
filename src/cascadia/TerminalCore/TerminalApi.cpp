@@ -48,9 +48,11 @@ void Terminal::SetViewportPosition(const til::point position) noexcept
     // The viewport is fixed at 0,0 for the alt buffer, so this is a no-op.
     if (!_inAltBuffer())
     {
+        const auto viewportDelta = position.y - _GetMutableViewport().Origin().y;
         const auto dimensions = _GetMutableViewport().Dimensions();
         _mutableViewport = Viewport::FromDimensions(position, dimensions);
-        Terminal::_NotifyScrollEvent();
+        _PreserveUserScrollOffset(viewportDelta);
+        _NotifyScrollEvent();
     }
 }
 
@@ -59,47 +61,19 @@ void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
     _activeBuffer().SetCurrentAttributes(attrs);
 }
 
-void Terminal::SetAutoWrapMode(const bool /*wrapAtEOL*/) noexcept
+void Terminal::SetSystemMode(const Mode mode, const bool enabled) noexcept
 {
-    // TODO: This will be needed to support DECAWM.
+    _systemMode.set(mode, enabled);
 }
 
-bool Terminal::GetAutoWrapMode() const noexcept
+bool Terminal::GetSystemMode(const Mode mode) const noexcept
 {
-    // TODO: This will be needed to support DECAWM.
-    return true;
-}
-
-void Terminal::SetScrollingRegion(const til::inclusive_rect& /*scrollMargins*/) noexcept
-{
-    // TODO: This will be needed to fully support DECSTBM.
+    return _systemMode.test(mode);
 }
 
 void Terminal::WarningBell()
 {
     _pfnWarningBell();
-}
-
-bool Terminal::GetLineFeedMode() const noexcept
-{
-    // TODO: This will be needed to support LNM.
-    return false;
-}
-
-void Terminal::LineFeed(const bool withReturn, const bool wrapForced)
-{
-    auto cursorPos = _activeBuffer().GetCursor().GetPosition();
-
-    // If the line was forced to wrap, set the wrap status.
-    // When explicitly moving down a row, clear the wrap status.
-    _activeBuffer().GetRowByOffset(cursorPos.y).SetWrapForced(wrapForced);
-
-    cursorPos.y++;
-    if (withReturn)
-    {
-        cursorPos.x = 0;
-    }
-    _AdjustCursorPosition(cursorPos);
 }
 
 void Terminal::SetWindowTitle(const std::wstring_view title)
@@ -131,16 +105,6 @@ unsigned int Terminal::GetConsoleOutputCP() const noexcept
 {
     // TODO: See SetConsoleOutputCP above.
     return CP_UTF8;
-}
-
-void Terminal::SetBracketedPasteMode(const bool enabled) noexcept
-{
-    _bracketedPasteMode = enabled;
-}
-
-std::optional<bool> Terminal::GetBracketedPasteMode() const noexcept
-{
-    return _bracketedPasteMode;
 }
 
 void Terminal::CopyToClipboard(std::wstring_view content)
@@ -221,7 +185,7 @@ void Terminal::PlayMidiNote(const int noteNumber, const int velocity, const std:
     _pfnPlayMidiNote(noteNumber, velocity, duration);
 }
 
-void Terminal::UseAlternateScreenBuffer()
+void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
 {
     // the new alt buffer is exactly the size of the viewport.
     _altBufferSize = _mutableViewport.Dimensions();
@@ -233,7 +197,7 @@ void Terminal::UseAlternateScreenBuffer()
 
     // Create a new alt buffer
     _altBuffer = std::make_unique<TextBuffer>(_altBufferSize,
-                                              TextAttribute{},
+                                              attrs,
                                               cursorSize,
                                               true,
                                               _mainBuffer->GetRenderer());
@@ -259,7 +223,7 @@ void Terminal::UseAlternateScreenBuffer()
 
     // GH#3321: Make sure we let the TerminalInput know that we switched
     // buffers. This might affect how we interpret certain mouse events.
-    _terminalInput->UseAlternateScreenBuffer();
+    _terminalInput.UseAlternateScreenBuffer();
 
     // Update scrollbars
     _NotifyScrollEvent();
@@ -313,7 +277,7 @@ void Terminal::UseMainScreenBuffer()
 
     // GH#3321: Make sure we let the TerminalInput know that we switched
     // buffers. This might affect how we interpret certain mouse events.
-    _terminalInput->UseMainScreenBuffer();
+    _terminalInput.UseMainScreenBuffer();
 
     // Update scrollbars
     _NotifyScrollEvent();
@@ -466,4 +430,63 @@ bool Terminal::IsVtInputEnabled() const noexcept
 void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/) noexcept
 {
     // This is only needed in conhost. Terminal handles accessibility in another way.
+}
+
+void Terminal::NotifyBufferRotation(const int delta)
+{
+    // Update our selection, so it doesn't move as the buffer is cycled
+    if (_selection)
+    {
+        // If the end of the selection will be out of range after the move, we just
+        // clear the selection. Otherwise we move both the start and end points up
+        // by the given delta and clamp to the first row.
+        if (_selection->end.y < delta)
+        {
+            _selection.reset();
+        }
+        else
+        {
+            // Stash this, so we can make sure to update the pivot to match later.
+            const auto pivotWasStart = _selection->start == _selection->pivot;
+            _selection->start.y = std::max(_selection->start.y - delta, 0);
+            _selection->end.y = std::max(_selection->end.y - delta, 0);
+            // Make sure to sync the pivot with whichever value is the right one.
+            _selection->pivot = pivotWasStart ? _selection->start : _selection->end;
+        }
+    }
+
+    // manually erase our pattern intervals since the locations have changed now
+    _patternIntervalTree = {};
+
+    const auto hasScrollMarks = _scrollMarks.size() > 0;
+    if (hasScrollMarks)
+    {
+        for (auto& mark : _scrollMarks)
+        {
+            // Move the mark up
+            mark.start.y -= delta;
+
+            // If the mark had sub-regions, then move those pointers too
+            if (mark.commandEnd.has_value())
+            {
+                (*mark.commandEnd).y -= delta;
+            }
+            if (mark.outputEnd.has_value())
+            {
+                (*mark.outputEnd).y -= delta;
+            }
+        }
+
+        _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
+                                          _scrollMarks.end(),
+                                          [](const auto& m) { return m.start.y < 0; }),
+                           _scrollMarks.end());
+    }
+
+    const auto oldScrollOffset = _scrollOffset;
+    _PreserveUserScrollOffset(delta);
+    if (_scrollOffset != oldScrollOffset || hasScrollMarks)
+    {
+        _NotifyScrollEvent();
+    }
 }

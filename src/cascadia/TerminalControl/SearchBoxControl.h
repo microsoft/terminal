@@ -14,6 +14,7 @@ Author(s):
 --*/
 
 #pragma once
+
 #include "SearchBoxControl.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation

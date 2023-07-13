@@ -80,7 +80,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static void _rethrowSerializationExceptionWithLocationInfo(const JsonUtils::DeserializationError& e, const std::string_view& settingsString);
         static Json::Value _parseJSON(const std::string_view& content);
         static const Json::Value& _getJSONValue(const Json::Value& json, const std::string_view& key) noexcept;
-        gsl::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
+        std::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
         void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
         void _parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
         static JsonSettings _parseJson(const std::string_view& content);
@@ -99,12 +99,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         static Model::CascadiaSettings LoadDefaults();
         static Model::CascadiaSettings LoadAll();
-        static Model::CascadiaSettings LoadUniversal();
 
         static winrt::hstring SettingsPath();
         static winrt::hstring DefaultSettingsPath();
         static winrt::hstring ApplicationDisplayName();
         static winrt::hstring ApplicationVersion();
+        static bool IsPortableMode();
         static void ExportFile(winrt::hstring path, winrt::hstring content);
 
         CascadiaSettings() noexcept = default;
@@ -143,6 +143,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::DefaultTerminal CurrentDefaultTerminal() noexcept;
         void CurrentDefaultTerminal(const Model::DefaultTerminal& terminal);
 
+        void ExpandCommands();
+
     private:
         static const std::filesystem::path& _settingsPath();
         static const std::filesystem::path& _releaseSettingsPath();
@@ -159,6 +161,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _validateSettings();
         void _validateAllSchemesExist();
         void _validateMediaResources();
+        void _validateProfileEnvironmentVariables();
         void _validateKeybindings() const;
         void _validateColorSchemesInCommands() const;
         bool _hasInvalidColorScheme(const Model::Command& command) const;

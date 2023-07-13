@@ -29,11 +29,11 @@ Dacl
 dataobject
 dcomp
 DERR
+delayimp
 dlldata
 DNE
 DONTADDTORECENT
 DWMSBT
-DWMWA
 DWMWA
 DWORDLONG
 endfor
@@ -55,6 +55,8 @@ GETMOUSEHOVERTIME
 Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
+hinternet
+HINTERNET
 hotkeys
 href
 hrgn
@@ -74,6 +76,7 @@ IConnection
 ICustom
 IDialog
 IDirect
+Idn
 IExplorer
 IFACEMETHOD
 IFile
@@ -85,6 +88,7 @@ IObject
 iosfwd
 IPackage
 IPeasant
+isa
 ISetup
 isspace
 IStorage
@@ -158,11 +162,13 @@ rcx
 REGCLS
 RETURNCMD
 rfind
+RLO
 ROOTOWNER
 roundf
 RSHIFT
 SACL
 schandle
+SEH
 semver
 serializer
 SETVERSION
@@ -210,10 +216,14 @@ UOI
 UPDATEINIFILE
 userenv
 USEROBJECTFLAGS
+Vcpp
 Viewbox
 virtualalloc
+vsnwprintf
 wcsstr
 wcstoui
+WDJ
+winhttp
 winmain
 winsta
 winstamin
@@ -221,6 +231,7 @@ wmemcmp
 wpc
 WSF
 wsregex
+WWH
 wwinmain
 xchg
 XDocument
@@ -246,3 +257,4 @@ xtree
 xutility
 YIcon
 YMax
+zwstring

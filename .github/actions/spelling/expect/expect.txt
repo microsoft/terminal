@@ -1,7 +1,9 @@
 aabbcc
+aarch
 ABANDONFONT
 abbcc
 ABCDEFGHIJKLMNOPQRSTUVWXY
+ABCF
 abgr
 abi
 ABORTIFHUNG
@@ -37,10 +39,12 @@ ansicpg
 ANSISYS
 ANSISYSRC
 ANSISYSSC
+answerback
 antialiasing
 ANull
 anycpu
 APARTMENTTHREADED
+APCA
 APCs
 APIENTRY
 apiset
@@ -101,6 +105,7 @@ bcx
 bcz
 BEFOREPARENT
 beginthread
+benchcat
 bgfx
 bgidx
 Bgk
@@ -154,7 +159,6 @@ capslock
 CARETBLINKINGENABLED
 CARRIAGERETURN
 cascadia
-castsi
 catid
 cazamor
 CBash
@@ -175,7 +179,6 @@ CConsole
 CConversion
 CCRT
 cdd
-CDeclaration
 CEdit
 CELLSIZE
 cfae
@@ -193,7 +196,8 @@ chh
 chk
 CHT
 Cic
-CLA
+cielab
+Cielab
 Clcompile
 CLE
 cleartype
@@ -213,11 +217,11 @@ cmder
 CMDEXT
 cmh
 CMOUSEBUTTONS
-cmpeq
 cmt
 cmw
 cmyk
 CNL
+cnn
 cnt
 CNTRL
 Codeflow
@@ -311,7 +315,6 @@ CPLINFO
 cplusplus
 CPPCORECHECK
 cppcorecheckrules
-cpprest
 cpprestsdk
 cppwinrt
 CProc
@@ -332,7 +335,7 @@ Cspace
 csrmsg
 CSRSS
 csrutil
-cstyle
+CSTYLE
 CSwitch
 CTerminal
 CText
@@ -407,20 +410,26 @@ DECANM
 DECARM
 DECAUPSS
 DECAWM
+DECBI
 DECBKM
 DECCARA
+DECCIR
 DECCKM
 DECCKSR
 DECCOLM
 DECCRA
 DECCTR
+DECDC
 DECDHL
 decdld
 DECDMAC
 DECDWL
+DECECM
 DECEKBD
 DECERA
+DECFI
 DECFRA
+DECIC
 DECID
 DECINVM
 DECKPAM
@@ -431,6 +440,7 @@ DECMSR
 DECNKM
 DECNRCM
 DECOM
+decommit
 DECPCTERM
 DECPS
 DECRARA
@@ -438,9 +448,12 @@ DECRC
 DECREQTPARM
 DECRLM
 DECRPM
+DECRQCRA
 DECRQM
+DECRQPSR
 DECRQSS
 DECRQTSR
+DECRSPS
 decrst
 DECSACE
 DECSASD
@@ -461,6 +474,7 @@ DECSTBM
 DECSTGLT
 DECSTR
 DECSWL
+DECTABSR
 DECTCEM
 DECXCPR
 DEFAPP
@@ -480,7 +494,6 @@ defterm
 DELAYLOAD
 DELETEONRELEASE
 Delt
-demoable
 depersist
 deprioritized
 deserializers
@@ -537,7 +550,6 @@ DSSCL
 DSwap
 DTest
 DTTERM
-DUMMYUNIONNAME
 dup'ed
 dvi
 dwl
@@ -565,6 +577,7 @@ EDITTEXT
 EDITUPDATE
 edputil
 Efast
+efghijklmn
 EHsc
 EINS
 EJO
@@ -581,6 +594,7 @@ ENU
 ENUMLOGFONT
 ENUMLOGFONTEX
 enumranges
+EOK
 eplace
 EPres
 EQU
@@ -590,7 +604,6 @@ ETW
 EUDC
 EVENTID
 eventing
-everytime
 evflags
 evt
 execd
@@ -612,8 +625,12 @@ FACESIZE
 FAILIFTHERE
 fastlink
 fcharset
+FDEA
 fdw
+FECF
+FEEF
 fesb
+FFAF
 FFDE
 FFrom
 fgbg
@@ -798,7 +815,6 @@ HIBYTE
 hicon
 HIDEWINDOW
 hinst
-Hirots
 HISTORYBUFS
 HISTORYNODUP
 HISTORYSIZE
@@ -810,9 +826,13 @@ hkl
 HKLM
 hlocal
 hlsl
+HMB
+HMK
 hmod
 hmodule
 hmon
+homeglyphs
+homoglyph
 HORZ
 hostable
 hostlib
@@ -899,7 +919,6 @@ INSERTMODE
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
 INTERNALNAME
-inthread
 intsafe
 INVALIDARG
 INVALIDATERECT
@@ -960,13 +979,15 @@ KLF
 KLMNO
 KLMNOPQRST
 KLMNOPQRSTQQQQQ
+KLMNOPQRSTUVWXY
+KLMNOPQRSTY
 KOK
 KPRIORITY
 KVM
 langid
 LANGUAGELIST
 lasterror
-lastexitcode
+LASTEXITCODE
 LAYOUTRTL
 lbl
 LBN
@@ -1002,7 +1023,6 @@ lnkd
 lnkfile
 LNM
 LOADONCALL
-loadu
 LOBYTE
 localappdata
 locsrc
@@ -1011,6 +1031,7 @@ LOGFONT
 LOGFONTA
 LOGFONTW
 logissue
+losslessly
 loword
 lparam
 LPCCH
@@ -1118,10 +1139,12 @@ Mip
 MMBB
 mmcc
 MMCPL
+MMIX
 mmsystem
 MNC
 MNOPQ
 MNOPQR
+MNOPQRSTUVWXY
 MODALFRAME
 MODERNCORE
 MONITORINFO
@@ -1131,7 +1154,6 @@ MOUSEACTIVATE
 MOUSEFIRST
 MOUSEHWHEEL
 MOUSEMOVE
-movemask
 MOVESTART
 msb
 msctf
@@ -1256,20 +1278,17 @@ ntm
 nto
 ntrtl
 ntstatus
-ntsubauth
 NTSYSCALLAPI
 nttree
 nturtl
 ntuser
 NTVDM
 ntverp
-NTWIN
 nugetversions
 nullability
 nullness
 nullonfailure
 nullopts
-NULs
 numlock
 numpad
 NUMSCROLL
@@ -1284,6 +1303,8 @@ OEMFONT
 OEMFORMAT
 OEMs
 offboarded
+oklab
+Oklab
 OLEAUT
 OLECHAR
 onecore
@@ -1302,8 +1323,6 @@ opencode
 opencon
 openconsole
 openconsoleproxy
-OPENIF
-OPENLINK
 openps
 openvt
 ORIGINALFILENAME
@@ -1356,9 +1375,7 @@ pcg
 pch
 PCIDLIST
 PCIS
-PCLIENT
 PCLONG
-PCOBJECT
 pcon
 PCONSOLE
 PCONSOLEENDTASK
@@ -1370,7 +1387,6 @@ pcshell
 PCSHORT
 PCSR
 PCSTR
-PCUNICODE
 PCWCH
 PCWCHAR
 PCWSTR
@@ -1419,7 +1435,6 @@ PLOGICAL
 pnm
 PNMLINK
 pntm
-PNTSTATUS
 POBJECT
 Podcast
 POINTSLIST
@@ -1437,9 +1452,7 @@ PPEB
 ppf
 ppguid
 ppidl
-pplx
 PPROC
-PPROCESS
 ppropvar
 ppsi
 ppsl
@@ -1503,7 +1516,6 @@ ptrs
 ptsz
 PTYIn
 PUCHAR
-PUNICODE
 pwch
 PWDDMCONSOLECONTEXT
 pws
@@ -1565,7 +1577,6 @@ REGISTEROS
 REGISTERVDM
 regkey
 REGSTR
-reingest
 RELBINPATH
 remoting
 renamer
@@ -1577,6 +1588,7 @@ replatformed
 Replymessage
 repositorypath
 Requiresx
+rerasterize
 rescap
 Resequence
 RESETCONTENT
@@ -1765,7 +1777,6 @@ somefile
 SOURCEBRANCH
 sourced
 spammy
-spand
 SRCCODEPAGE
 SRCCOPY
 SRCINVERT
@@ -1773,10 +1784,13 @@ srcsrv
 SRCSRVTRG
 srctool
 srect
+srgb
+Srgb
 srv
 srvinit
 srvpipe
 ssa
+startdir
 STARTF
 STARTUPINFO
 STARTUPINFOEX
@@ -1786,6 +1800,7 @@ STARTWPARMS
 STARTWPARMSA
 STARTWPARMSW
 Statusline
+stb
 stdafx
 STDAPI
 stdc
@@ -1859,6 +1874,7 @@ TDP
 TEAMPROJECT
 tearoff
 Teb
+Techo
 tellp
 teraflop
 terminalcore
@@ -1950,6 +1966,7 @@ trx
 tsattrs
 tsf
 tsgr
+tsm
 TStr
 TSTRFORMAT
 TSub
@@ -2001,7 +2018,6 @@ unittesting
 unittests
 unk
 unknwn
-unmark
 UNORM
 unparseable
 unregistering
@@ -2036,6 +2052,7 @@ USRDLL
 utr
 UVWX
 UVWXY
+UVWXYZ
 uwa
 uwp
 uxtheme
@@ -2046,6 +2063,7 @@ vcpkg
 vcprintf
 vcxitems
 vec
+vectorize
 vectorized
 VERCTRL
 VERTBAR
@@ -2114,7 +2132,6 @@ WDDMCONSOLECONTEXT
 wdm
 webpage
 websites
-websockets
 wekyb
 wex
 wextest
@@ -2286,7 +2303,6 @@ xunit
 xutr
 XVIRTUALSCREEN
 XWalk
-xwwyzz
 xxyyzz
 yact
 YCast
@@ -2297,7 +2313,9 @@ YOffset
 YSubstantial
 YVIRTUALSCREEN
 YWalk
+Zab
 zabcd
+Zabcdefghijklmn
 Zabcdefghijklmnopqrstuvwxyz
 ZCmd
 ZCtrl

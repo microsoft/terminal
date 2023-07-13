@@ -63,12 +63,10 @@ namespace Microsoft::Console::VirtualTerminal
         VtIoMode _IoMode;
 
         bool _initialized;
-        bool _objectsCreated;
 
         bool _lookingForCursorPosition;
 
         bool _resizeQuirk{ false };
-        bool _win32InputMode{ false };
         bool _passthroughMode{ false };
         bool _closeEventSent{ false };
 

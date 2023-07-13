@@ -22,6 +22,11 @@ namespace Microsoft.Terminal.Control
         Windows.Foundation.IReference<CopyFormat> Formats { get; };
     }
 
+    runtimeclass ContextMenuRequestedEventArgs
+    {
+        Windows.Foundation.Point Position { get; };
+    }
+
     runtimeclass TitleChangedEventArgs
     {
         String Title;
@@ -35,6 +40,7 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass OpenHyperlinkEventArgs
     {
+        OpenHyperlinkEventArgs(String uri);
         String Uri { get; };
     }
 

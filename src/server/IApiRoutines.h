@@ -66,32 +66,16 @@ public:
     [[nodiscard]] virtual HRESULT GetNumberOfConsoleInputEventsImpl(const IConsoleInputObject& context,
                                                                     ULONG& events) noexcept = 0;
 
-    [[nodiscard]] virtual HRESULT PeekConsoleInputAImpl(IConsoleInputObject& context,
-                                                        std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                        const size_t eventsToRead,
-                                                        INPUT_READ_HANDLE_DATA& readHandleState,
-                                                        std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
-
-    [[nodiscard]] virtual HRESULT PeekConsoleInputWImpl(IConsoleInputObject& context,
-                                                        std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                        const size_t eventsToRead,
-                                                        INPUT_READ_HANDLE_DATA& readHandleState,
-                                                        std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
-
-    [[nodiscard]] virtual HRESULT ReadConsoleInputAImpl(IConsoleInputObject& context,
-                                                        std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                        const size_t eventsToRead,
-                                                        INPUT_READ_HANDLE_DATA& readHandleState,
-                                                        std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
-
-    [[nodiscard]] virtual HRESULT ReadConsoleInputWImpl(IConsoleInputObject& context,
-                                                        std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                        const size_t eventsToRead,
-                                                        INPUT_READ_HANDLE_DATA& readHandleState,
-                                                        std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
+    [[nodiscard]] virtual HRESULT GetConsoleInputImpl(IConsoleInputObject& context,
+                                                      InputEventQueue& outEvents,
+                                                      const size_t eventReadCount,
+                                                      INPUT_READ_HANDLE_DATA& readHandleState,
+                                                      const bool IsUnicode,
+                                                      const bool IsPeek,
+                                                      std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ReadConsoleAImpl(IConsoleInputObject& context,
-                                                   gsl::span<char> buffer,
+                                                   std::span<char> buffer,
                                                    size_t& written,
                                                    std::unique_ptr<IWaitRoutine>& waiter,
                                                    const std::string_view initialData,
@@ -102,7 +86,7 @@ public:
                                                    DWORD& controlKeyState) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ReadConsoleWImpl(IConsoleInputObject& context,
-                                                   gsl::span<char> buffer,
+                                                   std::span<char> buffer,
                                                    size_t& written,
                                                    std::unique_ptr<IWaitRoutine>& waiter,
                                                    const std::string_view initialData,
@@ -207,41 +191,41 @@ public:
 
     [[nodiscard]] virtual HRESULT ReadConsoleOutputAttributeImpl(const IConsoleOutputObject& context,
                                                                  const til::point origin,
-                                                                 gsl::span<WORD> buffer,
+                                                                 std::span<WORD> buffer,
                                                                  size_t& written) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ReadConsoleOutputCharacterAImpl(const IConsoleOutputObject& context,
                                                                   const til::point origin,
-                                                                  gsl::span<char> buffer,
+                                                                  std::span<char> buffer,
                                                                   size_t& written) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ReadConsoleOutputCharacterWImpl(const IConsoleOutputObject& context,
                                                                   const til::point origin,
-                                                                  gsl::span<wchar_t> buffer,
+                                                                  std::span<wchar_t> buffer,
                                                                   size_t& written) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleInputAImpl(IConsoleInputObject& context,
-                                                         const gsl::span<const INPUT_RECORD> buffer,
+                                                         const std::span<const INPUT_RECORD> buffer,
                                                          size_t& written,
                                                          const bool append) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleInputWImpl(IConsoleInputObject& context,
-                                                         const gsl::span<const INPUT_RECORD> buffer,
+                                                         const std::span<const INPUT_RECORD> buffer,
                                                          size_t& written,
                                                          const bool append) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleOutputAImpl(IConsoleOutputObject& context,
-                                                          gsl::span<CHAR_INFO> buffer,
+                                                          std::span<CHAR_INFO> buffer,
                                                           const Microsoft::Console::Types::Viewport& requestRectangle,
                                                           Microsoft::Console::Types::Viewport& writtenRectangle) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleOutputWImpl(IConsoleOutputObject& context,
-                                                          gsl::span<CHAR_INFO> buffer,
+                                                          std::span<CHAR_INFO> buffer,
                                                           const Microsoft::Console::Types::Viewport& requestRectangle,
                                                           Microsoft::Console::Types::Viewport& writtenRectangle) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                                  const gsl::span<const WORD> attrs,
+                                                                  const std::span<const WORD> attrs,
                                                                   const til::point target,
                                                                   size_t& used) noexcept = 0;
 
@@ -256,28 +240,28 @@ public:
                                                                    size_t& used) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ReadConsoleOutputAImpl(const IConsoleOutputObject& context,
-                                                         gsl::span<CHAR_INFO> buffer,
+                                                         std::span<CHAR_INFO> buffer,
                                                          const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                          Microsoft::Console::Types::Viewport& readRectangle) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ReadConsoleOutputWImpl(const IConsoleOutputObject& context,
-                                                         gsl::span<CHAR_INFO> buffer,
+                                                         std::span<CHAR_INFO> buffer,
                                                          const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                          Microsoft::Console::Types::Viewport& readRectangle) noexcept = 0;
 
-    [[nodiscard]] virtual HRESULT GetConsoleTitleAImpl(gsl::span<char> title,
+    [[nodiscard]] virtual HRESULT GetConsoleTitleAImpl(std::span<char> title,
                                                        size_t& written,
                                                        size_t& needed) noexcept = 0;
 
-    [[nodiscard]] virtual HRESULT GetConsoleTitleWImpl(gsl::span<wchar_t> title,
+    [[nodiscard]] virtual HRESULT GetConsoleTitleWImpl(std::span<wchar_t> title,
                                                        size_t& written,
                                                        size_t& needed) noexcept = 0;
 
-    [[nodiscard]] virtual HRESULT GetConsoleOriginalTitleAImpl(gsl::span<char> title,
+    [[nodiscard]] virtual HRESULT GetConsoleOriginalTitleAImpl(std::span<char> title,
                                                                size_t& written,
                                                                size_t& needed) noexcept = 0;
 
-    [[nodiscard]] virtual HRESULT GetConsoleOriginalTitleWImpl(gsl::span<wchar_t> title,
+    [[nodiscard]] virtual HRESULT GetConsoleOriginalTitleWImpl(std::span<wchar_t> title,
                                                                size_t& written,
                                                                size_t& needed) noexcept = 0;
 
@@ -314,12 +298,12 @@ public:
                                                        const std::wstring_view exeName) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT GetConsoleAliasAImpl(const std::string_view source,
-                                                       gsl::span<char> target,
+                                                       std::span<char> target,
                                                        size_t& written,
                                                        const std::string_view exeName) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT GetConsoleAliasWImpl(const std::wstring_view source,
-                                                       gsl::span<wchar_t> target,
+                                                       std::span<wchar_t> target,
                                                        size_t& written,
                                                        const std::wstring_view exeName) noexcept = 0;
 
@@ -334,17 +318,17 @@ public:
     [[nodiscard]] virtual HRESULT GetConsoleAliasExesLengthWImpl(size_t& bufferRequired) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT GetConsoleAliasesAImpl(const std::string_view exeName,
-                                                         gsl::span<char> alias,
+                                                         std::span<char> alias,
                                                          size_t& written) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT GetConsoleAliasesWImpl(const std::wstring_view exeName,
-                                                         gsl::span<wchar_t> alias,
+                                                         std::span<wchar_t> alias,
                                                          size_t& written) noexcept = 0;
 
-    [[nodiscard]] virtual HRESULT GetConsoleAliasExesAImpl(gsl::span<char> aliasExes,
+    [[nodiscard]] virtual HRESULT GetConsoleAliasExesAImpl(std::span<char> aliasExes,
                                                            size_t& written) noexcept = 0;
 
-    [[nodiscard]] virtual HRESULT GetConsoleAliasExesWImpl(gsl::span<wchar_t> aliasExes,
+    [[nodiscard]] virtual HRESULT GetConsoleAliasExesWImpl(std::span<wchar_t> aliasExes,
                                                            size_t& written) noexcept = 0;
 
 #pragma region CMDext Private API
@@ -366,11 +350,11 @@ public:
                                                                       size_t& length) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT GetConsoleCommandHistoryAImpl(const std::string_view exeName,
-                                                                gsl::span<char> commandHistory,
+                                                                std::span<char> commandHistory,
                                                                 size_t& written) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT GetConsoleCommandHistoryWImpl(const std::wstring_view exeName,
-                                                                gsl::span<wchar_t> commandHistory,
+                                                                std::span<wchar_t> commandHistory,
                                                                 size_t& written) noexcept = 0;
 
 #pragma endregion

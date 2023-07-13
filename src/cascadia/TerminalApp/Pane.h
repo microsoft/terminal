@@ -51,6 +51,12 @@ enum class SplitState : int
     Vertical = 2
 };
 
+struct PaneResources
+{
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush focusedBorderBrush{ nullptr };
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush unfocusedBorderBrush{ nullptr };
+};
+
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
@@ -91,8 +97,8 @@ public:
         std::optional<uint32_t> focusedPaneId;
         uint32_t panesCreated;
     };
-    BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId);
-    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane() const;
+    BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId, const bool asContent = false, const bool asMovePane = false);
+    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane(const bool asContent = false) const;
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                         const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
@@ -136,7 +142,7 @@ public:
 
     bool ContainsReadOnly() const;
 
-    static void SetupResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+    void UpdateResources(const PaneResources& resources);
 
     // Method Description:
     // - A helper method for ad-hoc recursion on a pane tree. Walks the pane
@@ -206,6 +212,7 @@ public:
     WINRT_CALLBACK(LostFocus, winrt::delegate<std::shared_ptr<Pane>>);
     WINRT_CALLBACK(PaneRaiseBell, winrt::Windows::Foundation::EventHandler<bool>);
     WINRT_CALLBACK(Detached, winrt::delegate<std::shared_ptr<Pane>>);
+    WINRT_CALLBACK(RestartTerminalRequested, winrt::delegate<std::shared_ptr<Pane>>);
 
 private:
     struct PanePoint;
@@ -217,8 +224,8 @@ private:
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
     winrt::Windows::UI::Xaml::Controls::Border _borderFirst{};
     winrt::Windows::UI::Xaml::Controls::Border _borderSecond{};
-    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
-    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
+
+    PaneResources _themeResources;
 
 #pragma region Properties that need to be transferred between child / parent panes upon splitting / closing
     std::shared_ptr<Pane> _firstChild{ nullptr };
@@ -235,11 +242,18 @@ private:
     std::weak_ptr<Pane> _parentChildPath{};
 
     bool _lastActive{ false };
-    winrt::event_token _connectionStateChangedToken{ 0 };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
-    winrt::event_token _warningBellToken{ 0 };
-    winrt::event_token _closeTerminalRequestedToken{ 0 };
+
+    struct ControlEventTokens
+    {
+        winrt::Microsoft::Terminal::Control::TermControl::ConnectionStateChanged_revoker _ConnectionStateChanged;
+        winrt::Microsoft::Terminal::Control::TermControl::WarningBell_revoker _WarningBell;
+        winrt::Microsoft::Terminal::Control::TermControl::CloseTerminalRequested_revoker _CloseTerminalRequested;
+        winrt::Microsoft::Terminal::Control::TermControl::RestartTerminalRequested_revoker _RestartTerminalRequested;
+    } _controlEvents;
+    void _setupControlEvents();
+    void _removeControlEvents();
 
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
@@ -251,7 +265,7 @@ private:
     bool _zoomed{ false };
 
     winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
-    winrt::Windows::Media::Playback::MediaPlayer::MediaEnded_revoker _mediaEndedRevoker;
+    bool _bellPlayerCreated{ false };
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
@@ -294,6 +308,7 @@ private:
     void _ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                   const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
     void _CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+    void _RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
 
     std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
     SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
@@ -388,9 +403,6 @@ private:
         LayoutSizeNode(const LayoutSizeNode& other);
 
         LayoutSizeNode& operator=(const LayoutSizeNode& other);
-
-    private:
-        void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
     };
 
     friend struct winrt::TerminalApp::implementation::TerminalTab;

@@ -11,7 +11,6 @@
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
-    <TerminalCppRestSDK>true</TerminalCppRestSDK>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
@@ -99,39 +98,4 @@
 
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
-
-  <!--
-  BODGY:
-
-  We depend on `cpprest142*.dll`, which comes from our vcpkg dependency. As a
-  part of the vcpkg dependency restore, msbuild will call the `deployBinary()`
-  function in
-  `packages\vcpkg-cpprestsdk.2.10.14\scripts\BuildSystems\msbuild\AppLocal.ps1`.
-  That function does the actual job of copying the file. It copies it outside of
-  MsBuild. MsBuild then, in the `_CopyFilesMarkedCopyLocal` target, determines
-  that it needs to copy `cpprest142*.dll`, because that dll is a member of
-  `@(ReferencesCopiedInThisBuild)`. However, the file's already been copied, so
-  MsBuild never copies it. But that also prevents MsBuild from setting
-  `WroteAtLeastOneFile`, which then means that MsBuild will never create the
-  .CopyComplete file for this project.
-
-  Because that file is missing, MsBuild will never think the project is up to
-  date, and the FastUpToDate check in VS will always force MsBuild to run a pass
-  on this project.
-
-  To mitigate this, we're adding this other target here, which runs after
-  _CopyFilesMarkedCopyLocal, and always creates the CopyUpToDateMarker. This
-  makes the FastUpToDate check succeed.
-  -->
-
-  <Target
-      Name="_Post_CopyFilesMarkedCopyLocal"
-      AfterTargets="_CopyFilesMarkedCopyLocal"
-      Condition="'@(ReferenceCopyLocalPaths)' != ''">
-
-    <Touch Files="@(CopyUpToDateMarker)"
-      AlwaysCreate="true" />
-  </Target>
-
-
 </Project>

@@ -231,25 +231,25 @@ class ClipboardTests
                     if (isKeyDown)
                     {
                         // shift then letter
-                        const KeyEvent shiftDownEvent({ TRUE, 1, VK_SHIFT, leftShiftScanCode, L'\0', SHIFT_PRESSED });
+                        const KeyEvent shiftDownEvent{ TRUE, 1, VK_SHIFT, leftShiftScanCode, L'\0', SHIFT_PRESSED };
                         VERIFY_ARE_EQUAL(shiftDownEvent, *keyEvent);
 
-                        const KeyEvent expectedKeyEvent({ TRUE, 1, LOBYTE(keyState2), virtualScanCode2, wch, SHIFT_PRESSED });
+                        const KeyEvent expectedKeyEvent{ TRUE, 1, LOBYTE(keyState2), virtualScanCode2, wch, SHIFT_PRESSED };
                         VERIFY_ARE_EQUAL(expectedKeyEvent, *keyEvent2);
                     }
                     else
                     {
                         // letter then shift
-                        const KeyEvent expectedKeyEvent({ FALSE, 1, LOBYTE(keyState), virtualScanCode, wch, SHIFT_PRESSED });
+                        const KeyEvent expectedKeyEvent{ FALSE, 1, LOBYTE(keyState), virtualScanCode, wch, SHIFT_PRESSED };
                         VERIFY_ARE_EQUAL(expectedKeyEvent, *keyEvent);
 
-                        const KeyEvent shiftUpEvent({ FALSE, 1, VK_SHIFT, leftShiftScanCode, L'\0', 0 });
+                        const KeyEvent shiftUpEvent{ FALSE, 1, VK_SHIFT, leftShiftScanCode, L'\0', 0 };
                         VERIFY_ARE_EQUAL(shiftUpEvent, *keyEvent2);
                     }
                 }
                 else
                 {
-                    const KeyEvent expectedKeyEvent({ !!isKeyDown, 1, LOBYTE(keyState), virtualScanCode, wch, 0 });
+                    const KeyEvent expectedKeyEvent{ !!isKeyDown, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
                     VERIFY_ARE_EQUAL(expectedKeyEvent, *keyEvent);
                 }
             }

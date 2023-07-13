@@ -195,8 +195,7 @@ void HandleFocusEvent(const BOOL fSetFocus)
 
     try
     {
-        const auto EventsWritten = gci.pInputBuffer->Write(std::make_unique<FocusEvent>(!!fSetFocus));
-        FAIL_FAST_IF(EventsWritten != 1);
+        gci.pInputBuffer->WriteFocusEvent(fSetFocus);
     }
     catch (...)
     {
@@ -341,7 +340,7 @@ void ProcessCtrlEvents()
          * query. In this case, use best effort to send the close event but
          * ignore any errors.
          */
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             Status = ServiceLocator::LocateConsoleControl()
                          ->EndTask(r.dwProcessID,

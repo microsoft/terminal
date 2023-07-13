@@ -65,7 +65,7 @@ CATCH_RETURN()
 // - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
 // Return Value:
 // - S_OK or suitable memory management issue.
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::AppendClusters(const gsl::span<const ::Microsoft::Console::Render::Cluster> clusters)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::AppendClusters(const std::span<const ::Microsoft::Console::Render::Cluster> clusters)
 try
 {
     _textClusterColumns.reserve(_textClusterColumns.size() + clusters.size());
@@ -406,7 +406,7 @@ CATCH_RETURN()
         // Get the features to apply to the font
         const auto& features = _fontRenderData->DefaultFontFeatures();
 #pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
-        DWRITE_TYPOGRAPHIC_FEATURES typographicFeatures = { const_cast<DWRITE_FONT_FEATURE*>(features.data()), gsl::narrow<uint32_t>(features.size()) };
+        const DWRITE_TYPOGRAPHIC_FEATURES typographicFeatures = { const_cast<DWRITE_FONT_FEATURE*>(features.data()), gsl::narrow<uint32_t>(features.size()) };
         DWRITE_TYPOGRAPHIC_FEATURES const* typographicFeaturesPointer = &typographicFeatures;
         const uint32_t fontFeatureLengths[] = { textLength };
 

@@ -15,7 +15,6 @@ Author(s):
 --*/
 #pragma once
 
-#include "telemetry.hpp"
 #include "IStateMachineEngine.hpp"
 #include <functional>
 #include "../../types/inc/IInputEvent.hpp"
@@ -205,7 +204,7 @@ namespace Microsoft::Console::VirtualTerminal
                                 const DWORD modifierState,
                                 std::vector<INPUT_RECORD>& input);
 
-        bool _GetWindowManipulationType(const gsl::span<const size_t> parameters,
+        bool _GetWindowManipulationType(const std::span<const size_t> parameters,
                                         unsigned int& function) const noexcept;
 
         KeyEvent _GenerateWin32Key(const VTParameters parameters);

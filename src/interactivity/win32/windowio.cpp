@@ -30,10 +30,6 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // Bit 29 is whether ALT was held when the message was posted.
 #define WM_SYSKEYDOWN_ALT_PRESSED (0x20000000)
 
-// This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
-// "If the high-order bit is 1, the key is down; otherwise, it is up."
-static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
-
 // ----------------------------
 // Helpers
 // ----------------------------
@@ -119,30 +115,8 @@ bool HandleTerminalMouseEvent(const til::point cMousePosition,
                               const short sModifierKeystate,
                               const short sWheelDelta)
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    // If the modes don't align, this is unhandled by default.
-    auto fWasHandled = false;
-
-    // Virtual terminal input mode
-    if (IsInVirtualTerminalInputMode())
-    {
-        const TerminalInput::MouseButtonState state{
-            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_LBUTTON), KeyPressed),
-            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_MBUTTON), KeyPressed),
-            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_RBUTTON), KeyPressed)
-        };
-
-        // GH#6401: VT applications should be able to receive mouse events from outside the
-        // terminal buffer. This is likely to happen when the user drags the cursor offscreen.
-        // We shouldn't throw away perfectly good events when they're offscreen, so we just
-        // clamp them to be within the range [(0, 0), (W, H)].
-        auto clampedPosition{ cMousePosition };
-        const auto clampViewport{ gci.GetActiveOutputBuffer().GetViewport().ToOrigin() };
-        clampViewport.Clamp(clampedPosition);
-        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(clampedPosition, uiButton, sModifierKeystate, sWheelDelta, state);
-    }
-
-    return fWasHandled;
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.pInputBuffer->WriteMouseEvent(cMousePosition, uiButton, sModifierKeystate, sWheelDelta);
 }
 
 void HandleKeyEvent(const HWND hWnd,
@@ -209,7 +183,7 @@ void HandleKeyEvent(const HWND hWnd,
         }
         else
         {
-            keyEvent.SetCharData(0);
+            keyEvent.SetCharData(L'\0');
         }
     }
     else
@@ -220,7 +194,7 @@ void HandleKeyEvent(const HWND hWnd,
             return;
         }
         keyEvent.SetActiveModifierKeys(ControlKeyState);
-        keyEvent.SetCharData(0);
+        keyEvent.SetCharData(L'\0');
     }
 
     const INPUT_KEY_INFO inputKeyInfo(VirtualKeyCode, ControlKeyState);
@@ -992,7 +966,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK* phhook)
     // Create and activate the main window
     auto Status = Window::CreateInstance(&gci, gci.ScreenBuffers);
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         RIPMSG2(RIP_WARNING, "CreateWindowsWindow failed with status 0x%x, gle = 0x%x", Status, GetLastError());
         return Status;
@@ -1053,7 +1027,7 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
     }
 
     UnlockConsole();
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         ServiceLocator::LocateGlobals().ntstatusConsoleInputInitStatus = Status;
         ServiceLocator::LocateGlobals().hConsoleInputInitEvent.SetEvent();
