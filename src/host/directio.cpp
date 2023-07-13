@@ -153,12 +153,15 @@ try
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     til::small_vector<INPUT_RECORD, 16> events;
 
+    auto it = buffer.begin();
+    const auto end = buffer.end();
+
     // Check out the loop below. When a previous call ended on a leading DBCS we store it for
     // the next call to WriteConsoleInputAImpl to join it with the now available trailing DBCS.
     if (context.IsWritePartialByteSequenceAvailable())
     {
         auto lead = context.FetchWritePartialByteSequence(false)->ToInputRecord();
-        const auto& trail = buffer.front();
+        const auto& trail = *it;
 
         if (trail.EventType == KEY_EVENT)
         {
@@ -174,10 +177,12 @@ try
                 lead.Event.KeyEvent.uChar.UnicodeChar = wide[i];
                 events.push_back(lead);
             }
+
+            ++it;
         }
     }
 
-    for (auto it = buffer.begin(), end = buffer.end(); it != end; ++it)
+    for (; it != end; ++it)
     {
         if (it->EventType != KEY_EVENT)
         {
