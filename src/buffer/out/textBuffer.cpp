@@ -2873,10 +2873,6 @@ PointTree TextBuffer::GetPatterns(const til::CoordType firstRow, const til::Coor
     return result;
 }
 
-std::vector<ScrollMark>& TextBuffer::GetMarks()
-{
-    return _marks;
-}
 const std::vector<ScrollMark>& TextBuffer::GetMarks() const
 {
     return _marks;
@@ -2924,6 +2920,18 @@ void TextBuffer::ScrollMarks(const int delta)
     _trimMarksOutsideBuffer();
 }
 
+void TextBuffer::AddMark(ScrollMark& m, const bool activeMark)
+{
+    if (activeMark)
+    {
+        _marks.push_back(m);
+    }
+    else
+    {
+        _marks.insert(_marks.begin(), m);
+    }
+}
+
 void TextBuffer::_trimMarksOutsideBuffer()
 {
     const auto height = GetSize().Height();
@@ -2934,4 +2942,33 @@ void TextBuffer::_trimMarksOutsideBuffer()
                                            (m.start.y >= height);
                                 }),
                  _marks.end());
+}
+
+void TextBuffer::UpdateCurrentPromptEnd(const til::point pos)
+{
+    if (_marks.empty())
+    {
+        return;
+    }
+    auto& curr{ _marks.back() };
+    curr.end = pos;
+}
+void TextBuffer::UpdateCurrentCommandEnd(const til::point pos)
+{
+    if (_marks.empty())
+    {
+        return;
+    }
+    auto& curr{ _marks.back() };
+    curr.commandEnd = pos;
+}
+void TextBuffer::UpdateCurrentOutputEnd(const til::point pos, ::MarkCategory category)
+{
+    if (_marks.empty())
+    {
+        return;
+    }
+    auto& curr{ _marks.back() };
+    curr.outputEnd = pos;
+    curr.category = category;
 }

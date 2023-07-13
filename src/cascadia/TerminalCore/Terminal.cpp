@@ -1358,14 +1358,8 @@ void Terminal::AddMark(const ScrollMark& mark,
     m.start = start;
     m.end = end;
 
-    if (fromUi)
-    {
-        _activeBuffer().GetMarks().insert(_activeBuffer().GetMarks().begin(), m);
-    }
-    else
-    {
-        _activeBuffer().GetMarks().push_back(m);
-    }
+    // If the mark came from the user adding a mark via the UI, don't make it the active prompt mark. 
+    _activeBuffer().AddMark(m, !fromUi);
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
@@ -1409,8 +1403,7 @@ const std::vector<ScrollMark>& Terminal::GetScrollMarks() const noexcept
     // We want to return _no_ marks when we're in the alt buffer, to effectively
     // hide them. We need to return a reference, so we can't just ctor an empty
     // list here just for when we're in the alt buffer.
-    static const std::vector<ScrollMark> _altBufferMarks{};
-    return _inAltBuffer() ? _altBufferMarks : _activeBuffer().GetMarks();
+    return _activeBuffer().GetMarks();
 }
 
 til::color Terminal::GetColorForMark(const ScrollMark& mark) const

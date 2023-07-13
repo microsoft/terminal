@@ -337,7 +337,7 @@ void Terminal::MarkCommandStart()
         mark.category = MarkCategory::Prompt;
         AddMark(mark, cursorPos, cursorPos, false);
     }
-    _activeBuffer().GetMarks().back().end = cursorPos;
+    _activeBuffer().UpdateCurrentPromptEnd(cursorPos);
     _currentPromptState = PromptState::Command;
 }
 
@@ -363,7 +363,7 @@ void Terminal::MarkOutputStart()
         mark.category = MarkCategory::Prompt;
         AddMark(mark, cursorPos, cursorPos, false);
     }
-    _activeBuffer().GetMarks().back().commandEnd = cursorPos;
+    _activeBuffer().UpdateCurrentCommandEnd(cursorPos);
     _currentPromptState = PromptState::Output;
 }
 
@@ -396,10 +396,9 @@ void Terminal::MarkCommandFinish(std::optional<unsigned int> error)
         ScrollMark mark;
         mark.category = MarkCategory::Prompt;
         AddMark(mark, cursorPos, cursorPos, false);
-        _activeBuffer().GetMarks().back().commandEnd = cursorPos;
+        _activeBuffer().UpdateCurrentCommandEnd(cursorPos);
     }
-    _activeBuffer().GetMarks().back().outputEnd = cursorPos;
-    _activeBuffer().GetMarks().back().category = category;
+    _activeBuffer().UpdateCurrentOutputEnd(cursorPos, category);
     _currentPromptState = PromptState::None;
 }
 

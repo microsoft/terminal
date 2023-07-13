@@ -3145,11 +3145,11 @@ bool AdaptDispatch::_EraseScrollback()
     auto& cursor = textBuffer.GetCursor();
     const auto row = cursor.GetPosition().y;
 
-    // Scroll all the marks up. This will trim ones that are now "outside" the buffer
-    textBuffer.ScrollMarks(-top);
-    // Also clear all the marks below the new viewport position.
+    // Clear all the marks below the new viewport position.
     textBuffer.ClearMarksInRange(til::point{ 0, height },
                                  til::point{ bufferSize.width, bufferSize.height });
+    // Then scroll all the remaining marks up. This will trim ones that are now "outside" the buffer
+    textBuffer.ScrollMarks(-top);
 
     // Scroll the viewport content to the top of the buffer.
     textBuffer.ScrollRows(top, height, -top);

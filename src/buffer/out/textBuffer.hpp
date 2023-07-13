@@ -64,7 +64,7 @@ namespace Microsoft::Console::Render
     class Renderer;
 }
 
-enum class MarkCategory : size_t
+enum class MarkCategory
 {
     Prompt = 0,
     Error = 1,
@@ -263,11 +263,14 @@ public:
     void CopyPatterns(const TextBuffer& OtherBuffer);
     interval_tree::IntervalTree<til::point, size_t> GetPatterns(const til::CoordType firstRow, const til::CoordType lastRow) const;
 
-    std::vector<ScrollMark>& GetMarks();
     const std::vector<ScrollMark>& GetMarks() const;
     void ClearMarksInRange(const til::point start, const til::point end);
     void ClearAllMarks() noexcept;
     void ScrollMarks(const int delta);
+    void AddMark(ScrollMark& m, const bool activeMark);
+    void UpdateCurrentPromptEnd(const til::point pos);
+    void UpdateCurrentCommandEnd(const til::point pos);
+    void UpdateCurrentOutputEnd(const til::point pos, ::MarkCategory category);
 
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);
