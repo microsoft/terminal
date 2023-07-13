@@ -449,15 +449,6 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BrightBackgroundWhite = 107,
     };
 
-    // we use this in VT parser to indicate that the GraphicsOptions (parameter)
-    // accepts sub-parameters.
-    enum GraphicsOptionsWithSubParams : VTInt
-    {
-#ifdef UNIT_TESTING
-        TestOption = 12345,
-#endif
-    };
-
     enum LogicalAttributeOptions : VTInt
     {
         Default = 0,
