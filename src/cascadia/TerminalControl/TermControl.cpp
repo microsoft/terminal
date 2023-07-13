@@ -94,6 +94,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.coreOpenHyperlink = _core.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
         _revokers.interactivityOpenHyperlink = _interactivity.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
         _revokers.interactivityScrollPositionChanged = _interactivity.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
+        _revokers.interactivityHorizontalScrollPositionChanged = _interactivity.HorizontalScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_HorizontalScrollPositionChanged });
         _revokers.ContextMenuRequested = _interactivity.ContextMenuRequested(winrt::auto_revoke, { get_weak(), &TermControl::_contextMenuHandler });
 
         // "Bubbled" events - ones we want to handle, by raising our own event.
@@ -157,6 +158,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // _updateScrollBar func. Otherwise, we could get a callback from an
         // attached content before we set up the throttled func, and that'll A/V
         _revokers.coreScrollPositionChanged = _core.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
+        // TODO! Horizontal?
         _revokers.WarningBell = _core.WarningBell(winrt::auto_revoke, { get_weak(), &TermControl::_coreWarningBell });
         _revokers.CursorPositionChanged = _core.CursorPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_CursorPositionChanged });
 
@@ -280,7 +282,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _isInternalScrollBarUpdate = true;
 
-        auto scrollBar = ScrollBar();
+        auto scrollBar = update.horizontal ? HorizontalScrollBar() : ScrollBar();
         if (update.newValue)
         {
             scrollBar.Value(*update.newValue);
@@ -293,7 +295,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _isInternalScrollBarUpdate = false;
 
-        if (_showMarksInScrollbar)
+        if (!update.horizontal && _showMarksInScrollbar)
         {
             // Update scrollbar marks
             ScrollBarCanvas().Children().Clear();
@@ -976,6 +978,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ScrollBar().Value(0);
         ScrollBar().ViewportSize(bufferHeight);
         ScrollBar().LargeChange(bufferHeight); // scroll one "screenful" at a time when the scroll bar is clicked
+
+        auto bufferWidth = _core.BufferWidth();
+        auto viewWidth = _core.ViewWidth();
+
+        HorizontalScrollBar().Maximum(bufferWidth - viewWidth);
+        HorizontalScrollBar().Minimum(0);
+        HorizontalScrollBar().Value(0);
+        HorizontalScrollBar().ViewportSize(viewWidth);
+        HorizontalScrollBar().LargeChange(viewWidth); // scroll one "screenful" at a time when the scroll bar is clicked
 
         // Set up blinking cursor
         int blinkTime = GetCaretBlinkTime();
@@ -2030,6 +2041,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         update.newMinimum = 0;
         update.newViewportSize = args.ViewHeight();
         update.newValue = args.ViewTop();
+        update.horizontal = false;
+
+        _updateScrollBar->Run(update);
+
+        // if a selection marker is already visible,
+        // update the position of those markers
+        if (SelectionStartMarker().Visibility() == Visibility::Visible || SelectionEndMarker().Visibility() == Visibility::Visible)
+        {
+            _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
+        }
+    }
+    void TermControl::_HorizontalScrollPositionChanged(const IInspectable& /*sender*/,
+                                                       const Control::ScrollPositionChangedArgs& args)
+    {
+        ScrollBarUpdate update;
+        const auto hiddenContent = args.BufferSize() - args.ViewHeight();
+        update.newMaximum = hiddenContent;
+        update.newMinimum = 0;
+        update.newViewportSize = args.ViewHeight();
+        update.newValue = args.ViewTop();
+        update.horizontal = true;
 
         _updateScrollBar->Run(update);
 
@@ -2202,6 +2234,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     int TermControl::BufferHeight() const
     {
         return _core.BufferHeight();
+    }
+
+    int TermControl::HorizontalScrollOffset() const
+    {
+        return _core.HorizontalScrollOffset();
+    }
+    int TermControl::ViewWidth() const
+    {
+        return _core.ViewWidth();
+    }
+    int TermControl::BufferWidth() const
+    {
+        return _core.BufferWidth();
     }
 
     // Function Description:

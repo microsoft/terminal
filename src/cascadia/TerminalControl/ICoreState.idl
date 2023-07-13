@@ -45,6 +45,10 @@ namespace Microsoft.Terminal.Control
         Int32 ViewHeight { get; };
         Int32 BufferHeight { get; };
 
+        Int32 HorizontalScrollOffset { get; };
+        Int32 ViewWidth { get; };
+        Int32 BufferWidth { get; };
+
         Boolean HasSelection { get; };
         IVector<String> SelectedText(Boolean trimTrailingWhitespace);
 

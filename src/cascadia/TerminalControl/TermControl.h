@@ -68,6 +68,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int ScrollOffset() const;
         int ViewHeight() const;
         int BufferHeight() const;
+        // Horizontal scrolling
+        int HorizontalScrollOffset() const;
+        int ViewWidth() const;
+        int BufferWidth() const;
 
         bool HasSelection() const;
         Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
@@ -217,6 +221,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double newMaximum;
             double newMinimum;
             double newViewportSize;
+            bool horizontal;
         };
 
         std::shared_ptr<ThrottledFuncTrailing<ScrollBarUpdate>> _updateScrollBar;
@@ -314,6 +319,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _TerminalTabColorChanged(const std::optional<til::color> color);
 
         void _ScrollPositionChanged(const IInspectable& sender, const Control::ScrollPositionChangedArgs& args);
+        void _HorizontalScrollPositionChanged(const IInspectable& sender, const Control::ScrollPositionChangedArgs& args);
         winrt::fire_and_forget _CursorPositionChanged(const IInspectable& sender, const IInspectable& args);
 
         bool _CapturePointer(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
@@ -394,6 +400,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             Control::ControlInteractivity::OpenHyperlink_revoker interactivityOpenHyperlink;
             Control::ControlInteractivity::ScrollPositionChanged_revoker interactivityScrollPositionChanged;
+            Control::ControlInteractivity::HorizontalScrollPositionChanged_revoker interactivityHorizontalScrollPositionChanged;
             Control::ControlInteractivity::PasteFromClipboard_revoker PasteFromClipboard;
             Control::ControlInteractivity::ContextMenuRequested_revoker ContextMenuRequested;
         } _revokers{};
