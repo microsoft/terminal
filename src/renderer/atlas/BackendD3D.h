@@ -37,8 +37,8 @@ namespace Microsoft::Console::Render::Atlas
         struct alignas(16) PSConstBuffer
         {
             alignas(sizeof(f32x4)) f32x4 backgroundColor;
-            alignas(sizeof(f32x2)) f32x2 cellSize;
-            alignas(sizeof(f32x2)) f32x2 cellCount;
+            alignas(sizeof(f32x2)) f32x2 backgroundCellSize;
+            alignas(sizeof(f32x2)) f32x2 backgroundCellCount;
             alignas(sizeof(f32x4)) f32 gammaRatios[4]{};
             alignas(sizeof(f32)) f32 enhancedContrast = 0;
             alignas(sizeof(f32)) f32 underlineWidth = 0;
@@ -281,7 +281,7 @@ namespace Microsoft::Console::Render::Atlas
         til::generation_t _fontGeneration;
         til::generation_t _miscGeneration;
         u16x2 _targetSize{};
-        u16x2 _cellCount{};
+        u16x2 _viewportCellCount{};
         ShadingType _textShadingType = ShadingType::Default;
 
         // An empty-box cursor spanning a wide glyph that has different

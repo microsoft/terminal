@@ -53,7 +53,7 @@ namespace Microsoft::Console::Render::Atlas
         til::generation_t _generation;
         til::generation_t _fontGeneration;
         til::generation_t _cursorGeneration;
-        u16x2 _cellCount{};
+        u16x2 _viewportCellCount{};
 
 #if ATLAS_DEBUG_SHOW_DIRTY
         i32r _presentRects[9]{};
