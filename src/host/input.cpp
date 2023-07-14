@@ -211,10 +211,6 @@ void HandleMenuEvent(const DWORD wParam)
     try
     {
         EventsWritten = gci.pInputBuffer->Write(std::make_unique<MenuEvent>(wParam));
-        if (EventsWritten != 1)
-        {
-            RIPMSG0(RIP_WARNING, "PutInputInBuffer: EventsWritten != 1, 1 expected");
-        }
     }
     catch (...)
     {
@@ -237,7 +233,7 @@ void HandleCtrlEvent(const DWORD EventType)
         gci.CtrlFlags |= CONSOLE_CTRL_CLOSE_FLAG;
         break;
     default:
-        RIPMSG1(RIP_ERROR, "Invalid EventType: 0x%x", EventType);
+        break;
     }
 }
 

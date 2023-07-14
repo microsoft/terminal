@@ -527,31 +527,6 @@ void Telemetry::WriteFinalTraceLog()
     }
 }
 
-// These are legacy error messages with limited value, so don't send them back as telemetry.
-void Telemetry::LogRipMessage(_In_z_ const char* pszMessage, ...) const
-{
-    // Code needed for passing variable parameters to the vsprintf function.
-    va_list args;
-    va_start(args, pszMessage);
-    char szMessageEvaluated[200] = "";
-    auto cCharsWritten = vsprintf_s(szMessageEvaluated, ARRAYSIZE(szMessageEvaluated), pszMessage, args);
-    va_end(args);
-
-#if DBG
-    OutputDebugStringA(szMessageEvaluated);
-#endif
-
-    if (cCharsWritten > 0)
-    {
-        // clang-format off
-#pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
-        // clang-format on
-        TraceLoggingWriteTagged(_activity,
-                                "RipMessage",
-                                TraceLoggingString(szMessageEvaluated, "Message"));
-    }
-}
-
 bool Telemetry::IsUserInteractive()
 {
     return _fUserInteractiveForTelemetry;

@@ -40,10 +40,6 @@ void StoreKeyInfo(_In_ PMSG msg)
         ConsoleKeyInfo[i].wVirtualKeyCode = LOWORD(msg->wParam);
         ConsoleKeyInfo[i].wVirtualScanCode = (BYTE)(HIWORD(msg->lParam));
     }
-    else
-    {
-        RIPMSG0(RIP_WARNING, "ConsoleKeyInfo buffer is full");
-    }
 }
 
 void RetrieveKeyInfo(_In_ HWND hWnd, _Out_ PWORD pwVirtualKeyCode, _Inout_ PWORD pwVirtualScanCode, _In_ BOOL FreeKeyInfo)

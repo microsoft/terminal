@@ -540,10 +540,6 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                     {
                         _originalCursorPosition.y += ScrollY;
                     }
-                    else
-                    {
-                        RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed %x", status);
-                    }
                 }
 
                 _visibleCharCount += NumSpaces;
@@ -618,10 +614,6 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                                   _originalCursorPosition.x,
                                                   WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                   nullptr);
-                        if (FAILED_NTSTATUS(status))
-                        {
-                            RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed %x", status);
-                        }
                     }
                     _bytesRead -= sizeof(WCHAR);
                     _bufPtr -= 1;
@@ -733,7 +725,6 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                       &ScrollY);
             if (FAILED_NTSTATUS(status))
             {
-                RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed 0x%x", status);
                 _bytesRead = 0;
                 return true;
             }
@@ -784,10 +775,6 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                               _originalCursorPosition.x,
                                               WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                               nullptr);
-                    if (FAILED_NTSTATUS(status))
-                    {
-                        RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed 0x%x", status);
-                    }
                 }
                 _bytesRead += sizeof(WCHAR);
                 _bufPtr++;

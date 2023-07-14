@@ -897,7 +897,6 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         EventFlags = MOUSE_HWHEELED;
         break;
     default:
-        RIPMSG1(RIP_ERROR, "Invalid message 0x%x", Message);
         ButtonFlags = 0;
         EventFlags = 0;
         break;
@@ -917,11 +916,6 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
     {
         LOG_HR(wil::ResultFromCaughtException());
         EventsWritten = 0;
-    }
-
-    if (EventsWritten != 1)
-    {
-        RIPMSG1(RIP_WARNING, "PutInputInBuffer: EventsWritten != 1 (0x%x), 1 expected", EventsWritten);
     }
 
     return FALSE;
@@ -968,7 +962,6 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK* phhook)
 
     if (FAILED_NTSTATUS(Status))
     {
-        RIPMSG2(RIP_WARNING, "CreateWindowsWindow failed with status 0x%x, gle = 0x%x", Status, GetLastError());
         return Status;
     }
 

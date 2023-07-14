@@ -1050,7 +1050,6 @@ DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
                 // This will not return. Terminate immediately when disconnected.
                 ServiceLocator::RundownAndExit(STATUS_SUCCESS);
             }
-            RIPMSG1(RIP_WARNING, "DeviceIoControl failed with Result 0x%x", hr);
             ReplyMsg = nullptr;
             continue;
         }

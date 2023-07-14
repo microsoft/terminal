@@ -37,22 +37,10 @@ void InitSideBySide()
 
     const auto hActCtx = CreateActCtxW(&actctx);
 
-    // The error value is INVALID_HANDLE_VALUE.
     // ACTCTX_FLAG_SET_PROCESS_DEFAULT has nothing to return upon success, so it returns nullptr.
     // There is nothing to cleanup upon ACTCTX_FLAG_SET_PROCESS_DEFAULT success, the data
     // is referenced in the PEB, and lasts till process shutdown.
-    if (hActCtx == INVALID_HANDLE_VALUE)
-    {
-        const auto error = GetLastError();
-
-        // OpenConsole ships with a single manifest at ID 1, while conhost ships with 2 at ID 1
-        // and IDR_SYSTEM_MANIFEST. If we call CreateActCtxW() with IDR_SYSTEM_MANIFEST inside
-        // OpenConsole anyways, nothing happens and we get ERROR_SXS_PROCESS_DEFAULT_ALREADY_SET.
-        if (ERROR_SXS_PROCESS_DEFAULT_ALREADY_SET != error)
-        {
-            RIPMSG1(RIP_WARNING, "InitSideBySide failed create an activation context. Error: %d\r\n", error);
-        }
-    }
+    std::ignore = hActCtx;
 }
 
 // Routine Description:

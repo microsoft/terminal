@@ -325,7 +325,6 @@ void Window::_UpdateSystemMetrics() const
         if (hWnd == nullptr)
         {
             const auto gle = GetLastError();
-            RIPMSG1(RIP_WARNING, "CreateWindow failed with gle = 0x%x", gle);
             status = NTSTATUS_FROM_WIN32(gle);
         }
 
