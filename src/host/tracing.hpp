@@ -38,22 +38,6 @@ Author(s):
 class Tracing
 {
 public:
-    ~Tracing();
-
-    static Tracing s_TraceApiCall(const NTSTATUS result, PCSTR traceName);
-
-    static void s_TraceApi(const NTSTATUS status, const CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a);
-    static void s_TraceApi(const NTSTATUS status, const CONSOLE_SCREENBUFFERINFO_MSG* const a, const bool fSet);
-    static void s_TraceApi(const NTSTATUS status, const CONSOLE_SETSCREENBUFFERSIZE_MSG* const a);
-    static void s_TraceApi(const NTSTATUS status, const CONSOLE_SETWINDOWINFO_MSG* const a);
-
-    static void s_TraceApi(_In_ const void* const buffer, const CONSOLE_WRITECONSOLE_MSG* const a);
-
-    static void s_TraceApi(const CONSOLE_SCREENBUFFERINFO_MSG* const a);
-    static void s_TraceApi(const CONSOLE_MODE_MSG* const a, const std::wstring_view handleType);
-    static void s_TraceApi(const CONSOLE_SETTEXTATTRIBUTE_MSG* const a);
-    static void s_TraceApi(const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a);
-
     static void s_TraceWindowViewport(const Microsoft::Console::Types::Viewport& viewport);
 
     static void s_TraceChars(_In_z_ const char* pszMessage, ...);
@@ -69,8 +53,4 @@ public:
 
 private:
     static ULONG s_ulDebugFlag;
-
-    Tracing(std::function<void()> onExit);
-
-    std::function<void()> _onExit;
 };
