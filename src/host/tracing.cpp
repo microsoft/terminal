@@ -180,10 +180,10 @@ void Tracing::s_TraceCookedRead(_In_ ConsoleProcessHandle* const pConsoleProcess
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "CookedRead",
+            TraceLoggingPid(pConsoleProcessHandle->dwProcessId, "AttachedProcessId"),
             TraceLoggingCountedWideString(pwchCookedBuffer, cchCookedBufferLength, "ReadBuffer"),
             TraceLoggingULong(cchCookedBufferLength, "ReadBufferLength"),
-            TraceLoggingUInt32(pConsoleProcessHandle->dwProcessId, "AttachedProcessId"),
-            TraceLoggingUInt64(pConsoleProcessHandle->GetProcessCreationTime(), "AttachedProcessCreationTime"),
+            TraceLoggingFileTime(pConsoleProcessHandle->GetProcessCreationTime(), "AttachedProcessCreationTime"),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::CookedRead));
     }
@@ -198,8 +198,8 @@ void Tracing::s_TraceConsoleAttachDetach(_In_ ConsoleProcessHandle* const pConso
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "ConsoleAttachDetach",
-            TraceLoggingUInt32(pConsoleProcessHandle->dwProcessId, "AttachedProcessId"),
-            TraceLoggingUInt64(pConsoleProcessHandle->GetProcessCreationTime(), "AttachedProcessCreationTime"),
+            TraceLoggingPid(pConsoleProcessHandle->dwProcessId, "AttachedProcessId"),
+            TraceLoggingFileTime(pConsoleProcessHandle->GetProcessCreationTime(), "AttachedProcessCreationTime"),
             TraceLoggingBool(bIsAttach, "IsAttach"),
             TraceLoggingBool(bIsUserInteractive, "IsUserInteractive"),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE),
