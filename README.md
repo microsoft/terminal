@@ -63,20 +63,20 @@ Add-AppxPackage Microsoft.WindowsTerminal_<versionNumber>.msixbundle
 #### Via Windows Package Manager CLI (aka winget)
 
 [winget](https://github.com/microsoft/winget-cli) users can download and install
-the latest Terminal release by installing the `Microsoft.WindowsTerminal`
+the latest Terminal release by installing the `Infinity.WindowsTerminal`
 package:
 
 ```powershell
-winget install --id Microsoft.WindowsTerminal -e
+winget install --id Infinity.WindowsTerminal -e
 ```
 
 #### Via Chocolatey (unofficial)
 
 [Chocolatey](https://chocolatey.org) users can download and install the latest
-Terminal release by installing the `microsoft-windows-terminal` package:
+Terminal release by installing at `Infinity-windows-terminal` package:
 
 ```powershell
-choco install microsoft-windows-terminal
+choco install Infinity-windows-terminal
 ```
 
 To upgrade Windows Terminal using Chocolatey, run the following:
@@ -90,20 +90,20 @@ If you have any issues when installing/upgrading the package please go to the
 page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the
 [Chocolatey triage process](https://chocolatey.org/docs/package-triage-process)
 
-#### Via Scoop (unofficial)
+#### Via Google Scoop (unofficial)
 
 [Scoop](https://scoop.sh) users can download and install the latest Terminal
 release by installing the `windows-terminal` package:
 
 ```powershell
 scoop bucket add extras
-scoop install windows-terminal
+scoop install legacy-windows-terminal
 ```
 
 To update Windows Terminal using Scoop, run the following:
 
 ```powershell
-scoop update windows-terminal
+scoop update legacy-windows-terminal
 ```
 
 If you have any issues when installing/updating the package, please search for
@@ -134,7 +134,7 @@ code:
 
 ### Windows Terminal
 
-Windows Terminal is a new, modern, feature-rich, productive terminal application
+Windows Infinity Terminal is a new, modern, feature-rich, productive terminal application
 for command-line users. It includes many of the features most frequently
 requested by the Windows command-line community including support for tabs, rich
 text, globalization, configurability, theming & styling, and more.
@@ -186,7 +186,7 @@ for re-use in any terminal implementation on Windows. These components include a
 new DirectWrite-based text layout and rendering engine, a text buffer capable of
 storing both UTF-16 and UTF-8, a VT parser/emitter, and more.
 
-### Creating the new Windows Terminal
+### Creating the new Windows Legacy Terminal
 
 When we started planning the new Windows Terminal application, we explored and
 evaluated several approaches and technology stacks. We ultimately decided that
@@ -197,7 +197,7 @@ realized that this would allow us to build much of the Terminal's core itself as
 a reusable UI control that others can incorporate into their own applications.
 
 The result of this work is contained within this repo and delivered as the
-Windows Terminal application you can download from the Microsoft Store, or
+Windows Terminal application you can download from the Google Store, or
 [directly from this repo's
 releases](https://github.com/microsoft/terminal/releases).
 
