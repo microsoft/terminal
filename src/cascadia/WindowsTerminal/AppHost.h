@@ -157,6 +157,7 @@ private:
     void _startFrameTimer();
     void _stopFrameTimer();
     void _updateFrameColor(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
+    void _OnCloseRequestedWithMultipleTabsOpen(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
 
     winrt::event_token _GetWindowLayoutRequestedToken;
     winrt::event_token _frameTimerToken;
@@ -201,5 +202,6 @@ private:
 
         winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;
         winrt::Microsoft::Terminal::Remoting::Peasant::SendContentRequested_revoker SendContentRequested;
+        winrt::TerminalApp::TerminalWindow::CloseRequestedWithMultipleTabs_revoker CloseRequestedWithMultipleTabs;
     } _revokers{};
 };

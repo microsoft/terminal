@@ -1918,6 +1918,7 @@ namespace winrt::TerminalApp::implementation
             !_displayingCloseDialog)
         {
             _displayingCloseDialog = true;
+            _CloseRequestedWithMultipleTabsHandlers(*this, nullptr);
             auto warningResult = co_await _ShowCloseWarningDialog();
             _displayingCloseDialog = false;
 

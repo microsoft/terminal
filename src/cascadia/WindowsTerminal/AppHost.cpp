@@ -366,7 +366,7 @@ void AppHost::Initialize()
     _revokers.RequestMoveContent = _windowLogic.RequestMoveContent(winrt::auto_revoke, { this, &AppHost::_handleMoveContent });
     _revokers.RequestReceiveContent = _windowLogic.RequestReceiveContent(winrt::auto_revoke, { this, &AppHost::_handleReceiveContent });
     _revokers.SendContentRequested = _peasant.SendContentRequested(winrt::auto_revoke, { this, &AppHost::_handleSendContent });
-
+    _revokers.CloseRequestedWithMultipleTabs = _windowLogic.CloseRequestedWithMultipleTabs(winrt::auto_revoke, { this, &AppHost::_OnCloseRequestedWithMultipleTabsOpen });
     // Add our GetWindowLayoutRequested handler AFTER the xaml island is
     // started. Our _GetWindowLayoutAsync handler requires us to be able to work
     // on our UI thread, which requires that we have a Dispatcher ready for us
@@ -1492,4 +1492,17 @@ void AppHost::_handleSendContent(const winrt::Windows::Foundation::IInspectable&
 void AppHost::_requestUpdateSettings()
 {
     _UpdateSettingsRequestedHandlers();
+}
+
+// page -> window -> us
+// The TerminalWindow was asked to close with multiple tabs open. Ensure that we are in the foreground
+void AppHost::_OnCloseRequestedWithMultipleTabsOpen(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&)
+{
+    Remoting::SummonWindowBehavior args;
+    args.DropdownDuration(0);
+    args.MoveToCurrentDesktop(false);
+    args.ToMonitor(Remoting::MonitorBehavior::ToCurrent);
+    args.ToggleVisibility(false);
+
+    _window->SummonWindow(args);
 }
