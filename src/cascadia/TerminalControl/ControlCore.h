@@ -218,6 +218,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AdjustOpacity(const double opacity, const bool relative);
 
+        void ToggleAcrylic();
+
         void WindowVisibilityChanged(const bool showOrHide);
 
         uint64_t OwningHwnd();
@@ -271,6 +273,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             std::unique_ptr<til::throttled_func_trailing<>> updatePatternLocations;
             std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
         };
+
+        bool _acrylicToggle;
 
         std::atomic<bool> _initializedTerminal{ false };
         bool _closing{ false };
