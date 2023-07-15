@@ -906,16 +906,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND) == hr ||
                 HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND) == hr)
             {
-                message = { fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") },
+                message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") },
                                         (_focused ? _core.FocusedAppearance() : _core.UnfocusedAppearance()).PixelShaderPath()) };
             }
             else if (D2DERR_SHADER_COMPILE_FAILED == hr)
             {
-                message = { fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }) };
+                message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }) };
             }
             else
             {
-                message = { fmt::format(std::wstring_view{ RS_(L"UnexpectedRendererError") },
+                message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"UnexpectedRendererError") },
                                         hr) };
             }
 
