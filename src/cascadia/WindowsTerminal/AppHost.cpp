@@ -1503,8 +1503,8 @@ void AppHost::_OnCloseRequestedWithMultipleTabsOpen(const winrt::TerminalApp::Te
     summonWindowBehaviorArgs.MoveToCurrentDesktop(false);
     summonWindowBehaviorArgs.ToMonitor(Remoting::MonitorBehavior::ToCurrent);
     summonWindowBehaviorArgs.ToggleVisibility(false);
-
+    auto deferral = args.GetDeferral();
     _window->SummonWindow(summonWindowBehaviorArgs);
+    deferral.Complete();
 
-    args.GetDeferral().Complete();
 }
