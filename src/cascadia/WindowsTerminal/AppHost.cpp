@@ -1500,6 +1500,9 @@ void AppHost::_requestUpdateSettings()
 // The TerminalWindow was asked to close with multiple tabs open. Ensure that we are in the foreground
 void AppHost::_OnCloseRequestedWithMultipleTabsOpen(const winrt::TerminalApp::TerminalPage&, const winrt::TerminalApp::CloseRequestedWithMultipleTabsArgs& args)
 {
+
+    Remoting::SummonWindowSelectionArgs selectionArgs;
+    
     Remoting::SummonWindowBehavior summonWindowBehaviorArgs;
     summonWindowBehaviorArgs.DropdownDuration(0);
     summonWindowBehaviorArgs.MoveToCurrentDesktop(false);
@@ -1508,13 +1511,15 @@ void AppHost::_OnCloseRequestedWithMultipleTabsOpen(const winrt::TerminalApp::Te
     
     // We need to wait to signal our event args until the Window has been summoned. So lets grab a deferral here.
     // If we dont wait the Confirmation dialog will dismiss during the movement of the window.
-    auto deferral = args.GetDeferral();
 
     // This code will run after the window has moved to signal our deferral as complete and then clean up the event_token.
-    _WindowMovedToken = _window->WindowMoved([deferral, this]() {
+    /*_WindowMovedToken = _window->WindowMoved([deferral, this]() {
         deferral.Complete();
         _window->WindowMoved(_WindowMovedToken);
-    });
+    });*/
 
-    _window->SummonWindow(summonWindowBehaviorArgs);
+    //_window->SummonWindow(summonWindowBehaviorArgs);
+    selectionArgs.SummonBehavior(summonWindowBehaviorArgs);
+    _windowManager.SummonWindow(selectionArgs);
+    args.GetDeferral().Complete();
 }
