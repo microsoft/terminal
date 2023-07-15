@@ -60,7 +60,7 @@
                           Click="_CopyCommandHandler"
                           Icon="Copy" />
             <AppBarButton x:Name="PasteWithSelectionCommandButton"
-                          x:Uid="PasteWithSelectionCommandButton"
+                          x:Uid="PasteCommandButton"
                           Click="_PasteCommandHandler"
                           Icon="Paste" />
             <mux:CommandBarFlyout.SecondaryCommands>
@@ -69,7 +69,7 @@
                               Click="_SearchCommandHandler"
                               Icon="Find" />
                 <AppBarButton x:Name="SelectCommandWithSelectionButton"
-                              x:Uid="SelectCommandWithSelectionButton"
+                              x:Uid="SelectCommandButton"
                               Click="_SelectCommandHandler">
                     <AppBarButton.Icon>
                         <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
@@ -78,7 +78,7 @@
                     </AppBarButton.Icon>
                 </AppBarButton>
                 <AppBarButton x:Name="SelectOutputWithSelectionButton"
-                              x:Uid="SelectOutputWithSelectionButton"
+                              x:Uid="SelectOutputButton"
                               Click="_SelectOutputHandler"
                               Icon="AlignLeft" />
             </mux:CommandBarFlyout.SecondaryCommands>

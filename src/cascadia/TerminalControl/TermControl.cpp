@@ -3424,6 +3424,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                         this->TransformToVisual(nullptr).TransformPoint(Windows::Foundation::Point(0, 0)) };
 
         const auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin);
+        _lastContextMenuTerminalPosition = args.TerminalPosition();
         _showContextMenuAt(pos);
     }
 
@@ -3434,14 +3435,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         myOption.Placement(Controls::Primitives::FlyoutPlacementMode::TopEdgeAlignedLeft);
         myOption.Position(controlRelativePos.to_winrt_point());
 
+        const auto applicableActions{ _core.GetApplicableMenuActionsAtPosition(_lastContextMenuTerminalPosition) };
+
+        const auto applicabilityToVisibility = [applicableActions](MenuAction a) {
+            return (applicableActions & a) != (MenuAction)0 ? Visibility::Visible : Visibility::Collapsed;
+        };
+
         // The "Select command" and "Select output" buttons should only be
         // visible if shell integration is actually turned on.
-        const auto shouldShowSelectCommand{ _core.ShouldShowSelectCommand() };
-        const auto shouldShowSelectOutput{ _core.ShouldShowSelectOutput() };
-        SelectCommandButton().Visibility(shouldShowSelectCommand ? Visibility::Visible : Visibility::Collapsed);
-        SelectOutputButton().Visibility(shouldShowSelectOutput ? Visibility::Visible : Visibility::Collapsed);
-        SelectCommandWithSelectionButton().Visibility(shouldShowSelectCommand ? Visibility::Visible : Visibility::Collapsed);
-        SelectOutputWithSelectionButton().Visibility(shouldShowSelectOutput ? Visibility::Visible : Visibility::Collapsed);
+        SelectCommandButton().Visibility(applicabilityToVisibility(MenuAction::SelectCommand));
+        SelectCommandWithSelectionButton().Visibility(applicabilityToVisibility(MenuAction::SelectCommand));
+        SelectOutputButton().Visibility(applicabilityToVisibility(MenuAction::SelectOutput));
+        SelectOutputWithSelectionButton().Visibility(applicabilityToVisibility(MenuAction::SelectOutput));
 
         (_core.HasSelection() ? SelectionContextMenu() :
                                 ContextMenu())
@@ -3461,6 +3466,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // * {+1,+1} if there's no selection, to be on the bottom-right corner of
         //   the cursor position
         cursorPos += til::point{ hasSelection ? 0 : 1, 1 };
+        _lastContextMenuTerminalPosition = cursorPos.to_core_point();
         _showContextMenuAt(_toControlOrigin(cursorPos));
     }
 
@@ -3495,7 +3501,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         ContextMenu().Hide();
         SelectionContextMenu().Hide();
-        _core.ContextMenuSelectCommand();
+        _core.ContextMenuSelectCommand(_lastContextMenuTerminalPosition);
     }
 
     void TermControl::_SelectOutputHandler(const IInspectable& /*sender*/,
@@ -3503,6 +3509,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         ContextMenu().Hide();
         SelectionContextMenu().Hide();
-        _core.ContextMenuSelectOutput();
+        _core.ContextMenuSelectOutput(_lastContextMenuTerminalPosition);
     }
 }

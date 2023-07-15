@@ -157,8 +157,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SelectCommand(const bool goUp);
         void SelectOutput(const bool goUp);
 
-        void ContextMenuSelectCommand();
-        void ContextMenuSelectOutput();
+        void ContextMenuSelectCommand(winrt::Microsoft::Terminal::Core::Point viewportRelativeCharacterPosition);
+        void ContextMenuSelectOutput(winrt::Microsoft::Terminal::Core::Point viewportRelativeCharacterPosition);
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -226,10 +226,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalConnection::ITerminalConnection Connection();
         void Connection(const TerminalConnection::ITerminalConnection& connection);
 
-        void AnchorContextMenu(til::point viewportRelativeCharacterPosition);
-
-        bool ShouldShowSelectCommand();
-        bool ShouldShowSelectOutput();
+        MenuAction GetApplicableMenuActionsAtPosition(winrt::Microsoft::Terminal::Core::Point viewportRelativeCharacterPosition);
 
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
