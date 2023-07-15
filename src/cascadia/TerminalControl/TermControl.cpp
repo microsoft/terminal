@@ -907,7 +907,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND) == hr)
             {
                 message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") },
-                                        (_focused ? _core.FocusedAppearance() : _core.UnfocusedAppearance()).PixelShaderPath()) };
+                                                      (_focused ? _core.FocusedAppearance() : _core.UnfocusedAppearance()).PixelShaderPath()) };
             }
             else if (D2DERR_SHADER_COMPILE_FAILED == hr)
             {
@@ -916,7 +916,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             else
             {
                 message = winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"UnexpectedRendererError") },
-                                        hr) };
+                                                      hr) };
             }
 
             auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(message));
