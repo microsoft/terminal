@@ -1496,13 +1496,15 @@ void AppHost::_requestUpdateSettings()
 
 // page -> window -> us
 // The TerminalWindow was asked to close with multiple tabs open. Ensure that we are in the foreground
-void AppHost::_OnCloseRequestedWithMultipleTabsOpen(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_OnCloseRequestedWithMultipleTabsOpen(const winrt::TerminalApp::TerminalPage&, const winrt::TerminalApp::CloseRequestedWithMultipleTabsArgs& args)
 {
-    Remoting::SummonWindowBehavior args;
-    args.DropdownDuration(0);
-    args.MoveToCurrentDesktop(false);
-    args.ToMonitor(Remoting::MonitorBehavior::ToCurrent);
-    args.ToggleVisibility(false);
+    Remoting::SummonWindowBehavior summonWindowBehaviorArgs;
+    summonWindowBehaviorArgs.DropdownDuration(0);
+    summonWindowBehaviorArgs.MoveToCurrentDesktop(false);
+    summonWindowBehaviorArgs.ToMonitor(Remoting::MonitorBehavior::ToCurrent);
+    summonWindowBehaviorArgs.ToggleVisibility(false);
 
-    _window->SummonWindow(args);
+    _window->SummonWindow(summonWindowBehaviorArgs);
+
+    args.GetDeferral().Complete();
 }

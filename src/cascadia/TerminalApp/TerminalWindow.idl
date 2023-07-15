@@ -145,6 +145,6 @@ namespace TerminalApp
 
         void AttachContent(String content, UInt32 tabIndex);
         void SendContentToOther(RequestReceiveContentArgs args);
-        event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequestedWithMultipleTabs;
+        event Windows.Foundation.TypedEventHandler<TerminalPage, CloseRequestedWithMultipleTabsArgs> CloseRequestedWithMultipleTabs;
     }
 }

@@ -162,7 +162,7 @@ namespace winrt::TerminalApp::implementation
         void PropertyChanged(winrt::event_token const& token) { _root->PropertyChanged(token); }
 
         TYPED_EVENT(RequestedThemeChanged, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Settings::Model::Theme);
-        TYPED_EVENT(CloseRequestedWithMultipleTabs, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(CloseRequestedWithMultipleTabs, winrt::TerminalApp::TerminalPage, winrt::TerminalApp::CloseRequestedWithMultipleTabsArgs);
 
     private:
         // If you add controls here, but forget to null them either here or in

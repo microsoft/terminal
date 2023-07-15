@@ -185,8 +185,8 @@ namespace winrt::TerminalApp::implementation
             _root->SetInboundListener(true);
         }
 
-        _root->CloseRequestedWithMultipleTabs([weakThis = get_weak()](auto&& sender, auto&&) {
-            weakThis.get()->_CloseRequestedWithMultipleTabsHandlers(sender, nullptr);
+        _root->CloseRequestedWithMultipleTabs([weakThis = get_weak()](auto&& sender, auto&& args) {
+            weakThis.get()->_CloseRequestedWithMultipleTabsHandlers(sender, args);
         });
         return _root->Initialize(hwnd);
     }

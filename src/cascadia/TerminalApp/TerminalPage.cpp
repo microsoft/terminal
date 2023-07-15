@@ -1918,7 +1918,7 @@ namespace winrt::TerminalApp::implementation
             !_displayingCloseDialog)
         {
             _displayingCloseDialog = true;
-            _CloseRequestedWithMultipleTabsHandlers(*this, nullptr);
+            co_await _ClosingWithMultipleTabsOpen();
             auto warningResult = co_await _ShowCloseWarningDialog();
             _displayingCloseDialog = false;
 
@@ -4899,5 +4899,16 @@ namespace winrt::TerminalApp::implementation
         _MoveContent(std::move(startupActions), windowId, tabIndex, dragPoint);
         // _RemoveTab will make sure to null out the _stashed.draggedTab
         _RemoveTab(*_stashed.draggedTab);
+    }
+
+    winrt::Windows::Foundation::IAsyncOperation<bool> TerminalPage::_ClosingWithMultipleTabsOpen()
+    {
+        auto args = winrt::make_self<CloseRequestedWithMultipleTabsArgs>();
+        bool windowSummoned = false;
+        _CloseRequestedWithMultipleTabsHandlers(*this, *args);
+        co_await args->wait_for_deferrals();
+        windowSummoned = true;
+
+        co_return windowSummoned;
     }
 }

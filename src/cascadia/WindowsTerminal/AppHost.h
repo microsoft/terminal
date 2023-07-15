@@ -157,7 +157,7 @@ private:
     void _startFrameTimer();
     void _stopFrameTimer();
     void _updateFrameColor(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
-    void _OnCloseRequestedWithMultipleTabsOpen(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
+    void _OnCloseRequestedWithMultipleTabsOpen(const winrt::TerminalApp::TerminalPage&, const winrt::TerminalApp::CloseRequestedWithMultipleTabsArgs&);
 
     winrt::event_token _GetWindowLayoutRequestedToken;
     winrt::event_token _frameTimerToken;

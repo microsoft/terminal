@@ -11,6 +11,7 @@
 #include "RenameWindowRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
 #include "RequestReceiveContentArgs.g.h"
+#include "CloseRequestedWithMultipleTabsArgs.g.h"
 #include "Toast.h"
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
@@ -87,6 +88,17 @@ namespace winrt::TerminalApp::implementation
             _SourceWindow{ src },
             _TargetWindow{ tgt },
             _TabIndex{ tabIndex } {};
+    };
+
+    struct CloseRequestedWithMultipleTabsArgs : CloseRequestedWithMultipleTabsArgsT<CloseRequestedWithMultipleTabsArgs>,
+        deferrable_event_args<CloseRequestedWithMultipleTabsArgs>
+                                        
+    {
+        WINRT_PROPERTY(bool, Cancel);
+
+    public:
+        CloseRequestedWithMultipleTabsArgs() :
+            _Cancel(false) {}
     };
 
     struct TerminalPage : TerminalPageT<TerminalPage>
@@ -194,7 +206,7 @@ namespace winrt::TerminalApp::implementation
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, _PropertyChangedHandlers, nullptr);
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, FrameBrush, _PropertyChangedHandlers, nullptr);
-        TYPED_EVENT(CloseRequestedWithMultipleTabs, IInspectable, IInspectable);
+        TYPED_EVENT(CloseRequestedWithMultipleTabs, winrt::TerminalApp::TerminalPage, winrt::TerminalApp::CloseRequestedWithMultipleTabsArgs);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
@@ -531,7 +543,7 @@ namespace winrt::TerminalApp::implementation
         void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
         void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);
         void _PopulateContextMenu(const IInspectable& sender, const bool withSelection);
-
+        winrt::Windows::Foundation::IAsyncOperation<bool> _ClosingWithMultipleTabsOpen();
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);
