@@ -116,6 +116,7 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> _zoomedPane{ nullptr };
 
         Windows::UI::Xaml::Controls::MenuFlyoutItem _closePaneMenuItem;
+        Windows::UI::Xaml::Controls::MenuFlyoutItem _restartConnectionMenuItem;
 
         winrt::hstring _lastIconPath{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
@@ -155,8 +156,6 @@ namespace winrt::TerminalApp::implementation
         bool _inRename{ false };
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _tabRenameBoxLayoutUpdatedRevoker;
 
-        winrt::TerminalApp::ShortcutActionDispatch _dispatch;
-
         void _Setup();
 
         std::optional<Windows::UI::Xaml::DispatcherTimer> _bellIndicatorTimer;
@@ -182,6 +181,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdateProgressState();
 
         void _UpdateConnectionClosedState();
+        void _RestartActivePaneConnection();
 
         void _DuplicateTab();
 

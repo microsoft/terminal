@@ -35,6 +35,7 @@ namespace winrt::TerminalApp::implementation
         _activePane = nullptr;
 
         _closePaneMenuItem.Visibility(WUX::Visibility::Collapsed);
+        _restartConnectionMenuItem.Visibility(WUX::Visibility::Collapsed);
 
         auto firstId = _nextPaneId;
 
@@ -1064,7 +1065,8 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Set an indicator on the tab if any pane is in a closed connection state
+    // - Set an indicator on the tab if any pane is in a closed connection state.
+    // - Show/hide the Restart Connection context menu entry depending on active pane's state.
     // Arguments:
     // - <none>
     // Return Value:
@@ -1081,6 +1083,18 @@ namespace winrt::TerminalApp::implementation
 
             _tabStatus.IsConnectionClosed(isClosed);
         }
+
+        if (_activePane)
+        {
+            const bool isClosed = _activePane->GetConnectionState() >= ConnectionState::Closed;
+            _restartConnectionMenuItem.Visibility(isClosed ? WUX::Visibility::Visible : WUX::Visibility::Collapsed);
+        }
+    }
+
+    void TerminalTab::_RestartActivePaneConnection()
+    {
+        ActionAndArgs restartConnection{ ShortcutAction::RestartConnection, nullptr };
+        _dispatch.DoAction(restartConnection);
     }
 
     // Method Description:
@@ -1461,6 +1475,28 @@ namespace winrt::TerminalApp::implementation
             Automation::AutomationProperties::SetHelpText(findMenuItem, findToolTip);
         }
 
+        Controls::MenuFlyoutItem restartConnectionMenuItem = _restartConnectionMenuItem;
+        {
+            // "Restart Connection"
+            Controls::FontIcon restartConnectionSymbol;
+            restartConnectionSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+            restartConnectionSymbol.Glyph(L"\xE72C");
+
+            restartConnectionMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_RestartActivePaneConnection();
+                }
+            });
+            restartConnectionMenuItem.Text(RS_(L"RestartConnectionText"));
+            restartConnectionMenuItem.Icon(restartConnectionSymbol);
+
+            const auto restartConnectionToolTip = RS_(L"RestartConnectionToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(restartConnectionMenuItem, box_value(restartConnectionToolTip));
+            Automation::AutomationProperties::SetHelpText(restartConnectionMenuItem, restartConnectionToolTip);
+        }
+
         // Build the menu
         Controls::MenuFlyout contextMenuFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
@@ -1471,6 +1507,7 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Items().Append(moveTabToNewWindowMenuItem);
         contextMenuFlyout.Items().Append(exportTabMenuItem);
         contextMenuFlyout.Items().Append(findMenuItem);
+        contextMenuFlyout.Items().Append(restartConnectionMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
 
         // GH#5750 - When the context menu is dismissed with ESC, toss the focus

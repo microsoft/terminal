@@ -843,4 +843,7 @@
   <data name="RestartConnectionText" xml:space="preserve">
     <value>Restart Connection</value>
   </data>
+  <data name="RestartConnectionToolTip" xml:space="preserve">
+    <value>Restart the active pane connection</value>
+  </data>
 </root>
