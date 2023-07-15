@@ -4901,14 +4901,10 @@ namespace winrt::TerminalApp::implementation
         _RemoveTab(*_stashed.draggedTab);
     }
 
-    winrt::Windows::Foundation::IAsyncOperation<bool> TerminalPage::_ClosingWithMultipleTabsOpen()
+    winrt::Windows::Foundation::IAsyncAction TerminalPage::_ClosingWithMultipleTabsOpen()
     {
         auto args = winrt::make_self<CloseRequestedWithMultipleTabsArgs>();
-        bool windowSummoned = false;
         _CloseRequestedWithMultipleTabsHandlers(*this, *args);
-        co_await args->wait_for_deferrals();
-        windowSummoned = true;
-
-        co_return windowSummoned;
+        co_await winrt::when_all(args->wait_for_deferrals());
     }
 }

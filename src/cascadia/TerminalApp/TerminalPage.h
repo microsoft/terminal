@@ -543,7 +543,7 @@ namespace winrt::TerminalApp::implementation
         void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
         void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);
         void _PopulateContextMenu(const IInspectable& sender, const bool withSelection);
-        winrt::Windows::Foundation::IAsyncOperation<bool> _ClosingWithMultipleTabsOpen();
+        winrt::Windows::Foundation::IAsyncAction _ClosingWithMultipleTabsOpen();
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);
