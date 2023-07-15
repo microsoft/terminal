@@ -4901,10 +4901,12 @@ namespace winrt::TerminalApp::implementation
         _RemoveTab(*_stashed.draggedTab);
     }
 
+    // Raises the CloseRequestedWithMultipleTabs event so that we can summon the window to the current monitor.
+    // The event args are deferrable so we can wait for them to signal.
     winrt::Windows::Foundation::IAsyncAction TerminalPage::_ClosingWithMultipleTabsOpen()
     {
         auto args = winrt::make_self<CloseRequestedWithMultipleTabsArgs>();
         _CloseRequestedWithMultipleTabsHandlers(*this, *args);
-        co_await winrt::when_all(args->wait_for_deferrals());
+        co_await args->wait_for_deferrals();
     }
 }

@@ -161,6 +161,7 @@ private:
 
     winrt::event_token _GetWindowLayoutRequestedToken;
     winrt::event_token _frameTimerToken;
+    winrt::event_token _WindowMovedToken;
 
     // Helper struct. By putting these all into one struct, we can revoke them
     // all at once, by assigning _revokers to a fresh Revokers instance. That'll
