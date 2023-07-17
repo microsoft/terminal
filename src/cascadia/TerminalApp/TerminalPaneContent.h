@@ -19,6 +19,8 @@ namespace winrt::TerminalApp::implementation
         void Focus();
         void Close();
 
+        winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const bool asContent) const;
+
         void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                             const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
 

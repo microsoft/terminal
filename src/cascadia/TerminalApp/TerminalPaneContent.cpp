@@ -67,6 +67,59 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    NewTerminalArgs TerminalPaneContent::GetNewTerminalArgs(const bool asContent) const
+    {
+        NewTerminalArgs args{};
+        auto controlSettings = _control.Settings();
+
+        args.Profile(controlSettings.ProfileName());
+        // If we know the user's working directory use it instead of the profile.
+        if (const auto dir = _control.WorkingDirectory(); !dir.empty())
+        {
+            args.StartingDirectory(dir);
+        }
+        else
+        {
+            args.StartingDirectory(controlSettings.StartingDirectory());
+        }
+        args.TabTitle(controlSettings.StartingTitle());
+        args.Commandline(controlSettings.Commandline());
+        args.SuppressApplicationTitle(controlSettings.SuppressApplicationTitle());
+        if (controlSettings.TabColor() || controlSettings.StartingTabColor())
+        {
+            til::color c;
+            // StartingTabColor is prioritized over other colors
+            if (const auto color = controlSettings.StartingTabColor())
+            {
+                c = til::color(color.Value());
+            }
+            else
+            {
+                c = til::color(controlSettings.TabColor().Value());
+            }
+
+            args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>{ static_cast<winrt::Windows::UI::Color>(c) });
+        }
+
+        // TODO:GH#9800 - we used to be able to persist the color scheme that a
+        // TermControl was initialized with, by name. With the change to having the
+        // control own its own copy of its settings, this isn't possible anymore.
+        //
+        // We may be able to get around this by storing the Name in the Core::Scheme
+        // object. That would work for schemes set by the Terminal, but not ones set
+        // by VT, but that seems good enough.
+
+        // Only fill in the ContentId if absolutely needed. If you fill in a number
+        // here (even 0), we'll serialize that number, AND treat that action as an
+        // "attach existing" rather than a "create"
+        if (asContent)
+        {
+            args.ContentId(_control.ContentId());
+        }
+
+        return args;
+    }
+
     // Method Description:
     // - Called when our attached control is closed. Triggers listeners to our close
     //   event, if we're a leaf pane.
