@@ -9,6 +9,8 @@
 #include "textBuffer.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 
+extern "C" int __isa_available;
+
 // The STL is missing a std::iota_n analogue for std::iota, so I made my own.
 template<typename OutIt, typename Diff, typename T>
 constexpr OutIt iota_n(OutIt dest, Diff count, T val)
@@ -82,10 +84,7 @@ ROW::ROW(wchar_t* charsBuffer, uint16_t* charOffsetsBuffer, uint16_t rowWidth, c
     _attr{ rowWidth, fillAttribute },
     _columnCount{ rowWidth }
 {
-    if (_chars.data())
-    {
-        _init();
-    }
+    _init();
 }
 
 void ROW::SetWrapForced(const bool wrap) noexcept
@@ -118,17 +117,25 @@ LineRendition ROW::GetLineRendition() const noexcept
     return _lineRendition;
 }
 
+uint16_t ROW::GetLineWidth() const noexcept
+{
+    const auto scale = _lineRendition != LineRendition::SingleWidth ? 1 : 0;
+    return _columnCount >> scale;
+}
+
 // Routine Description:
 // - Sets all properties of the ROW to default values
 // Arguments:
 // - Attr - The default attribute (color) to fill
 // Return Value:
 // - <none>
-void ROW::Reset(const TextAttribute& attr)
+void ROW::Reset(const TextAttribute& attr) noexcept
 {
     _charsHeap.reset();
     _chars = { _charsBuffer, _columnCount };
-    _attr = { _columnCount, attr };
+    // Constructing and then moving objects into place isn't free.
+    // Modifying the existing object is _much_ faster.
+    *_attr.runs().unsafe_shrink_to_size(1) = til::rle_pair{ attr, _columnCount };
     _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
     _doubleBytePadded = false;
@@ -137,14 +144,132 @@ void ROW::Reset(const TextAttribute& attr)
 
 void ROW::_init() noexcept
 {
-    std::fill_n(_chars.begin(), _columnCount, UNICODE_SPACE);
+#pragma warning(push)
+#pragma warning(disable : 26462) // The value pointed to by '...' is assigned only once, mark it as a pointer to const (con.4).
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
+
+    // Fills _charsBuffer with whitespace and correspondingly _charOffsets
+    // with successive numbers from 0 to _columnCount+1.
+#if defined(TIL_SSE_INTRINSICS)
+    alignas(__m256i) static constexpr uint16_t whitespaceData[]{ 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20 };
+    alignas(__m256i) static constexpr uint16_t offsetsData[]{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+    alignas(__m256i) static constexpr uint16_t increment16Data[]{ 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16 };
+    alignas(__m128i) static constexpr uint16_t increment8Data[]{ 8, 8, 8, 8, 8, 8, 8, 8 };
+
+    // The AVX loop operates on 32 bytes at a minimum. Since _charsBuffer/_charOffsets uses 2 byte large
+    // wchar_t/uint16_t respectively, this translates to 16-element writes, which equals a _columnCount of 15,
+    // because it doesn't include the past-the-end char-offset as described in the _charOffsets member comment.
+    if (__isa_available >= __ISA_AVAILABLE_AVX2 && _columnCount >= 15)
+    {
+        auto chars = _charsBuffer;
+        auto charOffsets = _charOffsets.data();
+
+        // The backing buffer for both chars and charOffsets is guaranteed to be 16-byte aligned,
+        // but AVX operations are 32-byte large. As such, when we write out the last chunk, we
+        // have to align it to the ends of the 2 buffers. This results in a potential overlap of
+        // 16 bytes between the last write in the main loop below and the final write afterwards.
+        //
+        // An example:
+        // If you have a terminal between 16 and 23 columns the buffer has a size of 48 bytes.
+        // The main loop below will iterate once, as it writes out bytes 0-31 and then exits.
+        // The final write afterwards cannot write bytes 32-63 because that would write
+        // out of bounds. Instead it writes bytes 16-47, overwriting 16 overlapping bytes.
+        // This is better than branching and switching to SSE2, because both things are slow.
+        //
+        // Since we want to exit the main loop with at least 1 write left to do as the final write,
+        // we need to subtract 1 alignment from the buffer length (= 16 bytes). Since _columnCount is
+        // in wchar_t's we subtract -8. The same applies to the ~7 here vs ~15. If you squint slightly
+        // you'll see how this is effectively the inverse of what CalculateCharsBufferStride does.
+        const auto tailColumnOffset = gsl::narrow_cast<uint16_t>((_columnCount - 8u) & ~7);
+        const auto charsEndLoop = chars + tailColumnOffset;
+        const auto charOffsetsEndLoop = charOffsets + tailColumnOffset;
+
+        const auto whitespace = _mm256_load_si256(reinterpret_cast<const __m256i*>(&whitespaceData[0]));
+        auto offsetsLoop = _mm256_load_si256(reinterpret_cast<const __m256i*>(&offsetsData[0]));
+        const auto offsets = _mm256_add_epi16(offsetsLoop, _mm256_set1_epi16(tailColumnOffset));
+
+        if (chars < charsEndLoop)
+        {
+            const auto increment = _mm256_load_si256(reinterpret_cast<const __m256i*>(&increment16Data[0]));
+
+            do
+            {
+                _mm256_storeu_si256(reinterpret_cast<__m256i*>(chars), whitespace);
+                _mm256_storeu_si256(reinterpret_cast<__m256i*>(charOffsets), offsetsLoop);
+                offsetsLoop = _mm256_add_epi16(offsetsLoop, increment);
+                chars += 16;
+                charOffsets += 16;
+            } while (chars < charsEndLoop);
+        }
+
+        _mm256_storeu_si256(reinterpret_cast<__m256i*>(charsEndLoop), whitespace);
+        _mm256_storeu_si256(reinterpret_cast<__m256i*>(charOffsetsEndLoop), offsets);
+    }
+    else
+    {
+        auto chars = _charsBuffer;
+        auto charOffsets = _charOffsets.data();
+        const auto charsEnd = chars + _columnCount;
+
+        const auto whitespace = _mm_load_si128(reinterpret_cast<const __m128i*>(&whitespaceData[0]));
+        const auto increment = _mm_load_si128(reinterpret_cast<const __m128i*>(&increment8Data[0]));
+        auto offsets = _mm_load_si128(reinterpret_cast<const __m128i*>(&offsetsData[0]));
+
+        do
+        {
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(chars), whitespace);
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(charOffsets), offsets);
+            offsets = _mm_add_epi16(offsets, increment);
+            chars += 8;
+            charOffsets += 8;
+            // If _columnCount is something like 120, the actual backing buffer for charOffsets is 121 items large.
+            // --> The while loop uses <= to emit at least 1 more write.
+        } while (chars <= charsEnd);
+    }
+#elif defined(TIL_ARM_NEON_INTRINSICS)
+    alignas(uint16x8_t) static constexpr uint16_t offsetsData[]{ 0, 1, 2, 3, 4, 5, 6, 7 };
+
+    auto chars = _charsBuffer;
+    auto charOffsets = _charOffsets.data();
+    const auto charsEnd = chars + _columnCount;
+
+    const auto whitespace = vdupq_n_u16(L' ');
+    const auto increment = vdupq_n_u16(8);
+    auto offsets = vld1q_u16(&offsetsData[0]);
+
+    do
+    {
+        vst1q_u16(chars, whitespace);
+        vst1q_u16(charOffsets, offsets);
+        offsets = vaddq_u16(offsets, increment);
+        chars += 8;
+        charOffsets += 8;
+        // If _columnCount is something like 120, the actual backing buffer for charOffsets is 121 items large.
+        // --> The while loop uses <= to emit at least 1 more write.
+    } while (chars <= charsEnd);
+#else
+#error "Vectorizing this function improves overall performance by up to 40%. Don't remove this warning, just add the vectorized code."
+    std::fill_n(_charsBuffer, _columnCount, UNICODE_SPACE);
     std::iota(_charOffsets.begin(), _charOffsets.end(), uint16_t{ 0 });
+#endif
+
+#pragma warning(push)
 }
 
 void ROW::TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth)
 {
     _attr = attr;
     _attr.resize_trailing_extent(gsl::narrow<uint16_t>(newWidth));
+}
+
+void ROW::CopyFrom(const ROW& source)
+{
+    RowCopyTextFromState state{ .source = source };
+    CopyTextFrom(state);
+    TransferAttributes(source.Attributes(), _columnCount);
+    _lineRendition = source._lineRendition;
+    _wrapForced = source._wrapForced;
 }
 
 // Returns the previous possible cursor position, preceding the given column.
@@ -316,10 +441,9 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const til::CoordType c
     return it;
 }
 
-bool ROW::SetAttrToEnd(const til::CoordType columnBegin, const TextAttribute attr)
+void ROW::SetAttrToEnd(const til::CoordType columnBegin, const TextAttribute attr)
 {
     _attr.replace(_clampedColumnInclusive(columnBegin), _attr.size(), attr);
-    return true;
 }
 
 void ROW::ReplaceAttributes(const til::CoordType beginIndex, const til::CoordType endIndex, const TextAttribute& newAttr)
@@ -420,68 +544,135 @@ catch (...)
 
 [[msvc::forceinline]] void ROW::WriteHelper::ReplaceText() noexcept
 {
+    // This function starts with a fast-pass for ASCII. ASCII is still predominant in technical areas.
+    //
+    // We can infer the "end" from the amount of columns we're given (colLimit - colBeg),
+    // because ASCII is always 1 column wide per character.
+    auto it = chars.begin();
+    const auto end = it + std::min<size_t>(chars.size(), colLimit - colBeg);
     size_t ch = chBeg;
 
-    for (const auto& s : til::utf16_iterator{ chars })
+    while (it != end)
     {
-        const auto wide = til::at(s, 0) < 0x80 ? false : IsGlyphFullWidth(s);
-        const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + 1u + wide);
+        if (*it >= 0x80) [[unlikely]]
+        {
+            _replaceTextUnicode(ch, it);
+            return;
+        }
+
+        til::at(row._charOffsets, colEnd) = gsl::narrow_cast<uint16_t>(ch);
+        ++colEnd;
+        ++ch;
+        ++it;
+    }
+
+    colEndDirty = colEnd;
+    charsConsumed = ch - chBeg;
+}
+
+[[msvc::forceinline]] void ROW::WriteHelper::_replaceTextUnicode(size_t ch, std::wstring_view::const_iterator it) noexcept
+{
+    const auto end = chars.end();
+
+    while (it != end)
+    {
+        unsigned int width = 1;
+        auto ptr = &*it;
+        const auto wch = *ptr;
+        size_t advance = 1;
+
+        ++it;
+
+        // Even in our slow-path we can avoid calling IsGlyphFullWidth if the current character is ASCII.
+        // It also allows us to skip the surrogate pair decoding at the same time.
+        if (wch >= 0x80)
+        {
+            if (til::is_surrogate(wch))
+            {
+                if (it != end && til::is_leading_surrogate(wch) && til::is_trailing_surrogate(*it))
+                {
+                    advance = 2;
+                    ++it;
+                }
+                else
+                {
+                    ptr = &UNICODE_REPLACEMENT;
+                }
+            }
+
+            width = IsGlyphFullWidth({ ptr, advance }) + 1u;
+        }
+
+        const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
         if (colEndNew > colLimit)
         {
             colEndDirty = colLimit;
-            break;
+            charsConsumed = ch - chBeg;
+            return;
         }
 
+        // Fill our char-offset buffer with 1 entry containing the mapping from the
+        // current column (colEnd) to the start of the glyph in the string (ch)...
         til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch);
-        if (wide)
+        // ...followed by 0-N entries containing an indication that the
+        // columns are just a wide-glyph extension of the preceding one.
+        while (colEnd < colEndNew)
         {
             til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch | CharOffsetsTrailer);
         }
 
-        colEndDirty = colEnd;
-        ch += s.size();
+        ch += advance;
     }
 
+    colEndDirty = colEnd;
     charsConsumed = ch - chBeg;
 }
 
-til::CoordType ROW::CopyRangeFrom(til::CoordType columnBegin, til::CoordType columnLimit, const ROW& other, til::CoordType& otherBegin, til::CoordType otherLimit)
+void ROW::CopyTextFrom(RowCopyTextFromState& state)
 try
 {
-    const auto otherColBeg = other._clampedColumnInclusive(otherBegin);
-    const auto otherColLimit = other._clampedColumnInclusive(otherLimit);
-    std::span<uint16_t> charOffsets;
+    auto& source = state.source;
+    const auto sourceColBeg = source._clampedColumnInclusive(state.sourceColumnBegin);
+    const auto sourceColLimit = source._clampedColumnInclusive(state.sourceColumnLimit);
+    std::span<const uint16_t> charOffsets;
     std::wstring_view chars;
 
-    if (otherColBeg < otherColLimit)
+    if (sourceColBeg < sourceColLimit)
     {
-        charOffsets = other._charOffsets.subspan(otherColBeg, static_cast<size_t>(otherColLimit) - otherColBeg + 1);
+        charOffsets = source._charOffsets.subspan(sourceColBeg, static_cast<size_t>(sourceColLimit) - sourceColBeg + 1);
         const auto charsOffset = charOffsets.front() & CharOffsetsMask;
         // We _are_ using span. But C++ decided that string_view and span aren't convertible.
         // _chars is a std::span for performance and because it refers to raw, shared memory.
 #pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
-        chars = { other._chars.data() + charsOffset, other._chars.size() - charsOffset };
+        chars = { source._chars.data() + charsOffset, source._chars.size() - charsOffset };
     }
 
-    WriteHelper h{ *this, columnBegin, columnLimit, chars };
-    if (!h.IsValid())
+    WriteHelper h{ *this, state.columnBegin, state.columnLimit, chars };
+
+    if (!h.IsValid() ||
+        // If we were to copy text from ourselves, we'd overwrite
+        // our _charOffsets and break Finish() which reads from it.
+        this == &state.source ||
+        // Any valid charOffsets array is at least 2 elements long (the 1st element is the start offset and the 2nd
+        // element is the length of the first glyph) and begins/ends with a non-trailer offset. We don't really
+        // need to test for the end offset, since `WriteHelper::WriteWithOffsets` already takes care of that.
+        charOffsets.size() < 2 || WI_IsFlagSet(charOffsets.front(), CharOffsetsTrailer))
     {
-        return h.colBeg;
+        state.columnEnd = h.colBeg;
+        state.columnBeginDirty = h.colBeg;
+        state.columnEndDirty = h.colBeg;
+        state.sourceColumnEnd = source._columnCount;
+        return;
     }
-    // Any valid charOffsets array is at least 2 elements long (the 1st element is the start offset and the 2nd
-    // element is the length of the first glyph) and begins/ends with a non-trailer offset. We don't really
-    // need to test for the end offset, since `WriteHelper::WriteWithOffsets` already takes care of that.
-    if (charOffsets.size() < 2 || WI_IsFlagSet(charOffsets.front(), CharOffsetsTrailer))
-    {
-        assert(false);
-        otherBegin = other.size();
-        return h.colBeg;
-    }
-    h.CopyRangeFrom(charOffsets);
+
+    h.CopyTextFrom(charOffsets);
     h.Finish();
 
-    otherBegin += h.colEnd - h.colBeg;
-    return h.colEndDirty;
+    // state.columnEnd is computed identical to ROW::ReplaceText. Check it out for more information.
+    state.columnEnd = h.charsConsumed == chars.size() ? h.colEnd : h.colLimit;
+    state.columnBeginDirty = h.colBegDirty;
+    state.columnEndDirty = h.colEndDirty;
+    state.sourceColumnEnd = sourceColBeg + h.colEnd - h.colBeg;
 }
 catch (...)
 {
@@ -489,7 +680,7 @@ catch (...)
     throw;
 }
 
-[[msvc::forceinline]] void ROW::WriteHelper::CopyRangeFrom(const std::span<const uint16_t>& charOffsets) noexcept
+[[msvc::forceinline]] void ROW::WriteHelper::CopyTextFrom(const std::span<const uint16_t>& charOffsets) noexcept
 {
     // Since our `charOffsets` input is already in columns (just like the `ROW::_charOffsets`),
     // we can directly look up the end char-offset, but...
@@ -504,25 +695,35 @@ catch (...)
     const auto baseOffset = til::at(charOffsets, 0);
     const auto endOffset = til::at(charOffsets, colEndInput);
     const auto inToOutOffset = gsl::narrow_cast<uint16_t>(chBeg - baseOffset);
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+    const auto dst = row._charOffsets.data() + colEnd;
 
-    // Now with the `colEndInput` figured out, we can easily copy the `charOffsets` into the `_charOffsets`.
-    // It's possible to use SIMD for this loop for extra perf gains. Something like this for SSE2 (~8x faster):
-    //   const auto in = _mm_loadu_si128(...);
-    //   const auto off = _mm_and_epi32(in, _mm_set1_epi16(CharOffsetsMask));
-    //   const auto trailer  = _mm_and_epi32(in, _mm_set1_epi16(CharOffsetsTrailer));
-    //   const auto out = _mm_or_epi32(_mm_add_epi16(off, _mm_set1_epi16(inToOutOffset)), trailer);
-    //   _mm_store_si128(..., out);
-    for (uint16_t i = 0; i < colEndInput; ++i, ++colEnd)
-    {
-        const auto ch = til::at(charOffsets, i);
-        const auto off = ch & CharOffsetsMask;
-        const auto trailer = ch & CharOffsetsTrailer;
-        til::at(row._charOffsets, colEnd) = gsl::narrow_cast<uint16_t>((off + inToOutOffset) | trailer);
-    }
+    _copyOffsets(dst, charOffsets.data(), colEndInput, inToOutOffset);
 
+    colEnd += colEndInput;
     colEndDirty = gsl::narrow_cast<uint16_t>(colBeg + colEndDirtyInput);
     charsConsumed = endOffset - baseOffset;
 }
+
+#pragma warning(push)
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+[[msvc::forceinline]] void ROW::WriteHelper::_copyOffsets(uint16_t* __restrict dst, const uint16_t* __restrict src, uint16_t size, uint16_t offset) noexcept
+{
+    __assume(src != nullptr);
+    __assume(dst != nullptr);
+
+    // All tested compilers (including MSVC) will neatly unroll and vectorize
+    // this loop, which is why it's written in this particular way.
+    for (const auto end = src + size; src != end; ++src, ++dst)
+    {
+        const uint16_t ch = *src;
+        const uint16_t off = ch & CharOffsetsMask;
+        const uint16_t trailer = ch & CharOffsetsTrailer;
+        const uint16_t newOff = off + offset;
+        *dst = newOff | trailer;
+    }
+}
+#pragma warning(pop)
 
 [[msvc::forceinline]] void ROW::WriteHelper::Finish()
 {
@@ -744,6 +945,17 @@ DbcsAttribute ROW::DbcsAttrAt(til::CoordType column) const noexcept
 std::wstring_view ROW::GetText() const noexcept
 {
     return { _chars.data(), _charSize() };
+}
+
+std::wstring_view ROW::GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept
+{
+    const til::CoordType columns = _columnCount;
+    const auto colBeg = std::max(0, std::min(columns, columnBegin));
+    const auto colEnd = std::max(colBeg, std::min(columns, columnEnd));
+    const size_t chBeg = _uncheckedCharOffset(gsl::narrow_cast<size_t>(colBeg));
+    const size_t chEnd = _uncheckedCharOffset(gsl::narrow_cast<size_t>(colEnd));
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+    return { _chars.data() + chBeg, chEnd - chBeg };
 }
 
 DelimiterClass ROW::DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept

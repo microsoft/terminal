@@ -45,7 +45,7 @@ public:
 
     void SetWindowTitle(const std::wstring_view title) override;
 
-    void UseAlternateScreenBuffer() override;
+    void UseAlternateScreenBuffer(const TextAttribute& attrs) override;
 
     void UseMainScreenBuffer() override;
 

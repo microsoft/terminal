@@ -75,6 +75,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
         {
             wil::com_ptr<ID3D11Texture2D> buffer;
             THROW_IF_FAILED(p.swapChain.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(buffer.addressof())));
+            const auto surface = buffer.query<IDXGISurface>();
 
             const D2D1_RENDER_TARGET_PROPERTIES props{
                 .type = D2D1_RENDER_TARGET_TYPE_DEFAULT,
@@ -83,8 +84,8 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
                 .dpiY = static_cast<f32>(p.s->font->dpi),
             };
             // ID2D1RenderTarget and ID2D1DeviceContext are the same and I'm tired of pretending they're not.
-            THROW_IF_FAILED(p.d2dFactory->CreateDxgiSurfaceRenderTarget(buffer.query<IDXGISurface>().get(), &props, reinterpret_cast<ID2D1RenderTarget**>(_renderTarget.addressof())));
-            _renderTarget.query_to(_renderTarget4.addressof());
+            THROW_IF_FAILED(p.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, reinterpret_cast<ID2D1RenderTarget**>(_renderTarget.addressof())));
+            _renderTarget.try_query_to(_renderTarget4.addressof());
 
             _renderTarget->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
             _renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);

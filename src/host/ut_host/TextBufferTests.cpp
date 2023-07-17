@@ -188,7 +188,7 @@ void TextBufferTests::TestWrapFlag()
 {
     auto& textBuffer = GetTbi();
 
-    auto& Row = textBuffer._GetFirstRow();
+    auto& Row = textBuffer.GetRowByOffset(0);
 
     // no wrap by default
     VERIFY_IS_FALSE(Row.WasWrapForced());
@@ -207,7 +207,7 @@ void TextBufferTests::TestWrapThroughWriteLine()
     auto& textBuffer = GetTbi();
 
     auto VerifyWrap = [&](bool expected) {
-        auto& Row = textBuffer._GetFirstRow();
+        auto& Row = textBuffer.GetRowByOffset(0);
 
         if (expected)
         {
@@ -278,7 +278,7 @@ void TextBufferTests::TestDoubleBytePadFlag()
 {
     auto& textBuffer = GetTbi();
 
-    auto& Row = textBuffer._GetFirstRow();
+    auto& Row = textBuffer.GetRowByOffset(0);
 
     // no padding by default
     VERIFY_IS_FALSE(Row.WasDoubleBytePadded());
@@ -300,7 +300,7 @@ void TextBufferTests::DoBoundaryTest(PCWCHAR const pwszInputString,
 {
     auto& textBuffer = GetTbi();
 
-    auto& row = textBuffer._GetFirstRow();
+    auto& row = textBuffer.GetRowByOffset(0);
 
     // copy string into buffer
     for (til::CoordType i = 0; i < cLength; ++i)
@@ -622,7 +622,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
         textBuffer._firstRow = iRowToTestIndex;
 
         // fill first row with some stuff
-        auto& FirstRow = textBuffer._GetFirstRow();
+        auto& FirstRow = textBuffer.GetRowByOffset(0);
         FirstRow.ReplaceCharacters(0, 1, { L"A" });
 
         // ensure it does say that it contains text
@@ -633,7 +633,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
         // validate that first row has moved
         VERIFY_ARE_EQUAL(textBuffer._firstRow, iNextRowIndex); // first row has incremented
-        VERIFY_ARE_NOT_EQUAL(textBuffer._GetFirstRow(), FirstRow); // the old first row is no longer the first
+        VERIFY_ARE_NOT_EQUAL(textBuffer.GetRowByOffset(0), FirstRow); // the old first row is no longer the first
 
         // ensure old first row has been emptied
         VERIFY_IS_FALSE(FirstRow.ContainsText());
@@ -1847,7 +1847,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     // This is the negative squared latin capital letter B emoji: 🅱
     // It's encoded in UTF-16, as needed by the buffer.
     const auto bButton = L"\xD83C\xDD71";
-    _buffer->_storage[pos.y].ReplaceCharacters(pos.x, 2, bButton);
+    _buffer->GetRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, bButton);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
@@ -1888,7 +1888,7 @@ void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
     // This is the fire emoji: 🔥
     // It's encoded in UTF-16, as needed by the buffer.
     const auto fire = L"\xD83D\xDD25";
-    _buffer->_storage[pos.y].ReplaceCharacters(pos.x, 2, fire);
+    _buffer->GetRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, fire);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
@@ -1902,11 +1902,7 @@ void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
     // Scroll the row with our data by delta.
     _buffer->ScrollRows(pos.y, 1, delta);
 
-    // Retrieve the text at the old and new positions.
-    const auto shouldBeEmptyText = *_buffer->GetTextDataAt(pos);
     const auto shouldBeFireText = *_buffer->GetTextDataAt(newPos);
-
-    VERIFY_ARE_EQUAL(String(L" "), String(shouldBeEmptyText.data(), gsl::narrow<int>(shouldBeEmptyText.size())));
     VERIFY_ARE_EQUAL(String(fire), String(shouldBeFireText.data(), gsl::narrow<int>(shouldBeFireText.size())));
 }
 
@@ -1927,7 +1923,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
     // This is the eggplant emoji: 🍆
     // It's encoded in UTF-16, as needed by the buffer.
     const auto emoji = L"\xD83C\xDF46";
-    _buffer->_storage[pos.y].ReplaceCharacters(pos.x, 2, emoji);
+    _buffer->GetRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, emoji);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
@@ -1957,7 +1953,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     // This is the peach emoji: 🍑
     // It's encoded in UTF-16, as needed by the buffer.
     const auto emoji = L"\xD83C\xDF51";
-    _buffer->_storage[pos.y].ReplaceCharacters(pos.x, 2, emoji);
+    _buffer->GetRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, emoji);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
