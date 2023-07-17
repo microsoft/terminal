@@ -216,7 +216,7 @@ public:
     WINRT_CALLBACK(LostFocus, winrt::delegate<std::shared_ptr<Pane>>);
     WINRT_CALLBACK(PaneRaiseBell, winrt::Windows::Foundation::EventHandler<bool>);
     WINRT_CALLBACK(Detached, winrt::delegate<std::shared_ptr<Pane>>);
-    WINRT_CALLBACK(RestartTerminalRequested, winrt::delegate<std::shared_ptr<Pane>>);
+    // WINRT_CALLBACK(RestartTerminalRequested, winrt::delegate<std::shared_ptr<Pane>>);
 
 private:
     struct PanePoint;
@@ -255,10 +255,6 @@ private:
     Borders _borders{ Borders::None };
 
     bool _zoomed{ false };
-
-    // TODO! these were added in main after I started working on this
-    // winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
-    // bool _bellPlayerCreated{ false };
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;

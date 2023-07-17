@@ -1279,7 +1279,14 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto activePane{ activeTab->GetActivePane() })
             {
-                _restartPaneConnection(activePane);
+                activePane;
+                // TODO! If we don't expose the IPaneContent, then there's no
+                // way to get a TerminalPaneContent to pass to
+                // _restartPaneConnection / _duplicateConnectionForRestart. We
+                // probably need to change the signature to accept a
+                // TermControl&Profile
+
+                // _restartPaneConnection(activePane);
             }
         }
         args.Handled(true);

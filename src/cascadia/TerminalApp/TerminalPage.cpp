@@ -1282,15 +1282,20 @@ namespace winrt::TerminalApp::implementation
         return connection;
     }
 
-    TerminalConnection::ITerminalConnection TerminalPage::_duplicateConnectionForRestart(std::shared_ptr<Pane> pane)
+    TerminalConnection::ITerminalConnection TerminalPage::_duplicateConnectionForRestart(const TerminalApp::TerminalPaneContent& paneContent)
     {
-        const auto& control{ pane->GetTerminalControl() };
+        if (paneContent == nullptr)
+        {
+            return nullptr;
+        }
+
+        const auto& control{ paneContent.GetTerminal() };
         if (control == nullptr)
         {
             return nullptr;
         }
         const auto& connection = control.Connection();
-        auto profile{ pane->GetProfile() };
+        auto profile{ paneContent.GetProfile() };
 
         TerminalSettingsCreateResult controlSettings{ nullptr };
 
@@ -2922,10 +2927,9 @@ namespace winrt::TerminalApp::implementation
             // Don't need to worry about duplicating or anything - we'll
             // serialize the actual profile's GUID along with the content guid.
             const auto& profile = _settings.GetProfileForArgs(newTerminalArgs);
-
             const auto control = _AttachControlToContent(newTerminalArgs.ContentId());
-
-            return std::make_shared<Pane>(profile, control);
+            auto terminalPane{ winrt::make<TerminalPaneContent>(profile, control) };
+            return std::make_shared<Pane>(terminalPane);
         }
 
         TerminalSettingsCreateResult controlSettings{ nullptr };
@@ -3003,16 +3007,18 @@ namespace winrt::TerminalApp::implementation
             original->SetActive();
         }
 
-        resultPane->RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
+        terminalPane.RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
 
         return resultPane;
     }
 
-    void TerminalPage::_restartPaneConnection(const std::shared_ptr<Pane>& pane)
+    void TerminalPage::_restartPaneConnection(
+        const TerminalApp::TerminalPaneContent& paneContent,
+        const winrt::Windows::Foundation::IInspectable&)
     {
-        if (const auto& connection{ _duplicateConnectionForRestart(pane) })
+        if (const auto& connection{ _duplicateConnectionForRestart(paneContent) })
         {
-            pane->GetTerminalControl().Connection(connection);
+            paneContent.GetTerminal().Connection(connection);
             connection.Start();
         }
     }

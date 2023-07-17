@@ -12,6 +12,11 @@ namespace TerminalApp
         void UpdateSettings(const Microsoft.Terminal.Settings.Model.TerminalSettingsCreateResult settings,
                             const Microsoft.Terminal.Settings.Model.Profile profile);
 
+        void MarkAsDefterm();
+
         Microsoft.Terminal.Settings.Model.Profile GetProfile();
+
+
+        event Windows.Foundation.TypedEventHandler<TerminalPaneContent, Object> RestartTerminalRequested;
     }
 }

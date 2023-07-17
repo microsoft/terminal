@@ -1251,19 +1251,6 @@ void Pane::Shutdown()
     // modify our tree
     std::unique_lock lock{ _createCloseLock };
 
-    // TODO! This was added in main after I started working on this
-    // // Clear out our media player callbacks, and stop any playing media. This
-    // // will prevent the callback from being triggered after we've closed, and
-    // // also make sure that our sound stops when we're closed.
-    // if (_bellPlayer)
-    // {
-    //     _bellPlayer.Pause();
-    //     _bellPlayer.Source(nullptr);
-    //     _bellPlayer.Close();
-    //     _bellPlayer = nullptr;
-    //     _bellPlayerCreated = false;
-    // }
-
     if (_IsLeaf())
     {
         _content.Close();
@@ -3173,7 +3160,7 @@ void Pane::FinalizeConfigurationGivenDefault()
 {
     if (const auto& terminalPane{ _content.try_as<TerminalPaneContent>() })
     {
-        terminalPane.FinalizeConfigurationGivenDefault();
+        terminalPane.MarkAsDefterm();
     }
     // _isDefTermSession = true;
 }

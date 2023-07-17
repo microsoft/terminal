@@ -4,6 +4,7 @@
 #pragma once
 #include "TerminalPaneContent.g.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
+#include <til/winrt.h>
 
 namespace winrt::TerminalApp::implementation
 {
@@ -21,6 +22,8 @@ namespace winrt::TerminalApp::implementation
         void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                             const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
 
+        void MarkAsDefterm();
+
         winrt::Microsoft::Terminal::Settings::Model::Profile GetProfile() const
         {
             return _profile;
@@ -31,6 +34,8 @@ namespace winrt::TerminalApp::implementation
         uint64_t TaskbarProgress() { return _control.TaskbarProgress(); }
         bool ReadOnly() { return _control.ReadOnly(); }
 
+        til::typed_event<TerminalApp::TerminalPaneContent, winrt::Windows::Foundation::IInspectable> RestartTerminalRequested;
+
     private:
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
         winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
@@ -38,7 +43,7 @@ namespace winrt::TerminalApp::implementation
         bool _isDefTermSession{ false };
 
         winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
-        winrt::Windows::Media::Playback::MediaPlayer::MediaEnded_revoker _mediaEndedRevoker;
+        bool _bellPlayerCreated{ false };
 
         struct ControlEventTokens
         {

@@ -57,14 +57,14 @@ namespace winrt::TerminalApp::implementation
         // Clear out our media player callbacks, and stop any playing media. This
         // will prevent the callback from being triggered after we've closed, and
         // also make sure that our sound stops when we're closed.
-        _mediaEndedRevoker.revoke();
         if (_bellPlayer)
         {
             _bellPlayer.Pause();
             _bellPlayer.Source(nullptr);
             _bellPlayer.Close();
+            _bellPlayer = nullptr;
+            _bellPlayerCreated = false;
         }
-        _bellPlayer = nullptr;
     }
 
     // Method Description:
@@ -168,19 +168,15 @@ namespace winrt::TerminalApp::implementation
         co_await wil::resume_foreground(_control.Dispatcher());
         if (auto pane{ weakThis.get() })
         {
-            // BODGY
-            // GH#12258: We learned that if you leave the MediaPlayer open, and
-            // press the media keys (like play/pause), then the OS will _replay the
-            // bell_. So we have to re-create the MediaPlayer each time we want to
-            // play the bell, to make sure a subsequent play doesn't come through
-            // and reactivate the old one.
-
-            if (!_bellPlayer)
+            if (!_bellPlayerCreated)
             {
                 // The MediaPlayer might not exist on Windows N SKU.
                 try
                 {
+                    _bellPlayerCreated = true;
                     _bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+                    // GH#12258: The media keys (like play/pause) should have no effect on our bell sound.
+                    _bellPlayer.CommandManager().IsEnabled(false);
                 }
                 CATCH_LOG();
             }
@@ -190,27 +186,6 @@ namespace winrt::TerminalApp::implementation
                 const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
                 _bellPlayer.Source(item);
                 _bellPlayer.Play();
-
-                // This lambda will clean up the bell player when we're done with it.
-                auto weakThis2{ get_weak() };
-                _mediaEndedRevoker = _bellPlayer.MediaEnded(winrt::auto_revoke, [weakThis2](auto&&, auto&&) {
-                    if (auto self{ weakThis2.get() })
-                    {
-                        if (self->_bellPlayer)
-                        {
-                            // We need to make sure clear out the current track
-                            // that's being played, again, so that the system can't
-                            // come through and replay it. In testing, we needed to
-                            // do this, closing the MediaPlayer alone wasn't good
-                            // enough.
-                            self->_bellPlayer.Pause();
-                            self->_bellPlayer.Source(nullptr);
-                            self->_bellPlayer.Close();
-                        }
-                        self->_mediaEndedRevoker.revoke();
-                        self->_bellPlayer = nullptr;
-                    }
-                });
             }
         }
     }
@@ -223,7 +198,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::_RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                                const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
-        _RestartTerminalRequestedHandlers(*this, nullptr);
+        RestartTerminalRequested.raise(*this, nullptr);
     }
 
     void TerminalPaneContent::UpdateSettings(const TerminalSettingsCreateResult& settings,
@@ -231,5 +206,14 @@ namespace winrt::TerminalApp::implementation
     {
         _profile = profile;
         _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+    }
+
+    // Method Description:
+    // - Should be called when this pane is created via a default terminal handoff
+    // - Finalizes our configuration given the information that we have been
+    //   created via default handoff
+    void TerminalPaneContent::MarkAsDefterm()
+    {
+        _isDefTermSession = true;
     }
 }
