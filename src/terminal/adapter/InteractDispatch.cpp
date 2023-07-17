@@ -240,7 +240,7 @@ bool InteractDispatch::FocusChanged(const bool focused) const
 
         WI_UpdateFlag(gci.Flags, CONSOLE_HAS_FOCUS, shouldActuallyFocus);
         gci.ProcessHandleList.ModifyConsoleProcessFocus(shouldActuallyFocus);
-        gci.pInputBuffer->Write(std::make_unique<FocusEvent>(focused));
+        gci.pInputBuffer->WriteFocusEvent(focused);
     }
     // Does nothing outside of ConPTY. If there's a real HWND, then the HWND is solely in charge.
 

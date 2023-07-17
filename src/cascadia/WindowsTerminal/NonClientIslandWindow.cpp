@@ -26,7 +26,13 @@ NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme)
 {
 }
 
-NonClientIslandWindow::~NonClientIslandWindow() = default;
+void NonClientIslandWindow::Close()
+{
+    // Avoid further callbacks into XAML/WinUI-land after we've Close()d the DesktopWindowXamlSource
+    // inside `IslandWindow::Close()`. XAML thanks us for doing that by not crashing. Thank you XAML.
+    SetWindowLongPtr(_dragBarWindow.get(), GWLP_USERDATA, 0);
+    IslandWindow::Close();
+}
 
 static constexpr const wchar_t* dragBarClassName{ L"DRAG_BAR_WINDOW_CLASS" };
 

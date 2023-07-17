@@ -58,23 +58,6 @@ namespace winrt::TerminalApp::implementation
         ShellExecute(nullptr, nullptr, currentPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
-    bool AboutDialog::UpdatesAvailable() const
-    {
-        return !_pendingUpdateVersion.empty();
-    }
-
-    winrt::hstring AboutDialog::PendingUpdateVersion() const
-    {
-        return _pendingUpdateVersion;
-    }
-
-    void AboutDialog::_SetPendingUpdateVersion(const winrt::hstring& version)
-    {
-        _pendingUpdateVersion = version;
-        _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"PendingUpdateVersion" });
-        _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"UpdatesAvailable" });
-    }
-
     winrt::fire_and_forget AboutDialog::_queueUpdateCheck()
     {
         auto strongThis = get_strong();
@@ -91,7 +74,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         co_await wil::resume_foreground(strongThis->Dispatcher());
-        _SetPendingUpdateVersion({});
+        UpdatesAvailable(false);
         CheckingForUpdates(true);
 
         try
@@ -101,7 +84,7 @@ namespace winrt::TerminalApp::implementation
             // there is an update available. This lets us test the system.
             co_await winrt::resume_after(std::chrono::seconds{ 3 });
             co_await wil::resume_foreground(strongThis->Dispatcher());
-            _SetPendingUpdateVersion(L"X.Y.Z");
+            UpdatesAvailable(true);
 #else // release build, likely has a store context
             if (auto storeContext{ winrt::Windows::Services::Store::StoreContext::GetDefault() })
             {
@@ -110,10 +93,7 @@ namespace winrt::TerminalApp::implementation
                 const auto numUpdates = updates.Size();
                 if (numUpdates > 0)
                 {
-                    const auto update = updates.GetAt(0);
-                    const auto version = update.Package().Id().Version();
-                    const auto str = fmt::format(FMT_COMPILE(L"{}.{}.{}"), version.Major, version.Minor, version.Build);
-                    _SetPendingUpdateVersion(winrt::hstring{ str });
+                    UpdatesAvailable(true);
                 }
             }
 #endif

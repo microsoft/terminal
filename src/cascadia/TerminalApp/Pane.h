@@ -256,6 +256,10 @@ private:
 
     bool _zoomed{ false };
 
+    // TODO! these were added in main after I started working on this
+    // winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
+    // bool _bellPlayerCreated{ false };
+
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();

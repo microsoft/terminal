@@ -944,12 +944,13 @@ namespace winrt::TerminalApp::implementation
 
     winrt::Windows::UI::Xaml::Media::Brush TerminalWindow::TitlebarBrush()
     {
-        if (_root)
-        {
-            return _root->TitlebarBrush();
-        }
-        return { nullptr };
+        return _root ? _root->TitlebarBrush() : nullptr;
     }
+    winrt::Windows::UI::Xaml::Media::Brush TerminalWindow::FrameBrush()
+    {
+        return _root ? _root->FrameBrush() : nullptr;
+    }
+
     void TerminalWindow::WindowActivated(const bool activated)
     {
         if (_root)
@@ -1019,11 +1020,14 @@ namespace winrt::TerminalApp::implementation
     //   returned.
     // Arguments:
     // - args: an array of strings to process as a commandline. These args can contain spaces
+    // - cwd: The CWD that this window should treat as its own "virtual" CWD
     // Return Value:
     // - the result of the first command who's parsing returned a non-zero code,
     //   or 0. (see TerminalWindow::_ParseArgs)
-    int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args)
+    int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args, winrt::hstring cwd)
     {
+        _WindowProperties->SetInitialCwd(std::move(cwd));
+
         // This is called in AppHost::ctor(), before we've created the window
         // (or called TerminalWindow::Initialize)
         const auto result = _appArgs.ParseArgs(args);
@@ -1345,6 +1349,7 @@ namespace winrt::TerminalApp::implementation
             CATCH_LOG();
         }
     }
+
     uint64_t WindowProperties::WindowId() const noexcept
     {
         return _WindowId;

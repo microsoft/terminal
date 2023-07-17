@@ -28,6 +28,8 @@ using namespace std::chrono_literals;
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
 static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 
+constexpr const auto FrameUpdateInterval = std::chrono::milliseconds(16);
+
 AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
                  winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
                  const Remoting::WindowManager& manager,
@@ -38,6 +40,8 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     _peasant{ peasant },
     _desktopManager{ winrt::try_create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager)) }
 {
+    _started = std::chrono::high_resolution_clock::now();
+
     _HandleCommandlineArgs(args);
 
     _HandleSessionRestore(!args.Content().empty());
@@ -65,20 +69,6 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
                          std::placeholders::_2);
     _window->SetCreateCallback(pfn);
 
-    // Event handlers:
-    // MAKE SURE THEY ARE ALL:
-    // * winrt::auto_revoke
-    // * revoked manually in the dtor before the window is nulled out.
-    //
-    // If you don't, then it's possible for them to get triggered as the app is
-    // tearing down, after we've nulled out the window, during the dtor. That
-    // can cause unexpected AV's everywhere.
-    //
-    // _window callbacks don't need to be treated this way, because:
-    // * IslandWindow isn't a WinRT type (so it doesn't have neat revokers like this)
-    // * This particular bug scenario applies when we've already freed the window.
-    //
-    // (Most of these events are actually set up in AppHost::Initialize)
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->WindowMoved({ this, &AppHost::_WindowMoved });
@@ -89,21 +79,6 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
 
     _window->MakeWindow();
-}
-
-AppHost::~AppHost()
-{
-    // destruction order is important for proper teardown here
-
-    // revoke ALL our event handlers. There's a large class of bugs where we
-    // might get a callback to one of these when we call app.Close() below. Make
-    // sure to revoke these first, so we won't get any more callbacks, then null
-    // out the window, then close the app.
-    _revokers = {};
-
-    _showHideWindowThrottler.reset();
-
-    _window = nullptr;
 }
 
 bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
@@ -177,7 +152,7 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
         }
         else if (args)
         {
-            const auto result = _windowLogic.SetStartupCommandline(args.Commandline());
+            const auto result = _windowLogic.SetStartupCommandline(args.Commandline(), args.CurrentDirectory());
             const auto message = _windowLogic.ParseCommandlineMessage();
             if (!message.empty())
             {
@@ -443,6 +418,25 @@ void AppHost::Initialize()
     _window->OnAppInitialized();
 }
 
+void AppHost::Close()
+{
+    // After calling _window->Close() we should avoid creating more WinUI related actions.
+    // I suspect WinUI wouldn't like that very much. As such unregister all event handlers first.
+    _revokers = {};
+    if (_frameTimer)
+    {
+        _frameTimer.Tick(_frameTimerToken);
+    }
+    _showHideWindowThrottler.reset();
+    _window->Close();
+
+    if (_windowLogic)
+    {
+        _windowLogic.DismissDialog();
+        _windowLogic = nullptr;
+    }
+}
+
 // Method Description:
 // - Called every time when the active tab's title changes. We'll also fire off
 //   a window message so we can update the window's title on the main thread,
@@ -498,7 +492,7 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
     // event handler finishes.
     _windowManager.SignalClose(_peasant);
 
-    _window->Close();
+    PostQuitMessage(0);
 }
 
 LaunchPosition AppHost::_GetWindowLaunchPosition()
@@ -1050,24 +1044,138 @@ static bool _isActuallyDarkTheme(const auto requestedTheme)
     }
 }
 
+// DwmSetWindowAttribute(... DWMWA_BORDER_COLOR.. ) doesn't work on Windows 10,
+// but it _will_ spew to the debug console. This helper just no-ops the call on
+// Windows 10, so that we don't even get that spew
+void _frameColorHelper(const HWND h, const COLORREF color)
+{
+    static const bool isWindows11 = []() {
+        OSVERSIONINFOEXW osver{};
+        osver.dwOSVersionInfoSize = sizeof(osver);
+        osver.dwBuildNumber = 22000;
+
+        DWORDLONG dwlConditionMask = 0;
+        VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+        if (VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE)
+        {
+            return true;
+        }
+        return false;
+    }();
+
+    if (isWindows11)
+    {
+        LOG_IF_FAILED(DwmSetWindowAttribute(h, DWMWA_BORDER_COLOR, &color, sizeof(color)));
+    }
+}
+
 void AppHost::_updateTheme()
 {
     auto theme = _appLogic.Theme();
 
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
+    const auto windowTheme{ theme.Window() };
+
     const auto b = _windowLogic.TitlebarBrush();
     const auto color = ThemeColor::ColorFromBrush(b);
     const auto colorOpacity = b ? color.A / 255.0 : 0.0;
     const auto brushOpacity = _opacityFromBrush(b);
     const auto opacity = std::min(colorOpacity, brushOpacity);
-    _window->UseMica(theme.Window() ? theme.Window().UseMica() : false, opacity);
+    _window->UseMica(windowTheme ? windowTheme.UseMica() : false, opacity);
 
     // This is a hack to make the window borders dark instead of light.
     // It must be done before WM_NCPAINT so that the borders are rendered with
     // the correct theme.
     // For more information, see GH#6620.
-    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window->GetHandle(), _isActuallyDarkTheme(theme.RequestedTheme())));
+    _window->UseDarkTheme(_isActuallyDarkTheme(theme.RequestedTheme()));
+
+    // Update the window frame. If `rainbowFrame:true` is enabled, then that
+    // will be used. Otherwise we'll try to use the `FrameBrush` set in the
+    // terminal window, as that will have the right color for the ThemeColor for
+    // this setting. If that value is null, then revert to the default frame
+    // color.
+    if (windowTheme)
+    {
+        if (windowTheme.RainbowFrame())
+        {
+            _startFrameTimer();
+        }
+        else if (const auto b{ _windowLogic.FrameBrush() })
+        {
+            _stopFrameTimer();
+            const auto color = ThemeColor::ColorFromBrush(b);
+            COLORREF ref{ til::color{ color } };
+            _frameColorHelper(_window->GetHandle(), ref);
+        }
+        else
+        {
+            _stopFrameTimer();
+            // DWMWA_COLOR_DEFAULT is the magic "reset to the default" value
+            _frameColorHelper(_window->GetHandle(), DWMWA_COLOR_DEFAULT);
+        }
+    }
+}
+
+void AppHost::_startFrameTimer()
+{
+    // Instantiate the frame color timer, if we haven't already. We'll only ever
+    // create one instance of this. We'll set up the callback for the timers as
+    // _updateFrameColor, which will actually handle setting the colors. If we
+    // already have a timer, just start that one.
+
+    if (_frameTimer == nullptr)
+    {
+        _frameTimer = winrt::Windows::UI::Xaml::DispatcherTimer();
+        _frameTimer.Interval(FrameUpdateInterval);
+        _frameTimerToken = _frameTimer.Tick({ this, &AppHost::_updateFrameColor });
+    }
+    _frameTimer.Start();
+}
+
+void AppHost::_stopFrameTimer()
+{
+    if (_frameTimer)
+    {
+        _frameTimer.Stop();
+    }
+}
+
+// Method Description:
+// - Updates the color of the window frame to cycle through all the colors. This
+//   is called as the `_frameTimer` Tick callback, roughly 60 times per second.
+void AppHost::_updateFrameColor(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&)
+{
+    // First, a couple helper functions:
+    static const auto saturateAndToColor = [](const float a, const float b, const float c) -> til::color {
+        return til::color{
+            base::saturated_cast<uint8_t>(255.f * std::clamp(a, 0.f, 1.f)),
+            base::saturated_cast<uint8_t>(255.f * std::clamp(b, 0.f, 1.f)),
+            base::saturated_cast<uint8_t>(255.f * std::clamp(c, 0.f, 1.f))
+        };
+    };
+
+    // Helper for converting a hue [0, 1) to an RGB value.
+    // Credit to https://www.chilliant.com/rgb2hsv.html
+    static const auto hueToRGB = [&](const float H) -> til::color {
+        float R = abs(H * 6 - 3) - 1;
+        float G = 2 - abs(H * 6 - 2);
+        float B = 2 - abs(H * 6 - 4);
+        return saturateAndToColor(R, G, B);
+    };
+
+    // Now, the main body of work.
+    // - Convert the time delta between when we were started and now, to a hue. This will cycle us through all the colors.
+    // - Convert that hue to an RGB value.
+    // - Set the frame's color to that RGB color.
+    const auto now = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<float> delta{ now - _started };
+    const auto seconds = delta.count() / 4; // divide by four, to make the effect slower. Otherwise it flashes way to fast.
+    float ignored;
+    const auto color = hueToRGB(modf(seconds, &ignored));
+
+    _frameColorHelper(_window->GetHandle(), color);
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
@@ -1110,10 +1218,7 @@ void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&
     // should prevent scenarios where the Terminal window state and PTY window
     // state get de-sync'd, and cause the window to minimize/restore constantly
     // in a loop.
-    if (_showHideWindowThrottler)
-    {
-        _showHideWindowThrottler->Run(args.ShowOrHide());
-    }
+    _showHideWindowThrottler->Run(args.ShowOrHide());
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
@@ -1219,6 +1324,10 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
             nonClientWindow->SetTitlebarBackground(_windowLogic.TitlebarBrush());
             _updateTheme();
         }
+    }
+    else if (e.PropertyName() == L"FrameBrush")
+    {
+        _updateTheme();
     }
 }
 

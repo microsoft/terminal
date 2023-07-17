@@ -387,8 +387,8 @@ namespace Microsoft::Console::Render::Atlas
         til::generational<FontSettings> font;
         til::generational<CursorSettings> cursor;
         til::generational<MiscellaneousSettings> misc;
-        u16x2 targetSize{};
-        u16x2 cellCount{};
+        u16x2 targetSize{ 1, 1 };
+        u16x2 cellCount{ 1, 1 };
     };
 
     using GenerationalSettings = til::generational<Settings>;
@@ -531,8 +531,12 @@ namespace Microsoft::Console::Render::Atlas
         std::array<til::generation_t, 2> colorBitmapGenerations{ 1, 1 };
         // In columns/rows.
         til::rect cursorRect;
-        // In pixel.
-        til::rect dirtyRectInPx;
+        // The viewport/SwapChain area to be presented. In pixel.
+        // NOTE:
+        //   This cannot use til::rect, because til::rect generally expects positive coordinates only
+        //   (`operator!()` checks for negative values), whereas this one can go out of bounds,
+        //   whenever glyphs go out of bounds. `AtlasEngine::_present()` will clamp it.
+        i32r dirtyRectInPx{};
         // In rows.
         range<u16> invalidatedRows{};
         // In pixel.
@@ -553,5 +557,4 @@ namespace Microsoft::Console::Render::Atlas
         virtual void Render(RenderingPayload& payload) = 0;
         virtual bool RequiresContinuousRedraw() noexcept = 0;
     };
-
 }

@@ -36,10 +36,23 @@ TIL_FAST_MATH_BEGIN
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
 
+// Initializing large arrays can be very costly compared to how cheap some of these functions are.
+#define ALLOW_UNINITIALIZED_BEGIN _Pragma("warning(push)") _Pragma("warning(disable : 26494)")
+#define ALLOW_UNINITIALIZED_END _Pragma("warning(pop)")
+
 using namespace Microsoft::Console::Render::Atlas;
 
 template<>
-struct ::std::hash<BackendD3D::AtlasGlyphEntry>
+struct std::hash<u16>
+{
+    constexpr size_t operator()(u16 key) const noexcept
+    {
+        return til::flat_set_hash_integer(key);
+    }
+};
+
+template<>
+struct std::hash<BackendD3D::AtlasGlyphEntry>
 {
     constexpr size_t operator()(u16 key) const noexcept
     {
@@ -53,7 +66,7 @@ struct ::std::hash<BackendD3D::AtlasGlyphEntry>
 };
 
 template<>
-struct ::std::hash<BackendD3D::AtlasFontFaceEntry>
+struct std::hash<BackendD3D::AtlasFontFaceEntry>
 {
     using T = BackendD3D::AtlasFontFaceEntry;
 
@@ -680,7 +693,6 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
 
     const auto minAreaByFont = cellArea * 95; // Covers all printable ASCII characters
     const auto minAreaByGrowth = static_cast<u32>(_rectPacker.width) * _rectPacker.height * 2;
-    const auto min = std::max(minArea, std::max(minAreaByFont, minAreaByGrowth));
 
     // It's hard to say what the max. size of the cache should be. Optimally I think we should use as much
     // memory as is available, but the rendering code in this project is a big mess and so integrating
@@ -689,7 +701,9 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
     // we're locked into a state, where on every render pass we're starting with a half full atlas, drawing once,
     // filling it with the remaining half and drawing again, requiring two rendering passes on each frame.
     const auto maxAreaByFont = targetArea + targetArea / 4;
-    const auto area = std::min(maxArea, std::min(maxAreaByFont, min));
+
+    auto area = std::min(maxAreaByFont, std::max(minAreaByFont, minAreaByGrowth));
+    area = clamp(area, minArea, maxArea);
 
     // This block of code calculates the size of a power-of-2 texture that has an area larger than the given `area`.
     // For instance, for an area of 985x1946 = 1916810 it would result in a u/v of 2048x1024 (area = 2097152).
@@ -707,9 +721,16 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
 
     stbrp_init_target(&_rectPacker, u, v, _rectPackerData.data(), _rectPackerData.size());
 
+    // This is a little imperfect, because it only releases the memory of the glyph mappings, not the memory held by
+    // any DirectWrite fonts. On the other side, the amount of fonts on a system is always finite, where "finite"
+    // is pretty low, relatively speaking. Additionally this allows us to cache the boxGlyphs map indefinitely.
+    // It's not great, but it's not terrible.
     for (auto& slot : _glyphAtlasMap.container())
     {
-        slot.inner.reset();
+        if (slot.inner)
+        {
+            slot.inner->glyphs.clear();
+        }
     }
 
     _d2dBeginDrawing();
@@ -762,6 +783,7 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
 
     // We have our own glyph cache so Direct2D's cache doesn't help much.
     // This saves us 1MB of RAM, which is not much, but also not nothing.
+    if (_d2dRenderTarget4)
     {
         wil::com_ptr<ID2D1Device> device;
         _d2dRenderTarget4->GetDevice(device.addressof());
@@ -975,7 +997,13 @@ void BackendD3D::_drawText(RenderingPayload& p)
         // We need to goto here, because a retry will cause the atlas texture as well as the
         // _glyphCache hashmap to be cleared, and so we'll have to call insert() again.
         drawGlyphRetry:
-            auto& fontFaceEntry = *_glyphAtlasMap.insert(fontFaceKey).first.inner;
+            const auto [fontFaceEntryOuter, fontFaceInserted] = _glyphAtlasMap.insert(fontFaceKey);
+            auto& fontFaceEntry = *fontFaceEntryOuter.inner;
+
+            if (fontFaceInserted)
+            {
+                _initializeFontFaceEntry(fontFaceEntry);
+            }
 
             while (x < m.glyphsTo)
             {
@@ -1117,7 +1145,35 @@ void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
     }
 }
 
-bool BackendD3D::_drawGlyph(const RenderingPayload& p, const BackendD3D::AtlasFontFaceEntryInner& fontFaceEntry, BackendD3D::AtlasGlyphEntry& glyphEntry)
+void BackendD3D::_initializeFontFaceEntry(AtlasFontFaceEntryInner& fontFaceEntry)
+{
+    if (!fontFaceEntry.fontFace)
+    {
+        return;
+    }
+
+    ALLOW_UNINITIALIZED_BEGIN
+    std::array<u32, 0x100> codepoints;
+    std::array<u16, 0x100> indices;
+    ALLOW_UNINITIALIZED_END
+
+    for (u32 i = 0; i < codepoints.size(); ++i)
+    {
+        codepoints[i] = 0x2500 + i;
+    }
+
+    THROW_IF_FAILED(fontFaceEntry.fontFace->GetGlyphIndicesW(codepoints.data(), codepoints.size(), indices.data()));
+
+    for (u32 i = 0; i < indices.size(); ++i)
+    {
+        if (const auto idx = indices[i])
+        {
+            fontFaceEntry.boxGlyphs.insert(idx);
+        }
+    }
+}
+
+bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry)
 {
     if (!fontFaceEntry.fontFace)
     {
@@ -1200,22 +1256,20 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const BackendD3D::AtlasFo
 #endif
 
     const auto lineRendition = static_cast<LineRendition>(fontFaceEntry.lineRendition);
-    std::optional<D2D1_MATRIX_3X2_F> transform;
+    const auto needsTransform = lineRendition != LineRendition::SingleWidth;
 
-    if (lineRendition != LineRendition::SingleWidth)
+    static constexpr D2D1_MATRIX_3X2_F identityTransform{ .m11 = 1, .m22 = 1 };
+    D2D1_MATRIX_3X2_F transform = identityTransform;
+
+    if (needsTransform)
     {
-        auto& t = transform.emplace();
-        t.m11 = 2.0f;
-        t.m22 = lineRendition >= LineRendition::DoubleHeightTop ? 2.0f : 1.0f;
-        _d2dRenderTarget->SetTransform(&t);
+        transform.m11 = 2.0f;
+        transform.m22 = lineRendition >= LineRendition::DoubleHeightTop ? 2.0f : 1.0f;
+        _d2dRenderTarget->SetTransform(&transform);
     }
 
     const auto restoreTransform = wil::scope_exit([&]() noexcept {
-        if (transform)
-        {
-            static constexpr D2D1_MATRIX_3X2_F identity{ .m11 = 1, .m22 = 1 };
-            _d2dRenderTarget->SetTransform(&identity);
-        }
+        _d2dRenderTarget->SetTransform(&identityTransform);
     });
 
     // This calculates the black box of the glyph, or in other words,
@@ -1239,7 +1293,7 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const BackendD3D::AtlasFo
     bool isColorGlyph = false;
     D2D1_RECT_F bounds = GlyphRunEmptyBounds;
 
-    const auto cleanup = wil::scope_exit([&]() {
+    const auto antialiasingCleanup = wil::scope_exit([&]() {
         if (isColorGlyph)
         {
             _d2dRenderTarget4->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(p.s->font->antialiasingMode));
@@ -1266,7 +1320,23 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const BackendD3D::AtlasFo
         }
     }
 
-    // box may be empty if the glyph is whitespace.
+    // Overhangs for box glyphs can produce unsightly effects, where the antialiased edges of horizontal
+    // and vertical lines overlap between neighboring glyphs and produce "boldened" intersections.
+    // It looks a little something like this:
+    //   ---+---+---
+    // This avoids the issue in most cases by simply clipping the glyph to the size of a single cell.
+    // The downside is that it fails to work well for custom line heights, etc.
+    const auto isBoxGlyph = fontFaceEntry.boxGlyphs.lookup(glyphEntry.glyphIndex) != nullptr;
+    if (isBoxGlyph)
+    {
+        // NOTE: As mentioned above, the "origin" of a glyph's coordinate system is its baseline.
+        bounds.left = std::max(bounds.left, 0.0f);
+        bounds.top = std::max(bounds.top, static_cast<f32>(-p.s->font->baseline) * transform.m22);
+        bounds.right = std::min(bounds.right, static_cast<f32>(p.s->font->cellSize.x) * transform.m11);
+        bounds.bottom = std::min(bounds.bottom, static_cast<f32>(p.s->font->descender) * transform.m22);
+    }
+
+    // The bounds may be empty if the glyph is whitespace.
     if (bounds.left >= bounds.right || bounds.top >= bounds.bottom)
     {
         return true;
@@ -1292,15 +1362,31 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const BackendD3D::AtlasFo
         static_cast<f32>(rect.y - bt),
     };
 
-    if (transform)
-    {
-        auto& t = *transform;
-        t.dx = (1.0f - t.m11) * baselineOrigin.x;
-        t.dy = (1.0f - t.m22) * baselineOrigin.y;
-        _d2dRenderTarget->SetTransform(&t);
-    }
-
     _d2dBeginDrawing();
+
+    if (isBoxGlyph)
+    {
+        const D2D1_RECT_F clipRect{
+            static_cast<f32>(rect.x) / transform.m11,
+            static_cast<f32>(rect.y) / transform.m22,
+            static_cast<f32>(rect.x + rect.w) / transform.m11,
+            static_cast<f32>(rect.y + rect.h) / transform.m22,
+        };
+        _d2dRenderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
+    }
+    const auto boxGlyphCleanup = wil::scope_exit([&]() {
+        if (isBoxGlyph)
+        {
+            _d2dRenderTarget->PopAxisAlignedClip();
+        }
+    });
+
+    if (needsTransform)
+    {
+        transform.dx = (1.0f - transform.m11) * baselineOrigin.x;
+        transform.dy = (1.0f - transform.m22) * baselineOrigin.y;
+        _d2dRenderTarget->SetTransform(&transform);
+    }
 
     if (!isColorGlyph)
     {
@@ -1963,10 +2049,11 @@ void BackendD3D::_debugShowDirty(const RenderingPayload& p)
 
     for (size_t i = 0; i < std::size(_presentRects); ++i)
     {
-        if (const auto& rect = _presentRects[i])
+        const auto& rect = _presentRects[(_presentRectsPos + i) % std::size(_presentRects)];
+        if (rect.non_empty())
         {
             _appendQuad() = {
-                .shadingType = ShadingType::SolidFill,
+                .shadingType = ShadingType::Selection,
                 .position = {
                     static_cast<i16>(rect.left),
                     static_cast<i16>(rect.top),

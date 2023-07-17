@@ -17,7 +17,7 @@ public:
     int RunMessagePump();
     void RundownForExit();
 
-    winrt::Microsoft::Terminal::Remoting::Peasant Peasant();
+    uint64_t PeasantID();
 
     WINRT_CALLBACK(UpdateSettingsRequested, winrt::delegate<void()>);
 

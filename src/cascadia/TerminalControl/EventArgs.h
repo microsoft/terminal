@@ -180,3 +180,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WINRT_PROPERTY(bool, ClearMarkers, false);
     };
 }
+
+namespace winrt::Microsoft::Terminal::Control::factory_implementation
+{
+    BASIC_FACTORY(OpenHyperlinkEventArgs);
+}

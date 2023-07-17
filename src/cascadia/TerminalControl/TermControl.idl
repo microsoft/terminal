@@ -67,7 +67,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> RestartTerminalRequested;
 
-        Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
+        Boolean CopySelectionToClipboard(Boolean dismissSelection, Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
         void SelectAll();
         Boolean ToggleBlockSelection();
@@ -110,6 +110,8 @@ namespace Microsoft.Terminal.Control
         // not overriding or changing _that_ value. Callers that want the
         // opacity set by the settings should call this instead.
         Double BackgroundOpacity { get; };
+
+        Boolean DisplayCursorWhileBlurred;
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
 

@@ -20,7 +20,7 @@ public:
     virtual ~IslandWindow() override;
 
     virtual void MakeWindow() noexcept;
-    void Close();
+    virtual void Close();
     virtual void OnSize(const UINT width, const UINT height);
     HWND GetInteropHandle() const;
 
@@ -65,6 +65,7 @@ public:
     void AddToSystemMenu(const winrt::hstring& itemLabel, winrt::delegate<void()> callback);
     void RemoveFromSystemMenu(const winrt::hstring& itemLabel);
 
+    void UseDarkTheme(const bool v);
     virtual void UseMica(const bool newValue, const double titlebarOpacity);
 
     WINRT_CALLBACK(DragRegionClicked, winrt::delegate<>);

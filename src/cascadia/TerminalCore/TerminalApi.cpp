@@ -61,26 +61,19 @@ void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
     _activeBuffer().SetCurrentAttributes(attrs);
 }
 
-void Terminal::SetAutoWrapMode(const bool /*wrapAtEOL*/) noexcept
+void Terminal::SetSystemMode(const Mode mode, const bool enabled) noexcept
 {
-    // TODO: This will be needed to support DECAWM.
+    _systemMode.set(mode, enabled);
 }
 
-bool Terminal::GetAutoWrapMode() const noexcept
+bool Terminal::GetSystemMode(const Mode mode) const noexcept
 {
-    // TODO: This will be needed to support DECAWM.
-    return true;
+    return _systemMode.test(mode);
 }
 
 void Terminal::WarningBell()
 {
     _pfnWarningBell();
-}
-
-bool Terminal::GetLineFeedMode() const noexcept
-{
-    // TODO: This will be needed to support LNM.
-    return false;
 }
 
 void Terminal::SetWindowTitle(const std::wstring_view title)
@@ -112,16 +105,6 @@ unsigned int Terminal::GetConsoleOutputCP() const noexcept
 {
     // TODO: See SetConsoleOutputCP above.
     return CP_UTF8;
-}
-
-void Terminal::SetBracketedPasteMode(const bool enabled) noexcept
-{
-    _bracketedPasteMode = enabled;
-}
-
-bool Terminal::GetBracketedPasteMode() const noexcept
-{
-    return _bracketedPasteMode;
 }
 
 void Terminal::CopyToClipboard(std::wstring_view content)
@@ -202,7 +185,7 @@ void Terminal::PlayMidiNote(const int noteNumber, const int velocity, const std:
     _pfnPlayMidiNote(noteNumber, velocity, duration);
 }
 
-void Terminal::UseAlternateScreenBuffer()
+void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
 {
     // the new alt buffer is exactly the size of the viewport.
     _altBufferSize = _mutableViewport.Dimensions();
@@ -214,7 +197,7 @@ void Terminal::UseAlternateScreenBuffer()
 
     // Create a new alt buffer
     _altBuffer = std::make_unique<TextBuffer>(_altBufferSize,
-                                              TextAttribute{},
+                                              attrs,
                                               cursorSize,
                                               true,
                                               _mainBuffer->GetRenderer());
@@ -240,7 +223,7 @@ void Terminal::UseAlternateScreenBuffer()
 
     // GH#3321: Make sure we let the TerminalInput know that we switched
     // buffers. This might affect how we interpret certain mouse events.
-    _terminalInput->UseAlternateScreenBuffer();
+    _terminalInput.UseAlternateScreenBuffer();
 
     // Update scrollbars
     _NotifyScrollEvent();
@@ -294,7 +277,7 @@ void Terminal::UseMainScreenBuffer()
 
     // GH#3321: Make sure we let the TerminalInput know that we switched
     // buffers. This might affect how we interpret certain mouse events.
-    _terminalInput->UseMainScreenBuffer();
+    _terminalInput.UseMainScreenBuffer();
 
     // Update scrollbars
     _NotifyScrollEvent();

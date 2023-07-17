@@ -1,4 +1,5 @@
 aabbcc
+aarch
 ABANDONFONT
 abbcc
 ABCDEFGHIJKLMNOPQRSTUVWXY
@@ -104,6 +105,7 @@ bcx
 bcz
 BEFOREPARENT
 beginthread
+benchcat
 bgfx
 bgidx
 Bgk
@@ -157,7 +159,6 @@ capslock
 CARETBLINKINGENABLED
 CARRIAGERETURN
 cascadia
-castsi
 catid
 cazamor
 CBash
@@ -216,11 +217,11 @@ cmder
 CMDEXT
 cmh
 CMOUSEBUTTONS
-cmpeq
 cmt
 cmw
 cmyk
 CNL
+cnn
 cnt
 CNTRL
 Codeflow
@@ -260,7 +261,6 @@ condrv
 conechokey
 conemu
 configurability
-confusables
 conhost
 conime
 conimeinfo
@@ -410,6 +410,7 @@ DECANM
 DECARM
 DECAUPSS
 DECAWM
+DECBI
 DECBKM
 DECCARA
 DECCIR
@@ -418,13 +419,17 @@ DECCKSR
 DECCOLM
 DECCRA
 DECCTR
+DECDC
 DECDHL
 decdld
 DECDMAC
 DECDWL
+DECECM
 DECEKBD
 DECERA
+DECFI
 DECFRA
+DECIC
 DECID
 DECINVM
 DECKPAM
@@ -435,6 +440,7 @@ DECMSR
 DECNKM
 DECNRCM
 DECOM
+decommit
 DECPCTERM
 DECPS
 DECRARA
@@ -571,6 +577,7 @@ EDITTEXT
 EDITUPDATE
 edputil
 Efast
+efghijklmn
 EHsc
 EINS
 EJO
@@ -808,7 +815,6 @@ HIBYTE
 hicon
 HIDEWINDOW
 hinst
-Hirots
 HISTORYBUFS
 HISTORYNODUP
 HISTORYSIZE
@@ -825,6 +831,8 @@ HMK
 hmod
 hmodule
 hmon
+homeglyphs
+homoglyph
 HORZ
 hostable
 hostlib
@@ -971,13 +979,15 @@ KLF
 KLMNO
 KLMNOPQRST
 KLMNOPQRSTQQQQQ
+KLMNOPQRSTUVWXY
+KLMNOPQRSTY
 KOK
 KPRIORITY
 KVM
 langid
 LANGUAGELIST
 lasterror
-lastexitcode
+LASTEXITCODE
 LAYOUTRTL
 lbl
 LBN
@@ -1013,7 +1023,6 @@ lnkd
 lnkfile
 LNM
 LOADONCALL
-loadu
 LOBYTE
 localappdata
 locsrc
@@ -1022,6 +1031,7 @@ LOGFONT
 LOGFONTA
 LOGFONTW
 logissue
+losslessly
 loword
 lparam
 LPCCH
@@ -1134,6 +1144,7 @@ mmsystem
 MNC
 MNOPQ
 MNOPQR
+MNOPQRSTUVWXY
 MODALFRAME
 MODERNCORE
 MONITORINFO
@@ -1143,7 +1154,6 @@ MOUSEACTIVATE
 MOUSEFIRST
 MOUSEHWHEEL
 MOUSEMOVE
-movemask
 MOVESTART
 msb
 msctf
@@ -1279,7 +1289,6 @@ nullability
 nullness
 nullonfailure
 nullopts
-NULs
 numlock
 numpad
 NUMSCROLL
@@ -1768,7 +1777,6 @@ somefile
 SOURCEBRANCH
 sourced
 spammy
-spand
 SRCCODEPAGE
 SRCCOPY
 SRCINVERT
@@ -2044,6 +2052,7 @@ USRDLL
 utr
 UVWX
 UVWXY
+UVWXYZ
 uwa
 uwp
 uxtheme
@@ -2054,6 +2063,7 @@ vcpkg
 vcprintf
 vcxitems
 vec
+vectorize
 vectorized
 VERCTRL
 VERTBAR
@@ -2293,7 +2303,6 @@ xunit
 xutr
 XVIRTUALSCREEN
 XWalk
-xwwyzz
 xxyyzz
 yact
 YCast
@@ -2304,7 +2313,9 @@ YOffset
 YSubstantial
 YVIRTUALSCREEN
 YWalk
+Zab
 zabcd
+Zabcdefghijklmn
 Zabcdefghijklmnopqrstuvwxyz
 ZCmd
 ZCtrl

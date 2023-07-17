@@ -42,7 +42,8 @@ int WindowThread::RunMessagePump()
 
 void WindowThread::RundownForExit()
 {
-    _host = nullptr;
+    _host->Close();
+
     // !! LOAD BEARING !!
     //
     // Make sure to finish pumping all the messages for our thread here. We
@@ -128,7 +129,8 @@ int WindowThread::_messagePump()
     }
     return 0;
 }
-winrt::Microsoft::Terminal::Remoting::Peasant WindowThread::Peasant()
+
+uint64_t WindowThread::PeasantID()
 {
-    return _peasant;
+    return _peasant.GetID();
 }

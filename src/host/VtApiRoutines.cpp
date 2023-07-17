@@ -105,46 +105,16 @@ void VtApiRoutines::_SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) no
     }
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::PeekConsoleInputAImpl(IConsoleInputObject& context,
-                                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                           const size_t eventsToRead,
-                                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
+[[nodiscard]] HRESULT VtApiRoutines::GetConsoleInputImpl(
+    IConsoleInputObject& context,
+    InputEventQueue& outEvents,
+    const size_t eventReadCount,
+    INPUT_READ_HANDLE_DATA& readHandleState,
+    const bool IsUnicode,
+    const bool IsPeek,
+    std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    const auto hr = m_pUsualRoutines->PeekConsoleInputAImpl(context, outEvents, eventsToRead, readHandleState, waiter);
-    _SynchronizeCursor(waiter);
-    return hr;
-}
-
-[[nodiscard]] HRESULT VtApiRoutines::PeekConsoleInputWImpl(IConsoleInputObject& context,
-                                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                           const size_t eventsToRead,
-                                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
-{
-    const auto hr = m_pUsualRoutines->PeekConsoleInputWImpl(context, outEvents, eventsToRead, readHandleState, waiter);
-    _SynchronizeCursor(waiter);
-    return hr;
-}
-
-[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleInputAImpl(IConsoleInputObject& context,
-                                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                           const size_t eventsToRead,
-                                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
-{
-    const auto hr = m_pUsualRoutines->ReadConsoleInputAImpl(context, outEvents, eventsToRead, readHandleState, waiter);
-    _SynchronizeCursor(waiter);
-    return hr;
-}
-
-[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleInputWImpl(IConsoleInputObject& context,
-                                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                           const size_t eventsToRead,
-                                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
-{
-    const auto hr = m_pUsualRoutines->ReadConsoleInputWImpl(context, outEvents, eventsToRead, readHandleState, waiter);
+    const auto hr = m_pUsualRoutines->GetConsoleInputImpl(context, outEvents, eventReadCount, readHandleState, IsUnicode, IsPeek, waiter);
     _SynchronizeCursor(waiter);
     return hr;
 }

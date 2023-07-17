@@ -37,7 +37,66 @@ IslandWindow::IslandWindow() noexcept :
 
 IslandWindow::~IslandWindow()
 {
-    _source.Close();
+    Close();
+}
+
+void IslandWindow::Close()
+{
+    static const bool isWindows11 = []() {
+        OSVERSIONINFOEXW osver{};
+        osver.dwOSVersionInfoSize = sizeof(osver);
+        osver.dwBuildNumber = 22000;
+
+        DWORDLONG dwlConditionMask = 0;
+        VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+        if (VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE)
+        {
+            return true;
+        }
+        return false;
+    }();
+
+    if (!isWindows11)
+    {
+        // BODGY
+        //  ____   ____  _____   _______     __
+        // |  _ \ / __ \|  __ \ / ____\ \   / /
+        // | |_) | |  | | |  | | |  __ \ \_/ /
+        // |  _ <| |  | | |  | | | |_ | \   /
+        // | |_) | |__| | |__| | |__| |  | |
+        // |____/ \____/|_____/ \_____|  |_|
+        //
+        // There's a bug in Windows 10 where closing a DesktopWindowXamlSource
+        // on any thread will free an internal static resource that's used by
+        // XAML for the entire process. This would result in closing window
+        // essentially causing the entire app to crash.
+        //
+        // To avoid this, leak the XAML island. We only need to leak this on
+        // Windows 10, since the bug is fixed in Windows 11.
+        //
+        // See GH #15384, MSFT:32109540
+        auto a{ _source };
+        winrt::detach_abi(_source);
+
+        // </BODGY>
+    }
+
+    // GH#15454: Unset the user data for the window. This will prevent future
+    // callbacks that come onto our window message loop from being sent to the
+    // IslandWindow (or other derived class's) implementation.
+    //
+    // Specifically, this prevents a pending coroutine from being able to call
+    // something like ShowWindow, and have that come back on the IslandWindow
+    // message loop, where it'll end up asking XAML something that XAML is no
+    // longer able to answer.
+    SetWindowLongPtr(_window.get(), GWLP_USERDATA, 0);
+
+    if (_source)
+    {
+        _source.Close();
+        _source = nullptr;
+    }
 }
 
 HWND IslandWindow::GetInteropHandle() const
@@ -87,17 +146,6 @@ void IslandWindow::MakeWindow() noexcept
                                 this));
 
     WINRT_ASSERT(_window);
-}
-
-// Method Description:
-// - Called when no tab is remaining to close the window.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void IslandWindow::Close()
-{
-    PostQuitMessage(0);
 }
 
 // Method Description:
@@ -1825,6 +1873,12 @@ void IslandWindow::RemoveFromSystemMenu(const winrt::hstring& itemLabel)
     _systemMenuItems.erase(it->first);
 }
 
+void IslandWindow::UseDarkTheme(const bool v)
+{
+    const BOOL attribute = v ? TRUE : FALSE;
+    std::ignore = DwmSetWindowAttribute(GetHandle(), DWMWA_USE_IMMERSIVE_DARK_MODE, &attribute, sizeof(attribute));
+}
+
 void IslandWindow::UseMica(const bool newValue, const double /*titlebarOpacity*/)
 {
     // This block of code enables Mica for our window. By all accounts, this
@@ -1859,7 +1913,7 @@ void IslandWindow::UseMica(const bool newValue, const double /*titlebarOpacity*/
     // the darkness of our window. However, we're keeping this call to prevent
     // the window from appearing as a white rectangle for a frame before we load
     // the rest of the settings.
-    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), true));
+    UseDarkTheme(true);
 
     return TRUE;
 }

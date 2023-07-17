@@ -729,7 +729,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
             const auto terminator{ commandLine.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
             const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
             const std::filesystem::path executablePath{ commandLine.substr(start, terminator - start) };
-            const auto executableFilename{ executablePath.filename().wstring() };
+            const auto executableFilename{ executablePath.filename() };
             if (executableFilename == L"wsl" || executableFilename == L"wsl.exe")
             {
                 // We've got a WSL -- let's just make sure it's the right one.
@@ -784,7 +784,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
                 }
 
                 return {
-                    fmt::format(LR"("{}" --cd "{}" {})", executablePath.wstring(), mangledDirectory, arguments),
+                    fmt::format(LR"("{}" --cd "{}" {})", executablePath.native(), mangledDirectory, arguments),
                     std::wstring{}
                 };
             }
@@ -827,4 +827,28 @@ std::wstring_view Utils::TrimPaste(std::wstring_view textView) noexcept
     }
 
     return textView.substr(0, lastNonSpace + 1);
+}
+
+std::wstring Utils::EvaluateStartingDirectory(
+    std::wstring_view currentDirectory,
+    std::wstring_view startingDirectory)
+{
+    std::wstring resultPath{ startingDirectory };
+
+    // We only want to resolve the new WD against the CWD if it doesn't look
+    // like a Linux path (see GH#592)
+
+    // Append only if it DOESN'T look like a linux-y path. A linux-y path starts
+    // with `~` or `/`.
+    const bool looksLikeLinux =
+        resultPath.size() >= 1 &&
+        (til::at(resultPath, 0) == L'~' || til::at(resultPath, 0) == L'/');
+
+    if (!looksLikeLinux)
+    {
+        std::filesystem::path cwd{ currentDirectory };
+        cwd /= startingDirectory;
+        resultPath = cwd.wstring();
+    }
+    return resultPath;
 }

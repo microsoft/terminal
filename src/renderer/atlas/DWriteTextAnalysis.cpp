@@ -9,9 +9,10 @@
 
 using namespace Microsoft::Console::Render::Atlas;
 
-TextAnalysisSource::TextAnalysisSource(const wchar_t* _text, const UINT32 _textLength) noexcept :
-    _text{ _text },
-    _textLength{ _textLength }
+TextAnalysisSource::TextAnalysisSource(const wchar_t* locale, const wchar_t* text, const UINT32 textLength) noexcept :
+    _locale{ locale },
+    _text{ text },
+    _textLength{ textLength }
 {
 }
 
@@ -94,7 +95,7 @@ HRESULT TextAnalysisSource::GetLocaleName(UINT32 textPosition, UINT32* textLengt
     __assume(localeName != nullptr);
 
     *textLength = _textLength - textPosition;
-    *localeName = nullptr;
+    *localeName = _locale;
     return S_OK;
 }
 

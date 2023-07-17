@@ -155,6 +155,7 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass CopyTextArgs : IActionArgs
     {
         CopyTextArgs();
+        Boolean DismissSelection { get; };
         Boolean SingleLine { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Control.CopyFormat> CopyFormatting { get; };
     };
@@ -347,6 +348,11 @@ namespace Microsoft.Terminal.Settings.Model
     {
         RenameWindowArgs(String name);
         String Name { get; };
+    };
+
+    [default_interface] runtimeclass SearchForTextArgs : IActionArgs
+    {
+        String QueryUrl { get; };
     };
 
     [default_interface] runtimeclass GlobalSummonArgs : IActionArgs
