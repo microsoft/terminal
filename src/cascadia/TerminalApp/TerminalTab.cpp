@@ -892,9 +892,9 @@ namespace winrt::TerminalApp::implementation
             control.ReadOnlyChanged(events.readOnlyToken);
             control.FocusFollowMouseRequested(events.focusToken);
 
-            control.KeySent(events.keySentToken);
-            control.CharSent(events.charSentToken);
-            control.StringSent(events.stringSentToken);
+            events.KeySent.revoke();
+            events.CharSent.revoke();
+            events.StringSent.revoke();
 
             _controlEvents.erase(paneId);
         }
@@ -917,7 +917,7 @@ namespace winrt::TerminalApp::implementation
         auto dispatcher = TabViewItem().Dispatcher();
         ControlEventTokens events{};
 
-        events.titleToken = control.TitleChanged([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+        events.titleToken = control.TitleChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
@@ -928,7 +928,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.colorToken = control.TabColorChanged([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+        events.colorToken = control.TabColorChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             if (auto tab{ weakThis.get() })
             {
@@ -939,7 +939,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
@@ -948,7 +948,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.readOnlyToken = control.ReadOnlyChanged([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+        events.readOnlyToken = control.ReadOnlyChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             if (auto tab{ weakThis.get() })
             {
@@ -975,7 +975,7 @@ namespace winrt::TerminalApp::implementation
             _addBroadcastHandlers(control, events);
         }
 
-        _controlEvents[paneId] = events;
+        _controlEvents[paneId] = std::move(events);
     }
 
     // Method Description:
@@ -1802,18 +1802,14 @@ namespace winrt::TerminalApp::implementation
                 {
                     auto& events = it->second;
 
+                    // Always clear out old ones, just in case.
+                    events.KeySent.revoke();
+                    events.CharSent.revoke();
+                    events.StringSent.revoke();
+
                     if (newIsBroadcasting)
                     {
                         _addBroadcastHandlers(control, events);
-                    }
-
-                    else
-                    {
-                        // REVOKE EVENT HANDLERS
-
-                        control.KeySent(events.keySentToken);
-                        control.CharSent(events.charSentToken);
-                        control.StringSent(events.stringSentToken);
                     }
                 }
             }
@@ -1824,7 +1820,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
         // ADD EVENT HANDLERS HERE
-        events.keySentToken = termControl.KeySent([weakThis](auto&& sender, auto&& e) {
+        events.KeySent = termControl.KeySent(winrt::auto_revoke, [weakThis](auto&& sender, auto&& e) {
             if (const auto tab{ weakThis.get() })
             {
                 if (tab->_tabStatus.IsInputBroadcastActive())
@@ -1838,7 +1834,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.charSentToken = termControl.CharSent([weakThis](auto&& sender, auto&& e) {
+        events.CharSent = termControl.CharSent(winrt::auto_revoke, [weakThis](auto&& sender, auto&& e) {
             if (const auto tab{ weakThis.get() })
             {
                 if (tab->_tabStatus.IsInputBroadcastActive())
@@ -1851,7 +1847,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.stringSentToken = termControl.StringSent([weakThis](auto&& sender, auto&& e) {
+        events.StringSent = termControl.StringSent(winrt::auto_revoke, [weakThis](auto&& sender, auto&& e) {
             if (const auto tab{ weakThis.get() })
             {
                 if (tab->_tabStatus.IsInputBroadcastActive())

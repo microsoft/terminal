@@ -135,9 +135,9 @@ namespace winrt::TerminalApp::implementation
             winrt::event_token readOnlyToken;
             winrt::event_token focusToken;
 
-            winrt::event_token keySentToken;
-            winrt::event_token charSentToken;
-            winrt::event_token stringSentToken;
+            winrt::Microsoft::Terminal::Control::TermControl::KeySent_revoker KeySent;
+            winrt::Microsoft::Terminal::Control::TermControl::CharSent_revoker CharSent;
+            winrt::Microsoft::Terminal::Control::TermControl::StringSent_revoker StringSent;
         };
         std::unordered_map<uint32_t, ControlEventTokens> _controlEvents;
 
