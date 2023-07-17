@@ -37,6 +37,7 @@ namespace winrt::TerminalApp::implementation
         bool ReadOnly() { return _control.ReadOnly(); }
 
         til::typed_event<TerminalApp::TerminalPaneContent, winrt::Windows::Foundation::IInspectable> RestartTerminalRequested;
+        til::typed_event<> CloseRequested;
 
     private:
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };

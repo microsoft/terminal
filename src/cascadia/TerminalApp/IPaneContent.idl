@@ -21,5 +21,7 @@ namespace TerminalApp
         void Close();
         // event CloseRequested(...);
 
+        event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
+
     };
 }

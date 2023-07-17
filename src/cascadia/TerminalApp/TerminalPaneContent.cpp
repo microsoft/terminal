@@ -65,6 +65,8 @@ namespace winrt::TerminalApp::implementation
             _bellPlayer = nullptr;
             _bellPlayerCreated = false;
         }
+
+        CloseRequested.raise(*this, nullptr);
     }
 
     NewTerminalArgs TerminalPaneContent::GetNewTerminalArgs(const bool asContent) const
@@ -164,8 +166,7 @@ namespace winrt::TerminalApp::implementation
             if ((mode == CloseOnExitMode::Always) ||
                 ((mode == CloseOnExitMode::Graceful || mode == CloseOnExitMode::Automatic) && newConnectionState == ConnectionState::Closed))
             {
-                // TODO! ask the Pane to close
-                // Close();
+                Close();
             }
         }
     }

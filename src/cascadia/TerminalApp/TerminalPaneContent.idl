@@ -16,7 +16,6 @@ namespace TerminalApp
 
         Microsoft.Terminal.Settings.Model.Profile GetProfile();
 
-
         event Windows.Foundation.TypedEventHandler<TerminalPaneContent, Object> RestartTerminalRequested;
     }
 }

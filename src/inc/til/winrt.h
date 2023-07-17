@@ -70,7 +70,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         winrt::event<ArgsT> _handlers;
     };
 
-    template<typename SenderT, typename ArgsT>
+    template<typename SenderT = winrt::Windows::Foundation::IInspectable, typename ArgsT = winrt::Windows::Foundation::IInspectable>
     struct typed_event
     {
         typed_event<SenderT, ArgsT>() = default;
