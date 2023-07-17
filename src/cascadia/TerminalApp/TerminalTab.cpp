@@ -970,6 +970,11 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        if (_tabStatus.IsInputBroadcastActive())
+        {
+            _addBroadcastHandlers(control, events);
+        }
+
         _controlEvents[paneId] = events;
     }
 
@@ -1774,10 +1779,9 @@ namespace winrt::TerminalApp::implementation
     // - Toggle broadcasting input to all the panes in this tab.
     void TerminalTab::ToggleBroadcastInput()
     {
-        _tabStatus.IsInputBroadcastActive(!_tabStatus.IsInputBroadcastActive());
-
-        const bool isBroadcasting = _tabStatus.IsInputBroadcastActive();
-        _rootPane->EnableBroadcast(isBroadcasting);
+        const bool newIsBroadcasting = !_tabStatus.IsInputBroadcastActive();
+        _tabStatus.IsInputBroadcastActive(newIsBroadcasting);
+        _rootPane->EnableBroadcast(newIsBroadcasting);
 
         auto weakThis{ get_weak() };
 
@@ -1798,47 +1802,9 @@ namespace winrt::TerminalApp::implementation
                 {
                     auto& events = it->second;
 
-                    if (isBroadcasting)
+                    if (newIsBroadcasting)
                     {
-                        // ADD EVENT HANDLERS HERE
-                        events.keySentToken = control.KeySent([weakThis](auto&& sender, auto&& e) {
-                            if (const auto tab{ weakThis.get() })
-                            {
-                                if (tab->_tabStatus.IsInputBroadcastActive())
-                                {
-                                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
-                                    {
-                                        tab->_rootPane->BroadcastKey(termControl, e.VKey(), e.ScanCode(), e.Modifiers(), e.KeyDown());
-                                    }
-                                }
-                            }
-                        });
-
-                        events.charSentToken = control.CharSent([weakThis](auto&& sender, auto&& e) {
-                            if (const auto tab{ weakThis.get() })
-                            {
-                                if (tab->_tabStatus.IsInputBroadcastActive())
-                                {
-                                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
-                                    {
-                                        tab->_rootPane->BroadcastChar(termControl, e.Character(), e.ScanCode(), e.Modifiers());
-                                    }
-                                }
-                            }
-                        });
-
-                        events.stringSentToken = control.StringSent([weakThis](auto&& sender, auto&& e) {
-                            if (const auto tab{ weakThis.get() })
-                            {
-                                if (tab->_tabStatus.IsInputBroadcastActive())
-                                {
-                                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
-                                    {
-                                        tab->_rootPane->BroadcastString(termControl, e.Text());
-                                    }
-                                }
-                            }
-                        });
+                        _addBroadcastHandlers(control, events);
                     }
 
                     else
@@ -1849,6 +1815,49 @@ namespace winrt::TerminalApp::implementation
                         control.CharSent(events.charSentToken);
                         control.StringSent(events.stringSentToken);
                     }
+                }
+            }
+        });
+    }
+
+    void TerminalTab::_addBroadcastHandlers(const TermControl& termControl, ControlEventTokens& events)
+    {
+        auto weakThis{ get_weak() };
+        // ADD EVENT HANDLERS HERE
+        events.keySentToken = termControl.KeySent([weakThis](auto&& sender, auto&& e) {
+            if (const auto tab{ weakThis.get() })
+            {
+                if (tab->_tabStatus.IsInputBroadcastActive())
+                {
+                    tab->_rootPane->BroadcastKey(sender.try_as<TermControl>(),
+                                                 e.VKey(),
+                                                 e.ScanCode(),
+                                                 e.Modifiers(),
+                                                 e.KeyDown());
+                }
+            }
+        });
+
+        events.charSentToken = termControl.CharSent([weakThis](auto&& sender, auto&& e) {
+            if (const auto tab{ weakThis.get() })
+            {
+                if (tab->_tabStatus.IsInputBroadcastActive())
+                {
+                    tab->_rootPane->BroadcastChar(sender.try_as<TermControl>(),
+                                                  e.Character(),
+                                                  e.ScanCode(),
+                                                  e.Modifiers());
+                }
+            }
+        });
+
+        events.stringSentToken = termControl.StringSent([weakThis](auto&& sender, auto&& e) {
+            if (const auto tab{ weakThis.get() })
+            {
+                if (tab->_tabStatus.IsInputBroadcastActive())
+                {
+                    tab->_rootPane->BroadcastString(sender.try_as<TermControl>(),
+                                                    e.Text());
                 }
             }
         });

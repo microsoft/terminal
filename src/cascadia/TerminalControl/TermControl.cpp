@@ -2630,7 +2630,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        // SendInput will take care fo broadcasting for us.
+        // SendInput will take care of broadcasting for us.
         SendInput(text);
     }
 

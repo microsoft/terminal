@@ -184,6 +184,8 @@ namespace winrt::TerminalApp::implementation
 
         virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() override;
 
+        void _addBroadcastHandlers(const winrt::Microsoft::Terminal::Control::TermControl& control, ControlEventTokens& events);
+
         friend class ::TerminalAppLocalTests::TabTests;
     };
 }
