@@ -59,25 +59,6 @@ WindowEmperor::~WindowEmperor()
     _app = nullptr;
 }
 
-static bool IsWindows11()
-{
-    static const bool isWindows11 = []() {
-        OSVERSIONINFOEXW osver{};
-        osver.dwOSVersionInfoSize = sizeof(osver);
-        osver.dwBuildNumber = 22000;
-
-        DWORDLONG dwlConditionMask = 0;
-        VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
-
-        if (VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE)
-        {
-            return true;
-        }
-        return false;
-    }();
-    return isWindows11;
-}
-
 void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
 {
     if (auto commandline{ GetCommandLineW() })
@@ -258,7 +239,7 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
                 // On Windows 11, we DONT want to refrigerate the window. There,
                 // we can just close it like normal. Break out of the loop, so
                 // we don't try to put this window in the fridge.
-                if (IsWindows11())
+                if (Utils::IsWindows11())
                 {
                     decrementWindowCount.reset();
                     break;

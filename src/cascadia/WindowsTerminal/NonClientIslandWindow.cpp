@@ -57,6 +57,12 @@ static constexpr const wchar_t* dragBarClassName{ L"DRAG_BAR_WINDOW_CLASS" };
 
 void NonClientIslandWindow::MakeWindow() noexcept
 {
+    if (_window)
+    {
+        // no-op if we already have a window.
+        return;
+    }
+
     IslandWindow::MakeWindow();
 
     static auto dragBarWindowClass{ []() {
@@ -338,9 +344,9 @@ void NonClientIslandWindow::OnAppInitialized()
 void NonClientIslandWindow::Refrigerate() noexcept
 {
     IslandWindow::Refrigerate();
-    _dragBar.SizeChanged(_callbacks.dragBar_SizeChanged);
-    _rootGrid.SizeChanged(_callbacks.rootGrid_SizeChanged);
-    _titlebar.Loaded(_callbacks.titlebar_Loaded);
+
+    // Revoke all our XAML callbacks.
+    _callbacks = {};
 }
 
 bool NonClientIslandWindow::Initialize()
@@ -365,8 +371,8 @@ bool NonClientIslandWindow::Initialize()
     _titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
     _dragBar = _titlebar.DragBar();
 
-    _callbacks.dragBar_SizeChanged = _dragBar.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
-    _callbacks.rootGrid_SizeChanged = _rootGrid.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
+    _callbacks.dragBarSizeChanged = _dragBar.SizeChanged(winrt::auto_revoke, { this, &NonClientIslandWindow::_OnDragBarSizeChanged });
+    _callbacks.rootGridSizeChanged = _rootGrid.SizeChanged(winrt::auto_revoke, { this, &NonClientIslandWindow::_OnDragBarSizeChanged });
 
     _rootGrid.Children().Append(_titlebar);
 
@@ -375,7 +381,7 @@ bool NonClientIslandWindow::Initialize()
     // GH#3440 - When the titlebar is loaded (officially added to our UI tree),
     // then make sure to update its visual state to reflect if we're in the
     // maximized state on launch.
-    _callbacks.titlebar_Loaded = _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
+    _callbacks.titlebarLoaded = _titlebar.Loaded(winrt::auto_revoke, [this](auto&&, auto&&) { _OnMaximizeChange(); });
 
     // LOAD BEARING: call _ResizeDragBarWindow to update the position of our
     // XAML island to reflect our current bounds. In the case of a "warm init"

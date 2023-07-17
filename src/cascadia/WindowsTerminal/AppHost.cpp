@@ -84,10 +84,7 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     _windowCallbacks.WindowMoved = _window->WindowMoved({ this, &AppHost::_WindowMoved });
     _windowCallbacks.ShouldExitFullscreen = _window->ShouldExitFullscreen({ &_windowLogic, &winrt::TerminalApp::TerminalWindow::RequestExitFullscreen });
 
-    if (!isWarmStart)
-    {
-        _window->MakeWindow();
-    }
+    _window->MakeWindow();
 }
 
 bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
@@ -315,7 +312,7 @@ void AppHost::Initialize()
     // _window callbacks are a little special:
     // * IslandWindow isn't a WinRT type (so it doesn't have neat revokers like
     //   this), so instead they go in their own special helper struct.
-    // * they all need to be manually revoked in .
+    // * they all need to be manually revoked in _revokeWindowCallbacks.
 
     // Register the 'X' button of the window for a warning experience of multiple
     // tabs opened, this is consistent with Alt+F4 closing
@@ -460,6 +457,9 @@ void AppHost::Close()
 
 void AppHost::_revokeWindowCallbacks()
 {
+    // You'll recall, IslandWindow isn't a WinRT type so it can't have auto-revokers.
+    //
+    // Instead, we need to manually remove our callbacks we registered on the window object.
     _window->MouseScrolled(_windowCallbacks.MouseScrolled);
     _window->WindowActivated(_windowCallbacks.WindowActivated);
     _window->WindowMoved(_windowCallbacks.WindowMoved);
@@ -485,10 +485,10 @@ void AppHost::_revokeWindowCallbacks()
     _revokers = {};
     _showHideWindowThrottler.reset();
 
+    _revokeWindowCallbacks();
+
     // DO NOT CLOSE THE WINDOW
     _window->Refrigerate();
-
-    _revokeWindowCallbacks();
 
     if (_windowLogic)
     {
@@ -1111,22 +1111,7 @@ static bool _isActuallyDarkTheme(const auto requestedTheme)
 // Windows 10, so that we don't even get that spew
 void _frameColorHelper(const HWND h, const COLORREF color)
 {
-    static const bool isWindows11 = []() {
-        OSVERSIONINFOEXW osver{};
-        osver.dwOSVersionInfoSize = sizeof(osver);
-        osver.dwBuildNumber = 22000;
-
-        DWORDLONG dwlConditionMask = 0;
-        VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
-
-        if (VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE)
-        {
-            return true;
-        }
-        return false;
-    }();
-
-    if (isWindows11)
+    if (Utils::IsWindows11())
     {
         LOG_IF_FAILED(DwmSetWindowAttribute(h, DWMWA_BORDER_COLOR, &color, sizeof(color)));
     }

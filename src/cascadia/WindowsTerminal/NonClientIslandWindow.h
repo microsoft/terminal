@@ -100,10 +100,8 @@ private:
 
     struct Revokers
     {
-        winrt::event_token dragBar_SizeChanged;
-        winrt::event_token rootGrid_SizeChanged;
-        winrt::event_token titlebar_Loaded;
-        // LOAD BEARING!!
-        //If you add events here, make sure they're revoked in NonClientIslandWindow::Refrigerate
+        winrt::Windows::UI::Xaml::Controls::Border::SizeChanged_revoker dragBarSizeChanged;
+        winrt::Windows::UI::Xaml::Controls::Grid::SizeChanged_revoker rootGridSizeChanged;
+        winrt::TerminalApp::TitlebarControl::Loaded_revoker titlebarLoaded;
     } _callbacks{};
 };

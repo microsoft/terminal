@@ -93,6 +93,12 @@ HWND IslandWindow::GetInteropHandle() const
 // - <none>
 void IslandWindow::MakeWindow() noexcept
 {
+    if (_window)
+    {
+        // no-op if we already have a window.
+        return;
+    }
+
     WNDCLASS wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
@@ -340,8 +346,8 @@ bool IslandWindow::Initialize()
         // to move it to the new correct place, new size, and reset any leftover
         // runtime state.
         _warmInitialize();
+        return false;
     }
-    return false;
 }
 
 // Method Description:
@@ -406,7 +412,7 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
 {
     // NOTE: This _isn't_ called by NonClientIslandWindow::OnSize. The
     // NonClientIslandWindow has very different logic for positioning the
-    // DesktopWindowXamlSource inside it's HWND.
+    // DesktopWindowXamlSource inside its HWND.
 
     // update the interop window size
     SetWindowPos(_interopWindowHandle, nullptr, 0, 0, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
