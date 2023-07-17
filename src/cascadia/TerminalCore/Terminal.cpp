@@ -1358,7 +1358,7 @@ void Terminal::AddMark(const ScrollMark& mark,
     m.start = start;
     m.end = end;
 
-    // If the mark came from the user adding a mark via the UI, don't make it the active prompt mark. 
+    // If the mark came from the user adding a mark via the UI, don't make it the active prompt mark.
     _activeBuffer().AddMark(m, !fromUi);
 
     // Tell the control that the scrollbar has somehow changed. Used as a

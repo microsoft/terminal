@@ -263,12 +263,12 @@ public:
     void CopyPatterns(const TextBuffer& OtherBuffer);
     interval_tree::IntervalTree<til::point, size_t> GetPatterns(const til::CoordType firstRow, const til::CoordType lastRow) const;
 
-    const std::vector<ScrollMark>& GetMarks() const;
+    const std::vector<ScrollMark>& GetMarks() const noexcept;
     void ClearMarksInRange(const til::point start, const til::point end);
     void ClearAllMarks() noexcept;
     void ScrollMarks(const int delta);
-    void AddMark(ScrollMark& m, const bool activeMark);
-    void UpdateCurrentPromptEnd(const til::point pos);
+    void AddMark(const ScrollMark& m, const bool activeMark);
+    void UpdateCurrentPromptEnd(const til::point pos) noexcept;
     void UpdateCurrentCommandEnd(const til::point pos);
     void UpdateCurrentOutputEnd(const til::point pos, ::MarkCategory category);
 

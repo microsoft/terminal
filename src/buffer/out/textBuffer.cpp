@@ -2873,7 +2873,7 @@ PointTree TextBuffer::GetPatterns(const til::CoordType firstRow, const til::Coor
     return result;
 }
 
-const std::vector<ScrollMark>& TextBuffer::GetMarks() const
+const std::vector<ScrollMark>& TextBuffer::GetMarks() const noexcept
 {
     return _marks;
 }
@@ -2920,7 +2920,7 @@ void TextBuffer::ScrollMarks(const int delta)
     _trimMarksOutsideBuffer();
 }
 
-void TextBuffer::AddMark(ScrollMark& m, const bool activeMark)
+void TextBuffer::AddMark(const ScrollMark& m, const bool activeMark)
 {
     if (activeMark)
     {
@@ -2944,7 +2944,7 @@ void TextBuffer::_trimMarksOutsideBuffer()
                  _marks.end());
 }
 
-void TextBuffer::UpdateCurrentPromptEnd(const til::point pos)
+void TextBuffer::UpdateCurrentPromptEnd(const til::point pos) noexcept
 {
     if (_marks.empty())
     {
