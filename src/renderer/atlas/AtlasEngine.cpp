@@ -78,17 +78,17 @@ try
 
     // Clamp invalidation rects into valid value ranges.
     {
-        _api.invalidatedCursorArea.left = std::min(_api.invalidatedCursorArea.left, _p.s->cellCount.x);
-        _api.invalidatedCursorArea.top = std::min(_api.invalidatedCursorArea.top, _p.s->cellCount.y);
-        _api.invalidatedCursorArea.right = clamp(_api.invalidatedCursorArea.right, _api.invalidatedCursorArea.left, _p.s->cellCount.x);
-        _api.invalidatedCursorArea.bottom = clamp(_api.invalidatedCursorArea.bottom, _api.invalidatedCursorArea.top, _p.s->cellCount.y);
+        _api.invalidatedCursorArea.left = std::min(_api.invalidatedCursorArea.left, _p.s->viewportCellCount.x);
+        _api.invalidatedCursorArea.top = std::min(_api.invalidatedCursorArea.top, _p.s->viewportCellCount.y);
+        _api.invalidatedCursorArea.right = clamp(_api.invalidatedCursorArea.right, _api.invalidatedCursorArea.left, _p.s->viewportCellCount.x);
+        _api.invalidatedCursorArea.bottom = clamp(_api.invalidatedCursorArea.bottom, _api.invalidatedCursorArea.top, _p.s->viewportCellCount.y);
     }
     {
-        _api.invalidatedRows.start = std::min(_api.invalidatedRows.start, _p.s->cellCount.y);
-        _api.invalidatedRows.end = clamp(_api.invalidatedRows.end, _api.invalidatedRows.start, _p.s->cellCount.y);
+        _api.invalidatedRows.start = std::min(_api.invalidatedRows.start, _p.s->viewportCellCount.y);
+        _api.invalidatedRows.end = clamp(_api.invalidatedRows.end, _api.invalidatedRows.start, _p.s->viewportCellCount.y);
     }
     {
-        const auto limit = gsl::narrow_cast<i16>(_p.s->cellCount.y & 0x7fff);
+        const auto limit = gsl::narrow_cast<i16>(_p.s->viewportCellCount.y & 0x7fff);
         const auto offset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
         const auto nothingInvalid = _api.invalidatedRows.start == _api.invalidatedRows.end;
 
@@ -97,9 +97,9 @@ try
         // Mark the newly scrolled in rows as invalidated
         if (offset < 0)
         {
-            const u16 begRow = _p.s->cellCount.y + offset;
+            const u16 begRow = _p.s->viewportCellCount.y + offset;
             _api.invalidatedRows.start = nothingInvalid ? begRow : std::min(_api.invalidatedRows.start, begRow);
-            _api.invalidatedRows.end = _p.s->cellCount.y;
+            _api.invalidatedRows.end = _p.s->viewportCellCount.y;
         }
         else
         {
@@ -112,7 +112,7 @@ try
     _api.dirtyRect = {
         0,
         _api.invalidatedRows.start,
-        _p.s->cellCount.x,
+        _p.s->viewportCellCount.x,
         _api.invalidatedRows.end,
     };
 
@@ -134,7 +134,7 @@ try
     //   the contents of the entire swap chain is redundant, but more importantly because the scroll rect
     //   is the subset of the contents that are being scrolled into. If you scroll the entire viewport
     //   then the scroll rect is empty, which Present1() will loudly complain about.
-    if (_p.invalidatedRows == range<u16>{ 0, _p.s->cellCount.y })
+    if (_p.invalidatedRows == range<u16>{ 0, _p.s->viewportCellCount.y })
     {
         _p.MarkAllAsDirty();
     }
@@ -282,7 +282,7 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PrepareLineTransform(const LineRendition lineRendition, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
 {
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(targetRow, 0, _p.s->cellCount.y));
+    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y));
     _p.rows[y]->lineRendition = lineRendition;
     _api.lineRendition = lineRendition;
     return S_OK;
@@ -296,14 +296,15 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
 {
-    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _p.s->cellCount.y));
+    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _p.s->viewportCellCount.y));
 
     if (_api.lastPaintBufferLineCoord.y != y)
     {
         _flushBufferLine();
     }
 
-    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x, 0, _p.s->cellCount.x));
+    const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
+    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x - (_p.s->viewportOffset.x >> shift), 0, _p.s->viewportCellCount.x));
     auto columnEnd = x;
 
     // _api.bufferLineColumn contains 1 more item than _api.bufferLine, as it represents the
@@ -330,7 +331,6 @@ try
     }
 
     {
-        const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
         const auto row = _p.colorBitmap.begin() + _p.colorBitmapRowStride * y;
         auto beg = row + (static_cast<size_t>(x) << shift);
         auto end = row + (static_cast<size_t>(columnEnd) << shift);
@@ -368,9 +368,10 @@ CATCH_RETURN()
 try
 {
     const auto shift = gsl::narrow_cast<u8>(_api.lineRendition != LineRendition::SingleWidth);
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.y, 0, _p.s->cellCount.y));
-    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.x << shift, 0, _p.s->cellCount.x - 1));
-    const auto to = gsl::narrow_cast<u16>(clamp<size_t>((coordTarget.x + cchLine) << shift, from, _p.s->cellCount.x));
+    const auto x = std::max(0, coordTarget.x - (_p.s->viewportOffset.x >> shift));
+    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.y, 0, _p.s->viewportCellCount.y));
+    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(x << shift, 0, _p.s->viewportCellCount.x - 1));
+    const auto to = gsl::narrow_cast<u16>(clamp<size_t>((x + cchLine) << shift, from, _p.s->viewportCellCount.x));
     const auto fg = gsl::narrow_cast<u32>(color) | 0xff000000;
     _p.rows[y]->gridLineRanges.emplace_back(lines, fg, from, to);
     return S_OK;
@@ -385,9 +386,9 @@ try
     // As such we got to call _flushBufferLine() here just to be sure.
     _flushBufferLine();
 
-    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->cellCount.y));
-    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->cellCount.x - 1));
-    const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->cellCount.x));
+    const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
+    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
+    const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
 
     auto& row = *_p.rows[y];
     row.selectionFrom = from;
@@ -433,30 +434,30 @@ try
 
     if (options.isOn)
     {
-        const auto point = options.coordCursor;
-        // TODO: options.coordCursor can contain invalid out of bounds coordinates when
-        // the window is being resized and the cursor is on the last line of the viewport.
-        const auto top = clamp(point.y, 0, _p.s->cellCount.y - 1);
-        const auto bottom = top + 1;
         const auto cursorWidth = 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
+        const auto top = options.coordCursor.y;
+        const auto bottom = top + 1;
+        const auto shift = gsl::narrow_cast<u8>(_p.rows[top]->lineRendition != LineRendition::SingleWidth);
+        auto left = options.coordCursor.x - (_p.s->viewportOffset.x >> shift);
+        auto right = left + cursorWidth;
 
-        auto left = std::max(point.x, 0);
-        auto right = std::max(left + cursorWidth, 0);
+        left <<= shift;
+        right <<= shift;
 
-        if (_p.rows[top]->lineRendition != LineRendition::SingleWidth)
+        _p.cursorRect = {
+            std::max<til::CoordType>(left, 0),
+            std::max<til::CoordType>(top, 0),
+            std::min<til::CoordType>(right, _p.s->viewportCellCount.x),
+            std::min<til::CoordType>(bottom, _p.s->viewportCellCount.y),
+        };
+
+        if (_p.cursorRect)
         {
-            left <<= 1;
-            right <<= 1;
+            _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, left * _p.s->font->cellSize.x);
+            _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, top * _p.s->font->cellSize.y);
+            _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, right * _p.s->font->cellSize.x);
+            _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, bottom * _p.s->font->cellSize.y);
         }
-
-        left = std::min(left, _p.s->cellCount.x - cursorWidth);
-        right = std::min(right, i32{ _p.s->cellCount.x });
-
-        _p.cursorRect = { left, top, right, bottom };
-        _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, left * _p.s->font->cellSize.x);
-        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, top * _p.s->font->cellSize.y);
-        _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, right * _p.s->font->cellSize.x);
-        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, bottom * _p.s->font->cellSize.y);
     }
 
     return S_OK;
@@ -501,7 +502,7 @@ void AtlasEngine::_handleSettingsUpdate()
 {
     const auto targetChanged = _p.s->target != _api.s->target;
     const auto fontChanged = _p.s->font != _api.s->font;
-    const auto cellCountChanged = _p.s->cellCount != _api.s->cellCount;
+    const auto cellCountChanged = _p.s->viewportCellCount != _api.s->viewportCellCount;
 
     _p.s = _api.s;
 
@@ -573,7 +574,7 @@ void AtlasEngine::_recreateFontDependentResources()
 void AtlasEngine::_recreateCellCountDependentResources()
 {
     // Let's guess that every cell consists of a surrogate pair.
-    const auto projectedTextSize = static_cast<size_t>(_p.s->cellCount.x) * 2;
+    const auto projectedTextSize = static_cast<size_t>(_p.s->viewportCellCount.x) * 2;
     // IDWriteTextAnalyzer::GetGlyphs says:
     //   The recommended estimate for the per-glyph output buffers is (3 * textLength / 2 + 16).
     const auto projectedGlyphSize = 3 * projectedTextSize / 2 + 16;
@@ -590,16 +591,16 @@ void AtlasEngine::_recreateCellCountDependentResources()
     _api.glyphAdvances = Buffer<f32>{ projectedGlyphSize };
     _api.glyphOffsets = Buffer<DWRITE_GLYPH_OFFSET>{ projectedGlyphSize };
 
-    _p.unorderedRows = Buffer<ShapedRow>(_p.s->cellCount.y);
-    _p.rowsScratch = Buffer<ShapedRow*>(_p.s->cellCount.y);
-    _p.rows = Buffer<ShapedRow*>(_p.s->cellCount.y);
+    _p.unorderedRows = Buffer<ShapedRow>(_p.s->viewportCellCount.y);
+    _p.rowsScratch = Buffer<ShapedRow*>(_p.s->viewportCellCount.y);
+    _p.rows = Buffer<ShapedRow*>(_p.s->viewportCellCount.y);
 
     // Our render loop heavily relies on memcpy() which is up to between 1.5x (Intel)
     // and 40x (AMD) faster for allocations with an alignment of 32 or greater.
     // backgroundBitmapStride is a "count" of u32 and not in bytes,
     // so we round up to multiple of 8 because 8 * sizeof(u32) == 32.
-    _p.colorBitmapRowStride = (static_cast<size_t>(_p.s->cellCount.x) + 7) & ~7;
-    _p.colorBitmapDepthStride = _p.colorBitmapRowStride * _p.s->cellCount.y;
+    _p.colorBitmapRowStride = (static_cast<size_t>(_p.s->viewportCellCount.x) + 7) & ~7;
+    _p.colorBitmapDepthStride = _p.colorBitmapRowStride * _p.s->viewportCellCount.y;
     _p.colorBitmap = Buffer<u32, 32>(_p.colorBitmapDepthStride * 2);
     _p.backgroundBitmap = { _p.colorBitmap.data(), _p.colorBitmapDepthStride };
     _p.foregroundBitmap = { _p.colorBitmap.data() + _p.colorBitmapDepthStride, _p.colorBitmapDepthStride };
