@@ -347,6 +347,8 @@ not a C# one).
 > WindowsTerminal.exe. For more details on why, see
 > [#926](https://github.com/microsoft/terminal/issues/926),
 > [#4043](https://github.com/microsoft/terminal/issues/4043)
+>
+> current Terminal versions are not available via winget
 
 ### Coding Guidance
 
