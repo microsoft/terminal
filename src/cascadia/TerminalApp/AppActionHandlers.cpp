@@ -5,6 +5,7 @@
 #include "App.h"
 
 #include "TerminalPage.h"
+#include "ScratchpadContent.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
 #include "Utils.h"
@@ -1299,6 +1300,15 @@ namespace winrt::TerminalApp::implementation
         {
             control.ShowContextMenu();
         }
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleOpenScratchpad(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        auto scratchPane{ winrt::make_self<ScratchpadContent>() };
+        auto resultPane = std::make_shared<Pane>(*scratchPane);
+        _SplitPane(SplitDirection::Automatic, 0.5f, resultPane);
         args.Handled(true);
     }
 }

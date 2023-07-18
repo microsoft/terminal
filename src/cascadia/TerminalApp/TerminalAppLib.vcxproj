@@ -164,6 +164,9 @@
     <ClInclude Include="TerminalPaneContent.h">
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ScratchpadContent.h">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Toast.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
@@ -271,6 +274,9 @@
     </ClCompile>
     <ClCompile Include="TerminalPaneContent.cpp">
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ScratchpadContent.cpp">
+      <DependentUpon>ScratchpadContent.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
