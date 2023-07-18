@@ -463,7 +463,10 @@ void AtlasEngine::_present()
             {
                 const auto offsetInPx = _p.scrollOffset * _p.s->font->cellSize.y;
                 const auto width = _p.s->targetSize.x;
-                const auto height = _p.s->cellCount.y * _p.s->font->cellSize.y;
+                // We don't use targetSize.y here, because "height" refers to the bottom coordinate of the last text row
+                // in the buffer. We then add the "offsetInPx" (which is negative when scrolling text upwards) and thus
+                // end up with a "bottom" value that is the bottom of the last row of text that we haven't invalidated.
+                const auto height = _p.s->viewportCellCount.y * _p.s->font->cellSize.y;
                 const auto top = std::max(0, offsetInPx);
                 const auto bottom = height + std::min(0, offsetInPx);
 
