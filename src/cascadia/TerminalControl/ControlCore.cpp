@@ -1772,7 +1772,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _searchState.reset();
     }
 
-    Windows::Foundation::Collections::IVector<int32_t> ControlCore::MatchRows()
+    Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
     {
         auto results = winrt::single_threaded_vector<int32_t>();
         if (_bufferChangedSinceSearch)

@@ -225,7 +225,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     const bool caseSensitive);
         void SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void ExitSearch();
-        Windows::Foundation::Collections::IVector<int32_t> MatchRows();
+        Windows::Foundation::Collections::IVector<int32_t> SearchResultRows();
 
         void LeftClickOnTerminal(const til::point terminalPosition,
                                  const int numberOfClicks,

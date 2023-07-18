@@ -274,29 +274,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return RS_(L"TermControl_NoMatch");
         }
-        std::wstringstream ss;
+
+        std::wstring currentString;
+        std::wstring totalString;
 
         if (currentMatch < 0 || currentMatch > (MaximumTotalResultsToShowInStatus - 1))
         {
-            ss << CurrentIndexTooHighStatus;
+            currentString = CurrentIndexTooHighStatus;
         }
         else
         {
-            ss << currentMatch + 1;
+            currentString = fmt::format(L"{}", currentMatch + 1);
         }
-
-        ss << StatusDelimiter;
 
         if (totalMatches > MaximumTotalResultsToShowInStatus)
         {
-            ss << TotalResultsTooHighStatus;
+            totalString = TotalResultsTooHighStatus;
         }
         else
         {
-            ss << totalMatches;
+            totalString = fmt::format(L"{}", totalMatches);
         }
 
-        return ss.str().data();
+        return winrt::hstring{ fmt::format(RS_(L"TermControl_NumResults").c_str(), currentString, totalString) };
     }
 
     // Method Description:
