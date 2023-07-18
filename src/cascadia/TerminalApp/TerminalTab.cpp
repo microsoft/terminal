@@ -188,6 +188,11 @@ namespace winrt::TerminalApp::implementation
         return nullptr;
     }
 
+    IPaneContent TerminalTab::GetActiveContent() const
+    {
+        return _activePane ? _activePane->GetContent() : nullptr;
+    }
+
     // Method Description:
     // - Called after construction of a Tab object to bind event handlers to its
     //   associated Pane and TermControl objects
@@ -371,8 +376,8 @@ namespace winrt::TerminalApp::implementation
         {
             return RS_(L"MultiplePanes");
         }
-        const auto lastFocusedControl = GetActiveTerminalControl();
-        return lastFocusedControl ? lastFocusedControl.Title() : L"";
+        const auto activeContent = GetActiveContent();
+        return activeContent ? activeContent.Title() : L"";
     }
 
     // Method Description:
@@ -1433,7 +1438,12 @@ namespace winrt::TerminalApp::implementation
                 // GH#10112 - if we're opening the tab renamer, don't
                 // immediately toss focus to the control. We don't want to steal
                 // focus from the tab renamer.
-                if (!tab->_headerControl.InRename() && !tab->GetActiveTerminalControl().SearchBoxEditInFocus())
+                const auto& terminalControl{ tab->GetActiveTerminalControl() }; // maybe null
+                // If we're
+                // * NOT in a rename
+                // * AND (the content isn't a TermControl, OR the term control doesn't have focus in the search box)
+                if (!tab->_headerControl.InRename() &&
+                    (terminalControl == nullptr || !terminalControl.SearchBoxEditInFocus()))
                 {
                     tab->_RequestFocusActiveControlHandlers();
                 }

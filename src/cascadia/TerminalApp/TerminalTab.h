@@ -25,6 +25,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::Control::TermControl GetActiveTerminalControl() const;
         winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile() const noexcept;
+        winrt::TerminalApp::IPaneContent GetActiveContent() const;
 
         void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
 
