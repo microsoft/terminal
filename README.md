@@ -273,8 +273,8 @@ similar open/closed preexisting issues before creating a new issue.**
 If you would like to ask a question that you feel doesn't warrant an issue
 (yet), please reach out to us via Twitter:
 
-* Kayla Cinnamon, Program Manager:
-  [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
+* Christopher Nguyen, Product Manager:
+  [@nguyen_dows](https://twitter.com/nguyen_dows)
 * Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
 * Mike Griese, Senior Developer: [@zadjii@mastodon.social](https://mastodon.social/@zadjii)
 * Carlos Zamora, Developer: [@cazamor_msft](https://twitter.com/cazamor_msft)
