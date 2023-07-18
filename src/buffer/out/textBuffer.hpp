@@ -270,8 +270,8 @@ public:
     void StartPromptMark(const ScrollMark& m);
     void AddMark(const ScrollMark& m);
     void SetCurrentPromptEnd(const til::point pos) noexcept;
-    void SetCurrentCommandEnd(const til::point pos);
-    void SetCurrentOutputEnd(const til::point pos, ::MarkCategory category);
+    void SetCurrentCommandEnd(const til::point pos) noexcept;
+    void SetCurrentOutputEnd(const til::point pos, ::MarkCategory category) noexcept;
 
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);

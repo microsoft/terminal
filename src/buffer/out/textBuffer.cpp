@@ -2950,7 +2950,7 @@ void TextBuffer::SetCurrentPromptEnd(const til::point pos) noexcept
     auto& curr{ _marks.back() };
     curr.end = pos;
 }
-void TextBuffer::SetCurrentCommandEnd(const til::point pos)
+void TextBuffer::SetCurrentCommandEnd(const til::point pos) noexcept
 {
     if (_marks.empty())
     {
@@ -2959,7 +2959,7 @@ void TextBuffer::SetCurrentCommandEnd(const til::point pos)
     auto& curr{ _marks.back() };
     curr.commandEnd = pos;
 }
-void TextBuffer::SetCurrentOutputEnd(const til::point pos, ::MarkCategory category)
+void TextBuffer::SetCurrentOutputEnd(const til::point pos, ::MarkCategory category) noexcept
 {
     if (_marks.empty())
     {
