@@ -93,7 +93,7 @@ static constexpr std::string_view ColorSelectionKey{ "experimental.colorSelectio
 static constexpr std::string_view ShowContextMenuKey{ "showContextMenu" };
 static constexpr std::string_view ExpandSelectionToWordKey{ "expandSelectionToWord" };
 static constexpr std::string_view RestartConnectionKey{ "restartConnection" };
-static constexpr std::string_view OpenScratchpadKey{ "openScratchpad" };
+static constexpr std::string_view OpenScratchpadKey{ "experimental.openScratchpad" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
