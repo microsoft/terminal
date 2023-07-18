@@ -86,12 +86,7 @@ namespace winrt::TerminalApp::implementation
         void _controlReadOnlyChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
         void _controlFocusFollowMouseRequested(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
 
-        // void _ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
-        //                              const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-        // void _ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
-        //                               const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-        void
-        _CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+        void _CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
         void _RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
     };
 }

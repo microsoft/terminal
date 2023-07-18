@@ -217,7 +217,6 @@ public:
     WINRT_CALLBACK(LostFocus, winrt::delegate<std::shared_ptr<Pane>>);
     WINRT_CALLBACK(PaneRaiseBell, winrt::Windows::Foundation::EventHandler<bool>);
     WINRT_CALLBACK(Detached, winrt::delegate<std::shared_ptr<Pane>>);
-    // WINRT_CALLBACK(RestartTerminalRequested, winrt::delegate<std::shared_ptr<Pane>>);
 
 private:
     struct PanePoint;
@@ -294,15 +293,10 @@ private:
 
     void _Focus();
     void _FocusFirstChild();
-    // void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
-    // void _ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& sender,
-    //                                 const winrt::Windows::Foundation::IInspectable& e);
-    void _ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
+    void _ContentGotFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                  const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-    void _ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
+    void _ContentLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                   const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-    // void _CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
-    // void _RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
 
     std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
     SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
@@ -313,8 +307,6 @@ private:
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
     SplitState _convertAutomaticOrDirectionalSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitDirection& splitType) const;
-
-    // winrt::fire_and_forget _playBellSound(winrt::Windows::Foundation::Uri uri);
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split

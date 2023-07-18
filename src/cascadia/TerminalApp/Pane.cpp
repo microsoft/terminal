@@ -42,13 +42,11 @@ Pane::Pane(const IPaneContent& content, const bool lastFocused) :
     const auto& control{ _content.GetRoot() };
     _borderFirst.Child(control);
 
-    // _setupControlEvents();
-
     // Register an event with the control to have it inform us when it gains focus.
     if (control)
     {
-        _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
-        _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
+        _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ContentGotFocusHandler });
+        _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ContentLostFocusHandler });
     }
 
     // When our border is tapped, make sure to transfer focus to our control.
@@ -974,7 +972,7 @@ Pane::PaneNeighborSearch Pane::_FindPaneAndNeighbor(const std::shared_ptr<Pane> 
 // - <unused>
 // Return Value:
 // - <none>
-void Pane::_ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
+void Pane::_ContentGotFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                    const RoutedEventArgs& /* args */)
 {
     auto f = FocusState::Programmatic;
@@ -989,7 +987,7 @@ void Pane::_ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectabl
 // - Called when our control loses focus. We'll use this to trigger our LostFocus
 //   callback. The tab that's hosting us should have registered a callback which
 //   can be used to update its own internal focus state
-void Pane::_ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& /* sender */,
+void Pane::_ContentLostFocusHandler(const winrt::Windows::Foundation::IInspectable& /* sender */,
                                     const RoutedEventArgs& /* args */)
 {
     _LostFocusHandlers(shared_from_this());
@@ -1458,8 +1456,8 @@ void Pane::_CloseChild(const bool closeFirst, const bool /*isDetaching*/)
         // re-attach our handler for the control's GotFocus event.
         if (control)
         {
-            _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
-            _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
+            _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ContentGotFocusHandler });
+            _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ContentLostFocusHandler });
         }
 
         // If we're inheriting the "last active" state from one of our children,
@@ -1589,126 +1587,126 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
 
     if (auto pane{ weakThis.get() })
     {
-        //// This will query if animations are enabled via the "Show animations in
-        //// Windows" setting in the OS
-        //winrt::Windows::UI::ViewManagement::UISettings uiSettings;
-        //const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
-        //const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
+        // This will query if animations are enabled via the "Show animations in
+        // Windows" setting in the OS
+        winrt::Windows::UI::ViewManagement::UISettings uiSettings;
+        const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
+        const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
 
-        //// GH#7252: If either child is zoomed, just skip the animation. It won't work.
-        //const auto eitherChildZoomed = pane->_firstChild->_zoomed || pane->_secondChild->_zoomed;
+        // GH#7252: If either child is zoomed, just skip the animation. It won't work.
+        const auto eitherChildZoomed = pane->_firstChild->_zoomed || pane->_secondChild->_zoomed;
         // If animations are disabled, just skip this and go straight to
         // _CloseChild. Curiously, the pane opening animation doesn't need this,
         // and will skip straight to Completed when animations are disabled, but
         // this one doesn't seem to.
-        // if (!animationsEnabledInOS || !animationsEnabledInApp || eitherChildZoomed)
-        // {
-        pane->_CloseChild(closeFirst, false);
-        co_return;
-        // }
+        if (!animationsEnabledInOS || !animationsEnabledInApp || eitherChildZoomed)
+        {
+            pane->_CloseChild(closeFirst, false);
+            co_return;
+        }
 
-        // // Setup the animation
+        // Setup the animation
 
-        // auto removedChild = closeFirst ? _firstChild : _secondChild;
-        // auto remainingChild = closeFirst ? _secondChild : _firstChild;
-        // const auto splitWidth = _splitState == SplitState::Vertical;
+        auto removedChild = closeFirst ? _firstChild : _secondChild;
+        auto remainingChild = closeFirst ? _secondChild : _firstChild;
+        const auto splitWidth = _splitState == SplitState::Vertical;
 
-        // Size removedOriginalSize{
-        //     ::base::saturated_cast<float>(removedChild->_root.ActualWidth()),
-        //     ::base::saturated_cast<float>(removedChild->_root.ActualHeight())
-        // };
-        // Size remainingOriginalSize{
-        //     ::base::saturated_cast<float>(remainingChild->_root.ActualWidth()),
-        //     ::base::saturated_cast<float>(remainingChild->_root.ActualHeight())
-        // };
+        Size removedOriginalSize{
+            ::base::saturated_cast<float>(removedChild->_root.ActualWidth()),
+            ::base::saturated_cast<float>(removedChild->_root.ActualHeight())
+        };
+        Size remainingOriginalSize{
+            ::base::saturated_cast<float>(remainingChild->_root.ActualWidth()),
+            ::base::saturated_cast<float>(remainingChild->_root.ActualHeight())
+        };
 
-        // // Remove both children from the grid
-        // _borderFirst.Child(nullptr);
-        // _borderSecond.Child(nullptr);
+        // Remove both children from the grid
+        _borderFirst.Child(nullptr);
+        _borderSecond.Child(nullptr);
 
-        // if (_splitState == SplitState::Vertical)
-        // {
-        //     Controls::Grid::SetColumn(_borderFirst, 0);
-        //     Controls::Grid::SetColumn(_borderSecond, 1);
-        // }
-        // else if (_splitState == SplitState::Horizontal)
-        // {
-        //     Controls::Grid::SetRow(_borderFirst, 0);
-        //     Controls::Grid::SetRow(_borderSecond, 1);
-        // }
+        if (_splitState == SplitState::Vertical)
+        {
+            Controls::Grid::SetColumn(_borderFirst, 0);
+            Controls::Grid::SetColumn(_borderSecond, 1);
+        }
+        else if (_splitState == SplitState::Horizontal)
+        {
+            Controls::Grid::SetRow(_borderFirst, 0);
+            Controls::Grid::SetRow(_borderSecond, 1);
+        }
 
-        // // Create the dummy grid. This grid will be the one we actually animate,
-        // // in the place of the closed pane.
-        // Controls::Grid dummyGrid;
-        // // GH#603 - we can safely add a BG here, as the control is gone right
-        // // away, to fill the space as the rest of the pane expands.
-        // dummyGrid.Background(_themeResources.unfocusedBorderBrush);
-        // // It should be the size of the closed pane.
-        // dummyGrid.Width(removedOriginalSize.Width);
-        // dummyGrid.Height(removedOriginalSize.Height);
+        // Create the dummy grid. This grid will be the one we actually animate,
+        // in the place of the closed pane.
+        Controls::Grid dummyGrid;
+        // GH#603 - we can safely add a BG here, as the control is gone right
+        // away, to fill the space as the rest of the pane expands.
+        dummyGrid.Background(_themeResources.unfocusedBorderBrush);
+        // It should be the size of the closed pane.
+        dummyGrid.Width(removedOriginalSize.Width);
+        dummyGrid.Height(removedOriginalSize.Height);
 
-        // _borderFirst.Child(closeFirst ? dummyGrid : remainingChild->GetRootElement());
-        // _borderSecond.Child(closeFirst ? remainingChild->GetRootElement() : dummyGrid);
+        _borderFirst.Child(closeFirst ? dummyGrid : remainingChild->GetRootElement());
+        _borderSecond.Child(closeFirst ? remainingChild->GetRootElement() : dummyGrid);
 
-        // // Set up the rows/cols as auto/auto, so they'll only use the size of
-        // // the elements in the grid.
-        // //
-        // // * For the closed pane, we want to make that row/col "auto" sized, so
-        // //   it takes up as much space as is available.
-        // // * For the remaining pane, we'll make that row/col "*" sized, so it
-        // //   takes all the remaining space. As the dummy grid is resized down,
-        // //   the remaining pane will expand to take the rest of the space.
-        // _root.ColumnDefinitions().Clear();
-        // _root.RowDefinitions().Clear();
-        // if (_splitState == SplitState::Vertical)
-        // {
-        //     auto firstColDef = Controls::ColumnDefinition();
-        //     auto secondColDef = Controls::ColumnDefinition();
-        //     firstColDef.Width(!closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
-        //     secondColDef.Width(closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
-        //     _root.ColumnDefinitions().Append(firstColDef);
-        //     _root.ColumnDefinitions().Append(secondColDef);
-        // }
-        // else if (_splitState == SplitState::Horizontal)
-        // {
-        //     auto firstRowDef = Controls::RowDefinition();
-        //     auto secondRowDef = Controls::RowDefinition();
-        //     firstRowDef.Height(!closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
-        //     secondRowDef.Height(closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
-        //     _root.RowDefinitions().Append(firstRowDef);
-        //     _root.RowDefinitions().Append(secondRowDef);
-        // }
+        // Set up the rows/cols as auto/auto, so they'll only use the size of
+        // the elements in the grid.
+        //
+        // * For the closed pane, we want to make that row/col "auto" sized, so
+        //   it takes up as much space as is available.
+        // * For the remaining pane, we'll make that row/col "*" sized, so it
+        //   takes all the remaining space. As the dummy grid is resized down,
+        //   the remaining pane will expand to take the rest of the space.
+        _root.ColumnDefinitions().Clear();
+        _root.RowDefinitions().Clear();
+        if (_splitState == SplitState::Vertical)
+        {
+            auto firstColDef = Controls::ColumnDefinition();
+            auto secondColDef = Controls::ColumnDefinition();
+            firstColDef.Width(!closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
+            secondColDef.Width(closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
+            _root.ColumnDefinitions().Append(firstColDef);
+            _root.ColumnDefinitions().Append(secondColDef);
+        }
+        else if (_splitState == SplitState::Horizontal)
+        {
+            auto firstRowDef = Controls::RowDefinition();
+            auto secondRowDef = Controls::RowDefinition();
+            firstRowDef.Height(!closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
+            secondRowDef.Height(closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
+            _root.RowDefinitions().Append(firstRowDef);
+            _root.RowDefinitions().Append(secondRowDef);
+        }
 
-        // // Animate the dummy grid from its current size down to 0
-        // Media::Animation::DoubleAnimation animation{};
-        // animation.Duration(AnimationDuration);
-        // animation.From(splitWidth ? removedOriginalSize.Width : removedOriginalSize.Height);
-        // animation.To(0.0);
-        // // This easing is the same as the entrance animation.
-        // animation.EasingFunction(Media::Animation::QuadraticEase{});
-        // animation.EnableDependentAnimation(true);
+        // Animate the dummy grid from its current size down to 0
+        Media::Animation::DoubleAnimation animation{};
+        animation.Duration(AnimationDuration);
+        animation.From(splitWidth ? removedOriginalSize.Width : removedOriginalSize.Height);
+        animation.To(0.0);
+        // This easing is the same as the entrance animation.
+        animation.EasingFunction(Media::Animation::QuadraticEase{});
+        animation.EnableDependentAnimation(true);
 
-        // Media::Animation::Storyboard s;
-        // s.Duration(AnimationDuration);
-        // s.Children().Append(animation);
-        // s.SetTarget(animation, dummyGrid);
-        // s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
+        Media::Animation::Storyboard s;
+        s.Duration(AnimationDuration);
+        s.Children().Append(animation);
+        s.SetTarget(animation, dummyGrid);
+        s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
 
-        // // Start the animation.
-        // s.Begin();
+        // Start the animation.
+        s.Begin();
 
-        // std::weak_ptr<Pane> weakThis{ shared_from_this() };
+        std::weak_ptr<Pane> weakThis{ shared_from_this() };
 
-        // // When the animation is completed, reparent the child's content up to
-        // // us, and remove the child nodes from the tree.
-        // animation.Completed([weakThis, closeFirst](auto&&, auto&&) {
-        //     if (auto pane{ weakThis.lock() })
-        //     {
-        //         // We don't need to manually undo any of the above trickiness.
-        //         // We're going to re-parent the child's content into us anyways
-        //         pane->_CloseChild(closeFirst, false);
-        //     }
-        // });
+        // When the animation is completed, reparent the child's content up to
+        // us, and remove the child nodes from the tree.
+        animation.Completed([weakThis, closeFirst](auto&&, auto&&) {
+            if (auto pane{ weakThis.lock() })
+            {
+                // We don't need to manually undo any of the above trickiness.
+                // We're going to re-parent the child's content into us anyways
+                pane->_CloseChild(closeFirst, false);
+            }
+        });
     }
 }
 
