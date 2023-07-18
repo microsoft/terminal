@@ -1359,7 +1359,14 @@ void Terminal::AddMark(const ScrollMark& mark,
     m.end = end;
 
     // If the mark came from the user adding a mark via the UI, don't make it the active prompt mark.
-    fromUi ? _activeBuffer().AddMark(m) : _activeBuffer().StartPromptMark(m);
+    if (fromUi)
+    {
+        _activeBuffer().AddMark(m);
+    }
+    else
+    {
+        _activeBuffer().StartPromptMark(m);
+    }
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
