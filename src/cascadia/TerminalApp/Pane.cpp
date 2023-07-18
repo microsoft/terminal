@@ -2931,7 +2931,6 @@ void Pane::FinalizeConfigurationGivenDefault()
     {
         terminalPane.MarkAsDefterm();
     }
-    // _isDefTermSession = true;
 }
 
 // Method Description:
