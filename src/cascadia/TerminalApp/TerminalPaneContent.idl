@@ -5,7 +5,7 @@ import "IPaneContent.idl";
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass TerminalPaneContent : IPaneContent
+    [default_interface] runtimeclass TerminalPaneContent : IPaneContent, ISnappable
     {
         Microsoft.Terminal.Control.TermControl GetTerminal();
 

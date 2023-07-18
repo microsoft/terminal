@@ -270,4 +270,13 @@ namespace winrt::TerminalApp::implementation
     {
         _isDefTermSession = true;
     }
+
+    float TerminalPaneContent::SnapDownToGrid(const TerminalApp::PaneSnapDirection direction, const float sizeToSnap)
+    {
+        return _control.SnapDimensionToGrid(direction == PaneSnapDirection::Width, sizeToSnap);
+    }
+    Windows::Foundation::Size TerminalPaneContent::GridSize()
+    {
+        return _control.CharacterDimensions();
+    }
 }

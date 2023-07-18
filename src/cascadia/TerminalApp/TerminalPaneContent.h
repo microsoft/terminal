@@ -36,6 +36,9 @@ namespace winrt::TerminalApp::implementation
         uint64_t TaskbarProgress() { return _control.TaskbarProgress(); }
         bool ReadOnly() { return _control.ReadOnly(); }
 
+        float SnapDownToGrid(const TerminalApp::PaneSnapDirection direction, const float sizeToSnap);
+        Windows::Foundation::Size GridSize();
+
         til::typed_event<TerminalApp::TerminalPaneContent, winrt::Windows::Foundation::IInspectable> RestartTerminalRequested;
         til::typed_event<> CloseRequested;
 

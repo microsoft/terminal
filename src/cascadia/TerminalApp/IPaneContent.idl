@@ -22,6 +22,18 @@ namespace TerminalApp
         // event CloseRequested(...);
 
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
+    };
 
+
+    enum PaneSnapDirection
+    {
+        Width,
+        Height
+    };
+
+    interface ISnappable
+    {
+        Single SnapDownToGrid(PaneSnapDirection direction, Single sizeToSnap);
+        Windows.Foundation.Size GridSize { get; };
     };
 }
