@@ -2920,16 +2920,13 @@ void TextBuffer::ScrollMarks(const int delta)
     _trimMarksOutsideBuffer();
 }
 
-void TextBuffer::AddMark(const ScrollMark& m, const bool activeMark)
+void TextBuffer::StartPromptMark(const ScrollMark& m)
 {
-    if (activeMark)
-    {
-        _marks.push_back(m);
-    }
-    else
-    {
-        _marks.insert(_marks.begin(), m);
-    }
+    _marks.push_back(m);
+}
+void TextBuffer::AddMark(const ScrollMark& m)
+{
+    _marks.insert(_marks.begin(), m);
 }
 
 void TextBuffer::_trimMarksOutsideBuffer()
@@ -2944,7 +2941,7 @@ void TextBuffer::_trimMarksOutsideBuffer()
                  _marks.end());
 }
 
-void TextBuffer::UpdateCurrentPromptEnd(const til::point pos) noexcept
+void TextBuffer::SetCurrentPromptEnd(const til::point pos) noexcept
 {
     if (_marks.empty())
     {
@@ -2953,7 +2950,7 @@ void TextBuffer::UpdateCurrentPromptEnd(const til::point pos) noexcept
     auto& curr{ _marks.back() };
     curr.end = pos;
 }
-void TextBuffer::UpdateCurrentCommandEnd(const til::point pos)
+void TextBuffer::SetCurrentCommandEnd(const til::point pos)
 {
     if (_marks.empty())
     {
@@ -2962,7 +2959,7 @@ void TextBuffer::UpdateCurrentCommandEnd(const til::point pos)
     auto& curr{ _marks.back() };
     curr.commandEnd = pos;
 }
-void TextBuffer::UpdateCurrentOutputEnd(const til::point pos, ::MarkCategory category)
+void TextBuffer::SetCurrentOutputEnd(const til::point pos, ::MarkCategory category)
 {
     if (_marks.empty())
     {

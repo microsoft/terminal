@@ -267,10 +267,11 @@ public:
     void ClearMarksInRange(const til::point start, const til::point end);
     void ClearAllMarks() noexcept;
     void ScrollMarks(const int delta);
-    void AddMark(const ScrollMark& m, const bool activeMark);
-    void UpdateCurrentPromptEnd(const til::point pos) noexcept;
-    void UpdateCurrentCommandEnd(const til::point pos);
-    void UpdateCurrentOutputEnd(const til::point pos, ::MarkCategory category);
+    void StartPromptMark(const ScrollMark& m);
+    void AddMark(const ScrollMark& m);
+    void SetCurrentPromptEnd(const til::point pos) noexcept;
+    void SetCurrentCommandEnd(const til::point pos);
+    void SetCurrentOutputEnd(const til::point pos, ::MarkCategory category);
 
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);
