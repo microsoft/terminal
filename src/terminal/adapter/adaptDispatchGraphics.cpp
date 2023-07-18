@@ -64,6 +64,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
 
 // Routine Description:
 // - Helper to apply a single graphic rendition option to an attribute.
+// - Calls appropriate helper to apply the option with sub parameters when necessary.
 // Arguments:
 // - options - An array of options.
 // - optionIndex - The start index of the option that will be applied.
@@ -75,6 +76,14 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
                                            TextAttribute& attr) noexcept
 {
     const GraphicsOptions opt = options.at(optionIndex);
+
+    if (options.hasSubParamsFor(optionIndex))
+    {
+        const auto subParams = options.subParamsFor(optionIndex);
+        _ApplyGraphicsOptionSubParam(opt, subParams, attr);
+        return 1;
+    }
+
     switch (opt)
     {
     case Off:
@@ -248,6 +257,23 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
     default:
         return 1;
     }
+}
+
+// Routine Description:
+// - This is a no-op until we have something meaningful to do with sub parameters.
+// - Helper to apply a single graphic rendition option with sub parameters to an attribute.
+// Arguments:
+// - option - An option to apply.
+// - attr - The attribute that will be updated with the applied option.
+// Return Value:
+// - <None>
+void AdaptDispatch::_ApplyGraphicsOptionSubParam(const VTParameter /* option */,
+                                                 const VTSubParameters /* subParam */,
+                                                 TextAttribute& /* attr */) noexcept
+{
+    // here, we apply our "best effort" rule, while handling sub params if we don't
+    // recognise the parameter substring (parameter and it's sub parameters) then
+    // we should just skip over them.
 }
 
 // Routine Description:
