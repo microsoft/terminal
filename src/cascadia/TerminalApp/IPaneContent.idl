@@ -3,6 +3,12 @@
 
 namespace TerminalApp
 {
+
+    runtimeclass BellEventArgs
+    {
+        Boolean FlashTaskbar { get; };
+    };
+
     interface IPaneContent
     {
         Windows.UI.Xaml.FrameworkElement GetRoot();
@@ -16,12 +22,18 @@ namespace TerminalApp
 
         Microsoft.Terminal.Settings.Model.NewTerminalArgs GetNewTerminalArgs(Boolean asContent);
 
-        void Focus();
+        void Focus(Windows.UI.Xaml.FocusState reason);
 
         void Close();
-        // event CloseRequested(...);
 
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, BellEventArgs> BellRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TaskbarProgressChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FocusRequested;
     };
 
 

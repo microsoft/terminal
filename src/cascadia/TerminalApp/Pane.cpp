@@ -106,18 +106,6 @@ Pane::Pane(std::shared_ptr<Pane> first,
     });
 }
 
-// void Pane::_setupControlEvents()
-// {
-//     _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &Pane::_ControlConnectionStateChangedHandler });
-//     _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { this, &Pane::_ControlWarningBellHandler });
-//     _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { this, &Pane::_CloseTerminalRequestedHandler });
-//     _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { this, &Pane::_RestartTerminalRequestedHandler });
-// }
-// void Pane::_removeControlEvents()
-// {
-//     _controlEvents = {};
-// }
-
 // Method Description:
 // - Extract the terminal settings from the current (leaf) pane's control
 //   to be used to create an equivalent control
@@ -978,174 +966,6 @@ Pane::PaneNeighborSearch Pane::_FindPaneAndNeighbor(const std::shared_ptr<Pane> 
     return { nullptr, nullptr, offset };
 }
 
-// // Method Description:
-// // - Called when our attached control is closed. Triggers listeners to our close
-// //   event, if we're a leaf pane.
-// // - If this was called, and we became a parent pane (due to work on another
-// //   thread), this function will do nothing (allowing the control's new parent
-// //   to handle the event instead).
-// // Arguments:
-// // - <none>
-// // Return Value:
-// // - <none>
-// void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-//                                                  const winrt::Windows::Foundation::IInspectable& /*args*/)
-// {
-//     std::unique_lock lock{ _createCloseLock };
-//     // It's possible that this event handler started being executed, then before
-//     // we got the lock, another thread created another child. So our control is
-//     // actually no longer _our_ control, and instead could be a descendant.
-//     //
-//     // When the control's new Pane takes ownership of the control, the new
-//     // parent will register its own event handler. That event handler will get
-//     // fired after this handler returns, and will properly cleanup state.
-//     if (!_IsLeaf())
-//     {
-//         return;
-//     }
-
-//     const auto newConnectionState = _control.ConnectionState();
-//     const auto previousConnectionState = std::exchange(_connectionState, newConnectionState);
-
-//     if (newConnectionState < ConnectionState::Closed)
-//     {
-//         // Pane doesn't care if the connection isn't entering a terminal state.
-//         return;
-//     }
-
-//     if (previousConnectionState < ConnectionState::Connected && newConnectionState >= ConnectionState::Failed)
-//     {
-//         // A failure to complete the connection (before it has _connected_) is not covered by "closeOnExit".
-//         // This is to prevent a misconfiguration (closeOnExit: always, startingDirectory: garbage) resulting
-//         // in Terminal flashing open and immediately closed.
-//         return;
-//     }
-
-//     if (_profile)
-//     {
-//         if (_isDefTermSession && _profile.CloseOnExit() == CloseOnExitMode::Automatic)
-//         {
-//             // For 'automatic', we only care about the connection state if we were launched by Terminal
-//             // Since we were launched via defterm, ignore the connection state (i.e. we treat the
-//             // close on exit mode as 'always', see GH #13325 for discussion)
-//             Close();
-//         }
-
-//         const auto mode = _profile.CloseOnExit();
-//         if ((mode == CloseOnExitMode::Always) ||
-//             ((mode == CloseOnExitMode::Graceful || mode == CloseOnExitMode::Automatic) && newConnectionState == ConnectionState::Closed))
-//         {
-//             Close();
-//         }
-//     }
-// }
-
-// void Pane::_CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-//                                           const winrt::Windows::Foundation::IInspectable& /*args*/)
-// {
-//     std::unique_lock lock{ _createCloseLock };
-
-//     // It's possible that this event handler started being executed, then before
-//     // we got the lock, another thread created another child. So our control is
-//     // actually no longer _our_ control, and instead could be a descendant.
-//     //
-//     // When the control's new Pane takes ownership of the control, the new
-//     // parent will register its own event handler. That event handler will get
-//     // fired after this handler returns, and will properly cleanup state.
-//     if (!_IsLeaf())
-//     {
-//         return;
-//     }
-
-//     Close();
-// }
-
-// void Pane::_RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-//                                             const winrt::Windows::Foundation::IInspectable& /*args*/)
-// {
-//     if (!_IsLeaf())
-//     {
-//         return;
-//     }
-//     _RestartTerminalRequestedHandlers(shared_from_this());
-// }
-
-// winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
-// {
-//     auto weakThis{ weak_from_this() };
-//     co_await wil::resume_foreground(_root.Dispatcher());
-//     if (auto pane{ weakThis.lock() })
-//     {
-//         if (!_bellPlayerCreated)
-//         {
-//             // The MediaPlayer might not exist on Windows N SKU.
-//             try
-//             {
-//                 _bellPlayerCreated = true;
-//                 _bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
-//                 // GH#12258: The media keys (like play/pause) should have no effect on our bell sound.
-//                 _bellPlayer.CommandManager().IsEnabled(false);
-//             }
-//             CATCH_LOG();
-//         }
-//         if (_bellPlayer)
-//         {
-//             const auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
-//             const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
-//             _bellPlayer.Source(item);
-//             _bellPlayer.Play();
-//         }
-//     }
-// }
-
-// // Method Description:
-// // - Plays a warning note when triggered by the BEL control character,
-// //   using the sound configured for the "Critical Stop" system event.`
-// //   This matches the behavior of the Windows Console host.
-// // - Will also flash the taskbar if the bellStyle setting for this profile
-// //   has the 'visual' flag set
-// // Arguments:
-// // - <unused>
-// void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-//                                       const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
-// {
-//     if (!_IsLeaf())
-//     {
-//         return;
-//     }
-//     if (_profile)
-//     {
-//         // We don't want to do anything if nothing is set, so check for that first
-//         if (static_cast<int>(_profile.BellStyle()) != 0)
-//         {
-//             if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
-//             {
-//                 // Audible is set, play the sound
-//                 auto sounds{ _profile.BellSound() };
-//                 if (sounds && sounds.Size() > 0)
-//                 {
-//                     winrt::hstring soundPath{ wil::ExpandEnvironmentStringsW<std::wstring>(sounds.GetAt(rand() % sounds.Size()).c_str()) };
-//                     winrt::Windows::Foundation::Uri uri{ soundPath };
-//                     _playBellSound(uri);
-//                 }
-//                 else
-//                 {
-//                     const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-//                     PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-//                 }
-//             }
-
-//             if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
-//             {
-//                 _control.BellLightOn();
-//             }
-
-//             // raise the event with the bool value corresponding to the taskbar flag
-//             _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Taskbar));
-//         }
-//     }
-// }
-
 // Event Description:
 // - Called when our control gains focus. We'll use this to trigger our GotFocus
 //   callback. The tab that's hosting us should have registered a callback which
@@ -1418,10 +1238,7 @@ void Pane::UpdateVisuals()
 void Pane::_Focus()
 {
     _GotFocusHandlers(shared_from_this(), FocusState::Programmatic);
-    if (const auto& control = GetLastFocusedTerminalControl())
-    {
-        control.Focus(FocusState::Programmatic);
-    }
+    _content.Focus(FocusState::Programmatic);
 }
 
 // Method Description:
@@ -1649,7 +1466,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool /*isDetaching*/)
         // focus our control now. This should trigger our own GotFocus event.
         if (usedToFocusClosedChildsTerminal || _lastActive)
         {
-            _content.Focus();
+            _content.Focus(FocusState::Programmatic);
 
             // See GH#7252
             // Manually fire off the GotFocus event. Typically, this is done
@@ -2076,151 +1893,151 @@ void Pane::_ApplySplitDefinitions()
 //   have been set up.
 void Pane::_SetupEntranceAnimation()
 {
-    // // This will query if animations are enabled via the "Show animations in
-    // // Windows" setting in the OS
-    // winrt::Windows::UI::ViewManagement::UISettings uiSettings;
-    // const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
-    // const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
+    // This will query if animations are enabled via the "Show animations in
+    // Windows" setting in the OS
+    winrt::Windows::UI::ViewManagement::UISettings uiSettings;
+    const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
+    const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
 
-    // const auto splitWidth = _splitState == SplitState::Vertical;
-    // const auto totalSize = splitWidth ? _root.ActualWidth() : _root.ActualHeight();
-    // // If we don't have a size yet, it's likely that we're in startup, or we're
-    // // being executed as a sequence of actions. In that case, just skip the
-    // // animation.
-    // if (totalSize <= 0 || !animationsEnabledInOS || !animationsEnabledInApp)
-    // {
-    //     return;
-    // }
+    const auto splitWidth = _splitState == SplitState::Vertical;
+    const auto totalSize = splitWidth ? _root.ActualWidth() : _root.ActualHeight();
+    // If we don't have a size yet, it's likely that we're in startup, or we're
+    // being executed as a sequence of actions. In that case, just skip the
+    // animation.
+    if (totalSize <= 0 || !animationsEnabledInOS || !animationsEnabledInApp)
+    {
+        return;
+    }
 
-    // // Use the unfocused border color as the pane background, so an actual color
-    // // appears behind panes as we animate them sliding in.
-    // //
-    // // GH#603 - We set only the background of the new pane, while it animates
-    // // in. Once the animation is done, we'll remove that background, so if the
-    // // user wants vintage opacity, they'll be able to see what's under the
-    // // window.
-    // // * If we don't give it a background, then the BG will be entirely transparent.
-    // // * If we give the parent (us) root BG a color, then a transparent pane
-    // //   will flash opaque during the animation, then back to transparent, which
-    // //   looks bad.
-    // _secondChild->_root.Background(_themeResources.unfocusedBorderBrush);
+    // Use the unfocused border color as the pane background, so an actual color
+    // appears behind panes as we animate them sliding in.
+    //
+    // GH#603 - We set only the background of the new pane, while it animates
+    // in. Once the animation is done, we'll remove that background, so if the
+    // user wants vintage opacity, they'll be able to see what's under the
+    // window.
+    // * If we don't give it a background, then the BG will be entirely transparent.
+    // * If we give the parent (us) root BG a color, then a transparent pane
+    //   will flash opaque during the animation, then back to transparent, which
+    //   looks bad.
+    _secondChild->_root.Background(_themeResources.unfocusedBorderBrush);
 
-    // const auto [firstSize, secondSize] = _CalcChildrenSizes(::base::saturated_cast<float>(totalSize));
+    const auto [firstSize, secondSize] = _CalcChildrenSizes(::base::saturated_cast<float>(totalSize));
 
     // This is safe to capture this, because it's only being called in the
     // context of this method (not on another thread)
-    // auto setupAnimation = [&](const auto& size, const bool isFirstChild) {
-    //     auto child = isFirstChild ? _firstChild : _secondChild;
-    //     auto childGrid = child->_root;
-    //     // If we are splitting a parent pane this may be null
-    //     auto control = child->_control;
-    //     // Build up our animation:
-    //     // * it'll take as long as our duration (200ms)
-    //     // * it'll change the value of our property from 0 to secondSize
-    //     // * it'll animate that value using a quadratic function (like f(t) = t^2)
-    //     // * IMPORTANT! We'll manually tell the animation that "yes we know what
-    //     //   we're doing, we want an animation here."
-    //     Media::Animation::DoubleAnimation animation{};
-    //     animation.Duration(AnimationDuration);
-    //     if (isFirstChild)
-    //     {
-    //         // If we're animating the first pane, the size should decrease, from
-    //         // the full size down to the given size.
-    //         animation.From(totalSize);
-    //         animation.To(size);
-    //     }
-    //     else
-    //     {
-    //         // Otherwise, we want to show the pane getting larger, so animate
-    //         // from 0 to the requested size.
-    //         animation.From(0.0);
-    //         animation.To(size);
-    //     }
-    //     animation.EasingFunction(Media::Animation::QuadraticEase{});
-    //     animation.EnableDependentAnimation(true);
+    auto setupAnimation = [&](const auto& size, const bool isFirstChild) {
+        auto child = isFirstChild ? _firstChild : _secondChild;
+        auto childGrid = child->_root;
+        // If we are splitting a parent pane this may be null
+        auto control = child->_content.GetRoot();
+        // Build up our animation:
+        // * it'll take as long as our duration (200ms)
+        // * it'll change the value of our property from 0 to secondSize
+        // * it'll animate that value using a quadratic function (like f(t) = t^2)
+        // * IMPORTANT! We'll manually tell the animation that "yes we know what
+        //   we're doing, we want an animation here."
+        Media::Animation::DoubleAnimation animation{};
+        animation.Duration(AnimationDuration);
+        if (isFirstChild)
+        {
+            // If we're animating the first pane, the size should decrease, from
+            // the full size down to the given size.
+            animation.From(totalSize);
+            animation.To(size);
+        }
+        else
+        {
+            // Otherwise, we want to show the pane getting larger, so animate
+            // from 0 to the requested size.
+            animation.From(0.0);
+            animation.To(size);
+        }
+        animation.EasingFunction(Media::Animation::QuadraticEase{});
+        animation.EnableDependentAnimation(true);
 
-    //     // Now we're going to set up the Storyboard. This is a unit that uses the
-    //     // Animation from above, and actually applies it to a property.
-    //     // * we'll set it up for the same duration as the animation we have
-    //     // * Apply the animation to the grid of the new pane we're adding to the tree.
-    //     // * apply the animation to the Width or Height property.
-    //     Media::Animation::Storyboard s;
-    //     s.Duration(AnimationDuration);
-    //     s.Children().Append(animation);
-    //     s.SetTarget(animation, childGrid);
-    //     s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
+        // Now we're going to set up the Storyboard. This is a unit that uses the
+        // Animation from above, and actually applies it to a property.
+        // * we'll set it up for the same duration as the animation we have
+        // * Apply the animation to the grid of the new pane we're adding to the tree.
+        // * apply the animation to the Width or Height property.
+        Media::Animation::Storyboard s;
+        s.Duration(AnimationDuration);
+        s.Children().Append(animation);
+        s.SetTarget(animation, childGrid);
+        s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
 
-    //     // BE TRICKY:
-    //     // We're animating the width or height of our child pane's grid.
-    //     //
-    //     // We DON'T want to change the size of the control itself, because the
-    //     // terminal has to reflow the buffer every time the control changes size. So
-    //     // what we're going to do there is manually set the control's size to how
-    //     // big we _actually know_ the control will be.
-    //     //
-    //     // We're also going to be changing alignment of our child pane and the
-    //     // control. This way, we'll be able to have the control stick to the inside
-    //     // of the child pane's grid (the side that's moving), while we also have the
-    //     // pane's grid stick to "outside" of the grid (the side that's not moving)
-    //     if (splitWidth)
-    //     {
-    //         // If we're animating the first child, then stick to the top/left of
-    //         // the parent pane, otherwise use the bottom/right. This is always
-    //         // the "outside" of the parent pane.
-    //         childGrid.HorizontalAlignment(isFirstChild ? HorizontalAlignment::Left : HorizontalAlignment::Right);
-    //         if (control)
-    //         {
-    //             control.HorizontalAlignment(HorizontalAlignment::Left);
-    //             control.Width(isFirstChild ? totalSize : size);
-    //         }
+        // BE TRICKY:
+        // We're animating the width or height of our child pane's grid.
+        //
+        // We DON'T want to change the size of the control itself, because the
+        // terminal has to reflow the buffer every time the control changes size. So
+        // what we're going to do there is manually set the control's size to how
+        // big we _actually know_ the control will be.
+        //
+        // We're also going to be changing alignment of our child pane and the
+        // control. This way, we'll be able to have the control stick to the inside
+        // of the child pane's grid (the side that's moving), while we also have the
+        // pane's grid stick to "outside" of the grid (the side that's not moving)
+        if (splitWidth)
+        {
+            // If we're animating the first child, then stick to the top/left of
+            // the parent pane, otherwise use the bottom/right. This is always
+            // the "outside" of the parent pane.
+            childGrid.HorizontalAlignment(isFirstChild ? HorizontalAlignment::Left : HorizontalAlignment::Right);
+            if (control)
+            {
+                control.HorizontalAlignment(HorizontalAlignment::Left);
+                control.Width(isFirstChild ? totalSize : size);
+            }
 
-    //         // When the animation is completed, undo the trickiness from before, to
-    //         // restore the controls to the behavior they'd usually have.
-    //         animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
-    //             childGrid.Width(NAN);
-    //             childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
-    //             if (control)
-    //             {
-    //                 control.Width(NAN);
-    //                 control.HorizontalAlignment(HorizontalAlignment::Stretch);
-    //             }
-    //             root.Background(nullptr);
-    //         });
-    //     }
-    //     else
-    //     {
-    //         // If we're animating the first child, then stick to the top/left of
-    //         // the parent pane, otherwise use the bottom/right. This is always
-    //         // the "outside" of the parent pane.
-    //         childGrid.VerticalAlignment(isFirstChild ? VerticalAlignment::Top : VerticalAlignment::Bottom);
-    //         if (control)
-    //         {
-    //             control.VerticalAlignment(VerticalAlignment::Top);
-    //             control.Height(isFirstChild ? totalSize : size);
-    //         }
+            // When the animation is completed, undo the trickiness from before, to
+            // restore the controls to the behavior they'd usually have.
+            animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
+                childGrid.Width(NAN);
+                childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
+                if (control)
+                {
+                    control.Width(NAN);
+                    control.HorizontalAlignment(HorizontalAlignment::Stretch);
+                }
+                root.Background(nullptr);
+            });
+        }
+        else
+        {
+            // If we're animating the first child, then stick to the top/left of
+            // the parent pane, otherwise use the bottom/right. This is always
+            // the "outside" of the parent pane.
+            childGrid.VerticalAlignment(isFirstChild ? VerticalAlignment::Top : VerticalAlignment::Bottom);
+            if (control)
+            {
+                control.VerticalAlignment(VerticalAlignment::Top);
+                control.Height(isFirstChild ? totalSize : size);
+            }
 
-    //         // When the animation is completed, undo the trickiness from before, to
-    //         // restore the controls to the behavior they'd usually have.
-    //         animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
-    //             childGrid.Height(NAN);
-    //             childGrid.VerticalAlignment(VerticalAlignment::Stretch);
-    //             if (control)
-    //             {
-    //                 control.Height(NAN);
-    //                 control.VerticalAlignment(VerticalAlignment::Stretch);
-    //             }
-    //             root.Background(nullptr);
-    //         });
-    //     }
+            // When the animation is completed, undo the trickiness from before, to
+            // restore the controls to the behavior they'd usually have.
+            animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
+                childGrid.Height(NAN);
+                childGrid.VerticalAlignment(VerticalAlignment::Stretch);
+                if (control)
+                {
+                    control.Height(NAN);
+                    control.VerticalAlignment(VerticalAlignment::Stretch);
+                }
+                root.Background(nullptr);
+            });
+        }
 
-    //     // Start the animation.
-    //     s.Begin();
-    // };
+        // Start the animation.
+        s.Begin();
+    };
 
-    // // TODO: GH#7365 - animating the first child right now doesn't _really_ do
-    // // anything. We could do better though.
-    // setupAnimation(firstSize, true);
-    // setupAnimation(secondSize, false);
+    // TODO: GH#7365 - animating the first child right now doesn't _really_ do
+    // anything. We could do better though.
+    setupAnimation(firstSize, true);
+    setupAnimation(secondSize, false);
 }
 
 // Method Description:

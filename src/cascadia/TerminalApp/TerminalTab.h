@@ -126,15 +126,16 @@ namespace winrt::TerminalApp::implementation
         winrt::event_token _colorClearedToken;
         winrt::event_token _pickerClosedToken;
 
-        struct ControlEventTokens
+        struct ContentEventTokens
         {
-            winrt::event_token titleToken;
-            winrt::event_token colorToken;
-            winrt::event_token taskbarToken;
-            winrt::event_token readOnlyToken;
-            winrt::event_token focusToken;
+            winrt::TerminalApp::IPaneContent::BellRequested_revoker BellRequested;
+            winrt::TerminalApp::IPaneContent::TitleChanged_revoker TitleChanged;
+            winrt::TerminalApp::IPaneContent::TabColorChanged_revoker TabColorChanged;
+            winrt::TerminalApp::IPaneContent::TaskbarProgressChanged_revoker TaskbarProgressChanged;
+            winrt::TerminalApp::IPaneContent::ReadOnlyChanged_revoker ReadOnlyChanged;
+            winrt::TerminalApp::IPaneContent::FocusRequested_revoker FocusRequested;
         };
-        std::unordered_map<uint32_t, ControlEventTokens> _controlEvents;
+        std::unordered_map<uint32_t, ContentEventTokens> _contentEvents;
 
         winrt::event_token _rootClosedToken{};
 
@@ -163,8 +164,8 @@ namespace winrt::TerminalApp::implementation
         void _CreateContextMenu() override;
         virtual winrt::hstring _CreateToolTipTitle() override;
 
-        void _DetachEventHandlersFromControl(const uint32_t paneId, const winrt::Microsoft::Terminal::Control::TermControl& control);
-        void _AttachEventHandlersToControl(const uint32_t paneId, const winrt::Microsoft::Terminal::Control::TermControl& control);
+        void _DetachEventHandlersFromContent(const uint32_t paneId);
+        void _AttachEventHandlersToContent(const uint32_t paneId, const winrt::TerminalApp::IPaneContent& content);
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
 
         void _UpdateActivePane(std::shared_ptr<Pane> pane);

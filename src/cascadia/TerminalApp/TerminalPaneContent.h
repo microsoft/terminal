@@ -16,7 +16,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
         winrt::Microsoft::Terminal::Control::TermControl GetTerminal();
         winrt::Windows::Foundation::Size MinSize();
-        void Focus();
+        void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
         void Close();
 
         winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const bool asContent) const;
@@ -41,6 +41,12 @@ namespace winrt::TerminalApp::implementation
 
         til::typed_event<TerminalApp::TerminalPaneContent, winrt::Windows::Foundation::IInspectable> RestartTerminalRequested;
         til::typed_event<> CloseRequested;
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::BellEventArgs> BellRequested;
+        til::typed_event<> TitleChanged;
+        til::typed_event<> TabColorChanged;
+        til::typed_event<> TaskbarProgressChanged;
+        til::typed_event<> ReadOnlyChanged;
+        til::typed_event<> FocusRequested;
 
     private:
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
@@ -57,6 +63,13 @@ namespace winrt::TerminalApp::implementation
             winrt::Microsoft::Terminal::Control::TermControl::WarningBell_revoker _WarningBell;
             winrt::Microsoft::Terminal::Control::TermControl::CloseTerminalRequested_revoker _CloseTerminalRequested;
             winrt::Microsoft::Terminal::Control::TermControl::RestartTerminalRequested_revoker _RestartTerminalRequested;
+
+            winrt::Microsoft::Terminal::Control::TermControl::TitleChanged_revoker _TitleChanged;
+            winrt::Microsoft::Terminal::Control::TermControl::TabColorChanged_revoker _TabColorChanged;
+            winrt::Microsoft::Terminal::Control::TermControl::SetTaskbarProgress_revoker _SetTaskbarProgress;
+            winrt::Microsoft::Terminal::Control::TermControl::ReadOnlyChanged_revoker _ReadOnlyChanged;
+            winrt::Microsoft::Terminal::Control::TermControl::FocusFollowMouseRequested_revoker _FocusFollowMouseRequested;
+
         } _controlEvents;
         void _setupControlEvents();
         void _removeControlEvents();
@@ -66,11 +79,19 @@ namespace winrt::TerminalApp::implementation
         void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
         void _ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                         const winrt::Windows::Foundation::IInspectable& e);
+
+        void _controlTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
+        void _controlTabColorChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
+        void _controlSetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
+        void _controlReadOnlyChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
+        void _controlFocusFollowMouseRequested(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
+
         // void _ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
         //                              const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         // void _ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
         //                               const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-        void _CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+        void
+        _CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
         void _RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
     };
 }

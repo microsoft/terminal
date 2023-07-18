@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TerminalPaneContent.h"
+#include "PaneArgs.h"
 #include "TerminalPaneContent.g.cpp"
 
 #include <Mmsystem.h>
@@ -25,9 +26,15 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::_setupControlEvents()
     {
         _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &TerminalPaneContent::_ControlConnectionStateChangedHandler });
-        _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { this, &TerminalPaneContent::_ControlWarningBellHandler });
-        _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { this, &TerminalPaneContent::_CloseTerminalRequestedHandler });
-        _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { this, &TerminalPaneContent::_RestartTerminalRequestedHandler });
+        _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_ControlWarningBellHandler });
+        _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_CloseTerminalRequestedHandler });
+        _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_RestartTerminalRequestedHandler });
+
+        _controlEvents._TitleChanged = _control.TitleChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlTitleChanged });
+        _controlEvents._TabColorChanged = _control.TabColorChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlTabColorChanged });
+        _controlEvents._SetTaskbarProgress = _control.SetTaskbarProgress(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlSetTaskbarProgress });
+        _controlEvents._ReadOnlyChanged = _control.ReadOnlyChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlReadOnlyChanged });
+        _controlEvents._FocusFollowMouseRequested = _control.FocusFollowMouseRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlFocusFollowMouseRequested });
     }
     void TerminalPaneContent::_removeControlEvents()
     {
@@ -46,9 +53,9 @@ namespace winrt::TerminalApp::implementation
     {
         return _control.MinimumSize();
     }
-    void TerminalPaneContent::Focus()
+    void TerminalPaneContent::Focus(winrt::Windows::UI::Xaml::FocusState reason)
     {
-        _control.Focus(FocusState::Programmatic);
+        _control.Focus(reason);
     }
     void TerminalPaneContent::Close()
     {
@@ -120,6 +127,27 @@ namespace winrt::TerminalApp::implementation
         }
 
         return args;
+    }
+
+    void TerminalPaneContent::_controlTitleChanged(const IInspectable&, const IInspectable&)
+    {
+        TitleChanged.raise(*this, nullptr);
+    }
+    void TerminalPaneContent::_controlTabColorChanged(const IInspectable&, const IInspectable&)
+    {
+        TabColorChanged.raise(*this, nullptr);
+    }
+    void TerminalPaneContent::_controlSetTaskbarProgress(const IInspectable&, const IInspectable&)
+    {
+        TaskbarProgressChanged.raise(*this, nullptr);
+    }
+    void TerminalPaneContent::_controlReadOnlyChanged(const IInspectable&, const IInspectable&)
+    {
+        ReadOnlyChanged.raise(*this, nullptr);
+    }
+    void TerminalPaneContent::_controlFocusFollowMouseRequested(const IInspectable&, const IInspectable&)
+    {
+        FocusRequested.raise(*this, nullptr);
     }
 
     // Method Description:
@@ -209,9 +237,9 @@ namespace winrt::TerminalApp::implementation
                     _control.BellLightOn();
                 }
 
-                // TODO!
-                // // raise the event with the bool value corresponding to the taskbar flag
-                // _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Taskbar));
+                // raise the event with the bool value corresponding to the taskbar flag
+                BellRequested.raise(*this,
+                                    *winrt::make_self<TerminalApp::implementation::BellEventArgs>(WI_IsFlagSet(_profile.BellStyle(), BellStyle::Taskbar)));
             }
         }
     }

@@ -202,9 +202,9 @@ namespace winrt::TerminalApp::implementation
         _rootPane->WalkTree([&](std::shared_ptr<Pane> pane) {
             // Attach event handlers to each new pane
             _AttachEventHandlersToPane(pane);
-            if (auto control = pane->GetTerminalControl())
+            if (auto content = pane->GetContent())
             {
-                _AttachEventHandlersToControl(pane->Id().value(), control);
+                _AttachEventHandlersToContent(pane->Id().value(), content);
             }
         });
     }
@@ -507,10 +507,9 @@ namespace winrt::TerminalApp::implementation
             if (p->_IsLeaf())
             {
                 p->Id(_nextPaneId);
-                // TODO! this feels hacky
-                if (const auto& termPane{ p->_content.try_as<TerminalApp::TerminalPaneContent>() })
+                if (const auto& content{ p->GetContent() })
                 {
-                    _AttachEventHandlersToControl(p->Id().value(), termPane.GetTerminal());
+                    _AttachEventHandlersToContent(p->Id().value(), content);
                 }
                 _nextPaneId++;
             }
@@ -621,10 +620,9 @@ namespace winrt::TerminalApp::implementation
             {
                 p->Id(_nextPaneId);
 
-                // TODO! this feels hacky
-                if (const auto& termPane{ p->_content.try_as<TerminalApp::TerminalPaneContent>() })
+                if (const auto& content{ p->GetContent() })
                 {
-                    _AttachEventHandlersToControl(p->Id().value(), termPane.GetTerminal());
+                    _AttachEventHandlersToContent(p->Id().value(), content);
                 }
                 _nextPaneId++;
             }
@@ -882,24 +880,18 @@ namespace winrt::TerminalApp::implementation
     //   the control itself doesn't have a particular ID and its pointer is
     //   unstable since it is moved when panes split.
     // Arguments:
-    // - paneId: The ID of the pane that contains the given control.
-    // - control: the control to remove events from.
+    // - paneId: The ID of the pane that contains the given content.
     // Return Value:
     // - <none>
-    void TerminalTab::_DetachEventHandlersFromControl(const uint32_t paneId, const TermControl& control)
+    void TerminalTab::_DetachEventHandlersFromContent(const uint32_t paneId)
     {
-        auto it = _controlEvents.find(paneId);
-        if (it != _controlEvents.end())
+        auto it = _contentEvents.find(paneId);
+        if (it != _contentEvents.end())
         {
             auto& events = it->second;
+            events = {};
 
-            control.TitleChanged(events.titleToken);
-            control.TabColorChanged(events.colorToken);
-            control.SetTaskbarProgress(events.taskbarToken);
-            control.ReadOnlyChanged(events.readOnlyToken);
-            control.FocusFollowMouseRequested(events.focusToken);
-
-            _controlEvents.erase(paneId);
+            _contentEvents.erase(paneId);
         }
     }
 
@@ -914,66 +906,102 @@ namespace winrt::TerminalApp::implementation
     // - control: the TermControl to add events to.
     // Return Value:
     // - <none>
-    void TerminalTab::_AttachEventHandlersToControl(const uint32_t paneId, const TermControl& control)
+    void TerminalTab::_AttachEventHandlersToContent(const uint32_t paneId, const TerminalApp::IPaneContent& content)
     {
         auto weakThis{ get_weak() };
         auto dispatcher = TabViewItem().Dispatcher();
-        ControlEventTokens events{};
+        ContentEventTokens events{};
 
-        events.titleToken = control.TitleChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
-            co_await wil::resume_foreground(dispatcher);
-            // Check if Tab's lifetime has expired
-            if (auto tab{ weakThis.get() })
-            {
-                // The title of the control changed, but not necessarily the title of the tab.
-                // Set the tab's text to the active panes' text.
-                tab->UpdateTitle();
-            }
-        });
-
-        events.colorToken = control.TabColorChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
-            co_await wil::resume_foreground(dispatcher);
-            if (auto tab{ weakThis.get() })
-            {
-                // The control's tabColor changed, but it is not necessarily the
-                // active control in this tab. We'll just recalculate the
-                // current color anyways.
-                tab->_RecalculateAndApplyTabColor();
-            }
-        });
-
-        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
-            co_await wil::resume_foreground(dispatcher);
-            // Check if Tab's lifetime has expired
-            if (auto tab{ weakThis.get() })
-            {
-                tab->_UpdateProgressState();
-            }
-        });
-
-        events.readOnlyToken = control.ReadOnlyChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
-            co_await wil::resume_foreground(dispatcher);
-            if (auto tab{ weakThis.get() })
-            {
-                tab->_RecalculateAndApplyReadOnly();
-            }
-        });
-
-        events.focusToken = control.FocusFollowMouseRequested([dispatcher, weakThis](auto sender, auto) -> winrt::fire_and_forget {
-            co_await wil::resume_foreground(dispatcher);
-            if (const auto tab{ weakThis.get() })
-            {
-                if (tab->_focusState != FocusState::Unfocused)
+        events.TitleChanged = content.TitleChanged(
+            winrt::auto_revoke,
+            [dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+                co_await wil::resume_foreground(dispatcher);
+                // Check if Tab's lifetime has expired
+                if (auto tab{ weakThis.get() })
                 {
-                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
+                    // The title of the control changed, but not necessarily the title of the tab.
+                    // Set the tab's text to the active panes' text.
+                    tab->UpdateTitle();
+                }
+            });
+
+        events.TabColorChanged = content.TabColorChanged(
+            winrt::auto_revoke,
+            [dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+                co_await wil::resume_foreground(dispatcher);
+                if (auto tab{ weakThis.get() })
+                {
+                    // The control's tabColor changed, but it is not necessarily the
+                    // active control in this tab. We'll just recalculate the
+                    // current color anyways.
+                    tab->_RecalculateAndApplyTabColor();
+                }
+            });
+
+        events.TaskbarProgressChanged = content.TaskbarProgressChanged(
+            winrt::auto_revoke,
+            [dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+                co_await wil::resume_foreground(dispatcher);
+                // Check if Tab's lifetime has expired
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_UpdateProgressState();
+                }
+            });
+
+        events.ReadOnlyChanged = content.ReadOnlyChanged(
+            winrt::auto_revoke,
+            [dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+                co_await wil::resume_foreground(dispatcher);
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_RecalculateAndApplyReadOnly();
+                }
+            });
+
+        events.FocusRequested = content.FocusRequested(
+            winrt::auto_revoke,
+            [dispatcher, weakThis](auto sender, auto) -> winrt::fire_and_forget {
+                co_await wil::resume_foreground(dispatcher);
+                if (const auto tab{ weakThis.get() })
+                {
+                    if (tab->_focusState != FocusState::Unfocused)
                     {
-                        termControl.Focus(FocusState::Pointer);
+                        if (const auto content{ sender.try_as<TerminalApp::IPaneContent>() })
+                        {
+                            content.Focus(FocusState::Pointer);
+                        }
                     }
                 }
-            }
-        });
+            });
 
-        _controlEvents[paneId] = events;
+        // Add a PaneRaiseBell event handler to the Pane
+        events.BellRequested = content.BellRequested(
+            winrt::auto_revoke,
+            [weakThis](auto&& /*s*/, auto&& args) {
+                if (auto tab{ weakThis.get() })
+                {
+                    if (args.FlashTaskbar())
+                    {
+                        // If visual is set, we need to bubble this event all the way to app host to flash the taskbar
+                        // In this part of the chain we bubble it from the hosting tab to the page
+                        tab->_TabRaiseVisualBellHandlers();
+                    }
+
+                    // Show the bell indicator in the tab header
+                    tab->ShowBellIndicator(true);
+
+                    // If this tab is focused, activate the bell indicator timer, which will
+                    // remove the bell indicator once it fires
+                    // (otherwise, the indicator is removed when the tab gets focus)
+                    if (tab->_focusState != WUX::FocusState::Unfocused)
+                    {
+                        tab->ActivateBellIndicatorTimer();
+                    }
+                }
+            });
+
+        _contentEvents[paneId] = std::move(events);
     }
 
     // Method Description:
@@ -1188,36 +1216,12 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // Add a PaneRaiseBell event handler to the Pane
-        auto bellToken = pane->PaneRaiseBell([weakThis](auto&& /*s*/, auto&& visual) {
-            if (auto tab{ weakThis.get() })
-            {
-                if (visual)
-                {
-                    // If visual is set, we need to bubble this event all the way to app host to flash the taskbar
-                    // In this part of the chain we bubble it from the hosting tab to the page
-                    tab->_TabRaiseVisualBellHandlers();
-                }
-
-                // Show the bell indicator in the tab header
-                tab->ShowBellIndicator(true);
-
-                // If this tab is focused, activate the bell indicator timer, which will
-                // remove the bell indicator once it fires
-                // (otherwise, the indicator is removed when the tab gets focus)
-                if (tab->_focusState != WUX::FocusState::Unfocused)
-                {
-                    tab->ActivateBellIndicatorTimer();
-                }
-            }
-        });
-
         // box the event token so that we can give a reference to it in the
         // event handler.
         auto detachedToken = std::make_shared<winrt::event_token>();
         // Add a Detached event handler to the Pane to clean up tab state
         // and other event handlers when a pane is removed from this tab.
-        *detachedToken = pane->Detached([weakThis, weakPane, gotFocusToken, lostFocusToken, closedToken, bellToken, detachedToken](std::shared_ptr<Pane> /*sender*/) {
+        *detachedToken = pane->Detached([weakThis, weakPane, gotFocusToken, lostFocusToken, closedToken, detachedToken](std::shared_ptr<Pane> /*sender*/) {
             // Make sure we do this at most once
             if (auto pane{ weakPane.lock() })
             {
@@ -1225,14 +1229,10 @@ namespace winrt::TerminalApp::implementation
                 pane->GotFocus(gotFocusToken);
                 pane->LostFocus(lostFocusToken);
                 pane->Closed(closedToken);
-                pane->PaneRaiseBell(bellToken);
 
                 if (auto tab{ weakThis.get() })
                 {
-                    if (auto control = pane->GetTerminalControl())
-                    {
-                        tab->_DetachEventHandlersFromControl(pane->Id().value(), control);
-                    }
+                    tab->_DetachEventHandlersFromContent(pane->Id().value());
 
                     for (auto i = tab->_mruPanes.begin(); i != tab->_mruPanes.end(); ++i)
                     {

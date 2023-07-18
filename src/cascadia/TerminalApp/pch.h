@@ -81,6 +81,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+#include <til/winrt.h>
 
 #include <cppwinrt_utils.h>
 #include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined

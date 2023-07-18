@@ -88,6 +88,7 @@ public:
     }
 
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
+    winrt::TerminalApp::IPaneContent GetContent() const noexcept { return _IsLeaf() ? _content : nullptr; }
 
     bool WasLastFocused() const noexcept;
     void UpdateVisuals();

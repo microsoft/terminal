@@ -131,6 +131,9 @@
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Pane.h" />
+    <ClInclude Include="PaneArgs.h">
+      <DependentUpon>IPaneContent.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ShortcutActionDispatch.h">
@@ -233,6 +236,9 @@
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Pane.cpp" />
+    <ClCompile Include="PaneArgs.cpp">
+      <DependentUpon>IPaneContent.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
     <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
