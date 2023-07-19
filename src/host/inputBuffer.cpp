@@ -556,13 +556,14 @@ size_t InputBuffer::Prepend(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& in
 {
     try
     {
-        _vtInputShouldSuppress = true;
-        auto resetVtInputSuppress = wil::scope_exit([&]() { _vtInputShouldSuppress = false; });
-        _HandleConsoleSuspensionEvents(inEvents);
         if (inEvents.empty())
         {
             return STATUS_SUCCESS;
         }
+
+        _vtInputShouldSuppress = true;
+        auto resetVtInputSuppress = wil::scope_exit([&]() { _vtInputShouldSuppress = false; });
+
         // read all of the records out of the buffer, then write the
         // prepend ones, then write the original set. We need to do it
         // this way to handle any coalescing that might occur.
@@ -648,13 +649,13 @@ size_t InputBuffer::Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEv
 {
     try
     {
-        _vtInputShouldSuppress = true;
-        auto resetVtInputSuppress = wil::scope_exit([&]() { _vtInputShouldSuppress = false; });
-        _HandleConsoleSuspensionEvents(inEvents);
         if (inEvents.empty())
         {
             return 0;
         }
+
+        _vtInputShouldSuppress = true;
+        auto resetVtInputSuppress = wil::scope_exit([&]() { _vtInputShouldSuppress = false; });
 
         // Write to buffer.
         size_t EventsWritten;
@@ -734,6 +735,19 @@ bool InputBuffer::WriteMouseEvent(til::point position, const unsigned int button
     return false;
 }
 
+// Ctrl-S is traditionally considered an alias for the pause key.
+// This returns true if it's either of the two.
+static bool IsPauseKey(const KEY_EVENT_RECORD& event)
+{
+    if (event.wVirtualKeyCode == VK_PAUSE)
+    {
+        return true;
+    }
+
+    const auto ctrlButNotAlt = WI_IsAnyFlagSet(event.dwControlKeyState, CTRL_PRESSED) && WI_AreAllFlagsClear(event.dwControlKeyState, ALT_PRESSED);
+    return ctrlButNotAlt && event.wVirtualKeyCode == L'S';
+}
+
 // Routine Description:
 // - Coalesces input events and transfers them to storage queue.
 // Arguments:
@@ -750,23 +764,39 @@ void InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>&
                                _Out_ size_t& eventsWritten,
                                _Out_ bool& setWaitEvent)
 {
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
     eventsWritten = 0;
     setWaitEvent = false;
     const auto initiallyEmptyQueue = _storage.empty();
     const auto initialInEventsSize = inEvents.size();
     const auto vtInputMode = IsInVirtualTerminalInputMode();
 
-    while (!inEvents.empty())
+    for (auto& inEvent : inEvents)
     {
-        // Pop the next event.
+        if (inEvent->EventType() == InputEventType::KeyEvent && static_cast<const KeyEvent*>(inEvent.get())->IsKeyDown())
+        {
+            // if output is suspended, any keyboard input releases it.
+            if (WI_IsFlagSet(gci.Flags, CONSOLE_SUSPENDED) && !IsSystemKey(static_cast<const KeyEvent*>(inEvent.get())->GetVirtualKeyCode()))
+            {
+                UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
+                continue;
+            }
+            // intercept control-s
+            if (WI_IsFlagSet(InputMode, ENABLE_LINE_INPUT) && IsPauseKey(inEvent->ToInputRecord().Event.KeyEvent))
+            {
+                WI_SetFlag(gci.Flags, CONSOLE_SUSPENDED);
+                continue;
+            }
+        }
+
         // If we're in vt mode, try and handle it with the vt input module.
         // If it was handled, do nothing else for it.
         // If there was one event passed in, try coalescing it with the previous event currently in the buffer.
         // If it's not coalesced, append it to the buffer.
-        auto inEvent = std::move(inEvents.front());
-        inEvents.pop_front();
         if (vtInputMode)
         {
+            // GH#11682: TerminalInput::HandleKey can handle both KeyEvents and Focus events seamlessly
             if (const auto out = _termInput.HandleKey(inEvent.get()))
             {
                 _HandleTerminalInputCallback(*out);
@@ -779,40 +809,12 @@ void InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>&
         // record at a time because this is the original behavior of
         // the input buffer. Changing this behavior may break stuff
         // that was depending on it.
-        if (initialInEventsSize == 1 && !_storage.empty())
+        if (initialInEventsSize == 1 && !_storage.empty() && _CoalesceEvent(inEvents[0]))
         {
-            // coalescing requires a deque of events, so push it back onto the front.
-            inEvents.push_front(std::move(inEvent));
-
-            auto coalesced = false;
-            // this looks kinda weird but we don't want to coalesce a
-            // mouse event and then try to coalesce a key event right after.
-            //
-            // we also pass the whole deque to the coalescing methods
-            // even though they only want one event because it should
-            // be their responsibility to maintain the correct state
-            // of the deque if they process any records in it.
-            if (_CoalesceMouseMovedEvents(inEvents))
-            {
-                coalesced = true;
-            }
-            else if (_CoalesceRepeatedKeyPressEvents(inEvents))
-            {
-                coalesced = true;
-            }
-            if (coalesced)
-            {
-                eventsWritten = 1;
-                return;
-            }
-            else
-            {
-                // We didn't coalesce the event. pull it from the queue again,
-                //  to keep the state consistent with the start of this block.
-                inEvent = std::move(inEvents.front());
-                inEvents.pop_front();
-            }
+            eventsWritten++;
+            return;
         }
+
         // At this point, the event was neither coalesced, nor processed by VT.
         _storage.push_back(std::move(inEvent));
         ++eventsWritten;
@@ -821,74 +823,6 @@ void InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>&
     {
         setWaitEvent = true;
     }
-}
-
-// Routine Description:
-// - Checks if the last saved event and the first event of inRecords are
-// both MOUSE_MOVED events. If they are, the last saved event is
-// updated with the new mouse position and the first event of inRecords is
-// dropped.
-// Arguments:
-// - inRecords - The incoming records to process.
-// Return Value:
-// true if events were coalesced, false if they were not.
-// Note:
-// - The size of inRecords must be 1.
-// - Coalescing here means updating a record that already exists in
-// the buffer with updated values from an incoming event, instead of
-// storing the incoming event (which would make the original one
-// redundant/out of date with the most current state).
-bool InputBuffer::_CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
-{
-    FAIL_FAST_IF(!(inEvents.size() == 1));
-    FAIL_FAST_IF(_storage.empty());
-    const IInputEvent* const pFirstInEvent = inEvents.front().get();
-    const IInputEvent* const pLastStoredEvent = _storage.back().get();
-    if (pFirstInEvent->EventType() == InputEventType::MouseEvent &&
-        pLastStoredEvent->EventType() == InputEventType::MouseEvent)
-    {
-        const auto pInMouseEvent = static_cast<const MouseEvent* const>(pFirstInEvent);
-        const auto pLastMouseEvent = static_cast<const MouseEvent* const>(pLastStoredEvent);
-
-        if (pInMouseEvent->IsMouseMoveEvent() &&
-            pLastMouseEvent->IsMouseMoveEvent())
-        {
-            // update mouse moved position
-            const auto pMouseEvent = static_cast<MouseEvent* const>(_storage.back().release());
-            pMouseEvent->SetPosition(pInMouseEvent->GetPosition());
-            std::unique_ptr<IInputEvent> tempPtr(pMouseEvent);
-            tempPtr.swap(_storage.back());
-
-            inEvents.pop_front();
-            return true;
-        }
-    }
-    return false;
-}
-
-// Routine Description:
-// - checks two KeyEvents to see if they're similar enough to be coalesced
-// Arguments:
-// - a - the first KeyEvent
-// - b - the other KeyEvent
-// Return Value:
-// - true if the events could be coalesced, false otherwise
-bool InputBuffer::_CanCoalesce(const KeyEvent& a, const KeyEvent& b) const noexcept
-{
-    if (WI_IsFlagSet(a.GetActiveModifierKeys(), NLS_IME_CONVERSION) &&
-        a.GetCharData() == b.GetCharData() &&
-        a.GetActiveModifierKeys() == b.GetActiveModifierKeys())
-    {
-        return true;
-    }
-    // other key events check
-    else if (a.GetVirtualScanCode() == b.GetVirtualScanCode() &&
-             a.GetCharData() == b.GetCharData() &&
-             a.GetActiveModifierKeys() == b.GetActiveModifierKeys())
-    {
-        return true;
-    }
-    return false;
 }
 
 // Routine Description::
@@ -905,76 +839,44 @@ bool InputBuffer::_CanCoalesce(const KeyEvent& a, const KeyEvent& b) const noexc
 // the buffer with updated values from an incoming event, instead of
 // storing the incoming event (which would make the original one
 // redundant/out of date with the most current state).
-bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+bool InputBuffer::_CoalesceEvent(const std::unique_ptr<IInputEvent>& inEvent) const noexcept
 {
-    FAIL_FAST_IF(!(inEvents.size() == 1));
-    FAIL_FAST_IF(_storage.empty());
-    const IInputEvent* const pFirstInEvent = inEvents.front().get();
-    const IInputEvent* const pLastStoredEvent = _storage.back().get();
-    if (pFirstInEvent->EventType() == InputEventType::KeyEvent &&
-        pLastStoredEvent->EventType() == InputEventType::KeyEvent)
+    auto& lastEvent = _storage.back();
+
+    if (lastEvent->EventType() == InputEventType::MouseEvent && inEvent->EventType() == InputEventType::MouseEvent)
     {
-        const auto pInKeyEvent = static_cast<const KeyEvent* const>(pFirstInEvent);
-        const auto pLastKeyEvent = static_cast<const KeyEvent* const>(pLastStoredEvent);
+        const auto& inMouse = *static_cast<const MouseEvent*>(inEvent.get());
+        auto& lastMouse = *static_cast<MouseEvent*>(lastEvent.get());
 
-        if (pInKeyEvent->IsKeyDown() &&
-            pLastKeyEvent->IsKeyDown() &&
-            !IsGlyphFullWidth(pInKeyEvent->GetCharData()) &&
-            _CanCoalesce(*pInKeyEvent, *pLastKeyEvent))
+        if (lastMouse.IsMouseMoveEvent() && inMouse.IsMouseMoveEvent())
         {
-            // increment repeat count
-            const auto pKeyEvent = static_cast<KeyEvent* const>(_storage.back().release());
-            WORD repeatCount = pKeyEvent->GetRepeatCount() + pInKeyEvent->GetRepeatCount();
-            pKeyEvent->SetRepeatCount(repeatCount);
-            std::unique_ptr<IInputEvent> tempPtr(pKeyEvent);
-            tempPtr.swap(_storage.back());
-
-            inEvents.pop_front();
+            lastMouse.SetPosition(inMouse.GetPosition());
             return true;
         }
     }
-    return false;
-}
-
-// Routine Description:
-// - Handles records that suspend/resume the console.
-// Arguments:
-// - records - records to check for pause/unpause events
-// Return Value:
-// - None
-// Note:
-// - The console lock must be held when calling this routine.
-// - will throw exception on error
-void InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
-{
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    std::deque<std::unique_ptr<IInputEvent>> outEvents;
-    while (!inEvents.empty())
+    else if (lastEvent->EventType() == InputEventType::KeyEvent && inEvent->EventType() == InputEventType::KeyEvent)
     {
-        auto currEvent = std::move(inEvents.front());
-        inEvents.pop_front();
-        if (currEvent->EventType() == InputEventType::KeyEvent)
+        const auto& inKey = *static_cast<const KeyEvent*>(inEvent.get());
+        auto& lastKey = *static_cast<KeyEvent*>(lastEvent.get());
+
+        if (lastKey.IsKeyDown() && inKey.IsKeyDown() &&
+            (lastKey.GetVirtualScanCode() == inKey.GetVirtualScanCode() || WI_IsFlagSet(inKey.GetActiveModifierKeys(), NLS_IME_CONVERSION)) &&
+            lastKey.GetCharData() == inKey.GetCharData() &&
+            lastKey.GetActiveModifierKeys() == inKey.GetActiveModifierKeys() &&
+            // TODO: This behavior is an import from old conhost v1 and has been broken for decades.
+            // This is probably the outdated idea that any wide glyph is being represented by 2 characters (DBCS) and likely
+            // resulted from conhost originally being split into a ASCII/OEM and a DBCS variant with preprocessor flags.
+            // You can't update the repeat count of such a A,B pair, because they're stored as A,A,B,B (down-down, up-up).
+            // I believe the proper approach is to store pairs of characters as pairs, update their combined
+            // repeat count and only when they're being read de-coalesce them into their alternating form.
+            !IsGlyphFullWidth(inKey.GetCharData()))
         {
-            const auto pKeyEvent = static_cast<const KeyEvent* const>(currEvent.get());
-            if (pKeyEvent->IsKeyDown())
-            {
-                if (WI_IsFlagSet(gci.Flags, CONSOLE_SUSPENDED) &&
-                    !IsSystemKey(pKeyEvent->GetVirtualKeyCode()))
-                {
-                    UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
-                    continue;
-                }
-                else if (WI_IsFlagSet(InputMode, ENABLE_LINE_INPUT) && pKeyEvent->IsPauseKey())
-                {
-                    WI_SetFlag(gci.Flags, CONSOLE_SUSPENDED);
-                    continue;
-                }
-            }
+            lastKey.SetRepeatCount(lastKey.GetRepeatCount() + inKey.GetRepeatCount());
+            return true;
         }
-        outEvents.push_back(std::move(currEvent));
     }
-    inEvents.swap(outEvents);
+
+    return false;
 }
 
 // Routine Description:

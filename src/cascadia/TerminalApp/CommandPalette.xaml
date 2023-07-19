@@ -75,6 +75,7 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             AutomationProperties.AccessibilityView="Raw"
+                            Background="{ThemeResource FlyoutPresenterBackground}"
                             Style="{ThemeResource KeyChordBorderStyle}"
                             Visibility="{x:Bind Item.KeyChordText, Mode=OneWay, Converter={StaticResource CommandKeyChordVisibilityConverter}}">
 

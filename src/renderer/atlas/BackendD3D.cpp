@@ -269,7 +269,7 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
 
     const auto fontChanged = _fontGeneration != p.s->font.generation();
     const auto miscChanged = _miscGeneration != p.s->misc.generation();
-    const auto cellCountChanged = _cellCount != p.s->cellCount;
+    const auto cellCountChanged = _viewportCellCount != p.s->viewportCellCount;
 
     if (fontChanged)
     {
@@ -298,7 +298,7 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     _fontGeneration = p.s->font.generation();
     _miscGeneration = p.s->misc.generation();
     _targetSize = p.s->targetSize;
-    _cellCount = p.s->cellCount;
+    _viewportCellCount = p.s->viewportCellCount;
 }
 
 void BackendD3D::_updateFontDependents(const RenderingPayload& p)
@@ -509,8 +509,8 @@ void BackendD3D::_recreateBackgroundColorBitmap(const RenderingPayload& p)
     _backgroundBitmapView.reset();
 
     const D3D11_TEXTURE2D_DESC desc{
-        .Width = p.s->cellCount.x,
-        .Height = p.s->cellCount.y,
+        .Width = p.s->viewportCellCount.x,
+        .Height = p.s->viewportCellCount.y,
         .MipLevels = 1,
         .ArraySize = 1,
         .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
@@ -534,8 +534,8 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
     {
         PSConstBuffer data{};
         data.backgroundColor = colorFromU32Premultiply<f32x4>(p.s->misc->backgroundColor);
-        data.cellSize = { static_cast<f32>(p.s->font->cellSize.x), static_cast<f32>(p.s->font->cellSize.y) };
-        data.cellCount = { static_cast<f32>(p.s->cellCount.x), static_cast<f32>(p.s->cellCount.y) };
+        data.backgroundCellSize = { static_cast<f32>(p.s->font->cellSize.x), static_cast<f32>(p.s->font->cellSize.y) };
+        data.backgroundCellCount = { static_cast<f32>(p.s->viewportCellCount.x), static_cast<f32>(p.s->viewportCellCount.y) };
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);
         data.enhancedContrast = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
         data.underlineWidth = p.s->font->underline.height;
@@ -891,7 +891,7 @@ void BackendD3D::_flushQuads(const RenderingPayload& p)
 void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
 {
     // We use the viewport size of the terminal as the initial estimate for the amount of instances we'll see.
-    const auto minCapacity = static_cast<size_t>(p.s->cellCount.x) * p.s->cellCount.y;
+    const auto minCapacity = static_cast<size_t>(p.s->viewportCellCount.x) * p.s->viewportCellCount.y;
     auto newCapacity = std::max(_instancesCount, minCapacity);
     auto newSize = newCapacity * sizeof(QuadInstance);
     // Round up to multiples of 64kB to avoid reallocating too often.
@@ -1090,7 +1090,7 @@ void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
 
     i32 columnAdvance = 1;
     i32 columnAdvanceInPx{ p.s->font->cellSize.x };
-    i32 cellCount{ p.s->cellCount.x };
+    i32 cellCount{ p.s->viewportCellCount.x };
 
     if (p.rows[y]->lineRendition != LineRendition::SingleWidth)
     {
@@ -2092,8 +2092,8 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
             .time = std::chrono::duration<f32>(std::chrono::steady_clock::now() - _customShaderStartTime).count(),
             .scale = static_cast<f32>(p.s->font->dpi) / static_cast<f32>(USER_DEFAULT_SCREEN_DPI),
             .resolution = {
-                static_cast<f32>(_cellCount.x * p.s->font->cellSize.x),
-                static_cast<f32>(_cellCount.y * p.s->font->cellSize.y),
+                static_cast<f32>(_viewportCellCount.x * p.s->font->cellSize.x),
+                static_cast<f32>(_viewportCellCount.y * p.s->font->cellSize.y),
             },
             .background = colorFromU32Premultiply<f32x4>(p.s->misc->backgroundColor),
         };
