@@ -1,7 +1,7 @@
 ---
 author: Mike Griese
 created on: 2022-03-28
-last updated: 2023-02-06
+last updated: 2023-07-19
 issue id: 11000, 1527, 6232
 ---
 
@@ -77,7 +77,7 @@ A | ✅ Done   | The user can use mark each prompt and have a mark displayed on 
 B | ✅ Done   | The user can perform an action to scroll between marks
 C | ✅ Done   | The user can manually add marks to the buffer
 D | ✅ Done   | The shell can emit different marks to differentiate between prompt, command, and output
-E | 🐣 Crawl  | Clearing the buffer clears marks
+E | ✅ Done   | Clearing the buffer clears marks
 F | 🐣 Crawl  | Marks stay in the same place you'd expect after resizing the buffer.
 G | ✅ Done   | Users can perform an action to select the previous command's output
 H | 🚶 Walk   | The find dialog can display marks on the scrollbar indicating the position of search matches
@@ -303,15 +303,15 @@ priority, with errors being the highest priority.
 
 ## Work needed to get marks to v1
 
-* [ ] Clearing the screen leaves marks behind
-  * [ ] Make sure `ED2` works to clear/move marks
-  * [ ] Same with `ED3`
-  * [ ] Same with `cls` / `Clear-Host`
-  * [ ] Clear Buffer action too.
+* [x] Clearing the screen leaves marks behind
+  * [x] Make sure `ED2` works to clear/move marks
+  * [x] Same with `ED3`
+  * [x] Same with `cls` / `Clear-Host`
+  * [x] Clear Buffer action too.
 * [X] Circling doesn't update scrollbar
   * I think this was fixed in [#14341], or in [#14045]
 * [ ] Resizing / reflowing marks
-* [ ] marks should be stored in the `TextBuffer`
+* [x] marks should be stored in the `TextBuffer`
 
 ## Future Considerations
 * adding a timestamp for when a line was marked?
@@ -372,6 +372,30 @@ consider what the UX is like for this.
   - If it's in the buffer itself, we can render it with the renderer, which by
     all accounts, we probably should.
 
+### Edge cases where these might not work as expected
+
+Much of the benefits of shell integration come from literal buffer text parsing.
+This can lead to some rough edge cases, such as:
+
+* the user presses <kbd>Ctrl+V</kbd><kbd>Escape</kbd> to input an ESC character
+  and the shell displays it as `^[`
+* the user presses <kbd>Ctrl+V</kbd><kbd>Ctrl+J</kbd> to input an LF character
+  and the shell displays it as a line break
+* the user presses <kbd>Enter</kbd> within a quoted string and the shell
+  displays a continuation prompt
+* the user types a command including an exclamation point, and the shell invokes
+  history expansion and echoes the result of expansion before it runs the
+  command
+* The user has a prompt with a right-aligned status, ala
+  ![](https://user-images.githubusercontent.com/189190/254475719-5007df07-6cc3-42e8-baf7-2572579eb2b9.png)
+
+In these cases, the effects of shell integration will likely not work as
+intended. There are various possible solutions that are being explored. We might
+want to in the future also use [VsCode's extension to the FTCS sequences] to
+enable the shell to tell the terminal the literal resulting commandline.
+
+There's been [other proposals] to extend shell integration features as well.
+
 ### Rejected ideas
 
 There was originally some discussion as to whether this is a design that should
@@ -381,6 +405,7 @@ these features are going in very different directions, however. Likely best to
 leave them separate.
 
 ## Resources
+
 ### Other related issues
 
 Not necessarily marks related, but could happily leverage this functionality.
@@ -438,6 +463,8 @@ take just 1ms (including all text and metadata). If we assume that each row has
 a mark, that marks are 36 byte large and assuming the worst case of random
 access, we can go through all 32k within about 0.3ms.
 
+
+
 _(Thanks lhecker for these notes)_
 
 
@@ -472,3 +499,7 @@ _(Thanks lhecker for these notes)_
 [#14045]: https://github.com/microsoft/terminal/issues/14045
 [#14754]: https://github.com/microsoft/terminal/issues/14754
 [#14341]: https://github.com/microsoft/terminal/issues/14341
+
+[VsCode's extension to the FTCS sequences]: https://code.visualstudio.com/docs/terminal/shell-integration#_vs-code-custom-sequences-osc-633-st
+
+[other proposals]: https://gitlab.freedesktop.org/terminal-wg/specifications/-/merge_requests/6#f6de1e5703f5806d0821d92b0274e895c4b6d850
