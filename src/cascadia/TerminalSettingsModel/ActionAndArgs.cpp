@@ -72,7 +72,7 @@ static constexpr std::string_view IdentifyWindowKey{ "identifyWindow" };
 static constexpr std::string_view IdentifyWindowsKey{ "identifyWindows" };
 static constexpr std::string_view RenameWindowKey{ "renameWindow" };
 static constexpr std::string_view OpenWindowRenamerKey{ "openWindowRenamer" };
-static constexpr std::string_view DisplayWorkingDirectoryKey{ "displayTerminalCwd" };
+static constexpr std::string_view DisplayWorkingDirectoryKey{ "debugTerminalCwd" };
 static constexpr std::string_view SearchForTextKey{ "searchWeb" };
 static constexpr std::string_view GlobalSummonKey{ "globalSummon" };
 static constexpr std::string_view QuakeModeKey{ "quakeMode" };
