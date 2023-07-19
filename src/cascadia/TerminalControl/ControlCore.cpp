@@ -2329,7 +2329,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::AddMark(const Control::ScrollMark& mark)
     {
-        ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark m{};
+        ::ScrollMark m{};
 
         if (mark.Color.HasValue)
         {
@@ -2358,7 +2358,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto currentOffset = ScrollOffset();
         const auto& marks{ _terminal->GetScrollMarks() };
 
-        std::optional<DispatchTypes::ScrollMark> tgt;
+        std::optional<::ScrollMark> tgt;
 
         switch (direction)
         {
@@ -2461,7 +2461,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const til::point start = HasSelection() ? (goUp ? _terminal->GetSelectionAnchor() : _terminal->GetSelectionEnd()) :
                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
 
-        std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
+        std::optional<::ScrollMark> nearest{ std::nullopt };
         const auto& marks{ _terminal->GetScrollMarks() };
 
         // Early return so we don't have to check for the validity of `nearest` below after the loop exits.
@@ -2501,7 +2501,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const til::point start = HasSelection() ? (goUp ? _terminal->GetSelectionAnchor() : _terminal->GetSelectionEnd()) :
                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
 
-        std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
+        std::optional<::ScrollMark> nearest{ std::nullopt };
         const auto& marks{ _terminal->GetScrollMarks() };
 
         static constexpr til::point worst{ til::CoordTypeMax, til::CoordTypeMax };
@@ -2575,8 +2575,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_contextMenuSelectMark(
         const til::point& pos,
-        bool (*filter)(const DispatchTypes::ScrollMark&),
-        til::point_span (*getSpan)(const DispatchTypes::ScrollMark&))
+        bool (*filter)(const ::ScrollMark&),
+        til::point_span (*getSpan)(const ::ScrollMark&))
     {
         // Do nothing if the caller didn't give us a way to get the span to select for this mark.
         if (!getSpan)
@@ -2609,20 +2609,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _contextMenuSelectMark(
             _contextMenuBufferPosition,
-            [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasCommand(); },
-            [](const DispatchTypes::ScrollMark& m) { return til::point_span{ m.end, *m.commandEnd }; });
+            [](const ::ScrollMark& m) -> bool { return !m.HasCommand(); },
+            [](const ::ScrollMark& m) { return til::point_span{ m.end, *m.commandEnd }; });
     }
     void ControlCore::ContextMenuSelectOutput()
     {
         _contextMenuSelectMark(
             _contextMenuBufferPosition,
-            [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasOutput(); },
-            [](const DispatchTypes::ScrollMark& m) { return til::point_span{ *m.commandEnd, *m.outputEnd }; });
+            [](const ::ScrollMark& m) -> bool { return !m.HasOutput(); },
+            [](const ::ScrollMark& m) { return til::point_span{ *m.commandEnd, *m.outputEnd }; });
     }
 
     bool ControlCore::_clickedOnMark(
         const til::point& pos,
-        bool (*filter)(const DispatchTypes::ScrollMark&))
+        bool (*filter)(const ::ScrollMark&))
     {
         // Don't show this if the click was on the selection
         if (_terminal->IsSelectionActive() &&
@@ -2660,7 +2660,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // Relies on the anchor set in AnchorContextMenu
         return _clickedOnMark(_contextMenuBufferPosition,
-                              [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasCommand(); });
+                              [](const ::ScrollMark& m) -> bool { return !m.HasCommand(); });
     }
 
     // Method Description:
@@ -2669,6 +2669,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // Relies on the anchor set in AnchorContextMenu
         return _clickedOnMark(_contextMenuBufferPosition,
-                              [](const DispatchTypes::ScrollMark& m) -> bool { return !m.HasOutput(); });
+                              [](const ::ScrollMark& m) -> bool { return !m.HasOutput(); });
     }
 }
