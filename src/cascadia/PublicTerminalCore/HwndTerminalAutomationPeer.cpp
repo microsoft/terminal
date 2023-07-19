@@ -5,6 +5,7 @@
 #include "HwndTerminalAutomationPeer.hpp"
 #include "../../types/UiaTracing.h"
 #include <UIAutomationCoreApi.h>
+#include <delayimp.h>
 
 #pragma warning(suppress : 4471) // We don't control UIAutomationClient
 #include <UIAutomationClient.h>
@@ -12,6 +13,15 @@
 using namespace Microsoft::Console::Types;
 
 static constexpr wchar_t UNICODE_NEWLINE{ L'\n' };
+
+static int CheckDelayedProcException(int exception) noexcept
+{
+    if (exception == VcppException(ERROR_SEVERITY_ERROR, ERROR_PROC_NOT_FOUND))
+    {
+        return EXCEPTION_EXECUTE_HANDLER;
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
 
 // Method Description:
 // - creates a copy of the provided text with all of the control characters removed
@@ -123,6 +133,12 @@ void HwndTerminalAutomationPeer::SignalCursorChanged()
 
 void HwndTerminalAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
 {
+    if (_notificationsUnavailable) [[unlikely]]
+    {
+        // What if you tried to notify, but God said no
+        return;
+    }
+
     // Try to suppress any events (or event data)
     // that is just the keypress the user made
     auto sanitized{ Sanitize(newOutput) };
@@ -155,5 +171,19 @@ void HwndTerminalAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
 
     const auto sanitizedBstr = wil::make_bstr_nothrow(sanitized.c_str());
     static auto activityId = wil::make_bstr_nothrow(L"TerminalTextOutput");
-    LOG_IF_FAILED(UiaRaiseNotificationEvent(this, NotificationKind_ActionCompleted, NotificationProcessing_All, sanitizedBstr.get(), activityId.get()));
+    _tryNotify(sanitizedBstr.get(), activityId.get());
+}
+
+// This needs to be a separate function because it is using SEH try/except, which
+// is incompatible with C++ unwinding
+void HwndTerminalAutomationPeer::_tryNotify(BSTR string, BSTR activity)
+{
+    __try
+    {
+        LOG_IF_FAILED(UiaRaiseNotificationEvent(this, NotificationKind_ActionCompleted, NotificationProcessing_All, string, activity));
+    }
+    __except (CheckDelayedProcException(GetExceptionCode()))
+    {
+        _notificationsUnavailable = true;
+    }
 }

@@ -60,7 +60,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void WarningBell() = 0;
         virtual void SetWindowTitle(const std::wstring_view title) = 0;
-        virtual void UseAlternateScreenBuffer() = 0;
+        virtual void UseAlternateScreenBuffer(const TextAttribute& attrs) = 0;
         virtual void UseMainScreenBuffer() = 0;
 
         virtual CursorType GetUserDefaultCursorStyle() const = 0;
@@ -81,7 +81,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void NotifyAccessibilityChange(const til::rect& changedRect) = 0;
         virtual void NotifyBufferRotation(const int delta) = 0;
 
-        virtual void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) = 0;
+        virtual void MarkPrompt(const ScrollMark& mark) = 0;
         virtual void MarkCommandStart() = 0;
         virtual void MarkOutputStart() = 0;
         virtual void MarkCommandFinish(std::optional<unsigned int> error) = 0;

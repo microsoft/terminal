@@ -269,7 +269,7 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
 
     const auto fontChanged = _fontGeneration != p.s->font.generation();
     const auto miscChanged = _miscGeneration != p.s->misc.generation();
-    const auto cellCountChanged = _cellCount != p.s->cellCount;
+    const auto cellCountChanged = _viewportCellCount != p.s->viewportCellCount;
 
     if (fontChanged)
     {
@@ -298,7 +298,7 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     _fontGeneration = p.s->font.generation();
     _miscGeneration = p.s->misc.generation();
     _targetSize = p.s->targetSize;
-    _cellCount = p.s->cellCount;
+    _viewportCellCount = p.s->viewportCellCount;
 }
 
 void BackendD3D::_updateFontDependents(const RenderingPayload& p)
@@ -509,8 +509,8 @@ void BackendD3D::_recreateBackgroundColorBitmap(const RenderingPayload& p)
     _backgroundBitmapView.reset();
 
     const D3D11_TEXTURE2D_DESC desc{
-        .Width = p.s->cellCount.x,
-        .Height = p.s->cellCount.y,
+        .Width = p.s->viewportCellCount.x,
+        .Height = p.s->viewportCellCount.y,
         .MipLevels = 1,
         .ArraySize = 1,
         .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
@@ -534,8 +534,8 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
     {
         PSConstBuffer data{};
         data.backgroundColor = colorFromU32Premultiply<f32x4>(p.s->misc->backgroundColor);
-        data.cellSize = { static_cast<f32>(p.s->font->cellSize.x), static_cast<f32>(p.s->font->cellSize.y) };
-        data.cellCount = { static_cast<f32>(p.s->cellCount.x), static_cast<f32>(p.s->cellCount.y) };
+        data.backgroundCellSize = { static_cast<f32>(p.s->font->cellSize.x), static_cast<f32>(p.s->font->cellSize.y) };
+        data.backgroundCellCount = { static_cast<f32>(p.s->viewportCellCount.x), static_cast<f32>(p.s->viewportCellCount.y) };
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);
         data.enhancedContrast = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
         data.underlineWidth = p.s->font->underline.height;
@@ -693,7 +693,6 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
 
     const auto minAreaByFont = cellArea * 95; // Covers all printable ASCII characters
     const auto minAreaByGrowth = static_cast<u32>(_rectPacker.width) * _rectPacker.height * 2;
-    const auto min = std::max(minArea, std::max(minAreaByFont, minAreaByGrowth));
 
     // It's hard to say what the max. size of the cache should be. Optimally I think we should use as much
     // memory as is available, but the rendering code in this project is a big mess and so integrating
@@ -702,7 +701,9 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
     // we're locked into a state, where on every render pass we're starting with a half full atlas, drawing once,
     // filling it with the remaining half and drawing again, requiring two rendering passes on each frame.
     const auto maxAreaByFont = targetArea + targetArea / 4;
-    const auto area = std::min(maxArea, std::min(maxAreaByFont, min));
+
+    auto area = std::min(maxAreaByFont, std::max(minAreaByFont, minAreaByGrowth));
+    area = clamp(area, minArea, maxArea);
 
     // This block of code calculates the size of a power-of-2 texture that has an area larger than the given `area`.
     // For instance, for an area of 985x1946 = 1916810 it would result in a u/v of 2048x1024 (area = 2097152).
@@ -782,6 +783,7 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
 
     // We have our own glyph cache so Direct2D's cache doesn't help much.
     // This saves us 1MB of RAM, which is not much, but also not nothing.
+    if (_d2dRenderTarget4)
     {
         wil::com_ptr<ID2D1Device> device;
         _d2dRenderTarget4->GetDevice(device.addressof());
@@ -889,7 +891,7 @@ void BackendD3D::_flushQuads(const RenderingPayload& p)
 void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
 {
     // We use the viewport size of the terminal as the initial estimate for the amount of instances we'll see.
-    const auto minCapacity = static_cast<size_t>(p.s->cellCount.x) * p.s->cellCount.y;
+    const auto minCapacity = static_cast<size_t>(p.s->viewportCellCount.x) * p.s->viewportCellCount.y;
     auto newCapacity = std::max(_instancesCount, minCapacity);
     auto newSize = newCapacity * sizeof(QuadInstance);
     // Round up to multiples of 64kB to avoid reallocating too often.
@@ -1088,7 +1090,7 @@ void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
 
     i32 columnAdvance = 1;
     i32 columnAdvanceInPx{ p.s->font->cellSize.x };
-    i32 cellCount{ p.s->cellCount.x };
+    i32 cellCount{ p.s->viewportCellCount.x };
 
     if (p.rows[y]->lineRendition != LineRendition::SingleWidth)
     {
@@ -1370,12 +1372,12 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
             static_cast<f32>(rect.x + rect.w) / transform.m11,
             static_cast<f32>(rect.y + rect.h) / transform.m22,
         };
-        _d2dRenderTarget4->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
+        _d2dRenderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
     }
     const auto boxGlyphCleanup = wil::scope_exit([&]() {
         if (isBoxGlyph)
         {
-            _d2dRenderTarget4->PopAxisAlignedClip();
+            _d2dRenderTarget->PopAxisAlignedClip();
         }
     });
 
@@ -2090,8 +2092,8 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
             .time = std::chrono::duration<f32>(std::chrono::steady_clock::now() - _customShaderStartTime).count(),
             .scale = static_cast<f32>(p.s->font->dpi) / static_cast<f32>(USER_DEFAULT_SCREEN_DPI),
             .resolution = {
-                static_cast<f32>(_cellCount.x * p.s->font->cellSize.x),
-                static_cast<f32>(_cellCount.y * p.s->font->cellSize.y),
+                static_cast<f32>(_viewportCellCount.x * p.s->font->cellSize.x),
+                static_cast<f32>(_viewportCellCount.y * p.s->font->cellSize.y),
             },
             .background = colorFromU32Premultiply<f32x4>(p.s->misc->backgroundColor),
         };

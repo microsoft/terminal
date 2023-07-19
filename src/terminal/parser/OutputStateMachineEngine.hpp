@@ -13,7 +13,6 @@ Abstract:
 #include <functional>
 
 #include "../adapter/termDispatch.hpp"
-#include "telemetry.hpp"
 #include "IStateMachineEngine.hpp"
 
 namespace Microsoft::Console::Render
@@ -236,6 +235,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool _ParseHyperlink(const std::wstring_view string,
                              std::wstring& params,
                              std::wstring& uri) const;
+
+        bool _CanSeqAcceptSubParam(const VTID id, const VTParameters& parameters) noexcept;
 
         void _ClearLastChar() noexcept;
     };

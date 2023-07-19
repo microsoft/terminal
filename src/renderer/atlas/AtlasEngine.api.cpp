@@ -119,7 +119,7 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
         if (delta < 0)
         {
             _api.invalidatedRows.start = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.start + delta, u16min, u16max));
-            _api.invalidatedRows.end = _api.s->cellCount.y;
+            _api.invalidatedRows.end = _api.s->viewportCellCount.y;
         }
         else
         {
@@ -182,17 +182,29 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
 }
 
 [[nodiscard]] HRESULT AtlasEngine::UpdateViewport(const til::inclusive_rect& srNewViewport) noexcept
+try
 {
-    const u16x2 cellCount{
-        gsl::narrow_cast<u16>(std::max(1, srNewViewport.right - srNewViewport.left + 1)),
-        gsl::narrow_cast<u16>(std::max(1, srNewViewport.bottom - srNewViewport.top + 1)),
+    const u16x2 viewportCellCount{
+        gsl::narrow<u16>(std::max(1, srNewViewport.right - srNewViewport.left + 1)),
+        gsl::narrow<u16>(std::max(1, srNewViewport.bottom - srNewViewport.top + 1)),
     };
-    if (_api.s->cellCount != cellCount)
+    const u16x2 viewportOffset{
+        gsl::narrow<u16>(srNewViewport.left),
+        gsl::narrow<u16>(srNewViewport.top),
+    };
+
+    if (_api.s->viewportCellCount != viewportCellCount)
     {
-        _api.s.write()->cellCount = cellCount;
+        _api.s.write()->viewportCellCount = viewportCellCount;
     }
+    if (_api.s->viewportOffset != viewportOffset)
+    {
+        _api.s.write()->viewportOffset = viewportOffset;
+    }
+
     return S_OK;
 }
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::GetProposedFont(const FontInfoDesired& fontInfoDesired, _Out_ FontInfo& fontInfo, const int dpi) noexcept
 try
@@ -420,14 +432,19 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::SetWindowSize(const til::size pixels) noexcept
 {
-    u16x2 newSize;
-    RETURN_IF_FAILED(vec2_narrow(pixels.width, pixels.height, newSize));
+    // When Win+D is pressed, `GetClientRect` returns {0,0}.
+    // There's probably more situations in which our callers may pass us invalid data.
+    if (!pixels)
+    {
+        return S_OK;
+    }
 
-    // At the time of writing:
-    // When Win+D is pressed, `TriggerRedrawCursor` is called and a render pass is initiated.
-    // As conhost is in the background, GetClientRect will return {0,0} and we'll get called with {0,0}.
-    // This isn't a valid value for _api.sizeInPixel and would crash _recreateSizeDependentResources().
-    if (_api.s->targetSize != newSize && newSize != u16x2{})
+    const u16x2 newSize{
+        gsl::narrow_cast<u16>(clamp<til::CoordType>(pixels.width, 1, u16max)),
+        gsl::narrow_cast<u16>(clamp<til::CoordType>(pixels.height, 1, u16max)),
+    };
+
+    if (_api.s->targetSize != newSize)
     {
         _api.s.write()->targetSize = newSize;
     }

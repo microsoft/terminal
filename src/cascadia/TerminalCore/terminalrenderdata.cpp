@@ -70,7 +70,7 @@ CursorType Terminal::GetCursorStyle() const noexcept
     return _activeBuffer().GetCursor().GetType();
 }
 
-bool Terminal::IsCursorDoubleWidth() const noexcept
+bool Terminal::IsCursorDoubleWidth() const
 {
     const auto& buffer = _activeBuffer();
     const auto position = buffer.GetCursor().GetPosition();
