@@ -13,7 +13,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         property& operator=(const property& other) = default;
 
-        T operator()() const
+        T operator()() const noexcept
         {
             return _value;
         }
