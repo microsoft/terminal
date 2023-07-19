@@ -23,11 +23,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
         operator bool() const noexcept
         {
+#ifdef WINRT_Windows_Foundation_H
             if constexpr (std::is_same_v<T, winrt::hstring>)
             {
                 return !_value.empty();
             }
             else
+#endif
             {
                 return _value;
             }
