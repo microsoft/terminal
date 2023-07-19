@@ -65,7 +65,8 @@ Author(s):
     X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                                                                         \
     X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} })) \
     X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
-    X(bool, IsolatedMode, "compatibility.isolatedMode", false)
+    X(bool, IsolatedMode, "compatibility.isolatedMode", false)                                                                                                                                        \
+    X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")
 
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
     X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \
@@ -132,6 +133,9 @@ Author(s):
 
 #define MTSM_THEME_WINDOW_SETTINGS(X)                                                                                              \
     X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "applicationTheme", winrt::Windows::UI::Xaml::ElementTheme::Default) \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Frame, "frame", nullptr)                                            \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedFrame, "unfocusedFrame", nullptr)                          \
+    X(bool, RainbowFrame, "experimental.rainbowFrame", false)                                                                      \
     X(bool, UseMica, "useMica", false)
 
 #define MTSM_THEME_TABROW_SETTINGS(X)                                                             \

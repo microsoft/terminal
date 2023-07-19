@@ -68,13 +68,14 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
     const auto renderTargetChanged = !_renderTarget;
     const auto fontChanged = _fontGeneration != p.s->font.generation();
     const auto cursorChanged = _cursorGeneration != p.s->cursor.generation();
-    const auto cellCountChanged = _cellCount != p.s->cellCount;
+    const auto cellCountChanged = _viewportCellCount != p.s->viewportCellCount;
 
     if (renderTargetChanged)
     {
         {
             wil::com_ptr<ID3D11Texture2D> buffer;
             THROW_IF_FAILED(p.swapChain.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(buffer.addressof())));
+            const auto surface = buffer.query<IDXGISurface>();
 
             const D2D1_RENDER_TARGET_PROPERTIES props{
                 .type = D2D1_RENDER_TARGET_TYPE_DEFAULT,
@@ -83,8 +84,8 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
                 .dpiY = static_cast<f32>(p.s->font->dpi),
             };
             // ID2D1RenderTarget and ID2D1DeviceContext are the same and I'm tired of pretending they're not.
-            THROW_IF_FAILED(p.d2dFactory->CreateDxgiSurfaceRenderTarget(buffer.query<IDXGISurface>().get(), &props, reinterpret_cast<ID2D1RenderTarget**>(_renderTarget.addressof())));
-            _renderTarget.query_to(_renderTarget4.addressof());
+            THROW_IF_FAILED(p.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, reinterpret_cast<ID2D1RenderTarget**>(_renderTarget.addressof())));
+            _renderTarget.try_query_to(_renderTarget4.addressof());
 
             _renderTarget->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
             _renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
@@ -119,8 +120,8 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
             .dpiY = static_cast<f32>(p.s->font->dpi),
         };
         const D2D1_SIZE_U size{
-            p.s->cellCount.x,
-            p.s->cellCount.y,
+            p.s->viewportCellCount.x,
+            p.s->viewportCellCount.y,
         };
         const D2D1_MATRIX_3X2_F transform{
             .m11 = static_cast<f32>(p.s->font->cellSize.x),
@@ -144,7 +145,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
     _generation = p.s.generation();
     _fontGeneration = p.s->font.generation();
     _cursorGeneration = p.s->cursor.generation();
-    _cellCount = p.s->cellCount;
+    _viewportCellCount = p.s->viewportCellCount;
 }
 
 void BackendD2D::_drawBackground(const RenderingPayload& p) noexcept
@@ -538,6 +539,7 @@ void BackendD2D::_resizeCursorBitmap(const RenderingPayload& p, const til::size 
     cursorRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     cursorRenderTarget->BeginDraw();
+    cursorRenderTarget->Clear();
     {
         const D2D1_RECT_F rect{ 0, 0, sizeF.width, sizeF.height };
         const auto brush = _brushWithColor(0xffffffff);
@@ -627,7 +629,8 @@ void BackendD2D::_debugShowDirty(const RenderingPayload& p)
 
     for (size_t i = 0; i < std::size(_presentRects); ++i)
     {
-        if (const auto& rect = _presentRects[i])
+        const auto& rect = _presentRects[(_presentRectsPos + i) % std::size(_presentRects)];
+        if (rect.non_empty())
         {
             const D2D1_RECT_F rectF{
                 static_cast<f32>(rect.left),

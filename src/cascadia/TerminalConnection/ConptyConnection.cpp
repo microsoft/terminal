@@ -325,7 +325,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // handoff from an already-started PTY process.
         if (!_inPipe)
         {
-            DWORD flags = PSEUDOCONSOLE_RESIZE_QUIRK | PSEUDOCONSOLE_WIN32_INPUT_MODE;
+            DWORD flags = PSEUDOCONSOLE_RESIZE_QUIRK;
 
             // If we're using an existing buffer, we want the new connection
             // to reuse the existing cursor. When not setting this flag, the

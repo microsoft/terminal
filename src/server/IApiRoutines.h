@@ -66,29 +66,13 @@ public:
     [[nodiscard]] virtual HRESULT GetNumberOfConsoleInputEventsImpl(const IConsoleInputObject& context,
                                                                     ULONG& events) noexcept = 0;
 
-    [[nodiscard]] virtual HRESULT PeekConsoleInputAImpl(IConsoleInputObject& context,
-                                                        std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                        const size_t eventsToRead,
-                                                        INPUT_READ_HANDLE_DATA& readHandleState,
-                                                        std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
-
-    [[nodiscard]] virtual HRESULT PeekConsoleInputWImpl(IConsoleInputObject& context,
-                                                        std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                        const size_t eventsToRead,
-                                                        INPUT_READ_HANDLE_DATA& readHandleState,
-                                                        std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
-
-    [[nodiscard]] virtual HRESULT ReadConsoleInputAImpl(IConsoleInputObject& context,
-                                                        std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                        const size_t eventsToRead,
-                                                        INPUT_READ_HANDLE_DATA& readHandleState,
-                                                        std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
-
-    [[nodiscard]] virtual HRESULT ReadConsoleInputWImpl(IConsoleInputObject& context,
-                                                        std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                        const size_t eventsToRead,
-                                                        INPUT_READ_HANDLE_DATA& readHandleState,
-                                                        std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
+    [[nodiscard]] virtual HRESULT GetConsoleInputImpl(IConsoleInputObject& context,
+                                                      InputEventQueue& outEvents,
+                                                      const size_t eventReadCount,
+                                                      INPUT_READ_HANDLE_DATA& readHandleState,
+                                                      const bool IsUnicode,
+                                                      const bool IsPeek,
+                                                      std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ReadConsoleAImpl(IConsoleInputObject& context,
                                                    std::span<char> buffer,

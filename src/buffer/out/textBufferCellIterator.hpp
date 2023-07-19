@@ -49,9 +49,9 @@ public:
     til::point Pos() const noexcept;
 
 protected:
-    void _SetPos(const til::point newPos) noexcept;
+    void _SetPos(const til::point newPos);
     void _GenerateView() noexcept;
-    static const ROW* s_GetRow(const TextBuffer& buffer, const til::point pos) noexcept;
+    static const ROW* s_GetRow(const TextBuffer& buffer, const til::point pos);
 
     til::small_rle<TextAttribute, uint16_t, 1>::const_iterator _attrIter;
     OutputCellView _view;

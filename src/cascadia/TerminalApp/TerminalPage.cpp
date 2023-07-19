@@ -18,6 +18,7 @@
 #include <til/latch.h>
 
 #include "../../types/inc/utils.hpp"
+#include "App.h"
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
@@ -858,7 +859,10 @@ namespace winrt::TerminalApp::implementation
         });
         // Necessary for fly-out sub items to get focus on a tab before collapsing. Related to #15049
         newTabFlyout.Closing([this](auto&&, auto&&) {
-            _FocusCurrentTab(true);
+            if (!_commandPaletteIs(Visibility::Visible))
+            {
+                _FocusCurrentTab(true);
+            }
         });
         _newTabButton.Flyout(newTabFlyout);
     }
@@ -1120,6 +1124,7 @@ namespace winrt::TerminalApp::implementation
                 if (profile)
                 {
                     newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+                    newTerminalArgs.StartingDirectory(_evaluatePathForCwd(profile.EvaluatedStartingDirectory()));
                 }
             }
 
@@ -1165,6 +1170,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    std::wstring TerminalPage::_evaluatePathForCwd(const std::wstring_view path)
+    {
+        return Utils::EvaluateStartingDirectory(_WindowProperties.VirtualWorkingDirectory(), path);
+    }
+
     // Method Description:
     // - Creates a new connection based on the profile settings
     // Arguments:
@@ -1195,7 +1205,7 @@ namespace winrt::TerminalApp::implementation
                 connection = TerminalConnection::ConptyConnection{};
             }
 
-            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
+            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.native(),
                                                                                  L".",
                                                                                  L"Azure",
                                                                                  nullptr,
@@ -1233,13 +1243,7 @@ namespace winrt::TerminalApp::implementation
             // construction, because the connection might not spawn the child
             // process until later, on another thread, after we've already
             // restored the CWD to its original value.
-            const auto currentVirtualDir{ _WindowProperties.VirtualWorkingDirectory() };
-            const auto cwdString{ std::wstring_view{ currentVirtualDir } };
-            const auto requestedStartingDir{ settings.StartingDirectory() };
-            auto newWorkingDirectory = winrt::hstring{
-                Utils::EvaluateStartingDirectory(cwdString, std::wstring_view{ requestedStartingDir })
-            };
-
+            auto newWorkingDirectory{ _evaluatePathForCwd(settings.StartingDirectory()) };
             auto conhostConn = TerminalConnection::ConptyConnection();
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
                                                                                  newWorkingDirectory,
@@ -1448,9 +1452,10 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        if (const auto p = CommandPaletteElement(); p && p.Visibility() == Visibility::Visible && cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+        if (_commandPaletteIs(Visibility::Visible) &&
+            cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
         {
-            p.Visibility(Visibility::Collapsed);
+            CommandPaletteElement().Visibility(Visibility::Collapsed);
         }
 
         // Let's assume the user has bound the dead key "^" to a sendInput command that sends "b".
@@ -1782,6 +1787,11 @@ namespace winrt::TerminalApp::implementation
 
         return _loadCommandPaletteSlowPath();
     }
+    bool TerminalPage::_commandPaletteIs(WUX::Visibility visibility)
+    {
+        const auto p = CommandPaletteElement();
+        return p && p.Visibility() == visibility;
+    }
 
     CommandPalette TerminalPage::_loadCommandPaletteSlowPath()
     {
@@ -1793,7 +1803,7 @@ namespace winrt::TerminalApp::implementation
         // When the visibility of the command palette changes to "collapsed",
         // the palette has been closed. Toss focus back to the currently active control.
         p.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
-            if (CommandPaletteElement().Visibility() == Visibility::Collapsed)
+            if (_commandPaletteIs(Visibility::Collapsed))
             {
                 _FocusActiveControl(nullptr, nullptr);
             }
@@ -2081,6 +2091,13 @@ namespace winrt::TerminalApp::implementation
         const auto windowId{ args.Window() };
         if (!windowId.empty())
         {
+            // if the windowId is the same as our name, do nothing
+            if (windowId == WindowProperties().WindowName() ||
+                windowId == winrt::to_hstring(WindowProperties().WindowId()))
+            {
+                return true;
+            }
+
             if (const auto terminalTab{ _GetFocusedTabImpl() })
             {
                 auto startupActions = terminalTab->BuildStartupActions(true);
@@ -2731,15 +2748,16 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Copy text from the focused terminal to the Windows Clipboard
     // Arguments:
+    // - dismissSelection: if not enabled, copying text doesn't dismiss the selection
     // - singleLine: if enabled, copy contents as a single line of text
     // - formats: dictate which formats need to be copied
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
+    bool TerminalPage::_CopyText(const bool dismissSelection, const bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         if (const auto& control{ _GetActiveControl() })
         {
-            return control.CopySelectionToClipboard(singleLine, formats);
+            return control.CopySelectionToClipboard(dismissSelection, singleLine, formats);
         }
         return false;
     }
@@ -2760,9 +2778,8 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender (not used)
     // - args: the arguments specifying how to set the display status to ShowWindow for our window handle
-    winrt::fire_and_forget TerminalPage::_ShowWindowChangedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
+    void TerminalPage::_ShowWindowChangedHandler(const IInspectable& /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
     {
-        co_await resume_foreground(Dispatcher());
         _ShowWindowChangedHandlers(*this, args);
     }
 
@@ -2770,6 +2787,24 @@ namespace winrt::TerminalApp::implementation
     // - Paste text from the Windows Clipboard to the focused terminal
     void TerminalPage::_PasteText()
     {
+        // First, check if we're in broadcast input mode. If so, let's tell all
+        // the controls to paste.
+        if (const auto& tab{ _GetFocusedTabImpl() })
+        {
+            if (tab->TabStatus().IsInputBroadcastActive())
+            {
+                tab->GetRootPane()->WalkTree([](auto&& pane) {
+                    if (auto control = pane->GetTerminalControl())
+                    {
+                        control.PasteTextFromClipboard();
+                    }
+                });
+                return;
+            }
+        }
+
+        // The focused tab wasn't in broadcast mode. No matter. Just ask the
+        // current one to paste.
         if (const auto& control{ _GetActiveControl() })
         {
             control.PasteTextFromClipboard();
@@ -3707,6 +3742,15 @@ namespace winrt::TerminalApp::implementation
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
         if (!_settingsTab)
         {
+            if (auto app{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
+            {
+                if (auto appPrivate{ winrt::get_self<implementation::App>(app) })
+                {
+                    // Lazily load the Settings UI components so that we don't do it on startup.
+                    appPrivate->PrepareForSettingsUI();
+                }
+            }
+
             winrt::Microsoft::Terminal::Settings::Editor::MainPage sui{ _settings };
             if (_hostingHwnd)
             {
@@ -4254,23 +4298,29 @@ namespace winrt::TerminalApp::implementation
                                      const TerminalSettingsCreateResult& controlSettings,
                                      const Profile& profile)
     {
-        // Try to handle auto-elevation
-        const auto requestedElevation = controlSettings.DefaultSettings().Elevate();
-        const auto currentlyElevated = IsRunningElevated();
-
-        // We aren't elevated, but we want to be.
-        if (requestedElevation && !currentlyElevated)
+        // When duplicating a tab there aren't any newTerminalArgs.
+        if (!newTerminalArgs)
         {
-            // Manually set the Profile of the NewTerminalArgs to the guid we've
-            // resolved to. If there was a profile in the NewTerminalArgs, this
-            // will be that profile's GUID. If there wasn't, then we'll use
-            // whatever the default profile's GUID is.
-
-            newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
-            _OpenElevatedWT(newTerminalArgs);
-            return true;
+            return false;
         }
-        return false;
+
+        const auto defaultSettings = controlSettings.DefaultSettings();
+
+        // If we don't even want to elevate we can return early.
+        // If we're already elevated we can also return, because it doesn't get any more elevated than that.
+        if (!defaultSettings.Elevate() || IsRunningElevated())
+        {
+            return false;
+        }
+
+        // Manually set the Profile of the NewTerminalArgs to the guid we've
+        // resolved to. If there was a profile in the NewTerminalArgs, this
+        // will be that profile's GUID. If there wasn't, then we'll use
+        // whatever the default profile's GUID is.
+        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+        newTerminalArgs.StartingDirectory(_evaluatePathForCwd(defaultSettings.StartingDirectory()));
+        _OpenElevatedWT(newTerminalArgs);
+        return true;
     }
 
     // Method Description:
@@ -4443,6 +4493,16 @@ namespace winrt::TerminalApp::implementation
 
         til::color bgColor = backgroundSolidBrush.Color();
 
+        Media::Brush terminalBrush{ nullptr };
+        if (const auto& control{ _GetActiveControl() })
+        {
+            terminalBrush = control.BackgroundBrush();
+        }
+        else if (const auto& settingsTab{ _GetFocusedTab().try_as<TerminalApp::SettingsTab>() })
+        {
+            terminalBrush = settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
+        }
+
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
             const auto acrylicBrush = Media::AcrylicBrush();
@@ -4457,18 +4517,6 @@ namespace winrt::TerminalApp::implementation
                                                                theme.TabRow().UnfocusedBackground()) :
                                                  ThemeColor{ nullptr } })
         {
-            const auto terminalBrush = [this]() -> Media::Brush {
-                if (const auto& control{ _GetActiveControl() })
-                {
-                    return control.BackgroundBrush();
-                }
-                else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
-                {
-                    return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
-                }
-                return nullptr;
-            }();
-
             const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
             bgColor = ThemeColor::ColorFromBrush(themeBrush);
             TitlebarBrush(themeBrush);
@@ -4498,11 +4546,27 @@ namespace winrt::TerminalApp::implementation
                 tabImpl->ThemeColor(tabBackground, tabUnfocusedBackground, bgColor);
             }
         }
-
         // Update the new tab button to have better contrast with the new color.
         // In theory, it would be convenient to also change these for the
         // inactive tabs as well, but we're leaving that as a follow up.
         _SetNewTabButtonColor(bgColor, bgColor);
+
+        // Third: the window frame. This is basically the same logic as the tab row background.
+        // We'll set our `FrameBrush` property, for the window to later use.
+        const auto windowTheme{ theme.Window() };
+        if (auto windowFrame{ windowTheme ? (_activated ? windowTheme.Frame() :
+                                                          windowTheme.UnfocusedFrame()) :
+                                            ThemeColor{ nullptr } })
+        {
+            const auto themeBrush{ windowFrame.Evaluate(res, terminalBrush, true) };
+            FrameBrush(themeBrush);
+        }
+        else
+        {
+            // Nothing was set in the theme - fall back to null. The window will
+            // use that as an indication to use the default window frame.
+            FrameBrush(nullptr);
+        }
     }
 
     // Function Description:
@@ -4551,6 +4615,21 @@ namespace winrt::TerminalApp::implementation
             // will eat focus.
             _paneResources.unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
         }
+
+        const auto broadcastColorKey = winrt::box_value(L"BroadcastPaneBorderColor");
+        if (res.HasKey(broadcastColorKey))
+        {
+            // MAKE SURE TO USE ThemeLookup
+            auto obj = ThemeLookup(res, requestedTheme, broadcastColorKey);
+            _paneResources.broadcastBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+        }
+        else
+        {
+            // DON'T use Transparent here - if it's "Transparent", then it won't
+            // be able to hittest for clicks, and then clicking on the border
+            // will eat focus.
+            _paneResources.broadcastBorderBrush = SolidColorBrush{ Colors::Black() };
+        }
     }
 
     void TerminalPage::WindowActivated(const bool activated)
@@ -4573,7 +4652,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_PopulateContextMenu(const IInspectable& sender,
-                                            const bool /*withSelection*/)
+                                            const bool withSelection)
     {
         // withSelection can be used to add actions that only appear if there's
         // selected text, like "search the web". In this initial draft, it's not
@@ -4628,6 +4707,11 @@ namespace winrt::TerminalApp::implementation
         if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
         {
             makeItem(RS_(L"PaneClose"), L"\xE89F", ActionAndArgs{ ShortcutAction::ClosePane, nullptr });
+        }
+
+        if (withSelection)
+        {
+            makeItem(RS_(L"SearchWebText"), L"\xF6FA", ActionAndArgs{ ShortcutAction::SearchForText, nullptr });
         }
 
         makeItem(RS_(L"TabClose"), L"\xE711", ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } });

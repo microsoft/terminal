@@ -5,6 +5,7 @@
 
 #include "Profiles_Appearance.g.h"
 #include "Utils.h"
+#include "PreviewConnection.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -25,7 +26,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 
     private:
-        Microsoft::Terminal::Control::TermControl _previewControl;
+        void _onProfilePropertyChanged(const IInspectable&, const PropertyChangedEventArgs&) const;
+        bool _looksLikePowerlineFont() const;
+
+        winrt::com_ptr<PreviewConnection> _previewConnection{ nullptr };
+        Microsoft::Terminal::Control::TermControl _previewControl{ nullptr };
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _AppearanceViewModelChangedRevoker;
         Editor::IHostedInWindow _windowRoot;

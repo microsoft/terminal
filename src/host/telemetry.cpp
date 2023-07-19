@@ -34,9 +34,6 @@ Telemetry::Telemetry() :
     _rgiProcessFileNameIndex(),
     _rguiProcessFileNamesCount(),
     _rgiAlphabeticalIndex(),
-    _rguiProcessFileNamesCodesCount(),
-    _rguiProcessFileNamesFailedCodesCount(),
-    _rguiProcessFileNamesFailedOutsideCodesCount(),
     _rguiTimesApiUsed(),
     _rguiTimesApiUsedAnsi(),
     _uiNumberProcessFileNames(0),
@@ -214,28 +211,6 @@ void Telemetry::FindDialogClosed()
     _uiFindNextClickedTotal = 0;
 }
 
-// Total up all the used VT100 codes and assign them to the last process that was attached.
-// We originally did this when each process disconnected, but some processes don't
-// disconnect when the conhost process exits.  So we have to remember the last process that connected.
-void Telemetry::TotalCodesForPreviousProcess()
-{
-    using namespace Microsoft::Console::VirtualTerminal;
-    // Get the values even if we aren't recording the previously connected process, since we want to reset them to 0.
-    auto _uiTimesUsedCurrent = TermTelemetry::Instance().GetAndResetTimesUsedCurrent();
-    auto _uiTimesFailedCurrent = TermTelemetry::Instance().GetAndResetTimesFailedCurrent();
-    auto _uiTimesFailedOutsideRangeCurrent = TermTelemetry::Instance().GetAndResetTimesFailedOutsideRangeCurrent();
-
-    if (_iProcessConnectedCurrently < c_iMaxProcessesConnected)
-    {
-        _rguiProcessFileNamesCodesCount[_iProcessConnectedCurrently] += _uiTimesUsedCurrent;
-        _rguiProcessFileNamesFailedCodesCount[_iProcessConnectedCurrently] += _uiTimesFailedCurrent;
-        _rguiProcessFileNamesFailedOutsideCodesCount[_iProcessConnectedCurrently] += _uiTimesFailedOutsideRangeCurrent;
-
-        // Don't total any more process connected telemetry, unless a new processes attaches that we want to gather.
-        _iProcessConnectedCurrently = SIZE_MAX;
-    }
-}
-
 // Tries to find the process name amongst our previous process names by doing a binary search.
 // The main difference between this and the standard bsearch library call, is that if this
 // can't find the string, it returns the position the new string should be inserted at.  This saves
@@ -284,8 +259,6 @@ void Telemetry::LogProcessConnected(const HANDLE hProcess)
     // This is a bit of processing, so don't do it for the 95% of machines that aren't being sampled.
     if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, MICROSOFT_KEYWORD_MEASURES))
     {
-        TotalCodesForPreviousProcess();
-
         // Don't initialize wszFilePathAndName, QueryFullProcessImageName does that for us.  Use QueryFullProcessImageName instead of
         // GetProcessImageFileName because we need the path to begin with a drive letter and not a device name.
         WCHAR wszFilePathAndName[MAX_PATH];
@@ -360,15 +333,8 @@ void Telemetry::WriteFinalTraceLog()
     // This is a bit of processing, so don't do it for the 95% of machines that aren't being sampled.
     if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, MICROSOFT_KEYWORD_MEASURES))
     {
-        // Normally we would set the activity Id earlier, but since we know the parser only sends
-        // one final log at the end, setting the activity this late should be fine.
-        Microsoft::Console::VirtualTerminal::TermTelemetry::Instance().SetActivityId(_activity.Id());
-        Microsoft::Console::VirtualTerminal::TermTelemetry::Instance().SetShouldWriteFinalLog(_fUserInteractiveForTelemetry);
-
         if (_fUserInteractiveForTelemetry)
         {
-            TotalCodesForPreviousProcess();
-
             // Send this back using "measures" since we want a good sampling of our entire userbase.
             time_t tEndedAt;
             time(&tEndedAt);
@@ -395,9 +361,6 @@ void Telemetry::WriteFinalTraceLog()
                                     // Casting to UINT should be fine, since our array size is only 2K.
                                     TraceLoggingPackedField(_wchProcessFileNames, static_cast<UINT>(sizeof(WCHAR) * _iProcessFileNamesNext), TlgInUNICODESTRING | TlgInVcount, "ProcessesConnected"),
                                     TraceLoggingUInt32Array(_rguiProcessFileNamesCount, _uiNumberProcessFileNames, "ProcessesConnectedCount"),
-                                    TraceLoggingUInt32Array(_rguiProcessFileNamesCodesCount, _uiNumberProcessFileNames, "ProcessesConnectedCodesCount"),
-                                    TraceLoggingUInt32Array(_rguiProcessFileNamesFailedCodesCount, _uiNumberProcessFileNames, "ProcessesConnectedFailedCodesCount"),
-                                    TraceLoggingUInt32Array(_rguiProcessFileNamesFailedOutsideCodesCount, _uiNumberProcessFileNames, "ProcessesConnectedFailedOutsideCount"),
                                     // Send back both starting and ending times separately instead just usage time (ending - starting).
                                     // This can help us determine if they were using multiple consoles at the same time.
                                     TraceLoggingInt32(static_cast<int>(_tStartedAt), "StartedUsingAtSeconds"),

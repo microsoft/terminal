@@ -99,6 +99,7 @@ namespace Microsoft::Console::Render::Atlas
         ATLAS_ATTR_COLD void _recreateBackend();
         ATLAS_ATTR_COLD void _handleSwapChainUpdate();
         void _createSwapChain();
+        void _destroySwapChain();
         void _resizeBuffers();
         void _updateMatrixTransform();
         void _waitUntilCanRender() noexcept;

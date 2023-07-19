@@ -9,7 +9,7 @@ namespace Microsoft::Console::Render::Atlas
 {
     struct TextAnalysisSource final : IDWriteTextAnalysisSource
     {
-        TextAnalysisSource(const wchar_t* _text, const UINT32 _textLength) noexcept;
+        TextAnalysisSource(const wchar_t* locale, const wchar_t* text, const UINT32 textLength) noexcept;
 #ifndef NDEBUG
         ~TextAnalysisSource();
 #endif
@@ -24,6 +24,7 @@ namespace Microsoft::Console::Render::Atlas
         HRESULT __stdcall GetNumberSubstitution(UINT32 textPosition, UINT32* textLength, IDWriteNumberSubstitution** numberSubstitution) noexcept override;
 
     private:
+        const wchar_t* _locale;
         const wchar_t* _text;
         const UINT32 _textLength;
 #ifndef NDEBUG

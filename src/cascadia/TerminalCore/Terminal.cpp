@@ -21,35 +21,9 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 
-static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
-{
-    std::wstring wstr = L"";
-    for (const auto& ev : inEventsToWrite)
-    {
-        if (ev->EventType() == InputEventType::KeyEvent)
-        {
-            const auto& k = static_cast<KeyEvent&>(*ev);
-            const auto wch = k.GetCharData();
-            wstr += wch;
-        }
-    }
-    return wstr;
-}
-
 #pragma warning(suppress : 26455) // default constructor is throwing, too much effort to rearrange at this time.
 Terminal::Terminal()
 {
-    auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
-        if (!_pfnWriteInput)
-        {
-            return;
-        }
-        const auto wstr = _KeyEventsToText(inEventsToWrite);
-        _pfnWriteInput(wstr);
-    };
-
-    _terminalInput = std::make_unique<TerminalInput>(passAlongInput);
-
     _renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, RGB(255, 255, 255));
     _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, RGB(0, 0, 0));
 }
@@ -64,7 +38,7 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
     const UINT cursorSize = 12;
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, renderer);
 
-    auto dispatch = std::make_unique<AdaptDispatch>(*this, renderer, _renderSettings, *_terminalInput);
+    auto dispatch = std::make_unique<AdaptDispatch>(*this, renderer, _renderSettings, _terminalInput);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 
@@ -111,7 +85,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
 
-    _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
+    _terminalInput.ForceDisableWin32InputMode(settings.ForceVTInput());
 
     if (settings.TabColor() == nullptr)
     {
@@ -235,7 +209,7 @@ void Terminal::EraseScrollback()
 
 bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
 {
-    return _bracketedPasteMode;
+    return _systemMode.test(Mode::BracketedPaste);
 }
 
 std::wstring_view Terminal::GetWorkingDirectory() noexcept
@@ -540,7 +514,7 @@ void Terminal::TrySnapOnInput()
 // - true, if we are tracking mouse input. False, otherwise
 bool Terminal::IsTrackingMouseInput() const noexcept
 {
-    return _terminalInput->IsTrackingMouseInput();
+    return _terminalInput.IsTrackingMouseInput();
 }
 
 // Routine Description:
@@ -554,7 +528,7 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 bool Terminal::ShouldSendAlternateScroll(const unsigned int uiButton,
                                          const int32_t delta) const noexcept
 {
-    return _terminalInput->ShouldSendAlternateScroll(uiButton, ::base::saturated_cast<short>(delta));
+    return _terminalInput.ShouldSendAlternateScroll(uiButton, ::base::saturated_cast<short>(delta));
 }
 
 // Method Description:
@@ -741,7 +715,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     }
 
     const KeyEvent keyEv{ keyDown, 1, vkey, sc, ch, states.Value() };
-    return _terminalInput->HandleKey(&keyEv);
+    return _handleTerminalInputResult(_terminalInput.HandleKey(&keyEv));
 }
 
 // Method Description:
@@ -765,7 +739,7 @@ bool Terminal::SendMouseEvent(til::point viewportPos, const unsigned int uiButto
     // We shouldn't throw away perfectly good events when they're offscreen, so we just
     // clamp them to be within the range [(0, 0), (W, H)].
     _GetMutableViewport().ToOrigin().Clamp(viewportPos);
-    return _terminalInput->HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta, state);
+    return _handleTerminalInputResult(_terminalInput.HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta, state));
 }
 
 // Method Description:
@@ -818,7 +792,7 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     }
 
     const KeyEvent keyDown{ true, 1, vkey, scanCode, ch, states.Value() };
-    return _terminalInput->HandleKey(&keyDown);
+    return _handleTerminalInputResult(_terminalInput.HandleKey(&keyDown));
 }
 
 // Method Description:
@@ -829,9 +803,9 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
 // - focused: true if we're focused, false otherwise.
 // Return Value:
 // - none
-void Terminal::FocusChanged(const bool focused) noexcept
+void Terminal::FocusChanged(const bool focused)
 {
-    _terminalInput->HandleFocus(focused);
+    _handleTerminalInputResult(_terminalInput.HandleFocus(focused));
 }
 
 // Method Description:
@@ -953,6 +927,20 @@ catch (...)
 {
     LOG_CAUGHT_EXCEPTION();
     return UNICODE_INVALID;
+}
+
+[[maybe_unused]] bool Terminal::_handleTerminalInputResult(TerminalInput::OutputType&& out) const
+{
+    if (out)
+    {
+        const auto& str = *out;
+        if (_pfnWriteInput && !str.empty())
+        {
+            _pfnWriteInput(str);
+        }
+        return true;
+    }
+    return false;
 }
 
 // Method Description:
@@ -1356,7 +1344,7 @@ void Terminal::_updateUrlDetection()
 }
 
 // NOTE: This is the version of AddMark that comes from the UI. The VT api call into this too.
-void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
+void Terminal::AddMark(const ScrollMark& mark,
                        const til::point& start,
                        const til::point& end,
                        const bool fromUi)
@@ -1366,17 +1354,18 @@ void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes:
         return;
     }
 
-    DispatchTypes::ScrollMark m = mark;
+    ScrollMark m = mark;
     m.start = start;
     m.end = end;
 
+    // If the mark came from the user adding a mark via the UI, don't make it the active prompt mark.
     if (fromUi)
     {
-        _scrollMarks.insert(_scrollMarks.begin(), m);
+        _activeBuffer().AddMark(m);
     }
     else
     {
-        _scrollMarks.push_back(m);
+        _activeBuffer().StartPromptMark(m);
     }
 
     // Tell the control that the scrollbar has somehow changed. Used as a
@@ -1401,15 +1390,7 @@ void Terminal::ClearMark()
         start = til::point{ GetSelectionAnchor() };
         end = til::point{ GetSelectionEnd() };
     }
-    auto inSelection = [&start, &end](const DispatchTypes::ScrollMark& m) {
-        return (m.start >= start && m.start <= end) ||
-               (m.end >= start && m.end <= end);
-    };
-
-    _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
-                                      _scrollMarks.end(),
-                                      inSelection),
-                       _scrollMarks.end());
+    _activeBuffer().ClearMarksInRange(start, end);
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
@@ -1417,23 +1398,22 @@ void Terminal::ClearMark()
 }
 void Terminal::ClearAllMarks() noexcept
 {
-    _scrollMarks.clear();
+    _activeBuffer().ClearAllMarks();
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
     _NotifyScrollEvent();
 }
 
-const std::vector<DispatchTypes::ScrollMark>& Terminal::GetScrollMarks() const noexcept
+const std::vector<ScrollMark>& Terminal::GetScrollMarks() const noexcept
 {
     // TODO: GH#11000 - when the marks are stored per-buffer, get rid of this.
     // We want to return _no_ marks when we're in the alt buffer, to effectively
     // hide them. We need to return a reference, so we can't just ctor an empty
     // list here just for when we're in the alt buffer.
-    static const std::vector<DispatchTypes::ScrollMark> _altBufferMarks{};
-    return _inAltBuffer() ? _altBufferMarks : _scrollMarks;
+    return _activeBuffer().GetMarks();
 }
 
-til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) const
+til::color Terminal::GetColorForMark(const ScrollMark& mark) const
 {
     if (mark.color.has_value())
     {
@@ -1442,24 +1422,24 @@ til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::
 
     switch (mark.category)
     {
-    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Prompt:
+    case MarkCategory::Prompt:
     {
         return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
     }
-    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Error:
+    case MarkCategory::Error:
     {
         return _renderSettings.GetColorTableEntry(TextColor::BRIGHT_RED);
     }
-    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Warning:
+    case MarkCategory::Warning:
     {
         return _renderSettings.GetColorTableEntry(TextColor::BRIGHT_YELLOW);
     }
-    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Success:
+    case MarkCategory::Success:
     {
         return _renderSettings.GetColorTableEntry(TextColor::BRIGHT_GREEN);
     }
     default:
-    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Info:
+    case MarkCategory::Info:
     {
         return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
     }

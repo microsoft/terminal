@@ -36,14 +36,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct Font : FontT<Font>
     {
     public:
-        Font(std::wstring name, std::wstring localizedName) :
+        Font(std::wstring name, std::wstring localizedName, IDWriteFontFamily* family) :
             _Name{ name },
-            _LocalizedName{ localizedName } {};
+            _LocalizedName{ localizedName }
+        {
+            _family.copy_from(family);
+        }
 
         hstring ToString() { return _LocalizedName; }
+        bool HasPowerlineCharacters();
 
         WINRT_PROPERTY(hstring, Name);
         WINRT_PROPERTY(hstring, LocalizedName);
+
+    private:
+        winrt::com_ptr<IDWriteFontFamily> _family;
+        std::optional<bool> _hasPowerlineCharacters;
     };
 
     struct AppearanceViewModel : AppearanceViewModelT<AppearanceViewModel>, ViewModelHelper<AppearanceViewModel>

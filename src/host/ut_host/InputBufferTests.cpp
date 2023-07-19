@@ -611,6 +611,7 @@ class InputBufferTests
         auto inputEvent2 = IInputEvent::Create(record2);
         // write another event to a non-empty buffer
         waitEvent = false;
+        storage.clear();
         storage.push_back(std::move(inputEvent2));
         inputBuffer._WriteBuffer(storage, eventsWritten, waitEvent);
 

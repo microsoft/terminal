@@ -24,8 +24,6 @@
 #include "../buffer/out/search.h"
 #include "../buffer/out/TextColor.h"
 
-#include <til/ticket_lock.h>
-
 namespace ControlUnitTests
 {
     class ControlCoreTests;
@@ -145,6 +143,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int ViewHeight() const;
         int BufferHeight() const;
 
+        bool HasSelection() const;
+        Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
+
         bool BracketedPasteEnabled() const noexcept;
 
         Windows::Foundation::Collections::IVector<Control::ScrollMark> ScrollMarks() const;
@@ -188,9 +189,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const;
         Core::Point CursorPosition() const;
 
-        bool HasSelection() const;
         bool CopyOnSelect() const;
-        Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
         Control::SelectionData SelectionInfo() const;
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);
@@ -266,7 +265,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // clang-format on
 
     private:
-        bool _initializedTerminal{ false };
+        struct SharedState
+        {
+            std::shared_ptr<ThrottledFuncTrailing<>> tsfTryRedrawCanvas;
+            std::unique_ptr<til::throttled_func_trailing<>> updatePatternLocations;
+            std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
+        };
+
+        std::atomic<bool> _initializedTerminal{ false };
         bool _closing{ false };
 
         TerminalConnection::ITerminalConnection _connection{ nullptr };
@@ -313,9 +319,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t _owningHwnd{ 0 };
 
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
-        std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
-        std::unique_ptr<til::throttled_func_trailing<>> _updatePatternLocations;
-        std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
+        til::shared_mutex<SharedState> _shared;
 
         til::point _contextMenuBufferPosition{ 0, 0 };
 
@@ -368,10 +372,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _contextMenuSelectMark(
             const til::point& pos,
-            bool (*filter)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&),
-            til::point_span (*getSpan)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&));
+            bool (*filter)(const ::ScrollMark&),
+            til::point_span (*getSpan)(const ::ScrollMark&));
 
-        bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&));
+        bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::ScrollMark&));
 
         inline bool _IsClosing() const noexcept
         {

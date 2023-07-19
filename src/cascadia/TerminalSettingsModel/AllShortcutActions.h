@@ -86,6 +86,7 @@
     ON_ALL_ACTIONS(RenameWindow)            \
     ON_ALL_ACTIONS(OpenWindowRenamer)       \
     ON_ALL_ACTIONS(DisplayWorkingDirectory) \
+    ON_ALL_ACTIONS(SearchForText)           \
     ON_ALL_ACTIONS(GlobalSummon)            \
     ON_ALL_ACTIONS(QuakeMode)               \
     ON_ALL_ACTIONS(FocusPane)               \
@@ -106,7 +107,8 @@
     ON_ALL_ACTIONS(ShowContextMenu)         \
     ON_ALL_ACTIONS(ExpandSelectionToWord)   \
     ON_ALL_ACTIONS(CloseOtherPanes)         \
-    ON_ALL_ACTIONS(RestartConnection)
+    ON_ALL_ACTIONS(RestartConnection)       \
+    ON_ALL_ACTIONS(ToggleBroadcastInput)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)       \
@@ -116,6 +118,7 @@
     ON_ALL_ACTIONS_WITH_ARGS(CopyText)             \
     ON_ALL_ACTIONS_WITH_ARGS(ExecuteCommandline)   \
     ON_ALL_ACTIONS_WITH_ARGS(FindMatch)            \
+    ON_ALL_ACTIONS_WITH_ARGS(SearchForText)        \
     ON_ALL_ACTIONS_WITH_ARGS(GlobalSummon)         \
     ON_ALL_ACTIONS_WITH_ARGS(MoveFocus)            \
     ON_ALL_ACTIONS_WITH_ARGS(MovePane)             \

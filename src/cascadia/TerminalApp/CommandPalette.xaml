@@ -75,6 +75,7 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             AutomationProperties.AccessibilityView="Raw"
+                            Background="{ThemeResource FlyoutPresenterBackground}"
                             Style="{ThemeResource KeyChordBorderStyle}"
                             Visibility="{x:Bind Item.KeyChordText, Mode=OneWay, Converter={StaticResource CommandKeyChordVisibilityConverter}}">
 
@@ -203,6 +204,13 @@
                                   FontSize="12"
                                   Glyph="&#xE72E;"
                                   Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsReadOnlyActive, Mode=OneWay}" />
+
+                        <FontIcon x:Name="HeaderBroadcastIcon"
+                                  Margin="0,0,8,0"
+                                  FontFamily="Segoe MDL2 Assets"
+                                  FontSize="12"
+                                  Glyph="&#xEC05;"
+                                  Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsInputBroadcastActive, Mode=OneWay}" />
 
                     </StackPanel>
                 </Grid>
