@@ -115,6 +115,6 @@ namespace Microsoft::Console::Utils
     // Same deal, but in TerminalPage::_evaluatePathForCwd
     std::wstring EvaluateStartingDirectory(std::wstring_view cwd, std::wstring_view startingDirectory);
 
-    bool IsWindows11();
+    bool IsWindows11() noexcept;
 
 }

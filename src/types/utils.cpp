@@ -853,9 +853,9 @@ std::wstring Utils::EvaluateStartingDirectory(
     return resultPath;
 }
 
-bool Utils::IsWindows11()
+bool Utils::IsWindows11() noexcept
 {
-    static const bool isWindows11 = []() {
+    static const bool isWindows11 = []() noexcept {
         OSVERSIONINFOEXW osver{};
         osver.dwOSVersionInfoSize = sizeof(osver);
         osver.dwBuildNumber = 22000;

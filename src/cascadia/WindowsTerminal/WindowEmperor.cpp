@@ -578,7 +578,7 @@ LRESULT WindowEmperor::_messageHandler(UINT const message, WPARAM const wParam, 
 // emperor itself. We should probably only ever be called when we have no
 // windows left, and we don't want to keep running anymore. This will discard
 // all our refrigerated windows. If we try to use XAML on Windows 10 after this,
-// we'll undoubtably crash.
+// we'll undoubtedly crash.
 winrt::fire_and_forget WindowEmperor::_close()
 {
     {
