@@ -1272,6 +1272,17 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleToggleBroadcastInput(const IInspectable& /*sender*/,
+                                                   const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            activeTab->ToggleBroadcastInput();
+            args.Handled(true);
+        }
+        // If the focused tab wasn't a TerminalTab, then leave handled=false
+    }
+
     void TerminalPage::_HandleRestartConnection(const IInspectable& /*sender*/,
                                                 const ActionEventArgs& args)
     {
@@ -1294,4 +1305,5 @@ namespace winrt::TerminalApp::implementation
         }
         args.Handled(true);
     }
+
 }

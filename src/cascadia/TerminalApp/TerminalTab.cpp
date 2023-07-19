@@ -512,6 +512,8 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         });
+        pane->EnableBroadcast(_tabStatus.IsInputBroadcastActive());
+
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
         // Depending on which direction will be split, the new pane can be
@@ -620,7 +622,7 @@ namespace winrt::TerminalApp::implementation
                 _nextPaneId++;
             }
         });
-
+        pane->EnableBroadcast(_tabStatus.IsInputBroadcastActive());
         // pass the old id to the new child
         const auto previousId = _activePane->Id();
 
@@ -890,6 +892,10 @@ namespace winrt::TerminalApp::implementation
             control.ReadOnlyChanged(events.readOnlyToken);
             control.FocusFollowMouseRequested(events.focusToken);
 
+            events.KeySent.revoke();
+            events.CharSent.revoke();
+            events.StringSent.revoke();
+
             _controlEvents.erase(paneId);
         }
     }
@@ -964,7 +970,12 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        _controlEvents[paneId] = events;
+        if (_tabStatus.IsInputBroadcastActive())
+        {
+            _addBroadcastHandlers(control, events);
+        }
+
+        _controlEvents[paneId] = std::move(events);
     }
 
     // Method Description:
@@ -1762,5 +1773,89 @@ namespace winrt::TerminalApp::implementation
         }
 
         return Title();
+    }
+
+    // Method Description:
+    // - Toggle broadcasting input to all the panes in this tab.
+    void TerminalTab::ToggleBroadcastInput()
+    {
+        const bool newIsBroadcasting = !_tabStatus.IsInputBroadcastActive();
+        _tabStatus.IsInputBroadcastActive(newIsBroadcasting);
+        _rootPane->EnableBroadcast(newIsBroadcasting);
+
+        auto weakThis{ get_weak() };
+
+        // When we change the state of broadcasting, add or remove event
+        // handlers appropriately, so that controls won't be propagating events
+        // needlessly if no one is listening.
+
+        _rootPane->WalkTree([&](const auto& p) {
+            const auto paneId = p->Id();
+            if (!paneId.has_value())
+            {
+                return;
+            }
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                auto it = _controlEvents.find(*paneId);
+                if (it != _controlEvents.end())
+                {
+                    auto& events = it->second;
+
+                    // Always clear out old ones, just in case.
+                    events.KeySent.revoke();
+                    events.CharSent.revoke();
+                    events.StringSent.revoke();
+
+                    if (newIsBroadcasting)
+                    {
+                        _addBroadcastHandlers(control, events);
+                    }
+                }
+            }
+        });
+    }
+
+    void TerminalTab::_addBroadcastHandlers(const TermControl& termControl, ControlEventTokens& events)
+    {
+        auto weakThis{ get_weak() };
+        // ADD EVENT HANDLERS HERE
+        events.KeySent = termControl.KeySent(winrt::auto_revoke, [weakThis](auto&& sender, auto&& e) {
+            if (const auto tab{ weakThis.get() })
+            {
+                if (tab->_tabStatus.IsInputBroadcastActive())
+                {
+                    tab->_rootPane->BroadcastKey(sender.try_as<TermControl>(),
+                                                 e.VKey(),
+                                                 e.ScanCode(),
+                                                 e.Modifiers(),
+                                                 e.KeyDown());
+                }
+            }
+        });
+
+        events.CharSent = termControl.CharSent(winrt::auto_revoke, [weakThis](auto&& sender, auto&& e) {
+            if (const auto tab{ weakThis.get() })
+            {
+                if (tab->_tabStatus.IsInputBroadcastActive())
+                {
+                    tab->_rootPane->BroadcastChar(sender.try_as<TermControl>(),
+                                                  e.Character(),
+                                                  e.ScanCode(),
+                                                  e.Modifiers());
+                }
+            }
+        });
+
+        events.StringSent = termControl.StringSent(winrt::auto_revoke, [weakThis](auto&& sender, auto&& e) {
+            if (const auto tab{ weakThis.get() })
+            {
+                if (tab->_tabStatus.IsInputBroadcastActive())
+                {
+                    tab->_rootPane->BroadcastString(sender.try_as<TermControl>(),
+                                                    e.Text());
+                }
+            }
+        });
     }
 }
