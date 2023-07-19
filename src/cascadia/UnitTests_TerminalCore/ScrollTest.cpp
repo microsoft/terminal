@@ -154,6 +154,13 @@ void ScrollTest::TestNotifyScrolling()
     //   SHRT_MAX
     // - Have a selection
 
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:notifyOnCircling", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+    INIT_TEST_PROPERTY(bool, notifyOnCircling, L"Controls whether we should always request scroll notifications");
+
+    _term->AlwaysNotifyOnBufferRotation(notifyOnCircling);
+
     Log::Comment(L"Watch out - this test takes a while to run, and won't "
                  L"output anything unless in encounters an error. This is expected.");
 
@@ -181,10 +188,11 @@ void ScrollTest::TestNotifyScrolling()
         auto scrolled = currentRow >= TerminalViewHeight - 1;
 
         // When we circle the buffer, the scroll bar's position does not change.
-        // However, as of GH#14045, we still want to send notifications, so the
-        // control layer can update the position of marks on the scrollbar.
+        // However, as of GH#14045, we will send a notification IF the control
+        // requested on (by setting AlwaysNotifyOnBufferRotation)
         auto circledBuffer = currentRow >= totalBufferSize - 1;
-        auto expectScrollBarNotification = scrolled || circledBuffer;
+        auto expectScrollBarNotification = (scrolled && !circledBuffer) || // If we scrolled, but didn't circle the buffer OR
+                                           (circledBuffer && notifyOnCircling); // we circled AND we asked for notifications.
 
         if (expectScrollBarNotification)
         {

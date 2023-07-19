@@ -217,6 +217,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             [weakThis = get_weak()](const auto& update) {
                 if (auto core{ weakThis.get() })
                 {
+                    // Begin a search
+                    core->_terminal->AlwaysNotifyOnBufferRotation(true);
                     core->_searchState.emplace(update);
                     core->_SearchAsync(std::nullopt);
                 }
@@ -1470,9 +1472,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_inUnitTests)
             [[unlikely]]
-        {
-            _ScrollPositionChangedHandlers(*this, update);
-        }
+            {
+                _ScrollPositionChangedHandlers(*this, update);
+            }
         else
         {
             const auto shared = _shared.lock_shared();
@@ -1769,6 +1771,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     void ControlCore::ExitSearch()
     {
+        _terminal->AlwaysNotifyOnBufferRotation(false);
         _searchState.reset();
     }
 
