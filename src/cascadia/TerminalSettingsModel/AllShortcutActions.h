@@ -106,7 +106,8 @@
     ON_ALL_ACTIONS(ShowContextMenu)         \
     ON_ALL_ACTIONS(ExpandSelectionToWord)   \
     ON_ALL_ACTIONS(CloseOtherPanes)         \
-    ON_ALL_ACTIONS(RestartConnection)
+    ON_ALL_ACTIONS(RestartConnection)       \
+    ON_ALL_ACTIONS(ToggleBroadcastInput)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)       \

@@ -13,5 +13,6 @@ namespace TerminalApp
         Boolean BellIndicator { get; set; };
         UInt32 ProgressValue { get; set; };
         Boolean IsReadOnlyActive { get; set; };
+        Boolean IsInputBroadcastActive { get; set; };
     }
 }

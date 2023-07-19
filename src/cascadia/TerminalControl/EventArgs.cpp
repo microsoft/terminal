@@ -15,3 +15,6 @@
 #include "FoundResultsArgs.g.cpp"
 #include "ShowWindowArgs.g.cpp"
 #include "UpdateSelectionMarkersEventArgs.g.cpp"
+#include "KeySentEventArgs.g.cpp"
+#include "CharSentEventArgs.g.cpp"
+#include "StringSentEventArgs.g.cpp"
