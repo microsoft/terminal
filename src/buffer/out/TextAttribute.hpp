@@ -120,13 +120,13 @@ public:
     uint16_t GetHyperlinkId() const noexcept;
     void SetForeground(const TextColor foreground) noexcept;
     void SetBackground(const TextColor background) noexcept;
-    void SetForeground(const COLORREF rgbForeground) noexcept;
-    void SetBackground(const COLORREF rgbBackground) noexcept;
+    void SetForeground(const COLORREF rgbForeground, const bool isColon = false) noexcept;
+    void SetBackground(const COLORREF rgbBackground, const bool isColon = false) noexcept;
     void SetIndexedForeground(const BYTE fgIndex) noexcept;
     void SetIndexedBackground(const BYTE bgIndex) noexcept;
-    void SetIndexedForeground256(const BYTE fgIndex) noexcept;
-    void SetIndexedBackground256(const BYTE bgIndex) noexcept;
-    void SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept;
+    void SetIndexedForeground256(const BYTE fgIndex, const bool isColon = false) noexcept;
+    void SetIndexedBackground256(const BYTE bgIndex, const bool isColon = false) noexcept;
+    void SetColor(const COLORREF rgbColor, const bool fIsForeground, const bool isColon = false) noexcept;
     void SetHyperlinkId(uint16_t id) noexcept;
 
     void SetDefaultForeground() noexcept;

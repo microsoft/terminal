@@ -44,7 +44,9 @@ enum class ColorType : BYTE
     IsDefault,
     IsIndex16,
     IsIndex256,
-    IsRgb
+    IsIndex256Colon,
+    IsRgb,
+    IsRgbColon
 };
 
 enum class ColorAlias : size_t
@@ -92,16 +94,17 @@ public:
     {
     }
 
-    constexpr TextColor(const BYTE index, const bool isIndex256) noexcept :
-        _meta{ isIndex256 ? ColorType::IsIndex256 : ColorType::IsIndex16 },
+    constexpr TextColor(const BYTE index, const bool isIndex256, const bool isColon = false) noexcept :
+        // isColon is only used with IsIndex256.
+        _meta{ isIndex256 ? (isColon ? ColorType::IsIndex256Colon : ColorType::IsIndex256) : ColorType::IsIndex16 },
         _index{ index },
         _green{ 0 },
         _blue{ 0 }
     {
     }
 
-    constexpr TextColor(const COLORREF rgb) noexcept :
-        _meta{ ColorType::IsRgb },
+    constexpr TextColor(const COLORREF rgb, const bool isColon = false) noexcept :
+        _meta{ isColon ? ColorType::IsRgbColon : ColorType::IsRgb },
         _red{ GetRValue(rgb) },
         _green{ GetGValue(rgb) },
         _blue{ GetBValue(rgb) }
@@ -125,10 +128,12 @@ public:
     bool IsDefault() const noexcept;
     bool IsDefaultOrLegacy() const noexcept;
     bool IsRgb() const noexcept;
+    bool IsColon() const noexcept;
 
-    void SetColor(const COLORREF rgbColor) noexcept;
-    void SetIndex(const BYTE index, const bool isIndex256) noexcept;
+    void SetColor(const COLORREF rgbColor, const bool isColon = false) noexcept;
+    void SetIndex(const BYTE index, const bool isIndex256, const bool isColon = false) noexcept;
     void SetDefault() noexcept;
+    void SetColon(const bool isColon) noexcept;
 
     COLORREF GetColor(const std::array<COLORREF, TABLE_SIZE>& colorTable, const size_t defaultIndex, bool brighten = false) const noexcept;
     BYTE GetLegacyIndex(const BYTE defaultIndex) const noexcept;
@@ -184,11 +189,11 @@ namespace WEX
                 }
                 else if (color.IsRgb())
                 {
-                    return WEX::Common::NoThrowString().Format(L"{RGB:0x%06x}", color.GetRGB());
+                    return WEX::Common::NoThrowString().Format((color.IsColon() ? L"{RGB:0x%06x} (Colon)" : L"{RGB:0x%06x}"), color.GetRGB());
                 }
                 else
                 {
-                    return WEX::Common::NoThrowString().Format(L"{index:0x%04x}", color._red);
+                    return WEX::Common::NoThrowString().Format((color.IsColon() ? L"{index:0x%04x} (Colon)" : L"{index:0x%04x}"), color._red);
                 }
             }
         };

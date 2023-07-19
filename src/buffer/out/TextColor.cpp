@@ -74,7 +74,7 @@ bool TextColor::IsIndex16() const noexcept
 
 bool TextColor::IsIndex256() const noexcept
 {
-    return _meta == ColorType::IsIndex256;
+    return _meta == ColorType::IsIndex256 || _meta == ColorType::IsIndex256Colon;
 }
 
 bool TextColor::IsDefault() const noexcept
@@ -84,12 +84,17 @@ bool TextColor::IsDefault() const noexcept
 
 bool TextColor::IsDefaultOrLegacy() const noexcept
 {
-    return _meta != ColorType::IsRgb && _index < 16;
+    return !IsRgb() && _index < 16;
 }
 
 bool TextColor::IsRgb() const noexcept
 {
-    return _meta == ColorType::IsRgb;
+    return _meta == ColorType::IsRgb || _meta == ColorType::IsRgbColon;
+}
+
+bool TextColor::IsColon() const noexcept
+{
+    return _meta == ColorType::IsRgbColon || _meta == ColorType::IsIndex256Colon;
 }
 
 // Method Description:
@@ -97,11 +102,12 @@ bool TextColor::IsRgb() const noexcept
 //      attribute.
 // Arguments:
 // - rgbColor: the COLORREF containing the color information for this TextColor
+// - isColon: whether or not this TextColor should be a colon variant.
 // Return Value:
 // - <none>
-void TextColor::SetColor(const COLORREF rgbColor) noexcept
+void TextColor::SetColor(const COLORREF rgbColor, const bool isColon) noexcept
 {
-    _meta = ColorType::IsRgb;
+    _meta = isColon ? ColorType::IsRgbColon : ColorType::IsRgb;
     _red = GetRValue(rgbColor);
     _green = GetGValue(rgbColor);
     _blue = GetBValue(rgbColor);
@@ -112,11 +118,12 @@ void TextColor::SetColor(const COLORREF rgbColor) noexcept
 // Arguments:
 // - index: the index of the colortable we should use for this TextColor.
 // - isIndex256: is this a 256 color index (true) or a 16 color index (false).
+// - isColon: whether or not this TextColor should be a colon variant.
 // Return Value:
 // - <none>
-void TextColor::SetIndex(const BYTE index, const bool isIndex256) noexcept
+void TextColor::SetIndex(const BYTE index, const bool isIndex256, const bool isColon) noexcept
 {
-    _meta = isIndex256 ? ColorType::IsIndex256 : ColorType::IsIndex16;
+    _meta = isIndex256 ? (isColon ? ColorType::IsIndex256Colon : ColorType::IsIndex256) : ColorType::IsIndex16;
     _index = index;
     _green = 0;
     _blue = 0;
@@ -135,6 +142,24 @@ void TextColor::SetDefault() noexcept
     _red = 0;
     _green = 0;
     _blue = 0;
+}
+
+// Method Description:
+// - Sets this TextColor to be a colon variant of the current ColorType.
+// Arguments:
+// - isColon: whether or not this TextColor should be a colon variant.
+// Return Value:
+// - <none>
+void TextColor::SetColon(const bool isColon) noexcept
+{
+    if (IsIndex256())
+    {
+        _meta = isColon ? ColorType::IsIndex256Colon : ColorType::IsIndex256;
+    }
+    else if (IsRgb())
+    {
+        _meta = isColon ? ColorType::IsRgbColon : ColorType::IsRgb;
+    }
 }
 
 // Method Description:

@@ -4117,14 +4117,28 @@ void AdaptDispatch::_ReportSGRSetting() const
         else if (color.IsIndex256())
         {
             const auto index = color.GetIndex();
-            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{};5;{}"), base + 8, index);
+            if (color.IsColon())
+            {
+                fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{}:5:{}"), base + 8, index);
+            }
+            else
+            {
+                fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{};5;{}"), base + 8, index);
+            }
         }
         else if (color.IsRgb())
         {
             const auto r = GetRValue(color.GetRGB());
             const auto g = GetGValue(color.GetRGB());
             const auto b = GetBValue(color.GetRGB());
-            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{};2;{};{};{}"), base + 8, r, g, b);
+            if (color.IsColon())
+            {
+                fmt::format_to(std::back_inserter(response), FMT_COMPILE(";{}:2::{}:{}:{}"), base + 8, r, g, b);
+            }
+            else
+            {
+                fmt::format_to(std::back_inserter(response), FMT_COMPILE(";{};2;{};{};{}"), base + 8, r, g, b);
+            }
         }
     };
     addColor(30, attr.GetForeground());

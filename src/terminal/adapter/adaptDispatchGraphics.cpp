@@ -39,7 +39,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
         if (red <= 255 && green <= 255 && blue <= 255)
         {
             const auto rgbColor = RGB(red, green, blue);
-            attr.SetColor(rgbColor, isForeground);
+            attr.SetColor(rgbColor, isForeground, false);
         }
     }
     else if (typeOpt == DispatchTypes::GraphicsOptions::BlinkOrXterm256Index)
@@ -51,15 +51,75 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
             const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);
             if (isForeground)
             {
-                attr.SetIndexedForeground256(adjustedIndex);
+                attr.SetIndexedForeground256(adjustedIndex, false);
             }
             else
             {
-                attr.SetIndexedBackground256(adjustedIndex);
+                attr.SetIndexedBackground256(adjustedIndex, false);
             }
         }
     }
     return optionsConsumed;
+}
+
+// Routine Description:
+// - Helper to parse extended graphics options, which start with 38 (FG) or 48 (BG)
+//   - These options are followed by either a 2 (RGB) or 5 (xterm index):
+//     - RGB sequences then take 4 MORE options to designate the ColorSpaceID, R, G, B parts
+//       of the color.
+//     - Xterm index will use the option that follows to use a color from the
+//       preset 256 color xterm color table.
+// Arguments:
+// - colorItem - One of FG(38) and BG(48), indicating which color we're setting.
+// - options - An array of options that will be used to generate the RGB color
+// - attr - The attribute that will be updated with the parsed color.
+// Return Value:
+// - <none>
+void AdaptDispatch::_SetRgbColorsHelperAlt(const VTParameter colorItem,
+                                           const VTSubParameters options,
+                                           TextAttribute& attr) noexcept
+{
+    // This should be called for applying FG and BG colors only.
+    assert(colorItem == GraphicsOptions::ForegroundExtended ||
+           colorItem == GraphicsOptions::BackgroundExtended);
+
+    const bool isForeground = (colorItem == GraphicsOptions::ForegroundExtended);
+    const DispatchTypes::GraphicsOptions typeOpt = options.at(0);
+
+    if (typeOpt == DispatchTypes::GraphicsOptions::RGBColorOrFaint)
+    {
+        // sub params are in the order:
+        // :2:<color-space-id>:<r>:<g>:<b>
+        // we skip color-space-id, because we don't support it.
+        const size_t red = options.at(2).value_or(0);
+        const size_t green = options.at(3).value_or(0);
+        const size_t blue = options.at(4).value_or(0);
+        // ensure that each value fits in a byte
+        if (red <= 255 && green <= 255 && blue <= 255)
+        {
+            const auto rgbColor = RGB(red, green, blue);
+            attr.SetColor(rgbColor, isForeground, true);
+        }
+    }
+    else if (typeOpt == DispatchTypes::GraphicsOptions::BlinkOrXterm256Index)
+    {
+        // sub params are in the order:
+        // :5:<n>
+        // where 'n' is the index into the xterm color table.
+        const size_t tableIndex = options.at(1).value_or(0);
+        if (tableIndex <= 255)
+        {
+            const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);
+            if (isForeground)
+            {
+                attr.SetIndexedForeground256(adjustedIndex, true);
+            }
+            else
+            {
+                attr.SetIndexedBackground256(adjustedIndex, true);
+            }
+        }
+    }
 }
 
 // Routine Description:
@@ -80,7 +140,7 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
     if (options.hasSubParamsFor(optionIndex))
     {
         const auto subParams = options.subParamsFor(optionIndex);
-        _ApplyGraphicsOptionSubParam(opt, subParams, attr);
+        _ApplyGraphicsOptionAlt(opt, subParams, attr);
         return 1;
     }
 
@@ -260,20 +320,27 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
 }
 
 // Routine Description:
-// - This is a no-op until we have something meaningful to do with sub parameters.
 // - Helper to apply a single graphic rendition option with sub parameters to an attribute.
 // Arguments:
 // - option - An option to apply.
+// - subParams - Sub parameters associated with the option.
 // - attr - The attribute that will be updated with the applied option.
 // Return Value:
 // - <None>
-void AdaptDispatch::_ApplyGraphicsOptionSubParam(const VTParameter /* option */,
-                                                 const VTSubParameters /* subParam */,
-                                                 TextAttribute& /* attr */) noexcept
+void AdaptDispatch::_ApplyGraphicsOptionAlt(const VTParameter option,
+                                            const VTSubParameters subParams,
+                                            TextAttribute& attr) noexcept
 {
     // here, we apply our "best effort" rule, while handling sub params if we don't
     // recognise the parameter substring (parameter and it's sub parameters) then
     // we should just skip over them.
+    switch (option)
+    {
+    case ForegroundExtended:
+    case BackgroundExtended:
+        _SetRgbColorsHelperAlt(option, subParams, attr);
+        break;
+    }
 }
 
 // Routine Description:

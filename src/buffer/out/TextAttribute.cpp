@@ -166,14 +166,14 @@ void TextAttribute::SetBackground(const TextColor background) noexcept
     _background = background;
 }
 
-void TextAttribute::SetForeground(const COLORREF rgbForeground) noexcept
+void TextAttribute::SetForeground(const COLORREF rgbForeground, const bool isColon) noexcept
 {
-    _foreground = TextColor(rgbForeground);
+    _foreground = TextColor(rgbForeground, isColon);
 }
 
-void TextAttribute::SetBackground(const COLORREF rgbBackground) noexcept
+void TextAttribute::SetBackground(const COLORREF rgbBackground, const bool isColon) noexcept
 {
-    _background = TextColor(rgbBackground);
+    _background = TextColor(rgbBackground, isColon);
 }
 
 void TextAttribute::SetIndexedForeground(const BYTE fgIndex) noexcept
@@ -186,25 +186,25 @@ void TextAttribute::SetIndexedBackground(const BYTE bgIndex) noexcept
     _background = TextColor(bgIndex, false);
 }
 
-void TextAttribute::SetIndexedForeground256(const BYTE fgIndex) noexcept
+void TextAttribute::SetIndexedForeground256(const BYTE fgIndex, const bool isColon) noexcept
 {
-    _foreground = TextColor(fgIndex, true);
+    _foreground = TextColor(fgIndex, true, isColon);
 }
 
-void TextAttribute::SetIndexedBackground256(const BYTE bgIndex) noexcept
+void TextAttribute::SetIndexedBackground256(const BYTE bgIndex, const bool isColon) noexcept
 {
-    _background = TextColor(bgIndex, true);
+    _background = TextColor(bgIndex, true, isColon);
 }
 
-void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept
+void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground, const bool isColon) noexcept
 {
     if (fIsForeground)
     {
-        SetForeground(rgbColor);
+        SetForeground(rgbColor, isColon);
     }
     else
     {
-        SetBackground(rgbColor);
+        SetBackground(rgbColor, isColon);
     }
 }
 
