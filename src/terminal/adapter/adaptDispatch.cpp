@@ -3729,6 +3729,13 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     return false;
 }
 
+// We literally only implement the xterm.js sequences that are aliases for the
+// final term ones. Just implement exactly the same.
+bool AdaptDispatch::DoXtermJsAction(const std::wstring_view string)
+{
+    return DoFinalTermAction(string);
+}
+
 // Method Description:
 // - DECDLD - Downloads one or more characters of a dynamically redefinable
 //   character set (DRCS) with a specified pixel pattern. The pixel array is

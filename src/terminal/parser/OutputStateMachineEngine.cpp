@@ -417,10 +417,11 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTPara
 bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameters parameters)
 {
     // Bail out if we receive subparameters, but we don't accept them in the sequence.
-    if (parameters.hasSubParams() && !_CanSeqAcceptSubParam(id, parameters)) [[unlikely]]
-    {
-        return false;
-    }
+    if (parameters.hasSubParams() && !_CanSeqAcceptSubParam(id, parameters))
+        [[unlikely]]
+        {
+            return false;
+        }
 
     auto success = false;
 
@@ -866,6 +867,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::FinalTermAction:
     {
         success = _dispatch->DoFinalTermAction(string);
+        break;
+    }
+    case OscActionCodes::XtermJsAction:
+    {
+        success = _dispatch->DoXtermJsAction(string);
         break;
     }
     default:
