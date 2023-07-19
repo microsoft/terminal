@@ -387,8 +387,12 @@ namespace Microsoft::Console::Render::Atlas
         til::generational<FontSettings> font;
         til::generational<CursorSettings> cursor;
         til::generational<MiscellaneousSettings> misc;
+        // Size of the viewport / swap chain in pixel.
         u16x2 targetSize{ 1, 1 };
-        u16x2 cellCount{ 1, 1 };
+        // Size of the portion of the text buffer that we're drawing on the screen.
+        u16x2 viewportCellCount{ 1, 1 };
+        // The position of the viewport inside the text buffer (in cells).
+        u16x2 viewportOffset{ 0, 0 };
     };
 
     using GenerationalSettings = til::generational<Settings>;
@@ -545,7 +549,7 @@ namespace Microsoft::Console::Render::Atlas
         void MarkAllAsDirty() noexcept
         {
             dirtyRectInPx = { 0, 0, s->targetSize.x, s->targetSize.y };
-            invalidatedRows = { 0, s->cellCount.y };
+            invalidatedRows = { 0, s->viewportCellCount.y };
             scrollOffset = 0;
         }
     };
