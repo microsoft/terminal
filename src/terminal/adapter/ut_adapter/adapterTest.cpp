@@ -2466,6 +2466,61 @@ public:
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 5 }));
     }
 
+    TEST_METHOD(XtermExtendedSubParameterColorTest)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+
+        VTParameter rgOptions[1];
+        VTParameter rgSubParamOpts[16];
+        std::pair<BYTE, BYTE> subParamRanges[1];
+
+        _testGetSet->_expectedAttribute = _testGetSet->_textBuffer->GetCurrentAttributes();
+
+        Log::Comment(L"Test 1: Change Indexed Foreground with missing index sub parameter");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        subParamRanges[0] = { (BYTE)0, (BYTE)1 };
+        _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_BLACK);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 2: Change Indexed Background with default index sub parameter");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        rgSubParamOpts[1] = {};
+        subParamRanges[0] = { (BYTE)0, (BYTE)2 };
+        _testGetSet->_expectedAttribute.SetIndexedBackground256(TextColor::DARK_BLACK);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 3: Change RGB Foreground with all RGB sub parameters missing");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        subParamRanges[0] = { (BYTE)0, (BYTE)1 };
+        _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 0));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 4: Change RGB Background with some missing RGB sub parameters");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgSubParamOpts[1] = {}; // color-space-id
+        rgSubParamOpts[2] = 123;
+        subParamRanges[0] = { (BYTE)0, (BYTE)3 };
+        _testGetSet->_expectedAttribute.SetBackground(RGB(123, 0, 0));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 5: Change RGB Foreground with some default RGB sub parameters");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgSubParamOpts[1] = {}; // color-space-id
+        rgSubParamOpts[2] = {};
+        rgSubParamOpts[3] = {};
+        rgSubParamOpts[4] = 123;
+        subParamRanges[0] = { (BYTE)0, (BYTE)5 };
+        _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 123));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+    }
+
     TEST_METHOD(SetColorTableValue)
     {
         _testGetSet->PrepData();
