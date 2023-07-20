@@ -340,6 +340,9 @@ void AdaptDispatch::_ApplyGraphicsOptionAlt(const VTParameter option,
     case BackgroundExtended:
         _SetRgbColorsHelperAlt(option, subParams, attr);
         break;
+    default:
+        /* do nothing */
+        break;
     }
 }
 
