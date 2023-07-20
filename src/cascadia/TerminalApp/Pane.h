@@ -56,6 +56,7 @@ struct PaneResources
 {
     winrt::Windows::UI::Xaml::Media::SolidColorBrush focusedBorderBrush{ nullptr };
     winrt::Windows::UI::Xaml::Media::SolidColorBrush unfocusedBorderBrush{ nullptr };
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush broadcastBorderBrush{ nullptr };
 };
 
 class Pane : public std::enable_shared_from_this<Pane>
@@ -146,6 +147,11 @@ public:
     void FinalizeConfigurationGivenDefault();
 
     bool ContainsReadOnly() const;
+
+    void EnableBroadcast(bool enabled);
+    void BroadcastKey(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
+    void BroadcastChar(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const wchar_t vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+    void BroadcastString(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const winrt::hstring& text);
 
     void UpdateResources(const PaneResources& resources);
 
@@ -255,6 +261,7 @@ private:
     Borders _borders{ Borders::None };
 
     bool _zoomed{ false };
+    bool _broadcastEnabled{ false };
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
@@ -274,6 +281,7 @@ private:
     void _SetupEntranceAnimation();
     void _UpdateBorders();
     Borders _GetCommonBorders();
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush _ComputeBorderColor();
 
     bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
 
