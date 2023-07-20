@@ -84,7 +84,7 @@ H | 🚶 Walk   | The find dialog can display marks on the scrollbar indicating 
 I | 🏃‍♂️ Run    | The terminal can display icons in the gutter, with quick actions for that command (re-run, copy output, etc)
 J | 🏃‍♂️ Run    | The terminal can display a faint horizontal separator between commands in the buffer.
 K | 🚀 Sprint | The terminal can "collapse" content between two marks.
-L | 🚀 Sprint | The terminal can display a sticky header above the control which displays the most recent command 
+L | 🚀 Sprint | The terminal can display a sticky header above the control which displays the most recent command
 M | 🚀 Sprint | The user can open a dialog to manually bookmark a line with a custom comment
 
 ## Solution Design
@@ -94,7 +94,7 @@ M | 🚀 Sprint | The user can open a dialog to manually bookmark a line with a 
 * [x] iTerm2's OSC `SetMark` (in [#12948])
 * [x] FinalTerm prompt markup sequences
   - [x] **FTCS_PROMPT** was added in [#13163]
-  - [x] The rest in [#14341] 
+  - [x] The rest in [#14341]
 * [ ] additionally, VsCode's FinalTerm prompt markup variant, `OSC 663`
 * [ ] [ConEmu's
   `OSC9;12`](https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC)
@@ -202,11 +202,11 @@ PROMPT $e]133;D$e\$e]133;A$e\$e]9;9;$P$e\%PROMPT%$e]133;B$e\
 
 The below are the proposed additions to the settings for supporting marks and
 interacting with them. Some of these have already been added as experimental
-settings - these would be promoted to no longer be experimental. 
+settings - these would be promoted to no longer be experimental.
 
 Many of the sub-points on these settings are definitely "Future Consideration"
 level settings. For example, the `scrollToMark` `"highlight"` property. That one
-is certainly not something we need to ship with.  
+is certainly not something we need to ship with.
 
 ### Actions
 
@@ -218,26 +218,20 @@ region that means something to the user.
   mark covering at the selection. Otherwise, place the mark on the cursor row.
   - [x] `color`: a color for the scrollbar mark. (in [#12948])
   - [ ] `category`: one of `{"prompt", "error", "warning", "success", "info"}`
-  - [ ] `dismissSelection`: `bool`, default `true`. If true, dismiss the
-    selection (if there is one) after marking it. If false, leave the text
-    selected.
-    - This is considered for something like pattern matching, where a user might
-      want to match on "error: ", mark it with an error mark, and then also
-      colorize it. 
 * [ ] `scrollToMark`
   - [x] `direction`: `["first", "previous", "next", "last"]`  (in [#12948])
-  - [ ] [#13455] - `highlight`: `bool`, default false. Display a temporary
-    highlight around the mark when scrolling to it. ("Highlight" != "select")
-    - If the mark has prompt/command/output sections, only select the prompt and command.
-    - If the mark has zero width (i.e. the user just wanted to bookmark a line),
-      then highlight the entire row.
+  - [ ] `category`: `flags({categories}...)`, default `"all"`. Only scroll to
+    one of the categories specified (e.g. only scroll to the previous error,
+    only the previous prompt, or just any mark)
   - [ ] [#13449] - `center` or some other setting that controls how the mark is scrolled in.
     - Maybe `top` (current) /`center` (as proposed) /`nearestEdge` (when
       scrolling down, put the mark at the bottom line of viewport , up -> top
       line)?
-  - [ ] `category`: `flags({categories}...)`, default `"all"`. Only scroll to
-    one of the categories specified (e.g. only scroll to the previous error,
-    only the previous prompt, or just any mark)
+  - [ ] [#13455] - `highlight`: `bool`, default true. Display a temporary
+    highlight around the mark when scrolling to it. ("Highlight" != "select")
+    - If the mark has prompt/command/output sections, only select the prompt and command.
+    - If the mark has zero width (i.e. the user just wanted to bookmark a line),
+      then highlight the entire row.
 * [x] `clearMark`: Remove any marks in the selected region (or at the cursor
   position)  (in [#12948])
 * [x] `clearAllMarks`: Remove all the marks from the buffer.  (in [#12948])
@@ -264,15 +258,15 @@ copy()])`, to quickly select the previous commands output.
 
 * [x] `autoMarkPrompts`: `bool`, default `false`.  (in [#12948])
 * [ ] `showFindMatchesOnScrollbar`: `bool`, default `true`.
-* [ ] `showMarksOnScrollbar`: `bool` or `flags({categories}...)` 
+* [ ] `showMarksOnScrollbar`: `bool` or `flags({categories}...)`
   * As an example: `"showMarksOnScrollbar": ["error", "success"]`).
-  * Controls if marks should be displayed on the scrollbar. 
-  * If `true`/`"all"`, then all marks are displayed. 
-  * If `false`/`"none"`, then no marks are displayed. 
+  * Controls if marks should be displayed on the scrollbar.
+  * If `true`/`"all"`, then all marks are displayed.
+  * If `false`/`"none"`, then no marks are displayed.
   * If a set of categories are provided, only display marks from those categories.
   * [x] the bool version is (in [#12948])
-  * [ ] The `flags({categories}...)` version is not done yet. 
-* [ ] `showGutterIcons`, for displaying gutter icons. 
+  * [ ] The `flags({categories}...)` version is not done yet.
+* [ ] `showGutterIcons`, for displaying gutter icons.
 
 ## UX Design
 
@@ -421,7 +415,7 @@ Not necessarily marks related, but could happily leverage this functionality.
 * [#13449]
 * [#4588]
 * [#14754] - A "sticky header" for the `TermControl` that could display the
-  previous command at the top of the buffer. 
+  previous command at the top of the buffer.
 * [#2226] - a scrollable "minimap" in te scrollbar, as opposed to marks
 
 ### Relevant external docs
