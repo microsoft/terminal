@@ -39,7 +39,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
         if (red <= 255 && green <= 255 && blue <= 255)
         {
             const auto rgbColor = RGB(red, green, blue);
-            attr.SetColor(rgbColor, isForeground, false);
+            attr.SetColor(rgbColor, isForeground);
         }
     }
     else if (typeOpt == DispatchTypes::GraphicsOptions::BlinkOrXterm256Index)
@@ -51,11 +51,11 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
             const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);
             if (isForeground)
             {
-                attr.SetIndexedForeground256(adjustedIndex, false);
+                attr.SetIndexedForeground256(adjustedIndex);
             }
             else
             {
-                attr.SetIndexedBackground256(adjustedIndex, false);
+                attr.SetIndexedBackground256(adjustedIndex);
             }
         }
     }
@@ -98,7 +98,7 @@ void AdaptDispatch::_SetRgbColorsHelperAlt(const VTParameter colorItem,
         if (red <= 255 && green <= 255 && blue <= 255)
         {
             const auto rgbColor = RGB(red, green, blue);
-            attr.SetColor(rgbColor, isForeground, true);
+            attr.SetColor(rgbColor, isForeground);
         }
     }
     else if (typeOpt == DispatchTypes::GraphicsOptions::BlinkOrXterm256Index)
@@ -112,11 +112,11 @@ void AdaptDispatch::_SetRgbColorsHelperAlt(const VTParameter colorItem,
             const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);
             if (isForeground)
             {
-                attr.SetIndexedForeground256(adjustedIndex, true);
+                attr.SetIndexedForeground256(adjustedIndex);
             }
             else
             {
-                attr.SetIndexedBackground256(adjustedIndex, true);
+                attr.SetIndexedBackground256(adjustedIndex);
             }
         }
     }
