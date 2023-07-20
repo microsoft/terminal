@@ -216,7 +216,7 @@
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Web Search</value>
-  </data>  
+  </data>
   <data name="TabColorChoose" xml:space="preserve">
     <value>Color...</value>
   </data>
@@ -835,5 +835,9 @@
   </data>
   <data name="MoveTabToNewWindowToolTip" xml:space="preserve">
     <value>Moves tab to a new window </value>
+  </data>
+  <data name="RunAsAdminFlyout.Text" xml:space="preserve">
+    <value>Run as Administrator</value>
+    <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
 </root>
