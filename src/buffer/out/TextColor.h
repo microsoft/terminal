@@ -93,7 +93,6 @@ public:
     }
 
     constexpr TextColor(const BYTE index, const bool isIndex256) noexcept :
-        // isColon is only used with IsIndex256.
         _meta{ isIndex256 ? ColorType::IsIndex256 : ColorType::IsIndex16 },
         _index{ index },
         _green{ 0 },
