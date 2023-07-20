@@ -147,6 +147,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget IdentifyWindow();
         winrt::fire_and_forget RenameFailed();
+        winrt::fire_and_forget ShowTerminalWorkingDirectory();
 
         winrt::fire_and_forget ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
                                                      const bool initial,
@@ -256,6 +257,7 @@ namespace winrt::TerminalApp::implementation
 
         std::shared_ptr<Toast> _windowIdToast{ nullptr };
         std::shared_ptr<Toast> _windowRenameFailedToast{ nullptr };
+        std::shared_ptr<Toast> _windowCwdToast{ nullptr };
 
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _renamerLayoutUpdatedRevoker;
         int _renamerLayoutCount{ 0 };

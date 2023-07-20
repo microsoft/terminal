@@ -72,6 +72,7 @@ static constexpr std::string_view IdentifyWindowKey{ "identifyWindow" };
 static constexpr std::string_view IdentifyWindowsKey{ "identifyWindows" };
 static constexpr std::string_view RenameWindowKey{ "renameWindow" };
 static constexpr std::string_view OpenWindowRenamerKey{ "openWindowRenamer" };
+static constexpr std::string_view DisplayWorkingDirectoryKey{ "debugTerminalCwd" };
 static constexpr std::string_view SearchForTextKey{ "searchWeb" };
 static constexpr std::string_view GlobalSummonKey{ "globalSummon" };
 static constexpr std::string_view QuakeModeKey{ "quakeMode" };
@@ -404,6 +405,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::IdentifyWindows, RS_(L"IdentifyWindowsCommandKey") },
                 { ShortcutAction::RenameWindow, RS_(L"ResetWindowNameCommandKey") },
                 { ShortcutAction::OpenWindowRenamer, RS_(L"OpenWindowRenamerCommandKey") },
+                { ShortcutAction::DisplayWorkingDirectory, RS_(L"DisplayWorkingDirectoryCommandKey") },
                 { ShortcutAction::GlobalSummon, MustGenerate },
                 { ShortcutAction::SearchForText, MustGenerate },
                 { ShortcutAction::QuakeMode, RS_(L"QuakeModeCommandKey") },
