@@ -64,6 +64,41 @@ namespace Microsoft::Console::Render
     class Renderer;
 }
 
+enum class MarkCategory
+{
+    Prompt = 0,
+    Error = 1,
+    Warning = 2,
+    Success = 3,
+    Info = 4
+};
+struct ScrollMark
+{
+    std::optional<til::color> color;
+    til::point start;
+    til::point end; // exclusive
+    std::optional<til::point> commandEnd;
+    std::optional<til::point> outputEnd;
+
+    MarkCategory category{ MarkCategory::Info };
+    // Other things we may want to think about in the future are listed in
+    // GH#11000
+
+    bool HasCommand() const noexcept
+    {
+        return commandEnd.has_value() && *commandEnd != end;
+    }
+    bool HasOutput() const noexcept
+    {
+        return outputEnd.has_value() && *outputEnd != *commandEnd;
+    }
+    std::pair<til::point, til::point> GetExtent() const
+    {
+        til::point realEnd{ til::coalesce_value(outputEnd, commandEnd, end) };
+        return std::make_pair(til::point{ start }, realEnd);
+    }
+};
+
 class TextBuffer final
 {
 public:
@@ -228,6 +263,16 @@ public:
     void CopyPatterns(const TextBuffer& OtherBuffer);
     interval_tree::IntervalTree<til::point, size_t> GetPatterns(const til::CoordType firstRow, const til::CoordType lastRow) const;
 
+    const std::vector<ScrollMark>& GetMarks() const noexcept;
+    void ClearMarksInRange(const til::point start, const til::point end);
+    void ClearAllMarks() noexcept;
+    void ScrollMarks(const int delta);
+    void StartPromptMark(const ScrollMark& m);
+    void AddMark(const ScrollMark& m);
+    void SetCurrentPromptEnd(const til::point pos) noexcept;
+    void SetCurrentCommandEnd(const til::point pos) noexcept;
+    void SetCurrentOutputEnd(const til::point pos, ::MarkCategory category) noexcept;
+
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);
     void _commit(const std::byte* row);
@@ -251,6 +296,7 @@ private:
     til::point _GetWordEndForAccessibility(const til::point target, const std::wstring_view wordDelimiters, const til::point limit) const;
     til::point _GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const;
     void _PruneHyperlinks();
+    void _trimMarksOutsideBuffer();
 
     static void _AppendRTFText(std::ostringstream& contentBuilder, const std::wstring_view& text);
 
@@ -326,6 +372,8 @@ private:
     Cursor _cursor;
 
     bool _isActiveBuffer = false;
+
+    std::vector<ScrollMark> _marks;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

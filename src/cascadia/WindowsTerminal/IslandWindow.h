@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "BaseWindow.h"
+#include <til/winrt.h>
 
 void SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept;
 
@@ -21,6 +22,9 @@ public:
 
     virtual void MakeWindow() noexcept;
     virtual void Close();
+
+    virtual void Refrigerate() noexcept;
+
     virtual void OnSize(const UINT width, const UINT height);
     HWND GetInteropHandle() const;
 
@@ -37,7 +41,7 @@ public:
     virtual til::rect GetNonClientFrame(const UINT dpi) const noexcept;
     virtual til::size GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept;
 
-    virtual void Initialize();
+    virtual bool Initialize();
 
     void SetCreateCallback(std::function<void(const HWND, const til::rect&)> pfn) noexcept;
 
@@ -113,6 +117,9 @@ protected:
     RECT _rcWindowBeforeFullscreen{};
     RECT _rcWorkBeforeFullscreen{};
     UINT _dpiBeforeFullscreen{ 96 };
+
+    void _coldInitialize();
+    void _warmInitialize();
 
     virtual void _SetIsBorderless(const bool borderlessEnabled);
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);

@@ -1221,8 +1221,9 @@ void Pane::UpdateVisuals()
     {
         _UpdateBorders();
     }
-    _borderFirst.BorderBrush(_lastActive ? _themeResources.focusedBorderBrush : _themeResources.unfocusedBorderBrush);
-    _borderSecond.BorderBrush(_lastActive ? _themeResources.focusedBorderBrush : _themeResources.unfocusedBorderBrush);
+    const auto& brush{ _ComputeBorderColor() };
+    _borderFirst.BorderBrush(brush);
+    _borderSecond.BorderBrush(brush);
 }
 
 // Method Description:
@@ -2961,4 +2962,80 @@ void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& s
         _firstChild->CollectTaskbarStates(states);
         _secondChild->CollectTaskbarStates(states);
     }
+}
+
+void Pane::EnableBroadcast(bool enabled)
+{
+    if (_IsLeaf())
+    {
+        _broadcastEnabled = enabled;
+        UpdateVisuals();
+    }
+    else
+    {
+        _firstChild->EnableBroadcast(enabled);
+        _secondChild->EnableBroadcast(enabled);
+    }
+}
+
+void Pane::BroadcastKey(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl,
+                        const WORD vkey,
+                        const WORD scanCode,
+                        const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                        const bool keyDown)
+{
+    WalkTree([&](const auto& pane) {
+        if (const auto& termControl{ pane->GetTerminalControl() })
+        {
+            if (termControl != sourceControl && !termControl.ReadOnly())
+            {
+                termControl.RawWriteKeyEvent(vkey, scanCode, modifiers, keyDown);
+            }
+        }
+    });
+}
+
+void Pane::BroadcastChar(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl,
+                         const wchar_t character,
+                         const WORD scanCode,
+                         const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers)
+{
+    WalkTree([&](const auto& pane) {
+        if (const auto& termControl{ pane->GetTerminalControl() })
+        {
+            if (termControl != sourceControl && !termControl.ReadOnly())
+            {
+                termControl.RawWriteChar(character, scanCode, modifiers);
+            }
+        }
+    });
+}
+
+void Pane::BroadcastString(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl,
+                           const winrt::hstring& text)
+{
+    WalkTree([&](const auto& pane) {
+        if (const auto& termControl{ pane->GetTerminalControl() })
+        {
+            if (termControl != sourceControl && !termControl.ReadOnly())
+            {
+                termControl.RawWriteString(text);
+            }
+        }
+    });
+}
+
+winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::_ComputeBorderColor()
+{
+    if (_lastActive)
+    {
+        return _themeResources.focusedBorderBrush;
+    }
+
+    if (_broadcastEnabled && (_IsLeaf() && !_content.ReadOnly()))
+    {
+        return _themeResources.broadcastBorderBrush;
+    }
+
+    return _themeResources.unfocusedBorderBrush;
 }

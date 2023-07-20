@@ -31,6 +31,12 @@ namespace Microsoft::Console::VirtualTerminal
     // that number.
     constexpr size_t MAX_PARAMETER_COUNT = 32;
 
+    // Sub parameter limit for each parameter.
+    constexpr size_t MAX_SUBPARAMETER_COUNT = 6;
+    // we limit ourself to 256 sub parameters because we use bytes to store
+    // the their indexes.
+    static_assert(MAX_PARAMETER_COUNT * MAX_SUBPARAMETER_COUNT <= 256);
+
     class StateMachine final
     {
 #ifdef UNIT_TESTING
@@ -85,6 +91,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ActionVt52EscDispatch(const wchar_t wch);
         void _ActionCollect(const wchar_t wch) noexcept;
         void _ActionParam(const wchar_t wch);
+        void _ActionSubParam(const wchar_t wch);
         void _ActionCsiDispatch(const wchar_t wch);
         void _ActionOscParam(const wchar_t wch) noexcept;
         void _ActionOscPut(const wchar_t wch);
@@ -101,6 +108,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterEscapeIntermediate() noexcept;
         void _EnterCsiEntry();
         void _EnterCsiParam() noexcept;
+        void _EnterCsiSubParam() noexcept;
         void _EnterCsiIgnore() noexcept;
         void _EnterCsiIntermediate() noexcept;
         void _EnterOscParam() noexcept;
@@ -123,6 +131,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventCsiIntermediate(const wchar_t wch);
         void _EventCsiIgnore(const wchar_t wch);
         void _EventCsiParam(const wchar_t wch);
+        void _EventCsiSubParam(const wchar_t wch);
         void _EventOscParam(const wchar_t wch) noexcept;
         void _EventOscString(const wchar_t wch);
         void _EventOscTermination(const wchar_t wch);
@@ -152,6 +161,7 @@ namespace Microsoft::Console::VirtualTerminal
             CsiIntermediate,
             CsiIgnore,
             CsiParam,
+            CsiSubParam,
             OscParam,
             OscString,
             OscTermination,
@@ -190,7 +200,11 @@ namespace Microsoft::Console::VirtualTerminal
 
         VTIDBuilder _identifier;
         std::vector<VTParameter> _parameters;
-        bool _parameterLimitReached;
+        bool _parameterLimitOverflowed;
+        std::vector<VTParameter> _subParameters;
+        std::vector<std::pair<BYTE /*range start*/, BYTE /*range end*/>> _subParameterRanges;
+        bool _subParameterLimitOverflowed;
+        BYTE _subParameterCounter;
 
         std::wstring _oscString;
         VTInt _oscParameter;

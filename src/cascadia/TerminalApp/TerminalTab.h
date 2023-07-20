@@ -86,6 +86,7 @@ namespace winrt::TerminalApp::implementation
 
         void TogglePaneReadOnly();
         void SetPaneReadOnly(const bool readOnlyState);
+        void ToggleBroadcastInput();
 
         std::shared_ptr<Pane> GetActivePane() const;
         winrt::TerminalApp::TaskbarState GetCombinedTaskbarState() const;
@@ -135,6 +136,11 @@ namespace winrt::TerminalApp::implementation
             winrt::TerminalApp::IPaneContent::TaskbarProgressChanged_revoker TaskbarProgressChanged;
             winrt::TerminalApp::IPaneContent::ReadOnlyChanged_revoker ReadOnlyChanged;
             winrt::TerminalApp::IPaneContent::FocusRequested_revoker FocusRequested;
+
+            // These events literally only apply if the content is a TermControl.
+            winrt::Microsoft::Terminal::Control::TermControl::KeySent_revoker KeySent;
+            winrt::Microsoft::Terminal::Control::TermControl::CharSent_revoker CharSent;
+            winrt::Microsoft::Terminal::Control::TermControl::StringSent_revoker StringSent;
         };
         std::unordered_map<uint32_t, ContentEventTokens> _contentEvents;
 
@@ -180,6 +186,8 @@ namespace winrt::TerminalApp::implementation
         void _DuplicateTab();
 
         virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() override;
+
+        void _addBroadcastHandlers(const winrt::Microsoft::Terminal::Control::TermControl& control, ContentEventTokens& events);
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

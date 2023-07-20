@@ -520,6 +520,8 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         });
+        pane->EnableBroadcast(_tabStatus.IsInputBroadcastActive());
+
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
         // Depending on which direction will be split, the new pane can be
@@ -632,7 +634,7 @@ namespace winrt::TerminalApp::implementation
                 _nextPaneId++;
             }
         });
-
+        pane->EnableBroadcast(_tabStatus.IsInputBroadcastActive());
         // pass the old id to the new child
         const auto previousId = _activePane->Id();
 
@@ -980,31 +982,14 @@ namespace winrt::TerminalApp::implementation
                 }
             });
 
-        // Add a PaneRaiseBell event handler to the Pane
-        events.BellRequested = content.BellRequested(
-            winrt::auto_revoke,
-            [weakThis](auto&& /*s*/, auto&& args) {
-                if (auto tab{ weakThis.get() })
-                {
-                    if (args.FlashTaskbar())
-                    {
-                        // If visual is set, we need to bubble this event all the way to app host to flash the taskbar
-                        // In this part of the chain we bubble it from the hosting tab to the page
-                        tab->_TabRaiseVisualBellHandlers();
-                    }
+        if (_tabStatus.IsInputBroadcastActive())
+        {
+            if (const auto& termContent{ content.try_as<TerminalApp::TerminalPaneContent>() })
+            {
+                _addBroadcastHandlers(termContent.GetTerminal(), events);
 
-                    // Show the bell indicator in the tab header
-                    tab->ShowBellIndicator(true);
-
-                    // If this tab is focused, activate the bell indicator timer, which will
-                    // remove the bell indicator once it fires
-                    // (otherwise, the indicator is removed when the tab gets focus)
-                    if (tab->_focusState != WUX::FocusState::Unfocused)
-                    {
-                        tab->ActivateBellIndicatorTimer();
-                    }
-                }
-            });
+            }
+        }
 
         _contentEvents[paneId] = std::move(events);
     }
@@ -1753,6 +1738,10 @@ namespace winrt::TerminalApp::implementation
 
         ReadOnly(_rootPane->ContainsReadOnly());
         TabViewItem().IsClosable(!ReadOnly());
+
+        // Update all the visuals on all our panes, so they can update their
+        // border colors accordingly.
+        _rootPane->WalkTree([](const auto& p) { p->UpdateVisuals(); });
     }
 
     std::shared_ptr<Pane> TerminalTab::GetActivePane() const
@@ -1781,5 +1770,89 @@ namespace winrt::TerminalApp::implementation
         }
 
         return Title();
+    }
+
+    // Method Description:
+    // - Toggle broadcasting input to all the panes in this tab.
+    void TerminalTab::ToggleBroadcastInput()
+    {
+        const bool newIsBroadcasting = !_tabStatus.IsInputBroadcastActive();
+        _tabStatus.IsInputBroadcastActive(newIsBroadcasting);
+        _rootPane->EnableBroadcast(newIsBroadcasting);
+
+        auto weakThis{ get_weak() };
+
+        // When we change the state of broadcasting, add or remove event
+        // handlers appropriately, so that controls won't be propagating events
+        // needlessly if no one is listening.
+
+        _rootPane->WalkTree([&](const auto& p) {
+            const auto paneId = p->Id();
+            if (!paneId.has_value())
+            {
+                return;
+            }
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                auto it = _contentEvents.find(*paneId);
+                if (it != _contentEvents.end())
+                {
+                    auto& events = it->second;
+
+                    // Always clear out old ones, just in case.
+                    events.KeySent.revoke();
+                    events.CharSent.revoke();
+                    events.StringSent.revoke();
+
+                    if (newIsBroadcasting)
+                    {
+                        _addBroadcastHandlers(control, events);
+                    }
+                }
+            }
+        });
+    }
+
+    void TerminalTab::_addBroadcastHandlers(const TermControl& termControl, ContentEventTokens& events)
+    {
+        auto weakThis{ get_weak() };
+        // ADD EVENT HANDLERS HERE
+        events.KeySent = termControl.KeySent(winrt::auto_revoke, [weakThis](auto&& sender, auto&& e) {
+            if (const auto tab{ weakThis.get() })
+            {
+                if (tab->_tabStatus.IsInputBroadcastActive())
+                {
+                    tab->_rootPane->BroadcastKey(sender.try_as<TermControl>(),
+                                                 e.VKey(),
+                                                 e.ScanCode(),
+                                                 e.Modifiers(),
+                                                 e.KeyDown());
+                }
+            }
+        });
+
+        events.CharSent = termControl.CharSent(winrt::auto_revoke, [weakThis](auto&& sender, auto&& e) {
+            if (const auto tab{ weakThis.get() })
+            {
+                if (tab->_tabStatus.IsInputBroadcastActive())
+                {
+                    tab->_rootPane->BroadcastChar(sender.try_as<TermControl>(),
+                                                  e.Character(),
+                                                  e.ScanCode(),
+                                                  e.Modifiers());
+                }
+            }
+        });
+
+        events.StringSent = termControl.StringSent(winrt::auto_revoke, [weakThis](auto&& sender, auto&& e) {
+            if (const auto tab{ weakThis.get() })
+            {
+                if (tab->_tabStatus.IsInputBroadcastActive())
+                {
+                    tab->_rootPane->BroadcastString(sender.try_as<TermControl>(),
+                                                    e.Text());
+                }
+            }
+        });
     }
 }

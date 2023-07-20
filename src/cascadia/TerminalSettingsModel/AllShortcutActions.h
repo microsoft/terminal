@@ -107,6 +107,7 @@
     ON_ALL_ACTIONS(ExpandSelectionToWord)   \
     ON_ALL_ACTIONS(CloseOtherPanes)         \
     ON_ALL_ACTIONS(RestartConnection)       \
+    ON_ALL_ACTIONS(ToggleBroadcastInput)    \
     ON_ALL_ACTIONS(OpenScratchpad)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
