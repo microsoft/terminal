@@ -35,7 +35,8 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
         const size_t red = options.at(1).value_or(0);
         const size_t green = options.at(2).value_or(0);
         const size_t blue = options.at(3).value_or(0);
-        // ensure that each value fits in a byte
+        // We only apply the color if the R, G, B values fit within a byte. 
+        // This is to match XTerm's and VTE's behavior.
         if (red <= 255 && green <= 255 && blue <= 255)
         {
             const auto rgbColor = RGB(red, green, blue);
@@ -94,7 +95,8 @@ void AdaptDispatch::_SetRgbColorsHelperAlt(const VTParameter colorItem,
         const size_t red = options.at(2).value_or(0);
         const size_t green = options.at(3).value_or(0);
         const size_t blue = options.at(4).value_or(0);
-        // ensure that each value fits in a byte
+        // We only apply the color if the R, G, B values fit within a byte. 
+        // This is to match XTerm's and VTE's behavior.
         if (red <= 255 && green <= 255 && blue <= 255)
         {
             const auto rgbColor = RGB(red, green, blue);
