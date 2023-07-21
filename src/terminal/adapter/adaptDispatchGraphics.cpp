@@ -91,13 +91,20 @@ void AdaptDispatch::_SetRgbColorsHelperAlt(const VTParameter colorItem,
     {
         // sub params are in the order:
         // :2:<color-space-id>:<r>:<g>:<b>
-        // we skip color-space-id, because we don't support it.
+
+        // We treat a color as invalid, if it has a color space ID, as some 
+        // applications that support non-standard ODA color sequence may send
+        // the red value in its place.
+        const bool hasColorSpaceId = options.at(1).has_value();
+
+        // Skip color-space-id.
         const size_t red = options.at(2).value_or(0);
         const size_t green = options.at(3).value_or(0);
         const size_t blue = options.at(4).value_or(0);
+
         // We only apply the color if the R, G, B values fit within a byte. 
         // This is to match XTerm's and VTE's behavior.
-        if (red <= 255 && green <= 255 && blue <= 255)
+        if (!hasColorSpaceId && red <= 255 && green <= 255 && blue <= 255)
         {
             const auto rgbColor = RGB(red, green, blue);
             attr.SetColor(rgbColor, isForeground);
