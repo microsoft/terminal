@@ -1,0 +1,49 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "CascadiaSettings.idl";
+
+#define COMMA ,
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    runtimeclass TerminalSettingsCreateResult
+    {
+        TerminalSettingsCreateResult(TerminalSettings defaultSettings);
+        TerminalSettings DefaultSettings { get; };
+        TerminalSettings UnfocusedSettings { get; };
+    }
+
+    // Class Description:
+    // TerminalSettings encapsulates all settings that control the
+    //      TermControl's behavior. In these settings there is both the entirety
+    //      of the Core ICoreSettings properties and the IControlSettings
+    //      properties. It's the Profile's responsibility to build this from
+    //      settings it contains, in combination with the global settings.
+    // The TerminalControl will pull settings it requires from this object,
+    //      and pass along the Core properties to the terminal core.
+    [default_interface]
+    runtimeclass TerminalSettings : Microsoft.Terminal.Core.ICoreSettings,
+                                    Microsoft.Terminal.Control.IControlSettings
+    {
+        TerminalSettings();
+
+        Windows.Foundation.Collections.IMap<String COMMA String> EnvironmentVariables;
+
+        static TerminalSettings CreateForPreview(CascadiaSettings appSettings, Profile profile);
+        static TerminalSettingsCreateResult CreateWithProfile(CascadiaSettings appSettings, Profile profile, Microsoft.Terminal.Control.IKeyBindings keybindings);
+        static TerminalSettingsCreateResult CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.Control.IKeyBindings keybindings);
+
+        void ApplyColorScheme(ColorScheme scheme);
+
+        ColorScheme AppliedColorScheme;
+
+        // The getters for these are already defined in IControlSettings. So
+        // we're just adding the setters here, because TerminalApp likes to be
+        // able to change these at runtime (e.g. when duplicating a pane).
+        String Commandline { set; };
+        String StartingDirectory { set; };
+
+        Boolean Elevate;
+    };
+}

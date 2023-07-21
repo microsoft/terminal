@@ -1,0 +1,45 @@
+:: ColorTool equivalent (ColorTool.exe -c)
+__DATA__
+__TABLE__
+:: The test text
+SET "CELL=  gYw  "
+:: Alignment properties for the cells and headers
+SET "ALIGN.CELL=C"
+SET "ALIGN.BOXHEAD=C"
+SET "ALIGN.STUB=L"
+:: Table spacing
+SET "SEPARATOR.CELL= "
+SET "SEPARATOR.STUB=   "
+__TABLE:END__
+__COLS__
+#NUL#
+40m
+41m
+42m
+43m
+44m
+45m
+46m
+47m
+__COLS:END__
+__ROWS__
+m
+1m
+30m
+1;30m
+31m
+1;31m
+32m
+1;32m
+33m
+1;33m
+34m
+1;34m
+35m
+1;35m
+36m
+1;36m
+37m
+1;37m
+__ROWS:END__
+__DATA:END__

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{416fd703-baa7-4f6e-9361-64f550ec8fca}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>elevate-shim</RootNamespace>
+    <ProjectName>elevate-shim</ProjectName>
+    <TargetName>elevate-shim</TargetName>
+    <ConfigurationType>Application</ConfigurationType>
+  </PropertyGroup>
+
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.build.pre.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
+
+  <!-- Source Files -->
+  <ItemGroup>
+    <ClCompile Include="elevate-shim.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ResourceCompile Include="elevate-shim.rc" />
+  </ItemGroup>
+
+  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+
+  <ItemDefinitionGroup>
+    <Link>
+      <!-- Remove all non-onecore dependencies -->
+      <AdditionalDependencies>onecore.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

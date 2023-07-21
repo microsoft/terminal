@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
@@ -24,8 +24,8 @@ class ObjectTests
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalScreenBuffer();
         m_state->PrepareGlobalInputBuffer();
+        m_state->PrepareGlobalScreenBuffer();
 
         return true;
     }
@@ -67,7 +67,7 @@ class ObjectTests
                                                              existingOutput.GetTextBuffer().GetCursor().GetSize(),
                                                              &newOutput));
 
-        ConsoleObjectHeader* newOutputAsHeader = static_cast<ConsoleObjectHeader*>(newOutput);
+        auto newOutputAsHeader = static_cast<ConsoleObjectHeader*>(newOutput);
 
         VERIFY_ARE_EQUAL(0ul, newOutputAsHeader->_ulOpenCount);
         VERIFY_ARE_EQUAL(0ul, newOutputAsHeader->_ulReaderCount);

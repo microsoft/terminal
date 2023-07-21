@@ -6,8 +6,8 @@
 #include "WaitQueue.h"
 #include "WaitBlock.h"
 
-#include "..\host\globals.h"
-#include "..\host\utils.hpp"
+#include "../host/globals.h"
+#include "../host/utils.hpp"
 
 // Routine Description:
 // - Instantiates a new ConsoleWaitQueue
@@ -74,18 +74,18 @@ bool ConsoleWaitQueue::NotifyWaiters(const bool fNotifyAll)
 bool ConsoleWaitQueue::NotifyWaiters(const bool fNotifyAll,
                                      const WaitTerminationReason TerminationReason)
 {
-    bool fResult = false;
+    auto fResult = false;
 
     auto it = _blocks.cbegin();
     while (!_blocks.empty() && it != _blocks.cend())
     {
-        ConsoleWaitBlock* const WaitBlock = (*it);
+        const auto WaitBlock = (*it);
         if (nullptr == WaitBlock)
         {
             break;
         }
 
-        auto const nextIt = std::next(it); // we have to capture next before it is potentially erased
+        const auto nextIt = std::next(it); // we have to capture next before it is potentially erased
 
         if (_NotifyBlock(WaitBlock, TerminationReason))
         {
@@ -114,7 +114,7 @@ bool ConsoleWaitQueue::_NotifyBlock(_In_ ConsoleWaitBlock* pWaitBlock,
                                     _In_ WaitTerminationReason TerminationReason)
 {
     // Attempt to notify block with the given reason.
-    bool const fResult = pWaitBlock->Notify(TerminationReason);
+    const auto fResult = pWaitBlock->Notify(TerminationReason);
 
     if (fResult)
     {

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{26c51792-41a3-4fe0-ab5e-8b69d557bf91}</ProjectGuid>
+    <ProjectName>SampleApp</ProjectName>
+    <RootNamespace>SampleApp</RootNamespace>
+    <!-- cppwinrt.build.pre.props depends on these settings: -->
+    <!-- build a dll, not exe (Application) -->
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <SubSystem>Console</SubSystem>
+    <!-- sets a bunch of Windows Universal properties -->
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+  </PropertyGroup>
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+  </PropertyGroup>
+  <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  <!-- ========================= XAML files ======================== -->
+  <ItemGroup>
+    <!-- DON'T PUT XAML FILES HERE! Put them in SampleAppLib.vcxproj -->
+  </ItemGroup>
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <!-- Only put headers for winrt types in here. Don't put other header files
+    in here - put them in SampleAppLib.vcxproj instead! -->
+    <ClInclude Include="pch.h" />
+  </ItemGroup>
+  <!-- ========================= Cpp Files ======================== -->
+  <ItemGroup>
+    <!-- Don't put source files in here - put them in SampleAppLib.vcxproj instead! -->
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <!-- ========================= idl Files ======================== -->
+  <ItemGroup>
+    <!-- DON'T PUT IDL FILES HERE! Put them in App.vcxproj -->
+  </ItemGroup>
+  <!-- ========================= Misc Files ======================== -->
+  <ItemGroup>
+    <None Include="$(ProjectName).def" />
+  </ItemGroup>
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <!-- Reference SampleAppLib here, so we can use its App.winmd as
+    our App.winmd. This didn't work correctly in VS2017, you'd need to
+    manually reference the lib -->
+    <ProjectReference Include="$(OpenConsoleDir)scratch\ScratchIslandApp\SampleApp\SampleAppLib.vcxproj">
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
+      <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
+    </ProjectReference>
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <!-- Manually include the Terminal.Core winmd, so we know where those types
+    are defined. We don't want to include it as a project reference, because
+    that would make us link that lib into our own binary. -->
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.TerminalConnection">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Control">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+  </ItemGroup>
+
+  <!-- ====================== Compiler & Linker Flags ===================== -->
+
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>$(OpenConsoleCommonOutDir)\ConTypes.lib;WindowsApp.lib;shell32.lib;user32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <Import Project="$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets'))" />
+  </Target>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <!-- SampleAppLib contains a DllMain that we need to force the use of. -->
+      <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+</Project>

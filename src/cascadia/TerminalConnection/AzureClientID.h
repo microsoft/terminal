@@ -3,4 +3,4 @@
 
 #pragma once
 
-static constexpr std::wstring_view AzureClientID = L"0";
+inline constexpr std::wstring_view AzureClientID = L"0";

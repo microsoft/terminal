@@ -2,11 +2,11 @@
 // Licensed under the MIT license.
 
 #include <windows.h>
-#include <wil\Common.h>
-#include <wil\result.h>
-#include <wil\resource.h>
-#include <wil\wistd_functional.h>
-#include <wil\wistd_memory.h>
+#include <wil/Common.h>
+#include <wil/result.h>
+#include <wil/resource.h>
+#include <wil/wistd_functional.h>
+#include <wil/wistd_memory.h>
 #include <cstdlib> /* srand, rand */
 #include <ctime> /* time */
 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
 // pch.h
@@ -8,6 +8,9 @@
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN
+#define NOMCX
+#define NOHELP
+#define NOCOMM
 
 #include <LibraryIncludes.h>
 // This is inexplicable, but for whatever reason, cppwinrt conflicts with the
@@ -28,3 +31,8 @@
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.System.h>
+
+#include <shlobj.h>
+#include <shobjidl_core.h>
+
+#include <cppwinrt_utils.h>

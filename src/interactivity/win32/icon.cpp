@@ -7,7 +7,7 @@
 
 #include "window.hpp"
 
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
@@ -51,7 +51,7 @@ Icon& Icon::Instance()
 // - S_OK or HRESULT failure code.
 [[nodiscard]] HRESULT Icon::GetIcons(_Out_opt_ HICON* const phIcon, _Out_opt_ HICON* const phSmIcon)
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     if (nullptr != phIcon)
     {
@@ -78,7 +78,7 @@ Icon& Icon::Instance()
 // - S_OK or HRESULT failure code.
 [[nodiscard]] HRESULT Icon::SetIcons(const HICON hIcon, const HICON hSmIcon)
 {
-    HRESULT hr = _SetIconFromReference(_hIcon, hIcon);
+    auto hr = _SetIconFromReference(_hIcon, hIcon);
 
     if (SUCCEEDED(hr))
     {
@@ -119,7 +119,7 @@ Icon& Icon::Instance()
 // - S_OK or HRESULT failure code.
 [[nodiscard]] HRESULT Icon::LoadIconsFromPath(_In_ PCWSTR pwszIconLocation, const int nIconIndex)
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     // Return value is count of icons extracted, which is redundant with filling the pointers.
     // http://msdn.microsoft.com/en-us/library/windows/desktop/ms648069(v=vs.85).aspx
@@ -149,7 +149,7 @@ Icon& Icon::Instance()
     HICON hIcon;
     HICON hSmIcon;
 
-    HRESULT hr = GetIcons(&hIcon, &hSmIcon);
+    auto hr = GetIcons(&hIcon, &hSmIcon);
 
     if (SUCCEEDED(hr))
     {
@@ -168,7 +168,7 @@ Icon& Icon::Instance()
 // - S_OK or HRESULT failure code.
 [[nodiscard]] HRESULT Icon::_Initialize()
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     if (!_fInitialized)
     {
@@ -232,7 +232,7 @@ void Icon::_DestroyNonDefaultIcons()
 // - S_OK or HRESULT failure code.
 [[nodiscard]] HRESULT Icon::_GetAvailableIconFromReference(_In_ HICON& hIconRef, _In_ HICON& hDefaultIconRef, _Out_ HICON* const phIcon)
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     // expecting hIconRef to be pointing to either the regular or small custom handles
     FAIL_FAST_IF(!(&hIconRef == &_hIcon || &hIconRef == &_hSmIcon));
@@ -264,7 +264,7 @@ void Icon::_DestroyNonDefaultIcons()
     // expecting hIconRef to be pointing to either the regular or small default handles
     FAIL_FAST_IF(!(&hIconRef == &_hDefaultIcon || &hIconRef == &_hDefaultSmIcon));
 
-    HRESULT hr = _Initialize();
+    auto hr = _Initialize();
 
     if (SUCCEEDED(hr))
     {
@@ -287,7 +287,7 @@ void Icon::_DestroyNonDefaultIcons()
     // expecting hIconRef to be pointing to either the regular or small custom handles
     FAIL_FAST_IF(!(&hIconRef == &_hIcon || &hIconRef == &_hSmIcon));
 
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     // Only set icon if something changed
     if (hNewIcon != hIconRef)

@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) Microsoft Corporation.
+ * Licensed under the MIT license.
+ *
  * Reserved console space.
  *
  * This was moved from the console code so that we can localize it

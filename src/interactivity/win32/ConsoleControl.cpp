@@ -9,7 +9,7 @@
 
 #include "ConsoleControl.hpp"
 
-#include "..\..\interactivity\inc\ServiceLocator.hpp"
+#include "../../interactivity/inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
@@ -37,12 +37,12 @@ using namespace Microsoft::Console::Interactivity::Win32;
                    sizeof(Flags));
 }
 
-[[nodiscard]] NTSTATUS ConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
+[[nodiscard]] NTSTATUS ConsoleControl::EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
 {
     auto pConsoleWindow = ServiceLocator::LocateConsoleWindow();
 
     CONSOLEENDTASK ConsoleEndTaskParams;
-    ConsoleEndTaskParams.ProcessId = hProcessId;
+    ConsoleEndTaskParams.ProcessId = ULongToHandle(dwProcessId); // This is actually a PID, even though the struct expects a HANDLE.
     ConsoleEndTaskParams.ConsoleEventCode = dwEventType;
     ConsoleEndTaskParams.ConsoleFlags = ulCtrlFlags;
     ConsoleEndTaskParams.hwnd = pConsoleWindow == nullptr ? nullptr : pConsoleWindow->GetWindowHandle();
@@ -50,6 +50,18 @@ using namespace Microsoft::Console::Interactivity::Win32;
     return Control(ControlType::ConsoleEndTask,
                    &ConsoleEndTaskParams,
                    sizeof(ConsoleEndTaskParams));
+}
+
+[[nodiscard]] NTSTATUS ConsoleControl::SetWindowOwner(HWND hwnd, DWORD processId, DWORD threadId) noexcept
+{
+    CONSOLEWINDOWOWNER ConsoleOwner;
+    ConsoleOwner.hwnd = hwnd;
+    ConsoleOwner.ProcessId = processId;
+    ConsoleOwner.ThreadId = threadId;
+
+    return Control(ConsoleControl::ControlType::ConsoleSetWindowOwner,
+                   &ConsoleOwner,
+                   sizeof(ConsoleOwner));
 }
 
 #pragma endregion
@@ -65,7 +77,7 @@ using namespace Microsoft::Console::Interactivity::Win32;
     {
         typedef NTSTATUS(WINAPI * PfnConsoleControl)(ControlType Command, PVOID Information, DWORD Length);
 
-        static PfnConsoleControl pfn = (PfnConsoleControl)GetProcAddress(_hUser32, "ConsoleControl");
+        static auto pfn = (PfnConsoleControl)GetProcAddress(_hUser32, "ConsoleControl");
 
         if (pfn != nullptr)
         {
@@ -86,7 +98,7 @@ BOOL ConsoleControl::EnterReaderModeHelper(_In_ HWND hwnd)
     {
         typedef BOOL(WINAPI * PfnEnterReaderModeHelper)(HWND hwnd);
 
-        static PfnEnterReaderModeHelper pfn = (PfnEnterReaderModeHelper)GetProcAddress(_hUser32, "EnterReaderModeHelper");
+        static auto pfn = (PfnEnterReaderModeHelper)GetProcAddress(_hUser32, "EnterReaderModeHelper");
 
         if (pfn != nullptr)
         {
@@ -108,7 +120,7 @@ BOOL ConsoleControl::TranslateMessageEx(const MSG* pmsg,
     {
         typedef BOOL(WINAPI * PfnTranslateMessageEx)(const MSG* pmsg, UINT flags);
 
-        static PfnTranslateMessageEx pfn = (PfnTranslateMessageEx)GetProcAddress(_hUser32, "TranslateMessageEx");
+        static auto pfn = (PfnTranslateMessageEx)GetProcAddress(_hUser32, "TranslateMessageEx");
 
         if (pfn != nullptr)
         {

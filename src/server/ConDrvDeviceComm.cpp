@@ -10,9 +10,7 @@ ConDrvDeviceComm::ConDrvDeviceComm(_In_ HANDLE Server) :
     THROW_HR_IF(E_HANDLE, Server == INVALID_HANDLE_VALUE);
 }
 
-ConDrvDeviceComm::~ConDrvDeviceComm()
-{
-}
+ConDrvDeviceComm::~ConDrvDeviceComm() = default;
 
 // Routine Description:
 // - Needs to be called once per server session and typically as the absolute first operation.
@@ -41,11 +39,11 @@ ConDrvDeviceComm::~ConDrvDeviceComm()
 [[nodiscard]] HRESULT ConDrvDeviceComm::ReadIo(_In_opt_ PCONSOLE_API_MSG const pReplyMsg,
                                                _Out_ CONSOLE_API_MSG* const pMessage) const
 {
-    HRESULT hr = _CallIoctl(IOCTL_CONDRV_READ_IO,
-                            pReplyMsg == nullptr ? nullptr : &pReplyMsg->Complete,
-                            pReplyMsg == nullptr ? 0 : sizeof(pReplyMsg->Complete),
-                            &pMessage->Descriptor,
-                            sizeof(CONSOLE_API_MSG) - FIELD_OFFSET(CONSOLE_API_MSG, Descriptor));
+    auto hr = _CallIoctl(IOCTL_CONDRV_READ_IO,
+                         pReplyMsg == nullptr ? nullptr : &pReplyMsg->Complete,
+                         pReplyMsg == nullptr ? 0 : sizeof(pReplyMsg->Complete),
+                         &pMessage->Descriptor,
+                         sizeof(CONSOLE_API_MSG) - FIELD_OFFSET(CONSOLE_API_MSG, Descriptor));
 
     if (hr == HRESULT_FROM_WIN32(ERROR_IO_PENDING))
     {
@@ -151,6 +149,12 @@ ConDrvDeviceComm::~ConDrvDeviceComm()
     return S_OK;
 }
 
+// Routine Description:
+// - Implements IDeviceComm handle exchange for ConDrv.
+// - "Translates" a pointer to an object into a handle value
+//   that the driver can use to identify objects in a console
+//   session.
+// - The opposite of GetHandle
 [[nodiscard]] ULONG_PTR ConDrvDeviceComm::PutHandle(const void* handle)
 {
     // ConDrv will pass back whatever large integer we send it, as an opaque data blob
@@ -158,6 +162,11 @@ ConDrvDeviceComm::~ConDrvDeviceComm()
     return reinterpret_cast<ULONG_PTR>(handle);
 }
 
+// Routine Description:
+// - Implements IDeviceComm handle exchange for ConDrv.
+// - "Translates" an object handle from ConDrv into
+//   a pointer to an object
+// - The opposite of PutHandle
 [[nodiscard]] void* ConDrvDeviceComm::GetHandle(ULONG_PTR handleId) const
 {
     return reinterpret_cast<void*>(handleId);
@@ -166,4 +175,13 @@ ConDrvDeviceComm::~ConDrvDeviceComm()
 void ConDrvDeviceComm::DestroyHandle(ULONG_PTR /*handleId*/)
 {
     // nothing
+}
+
+// Routine Description:
+// - Provides access to the raw server handle so it can be used to hand off
+//   the session to another console host server.
+[[nodiscard]] HRESULT ConDrvDeviceComm::GetServerHandle(_Out_ HANDLE* pHandle) const
+{
+    *pHandle = _Server.get();
+    return S_OK;
 }

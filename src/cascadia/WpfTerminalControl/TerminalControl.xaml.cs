@@ -1,4 +1,4 @@
-﻿// <copyright file="TerminalControl.xaml.cs" company="Microsoft Corporation">
+// <copyright file="TerminalControl.xaml.cs" company="Microsoft Corporation">
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 // </copyright>
@@ -8,6 +8,7 @@ namespace Microsoft.Terminal.Wpf
     using System;
     using System.Threading;
     using System.Windows;
+    using System.Windows.Automation.Peers;
     using System.Windows.Controls;
     using System.Windows.Input;
     using System.Windows.Media;
@@ -19,14 +20,6 @@ namespace Microsoft.Terminal.Wpf
     public partial class TerminalControl : UserControl
     {
         private int accumulatedDelta = 0;
-
-        /// <summary>
-        /// Gets size of the terminal renderer.
-        /// </summary>
-        private Size TerminalRendererSize
-        {
-            get => this.termContainer.TerminalRendererSize;
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TerminalControl"/> class.
@@ -71,12 +64,21 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <summary>
+        /// Gets size of the terminal renderer.
+        /// </summary>
+        private Size TerminalRendererSize
+        {
+            get => this.termContainer.TerminalRendererSize;
+        }
+
+        /// <summary>
         /// Sets the theme for the terminal. This includes font family, size, color, as well as background and foreground colors.
         /// </summary>
         /// <param name="theme">The color theme to use in the terminal.</param>
         /// <param name="fontFamily">The font family to use in the terminal.</param>
         /// <param name="fontSize">The font size to use in the terminal.</param>
-        public void SetTheme(TerminalTheme theme, string fontFamily, short fontSize)
+        /// <param name="externalBackground">Color for the control background when the terminal window is smaller than the hosting WPF window.</param>
+        public void SetTheme(TerminalTheme theme, string fontFamily, short fontSize, Color externalBackground = default)
         {
             PresentationSource source = PresentationSource.FromVisual(this);
 
@@ -92,7 +94,12 @@ namespace Microsoft.Terminal.Wpf
             byte g = Convert.ToByte((theme.DefaultBackground >> 8) & 0xff);
             byte r = Convert.ToByte(theme.DefaultBackground & 0xff);
 
-            this.terminalGrid.Background = new SolidColorBrush(Color.FromRgb(r, g, b));
+            // Set the background color for the control only if one is provided.
+            // This is only shown when the terminal renderer is smaller than the enclosing WPF window.
+            if (externalBackground != default)
+            {
+                this.Background = new SolidColorBrush(externalBackground);
+            }
         }
 
         /// <summary>
@@ -117,7 +124,7 @@ namespace Microsoft.Terminal.Wpf
 
 #pragma warning disable VSTHRD001 // Avoid legacy thread switching APIs
             await this.Dispatcher.BeginInvoke(
-                new Action(delegate() { this.terminalGrid.Margin = this.CalculateMargins(); }),
+                new Action(delegate { this.terminalGrid.Margin = this.CalculateMargins(); }),
                 System.Windows.Threading.DispatcherPriority.Render);
 #pragma warning restore VSTHRD001 // Avoid legacy thread switching APIs
         }
@@ -133,9 +140,28 @@ namespace Microsoft.Terminal.Wpf
             rendersize.Width *= dpiScale.DpiScaleX;
             rendersize.Height *= dpiScale.DpiScaleY;
 
+            if (rendersize.Width == 0 || rendersize.Height == 0)
+            {
+                return (0, 0);
+            }
+
             this.termContainer.Resize(rendersize);
 
             return (this.Rows, this.Columns);
+        }
+
+        /// <inheritdoc/>
+        protected override AutomationPeer OnCreateAutomationPeer()
+        {
+            var peer = FrameworkElementAutomationPeer.FromElement(this);
+            if (peer == null)
+            {
+                // Provide our own automation peer here that just sets IsContentElement/IsControlElement to false
+                // (aka AccessibilityView = Raw). This makes it not pop up in the UIA tree.
+                peer = new TermControlAutomationPeer(this);
+            }
+
+            return peer;
         }
 
         /// <inheritdoc/>
@@ -143,11 +169,16 @@ namespace Microsoft.Terminal.Wpf
         {
             var dpiScale = VisualTreeHelper.GetDpi(this);
 
-            // termContainer requires scaled sizes.
-            this.termContainer.TerminalControlSize = new Size()
+            var newSizeWidth = (sizeInfo.NewSize.Width - this.scrollbar.ActualWidth) * dpiScale.DpiScaleX;
+            newSizeWidth = newSizeWidth < 0 ? 0 : newSizeWidth;
+
+            var newSizeHeight = sizeInfo.NewSize.Height * dpiScale.DpiScaleY;
+            newSizeHeight = newSizeHeight < 0 ? 0 : newSizeHeight;
+
+            this.termContainer.TerminalControlSize = new Size
             {
-                Width = (sizeInfo.NewSize.Width - this.scrollbar.ActualWidth) * dpiScale.DpiScaleX,
-                Height = sizeInfo.NewSize.Height * dpiScale.DpiScaleY,
+                Width = newSizeWidth,
+                Height = newSizeHeight,
             };
 
             if (!this.AutoResize)
@@ -175,7 +206,7 @@ namespace Microsoft.Terminal.Wpf
 
             if (controlSize == default)
             {
-                controlSize = new Size()
+                controlSize = new Size
                 {
                     Width = this.terminalUserControl.ActualWidth,
                     Height = this.terminalUserControl.ActualHeight,
@@ -249,6 +280,24 @@ namespace Microsoft.Terminal.Wpf
         {
             var viewTop = (int)e.NewValue;
             this.termContainer.UserScroll(viewTop);
+        }
+
+        private class TermControlAutomationPeer : UserControlAutomationPeer
+        {
+            public TermControlAutomationPeer(UserControl owner)
+                : base(owner)
+            {
+            }
+
+            protected override bool IsContentElementCore()
+            {
+                return false;
+            }
+
+            protected override bool IsControlElementCore()
+            {
+                return false;
+            }
         }
     }
 }

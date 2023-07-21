@@ -5,8 +5,39 @@
 #include "TextAttribute.hpp"
 #include "../../inc/conattrs.hpp"
 
-BYTE TextAttribute::s_legacyDefaultForeground = 7;
-BYTE TextAttribute::s_legacyDefaultBackground = 0;
+// Keeping TextColor compact helps us keeping TextAttribute compact,
+// which in turn ensures that our buffer memory usage is low.
+static_assert(sizeof(TextAttribute) == 12);
+static_assert(alignof(TextAttribute) == 2);
+// Ensure that we can memcpy() and memmove() the struct for performance.
+static_assert(std::is_trivially_copyable_v<TextAttribute>);
+// Assert that the use of memcmp() for comparisons is safe.
+static_assert(std::has_unique_object_representations_v<TextAttribute>);
+
+namespace
+{
+    constexpr std::array<TextColor, 16> s_initLegacyColorMap(const BYTE defaultIndex)
+    {
+        std::array<TextColor, 16> legacyColorMap;
+        for (auto i = 0u; i < legacyColorMap.size(); i++)
+        {
+            const auto legacyIndex = TextColor::TransposeLegacyIndex(i);
+            gsl::at(legacyColorMap, i) = i == defaultIndex ? TextColor{} : TextColor{ legacyIndex, true };
+        }
+        return legacyColorMap;
+    }
+
+    BYTE s_legacyDefaultForeground = 7;
+    BYTE s_legacyDefaultBackground = 0;
+    BYTE s_ansiDefaultForeground = 7;
+    BYTE s_ansiDefaultBackground = 0;
+}
+
+// These maps allow for an efficient conversion from a legacy attribute index
+// to a TextColor with the corresponding ANSI index, also taking into account
+// the legacy index values that need to be converted to a default TextColor.
+std::array<TextColor, 16> TextAttribute::s_legacyForegroundColorMap = s_initLegacyColorMap(7);
+std::array<TextColor, 16> TextAttribute::s_legacyBackgroundColorMap = s_initLegacyColorMap(0);
 
 // Routine Description:
 // - Sets the legacy attributes which map to and from the default colors.
@@ -16,8 +47,22 @@ BYTE TextAttribute::s_legacyDefaultBackground = 0;
 // - None
 void TextAttribute::SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept
 {
+    // First we reset the current default color map entries to what they should
+    // be for a regular translation from a legacy index to an ANSI TextColor.
+    gsl::at(s_legacyForegroundColorMap, s_legacyDefaultForeground) = TextColor{ s_ansiDefaultForeground, true };
+    gsl::at(s_legacyBackgroundColorMap, s_legacyDefaultBackground) = TextColor{ s_ansiDefaultBackground, true };
+
+    // Then we save the new default attribute values and their corresponding
+    // ANSI translations. We use the latter values to more efficiently handle
+    // the "VT Quirk" conversion below.
     s_legacyDefaultForeground = defaultAttributes & FG_ATTRS;
     s_legacyDefaultBackground = (defaultAttributes & BG_ATTRS) >> 4;
+    s_ansiDefaultForeground = TextColor::TransposeLegacyIndex(s_legacyDefaultForeground);
+    s_ansiDefaultBackground = TextColor::TransposeLegacyIndex(s_legacyDefaultBackground);
+
+    // Finally we set the new default color map entries.
+    gsl::at(s_legacyForegroundColorMap, s_legacyDefaultForeground) = TextColor{};
+    gsl::at(s_legacyBackgroundColorMap, s_legacyDefaultBackground) = TextColor{};
 }
 
 // Routine Description:
@@ -48,13 +93,13 @@ TextAttribute TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(const Te
     const auto bg{ attribute.GetBackground() };
     auto copy{ attribute };
     if (fg.IsIndex16() &&
-        attribute.IsBold() == WI_IsFlagSet(s_legacyDefaultForeground, FOREGROUND_INTENSITY) &&
-        fg.GetIndex() == (s_legacyDefaultForeground & ~FOREGROUND_INTENSITY))
+        attribute.IsIntense() == WI_IsFlagSet(s_ansiDefaultForeground, FOREGROUND_INTENSITY) &&
+        fg.GetIndex() == (s_ansiDefaultForeground & ~FOREGROUND_INTENSITY))
     {
         // We don't want to turn 1;37m into 39m (or even 1;39m), as this was meant to mimic a legacy color.
         copy.SetDefaultForeground();
     }
-    if (bg.IsIndex16() && bg.GetIndex() == s_legacyDefaultBackground)
+    if (bg.IsIndex16() && bg.GetIndex() == s_ansiDefaultBackground)
     {
         copy.SetDefaultBackground();
     }
@@ -69,49 +114,16 @@ TextAttribute TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(const Te
 // - a WORD with legacy-style attributes for this textattribute.
 WORD TextAttribute::GetLegacyAttributes() const noexcept
 {
-    const BYTE fgIndex = _foreground.GetLegacyIndex(s_legacyDefaultForeground);
-    const BYTE bgIndex = _background.GetLegacyIndex(s_legacyDefaultBackground);
-    const WORD metaAttrs = _wAttrLegacy & META_ATTRS;
-    const bool brighten = IsBold() && _foreground.CanBeBrightened();
+    const auto fgIndex = _foreground.GetLegacyIndex(s_legacyDefaultForeground);
+    const auto bgIndex = _background.GetLegacyIndex(s_legacyDefaultBackground);
+    const WORD metaAttrs = static_cast<WORD>(_attrs) & USED_META_ATTRS;
+    const auto brighten = IsIntense() && _foreground.CanBeBrightened();
     return fgIndex | (bgIndex << 4) | metaAttrs | (brighten ? FOREGROUND_INTENSITY : 0);
 }
 
 bool TextAttribute::IsLegacy() const noexcept
 {
     return _foreground.IsLegacy() && _background.IsLegacy();
-}
-
-// Routine Description:
-// - Calculates rgb colors based off of current color table and active modification attributes.
-// Arguments:
-// - colorTable: the current color table rgb values.
-// - defaultFgColor: the default foreground color rgb value.
-// - defaultBgColor: the default background color rgb value.
-// - reverseScreenMode: true if the screen mode is reversed.
-// - blinkingIsFaint: true if blinking should be interpreted as faint.
-// Return Value:
-// - the foreground and background colors that should be displayed.
-std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const gsl::span<const COLORREF> colorTable,
-                                                                const COLORREF defaultFgColor,
-                                                                const COLORREF defaultBgColor,
-                                                                const bool reverseScreenMode,
-                                                                const bool blinkingIsFaint) const noexcept
-{
-    auto fg = _foreground.GetColor(colorTable, defaultFgColor, IsBold());
-    auto bg = _background.GetColor(colorTable, defaultBgColor);
-    if (IsFaint() || (IsBlinking() && blinkingIsFaint))
-    {
-        fg = (fg >> 1) & 0x7F7F7F; // Divide foreground color components by two.
-    }
-    if (IsReverseVideo() ^ reverseScreenMode)
-    {
-        std::swap(fg, bg);
-    }
-    if (IsInvisible())
-    {
-        fg = bg;
-    }
-    return { fg, bg };
 }
 
 // Method description:
@@ -205,156 +217,151 @@ void TextAttribute::SetHyperlinkId(uint16_t id) noexcept
     _hyperlinkId = id;
 }
 
-bool TextAttribute::IsLeadingByte() const noexcept
-{
-    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_LEADING_BYTE);
-}
-
-bool TextAttribute::IsTrailingByte() const noexcept
-{
-    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_LEADING_BYTE);
-}
-
 bool TextAttribute::IsTopHorizontalDisplayed() const noexcept
 {
-    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL);
+    return WI_IsFlagSet(_attrs, CharacterAttributes::TopGridline);
 }
 
 bool TextAttribute::IsBottomHorizontalDisplayed() const noexcept
 {
-    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_UNDERSCORE);
+    return WI_IsFlagSet(_attrs, CharacterAttributes::BottomGridline);
 }
 
 bool TextAttribute::IsLeftVerticalDisplayed() const noexcept
 {
-    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_LVERTICAL);
+    return WI_IsFlagSet(_attrs, CharacterAttributes::LeftGridline);
 }
 
 bool TextAttribute::IsRightVerticalDisplayed() const noexcept
 {
-    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_RVERTICAL);
+    return WI_IsFlagSet(_attrs, CharacterAttributes::RightGridline);
 }
 
 void TextAttribute::SetLeftVerticalDisplayed(const bool isDisplayed) noexcept
 {
-    WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_LVERTICAL, isDisplayed);
+    WI_UpdateFlag(_attrs, CharacterAttributes::LeftGridline, isDisplayed);
 }
 
 void TextAttribute::SetRightVerticalDisplayed(const bool isDisplayed) noexcept
 {
-    WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_RVERTICAL, isDisplayed);
+    WI_UpdateFlag(_attrs, CharacterAttributes::RightGridline, isDisplayed);
 }
 
-bool TextAttribute::IsBold() const noexcept
+bool TextAttribute::IsIntense() const noexcept
 {
-    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Bold);
+    return WI_IsFlagSet(_attrs, CharacterAttributes::Intense);
 }
 
 bool TextAttribute::IsFaint() const noexcept
 {
-    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Faint);
+    return WI_IsFlagSet(_attrs, CharacterAttributes::Faint);
 }
 
 bool TextAttribute::IsItalic() const noexcept
 {
-    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Italics);
+    return WI_IsFlagSet(_attrs, CharacterAttributes::Italics);
 }
 
 bool TextAttribute::IsBlinking() const noexcept
 {
-    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Blinking);
+    return WI_IsFlagSet(_attrs, CharacterAttributes::Blinking);
 }
 
 bool TextAttribute::IsInvisible() const noexcept
 {
-    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Invisible);
+    return WI_IsFlagSet(_attrs, CharacterAttributes::Invisible);
 }
 
 bool TextAttribute::IsCrossedOut() const noexcept
 {
-    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::CrossedOut);
+    return WI_IsFlagSet(_attrs, CharacterAttributes::CrossedOut);
 }
 
 bool TextAttribute::IsUnderlined() const noexcept
 {
-    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Underlined);
+    return WI_IsFlagSet(_attrs, CharacterAttributes::Underlined);
 }
 
 bool TextAttribute::IsDoublyUnderlined() const noexcept
 {
-    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::DoublyUnderlined);
+    return WI_IsFlagSet(_attrs, CharacterAttributes::DoublyUnderlined);
 }
 
 bool TextAttribute::IsOverlined() const noexcept
 {
-    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL);
+    return WI_IsFlagSet(_attrs, CharacterAttributes::TopGridline);
 }
 
 bool TextAttribute::IsReverseVideo() const noexcept
 {
-    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
+    return WI_IsFlagSet(_attrs, CharacterAttributes::ReverseVideo);
 }
 
-void TextAttribute::SetBold(bool isBold) noexcept
+bool TextAttribute::IsProtected() const noexcept
 {
-    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Bold, isBold);
+    return WI_IsFlagSet(_attrs, CharacterAttributes::Protected);
+}
+
+void TextAttribute::SetIntense(bool isIntense) noexcept
+{
+    WI_UpdateFlag(_attrs, CharacterAttributes::Intense, isIntense);
 }
 
 void TextAttribute::SetFaint(bool isFaint) noexcept
 {
-    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Faint, isFaint);
+    WI_UpdateFlag(_attrs, CharacterAttributes::Faint, isFaint);
 }
 
 void TextAttribute::SetItalic(bool isItalic) noexcept
 {
-    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Italics, isItalic);
+    WI_UpdateFlag(_attrs, CharacterAttributes::Italics, isItalic);
 }
 
 void TextAttribute::SetBlinking(bool isBlinking) noexcept
 {
-    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Blinking, isBlinking);
+    WI_UpdateFlag(_attrs, CharacterAttributes::Blinking, isBlinking);
 }
 
 void TextAttribute::SetInvisible(bool isInvisible) noexcept
 {
-    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Invisible, isInvisible);
+    WI_UpdateFlag(_attrs, CharacterAttributes::Invisible, isInvisible);
 }
 
 void TextAttribute::SetCrossedOut(bool isCrossedOut) noexcept
 {
-    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::CrossedOut, isCrossedOut);
+    WI_UpdateFlag(_attrs, CharacterAttributes::CrossedOut, isCrossedOut);
 }
 
 void TextAttribute::SetUnderlined(bool isUnderlined) noexcept
 {
-    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Underlined, isUnderlined);
+    WI_UpdateFlag(_attrs, CharacterAttributes::Underlined, isUnderlined);
 }
 
 void TextAttribute::SetDoublyUnderlined(bool isDoublyUnderlined) noexcept
 {
-    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::DoublyUnderlined, isDoublyUnderlined);
+    WI_UpdateFlag(_attrs, CharacterAttributes::DoublyUnderlined, isDoublyUnderlined);
 }
 
 void TextAttribute::SetOverlined(bool isOverlined) noexcept
 {
-    WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL, isOverlined);
+    WI_UpdateFlag(_attrs, CharacterAttributes::TopGridline, isOverlined);
 }
 
 void TextAttribute::SetReverseVideo(bool isReversed) noexcept
 {
-    WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO, isReversed);
+    WI_UpdateFlag(_attrs, CharacterAttributes::ReverseVideo, isReversed);
 }
 
-ExtendedAttributes TextAttribute::GetExtendedAttributes() const noexcept
+void TextAttribute::SetProtected(bool isProtected) noexcept
 {
-    return _extendedAttrs;
+    WI_UpdateFlag(_attrs, CharacterAttributes::Protected, isProtected);
 }
 
 // Routine Description:
 // - swaps foreground and background color
 void TextAttribute::Invert() noexcept
 {
-    WI_ToggleFlag(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
+    WI_ToggleFlag(_attrs, CharacterAttributes::ReverseVideo);
 }
 
 void TextAttribute::SetDefaultForeground() noexcept
@@ -368,11 +375,11 @@ void TextAttribute::SetDefaultBackground() noexcept
 }
 
 // Method description:
-// - Resets only the meta and extended attributes
-void TextAttribute::SetDefaultMetaAttrs() noexcept
+// - Resets only the rendition character attributes, which includes everything
+//     except the Protected attribute.
+void TextAttribute::SetDefaultRenditionAttributes() noexcept
 {
-    _extendedAttrs = ExtendedAttributes::Normal;
-    _wAttrLegacy = 0;
+    _attrs &= ~CharacterAttributes::Rendition;
 }
 
 // Method Description:
@@ -391,10 +398,11 @@ bool TextAttribute::BackgroundIsDefault() const noexcept
 }
 
 // Routine Description:
-// - Resets the meta and extended attributes, which is what the VT standard
-//      requires for most erasing and filling operations.
+// - Resets the character attributes, which is what the VT standard
+//      requires for most erasing and filling operations. In modern
+//      applications it is also expected that hyperlinks are erased.
 void TextAttribute::SetStandardErase() noexcept
 {
-    SetDefaultMetaAttrs();
+    _attrs = CharacterAttributes::Normal;
     _hyperlinkId = 0;
 }

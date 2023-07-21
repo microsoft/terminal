@@ -1,0 +1,18 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass TerminalTabStatus : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        TerminalTabStatus();
+
+        Boolean IsPaneZoomed { get; set; };
+        Boolean IsProgressRingActive { get; set; };
+        Boolean IsProgressRingIndeterminate { get; set; };
+        Boolean BellIndicator { get; set; };
+        UInt32 ProgressValue { get; set; };
+        Boolean IsReadOnlyActive { get; set; };
+        Boolean IsInputBroadcastActive { get; set; };
+    }
+}

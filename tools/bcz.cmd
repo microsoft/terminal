@@ -32,6 +32,10 @@ if (%1) == (rel) (
     echo Manually building release
     set _LAST_BUILD_CONF=Release
 )
+if (%1) == (audit) (
+    echo Manually building audit mode
+    set _LAST_BUILD_CONF=AuditMode
+)
 if (%1) == (no_clean) (
     set _MSBUILD_TARGET=Build
 )
@@ -72,25 +76,59 @@ if "%_SKIP_NUGET_RESTORE%" == "1" (
     nuget.exe restore %OPENCON%\OpenConsole.sln
 )
 
-set _BUILD_CMDLINE="%MSBUILD%" %OPENCON%\OpenConsole.sln /t:"%_MSBUILD_TARGET%" /m /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% %_APPX_ARGS%
+@rem /p:GenerateAppxPackageOnBuild=false will prevent us from building the whole .msix package when building the wapproj project.
+set _BUILD_CMDLINE="%MSBUILD%" %OPENCON%\OpenConsole.sln /t:"%_MSBUILD_TARGET%" /m /p:Configuration=%_LAST_BUILD_CONF% /p:GenerateAppxPackageOnBuild=false /p:Platform=%ARCH% %_APPX_ARGS%
 
 echo %_BUILD_CMDLINE%
 echo Starting build...
+
+@rem start indeterminate progress in the taskbar
+@rem this `<NUL set /p =` magic will output the text _without a newline_
+<NUL set /p =]9;4;3
+
 %_BUILD_CMDLINE%
+
+@rem capture the return value of msbuild, so we can return that as our return value.
+set _build_result=%errorlevel%
+if (%_build_result%) == (0) (
+
+@rem clear the progress
+<NUL set /p =]9;4
+
+) else (
+
+@rem set the taskbar to the error state, then sleep for 500ms, before clearing
+@rem the progress state. This will "blink" the error state into the taskbar
+
+<NUL set /p =]9;4;2;100
+
+@rem this works to "sleep" the console for 500ms. `ping` can't wait for less
+@rem than 500ms, and it will only wait if the target address _doesn't_ respond,
+@rem hence why we're using 128., not 127.
+
+ping 128.0.0.1 -n 1 -w 500 > nul
+
+<NUL set /p =]9;4
+
+)
 
 rem Cleanup unused variables here. Note we cannot use setlocal because we need to pass modified
 rem _LAST_BUILD_CONF out to OpenCon.cmd later.
 rem
 set _MSBUILD_TARGET=
 set _BIN_=%~dp0\bin\%PLATFORM%\%_LAST_BUILD_CONF%
+
+@rem Exit with the value from msbuild. If msbuild is unsuccessful in building, this will be 1
+EXIT /b %_build_result%
+
 goto :eof
 
 rem ############################################################################
 rem The code to figure out what project we're building needs to be in its own
 rem function. Otherwise, when cmd evaluates the if statement above `if
 rem "%_EXCLUSIVE%" == "1"`, it'll evaluate the entire block with the value of
-rem the the variables at the time the if was executed. So instead, make a
-rem function here with `enabledelayedexpansion` set.
+rem the variables at the time the if was executed. So instead, make a function
+rem here with `enabledelayedexpansion` set.
 :get_project
 setlocal enabledelayedexpansion
 

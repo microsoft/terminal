@@ -1,0 +1,133 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.GlobalAppearance"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate x:Key="EnumComboBoxTemplate"
+                          x:DataType="local:EnumEntry">
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
+            </DataTemplate>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <ScrollViewer ViewChanging="ViewChanging">
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
+            <!--  Language  -->
+            <local:SettingContainer x:Uid="Globals_Language"
+                                    Visibility="{x:Bind ViewModel.LanguageSelectorAvailable}">
+                <ComboBox ItemsSource="{x:Bind ViewModel.LanguageList}"
+                          SelectedItem="{x:Bind ViewModel.CurrentLanguage, Mode=TwoWay}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Text="{x:Bind local:GlobalAppearanceViewModel.LanguageDisplayConverter((x:String))}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </local:SettingContainer>
+
+            <!--  Theme  -->
+            <local:SettingContainer x:Uid="Globals_Theme">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemsSource="{x:Bind ViewModel.ThemeList, Mode=OneWay}"
+                          SelectedItem="{x:Bind ViewModel.CurrentTheme, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="model:Theme">
+                            <TextBlock Text="{x:Bind local:GlobalAppearanceViewModel.ThemeNameConverter((model:Theme)), Mode=OneWay}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </local:SettingContainer>
+
+            <!--  Position of new tab  -->
+            <local:SettingContainer x:Uid="Globals_NewTabPosition">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind ViewModel.NewTabPositionList, Mode=OneWay}"
+                          SelectedItem="{x:Bind ViewModel.CurrentNewTabPosition, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
+            </local:SettingContainer>
+
+            <!--  Show Titlebar  -->
+            <local:SettingContainer x:Uid="Globals_ShowTitlebar">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ShowTabsInTitlebar, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}"
+                              Toggled="{x:Bind ViewModel.ShowTitlebarToggled}" />
+            </local:SettingContainer>
+
+            <!--  Always show tabs  -->
+            <local:SettingContainer x:Uid="Globals_AlwaysShowTabs">
+                <ToggleSwitch IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.ShowTabsInTitlebar), Mode=OneWay}"
+                              IsOn="{x:Bind ViewModel.AlwaysShowTabs, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Show Acrylic in Tab Row  -->
+            <local:SettingContainer x:Uid="Globals_AcrylicTabRow">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.UseAcrylicInTabRow, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Show Title in Titlebar  -->
+            <local:SettingContainer x:Uid="Globals_ShowTitleInTitlebar">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ShowTitleInTitlebar, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Always on Top  -->
+            <local:SettingContainer x:Uid="Globals_AlwaysOnTop">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.AlwaysOnTop, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Tab Width Mode  -->
+            <local:SettingContainer x:Uid="Globals_TabWidthMode">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind ViewModel.TabWidthModeList, Mode=OneWay}"
+                          SelectedItem="{x:Bind ViewModel.CurrentTabWidthMode, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
+            </local:SettingContainer>
+
+            <!--  Disable Animations  -->
+            <!--  NOTE: the UID is "DisablePaneAnimationsReversed" not "DisablePaneAnimations". See GH#9124 for more details.  -->
+            <local:SettingContainer x:Uid="Globals_DisableAnimationsReversed">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.InvertedDisableAnimations, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Always Show Notification Icon  -->
+            <local:SettingContainer x:Uid="Globals_AlwaysShowNotificationIcon">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.AlwaysShowNotificationIcon, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Minimize To Notification Area  -->
+            <local:SettingContainer x:Uid="Globals_MinimizeToNotificationArea">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.MinimizeToNotificationArea, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Automatically hide window  -->
+            <local:SettingContainer x:Uid="Globals_AutoHideWindow">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.AutoHideWindow, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

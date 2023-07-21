@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{8222900C-8B6C-452A-91AC-BE95DB04B95F}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>atlas</RootNamespace>
+    <ProjectName>RendererAtlas</ProjectName>
+    <TargetName>ConRenderAtlas</TargetName>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.props" />
+  <ItemGroup>
+    <ClCompile Include="AtlasEngine.api.cpp" />
+    <ClCompile Include="AtlasEngine.r.cpp" />
+    <ClCompile Include="Backend.cpp" />
+    <ClCompile Include="BackendD2D.cpp" />
+    <ClCompile Include="BackendD3D.cpp" />
+    <ClCompile Include="dwrite.cpp" />
+    <ClCompile Include="DWriteTextAnalysis.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="AtlasEngine.cpp" />
+    <ClCompile Include="stb_rect_pack.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Backend.h" />
+    <ClInclude Include="BackendD2D.h" />
+    <ClInclude Include="BackendD3D.h" />
+    <ClInclude Include="colorbrewer.h" />
+    <ClInclude Include="common.h" />
+    <ClInclude Include="dwrite.h" />
+    <ClInclude Include="DWriteTextAnalysis.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="AtlasEngine.h" />
+    <ClInclude Include="wic.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="custom_shader_ps.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>4.0</ShaderModel>
+      <AllResourcesBound>true</AllResourcesBound>
+      <VariableName>%(Filename)</VariableName>
+      <ObjectFileOutput />
+      <HeaderFileOutput>$(OutDir)$(ProjectName)\%(Filename).h</HeaderFileOutput>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalOptions>/Zpc %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
+    </FxCompile>
+    <FxCompile Include="custom_shader_vs.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <ShaderModel>4.0</ShaderModel>
+      <AllResourcesBound>true</AllResourcesBound>
+      <VariableName>%(Filename)</VariableName>
+      <ObjectFileOutput />
+      <HeaderFileOutput>$(OutDir)$(ProjectName)\%(Filename).h</HeaderFileOutput>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalOptions>/Zpc %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
+    </FxCompile>
+    <FxCompile Include="dwrite.hlsl">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="shader_common.hlsl">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="shader_ps.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>4.0</ShaderModel>
+      <AllResourcesBound>true</AllResourcesBound>
+      <VariableName>%(Filename)</VariableName>
+      <ObjectFileOutput />
+      <HeaderFileOutput>$(OutDir)$(ProjectName)\%(Filename).h</HeaderFileOutput>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalOptions>/Zpc %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
+    </FxCompile>
+    <FxCompile Include="shader_vs.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <ShaderModel>4.0</ShaderModel>
+      <AllResourcesBound>true</AllResourcesBound>
+      <VariableName>%(Filename)</VariableName>
+      <ObjectFileOutput />
+      <HeaderFileOutput>$(OutDir)$(ProjectName)\%(Filename).h</HeaderFileOutput>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalOptions>/Zpc %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+  </ItemGroup>
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(SolutionDir)\oss\stb;$(OutDir)$(ProjectName);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+</Project>

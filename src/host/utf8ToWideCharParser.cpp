@@ -66,7 +66,7 @@ void Utf8ToWideCharParser::SetCodePage(const unsigned int codePage)
 // Return Value:
 // - <none>
 [[nodiscard]] HRESULT Utf8ToWideCharParser::Parse(_In_reads_(cchBuffer) const byte* const pBytes,
-                                                  _In_ unsigned int const cchBuffer,
+                                                  _In_ const unsigned int cchBuffer,
                                                   _Out_ unsigned int& cchConsumed,
                                                   _Inout_ std::unique_ptr<wchar_t[]>& converted,
                                                   _Out_ unsigned int& cchConverted)
@@ -84,10 +84,10 @@ void Utf8ToWideCharParser::SetCodePage(const unsigned int codePage)
     {
         _currentState = _State::Error;
     }
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     try
     {
-        bool loop = true;
+        auto loop = true;
         unsigned int wideCharCount = 0;
         _convertedWideChars.reset(nullptr);
         while (loop)
@@ -141,7 +141,7 @@ void Utf8ToWideCharParser::SetCodePage(const unsigned int codePage)
 // - True if ch is a lead byte, false otherwise.
 bool Utf8ToWideCharParser::_IsLeadByte(_In_ byte ch)
 {
-    unsigned int sequenceSize = _Utf8SequenceSize(ch);
+    auto sequenceSize = _Utf8SequenceSize(ch);
     return !_IsContinuationByte(ch) &&
            !_IsAsciiByte(ch) &&
            sequenceSize > 1 &&
@@ -190,7 +190,7 @@ bool Utf8ToWideCharParser::_IsValidMultiByteSequence(_In_reads_(cb) const byte* 
     {
         return false;
     }
-    const unsigned int sequenceSize = _Utf8SequenceSize(*pLeadByte);
+    const auto sequenceSize = _Utf8SequenceSize(*pLeadByte);
     if (sequenceSize > cb)
     {
         return false;
@@ -198,7 +198,7 @@ bool Utf8ToWideCharParser::_IsValidMultiByteSequence(_In_reads_(cb) const byte* 
     // i starts at 1 so that we skip the lead byte
     for (unsigned int i = 1; i < sequenceSize; ++i)
     {
-        const byte ch = *(pLeadByte + i);
+        const auto ch = *(pLeadByte + i);
         if (!_IsContinuationByte(ch))
         {
             return false;
@@ -225,7 +225,7 @@ bool Utf8ToWideCharParser::_IsPartialMultiByteSequence(_In_reads_(cb) const byte
     {
         return false;
     }
-    const unsigned int sequenceSize = _Utf8SequenceSize(*pLeadByte);
+    const auto sequenceSize = _Utf8SequenceSize(*pLeadByte);
     if (sequenceSize <= cb)
     {
         return false;
@@ -233,7 +233,7 @@ bool Utf8ToWideCharParser::_IsPartialMultiByteSequence(_In_reads_(cb) const byte
     // i starts at 1 so that we skip the lead byte
     for (unsigned int i = 1; i < cb; ++i)
     {
-        const byte ch = *(pLeadByte + i);
+        const auto ch = *(pLeadByte + i);
         if (!_IsContinuationByte(ch))
         {
             return false;
@@ -292,15 +292,15 @@ unsigned int Utf8ToWideCharParser::_Utf8SequenceSize(_In_ byte ch)
 // or 0 if pInputChars cannot be successfully converted.
 unsigned int Utf8ToWideCharParser::_ParseFullRange(_In_reads_(cb) const byte* const pInputChars, const unsigned int cb)
 {
-    int bufferSize = MultiByteToWideChar(_currentCodePage,
-                                         MB_ERR_INVALID_CHARS,
-                                         reinterpret_cast<LPCCH>(pInputChars),
-                                         cb,
-                                         nullptr,
-                                         0);
+    auto bufferSize = MultiByteToWideChar(_currentCodePage,
+                                          MB_ERR_INVALID_CHARS,
+                                          reinterpret_cast<LPCCH>(pInputChars),
+                                          cb,
+                                          nullptr,
+                                          0);
     if (bufferSize == 0)
     {
-        DWORD err = GetLastError();
+        auto err = GetLastError();
         LOG_WIN32(err);
         if (err == ERROR_NO_UNICODE_TRANSLATION)
         {
@@ -355,7 +355,7 @@ unsigned int Utf8ToWideCharParser::_InvolvedParse(_In_reads_(cb) const byte* con
 {
     // Do safe math to add up the count and error if it won't fit.
     unsigned int count;
-    const HRESULT hr = UIntAdd(cb, _bytesStored, &count);
+    const auto hr = UIntAdd(cb, _bytesStored, &count);
     if (FAILED(hr))
     {
         LOG_HR(hr);
@@ -364,11 +364,11 @@ unsigned int Utf8ToWideCharParser::_InvolvedParse(_In_reads_(cb) const byte* con
     }
 
     // Allocate space and copy.
-    std::unique_ptr<byte[]> combinedInputBytes = std::make_unique<byte[]>(count);
+    auto combinedInputBytes = std::make_unique<byte[]>(count);
     std::copy(_utf8CodePointPieces, _utf8CodePointPieces + _bytesStored, combinedInputBytes.get());
     std::copy(pInputChars, pInputChars + cb, combinedInputBytes.get() + _bytesStored);
     _bytesStored = 0;
-    std::pair<std::unique_ptr<byte[]>, unsigned int> validSequence = _RemoveInvalidSequences(combinedInputBytes.get(), count);
+    auto validSequence = _RemoveInvalidSequences(combinedInputBytes.get(), count);
     // the input may have only been a partial sequence so we need to
     // check that there are actually any bytes that we can convert
     // right now
@@ -386,12 +386,12 @@ unsigned int Utf8ToWideCharParser::_InvolvedParse(_In_reads_(cb) const byte* con
     // This issue and related concerns are fully captured in future work item GH#3378
     // for future cleanup and reconciliation.
     // The original issue introducing this was GH#3320.
-    int bufferSize = MultiByteToWideChar(_currentCodePage,
-                                         0,
-                                         reinterpret_cast<LPCCH>(validSequence.first.get()),
-                                         validSequence.second,
-                                         nullptr,
-                                         0);
+    auto bufferSize = MultiByteToWideChar(_currentCodePage,
+                                          0,
+                                          reinterpret_cast<LPCCH>(validSequence.first.get()),
+                                          validSequence.second,
+                                          nullptr,
+                                          0);
     if (bufferSize == 0)
     {
         LOG_LAST_ERROR();
@@ -434,7 +434,7 @@ unsigned int Utf8ToWideCharParser::_InvolvedParse(_In_reads_(cb) const byte* con
 // of bytes in the sequence.
 std::pair<std::unique_ptr<byte[]>, unsigned int> Utf8ToWideCharParser::_RemoveInvalidSequences(_In_reads_(cb) const byte* const pInputChars, const unsigned int cb)
 {
-    std::unique_ptr<byte[]> validSequence = std::make_unique<byte[]>(cb);
+    auto validSequence = std::make_unique<byte[]>(cb);
     unsigned int validSequenceLocation = 0; // index into validSequence
     unsigned int currentByteInput = 0; // index into pInputChars
     while (currentByteInput < cb)
@@ -456,9 +456,9 @@ std::pair<std::unique_ptr<byte[]>, unsigned int> Utf8ToWideCharParser::_RemoveIn
         {
             if (_IsValidMultiByteSequence(&pInputChars[currentByteInput], cb - currentByteInput))
             {
-                const unsigned int sequenceSize = _Utf8SequenceSize(pInputChars[currentByteInput]);
+                const auto sequenceSize = _Utf8SequenceSize(pInputChars[currentByteInput]);
                 // min is to guard against static analysis possible buffer overflow
-                const unsigned int limit = std::min(sequenceSize, cb - currentByteInput);
+                const auto limit = std::min(sequenceSize, cb - currentByteInput);
                 for (unsigned int i = 0; i < limit; ++i)
                 {
                     validSequence[validSequenceLocation] = pInputChars[currentByteInput];
@@ -500,7 +500,7 @@ std::pair<std::unique_ptr<byte[]>, unsigned int> Utf8ToWideCharParser::_RemoveIn
 // - <none>
 void Utf8ToWideCharParser::_StorePartialSequence(_In_reads_(cb) const byte* const pLeadByte, const unsigned int cb)
 {
-    const unsigned int maxLength = std::min(cb, _UTF8_BYTE_SEQUENCE_MAX);
+    const auto maxLength = std::min(cb, _UTF8_BYTE_SEQUENCE_MAX);
     std::copy(pLeadByte, pLeadByte + maxLength, _utf8CodePointPieces);
     _bytesStored = maxLength;
 }

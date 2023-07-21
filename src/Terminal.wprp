@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WindowsPerformanceRecorder Version="1.0" Author="Microsoft Corporation" Copyright="Microsoft Corporation" Company="Microsoft Corporation">
+  <Profiles>
+    <EventCollector Id="EventCollector_Terminal" Name="Terminal">
+      <BufferSize Value="64" />
+      <Buffers Value="4" />
+    </EventCollector>
+    <EventProvider Id="EventProvider_TerminalControl" Name="28c82e50-57af-5a86-c25b-e39cd990032b" />
+    <EventProvider Id="EventProvider_TerminalConnection" Name="e912fe7b-eeb6-52a5-c628-abe388e5f792" />
+    <EventProvider Id="EventProvider_TerminalSettingsModel" Name="be579944-4d33-5202-e5d6-a7a57f1935cb" />
+    <EventProvider Id="EventProvider_TerminalApp" Name="24a1622f-7da7-5c77-3303-d850bd1ab2ed" />
+    <EventProvider Id="EventProvider_TerminalWin32Host" Name="56c06166-2e2e-5f4d-7ff3-74f4b78c87d6" />
+    <EventProvider Id="EventProvider_TerminalRemoting" Name="d6f04aad-629f-539a-77c1-73f5c3e4aa7b" />
+    <EventProvider Id="EventProvider_TerminalDirectX" Name="c93e739e-ae50-5a14-78e7-f171e947535d" />
+    <EventProvider Id="EventProvider_TerminalUIA" Name="e7ebce59-2161-572d-b263-2f16a6afb9e5"/>
+    <!-- Console providers here -->
+    <EventProvider Id="EventProvider-Microsoft.Windows.Console.Launcher" Name="770aa552-671a-5e97-579b-151709ec0dbd"/>
+    <EventProvider Id="EventProvider-Microsoft.Windows.Console.Host" Name="fe1ff234-1f09-50a8-d38d-c44fab43e818"/>
+    <EventProvider Id="EventProvider-Microsoft.Windows.Console.Server" Name="1A541C01-589A-496E-85A7-A9E02170166D"/>
+    <EventProvider Id="EventProvider-Microsoft.Windows.Console.VirtualTerminal.Parser" Name="c9ba2a84-d3ca-5e19-2bd6-776a0910cb9d"/>
+    <EventProvider Id="EventProvider-Microsoft.Windows.Console.Render.VtEngine" Name="c9ba2a95-d3ca-5e19-2bd6-776a0910cb9d"/>
+    <EventProvider Id="EventProvider-Microsoft.Windows.Console.UIA" Name="e7ebce59-2161-572d-b263-2f16a6afb9e5"/>
+
+    <!-- Profile for General Terminal logging -->
+    <Profile Id="Terminal.Verbose.File" Name="Terminal" Description="Terminal" LoggingMode="File" DetailLevel="Verbose">
+      <Collectors>
+        <EventCollectorId Value="EventCollector_Terminal">
+          <EventProviders>
+            <EventProviderId Value="EventProvider_TerminalControl" />
+            <EventProviderId Value="EventProvider_TerminalConnection" />
+            <EventProviderId Value="EventProvider_TerminalSettingsModel" />
+            <EventProviderId Value="EventProvider_TerminalApp" />
+            <EventProviderId Value="EventProvider_TerminalWin32Host" />
+            <EventProviderId Value="EventProvider_TerminalRemoting" />
+            <EventProviderId Value="EventProvider_TerminalDirectX" />
+            <EventProviderId Value="EventProvider_TerminalUIA" />
+          </EventProviders>
+        </EventCollectorId>
+      </Collectors>
+    </Profile>
+    <Profile Id="Terminal.Light.File" Name="Terminal" Description="Terminal" Base="Terminal.Verbose.File" LoggingMode="File" DetailLevel="Light" />
+    <Profile Id="Terminal.Verbose.Memory" Name="Terminal" Description="Terminal" Base="Terminal.Verbose.File" LoggingMode="Memory" DetailLevel="Verbose" />
+    <Profile Id="Terminal.Light.Memory" Name="Terminal" Description="Terminal" Base="Terminal.Verbose.File" LoggingMode="Memory" DetailLevel="Light" />
+
+    <!-- Profile for DefTerm logging. Includes some conhost logging. -->
+    <Profile Id="DefTerm.Verbose.File" Name="DefTerm" Description="DefTerm" LoggingMode="File" DetailLevel="Verbose">
+      <Collectors>
+        <EventCollectorId Value="EventCollector_Terminal">
+          <EventProviders>
+            <EventProviderId Value="EventProvider_TerminalControl" />
+            <EventProviderId Value="EventProvider_TerminalConnection" />
+            <EventProviderId Value="EventProvider_TerminalSettingsModel" />
+            <EventProviderId Value="EventProvider_TerminalApp" />
+            <EventProviderId Value="EventProvider_TerminalWin32Host" />
+            <EventProviderId Value="EventProvider_TerminalRemoting" />
+            <EventProviderId Value="EventProvider-Microsoft.Windows.Console.Launcher" />
+            <EventProviderId Value="EventProvider-Microsoft.Windows.Console.Host" />
+            <EventProviderId Value="EventProvider-Microsoft.Windows.Console.Server" />
+          </EventProviders>
+        </EventCollectorId>
+      </Collectors>
+    </Profile>
+    <Profile Id="DefTerm.Light.File" Name="DefTerm" Description="DefTerm" Base="DefTerm.Verbose.File" LoggingMode="File" DetailLevel="Light" />
+    <Profile Id="DefTerm.Verbose.Memory" Name="DefTerm" Description="DefTerm" Base="DefTerm.Verbose.File" LoggingMode="Memory" DetailLevel="Verbose" />
+    <Profile Id="DefTerm.Light.Memory" Name="DefTerm" Description="DefTerm" Base="DefTerm.Verbose.File" LoggingMode="Memory" DetailLevel="Light" />
+  </Profiles>
+</WindowsPerformanceRecorder>

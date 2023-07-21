@@ -4,6 +4,8 @@
 #include "precomp.h"
 #include "WexTestClass.h"
 
+#include <til/spsc.h>
+
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -50,30 +52,62 @@ class SPSCTests
         TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:10") // 10s timeout
     END_TEST_CLASS()
 
+    TEST_METHOD(SmokeTest);
     TEST_METHOD(DropEmptyTest);
     TEST_METHOD(DropSameRevolutionTest);
     TEST_METHOD(DropDifferentRevolutionTest);
     TEST_METHOD(IntegrationTest);
 };
 
+void SPSCTests::SmokeTest()
+{
+    // This test mostly ensures that the API wasn't broken.
+
+    // construction
+    auto [tx, rx] = til::spsc::channel<int>(32);
+    std::array<int, 3> data{};
+
+    // move constructor
+    auto tx2(std::move(tx));
+    auto rx2(std::move(rx));
+
+    // move assignment operator
+    tx = std::move(tx2);
+    rx = std::move(rx2);
+
+    // push
+    tx.emplace(0);
+    tx.push(data.begin(), data.end());
+    tx.push(til::spsc::block_initially, data.begin(), data.end());
+    tx.push(til::spsc::block_forever, data.begin(), data.end());
+    tx.push_n(data.begin(), data.size());
+    tx.push_n(til::spsc::block_initially, data.begin(), data.size());
+    tx.push_n(til::spsc::block_forever, data.begin(), data.size());
+
+    // pop
+    auto x = rx.pop();
+    rx.pop_n(til::spsc::block_initially, data.begin(), data.size());
+    rx.pop_n(til::spsc::block_forever, data.begin(), data.size());
+}
+
 void SPSCTests::DropEmptyTest()
 {
     auto [tx, rx] = til::spsc::channel<drop_indicator>(5);
-    int counter = 0;
+    auto counter = 0;
 
-    for (int i = 0; i < 5; ++i)
+    for (auto i = 0; i < 5; ++i)
     {
         tx.emplace(counter);
     }
     VERIFY_ARE_EQUAL(counter, 0);
 
-    for (int i = 0; i < 5; ++i)
+    for (auto i = 0; i < 5; ++i)
     {
         rx.pop();
     }
     VERIFY_ARE_EQUAL(counter, 5);
 
-    for (int i = 0; i < 3; ++i)
+    for (auto i = 0; i < 3; ++i)
     {
         tx.emplace(counter);
     }
@@ -82,7 +116,7 @@ void SPSCTests::DropEmptyTest()
     drop(tx);
     VERIFY_ARE_EQUAL(counter, 5);
 
-    for (int i = 0; i < 3; ++i)
+    for (auto i = 0; i < 3; ++i)
     {
         rx.pop();
     }
@@ -95,9 +129,9 @@ void SPSCTests::DropEmptyTest()
 void SPSCTests::DropSameRevolutionTest()
 {
     auto [tx, rx] = til::spsc::channel<drop_indicator>(5);
-    int counter = 0;
+    auto counter = 0;
 
-    for (int i = 0; i < 5; ++i)
+    for (auto i = 0; i < 5; ++i)
     {
         tx.emplace(counter);
     }
@@ -106,7 +140,7 @@ void SPSCTests::DropSameRevolutionTest()
     drop(tx);
     VERIFY_ARE_EQUAL(counter, 0);
 
-    for (int i = 0; i < 3; ++i)
+    for (auto i = 0; i < 3; ++i)
     {
         rx.pop();
     }
@@ -119,21 +153,21 @@ void SPSCTests::DropSameRevolutionTest()
 void SPSCTests::DropDifferentRevolutionTest()
 {
     auto [tx, rx] = til::spsc::channel<drop_indicator>(5);
-    int counter = 0;
+    auto counter = 0;
 
-    for (int i = 0; i < 4; ++i)
+    for (auto i = 0; i < 4; ++i)
     {
         tx.emplace(counter);
     }
     VERIFY_ARE_EQUAL(counter, 0);
 
-    for (int i = 0; i < 3; ++i)
+    for (auto i = 0; i < 3; ++i)
     {
         rx.pop();
     }
     VERIFY_ARE_EQUAL(counter, 3);
 
-    for (int i = 0; i < 4; ++i)
+    for (auto i = 0; i < 4; ++i)
     {
         tx.emplace(counter);
     }
@@ -157,13 +191,13 @@ void SPSCTests::IntegrationTest()
 
     std::thread t([tx = std::move(tx)]() {
         std::array<int, 11> buffer{};
-        std::generate(buffer.begin(), buffer.end(), [v = 0]() mutable { return v++; });
+        std::ranges::generate(buffer, [v = 0]() mutable { return v++; });
 
-        for (int i = 0; i < 37; ++i)
+        for (auto i = 0; i < 37; ++i)
         {
             tx.emplace(i);
         }
-        for (int i = 0; i < 3; ++i)
+        for (auto i = 0; i < 3; ++i)
         {
             tx.push(buffer.begin(), buffer.end());
         }
@@ -171,20 +205,20 @@ void SPSCTests::IntegrationTest()
 
     std::array<int, 11> buffer{};
 
-    for (int i = 0; i < 3; ++i)
+    for (auto i = 0; i < 3; ++i)
     {
         rx.pop_n(buffer.data(), buffer.size());
-        for (int j = 0; j < 11; ++j)
+        for (auto j = 0; j < 11; ++j)
         {
             VERIFY_ARE_EQUAL(i * 11 + j, buffer[j]);
         }
     }
-    for (int i = 33; i < 37; ++i)
+    for (auto i = 33; i < 37; ++i)
     {
         auto actual = rx.pop();
         VERIFY_ARE_EQUAL(i, actual);
     }
-    for (int i = 0; i < 33; ++i)
+    for (auto i = 0; i < 33; ++i)
     {
         auto expected = i % 11;
         auto actual = rx.pop();

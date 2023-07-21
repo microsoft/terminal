@@ -1,0 +1,117 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Remoting
+{
+
+    runtimeclass CommandlineArgs
+    {
+        CommandlineArgs();
+        CommandlineArgs(String[] args, String cwd, UInt32 showWindowCommand);
+
+        String[] Commandline { get; set; };
+        String CurrentDirectory { get; };
+        UInt32 ShowWindowCommand { get; };
+    };
+
+    runtimeclass RenameRequestArgs
+    {
+        RenameRequestArgs(String newName);
+        String NewName { get; };
+        Boolean Succeeded;
+    };
+
+    runtimeclass WindowActivatedArgs
+    {
+        WindowActivatedArgs(UInt64 peasantID, Guid desktopID, Windows.Foundation.DateTime activatedTime);
+        WindowActivatedArgs(UInt64 peasantID, UInt64 hwnd, Guid desktopID, Windows.Foundation.DateTime activatedTime);
+        UInt64 PeasantID { get; };
+        UInt64 Hwnd { get; };
+        Guid DesktopID { get; };
+        Windows.Foundation.DateTime ActivatedTime { get; };
+    };
+
+    [default_interface] runtimeclass GetWindowLayoutArgs {
+        GetWindowLayoutArgs();
+        String WindowLayoutJson;
+        Windows.Foundation.IAsyncOperation<String> WindowLayoutJsonAsync;
+    }
+
+    enum MonitorBehavior
+    {
+        InPlace,
+        ToCurrent,
+        ToMouse,
+    };
+
+    [default_interface] runtimeclass SummonWindowBehavior {
+        SummonWindowBehavior();
+        Boolean MoveToCurrentDesktop;
+        Boolean ToggleVisibility;
+        UInt32 DropdownDuration;
+        MonitorBehavior ToMonitor;
+    }
+
+    [default_interface] runtimeclass AttachRequest {
+        String Content { get; };
+        UInt32 TabIndex { get; };
+    }
+    [default_interface] runtimeclass RequestReceiveContentArgs {
+        RequestReceiveContentArgs(UInt64 src, UInt64 tgt, UInt32 tabIndex);
+
+        UInt64 SourceWindow { get; };
+        UInt64 TargetWindow { get; };
+        UInt32 TabIndex { get; };
+    };
+
+    interface IPeasant
+    {
+        CommandlineArgs InitialArgs { get; };
+
+        void AssignID(UInt64 id);
+        UInt64 GetID();
+        UInt64 GetPID();
+        Boolean ExecuteCommandline(CommandlineArgs args);
+        void ActivateWindow(WindowActivatedArgs args);
+        WindowActivatedArgs GetLastActivatedArgs();
+
+        void DisplayWindowId(); // Tells us to display its own ID (which causes a DisplayWindowIdRequested to be raised)
+
+        String WindowName { get; };
+        String ActiveTabTitle { get; };
+        void RequestIdentifyWindows(); // Tells us to raise a IdentifyWindowsRequested
+        void RequestRename(RenameRequestArgs args); // Tells us to raise a RenameRequested
+        void Summon(SummonWindowBehavior behavior);
+
+        void RequestShowNotificationIcon();
+        void RequestHideNotificationIcon();
+        void RequestQuitAll();
+        void Quit();
+        String GetWindowLayout();
+
+        void AttachContentToWindow(AttachRequest request);
+        void SendContent(RequestReceiveContentArgs args);
+
+        event Windows.Foundation.TypedEventHandler<Object, WindowActivatedArgs> WindowActivated;
+        event Windows.Foundation.TypedEventHandler<Object, CommandlineArgs> ExecuteCommandlineRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> DisplayWindowIdRequested;
+        event Windows.Foundation.TypedEventHandler<Object, RenameRequestArgs> RenameRequested;
+        event Windows.Foundation.TypedEventHandler<Object, SummonWindowBehavior> SummonRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, GetWindowLayoutArgs> GetWindowLayoutRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> QuitAllRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, AttachRequest> AttachRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> SendContentRequested;
+    };
+
+    [default_interface] runtimeclass Peasant : IPeasant
+    {
+        Peasant();
+    };
+}

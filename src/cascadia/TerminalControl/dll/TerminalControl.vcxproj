@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CA5CAD1A-F542-4635-A069-7CAEFB930070}</ProjectGuid>
+    <ProjectName>Microsoft.Terminal.Control</ProjectName>
+    <RootNamespace>Microsoft.Terminal.Control</RootNamespace>
+    <!-- cppwinrt.build.pre.props depends on these settings: -->
+    <!-- build a dll, not exe (Application) -->
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <SubSystem>Console</SubSystem>
+    <!-- sets a bunch of Windows Universal properties -->
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <PgoTarget>true</PgoTarget>
+
+    <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
+         Unfortunately for us, we need it to be 3. When the namespace merging
+         depth is 1, Microsoft.Terminal.Control becomes "Microsoft",
+         and our WinMD file becomes "Microsoft". Because WinRT is very
+         namespace-driven, this winmd is considered to contain the entire
+         Microsoft namespace. This is, obviously, not great. None of our other
+         projects compile properly when they depend on this "Microsoft.winmd."
+    -->
+    <CppWinRTNamespaceMergeDepth>3</CppWinRTNamespaceMergeDepth>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalMUX>true</TerminalMUX>
+  </PropertyGroup>
+
+  <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  <!-- ========================= XAML files ======================== -->
+  <ItemGroup>
+    <!-- DON'T PUT XAML FILES HERE! Put them in TerminalControlLib.vcxproj -->
+  </ItemGroup>
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <!-- Only put headers for winrt types in here. Don't put other header files
+    in here - put them in TerminalControlLib.vcxproj instead! -->
+    <ClInclude Include="pch.h" />
+  </ItemGroup>
+  <!-- ========================= Cpp Files ======================== -->
+  <ItemGroup>
+    <!-- Don't put source files in here - put them in TerminalControlLib.vcxproj instead! -->
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <!-- ========================= idl Files ======================== -->
+  <ItemGroup>
+    <!-- DON'T PUT IDL FILES HERE! Put them in TerminalControlLib.vcxproj -->
+  </ItemGroup>
+  <!-- ========================= Misc Files ======================== -->
+  <ItemGroup>
+    <None Include="$(ProjectName).def" />
+  </ItemGroup>
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <!-- Reference TerminalControlLib here, so we can use its Microsoft.Terminal.Control.winmd as
+    our Microsoft.Terminal.Control.winmd. This didn't work correctly in VS2017, you'd need to
+    manually reference the lib -->
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControlLib.vcxproj">
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Manually add a reference to TerminalControl here. We need this so
+    MDMERGE will know where the TermControl types are defined. However, we need
+    to do it exactly like this so the packaging project won't roll up
+    TermControl's .xbf's from both the TermControl project and this one. -->
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+
+    <Reference Include="Microsoft.Terminal.TerminalConnection">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+  </ItemGroup>
+
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;shell32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <!--
+      ControlLib contains a DllMain that we need to force the use of.
+      If you don't have this, then you'll see an error like
+      "(init.obj) : error LNK2005: DllMain already defined in MSVCRTD.lib(dll_dllmain_stub.obj)"
+      -->
+      <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain %(AdditionalOptions)</AdditionalOptions>
+
+      <Reference>
+        <!-- Do not propagate microsoft.ui.xaml upwards as a private dependency. -->
+        <Private>false</Private>
+      </Reference>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+</Project>

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include <precomp.h>
+#include "precomp.h"
 
 #include <windowsinternalstring.h>
 
@@ -55,7 +55,7 @@ HRESULT PrintMonitorInfo(LPCWSTR pwszLabel, HMONITOR hmon)
     mi.cbSize = sizeof(mi);
     RETURN_IF_WIN32_BOOL_FALSE(GetMonitorInfoW(hmon, &mi));
 
-    bool const IsPrimary = mi.dwFlags & MONITORINFOF_PRIMARY;
+    const bool IsPrimary = mi.dwFlags & MONITORINFOF_PRIMARY;
 
     wcout << pwszLabel << endl;
     wcout << "- Monitor Name: " << mi.szDevice << endl;
@@ -181,14 +181,7 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv*/[])
 
     if (hUser32 != nullptr)
     {
-        // First try the TH1/TH2 name of the function.
-        PfnGetDpiMetrics pfn = (PfnGetDpiMetrics)GetProcAddress(hUser32, "GetDpiMetrics");
-
-        if (pfn == nullptr)
-        {
-            // If not, then try the RS1 name of the function.
-            pfn = (PfnGetDpiMetrics)GetProcAddress(hUser32, "GetSystemMetricsForDpi");
-        }
+        pfn = (PfnGetDpiMetrics)GetProcAddress(hUser32, "GetSystemMetricsForDpi");
 
         if (pfn != nullptr)
         {

@@ -26,7 +26,7 @@ This spec was largely inspired by the following diagram from @DHowett:
 ![figure 1](data-mockup.png)
 
 The goal is to introduce an `id` parameter by which actions could be uniquely
-refered to. If we'd ever like to use an action outside the list of `actions`, we
+referred to. If we'd ever like to use an action outside the list of `actions`, we
 can simply refer to the action's ID, allowing the user to only define the action
 _once_.
 

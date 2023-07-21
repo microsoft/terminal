@@ -16,13 +16,13 @@ Author(s):
 
 namespace Microsoft::Console::Types
 {
-    typedef unsigned long long IdType;
+    using IdType = unsigned long long;
     constexpr IdType InvalidId = 0;
 
     class IUiaTraceable
     {
     public:
-        const IdType GetId() const noexcept
+        IdType GetId() const noexcept
         {
             return _id;
         }

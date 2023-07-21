@@ -1,0 +1,88 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Model
+{
+
+    enum ThemeColorType
+    {
+        Accent,
+        Color,
+        TerminalBackground
+    };
+
+    enum TabCloseButtonVisibility
+    {
+        Always,
+        Hover,
+        Never,
+        ActiveOnly
+    };
+
+    [default_interface] runtimeclass ThemePair
+    {
+        ThemePair();
+        ThemePair(String name);
+        ThemePair(String darkName, String lightName);
+
+        String DarkName;
+        String LightName;
+    };
+
+    runtimeclass ThemeColor
+    {
+        ThemeColor();
+        static ThemeColor FromColor(Microsoft.Terminal.Core.Color color);
+        static ThemeColor FromAccent();
+        static ThemeColor FromTerminalBackground();
+
+        Microsoft.Terminal.Core.Color Color { get; };
+        ThemeColorType ColorType;
+
+        static Microsoft.Terminal.Core.Color ColorFromBrush(Windows.UI.Xaml.Media.Brush brush);
+        Windows.UI.Xaml.Media.Brush Evaluate(Windows.UI.Xaml.ResourceDictionary res,
+                                             Windows.UI.Xaml.Media.Brush terminalBackground,
+                                             Boolean forTitlebar);
+        UInt8 UnfocusedTabOpacity { get; };
+    }
+
+    runtimeclass WindowTheme {
+        Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
+        Boolean UseMica { get; };
+        Boolean RainbowFrame { get; };
+        ThemeColor Frame { get; };
+        ThemeColor UnfocusedFrame { get; };
+    }
+
+    runtimeclass TabRowTheme {
+        ThemeColor Background { get; };
+        ThemeColor UnfocusedBackground { get; };
+    }
+
+    runtimeclass TabTheme {
+        ThemeColor Background { get; };
+        ThemeColor UnfocusedBackground { get; };
+        TabCloseButtonVisibility ShowCloseButton { get; };
+    }
+
+    [default_interface] runtimeclass Theme : Windows.Foundation.IStringable {
+        Theme();
+        Theme(Windows.UI.Xaml.ElementTheme requestedTheme);
+
+        String Name;
+
+        // window.* Namespace
+        WindowTheme Window { get; };
+
+        // tabRow.* Namespace
+        TabRowTheme TabRow { get; };
+
+        // tab.* Namespace
+        TabTheme Tab { get; };
+
+        // A helper for retrieving the RequestedTheme out of the window property
+        Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
+        static Boolean IsSystemInDarkTheme();
+
+    }
+}

@@ -1,0 +1,21 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Control
+{
+    interface IControlAppearance requires Microsoft.Terminal.Core.ICoreAppearance
+    {
+        Microsoft.Terminal.Core.Color SelectionBackground { get; };
+        String BackgroundImage { get; };
+        Double BackgroundImageOpacity { get; };
+        Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode { get; };
+        Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment { get; };
+        Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment { get; };
+        // IntenseIsBold and IntenseIsBright are in Core Appearance
+        Double Opacity { get; };
+
+        // Experimental settings
+        Boolean RetroTerminalEffect { get; };
+        String PixelShaderPath { get; };
+    };
+}

@@ -32,8 +32,8 @@ namespace Microsoft::Console::Interactivity::Win32
     protected:
         Icon();
         ~Icon();
-        Icon(Icon const&) = delete;
-        void operator=(Icon const&) = delete;
+        Icon(const Icon&) = delete;
+        void operator=(const Icon&) = delete;
 
     private:
         [[nodiscard]] HRESULT _Initialize();

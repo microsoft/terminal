@@ -1,7 +1,8 @@
 DIRS=\
+     staging \
      buffer \
+     audio \
      interactivity \
-     dep \
      host \
      propsheet \
      propslib \

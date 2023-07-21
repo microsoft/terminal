@@ -1,0 +1,24 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+import "TerminalTabStatus.idl";
+
+namespace TerminalApp
+{
+    delegate void TitleChangeRequestedArgs(String title);
+
+    [default_interface] runtimeclass TabHeaderControl : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Title { get; set; };
+        Double RenamerMaxWidth { get; set; };
+
+        TabHeaderControl();
+        void BeginRename();
+
+        Boolean InRename { get; };
+
+        TerminalTabStatus TabStatus { get;  set; };
+
+        event TitleChangeRequestedArgs TitleChangeRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RenameEnded;
+    }
+}

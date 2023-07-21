@@ -1,0 +1,46 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    // Due to a XAML Compiler bug, it is hard for us to propagate an HWND into a XAML-using runtimeclass.
+    // To work around that, we'll only propagate the HWND (when we need to) into the settings' toplevel page
+    // and use IHostedInWindow to hide the implementation detail where we use IInitializeWithWindow (shobjidl_core)
+    // https://github.com/microsoft/microsoft-ui-xaml/issues/3331
+    interface IHostedInWindow
+    {
+        Boolean TryPropagateHostingWindow(IInspectable i);
+        UInt64 GetHostingWindow();
+    }
+
+    enum BreadcrumbSubPage
+    {
+        None = 0,
+        Profile_Appearance,
+        Profile_Advanced,
+        ColorSchemes_Edit
+    };
+
+    runtimeclass Breadcrumb : Windows.Foundation.IStringable
+    {
+        IInspectable Tag;
+        String Label;
+        BreadcrumbSubPage SubPage;
+    }
+
+    [default_interface] runtimeclass MainPage : Windows.UI.Xaml.Controls.Page, IHostedInWindow
+    {
+        MainPage(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+
+        void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.SettingsTarget> OpenJson;
+
+        // Due to the aforementioned bug, we can't use IInitializeWithWindow _here_ either.
+        // Let's just smuggle the HWND in as a UInt64 :|
+        void SetHostingWindow(UInt64 window);
+
+        Windows.Foundation.Collections.IObservableVector<IInspectable> Breadcrumbs { get; };
+
+        Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
+    }
+}

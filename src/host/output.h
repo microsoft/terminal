@@ -22,32 +22,32 @@ Revision History:
 #include "../buffer/out/OutputCell.hpp"
 #include "../buffer/out/OutputCellRect.hpp"
 
-void ScreenBufferSizeChange(const COORD coordNewSize);
+void ScreenBufferSizeChange(const til::size coordNewSize);
 
 [[nodiscard]] NTSTATUS DoCreateScreenBuffer();
 
 std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
-                                       const COORD coordRead,
+                                       const til::point coordRead,
                                        const size_t amountToRead);
 
 std::wstring ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
-                               const COORD coordRead,
+                               const til::point coordRead,
                                const size_t amountToRead);
 
 std::string ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
-                              const COORD coordRead,
+                              const til::point coordRead,
                               const size_t amountToRead);
 
 void ScrollRegion(SCREEN_INFORMATION& screenInfo,
-                  const SMALL_RECT scrollRect,
-                  const std::optional<SMALL_RECT> clipRect,
-                  const COORD destinationOrigin,
+                  const til::inclusive_rect scrollRect,
+                  const std::optional<til::inclusive_rect> clipRect,
+                  const til::point destinationOrigin,
                   const wchar_t fillCharGiven,
                   const TextAttribute fillAttrsGiven);
 
 VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData);
 
-bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo);
+void StreamScrollRegion(SCREEN_INFORMATION& screenInfo);
 
 // For handling process handle state, not the window state itself.
 void CloseConsoleProcessState();

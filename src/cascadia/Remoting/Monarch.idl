@@ -1,0 +1,93 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "Peasant.idl";
+
+namespace Microsoft.Terminal.Remoting
+{
+
+    [default_interface] runtimeclass FindTargetWindowArgs {
+        CommandlineArgs Args { get; };
+        Int32 ResultTargetWindow;
+        String ResultTargetWindowName;
+    }
+
+    [default_interface] runtimeclass ProposeCommandlineResult {
+        Windows.Foundation.IReference<UInt64> Id { get; };
+        String WindowName { get; };
+        Boolean ShouldCreateWindow { get; }; // If you name this `CreateWindow`, the compiler will explode
+    }
+
+    [default_interface] runtimeclass WindowRequestedArgs {
+        WindowRequestedArgs(ProposeCommandlineResult windowInfo, CommandlineArgs command);
+
+        UInt64 Id { get; };
+        String WindowName { get; };
+
+        String[] Commandline { get; };
+        String CurrentDirectory { get; };
+        UInt32 ShowWindowCommand { get; };
+
+        String Content { get; };
+        Windows.Foundation.IReference<Windows.Foundation.Rect> InitialBounds { get; };
+    }
+
+    [default_interface] runtimeclass SummonWindowSelectionArgs {
+        SummonWindowSelectionArgs();
+        SummonWindowSelectionArgs(String windowName);
+        String WindowName;
+        Boolean OnCurrentDesktop;
+        // TODO GH#8888 Other options:
+        // * CurrentMonitor
+
+        Boolean FoundMatch;
+        SummonWindowBehavior SummonBehavior;
+        Windows.Foundation.IReference<UInt64> WindowID;
+    }
+
+    [default_interface] runtimeclass QuitAllRequestedArgs {
+        QuitAllRequestedArgs();
+        Windows.Foundation.IAsyncAction BeforeQuitAllAction;
+    }
+
+    struct PeasantInfo
+    {
+        UInt64 Id;
+        String Name;
+        String TabTitle;
+    };
+
+    interface IMonarch
+    {
+
+        UInt64 GetPID();
+        UInt64 AddPeasant(IPeasant peasant);
+        UInt64 GetNumberOfPeasants();
+        ProposeCommandlineResult ProposeCommandline(CommandlineArgs args);
+        void HandleActivatePeasant(WindowActivatedArgs args);
+        void SummonWindow(SummonWindowSelectionArgs args);
+        void SignalClose(UInt64 peasantId);
+
+        void SummonAllWindows();
+        Boolean DoesQuakeWindowExist();
+        Windows.Foundation.Collections.IVectorView<PeasantInfo> GetPeasantInfos { get; };
+        Windows.Foundation.Collections.IVector<String> GetAllWindowLayouts();
+
+        void RequestMoveContent(String window, String content, UInt32 tabIndex, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
+        void RequestSendContent(RequestReceiveContentArgs args);
+
+        event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;
+        event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
+        event Windows.Foundation.TypedEventHandler<Object, QuitAllRequestedArgs> QuitAllRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
+    };
+
+    runtimeclass Monarch : [default] IMonarch
+    {
+        Monarch();
+    };
+}

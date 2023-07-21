@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>Microsoft.Terminal.Control.Lib</ProjectName>
+    <RootNamespace>Microsoft.Terminal.Control</RootNamespace>
+    <TargetName>Microsoft.Terminal.ControlLib</TargetName>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <SubSystem>Console</SubSystem>
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+
+    <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
+         Unfortunately for us, we need it to be 3. When the namespace merging
+         depth is 1, Microsoft.Terminal.Control becomes "Microsoft",
+         and our WinMD file becomes "Microsoft". Because WinRT is very
+         namespace-driven, this winmd is considered to contain the entire
+         Microsoft namespace. This is, obviously, not great. None of our other
+         projects compile properly when they depend on this "Microsoft.winmd."
+    -->
+    <CppWinRTNamespaceMergeDepth>3</CppWinRTNamespaceMergeDepth>
+    <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalMUX>true</TerminalMUX>
+  </PropertyGroup>
+
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="ControlCore.h">
+      <DependentUpon>ControlCore.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ControlInteractivity.h">
+      <DependentUpon>ControlInteractivity.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ScrollBarVisualStateManager.h">
+      <DependentUpon>ScrollBarVisualStateManager.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="KeyChord.h">
+      <DependentUpon>KeyChord.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="EventArgs.h">
+      <DependentUpon>EventArgs.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SearchBoxControl.h">
+      <DependentUpon>SearchBoxControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="XamlLights.h">
+      <DependentUpon>XamlLights.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TermControl.h">
+      <DependentUpon>TermControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TermControlAutomationPeer.h">
+      <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="InteractivityAutomationPeer.h">
+      <DependentUpon>InteractivityAutomationPeer.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TSFInputControl.h">
+      <DependentUpon>TSFInputControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="XamlUiaTextRange.h" />
+  </ItemGroup>
+  <!-- ========================= Cpp Files ======================== -->
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="ControlCore.cpp">
+      <DependentUpon>ControlCore.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ControlInteractivity.cpp">
+      <DependentUpon>ControlInteractivity.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ScrollBarVisualStateManager.cpp">
+      <DependentUpon>ScrollBarVisualStateManager.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="EventArgs.cpp">
+      <DependentUpon>EventArgs.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="init.cpp" />
+    <ClCompile Include="KeyChord.cpp">
+      <DependentUpon>KeyChord.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SearchBoxControl.cpp">
+      <DependentUpon>SearchBoxControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="XamlLights.cpp">
+      <DependentUpon>XamlLights.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TermControl.cpp">
+      <DependentUpon>TermControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TSFInputControl.cpp">
+      <DependentUpon>TSFInputControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="TermControlAutomationPeer.cpp">
+      <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="InteractivityAutomationPeer.cpp">
+      <DependentUpon>InteractivityAutomationPeer.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="XamlUiaTextRange.cpp" />
+  </ItemGroup>
+  <!-- ========================= idl Files ======================== -->
+  <ItemGroup>
+    <Midl Include="ControlCore.idl" />
+    <Midl Include="ControlInteractivity.idl" />
+    <Midl Include="ScrollBarVisualStateManager.idl" />
+    <Midl Include="ICoreState.idl" />
+    <Midl Include="IDirectKeyListener.idl" />
+    <Midl Include="KeyChord.idl" />
+    <Midl Include="EventArgs.idl" />
+    <Midl Include="IKeyBindings.idl" />
+    <Midl Include="IControlSettings.idl" />
+    <Midl Include="IControlAppearance.idl" />
+    <Midl Include="SearchBoxControl.idl">
+      <DependentUpon>SearchBoxControl.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="XamlLights.idl" />
+    <Midl Include="TermControl.idl">
+      <DependentUpon>TermControl.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="TermControlAutomationPeer.idl" />
+    <Midl Include="InteractivityAutomationPeer.idl" />
+    <Midl Include="IMouseWheelListener.idl" />
+    <Midl Include="TSFInputControl.idl">
+      <DependentUpon>TSFInputControl.xaml</DependentUpon>
+    </Midl>
+  </ItemGroup>
+  <!-- ========================= XAML Files ======================== -->
+  <ItemGroup>
+    <Page Include="SearchBoxControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="TermControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="TSFInputControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <!-- ========================= Misc Files ======================== -->
+  <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <OCResourceDirectory Include="Resources" />
+  </ItemGroup>
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\types\lib\types.vcxproj" />
+    <ProjectReference Include="..\..\audio\midi\lib\midi.vcxproj" />
+    <ProjectReference Include="..\..\buffer\out\lib\bufferout.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\renderer\base\lib\base.vcxproj" />
+    <ProjectReference Include="..\..\renderer\atlas\atlas.vcxproj" />
+    <ProjectReference Include="..\..\renderer\dx\lib\dx.vcxproj" />
+    <ProjectReference Include="..\..\renderer\uia\lib\uia.vcxproj" />
+    <ProjectReference Include="..\..\terminal\parser\lib\parser.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\terminal\input\lib\terminalinput.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
+      <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <!-- ====================== Compiler & Linker Flags ===================== -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(OpenConsoleDir)src\cascadia\inc;$(OpenConsoleDir)src\types\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Reference>
+      <Private>false</Private>
+    </Reference>
+  </ItemDefinitionGroup>
+  <!-- ========================= Globals ======================== -->
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+
+  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
+</Project>

@@ -16,8 +16,8 @@ using namespace std;
 
 // WIL
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
-#include <wil\Common.h>
-#include <wil\Result.h>
+#include <wil/Common.h>
+#include <wil/Result.h>
 
 bool gVtInput = false;
 bool gVtOutput = true;

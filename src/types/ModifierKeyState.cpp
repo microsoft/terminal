@@ -107,7 +107,7 @@ std::unordered_set<ModifierKeyState> FromConsoleControlKeyFlags(const DWORD flag
 {
     std::unordered_set<ModifierKeyState> keyStates;
 
-    for (const ModifierKeyStateMapping& mapping : ModifierKeyStateTranslationTable)
+    for (const auto& mapping : ModifierKeyStateTranslationTable)
     {
         if (RuntimeIsFlagSet(flags, mapping.second))
         {
@@ -126,7 +126,7 @@ std::unordered_set<ModifierKeyState> FromConsoleControlKeyFlags(const DWORD flag
 // - console bitflag associated with modifierKey
 DWORD ToConsoleControlKeyFlag(const ModifierKeyState modifierKey) noexcept
 {
-    for (const ModifierKeyStateMapping& mapping : ModifierKeyStateTranslationTable)
+    for (const auto& mapping : ModifierKeyStateTranslationTable)
     {
         if (mapping.first == modifierKey)
         {

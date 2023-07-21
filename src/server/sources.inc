@@ -54,4 +54,5 @@ SOURCES= \
 
 INCLUDES= \
     $(INCLUDES); \
+    $(WINCORE_OBJ_PATH)\console\open\src\host\proxy\$(O); \
     ..; \

@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "srvinit.h"
 
@@ -46,7 +46,7 @@ class TitleTests
         bool fSubstitute;
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"substitute", fSubstitute));
 
-        PWSTR pszTranslated = TranslateConsoleTitle(strConsoleTitle, fUnexpand, fSubstitute);
+        auto pszTranslated = TranslateConsoleTitle(strConsoleTitle, fUnexpand, fSubstitute);
         VERIFY_IS_NOT_NULL(pszTranslated);
         Log::Comment(String().Format(L"Translated title: %s", pszTranslated));
 

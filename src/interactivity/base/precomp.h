@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "..\..\host\precomp.h"
+#include "../../host/precomp.h"
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
 // From ntdef.h and winnt.h

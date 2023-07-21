@@ -16,7 +16,7 @@ Revision History:
 
 #pragma once
 
-#include "..\host\conapi.h"
+#include "../host/conapi.h"
 
 class IDeviceComm
 {
@@ -36,4 +36,6 @@ public:
     [[nodiscard]] virtual ULONG_PTR PutHandle(const void*) = 0;
     [[nodiscard]] virtual void* GetHandle(ULONG_PTR) const = 0;
     virtual void DestroyHandle(ULONG_PTR) = 0;
+
+    [[nodiscard]] virtual HRESULT GetServerHandle(_Out_ HANDLE* pHandle) const = 0;
 };

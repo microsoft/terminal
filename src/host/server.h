@@ -24,11 +24,13 @@ Revision History:
 #include "VtIo.hpp"
 #include "CursorBlinker.hpp"
 
-#include "..\server\ProcessList.h"
-#include "..\server\WaitQueue.h"
+#include "../server/ProcessList.h"
+#include "../server/WaitQueue.h"
 
-#include "..\host\RenderData.hpp"
-#include "..\renderer\inc\BlinkingState.hpp"
+#include "../host/RenderData.hpp"
+#include "../audio/midi/MidiAudio.hpp"
+
+#include <til/ticket_lock.h>
 
 // clang-format off
 // Flags flags
@@ -77,46 +79,45 @@ class CONSOLE_INFORMATION :
     public Microsoft::Console::IIoProvider
 {
 public:
-    CONSOLE_INFORMATION();
-    ~CONSOLE_INFORMATION();
+    CONSOLE_INFORMATION() = default;
     CONSOLE_INFORMATION(const CONSOLE_INFORMATION& c) = delete;
     CONSOLE_INFORMATION& operator=(const CONSOLE_INFORMATION& c) = delete;
 
     ConsoleProcessList ProcessHandleList;
-    InputBuffer* pInputBuffer;
+    InputBuffer* pInputBuffer = nullptr;
 
-    SCREEN_INFORMATION* ScreenBuffers; // singly linked list
+    SCREEN_INFORMATION* ScreenBuffers = nullptr; // singly linked list
     ConsoleWaitQueue OutputQueue;
 
-    DWORD Flags;
+    DWORD Flags = 0;
 
-    std::atomic<WORD> PopupCount;
+    std::atomic<WORD> PopupCount = 0;
 
     // the following fields are used for ansi-unicode translation
-    UINT CP;
-    UINT OutputCP;
+    UINT CP = 0;
+    UINT OutputCP = 0;
 
-    ULONG CtrlFlags; // indicates outstanding ctrl requests
-    ULONG LimitingProcessId;
+    ULONG CtrlFlags = 0; // indicates outstanding ctrl requests
+    ULONG LimitingProcessId = 0;
 
-    CPINFO CPInfo;
-    CPINFO OutputCPInfo;
+    CPINFO CPInfo = {};
+    CPINFO OutputCPInfo = {};
 
     ConsoleImeInfo ConsoleIme;
 
-    void LockConsole();
-    bool TryLockConsole();
-    void UnlockConsole();
-    bool IsConsoleLocked() const;
-    ULONG GetCSRecursionCount();
+    void LockConsole() noexcept;
+    void UnlockConsole() noexcept;
+    bool IsConsoleLocked() const noexcept;
+    ULONG GetCSRecursionCount() const noexcept;
 
     Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
 
     SCREEN_INFORMATION& GetActiveOutputBuffer() override;
     const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;
+    void SetActiveOutputBuffer(SCREEN_INFORMATION& screenBuffer);
     bool HasActiveOutputBuffer() const;
 
-    InputBuffer* const GetActiveInputBuffer() const;
+    InputBuffer* const GetActiveInputBuffer() const override;
 
     bool IsInVtIoMode() const;
     bool HasPendingCookedRead() const noexcept;
@@ -124,18 +125,17 @@ public:
     COOKED_READ_DATA& CookedReadData() noexcept;
     void SetCookedReadData(COOKED_READ_DATA* readData) noexcept;
 
-    COLORREF GetDefaultForeground() const noexcept;
-    COLORREF GetDefaultBackground() const noexcept;
-    std::pair<COLORREF, COLORREF> LookupAttributeColors(const TextAttribute& attr) const noexcept;
+    bool GetBracketedPasteMode() const noexcept;
+    void SetBracketedPasteMode(const bool enabled) noexcept;
 
     void SetTitle(const std::wstring_view newTitle);
-    void SetTitlePrefix(const std::wstring& newTitlePrefix);
-    void SetOriginalTitle(const std::wstring& originalTitle);
-    void SetLinkTitle(const std::wstring& linkTitle);
-    const std::wstring& GetTitle() const noexcept;
-    const std::wstring& GetOriginalTitle() const noexcept;
-    const std::wstring& GetLinkTitle() const noexcept;
-    const std::wstring GetTitleAndPrefix() const;
+    void SetTitlePrefix(const std::wstring_view newTitlePrefix);
+    void SetOriginalTitle(const std::wstring_view originalTitle);
+    void SetLinkTitle(const std::wstring_view linkTitle);
+    const std::wstring_view GetTitle() const noexcept;
+    const std::wstring_view GetOriginalTitle() const noexcept;
+    const std::wstring_view GetLinkTitle() const noexcept;
+    const std::wstring_view GetTitleAndPrefix() const;
 
     [[nodiscard]] static NTSTATUS AllocateConsole(const std::wstring_view title);
     // MSFT:16886775 : get rid of friends
@@ -143,24 +143,28 @@ public:
     friend class SCREEN_INFORMATION;
     friend class CommonState;
     Microsoft::Console::CursorBlinker& GetCursorBlinker() noexcept;
-    Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
+
+    MidiAudio& GetMidiAudio();
 
     CHAR_INFO AsCharInfo(const OutputCellView& cell) const noexcept;
 
     RenderData renderData;
 
 private:
-    CRITICAL_SECTION _csConsoleLock; // serialize input and output using this
+    til::recursive_ticket_lock _lock;
+
     std::wstring _Title;
-    std::wstring _TitlePrefix; // Eg Select, Mark - things that we manually prepend to the title.
+    std::wstring _Prefix; // Eg Select, Mark - things that we manually prepend to the title.
+    std::wstring _TitleAndPrefix;
     std::wstring _OriginalTitle;
     std::wstring _LinkTitle; // Path to .lnk file
-    SCREEN_INFORMATION* pCurrentScreenBuffer;
-    COOKED_READ_DATA* _cookedReadData; // non-ownership pointer
+    SCREEN_INFORMATION* pCurrentScreenBuffer = nullptr;
+    COOKED_READ_DATA* _cookedReadData = nullptr; // non-ownership pointer
+    bool _bracketedPasteMode = false;
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
     Microsoft::Console::CursorBlinker _blinker;
-    mutable Microsoft::Console::Render::BlinkingState _blinkingState;
+    MidiAudio _midiAudio;
 };
 
 #define ConsoleLocked() (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)
@@ -169,6 +173,6 @@ private:
 #define CONSOLE_STATUS_READ_COMPLETE 0xC0030002
 #define CONSOLE_STATUS_WAIT_NO_BLOCK 0xC0030003
 
-#include "..\server\ObjectHandle.h"
+#include "../server/ObjectHandle.h"
 
 void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo);

@@ -1,0 +1,90 @@
+parameters:
+  configuration: 'Release'
+  platform: ''
+  additionalBuildArguments: ''
+  artifactName: 'drop'
+  testLogPath: '$(Build.BinariesDirectory)\$(BuildPlatform)\$(BuildConfiguration)\testsOnBuildMachine.wtl'
+
+jobs:
+- job: Test${{ parameters.platform }}${{ parameters.configuration }}
+  displayName: Test ${{ parameters.platform }} ${{ parameters.configuration }}
+  variables:
+    BuildConfiguration: ${{ parameters.configuration }}
+    BuildPlatform: ${{ parameters.platform }}
+  pool:
+    ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+      name: WinDevPoolOSS-L
+    ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+      name: WinDevPool-L
+    demands: ImageOverride -equals WinDevVS17-latest
+
+  steps:
+  - checkout: self
+    submodules: true
+    clean: true
+    fetchDepth: 1
+
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      artifactName: ${{ parameters.artifactName }}
+
+  - task: PowerShell@2
+    displayName: 'Rationalize build platform'
+    inputs:
+      targetType: inline
+      script: |
+        $Arch = "$(BuildPlatform)"
+        If ($Arch -Eq "x86") { $Arch = "Win32" }
+        Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
+
+  - task: PowerShell@2
+    displayName: 'Run Unit Tests'
+    inputs:
+      targetType: filePath
+      filePath: build\scripts\Run-Tests.ps1
+      arguments: -MatchPattern '*unit.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(System.ArtifactsDirectory)\\${{ parameters.artifactName }}\\$(BuildConfiguration)\\$(BuildPlatform)\\test"
+    condition: and(and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument')), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
+
+  - task: PowerShell@2
+    displayName: 'Run Feature Tests (x64 only)'
+    inputs:
+      targetType: filePath
+      filePath: build\scripts\Run-Tests.ps1
+      arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(System.ArtifactsDirectory)\\${{ parameters.artifactName }}\\$(BuildConfiguration)\\$(BuildPlatform)\\test"
+    condition: and(and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument')), eq(variables['BuildPlatform'], 'x64'))
+
+  - task: PowerShell@2
+    displayName: 'Convert Test Logs from WTL to xUnit format'
+    inputs:
+      targetType: filePath
+      filePath: build\Helix\ConvertWttLogToXUnit.ps1
+      arguments: -WttInputPath '${{ parameters.testLogPath }}' -WttSingleRerunInputPath 'unused.wtl' -WttMultipleRerunInputPath 'unused2.wtl' -XUnitOutputPath 'onBuildMachineResults.xml' -TestNamePrefix '$(BuildConfiguration).$(BuildPlatform)'
+    condition: and(ne(variables['PGOBuildMode'], 'Instrument'),or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
+
+  - task: PublishTestResults@2
+    displayName: 'Upload converted test logs'
+    condition: ne(variables['PGOBuildMode'], 'Instrument')
+    inputs:
+      testResultsFormat: 'xUnit' # Options: JUnit, NUnit, VSTest, xUnit, cTest
+      testResultsFiles: '**/onBuildMachineResults.xml'
+      #searchFolder: '$(System.DefaultWorkingDirectory)' # Optional
+      #mergeTestResults: false # Optional
+      #failTaskOnFailedTests: false # Optional
+      testRunTitle: 'On Build Machine Tests' # Optional
+      buildPlatform: $(BuildPlatform) # Optional
+      buildConfiguration: $(BuildConfiguration) # Optional
+      #publishRunAttachments: true # Optional
+
+  - task: CopyFiles@2
+    displayName: 'Copy result logs to Artifacts'
+    inputs:
+      Contents: |
+       **/*.wtl
+       **/*onBuildMachineResults.xml
+       ${{ parameters.testLogPath }}
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test-logs'
+      OverWrite: true
+      flattenFolders: true
+
+  - publish: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test-logs'
+    artifact: TestLogs$(BuildPlatform)$(BuildConfiguration)

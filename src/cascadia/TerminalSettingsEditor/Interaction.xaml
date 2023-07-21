@@ -1,0 +1,98 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.Interaction"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate x:Key="EnumComboBoxTemplate"
+                          x:DataType="local:EnumEntry">
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
+            </DataTemplate>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <ScrollViewer ViewChanging="ViewChanging">
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
+            <!--  Copy On Select  -->
+            <local:SettingContainer x:Uid="Globals_CopyOnSelect">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.CopyOnSelect, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Copy Format  -->
+            <local:SettingContainer x:Uid="Globals_CopyFormat">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind ViewModel.CopyFormatList, Mode=OneWay}"
+                          SelectedItem="{x:Bind ViewModel.CurrentCopyFormat, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
+            </local:SettingContainer>
+
+            <!--  Trim Block Selection  -->
+            <local:SettingContainer x:Uid="Globals_TrimBlockSelection">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.TrimBlockSelection, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Trim Paste  -->
+            <local:SettingContainer x:Uid="Globals_TrimPaste">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.TrimPaste, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Word Delimiters  -->
+            <local:SettingContainer x:Uid="Globals_WordDelimiters"
+                                    CurrentValue="{x:Bind ViewModel.WordDelimiters, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <TextBox IsSpellCheckEnabled="False"
+                         Style="{StaticResource TextBoxSettingStyle}"
+                         Text="{x:Bind ViewModel.WordDelimiters, Mode=TwoWay}" />
+            </local:SettingContainer>
+
+            <!--  Snap On Resize  -->
+            <local:SettingContainer x:Uid="Globals_SnapToGridOnResize">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.SnapToGridOnResize, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Tab Switcher Mode  -->
+            <local:SettingContainer x:Uid="Globals_TabSwitcherMode">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind ViewModel.TabSwitcherModeList}"
+                          SelectedItem="{x:Bind ViewModel.CurrentTabSwitcherMode, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
+            </local:SettingContainer>
+
+            <!--  Focus Follow Mouse Mode  -->
+            <local:SettingContainer x:Uid="Globals_FocusFollowMouse">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.FocusFollowMouse, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Detect URLs  -->
+            <local:SettingContainer x:Uid="Globals_DetectURLs">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.DetectURLs, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <local:SettingContainer x:Uid="Globals_ConfirmCloseAllTabs">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ConfirmCloseAllTabs, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

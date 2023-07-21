@@ -18,13 +18,13 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
-    HighlightedTextSegment::HighlightedTextSegment(winrt::hstring const& textSegment, bool isHighlighted) :
+    HighlightedTextSegment::HighlightedTextSegment(const winrt::hstring& textSegment, bool isHighlighted) :
         _TextSegment(textSegment),
         _IsHighlighted(isHighlighted)
     {
     }
 
-    HighlightedText::HighlightedText(Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::HighlightedTextSegment> const& segments) :
+    HighlightedText::HighlightedText(const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::HighlightedTextSegment>& segments) :
         _Segments(segments)
     {
     }

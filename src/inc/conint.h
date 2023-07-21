@@ -44,4 +44,10 @@ namespace Microsoft::Console::Internal
     {
         [[nodiscard]] HRESULT TrySetDarkMode(HWND hwnd) noexcept;
     }
+
+    namespace DefaultApp
+    {
+        [[nodiscard]] bool CheckDefaultAppPolicy() noexcept;
+        [[nodiscard]] bool CheckShouldTerminalBeDefault() noexcept;
+    }
 }

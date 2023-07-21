@@ -14,22 +14,22 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\IAccessibilityNotifier.hpp"
+#include "../inc/IAccessibilityNotifier.hpp"
 
 #pragma hdrstop
 
 namespace Microsoft::Console::Interactivity::OneCore
 {
-    class AccessibilityNotifier sealed : public IAccessibilityNotifier
+    class AccessibilityNotifier : public IAccessibilityNotifier
     {
     public:
-        void NotifyConsoleCaretEvent(_In_ RECT rectangle);
-        void NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags flags, _In_ LONG position);
-        void NotifyConsoleUpdateScrollEvent(_In_ LONG x, _In_ LONG y);
-        void NotifyConsoleUpdateSimpleEvent(_In_ LONG start, _In_ LONG charAndAttribute);
-        void NotifyConsoleUpdateRegionEvent(_In_ LONG startXY, _In_ LONG endXY);
-        void NotifyConsoleLayoutEvent();
-        void NotifyConsoleStartApplicationEvent(_In_ DWORD processId);
-        void NotifyConsoleEndApplicationEvent(_In_ DWORD processId);
+        void NotifyConsoleCaretEvent(_In_ const til::rect& rectangle) noexcept override;
+        void NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags flags, _In_ LONG position) noexcept override;
+        void NotifyConsoleUpdateScrollEvent(_In_ LONG x, _In_ LONG y) noexcept override;
+        void NotifyConsoleUpdateSimpleEvent(_In_ LONG start, _In_ LONG charAndAttribute) noexcept override;
+        void NotifyConsoleUpdateRegionEvent(_In_ LONG startXY, _In_ LONG endXY) noexcept override;
+        void NotifyConsoleLayoutEvent() noexcept override;
+        void NotifyConsoleStartApplicationEvent(_In_ DWORD processId) noexcept override;
+        void NotifyConsoleEndApplicationEvent(_In_ DWORD processId) noexcept override;
     };
 }

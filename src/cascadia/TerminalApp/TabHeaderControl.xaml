@@ -1,0 +1,66 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+
+<UserControl x:Class="TerminalApp.TabHeaderControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="using:TerminalApp"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+             MinHeight="16"
+             mc:Ignorable="d">
+
+    <StackPanel x:Name="HeaderStackPanel"
+                Orientation="Horizontal">
+        <mux:ProgressRing x:Name="HeaderProgressRing"
+                          Width="15"
+                          Height="15"
+                          MinWidth="0"
+                          MinHeight="0"
+                          Margin="3,0,8,0"
+                          IsActive="{x:Bind TabStatus.IsProgressRingActive, Mode=OneWay}"
+                          IsIndeterminate="{x:Bind TabStatus.IsProgressRingIndeterminate, Mode=OneWay}"
+                          Visibility="{x:Bind TabStatus.IsProgressRingActive, Mode=OneWay}"
+                          Value="{x:Bind TabStatus.ProgressValue, Mode=OneWay}" />
+        <FontIcon x:Name="HeaderBellIndicator"
+                  Margin="0,0,8,0"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                  FontSize="12"
+                  Glyph="&#xEA8F;"
+                  Visibility="{x:Bind TabStatus.BellIndicator, Mode=OneWay}" />
+        <FontIcon x:Name="HeaderZoomIcon"
+                  Margin="0,0,8,0"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                  FontSize="12"
+                  Glyph="&#xE8A3;"
+                  Visibility="{x:Bind TabStatus.IsPaneZoomed, Mode=OneWay}" />
+        <FontIcon x:Name="HeaderLockIcon"
+                  Margin="0,0,8,0"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                  FontSize="12"
+                  Glyph="&#xE72E;"
+                  Visibility="{x:Bind TabStatus.IsReadOnlyActive, Mode=OneWay}" />
+        <FontIcon x:Name="HeaderBroadcastIcon"
+                  Margin="0,0,8,0"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                  FontSize="12"
+                  Glyph="&#xEC05;"
+                  Visibility="{x:Bind TabStatus.IsInputBroadcastActive, Mode=OneWay}" />
+        <TextBlock x:Name="HeaderTextBlock"
+                   Text="{x:Bind Title, Mode=OneWay}"
+                   Visibility="Visible" />
+        <TextBox x:Name="HeaderRenamerTextBox"
+                 Height="24"
+                 MinHeight="0"
+                 MaxWidth="{x:Bind RenamerMaxWidth, Mode=OneWay}"
+                 Padding="4,4,4,3"
+                 FontSize="12"
+                 IsSpellCheckEnabled="False"
+                 LostFocus="RenameBoxLostFocusHandler"
+                 MaxLength="1024"
+                 Visibility="Collapsed" />
+    </StackPanel>
+</UserControl>

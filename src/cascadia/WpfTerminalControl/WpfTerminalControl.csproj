@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     
-    <TargetFrameworks>net472;netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks>net472;net6.0-windows</TargetFrameworks>
     <RootNamespace>Microsoft.Terminal.Wpf</RootNamespace>
     <AssemblyName>Microsoft.Terminal.Wpf</AssemblyName>
     <UseWpf>true</UseWpf>
@@ -29,6 +29,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <!-- Install an empty one for CSPROJ projects as they don't PGO. -->
+  <Target Name="MergePGOCounts" />
+
   <Target Name="CollectNativePackContents">
     <ItemGroup>
       <None Include="$(RepoBinPath)\Win32\$(Configuration)\PublicTerminalCore.dll">
@@ -38,6 +41,10 @@
       <None Include="$(RepoBinPath)\x64\$(Configuration)\PublicTerminalCore.dll">
         <Pack>true</Pack>
         <PackagePath>runtimes\win-x64\native\</PackagePath>
+      </None>
+      <None Include="$(RepoBinPath)\ARM64\$(Configuration)\PublicTerminalCore.dll">
+        <Pack>true</Pack>
+        <PackagePath>runtimes\win-arm64\native\</PackagePath>
       </None>
     </ItemGroup>
   </Target>

@@ -41,6 +41,8 @@ public:
     [[nodiscard]] void* GetHandle(ULONG_PTR) const override;
     void DestroyHandle(ULONG_PTR) override;
 
+    [[nodiscard]] HRESULT GetServerHandle(_Out_ HANDLE* pHandle) const override;
+
 private:
     [[nodiscard]] HRESULT _CallIoctl(_In_ DWORD dwIoControlCode,
                                      _In_reads_bytes_opt_(cbInBufferSize) PVOID pInBuffer,

@@ -25,7 +25,7 @@ std::unique_ptr<IInputEvent> IInputEvent::Create(const INPUT_RECORD& record)
     }
 }
 
-std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(gsl::span<const INPUT_RECORD> records)
+std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(std::span<const INPUT_RECORD> records)
 {
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
 
@@ -48,7 +48,7 @@ std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(const std::deque<IN
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
     for (const auto& record : records)
     {
-        std::unique_ptr<IInputEvent> event = Create(record);
+        auto event = Create(record);
         outEvents.push_back(std::move(event));
     }
     return outEvents;

@@ -1,0 +1,160 @@
+:: Check SGR intensity attributes, requires 110 columns
+__DATA__
+__TABLE__
+:: The test text
+SET "CELL= gYw "
+SET "STUBHEAD=SGR Intensity "
+:: Alignment properties for the cells and headers
+REM SET "ALIGN.CELL=C"
+REM SET "ALIGN.BOXHEAD=R"
+REM SET "ALIGN.STUB=L"
+REM SET "ALIGN.STUBHEAD=C"
+:: Separator characters for cells and headers
+REM SET "SEPARATOR.STUB= "
+REM SET "SEPARATOR.STUB=│"
+REM SET "SEPARATOR.BOXHEAD= "
+REM SET "SEPARATOR.BOXHEAD=─"
+REM SET "SEPARATOR.COL= "
+REM SET "SEPARATOR.COL=╎"
+REM SET "SEPARATOR.STUBHEAD_BOXHEAD= "
+REM Can't use pipe or exclamation point as a separator
+SET "SEPARATOR.STUBHEAD_BOXHEAD=:"
+REM SET "SEPARATOR.STUBHEAD_BOXHEAD=▓▓"
+REM SET "SEPARATOR.STUBHEAD_STUB= "
+REM SET "SEPARATOR.STUBHEAD_STUB=─"
+SET "SEPARATOR.STUBHEAD_STUB=-"
+REM SET "SEPARATOR.STUBHEAD_STUB=▓"
+REM SET "SEPARATOR.INTERSECT= "
+REM SET "SEPARATOR.INTERSECT=┼"
+REM SET "SEPARATOR.INTERSECT=┘"
+SET "SEPARATOR.INTERSECT=+"
+REM SET "SEPARATOR.INTERSECT=▓▒▒░"
+REM SET "SEPARATOR.BOXHEAD_BODY= "
+REM SET "SEPARATOR.BOXHEAD_BODY=─"
+REM SET "SEPARATOR.BOXHEAD_BODY=░"
+REM SET "SEPARATOR.STUB_BODY= "
+REM SET "SEPARATOR.STUB_BODY=│"
+REM SET "SEPARATOR.STUB_BODY=░░"
+REM SET "SEPARATOR.BOXHEADERS= "
+REM SET "SEPARATOR.BOXHEADERS=╎"
+REM SET "SEPARATOR.CELL= "
+REM SET "SEPARATOR.CELL=╎"
+__TABLE:END__
+
+:: Background
+__COLS__
+49m
+#SPC#
+#NUL#
+40m
+100m
+41m
+101m
+42m
+102m
+43m
+103m
+44m
+104m
+45m
+105m
+46m
+106m
+47m
+107m
+__COLS:END__
+
+:: [Intensity;][Attribute;]Foreground
+__ROWS__
+:: Default
+#LBL# Default
+39m
+#SPC#
+:: Normal
+#LBL# Normal
+#NUL#
+30m
+90m
+31m
+91m
+32m
+92m
+33m
+93m
+34m
+94m
+35m
+95m
+36m
+96m
+37m
+97m
+#SPC#
+:: Attributes
+#LBL# Attributes
+2m
+#NUL#
+1m
+#SPC#
+:: Faint (decreased intensity), 2
+:: Normal
+:: Bold or increased intensity, 1
+#LBL# Applied !CSI!2mdecreased!RESET! intensity
+#LBL# Normal
+#LBL# Applied !CSI!1mincreased!RESET! intensity
+2;39m
+  39m
+1;39m
+  2m
+#NUL#
+  1m
+2;30m
+  30m
+1;30m
+2;90m
+  90m
+1;90m
+2;31m
+  31m
+1;31m
+2;91m
+  91m
+1;91m
+2;32m
+  32m
+1;32m
+2;92m
+  92m
+1;92m
+2;33m
+  33m
+1;33m
+2;93m
+  93m
+1;93m
+2;34m
+  34m
+1;34m
+2;94m
+  94m
+1;94m
+2;35m
+  35m
+1;35m
+2;95m
+  95m
+1;95m
+2;36m
+  36m
+1;36m
+2;96m
+  96m
+1;96m
+2;37m
+  37m
+1;37m
+2;97m
+  97m
+1;97m
+__ROWS:END__
+__DATA:END__

@@ -1,0 +1,31 @@
+// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license.
+
+import "GlobalAppSettings.idl";
+import "Profile.idl";
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    [default_interface] runtimeclass EnumMappings {
+        // Global Settings
+        static Windows.Foundation.Collections.IMap<String, Windows.UI.Xaml.ElementTheme> ElementTheme { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.NewTabPosition> NewTabPosition { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.UI.Xaml.Controls.TabViewWidthMode> TabViewWidthMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.FirstWindowPreference> FirstWindowPreference { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.LaunchMode> LaunchMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.TabSwitcherMode> TabSwitcherMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.CopyFormat> CopyFormat { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.WindowingMode> WindowingMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.MatchMode> MatchMode { get; };
+
+        // Profile Settings
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.CloseOnExitMode> CloseOnExitMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.ScrollbarState> ScrollbarState { get; };
+        static Windows.Foundation.Collections.IMap<String, Windows.UI.Xaml.Media.Stretch> BackgroundImageStretchMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.TextAntialiasingMode> TextAntialiasingMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.CursorStyle> CursorStyle { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.AdjustTextMode> AdjustIndistinguishableColors { get; };
+        static Windows.Foundation.Collections.IMap<String, UInt16> FontWeight { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.IntenseStyle> IntenseTextStyle { get; };
+    }
+}
