@@ -35,6 +35,11 @@ Author(s):
 #define DBGOUTPUT(_params_)
 #endif
 
+#define TraceLoggingConsoleCoord(value, name) \
+    TraceLoggingStruct(2, name),              \
+        TraceLoggingInt32(value.X, "X"),      \
+        TraceLoggingInt32(value.Y, "Y")
+
 class Tracing
 {
 public:
