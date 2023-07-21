@@ -13,16 +13,27 @@
 #include "../host/cmdline.h"
 
 // Assumes that it will find <m> in the calling environment.
-#define TraceConsoleAPICallWithOrigin(ApiName, ...)       \
-    TraceLoggingWrite(                                    \
-        g_hConhostV2EventTraceProvider,                   \
-        "API_" ApiName,                                   \
-        TraceLoggingPid([&] { const auto p=m->GetProcessHandle(); return p ? p->dwProcessId : 0; }(), "OriginatingProcess"), \
-        TraceLoggingTid([&] { const auto p=m->GetProcessHandle(); return p ? p->dwThreadId : 0; }(), "OriginatingThread"),  \
-        __VA_ARGS__ __VA_OPT__(, )                        \
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),    \
+#define TraceConsoleAPICallWithOrigin(ApiName, ...)                  \
+    TraceLoggingWrite(                                               \
+        g_hConhostV2EventTraceProvider,                              \
+        "API_" ApiName,                                              \
+        TraceLoggingPid(TraceGetProcessId(m), "OriginatingProcess"), \
+        TraceLoggingTid(TraceGetThreadId(m), "OriginatingThread"),   \
+        __VA_ARGS__ __VA_OPT__(, )                                   \
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),               \
         TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-// TODO(DH): I removed TraceKeyword::API
+
+static DWORD TraceGetProcessId(CONSOLE_API_MSG* const m)
+{
+    const auto p = m->GetProcessHandle();
+    return p ? p->dwProcessId : 0;
+}
+
+static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
+{
+    const auto p = m->GetProcessHandle();
+    return p ? p->dwThreadId : 0;
+}
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleCP(_Inout_ CONSOLE_API_MSG* const m,
                                                          _Inout_ BOOL* const /*pbReplyPending*/)
