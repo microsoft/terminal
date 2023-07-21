@@ -297,15 +297,15 @@ namespace Microsoft::Console::VirtualTerminal
         size_t _SetRgbColorsHelper(const VTParameters options,
                                    TextAttribute& attr,
                                    const bool isForeground) noexcept;
-        void _SetRgbColorsHelperAlt(const VTParameter colorItem,
-                                    const VTSubParameters options,
-                                    TextAttribute& attr) noexcept;
+        void _SetRgbColorsHelperFromSubParams(const VTParameter colorItem,
+                                              const VTSubParameters options,
+                                              TextAttribute& attr) noexcept;
         size_t _ApplyGraphicsOption(const VTParameters options,
                                     const size_t optionIndex,
                                     TextAttribute& attr) noexcept;
-        void _ApplyGraphicsOptionAlt(const VTParameter option,
-                                     const VTSubParameters subParams,
-                                     TextAttribute& attr) noexcept;
+        void _ApplyGraphicsOptionWithSubParams(const VTParameter option,
+                                               const VTSubParameters subParams,
+                                               TextAttribute& attr) noexcept;
         void _ApplyGraphicsOptions(const VTParameters options,
                                    TextAttribute& attr) noexcept;
 

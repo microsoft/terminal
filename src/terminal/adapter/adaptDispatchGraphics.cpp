@@ -76,7 +76,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
 // - attr - The attribute that will be updated with the parsed color.
 // Return Value:
 // - <none>
-void AdaptDispatch::_SetRgbColorsHelperAlt(const VTParameter colorItem,
+void AdaptDispatch::_SetRgbColorsHelperFromSubParams(const VTParameter colorItem,
                                            const VTSubParameters options,
                                            TextAttribute& attr) noexcept
 {
@@ -149,7 +149,7 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
     if (options.hasSubParamsFor(optionIndex))
     {
         const auto subParams = options.subParamsFor(optionIndex);
-        _ApplyGraphicsOptionAlt(opt, subParams, attr);
+        _ApplyGraphicsOptionWithSubParams(opt, subParams, attr);
         return 1;
     }
 
@@ -336,7 +336,7 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
 // - attr - The attribute that will be updated with the applied option.
 // Return Value:
 // - <None>
-void AdaptDispatch::_ApplyGraphicsOptionAlt(const VTParameter option,
+void AdaptDispatch::_ApplyGraphicsOptionWithSubParams(const VTParameter option,
                                             const VTSubParameters subParams,
                                             TextAttribute& attr) noexcept
 {
@@ -347,7 +347,7 @@ void AdaptDispatch::_ApplyGraphicsOptionAlt(const VTParameter option,
     {
     case ForegroundExtended:
     case BackgroundExtended:
-        _SetRgbColorsHelperAlt(option, subParams, attr);
+        _SetRgbColorsHelperFromSubParams(option, subParams, attr);
         break;
     default:
         /* do nothing */
