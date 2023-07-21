@@ -174,7 +174,6 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
     // alias API.
     NTSTATUS Status = S_OK;
     {
-        const auto trace = Tracing::s_TraceApiCall(Status, Descriptor->TraceName);
         Status = (*Descriptor->Routine)(Message, &ReplyPending);
     }
     if (Status != STATUS_BUFFER_TOO_SMALL)
