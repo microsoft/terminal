@@ -47,6 +47,9 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
     {
         optionsConsumed = 2;
         const size_t tableIndex = options.at(1).value_or(0);
+
+        // We only apply the color if the index value fit within a byte. 
+        // This is to match XTerm's and VTE's behavior.
         if (tableIndex <= 255)
         {
             const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);
@@ -116,6 +119,9 @@ void AdaptDispatch::_SetRgbColorsHelperFromSubParams(const VTParameter colorItem
         // :5:<n>
         // where 'n' is the index into the xterm color table.
         const size_t tableIndex = options.at(1).value_or(0);
+
+        // We only apply the color if the index value fit within a byte. 
+        // This is to match XTerm's and VTE's behavior.
         if (tableIndex <= 255)
         {
             const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);

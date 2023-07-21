@@ -2464,6 +2464,26 @@ public:
         rgOptions[4] = 123;
         _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 123));
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 5 }));
+
+        Log::Comment(L"Test 6: Ignore Rgb color when R, G or B is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgOptions[2] = 283;
+        rgOptions[3] = 182;
+        rgOptions[4] = 123;
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 5 }));
+
+        Log::Comment(L"Test 7: Ignore indexed color when index is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        rgOptions[2] = 283;
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 3 }));
     }
 
     TEST_METHOD(XtermExtendedSubParameterColorTest)
@@ -2518,6 +2538,44 @@ public:
         rgSubParamOpts[4] = 123;
         subParamRanges[0] = { (BYTE)0, (BYTE)5 };
         _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 123));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 6: Ignore color when ColorSpaceID is not empty");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgSubParamOpts[1] = 7; // color-space-id
+        rgSubParamOpts[2] = 182;
+        rgSubParamOpts[3] = 182;
+        rgSubParamOpts[4] = 123;
+        subParamRanges[0] = { (BYTE)0, (BYTE)5 };
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 7: Ignore Rgb color when R, G or B is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgSubParamOpts[1] = {}; // color-space-id
+        // Ensure r, g and b set a color that is different from current color.
+        // Otherwise, the test will pass even if the color is not ignored.
+        rgSubParamOpts[2] = 128;
+        rgSubParamOpts[3] = 283;
+        rgSubParamOpts[4] = 155;
+        subParamRanges[0] = { (BYTE)0, (BYTE)5 };
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 8: Ignore indexed color when index is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        rgSubParamOpts[1] = 283;
+        subParamRanges[0] = { (BYTE)0, (BYTE)2 };
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
     }
 
