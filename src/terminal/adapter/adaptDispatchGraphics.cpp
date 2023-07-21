@@ -35,7 +35,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
         const size_t red = options.at(1).value_or(0);
         const size_t green = options.at(2).value_or(0);
         const size_t blue = options.at(3).value_or(0);
-        // We only apply the color if the R, G, B values fit within a byte. 
+        // We only apply the color if the R, G, B values fit within a byte.
         // This is to match XTerm's and VTE's behavior.
         if (red <= 255 && green <= 255 && blue <= 255)
         {
@@ -48,7 +48,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
         optionsConsumed = 2;
         const size_t tableIndex = options.at(1).value_or(0);
 
-        // We only apply the color if the index value fit within a byte. 
+        // We only apply the color if the index value fit within a byte.
         // This is to match XTerm's and VTE's behavior.
         if (tableIndex <= 255)
         {
@@ -80,8 +80,8 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
 // Return Value:
 // - <none>
 void AdaptDispatch::_SetRgbColorsHelperFromSubParams(const VTParameter colorItem,
-                                           const VTSubParameters options,
-                                           TextAttribute& attr) noexcept
+                                                     const VTSubParameters options,
+                                                     TextAttribute& attr) noexcept
 {
     // This should be called for applying FG and BG colors only.
     assert(colorItem == GraphicsOptions::ForegroundExtended ||
@@ -95,7 +95,7 @@ void AdaptDispatch::_SetRgbColorsHelperFromSubParams(const VTParameter colorItem
         // sub params are in the order:
         // :2:<color-space-id>:<r>:<g>:<b>
 
-        // We treat a color as invalid, if it has a color space ID, as some 
+        // We treat a color as invalid, if it has a color space ID, as some
         // applications that support non-standard ODA color sequence may send
         // the red value in its place.
         const bool hasColorSpaceId = options.at(1).has_value();
@@ -105,7 +105,7 @@ void AdaptDispatch::_SetRgbColorsHelperFromSubParams(const VTParameter colorItem
         const size_t green = options.at(3).value_or(0);
         const size_t blue = options.at(4).value_or(0);
 
-        // We only apply the color if the R, G, B values fit within a byte. 
+        // We only apply the color if the R, G, B values fit within a byte.
         // This is to match XTerm's and VTE's behavior.
         if (!hasColorSpaceId && red <= 255 && green <= 255 && blue <= 255)
         {
@@ -120,7 +120,7 @@ void AdaptDispatch::_SetRgbColorsHelperFromSubParams(const VTParameter colorItem
         // where 'n' is the index into the xterm color table.
         const size_t tableIndex = options.at(1).value_or(0);
 
-        // We only apply the color if the index value fit within a byte. 
+        // We only apply the color if the index value fit within a byte.
         // This is to match XTerm's and VTE's behavior.
         if (tableIndex <= 255)
         {
@@ -343,8 +343,8 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
 // Return Value:
 // - <None>
 void AdaptDispatch::_ApplyGraphicsOptionWithSubParams(const VTParameter option,
-                                            const VTSubParameters subParams,
-                                            TextAttribute& attr) noexcept
+                                                      const VTSubParameters subParams,
+                                                      TextAttribute& attr) noexcept
 {
     // here, we apply our "best effort" rule, while handling sub params if we don't
     // recognise the parameter substring (parameter and it's sub parameters) then
