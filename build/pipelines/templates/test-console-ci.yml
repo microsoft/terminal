@@ -13,7 +13,7 @@ jobs:
     BuildPlatform: ${{ parameters.platform }}
   pool:
     ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
-      name: WinDevPoolOSS-L
+      name: SHINE-OSS-L
     ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
       name: WinDevPool-L
     demands: ImageOverride -equals WinDevVS17-latest
