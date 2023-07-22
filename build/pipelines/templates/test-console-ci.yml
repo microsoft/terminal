@@ -16,7 +16,7 @@ jobs:
       name: SHINE-OSS-L
     ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
       name: WinDevPool-L
-    demands: ImageOverride -equals WinDevVS17-latest
+    demands: ImageOverride -equals SHINE-VS17-Latest
 
   steps:
   - checkout: self
