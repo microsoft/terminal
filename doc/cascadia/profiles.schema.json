@@ -1836,11 +1836,7 @@
       "properties": {
         "applicationTheme": {
           "description": "Which UI theme the Terminal should use for controls",
-          "enum": [
-            "light",
-            "dark",
-            "system"
-          ],
+          "enum": [ "light", "dark", "system" ],
           "type": "string"
         },
         "useMica": {
@@ -1871,11 +1867,7 @@
           "type": "string",
           "description": "The name of the theme. This will be displayed in the settings UI.",
           "not": {
-            "enum": [
-              "light",
-              "dark",
-              "system"
-            ]
+            "enum": [ "light", "dark", "system" ]
           }
         },
         "tab": {
