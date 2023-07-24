@@ -167,6 +167,14 @@ void HandleKeyEvent(const HWND hWnd,
         // --- END LOAD BEARING CODE ---
     }
 
+    // Certain applications like PowerToys and AutoHotKey, due to their keyboard
+    // remapping feature, send us key events using SendInput() whose values could
+    // be outside of the valid range. We should ignore such KeyEvents. GH#7064
+    if (VirtualKeyCode == 0 || VirtualKeyCode >= 0xff)
+    {
+        return;
+    }
+
     KeyEvent keyEvent{ !!bKeyDown, RepeatCount, VirtualKeyCode, VirtualScanCode, UNICODE_NULL, 0 };
 
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
