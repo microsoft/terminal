@@ -1447,10 +1447,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                             viewHeight,
                                                             bufferSize) };
 
-        if (_inUnitTests) [[unlikely]]
-        {
-            _ScrollPositionChangedHandlers(*this, update);
-        }
+        if (_inUnitTests)
+            [[unlikely]]
+            {
+                _ScrollPositionChangedHandlers(*this, update);
+            }
         else
         {
             const auto shared = _shared.lock_shared();
@@ -1751,7 +1752,48 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        _updateSelectionUI();
+        else
+        {
+            const auto cursorPos{ _terminal->GetCursorPosition() };
+
+            // Does the current buffer line have a mark on it?
+            const auto& marks{ _terminal->GetScrollMarks() };
+            if (!marks.empty() /* && cursorPos.y >= terminalPosition.y */)
+            {
+                const auto& last{ marks.back() };
+                const auto [start, end] = last.GetExtent();
+                if (terminalPosition >= end)
+                {
+                    // iterate over all the characters between the mark and the cursor
+
+                    auto iter = _terminal->GetTextBuffer().GetCellDataAt(end);
+                    const auto lastIter = _terminal->GetTextBuffer().GetCellDataAt(terminalPosition);
+
+                    // auto keyStrokes = lastIter - iter;
+                    auto bufferSize = _terminal->GetTextBuffer().GetSize();
+                    auto keyStrokes = bufferSize.CompareInBounds(terminalPosition, cursorPos);
+                    if (keyStrokes > 0)
+                    {
+                        for (auto i = 0; i < keyStrokes; i++)
+                        {
+                            _terminal->SendKeyEvent(VK_RIGHT, 0, {}, true);
+                            _terminal->SendKeyEvent(VK_RIGHT, 0, {}, false);
+                            // _sendInputToConnection(L"\x1b[C");
+                        }
+                    }
+                    else if (keyStrokes < 0)
+                    {
+                        for (auto i = 0; i > keyStrokes; i--)
+                        {
+                            _terminal->SendKeyEvent(VK_LEFT, 0, {}, true);
+                            _terminal->SendKeyEvent(VK_LEFT, 0, {}, false);
+                        }
+                    }
+                }
+            }
+
+            _updateSelectionUI();
+        }
     }
 
     // Method Description:
