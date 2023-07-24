@@ -3,7 +3,7 @@ trigger: none
 pr: none
 
 pool:
-  name: SHINE-INT-L
+  name: SHINE-INT-S # By default, send jobs to the small agent pool.
   demands: ImageOverride -equals SHINE-VS17-Latest
 
 parameters:
@@ -91,6 +91,9 @@ resources:
     ref: main
 jobs:
 - job: Build
+  pool:
+    name: SHINE-INT-L # Run the compilation on the large agent pool, rather than the default small one.
+    demands: ImageOverride -equals SHINE-VS17-Latest
   strategy:
     matrix:
       ${{ each config in parameters.buildConfigurations }}:
@@ -340,7 +343,6 @@ jobs:
 
 - ${{ if eq(parameters.buildTerminal, true) }}:
   - job: BundleAndSign
-    pool: { name: SHINE-INT-S }
     displayName: Create and sign AppX/MSIX bundles
     variables:
       ${{ if eq(parameters.branding, 'Release') }}:
@@ -436,7 +438,6 @@ jobs:
 
 - ${{ if eq(parameters.buildConPTY, true) }}:
   - job: PackageAndSignConPTY
-    pool: { name: SHINE-INT-S }
     strategy:
       matrix:
         ${{ each config in parameters.buildConfigurations }}:
@@ -528,7 +529,6 @@ jobs:
 
 - ${{ if eq(parameters.buildWPF, true) }}:
   - job: PackageAndSignWPF
-    pool: { name: SHINE-INT-S }
     strategy:
       matrix:
         ${{ each config in parameters.buildConfigurations }}:
@@ -634,7 +634,6 @@ jobs:
 
 - ${{ if eq(parameters.publishSymbolsToPublic, true) }}:
   - job: PublishSymbols
-    pool: { name: SHINE-INT-S }
     displayName: Publish Symbols
     dependsOn: BundleAndSign
     steps:
@@ -701,7 +700,6 @@ jobs:
 
 - ${{ if eq(parameters.buildTerminalVPack, true) }}:
   - job: VPack
-    pool: { name: SHINE-INT-S }
     displayName: Create Windows vPack
     dependsOn: BundleAndSign
     steps:
