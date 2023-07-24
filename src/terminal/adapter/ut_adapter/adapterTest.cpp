@@ -1699,7 +1699,7 @@ public:
         attribute.SetIndexedBackground256(45);
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
-        _testGetSet->ValidateInputEvent(L"\033P1$r0;38;5;123;48;5;45m\033\\");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;38:5:123;48:5:45m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (ITU RGB colors).");
         _testGetSet->PrepData();
@@ -1708,7 +1708,7 @@ public:
         attribute.SetBackground(RGB(65, 43, 21));
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
-        _testGetSet->ValidateInputEvent(L"\033P1$r0;38;2;12;34;56;48;2;65;43;21m\033\\");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;38:2::12:34:56;48:2::65:43:21m\033\\");
 
         Log::Comment(L"Requesting DECSCA attributes (unprotected).");
         _testGetSet->PrepData();
@@ -2464,6 +2464,119 @@ public:
         rgOptions[4] = 123;
         _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 123));
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 5 }));
+
+        Log::Comment(L"Test 6: Ignore Rgb color when R, G or B is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgOptions[2] = 283;
+        rgOptions[3] = 182;
+        rgOptions[4] = 123;
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 5 }));
+
+        Log::Comment(L"Test 7: Ignore indexed color when index is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        rgOptions[2] = 283;
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 3 }));
+    }
+
+    TEST_METHOD(XtermExtendedSubParameterColorTest)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+
+        VTParameter rgOptions[1];
+        VTParameter rgSubParamOpts[16];
+        std::pair<BYTE, BYTE> subParamRanges[1];
+
+        _testGetSet->_expectedAttribute = _testGetSet->_textBuffer->GetCurrentAttributes();
+
+        Log::Comment(L"Test 1: Change Indexed Foreground with missing index sub parameter");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        subParamRanges[0] = { (BYTE)0, (BYTE)1 };
+        _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_BLACK);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 2: Change Indexed Background with default index sub parameter");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        rgSubParamOpts[1] = {};
+        subParamRanges[0] = { (BYTE)0, (BYTE)2 };
+        _testGetSet->_expectedAttribute.SetIndexedBackground256(TextColor::DARK_BLACK);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 3: Change RGB Foreground with all RGB sub parameters missing");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        subParamRanges[0] = { (BYTE)0, (BYTE)1 };
+        _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 0));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 4: Change RGB Background with some missing RGB sub parameters");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgSubParamOpts[1] = {}; // color-space-id
+        rgSubParamOpts[2] = 123;
+        subParamRanges[0] = { (BYTE)0, (BYTE)3 };
+        _testGetSet->_expectedAttribute.SetBackground(RGB(123, 0, 0));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 5: Change RGB Foreground with some default RGB sub parameters");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgSubParamOpts[1] = {}; // color-space-id
+        rgSubParamOpts[2] = {};
+        rgSubParamOpts[3] = {};
+        rgSubParamOpts[4] = 123;
+        subParamRanges[0] = { (BYTE)0, (BYTE)5 };
+        _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 123));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 6: Ignore color when ColorSpaceID is not empty");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgSubParamOpts[1] = 7; // color-space-id
+        rgSubParamOpts[2] = 182;
+        rgSubParamOpts[3] = 182;
+        rgSubParamOpts[4] = 123;
+        subParamRanges[0] = { (BYTE)0, (BYTE)5 };
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 7: Ignore Rgb color when R, G or B is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgSubParamOpts[1] = {}; // color-space-id
+        // Ensure r, g and b set a color that is different from current color.
+        // Otherwise, the test will pass even if the color is not ignored.
+        rgSubParamOpts[2] = 128;
+        rgSubParamOpts[3] = 283;
+        rgSubParamOpts[4] = 155;
+        subParamRanges[0] = { (BYTE)0, (BYTE)5 };
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 8: Ignore indexed color when index is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        rgSubParamOpts[1] = 283;
+        subParamRanges[0] = { (BYTE)0, (BYTE)2 };
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
     }
 
     TEST_METHOD(SetColorTableValue)
