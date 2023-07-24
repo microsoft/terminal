@@ -340,6 +340,7 @@ jobs:
 
 - ${{ if eq(parameters.buildTerminal, true) }}:
   - job: BundleAndSign
+    pool: { name: SHINE-INT-S }
     displayName: Create and sign AppX/MSIX bundles
     variables:
       ${{ if eq(parameters.branding, 'Release') }}:
@@ -435,6 +436,7 @@ jobs:
 
 - ${{ if eq(parameters.buildConPTY, true) }}:
   - job: PackageAndSignConPTY
+    pool: { name: SHINE-INT-S }
     strategy:
       matrix:
         ${{ each config in parameters.buildConfigurations }}:
@@ -526,6 +528,7 @@ jobs:
 
 - ${{ if eq(parameters.buildWPF, true) }}:
   - job: PackageAndSignWPF
+    pool: { name: SHINE-INT-S }
     strategy:
       matrix:
         ${{ each config in parameters.buildConfigurations }}:
@@ -631,6 +634,7 @@ jobs:
 
 - ${{ if eq(parameters.publishSymbolsToPublic, true) }}:
   - job: PublishSymbols
+    pool: { name: SHINE-INT-S }
     displayName: Publish Symbols
     dependsOn: BundleAndSign
     steps:
@@ -697,6 +701,7 @@ jobs:
 
 - ${{ if eq(parameters.buildTerminalVPack, true) }}:
   - job: VPack
+    pool: { name: SHINE-INT-S }
     displayName: Create Windows vPack
     dependsOn: BundleAndSign
     steps:
