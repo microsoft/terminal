@@ -3,7 +3,7 @@ trigger: none
 pr: none
 
 pool:
-  name: WinDevPool-L
+  name: SHINE-INT-L
   demands: ImageOverride -equals SHINE-VS17-Latest
 
 parameters:

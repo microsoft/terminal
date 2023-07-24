@@ -16,7 +16,7 @@ jobs:
     ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
       name: SHINE-OSS-L
     ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
-      name: WinDevPool-L
+      name: SHINE-INT-L
     demands: ImageOverride -equals SHINE-VS17-Latest
 
   steps:
