@@ -198,7 +198,6 @@ int ConvertToOem(const UINT uiCodePage,
                  const UINT cchTarget) noexcept
 {
     FAIL_FAST_IF(!(pwchSource != (LPWSTR)pchTarget));
-    DBGCHARS(("ConvertToOem U->%d %.*ls\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pwchSource));
     // clang-format off
 #pragma prefast(suppress: __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
     // clang-format on
@@ -212,8 +211,6 @@ int ConvertInputToUnicode(const UINT uiCodePage,
                           _Out_writes_(cchTarget) WCHAR* const pwchTarget,
                           const UINT cchTarget) noexcept
 {
-    DBGCHARS(("ConvertInputToUnicode %d->U %.*s\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pchSource));
-
     return MultiByteToWideChar(uiCodePage, 0, pchSource, cchSource, pwchTarget, cchTarget);
 }
 
@@ -226,8 +223,6 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
 {
     FAIL_FAST_IF(!(cchTarget > 0));
     pwchTarget[0] = L'\0';
-
-    DBGCHARS(("ConvertOutputToUnicode %d->U %.*s\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pchSource));
 
     if (DoBuffersOverlap(reinterpret_cast<const BYTE* const>(pchSource),
                          cchSource * sizeof(CHAR),

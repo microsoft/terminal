@@ -21,20 +21,6 @@ Author(s):
 
 #include "../types/inc/Viewport.hpp"
 
-#if DBG
-#define DBGCHARS(_params_)              \
-    {                                   \
-        Tracing::s_TraceChars _params_; \
-    }
-#define DBGOUTPUT(_params_)              \
-    {                                    \
-        Tracing::s_TraceOutput _params_; \
-    }
-#else
-#define DBGCHARS(_params_)
-#define DBGOUTPUT(_params_)
-#endif
-
 #define TraceLoggingConsoleCoord(value, name) \
     TraceLoggingStruct(2, name),              \
         TraceLoggingInt32(value.X, "X"),      \
@@ -44,9 +30,6 @@ class Tracing
 {
 public:
     static void s_TraceWindowViewport(const Microsoft::Console::Types::Viewport& viewport);
-
-    static void s_TraceChars(_In_z_ const char* pszMessage, ...);
-    static void s_TraceOutput(_In_z_ const char* pszMessage, ...);
 
     static void s_TraceWindowMessage(const MSG& msg);
     static void s_TraceInputRecord(const INPUT_RECORD& inputRecord);

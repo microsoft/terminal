@@ -14,8 +14,8 @@ enum TraceKeywords
 {
     //Font = 0x001, // _DBGFONTS
     //Font2 = 0x002, // _DBGFONTS2
-    Chars = 0x004, // _DBGCHARS
-    Output = 0x008, // _DBGOUTPUT
+    //Chars = 0x004, // _DBGCHARS
+    //Output = 0x008, // _DBGOUTPUT
     General = 0x100,
     Input = 0x200,
     //API = 0x400, // No longer used

@@ -24,10 +24,6 @@ Revision History:
 #include <ShellScalingAPI.h>
 #pragma hdrstop
 
-#if DBG
-ULONG gDebugFlag = 0;
-#endif
-
 #define MAX_FONT_INFO_ALLOC (ULONG_MAX / sizeof(FONT_INFO))
 
 #define FE_ABANDONFONT 0

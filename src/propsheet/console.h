@@ -185,27 +185,6 @@ void Undo(HWND hControlWindow);
 #define PopupBkColor(pStateInfo) \
     (AttrToRGB(LOBYTE(pStateInfo->PopupAttributes >> 4)))
 
-// clang-format off
-#if DBG
-  #define _DBGFONTS  0x00000001
-  #define _DBGFONTS2 0x00000002
-  #define _DBGCHARS  0x00000004
-  #define _DBGOUTPUT 0x00000008
-  #define _DBGALL    0xFFFFFFFF
-  extern ULONG gDebugFlag;
-
-  #define DBGFONTS(_params_)
-  #define DBGFONTS2(_params_)
-  #define DBGCHARS(_params_)
-  #define DBGOUTPUT(_params_)
-#else
-  #define DBGFONTS(_params_)
-  #define DBGFONTS2(_params_)
-  #define DBGCHARS(_params_)
-  #define DBGOUTPUT(_params_)
-#endif
-// clang-format on
-
 // Macro definitions that handle codepages
 //
 #define CP_US (UINT)437
