@@ -1382,15 +1382,15 @@ Profile Pane::GetFocusedProfile()
 }
 
 // Method Description:
-// - Gets the connection state of this pane. If this Pane is not a leaf this will
-//   return NotConnected.
+// - Returns true if the connection state of this pane is closed. If this Pane is not a leaf this will
+//   return false.
 // Arguments:
 // - <none>
 // Return Value:
-// - The connection state of this Pane.
-winrt::Microsoft::Terminal::TerminalConnection::ConnectionState Pane::GetConnectionState() const
+// - true if the connection state of this Pane is closed.
+bool Pane::IsConnectionClosed() const
 {
-    return _connectionState;
+    return _connectionState >= ConnectionState::Closed;
 }
 
 // Method Description:

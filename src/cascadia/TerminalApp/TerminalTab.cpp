@@ -1078,7 +1078,7 @@ namespace winrt::TerminalApp::implementation
         if (_rootPane)
         {
             const bool isClosed = _rootPane->WalkTree([&](const auto& p) {
-                return p->GetConnectionState() >= ConnectionState::Closed;
+                return p->IsConnectionClosed();
             });
 
             _tabStatus.IsConnectionClosed(isClosed);
@@ -1086,8 +1086,9 @@ namespace winrt::TerminalApp::implementation
 
         if (_activePane)
         {
-            const bool isClosed = _activePane->GetConnectionState() >= ConnectionState::Closed;
-            _restartConnectionMenuItem.Visibility(isClosed ? WUX::Visibility::Visible : WUX::Visibility::Collapsed);
+            _restartConnectionMenuItem.Visibility(_activePane->IsConnectionClosed() ?
+                                                      WUX::Visibility::Visible :
+                                                      WUX::Visibility::Collapsed);
         }
     }
 

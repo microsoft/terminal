@@ -4717,9 +4717,12 @@ namespace winrt::TerminalApp::implementation
             makeItem(RS_(L"PaneClose"), L"\xE89F", ActionAndArgs{ ShortcutAction::ClosePane, nullptr });
         }
 
-        if (const auto& control{ _GetActiveControl() }; control.ConnectionState() >= ConnectionState::Closed)
+        if (const auto pane{ _GetFocusedTabImpl()->GetActivePane() })
         {
-            makeItem(RS_(L"RestartConnectionText"), L"\xE72C", ActionAndArgs{ ShortcutAction::RestartConnection, nullptr });
+            if (pane->IsConnectionClosed())
+            {
+                makeItem(RS_(L"RestartConnectionText"), L"\xE72C", ActionAndArgs{ ShortcutAction::RestartConnection, nullptr });
+            }
         }
 
         if (withSelection)
