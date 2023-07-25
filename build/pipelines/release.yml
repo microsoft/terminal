@@ -82,19 +82,6 @@ variables:
       NuGetPackBetaVersion: preview
   ${{ elseif eq(variables['Build.SourceBranchName'], 'main') }}:
     NuGetPackBetaVersion: experimental
-  ${{ if eq(parameters.buildTerminal, true) }}:
-    BuildTargetsTerminal: Terminal\CascadiaPackage;
-  ${{ else }}:
-    BuildTargetsTerminal: ""
-  ${{ if eq(parameters.buildWPF, true) }}:
-    BuildTargetsWPF: Terminal\wpf\PublicTerminalCore;
-  ${{ else }}:
-    BuildTargetsWPF: ""
-  ${{ if eq(parameters.buildConPTY, true) }}:
-    BuildTargetsConPTY: Conhost\Host_EXE;Conhost\winconpty_DLL;
-  ${{ else }}:
-    BuildTargetsConPTY: ""
-  BuildTargets: $(BuildTargetsTerminal)$(BuildTargetsWPF)$(BuildTargetsConPTY)
 
 name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
 resources:
@@ -126,16 +113,17 @@ jobs:
     displayName: Package ES - Setup Build
     inputs:
       disableOutputRedirect: true
-  - task: PowerShell@2
-    displayName: Rationalize Build Platform
-    inputs:
-      targetType: inline
-      script: >-
-        $Arch = "$(BuildPlatform)"
+  - powershell: |-
+      $Arch = "$(BuildPlatform)"
+      If ($Arch -Eq "x86") { $Arch = "Win32" }
+      Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
 
-        If ($Arch -Eq "x86") { $Arch = "Win32" }
-
-        Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
+      $BuildTargets = @()
+      If ("${{ parameters.buildTerminal }}" -eq "true") { $BuildTargets += "Terminal\CascadiaPackage" }
+      If ("${{ parameters.buildWPF }}" -eq "true") { $BuildTargets += "Terminal\wpf\PublicTerminalCore" }
+      If ("${{ parameters.buildConPTY }}" -eq "true") { $BuildTargets += "Conhost\Host_EXE;Conhost\winconpty_DLL" }
+      Write-Host "##vso[task.setvariable variable=BuildTargets]$($BuildTargets -Join ";")"
+    displayName: Rationalize Build Variables
   - template: .\templates\restore-nuget-steps.yml
   - task: UniversalPackages@0
     displayName: Download terminal-internal Universal Package
