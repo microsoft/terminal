@@ -82,6 +82,19 @@ variables:
       NuGetPackBetaVersion: preview
   ${{ elseif eq(variables['Build.SourceBranchName'], 'main') }}:
     NuGetPackBetaVersion: experimental
+  ${{ if eq(parameters.buildTerminal, true) }}:
+    BuildTargetsTerminal: Terminal\CascadiaPackage;
+  ${{ else }}:
+    BuildTargetsTerminal: ""
+  ${{ if eq(parameters.buildWPF, true) }}:
+    BuildTargetsWPF: Terminal\wpf\PublicTerminalCore;
+  ${{ else }}:
+    BuildTargetsWPF: ""
+  ${{ if eq(parameters.buildConPTY, true) }}:
+    BuildTargetsConPTY: Conhost\Host_EXE;Conhost\winconpty_DLL;
+  ${{ else }}:
+    BuildTargetsConPTY: ""
+  BuildTargets: $(BuildTargetsTerminal)$(BuildTargetsWPF)$(BuildTargetsConPTY)
 
 name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
 resources:
@@ -173,24 +186,24 @@ jobs:
       filePath: .\build\scripts\Generate-ThirdPartyNotices.ps1
       arguments: -MarkdownNoticePath .\NOTICE.md -OutputPath .\src\cascadia\CascadiaPackage\NOTICE.html
       pwsh: true
+  - task: VSBuild@1
+    displayName: Build solution **\OpenConsole.sln
+    condition: true
+    inputs:
+      solution: '**\OpenConsole.sln'
+      msbuildArgs: /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }};WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog /t:$(BuildTargets)
+      platform: $(BuildPlatform)
+      configuration: $(BuildConfiguration)
+      clean: true
+      maximumCpuCount: true
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact: binlog'
+    condition: always()
+    continueOnError: True
+    inputs:
+      PathtoPublish: $(Build.SourcesDirectory)\msbuild.binlog
+      ArtifactName: binlog-$(BuildPlatform)
   - ${{ if eq(parameters.buildTerminal, true) }}:
-    - task: VSBuild@1
-      displayName: Build solution **\OpenConsole.sln
-      condition: true
-      inputs:
-        solution: '**\OpenConsole.sln'
-        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
-        platform: $(BuildPlatform)
-        configuration: $(BuildConfiguration)
-        clean: true
-        maximumCpuCount: true
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish Artifact: binlog'
-      condition: failed()
-      continueOnError: True
-      inputs:
-        PathtoPublish: $(Build.SourcesDirectory)\msbuild.binlog
-        ArtifactName: binlog-$(BuildPlatform)
     - task: PowerShell@2
       displayName: Check MSIX for common regressions
       inputs:
@@ -200,22 +213,6 @@ jobs:
 
           .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path $Package.FullName
         pwsh: true
-  - ${{ if eq(parameters.buildWPF, true) }}:
-    - task: VSBuild@1
-      displayName: Build solution **\OpenConsole.sln for PublicTerminalCore
-      inputs:
-        solution: '**\OpenConsole.sln'
-        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Terminal\wpf\PublicTerminalCore
-        platform: $(BuildPlatform)
-        configuration: $(BuildConfiguration)
-  - ${{ if eq(parameters.buildConPTY, true) }}:
-    - task: VSBuild@1
-      displayName: Build solution **\OpenConsole.sln for ConPTY
-      inputs:
-        solution: '**\OpenConsole.sln'
-        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Conhost\Host_EXE;Conhost\winconpty_DLL
-        platform: $(BuildPlatform)
-        configuration: $(BuildConfiguration)
   - task: PowerShell@2
     displayName: Source Index PDBs
     inputs:
