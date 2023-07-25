@@ -1022,6 +1022,16 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleDisplayWorkingDirectory(const IInspectable& /*sender*/,
+                                                      const ActionEventArgs& args)
+    {
+        if (_settings.GlobalSettings().DebugFeaturesEnabled())
+        {
+            ShowTerminalWorkingDirectory();
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleSearchForText(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
