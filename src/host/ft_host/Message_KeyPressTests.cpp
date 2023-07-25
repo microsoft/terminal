@@ -103,6 +103,52 @@ class KeyPressTests
         TEST_METHOD_PROPERTY(L"Ignore[default]", L"true")
     END_TEST_METHOD()
 
+    TEST_METHOD(TestKeyPressWithInvalidScanCode)
+    {
+        if (!OneCoreDelay::IsSendMessageWPresent())
+        {
+            Log::Comment(L"Injecting keys to the window message queue cannot be done on systems without a classic window message queue. Skipping.");
+            Log::Result(WEX::Logging::TestResults::Skipped);
+            return;
+        }
+
+        Log::Comment(L"Testing that key events with scan code equal to 0 are properly ignored and not put into the input buffer");
+        BOOL successBool;
+        auto hwnd = GetConsoleWindow();
+        VERIFY_IS_TRUE(!!IsWindow(hwnd));
+        auto inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+        DWORD events = 0;
+
+        // flush input buffer
+        FlushConsoleInputBuffer(inputHandle);
+        successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
+        VERIFY_IS_TRUE(!!successBool);
+        VERIFY_ARE_EQUAL(events, 0u);
+
+        // Send a bunch of 'a' keypresses to the console. Make sure scan code is
+        // 0 in this case, and lParam strictly follows the format mentioned here:
+        // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-char
+        WPARAM vKey = 0x41; // valid virtual key code
+        BYTE scanCode = 0; // invalid scan code
+        WORD repeatCount = 1;
+        LPARAM lParam = (scanCode << 16) | repeatCount;
+
+        // Send the keypress
+        SendMessage(hwnd, WM_CHAR, vKey, lParam);
+
+        // make sure the keypress got ignored
+        events = 0;
+        successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
+        VERIFY_IS_TRUE(!!successBool);
+        VERIFY_ARE_EQUAL(events, 0u);
+        auto inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
+        PeekConsoleInput(inputHandle,
+                         inputBuffer.get(),
+                         1,
+                         &events);
+        VERIFY_ARE_EQUAL(events, 0u);
+    }
+
     TEST_METHOD(TestCoalesceSameKeyPress)
     {
         if (!OneCoreDelay::IsSendMessageWPresent())
@@ -125,15 +171,17 @@ class KeyPressTests
         VERIFY_IS_TRUE(!!successBool);
         VERIFY_ARE_EQUAL(events, 0u);
 
-        // send a bunch of 'a' keypresses to the console
-        DWORD repeatCount = 1;
+        // Send a bunch of 'a' keypresses to the console. Make sure scan code is
+        // valid, and lParam strictly follows the format mentioned here:
+        // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-char
+        WPARAM vKey = 0x41;
+        BYTE scanCode = gsl::narrow_cast<BYTE>(MapVirtualKeyW(0x41, MAPVK_VK_TO_VSC));
+        WORD repeatCount = 1;
+        LPARAM lParam = (scanCode << 16) | repeatCount;
         const unsigned int messageSendCount = 1000;
         for (unsigned int i = 0; i < messageSendCount; ++i)
         {
-            SendMessage(hwnd,
-                        WM_CHAR,
-                        0x41,
-                        repeatCount);
+            SendMessage(hwnd, WM_CHAR, vKey, lParam);
         }
 
         // make sure the keypresses got processed and coalesced
