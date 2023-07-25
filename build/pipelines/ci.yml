@@ -63,7 +63,6 @@ stages:
   - stage: Build_ARM64
     displayName: Build ARM64
     dependsOn: []
-    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
     jobs:
       - template: ./templates/build-console-ci.yml
         parameters:
@@ -89,7 +88,6 @@ stages:
   - stage: Test_ARM64
     displayName: Test ARM64
     dependsOn: [Build_ARM64]
-    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
     jobs:
       - template: ./templates/test-console-ci.yml
         parameters:
