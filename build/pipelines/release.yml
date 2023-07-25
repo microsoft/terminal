@@ -3,8 +3,8 @@ trigger: none
 pr: none
 
 pool:
-  name: WinDevPool-L
-  demands: ImageOverride -equals WinDevVS17-latest
+  name: SHINE-INT-S # By default, send jobs to the small agent pool.
+  demands: ImageOverride -equals SHINE-VS17-Latest
 
 parameters:
   - name: branding
@@ -91,6 +91,9 @@ resources:
     ref: main
 jobs:
 - job: Build
+  pool:
+    name: SHINE-INT-L # Run the compilation on the large agent pool, rather than the default small one.
+    demands: ImageOverride -equals SHINE-VS17-Latest
   strategy:
     matrix:
       ${{ each config in parameters.buildConfigurations }}:
