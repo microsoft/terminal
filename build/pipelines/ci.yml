@@ -95,7 +95,7 @@ stages:
         parameters:
           platform: ARM64
 
-  - ${{ if(eq(parameters.submitHelix), true) }}:
+  - ${{ if(eq(parameters.submitHelix, true)) }}:
     - stage: Helix_x64
       displayName: Helix x64
       dependsOn: [Build_x64]
