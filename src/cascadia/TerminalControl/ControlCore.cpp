@@ -1752,42 +1752,41 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        else
+        else if (_settings->MoveCursorWithMouse()) // This is also mode==Char && !shiftEnabled
         {
+            // If we're handling a single left click, without shift pressed, and
+            // outside mouse mode, AND the user has MoveCursorWithMouse turned
+            // on, let's try to move the cursor.
+            //
+            // We'll only move the cursor if the user has clicked after the last
+            // mark, if there is one. That means the user also needs to set up
+            // shell integration to enable this feature.
+            //
+            // As noted in GH #8573, there's plenty of edge cases with this
+            // approach, but it's good enough to bring value to 90% of use cases.
             const auto cursorPos{ _terminal->GetCursorPosition() };
 
             // Does the current buffer line have a mark on it?
             const auto& marks{ _terminal->GetScrollMarks() };
-            if (!marks.empty() /* && cursorPos.y >= terminalPosition.y */)
+            if (!marks.empty())
             {
                 const auto& last{ marks.back() };
                 const auto [start, end] = last.GetExtent();
                 if (terminalPosition >= end)
                 {
-                    // iterate over all the characters between the mark and the cursor
-
-                    auto iter = _terminal->GetTextBuffer().GetCellDataAt(end);
-                    const auto lastIter = _terminal->GetTextBuffer().GetCellDataAt(terminalPosition);
-
-                    // auto keyStrokes = lastIter - iter;
-                    auto bufferSize = _terminal->GetTextBuffer().GetSize();
-                    auto keyStrokes = bufferSize.CompareInBounds(terminalPosition, cursorPos);
-                    if (keyStrokes > 0)
+                    // Get the distance between the cursor and the click, in cells.
+                    const auto bufferSize = _terminal->GetTextBuffer().GetSize();
+                    const auto delta = bufferSize.CompareInBounds(terminalPosition, cursorPos);
+                    const WORD key = delta > 0 ? VK_RIGHT : VK_LEFT;
+                    const auto keystrokes = std::abs(delta);
+                    // Send an up and a down once per cell. This won't
+                    // accurately handle wide characters, or continuation
+                    // prompts, or cases where a single escape character in the
+                    // command (e.g. ^[) takes up two cells.
+                    for (auto i = 0; i < keystrokes; i++)
                     {
-                        for (auto i = 0; i < keyStrokes; i++)
-                        {
-                            _terminal->SendKeyEvent(VK_RIGHT, 0, {}, true);
-                            _terminal->SendKeyEvent(VK_RIGHT, 0, {}, false);
-                            // _sendInputToConnection(L"\x1b[C");
-                        }
-                    }
-                    else if (keyStrokes < 0)
-                    {
-                        for (auto i = 0; i > keyStrokes; i--)
-                        {
-                            _terminal->SendKeyEvent(VK_LEFT, 0, {}, true);
-                            _terminal->SendKeyEvent(VK_LEFT, 0, {}, false);
-                        }
+                        _terminal->SendKeyEvent(key, 0, {}, true);
+                        _terminal->SendKeyEvent(key, 0, {}, false);
                     }
                 }
             }

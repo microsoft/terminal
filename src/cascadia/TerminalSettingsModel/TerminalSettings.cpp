@@ -325,6 +325,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _ShowMarks = Feature_ScrollbarMarks::IsEnabled() && profile.ShowMarks();
 
         _RightClickContextMenu = profile.RightClickContextMenu();
+
+        _MoveCursorWithMouse = profile.MoveCursorWithMouse();
     }
 
     // Method Description:
