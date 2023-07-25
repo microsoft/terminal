@@ -95,15 +95,15 @@ stages:
         parameters:
           platform: ARM64
 
-  - ${{ if(eq(parameters.submitHelix, true)) }}:
-    - stage: Helix_x64
-      displayName: Helix x64
-      dependsOn: [Build_x64]
-      condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequest')))
-      jobs:
-        - template: ./templates/console-ci-helix-job.yml
-          parameters:
-            platform: x64
+            #- ${{ if(eq(parameters.submitHelix, true)) }}:
+            #  - stage: Helix_x64
+            #    displayName: Helix x64
+            #    dependsOn: [Build_x64]
+            #    condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequest')))
+            #    jobs:
+            #      - template: ./templates/console-ci-helix-job.yml
+            #        parameters:
+            #          platform: x64
 
   - stage: Scripts
     displayName: Code Health Scripts
