@@ -98,7 +98,7 @@ stages:
   - stage: Helix_x64
     displayName: Helix x64
     dependsOn: [Build_x64]
-    condition: and(parameters.submitHelix, succeeded(), not(eq(variables['Build.Reason'], 'PullRequest')))
+    condition: and(parameters['submitHelix'], succeeded(), not(eq(variables['Build.Reason'], 'PullRequest')))
     jobs:
       - template: ./templates/console-ci-helix-job.yml
         parameters:
