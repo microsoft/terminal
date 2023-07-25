@@ -71,6 +71,7 @@ stages:
       - template: ./templates/test-console-ci.yml
         parameters:
           platform: x64
+
   - stage: Test_x86
     displayName: Test x86
     dependsOn: [Build_x86]
@@ -78,6 +79,15 @@ stages:
       - template: ./templates/test-console-ci.yml
         parameters:
           platform: x86
+
+  - stage: Test_ARM64
+    displayName: Test ARM64
+    dependsOn: [Build_ARM64]
+    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+    jobs:
+      - template: ./templates/test-console-ci.yml
+        parameters:
+          platform: ARM64
 
   - stage: Helix_x64
     displayName: Helix x64
