@@ -29,6 +29,12 @@ variables:
 #     0.0.1904.0900
 name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
 
+parameters:
+  - name: submitHelix
+    displayName: "Submit to Helix for testing"
+    type: boolean
+    default: true
+
 stages:
   - stage: Audit_x64
     displayName: Audit Mode
@@ -92,7 +98,7 @@ stages:
   - stage: Helix_x64
     displayName: Helix x64
     dependsOn: [Build_x64]
-    condition: and(succeeded(), not(eq(variables['Build.Reason'], 'PullRequest')))
+    condition: and(parameters.submitHelix, succeeded(), not(eq(variables['Build.Reason'], 'PullRequest')))
     jobs:
       - template: ./templates/console-ci-helix-job.yml
         parameters:
