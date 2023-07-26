@@ -59,8 +59,7 @@
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="local:ColorSchemeViewModel">
                             <Grid Grid.Column="0"
-                                  Height="32"
-                                  Padding="8,8,0,0"
+                                  Padding="8"
                                   VerticalAlignment="Center"
                                   Background="{x:Bind local:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
                                   ColumnSpacing="1"
