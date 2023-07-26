@@ -59,7 +59,7 @@ jobs:
         arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(System.ArtifactsDirectory)\\${{ parameters.artifactName }}\\$(BuildConfiguration)\\$(BuildPlatform)\\test"
       condition: and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument'))
 
-    # Load-bearing: This needs to be Windows PowerShell, not pwsh.
+    # Load-bearing: This needs to be Windows PowerShell, not pwsh, due to Add-AppxPackage not working in pwsh.
     - powershell: |-
         $deps = Get-ChildItem -Recurse "$(System.ArtifactsDirectory)\\${{ parameters.artifactName }}\\$(BuildConfiguration)\\$(BuildPlatform)\\test\\dependencies"
         $deps | % {
