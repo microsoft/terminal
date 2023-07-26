@@ -7,12 +7,11 @@ Param(
 )
 
 $Recipe = [xml](Get-Content $Path)
-$xm = [System.Xml.XmlNamespaceManager]::new($Recipe.NameTable)
-$xm.AddNamespace("x", $Recipe.Project.xmlns)
-$recipePackageXpath = '/x:Project/x:ItemGroup/x:ResolvedSDKReference'
-$DependencyNodes = $Recipe.SelectNodes($recipePackageXpath, $xm)
+$ResolvedSDKReferences = $Recipe.Project.ItemGroup.ResolvedSDKReference
 
-$DependencyNodes | ? Architecture -eq $Recipe.Project.PropertyGroup.PackageArchitecture | % {
-	$l = [Uri]::UnescapeDataString($_.AppxLocation)
-	Get-Item $l
-}
+$ResolvedSDKReferences |
+	Where-Object Architecture -eq $Recipe.Project.PropertyGroup.PackageArchitecture |
+	ForEach-Object {
+		$l = [Uri]::UnescapeDataString($_.AppxLocation)
+		Get-Item $l
+	}
