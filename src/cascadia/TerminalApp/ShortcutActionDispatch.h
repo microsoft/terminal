@@ -13,7 +13,7 @@ namespace TerminalAppLocalTests
     class KeyBindingsTests;
 }
 
-#define DECLARE_ACTION(action) TYPED_EVENT(action, winrt::Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+#define DECLARE_ACTION(action) til::typed_event<winrt::Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::ActionEventArgs> action;
 
 namespace winrt::TerminalApp::implementation
 {

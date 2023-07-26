@@ -10,11 +10,11 @@ using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::TerminalApp;
 
-#define ACTION_CASE(action)                     \
-    case ShortcutAction::action:                \
-    {                                           \
-        _##action##Handlers(sender, eventArgs); \
-        break;                                  \
+#define ACTION_CASE(action)                  \
+    case ShortcutAction::action:             \
+    {                                        \
+        action.raise(sender, eventArgs);     \
+        break;                               \
     }
 
 namespace winrt::TerminalApp::implementation
