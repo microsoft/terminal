@@ -9,10 +9,10 @@ Param(
 $Recipe = [xml](Get-Content $Path)
 $xm = [System.Xml.XmlNamespaceManager]::new($Recipe.NameTable)
 $xm.AddNamespace("x", $Recipe.Project.xmlns)
-$recipePackageXpath = '/x:Project/x:ItemGroup/x:ResolvedSDKReference[./x:Architecture[text()="{0}"]]' -f $Recipe.Project.PropertyGroup.PackageArchitecture
+$recipePackageXpath = '/x:Project/x:ItemGroup/x:ResolvedSDKReference'
 $DependencyNodes = $Recipe.SelectNodes($recipePackageXpath, $xm)
 
-$DependencyNodes | % {
+$DependencyNodes | ? Architecture -eq $Recipe.Project.PropertyGroup.PackageArchitecture | % {
 	$l = [Uri]::UnescapeDataString($_.AppxLocation)
 	Get-Item $l
 }
