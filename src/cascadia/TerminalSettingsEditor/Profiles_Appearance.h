@@ -22,6 +22,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Editor::IHostedInWindow WindowRoot() { return _windowRoot; };
 
+        void ViewChanging(const winrt::Windows::Foundation::IInspectable& sender,
+                          const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs& /*e*/);
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 

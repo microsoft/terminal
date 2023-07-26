@@ -34,6 +34,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
@@ -41,20 +42,24 @@
                    Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
-        <ScrollViewer Grid.Row="1"
-                      ViewChanging="ViewChanging">
+        <!--  Control Preview  -->
+        <Border Grid.Row="1" MaxWidth="{StaticResource StandardControlMaxWidth}"
+            Padding="{StaticResource StandardIndentMargin}" x:Name="ControlContainer">
+            <Border.Shadow>
+                <ThemeShadow x:Name="ControlShadow" />
+            </Border.Shadow>
+            <Border x:Name="ControlPreview"
+                    Width="400"
+                    Height="180"
+                    Margin="0,0,0,12"
+                    HorizontalAlignment="Left"
+                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                    BorderThickness="1" />
+        </Border>
+        <ScrollViewer Grid.Row="2"
+                      ViewChanging="ViewChanging"
+                      x:Name="ScrollContainer">
             <StackPanel Style="{StaticResource SettingsStackStyle}">
-                <!--  Control Preview  -->
-                <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
-                    <Border x:Name="ControlPreview"
-                            Width="400"
-                            Height="180"
-                            Margin="0,0,0,12"
-                            HorizontalAlignment="Left"
-                            BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
-                            BorderThickness="1" />
-                </Border>
-
                 <local:Appearances Appearance="{x:Bind Profile.DefaultAppearance, Mode=OneWay}"
                                    SourceProfile="{x:Bind Profile, Mode=OneWay}"
                                    WindowRoot="{x:Bind WindowRoot, Mode=OneTime}" />

@@ -52,6 +52,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // The Appearances object handles updating the values in the settings UI, but
         // we still need to listen to the changes here just to update the preview control
         _AppearanceViewModelChangedRevoker = _Profile.DefaultAppearance().PropertyChanged(winrt::auto_revoke, { this, &Profiles_Appearance::_onProfilePropertyChanged });
+
+        ControlShadow().Receivers().Clear();
+        ControlShadow().Receivers().Append(ScrollContainer());
     }
 
     void Profiles_Appearance::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
@@ -90,5 +93,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto settings = _Profile.TermSettings();
         _previewConnection->DisplayPowerlineGlyphs(_looksLikePowerlineFont());
         _previewControl.UpdateControlSettings(settings, settings);
+    }
+
+    void Profiles_Appearance::ViewChanging(const IInspectable& sender, const Controls::ScrollViewerViewChangingEventArgs& e)
+    {
+        double in = std::min(16.0, e.NextView().VerticalOffset());
+        double f = (5. / 16.) * in;
+        ControlContainer().Translation({ 0, 0, gsl::narrow_cast<float>(f) });
+        HasScrollViewer<Profiles_Appearance>::ViewChanging(sender, e);
     }
 }
