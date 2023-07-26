@@ -154,8 +154,6 @@ namespace winrt::TerminalApp::implementation
         bool _inRename{ false };
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _tabRenameBoxLayoutUpdatedRevoker;
 
-        winrt::TerminalApp::ShortcutActionDispatch _dispatch;
-
         void _Setup();
 
         std::optional<Windows::UI::Xaml::DispatcherTimer> _bellIndicatorTimer;
@@ -185,6 +183,8 @@ namespace winrt::TerminalApp::implementation
         virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() override;
 
         void _addBroadcastHandlers(const winrt::Microsoft::Terminal::Control::TermControl& control, ControlEventTokens& events);
+
+        void _exportTextClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

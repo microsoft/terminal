@@ -200,17 +200,17 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        newTabImpl->ExportTabRequested([weakTab, weakThis{ get_weak() }]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
+        // newTabImpl->ExportTabRequested([weakTab, weakThis{ get_weak() }]() {
+        //     auto page{ weakThis.get() };
+        //     auto tab{ weakTab.get() };
 
-            if (page && tab)
-            {
-                // Passing empty string as the path to export tab will make it
-                // prompt for the path
-                page->_ExportTab(*tab, L"");
-            }
-        });
+        //     if (page && tab)
+        //     {
+        //         // Passing empty string as the path to export tab will make it
+        //         // prompt for the path
+        //         page->_ExportTab(*tab, L"");
+        //     }
+        // });
 
         newTabImpl->FindRequested([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };

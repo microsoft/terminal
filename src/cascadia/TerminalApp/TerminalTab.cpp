@@ -917,7 +917,7 @@ namespace winrt::TerminalApp::implementation
         auto dispatcher = TabViewItem().Dispatcher();
         ControlEventTokens events{};
 
-        events.titleToken = control.TitleChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+        events.titleToken = control.TitleChanged([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
@@ -928,7 +928,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.colorToken = control.TabColorChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+        events.colorToken = control.TabColorChanged([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             if (auto tab{ weakThis.get() })
             {
@@ -939,7 +939,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
@@ -948,7 +948,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.readOnlyToken = control.ReadOnlyChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+        events.readOnlyToken = control.ReadOnlyChanged([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             if (auto tab{ weakThis.get() })
             {
@@ -1393,12 +1393,7 @@ namespace winrt::TerminalApp::implementation
             exportTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             exportTabSymbol.Glyph(L"\xE74E"); // Save
 
-            exportTabMenuItem.Click([weakThis](auto&&, auto&&) {
-                if (auto tab{ weakThis.get() })
-                {
-                    tab->_ExportTabRequestedHandlers();
-                }
-            });
+            exportTabMenuItem.Click({ get_weak(), &TerminalTab::_exportTextClicked });
             exportTabMenuItem.Text(RS_(L"ExportTabText"));
             exportTabMenuItem.Icon(exportTabSymbol);
 
@@ -1857,5 +1852,13 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         });
+    }
+
+    void TerminalTab::_exportTextClicked(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                         const winrt::Windows::UI::Xaml::RoutedEventArgs& /* args */)
+    {
+        ActionAndArgs actionAndArgs{};
+        actionAndArgs.Action(ShortcutAction::ExportBuffer);
+        _dispatch.DoAction(*this, actionAndArgs);
     }
 }
