@@ -2093,7 +2093,7 @@ namespace winrt::TerminalApp::implementation
         _RequestMoveContentHandlers(*this, *request);
     }
 
-    bool TerminalPage::_MoveTab(MoveTabArgs args)
+    bool TerminalPage::_MoveTab(winrt::com_ptr<TerminalTab> tab, MoveTabArgs args)
     {
         // If there was a windowId in the action, try to move it to the
         // specified window instead of moving it in our tab row.
@@ -2107,12 +2107,12 @@ namespace winrt::TerminalApp::implementation
                 return true;
             }
 
-            if (const auto terminalTab{ _GetFocusedTabImpl() })
+            if (tab)
             {
-                auto startupActions = terminalTab->BuildStartupActions(true);
-                _DetachTabFromWindow(terminalTab);
+                auto startupActions = tab->BuildStartupActions(true);
+                _DetachTabFromWindow(tab);
                 _MoveContent(std::move(startupActions), args.Window(), 0);
-                _RemoveTab(*terminalTab);
+                _RemoveTab(*tab);
                 return true;
             }
         }
@@ -2120,6 +2120,7 @@ namespace winrt::TerminalApp::implementation
         const auto direction = args.Direction();
         if (direction != MoveTabDirection::None)
         {
+            // TODO! Get the index of the tab passed in, not the focused one you dingus
             if (auto focusedTabIndex = _GetFocusedTabIndex())
             {
                 const auto currentTabIndex = focusedTabIndex.value();

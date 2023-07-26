@@ -351,7 +351,7 @@ namespace winrt::TerminalApp::implementation
         bool _MoveFocus(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool _SwapPane(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool _MovePane(const Microsoft::Terminal::Settings::Model::MovePaneArgs args);
-        bool _MoveTab(const Microsoft::Terminal::Settings::Model::MoveTabArgs args);
+        bool _MoveTab(winrt::com_ptr<TerminalTab> tab, const Microsoft::Terminal::Settings::Model::MoveTabArgs args);
 
         template<typename F>
         bool _ApplyToActiveControls(F f)

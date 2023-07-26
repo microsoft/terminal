@@ -1354,12 +1354,7 @@ namespace winrt::TerminalApp::implementation
             moveTabToNewWindowTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             moveTabToNewWindowTabSymbol.Glyph(L"\xE8A7");
 
-            moveTabToNewWindowMenuItem.Click([weakThis](auto&&, auto&&) {
-                if (auto tab{ weakThis.get() })
-                {
-                    tab->_MoveTabToNewWindowRequestedHandlers();
-                }
-            });
+            moveTabToNewWindowMenuItem.Click({ get_weak(), &TerminalTab::_moveTabToNewWindowClicked });
             moveTabToNewWindowMenuItem.Text(RS_(L"MoveTabToNewWindowText"));
             moveTabToNewWindowMenuItem.Icon(moveTabToNewWindowTabSymbol);
 
@@ -1859,6 +1854,15 @@ namespace winrt::TerminalApp::implementation
     {
         ActionAndArgs actionAndArgs{};
         actionAndArgs.Action(ShortcutAction::ExportBuffer);
+        _dispatch.DoAction(*this, actionAndArgs);
+    }
+    void TerminalTab::_moveTabToNewWindowClicked(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                                 const winrt::Windows::UI::Xaml::RoutedEventArgs& /* args */)
+    {
+        ActionAndArgs actionAndArgs{};
+        MoveTabArgs args{ hstring{ L"new" }, MoveTabDirection::Forward };
+        actionAndArgs.Action(ShortcutAction::MoveTab);
+        actionAndArgs.Args(args);
         _dispatch.DoAction(*this, actionAndArgs);
     }
 }

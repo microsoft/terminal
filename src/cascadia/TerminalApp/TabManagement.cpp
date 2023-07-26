@@ -168,6 +168,8 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // TODO! get rid of these too!
+
         newTabImpl->DuplicateRequested([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
@@ -187,30 +189,6 @@ namespace winrt::TerminalApp::implementation
                 page->_SplitTab(*tab);
             }
         });
-
-        newTabImpl->MoveTabToNewWindowRequested([weakTab, weakThis{ get_weak() }]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-
-            if (page && tab)
-            {
-                MoveTabArgs args{ hstring{ L"new" }, MoveTabDirection::Forward };
-                page->_SetFocusedTab(*tab);
-                page->_MoveTab(args);
-            }
-        });
-
-        // newTabImpl->ExportTabRequested([weakTab, weakThis{ get_weak() }]() {
-        //     auto page{ weakThis.get() };
-        //     auto tab{ weakTab.get() };
-
-        //     if (page && tab)
-        //     {
-        //         // Passing empty string as the path to export tab will make it
-        //         // prompt for the path
-        //         page->_ExportTab(*tab, L"");
-        //     }
-        // });
 
         newTabImpl->FindRequested([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
