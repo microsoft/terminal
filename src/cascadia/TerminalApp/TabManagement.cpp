@@ -743,7 +743,10 @@ namespace winrt::TerminalApp::implementation
         //          sometimes set focus to an incorrect tab after removing some tabs
         auto weakThis{ get_weak() };
 
-        co_await wil::resume_foreground(_tabView.Dispatcher());
+        if (!_tabView.Dispatcher().HasThreadAccess())
+        {
+            co_await winrt::resume_foreground(_tabView.Dispatcher());
+        }
 
         if (auto page{ weakThis.get() })
         {
