@@ -90,7 +90,6 @@ steps:
      $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.exe
      $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.dll
      $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.xml
-     **/Microsoft.VCLibs.*.appx
      **/*unit.test*.dll
      **/*unit.test*.manifest
      **/TestHostApp/*.exe
@@ -104,6 +103,12 @@ steps:
     OverWrite: true
     flattenFolders: true
   condition: succeeded()
+
+- pwsh: |-
+    $deps = ./build/scripts/Get-DependenciesFromAppxRecipe.ps1 -Path "$(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/TestHostApp/TestHostApp.build.appxrecipe"
+    $dir = New-Item -Type Directory "$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test/dependencies"
+    $deps | Copy-Item -Destination $dir -Verbose
+  displayName: "Copy appx/msix dependencies for local tests"
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish All Build Artifacts'

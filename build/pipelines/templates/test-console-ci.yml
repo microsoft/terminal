@@ -59,6 +59,15 @@ jobs:
         arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(System.ArtifactsDirectory)\\${{ parameters.artifactName }}\\$(BuildConfiguration)\\$(BuildPlatform)\\test"
       condition: and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument'))
 
+    # Load-bearing: This needs to be Windows PowerShell, not pwsh.
+    - powershell: |-
+        $deps = Get-ChildItem -Recurse "$(System.ArtifactsDirectory)\\${{ parameters.artifactName }}\\$(BuildConfiguration)\\$(BuildPlatform)\\test\\dependencies"
+        $deps | % {
+          Write-Host "Installing $($_.FullName)..."
+          Add-AppxPackage -Path $_.FullName -ErrorAction:Ignore
+        }
+      displayName: 'Install LocalTest Dependencies'
+
     - task: PowerShell@2
       displayName: 'Run Local Tests'
       inputs:
