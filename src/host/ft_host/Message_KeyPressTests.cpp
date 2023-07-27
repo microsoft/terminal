@@ -191,6 +191,8 @@ class KeyPressTests
         VERIFY_ARE_EQUAL(events, 1u);
         VERIFY_ARE_EQUAL(inputBuffer[0].EventType, KEY_EVENT);
         VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wRepeatCount, 1, NoThrowString().Format(L"%d", inputBuffer[0].Event.KeyEvent.wRepeatCount));
+        // 'VK_LWIN' is an enhanced key, so the ENHANCED_KEY bit should be set.
+        VERIFY_IS_TRUE(inputBuffer[0].Event.KeyEvent.dwControlKeyState & ENHANCED_KEY); 
     }
 
     TEST_METHOD(TestCoalesceSameKeyPress)
