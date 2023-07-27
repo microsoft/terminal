@@ -192,7 +192,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseOtherPanes(const IInspectable& sender,
                                               const ActionEventArgs& args)
     {
-        if (const auto terminalTab{ _senderOrFocusedTab(sender) })
+        if (const auto& terminalTab{ _senderOrFocusedTab(sender) })
         {
             const auto activePane = terminalTab->GetActivePane();
             if (terminalTab->GetRootPane() != activePane)
@@ -237,7 +237,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleSplitPane(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleSplitPane(const IInspectable& sender,
                                         const ActionEventArgs& args)
     {
         if (args == nullptr)
@@ -259,7 +259,11 @@ namespace winrt::TerminalApp::implementation
             }
 
             const auto& duplicateFromTab{ realArgs.SplitMode() == SplitType::Duplicate ? _GetFocusedTab() : nullptr };
-            _SplitPane(realArgs.SplitDirection(),
+
+            const auto& terminalTab{ _senderOrFocusedTab(sender) };
+
+            _SplitPane(terminalTab,
+                       realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        ::base::saturated_cast<float>(realArgs.SplitSize()),
                        _MakePane(realArgs.TerminalArgs(), duplicateFromTab));
@@ -559,6 +563,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto activeTab{ _senderOrFocusedTab(sender) })
         {
+            _SetFocusedTab(*activeTab);
             _Find(*activeTab);
         }
         args.Handled(true);
@@ -691,7 +696,12 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto activeTab{ _senderOrFocusedTab(sender) })
         {
-            activeTab->RequestColorPicker();
+            if (!_tabColorPicker)
+            {
+                _tabColorPicker = winrt::make<ColorPickupFlyout>();
+            }
+
+            activeTab->AttachColorPicker(_tabColorPicker);
         }
         args.Handled(true);
     }

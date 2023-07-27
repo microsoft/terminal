@@ -329,7 +329,7 @@ namespace winrt::TerminalApp::implementation
         void _DuplicateFocusedTab();
         void _DuplicateTab(const TerminalTab& tab);
 
-        void _SplitTab(TerminalTab& tab);
+        // void _SplitTab(TerminalTab& tab);
         winrt::fire_and_forget _ExportTab(const TerminalTab& tab, winrt::hstring filepath);
 
         winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::TerminalApp::TabBase tab);
@@ -390,10 +390,10 @@ namespace winrt::TerminalApp::implementation
 
         void _Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll);
 
-        void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
-                        const float splitSize,
-                        std::shared_ptr<Pane> newPane);
-        void _SplitPane(TerminalTab& tab,
+        // void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
+        //                 const float splitSize,
+        //                 std::shared_ptr<Pane> newPane);
+        void _SplitPane(const winrt::com_ptr<TerminalTab>& tab,
                         const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                         const float splitSize,
                         std::shared_ptr<Pane> newPane);

@@ -168,39 +168,6 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // TODO! get rid of these too!
-
-        newTabImpl->DuplicateRequested([weakTab, weakThis{ get_weak() }]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-
-            if (page && tab)
-            {
-                page->_DuplicateTab(*tab);
-            }
-        });
-
-        newTabImpl->SplitTabRequested([weakTab, weakThis{ get_weak() }]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-
-            if (page && tab)
-            {
-                page->_SplitTab(*tab);
-            }
-        });
-
-        newTabImpl->FindRequested([weakTab, weakThis{ get_weak() }]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-
-            if (page && tab)
-            {
-                page->_SetFocusedTab(*tab);
-                page->_Find(*tab);
-            }
-        });
-
         auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().InsertAt(insertPosition, tabViewItem);
 
@@ -345,19 +312,19 @@ namespace winrt::TerminalApp::implementation
         CATCH_LOG();
     }
 
-    // Method Description:
-    // - Sets the specified tab as the focused tab and splits its active pane
-    // Arguments:
-    // - tab: tab to split
-    void TerminalPage::_SplitTab(TerminalTab& tab)
-    {
-        try
-        {
-            _SetFocusedTab(tab);
-            _SplitPane(tab, SplitDirection::Automatic, 0.5f, _MakePane(nullptr, tab));
-        }
-        CATCH_LOG();
-    }
+    // // Method Description:
+    // // - Sets the specified tab as the focused tab and splits its active pane
+    // // Arguments:
+    // // - tab: tab to split
+    // void TerminalPage::_SplitTab(TerminalTab& tab)
+    // {
+    //     try
+    //     {
+    //         _SetFocusedTab(tab);
+    //         _SplitPane(tab, SplitDirection::Automatic, 0.5f, _MakePane(nullptr, tab));
+    //     }
+    //     CATCH_LOG();
+    // }
 
     // Method Description:
     // - Exports the content of the Terminal Buffer inside the tab
