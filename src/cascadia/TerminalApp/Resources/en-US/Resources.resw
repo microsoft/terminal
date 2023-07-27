@@ -840,4 +840,10 @@
     <value>Run as Administrator</value>
     <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
+  <data name="TerminalPage_PaneMovedAnnouncement" xml:space="preserve">
+    <value>Pane moved successfully</value>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement" xml:space="preserve">
+    <value>Tab moved successfully</value>
+  </data>
 </root>
