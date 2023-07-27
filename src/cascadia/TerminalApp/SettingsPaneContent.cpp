@@ -53,6 +53,7 @@ namespace winrt::TerminalApp::implementation
 
     NewTerminalArgs SettingsPaneContent::GetNewTerminalArgs(const bool /* asContent */) const
     {
+        // TODO! hey, can we somehow replicate std::vector<ActionAndArgs> SettingsTab::BuildStartupActions?
         return nullptr;
     }
 }

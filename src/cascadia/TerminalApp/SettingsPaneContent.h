@@ -11,13 +11,14 @@ namespace winrt::TerminalApp::implementation
         SettingsPaneContent(winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
+        winrt::Microsoft::Terminal::Settings::Editor::MainPage SettingsUI() { return _sui; }
 
         winrt::Windows::Foundation::Size MinSize();
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
         void Close();
         winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const bool asContent) const;
 
-        winrt::hstring Title() { return L"Scratchpad"; }
+        winrt::hstring Title() { return RS_(L"SettingsTab"); }
         uint64_t TaskbarState() { return 0; }
         uint64_t TaskbarProgress() { return 0; }
         bool ReadOnly() { return false; }
@@ -31,8 +32,6 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<> FocusRequested;
 
     private:
-        winrt::Windows::UI::Xaml::Controls::Grid _root{ nullptr };
-        winrt::Windows::UI::Xaml::Controls::TextBox _box{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::MainPage _sui{ nullptr };
     };
 }

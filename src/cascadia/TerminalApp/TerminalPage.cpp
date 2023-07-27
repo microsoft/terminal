@@ -22,6 +22,7 @@
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
+#include "SettingsPaneContent.h"
 #include "TabRowControl.h"
 #include "Utils.h"
 
@@ -2264,6 +2265,8 @@ namespace winrt::TerminalApp::implementation
                                   const float splitSize,
                                   std::shared_ptr<Pane> newPane)
     {
+        // TODO! Prevent splitting the _settingsTab!
+
         // If the caller is calling us with the return value of _MakePane
         // directly, it's possible that nullptr was returned, if the connections
         // was supposed to be launched in an elevated window. In that case, do
@@ -3768,7 +3771,10 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            winrt::Microsoft::Terminal::Settings::Editor::MainPage sui{ _settings };
+            // Create the SUI pane content
+            auto settingsContent{ winrt::make_self<SettingsPaneContent>(_settings) };
+            auto sui = settingsContent->SettingsUI();
+
             if (_hostingHwnd)
             {
                 sui.SetHostingWindow(reinterpret_cast<uint64_t>(*_hostingHwnd));
@@ -3784,52 +3790,58 @@ namespace winrt::TerminalApp::implementation
                 }
             });
 
-            auto newTabImpl = winrt::make_self<SettingsTab>(sui, _settings.GlobalSettings().CurrentTheme().RequestedTheme());
+            // Create the tab
+            auto resultPane = std::make_shared<Pane>(*settingsContent);
+            _settingsTab = _CreateNewTabFromPane(resultPane);
 
-            // Add the new tab to the list of our tabs.
-            _tabs.Append(*newTabImpl);
-            _mruTabs.Append(*newTabImpl);
+            // auto newTabImpl = winrt::make_self<SettingsTab>(sui, _settings.GlobalSettings().CurrentTheme().RequestedTheme());
 
-            newTabImpl->SetDispatch(*_actionDispatch);
-            newTabImpl->SetActionMap(_settings.ActionMap());
+            // // Add the new tab to the list of our tabs.
+            // _tabs.Append(*newTabImpl);
+            // _mruTabs.Append(*newTabImpl);
 
-            // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
-            _UpdateTabIndices();
+            // newTabImpl->SetDispatch(*_actionDispatch);
+            // newTabImpl->SetActionMap(_settings.ActionMap());
 
-            // Don't capture a strong ref to the tab. If the tab is removed as this
-            // is called, we don't really care anymore about handling the event.
-            auto weakTab = make_weak(newTabImpl);
+            // // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
+            // _UpdateTabIndices();
 
-            auto tabViewItem = newTabImpl->TabViewItem();
-            _tabView.TabItems().Append(tabViewItem);
+            // // Don't capture a strong ref to the tab. If the tab is removed as this
+            // // is called, we don't really care anymore about handling the event.
+            // auto weakTab = make_weak(newTabImpl);
 
-            tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
+            // auto tabViewItem = newTabImpl->TabViewItem();
+            // _tabView.TabItems().Append(tabViewItem);
 
-            // When the tab requests close, try to close it (prompt for approval, if required)
-            newTabImpl->CloseRequested([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
-                auto page{ weakThis.get() };
-                auto tab{ weakTab.get() };
+            // tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 
-                if (page && tab)
-                {
-                    page->_HandleCloseTabRequested(*tab);
-                }
-            });
+            // // When the tab requests close, try to close it (prompt for approval, if required)
+            // newTabImpl->CloseRequested([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+            //     auto page{ weakThis.get() };
+            //     auto tab{ weakTab.get() };
 
-            // When the tab is closed, remove it from our list of tabs.
-            newTabImpl->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
-                if (auto page{ weakThis.get() })
-                {
-                    page->_settingsTab = nullptr;
-                    page->_RemoveOnCloseRoutine(tabViewItem, page);
-                }
-            });
+            //     if (page && tab)
+            //     {
+            //         page->_HandleCloseTabRequested(*tab);
+            //     }
+            // });
 
-            _settingsTab = *newTabImpl;
+            // TODO! Make sure we remove the _settingsTab if it is closed!
 
-            // This kicks off TabView::SelectionChanged, in response to which
-            // we'll attach the terminal's Xaml control to the Xaml root.
-            _tabView.SelectedItem(tabViewItem);
+            // // When the tab is closed, remove it from our list of tabs.
+            // newTabImpl->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+            //     if (auto page{ weakThis.get() })
+            //     {
+            //         page->_settingsTab = nullptr;
+            //         page->_RemoveOnCloseRoutine(tabViewItem, page);
+            //     }
+            // });
+
+            // _settingsTab = *newTabImpl;
+
+            //// This kicks off TabView::SelectionChanged, in response to which
+            //// we'll attach the terminal's Xaml control to the Xaml root.
+            //_tabView.SelectedItem(tabViewItem);
         }
         else
         {

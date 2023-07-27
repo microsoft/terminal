@@ -275,13 +275,15 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - pane: The pane to use as the root.
     // - insertPosition: Optional parameter to indicate the position of tab.
-    void TerminalPage::_CreateNewTabFromPane(std::shared_ptr<Pane> pane, uint32_t insertPosition)
+    TerminalApp::TerminalTab TerminalPage::_CreateNewTabFromPane(std::shared_ptr<Pane> pane, uint32_t insertPosition)
     {
         if (pane)
         {
             auto newTabImpl = winrt::make_self<TerminalTab>(pane);
             _InitializeTab(newTabImpl, insertPosition);
+            return *newTabImpl;
         }
+        return nullptr;
     }
 
     // Method Description:
