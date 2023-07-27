@@ -103,7 +103,7 @@ class KeyPressTests
         TEST_METHOD_PROPERTY(L"Ignore[default]", L"true")
     END_TEST_METHOD()
 
-    TEST_METHOD(TestKeyPressWithInvalidScanCode)
+    TEST_METHOD(TestInvalidKeyPressIsIgnored)
     {
         if (!OneCoreDelay::IsSendMessageWPresent())
         {
@@ -112,7 +112,7 @@ class KeyPressTests
             return;
         }
 
-        Log::Comment(L"Testing that key events with scan code equal to 0 are properly ignored and not put into the input buffer");
+        Log::Comment(L"Testing that key events with invalid virtual keycode and invalid scan code are properly ignored, and not put into the input buffer");
         BOOL successBool;
         auto hwnd = GetConsoleWindow();
         VERIFY_IS_TRUE(!!IsWindow(hwnd));
@@ -125,11 +125,8 @@ class KeyPressTests
         VERIFY_IS_TRUE(!!successBool);
         VERIFY_ARE_EQUAL(events, 0u);
 
-        // Send a bunch of 'a' keypresses to the console. Make sure scan code is
-        // 0 in this case, and lParam strictly follows the format mentioned here:
-        // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-char
-        WPARAM vKey = 0x41; // valid virtual key code
-        BYTE scanCode = 0; // invalid scan code
+        WPARAM vKey = 0xFF; // invalid keycode
+        BYTE scanCode = 0; // invalid scancode
         WORD repeatCount = 1;
         LPARAM lParam = (scanCode << 16) | repeatCount;
 
@@ -147,6 +144,53 @@ class KeyPressTests
                          1,
                          &events);
         VERIFY_ARE_EQUAL(events, 0u);
+    }
+
+    TEST_METHOD(TestKeyPressWithScanCodeZero)
+    {
+        if (!OneCoreDelay::IsSendMessageWPresent())
+        {
+            Log::Comment(L"Injecting keys to the window message queue cannot be done on systems without a classic window message queue. Skipping.");
+            Log::Result(WEX::Logging::TestResults::Skipped);
+            return;
+        }
+
+        Log::Comment(L"Testing that key events with valid virtual keycode with scan code 0 are properly processed");
+        BOOL successBool;
+        auto hwnd = GetConsoleWindow();
+        VERIFY_IS_TRUE(!!IsWindow(hwnd));
+        auto inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+        DWORD events = 0;
+
+        // flush input buffer
+        FlushConsoleInputBuffer(inputHandle);
+        successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
+        VERIFY_IS_TRUE(!!successBool);
+        VERIFY_ARE_EQUAL(events, 0u);
+
+        // Send 'VK_LWIN' (Left Windows Key) as a keypress to the console. Make
+        // sure scan code is 0 in this case.
+        WPARAM vKey = VK_LWIN;
+        BYTE scanCode = 0;
+        WORD repeatCount = 1;
+        LPARAM lParam = (scanCode << 16) | repeatCount;
+
+        // Send the keypress
+        SendMessage(hwnd, WM_KEYDOWN, vKey, lParam);
+
+        // Make sure the keypress got processed.
+        events = 0;
+        successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
+        VERIFY_IS_TRUE(!!successBool);
+        VERIFY_ARE_EQUAL(events, 1u);
+        auto inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
+        PeekConsoleInput(inputHandle,
+                         inputBuffer.get(),
+                         1,
+                         &events);
+        VERIFY_ARE_EQUAL(events, 1u);
+        VERIFY_ARE_EQUAL(inputBuffer[0].EventType, KEY_EVENT);
+        VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wRepeatCount, 1, NoThrowString().Format(L"%d", inputBuffer[0].Event.KeyEvent.wRepeatCount));
     }
 
     TEST_METHOD(TestCoalesceSameKeyPress)
@@ -171,9 +215,8 @@ class KeyPressTests
         VERIFY_IS_TRUE(!!successBool);
         VERIFY_ARE_EQUAL(events, 0u);
 
-        // Send a bunch of 'a' keypresses to the console. Make sure scan code is
-        // valid, and lParam strictly follows the format mentioned here:
-        // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-char
+        // Send a bunch of 'a' keypresses to the console. Make sure scan code
+        // is valid.
         WPARAM vKey = 0x41;
         BYTE scanCode = gsl::narrow_cast<BYTE>(MapVirtualKeyW(0x41, MAPVK_VK_TO_VSC));
         WORD repeatCount = 1;

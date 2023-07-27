@@ -127,11 +127,11 @@ void HandleKeyEvent(const HWND hWnd,
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(lParam) is a character
+    // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(wParam) is a character
     auto VirtualKeyCode = LOWORD(wParam);
     WORD VirtualScanCode = LOBYTE(HIWORD(lParam));
     const auto RepeatCount = LOWORD(lParam);
-    const auto ControlKeyState = GetControlKeyState(lParam);
+    auto ControlKeyState = GetControlKeyState(lParam);
     const BOOL bKeyDown = WI_IsFlagClear(lParam, KEY_TRANSITION_UP);
 
     if (bKeyDown)
@@ -167,12 +167,25 @@ void HandleKeyEvent(const HWND hWnd,
         // --- END LOAD BEARING CODE ---
     }
 
-    // Certain applications like PowerToys and AutoHotKey, due to their keyboard
-    // remapping feature, send us key events using SendInput() whose values could
-    // be outside of the valid range. We should ignore such KeyEvents. GH#7064
-    if (VirtualKeyCode == 0 || VirtualKeyCode >= 0xff)
+    // - Certain applications like PowerToys and AutoHotKey, due to their keyboard
+    //   remapping feature, send us key events (WM_KEYUP, WM_KEYDOWN, etc.) using
+    //   SendInput(), whose keycode or scancode values could be outside of the
+    //   valid range. We need to filter those events out, as some clients will
+    //   incorrectly translate them to an ascii NULL character.
+    // - If scan code is 0, we can still infer it from the virtual key code as long
+    //   as the virtual key code is valid (0 < vKey < 0xFF).
+    if (VirtualScanCode == 0) [[unlikely]]
     {
-        return;
+        // try to infer scancode from virtual keycode
+        auto FullVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VirtualKeyCode, MAPVK_VK_TO_VSC_EX));
+        VirtualScanCode = LOBYTE(FullVirtualScanCode);
+        // if we still don't have a scancode, return.
+        if (VirtualScanCode == 0)
+        {
+            return;
+        }
+        // Otherwise, set 'enhanced' bit if necessary and continue.
+        ControlKeyState |= (HIBYTE(FullVirtualScanCode) == 0xE0) && ENHANCED_KEY;
     }
 
     KeyEvent keyEvent{ !!bKeyDown, RepeatCount, VirtualKeyCode, VirtualScanCode, UNICODE_NULL, 0 };
