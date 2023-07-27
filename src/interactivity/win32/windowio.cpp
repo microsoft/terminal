@@ -176,16 +176,15 @@ void HandleKeyEvent(const HWND hWnd,
     //   as the virtual key code is valid (0 < vKey < 0xFF).
     if (VirtualScanCode == 0) [[unlikely]]
     {
-        // try to infer scancode from virtual keycode
         auto FullVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VirtualKeyCode, MAPVK_VK_TO_VSC_EX));
         VirtualScanCode = LOBYTE(FullVirtualScanCode);
-        // if we still don't have a scancode, return.
+        // If the virtual key code is invalid, translation fails with LOBYTE(0). (We ignore the enhanced bit because it doesn't affect the scan code.)
         if (VirtualScanCode == 0)
         {
             return;
         }
         // Otherwise, set 'enhanced' bit if necessary and continue.
-        ControlKeyState |= (HIBYTE(FullVirtualScanCode) == 0xE0) && ENHANCED_KEY;
+        ControlKeyState |= (HIBYTE(FullVirtualScanCode) == 0xE0) ? ENHANCED_KEY : 0;
     }
 
     KeyEvent keyEvent{ !!bKeyDown, RepeatCount, VirtualKeyCode, VirtualScanCode, UNICODE_NULL, 0 };
