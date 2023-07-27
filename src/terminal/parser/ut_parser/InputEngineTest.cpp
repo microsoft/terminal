@@ -959,7 +959,10 @@ void InputEngineTest::AltIntermediateTest()
     auto pfnInputStateMachineCallback = [&](const std::span<const INPUT_RECORD>& inEvents) {
         for (auto& ev : inEvents)
         {
-            terminalInput.HandleKey(ev);
+            if (const auto str = terminalInput.HandleKey(ev))
+            {
+                translation.append(*str);
+            }
         }
     };
     auto dispatch = std::make_unique<TestInteractDispatch>(pfnInputStateMachineCallback, &testState);
