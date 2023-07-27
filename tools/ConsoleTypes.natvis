@@ -46,7 +46,8 @@
     </Type>
 
     <Type Name="_KEY_EVENT_RECORD">
-        <DisplayString>down:{bKeyDown} rep:{wRepeatCount} vk:{wVirtualKeyCode} sc:{wVirtualScanCode} ch:{uChar.UnicodeChar} ctrl:{(unsigned short)dwControlKeyState,x}</DisplayString>
+        <DisplayString Condition="bKeyDown != 0">↓ rep:{wRepeatCount} vk:{wVirtualKeyCode} sc:{wVirtualScanCode} ch:{uChar.UnicodeChar} ctrl:{(unsigned short)dwControlKeyState,x}</DisplayString>
+        <DisplayString Condition="bKeyDown == 0">↑ rep:{wRepeatCount} vk:{wVirtualKeyCode} sc:{wVirtualScanCode} ch:{uChar.UnicodeChar} ctrl:{(unsigned short)dwControlKeyState,x}</DisplayString>
     </Type>
     <Type Name="_MOUSE_EVENT_RECORD">
         <DisplayString>pos:{dwMousePosition.X},{dwMousePosition.Y} state:{dwButtonState,x} ctrl:{(unsigned short)dwControlKeyState,x} flags:{(unsigned short)dwEventFlags,x}</DisplayString>
