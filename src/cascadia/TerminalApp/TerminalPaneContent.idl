@@ -23,4 +23,8 @@ namespace TerminalApp
     [default_interface] runtimeclass ScratchpadContent : IPaneContent
     {
     }
+    [default_interface] runtimeclass SettingsPaneContent : IPaneContent
+    {
+        SettingsPaneContent(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+    }
 }
