@@ -20,7 +20,6 @@ namespace winrt::TerminalApp::implementation
 
         auto res = Windows::UI::Xaml::Application::Current().Resources();
         auto bg = res.Lookup(winrt::box_value(L"UnfocusedBorderBrush"));
-        // _root.Background(Media::SolidColorBrush{ winrt::Windows::UI::Colors::Red() });
         _root.Background(bg.try_as<Media::Brush>());
 
         _box = winrt::Windows::UI::Xaml::Controls::TextBox{};
