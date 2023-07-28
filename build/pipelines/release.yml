@@ -14,22 +14,11 @@ parameters:
     values:
       - Release
       - Preview
+      - Dev
   - name: buildTerminal
     displayName: "Build Windows Terminal MSIX"
     type: boolean
     default: true
-  - name: runCompliance
-    displayName: "Run Compliance and Security Build"
-    type: boolean
-    default: true
-  - name: publishSymbolsToPublic
-    displayName: "Publish Symbols to MSDL"
-    type: boolean
-    default: true
-  - name: packTerminalVPack
-    displayName: "Build Windows Terminal VPack"
-    type: boolean
-    default: false
   - name: buildConPTY
     displayName: "Build ConPTY NuGet"
     type: boolean
@@ -56,9 +45,28 @@ parameters:
       - x64
       - x86
       - arm64
+  - name: generateSbom
+    type: boolean
+    default: true
   - name: codeSign
     type: boolean
     default: true
+  - name: terminalInternalPackageVersion
+    type: string
+    default: '0.0.8'
+
+  - name: runCompliance
+    displayName: "Run Compliance and Security Build"
+    type: boolean
+    default: true
+  - name: publishSymbolsToPublic
+    displayName: "Publish Symbols to MSDL"
+    type: boolean
+    default: true
+  - name: packTerminalVPack
+    displayName: "Build Windows Terminal VPack"
+    type: boolean
+    default: false
 
 variables:
   Temp: Placehold
@@ -87,6 +95,5 @@ jobs:
     buildPlatforms: ${{ parameters.buildPlatforms }}
     generateSbom: ${{ parameters.generateSbom }}
     codeSign: ${{ parameters.codeSign }}
-    artifactStem: ${{ parameters.artifactStem }}
     terminalInternalPackageVersion: ${{ parameters.terminalInternalPackageVersion }}
 ...
