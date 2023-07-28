@@ -2643,7 +2643,7 @@
         },
         "experimental.showMarksOnScrollbar": {
           "default": false,
-          "description": "When set to true, marks added to the buffer via the addMark action will appear on the scrollbar.",
+          "description": "dragonpoop",
           "type": "boolean"
         },
         "experimental.pixelShaderPath": {
