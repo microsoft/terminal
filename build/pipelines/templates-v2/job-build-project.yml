@@ -48,6 +48,9 @@ parameters:
     default: ''
   - name: terminalInternalPackageVersion
     type: string
+  - name: pool
+    type: object
+    default: null
 
 jobs:
 - job: Build
