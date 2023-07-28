@@ -11,10 +11,6 @@ parameters:
     displayName: "Build Windows Terminal MSIX"
     type: boolean
     default: true
-  - name: packTerminalVPack
-    displayName: "Build Windows Terminal VPack"
-    type: boolean
-    default: false
   - name: buildConPTY
     displayName: "Build ConPTY NuGet"
     type: boolean
@@ -53,37 +49,6 @@ parameters:
   - name: terminalInternalPackageVersion
     type: string
 
-variables:
-  MakeAppxPath: 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\MakeAppx.exe'
-  # If we are building a branch called "release-*", change the NuGet suffix
-  # to "preview". If we don't do that, XES will set the suffix to "release1"
-  # because it truncates the value after the first period.
-  # We also want to disable the suffix entirely if we're Release branded while
-  # on a release branch.
-  # main is special, however. XES ignores main. Since we never produce actual
-  # shipping builds from main, we want to force it to have a beta label as
-  # well.
-  #
-  # In effect:
-  # BRANCH / BRANDING | Release                    | Preview
-  # ------------------|----------------------------|-----------------------------
-  # release-*         | 1.12.20220427              | 1.13.20220427-preview
-  # main              | 1.14.20220427-experimental | 1.14.20220427-experimental
-  # all others        | 1.14.20220427-mybranch     | 1.14.20220427-mybranch
-  ${{ if startsWith(variables['Build.SourceBranchName'], 'release-') }}:
-    ${{ if eq(parameters.branding, 'Release') }}:
-      NoNuGetPackBetaVersion: true
-    ${{ else }}:
-      NuGetPackBetaVersion: preview
-  ${{ elseif eq(variables['Build.SourceBranchName'], 'main') }}:
-    NuGetPackBetaVersion: experimental
-
-resources:
-  repositories:
-  - repository: self
-    type: git
-    ref: main
-
 jobs:
 - job: Build
   pool: ${{ parameters.pool }}
@@ -99,6 +64,7 @@ jobs:
             ${{ else }}:
               OutputBuildPlatform: ${{ platform }}
   variables:
+    MakeAppxPath: 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\MakeAppx.exe'
     BinDir: $(Build.SourcesDirectory)/bin/$(OutputBuildPlatform)/$(BuildConfiguration)
   displayName: Build $(BuildConfiguration) $(BuildPlatform)
   timeoutInMinutes: 240
