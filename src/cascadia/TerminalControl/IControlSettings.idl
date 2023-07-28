@@ -32,6 +32,7 @@ namespace Microsoft.Terminal.Control
         String ProfileSource;
 
         Boolean UseAcrylic { get; };
+        Boolean EnableUnfocusedAcrylic;
         ScrollbarState ScrollState { get; };
 
         Boolean UseAtlasEngine { get; };

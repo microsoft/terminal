@@ -28,7 +28,6 @@ namespace Microsoft.Terminal.Core
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor;
 
         Boolean AutoMarkPrompts;
-        Boolean EnableUnfocusedAcrylic;
 
     };
 
