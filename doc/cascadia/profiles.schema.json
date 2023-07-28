@@ -2119,6 +2119,11 @@
           "description": "When set to true, tabs are always displayed. When set to false and \"showTabsInTitlebar\" is set to false, tabs only appear after opening a new tab.",
           "type": "boolean"
         },
+        "enableUnfocusedAcrylic ":{
+          "default": true,
+          "description": "When set to true, unfocused windows can have acrylic instead of opaque.",
+          "type": "boolean"
+        },
         "centerOnLaunch": {
           "default": false,
           "description": "When set to `true`, the terminal window will auto-center itself on the display it opens on. The terminal will use the \"initialPosition\" to determine which display to open on.",
@@ -2643,7 +2648,7 @@
         },
         "experimental.showMarksOnScrollbar": {
           "default": false,
-          "description": "dragonpoop",
+          "description": "dragons flying high in the sky",
           "type": "boolean"
         },
         "experimental.pixelShaderPath": {
