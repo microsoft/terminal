@@ -1,0 +1,234 @@
+parameters:
+  - name: branding
+    displayName: "Branding (Build Type)"
+    type: string
+    default: Release
+    values:
+      - Release
+      - Preview
+      - Dev
+  - name: buildTerminal
+    displayName: "Build Windows Terminal MSIX"
+    type: boolean
+    default: true
+  - name: packTerminalVPack
+    displayName: "Build Windows Terminal VPack"
+    type: boolean
+    default: false
+  - name: buildConPTY
+    displayName: "Build ConPTY NuGet"
+    type: boolean
+    default: false
+  - name: buildWPF
+    displayName: "Build Terminal WPF Control"
+    type: boolean
+    default: false
+  - name: pgoBuildMode
+    displayName: "PGO Build Mode"
+    type: string
+    default: Optimize
+    values:
+      - Optimize
+      - Instrument
+      - None
+  - name: buildConfigurations
+    type: object
+    default:
+      - Release
+  - name: buildPlatforms
+    type: object
+    default:
+      - x64
+      - x86
+      - arm64
+  - name: generateSbom
+    type: boolean
+    default: true
+  - name: codeSign
+    type: boolean
+    default: true
+  - name: artifactStem
+    type: string
+    default: ''
+  - name: terminalInternalPackageVersion
+    type: string
+
+variables:
+  MakeAppxPath: 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\MakeAppx.exe'
+  # If we are building a branch called "release-*", change the NuGet suffix
+  # to "preview". If we don't do that, XES will set the suffix to "release1"
+  # because it truncates the value after the first period.
+  # We also want to disable the suffix entirely if we're Release branded while
+  # on a release branch.
+  # main is special, however. XES ignores main. Since we never produce actual
+  # shipping builds from main, we want to force it to have a beta label as
+  # well.
+  #
+  # In effect:
+  # BRANCH / BRANDING | Release                    | Preview
+  # ------------------|----------------------------|-----------------------------
+  # release-*         | 1.12.20220427              | 1.13.20220427-preview
+  # main              | 1.14.20220427-experimental | 1.14.20220427-experimental
+  # all others        | 1.14.20220427-mybranch     | 1.14.20220427-mybranch
+  ${{ if startsWith(variables['Build.SourceBranchName'], 'release-') }}:
+    ${{ if eq(parameters.branding, 'Release') }}:
+      NoNuGetPackBetaVersion: true
+    ${{ else }}:
+      NuGetPackBetaVersion: preview
+  ${{ elseif eq(variables['Build.SourceBranchName'], 'main') }}:
+    NuGetPackBetaVersion: experimental
+
+resources:
+  repositories:
+  - repository: self
+    type: git
+    ref: main
+
+jobs:
+- job: Build
+  pool: ${{ parameters.pool }}
+  strategy:
+    matrix:
+      ${{ each config in parameters.buildConfigurations }}:
+        ${{ each platform in parameters.buildPlatforms }}:
+          ${{ config }}_${{ platform }}:
+            BuildConfiguration: ${{ config }}
+            BuildPlatform: ${{ platform }}
+            ${{ if eq(platform, 'x86') }}:
+              OutputBuildPlatform: Win32
+            ${{ else }}:
+              OutputBuildPlatform: ${{ platform }}
+  variables:
+    BinDir: $(Build.SourcesDirectory)/bin/$(OutputBuildPlatform)/$(BuildConfiguration)
+  displayName: Build $(BuildConfiguration) $(BuildPlatform)
+  timeoutInMinutes: 240
+  cancelTimeoutInMinutes: 1
+  steps:
+  - checkout: self
+    clean: true
+    submodules: true
+    persistCredentials: True
+  - task: PkgESSetupBuild@12
+    displayName: Package ES - Setup Build
+    inputs:
+      disableOutputRedirect: true
+  - powershell: |-
+      $BuildTargets = @()
+      If ([bool]::Parse("${{ parameters.buildTerminal }}")) { $BuildTargets += "Terminal\CascadiaPackage" }
+      If ([bool]::Parse("${{ parameters.buildWPF }}")) { $BuildTargets += "Terminal\wpf\PublicTerminalCore" }
+      If ([bool]::Parse("${{ parameters.buildConPTY }}")) { $BuildTargets += "Conhost\Host_EXE;Conhost\winconpty_DLL" }
+      Write-Host "##vso[task.setvariable variable=BuildTargets]$($BuildTargets -Join ";")"
+    displayName: Rationalize Build Variables
+
+  - ${{ if ne(parameters.terminalInternalPackageVersion, '') }}:
+    - task: UniversalPackages@0
+      displayName: Download terminal-internal Universal Package
+      inputs:
+        feedListDownload: 2b3f8893-a6e8-411f-b197-a9e05576da48
+        packageListDownload: e82d490c-af86-4733-9dc4-07b772033204
+        versionListDownload: ${{ parameters.terminalInternalPackageVersion }}
+
+  - template: .\steps-fetch-and-prepare-localizations.yml
+    parameters:
+      includePseudoLoc: true
+
+  - pwsh: |-
+      .\build\scripts\Generate-ThirdPartyNotices.ps1 -MarkdownNoticePath .\NOTICE.md -OutputPath .\src\cascadia\CascadiaPackage\NOTICE.html
+    displayName: Generate NOTICE.html from NOTICE.md
+
+  - template: .\steps-restore-nuget.yml
+
+  - task: VSBuild@1
+    displayName: Build solution **\OpenConsole.sln
+    condition: true
+    inputs:
+      solution: '**\OpenConsole.sln'
+      msbuildArgs: /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }};WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog /t:$(BuildTargets)
+      platform: $(BuildPlatform)
+      configuration: $(BuildConfiguration)
+      maximumCpuCount: true
+
+  - publish: $(Build.SourcesDirectory)/msbuild.binlog
+    artifactName: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+    condition: always()
+
+  - pwsh: |-
+      build\scripts\Index-Pdbs.ps1 -SearchDir '$(BinDir)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+    displayName: Source Index PDBs
+    errorActionPreference: silentlyContinue
+
+  - ${{ if eq(parameters.buildTerminal, true) }}:
+    - pwsh: |-
+        $Package = (Get-ChildItem -Recurse -Filter "CascadiaPackage*.msix" | Select -First 1)
+        $PackageFilename = $Package.FullName
+        Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
+      displayName: Locate the MSIX
+
+    - pwsh: |-
+        .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path "$(WindowsTerminalPackagePath)"
+      displayName: Check MSIX for common regressions
+      
+    - pwsh: |-
+        & "$(MakeAppxPath)" unpack /p "$(WindowsTerminalPackagePath)" /d "$(Build.SourcesDirectory)\UnpackedTerminalPackage"
+      displayName: Unpack the MSIX for signing
+
+    - ${{ if eq(parameters.codeSign, true) }}:
+      - task: EsrpCodeSigning@1
+        displayName: Submit Terminal binaries for signing
+        inputs:
+          ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
+          FolderPath: '$(Build.SourcesDirectory)\UnpackedTerminalPackage'
+          signType: batchSigning
+          batchSignPolicyFile: '$(Build.SourcesDirectory)\build\config\ESRPSigning_Terminal.json'
+
+      # We only need to re-pack the MSIX if we actually signed, so this can stay in the codeSign conditional
+      - pwsh: |-
+          $outDir = New-Item -Type Directory "$(BinDir)/_appx" -ErrorAction:Ignore
+          $PackageFilename = Join-Path $outDir.FullName (Split-Path -Leaf "$(WindowsTerminalPackagePath)")
+          Remove-Item "$(Build.SourcesDirectory)\UnpackedTerminalPackage\CodeSignSummary*" -ErrorAction:Ignore
+          & "$(MakeAppxPath)" pack /h SHA256 /o /p $PackageFilename /d "$(Build.SourcesDirectory)\UnpackedTerminalPackage"
+          Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
+        displayName: Re-pack the new Terminal package after signing
+
+    - ${{ else }}: # No Signing
+      - pwsh: |-
+          $outDir = New-Item -Type Directory "$(BinDir)/_appx" -ErrorAction:Ignore
+          $PackageFilename = Join-Path $outDir.FullName (Split-Path -Leaf "$(WindowsTerminalPackagePath)")
+          Copy-Item "$(WindowsTerminalPackagePath)" $PackageFilename
+          Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
+        displayName: Stage the package (unsigned)
+
+    - pwsh: |-
+        $XamlAppxPath = (Get-Item "src\cascadia\CascadiaPackage\AppPackages\*\Dependencies\$(BuildPlatform)\Microsoft.UI.Xaml*.appx").FullName
+        $outDir = New-Item -Type Directory "$(BinDir)/_unpackaged" -ErrorAction:Ignore
+        & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 -TerminalAppX $(WindowsTerminalPackagePath) -XamlAppX $XamlAppxPath -Destination $outDir.FullName
+      displayName: Build Unpackaged Distribution (from MSIX)
+
+# - task: PublishSymbols@2
+#   displayName: Publish symbols path
+#   continueOnError: True
+#   inputs:
+#     SearchPattern: |
+#       $(BinDir)/**/*.pdb
+#       $(BinDir)/**/*.exe
+#       $(BinDir)/**/*.dll
+#     IndexSources: false
+#     SymbolServerType: TeamServices
+  
+  - ${{ if eq(parameters.generateSbom, true) }}:
+    - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
+      displayName: 'Generate SBOM manifest'
+      inputs:
+        BuildDropPath: 'bin'
+
+    - task: DropValidatorTask@0
+      displayName: 'Validate SBOM manifest'
+      inputs:
+        BuildDropPath: 'bin'
+        OutputPath: 'output.json'
+        ValidateSignature: true
+        Verbosity: 'Verbose'
+
+  - publish: bin/$(OutputBuildPlatform)/$(BuildConfiguration)
+    artifact: build-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+    displayName: Publish All Outputs
