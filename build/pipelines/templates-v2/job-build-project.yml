@@ -115,7 +115,7 @@ jobs:
       maximumCpuCount: true
 
   - publish: $(Build.SourcesDirectory)/msbuild.binlog
-    artifactName: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+    artifact: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
     condition: always()
 
   - pwsh: |-
