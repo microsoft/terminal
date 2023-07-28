@@ -108,7 +108,6 @@ jobs:
       demands: ImageOverride -equals SHINE-VS17-Latest
     branding: ${{ parameters.branding }}
     buildTerminal: ${{ parameters.buildTerminal }}
-    packTerminalVPack: ${{ parameters.packTerminalVPack }}
     buildConPTY: ${{ parameters.buildConPTY }}
     buildWPF: ${{ parameters.buildWPF }}
     pgoBuildMode: ${{ parameters.pgoBuildMode }}
