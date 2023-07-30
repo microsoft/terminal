@@ -112,7 +112,7 @@ class KeyPressTests
             return;
         }
 
-        Log::Comment(L"Testing that key events with invalid virtual keycode and invalid scan code are properly ignored, and not put into the input buffer");
+        Log::Comment(L"Testing that key events with an invalid virtual keycode and an invalid scan code are properly ignored, and not put into the input buffer");
         BOOL successBool;
         auto hwnd = GetConsoleWindow();
         VERIFY_IS_TRUE(!!IsWindow(hwnd));
@@ -125,8 +125,8 @@ class KeyPressTests
         VERIFY_IS_TRUE(!!successBool);
         VERIFY_ARE_EQUAL(events, 0u);
 
-        WPARAM vKey = 0xFF; // invalid keycode
-        BYTE scanCode = 0; // invalid scancode
+        WPARAM vKey = 0xFF;
+        BYTE scanCode = 0;
         WORD repeatCount = 1;
 
         LPARAM lParam = (scanCode << 16) | repeatCount;
@@ -191,6 +191,8 @@ class KeyPressTests
         VERIFY_ARE_EQUAL(events, 1u);
         VERIFY_ARE_EQUAL(inputBuffer[0].EventType, KEY_EVENT);
         VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wRepeatCount, 1, NoThrowString().Format(L"%d", inputBuffer[0].Event.KeyEvent.wRepeatCount));
+        // Scan code should be set to the correct value.
+        VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wVirtualScanCode, VK_LWIN);
         // 'VK_LWIN' is an enhanced key, so the ENHANCED_KEY bit should be set.
         VERIFY_IS_TRUE(inputBuffer[0].Event.KeyEvent.dwControlKeyState & ENHANCED_KEY);
     }
@@ -217,8 +219,8 @@ class KeyPressTests
         VERIFY_IS_TRUE(!!successBool);
         VERIFY_ARE_EQUAL(events, 0u);
 
-        // Send a bunch of 'a' keypresses to the console.
-        WORD repeatCount = 1;
+        // send a bunch of 'a' keypresses to the console.
+        DWORD repeatCount = 1;
         const unsigned int messageSendCount = 1000;
         for (unsigned int i = 0; i < messageSendCount; ++i)
         {
