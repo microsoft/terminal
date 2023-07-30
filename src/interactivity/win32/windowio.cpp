@@ -172,7 +172,7 @@ void HandleKeyEvent(const HWND hWnd,
     // virtual key code, and invalid scan code. We need to filter such events out,
     // as some applications (e.g. WSL) treat those events as valid key events and
     // translate them to an ascii NULL character. GH#15753
-    if (VirtualScanCode == 0 && !IsCharacterMessage)  // `WM_[SYS][DEAD]CHAR` messages don't have this issue
+    if (VirtualScanCode == 0 && !IsCharacterMessage) // `WM_[SYS][DEAD]CHAR` messages don't have this issue
     {
         // We try to infer the correct scan code from the virtual key code. If the
         // virtual key code is invalid or we couldn't map it to a scan code,

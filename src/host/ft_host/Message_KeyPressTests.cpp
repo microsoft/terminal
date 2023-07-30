@@ -128,10 +128,11 @@ class KeyPressTests
         WPARAM vKey = 0xFF; // invalid keycode
         BYTE scanCode = 0; // invalid scancode
         WORD repeatCount = 1;
+
         LPARAM lParam = (scanCode << 16) | repeatCount;
 
         // Send the keypress
-        SendMessage(hwnd, WM_CHAR, vKey, lParam);
+        SendMessage(hwnd, WM_KEYDOWN, vKey, lParam);
 
         // make sure the keypress got ignored
         events = 0;
@@ -155,7 +156,7 @@ class KeyPressTests
             return;
         }
 
-        Log::Comment(L"Testing that key events with valid virtual keycode with scan code 0 are properly processed");
+        Log::Comment(L"Testing that key events with a valid keycode and an invalid scancode (0) are properly processed.");
         BOOL successBool;
         auto hwnd = GetConsoleWindow();
         VERIFY_IS_TRUE(!!IsWindow(hwnd));
@@ -168,11 +169,10 @@ class KeyPressTests
         VERIFY_IS_TRUE(!!successBool);
         VERIFY_ARE_EQUAL(events, 0u);
 
-        // Send 'VK_LWIN' (Left Windows Key) as a keypress to the console. Make
-        // sure scan code is 0 in this case.
         WPARAM vKey = VK_LWIN;
-        BYTE scanCode = 0;
+        BYTE scanCode = 0; // Conhost should convert this to the correct scan code
         WORD repeatCount = 1;
+
         LPARAM lParam = (scanCode << 16) | repeatCount;
 
         // Send the keypress
@@ -217,16 +217,15 @@ class KeyPressTests
         VERIFY_IS_TRUE(!!successBool);
         VERIFY_ARE_EQUAL(events, 0u);
 
-        // Send a bunch of 'a' keypresses to the console. Make sure scan code
-        // is valid.
-        WPARAM vKey = 0x41;
-        BYTE scanCode = gsl::narrow_cast<BYTE>(MapVirtualKeyW(0x41, MAPVK_VK_TO_VSC));
+        // Send a bunch of 'a' keypresses to the console.
         WORD repeatCount = 1;
-        LPARAM lParam = (scanCode << 16) | repeatCount;
         const unsigned int messageSendCount = 1000;
         for (unsigned int i = 0; i < messageSendCount; ++i)
         {
-            SendMessage(hwnd, WM_CHAR, vKey, lParam);
+            SendMessage(hwnd,
+                        WM_CHAR,
+                        0x41,
+                        repeatCount); // WM_CHAR doesn't use scan code
         }
 
         // make sure the keypresses got processed and coalesced
