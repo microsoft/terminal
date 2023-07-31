@@ -301,37 +301,19 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     std::unique_ptr<IWaitRoutine> waiter;
     size_t cbWritten;
 
-    HRESULT hr;
-    if (a->Unicode)
-    {
-        const std::string_view initialData(pbInitialData.get(), cbInitialData);
-        const std::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
-        hr = m->_pApiRoutines->ReadConsoleWImpl(*pInputBuffer,
+    const std::wstring_view initialData(reinterpret_cast<const wchar_t*>(pbInitialData.get()), cbInitialData / sizeof(wchar_t));
+    const std::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
+    auto hr = m->_pApiRoutines->ReadConsoleImpl(*pInputBuffer,
                                                 outputBuffer,
                                                 cbWritten, // We must set the reply length in bytes.
                                                 waiter,
                                                 initialData,
                                                 exeView,
                                                 *pInputReadHandleData,
+                                                a->Unicode,
                                                 hConsoleClient,
                                                 a->CtrlWakeupMask,
                                                 a->ControlKeyState);
-    }
-    else
-    {
-        const std::string_view initialData(pbInitialData.get(), cbInitialData);
-        const std::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
-        hr = m->_pApiRoutines->ReadConsoleAImpl(*pInputBuffer,
-                                                outputBuffer,
-                                                cbWritten, // We must set the reply length in bytes.
-                                                waiter,
-                                                initialData,
-                                                exeView,
-                                                *pInputReadHandleData,
-                                                hConsoleClient,
-                                                a->CtrlWakeupMask,
-                                                a->ControlKeyState);
-    }
 
     LOG_IF_FAILED(SizeTToULong(cbWritten, &a->NumBytes));
 
