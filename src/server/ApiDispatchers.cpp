@@ -276,17 +276,23 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     const std::wstring_view exeView(pwsExeName.get(), cchExeName);
 
     // 2. Existing data in the buffer that was passed in.
-    const auto cbInitialData = a->InitialNumBytes;
     std::unique_ptr<char[]> pbInitialData;
+    std::wstring_view initialData;
 
     try
     {
+        const auto cbInitialData = a->InitialNumBytes;
         if (cbInitialData > 0)
         {
+            // InitialNumBytes is only supported for ReadConsoleW (via CONSOLE_READCONSOLE_CONTROL::nInitialChars).
+            RETURN_HR_IF(E_INVALIDARG, !a->Unicode);
+
             pbInitialData = std::make_unique<char[]>(cbInitialData);
 
             // This parameter starts immediately after the exe name so skip by that many bytes.
             RETURN_IF_FAILED(m->ReadMessageInput(cbExeName, pbInitialData.get(), cbInitialData));
+
+            initialData = { reinterpret_cast<const wchar_t*>(pbInitialData.get()), cbInitialData / sizeof(wchar_t) };
         }
     }
     CATCH_RETURN();
@@ -301,7 +307,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     std::unique_ptr<IWaitRoutine> waiter;
     size_t cbWritten;
 
-    const std::wstring_view initialData(reinterpret_cast<const wchar_t*>(pbInitialData.get()), cbInitialData / sizeof(wchar_t));
     const std::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
     auto hr = m->_pApiRoutines->ReadConsoleImpl(*pInputBuffer,
                                                 outputBuffer,
