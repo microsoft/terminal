@@ -58,7 +58,7 @@ parameters:
 
 jobs:
 - job: Build
-  ${{ if ne(null, parameters.pool) }}:
+  ${{ if ne(length(parameters.pool), 0) }}:
     pool: ${{ parameters.pool }}
   strategy:
     matrix:

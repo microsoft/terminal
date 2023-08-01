@@ -24,7 +24,7 @@ parameters:
 
 jobs:
 - job: Bundle
-  ${{ if ne(null, parameters.pool) }}:
+  ${{ if ne(length(parameters.pool), 0) }}:
     pool: ${{ parameters.pool }}
   displayName: Create and sign AppX/MSIX bundles
   strategy:
