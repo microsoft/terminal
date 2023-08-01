@@ -1,56 +1,5 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
-Module Name:
-- cmdline.h
-
-Abstract:
-- This file contains the internal structures and definitions used by command line input and editing.
-
-Author:
-- Therese Stowell (ThereseS) 15-Nov-1991
-
-Revision History:
-- Mike Griese (migrie) Jan 2018:
-    Refactored the history and alias functionality into their own files.
-- Michael Niksa (miniksa) May 2018:
-    Split apart popup information. Started encapsulating command line things. Removed 0 length buffers.
-Notes:
-    The input model for the command line editing popups is complex.
-    Here is the relevant pseudocode:
-
-    CookedReadWaitRoutine
-        if (CookedRead->Popup)
-            Status = (*CookedRead->Popup->Callback)();
-            if (Status == CONSOLE_STATUS_READ_COMPLETE)
-                return STATUS_SUCCESS;
-            return Status;
-
-    CookedRead
-        if (Command Line Editing Key)
-            ProcessCommandLine
-        else
-            process regular key
-
-    ProcessCommandLine
-        if F7
-            return Popup
-
-    Popup
-        draw popup
-        return ProcessCommandListInput
-
-    ProcessCommandListInput
-        while (TRUE)
-            GetChar
-            if (wait)
-                return wait
-            switch (char)
-                .
-                .
-                .
---*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 
@@ -137,7 +86,5 @@ void RedrawCommandLine(COOKED_READ_DATA& cookedReadData);
 // Word delimiters
 bool IsWordDelim(const wchar_t wch);
 bool IsWordDelim(const std::wstring_view charData);
-
-bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...);
 
 void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ SHORT Index);
