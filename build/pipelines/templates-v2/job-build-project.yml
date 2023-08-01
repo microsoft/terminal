@@ -73,7 +73,7 @@ jobs:
   variables:
     MakeAppxPath: 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\MakeAppx.exe'
     BinDir: $(Build.SourcesDirectory)/bin/$(OutputBuildPlatform)/$(BuildConfiguration)
-  displayName: Build $(BuildConfiguration) $(BuildPlatform)
+  displayName: Build
   timeoutInMinutes: 240
   cancelTimeoutInMinutes: 1
   steps:
