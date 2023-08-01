@@ -109,7 +109,7 @@ jobs:
               }
           ]
 
-  - ${{ if eq(parameters.generateSbom, true }}:
+  - ${{ if eq(parameters.generateSbom, true) }}:
     - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
       displayName: 'Generate SBOM manifest (bundle)'
       inputs:
