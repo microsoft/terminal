@@ -64,6 +64,9 @@
   <!-- Static Libs Only -->
   <ItemDefinitionGroup Condition="'$(ConfigurationType)' == 'StaticLibrary'">
     <ClCompile>
+      <DebugInformationFormat>None</DebugInformationFormat>
+    </ClCompile>
+    <ClCompile>
       <PreprocessorDefinitions>_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
