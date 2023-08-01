@@ -1266,6 +1266,9 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     const auto alignment = a->Unicode ? alignof(wchar_t) : alignof(char);
     // ExeLength, SourceLength and TargetLength are USHORT and summing them up will not overflow a ULONG.
     const auto badLength = cbInputTarget + cbInputExeName + cbInputSource > cbBufferSize;
+    // Since (any) alignment is a power of 2, we can use bit tricks to test if the alignment is right:
+    // a) Combining the values with OR works, because we're only interested whether the lowest bits are 0 (= aligned).
+    // b) x % y can be replaced with x & (y - 1) if y is a power of 2.
     const auto badAlignment = ((cbInputExeName | cbInputSource | cbInputTarget) & (alignment - 1)) != 0;
     RETURN_HR_IF(E_INVALIDARG, badLength || badAlignment);
 
@@ -1309,6 +1312,9 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     const auto alignment = a->Unicode ? alignof(wchar_t) : alignof(char);
     // ExeLength and SourceLength are USHORT and summing them up will not overflow a ULONG.
     const auto badLength = cbInputExeName + cbInputSource > cbInputBufferSize;
+    // Since (any) alignment is a power of 2, we can use bit tricks to test if the alignment is right:
+    // a) Combining the values with OR works, because we're only interested whether the lowest bits are 0 (= aligned).
+    // b) x % y can be replaced with x & (y - 1) if y is a power of 2.
     const auto badAlignment = ((cbInputExeName | cbInputSource) & (alignment - 1)) != 0;
     RETURN_HR_IF(E_INVALIDARG, badLength || badAlignment);
 
