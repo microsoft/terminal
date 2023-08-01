@@ -321,14 +321,14 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
     // If possible, the buffer should have the same app name.
     const auto beg = s_historyLists.begin();
     const auto end = s_historyLists.end();
-    auto BestCandidate = s_historyLists.end();
+    auto BestCandidate = end;
     auto SameApp = false;
 
     for (auto it = beg; it != end; ++it)
     {
         if (WI_IsFlagClear(it->Flags, CLE_ALLOCATED))
         {
-            // use LRU history buffer with same app name
+            // use MRU history buffer with same app name
             if (it->IsAppNameMatch(appName))
             {
                 BestCandidate = it;

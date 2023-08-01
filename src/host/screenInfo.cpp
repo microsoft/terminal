@@ -2098,7 +2098,7 @@ bool SCREEN_INFORMATION::_IsInVTMode() const
 // <none>
 // Return value:
 // - This screen buffer's attributes
-const TextAttribute& SCREEN_INFORMATION::GetAttributes() const
+TextAttribute SCREEN_INFORMATION::GetAttributes() const
 {
     return _textBuffer->GetCurrentAttributes();
 }
@@ -2109,7 +2109,7 @@ const TextAttribute& SCREEN_INFORMATION::GetAttributes() const
 // <none>
 // Return value:
 // - This screen buffer's popup attributes
-const TextAttribute& SCREEN_INFORMATION::GetPopupAttributes() const
+TextAttribute SCREEN_INFORMATION::GetPopupAttributes() const
 {
     return _PopupAttributes;
 }

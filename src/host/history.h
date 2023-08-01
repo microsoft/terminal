@@ -78,6 +78,8 @@ private:
     void _Dec(Index& ind) const;
     void _Inc(Index& ind) const;
 
+    // NOTE: In conhost v1 this used to be a circular buffer because removal at the
+    // start is a very common operation. It seems this was lost in the C++ refactor.
     std::vector<std::wstring> _commands;
     Index _maxCommands = 0;
 
