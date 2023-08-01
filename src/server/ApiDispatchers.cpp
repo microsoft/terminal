@@ -1323,9 +1323,9 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     size_t cbWritten;
     if (a->Unicode)
     {
-        const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvInputExeName), cbInputExeName / sizeof(wchar_t));
-        const std::wstring_view inputSource(reinterpret_cast<wchar_t*>(pvInputSource), cbInputSource / sizeof(wchar_t));
-        const std::span outputBuffer(static_cast<wchar_t*>(pvOutputBuffer), cbOutputBufferSize / sizeof(wchar_t));
+        const std::wstring_view inputExeName{ reinterpret_cast<wchar_t*>(pvInputExeName), cbInputExeName / sizeof(wchar_t) };
+        const std::wstring_view inputSource{ reinterpret_cast<wchar_t*>(pvInputSource), cbInputSource / sizeof(wchar_t) };
+        const std::span outputBuffer{ static_cast<wchar_t*>(pvOutputBuffer), cbOutputBufferSize / sizeof(wchar_t) };
         size_t cchWritten;
 
         hr = m->_pApiRoutines->GetConsoleAliasWImpl(inputSource, outputBuffer, cchWritten, inputExeName);
@@ -1335,9 +1335,9 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     }
     else
     {
-        const std::string_view inputExeName(pvInputExeName, cbInputExeName);
-        const std::string_view inputSource(pvInputSource, cbInputSource);
-        const std::span outputBuffer(static_cast<char*>(pvOutputBuffer), cbOutputBufferSize);
+        const std::string_view inputExeName{ pvInputExeName, cbInputExeName };
+        const std::string_view inputSource{ pvInputSource, cbInputSource };
+        const std::span outputBuffer{ static_cast<char*>(pvOutputBuffer), cbOutputBufferSize };
         size_t cchWritten;
 
         hr = m->_pApiRoutines->GetConsoleAliasAImpl(inputSource, outputBuffer, cchWritten, inputExeName);
