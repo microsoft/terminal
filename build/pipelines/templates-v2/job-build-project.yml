@@ -46,7 +46,7 @@ parameters:
     default: true
   - name: codeSign
     type: boolean
-    default: true
+    default: false
   - name: artifactStem
     type: string
     default: ''
