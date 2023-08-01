@@ -143,6 +143,16 @@ jobs:
   - publish: $(Build.SourcesDirectory)/msbuild.binlog
     artifact: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
     condition: always()
+    displayName: Publish binlog
+
+  # This saves 1.5GB per architecture. We won't need these later.
+  # Removes:
+  # - Directories ending in Lib (static lib projects that we fully linked into DLLs)
+  # - All PDB files inside the WindowsTerminal/ output, which do not belong there.
+  - pwsh: |-
+      Get-ChildItem '$(BinDir)' -Filter '*Lib' -Directory | Remove-Item -Force -Recurse -Verbose
+      Get-ChildItem '$(BinDir)\WindowsTerminal' -Filter '*.pdb' -ErrorAction:Ignore | Where-Object Name -Ne "WindowsTerminal.pdb" | Remove-Item -Verbose
+    displayName: Clean up static libs and extra symbols
 
   - pwsh: |-
       build\scripts\Index-Pdbs.ps1 -SearchDir '$(BinDir)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
@@ -171,10 +181,6 @@ jobs:
         outFile: '$(Build.SourcesDirectory)/ESRPSigningConfig.json'
         stage: build
         fragments: $(SelectedSigningFragments)
-
-    #### DEBUG
-    - publish: $(Build.SourcesDirectory)/ESRPSigningConfig.json
-      artifact: sign-config-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
 
     # Code-sign everything we just put together.
     # We run the signing in BinDir, because all of the signing batches are relative to the final architecture/configuration output folder.

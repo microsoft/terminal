@@ -42,7 +42,8 @@
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
 
-  <ItemDefinitionGroup>
+  <!-- Executables and DLLs only! -->
+  <ItemDefinitionGroup Condition="'$(ConfigurationType)' != 'StaticLibrary'">
     <!-- Definition the program database type has to come after Microsoft.Cpp.props or it will be
          rewritten to /ZI (edit-and-continue) type every time. -->
     <ClCompile>
