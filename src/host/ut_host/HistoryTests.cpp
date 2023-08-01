@@ -163,7 +163,7 @@ class HistoryTests
         {
             VERIFY_SUCCEEDED(history->Add(_manyHistoryItems[j], false));
         }
-        VERIFY_ARE_EQUAL(_manyHistoryItems.size(), history->GetNumberOfCommands());
+        VERIFY_ARE_EQUAL((CommandHistory::Index)_manyHistoryItems.size(), history->GetNumberOfCommands());
     }
 
     TEST_METHOD(ReallocDown)
