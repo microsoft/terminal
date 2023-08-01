@@ -433,54 +433,24 @@ void CommandHistory::_Inc(Index& ind) const
 
 std::wstring CommandHistory::Remove(const Index iDel)
 {
-    Index iFirst = 0;
-    auto iLast = gsl::narrow<Index>(_commands.size() - 1);
-    auto iDisp = LastDisplayed;
-
-    if (_commands.size() == 0)
+    if (iDel < 0 || iDel >= GetNumberOfCommands())
     {
         return {};
     }
 
-    if ((iDel < iFirst) || (iDel > iLast))
-    {
-        return {};
-    }
+    const auto str = std::move(_commands.at(iDel));
+    _commands.erase(_commands.begin() + iDel);
 
-    if (iDisp == iDel)
+    if (LastDisplayed == iDel)
     {
         LastDisplayed = -1;
     }
-
-    try
+    else if (LastDisplayed > iDel)
     {
-        const auto str = _commands.at(iDel);
-
-        if (iDel < iLast)
-        {
-            _commands.erase(_commands.cbegin() + iDel);
-            if ((iDisp > iDel) && (iDisp <= iLast))
-            {
-                _Dec(iDisp);
-            }
-            _Dec(iLast);
-        }
-        else if (iDel >= iFirst)
-        {
-            _commands.erase(_commands.cbegin() + iDel);
-            if ((iDisp >= iFirst) && (iDisp < iDel))
-            {
-                _Inc(iDisp);
-            }
-            _Inc(iFirst);
-        }
-
-        LastDisplayed = iDisp;
-        return str;
+        _Dec(LastDisplayed);
     }
-    CATCH_LOG();
 
-    return {};
+    return str;
 }
 
 // Routine Description:
