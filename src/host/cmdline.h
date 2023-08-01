@@ -87,4 +87,4 @@ void RedrawCommandLine(COOKED_READ_DATA& cookedReadData);
 bool IsWordDelim(const wchar_t wch);
 bool IsWordDelim(const std::wstring_view charData);
 
-void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ SHORT Index);
+void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ CommandHistory::Index Index);

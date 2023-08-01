@@ -174,7 +174,7 @@ class CommandNumberPopupTests
     TEST_METHOD(CanSelectHistoryItem)
     {
         PopupTestHelper::InitHistory(*m_pHistory);
-        for (unsigned int historyIndex = 0; historyIndex < m_pHistory->GetNumberOfCommands(); ++historyIndex)
+        for (CommandHistory::Index historyIndex = 0; historyIndex < m_pHistory->GetNumberOfCommands(); ++historyIndex)
         {
             Popup::UserInputFunction fn = [historyIndex](COOKED_READ_DATA& /*cookedReadData*/,
                                                          bool& popupKey,

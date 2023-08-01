@@ -229,7 +229,7 @@ void RedrawCommandLine(COOKED_READ_DATA& cookedReadData)
 
 // Routine Description:
 // - This routine copies the commandline specified by Index into the cooked read buffer
-void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ SHORT Index) // index, not command number
+void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ CommandHistory::Index Index) // index, not command number
 {
     DeleteCommandLine(cookedReadData, TRUE);
     FAIL_FAST_IF_FAILED(cookedReadData.History().RetrieveNth(Index,
@@ -938,7 +938,7 @@ til::point CommandLine::_cycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& c
     auto cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
     if (cookedReadData.HasHistory())
     {
-        SHORT index;
+        CommandHistory::Index index;
         if (cookedReadData.History().FindMatchingCommand({ cookedReadData.BufferStartPtr(), cookedReadData.InsertionPoint() },
                                                          cookedReadData.History().LastDisplayed,
                                                          index,
@@ -948,7 +948,7 @@ til::point CommandLine::_cycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& c
             const auto CurrentPos = cookedReadData.InsertionPoint();
 
             DeleteCommandLine(cookedReadData, true);
-            THROW_IF_FAILED(cookedReadData.History().RetrieveNth((SHORT)index,
+            THROW_IF_FAILED(cookedReadData.History().RetrieveNth(index,
                                                                  cookedReadData.SpanWholeBuffer(),
                                                                  cookedReadData.BytesRead()));
             FAIL_FAST_IF(!(cookedReadData.BufferStartPtr() == cookedReadData.BufferCurrentPtr()));
