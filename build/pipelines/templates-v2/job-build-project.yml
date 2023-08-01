@@ -54,7 +54,7 @@ parameters:
     type: string
   - name: pool
     type: object
-    default: null
+    default: []
 
 jobs:
 - job: Build

@@ -14,7 +14,7 @@ parameters:
     default: false
   - name: pool
     type: object
-    default: null
+    default: []
   - name: dependsOn
     type: object
     default: null
