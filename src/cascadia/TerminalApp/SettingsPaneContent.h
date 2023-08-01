@@ -3,6 +3,7 @@
 
 #pragma once
 #include "SettingsPaneContent.g.h"
+#include <LibraryResources.h>
 
 namespace winrt::TerminalApp::implementation
 {
