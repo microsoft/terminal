@@ -155,7 +155,7 @@ void CommandHistory::_Reset()
 
 std::wstring_view CommandHistory::GetNth(Index index) const
 {
-    if (index >= 0 && index < _commands.size())
+    if (index >= 0 && index < GetNumberOfCommands())
     {
         return _commands.at(index);
     }
@@ -516,9 +516,10 @@ void CommandHistory::s_ClearHistoryListStorage()
 // - indexB - index of one history item to swap
 void CommandHistory::Swap(const Index indexA, const Index indexB)
 {
+    const auto num = GetNumberOfCommands();
     if (indexA != indexB &&
-        indexA >= 0 && indexA < _commands.size() &&
-        indexB >= 0 && indexB < _commands.size())
+        indexA >= 0 && indexA < num &&
+        indexB >= 0 && indexB < num)
     {
         std::swap(_commands.at(indexA), _commands.at(indexB));
     }
