@@ -4691,6 +4691,7 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_ControlMenuChangedHandler(const IInspectable /*sender*/,
                                                                     const MenuChangedEventArgs args)
     {
+        // This will come in on a background (not-UI, not output) thread.
         if constexpr (!Feature_ShellCompletions::IsEnabled())
         {
             co_return;
@@ -4702,33 +4703,27 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
-        auto weakThis{ get_weak() };
-        co_await winrt::resume_background();
-        if (const auto& page{ weakThis.get() })
+        // Parse the json string into a collection of actions
+        try
         {
-            // `this` is safe to use
+            auto commandsCollection = Command::ParsePowerShellMenuComplete(args.MenuJson(),
+                                                                           args.ReplacementLength());
 
-            // Parse the json
-            try
-            {
-                auto commandsCollection = Command::ParsePowerShellMenuComplete(args.MenuJson(),
-                                                                               args.ReplacementLength());
-
+            auto weakThis{ get_weak() };
+            Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis, commandsCollection]() {
                 // On the UI thread...
-                page->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis, commandsCollection]() {
-                    if (const auto& innerPage{ weakThis.get() })
-                    {
-                        innerPage->_OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
-                    }
-                });
+                if (const auto& page{ weakThis.get() })
+                {
+                    // Open the Suggestions UI with the commands from the control
+                    page->_OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
+                }
+            });
 
-                // co_await winrt::resume_foreground(page.Dispatcher());
+            // co_await winrt::resume_foreground(page.Dispatcher());
 
-                // // Open the Suggestions UI with the commands from the control
-                // _OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
-            }
-            CATCH_LOG();
+            // _OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
         }
+        CATCH_LOG();
     }
 
     void TerminalPage::_OpenSuggestions(IVector<Command> commandsCollection,

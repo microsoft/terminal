@@ -350,7 +350,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const int velocity,
                                    const std::chrono::microseconds duration);
 
-        void _terminalMenuChanged(std::wstring_view menuJson, unsigned int replaceLength);
+        winrt::fire_and_forget _terminalMenuChanged(std::wstring_view menuJson, unsigned int replaceLength);
 
 #pragma endregion
 

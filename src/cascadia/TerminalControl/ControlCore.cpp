@@ -2232,11 +2232,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::_terminalMenuChanged(std::wstring_view menuJson,
-                                           unsigned int replaceLength)
+    winrt::fire_and_forget ControlCore::_terminalMenuChanged(std::wstring_view menuJson,
+                                                             unsigned int replaceLength)
     {
         auto args = winrt::make_self<MenuChangedEventArgs>(winrt::hstring{ menuJson },
                                                            replaceLength);
+
+        co_await winrt::resume_background();
+
         _MenuChangedHandlers(*this, *args);
     }
     void ControlCore::_selectSpan(til::point_span s)
