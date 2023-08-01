@@ -53,7 +53,13 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
+
         event Windows.Foundation.TypedEventHandler<Object, MenuChangedEventArgs> MenuChanged;
+
+        event Windows.Foundation.TypedEventHandler<Object, KeySentEventArgs> KeySent;
+        event Windows.Foundation.TypedEventHandler<Object, CharSentEventArgs> CharSent;
+        event Windows.Foundation.TypedEventHandler<Object, StringSentEventArgs> StringSent;
+
 
         Microsoft.UI.Xaml.Controls.CommandBarFlyout ContextMenu { get; };
         Microsoft.UI.Xaml.Controls.CommandBarFlyout SelectionContextMenu { get; };
@@ -68,7 +74,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> RestartTerminalRequested;
 
-        Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
+        Boolean CopySelectionToClipboard(Boolean dismissSelection, Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
         void SelectAll();
         Boolean ToggleBlockSelection();
@@ -95,6 +101,9 @@ namespace Microsoft.Terminal.Control
 
         void ToggleShaderEffects();
         void SendInput(String input);
+        Boolean RawWriteKeyEvent(UInt16 vkey, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers, Boolean keyDown);
+        Boolean RawWriteChar(Char character, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers);
+        void RawWriteString(String text);
 
         void BellLightOn();
 

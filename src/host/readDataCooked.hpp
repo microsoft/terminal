@@ -40,7 +40,7 @@ public:
                      _In_ char* UserBuffer,
                      _In_ ULONG CtrlWakeupMask,
                      _In_ const std::wstring_view exeName,
-                     _In_ const std::string_view initialData,
+                     _In_ const std::wstring_view initialData,
                      _In_ ConsoleProcessHandle* const pClientProcess);
 
     ~COOKED_READ_DATA() override;
