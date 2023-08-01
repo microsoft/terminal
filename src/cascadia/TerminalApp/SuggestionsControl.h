@@ -41,17 +41,15 @@ namespace winrt::TerminalApp::implementation
         void Mode(TerminalApp::SuggestionsMode mode);
         void Anchor(Windows::Foundation::Point anchor, Windows::Foundation::Size space, float characterHeight);
 
+        til::typed_event<winrt::TerminalApp::SuggestionsControl, Microsoft::Terminal::Settings::Model::Command> DispatchCommandRequested;
+        til::typed_event<Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command> PreviewAction;
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SearchBoxPlaceholderText, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ControlName, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ParentCommandName, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ParsedCommandLineText, _PropertyChangedHandlers);
-
-        TYPED_EVENT(SwitchToTabRequested, winrt::TerminalApp::SuggestionsControl, winrt::TerminalApp::TabBase);
-        TYPED_EVENT(CommandLineExecutionRequested, winrt::TerminalApp::SuggestionsControl, winrt::hstring);
-        TYPED_EVENT(DispatchCommandRequested, winrt::TerminalApp::SuggestionsControl, Microsoft::Terminal::Settings::Model::Command);
-        TYPED_EVENT(PreviewAction, Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command);
 
     private:
         struct winrt_object_hash
@@ -68,8 +66,6 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> _filteredActions{ nullptr };
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _nestedActionStack{ nullptr };
 
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandsToFilter();
-
         TerminalApp::SuggestionsMode _mode{ TerminalApp::SuggestionsMode::Palette };
         TerminalApp::SuggestionsDirection _direction{ TerminalApp::SuggestionsDirection::TopDown };
 
@@ -77,62 +73,49 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Point _anchor;
         Windows::Foundation::Size _space;
 
-        void _filterTextChanged(const Windows::Foundation::IInspectable& sender,
-                                const Windows::UI::Xaml::RoutedEventArgs& args);
-        void _previewKeyDownHandler(const Windows::Foundation::IInspectable& sender,
-                                    const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
-
-        void _keyUpHandler(const Windows::Foundation::IInspectable& sender,
-                           const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
-
-        void _selectedCommandChanged(const Windows::Foundation::IInspectable& sender,
-                                     const Windows::UI::Xaml::RoutedEventArgs& args);
-
-        void _updateUIForStackChange();
-
-        void _rootPointerPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
-
-        void _lostFocusHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
-
-        void _backdropPointerPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
-
-        void _listItemClicked(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::ItemClickEventArgs& e);
-
-        void _listItemSelectionChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e);
-
-        void _moveBackButtonClicked(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs&);
-
-        void _updateFilteredActions();
-
-        void _updateCurrentNestedCommands(const winrt::Microsoft::Terminal::Settings::Model::Command& parentCommand);
-
-        std::vector<winrt::TerminalApp::FilteredCommand> _collectFilteredActions();
-
-        void _close();
-
-        void _switchToMode();
-
-        void _setDirection(TerminalApp::SuggestionsDirection direction);
-
-        std::wstring _getTrimmedInput();
-
         Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
 
         winrt::Windows::UI::Xaml::Controls::ListView::SizeChanged_revoker _sizeChangedRevoker;
 
-        void _dispatchCommand(const winrt::TerminalApp::FilteredCommand& command);
-        static std::optional<winrt::TerminalApp::FilteredCommand> _buildCommandLineCommand(const winrt::hstring& commandLine);
-
-        void _dismissPalette();
-
-        void _scrollToIndex(uint32_t index);
-        uint32_t _getNumVisibleItems();
-
-        void _choosingItemContainer(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs& args);
-        void _containerContentChanging(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs& args);
         winrt::TerminalApp::PaletteItemTemplateSelector _itemTemplateSelector{ nullptr };
         std::unordered_map<Windows::UI::Xaml::DataTemplate, std::unordered_set<Windows::UI::Xaml::Controls::Primitives::SelectorItem, winrt_object_hash>, winrt_object_hash> _listViewItemsCache;
         Windows::UI::Xaml::DataTemplate _listItemTemplate;
+
+        void _switchToMode();
+        void _setDirection(TerminalApp::SuggestionsDirection direction);
+
+        void _scrollToIndex(uint32_t index);
+
+        void _updateUIForStackChange();
+        void _updateFilteredActions();
+
+        void _dispatchCommand(const winrt::TerminalApp::FilteredCommand& command);
+        void _close();
+        void _dismissPalette();
+
+        void _filterTextChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+        void _previewKeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
+        void _keyUpHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
+
+        void _rootPointerPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+
+        void _lostFocusHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+        void _backdropPointerPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+
+        void _listItemClicked(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::ItemClickEventArgs& e);
+        void _listItemSelectionChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e);
+        void _selectedCommandChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+
+        void _moveBackButtonClicked(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs&);
+        void _updateCurrentNestedCommands(const winrt::Microsoft::Terminal::Settings::Model::Command& parentCommand);
+
+        void _choosingItemContainer(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs& args);
+        void _containerContentChanging(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs& args);
+
+        std::vector<winrt::TerminalApp::FilteredCommand> _collectFilteredActions();
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandsToFilter();
+        std::wstring _getTrimmedInput();
+        uint32_t _getNumVisibleItems();
 
         friend class TerminalAppLocalTests::TabTests;
     };
