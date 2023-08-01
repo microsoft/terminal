@@ -4718,10 +4718,6 @@ namespace winrt::TerminalApp::implementation
                     page->_OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
                 }
             });
-
-            // co_await winrt::resume_foreground(page.Dispatcher());
-
-            // _OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
         }
         CATCH_LOG();
     }
@@ -4759,13 +4755,12 @@ namespace winrt::TerminalApp::implementation
 
         const auto characterSize{ control.CharacterDimensions() };
         // This is in control-relative space. We'll need to convert it to page-relative space.
-        const til::point cursorPos{ control.CursorPositionInDips() };
+        const auto cursorPos{ control.CursorPositionInDips() };
         const auto controlTransform = control.TransformToVisual(this->Root());
-        const til::point controlOrigin{ til::math::rounding, controlTransform.TransformPoint(Windows::Foundation::Point{ 0, 0 }) };
-        const til::point realCursorPos = controlOrigin + cursorPos;
-        const til::size windowDimensions{ til::math::rounding, ActualWidth(), ActualHeight() };
+        const auto realCursorPos{ controlTransform.TransformPoint({ cursorPos.X, cursorPos.Y }) }; // == controlTransform + cursorPos
+        const Windows::Foundation::Size windowDimensions{ gsl::narrow_cast<float>(ActualWidth()), gsl::narrow_cast<float>(ActualHeight()) };
 
-        sxnUi.Anchor(realCursorPos.to_winrt_point(), windowDimensions.to_winrt_size(), characterSize.Height);
+        sxnUi.Anchor(realCursorPos, windowDimensions, characterSize.Height);
     }
 
     void TerminalPage::_ContextMenuOpened(const IInspectable& sender,

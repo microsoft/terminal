@@ -53,7 +53,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void PreviewInput(const winrt::hstring& text);
 
-        Microsoft::Terminal::Core::Point CursorPositionInDips();
+        Windows::Foundation::Point CursorPositionInDips();
 
         void WindowVisibilityChanged(const bool showOrHide);
 

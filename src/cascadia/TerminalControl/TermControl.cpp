@@ -2353,7 +2353,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Method Description:
     // - Get the size of a single character of this control. The size is in
-    //   DIPs. If you need it in _pixels_, you'll need to multiply by the
+    //   _pixels_. If you want it in DIPs, you'll need to DIVIDE by the
     //   current display scaling.
     // Arguments:
     // - <none>
@@ -3481,26 +3481,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Returns the text cursor's position relative to our origin, in DIPs.
-    Microsoft::Terminal::Core::Point TermControl::CursorPositionInDips()
+    Windows::Foundation::Point TermControl::CursorPositionInDips()
     {
         const til::point cursorPos{ _core.CursorPosition() };
 
-        const til::size fontSize{ til::math::flooring, CharacterDimensions() };
+        // CharacterDimensions returns a font size in pixels.
+        const auto fontSize{ CharacterDimensions() };
 
         // Convert text buffer cursor position to client coordinate position
         // within the window. This point is in _pixels_
-        const til::point clientCursorPos{ cursorPos * fontSize };
+        const Windows::Foundation::Point clientCursorPos{ cursorPos.x * fontSize.Width,
+                                                          cursorPos.y * fontSize.Height };
 
         // Get scale factor for view
         const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
 
-        const til::point clientCursorInDips{ til::math::flooring, clientCursorPos.x / scaleFactor, clientCursorPos.y / scaleFactor };
+        // Adjust to DIPs
+        const til::point clientCursorInDips{ til::math::rounding, clientCursorPos.X / scaleFactor, clientCursorPos.Y / scaleFactor };
 
+        // Account for the margins, which are in DIPs
         auto padding{ GetPadding() };
         til::point relativeToOrigin{ til::math::flooring,
                                      clientCursorInDips.x + padding.Left,
                                      clientCursorInDips.y + padding.Top };
-        return relativeToOrigin.to_core_point();
+
+        return relativeToOrigin.to_winrt_point();
     }
 
     void TermControl::_contextMenuHandler(IInspectable /*sender*/,

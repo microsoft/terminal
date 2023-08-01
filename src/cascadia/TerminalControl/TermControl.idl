@@ -129,7 +129,7 @@ namespace Microsoft.Terminal.Control
 
         void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
 
-        Microsoft.Terminal.Core.Point CursorPositionInDips { get; };
+        Windows.Foundation.Point CursorPositionInDips { get; };
 
         void ShowContextMenu();
 
