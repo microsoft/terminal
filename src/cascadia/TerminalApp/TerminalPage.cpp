@@ -4714,19 +4714,32 @@ namespace winrt::TerminalApp::implementation
                 auto commandsCollection = Command::ParsePowerShellMenuComplete(args.MenuJson(),
                                                                                args.ReplacementLength());
 
-                // Open the Suggestions UI with the commands from the control
-                _OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
+                // On the UI thread...
+                page->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis, commandsCollection]() {
+                    if (const auto& innerPage{ weakThis.get() })
+                    {
+                        innerPage->_OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
+                    }
+                });
+
+                // co_await winrt::resume_foreground(page.Dispatcher());
+
+                // // Open the Suggestions UI with the commands from the control
+                // _OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
             }
             CATCH_LOG();
         }
     }
 
-    winrt::fire_and_forget TerminalPage::_OpenSuggestions(IVector<Command> commandsCollection,
-                                                          winrt::TerminalApp::SuggestionsMode mode)
+    void TerminalPage::_OpenSuggestions(IVector<Command> commandsCollection,
+                                        winrt::TerminalApp::SuggestionsMode mode)
     {
+        // ON THE UI THREAD
+        assert(Dispatcher().HasThreadAccess());
+
         if (commandsCollection == nullptr)
         {
-            co_return;
+            return;
         }
         if (commandsCollection.Size() == 0)
         {
@@ -4734,22 +4747,15 @@ namespace winrt::TerminalApp::implementation
             {
                 p.Visibility(Visibility::Collapsed);
             }
+            return;
+        }
 
-            co_return;
-        }
-        auto weakThis{ get_weak() };
-        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
-        const auto& page{ weakThis.get() };
-        if (!page)
-        {
-            co_return;
-        }
-        // page is now keeping `this` alive to use safely
         const auto& control{ _GetActiveControl() };
         if (!control)
         {
-            co_return;
+            return;
         }
+
         const auto& sxnUi{ LoadSuggestionsUI() };
 
         sxnUi.Mode(mode);

@@ -448,14 +448,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _inComposition = false;
 
         // HACK trim off leading DEL chars.
-        std::wstring_view view{ text.c_str() };
+        std::wstring_view view{ text };
         const auto strBegin = view.find_first_not_of(L"\x7f");
         if (strBegin != std::wstring::npos)
         {
             view = view.substr(strBegin * 2);
         }
 
-        TextBlock().Text(winrt::hstring{ view });
+        TextBlock().Text(view);
         TextBlock().UpdateLayout();
         TryRedrawCanvas();
     }

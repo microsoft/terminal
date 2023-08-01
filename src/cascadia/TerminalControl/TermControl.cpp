@@ -525,6 +525,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::SendInput(const winrt::hstring& wstr)
     {
+        // Dismiss any previewed input.
         PreviewInput(L"");
 
         // only broadcast if there's an actual listener. Saves the overhead of some object creation.

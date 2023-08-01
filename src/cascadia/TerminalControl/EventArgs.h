@@ -195,7 +195,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         WINRT_PROPERTY(winrt::hstring, MenuJson, L"");
         WINRT_PROPERTY(uint32_t, ReplacementLength, 0);
-    }
+    };
 
     struct KeySentEventArgs : public KeySentEventArgsT<KeySentEventArgs>
     {
