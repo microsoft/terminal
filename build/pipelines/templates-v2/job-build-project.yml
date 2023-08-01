@@ -172,6 +172,10 @@ jobs:
         stage: build
         fragments: $(SelectedSigningFragments)
 
+    #### DEBUG
+    - publish: $(Build.SourcesDirectory)/ESRPSigningConfig.json
+      artifact: sign-config-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+
     # Code-sign everything we just put together.
     # We run the signing in BinDir, because all of the signing batches are relative to the final architecture/configuration output folder.
     - task: EsrpCodeSigning@1
