@@ -56,9 +56,16 @@ stages:
       dependsOn: []
       condition: succeeded()
       jobs:
-        - template: ./templates/build-console-audit-job.yml
+        - template: ./templates-v2/job-build-project.yml
           parameters:
-            platform: x64
+            pool:
+              ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+                name: SHINE-OSS-L
+              ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+                name: SHINE-INT-L
+            buildPlatforms: x64
+            buildConfigurations: AuditMode
+            buildEverything: true
 
   - stage: Scripts
     displayName: Code Health Scripts
@@ -75,6 +82,11 @@ stages:
       jobs:
         - template: ./templates-v2/job-build-project.yml
           parameters:
+            pool:
+              ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+                name: SHINE-OSS-L
+              ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+                name: SHINE-INT-L
             buildPlatforms: ${{ platform }}
             buildConfigurations: Release
             buildEverything: true
