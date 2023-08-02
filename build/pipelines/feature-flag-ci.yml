@@ -25,6 +25,7 @@ parameters:
 stages:
   - ${{ each branding in parameters.buildBrandings }}:
     - stage: Build_${{ branding }}
+      dependsOn: []
       displayName: Build ${{ branding }}
       jobs:
         - template: ./templates-v2/job-build-project.yml
