@@ -128,11 +128,14 @@ jobs:
   - template: .\steps-restore-nuget.yml
 
   - task: VSBuild@1
-    displayName: Build solution **\OpenConsole.sln
-    condition: true
+    displayName: Build OpenConsole.sln
     inputs:
-      solution: '**\OpenConsole.sln'
-      msbuildArgs: /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }};WindowsTerminalReleaseBuild=true ${{ parameters.additionalBuildOptions }} /bl:$(Build.SourcesDirectory)\msbuild.binlog $(BuildTargetParameter)
+      solution: 'OpenConsole.sln'
+      msbuildArgs: >-
+        /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }}
+        ${{ parameters.additionalBuildOptions }}
+        /bl:$(Build.SourcesDirectory)\msbuild.binlog
+        $(BuildTargetParameter)
       platform: $(BuildPlatform)
       configuration: $(BuildConfiguration)
       maximumCpuCount: true
