@@ -6,6 +6,7 @@ parameters:
     values: [Release, Preview, Dev]
   - name: additionalBuildOptions
     type: string
+    default: ''
   - name: buildTerminal
     displayName: "Build Windows Terminal MSIX"
     type: boolean
