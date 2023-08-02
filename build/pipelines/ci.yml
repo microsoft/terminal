@@ -73,9 +73,12 @@ stages:
       dependsOn: []
       condition: succeeded()
       jobs:
-        - template: ./templates/build-console-ci.yml
+        - template: ./templates-v2/job-build-project.yml
           parameters:
-            platform: ${{ platform }}
+            buildPlatforms: ${{ platform }}
+            buildConfigurations: Release
+            buildEverything: true
+
     - ${{ if eq(parameters.runTests, true) }}:
       - stage: Test_${{ platform }}
         displayName: Test ${{ platform }}
