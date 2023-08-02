@@ -136,19 +136,26 @@ jobs:
     condition: always()
     displayName: Publish binlog
 
-  # This saves 1.5GB per architecture. We won't need these later.
+  # This saves ~2GiB per architecture. We won't need these later.
   # Removes:
-  # - Directories ending in Lib (static lib projects that we fully linked into DLLs)
-  # - All LocalTests_ projects; their output is subsumed into TestHostApp
+  # - All .lib that do not have an associated .exp (which would indicate that they are import libs)
+  # - Directories ending in Lib (static lib projects that we fully linked into DLLs which also contain unnecessary resources)
+  # - All LocalTests_ projects as their output is subsumed into TestHostApp
   # - All PDB files inside the WindowsTerminal/ output, which do not belong there.
   - pwsh: |-
-      Get-ChildItem '$(BinDir)' -Filter '*Lib' -Directory | Remove-Item -Force -Recurse -Verbose
-      Get-ChildItem '$(BinDir)' -Filter 'LocalTests_*' -Directory | Remove-Item -Force -Recurse -Verbose
-      Get-ChildItem '$(BinDir)\WindowsTerminal' -Filter '*.pdb' -ErrorAction:Ignore | Where-Object Name -Ne "WindowsTerminal.pdb" | Remove-Item -Verbose
+      $ImportLibs = Get-ChildItem '$(BinDir)' -Recurse -Filter *.exp | ForEach-Object { $_.FullName -Replace "exp$","lib" }
+
+      $Items = @()
+      $Items += Get-ChildItem '$(BinDir)' -Filter '*.lib' -Recurse | Where-Object FullName -NotIn $ImportLibs
+      $Items += Get-ChildItem '$(BinDir)' -Filter '*Lib' -Directory
+      $Items += Get-ChildItem '$(BinDir)' -Filter 'LocalTests_*' -Directory
+      $Items += Get-ChildItem '$(BinDir)\WindowsTerminal' -Filter '*.pdb' -ErrorAction:Ignore
+
       If (-Not [bool]::Parse('${{ parameters.keepAllExpensiveBuildOutputs }}')) {
-        Get-ChildItem '$(BinDir)' -Filter '*.lib' -Recurse | Remove-Item -Force -Verbose
-        Get-ChildItem '$(BinDir)' -Filter '*.pdb' -Recurse | Remove-Item -Force -Verbose
+        $Items += Get-ChildItem '$(BinDir)' -Filter '*.pdb' -Recurse
       }
+
+      $Items | Remove-Item -Force -Verbose
     displayName: Clean up static libs and extra symbols
 
   # We cannot index PDBs that we have deleted!
