@@ -3,10 +3,9 @@ parameters:
     displayName: "Branding (Build Type)"
     type: string
     default: Release
-    values:
-      - Release
-      - Preview
-      - Dev
+    values: [Release, Preview, Dev]
+  - name: additionalBuildOptions
+    type: string
   - name: buildTerminal
     displayName: "Build Windows Terminal MSIX"
     type: boolean
@@ -27,10 +26,7 @@ parameters:
     displayName: "PGO Build Mode"
     type: string
     default: Optimize
-    values:
-      - Optimize
-      - Instrument
-      - None
+    values: [Optimize, Instrument, None]
   - name: buildConfigurations
     type: object
     default:
@@ -136,7 +132,7 @@ jobs:
     condition: true
     inputs:
       solution: '**\OpenConsole.sln'
-      msbuildArgs: /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }};WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog $(BuildTargetParameter)
+      msbuildArgs: /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }};WindowsTerminalReleaseBuild=true ${{ parameters.additionalBuildOptions }} /bl:$(Build.SourcesDirectory)\msbuild.binlog $(BuildTargetParameter)
       platform: $(BuildPlatform)
       configuration: $(BuildConfiguration)
       maximumCpuCount: true
