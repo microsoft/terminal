@@ -35,7 +35,7 @@ jobs:
     fetchDepth: 1
 
   - task: DownloadPipelineArtifact@2
-    displayName: Download artifacts for ${{ platform }}
+    displayName: Download artifacts
     inputs:
       artifactName: build-${{ parameters.platform }}-$(BuildConfiguration)${{ parameters.artifactStem }}
       downloadPath: $(BinDir)
