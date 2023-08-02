@@ -95,4 +95,24 @@ namespace Microsoft.Terminal.Control
         String MenuJson { get; };
         UInt32 ReplacementLength { get; };
     }
+
+    runtimeclass KeySentEventArgs
+    {
+        UInt16 VKey { get; };
+        UInt16 ScanCode { get; };
+        Microsoft.Terminal.Core.ControlKeyStates Modifiers { get; };
+        Boolean KeyDown { get; };
+    }
+
+    runtimeclass CharSentEventArgs
+    {
+        Char Character { get; };
+        UInt16 ScanCode { get; };
+        Microsoft.Terminal.Core.ControlKeyStates Modifiers { get; };
+    }
+
+    runtimeclass StringSentEventArgs
+    {
+        String Text { get; };
+    }
 }

@@ -50,7 +50,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                    _In_ char* UserBuffer,
                                    _In_ ULONG CtrlWakeupMask,
                                    _In_ const std::wstring_view exeName,
-                                   _In_ const std::string_view initialData,
+                                   _In_ const std::wstring_view initialData,
                                    _In_ ConsoleProcessHandle* const pClientProcess) :
     ReadData(pInputBuffer, pInputReadHandleData),
     _screenInfo{ screenInfo },
@@ -97,11 +97,11 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 
     if (!initialData.empty())
     {
-        memcpy_s(_bufPtr, _bufferSize, initialData.data(), initialData.size());
+        memcpy_s(_bufPtr, _bufferSize, initialData.data(), initialData.size() * 2);
 
-        _bytesRead += initialData.size();
+        _bytesRead += initialData.size() * 2;
 
-        const auto cchInitialData = initialData.size() / sizeof(wchar_t);
+        const auto cchInitialData = initialData.size();
         VisibleCharCount() = cchInitialData;
         _bufPtr += cchInitialData;
         _currentPosition = cchInitialData;

@@ -84,18 +84,18 @@
 
                                     <Grid.ColumnDefinitions>
                                         <!--  icon  -->
-                                        <ColumnDefinition Width="24" />
-                                        <!--  profile name and author  -->
-                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="auto" />
+                                        <!--  terminal name and author  -->
+                                        <ColumnDefinition Width="auto" />
                                         <!--  version  -->
-                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="auto" />
                                     </Grid.ColumnDefinitions>
 
                                     <Grid.RowDefinitions>
-                                        <!--  profile name  -->
-                                        <RowDefinition Height="20" />
+                                        <!--  terminal name  -->
+                                        <RowDefinition Height="auto" />
                                         <!--  author and version  -->
-                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="auto" />
                                     </Grid.RowDefinitions>
 
                                     <IconSourceElement Grid.Row="0"
@@ -109,13 +109,11 @@
                                     <TextBlock Grid.Row="0"
                                                Grid.Column="1"
                                                Grid.ColumnSpan="2"
-                                               Height="20"
                                                AutomationProperties.AccessibilityView="Raw"
                                                Text="{x:Bind Name}" />
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="1"
-                                               Height="20"
                                                AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Author}"
@@ -123,7 +121,6 @@
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="2"
-                                               Height="20"
                                                AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Version}"

@@ -18,12 +18,18 @@ WindowThread::WindowThread(winrt::TerminalApp::AppLogic logic,
 
 void WindowThread::CreateHost()
 {
+    // Calling this while refrigerated won't work.
+    // * We can't re-initialize our winrt apartment.
+    // * AppHost::Initialize has to be done on the "UI" thread.
+    assert(_warmWindow == nullptr);
+
     // Start the AppHost HERE, on the actual thread we want XAML to run on
     _host = std::make_unique<::AppHost>(_appLogic,
                                         _args,
                                         _manager,
                                         _peasant);
-    _host->UpdateSettingsRequested([this]() { _UpdateSettingsRequestedHandlers(); });
+
+    _UpdateSettingsRequestedToken = _host->UpdateSettingsRequested([this]() { _UpdateSettingsRequestedHandlers(); });
 
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
@@ -40,9 +46,29 @@ int WindowThread::RunMessagePump()
     return exitCode;
 }
 
+void WindowThread::_pumpRemainingXamlMessages()
+{
+    MSG msg = {};
+    while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
+    {
+        ::DispatchMessageW(&msg);
+    }
+}
+
 void WindowThread::RundownForExit()
 {
-    _host->Close();
+    if (_host)
+    {
+        _host->UpdateSettingsRequested(_UpdateSettingsRequestedToken);
+        _host->Close();
+    }
+    if (_warmWindow)
+    {
+        // If we have a _warmWindow, we're a refrigerated thread without a
+        // AppHost in control of the window. Manually close the window
+        // ourselves, to free the DesktopWindowXamlSource.
+        _warmWindow->Close();
+    }
 
     // !! LOAD BEARING !!
     //
@@ -52,13 +78,100 @@ void WindowThread::RundownForExit()
     // exiting. So do that now. If you don't, then the last tab to close
     // will never actually destruct the last tab / TermControl / ControlCore
     // / renderer.
+    _pumpRemainingXamlMessages();
+}
+
+void WindowThread::ThrowAway()
+{
+    // raise the signal to unblock KeepWarm. We won't have a host, so we'll drop
+    // out of the message loop to eventually RundownForExit.
+    //
+    // This should only be called when the app is fully quitting. After this is
+    // called on any thread, on win10, we won't be able to call into XAML
+    // anymore.
+    _microwaveBuzzer.notify_one();
+}
+
+// Method Description:
+// - Check if we should keep this window alive, to try it's message loop again.
+//   If we were refrigerated for later, then this will block the thread on the
+//   _microwaveBuzzer. We'll sit there like that till the emperor decides if
+//   they want to re-use this window thread for a new window.
+// Return Value:
+// - true IFF we should enter this thread's message loop
+// INVARIANT: This must be called on our "ui thread", our window thread.
+bool WindowThread::KeepWarm()
+{
+    if (_host != nullptr)
     {
-        MSG msg = {};
-        while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
-        {
-            ::DispatchMessageW(&msg);
-        }
+        // We're currently hot
+        return true;
     }
+
+    // If we're refrigerated, then wait on the microwave signal, which will be
+    // raised when we get re-heated by another thread to reactivate us.
+
+    if (_warmWindow != nullptr)
+    {
+        std::unique_lock lock(_microwave);
+        _microwaveBuzzer.wait(lock);
+
+        // If ThrowAway() was called, then the buzzer will be signalled without
+        // setting a new _host. In that case, the app is quitting, for real. We
+        // just want to exit with false.
+        const bool reheated = _host != nullptr;
+        if (reheated)
+        {
+            _UpdateSettingsRequestedToken = _host->UpdateSettingsRequested([this]() { _UpdateSettingsRequestedHandlers(); });
+            // Re-initialize the host here, on the window thread
+            _host->Initialize();
+        }
+        return reheated;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+// Method Description:
+// - "Refrigerate" this thread for later reuse. This will refrigerate the window
+//   itself, and tear down our current app host. We'll save our window for
+//   later. We'll also pump out the existing message from XAML, before
+//   returning. After we return, the emperor will add us to the list of threads
+//   that can be re-used.
+void WindowThread::Refrigerate()
+{
+    _host->UpdateSettingsRequested(_UpdateSettingsRequestedToken);
+
+    // keep a reference to the HWND and DesktopWindowXamlSource alive.
+    _warmWindow = std::move(_host->Refrigerate());
+
+    // rundown remaining messages before destructing the app host
+    _pumpRemainingXamlMessages();
+    _host = nullptr;
+}
+
+// Method Description:
+// - "Reheat" this thread for reuse. We'll build a new AppHost, and pass in the
+//   existing window to it. We'll then trigger the _microwaveBuzzer, so KeepWarm
+//   (which is on the UI thread) will get unblocked, and we can initialize this
+//   window.
+void WindowThread::Microwave(
+    winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
+    winrt::Microsoft::Terminal::Remoting::Peasant peasant)
+{
+    _peasant = std::move(peasant);
+    _args = std::move(args);
+
+    _host = std::make_unique<::AppHost>(_appLogic,
+                                        _args,
+                                        _manager,
+                                        _peasant,
+                                        std::move(_warmWindow));
+
+    // raise the signal to unblock KeepWarm and start the window message loop again.
+    _microwaveBuzzer.notify_one();
 }
 
 winrt::TerminalApp::TerminalWindow WindowThread::Logic()

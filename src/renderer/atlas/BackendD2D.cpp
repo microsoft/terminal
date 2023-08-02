@@ -68,7 +68,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
     const auto renderTargetChanged = !_renderTarget;
     const auto fontChanged = _fontGeneration != p.s->font.generation();
     const auto cursorChanged = _cursorGeneration != p.s->cursor.generation();
-    const auto cellCountChanged = _cellCount != p.s->cellCount;
+    const auto cellCountChanged = _viewportCellCount != p.s->viewportCellCount;
 
     if (renderTargetChanged)
     {
@@ -120,8 +120,8 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
             .dpiY = static_cast<f32>(p.s->font->dpi),
         };
         const D2D1_SIZE_U size{
-            p.s->cellCount.x,
-            p.s->cellCount.y,
+            p.s->viewportCellCount.x,
+            p.s->viewportCellCount.y,
         };
         const D2D1_MATRIX_3X2_F transform{
             .m11 = static_cast<f32>(p.s->font->cellSize.x),
@@ -145,7 +145,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
     _generation = p.s.generation();
     _fontGeneration = p.s->font.generation();
     _cursorGeneration = p.s->cursor.generation();
-    _cellCount = p.s->cellCount;
+    _viewportCellCount = p.s->viewportCellCount;
 }
 
 void BackendD2D::_drawBackground(const RenderingPayload& p) noexcept
