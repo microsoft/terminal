@@ -31,9 +31,6 @@ namespace Microsoft.Terminal.Control
         void ClearBuffer();
         void TryRedrawCanvas();
 
-        void ManuallyDisplayText(String text);
-
-
         void Close();
     }
 }
