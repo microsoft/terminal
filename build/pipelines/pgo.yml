@@ -1,6 +1,13 @@
 trigger: none
 pr: none
 
+parameters:
+  - name: buildPlatforms
+    type: object
+    default:
+      - x64
+      - arm64
+
 variables:
   - name: runCodesignValidationInjectionBG
     value: false
@@ -10,14 +17,53 @@ variables:
 name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
 
 stages:
-  - stage: Build_x64
-    displayName: Build x64
+  - stage: Build
+    displayName: Build
     dependsOn: []
     condition: succeeded()
     jobs:
-      - template: ./templates/build-console-pgo.yml
+      - template: ./templates-v2/job-build-project.yml
         parameters:
-          platform: x64
+          pool:
+            ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+              name: SHINE-OSS-L
+            ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+              name: SHINE-INT-L
+          buildPlatforms: ${{ parameters.buildPlatforms }}
+          buildConfigurations: [Release]
+          buildTerminal: true
+          pgoBuildMode: Instrument
+
+      - template: helix-runtests-job.yml
+        parameters:
+          name: 'RunTestsInHelix'
+          dependsOn: Build${{ parameters.platform }}${{ parameters.configuration }}
+          condition: succeeded()
+          testSuite: 'PgoInstrumentationSuite'
+          taefQuery: '@IsPgo=true'
+          configuration: ${{ parameters.configuration }}
+          platform: ${{ parameters.platform }}
+          rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
+
+      - template: helix-processtestresults-job.yml
+        parameters:
+          name: 'ProcessTestResults'
+          pgoArtifact: 'PGO'
+          dependsOn:
+          - RunTestsInHelix
+          condition: succeededOrFailed()
+          rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
+          minimumExpectedTestsExecutedCount: ${{ parameters.minimumExpectedTestsExecutedCount }}
+
+      - template: pgo-merge-pgd-job.yml
+        parameters:
+          name: 'MergePGD'
+          dependsOn:
+          - ProcessTestResults
+          pgoArtifact: 'PGO'
+          platform: ${{ parameters.platform }}
+          configuration: ${{ parameters.configuration }}
+
   - stage: Publish_PGO_Databases
     displayName: Publish PGO databases
     dependsOn: ['Build_x64']
