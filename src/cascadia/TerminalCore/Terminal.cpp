@@ -1453,19 +1453,13 @@ til::color Terminal::GetColorForMark(const ScrollMark& mark) const
 
 std::wstring_view Terminal::CurrentCommand() const
 {
-    if (_currentPromptState != PromptState::Command ||
-        _scrollMarks.size() == 0)
+    if (_currentPromptState != PromptState::Command)
     {
         return L"";
     }
 
-    const auto& curr{ _scrollMarks.back() };
-    const auto& start{ curr.end };
-    const auto& end{ _activeBuffer().GetCursor().GetPosition() };
+    return _activeBuffer().CurrentCommand();
 
-    const auto line = start.y;
-    const auto& row = _activeBuffer().GetRowByOffset(line);
-    return row.GetText(start.x, end.x);
 }
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
