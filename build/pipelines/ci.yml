@@ -114,9 +114,9 @@ stages:
           parameters:
             platform: x64
 
-  - ${{ if and(containsValue(parameters.buildPlatforms, 'x64'), ne(variables['Build.Reason'], 'PullRequest')) }}:
+  - ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
     - stage: CodeIndexer
       displayName: Github CodeNav Indexer
-      dependsOn: [Build_x64]
+      dependsOn: []
       jobs:
         - template: ./templates/codenav-indexer.yml
