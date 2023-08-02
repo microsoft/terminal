@@ -4749,10 +4749,6 @@ namespace winrt::TerminalApp::implementation
 
         const auto& sxnUi{ LoadSuggestionsUI() };
 
-        sxnUi.Mode(mode);
-        sxnUi.SetCommands(commandsCollection);
-        sxnUi.Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
-
         const auto characterSize{ control.CharacterDimensions() };
         // This is in control-relative space. We'll need to convert it to page-relative space.
         const auto cursorPos{ control.CursorPositionInDips() };
@@ -4760,7 +4756,7 @@ namespace winrt::TerminalApp::implementation
         const auto realCursorPos{ controlTransform.TransformPoint({ cursorPos.X, cursorPos.Y }) }; // == controlTransform + cursorPos
         const Windows::Foundation::Size windowDimensions{ gsl::narrow_cast<float>(ActualWidth()), gsl::narrow_cast<float>(ActualHeight()) };
 
-        sxnUi.Anchor(realCursorPos, windowDimensions, characterSize.Height);
+        sxnUi.Open(mode, commandsCollection, realCursorPos, windowDimensions, characterSize.Height);
     }
 
     void TerminalPage::_ContextMenuOpened(const IInspectable& sender,

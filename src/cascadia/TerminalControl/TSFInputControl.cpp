@@ -450,6 +450,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // HACK trim off leading DEL chars.
         std::wstring_view view{ text };
         const auto strBegin = view.find_first_not_of(L"\x7f");
+
+        // What we actually want to display is the text that would remain after
+        // accounting for the leading backspaces. So trim off the leading
+        // backspaces, AND and equal number of "real" characters.
         if (strBegin != std::wstring::npos)
         {
             view = view.substr(strBegin * 2);

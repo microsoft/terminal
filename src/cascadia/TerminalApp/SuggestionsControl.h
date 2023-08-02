@@ -39,7 +39,12 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::SuggestionsMode Mode() const;
         void Mode(TerminalApp::SuggestionsMode mode);
-        void Anchor(Windows::Foundation::Point anchor, Windows::Foundation::Size space, float characterHeight);
+
+        void Open(TerminalApp::SuggestionsMode mode,
+                  const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command>& commands,
+                  Windows::Foundation::Point anchor,
+                  Windows::Foundation::Size space,
+                  float characterHeight);
 
         til::typed_event<winrt::TerminalApp::SuggestionsControl, Microsoft::Terminal::Settings::Model::Command> DispatchCommandRequested;
         til::typed_event<Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command> PreviewAction;
