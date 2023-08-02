@@ -44,7 +44,7 @@ parameters:
   - name: codeSign
     type: boolean
     default: false
-  - name: keepAllStaticAndImportLibraries
+  - name: keepAllExpensiveBuildOutputs
     type: boolean
     default: true
   - name: artifactStem
@@ -145,15 +145,18 @@ jobs:
       Get-ChildItem '$(BinDir)' -Filter '*Lib' -Directory | Remove-Item -Force -Recurse -Verbose
       Get-ChildItem '$(BinDir)' -Filter 'LocalTests_*' -Directory | Remove-Item -Force -Recurse -Verbose
       Get-ChildItem '$(BinDir)\WindowsTerminal' -Filter '*.pdb' -ErrorAction:Ignore | Where-Object Name -Ne "WindowsTerminal.pdb" | Remove-Item -Verbose
-      If (-Not [bool]::Parse('${{ parameters.keepAllStaticAndImportLibraries }}')) {
+      If (-Not [bool]::Parse('${{ parameters.keepAllExpensiveBuildOutputs }}')) {
         Get-ChildItem '$(BinDir)' -Filter '*.lib' -Recurse | Remove-Item -Force -Verbose
+        Get-ChildItem '$(BinDir)' -Filter '*.pdb' -Recurse | Remove-Item -Force -Verbose
       }
     displayName: Clean up static libs and extra symbols
 
-  - pwsh: |-
-      build\scripts\Index-Pdbs.ps1 -SearchDir '$(BinDir)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
-    displayName: Source Index PDBs
-    errorActionPreference: silentlyContinue
+  # We cannot index PDBs that we have deleted!
+  - ${{ if eq(parameters.keepAllExpensiveBuildOutputs, true) }}:
+    - pwsh: |-
+        build\scripts\Index-Pdbs.ps1 -SearchDir '$(BinDir)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+      displayName: Source Index PDBs
+      errorActionPreference: silentlyContinue
 
   - ${{ if or(parameters.buildTerminal, parameters.buildEverything) }}:
     - pwsh: |-
