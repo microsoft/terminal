@@ -136,9 +136,11 @@ jobs:
   # This saves 1.5GB per architecture. We won't need these later.
   # Removes:
   # - Directories ending in Lib (static lib projects that we fully linked into DLLs)
+  # - All LocalTests_ projects; their output is subsumed into TestHostApp
   # - All PDB files inside the WindowsTerminal/ output, which do not belong there.
   - pwsh: |-
       Get-ChildItem '$(BinDir)' -Filter '*Lib' -Directory | Remove-Item -Force -Recurse -Verbose
+      Get-ChildItem '$(BinDir)' -Filter 'LocalTests_*' -Directory | Remove-Item -Force -Recurse -Verbose
       Get-ChildItem '$(BinDir)\WindowsTerminal' -Filter '*.pdb' -ErrorAction:Ignore | Where-Object Name -Ne "WindowsTerminal.pdb" | Remove-Item -Verbose
     displayName: Clean up static libs and extra symbols
 
