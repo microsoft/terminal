@@ -44,6 +44,9 @@ parameters:
   - name: codeSign
     type: boolean
     default: false
+  - name: keepAllStaticAndImportLibraries
+    type: boolean
+    default: true
   - name: artifactStem
     type: string
     default: ''
@@ -142,6 +145,9 @@ jobs:
       Get-ChildItem '$(BinDir)' -Filter '*Lib' -Directory | Remove-Item -Force -Recurse -Verbose
       Get-ChildItem '$(BinDir)' -Filter 'LocalTests_*' -Directory | Remove-Item -Force -Recurse -Verbose
       Get-ChildItem '$(BinDir)\WindowsTerminal' -Filter '*.pdb' -ErrorAction:Ignore | Where-Object Name -Ne "WindowsTerminal.pdb" | Remove-Item -Verbose
+      If (-Not [bool]::Parse('${{ parameters.keepAllStaticAndImportLibraries }}')) {
+        Get-ChildItem '$(BinDir)' -Filter '*.lib' -Recurse | Remove-Item -Force -Verbose
+      }
     displayName: Clean up static libs and extra symbols
 
   - pwsh: |-
