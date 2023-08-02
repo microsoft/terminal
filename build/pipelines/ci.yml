@@ -87,7 +87,8 @@ stages:
                 name: SHINE-OSS-L
               ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
                 name: SHINE-INT-L
-            buildPlatforms: [${{ platform }}]
+            buildPlatforms:
+              - ${{ platform }}
             buildConfigurations: [Release]
             buildEverything: true
 
