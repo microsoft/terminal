@@ -1,6 +1,5 @@
 parameters:
   - name: branding
-    displayName: "Branding (Build Type)"
     type: string
   - name: buildConfigurations
     type: object
@@ -126,5 +125,5 @@ jobs:
         Verbosity: 'Verbose'
 
   - publish: '$(System.ArtifactsDirectory)/bundle'
-    artifact: appxbundle-$(BuildConfiguration)-${{ parameters.artifactStem }}
+    artifact: appxbundle-$(BuildConfiguration)${{ parameters.artifactStem }}
     displayName: Publish msixbundle
