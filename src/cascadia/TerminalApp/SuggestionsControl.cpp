@@ -273,7 +273,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
-                _PreviewActionHandlers(*this, actionPaletteItem.Command());
+                PreviewAction.raise(*this, actionPaletteItem.Command());
             }
         }
     }
@@ -519,7 +519,7 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::_moveBackButtonClicked(const Windows::Foundation::IInspectable& /*sender*/,
                                                     const Windows::UI::Xaml::RoutedEventArgs&)
     {
-        _PreviewActionHandlers(*this, nullptr);
+        PreviewAction.raise(*this, nullptr);
         _searchBox().Focus(FocusState::Programmatic);
 
         const auto previousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
@@ -642,7 +642,7 @@ namespace winrt::TerminalApp::implementation
                     // "ToggleCommandPalette" actions. We may want to do the
                     // same with "Suggestions" actions in the future, should we
                     // ever allow non-sendInput actions.
-                    _DispatchCommandRequestedHandlers(*this, actionPaletteItem.Command());
+                    DispatchCommandRequested.raise(*this, actionPaletteItem.Command());
 
                     TraceLoggingWrite(
                         g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
@@ -679,17 +679,6 @@ namespace winrt::TerminalApp::implementation
         }
 
         return input.substr(firstNonSpace);
-    }
-
-    std::optional<TerminalApp::FilteredCommand> SuggestionsControl::_buildCommandLineCommand(const hstring& commandLine)
-    {
-        if (commandLine.empty())
-        {
-            return std::nullopt;
-        }
-
-        auto commandLinePaletteItem{ winrt::make<CommandLinePaletteItem>(commandLine) };
-        return winrt::make<FilteredCommand>(commandLinePaletteItem);
     }
 
     // Method Description:
@@ -965,7 +954,7 @@ namespace winrt::TerminalApp::implementation
         ParentCommandName(L"");
         _currentNestedCommands.Clear();
 
-        _PreviewActionHandlers(*this, nullptr);
+        PreviewAction.raise(*this, nullptr);
     }
 
     // Method Description:
@@ -1057,10 +1046,18 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void SuggestionsControl::Anchor(Windows::Foundation::Point anchor,
-                                    Windows::Foundation::Size space,
-                                    float characterHeight)
+    void SuggestionsControl::Open(TerminalApp::SuggestionsMode mode,
+                                  const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command>& commands,
+                                  winrt::hstring filter,
+                                  Windows::Foundation::Point anchor,
+                                  Windows::Foundation::Size space,
+                                  float characterHeight)
     {
+        SetCommands(commands);
+        Visibility(commands.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
+        _searchBox().Text(filter);
+        Mode(mode);
+
         _anchor = anchor;
         _space = space;
 
@@ -1102,12 +1099,4 @@ namespace winrt::TerminalApp::implementation
         Margin(newMargin);
     }
 
-    winrt::hstring SuggestionsControl::FilterText()
-    {
-        return _searchBox().Text();
-    }
-    void SuggestionsControl::FilterText(winrt::hstring filter)
-    {
-        _searchBox().Text(filter);
-    }
 }

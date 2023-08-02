@@ -97,8 +97,8 @@ public:
     RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
     const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
 
-    const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& GetScrollMarks() const noexcept;
-    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
+    const std::vector<ScrollMark>& GetScrollMarks() const noexcept;
+    void AddMark(const ScrollMark& mark,
                  const til::point& start,
                  const til::point& end,
                  const bool fromUi);
@@ -129,7 +129,7 @@ public:
     void UseAlternateScreenBuffer(const TextAttribute& attrs) override;
     void UseMainScreenBuffer() override;
 
-    void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
+    void MarkPrompt(const ScrollMark& mark) override;
     void MarkCommandStart() override;
     void MarkOutputStart() override;
     void MarkCommandFinish(std::optional<unsigned int> error) override;
@@ -145,7 +145,7 @@ public:
 
     void ClearMark();
     void ClearAllMarks() noexcept;
-    til::color GetColorForMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) const;
+    til::color GetColorForMark(const ScrollMark& mark) const;
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
@@ -400,7 +400,6 @@ private:
     };
     std::optional<KeyEventCodes> _lastKeyEventCodes;
 
-    std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark> _scrollMarks;
     enum class PromptState : uint32_t
     {
         None = 0,
