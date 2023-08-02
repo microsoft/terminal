@@ -80,10 +80,6 @@ jobs:
     clean: true
     submodules: true
     persistCredentials: True
-  - task: PkgESSetupBuild@12
-    displayName: Package ES - Setup Build
-    inputs:
-      disableOutputRedirect: true
   # This generates either an empty string for BuildTargetParameter, or /t:X;Y;Z, to control targets later.
   - pwsh: |-
       If ([bool]::Parse("${{ parameters.buildEverything }}")) {
