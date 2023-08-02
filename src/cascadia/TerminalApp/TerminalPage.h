@@ -149,6 +149,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget IdentifyWindow();
         winrt::fire_and_forget RenameFailed();
+        winrt::fire_and_forget ShowTerminalWorkingDirectory();
 
         winrt::fire_and_forget ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
                                                      const bool initial,
@@ -258,6 +259,7 @@ namespace winrt::TerminalApp::implementation
 
         std::shared_ptr<Toast> _windowIdToast{ nullptr };
         std::shared_ptr<Toast> _windowRenameFailedToast{ nullptr };
+        std::shared_ptr<Toast> _windowCwdToast{ nullptr };
 
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _renamerLayoutUpdatedRevoker;
         int _renamerLayoutCount{ 0 };
@@ -414,7 +416,7 @@ namespace winrt::TerminalApp::implementation
         bool _IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri);
 
         void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
-        bool _CopyText(const bool singleLine, const Windows::Foundation::IReference<Microsoft::Terminal::Control::CopyFormat>& formats);
+        bool _CopyText(const bool dismissSelection, const bool singleLine, const Windows::Foundation::IReference<Microsoft::Terminal::Control::CopyFormat>& formats);
 
         winrt::fire_and_forget _SetTaskbarProgressHandler(const IInspectable sender, const IInspectable eventArgs);
 
@@ -518,7 +520,7 @@ namespace winrt::TerminalApp::implementation
         void _updatePaneResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
 
         winrt::fire_and_forget _ControlMenuChangedHandler(const winrt::Windows::Foundation::IInspectable sender, const winrt::Microsoft::Terminal::Control::MenuChangedEventArgs args);
-        winrt::fire_and_forget _OpenSuggestions(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> commandsCollection, winrt::TerminalApp::SuggestionsMode mode);
+        void _OpenSuggestions(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> commandsCollection, winrt::TerminalApp::SuggestionsMode mode);
 
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
 
@@ -540,7 +542,7 @@ namespace winrt::TerminalApp::implementation
         void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
         void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);
         void _PopulateContextMenu(const IInspectable& sender, const bool withSelection);
-
+        winrt::Windows::UI::Xaml::Controls::MenuFlyout _CreateRunAsAdminFlyout(int profileIndex);
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);

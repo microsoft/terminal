@@ -16,3 +16,6 @@
 #include "ShowWindowArgs.g.cpp"
 #include "UpdateSelectionMarkersEventArgs.g.cpp"
 #include "MenuChangedEventArgs.g.cpp"
+#include "KeySentEventArgs.g.cpp"
+#include "CharSentEventArgs.g.cpp"
+#include "StringSentEventArgs.g.cpp"

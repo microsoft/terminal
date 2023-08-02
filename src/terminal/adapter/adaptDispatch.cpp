@@ -176,7 +176,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             //   we tried writing a wide glyph into the last column which can't work.
             if (textPositionBefore == textPositionAfter && (state.columnBegin == 0 || !wrapAtEOL))
             {
-                textBuffer.ConsumeGrapheme(state.text);
+                state.text = state.text.substr(textBuffer.GraphemeNext(state.text, 0));
             }
 
             if (wrapAtEOL)
@@ -3145,6 +3145,12 @@ bool AdaptDispatch::_EraseScrollback()
     auto& cursor = textBuffer.GetCursor();
     const auto row = cursor.GetPosition().y;
 
+    // Clear all the marks below the new viewport position.
+    textBuffer.ClearMarksInRange(til::point{ 0, height },
+                                 til::point{ bufferSize.width, bufferSize.height });
+    // Then scroll all the remaining marks up. This will trim ones that are now "outside" the buffer
+    textBuffer.ScrollMarks(-top);
+
     // Scroll the viewport content to the top of the buffer.
     textBuffer.ScrollRows(top, height, -top);
     // Clear everything after the viewport.
@@ -3226,6 +3232,10 @@ bool AdaptDispatch::_EraseAll()
 
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(newViewportTop, newViewportBottom);
+
+    // Clear any marks that remain below the start of the
+    textBuffer.ClearMarksInRange(til::point{ 0, newViewportTop },
+                                 til::point{ bufferSize.Width(), bufferSize.Height() });
 
     // GH#5683 - If this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this ED sequence to the connected
@@ -3633,8 +3643,8 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 
     if (action == L"SetMark")
     {
-        DispatchTypes::ScrollMark mark;
-        mark.category = DispatchTypes::MarkCategory::Prompt;
+        ScrollMark mark;
+        mark.category = MarkCategory::Prompt;
         _api.MarkPrompt(mark);
         return true;
     }
@@ -3681,8 +3691,8 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         case L'A': // FTCS_PROMPT
         {
             // Simply just mark this line as a prompt line.
-            DispatchTypes::ScrollMark mark;
-            mark.category = DispatchTypes::MarkCategory::Prompt;
+            ScrollMark mark;
+            mark.category = MarkCategory::Prompt;
             _api.MarkPrompt(mark);
             return true;
         }
@@ -4174,14 +4184,14 @@ void AdaptDispatch::_ReportSGRSetting() const
         else if (color.IsIndex256())
         {
             const auto index = color.GetIndex();
-            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{};5;{}"), base + 8, index);
+            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{}:5:{}"), base + 8, index);
         }
         else if (color.IsRgb())
         {
             const auto r = GetRValue(color.GetRGB());
             const auto g = GetGValue(color.GetRGB());
             const auto b = GetBValue(color.GetRGB());
-            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{};2;{};{};{}"), base + 8, r, g, b);
+            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{}:2::{}:{}:{}"), base + 8, r, g, b);
         }
     };
     addColor(30, attr.GetForeground());

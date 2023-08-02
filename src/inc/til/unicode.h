@@ -59,28 +59,30 @@ namespace til
         return { ptr, len };
     }
 
-    // Removes the first code point off of `wstr` and returns the rest.
-    constexpr std::wstring_view utf16_pop(std::wstring_view wstr) noexcept
+    // Returns the index of the next codepoint in the given wstr (i.e. after the codepoint that idx points at).
+    constexpr size_t utf16_iterate_next(const std::wstring_view& wstr, size_t idx) noexcept
     {
-        auto it = wstr.begin();
-        const auto end = wstr.end();
-
-        if (it != end)
+        if (idx < wstr.size() && is_leading_surrogate(til::at(wstr, idx++)))
         {
-            const auto wch = *it;
-            ++it;
-
-            if (is_surrogate(wch))
+            if (idx < wstr.size() && is_trailing_surrogate(til::at(wstr, idx)))
             {
-                const auto wch2 = it != end ? *it : wchar_t{};
-                if (is_leading_surrogate(wch) && is_trailing_surrogate(wch2))
-                {
-                    ++it;
-                }
+                ++idx;
             }
         }
+        return idx;
+    }
 
-        return { it, end };
+    // Returns the index of the preceding codepoint in the given wstr (i.e. in front of the codepoint that idx points at).
+    constexpr size_t utf16_iterate_prev(const std::wstring_view& wstr, size_t idx) noexcept
+    {
+        if (idx > 0 && is_trailing_surrogate(til::at(wstr, --idx)))
+        {
+            if (idx > 0 && is_leading_surrogate(til::at(wstr, idx - 1)))
+            {
+                --idx;
+            }
+        }
+        return idx;
     }
 
     // Splits a UTF16 string into codepoints, yielding `wstring_view`s of UTF16 text. Use it as:

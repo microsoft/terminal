@@ -73,6 +73,7 @@ static constexpr std::string_view IdentifyWindowKey{ "identifyWindow" };
 static constexpr std::string_view IdentifyWindowsKey{ "identifyWindows" };
 static constexpr std::string_view RenameWindowKey{ "renameWindow" };
 static constexpr std::string_view OpenWindowRenamerKey{ "openWindowRenamer" };
+static constexpr std::string_view DisplayWorkingDirectoryKey{ "debugTerminalCwd" };
 static constexpr std::string_view SearchForTextKey{ "searchWeb" };
 static constexpr std::string_view GlobalSummonKey{ "globalSummon" };
 static constexpr std::string_view QuakeModeKey{ "quakeMode" };
@@ -94,6 +95,7 @@ static constexpr std::string_view ColorSelectionKey{ "experimental.colorSelectio
 static constexpr std::string_view ShowContextMenuKey{ "showContextMenu" };
 static constexpr std::string_view ExpandSelectionToWordKey{ "expandSelectionToWord" };
 static constexpr std::string_view RestartConnectionKey{ "restartConnection" };
+static constexpr std::string_view ToggleBroadcastInputKey{ "toggleBroadcastInput" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -405,6 +407,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::IdentifyWindows, RS_(L"IdentifyWindowsCommandKey") },
                 { ShortcutAction::RenameWindow, RS_(L"ResetWindowNameCommandKey") },
                 { ShortcutAction::OpenWindowRenamer, RS_(L"OpenWindowRenamerCommandKey") },
+                { ShortcutAction::DisplayWorkingDirectory, RS_(L"DisplayWorkingDirectoryCommandKey") },
                 { ShortcutAction::GlobalSummon, MustGenerate },
                 { ShortcutAction::SearchForText, MustGenerate },
                 { ShortcutAction::QuakeMode, RS_(L"QuakeModeCommandKey") },
@@ -426,6 +429,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::ShowContextMenu, RS_(L"ShowContextMenuCommandKey") },
                 { ShortcutAction::ExpandSelectionToWord, RS_(L"ExpandSelectionToWordCommandKey") },
                 { ShortcutAction::RestartConnection, RS_(L"RestartConnectionKey") },
+                { ShortcutAction::ToggleBroadcastInput, RS_(L"ToggleBroadcastInputCommandKey") },
             };
         }();
 

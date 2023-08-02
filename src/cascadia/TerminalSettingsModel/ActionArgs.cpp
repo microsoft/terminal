@@ -198,6 +198,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             ss << RS_(L"CopyTextCommandKey").c_str();
         }
 
+        if (!DismissSelection())
+        {
+            ss << L", dismissSelection: false";
+        }
+
         if (CopyFormatting())
         {
             ss << L", copyFormatting: ";

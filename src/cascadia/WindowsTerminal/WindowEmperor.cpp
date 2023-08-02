@@ -111,7 +111,8 @@ bool WindowEmperor::HandleCommandlineArgs()
 
     const auto result = _manager.ProposeCommandline(eventArgs, isolatedMode);
 
-    if (result.ShouldCreateWindow())
+    const bool makeWindow = result.ShouldCreateWindow();
+    if (makeWindow)
     {
         _createNewWindowThread(Remoting::WindowRequestedArgs{ result, eventArgs });
 
@@ -127,7 +128,7 @@ bool WindowEmperor::HandleCommandlineArgs()
         }
     }
 
-    return result.ShouldCreateWindow();
+    return makeWindow;
 }
 
 void WindowEmperor::WaitForWindows()
@@ -143,7 +144,38 @@ void WindowEmperor::WaitForWindows()
 void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& args)
 {
     Remoting::Peasant peasant{ _manager.CreatePeasant(args) };
-    auto window{ std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant) };
+    std::shared_ptr<WindowThread> window{ nullptr };
+
+    // FIRST: Attempt to reheat an existing window that we refrigerated for
+    // later. If we have an existing unused window, then we don't need to create
+    // a new WindowThread & HWND for this request.
+    { // Add a scope to minimize lock duration.
+        auto fridge{ _oldThreads.lock() };
+        if (!fridge->empty())
+        {
+            // Look at that, a refrigerated thread ready to be used. Let's use that!
+            window = std::move(fridge->back());
+            fridge->pop_back();
+        }
+    }
+
+    // Did we find one?
+    if (window)
+    {
+        // Cool! Let's increment the number of active windows, and re-heat it.
+        _windowThreadInstances.fetch_add(1, std::memory_order_relaxed);
+
+        window->Microwave(args, peasant);
+        // This will unblock the event we're waiting on in KeepWarm, and the
+        // window thread (started below) will continue through it's loop
+        return;
+    }
+
+    // At this point, there weren't any pending refrigerated threads we could
+    // just use. That's fine. Let's just go create a new one.
+
+    window = std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant);
+
     std::weak_ptr<WindowEmperor> weakThis{ weak_from_this() };
 
     // Increment our count of window instances _now_, immediately. We're
@@ -164,33 +196,66 @@ void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& 
     std::thread t([weakThis, window]() {
         try
         {
-            const auto decrementWindowCount = wil::scope_exit([&]() {
-                if (auto self{ weakThis.lock() })
-                {
-                    self->_decrementWindowCount();
-                }
-            });
-            auto removeWindow = wil::scope_exit([&]() {
-                if (auto self{ weakThis.lock() })
-                {
-                    self->_removeWindow(window->PeasantID());
-                }
-            });
-
             window->CreateHost();
 
             if (auto self{ weakThis.lock() })
             {
                 self->_windowStartedHandlerPostXAML(window);
             }
+            while (window->KeepWarm())
+            {
+                // Now that the window is ready to go, we can add it to our list of windows,
+                // because we know it will be well behaved.
+                //
+                // Be sure to only modify the list of windows under lock.
 
-            window->RunMessagePump();
+                if (auto self{ weakThis.lock() })
+                {
+                    auto lockedWindows{ self->_windows.lock() };
+                    lockedWindows->push_back(window);
+                }
+                auto removeWindow = wil::scope_exit([&]() {
+                    if (auto self{ weakThis.lock() })
+                    {
+                        self->_removeWindow(window->PeasantID());
+                    }
+                });
 
-            // Manually trigger the cleanup callback. This will ensure that we
-            // remove the window from our list of windows, before we release the
-            // AppHost (and subsequently, the host's Logic() member that we use
-            // elsewhere).
-            removeWindow.reset();
+                auto decrementWindowCount = wil::scope_exit([&]() {
+                    if (auto self{ weakThis.lock() })
+                    {
+                        self->_decrementWindowCount();
+                    }
+                });
+
+                window->RunMessagePump();
+
+                // Manually trigger the cleanup callback. This will ensure that we
+                // remove the window from our list of windows, before we release the
+                // AppHost (and subsequently, the host's Logic() member that we use
+                // elsewhere).
+                removeWindow.reset();
+
+                // On Windows 11, we DONT want to refrigerate the window. There,
+                // we can just close it like normal. Break out of the loop, so
+                // we don't try to put this window in the fridge.
+                if (Utils::IsWindows11())
+                {
+                    decrementWindowCount.reset();
+                    break;
+                }
+                else
+                {
+                    window->Refrigerate();
+                    decrementWindowCount.reset();
+
+                    if (auto self{ weakThis.lock() })
+                    {
+                        auto fridge{ self->_oldThreads.lock() };
+                        fridge->push_back(window);
+                    }
+                }
+            }
 
             // Now that we no longer care about this thread's window, let it
             // release it's app host and flush the rest of the XAML queue.
@@ -224,15 +289,6 @@ void WindowEmperor::_windowStartedHandlerPostXAML(const std::shared_ptr<WindowTh
     // the Terminal window, making it visible BEFORE the XAML island is actually
     // ready to be drawn. We want to wait till the app's Initialized event
     // before we make the window visible.
-
-    // Now that the window is ready to go, we can add it to our list of windows,
-    // because we know it will be well behaved.
-    //
-    // Be sure to only modify the list of windows under lock.
-    {
-        auto lockedWindows{ _windows.lock() };
-        lockedWindows->push_back(sender);
-    }
 }
 
 void WindowEmperor::_removeWindow(uint64_t senderID)
@@ -518,8 +574,22 @@ LRESULT WindowEmperor::_messageHandler(UINT const message, WPARAM const wParam, 
     return DefWindowProc(_window.get(), message, wParam, lParam);
 }
 
+// Close the Terminal application. This will exit the main thread for the
+// emperor itself. We should probably only ever be called when we have no
+// windows left, and we don't want to keep running anymore. This will discard
+// all our refrigerated windows. If we try to use XAML on Windows 10 after this,
+// we'll undoubtedly crash.
 winrt::fire_and_forget WindowEmperor::_close()
 {
+    {
+        auto fridge{ _oldThreads.lock() };
+        for (auto& window : *fridge)
+        {
+            window->ThrowAway();
+        }
+        fridge->clear();
+    }
+
     // Important! Switch back to the main thread for the emperor. That way, the
     // quit will go to the emperor's message pump.
     co_await wil::resume_foreground(_dispatcher);

@@ -354,7 +354,7 @@ NT_CATCH_RETURN()
                                             std::span<char> buffer,
                                             size_t& bytesRead,
                                             DWORD& controlKeyState,
-                                            const std::string_view initialData,
+                                            const std::wstring_view initialData,
                                             const DWORD ctrlWakeupMask,
                                             INPUT_READ_HANDLE_DATA& readHandleState,
                                             const std::wstring_view exeName,
@@ -492,7 +492,7 @@ NT_CATCH_RETURN()
                                      std::span<char> buffer,
                                      size_t& bytesRead,
                                      ULONG& controlKeyState,
-                                     const std::string_view initialData,
+                                     const std::wstring_view initialData,
                                      const DWORD ctrlWakeupMask,
                                      INPUT_READ_HANDLE_DATA& readHandleState,
                                      const std::wstring_view exeName,
@@ -552,60 +552,29 @@ NT_CATCH_RETURN()
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT ApiRoutines::ReadConsoleAImpl(IConsoleInputObject& context,
-                                                    std::span<char> buffer,
-                                                    size_t& written,
-                                                    std::unique_ptr<IWaitRoutine>& waiter,
-                                                    const std::string_view initialData,
-                                                    const std::wstring_view exeName,
-                                                    INPUT_READ_HANDLE_DATA& readHandleState,
-                                                    const HANDLE clientHandle,
-                                                    const DWORD controlWakeupMask,
-                                                    DWORD& controlKeyState) noexcept
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleImpl(IConsoleInputObject& context,
+                                                   std::span<char> buffer,
+                                                   size_t& written,
+                                                   std::unique_ptr<IWaitRoutine>& waiter,
+                                                   const std::wstring_view initialData,
+                                                   const std::wstring_view exeName,
+                                                   INPUT_READ_HANDLE_DATA& readHandleState,
+                                                   const bool IsUnicode,
+                                                   const HANDLE clientHandle,
+                                                   const DWORD controlWakeupMask,
+                                                   DWORD& controlKeyState) noexcept
 {
-    try
-    {
-        return HRESULT_FROM_NT(DoReadConsole(context,
-                                             clientHandle,
-                                             buffer,
-                                             written,
-                                             controlKeyState,
-                                             initialData,
-                                             controlWakeupMask,
-                                             readHandleState,
-                                             exeName,
-                                             false,
-                                             waiter));
-    }
-    CATCH_RETURN();
-}
-
-[[nodiscard]] HRESULT ApiRoutines::ReadConsoleWImpl(IConsoleInputObject& context,
-                                                    std::span<char> buffer,
-                                                    size_t& written,
-                                                    std::unique_ptr<IWaitRoutine>& waiter,
-                                                    const std::string_view initialData,
-                                                    const std::wstring_view exeName,
-                                                    INPUT_READ_HANDLE_DATA& readHandleState,
-                                                    const HANDLE clientHandle,
-                                                    const DWORD controlWakeupMask,
-                                                    DWORD& controlKeyState) noexcept
-{
-    try
-    {
-        return HRESULT_FROM_NT(DoReadConsole(context,
-                                             clientHandle,
-                                             buffer,
-                                             written,
-                                             controlKeyState,
-                                             initialData,
-                                             controlWakeupMask,
-                                             readHandleState,
-                                             exeName,
-                                             true,
-                                             waiter));
-    }
-    CATCH_RETURN();
+    return HRESULT_FROM_NT(DoReadConsole(context,
+                                         clientHandle,
+                                         buffer,
+                                         written,
+                                         controlKeyState,
+                                         initialData,
+                                         controlWakeupMask,
+                                         readHandleState,
+                                         exeName,
+                                         IsUnicode,
+                                         waiter));
 }
 
 void UnblockWriteConsole(const DWORD dwReason)
