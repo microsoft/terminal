@@ -278,25 +278,17 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleTogglePaneZoom(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleTogglePaneZoom(const IInspectable& sender,
                                              const ActionEventArgs& args)
     {
-        // TODO! This seemingly manipulates the current UI directly. We should
-        // only do the UI manupulation if the sender is in fact, the active tab.
-        if (const auto activeTab{ _GetFocusedTabImpl() })
+        if (const auto terminalTab{ _senderOrFocusedTab(sender) })
         {
             // Don't do anything if there's only one pane. It's already zoomed.
-            if (activeTab->GetLeafPaneCount() > 1)
+            if (terminalTab->GetLeafPaneCount() > 1)
             {
-                // First thing's first, remove the current content from the UI
-                // tree. This is important, because we might be leaving zoom, and if
-                // a pane is zoomed, then it's currently in the UI tree, and should
-                // be removed before it's re-added in Pane::Restore
-                _tabContent.Children().Clear();
-
                 // Togging the zoom on the tab will cause the tab to inform us of
                 // the new root Content for this tab.
-                activeTab->ToggleZoom();
+                terminalTab->ToggleZoom();
             }
         }
 
