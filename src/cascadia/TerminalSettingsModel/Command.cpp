@@ -652,7 +652,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
         }
 
-        auto result = winrt::single_threaded_vector<Model::Command>();
+        std::vector<Model::Command> result;
 
         auto backspaces = std::wstring(::base::saturated_cast<size_t>(replaceLength), L'\x7f');
 
@@ -664,7 +664,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(element, "ListItemText", listText);
             JsonUtils::GetValueForKey(element, "ToolTip", tooltipText);
 
-            Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}", backspaces, completionText.c_str()) } };
+            Model::SendInputArgs args{
+                winrt::hstring{ fmt::format(FMT_COMPILE(L"{:\x7f^{}}{}"),
+                                            L"",
+                                            replaceLength,
+                                            (std::wstring_view)completionText) }
+            };
+
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
 
             auto c = winrt::make_self<Command>();
@@ -714,7 +720,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 }
             }
 
-            result.Append(*c);
+            result.push_back(*c);
         };
 
         if (root.isArray())
@@ -730,6 +736,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // If we instead only got a single element back, just parse the root element.
             parseElement(root);
         }
-        return result;
+
+        return winrt::single_threaded_vector<Model::Command>(std::move(result));
     }
 }

@@ -512,7 +512,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<CopyTextArgs>())
         {
-            const auto handled = _CopyText(realArgs.SingleLine(), realArgs.CopyFormatting());
+            const auto handled = _CopyText(realArgs.DismissSelection(), realArgs.SingleLine(), realArgs.CopyFormatting());
             args.Handled(handled);
         }
     }
@@ -1021,6 +1021,16 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleDisplayWorkingDirectory(const IInspectable& /*sender*/,
+                                                      const ActionEventArgs& args)
+    {
+        if (_settings.GlobalSettings().DebugFeaturesEnabled())
+        {
+            ShowTerminalWorkingDirectory();
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleSearchForText(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
@@ -1272,6 +1282,17 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleToggleBroadcastInput(const IInspectable& /*sender*/,
+                                                   const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            activeTab->ToggleBroadcastInput();
+            args.Handled(true);
+        }
+        // If the focused tab wasn't a TerminalTab, then leave handled=false
+    }
+
     void TerminalPage::_HandleRestartConnection(const IInspectable& /*sender*/,
                                                 const ActionEventArgs& args)
     {
@@ -1294,4 +1315,5 @@ namespace winrt::TerminalApp::implementation
         }
         args.Handled(true);
     }
+
 }

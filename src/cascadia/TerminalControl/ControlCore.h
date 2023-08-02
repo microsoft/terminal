@@ -350,7 +350,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const int velocity,
                                    const std::chrono::microseconds duration);
 
-        void _terminalMenuChanged(std::wstring_view menuJson, unsigned int replaceLength);
+        winrt::fire_and_forget _terminalMenuChanged(std::wstring_view menuJson, unsigned int replaceLength);
 
 #pragma endregion
 
@@ -377,10 +377,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _contextMenuSelectMark(
             const til::point& pos,
-            bool (*filter)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&),
-            til::point_span (*getSpan)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&));
+            bool (*filter)(const ::ScrollMark&),
+            til::point_span (*getSpan)(const ::ScrollMark&));
 
-        bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&));
+        bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::ScrollMark&));
 
         inline bool _IsClosing() const noexcept
         {

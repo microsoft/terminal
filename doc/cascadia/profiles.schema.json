@@ -260,7 +260,8 @@
           "description": "Name of the scheme to use when the app is using dark theme",
           "type": "string"
         }
-      }
+      },
+      "type": "object"
     },
     "FontConfig": {
       "properties": {
@@ -798,6 +799,11 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the copied content will be copied as a single line (even if there are hard line breaks present in the text). If false, newlines persist from the selected text."
+            },
+            "dismissSelection": {
+              "type": "boolean",
+              "default": true,
+              "description": "If false, the copied content will be copied and the selection will not be dismissed. If true, the selection will be dismissed."
             },
             "copyFormatting": {
               "default": null,

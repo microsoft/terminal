@@ -852,3 +852,22 @@ std::wstring Utils::EvaluateStartingDirectory(
     }
     return resultPath;
 }
+
+bool Utils::IsWindows11() noexcept
+{
+    static const bool isWindows11 = []() noexcept {
+        OSVERSIONINFOEXW osver{};
+        osver.dwOSVersionInfoSize = sizeof(osver);
+        osver.dwBuildNumber = 22000;
+
+        DWORDLONG dwlConditionMask = 0;
+        VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+        if (VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE)
+        {
+            return true;
+        }
+        return false;
+    }();
+    return isWindows11;
+}

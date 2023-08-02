@@ -14,10 +14,10 @@ jobs:
     EnableRichCodeNavigation: true
   pool:
     ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
-      name: WinDevPoolOSS-L
+      name: SHINE-OSS-L
     ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
-      name: WinDevPool-L
-    demands: ImageOverride -equals WinDevVS17-latest
+      name: SHINE-INT-L
+    demands: ImageOverride -equals SHINE-VS17-Latest
 
   steps:
   - template: build-console-steps.yml
