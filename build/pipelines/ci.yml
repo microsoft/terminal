@@ -101,7 +101,7 @@ stages:
           - Build_${{ platform }}
         condition: succeeded()
         jobs:
-          - template: ./templates/test-console-ci.yml
+          - template: ./templates-v2/job-test-project.yml
             parameters:
               platform: ${{ platform }}
 
