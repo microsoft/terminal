@@ -121,8 +121,6 @@ namespace Microsoft.Terminal.Control
         // opacity set by the settings should call this instead.
         Double BackgroundOpacity { get; };
 
-        void PreviewInput(String text);
-
         Boolean DisplayCursorWhileBlurred;
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
