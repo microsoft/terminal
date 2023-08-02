@@ -100,6 +100,7 @@
         <muxc:NavigationView.MenuItems>
 
             <muxc:NavigationViewItem x:Uid="Nav_Launch"
+                                     AutomationProperties.AutomationId="LaunchNavItem"
                                      Tag="Launch_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE7B5;" />
@@ -107,6 +108,7 @@
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_Interaction"
+                                     AutomationProperties.AutomationId="InteractionNavItem"
                                      Tag="Interaction_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE7C9;" />
@@ -114,6 +116,7 @@
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_Appearance"
+                                     AutomationProperties.AutomationId="AppearanceNavItem"
                                      Tag="GlobalAppearance_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE771;" />
@@ -121,6 +124,7 @@
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_ColorSchemes"
+                                     AutomationProperties.AutomationId="ColorSchemesNavItem"
                                      Tag="ColorSchemes_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE790;" />
@@ -128,6 +132,7 @@
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_Rendering"
+                                     AutomationProperties.AutomationId="RenderingNavItem"
                                      Tag="Rendering_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE7F8;" />
@@ -135,6 +140,7 @@
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_Actions"
+                                     AutomationProperties.AutomationId="ActionsNavItem"
                                      Tag="Actions_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE765;" />
@@ -145,6 +151,7 @@
 
             <muxc:NavigationViewItem x:Name="BaseLayerMenuItem"
                                      x:Uid="Nav_ProfileDefaults"
+                                     AutomationProperties.AutomationId="BaseLayerNavItem"
                                      Tag="GlobalProfile_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE81E;" />
