@@ -16,7 +16,7 @@ pr: none
 name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
 
 stages:
-  - stage: Build_x64
+  - stage: Build
     displayName: Fuzzing Build
     dependsOn: []
     condition: succeeded()
@@ -33,6 +33,11 @@ stages:
           buildEverything: true
           keepAllExpensiveBuildOutputs: false
 
+  - stage: Submit
+    displayName: Submit to OneFuzz
+    dependsOn: [Build]
+    condition: succeeded()
+    jobs:
       - job:
         pool:
           vmImage: 'ubuntu-latest'
