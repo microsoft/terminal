@@ -40,8 +40,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ClearBuffer();
         void TryRedrawCanvas();
 
-        void ManuallyDisplayText(const winrt::hstring& text);
-
         void Close();
 
         // -------------------------------- WinRT Events ---------------------------------
