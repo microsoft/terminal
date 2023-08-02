@@ -374,6 +374,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::Control::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
+        std::optional<uint32_t> _GetTabIndex(const TerminalApp::TabBase& tab) const noexcept;
         TerminalApp::TabBase _GetFocusedTab() const noexcept;
         winrt::com_ptr<TerminalTab> _GetFocusedTabImpl() const noexcept;
         TerminalApp::TabBase _GetTabByTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept;

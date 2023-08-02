@@ -917,7 +917,7 @@ namespace winrt::TerminalApp::implementation
         auto dispatcher = TabViewItem().Dispatcher();
         ControlEventTokens events{};
 
-        events.titleToken = control.TitleChanged([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+        events.titleToken = control.TitleChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
@@ -928,7 +928,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.colorToken = control.TabColorChanged([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+        events.colorToken = control.TabColorChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             if (auto tab{ weakThis.get() })
             {
@@ -939,7 +939,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
@@ -948,7 +948,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.readOnlyToken = control.ReadOnlyChanged([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+        events.readOnlyToken = control.ReadOnlyChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             if (auto tab{ weakThis.get() })
             {

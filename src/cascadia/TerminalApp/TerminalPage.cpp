@@ -2107,10 +2107,14 @@ namespace winrt::TerminalApp::implementation
         const auto direction = args.Direction();
         if (direction != MoveTabDirection::None)
         {
-            // TODO! Get the index of the tab passed in, not the focused one you dingus
-            if (auto focusedTabIndex = _GetFocusedTabIndex())
+            // Use the requested tab, if provided. Otherwise, use the currently
+            // focused tab.
+            const auto tabIndex = til::coalesce(_GetTabIndex(*tab),
+                                                _GetFocusedTabIndex(),
+                                                std::optional<uint32_t>{ std::nullopt });
+            if (tabIndex)
             {
-                const auto currentTabIndex = focusedTabIndex.value();
+                const auto currentTabIndex = tabIndex.value();
                 const auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
                 _TryMoveTab(currentTabIndex, currentTabIndex + delta);
             }

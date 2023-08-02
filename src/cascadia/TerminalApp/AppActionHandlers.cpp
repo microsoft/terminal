@@ -1128,7 +1128,16 @@ namespace winrt::TerminalApp::implementation
             if (const auto& realArgs = args.ActionArgs().try_as<FocusPaneArgs>())
             {
                 const auto paneId = realArgs.Id();
-                // TODO! will this explode if the sender isn't the active tab?
+
+                // This action handler is not enlightened for _senderOrFocusedTab.
+                // There's currently no way for an inactive tab to be the sender of a focusPane command.
+                // If that ever changes, then we'll need to consider how this handler should behave.
+                // Should it
+                // * focus the tab that sent the command AND activate the requested pane?
+                // * or should it just activate the pane in the sender, and leave the focused tab alone?
+                //
+                // For now, we'll just focus the pane in the focused tab.
+
                 if (const auto activeTab{ _GetFocusedTabImpl() })
                 {
                     _UnZoomIfNeeded();
