@@ -42,6 +42,12 @@ namespace winrt::TerminalApp::implementation
             {
                 // Force immediate binding update so we can select an item
                 Bindings->Update();
+                UpdateLayout(); // THIS ONE IN PARTICULAR SEEMS LOAD BEARING.
+                // Without the UpdateLayout call, our ListView won't have a
+                // chance to instantiate ListViewItem's. If we don't have those,
+                // then our call to `SelectedItem()` below is going to return
+                // null. If it does that, then we won't be able to focus
+                // ourselves when we're opened.
 
                 // Select the correct element in the list, depending on which
                 // direction we were opened in.
@@ -69,8 +75,10 @@ namespace winrt::TerminalApp::implementation
 
                     _searchBox().Visibility(Visibility::Collapsed);
 
-                    const auto dependencyObj = SelectedItem().try_as<winrt::Windows::UI::Xaml::DependencyObject>();
-                    Input::FocusManager::TryFocusAsync(dependencyObj, FocusState::Programmatic);
+                    if (const auto& dependencyObj = SelectedItem().try_as<winrt::Windows::UI::Xaml::DependencyObject>())
+                    {
+                        Input::FocusManager::TryFocusAsync(dependencyObj, FocusState::Programmatic);
+                    }
                 }
 
                 TraceLoggingWrite(
@@ -1052,9 +1060,8 @@ namespace winrt::TerminalApp::implementation
                                   Windows::Foundation::Size space,
                                   float characterHeight)
     {
-        SetCommands(commands);
-        Visibility(commands.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
         Mode(mode);
+        SetCommands(commands);
 
         _anchor = anchor;
         _space = space;
@@ -1095,5 +1102,7 @@ namespace winrt::TerminalApp::implementation
             newMargin.Top = (_anchor.Y - actualSize.height);
         }
         Margin(newMargin);
+
+        Visibility(commands.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
     }
 }
