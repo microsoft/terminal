@@ -63,8 +63,8 @@ stages:
                 name: SHINE-OSS-L
               ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
                 name: SHINE-INT-L
-            buildPlatforms: x64
-            buildConfigurations: AuditMode
+            buildPlatforms: [x64]
+            buildConfigurations: [AuditMode]
             buildEverything: true
 
   - stage: Scripts
@@ -87,8 +87,8 @@ stages:
                 name: SHINE-OSS-L
               ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
                 name: SHINE-INT-L
-            buildPlatforms: ${{ platform }}
-            buildConfigurations: Release
+            buildPlatforms: [${{ platform }}]
+            buildConfigurations: [Release]
             buildEverything: true
 
     - ${{ if eq(parameters.runTests, true) }}:
