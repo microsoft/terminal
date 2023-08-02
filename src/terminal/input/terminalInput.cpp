@@ -269,45 +269,45 @@ void TerminalInput::ForceDisableWin32InputMode(const bool win32InputMode) noexce
     _forceDisableWin32InputMode = win32InputMode;
 }
 
-static const std::span<const TermKeyMap> _getKeyMapping(const KEY_EVENT_RECORD& keyEvent,
-                                                        const bool ansiMode,
-                                                        const bool cursorApplicationMode,
-                                                        const bool keypadApplicationMode) noexcept
+static std::span<const TermKeyMap> _getKeyMapping(const KEY_EVENT_RECORD& keyEvent, const bool ansiMode, const bool cursorApplicationMode, const bool keypadApplicationMode) noexcept
 {
+    // Cursor keys: VK_END, VK_HOME, VK_LEFT, VK_UP, VK_RIGHT, VK_DOWN
+    const auto isCursorKey = keyEvent.wVirtualKeyCode >= VK_END && keyEvent.wVirtualKeyCode <= VK_DOWN;
+
     if (ansiMode)
     {
-        if (keyEvent.wVirtualKeyCode >= VK_END && keyEvent.wVirtualKeyCode <= VK_DOWN)
+        if (isCursorKey)
         {
             if (cursorApplicationMode)
             {
-                return { s_cursorKeysApplicationMapping.data(), s_cursorKeysApplicationMapping.size() };
+                return s_cursorKeysApplicationMapping;
             }
             else
             {
-                return { s_cursorKeysNormalMapping.data(), s_cursorKeysNormalMapping.size() };
+                return s_cursorKeysNormalMapping;
             }
         }
         else
         {
             if (keypadApplicationMode)
             {
-                return { s_keypadApplicationMapping.data(), s_keypadApplicationMapping.size() };
+                return s_keypadApplicationMapping;
             }
             else
             {
-                return { s_keypadNumericMapping.data(), s_keypadNumericMapping.size() };
+                return s_keypadNumericMapping;
             }
         }
     }
     else
     {
-        if (keyEvent.wVirtualKeyCode >= VK_END && keyEvent.wVirtualKeyCode <= VK_DOWN)
+        if (isCursorKey)
         {
-            return { s_cursorKeysVt52Mapping.data(), s_cursorKeysVt52Mapping.size() };
+            return s_cursorKeysVt52Mapping;
         }
         else
         {
-            return { s_keypadVt52Mapping.data(), s_keypadVt52Mapping.size() };
+            return s_keypadVt52Mapping;
         }
     }
 }
