@@ -41,7 +41,7 @@ parameters:
   - name: submitHelix
     displayName: "Submit to Helix for testing and PGO"
     type: boolean
-    default: true
+    default: false
   - name: buildPlatforms
     type: object
     default:
@@ -105,7 +105,7 @@ stages:
             parameters:
               platform: ${{ platform }}
 
-  - ${{ if and(containsValue(parameters.buildPlatforms, 'x64'), eq(parameters.submitHelix, true), ne(variables['Build.Reason'], 'PullRequest')) }}:
+  - ${{ if and(containsValue(parameters.buildPlatforms, 'x64'), eq(parameters.submitHelix, true)) }}:
     - stage: Helix_x64
       displayName: Helix x64
       dependsOn: [Build_x64]
