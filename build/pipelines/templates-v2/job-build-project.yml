@@ -157,6 +157,7 @@ jobs:
     - pwsh: |-
         .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path "$(WindowsTerminalPackagePath)"
       displayName: Check MSIX for common regressions
+      condition: and(succeeded(), ne(variables.WindowsTerminalPackagePath, ''))
       
     - ${{ if eq(parameters.codeSign, true) }}:
       - pwsh: |-
@@ -197,6 +198,7 @@ jobs:
           Copy-Item "$(WindowsTerminalPackagePath)" $PackageFilename
           Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
         displayName: Stage the package (unsigned)
+        condition: and(succeeded(), ne(variables.WindowsTerminalPackagePath, ''))
 
   - ${{ if or(parameters.buildTerminal, parameters.buildEverything) }}:
     - pwsh: |-
@@ -204,6 +206,7 @@ jobs:
         $outDir = New-Item -Type Directory "$(BinDir)/_unpackaged" -ErrorAction:Ignore
         & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 -TerminalAppX $(WindowsTerminalPackagePath) -XamlAppX $XamlAppxPath -Destination $outDir.FullName
       displayName: Build Unpackaged Distribution (from MSIX)
+      condition: and(succeeded(), ne(variables.WindowsTerminalPackagePath, ''))
 
 # - task: PublishSymbols@2
 #   displayName: Publish symbols path
