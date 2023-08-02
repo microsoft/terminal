@@ -4194,7 +4194,6 @@ namespace winrt::TerminalApp::implementation
         // will be that profile's GUID. If there wasn't, then we'll use
         // whatever the default profile's GUID is.
         newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
-        newTerminalArgs.StartingDirectory(_evaluatePathForCwd(defaultSettings.StartingDirectory()));
         _OpenElevatedWT(newTerminalArgs);
         return true;
     }
