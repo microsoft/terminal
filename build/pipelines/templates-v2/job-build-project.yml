@@ -74,7 +74,7 @@ jobs:
               OutputBuildPlatform: ${{ platform }}
   variables:
     MakeAppxPath: 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\MakeAppx.exe'
-    BinDir: $(Build.SourcesDirectory)/bin/$(OutputBuildPlatform)/$(BuildConfiguration)
+    Terminal.BinDir: $(Build.SourcesDirectory)/bin/$(OutputBuildPlatform)/$(BuildConfiguration)
     # Azure DevOps abhors a vacuum
     # If these are blank, expansion will fail later on... which will result in direct substitution of the variable *names*
     # later on. We'll just... set them to a single space and if we need to, check IsNullOrWhiteSpace.
@@ -147,16 +147,16 @@ jobs:
   # - All LocalTests_ projects as their output is subsumed into TestHostApp
   # - All PDB files inside the WindowsTerminal/ output, which do not belong there.
   - pwsh: |-
-      $ImportLibs = Get-ChildItem '$(BinDir)' -Recurse -Filter *.exp | ForEach-Object { $_.FullName -Replace "exp$","lib" }
+      $ImportLibs = Get-ChildItem '$(Terminal.BinDir)' -Recurse -Filter *.exp | ForEach-Object { $_.FullName -Replace "exp$","lib" }
 
       $Items = @()
-      $Items += Get-ChildItem '$(BinDir)' -Filter '*.lib' -Recurse | Where-Object FullName -NotIn $ImportLibs
-      $Items += Get-ChildItem '$(BinDir)' -Filter '*Lib' -Directory
-      $Items += Get-ChildItem '$(BinDir)' -Filter 'LocalTests_*' -Directory
-      $Items += Get-ChildItem '$(BinDir)\WindowsTerminal' -Filter '*.pdb' -ErrorAction:Ignore
+      $Items += Get-ChildItem '$(Terminal.BinDir)' -Filter '*.lib' -Recurse | Where-Object FullName -NotIn $ImportLibs
+      $Items += Get-ChildItem '$(Terminal.BinDir)' -Filter '*Lib' -Directory
+      $Items += Get-ChildItem '$(Terminal.BinDir)' -Filter 'LocalTests_*' -Directory
+      $Items += Get-ChildItem '$(Terminal.BinDir)\WindowsTerminal' -Filter '*.pdb' -ErrorAction:Ignore
 
       If (-Not [bool]::Parse('${{ parameters.keepAllExpensiveBuildOutputs }}')) {
-        $Items += Get-ChildItem '$(BinDir)' -Filter '*.pdb' -Recurse
+        $Items += Get-ChildItem '$(Terminal.BinDir)' -Filter '*.pdb' -Recurse
       }
 
       $Items | Remove-Item -Recurse -Force -Verbose -ErrorAction:Ignore
@@ -165,7 +165,7 @@ jobs:
   # We cannot index PDBs that we have deleted!
   - ${{ if eq(parameters.keepAllExpensiveBuildOutputs, true) }}:
     - pwsh: |-
-        build\scripts\Index-Pdbs.ps1 -SearchDir '$(BinDir)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+        build\scripts\Index-Pdbs.ps1 -SearchDir '$(Terminal.BinDir)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
       displayName: Source Index PDBs
       errorActionPreference: silentlyContinue
 
@@ -183,7 +183,7 @@ jobs:
       
     - ${{ if eq(parameters.codeSign, true) }}:
       - pwsh: |-
-          & "$(MakeAppxPath)" unpack /p "$(WindowsTerminalPackagePath)" /d "$(BinDir)/PackageContents"
+          & "$(MakeAppxPath)" unpack /p "$(WindowsTerminalPackagePath)" /d "$(Terminal.BinDir)/PackageContents"
         displayName: Unpack the MSIX for signing
 
   - ${{ if eq(parameters.codeSign, true) }}:
@@ -194,28 +194,28 @@ jobs:
         fragments: $(SelectedSigningFragments)
 
     # Code-sign everything we just put together.
-    # We run the signing in BinDir, because all of the signing batches are relative to the final architecture/configuration output folder.
+    # We run the signing in Terminal.BinDir, because all of the signing batches are relative to the final architecture/configuration output folder.
     - task: EsrpCodeSigning@1
       displayName: Submit Signing Request
       inputs:
         ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: '$(BinDir)'
+        FolderPath: '$(Terminal.BinDir)'
         signType: batchSigning
         batchSignPolicyFile: '$(Build.SourcesDirectory)/ESRPSigningConfig.json'
 
     # We only need to re-pack the MSIX if we actually signed, so this can stay in the codeSign conditional
     - ${{ if or(parameters.buildTerminal, parameters.buildEverything) }}:
       - pwsh: |-
-          $outDir = New-Item -Type Directory "$(BinDir)/_appx" -ErrorAction:Ignore
+          $outDir = New-Item -Type Directory "$(Terminal.BinDir)/_appx" -ErrorAction:Ignore
           $PackageFilename = Join-Path $outDir.FullName (Split-Path -Leaf "$(WindowsTerminalPackagePath)")
-          & "$(MakeAppxPath)" pack /h SHA256 /o /p $PackageFilename /d "$(BinDir)/PackageContents"
+          & "$(MakeAppxPath)" pack /h SHA256 /o /p $PackageFilename /d "$(Terminal.BinDir)/PackageContents"
           Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
         displayName: Re-pack the new Terminal package after signing
 
   - ${{ else }}: # No Signing
     - ${{ if or(parameters.buildTerminal, parameters.buildEverything) }}:
       - pwsh: |-
-          $outDir = New-Item -Type Directory "$(BinDir)/_appx" -ErrorAction:Ignore
+          $outDir = New-Item -Type Directory "$(Terminal.BinDir)/_appx" -ErrorAction:Ignore
           $PackageFilename = Join-Path $outDir.FullName (Split-Path -Leaf "$(WindowsTerminalPackagePath)")
           Copy-Item "$(WindowsTerminalPackagePath)" $PackageFilename
           Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
@@ -225,7 +225,7 @@ jobs:
   - ${{ if or(parameters.buildTerminal, parameters.buildEverything) }}:
     - pwsh: |-
         $XamlAppxPath = (Get-Item "src\cascadia\CascadiaPackage\AppPackages\*\Dependencies\$(BuildPlatform)\Microsoft.UI.Xaml*.appx").FullName
-        $outDir = New-Item -Type Directory "$(BinDir)/_unpackaged" -ErrorAction:Ignore
+        $outDir = New-Item -Type Directory "$(Terminal.BinDir)/_unpackaged" -ErrorAction:Ignore
         & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 -TerminalAppX $(WindowsTerminalPackagePath) -XamlAppX $XamlAppxPath -Destination $outDir.FullName
       displayName: Build Unpackaged Distribution (from MSIX)
       condition: and(succeeded(), ne(variables.WindowsTerminalPackagePath, ''))
@@ -235,9 +235,9 @@ jobs:
 #   continueOnError: True
 #   inputs:
 #     SearchPattern: |
-#       $(BinDir)/**/*.pdb
-#       $(BinDir)/**/*.exe
-#       $(BinDir)/**/*.dll
+#       $(Terminal.BinDir)/**/*.pdb
+#       $(Terminal.BinDir)/**/*.exe
+#       $(Terminal.BinDir)/**/*.dll
 #     IndexSources: false
 #     SymbolServerType: TeamServices
   
