@@ -35,6 +35,10 @@ jobs:
       artifactName: build-${{ parameters.platform }}-$(BuildConfiguration)${{ parameters.artifactStem }}
       downloadPath: $(BinDir)
 
+  - pwsh: |-
+      & tar.exe -x -v -f (Get-Item "$(BinDir)/_unpackaged/*.zip") -C "$(BinDir)"
+    displayName: Extract the unpackaged build for PGO
+
   - task: PowerShell@2
     displayName: 'Run PGO Tests'
     inputs:
