@@ -179,7 +179,9 @@ jobs:
     - pwsh: |-
         .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path "$(WindowsTerminalPackagePath)"
       displayName: Check MSIX for common regressions
-      condition: and(succeeded(), ne(variables.WindowsTerminalPackagePath, ''))
+      # CHECK EXCEPTION
+      # PGO requires a desktop CRT, which fails this test
+      condition: and(succeeded(), ne(parameters.pgoBuildMode, 'Instrument'), ne(variables.WindowsTerminalPackagePath, ''))
       
     - ${{ if eq(parameters.codeSign, true) }}:
       - pwsh: |-
