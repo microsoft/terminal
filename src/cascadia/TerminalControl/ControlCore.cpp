@@ -1449,9 +1449,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_inUnitTests)
             [[unlikely]]
-            {
-                _ScrollPositionChangedHandlers(*this, update);
-            }
+        {
+            _ScrollPositionChangedHandlers(*this, update);
+        }
         else
         {
             const auto shared = _shared.lock_shared();
@@ -1776,14 +1776,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 {
                     // Get the distance between the cursor and the click, in cells.
                     const auto bufferSize = _terminal->GetTextBuffer().GetSize();
-                    const auto delta = bufferSize.CompareInBounds(terminalPosition, cursorPos);
-                    const WORD key = delta > 0 ? VK_RIGHT : VK_LEFT;
-                    const auto keystrokes = std::abs(delta);
+
+                    // First, make sure to iterate from the first point to the
+                    // second. The user may have clicked _earlier_ in the
+                    // buffer!
+                    auto goRight = terminalPosition > cursorPos;
+                    const auto startPoint = goRight ? cursorPos : terminalPosition;
+                    const auto endPoint = goRight ? terminalPosition : cursorPos;
+
+                    const auto delta = _terminal->GetTextBuffer().GetCellDistance(startPoint, endPoint);
+
+                    const WORD key = goRight ? VK_RIGHT : VK_LEFT;
                     // Send an up and a down once per cell. This won't
                     // accurately handle wide characters, or continuation
                     // prompts, or cases where a single escape character in the
                     // command (e.g. ^[) takes up two cells.
-                    for (auto i = 0; i < keystrokes; i++)
+                    for (size_t i = 0u; i < delta; i++)
                     {
                         _terminal->SendKeyEvent(key, 0, {}, true);
                         _terminal->SendKeyEvent(key, 0, {}, false);
