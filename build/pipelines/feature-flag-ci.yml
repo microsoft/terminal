@@ -37,3 +37,4 @@ stages:
             buildEverything: true
             branding: ${{ branding }}
             keepAllExpensiveBuildOutputs: false
+            artifactStem: -${{ branding }} # Disambiguate artifacts with the same config/platform
