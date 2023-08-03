@@ -155,7 +155,7 @@ jobs:
         $Items += Get-ChildItem '$(BinDir)' -Filter '*.pdb' -Recurse
       }
 
-      $Items | Remove-Item -Force -Verbose
+      $Items | Remove-Item -Recurse -Force -Verbose
     displayName: Clean up static libs and extra symbols
 
   # We cannot index PDBs that we have deleted!
