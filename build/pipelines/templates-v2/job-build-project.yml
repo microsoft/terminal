@@ -176,12 +176,13 @@ jobs:
         Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
       displayName: Locate the MSIX
 
-    - pwsh: |-
-        .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path "$(WindowsTerminalPackagePath)"
-      displayName: Check MSIX for common regressions
-      # CHECK EXCEPTION
-      # PGO requires a desktop CRT, which fails this test
-      condition: and(succeeded(), ne(parameters.pgoBuildMode, 'Instrument'), ne(variables.WindowsTerminalPackagePath, ''))
+    # CHECK EXCEPTION
+    # PGO requires a desktop CRT
+    - ${{ if ne(parameters.pgoBuildMode, 'Instrument') }}:
+      - pwsh: |-
+          .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path "$(WindowsTerminalPackagePath)"
+        displayName: Check MSIX for common regressions
+        condition: and(succeeded(), ne(variables.WindowsTerminalPackagePath, ''))
       
     - ${{ if eq(parameters.codeSign, true) }}:
       - pwsh: |-
