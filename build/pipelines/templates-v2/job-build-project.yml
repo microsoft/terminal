@@ -75,6 +75,12 @@ jobs:
   variables:
     MakeAppxPath: 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\MakeAppx.exe'
     BinDir: $(Build.SourcesDirectory)/bin/$(OutputBuildPlatform)/$(BuildConfiguration)
+    # Azure DevOps abhors a vacuum
+    # If these are blank, expansion will fail later on... which will result in direct substitution of the variable *names*
+    # later on. We'll just... set them to a single space and if we need to, check IsNullOrWhiteSpace.
+    # Yup.
+    BuildTargetParameter: ' '
+    SelectedSigningFragments: ' '
   displayName: Build
   timeoutInMinutes: 240
   cancelTimeoutInMinutes: 1
@@ -83,12 +89,9 @@ jobs:
     clean: true
     submodules: true
     persistCredentials: True
-  # This generates either an empty string for BuildTargetParameter, or /t:X;Y;Z, to control targets later.
+  # This generates either nothing for BuildTargetParameter, or /t:X;Y;Z, to control targets later.
   - pwsh: |-
-      If ([bool]::Parse("${{ parameters.buildEverything }}")) {
-        Write-Host "##vso[task.setvariable variable=BuildTargetParameter]"
-        Write-Host "##vso[task.setvariable variable=SelectedSigningFragments]"
-      } Else {
+      If (-Not [bool]::Parse("${{ parameters.buildEverything }}")) {
         $BuildTargets = @()
         $SignFragments = @()
         If ([bool]::Parse("${{ parameters.buildTerminal }}")) {
@@ -107,7 +110,7 @@ jobs:
         Write-Host "Sign targets: $($SignFragments -Join ";")"
         Write-Host "##vso[task.setvariable variable=BuildTargetParameter]/t:$($BuildTargets -Join ";")"
         # DEBUG
-        Write-Host "##vso[task.setvariable variable=SelectedSigningFragments]"
+        #Write-Host "##vso[task.setvariable variable=SelectedSigningFragments]$($SignFragments -Join ";")"
       }
     displayName: Prepare Build and Sign Targets
 
