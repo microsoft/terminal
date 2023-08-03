@@ -42,7 +42,7 @@ namespace winrt::TerminalApp::implementation
                        std::shared_ptr<Pane> newPane);
 
         void ToggleSplitOrientation();
-        void UpdateIcon(const winrt::hstring iconPath);
+        void UpdateIcon(const winrt::hstring& iconPath);
         void HideIcon(const bool hide);
 
         void ShowBellIndicator(const bool show);
@@ -58,7 +58,7 @@ namespace winrt::TerminalApp::implementation
         bool SwapPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool FocusPane(const uint32_t id);
 
-        void UpdateSettings();
+        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
         void UpdateTitle();
 
         void Shutdown() override;

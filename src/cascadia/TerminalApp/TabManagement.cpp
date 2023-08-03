@@ -289,7 +289,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto content{ tab.GetActiveContent() })
         {
-            tab.UpdateIcon(content.Icon());
+            const auto& icon{ content.Icon() };
+            tab.UpdateIcon(icon);
         }
     }
 

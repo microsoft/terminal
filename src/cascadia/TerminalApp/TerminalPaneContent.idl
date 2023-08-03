@@ -9,8 +9,8 @@ namespace TerminalApp
     {
         Microsoft.Terminal.Control.TermControl GetTerminal();
 
-        void UpdateSettings(const Microsoft.Terminal.Settings.Model.TerminalSettingsCreateResult settings,
-                            const Microsoft.Terminal.Settings.Model.Profile profile);
+        void UpdateTerminalSettings(Microsoft.Terminal.Settings.Model.TerminalSettingsCreateResult settings,
+                                    Microsoft.Terminal.Settings.Model.Profile profile);
 
         void MarkAsDefterm();
 

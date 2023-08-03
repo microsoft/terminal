@@ -288,8 +288,15 @@ namespace winrt::TerminalApp::implementation
         RestartTerminalRequested.raise(*this, nullptr);
     }
 
-    void TerminalPaneContent::UpdateSettings(const TerminalSettingsCreateResult& settings,
-                                             const Profile& profile)
+    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& /*settings*/)
+    {
+        // Do nothing. We'll later be updated manually by
+        // UpdateTerminalSettings, which we need for profile and
+        // focused/unfocused settings.
+    }
+
+    void TerminalPaneContent::UpdateTerminalSettings(const TerminalSettingsCreateResult& settings,
+                                                     const Profile& profile)
     {
         _profile = profile;
         _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());

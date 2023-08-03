@@ -3154,11 +3154,17 @@ namespace winrt::TerminalApp::implementation
         {
             if (auto terminalTab{ _GetTerminalTabImpl(tab) })
             {
-                terminalTab->UpdateSettings();
+                // Let the tab know that there are new settings. It's up to each content to decide what to do with them.
+                terminalTab->UpdateSettings(_settings);
+
+                // FURTHERMORE We need to do a bit more work here for terminal
+                // panes. They need to know about the profile that was used for
+                // them, and about the focused/unfocused settings.
 
                 // Manually enumerate the panes in each tab; this will let us recycle TerminalSettings
                 // objects but only have to iterate one time.
                 terminalTab->GetRootPane()->WalkTree([&](auto&& pane) {
+                    // If the pane isn't a terminal pane, it won't have a profile.
                     if (const auto profile{ pane->GetProfile() })
                     {
                         const auto found{ profileGuidSettingsMap.find(profile.Guid()) };
@@ -3173,7 +3179,7 @@ namespace winrt::TerminalApp::implementation
                             {
                                 pair.second = TerminalSettings::CreateWithProfile(_settings, pair.first, *_bindings);
                             }
-                            pane->UpdateSettings(pair.second, pair.first);
+                            pane->UpdateTerminalSettings(pair.second, pair.first);
                         }
                     }
                 });

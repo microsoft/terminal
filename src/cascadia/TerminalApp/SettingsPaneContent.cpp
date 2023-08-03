@@ -10,11 +10,23 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
+#define ASSERT_UI_THREAD() assert(_sui.Dispatcher().HasThreadAccess())
+
 namespace winrt::TerminalApp::implementation
 {
     SettingsPaneContent::SettingsPaneContent(CascadiaSettings settings)
     {
         _sui = winrt::Microsoft::Terminal::Settings::Editor::MainPage{ settings };
+    }
+
+    void SettingsPaneContent::UpdateSettings(const CascadiaSettings& settings)
+    {
+        ASSERT_UI_THREAD();
+        _sui.UpdateSettings(settings);
+
+        // Stash away the current requested theme of the app. We'll need that in
+        // _BackgroundBrush() to do a theme-aware resource lookup
+        // _requestedTheme = settings.GlobalSettings().CurrentTheme().RequestedTheme();
     }
 
     winrt::Windows::UI::Xaml::FrameworkElement SettingsPaneContent::GetRoot()

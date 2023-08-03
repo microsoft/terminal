@@ -12,6 +12,7 @@ namespace TerminalApp
     interface IPaneContent
     {
         Windows.UI.Xaml.FrameworkElement GetRoot();
+        void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
         Windows.Foundation.Size MinSize { get; };
 

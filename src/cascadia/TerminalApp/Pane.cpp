@@ -1276,6 +1276,14 @@ void Pane::_FocusFirstChild()
     }
 }
 
+void Pane::UpdateSettings(const CascadiaSettings& settings)
+{
+    if (_content)
+    {
+        _content.UpdateSettings(settings);
+    }
+}
+
 // Method Description:
 // - Updates the settings of this pane, presuming that it is a leaf.
 // Arguments:
@@ -1283,13 +1291,13 @@ void Pane::_FocusFirstChild()
 // - profile: The profile from which these settings originated.
 // Return Value:
 // - <none>
-void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Profile& profile)
+void Pane::UpdateTerminalSettings(const TerminalSettingsCreateResult& settings, const Profile& profile)
 {
     assert(_IsLeaf());
 
     if (const auto& terminalPane{ _getTerminalContent() })
     {
-        return terminalPane.UpdateSettings(settings, profile);
+        return terminalPane.UpdateTerminalSettings(settings, profile);
     }
 }
 

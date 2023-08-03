@@ -268,12 +268,18 @@ namespace winrt::TerminalApp::implementation
     //   of the settings that apply to all tabs.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings()
+    void TerminalTab::UpdateSettings(const CascadiaSettings& settings)
     {
         ASSERT_UI_THREAD();
 
         // The tabWidthMode may have changed, update the header control accordingly
         _UpdateHeaderControlMaxWidth();
+
+        // Update the settings on all our panes.
+        _rootPane->WalkTree([&](auto pane) {
+            pane->UpdateSettings(settings);
+            return false;
+        });
     }
 
     // Method Description:
@@ -282,7 +288,7 @@ namespace winrt::TerminalApp::implementation
     // - iconPath: The new path string to use as the IconPath for our TabViewItem
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateIcon(const winrt::hstring iconPath)
+    void TerminalTab::UpdateIcon(const winrt::hstring& iconPath)
     {
         ASSERT_UI_THREAD();
 
@@ -377,7 +383,7 @@ namespace winrt::TerminalApp::implementation
             return RS_(L"MultiplePanes");
         }
         const auto activeContent = GetActiveContent();
-        return activeContent ? activeContent.Title() : L"";
+        return activeContent ? activeContent.Title() : winrt::hstring{ L"" };
     }
 
     // Method Description:
@@ -987,7 +993,6 @@ namespace winrt::TerminalApp::implementation
             if (const auto& termContent{ content.try_as<TerminalApp::TerminalPaneContent>() })
             {
                 _addBroadcastHandlers(termContent.GetTerminal(), events);
-
             }
         }
 

@@ -11,6 +11,8 @@ namespace winrt::TerminalApp::implementation
     {
         SettingsPaneContent(winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
 
+        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
         winrt::Microsoft::Terminal::Settings::Editor::MainPage SettingsUI() { return _sui; }
 
