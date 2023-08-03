@@ -35,6 +35,11 @@ stages:
           pgoBuildMode: Instrument
           artifactStem: -instrumentation
 
+  - stage: RunPGO
+    displayName: Run PGO
+    dependsOn: [Build]
+    condition: succeeded()
+    jobs:
       - ${{ each platform in parameters.buildPlatforms }}:
         - template: ./templates-v2/job-run-pgo-tests.yml
           parameters:
