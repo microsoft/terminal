@@ -33,41 +33,27 @@ stages:
           buildConfigurations: [Release]
           buildTerminal: true
           pgoBuildMode: Instrument
+          artifactStem: -instrumentation
 
-      - template: helix-runtests-job.yml
-        parameters:
-          name: 'RunTestsInHelix'
-          dependsOn: Build${{ parameters.platform }}${{ parameters.configuration }}
-          condition: succeeded()
-          testSuite: 'PgoInstrumentationSuite'
-          taefQuery: '@IsPgo=true'
-          configuration: ${{ parameters.configuration }}
-          platform: ${{ parameters.platform }}
-          rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
+      - ${{ each platform in parameters.buildPlatforms }}:
+        - template: ./templates-v2/job-run-pgo-tests.yml
+          parameters:
+            platform: ${{ platform }}
+            artifactStem: -instrumentation
 
-      - template: helix-processtestresults-job.yml
-        parameters:
-          name: 'ProcessTestResults'
-          pgoArtifact: 'PGO'
-          dependsOn:
-          - RunTestsInHelix
-          condition: succeededOrFailed()
-          rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
-          minimumExpectedTestsExecutedCount: ${{ parameters.minimumExpectedTestsExecutedCount }}
+#     - template: pgo-merge-pgd-job.yml
+#       parameters:
+#         name: 'MergePGD'
+#         dependsOn:
+#         - ProcessTestResults
+#         pgoArtifact: 'PGO'
+#         platform: ${{ parameters.platform }}
+#         configuration: ${{ parameters.configuration }}
 
-      - template: pgo-merge-pgd-job.yml
-        parameters:
-          name: 'MergePGD'
-          dependsOn:
-          - ProcessTestResults
-          pgoArtifact: 'PGO'
-          platform: ${{ parameters.platform }}
-          configuration: ${{ parameters.configuration }}
-
-  - stage: Publish_PGO_Databases
-    displayName: Publish PGO databases
-    dependsOn: ['Build_x64']
-    jobs:
-      - template: ./templates/pgo-build-and-publish-nuget-job.yml
-        parameters:
-          pgoArtifact: 'PGO'
+# - stage: Publish_PGO_Databases
+#   displayName: Publish PGO databases
+#   dependsOn: ['Build_x64']
+#   jobs:
+#     - template: ./templates/pgo-build-and-publish-nuget-job.yml
+#       parameters:
+#         pgoArtifact: 'PGO'
