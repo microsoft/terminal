@@ -106,7 +106,8 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
-                    <Grid Style="{StaticResource NonExpanderGrid}">
+                    <Grid AutomationProperties.Name="{TemplateBinding Header}"
+                          Style="{StaticResource NonExpanderGrid}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />

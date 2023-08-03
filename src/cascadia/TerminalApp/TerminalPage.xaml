@@ -205,5 +205,11 @@
                          Text="{x:Bind WindowProperties.WindowName, Mode=OneWay}" />
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
+
+        <mux:TeachingTip x:Name="WindowCwdToast"
+                         x:Uid="WindowCwdToast"
+                         Title="{x:Bind WindowProperties.VirtualWorkingDirectory, Mode=OneWay}"
+                         x:Load="False"
+                         IsLightDismissEnabled="True" />
     </Grid>
 </Page>

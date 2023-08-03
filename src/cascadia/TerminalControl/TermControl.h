@@ -146,6 +146,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AdjustOpacity(const double opacity, const bool relative);
 
+        bool RawWriteKeyEvent(const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
+        bool RawWriteChar(const wchar_t character, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        void RawWriteString(const winrt::hstring& text);
+
         void ShowContextMenu();
 
         void Detach();
@@ -180,7 +184,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
         TYPED_EVENT(Initialized,               Control::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(WarningBell,               IInspectable, IInspectable);
-
+        TYPED_EVENT(KeySent,                   IInspectable, Control::KeySentEventArgs);
+        TYPED_EVENT(CharSent,                  IInspectable, Control::CharSentEventArgs);
+        TYPED_EVENT(StringSent,                IInspectable, Control::StringSentEventArgs);
         // clang-format on
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, BackgroundBrush, _PropertyChangedHandlers, nullptr);
@@ -354,6 +360,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
+
+        void _pasteTextWithBroadcast(const winrt::hstring& text);
 
         void _contextMenuHandler(IInspectable sender, Control::ContextMenuRequestedEventArgs args);
         void _showContextMenuAt(const til::point& controlRelativePos);
