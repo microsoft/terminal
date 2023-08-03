@@ -35,6 +35,7 @@ namespace winrt::TerminalApp::implementation
         uint64_t TaskbarState() { return _control.TaskbarState(); }
         uint64_t TaskbarProgress() { return _control.TaskbarProgress(); }
         bool ReadOnly() { return _control.ReadOnly(); }
+        winrt::hstring Icon() const;
 
         float SnapDownToGrid(const TerminalApp::PaneSnapDirection direction, const float sizeToSnap);
         Windows::Foundation::Size GridSize();

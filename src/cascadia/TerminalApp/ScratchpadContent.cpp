@@ -50,4 +50,10 @@ namespace winrt::TerminalApp::implementation
     {
         return nullptr;
     }
+
+    winrt::hstring ScratchpadContent::Icon() const
+    {
+        static constexpr std::wstring_view glyph{ L"\xe70b" }; // QuickNote
+        return winrt::hstring{ glyph };
+    }
 }

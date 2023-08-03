@@ -19,6 +19,7 @@ namespace TerminalApp
         UInt64 TaskbarState { get; };
         UInt64 TaskbarProgress { get; };
         Boolean ReadOnly { get; };
+        String Icon { get; };
 
         Microsoft.Terminal.Settings.Model.NewTerminalArgs GetNewTerminalArgs(Boolean asContent);
 

@@ -23,6 +23,7 @@ namespace winrt::TerminalApp::implementation
         uint64_t TaskbarState() { return 0; }
         uint64_t TaskbarProgress() { return 0; }
         bool ReadOnly() { return false; }
+        winrt::hstring Icon() const;
 
         til::typed_event<> CloseRequested;
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::BellEventArgs> BellRequested;

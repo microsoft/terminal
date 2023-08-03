@@ -2265,7 +2265,11 @@ namespace winrt::TerminalApp::implementation
                                   const float splitSize,
                                   std::shared_ptr<Pane> newPane)
     {
-        // TODO! Prevent splitting the _settingsTab!
+        // For now, prevent splitting the _settingsTab. We can always revisit this later.
+        if (tab == _settingsTab)
+        {
+            return;
+        }
 
         // If the caller is calling us with the return value of _MakePane
         // directly, it's possible that nullptr was returned, if the connections

@@ -42,4 +42,11 @@ namespace winrt::TerminalApp::implementation
         // TODO! hey, can we somehow replicate std::vector<ActionAndArgs> SettingsTab::BuildStartupActions?
         return nullptr;
     }
+
+    winrt::hstring SettingsPaneContent::Icon() const
+    {
+        // This is the Setting icon (looks like a gear)
+        static constexpr std::wstring_view glyph{ L"\xE713" };
+        return winrt::hstring{ glyph };
+    }
 }

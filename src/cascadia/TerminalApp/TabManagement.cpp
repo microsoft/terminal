@@ -226,14 +226,8 @@ namespace winrt::TerminalApp::implementation
         auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().InsertAt(insertPosition, tabViewItem);
 
-        // Set this tab's icon to the icon from the user's profile
-        if (const auto profile{ newTabImpl->GetFocusedProfile() })
-        {
-            if (!profile.Icon().empty())
-            {
-                newTabImpl->UpdateIcon(profile.Icon());
-            }
-        }
+        // Set this tab's icon to the icon from the content
+        _UpdateTabIcon(*newTabImpl);
 
         tabViewItem.PointerReleased({ this, &TerminalPage::_OnTabClick });
 
@@ -293,9 +287,9 @@ namespace winrt::TerminalApp::implementation
     // - tab: the Tab to update the title for.
     void TerminalPage::_UpdateTabIcon(TerminalTab& tab)
     {
-        if (const auto profile = tab.GetFocusedProfile())
+        if (const auto content{ tab.GetActiveContent() })
         {
-            tab.UpdateIcon(profile.Icon());
+            tab.UpdateIcon(content.Icon());
         }
     }
 

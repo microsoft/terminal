@@ -76,6 +76,11 @@ namespace winrt::TerminalApp::implementation
         CloseRequested.raise(*this, nullptr);
     }
 
+    winrt::hstring TerminalPaneContent::Icon() const
+    {
+        return _profile.Icon();
+    }
+
     NewTerminalArgs TerminalPaneContent::GetNewTerminalArgs(const bool asContent) const
     {
         NewTerminalArgs args{};
