@@ -1,7 +1,7 @@
 ---
 author: Mike Griese
 created on: 2022-08-22
-last updated: 2023-07-11
+last updated: 2023-08-03
 issue id: 1595
 ---
 
@@ -157,11 +157,11 @@ We will want to make sure that there's some semblance of consistency across our
 implementation for the Suggestions UI, our own Command Palette, VsCode's
 intellisense and their own implementation of shell-completions in the Terminal.
 
-> **Note** 
+> **Note**
 > In my prototype, for the "Menu" mode, I accepted ALL of right-arrow, tab, and
 > enter as "accept completion", and any other key dismissed the UI. This _felt_
 > right for that mode. I'm not sure we could make the same call for "palette"
-> mode, where we'd need tab for navigating focus. 
+> mode, where we'd need tab for navigating focus.
 
 ### Implementation Details
 
@@ -283,11 +283,11 @@ These actions are colloquially:
 * Give me suggestions of directories I've recently been in
 * _(After [Tasks] are implemented)_ Give me suggestions from recent commands,
   commands I've saved, and commands for this project. Don't nest any, so they're
-  all in the top-level menu. Use what I've typed already to start filtering. 
+  all in the top-level menu. Use what I've typed already to start filtering.
 * Just open the Suggestions UI with all suggestions sources, and group them by
-  the source of the suggestions. 
+  the source of the suggestions.
 
-This should cover most of the basic use cases for suggestions. 
+This should cover most of the basic use cases for suggestions.
 
 #### Who owns this menu?
 
@@ -297,8 +297,7 @@ itself? Or the app hosting the control?
 A main argument for hosting this UI in the control itself is that any consumer
 of the `TermControl` should be able to display the [shell-driven autocompletion]
 menu. And they should get the UI from us "for free". Consumers shouldn't need to
-reimplement it themselves. In this scenarioThis probably could be done without
-many changes
+reimplement it themselves. This probably could be done without many changes:
 * Instead of operating on `Command`s and actions from the terminal settings,
   the control could just know that all the entries in the menu are "send
   input" "actions".
@@ -335,13 +334,13 @@ The Suggestions UI was designed with the goal of making commandline shell
 suggestions _more_ accessible. As Carlos previously wrote:
 
 > Screen readers struggle with this because the entire menu is redrawn every time, making it harder to understand what exactly is "selected" (as the concept of selection in this instance is a shell-side concept represented by visual manipulation).
-> 
+>
 > ...
-> 
-> _\[Shell driven suggestions\]_ can then be leveraged by Windows Terminal to create UI elements. Doing so leverages WinUI's accessible design. 
+>
+> _\[Shell driven suggestions\]_ can then be leveraged by Windows Terminal to create UI elements. Doing so leverages WinUI's accessible design.
 
 This will allow the Terminal to provide more context-relevant information to
-screen readers. 
+screen readers.
 
 </td></tr>
 
@@ -376,8 +375,8 @@ spec's review.
 
 * [ ] Fork the Command palette to a new UI element, the `SuggestionsControl`
 * [ ] Enable previewing `sendInput` actions in the Command Palette and `SuggestionsControl`
-* [ ] Enable the `SuggestionsControl` to open top-down (aligned to the bottom of the cursor row) or bottom-up (aligned to the top of the cursor row). 
-* [ ] Disable sorting on the `SuggestionsControl` - elements should presumably be pre-sorted by the source. 
+* [ ] Enable the `SuggestionsControl` to open top-down (aligned to the bottom of the cursor row) or bottom-up (aligned to the top of the cursor row).
+* [ ] Disable sorting on the `SuggestionsControl` - elements should presumably be pre-sorted by the source.
 * [ ] Expose the recent commands as a accessor on `TermControl`
 * [ ] Add a `suggestions` action which accepts a single option `recentCommands`. These should be fed in MRU order to the `SuggestionsControl`.
 * [ ] Expose the recent directories as an accessor on `TermControl`, and add a `recentDirectories` source.
@@ -388,10 +387,9 @@ spec's review.
   a tree of all `sendInput` commands
 * [ ] Enable the `SuggestionsControl` to open with or without a search box
 * [ ] Plumb support for shell-driven completions through the core up to the app
-* [ ] Figure out how exactly we want to persist recent commands / directories. Globally? Per-profile? Layered? Per executable (does that even make sense)?
-* [ ] Persist recent commands / directories accordingly
 * [ ] Expose the _current_ commandline from the `TermControl`
-* [ ] Add a `useCommandline` property to `suggestions`, to pre-populate the search with the current commandline. 
+* [ ] Add a `useCommandline` property to `suggestions`, to pre-populate the search with the current commandline.
+* [ ] Persist recent commands / directories accordingly
 
 ### 🏃‍♂️ Run
 
@@ -402,14 +400,14 @@ spec's review.
 * [ ] Add a boolean `nesting` property which can be used to disable nesting on the `tasks` source.
 * [ ] Add the ability for `nesting` to accept `enabled`/`disabled` as `true`/`false` equivalents
 * [ ] Add the ability for `nesting` to accept `source`, which instead groups all
-  commands to the Suggestions UI by the source of that suggestion. 
+  commands to the Suggestions UI by the source of that suggestion.
 
 ### 🚀 Sprint
 
 The two "sprint" tasks here are much more ambitious than the other listed
 scenarios, so breaking them down to atomic tasks sees less reasonable. We'd have
 to spend a considerable amount more time figuring out _how_ to do each of these
-first. 
+first.
 
 For example - extensions. We have yet to fully realize what extensions _are_.
 Determining how extensions will provide suggestions is left as something we'll
@@ -449,13 +447,27 @@ Here's a sample json schema for the settings discussed here.
     }
   ]
 },
+"BuiltinSuggestionSource": {
+  "enum": [
+    "commandHistory",
+    "directoryHistory",
+    "tasks",
+    "local",
+    "all"
+  ],
+  "type": "string"
+},
 "SuggestionSource": {
   "default": "all",
   "description": "Either a single suggestion source, or an array of sources to concatenate. Built-in sources include `commandHistory`, `directoryHistory`, `tasks`, and `local`. Extensions may provide additional values. The special value `all` indicates all suggestion sources should be included",
   "$comment": "`tasks` and `local` are sources that would be added by the Tasks feature, as a follow-up"
   "oneOf": [
     {
-      "type": [ "string", "null" ]
+      "type": [ "string", "null", "BuiltinSuggestionSource" ]
+    },
+    {
+      "type": "array",
+      "items": { "type": "BuiltinSuggestionSource" }
     },
     {
       "type": "array",
@@ -525,8 +537,8 @@ configuration that the user has already set up. Hence why the Terminal can't
 just have a "Light up all the bells and whistles" toggle in the Settings UI.
 
 This is a non-trivial problem to solve, so it is being left as a future
-consideration. It deserves its own spec to sort out how we should expose this to
-users and safely implement it.
+consideration, for a later spec. It deserves its own spec to sort out how we
+should expose this to users and safely implement it.
 
 #### Pre-filtering the UI & filter by source
 
@@ -577,12 +589,12 @@ We'll probably want a way for recent commands to be saved across sessions. That 
 * A setting to control the context of these saved commandlines.
   * Do we want them saved per-profile, or globally?
   * If they're saved per-profile, maybe a profile can opt-in to loading all the commands?
-  * How does defterm play with this? Do we "layer: by concatenating per-profile commands with `profiles.defaults` ones?
+  * How does defterm play with this? Do we "layer" by concatenating per-profile commands with `profiles.defaults` ones?
 * A button in the Settings UI for clearing these commands
 * Should fragments be able to pre-populate "recent commands"?
   * I'm just gonna say _no_. That would be a better idea for Tasks (aka just a `sendInput` Action that we load from the fragment normally as a Task), or a specific suggestion source for the fragment extension.
 
-#### Inline mode 
+#### Inline mode
 
 > **Note**
 > _This is a half-baked idea with some potential. However, I don't
@@ -592,7 +604,7 @@ We'll probably want a way for recent commands to be saved across sessions. That 
 Do we want to have a suggestions UI "mode", that's just **one** inline
 suggestion, "no" UI? Some UX ala the `PsReadline` recent command suggestion
 feature. Imagine, we just display the IME ghost text thing for the first result,
-given the current prompt? 
+given the current prompt?
 
 Take the following action as an example:
 
@@ -613,19 +625,14 @@ ghost text preview).
 
 This would seemingly SUPER conflict with PowerShell's own handler. Probably not
 something someone should enable for PowerShell 7 profiles if they're using that
-feature. 
+feature.
 
 ### Rejected ideas
 
 These are musings from earlier versions of the spec.
 * **Asynchronous prompting**: This was rejected because it was so fundamentally
   different from the rest of the UX of the Suggestions UI, it didn't make sense
-  to try and also do that behavior. 
-  
-  Furthermore, async sources wouldn't work with sync
-  ones, at all. E.g. if you did `source: ["tasks", "myAsyncSource"]`. It doesn't
-  make sense to start with a list of `tasks`, then type, find no tasks, but then
-  oh! the UI fills in some other suggestions too. That's weird. 
+  to try and also do that behavior.
 * ...
 
 #### REJECTED: Asynchronous prompting
@@ -685,7 +692,10 @@ After some discussion:
 * How do we differentiate the prompting version of the Suggestions UI from the
   filtering version?
   * The prompting version _doesn't_ filter results
-* Async modes wouldn't work with sync ones
+* Async modes wouldn't work with sync ones at all. E.g. if you did `source:
+  ["tasks", "myAsyncSource"]`. It doesn't make sense to start with a list of
+  `tasks`, then type, find no tasks, but then oh! the UI fills in some other
+  suggestions too. That's weird.
 
 ## Resources
 
