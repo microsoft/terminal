@@ -176,7 +176,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             //   we tried writing a wide glyph into the last column which can't work.
             if (textPositionBefore == textPositionAfter && (state.columnBegin == 0 || !wrapAtEOL))
             {
-                textBuffer.ConsumeGrapheme(state.text);
+                state.text = state.text.substr(textBuffer.GraphemeNext(state.text, 0));
             }
 
             if (wrapAtEOL)
