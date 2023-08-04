@@ -31,7 +31,7 @@ stages:
               name: SHINE-INT-L
           buildPlatforms: ${{ parameters.buildPlatforms }}
           buildConfigurations: [Release]
-          buildTerminal: true
+          buildEverything: true
           pgoBuildMode: Instrument
           artifactStem: -instrumentation
 
