@@ -138,7 +138,7 @@ jobs:
   - publish: $(Build.SourcesDirectory)/msbuild.binlog
     artifact: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
     condition: always()
-    displayName: Publish binlog
+    displayName: Publish Build Log
 
   # This saves ~2GiB per architecture. We won't need these later.
   # Removes:
@@ -258,6 +258,6 @@ jobs:
         ValidateSignature: true
         Verbosity: 'Verbose'
 
-  - publish: bin/$(OutputBuildPlatform)/$(BuildConfiguration)
+  - publish: $(BinDir)
     artifact: build-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
     displayName: Publish All Outputs
