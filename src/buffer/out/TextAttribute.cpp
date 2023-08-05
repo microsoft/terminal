@@ -7,7 +7,7 @@
 
 // Keeping TextColor compact helps us keeping TextAttribute compact,
 // which in turn ensures that our buffer memory usage is low.
-static_assert(sizeof(TextAttribute) == 12);
+static_assert(sizeof(TextAttribute) == 18);
 static_assert(alignof(TextAttribute) == 2);
 // Ensure that we can memcpy() and memmove() the struct for performance.
 static_assert(std::is_trivially_copyable_v<TextAttribute>);
@@ -156,6 +156,16 @@ uint16_t TextAttribute::GetHyperlinkId() const noexcept
     return _hyperlinkId;
 }
 
+TextColor TextAttribute::GetUnderlineColor() const noexcept
+{
+    return _underlineColor;
+}
+
+UnderlineStyle TextAttribute::GetUnderlineStyle() const noexcept
+{
+    return _underlineStyle;
+}
+
 void TextAttribute::SetForeground(const TextColor foreground) noexcept
 {
     _foreground = foreground;
@@ -164,6 +174,11 @@ void TextAttribute::SetForeground(const TextColor foreground) noexcept
 void TextAttribute::SetBackground(const TextColor background) noexcept
 {
     _background = background;
+}
+
+void TextAttribute::SetUnderlineColor(const TextColor color) noexcept
+{
+    _underlineColor = color;
 }
 
 void TextAttribute::SetForeground(const COLORREF rgbForeground) noexcept
@@ -277,6 +292,9 @@ bool TextAttribute::IsCrossedOut() const noexcept
     return WI_IsFlagSet(_attrs, CharacterAttributes::CrossedOut);
 }
 
+// Method description:
+// - Returns true if the text is underlined with the any underline style,
+//   Eg. singly, doubly, curly, dotted, and dashed.
 bool TextAttribute::IsUnderlined() const noexcept
 {
     return WI_IsFlagSet(_attrs, CharacterAttributes::Underlined);
@@ -334,9 +352,43 @@ void TextAttribute::SetCrossedOut(bool isCrossedOut) noexcept
 
 void TextAttribute::SetUnderlined(bool isUnderlined) noexcept
 {
-    WI_UpdateFlag(_attrs, CharacterAttributes::Underlined, isUnderlined);
+    if (isUnderlined)
+    {
+        SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+    }
+    else
+    {
+        SetUnderlineStyle(UnderlineStyle::NoUnderline);
+    }
 }
 
+void TextAttribute::SetUnderlineStyle(const UnderlineStyle underlineStyle) noexcept
+{
+    switch (underlineStyle)
+    {
+    case UnderlineStyle::NoUnderline:
+        WI_ClearFlag(_attrs, CharacterAttributes::Underlined);
+        _underlineStyle = underlineStyle;
+        break;
+    case UnderlineStyle::SinglyUnderlined:
+    case UnderlineStyle::DoublyUnderlined:
+    case UnderlineStyle::CurlyUnderlined:
+    case UnderlineStyle::DottedUnderlined:
+    case UnderlineStyle::DashedUnderlined:
+        WI_SetFlag(_attrs, CharacterAttributes::Underlined);
+        _underlineStyle = underlineStyle;
+        break;
+    default:
+        /* do nothing */
+        break;
+    }
+}
+
+// Method description:
+// - Sets doubly underlined in the attribute.
+// - This is used for SGR 21 sequences. (do not use with SGR 4:x)
+// Arguments:
+// - isDoublyUnderlined - whether to set doubly underlined or not.
 void TextAttribute::SetDoublyUnderlined(bool isDoublyUnderlined) noexcept
 {
     WI_UpdateFlag(_attrs, CharacterAttributes::DoublyUnderlined, isDoublyUnderlined);
@@ -374,12 +426,18 @@ void TextAttribute::SetDefaultBackground() noexcept
     _background = TextColor();
 }
 
+void TextAttribute::SetDefaultUnderlineColor() noexcept
+{
+    _underlineColor = TextColor{};
+}
+
 // Method description:
 // - Resets only the rendition character attributes, which includes everything
-//     except the Protected attribute.
+//     except the Protected attribute. Additionally, resets the underline style.
 void TextAttribute::SetDefaultRenditionAttributes() noexcept
 {
     _attrs &= ~CharacterAttributes::Rendition;
+    _underlineStyle = UnderlineStyle::NoUnderline;
 }
 
 // Method Description:
@@ -404,5 +462,6 @@ bool TextAttribute::BackgroundIsDefault() const noexcept
 void TextAttribute::SetStandardErase() noexcept
 {
     _attrs = CharacterAttributes::Normal;
+    _underlineStyle = UnderlineStyle::NoUnderline;
     _hyperlinkId = 0;
 }

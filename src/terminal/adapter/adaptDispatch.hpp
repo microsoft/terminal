@@ -294,6 +294,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         SgrStack _sgrStack;
 
+        void _SetUnderlineStyleHelper(const VTParameter option, TextAttribute& attr) noexcept;
         size_t _SetRgbColorsHelper(const VTParameters options,
                                    TextAttribute& attr,
                                    const bool isForeground) noexcept;

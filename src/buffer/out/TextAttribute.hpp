@@ -27,6 +27,16 @@ Revision History:
 #include "WexTestClass.h"
 #endif
 
+enum class UnderlineStyle : uint8_t
+{
+    NoUnderline = 0,
+    SinglyUnderlined = 1,
+    DoublyUnderlined = 2,
+    CurlyUnderlined = 3,
+    DottedUnderlined = 4,
+    DashedUnderlined = 5,
+};
+
 class TextAttribute final
 {
 public:
@@ -34,7 +44,10 @@ public:
         _attrs{ CharacterAttributes::Normal },
         _foreground{},
         _background{},
-        _hyperlinkId{ 0 }
+        _hyperlinkId{ 0 },
+        _underlineColor{},
+        _underlineStyle{ UnderlineStyle::NoUnderline },
+        __unused{}
     {
     }
 
@@ -42,7 +55,10 @@ public:
         _attrs{ gsl::narrow_cast<WORD>(wLegacyAttr & USED_META_ATTRS) },
         _foreground{ gsl::at(s_legacyForegroundColorMap, wLegacyAttr & FG_ATTRS) },
         _background{ gsl::at(s_legacyBackgroundColorMap, (wLegacyAttr & BG_ATTRS) >> 4) },
-        _hyperlinkId{ 0 }
+        _hyperlinkId{ 0 },
+        _underlineColor{},
+        _underlineStyle{ UnderlineStyle::NoUnderline },
+        __unused{}
     {
     }
 
@@ -51,7 +67,21 @@ public:
         _attrs{ CharacterAttributes::Normal },
         _foreground{ rgbForeground },
         _background{ rgbBackground },
-        _hyperlinkId{ 0 }
+        _hyperlinkId{ 0 },
+        _underlineColor{},
+        _underlineStyle{ UnderlineStyle::NoUnderline },
+        __unused{}
+    {
+    }
+
+    constexpr TextAttribute(const CharacterAttributes attrs, const TextColor foreground, const TextColor background, const uint16_t hyperlinkId, const TextColor underlineColor, const UnderlineStyle underlineStyle) noexcept :
+        _attrs{ attrs },
+        _foreground{ foreground },
+        _background{ background },
+        _hyperlinkId{ hyperlinkId },
+        _underlineColor{ underlineColor },
+        _underlineStyle{ underlineStyle },
+        __unused{}
     {
     }
 
@@ -99,6 +129,7 @@ public:
     void SetInvisible(bool isInvisible) noexcept;
     void SetCrossedOut(bool isCrossedOut) noexcept;
     void SetUnderlined(bool isUnderlined) noexcept;
+    void SetUnderlineStyle(const UnderlineStyle underlineStyle) noexcept;
     void SetDoublyUnderlined(bool isDoublyUnderlined) noexcept;
     void SetOverlined(bool isOverlined) noexcept;
     void SetReverseVideo(bool isReversed) noexcept;
@@ -118,8 +149,11 @@ public:
     TextColor GetForeground() const noexcept;
     TextColor GetBackground() const noexcept;
     uint16_t GetHyperlinkId() const noexcept;
+    TextColor GetUnderlineColor() const noexcept;
+    UnderlineStyle GetUnderlineStyle() const noexcept;
     void SetForeground(const TextColor foreground) noexcept;
     void SetBackground(const TextColor background) noexcept;
+    void SetUnderlineColor(const TextColor color) noexcept;
     void SetForeground(const COLORREF rgbForeground) noexcept;
     void SetBackground(const COLORREF rgbBackground) noexcept;
     void SetIndexedForeground(const BYTE fgIndex) noexcept;
@@ -131,6 +165,7 @@ public:
 
     void SetDefaultForeground() noexcept;
     void SetDefaultBackground() noexcept;
+    void SetDefaultUnderlineColor() noexcept;
     void SetDefaultRenditionAttributes() noexcept;
 
     bool BackgroundIsDefault() const noexcept;
@@ -175,6 +210,9 @@ private:
     uint16_t _hyperlinkId; // sizeof: 2, alignof: 2
     TextColor _foreground; // sizeof: 4, alignof: 1
     TextColor _background; // sizeof: 4, alignof: 1
+    TextColor _underlineColor; // sizeof: 4, alignof: 1
+    UnderlineStyle _underlineStyle; // sizeof: 1, alignof: 1
+    BYTE __unused; // sizeof: 1, alignof: 1 (avoids padding)
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
