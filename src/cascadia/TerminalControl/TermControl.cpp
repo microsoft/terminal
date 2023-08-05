@@ -668,7 +668,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_InitializeBackgroundBrush()
     {
         auto settings{ _core.Settings() };
-        auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() };
+        auto bgColor = til::color{ _core.FocusedAppearance().RetroTerminalEffect() };
+
+
+        bool useAcrylic2 = _core.UnfocusedAppearance().UseAcrylic2();
+
+        hstring myhstring = useAcrylic2 ? L"true" : L"false";
+        OutputDebugStringW(myhstring.c_str());
+
+
 
         auto transparentBg = settings.UseBackgroundImageForWindow();
         if (transparentBg)
