@@ -205,6 +205,8 @@ namespace Microsoft::Console::VirtualTerminal
             CharacterAttributes xorAttrMask = CharacterAttributes::Normal;
             std::optional<TextColor> foreground;
             std::optional<TextColor> background;
+            std::optional<TextColor> underlineColor;
+            std::optional<UnderlineStyle> underlineStyle;
         };
 
         void _WriteToBuffer(const std::wstring_view string);
