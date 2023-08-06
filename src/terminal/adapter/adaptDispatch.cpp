@@ -4318,7 +4318,7 @@ void AdaptDispatch::_ReportCursorInformation()
     const auto viewport = _api.GetViewport();
     const auto& textBuffer = _api.GetTextBuffer();
     const auto& cursor = textBuffer.GetCursor();
-    const auto attributes = textBuffer.GetCurrentAttributes();
+    const auto& attributes = textBuffer.GetCurrentAttributes();
 
     // First pull the cursor position relative to the entire buffer out of the console.
     til::point cursorPosition{ cursor.GetPosition() };

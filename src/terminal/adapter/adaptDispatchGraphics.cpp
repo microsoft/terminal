@@ -477,7 +477,7 @@ bool AdaptDispatch::SetCharacterProtectionAttribute(const VTParameters options)
 // - True.
 bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
 {
-    const auto currentAttributes = _api.GetTextBuffer().GetCurrentAttributes();
+    const auto& currentAttributes = _api.GetTextBuffer().GetCurrentAttributes();
     _sgrStack.Push(currentAttributes, options);
     return true;
 }
@@ -491,7 +491,7 @@ bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
 // - True.
 bool AdaptDispatch::PopGraphicsRendition()
 {
-    const auto currentAttributes = _api.GetTextBuffer().GetCurrentAttributes();
+    const auto& currentAttributes = _api.GetTextBuffer().GetCurrentAttributes();
     _api.SetTextAttributes(_sgrStack.Pop(currentAttributes));
     return true;
 }
