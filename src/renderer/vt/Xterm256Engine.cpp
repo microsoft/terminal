@@ -100,8 +100,9 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
     // we can then check if either should be turned back on again.
     if (textAttributes.IsUnderlined() && !_lastTextAttributes.IsUnderlined())
     {
-        RETURN_IF_FAILED(_SetUnderlined(true));
-        _lastTextAttributes.SetUnderlined(true);
+        auto style = textAttributes.GetUnderlineStyle();
+        RETURN_IF_FAILED(_SetUnderlineExtended(style));
+        _lastTextAttributes.SetUnderlineStyle(style);
     }
     if (textAttributes.IsDoublyUnderlined() && !_lastTextAttributes.IsDoublyUnderlined())
     {
