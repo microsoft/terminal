@@ -38,7 +38,6 @@ namespace winrt::TerminalApp::implementation
 
     void SettingsTab::UpdateSettings(CascadiaSettings settings)
     {
-        // TODO! oh noes, we need to do this too in the content
         ASSERT_UI_THREAD();
 
         auto settingsUI{ Content().as<MainPage>() };
@@ -110,8 +109,6 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void SettingsTab::_CreateIcon()
     {
-        // TODO! make sure this works
-
         // This is the Setting icon (looks like a gear)
         static constexpr std::wstring_view glyph{ L"\xE713" };
 
@@ -122,9 +119,6 @@ namespace winrt::TerminalApp::implementation
 
     winrt::Windows::UI::Xaml::Media::Brush SettingsTab::_BackgroundBrush()
     {
-        // TODO! make sure this still works. It would be ironic if this _just
-        // worked_ because the SUI was the same color as a tab with no styling.
-
         // Look up the color we should use for the settings tab item from our
         // resources. This should only be used for when "terminalBackground" is
         // requested.

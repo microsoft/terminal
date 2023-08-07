@@ -1470,12 +1470,12 @@ namespace winrt::TerminalApp::implementation
     {
         ASSERT_UI_THREAD();
 
-        std::optional<winrt::Windows::UI::Color> controlTabColor;
-        if (const auto& control = GetActiveTerminalControl())
+        std::optional<winrt::Windows::UI::Color> contentTabColor;
+        if (const auto& content{ GetActiveContent() })
         {
-            if (const auto color = control.TabColor())
+            if (const auto color = content.TabColor())
             {
-                controlTabColor = color.Value();
+                contentTabColor = color.Value();
             }
         }
 
@@ -1485,7 +1485,7 @@ namespace winrt::TerminalApp::implementation
         // Color                |             | Set by
         // -------------------- | --          | --
         // Runtime Color        | _optional_  | Color Picker / `setTabColor` action
-        // Control Tab Color    | _optional_  | Profile's `tabColor`, or a color set by VT
+        // Content Tab Color    | _optional_  | Profile's `tabColor`, or a color set by VT (whatever the tab's content wants)
         // Theme Tab Background | _optional_  | `tab.backgroundColor` in the theme (handled in _RecalculateAndApplyTabColor)
         // Tab Default Color    | **default** | TabView in XAML
         //
@@ -1494,7 +1494,7 @@ namespace winrt::TerminalApp::implementation
         // tabview color" (and clear out any colors we've set).
 
         return til::coalesce(_runtimeTabColor,
-                             controlTabColor,
+                             contentTabColor,
                              std::optional<Windows::UI::Color>(std::nullopt));
     }
 
@@ -1533,7 +1533,7 @@ namespace winrt::TerminalApp::implementation
     winrt::Windows::UI::Xaml::Media::Brush TerminalTab::_BackgroundBrush()
     {
         Media::Brush terminalBrush{ nullptr };
-        if (const auto& c{ GetActiveTerminalControl() })
+        if (const auto& c{ GetActiveContent() })
         {
             terminalBrush = c.BackgroundBrush();
         }

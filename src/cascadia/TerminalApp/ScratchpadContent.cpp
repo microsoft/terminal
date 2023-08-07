@@ -61,4 +61,9 @@ namespace winrt::TerminalApp::implementation
         static constexpr std::wstring_view glyph{ L"\xe70b" }; // QuickNote
         return winrt::hstring{ glyph };
     }
+
+    winrt::Windows::UI::Xaml::Media::Brush ScratchpadContent::BackgroundBrush()
+    {
+        return _root.Background();
+    }
 }

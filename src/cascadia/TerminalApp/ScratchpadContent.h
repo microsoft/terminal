@@ -24,6 +24,8 @@ namespace winrt::TerminalApp::implementation
         uint64_t TaskbarProgress() { return 0; }
         bool ReadOnly() { return false; }
         winrt::hstring Icon() const;
+        Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() const noexcept { return nullptr; }
+        winrt::Windows::UI::Xaml::Media::Brush BackgroundBrush();
 
         til::typed_event<> CloseRequested;
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::BellEventArgs> BellRequested;

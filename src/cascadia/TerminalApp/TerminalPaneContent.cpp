@@ -81,6 +81,11 @@ namespace winrt::TerminalApp::implementation
         return _profile.Icon();
     }
 
+    Windows::Foundation::IReference<winrt::Windows::UI::Color> TerminalPaneContent::TabColor() const noexcept
+    {
+        return _control.TabColor();
+    }
+
     NewTerminalArgs TerminalPaneContent::GetNewTerminalArgs(const bool asContent) const
     {
         NewTerminalArgs args{};
@@ -309,6 +314,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::MarkAsDefterm()
     {
         _isDefTermSession = true;
+    }
+
+    winrt::Windows::UI::Xaml::Media::Brush TerminalPaneContent::BackgroundBrush()
+    {
+        return _control.BackgroundBrush();
     }
 
     float TerminalPaneContent::SnapDownToGrid(const TerminalApp::PaneSnapDirection direction, const float sizeToSnap)
