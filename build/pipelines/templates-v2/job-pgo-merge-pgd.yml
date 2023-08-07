@@ -3,6 +3,9 @@ parameters:
     type: string
   - name: buildPlatforms
     type: object
+  - name: pool
+    type: object
+    default: []
   - name: dependsOn
     type: object
     default: null
