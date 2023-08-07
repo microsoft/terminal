@@ -84,7 +84,7 @@ namespace Microsoft.Terminal.Control
         String FontFaceName { get; };
         UInt16 FontWeight { get; };
         Double Opacity { get; };
-        Boolean UseAcrylic { get; };
+        Boolean UseAcrylic2 { get; };
 
         Boolean TryMarkModeKeybinding(Int16 vkey,
                                       Microsoft.Terminal.Core.ControlKeyStates modifiers);
