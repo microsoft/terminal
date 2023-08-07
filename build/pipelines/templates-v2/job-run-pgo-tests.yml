@@ -1,24 +1,24 @@
 parameters:
-  configuration: 'Release'
-  platform: ''
+  buildConfiguration: 'Release'
+  buildPlatform: ''
   artifactStem: ''
 
 jobs:
-- job: PGO${{ parameters.platform }}${{ parameters.configuration }}
-  displayName: PGO ${{ parameters.platform }} ${{ parameters.configuration }}
+- job: PGO${{ parameters.buildPlatform }}${{ parameters.buildConfiguration }}
+  displayName: PGO ${{ parameters.buildPlatform }} ${{ parameters.buildConfiguration }}
   variables:
-    BuildConfiguration: ${{ parameters.configuration }}
-    BuildPlatform: ${{ parameters.platform }}
-    OutputBuildPlatform: ${{ parameters.platform }}
+    BuildConfiguration: ${{ parameters.buildConfiguration }}
+    BuildPlatform: ${{ parameters.buildPlatform }}
+    OutputBuildPlatform: ${{ parameters.buildPlatform }}
     BinDir: $(Build.SourcesDirectory)/bin/$(OutputBuildPlatform)/$(BuildConfiguration)
   pool:
     ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
-      ${{ if ne(parameters.platform, 'ARM64') }}:
+      ${{ if ne(parameters.buildPlatform, 'ARM64') }}:
         name: SHINE-OSS-Testing-x64
       ${{ else }}:
         name: SHINE-OSS-Testing-arm64
     ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
-      ${{ if ne(parameters.platform, 'ARM64') }}:
+      ${{ if ne(parameters.buildPlatform, 'ARM64') }}:
         name: SHINE-INT-Testing-x64
       ${{ else }}:
         name: SHINE-INT-Testing-arm64
@@ -32,7 +32,7 @@ jobs:
   - task: DownloadPipelineArtifact@2
     displayName: Download artifacts
     inputs:
-      artifactName: build-${{ parameters.platform }}-$(BuildConfiguration)${{ parameters.artifactStem }}
+      artifactName: build-${{ parameters.buildPlatform }}-$(BuildConfiguration)${{ parameters.artifactStem }}
       downloadPath: $(BinDir)
 
   - powershell: |-
@@ -53,37 +53,51 @@ jobs:
         -AdditionalTaefArguments '/select:(@IsPGO=true)'
     condition: and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument'))
 
-  - task: PowerShell@2
-    displayName: 'Convert Test Logs from WTL to xUnit format'
-    inputs:
-      targetType: filePath
-      filePath: build\Helix\ConvertWttLogToXUnit.ps1
-      arguments: -WttInputPath '${{ parameters.testLogPath }}' -WttSingleRerunInputPath 'unused.wtl' -WttMultipleRerunInputPath 'unused2.wtl' -XUnitOutputPath 'onBuildMachineResults.xml' -TestNamePrefix '$(BuildConfiguration).$(BuildPlatform)'
-    condition: ne(variables['PGOBuildMode'], 'Instrument')
-
-  - task: PublishTestResults@2
-    displayName: 'Upload converted test logs'
-    condition: ne(variables['PGOBuildMode'], 'Instrument')
-    inputs:
-      testResultsFormat: 'xUnit' # Options: JUnit, NUnit, VSTest, xUnit, cTest
-      testResultsFiles: '**/onBuildMachineResults.xml'
-      testRunTitle: 'On Build Machine Tests' # Optional
-      buildPlatform: $(BuildPlatform) # Optional
-      buildConfiguration: $(BuildConfiguration) # Optional
+#  - task: PowerShell@2
+#    displayName: 'Convert Test Logs from WTL to xUnit format'
+#    inputs:
+#      targetType: filePath
+#      filePath: build\Helix\ConvertWttLogToXUnit.ps1
+#      arguments: -WttInputPath '${{ parameters.testLogPath }}' -WttSingleRerunInputPath 'unused.wtl' -WttMultipleRerunInputPath 'unused2.wtl' -XUnitOutputPath 'onBuildMachineResults.xml' -TestNamePrefix '$(BuildConfiguration).$(BuildPlatform)'
+#    condition: ne(variables['PGOBuildMode'], 'Instrument')
+#
+#  - task: PublishTestResults@2
+#    displayName: 'Upload converted test logs'
+#    condition: ne(variables['PGOBuildMode'], 'Instrument')
+#    inputs:
+#      testResultsFormat: 'xUnit' # Options: JUnit, NUnit, VSTest, xUnit, cTest
+#      testResultsFiles: '**/onBuildMachineResults.xml'
+#      testRunTitle: 'On Build Machine Tests' # Optional
+#      buildPlatform: $(BuildPlatform) # Optional
+#      buildConfiguration: $(BuildConfiguration) # Optional
 
   - task: CopyFiles@2
-    displayName: 'Copy result logs to Artifacts'
+    displayName: 'Copy PGO outputs to Artifacts'
     condition: always()
     inputs:
       Contents: |
        **/*.pgc
-       **/*.wtl
-       **/*onBuildMachineResults.xml
        ${{ parameters.testLogPath }}
-      TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test-logs'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/pgc'
       OverWrite: true
       flattenFolders: true
 
-  - publish: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test-logs'
-    artifact: test-logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+# - task: CopyFiles@2
+#   displayName: 'Copy result logs to Artifacts'
+#   condition: always()
+#   inputs:
+#     Contents: |
+#      **/*.wtl
+#      **/*onBuildMachineResults.xml
+#      ${{ parameters.testLogPath }}
+#     TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test-logs'
+#     OverWrite: true
+#     flattenFolders: true
+
+  - publish: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/pgc'
+    artifact: pgc-intermediates-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
     condition: always()
+
+# - publish: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test-logs'
+#   artifact: test-logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+#   condition: always()

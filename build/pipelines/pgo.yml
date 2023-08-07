@@ -43,17 +43,21 @@ stages:
       - ${{ each platform in parameters.buildPlatforms }}:
         - template: ./templates-v2/job-run-pgo-tests.yml
           parameters:
-            platform: ${{ platform }}
+            buildPlatform: ${{ platform }}
+            buildConfiguration: Release
             artifactStem: -instrumentation
 
-#     - template: pgo-merge-pgd-job.yml
-#       parameters:
-#         name: 'MergePGD'
-#         dependsOn:
-#         - ProcessTestResults
-#         pgoArtifact: 'PGO'
-#         platform: ${{ parameters.platform }}
-#         configuration: ${{ parameters.configuration }}
+  - stage: FinalizePGO
+    displayName: Finalize PGO and Publish
+    dependsOn: [RunPGO]
+    condition: succeeded()
+    jobs:
+      - template: ./templates-v2/job-pgo-merge-pgd.yml
+        parameters:
+          buildConfiguration: Release
+          buildPlatforms: ${{ parameters.buildPlatforms }}
+          platform: ${{ platform }}
+          artifactStem: -instrumentation
 
 # - stage: Publish_PGO_Databases
 #   displayName: Publish PGO databases
