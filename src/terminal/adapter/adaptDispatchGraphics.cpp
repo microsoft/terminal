@@ -100,8 +100,22 @@ void AdaptDispatch::_SetRgbColorsHelperFromSubParams(const VTParameter colorItem
                                                      const VTSubParameters options,
                                                      TextAttribute& attr) noexcept
 {
-    // Initialize with a default color.
-    TextColor color{};
+    const auto applyColor = [&](const TextColor& color) {
+        switch (colorItem)
+        {
+        case ForegroundExtended:
+            attr.SetForeground(color);
+            break;
+        case BackgroundExtended:
+            attr.SetBackground(color);
+            break;
+        case UnderlineColor:
+            attr.SetUnderlineColor(color);
+            break;
+        default:
+            break;
+        };
+    };
 
     const DispatchTypes::GraphicsOptions typeOpt = options.at(0);
     switch (typeOpt)
@@ -116,7 +130,6 @@ void AdaptDispatch::_SetRgbColorsHelperFromSubParams(const VTParameter colorItem
         // send the red value in its place.
         const bool hasColorSpaceId = options.at(1).has_value();
 
-        // Skip color-space-id.
         const size_t red = options.at(2).value_or(0);
         const size_t green = options.at(3).value_or(0);
         const size_t blue = options.at(4).value_or(0);
@@ -125,7 +138,7 @@ void AdaptDispatch::_SetRgbColorsHelperFromSubParams(const VTParameter colorItem
         // This is to match XTerm's and VTE's behavior.
         if (!hasColorSpaceId && red <= 255 && green <= 255 && blue <= 255)
         {
-            color = TextColor{ RGB(red, green, blue) };
+            applyColor(TextColor{ RGB(red, green, blue) });
         }
         break;
     }
@@ -141,32 +154,13 @@ void AdaptDispatch::_SetRgbColorsHelperFromSubParams(const VTParameter colorItem
         if (tableIndex <= 255)
         {
             const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);
-            color = TextColor{ adjustedIndex, true };
+            applyColor(TextColor{ adjustedIndex, true });
         }
         break;
     }
     default:
         break;
     };
-
-    // apply the color iff it's not default.
-    if (!color.IsDefault())
-    {
-        switch (colorItem)
-        {
-        case ForegroundExtended:
-            attr.SetForeground(color);
-            break;
-        case BackgroundExtended:
-            attr.SetBackground(color);
-            break;
-        case UnderlineColor:
-            attr.SetUnderlineColor(color);
-            break;
-        default:
-            break;
-        };
-    }
 }
 
 // Routine Description:
