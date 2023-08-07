@@ -136,10 +136,20 @@ jobs:
 - ${{ if eq(parameters.buildTerminal, true) }}:
   - template: ./templates-v2/job-merge-msix-into-bundle.yml
     parameters:
+      jobName: Bundle
       branding: ${{ parameters.branding }}
       buildConfigurations: ${{ parameters.buildConfigurations }}
       buildPlatforms: ${{ parameters.buildPlatforms }}
       generateSbom: ${{ parameters.generateSbom }}
       codeSign: ${{ parameters.codeSign }}
       dependsOn: Build
+
+# We only support the vpack for Release builds that include Terminal
+- ${{ if and(containsValue(parameters.buildConfigurations, 'Release'), parameters.buildTerminal, parameters.packTerminalVPack) }}:
+  - template: ./templates-v2/job-submit-windows-vpack.yml
+    parameters:
+      buildConfiguration: Release
+      generateSbom: ${{ parameters.generateSbom }}
+      dependsOn: Bundle
+
 ...

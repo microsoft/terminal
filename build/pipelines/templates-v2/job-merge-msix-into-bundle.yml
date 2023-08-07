@@ -20,9 +20,12 @@ parameters:
   - name: artifactStem
     type: string
     default: ''
+  - name: jobName
+    type: string
+    default: Bundle
 
 jobs:
-- job: Bundle
+- job: ${{ parameters.jobName }}
   ${{ if ne(length(parameters.pool), 0) }}:
     pool: ${{ parameters.pool }}
   displayName: Create and sign AppX/MSIX bundles
