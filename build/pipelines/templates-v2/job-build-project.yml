@@ -262,6 +262,6 @@ jobs:
         ValidateSignature: true
         Verbosity: 'Verbose'
 
-  - publish: $(BinDir)
+  - publish: $(Terminal.BinDir)
     artifact: build-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
     displayName: Publish All Outputs
