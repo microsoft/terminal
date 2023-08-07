@@ -56,7 +56,6 @@ stages:
         parameters:
           buildConfiguration: Release
           buildPlatforms: ${{ parameters.buildPlatforms }}
-          platform: ${{ platform }}
           artifactStem: -instrumentation
 
 # - stage: Publish_PGO_Databases
