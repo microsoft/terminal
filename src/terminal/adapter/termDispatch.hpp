@@ -130,7 +130,7 @@ public:
 
     bool DoFinalTermAction(const std::wstring_view /*string*/) override { return false; }
 
-    bool DoXtermJsAction(const std::wstring_view /*string*/) override { return false; }
+    bool DoVsCodeAction(const std::wstring_view /*string*/) override { return false; }
 
     StringHandler DownloadDRCS(const VTInt /*fontNumber*/,
                                const VTParameter /*startChar*/,

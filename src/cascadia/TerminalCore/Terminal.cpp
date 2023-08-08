@@ -1259,9 +1259,9 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noe
     return _taskbarProgress;
 }
 
-void Microsoft::Terminal::Core::Terminal::MenuChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept
+void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept
 {
-    _pfnMenuChanged.swap(pfn);
+    _pfnCompletionsChanged.swap(pfn);
 }
 
 Scheme Terminal::GetColorScheme() const

@@ -29,7 +29,6 @@ namespace TerminalApp
         String SearchBoxPlaceholderText { get; };
         String ControlName { get; };
         String ParentCommandName { get; };
-        String ParsedCommandLineText { get; };
 
         Windows.UI.Xaml.FrameworkElement SelectedItem { get; };
 

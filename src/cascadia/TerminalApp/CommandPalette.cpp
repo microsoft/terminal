@@ -225,24 +225,15 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_selectedCommandChanged(const IInspectable& /*sender*/,
                                                  const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
-        const auto currentlyVisible{ Visibility() == Visibility::Visible };
-
         const auto selectedCommand = _filteredActionsView().SelectedItem();
         const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
         if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
             _switchToTab(filteredCommand);
         }
-        else if (_currentMode == CommandPaletteMode::ActionMode &&
-                 currentlyVisible)
+        else if (_currentMode == CommandPaletteMode::ActionMode && filteredCommand != nullptr)
         {
-            // If we don't have a selected command, then end any previews we
-            // might currently be showing.
-            if (filteredCommand == nullptr)
-            {
-                _PreviewActionHandlers(*this, nullptr);
-            }
-            else if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
                 _PreviewActionHandlers(*this, actionPaletteItem.Command());
             }
@@ -1092,9 +1083,7 @@ namespace winrt::TerminalApp::implementation
         {
             std::copy(begin(commandsToFilter), end(commandsToFilter), std::back_inserter(actions));
         }
-        else if (_currentMode == CommandPaletteMode::TabSearchMode ||
-                 _currentMode == CommandPaletteMode::ActionMode ||
-                 _currentMode == CommandPaletteMode::CommandlineMode)
+        else if (_currentMode == CommandPaletteMode::TabSearchMode || _currentMode == CommandPaletteMode::ActionMode || _currentMode == CommandPaletteMode::CommandlineMode)
         {
             for (const auto& action : commandsToFilter)
             {

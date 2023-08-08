@@ -104,7 +104,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.ConnectionStateChanged = _core.ConnectionStateChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleConnectionStateChanged });
         _revokers.ShowWindowChanged = _core.ShowWindowChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleShowWindowChanged });
         _revokers.CloseTerminalRequested = _core.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCloseTerminalRequested });
-        _revokers.MenuChanged = _core.MenuChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleMenuChanged });
+        _revokers.CompletionsChanged = _core.CompletionsChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCompletionsChanged });
         _revokers.RestartTerminalRequested = _core.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleRestartTerminalRequested });
 
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
@@ -525,9 +525,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::SendInput(const winrt::hstring& wstr)
     {
-        // Dismiss any previewed input.
-        PreviewInput(L"");
-
         // only broadcast if there's an actual listener. Saves the overhead of some object creation.
         if (_StringSentHandlers)
         {
@@ -3449,11 +3446,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     uint64_t TermControl::OwningHwnd()
     {
         return _core.OwningHwnd();
-    }
-
-    void TermControl::PreviewInput(const winrt::hstring& text)
-    {
-        TSFInputControl().ManuallyDisplayText(text);
     }
 
     void TermControl::AddMark(const Control::ScrollMark& mark)

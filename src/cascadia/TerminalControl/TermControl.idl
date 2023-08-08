@@ -54,7 +54,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
 
-        event Windows.Foundation.TypedEventHandler<Object, MenuChangedEventArgs> MenuChanged;
+        event Windows.Foundation.TypedEventHandler<Object, CompletionsChangedEventArgs> CompletionsChanged;
 
         event Windows.Foundation.TypedEventHandler<Object, KeySentEventArgs> KeySent;
         event Windows.Foundation.TypedEventHandler<Object, CharSentEventArgs> CharSent;
@@ -121,8 +121,6 @@ namespace Microsoft.Terminal.Control
         // not overriding or changing _that_ value. Callers that want the
         // opacity set by the settings should call this instead.
         Double BackgroundOpacity { get; };
-
-        void PreviewInput(String text);
 
         Boolean DisplayCursorWhileBlurred;
 
