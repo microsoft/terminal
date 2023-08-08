@@ -1315,7 +1315,10 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 // Open the palette with all these commands in it.
-                _OpenSuggestions(commandsCollection, SuggestionsMode::Palette, currentCommandline);
+                _OpenSuggestions(_GetActiveControl(),
+                                 commandsCollection,
+                                 SuggestionsMode::Palette,
+                                 currentCommandline);
                 args.Handled(true);
             }
         }
