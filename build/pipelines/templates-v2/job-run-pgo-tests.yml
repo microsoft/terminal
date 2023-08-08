@@ -40,6 +40,13 @@ jobs:
       & tar.exe -x -v -f (Get-Item "$(Terminal.BinDir)/_unpackaged/*.zip") -C "$(Terminal.BinDir)"
     displayName: Extract the unpackaged build for PGO
 
+  - powershell: |-
+      $Package = 'Microsoft.Internal.Windows.Terminal.TestContent'
+      $Version = '1.0.1'
+      & nuget.exe install $Package -Version $Version
+      Write-Host "##vso[task.setvariable variable=TerminalTestContentPath]$(Build.SourcesDirectory)\packages\${Package}.${Version}\content"
+    displayName: Install Test Content
+
   - task: PowerShell@2
     displayName: 'Run PGO Tests'
     inputs:
@@ -51,7 +58,7 @@ jobs:
         -Configuration '$(BuildConfiguration)'
         -LogPath '${{ parameters.testLogPath }}'
         -Root "$(Terminal.BinDir)"
-        -AdditionalTaefArguments '/select:(@IsPGO=true)'
+        -AdditionalTaefArguments '/select:(@IsPGO=true)','/p:WTTestContent=$(TerminalTestContentPath)'
     condition: and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument'))
 
 #  - task: PowerShell@2

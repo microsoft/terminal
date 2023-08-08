@@ -10,7 +10,7 @@ Param(
     [string]$LogPath,
     [Parameter(Mandatory=$false)]
     [string]$Root = ".\bin\$Platform\$Configuration",
-    [string]$AdditionalTaefArguments
+    [string[]]$AdditionalTaefArguments
 )
 
 # Find test DLLs based on the provided root, match pattern, and recursion
