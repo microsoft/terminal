@@ -49,7 +49,15 @@ namespace WindowsTerminal.UIA.Tests.Elements
         {
             this.context = context;
 
-            // If running locally, set WTPath to where we can find a loose deployment of Windows Terminal
+            // If running locally, set WTPath to where we can find a loose
+            // deployment of Windows Terminal. That means you'll need to build
+            // the Terminal appx, then use
+            // New-UnpackagedTerminalDistribution.ps1 to build an unpackaged
+            // layout that can successfully launch. Then, point the tests at
+            // that WindowsTerminal.exe like so:
+            //
+            //   te.exe WindowsTerminal.UIA.Tests.dll /p:WTPath=C:\the\path\to\the\unpackaged\layout\WindowsTerminal.exe
+            //
             // On the build machines, the scripts lay it out at the terminal-0.0.1.0\ subfolder of the test deployment directory
             string path = Path.GetFullPath(Path.Combine(context.TestDeploymentDir, @"terminal-0.0.1.0\WindowsTerminal.exe"));
             if (context.Properties.Contains("WTPath"))

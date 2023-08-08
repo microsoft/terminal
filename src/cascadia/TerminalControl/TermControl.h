@@ -175,7 +175,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         BUBBLED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(CloseTerminalRequested, IInspectable, IInspectable);
-        BUBBLED_FORWARDED_TYPED_EVENT(MenuChanged,            IInspectable, Control::MenuChangedEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(CompletionsChanged,     IInspectable, Control::CompletionsChangedEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(RestartTerminalRequested, IInspectable, IInspectable);
 
         BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
@@ -398,7 +398,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::ConnectionStateChanged_revoker ConnectionStateChanged;
             Control::ControlCore::ShowWindowChanged_revoker ShowWindowChanged;
             Control::ControlCore::CloseTerminalRequested_revoker CloseTerminalRequested;
-            Control::ControlCore::MenuChanged_revoker MenuChanged;
+            Control::ControlCore::CompletionsChanged_revoker CompletionsChanged;
             Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
 
             // These are set up in _InitializeTerminal

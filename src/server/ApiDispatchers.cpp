@@ -1257,38 +1257,38 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     ULONG cbBufferSize;
     RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbBufferSize));
 
-    PVOID pvInputTarget;
-    const auto cbInputTarget = a->TargetLength;
-    PVOID pvInputExeName;
-    const auto cbInputExeName = a->ExeLength;
-    PVOID pvInputSource;
-    const auto cbInputSource = a->SourceLength;
-    // clang-format off
-    RETURN_HR_IF(E_INVALIDARG, !IsValidStringBuffer(a->Unicode,
-                                                    pvBuffer,
-                                                    cbBufferSize,
-                                                    3,
-                                                    cbInputExeName,
-                                                    &pvInputExeName,
-                                                    cbInputSource,
-                                                    &pvInputSource,
-                                                    cbInputTarget,
-                                                    &pvInputTarget));
-    // clang-format on
+    // There are 3 strings stored back-to-back within the message payload.
+    // First we verify that their size and alignment are alright and then we extract them.
+    const ULONG cbInputExeName = a->ExeLength;
+    const ULONG cbInputSource = a->SourceLength;
+    const ULONG cbInputTarget = a->TargetLength;
+
+    const auto alignment = a->Unicode ? alignof(wchar_t) : alignof(char);
+    // ExeLength, SourceLength and TargetLength are USHORT and summing them up will not overflow a ULONG.
+    const auto badLength = cbInputTarget + cbInputExeName + cbInputSource > cbBufferSize;
+    // Since (any) alignment is a power of 2, we can use bit tricks to test if the alignment is right:
+    // a) Combining the values with OR works, because we're only interested whether the lowest bits are 0 (= aligned).
+    // b) x % y can be replaced with x & (y - 1) if y is a power of 2.
+    const auto badAlignment = ((cbInputExeName | cbInputSource | cbInputTarget) & (alignment - 1)) != 0;
+    RETURN_HR_IF(E_INVALIDARG, badLength || badAlignment);
+
+    const auto pvInputExeName = static_cast<char*>(pvBuffer);
+    const auto pvInputSource = pvInputExeName + cbInputExeName;
+    const auto pvInputTarget = pvInputSource + cbInputSource;
 
     if (a->Unicode)
     {
+        const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvInputExeName), cbInputExeName / sizeof(wchar_t));
         const std::wstring_view inputSource(reinterpret_cast<wchar_t*>(pvInputSource), cbInputSource / sizeof(wchar_t));
         const std::wstring_view inputTarget(reinterpret_cast<wchar_t*>(pvInputTarget), cbInputTarget / sizeof(wchar_t));
-        const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvInputExeName), cbInputExeName / sizeof(wchar_t));
 
         return m->_pApiRoutines->AddConsoleAliasWImpl(inputSource, inputTarget, inputExeName);
     }
     else
     {
-        const std::string_view inputSource(reinterpret_cast<char*>(pvInputSource), cbInputSource);
-        const std::string_view inputTarget(reinterpret_cast<char*>(pvInputTarget), cbInputTarget);
-        const std::string_view inputExeName(reinterpret_cast<char*>(pvInputExeName), cbInputExeName);
+        const std::string_view inputExeName(pvInputExeName, cbInputExeName);
+        const std::string_view inputSource(pvInputSource, cbInputSource);
+        const std::string_view inputTarget(pvInputTarget, cbInputTarget);
 
         return m->_pApiRoutines->AddConsoleAliasAImpl(inputSource, inputTarget, inputExeName);
     }
@@ -1304,20 +1304,22 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     ULONG cbInputBufferSize;
     RETURN_IF_FAILED(m->GetInputBuffer(&pvInputBuffer, &cbInputBufferSize));
 
-    PVOID pvInputExe;
-    const auto cbInputExe = a->ExeLength;
-    PVOID pvInputSource;
-    const auto cbInputSource = a->SourceLength;
-    // clang-format off
-    RETURN_HR_IF(E_INVALIDARG, !IsValidStringBuffer(a->Unicode,
-                                                    pvInputBuffer,
-                                                    cbInputBufferSize,
-                                                    2,
-                                                    cbInputExe,
-                                                    &pvInputExe,
-                                                    cbInputSource,
-                                                    &pvInputSource));
-    // clang-format on
+    // There are 2 strings stored back-to-back within the message payload.
+    // First we verify that their size and alignment are alright and then we extract them.
+    const ULONG cbInputExeName = a->ExeLength;
+    const ULONG cbInputSource = a->SourceLength;
+
+    const auto alignment = a->Unicode ? alignof(wchar_t) : alignof(char);
+    // ExeLength and SourceLength are USHORT and summing them up will not overflow a ULONG.
+    const auto badLength = cbInputExeName + cbInputSource > cbInputBufferSize;
+    // Since (any) alignment is a power of 2, we can use bit tricks to test if the alignment is right:
+    // a) Combining the values with OR works, because we're only interested whether the lowest bits are 0 (= aligned).
+    // b) x % y can be replaced with x & (y - 1) if y is a power of 2.
+    const auto badAlignment = ((cbInputExeName | cbInputSource) & (alignment - 1)) != 0;
+    RETURN_HR_IF(E_INVALIDARG, badLength || badAlignment);
+
+    const auto pvInputExeName = static_cast<char*>(pvInputBuffer);
+    const auto pvInputSource = pvInputExeName + cbInputExeName;
 
     PVOID pvOutputBuffer;
     ULONG cbOutputBufferSize;
@@ -1327,9 +1329,9 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     size_t cbWritten;
     if (a->Unicode)
     {
-        const std::wstring_view inputSource(reinterpret_cast<wchar_t*>(pvInputSource), cbInputSource / sizeof(wchar_t));
-        const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvInputExe), cbInputExe / sizeof(wchar_t));
-        std::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbOutputBufferSize / sizeof(wchar_t));
+        const std::wstring_view inputExeName{ reinterpret_cast<wchar_t*>(pvInputExeName), cbInputExeName / sizeof(wchar_t) };
+        const std::wstring_view inputSource{ reinterpret_cast<wchar_t*>(pvInputSource), cbInputSource / sizeof(wchar_t) };
+        const std::span outputBuffer{ static_cast<wchar_t*>(pvOutputBuffer), cbOutputBufferSize / sizeof(wchar_t) };
         size_t cchWritten;
 
         hr = m->_pApiRoutines->GetConsoleAliasWImpl(inputSource, outputBuffer, cchWritten, inputExeName);
@@ -1339,9 +1341,9 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     }
     else
     {
-        const std::string_view inputSource(reinterpret_cast<char*>(pvInputSource), cbInputSource);
-        const std::string_view inputExeName(reinterpret_cast<char*>(pvInputExe), cbInputExe);
-        std::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbOutputBufferSize);
+        const std::string_view inputExeName{ pvInputExeName, cbInputExeName };
+        const std::string_view inputSource{ pvInputSource, cbInputSource };
+        const std::span outputBuffer{ static_cast<char*>(pvOutputBuffer), cbOutputBufferSize };
         size_t cchWritten;
 
         hr = m->_pApiRoutines->GetConsoleAliasAImpl(inputSource, outputBuffer, cchWritten, inputExeName);
