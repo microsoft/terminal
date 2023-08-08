@@ -947,8 +947,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             const auto inArgs{ command.ActionAndArgs().Args().try_as<Model::SendInputArgs>() };
 
-            Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}", backspaces, inArgs ? inArgs.Input() : L"") } };
-            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
+            auto args = winrt::make_self<SendInputArgs>(
+                winrt::hstring{ fmt::format(L"{}{}", backspaces, inArgs ? inArgs.Input() : L"") });
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
 
             auto copy = cmdImpl->Copy();
             copy->ActionAndArgs(actionAndArgs);
