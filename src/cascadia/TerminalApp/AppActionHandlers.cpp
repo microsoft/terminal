@@ -1273,7 +1273,9 @@ namespace winrt::TerminalApp::implementation
                     if (const auto& control{ _GetActiveControl() })
                     {
                         const auto context = control.CommandHistory();
-                        _OpenSuggestions(Command::HistoryToCommands(context.History(), context.CurrentCommandline(), false), SuggestionsMode::Palette);
+                        _OpenSuggestions(control,
+                                         Command::HistoryToCommands(context.History(), context.CurrentCommandline(), false),
+                                         SuggestionsMode::Palette);
                     }
                     args.Handled(true);
                 }

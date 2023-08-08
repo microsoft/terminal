@@ -758,8 +758,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 return;
             }
-            Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}{}", cdText, backspaces, line) } };
-            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
+            auto args = winrt::make_self<SendInputArgs>(
+                winrt::hstring{ fmt::format(L"{}{}{}", cdText, backspaces, line) });
+
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
 
             auto command = winrt::make_self<Command>();
             command->_ActionAndArgs = actionAndArgs;
