@@ -44,7 +44,7 @@ public:
         VERIFY_SUCCEEDED(history.Add(L"hear me shout", false));
         VERIFY_SUCCEEDED(history.Add(L"here is my handle", false));
         VERIFY_SUCCEEDED(history.Add(L"here is my spout", false));
-        VERIFY_ARE_EQUAL(history.GetNumberOfCommands(), 4u);
+        VERIFY_ARE_EQUAL(history.GetNumberOfCommands(), 4);
     }
 
     static void InitLongHistory(CommandHistory& history) noexcept
@@ -79,6 +79,6 @@ public:
         VERIFY_SUCCEEDED(history.Add(L"Since then - 'tis Centuries - and yet", false));
         VERIFY_SUCCEEDED(history.Add(L"Feels shorter than the Day", false));
         VERIFY_SUCCEEDED(history.Add(L"~ Emily Dickinson", false));
-        VERIFY_ARE_EQUAL(history.GetNumberOfCommands(), 28u);
+        VERIFY_ARE_EQUAL(history.GetNumberOfCommands(), 28);
     }
 };
