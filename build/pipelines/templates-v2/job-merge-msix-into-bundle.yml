@@ -46,6 +46,7 @@ jobs:
   - checkout: self
     clean: true
     fetchDepth: 1
+    fetchTags: false # Tags still result in depth > 1 fetch; we don't need them here
     submodules: true
     persistCredentials: True
   - task: PkgESSetupBuild@12

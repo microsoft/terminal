@@ -28,6 +28,7 @@ jobs:
     submodules: false
     clean: true
     fetchDepth: 1
+    fetchTags: false # Tags still result in depth > 1 fetch; we don't need them here
 
   - task: DownloadPipelineArtifact@2
     displayName: Download artifacts
