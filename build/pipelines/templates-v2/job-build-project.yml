@@ -252,12 +252,12 @@ jobs:
     - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
       displayName: 'Generate SBOM manifest'
       inputs:
-        BuildDropPath: 'bin'
+        BuildDropPath: '$(Terminal.BinDir)'
 
     - task: DropValidatorTask@0
       displayName: 'Validate SBOM manifest'
       inputs:
-        BuildDropPath: 'bin'
+        BuildDropPath: '$(Terminal.BinDir)'
         OutputPath: 'output.json'
         ValidateSignature: true
         Verbosity: 'Verbose'
