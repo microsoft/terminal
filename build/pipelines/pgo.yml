@@ -16,13 +16,6 @@ variables:
 #     0.0.1904.0900
 name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
 
-# Run all unspecified phases on the Large pools
-pool:
-  ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
-    name: SHINE-OSS-L
-  ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
-    name: SHINE-INT-L
-
 stages:
   - stage: Build
     displayName: Build
@@ -31,6 +24,11 @@ stages:
     jobs:
       - template: ./templates-v2/job-build-project.yml
         parameters:
+          pool:
+            ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+              name: SHINE-OSS-L
+            ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+              name: SHINE-INT-L
           buildPlatforms: ${{ parameters.buildPlatforms }}
           buildConfigurations: [Release]
           buildEverything: true
@@ -45,6 +43,7 @@ stages:
       - ${{ each platform in parameters.buildPlatforms }}:
         - template: ./templates-v2/job-run-pgo-tests.yml
           parameters:
+            # This job chooses its own pools based on platform
             buildPlatform: ${{ platform }}
             buildConfiguration: Release
             artifactStem: -instrumentation
@@ -56,6 +55,11 @@ stages:
     jobs:
       - template: ./templates-v2/job-pgo-merge-pgd.yml
         parameters:
+          pool:
+            ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+              name: SHINE-OSS-L
+            ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+              name: SHINE-INT-L
           buildConfiguration: Release
           buildPlatforms: ${{ parameters.buildPlatforms }}
           artifactStem: -instrumentation
