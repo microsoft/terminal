@@ -53,21 +53,20 @@ stages:
     dependsOn: [RunPGO]
     condition: succeeded()
     jobs:
+      # This job takes multiple platforms and fans them back in to a single artifact.
       - template: ./templates-v2/job-pgo-merge-pgd.yml
         parameters:
+          jobName: MergePGD
           pool:
-            ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
-              name: SHINE-OSS-L
-            ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
-              name: SHINE-INT-L
+            vmImage: 'windows-2022'
           buildConfiguration: Release
           buildPlatforms: ${{ parameters.buildPlatforms }}
           artifactStem: -instrumentation
 
-# - stage: Publish_PGO_Databases
-#   displayName: Publish PGO databases
-#   dependsOn: ['Build_x64']
-#   jobs:
-#     - template: ./templates/pgo-build-and-publish-nuget-job.yml
-#       parameters:
-#         pgoArtifact: 'PGO'
+      - template: ./templates-v2/job-pgo-build-nuget-and-publish.yml
+        parameters:
+          pool:
+            vmImage: 'windows-2022'
+          dependsOn: MergePGD
+          buildConfiguration: Release
+          artifactStem: -instrumentation
