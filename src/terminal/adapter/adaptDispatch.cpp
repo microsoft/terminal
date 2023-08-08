@@ -1012,6 +1012,10 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
                 {
                     attr.SetBackground(*changeOps.background);
                 }
+                if (changeOps.underlineColor)
+                {
+                    attr.SetUnderlineColor(*changeOps.underlineColor);
+                }
                 // remove underline style if the underline is no longer set.
                 if (!attr.IsUnderlined())
                 {
