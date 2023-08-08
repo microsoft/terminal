@@ -387,8 +387,12 @@ namespace Microsoft::Console::Render::Atlas
         til::generational<FontSettings> font;
         til::generational<CursorSettings> cursor;
         til::generational<MiscellaneousSettings> misc;
-        u16x2 targetSize{};
-        u16x2 cellCount{};
+        // Size of the viewport / swap chain in pixel.
+        u16x2 targetSize{ 1, 1 };
+        // Size of the portion of the text buffer that we're drawing on the screen.
+        u16x2 viewportCellCount{ 1, 1 };
+        // The position of the viewport inside the text buffer (in cells).
+        u16x2 viewportOffset{ 0, 0 };
     };
 
     using GenerationalSettings = til::generational<Settings>;
@@ -531,8 +535,12 @@ namespace Microsoft::Console::Render::Atlas
         std::array<til::generation_t, 2> colorBitmapGenerations{ 1, 1 };
         // In columns/rows.
         til::rect cursorRect;
-        // In pixel.
-        til::rect dirtyRectInPx;
+        // The viewport/SwapChain area to be presented. In pixel.
+        // NOTE:
+        //   This cannot use til::rect, because til::rect generally expects positive coordinates only
+        //   (`operator!()` checks for negative values), whereas this one can go out of bounds,
+        //   whenever glyphs go out of bounds. `AtlasEngine::_present()` will clamp it.
+        i32r dirtyRectInPx{};
         // In rows.
         range<u16> invalidatedRows{};
         // In pixel.
@@ -541,7 +549,7 @@ namespace Microsoft::Console::Render::Atlas
         void MarkAllAsDirty() noexcept
         {
             dirtyRectInPx = { 0, 0, s->targetSize.x, s->targetSize.y };
-            invalidatedRows = { 0, s->cellCount.y };
+            invalidatedRows = { 0, s->viewportCellCount.y };
             scrollOffset = 0;
         }
     };
@@ -553,5 +561,4 @@ namespace Microsoft::Console::Render::Atlas
         virtual void Render(RenderingPayload& payload) = 0;
         virtual bool RequiresContinuousRedraw() noexcept = 0;
     };
-
 }

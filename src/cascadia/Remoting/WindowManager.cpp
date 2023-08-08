@@ -41,9 +41,8 @@ namespace
                 // Make a temporary monarch CLSID based on the unpackaged install root
                 std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
                 modulePath.remove_filename();
-                std::wstring pathRootAsString{ modulePath.wstring() };
 
-                return Utils::CreateV5Uuid(processRootHashedGuidBase, std::as_bytes(std::span{ pathRootAsString }));
+                return Utils::CreateV5Uuid(processRootHashedGuidBase, std::as_bytes(std::span{ modulePath.native() }));
             }();
             return processRootHashedGuid;
         }

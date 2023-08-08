@@ -42,7 +42,7 @@ void CommandNumberPopup::_handleNumber(COOKED_READ_DATA& cookedReadData, const w
                                                       &CharsToWrite,
                                                       &NumSpaces,
                                                       cookedReadData.OriginalCursorPosition().x,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                      WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                       nullptr));
         cookedReadData.ScreenInfo().SetAttributes(realAttributes);
         try
@@ -73,7 +73,7 @@ void CommandNumberPopup::_handleBackspace(COOKED_READ_DATA& cookedReadData) noex
                                                       &CharsToWrite,
                                                       &NumSpaces,
                                                       cookedReadData.OriginalCursorPosition().x,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                      WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                       nullptr));
         cookedReadData.ScreenInfo().SetAttributes(realAttributes);
         _pop();
@@ -101,8 +101,7 @@ void CommandNumberPopup::_handleEscape(COOKED_READ_DATA& cookedReadData) noexcep
 // - cookedReadData - read data to operate on
 void CommandNumberPopup::_handleReturn(COOKED_READ_DATA& cookedReadData) noexcept
 {
-    const auto commandNumber = gsl::narrow<short>(std::min(static_cast<size_t>(_parse()),
-                                                           cookedReadData.History().GetNumberOfCommands() - 1));
+    const auto commandNumber = gsl::narrow<short>(std::min(_parse(), cookedReadData.History().GetNumberOfCommands() - 1));
 
     CommandLine::Instance().EndAllPopups();
     SetCurrentCommandLine(cookedReadData, commandNumber);

@@ -97,8 +97,8 @@ public:
     RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
     const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
 
-    const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& GetScrollMarks() const noexcept;
-    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
+    const std::vector<ScrollMark>& GetScrollMarks() const noexcept;
+    void AddMark(const ScrollMark& mark,
                  const til::point& start,
                  const til::point& end,
                  const bool fromUi);
@@ -111,26 +111,23 @@ public:
     til::rect GetViewport() const noexcept override;
     void SetViewportPosition(const til::point position) noexcept override;
     void SetTextAttributes(const TextAttribute& attrs) noexcept override;
-    void SetAutoWrapMode(const bool wrapAtEOL) noexcept override;
-    bool GetAutoWrapMode() const noexcept override;
+    void SetSystemMode(const Mode mode, const bool enabled) noexcept override;
+    bool GetSystemMode(const Mode mode) const noexcept override;
     void WarningBell() override;
-    bool GetLineFeedMode() const noexcept override;
     void SetWindowTitle(const std::wstring_view title) override;
     CursorType GetUserDefaultCursorStyle() const noexcept override;
     bool ResizeWindow(const til::CoordType width, const til::CoordType height) noexcept override;
     void SetConsoleOutputCP(const unsigned int codepage) noexcept override;
     unsigned int GetConsoleOutputCP() const noexcept override;
-    void SetBracketedPasteMode(const bool enabled) noexcept override;
-    bool GetBracketedPasteMode() const noexcept override;
     void CopyToClipboard(std::wstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(std::wstring_view uri) override;
     void PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration) override;
     void ShowWindow(bool showOrHide) override;
-    void UseAlternateScreenBuffer() override;
+    void UseAlternateScreenBuffer(const TextAttribute& attrs) override;
     void UseMainScreenBuffer() override;
 
-    void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
+    void MarkPrompt(const ScrollMark& mark) override;
     void MarkCommandStart() override;
     void MarkOutputStart() override;
     void MarkCommandFinish(std::optional<unsigned int> error) override;
@@ -143,7 +140,7 @@ public:
 
     void ClearMark();
     void ClearAllMarks() noexcept;
-    til::color GetColorForMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) const;
+    til::color GetColorForMark(const ScrollMark& mark) const;
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
@@ -159,7 +156,7 @@ public:
     bool IsTrackingMouseInput() const noexcept;
     bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const noexcept;
 
-    void FocusChanged(const bool focused) noexcept override;
+    void FocusChanged(const bool focused) override;
 
     std::wstring GetHyperlinkAtViewportPosition(const til::point viewportPos);
     std::wstring GetHyperlinkAtBufferPosition(const til::point bufferPos);
@@ -183,7 +180,7 @@ public:
     ULONG GetCursorHeight() const noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;
     CursorType GetCursorStyle() const noexcept override;
-    bool IsCursorDoubleWidth() const noexcept override;
+    bool IsCursorDoubleWidth() const override;
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
     const std::wstring GetHyperlinkUri(uint16_t id) const override;
@@ -312,7 +309,7 @@ private:
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
-    std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
+    ::Microsoft::Console::VirtualTerminal::TerminalInput _terminalInput;
 
     std::optional<std::wstring> _title;
     std::wstring _startingTitle;
@@ -320,10 +317,11 @@ private:
 
     CursorType _defaultCursorShape = CursorType::Legacy;
 
+    til::enumset<Mode> _systemMode{ Mode::AutoWrap };
+
     bool _snapOnInput = true;
     bool _altGrAliasing = true;
     bool _suppressApplicationTitle = false;
-    bool _bracketedPasteMode = false;
     bool _trimBlockSelection = false;
     bool _autoMarkPrompts = false;
 
@@ -395,7 +393,6 @@ private:
     };
     std::optional<KeyEventCodes> _lastKeyEventCodes;
 
-    std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark> _scrollMarks;
     enum class PromptState : uint32_t
     {
         None = 0,
@@ -410,6 +407,7 @@ private:
     static WORD _VirtualKeyFromCharacter(const wchar_t ch) noexcept;
     static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;
 
+    [[maybe_unused]] bool _handleTerminalInputResult(::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType&& out) const;
     void _StoreKeyEvent(const WORD vkey, const WORD scanCode) noexcept;
     WORD _TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept;
 

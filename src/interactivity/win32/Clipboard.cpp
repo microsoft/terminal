@@ -251,7 +251,8 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
     const auto text = buffer.GetText(includeCRLF,
                                      trimTrailingWhitespace,
                                      selectionRects,
-                                     GetAttributeColors);
+                                     GetAttributeColors,
+                                     selection.IsKeyboardMarkSelection());
 
     CopyTextToSystemClipboard(text, copyFormatting);
 }

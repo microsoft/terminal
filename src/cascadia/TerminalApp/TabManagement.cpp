@@ -188,6 +188,18 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        newTabImpl->MoveTabToNewWindowRequested([weakTab, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                MoveTabArgs args{ hstring{ L"new" }, MoveTabDirection::Forward };
+                page->_SetFocusedTab(*tab);
+                page->_MoveTab(args);
+            }
+        });
+
         newTabImpl->ExportTabRequested([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
@@ -425,7 +437,7 @@ namespace winrt::TerminalApp::implementation
                     // environment variables, but the user might have set one in
                     // the settings. Expand those here.
 
-                    path = { wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
+                    path = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
                 }
 
                 if (!path.empty())

@@ -18,6 +18,7 @@
 #include <til/latch.h>
 
 #include "../../types/inc/utils.hpp"
+#include "App.h"
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
@@ -238,12 +239,7 @@ namespace winrt::TerminalApp::implementation
                 page->_OpenNewTerminalViaDropdown(NewTerminalArgs());
             }
         });
-        _newTabButton.Drop([weakThis{ get_weak() }](const Windows::Foundation::IInspectable&, winrt::Windows::UI::Xaml::DragEventArgs e) {
-            if (auto page{ weakThis.get() })
-            {
-                page->NewTerminalByDrop(e);
-            }
-        });
+        _newTabButton.Drop({ get_weak(), &TerminalPage::_NewTerminalByDrop });
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
         _tabView.TabCloseRequested({ this, &TerminalPage::_OnTabCloseRequested });
         _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
@@ -402,35 +398,46 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
+    winrt::fire_and_forget TerminalPage::_NewTerminalByDrop(const Windows::Foundation::IInspectable&, winrt::Windows::UI::Xaml::DragEventArgs e)
+    try
     {
-        Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items;
-        try
+        const auto data = e.DataView();
+        if (!data.Contains(StandardDataFormats::StorageItems()))
         {
-            items = co_await e.DataView().GetStorageItemsAsync();
+            co_return;
         }
-        CATCH_LOG();
 
-        if (items.Size() == 1)
+        const auto weakThis = get_weak();
+        const auto items = co_await data.GetStorageItemsAsync();
+        const auto strongThis = weakThis.get();
+        if (!strongThis)
         {
-            std::filesystem::path path(items.GetAt(0).Path().c_str());
+            co_return;
+        }
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "NewTabByDragDrop",
+            TraceLoggingDescription("Event emitted when the user drag&drops onto the new tab button"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        for (const auto& item : items)
+        {
+            auto directory = item.Path();
+
+            std::filesystem::path path(std::wstring_view{ directory });
             if (!std::filesystem::is_directory(path))
             {
-                path = path.parent_path();
+                directory = winrt::hstring{ path.parent_path().native() };
             }
 
             NewTerminalArgs args;
-            args.StartingDirectory(winrt::hstring{ path.wstring() });
-            this->_OpenNewTerminalViaDropdown(args);
-
-            TraceLoggingWrite(
-                g_hTerminalAppProvider,
-                "NewTabByDragDrop",
-                TraceLoggingDescription("Event emitted when the user drag&drops onto the new tab button"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+            args.StartingDirectory(directory);
+            _OpenNewTerminalViaDropdown(args);
         }
     }
+    CATCH_LOG()
 
     // Method Description:
     // - This method is called once command palette action was chosen for dispatching
@@ -551,27 +558,28 @@ namespace winrt::TerminalApp::implementation
         // Handle it on a subsequent pass of the UI thread.
         co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
 
-        // If the caller provided a CWD, switch to that directory, then switch
+        // If the caller provided a CWD, "switch" to that directory, then switch
         // back once we're done. This looks weird though, because we have to set
         // up the scope_exit _first_. We'll release the scope_exit if we don't
         // actually need it.
-        auto originalCwd{ wil::GetCurrentDirectoryW<std::wstring>() };
-        auto restoreCwd = wil::scope_exit([&originalCwd]() {
+
+        auto originalVirtualCwd{ _WindowProperties.VirtualWorkingDirectory() };
+        auto restoreCwd = wil::scope_exit([&originalVirtualCwd, this]() {
             // ignore errors, we'll just power on through. We'd rather do
             // something rather than fail silently if the directory doesn't
             // actually exist.
-            LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(originalCwd.c_str()));
+            _WindowProperties.VirtualWorkingDirectory(originalVirtualCwd);
         });
+
         if (cwd.empty())
         {
+            // We didn't actually need to change the virtual CWD, so we don't
+            // need to restore it
             restoreCwd.release();
         }
         else
         {
-            // ignore errors, we'll just power on through. We'd rather do
-            // something rather than fail silently if the directory doesn't
-            // actually exist.
-            LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(cwd.c_str()));
+            _WindowProperties.VirtualWorkingDirectory(cwd);
         }
 
         if (auto page{ weakThis.get() })
@@ -851,7 +859,10 @@ namespace winrt::TerminalApp::implementation
         });
         // Necessary for fly-out sub items to get focus on a tab before collapsing. Related to #15049
         newTabFlyout.Closing([this](auto&&, auto&&) {
-            _FocusCurrentTab(true);
+            if (!_commandPaletteIs(Visibility::Visible))
+            {
+                _FocusCurrentTab(true);
+            }
         });
         _newTabButton.Flyout(newTabFlyout);
     }
@@ -1046,6 +1057,15 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // Using the static method on the base class seems to do what we want in terms of placement.
+        WUX::Controls::Primitives::FlyoutBase::SetAttachedFlyout(profileMenuItem, _CreateRunAsAdminFlyout(profileIndex));
+
+        // Since we are not setting the ContextFlyout property of the item we have to handle the ContextRequested event
+        // and rely on the base class to show our menu.
+        profileMenuItem.ContextRequested([profileMenuItem](auto&&, auto&&) {
+            WUX::Controls::Primitives::FlyoutBase::ShowAttachedFlyout(profileMenuItem);
+        });
+
         return profileMenuItem;
     }
 
@@ -1113,6 +1133,7 @@ namespace winrt::TerminalApp::implementation
                 if (profile)
                 {
                     newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+                    newTerminalArgs.StartingDirectory(_evaluatePathForCwd(profile.EvaluatedStartingDirectory()));
                 }
             }
 
@@ -1148,6 +1169,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    std::wstring TerminalPage::_evaluatePathForCwd(const std::wstring_view path)
+    {
+        return Utils::EvaluateStartingDirectory(_WindowProperties.VirtualWorkingDirectory(), path);
+    }
+
     // Method Description:
     // - Creates a new connection based on the profile settings
     // Arguments:
@@ -1178,7 +1204,7 @@ namespace winrt::TerminalApp::implementation
                 connection = TerminalConnection::ConptyConnection{};
             }
 
-            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
+            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.native(),
                                                                                  L".",
                                                                                  L"Azure",
                                                                                  nullptr,
@@ -1216,16 +1242,7 @@ namespace winrt::TerminalApp::implementation
             // construction, because the connection might not spawn the child
             // process until later, on another thread, after we've already
             // restored the CWD to its original value.
-            auto newWorkingDirectory{ settings.StartingDirectory() };
-            if (newWorkingDirectory.size() == 0 || newWorkingDirectory.size() == 1 &&
-                                                       !(newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/'))
-            { // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
-                auto cwdString{ wil::GetCurrentDirectoryW<std::wstring>() };
-                std::filesystem::path cwd{ cwdString };
-                cwd /= settings.StartingDirectory().c_str();
-                newWorkingDirectory = winrt::hstring{ cwd.wstring() };
-            }
-
+            auto newWorkingDirectory{ _evaluatePathForCwd(settings.StartingDirectory()) };
             auto conhostConn = TerminalConnection::ConptyConnection();
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
                                                                                  newWorkingDirectory,
@@ -1434,9 +1451,10 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        if (const auto p = CommandPaletteElement(); p && p.Visibility() == Visibility::Visible && cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+        if (_commandPaletteIs(Visibility::Visible) &&
+            cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
         {
-            p.Visibility(Visibility::Collapsed);
+            CommandPaletteElement().Visibility(Visibility::Collapsed);
         }
 
         // Let's assume the user has bound the dead key "^" to a sendInput command that sends "b".
@@ -1768,6 +1786,11 @@ namespace winrt::TerminalApp::implementation
 
         return _loadCommandPaletteSlowPath();
     }
+    bool TerminalPage::_commandPaletteIs(WUX::Visibility visibility)
+    {
+        const auto p = CommandPaletteElement();
+        return p && p.Visibility() == visibility;
+    }
 
     CommandPalette TerminalPage::_loadCommandPaletteSlowPath()
     {
@@ -1779,7 +1802,7 @@ namespace winrt::TerminalApp::implementation
         // When the visibility of the command palette changes to "collapsed",
         // the palette has been closed. Toss focus back to the currently active control.
         p.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
-            if (CommandPaletteElement().Visibility() == Visibility::Collapsed)
+            if (_commandPaletteIs(Visibility::Collapsed))
             {
                 _FocusActiveControl(nullptr, nullptr);
             }
@@ -2067,6 +2090,13 @@ namespace winrt::TerminalApp::implementation
         const auto windowId{ args.Window() };
         if (!windowId.empty())
         {
+            // if the windowId is the same as our name, do nothing
+            if (windowId == WindowProperties().WindowName() ||
+                windowId == winrt::to_hstring(WindowProperties().WindowId()))
+            {
+                return true;
+            }
+
             if (const auto terminalTab{ _GetFocusedTabImpl() })
             {
                 auto startupActions = terminalTab->BuildStartupActions(true);
@@ -2717,15 +2747,16 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Copy text from the focused terminal to the Windows Clipboard
     // Arguments:
+    // - dismissSelection: if not enabled, copying text doesn't dismiss the selection
     // - singleLine: if enabled, copy contents as a single line of text
     // - formats: dictate which formats need to be copied
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
+    bool TerminalPage::_CopyText(const bool dismissSelection, const bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         if (const auto& control{ _GetActiveControl() })
         {
-            return control.CopySelectionToClipboard(singleLine, formats);
+            return control.CopySelectionToClipboard(dismissSelection, singleLine, formats);
         }
         return false;
     }
@@ -2746,9 +2777,8 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender (not used)
     // - args: the arguments specifying how to set the display status to ShowWindow for our window handle
-    winrt::fire_and_forget TerminalPage::_ShowWindowChangedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
+    void TerminalPage::_ShowWindowChangedHandler(const IInspectable& /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
     {
-        co_await resume_foreground(Dispatcher());
         _ShowWindowChangedHandlers(*this, args);
     }
 
@@ -2756,6 +2786,24 @@ namespace winrt::TerminalApp::implementation
     // - Paste text from the Windows Clipboard to the focused terminal
     void TerminalPage::_PasteText()
     {
+        // First, check if we're in broadcast input mode. If so, let's tell all
+        // the controls to paste.
+        if (const auto& tab{ _GetFocusedTabImpl() })
+        {
+            if (tab->TabStatus().IsInputBroadcastActive())
+            {
+                tab->GetRootPane()->WalkTree([](auto&& pane) {
+                    if (auto control = pane->GetTerminalControl())
+                    {
+                        control.PasteTextFromClipboard();
+                    }
+                });
+                return;
+            }
+        }
+
+        // The focused tab wasn't in broadcast mode. No matter. Just ask the
+        // current one to paste.
         if (const auto& control{ _GetActiveControl() })
         {
             control.PasteTextFromClipboard();
@@ -3693,6 +3741,15 @@ namespace winrt::TerminalApp::implementation
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
         if (!_settingsTab)
         {
+            if (auto app{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
+            {
+                if (auto appPrivate{ winrt::get_self<implementation::App>(app) })
+                {
+                    // Lazily load the Settings UI components so that we don't do it on startup.
+                    appPrivate->PrepareForSettingsUI();
+                }
+            }
+
             winrt::Microsoft::Terminal::Settings::Editor::MainPage sui{ _settings };
             if (_hostingHwnd)
             {
@@ -4049,6 +4106,33 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    winrt::fire_and_forget TerminalPage::ShowTerminalWorkingDirectory()
+    {
+        auto weakThis{ get_weak() };
+        co_await wil::resume_foreground(Dispatcher());
+        if (auto page{ weakThis.get() })
+        {
+            // If we haven't ever loaded the TeachingTip, then do so now and
+            // create the toast for it.
+            if (page->_windowCwdToast == nullptr)
+            {
+                if (auto tip{ page->FindName(L"WindowCwdToast").try_as<MUX::Controls::TeachingTip>() })
+                {
+                    page->_windowCwdToast = std::make_shared<Toast>(tip);
+                    // Make sure to use the weak ref when setting up this
+                    // callback.
+                    tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
+                }
+            }
+            _UpdateTeachingTipTheme(WindowCwdToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+
+            if (page->_windowCwdToast != nullptr)
+            {
+                page->_windowCwdToast->Open();
+            }
+        }
+    }
+
     // Method Description:
     // - Called when the user hits the "Ok" button on the WindowRenamer TeachingTip.
     // - Will raise an event that will bubble up to the monarch, asking if this
@@ -4215,23 +4299,29 @@ namespace winrt::TerminalApp::implementation
                                      const TerminalSettingsCreateResult& controlSettings,
                                      const Profile& profile)
     {
-        // Try to handle auto-elevation
-        const auto requestedElevation = controlSettings.DefaultSettings().Elevate();
-        const auto currentlyElevated = IsRunningElevated();
-
-        // We aren't elevated, but we want to be.
-        if (requestedElevation && !currentlyElevated)
+        // When duplicating a tab there aren't any newTerminalArgs.
+        if (!newTerminalArgs)
         {
-            // Manually set the Profile of the NewTerminalArgs to the guid we've
-            // resolved to. If there was a profile in the NewTerminalArgs, this
-            // will be that profile's GUID. If there wasn't, then we'll use
-            // whatever the default profile's GUID is.
-
-            newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
-            _OpenElevatedWT(newTerminalArgs);
-            return true;
+            return false;
         }
-        return false;
+
+        const auto defaultSettings = controlSettings.DefaultSettings();
+
+        // If we don't even want to elevate we can return early.
+        // If we're already elevated we can also return, because it doesn't get any more elevated than that.
+        if (!defaultSettings.Elevate() || IsRunningElevated())
+        {
+            return false;
+        }
+
+        // Manually set the Profile of the NewTerminalArgs to the guid we've
+        // resolved to. If there was a profile in the NewTerminalArgs, this
+        // will be that profile's GUID. If there wasn't, then we'll use
+        // whatever the default profile's GUID is.
+        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+        newTerminalArgs.StartingDirectory(_evaluatePathForCwd(defaultSettings.StartingDirectory()));
+        _OpenElevatedWT(newTerminalArgs);
+        return true;
     }
 
     // Method Description:
@@ -4404,6 +4494,16 @@ namespace winrt::TerminalApp::implementation
 
         til::color bgColor = backgroundSolidBrush.Color();
 
+        Media::Brush terminalBrush{ nullptr };
+        if (const auto& control{ _GetActiveControl() })
+        {
+            terminalBrush = control.BackgroundBrush();
+        }
+        else if (const auto& settingsTab{ _GetFocusedTab().try_as<TerminalApp::SettingsTab>() })
+        {
+            terminalBrush = settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
+        }
+
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
             const auto acrylicBrush = Media::AcrylicBrush();
@@ -4418,18 +4518,6 @@ namespace winrt::TerminalApp::implementation
                                                                theme.TabRow().UnfocusedBackground()) :
                                                  ThemeColor{ nullptr } })
         {
-            const auto terminalBrush = [this]() -> Media::Brush {
-                if (const auto& control{ _GetActiveControl() })
-                {
-                    return control.BackgroundBrush();
-                }
-                else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
-                {
-                    return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
-                }
-                return nullptr;
-            }();
-
             const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
             bgColor = ThemeColor::ColorFromBrush(themeBrush);
             TitlebarBrush(themeBrush);
@@ -4459,11 +4547,27 @@ namespace winrt::TerminalApp::implementation
                 tabImpl->ThemeColor(tabBackground, tabUnfocusedBackground, bgColor);
             }
         }
-
         // Update the new tab button to have better contrast with the new color.
         // In theory, it would be convenient to also change these for the
         // inactive tabs as well, but we're leaving that as a follow up.
         _SetNewTabButtonColor(bgColor, bgColor);
+
+        // Third: the window frame. This is basically the same logic as the tab row background.
+        // We'll set our `FrameBrush` property, for the window to later use.
+        const auto windowTheme{ theme.Window() };
+        if (auto windowFrame{ windowTheme ? (_activated ? windowTheme.Frame() :
+                                                          windowTheme.UnfocusedFrame()) :
+                                            ThemeColor{ nullptr } })
+        {
+            const auto themeBrush{ windowFrame.Evaluate(res, terminalBrush, true) };
+            FrameBrush(themeBrush);
+        }
+        else
+        {
+            // Nothing was set in the theme - fall back to null. The window will
+            // use that as an indication to use the default window frame.
+            FrameBrush(nullptr);
+        }
     }
 
     // Function Description:
@@ -4512,6 +4616,21 @@ namespace winrt::TerminalApp::implementation
             // will eat focus.
             _paneResources.unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
         }
+
+        const auto broadcastColorKey = winrt::box_value(L"BroadcastPaneBorderColor");
+        if (res.HasKey(broadcastColorKey))
+        {
+            // MAKE SURE TO USE ThemeLookup
+            auto obj = ThemeLookup(res, requestedTheme, broadcastColorKey);
+            _paneResources.broadcastBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+        }
+        else
+        {
+            // DON'T use Transparent here - if it's "Transparent", then it won't
+            // be able to hittest for clicks, and then clicking on the border
+            // will eat focus.
+            _paneResources.broadcastBorderBrush = SolidColorBrush{ Colors::Black() };
+        }
     }
 
     void TerminalPage::WindowActivated(const bool activated)
@@ -4534,7 +4653,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_PopulateContextMenu(const IInspectable& sender,
-                                            const bool /*withSelection*/)
+                                            const bool withSelection)
     {
         // withSelection can be used to add actions that only appear if there's
         // selected text, like "search the web". In this initial draft, it's not
@@ -4589,6 +4708,11 @@ namespace winrt::TerminalApp::implementation
         if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
         {
             makeItem(RS_(L"PaneClose"), L"\xE89F", ActionAndArgs{ ShortcutAction::ClosePane, nullptr });
+        }
+
+        if (withSelection)
+        {
+            makeItem(RS_(L"SearchWebText"), L"\xF6FA", ActionAndArgs{ ShortcutAction::SearchForText, nullptr });
         }
 
         makeItem(RS_(L"TabClose"), L"\xE711", ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } });
@@ -4836,4 +4960,42 @@ namespace winrt::TerminalApp::implementation
         // _RemoveTab will make sure to null out the _stashed.draggedTab
         _RemoveTab(*_stashed.draggedTab);
     }
+
+    /// <summary>
+    /// Creates a sub flyout menu for profile items in the split button menu that when clicked will show a menu item for
+    /// Run as Administrator
+    /// </summary>
+    /// <param name="profileIndex">The index for the profileMenuItem</param>
+    /// <returns>MenuFlyout that will show when the context is request on a profileMenuItem</returns>
+    WUX::Controls::MenuFlyout TerminalPage::_CreateRunAsAdminFlyout(int profileIndex)
+    {
+        // Create the MenuFlyout and set its placement
+        WUX::Controls::MenuFlyout profileMenuItemFlyout{};
+        profileMenuItemFlyout.Placement(WUX::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedRight);
+
+        // Create the menu item and an icon to use in the menu
+        WUX::Controls::MenuFlyoutItem runAsAdminItem{};
+        WUX::Controls::FontIcon adminShieldIcon{};
+
+        adminShieldIcon.Glyph(L"\xEA18");
+        adminShieldIcon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+
+        runAsAdminItem.Icon(adminShieldIcon);
+        runAsAdminItem.Text(RS_(L"RunAsAdminFlyout/Text"));
+
+        // Click handler for the flyout item
+        runAsAdminItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto page{ weakThis.get() })
+            {
+                NewTerminalArgs args{ profileIndex };
+                args.Elevate(true);
+                page->_OpenNewTerminalViaDropdown(args);
+            }
+        });
+
+        profileMenuItemFlyout.Items().Append(runAsAdminItem);
+
+        return profileMenuItemFlyout;
+    }
+
 }

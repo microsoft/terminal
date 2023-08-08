@@ -7,8 +7,8 @@
 cbuffer ConstBuffer : register(b0)
 {
     float4 backgroundColor;
-    float2 cellSize;
-    float2 cellCount;
+    float2 backgroundCellSize;
+    float2 backgroundCellCount;
     float4 gammaRatios;
     float enhancedContrast;
     float underlineWidth;
@@ -34,8 +34,8 @@ Output main(PSData data) : SV_Target
     {
     case SHADING_TYPE_TEXT_BACKGROUND:
     {
-        const float2 cell = data.position.xy / cellSize;
-        color = all(cell < cellCount) ? background[cell] : backgroundColor;
+        const float2 cell = data.position.xy / backgroundCellSize;
+        color = all(cell < backgroundCellCount) ? background[cell] : backgroundColor;
         weights = float4(1, 1, 1, 1);
         break;
     }

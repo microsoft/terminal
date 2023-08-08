@@ -28,29 +28,43 @@ using namespace std::chrono_literals;
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
 static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 
+constexpr const auto FrameUpdateInterval = std::chrono::milliseconds(16);
+
 AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
                  winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
                  const Remoting::WindowManager& manager,
-                 const Remoting::Peasant& peasant) noexcept :
+                 const Remoting::Peasant& peasant,
+                 std::unique_ptr<IslandWindow> window) noexcept :
     _appLogic{ logic },
     _windowLogic{ nullptr }, // don't make one, we're going to take a ref on app's
     _windowManager{ manager },
     _peasant{ peasant },
     _desktopManager{ winrt::try_create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager)) }
 {
+    _started = std::chrono::high_resolution_clock::now();
+
     _HandleCommandlineArgs(args);
 
     _HandleSessionRestore(!args.Content().empty());
 
     // _HandleCommandlineArgs will create a _windowLogic
     _useNonClientArea = _windowLogic.GetShowTabsInTitlebar();
-    if (_useNonClientArea)
+
+    const bool isWarmStart = window != nullptr;
+    if (isWarmStart)
     {
-        _window = std::make_unique<NonClientIslandWindow>(_windowLogic.GetRequestedTheme());
+        _window = std::move(window);
     }
     else
     {
-        _window = std::make_unique<IslandWindow>();
+        if (_useNonClientArea)
+        {
+            _window = std::make_unique<NonClientIslandWindow>(_windowLogic.GetRequestedTheme());
+        }
+        else
+        {
+            _window = std::make_unique<IslandWindow>();
+        }
     }
 
     // Update our own internal state tracking if we're in quake mode or not.
@@ -65,45 +79,12 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
                          std::placeholders::_2);
     _window->SetCreateCallback(pfn);
 
-    // Event handlers:
-    // MAKE SURE THEY ARE ALL:
-    // * winrt::auto_revoke
-    // * revoked manually in the dtor before the window is nulled out.
-    //
-    // If you don't, then it's possible for them to get triggered as the app is
-    // tearing down, after we've nulled out the window, during the dtor. That
-    // can cause unexpected AV's everywhere.
-    //
-    // _window callbacks don't need to be treated this way, because:
-    // * IslandWindow isn't a WinRT type (so it doesn't have neat revokers like this)
-    // * This particular bug scenario applies when we've already freed the window.
-    //
-    // (Most of these events are actually set up in AppHost::Initialize)
-    _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
-    _window->WindowActivated({ this, &AppHost::_WindowActivated });
-    _window->WindowMoved({ this, &AppHost::_WindowMoved });
-
-    _window->ShouldExitFullscreen({ &_windowLogic, &winrt::TerminalApp::TerminalWindow::RequestExitFullscreen });
-
-    _window->SetAlwaysOnTop(_windowLogic.GetInitialAlwaysOnTop());
-    _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
+    _windowCallbacks.MouseScrolled = _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
+    _windowCallbacks.WindowActivated = _window->WindowActivated({ this, &AppHost::_WindowActivated });
+    _windowCallbacks.WindowMoved = _window->WindowMoved({ this, &AppHost::_WindowMoved });
+    _windowCallbacks.ShouldExitFullscreen = _window->ShouldExitFullscreen({ &_windowLogic, &winrt::TerminalApp::TerminalWindow::RequestExitFullscreen });
 
     _window->MakeWindow();
-}
-
-AppHost::~AppHost()
-{
-    // destruction order is important for proper teardown here
-
-    // revoke ALL our event handlers. There's a large class of bugs where we
-    // might get a callback to one of these when we call app.Close() below. Make
-    // sure to revoke these first, so we won't get any more callbacks, then null
-    // out the window, then close the app.
-    _revokers = {};
-
-    _showHideWindowThrottler.reset();
-
-    _window = nullptr;
 }
 
 bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
@@ -177,7 +158,7 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
         }
         else if (args)
         {
-            const auto result = _windowLogic.SetStartupCommandline(args.Commandline());
+            const auto result = _windowLogic.SetStartupCommandline(args.Commandline(), args.CurrentDirectory());
             const auto message = _windowLogic.ParseCommandlineMessage();
             if (!message.empty())
             {
@@ -311,6 +292,14 @@ void AppHost::Initialize()
         _windowLogic.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
     }
 
+    // These call APIs that are reentrant on the window message loop. If
+    // you call them in the ctor, we might deadlock. The ctor for AppHost isn't
+    // always called on the window thread - for reheated windows, it could be
+    // called on a random COM thread.
+
+    _window->SetAlwaysOnTop(_windowLogic.GetInitialAlwaysOnTop());
+    _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
+
     // MORE EVENT HANDLERS HERE!
     // MAKE SURE THEY ARE ALL:
     // * winrt::auto_revoke
@@ -320,13 +309,14 @@ void AppHost::Initialize()
     // tearing down, after we've nulled out the window, during the dtor. That
     // can cause unexpected AV's everywhere.
     //
-    // _window callbacks don't need to be treated this way, because:
-    // * IslandWindow isn't a WinRT type (so it doesn't have neat revokers like this)
-    // * This particular bug scenario applies when we've already freed the window.
+    // _window callbacks are a little special:
+    // * IslandWindow isn't a WinRT type (so it doesn't have neat revokers like
+    //   this), so instead they go in their own special helper struct.
+    // * they all need to be manually revoked in _revokeWindowCallbacks.
 
     // Register the 'X' button of the window for a warning experience of multiple
     // tabs opened, this is consistent with Alt+F4 closing
-    _window->WindowCloseButtonClicked([this]() {
+    _windowCallbacks.WindowCloseButtonClicked = _window->WindowCloseButtonClicked([this]() {
         _CloseRequested(nullptr, nullptr);
     });
     // If the user requests a close in another way handle the same as if the 'X'
@@ -335,11 +325,11 @@ void AppHost::Initialize()
 
     // Add an event handler to plumb clicks in the titlebar area down to the
     // application layer.
-    _window->DragRegionClicked([this]() { _windowLogic.TitlebarClicked(); });
+    _windowCallbacks.DragRegionClicked = _window->DragRegionClicked([this]() { _windowLogic.TitlebarClicked(); });
 
-    _window->WindowVisibilityChanged([this](bool showOrHide) { _windowLogic.WindowVisibilityChanged(showOrHide); });
+    _windowCallbacks.WindowVisibilityChanged = _window->WindowVisibilityChanged([this](bool showOrHide) { _windowLogic.WindowVisibilityChanged(showOrHide); });
 
-    _window->UpdateSettingsRequested({ this, &AppHost::_requestUpdateSettings });
+    _windowCallbacks.UpdateSettingsRequested = _window->UpdateSettingsRequested({ this, &AppHost::_requestUpdateSettings });
 
     _revokers.Initialized = _windowLogic.Initialized(winrt::auto_revoke, { this, &AppHost::_WindowInitializedHandler });
     _revokers.RequestedThemeChanged = _windowLogic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
@@ -350,14 +340,14 @@ void AppHost::Initialize()
     _revokers.SystemMenuChangeRequested = _windowLogic.SystemMenuChangeRequested(winrt::auto_revoke, { this, &AppHost::_SystemMenuChangeRequested });
     _revokers.ChangeMaximizeRequested = _windowLogic.ChangeMaximizeRequested(winrt::auto_revoke, { this, &AppHost::_ChangeMaximizeRequested });
 
-    _window->MaximizeChanged([this](bool newMaximize) {
+    _windowCallbacks.MaximizeChanged = _window->MaximizeChanged([this](bool newMaximize) {
         if (_windowLogic)
         {
             _windowLogic.Maximized(newMaximize);
         }
     });
 
-    _window->AutomaticShutdownRequested([this]() {
+    _windowCallbacks.AutomaticShutdownRequested = _window->AutomaticShutdownRequested([this]() {
         // Raised when the OS is beginning an update of the app. We will quit,
         // to save our state, before the OS manually kills us.
         Remoting::WindowManager::RequestQuitAll(_peasant);
@@ -443,6 +433,72 @@ void AppHost::Initialize()
     _window->OnAppInitialized();
 }
 
+void AppHost::Close()
+{
+    // After calling _window->Close() we should avoid creating more WinUI related actions.
+    // I suspect WinUI wouldn't like that very much. As such unregister all event handlers first.
+    _revokers = {};
+    if (_frameTimer)
+    {
+        _frameTimer.Tick(_frameTimerToken);
+    }
+    _showHideWindowThrottler.reset();
+
+    _revokeWindowCallbacks();
+
+    _window->Close();
+
+    if (_windowLogic)
+    {
+        _windowLogic.DismissDialog();
+        _windowLogic = nullptr;
+    }
+}
+
+void AppHost::_revokeWindowCallbacks()
+{
+    // You'll recall, IslandWindow isn't a WinRT type so it can't have auto-revokers.
+    //
+    // Instead, we need to manually remove our callbacks we registered on the window object.
+    _window->MouseScrolled(_windowCallbacks.MouseScrolled);
+    _window->WindowActivated(_windowCallbacks.WindowActivated);
+    _window->WindowMoved(_windowCallbacks.WindowMoved);
+    _window->ShouldExitFullscreen(_windowCallbacks.ShouldExitFullscreen);
+    _window->WindowCloseButtonClicked(_windowCallbacks.WindowCloseButtonClicked);
+    _window->DragRegionClicked(_windowCallbacks.DragRegionClicked);
+    _window->WindowVisibilityChanged(_windowCallbacks.WindowVisibilityChanged);
+    _window->UpdateSettingsRequested(_windowCallbacks.UpdateSettingsRequested);
+    _window->MaximizeChanged(_windowCallbacks.MaximizeChanged);
+    _window->AutomaticShutdownRequested(_windowCallbacks.AutomaticShutdownRequested);
+}
+
+// revoke our callbacks, discard our XAML content (TerminalWindow &
+// TerminalPage), and hand back our IslandWindow. This does _not_ close the XAML
+// island for this thread. We should not be re-used after this, and our caller
+// can destruct us like they normally would during a close. The returned
+// IslandWindow will retain ownership of the DesktopWindowXamlSource, for later
+// reuse.
+[[nodiscard]] std::unique_ptr<IslandWindow> AppHost::Refrigerate()
+{
+    // After calling _window->Close() we should avoid creating more WinUI related actions.
+    // I suspect WinUI wouldn't like that very much. As such unregister all event handlers first.
+    _revokers = {};
+    _showHideWindowThrottler.reset();
+
+    _revokeWindowCallbacks();
+
+    // DO NOT CLOSE THE WINDOW
+    _window->Refrigerate();
+
+    if (_windowLogic)
+    {
+        _windowLogic.DismissDialog();
+        _windowLogic = nullptr;
+    }
+
+    return std::move(_window);
+}
+
 // Method Description:
 // - Called every time when the active tab's title changes. We'll also fire off
 //   a window message so we can update the window's title on the main thread,
@@ -498,7 +554,7 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
     // event handler finishes.
     _windowManager.SignalClose(_peasant);
 
-    _window->Close();
+    PostQuitMessage(0);
 }
 
 LaunchPosition AppHost::_GetWindowLaunchPosition()
@@ -906,8 +962,6 @@ winrt::fire_and_forget AppHost::_peasantNotifyActivateWindow()
 // - The window layout as a json string.
 winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowLayoutAsync()
 {
-    winrt::apartment_context peasant_thread;
-
     winrt::hstring layoutJson = L"";
     // Use the main thread since we are accessing controls.
     co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
@@ -917,9 +971,6 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowL
         layoutJson = _windowLogic.GetWindowLayoutJson(pos);
     }
     CATCH_LOG()
-
-    // go back to give the result to the peasant.
-    co_await peasant_thread;
 
     co_return layoutJson;
 }
@@ -996,9 +1047,6 @@ void AppHost::_DisplayWindowId(const winrt::Windows::Foundation::IInspectable& /
 winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
                                                        const winrt::TerminalApp::RenameWindowRequestedArgs args)
 {
-    // Capture calling context.
-    winrt::apartment_context ui_thread;
-
     // Switch to the BG thread - anything x-proc must happen on a BG thread
     co_await winrt::resume_background();
 
@@ -1008,12 +1056,9 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
 
         _peasant.RequestRename(requestArgs);
 
-        // Switch back to the UI thread. Setting the WindowName needs to happen
-        // on the UI thread, because it'll raise a PropertyChanged event
-        co_await ui_thread;
-
         if (requestArgs.Succeeded())
         {
+            co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
             _windowLogic.WindowName(args.ProposedName());
         }
         else
@@ -1050,24 +1095,123 @@ static bool _isActuallyDarkTheme(const auto requestedTheme)
     }
 }
 
+// DwmSetWindowAttribute(... DWMWA_BORDER_COLOR.. ) doesn't work on Windows 10,
+// but it _will_ spew to the debug console. This helper just no-ops the call on
+// Windows 10, so that we don't even get that spew
+void _frameColorHelper(const HWND h, const COLORREF color)
+{
+    if (Utils::IsWindows11())
+    {
+        LOG_IF_FAILED(DwmSetWindowAttribute(h, DWMWA_BORDER_COLOR, &color, sizeof(color)));
+    }
+}
+
 void AppHost::_updateTheme()
 {
     auto theme = _appLogic.Theme();
 
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
+    const auto windowTheme{ theme.Window() };
+
     const auto b = _windowLogic.TitlebarBrush();
     const auto color = ThemeColor::ColorFromBrush(b);
     const auto colorOpacity = b ? color.A / 255.0 : 0.0;
     const auto brushOpacity = _opacityFromBrush(b);
     const auto opacity = std::min(colorOpacity, brushOpacity);
-    _window->UseMica(theme.Window() ? theme.Window().UseMica() : false, opacity);
+    _window->UseMica(windowTheme ? windowTheme.UseMica() : false, opacity);
 
     // This is a hack to make the window borders dark instead of light.
     // It must be done before WM_NCPAINT so that the borders are rendered with
     // the correct theme.
     // For more information, see GH#6620.
-    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window->GetHandle(), _isActuallyDarkTheme(theme.RequestedTheme())));
+    _window->UseDarkTheme(_isActuallyDarkTheme(theme.RequestedTheme()));
+
+    // Update the window frame. If `rainbowFrame:true` is enabled, then that
+    // will be used. Otherwise we'll try to use the `FrameBrush` set in the
+    // terminal window, as that will have the right color for the ThemeColor for
+    // this setting. If that value is null, then revert to the default frame
+    // color.
+    if (windowTheme)
+    {
+        if (windowTheme.RainbowFrame())
+        {
+            _startFrameTimer();
+        }
+        else if (const auto b{ _windowLogic.FrameBrush() })
+        {
+            _stopFrameTimer();
+            const auto color = ThemeColor::ColorFromBrush(b);
+            COLORREF ref{ til::color{ color } };
+            _frameColorHelper(_window->GetHandle(), ref);
+        }
+        else
+        {
+            _stopFrameTimer();
+            // DWMWA_COLOR_DEFAULT is the magic "reset to the default" value
+            _frameColorHelper(_window->GetHandle(), DWMWA_COLOR_DEFAULT);
+        }
+    }
+}
+
+void AppHost::_startFrameTimer()
+{
+    // Instantiate the frame color timer, if we haven't already. We'll only ever
+    // create one instance of this. We'll set up the callback for the timers as
+    // _updateFrameColor, which will actually handle setting the colors. If we
+    // already have a timer, just start that one.
+
+    if (_frameTimer == nullptr)
+    {
+        _frameTimer = winrt::Windows::UI::Xaml::DispatcherTimer();
+        _frameTimer.Interval(FrameUpdateInterval);
+        _frameTimerToken = _frameTimer.Tick({ this, &AppHost::_updateFrameColor });
+    }
+    _frameTimer.Start();
+}
+
+void AppHost::_stopFrameTimer()
+{
+    if (_frameTimer)
+    {
+        _frameTimer.Stop();
+    }
+}
+
+// Method Description:
+// - Updates the color of the window frame to cycle through all the colors. This
+//   is called as the `_frameTimer` Tick callback, roughly 60 times per second.
+void AppHost::_updateFrameColor(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&)
+{
+    // First, a couple helper functions:
+    static const auto saturateAndToColor = [](const float a, const float b, const float c) -> til::color {
+        return til::color{
+            base::saturated_cast<uint8_t>(255.f * std::clamp(a, 0.f, 1.f)),
+            base::saturated_cast<uint8_t>(255.f * std::clamp(b, 0.f, 1.f)),
+            base::saturated_cast<uint8_t>(255.f * std::clamp(c, 0.f, 1.f))
+        };
+    };
+
+    // Helper for converting a hue [0, 1) to an RGB value.
+    // Credit to https://www.chilliant.com/rgb2hsv.html
+    static const auto hueToRGB = [&](const float H) -> til::color {
+        float R = abs(H * 6 - 3) - 1;
+        float G = 2 - abs(H * 6 - 2);
+        float B = 2 - abs(H * 6 - 4);
+        return saturateAndToColor(R, G, B);
+    };
+
+    // Now, the main body of work.
+    // - Convert the time delta between when we were started and now, to a hue. This will cycle us through all the colors.
+    // - Convert that hue to an RGB value.
+    // - Set the frame's color to that RGB color.
+    const auto now = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<float> delta{ now - _started };
+    const auto seconds = delta.count() / 4; // divide by four, to make the effect slower. Otherwise it flashes way to fast.
+    float ignored;
+    const auto color = hueToRGB(modf(seconds, &ignored));
+
+    _frameColorHelper(_window->GetHandle(), color);
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
@@ -1110,10 +1254,7 @@ void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&
     // should prevent scenarios where the Terminal window state and PTY window
     // state get de-sync'd, and cause the window to minimize/restore constantly
     // in a loop.
-    if (_showHideWindowThrottler)
-    {
-        _showHideWindowThrottler->Run(args.ShowOrHide());
-    }
+    _showHideWindowThrottler->Run(args.ShowOrHide());
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
@@ -1219,6 +1360,10 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
             nonClientWindow->SetTitlebarBackground(_windowLogic.TitlebarBrush());
             _updateTheme();
         }
+    }
+    else if (e.PropertyName() == L"FrameBrush")
+    {
+        _updateTheme();
     }
 }
 
