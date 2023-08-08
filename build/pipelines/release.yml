@@ -173,7 +173,7 @@ stages:
 
   - ${{ if and(containsValue(parameters.buildConfigurations, 'Release'), parameters.buildTerminal, parameters.packTerminalVPack) }}:
     - stage: Publish
-      displayName: Package
+      displayName: Publish
       dependsOn: [Build, Package]
       jobs:
         # We only support the vpack for Release builds that include Terminal
