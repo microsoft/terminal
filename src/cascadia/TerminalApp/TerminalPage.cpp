@@ -4691,7 +4691,7 @@ namespace winrt::TerminalApp::implementation
         _updateThemeColors();
     }
 
-    winrt::fire_and_forget TerminalPage::_ControlCompletionsChangedHandler(const IInspectable /*sender*/,
+    winrt::fire_and_forget TerminalPage::_ControlCompletionsChangedHandler(const IInspectable sender,
                                                                            const CompletionsChangedEventArgs args)
     {
         // This will come in on a background (not-UI, not output) thread.
@@ -4713,20 +4713,22 @@ namespace winrt::TerminalApp::implementation
                                                                            args.ReplacementLength());
 
             auto weakThis{ get_weak() };
-            Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis, commandsCollection]() {
+            Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis, commandsCollection, sender]() {
                 // On the UI thread...
                 if (const auto& page{ weakThis.get() })
                 {
                     // Open the Suggestions UI with the commands from the control
-                    page->_OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
+                    page->_OpenSuggestions(sender.try_as<TermControl>(), commandsCollection, SuggestionsMode::Menu);
                 }
             });
         }
         CATCH_LOG();
     }
 
-    void TerminalPage::_OpenSuggestions(IVector<Command> commandsCollection,
-                                        winrt::TerminalApp::SuggestionsMode mode)
+    void TerminalPage::_OpenSuggestions(
+        const TermControl& sender,
+        IVector<Command> commandsCollection,
+        winrt::TerminalApp::SuggestionsMode mode)
     {
         // ON THE UI THREAD
         assert(Dispatcher().HasThreadAccess());
@@ -4744,7 +4746,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto& control{ _GetActiveControl() };
+        const auto& control{ sender ? sender : _GetActiveControl() };
         if (!control)
         {
             return;
