@@ -47,14 +47,12 @@ jobs:
         artifactName: pgc-intermediates-${{ platform }}-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
         downloadPath: '$(Build.SourcesDirectory)/pgc/${{ platform }}/${{ parameters.buildConfiguration }}'
     - pwsh: |-
-        ##DEEBUG
-        Get-ChildItem pgc -Rec | Select -Expand FullName
-        Get-ChildItem pgo -Rec | Select -Expand FullName
-        ##DEEBUG
         $Arch = '${{ platform }}'
         $Conf = '${{ parameters.buildConfiguration }}'
         $PGCDir = '$(Build.SourcesDirectory)/pgc/${{ platform }}/${{ parameters.buildConfiguration }}'
         $PGDDir = '$(Build.SourcesDirectory)/pgd/${{ platform }}/${{ parameters.buildConfiguration }}'
+        # Flatten the PGD directory
+        Get-ChildItem $PGDDir -Recurse -Filter *.pgd | Move-Item -Destination $PGDDir -Verbose
         Get-ChildItem $PGCDir -Filter *.pgc |
           ForEach-Object {
             $Parts = $_.Name -Split "!";
@@ -62,7 +60,7 @@ jobs:
           } |
           Group-Object Module |
           ForEach-Object {
-            & "$(VCToolsInstallDir)\pgomgr.exe" /merge $_.Group.FullName "$PGDDir\$($_.Name).pgd"
+            & "$(VCToolsInstallDir)\bin\Hostx64\${{ platform }}\pgomgr.exe" /merge $_.Group.FullName "$PGDDir\$($_.Name).pgd"
           }
       displayName: Merge PGO Counts for ${{ platform }}
     - task: CopyFiles@2
