@@ -117,7 +117,10 @@ jobs:
     displayName: Build solution OpenConsole.sln for WPF Control (Pack)
     inputs:
       solution: 'OpenConsole.sln'
-      msbuildArgs: /p:WindowsTerminalReleaseBuild=true;Version=$(XES_PACKAGEVERSIONNUMBER) /t:Pack
+      msbuildArgs: >-
+        /p:WindowsTerminalReleaseBuild=true;Version=$(XES_PACKAGEVERSIONNUMBER)
+        /p:NoBuild=true
+        /t:Pack
       platform: Any CPU
       configuration: $(BuildConfiguration)
       maximumCpuCount: true
