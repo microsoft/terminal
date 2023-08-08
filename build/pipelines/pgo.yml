@@ -1,7 +1,22 @@
 trigger: none
 pr: none
+schedules:
+  - cron: "0 5 * * 2-6" # Run at 05:00 UTC Tuesday through Saturday (Even later than Localization, after the work day in Pacific, Mon-Fri)
+    displayName: "Nightly Instrumentation Build"
+    branches:
+      include:
+        - main
+    always: false # only run if there's code changes!
 
 parameters:
+  - name: branding
+    displayName: "Branding (Build Type)"
+    type: string
+    default: Preview # By default, we'll PGO the Preview builds to get max coverage
+    values:
+      - Release
+      - Preview
+      - Dev
   - name: buildPlatforms
     type: object
     default:
@@ -29,6 +44,7 @@ stages:
               name: SHINE-OSS-L
             ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
               name: SHINE-INT-L
+          branding: ${{ parameters.branding }}
           buildPlatforms: ${{ parameters.buildPlatforms }}
           buildConfigurations: [Release]
           buildEverything: true
