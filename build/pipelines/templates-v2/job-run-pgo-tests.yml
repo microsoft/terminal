@@ -40,6 +40,8 @@ jobs:
       & tar.exe -x -v -f (Get-Item "$(Terminal.BinDir)/_unpackaged/*.zip") -C "$(Terminal.BinDir)"
     displayName: Extract the unpackaged build for PGO
 
+  - template: steps-ensure-nuget-version.yml
+
   - powershell: |-
       $Package = 'Microsoft.Internal.Windows.Terminal.TestContent'
       $Version = '1.0.1'
