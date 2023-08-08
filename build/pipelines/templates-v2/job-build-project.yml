@@ -113,6 +113,13 @@ jobs:
       }
     displayName: Prepare Build and Sign Targets
 
+      #- ${{ if eq(parameters.codeSign, true) }}:
+  - template: steps-create-signing-config.yml
+    parameters:
+      outFile: '$(Build.SourcesDirectory)/ESRPSigningConfig.json'
+      stage: build
+      fragments: $(SelectedSigningFragments)
+
   - pwsh: |-
       .\build\scripts\Generate-ThirdPartyNotices.ps1 -MarkdownNoticePath .\NOTICE.md -OutputPath .\src\cascadia\CascadiaPackage\NOTICE.html
     displayName: Generate NOTICE.html from NOTICE.md
@@ -191,13 +198,6 @@ jobs:
       - pwsh: |-
           & "$(MakeAppxPath)" unpack /p "$(WindowsTerminalPackagePath)" /d "$(Terminal.BinDir)/PackageContents"
         displayName: Unpack the MSIX for signing
-
-  - ${{ if eq(parameters.codeSign, true) }}:
-    - template: steps-create-signing-config.yml
-      parameters:
-        outFile: '$(Build.SourcesDirectory)/ESRPSigningConfig.json'
-        stage: build
-        fragments: $(SelectedSigningFragments)
 
     # Code-sign everything we just put together.
     # We run the signing in Terminal.BinDir, because all of the signing batches are relative to the final architecture/configuration output folder.
