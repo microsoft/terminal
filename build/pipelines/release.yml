@@ -68,8 +68,8 @@ parameters:
     displayName: "Publish Symbols to MSDL"
     type: boolean
     default: true
-  - name: packTerminalVPack
-    displayName: "Build Windows Terminal VPack"
+  - name: publishVpackToWindows
+    displayName: "Publish VPack to Windows"
     type: boolean
     default: false
 
@@ -171,13 +171,13 @@ stages:
             generateSbom: ${{ parameters.generateSbom }}
             codeSign: ${{ parameters.codeSign }}
 
-  - ${{ if and(containsValue(parameters.buildConfigurations, 'Release'), parameters.buildTerminal, parameters.packTerminalVPack) }}:
+  - ${{ if and(containsValue(parameters.buildConfigurations, 'Release'), parameters.buildTerminal, parameters.publishVpackToWindows) }}:
     - stage: Publish
       displayName: Publish
       dependsOn: [Build, Package]
       jobs:
         # We only support the vpack for Release builds that include Terminal
-        - ${{ if and(containsValue(parameters.buildConfigurations, 'Release'), parameters.buildTerminal, parameters.packTerminalVPack) }}:
+        - ${{ if and(containsValue(parameters.buildConfigurations, 'Release'), parameters.buildTerminal, parameters.publishVpackToWindows) }}:
           - template: ./templates-v2/job-submit-windows-vpack.yml
             parameters:
               buildConfiguration: Release
