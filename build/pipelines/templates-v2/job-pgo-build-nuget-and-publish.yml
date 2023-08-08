@@ -41,14 +41,11 @@ jobs:
       artifact: pgd-merged-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
       downloadPath: $(artifactsPath)
 
+  - template: steps-ensure-nuget-version.yml
+
   - task: NuGetAuthenticate@0
     inputs:
       nuGetServiceConnections: 'Terminal Public Artifact Feed'
-
-  - task: NuGetToolInstaller@0
-    displayName: 'Use NuGet 5.8.0'
-    inputs:
-      versionSpec: 5.8.0
 
   # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
   # This should be `task: NuGetCommand@2`

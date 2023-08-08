@@ -1,8 +1,5 @@
 steps:
-- task: NuGetToolInstaller@0
-  displayName: 'Use NuGet 6.3.0'
-  inputs:
-    versionSpec: 6.3.0
+- template: steps-ensure-nuget-version.yml
 
 - task: NuGetAuthenticate@0
 

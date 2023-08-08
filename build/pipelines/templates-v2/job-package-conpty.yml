@@ -55,10 +55,7 @@ jobs:
         - $(BuildConfiguration)
       artifactStem: ${{ parameters.artifactStem }}
 
-  - task: NuGetToolInstaller@1
-    displayName: Use NuGet 5.10.0
-    inputs:
-      versionSpec: 5.10.0
+  - template: steps-ensure-nuget-version.yml
 
 # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
 # This should be `task: NuGetCommand@2`
