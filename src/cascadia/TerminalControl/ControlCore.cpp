@@ -1452,9 +1452,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_inUnitTests)
             [[unlikely]]
-            {
-                _ScrollPositionChangedHandlers(*this, update);
-            }
+        {
+            _ScrollPositionChangedHandlers(*this, update);
+        }
         else
         {
             const auto shared = _shared.lock_shared();
