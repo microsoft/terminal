@@ -18,15 +18,12 @@ steps:
   - pwsh: |-
       $SignBatchFiles = (Get-Item build/config/esrp.${{ parameters.stage }}.batch.*.json)
       $Fragments = "${{ parameters.fragments }}"
-      Write-Host "FRAGMENTS: $Fragments"
       If (-Not [String]::IsNullOrWhiteSpace($Fragments)) {
         $FragmentList = $Fragments -Split ";"
         If ($Fragments.Length -Gt 0) {
           $SignBatchFiles = $SignBatchFiles | Where-Object { ($_.Name -Split '.')[3] -NotIn $FragmentList }
         }
-        $FragmentList | Out-Host
       }
-      $SignBatchFiles | Out-Host
       Write-Host "Found $($SignBatchFiles.Length) Signing Configs"
       $FinalSignConfig = @{
         Version = "1.0.0";
