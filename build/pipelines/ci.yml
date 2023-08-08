@@ -35,13 +35,9 @@ parameters:
     type: boolean
     default: true
   - name: runTests
-    displayName: "Run Unit and Feature Tests"
+    displayName: "Run Tests"
     type: boolean
     default: true
-  - name: submitHelix
-    displayName: "Submit to Helix for testing and PGO"
-    type: boolean
-    default: false
   - name: buildPlatforms
     type: object
     default:
