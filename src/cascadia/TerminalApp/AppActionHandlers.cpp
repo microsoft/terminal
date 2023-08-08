@@ -1274,7 +1274,8 @@ namespace winrt::TerminalApp::implementation
                     {
                         const auto context = control.CommandHistory();
                         const auto& currentCmd{ realArgs.UseCommandline() ? context.CurrentCommandline() : L"" };
-                        _OpenSuggestions(Command::HistoryToCommands(context.History(), currentCmd, false),
+                        _OpenSuggestions(control,
+                                         Command::HistoryToCommands(context.History(), currentCmd, false),
                                          SuggestionsMode::Palette,
                                          currentCmd);
                     }
