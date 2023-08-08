@@ -29,7 +29,7 @@ steps:
       $FinalSignConfig = @{
         Version = "1.0.0";
         UseMinimatch = $false;
-        SignBatches = ($SignBatchFiles | ForEach-Object { Get-Content $_ | Where-Object { $_ -NotMatch "^\s*\/\/" } | ConvertFrom-Json -Depth 10 });
+        SignBatches = @($SignBatchFiles | ForEach-Object { Get-Content $_ | Where-Object { $_ -NotMatch "^\s*\/\/" } | ConvertFrom-Json -Depth 10 });
       }
       $FinalSignConfig | ConvertTo-Json -Depth 10 | Out-File -Encoding utf8 "${{ parameters.outFile }}"
     displayName: Merge ${{ parameters.stage }} signing configs (${{ parameters.outFile }})
