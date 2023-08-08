@@ -437,5 +437,4 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TSFInputControl::_formatUpdatingHandler(CoreTextEditContext sender, const CoreTextFormatUpdatingEventArgs& /*args*/)
     {
     }
-
 }

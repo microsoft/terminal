@@ -431,11 +431,11 @@ void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/) noexc
     // This is only needed in conhost. Terminal handles accessibility in another way.
 }
 
-void Terminal::InvokeMenu(std::wstring_view menuJson, unsigned int replaceLength)
+void Terminal::InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength)
 {
-    if (_pfnMenuChanged)
+    if (_pfnCompletionsChanged)
     {
-        _pfnMenuChanged(menuJson, replaceLength);
+        _pfnCompletionsChanged(menuJson, replaceLength);
     }
 }
 
