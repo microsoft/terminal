@@ -83,10 +83,7 @@ jobs:
     displayName: 'Create PGO Nuget'
     inputs:
       solution: $(pgoToolsPath)\PGO.DB.proj
-      msbuildArguments: /t:CreatePGONuGet /p:PGOBuildMode=Instrument /p:PGDPathForAllArch=$(artifactsPath) /p:PGOOutputPath=$(Build.ArtifactStagingDirectory) /bl
-
-  - publish: msbuild.binlog
-    artifact: pgo-build-binlog-${{parameters.buildConfiguration}}${{parameters.artifactStem}}
+      msbuildArguments: '/t:CreatePGONuGet /p:PGOBuildMode=Instrument /p:PGDPathForAllArch=$(artifactsPath) /p:PGOOutputPath=$(Build.ArtifactStagingDirectory)'
 
   - publish: $(Build.ArtifactStagingDirectory)
     artifact: pgo-nupkg-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
