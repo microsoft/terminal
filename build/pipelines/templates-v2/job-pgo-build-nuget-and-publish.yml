@@ -13,18 +13,6 @@ parameters:
   - name: jobName
     type: string
     default: BuildAndPublishPGONuget
-  - name: pgoProject
-    type: string
-    default: ''
-  - name: pgoDefinition
-    type: string
-    default: ''
-  - name: pgoVersionDl
-    type: string
-    default: ''
-  - name: pgoPipelineId
-    type: string
-    default: ''
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -52,12 +40,6 @@ jobs:
     inputs:
       artifact: pgd-merged-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
       downloadPath: $(artifactsPath)
-      ${{ if ne(parameters.pgoProject, '') }}:
-        buildType: specific
-        project: ${{parameters.pgoProject}}
-        definition: ${{parameters.pgoDefinition}}
-        buildVersionToDownload: ${{parameters.pgoVersionDl}}
-        pipelineId: ${{parameters.pgoPipelineId}}
 
   - task: NuGetAuthenticate@0
     inputs:

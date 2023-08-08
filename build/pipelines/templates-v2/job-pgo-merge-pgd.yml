@@ -15,18 +15,6 @@ parameters:
   - name: jobName
     type: string
     default: MergePGD
-  - name: pgoProject
-    type: string
-    default: ''
-  - name: pgoDefinition
-    type: string
-    default: ''
-  - name: pgoVersionDl
-    type: string
-    default: ''
-  - name: pgoPipelineId
-    type: string
-    default: ''
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -53,23 +41,11 @@ jobs:
         artifactName: build-${{ platform }}-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
         itemPattern: '**/*.pgd'
         downloadPath: '$(Build.SourcesDirectory)/pgd/${{ platform }}/${{ parameters.buildConfiguration }}'
-        ${{ if ne(parameters.pgoProject, '') }}:
-          buildType: specific
-          project: ${{parameters.pgoProject}}
-          definition: ${{parameters.pgoDefinition}}
-          buildVersionToDownload: ${{parameters.pgoVersionDl}}
-          pipelineId: ${{parameters.pgoPipelineId}}
     - task: DownloadPipelineArtifact@2
       displayName: Download PGO Counts for ${{ platform }}
       inputs:
         artifactName: pgc-intermediates-${{ platform }}-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
         downloadPath: '$(Build.SourcesDirectory)/pgc/${{ platform }}/${{ parameters.buildConfiguration }}'
-        ${{ if ne(parameters.pgoProject, '') }}:
-          buildType: specific
-          project: ${{parameters.pgoProject}}
-          definition: ${{parameters.pgoDefinition}}
-          buildVersionToDownload: ${{parameters.pgoVersionDl}}
-          pipelineId: ${{parameters.pgoPipelineId}}
     - pwsh: |-
         $Arch = '${{ platform }}'
         $Conf = '${{ parameters.buildConfiguration }}'

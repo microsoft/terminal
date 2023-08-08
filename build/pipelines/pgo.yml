@@ -7,18 +7,6 @@ parameters:
     default:
       - x64
       - arm64
-  - name: pgoProject
-    type: string
-    default: ''
-  - name: pgoDefinition
-    type: string
-    default: ''
-  - name: pgoVersionDl
-    type: string
-    default: ''
-  - name: pgoPipelineId
-    type: string
-    default: ''
 
 variables:
   - name: runCodesignValidationInjectionBG
@@ -74,10 +62,6 @@ stages:
           buildConfiguration: Release
           buildPlatforms: ${{ parameters.buildPlatforms }}
           artifactStem: -instrumentation
-          pgoProject: ${{parameters.pgoProject}}
-          pgoDefinition: ${{parameters.pgoDefinition}}
-          pgoVersionDl: ${{parameters.pgoVersionDl}}
-          pgoPipelineId: ${{parameters.pgoPipelineId}}
 
       - template: ./templates-v2/job-pgo-build-nuget-and-publish.yml
         parameters:
@@ -86,7 +70,3 @@ stages:
           dependsOn: MergePGD
           buildConfiguration: Release
           artifactStem: -instrumentation
-          pgoProject: ${{parameters.pgoProject}}
-          pgoDefinition: ${{parameters.pgoDefinition}}
-          pgoVersionDl: ${{parameters.pgoVersionDl}}
-          pgoPipelineId: ${{parameters.pgoPipelineId}}
