@@ -36,22 +36,27 @@ parameters:
       - Instrument
       - None
   - name: buildConfigurations
+    displayName: "Build Configurations"
     type: object
     default:
       - Release
   - name: buildPlatforms
+    displayName: "Build Platforms"
     type: object
     default:
       - x64
       - x86
       - arm64
-  - name: generateSbom
+  - name: codeSign
+    displayName: "Sign all build outputs"
     type: boolean
     default: true
-  - name: codeSign
+  - name: generateSbom
+    displayName: "Generate a Bill of Materials"
     type: boolean
     default: true
   - name: terminalInternalPackageVersion
+    displayName: "Terminal Internal Package Version"
     type: string
     default: '0.0.8'
 
