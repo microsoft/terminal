@@ -454,7 +454,7 @@ void ConhostInternalGetSet::MarkCommandFinish(std::optional<unsigned int> /*erro
 {
     // Not implemented for conhost.
 }
-void ConhostInternalGetSet::InvokeMenu(std::wstring_view /*menuJson*/, unsigned int /*replaceLength*/)
+void ConhostInternalGetSet::InvokeCompletions(std::wstring_view /*menuJson*/, unsigned int /*replaceLength*/)
 {
     // Not implemented for conhost.
 }

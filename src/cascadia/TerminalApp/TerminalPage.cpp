@@ -1659,7 +1659,11 @@ namespace winrt::TerminalApp::implementation
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
 
-        term.MenuChanged({ get_weak(), &TerminalPage::_ControlMenuChangedHandler });
+        // Don't even register for the event if the feature is compiled off.
+        if constexpr (!Feature_ShellCompletions::IsEnabled())
+        {
+            term.CompletionsChanged({ get_weak(), &TerminalPage::_ControlCompletionsChangedHandler });
+        }
 
         term.ContextMenu().Opening({ this, &TerminalPage::_ContextMenuOpened });
         term.SelectionContextMenu().Opening({ this, &TerminalPage::_SelectionMenuOpened });
@@ -2825,9 +2829,8 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender (not used)
     // - args: the arguments specifying how to set the display status to ShowWindow for our window handle
-    winrt::fire_and_forget TerminalPage::_ShowWindowChangedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
+    void TerminalPage::_ShowWindowChangedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
     {
-        co_await resume_foreground(Dispatcher());
         _ShowWindowChangedHandlers(*this, args);
     }
 
@@ -4688,14 +4691,14 @@ namespace winrt::TerminalApp::implementation
         _updateThemeColors();
     }
 
-    winrt::fire_and_forget TerminalPage::_ControlMenuChangedHandler(const IInspectable /*sender*/,
-                                                                    const MenuChangedEventArgs args)
+    winrt::fire_and_forget TerminalPage::_ControlCompletionsChangedHandler(const IInspectable /*sender*/,
+                                                                           const CompletionsChangedEventArgs args)
     {
         // This will come in on a background (not-UI, not output) thread.
-        if constexpr (!Feature_ShellCompletions::IsEnabled())
-        {
-            co_return;
-        }
+
+        // This won't even get hit if the velocity flag is disabled - we gate
+        // registering for the event based off of
+        // Feature_ShellCompletions::IsEnabled back in _RegisterTerminalEvents
 
         // User must explicitly opt-in on Preview builds
         if (!_settings.GlobalSettings().EnableShellCompletionMenu())
