@@ -144,6 +144,24 @@ jobs:
       codeSign: ${{ parameters.codeSign }}
       dependsOn: Build
 
+- ${{ if eq(parameters.buildConPTY, true) }}:
+  - template: ./templates-v2/job-package-conpty.yml
+    parameters:
+      buildConfigurations: ${{ parameters.buildConfigurations }}
+      buildPlatforms: ${{ parameters.buildPlatforms }}
+      generateSbom: ${{ parameters.generateSbom }}
+      codeSign: ${{ parameters.codeSign }}
+      dependsOn: Build
+
+- ${{ if eq(parameters.buildWPF, true) }}:
+  - template: ./templates-v2/job-build-package-wpf.yml
+    parameters:
+      buildConfigurations: ${{ parameters.buildConfigurations }}
+      buildPlatforms: ${{ parameters.buildPlatforms }}
+      generateSbom: ${{ parameters.generateSbom }}
+      codeSign: ${{ parameters.codeSign }}
+      dependsOn: Build
+
 # We only support the vpack for Release builds that include Terminal
 - ${{ if and(containsValue(parameters.buildConfigurations, 'Release'), parameters.buildTerminal, parameters.packTerminalVPack) }}:
   - template: ./templates-v2/job-submit-windows-vpack.yml
