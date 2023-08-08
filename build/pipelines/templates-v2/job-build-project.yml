@@ -109,8 +109,7 @@ jobs:
         Write-Host "Targets: $($BuildTargets -Join ";")"
         Write-Host "Sign targets: $($SignFragments -Join ";")"
         Write-Host "##vso[task.setvariable variable=BuildTargetParameter]/t:$($BuildTargets -Join ";")"
-        # DEBUG
-        #Write-Host "##vso[task.setvariable variable=SelectedSigningFragments]$($SignFragments -Join ";")"
+        Write-Host "##vso[task.setvariable variable=SelectedSigningFragments]$($SignFragments -Join ";")"
       }
     displayName: Prepare Build and Sign Targets
 
