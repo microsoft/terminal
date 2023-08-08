@@ -54,7 +54,6 @@ stages:
     - stage: Audit_x64
       displayName: Audit Mode
       dependsOn: []
-      condition: succeeded()
       jobs:
         - template: ./templates-v2/job-build-project.yml
           parameters:
@@ -68,18 +67,16 @@ stages:
             buildEverything: true
             keepAllExpensiveBuildOutputs: false
 
-  - stage: Scripts
-    displayName: Code Health Scripts
+  - stage: CodeHealth
+    displayName: Code Health
     dependsOn: []
-    condition: succeeded()
     jobs:
-      - template: ./templates/check-formatting.yml
+      - template: ./template-v2/job-check-code-format.yml
 
   - ${{ each platform in parameters.buildPlatforms }}:
     - stage: Build_${{ platform }}
       displayName: Build ${{ platform }}
       dependsOn: []
-      condition: succeeded()
       jobs:
         - template: ./templates-v2/job-build-project.yml
           parameters:
@@ -105,18 +102,9 @@ stages:
             parameters:
               platform: ${{ platform }}
 
-  - ${{ if and(containsValue(parameters.buildPlatforms, 'x64'), eq(parameters.submitHelix, true)) }}:
-    - stage: Helix_x64
-      displayName: Helix x64
-      dependsOn: [Build_x64]
-      jobs:
-        - template: ./templates/console-ci-helix-job.yml
-          parameters:
-            platform: x64
-
   - ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
     - stage: CodeIndexer
       displayName: Github CodeNav Indexer
       dependsOn: []
       jobs:
-        - template: ./templates/codenav-indexer.yml
+        - template: ./templates-v2/job-index-github-codenav.yml
