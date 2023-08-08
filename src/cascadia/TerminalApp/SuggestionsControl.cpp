@@ -1126,6 +1126,10 @@ namespace winrt::TerminalApp::implementation
         Mode(mode);
         SetCommands(commands);
 
+        // LOAD BEARING
+        // The control must become visible here, BEFORE we try to get its ActualWidth/Height.
+        Visibility(commands.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
+
         _anchor = anchor;
         _space = space;
 
@@ -1165,7 +1169,5 @@ namespace winrt::TerminalApp::implementation
             newMargin.Top = (_anchor.Y - actualSize.height);
         }
         Margin(newMargin);
-
-        Visibility(commands.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
     }
 }

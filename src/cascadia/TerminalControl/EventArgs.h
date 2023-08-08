@@ -15,7 +15,7 @@
 #include "FoundResultsArgs.g.h"
 #include "ShowWindowArgs.g.h"
 #include "UpdateSelectionMarkersEventArgs.g.h"
-#include "MenuChangedEventArgs.g.h"
+#include "CompletionsChangedEventArgs.g.h"
 #include "KeySentEventArgs.g.h"
 #include "CharSentEventArgs.g.h"
 #include "StringSentEventArgs.g.h"
@@ -184,10 +184,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WINRT_PROPERTY(bool, ClearMarkers, false);
     };
 
-    struct MenuChangedEventArgs : public MenuChangedEventArgsT<MenuChangedEventArgs>
+    struct CompletionsChangedEventArgs : public CompletionsChangedEventArgsT<CompletionsChangedEventArgs>
     {
     public:
-        MenuChangedEventArgs(const winrt::hstring menuJson, const unsigned int replaceLength) :
+        CompletionsChangedEventArgs(const winrt::hstring menuJson, const unsigned int replaceLength) :
             _MenuJson(menuJson),
             _ReplacementLength(replaceLength)
         {

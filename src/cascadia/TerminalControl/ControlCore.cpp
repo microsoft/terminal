@@ -119,8 +119,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnPlayMidiNote = std::bind(&ControlCore::_terminalPlayMidiNote, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetPlayMidiNoteCallback(pfnPlayMidiNote);
 
-        auto pfnMenuChanged = std::bind(&ControlCore::_terminalMenuChanged, this, std::placeholders::_1, std::placeholders::_2);
-        _terminal->MenuChangedCallback(pfnMenuChanged);
+        auto pfnCompletionsChanged = [=](auto&& menuJson, auto&& replaceLength) { _terminalCompletionsChanged(menuJson, replaceLength); };
+        _terminal->CompletionsChangedCallback(pfnCompletionsChanged);
 
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
@@ -2232,15 +2232,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    winrt::fire_and_forget ControlCore::_terminalMenuChanged(std::wstring_view menuJson,
-                                                             unsigned int replaceLength)
+    winrt::fire_and_forget ControlCore::_terminalCompletionsChanged(std::wstring_view menuJson,
+                                                                    unsigned int replaceLength)
     {
-        auto args = winrt::make_self<MenuChangedEventArgs>(winrt::hstring{ menuJson },
-                                                           replaceLength);
+        auto args = winrt::make_self<CompletionsChangedEventArgs>(winrt::hstring{ menuJson },
+                                                                  replaceLength);
 
         co_await winrt::resume_background();
 
-        _MenuChangedHandlers(*this, *args);
+        _CompletionsChangedHandlers(*this, *args);
     }
     void ControlCore::_selectSpan(til::point_span s)
     {

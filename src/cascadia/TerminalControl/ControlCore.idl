@@ -176,7 +176,7 @@ namespace Microsoft.Terminal.Control
 
         event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
 
-        event Windows.Foundation.TypedEventHandler<Object, MenuChangedEventArgs> MenuChanged;
+        event Windows.Foundation.TypedEventHandler<Object, CompletionsChangedEventArgs> CompletionsChanged;
 
     };
 }

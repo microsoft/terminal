@@ -645,7 +645,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto data = winrt::to_string(json);
 
         std::string errs;
-        static std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        static std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
         Json::Value root;
         if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
         {
@@ -653,8 +653,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         std::vector<Model::Command> result;
-
-        auto backspaces = std::wstring(::base::saturated_cast<size_t>(replaceLength), L'\x7f');
 
         const auto parseElement = [&](const auto& element) {
             winrt::hstring completionText;
@@ -664,14 +662,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(element, "ListItemText", listText);
             JsonUtils::GetValueForKey(element, "ToolTip", tooltipText);
 
-            Model::SendInputArgs args{
+            auto args = winrt::make_self<SendInputArgs>(
                 winrt::hstring{ fmt::format(FMT_COMPILE(L"{:\x7f^{}}{}"),
                                             L"",
                                             replaceLength,
-                                            (std::wstring_view)completionText) }
-            };
+                                            static_cast<std::wstring_view>(completionText)) });
 
-            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
 
             auto c = winrt::make_self<Command>();
             c->_name = listText;

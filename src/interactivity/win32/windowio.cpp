@@ -127,12 +127,13 @@ void HandleKeyEvent(const HWND hWnd,
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(lParam) is a character
+    // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(wParam) is a character
     auto VirtualKeyCode = LOWORD(wParam);
     WORD VirtualScanCode = LOBYTE(HIWORD(lParam));
     const auto RepeatCount = LOWORD(lParam);
-    const auto ControlKeyState = GetControlKeyState(lParam);
+    auto ControlKeyState = GetControlKeyState(lParam);
     const BOOL bKeyDown = WI_IsFlagClear(lParam, KEY_TRANSITION_UP);
+    const bool IsCharacterMessage = (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR);
 
     if (bKeyDown)
     {
@@ -146,7 +147,7 @@ void HandleKeyEvent(const HWND hWnd,
 
     // Make sure we retrieve the key info first, or we could chew up
     // unneeded space in the key info table if we bail out early.
-    if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
+    if (IsCharacterMessage)
     {
         // --- START LOAD BEARING CODE ---
         // NOTE: We MUST match up the original data from the WM_KEYDOWN stroke (handled at some inexact moment in the
@@ -167,9 +168,27 @@ void HandleKeyEvent(const HWND hWnd,
         // --- END LOAD BEARING CODE ---
     }
 
+    // Simulated key events (using `SendInput` or `SendMessage`) can have invalid
+    // virtual key code, and invalid scan code. We need to filter such events out,
+    // as some applications (e.g. WSL) treat those events as valid key events and
+    // translate them to an ascii NULL character. GH#15753
+    if (VirtualScanCode == 0 && !IsCharacterMessage) // `WM_[SYS][DEAD]CHAR` messages don't have this issue
+    {
+        // We try to infer the correct scan code from the virtual key code. If the
+        // virtual key code is invalid or we couldn't map it to a scan code,
+        // MapVirtualKeyEx will return 0.
+        auto FullVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VirtualKeyCode, MAPVK_VK_TO_VSC_EX));
+        VirtualScanCode = LOBYTE(FullVirtualScanCode);
+        ControlKeyState |= (HIBYTE(FullVirtualScanCode) == 0xE0) ? ENHANCED_KEY : 0;
+        if (VirtualScanCode == 0)
+        {
+            return;
+        }
+    }
+
     KeyEvent keyEvent{ !!bKeyDown, RepeatCount, VirtualKeyCode, VirtualScanCode, UNICODE_NULL, 0 };
 
-    if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
+    if (IsCharacterMessage)
     {
         // If this is a fake character, zero the scancode.
         if (lParam & 0x02000000)
@@ -409,7 +428,7 @@ void HandleKeyEvent(const HWND hWnd,
     // ignore key strokes that will generate CHAR messages. this is only necessary while a dialog box is up.
     if (ServiceLocator::LocateGlobals().uiDialogBoxCount != 0)
     {
-        if (Message != WM_CHAR && Message != WM_SYSCHAR && Message != WM_DEADCHAR && Message != WM_SYSDEADCHAR)
+        if (!IsCharacterMessage)
         {
             WCHAR awch[MAX_CHARS_FROM_1_KEYSTROKE];
             BYTE KeyState[256];
