@@ -1660,7 +1660,7 @@ namespace winrt::TerminalApp::implementation
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
 
         // Don't even register for the event if the feature is compiled off.
-        if constexpr (!Feature_ShellCompletions::IsEnabled())
+        if constexpr (Feature_ShellCompletions::IsEnabled())
         {
             term.CompletionsChanged({ get_weak(), &TerminalPage::_ControlCompletionsChangedHandler });
         }
@@ -1847,7 +1847,7 @@ namespace winrt::TerminalApp::implementation
     }
     bool TerminalPage::_suggestionsControlIs(WUX::Visibility visibility)
     {
-        const auto p = SuggestionsControl();
+        const auto p = SuggestionsElement();
         return p && p.Visibility() == visibility;
     }
 
