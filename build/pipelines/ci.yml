@@ -67,7 +67,7 @@ stages:
     displayName: Code Health
     dependsOn: []
     jobs:
-      - template: ./template-v2/job-check-code-format.yml
+      - template: ./templates-v2/job-check-code-format.yml
 
   - ${{ each platform in parameters.buildPlatforms }}:
     - stage: Build_${{ platform }}
