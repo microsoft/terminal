@@ -260,7 +260,8 @@
           "description": "Name of the scheme to use when the app is using dark theme",
           "type": "string"
         }
-      }
+      },
+      "type": "object"
     },
     "FontConfig": {
       "properties": {

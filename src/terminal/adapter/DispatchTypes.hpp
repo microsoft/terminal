@@ -166,7 +166,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         constexpr VTParameter at(const size_t index) const noexcept
         {
-            return til::at(_subParams, index);
+            // If the index is out of range, we return a sub parameter with no value.
+            return index < _subParams.size() ? til::at(_subParams, index) : defaultParameter;
         }
 
         VTSubParameters subspan(const size_t offset, const size_t count) const noexcept
@@ -191,6 +192,8 @@ namespace Microsoft::Console::VirtualTerminal
         }
 
     private:
+        static constexpr VTParameter defaultParameter{};
+
         std::span<const VTParameter> _subParams;
     };
 

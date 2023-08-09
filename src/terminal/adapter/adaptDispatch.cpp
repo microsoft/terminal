@@ -176,7 +176,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             //   we tried writing a wide glyph into the last column which can't work.
             if (textPositionBefore == textPositionAfter && (state.columnBegin == 0 || !wrapAtEOL))
             {
-                textBuffer.ConsumeGrapheme(state.text);
+                state.text = state.text.substr(textBuffer.GraphemeNext(state.text, 0));
             }
 
             if (wrapAtEOL)
@@ -4117,14 +4117,14 @@ void AdaptDispatch::_ReportSGRSetting() const
         else if (color.IsIndex256())
         {
             const auto index = color.GetIndex();
-            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{};5;{}"), base + 8, index);
+            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{}:5:{}"), base + 8, index);
         }
         else if (color.IsRgb())
         {
             const auto r = GetRValue(color.GetRGB());
             const auto g = GetGValue(color.GetRGB());
             const auto b = GetBValue(color.GetRGB());
-            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{};2;{};{};{}"), base + 8, r, g, b);
+            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{}:2::{}:{}:{}"), base + 8, r, g, b);
         }
     };
     addColor(30, attr.GetForeground());

@@ -962,8 +962,6 @@ winrt::fire_and_forget AppHost::_peasantNotifyActivateWindow()
 // - The window layout as a json string.
 winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowLayoutAsync()
 {
-    winrt::apartment_context peasant_thread;
-
     winrt::hstring layoutJson = L"";
     // Use the main thread since we are accessing controls.
     co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
@@ -973,9 +971,6 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowL
         layoutJson = _windowLogic.GetWindowLayoutJson(pos);
     }
     CATCH_LOG()
-
-    // go back to give the result to the peasant.
-    co_await peasant_thread;
 
     co_return layoutJson;
 }
@@ -1052,9 +1047,6 @@ void AppHost::_DisplayWindowId(const winrt::Windows::Foundation::IInspectable& /
 winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
                                                        const winrt::TerminalApp::RenameWindowRequestedArgs args)
 {
-    // Capture calling context.
-    winrt::apartment_context ui_thread;
-
     // Switch to the BG thread - anything x-proc must happen on a BG thread
     co_await winrt::resume_background();
 
@@ -1064,12 +1056,9 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
 
         _peasant.RequestRename(requestArgs);
 
-        // Switch back to the UI thread. Setting the WindowName needs to happen
-        // on the UI thread, because it'll raise a PropertyChanged event
-        co_await ui_thread;
-
         if (requestArgs.Succeeded())
         {
+            co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
             _windowLogic.WindowName(args.ProposedName());
         }
         else

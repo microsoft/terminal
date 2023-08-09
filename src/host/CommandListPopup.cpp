@@ -34,9 +34,9 @@ static til::size calculatePopupSize(const CommandHistory& history)
 
     // find the widest command history item and use it for the width
     size_t width = minSize.width;
-    for (size_t i = 0; i < history.GetNumberOfCommands(); ++i)
+    for (CommandHistory::Index i = 0; i < history.GetNumberOfCommands(); ++i)
     {
-        const auto& historyItem = history.GetNth(gsl::narrow<short>(i));
+        const auto& historyItem = history.GetNth(i);
         width = std::max(width, historyItem.size() + padding);
     }
     if (width > SHRT_MAX)
@@ -53,7 +53,7 @@ static til::size calculatePopupSize(const CommandHistory& history)
 CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const CommandHistory& history) :
     Popup(screenInfo, calculatePopupSize(history)),
     _history{ history },
-    _currentCommand{ std::min(history.LastDisplayed, static_cast<SHORT>(history.GetNumberOfCommands() - 1)) }
+    _currentCommand{ std::min(history.LastDisplayed, history.GetNumberOfCommands() - 1) }
 {
     FAIL_FAST_IF(_currentCommand < 0);
     _setBottomIndex();
@@ -65,7 +65,7 @@ CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const Command
 {
     try
     {
-        short Index = 0;
+        CommandHistory::Index Index = 0;
         const auto shiftPressed = WI_IsFlagSet(modifiers, SHIFT_PRESSED);
         switch (wch)
         {
@@ -107,17 +107,17 @@ CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const Command
             break;
         case VK_END:
             // Move waaay forward, UpdateCommandListPopup() can handle it.
-            _update((SHORT)(cookedReadData.History().GetNumberOfCommands()));
+            _update(cookedReadData.History().GetNumberOfCommands());
             break;
         case VK_HOME:
             // Move waaay back, UpdateCommandListPopup() can handle it.
-            _update(-(SHORT)(cookedReadData.History().GetNumberOfCommands()));
+            _update(-cookedReadData.History().GetNumberOfCommands());
             break;
         case VK_PRIOR:
-            _update(-(SHORT)Height());
+            _update(-Height());
             break;
         case VK_NEXT:
-            _update((SHORT)Height());
+            _update(Height());
             break;
         case VK_DELETE:
             return _deleteSelection(cookedReadData);
@@ -125,7 +125,7 @@ CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const Command
         case VK_RIGHT:
             Index = _currentCommand;
             CommandLine::Instance().EndCurrentPopup();
-            SetCurrentCommandLine(cookedReadData, (SHORT)Index);
+            SetCurrentCommandLine(cookedReadData, Index);
             return CONSOLE_STATUS_WAIT_NO_BLOCK;
         default:
             break;
@@ -137,13 +137,13 @@ CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const Command
 
 void CommandListPopup::_setBottomIndex()
 {
-    if (_currentCommand < (SHORT)(_history.GetNumberOfCommands() - Height()))
+    if (_currentCommand < _history.GetNumberOfCommands() - Height())
     {
-        _bottomIndex = std::max(_currentCommand, gsl::narrow<SHORT>(Height() - 1));
+        _bottomIndex = std::max(_currentCommand, Height() - 1);
     }
     else
     {
-        _bottomIndex = (SHORT)(_history.GetNumberOfCommands() - 1);
+        _bottomIndex = _history.GetNumberOfCommands() - 1;
     }
 }
 
@@ -152,7 +152,7 @@ void CommandListPopup::_setBottomIndex()
     try
     {
         auto& history = cookedReadData.History();
-        history.Remove(static_cast<short>(_currentCommand));
+        history.Remove(_currentCommand);
         _setBottomIndex();
 
         if (history.GetNumberOfCommands() == 0)
@@ -160,9 +160,9 @@ void CommandListPopup::_setBottomIndex()
             // close the popup
             return CONSOLE_STATUS_READ_COMPLETE;
         }
-        else if (_currentCommand >= static_cast<short>(history.GetNumberOfCommands()))
+        else if (_currentCommand >= history.GetNumberOfCommands())
         {
-            _currentCommand = static_cast<short>(history.GetNumberOfCommands() - 1);
+            _currentCommand = history.GetNumberOfCommands() - 1;
             _bottomIndex = _currentCommand;
         }
 
@@ -204,7 +204,7 @@ void CommandListPopup::_setBottomIndex()
     {
         auto& history = cookedReadData.History();
 
-        if (history.GetNumberOfCommands() <= 1 || _currentCommand == gsl::narrow<short>(history.GetNumberOfCommands()) - 1)
+        if (history.GetNumberOfCommands() <= 1 || _currentCommand == history.GetNumberOfCommands() - 1)
         {
             return STATUS_SUCCESS;
         }
@@ -218,12 +218,12 @@ void CommandListPopup::_setBottomIndex()
 
 void CommandListPopup::_handleReturn(COOKED_READ_DATA& cookedReadData)
 {
-    short Index = 0;
+    CommandHistory::Index Index = 0;
     auto Status = STATUS_SUCCESS;
     DWORD LineCount = 1;
     Index = _currentCommand;
     CommandLine::Instance().EndCurrentPopup();
-    SetCurrentCommandLine(cookedReadData, (SHORT)Index);
+    SetCurrentCommandLine(cookedReadData, Index);
     cookedReadData.ProcessInput(UNICODE_CARRIAGERETURN, 0, Status);
     // complete read
     if (cookedReadData.IsEchoInput())
@@ -268,13 +268,13 @@ void CommandListPopup::_handleReturn(COOKED_READ_DATA& cookedReadData)
 
 void CommandListPopup::_cycleSelectionToMatchingCommands(COOKED_READ_DATA& cookedReadData, const wchar_t wch)
 {
-    short Index = 0;
+    CommandHistory::Index Index = 0;
     if (cookedReadData.History().FindMatchingCommand({ &wch, 1 },
                                                      _currentCommand,
                                                      Index,
                                                      CommandHistory::MatchOptions::JustLooking))
     {
-        _update((SHORT)(Index - _currentCommand), true);
+        _update(Index - _currentCommand, true);
     }
 }
 
@@ -345,7 +345,7 @@ void CommandListPopup::_drawList()
     auto api = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().api;
 
     WriteCoord.y = _region.top + 1;
-    auto i = gsl::narrow<SHORT>(std::max(_bottomIndex - Height() + 1, 0));
+    auto i = std::max(_bottomIndex - Height() + 1, 0);
     for (; i <= _bottomIndex; i++)
     {
         CHAR CommandNumber[COMMAND_NUMBER_SIZE];
@@ -447,7 +447,7 @@ void CommandListPopup::_drawList()
 // Arguments:
 // - originalDelta - The number of lines to move up or down
 // - wrap - Down past the bottom or up past the top should wrap the command list
-void CommandListPopup::_update(const SHORT originalDelta, const bool wrap)
+void CommandListPopup::_update(const CommandHistory::Index originalDelta, const bool wrap)
 {
     auto delta = originalDelta;
     if (delta == 0)
@@ -457,7 +457,7 @@ void CommandListPopup::_update(const SHORT originalDelta, const bool wrap)
     const auto Size = Height();
 
     auto CurCmdNum = _currentCommand;
-    SHORT NewCmdNum = CurCmdNum + delta;
+    CommandHistory::Index NewCmdNum = CurCmdNum + delta;
 
     if (wrap)
     {
@@ -466,9 +466,9 @@ void CommandListPopup::_update(const SHORT originalDelta, const bool wrap)
     }
     else
     {
-        if (NewCmdNum >= gsl::narrow<SHORT>(_history.GetNumberOfCommands()))
+        if (NewCmdNum >= _history.GetNumberOfCommands())
         {
-            NewCmdNum = gsl::narrow<SHORT>(_history.GetNumberOfCommands()) - 1;
+            NewCmdNum = _history.GetNumberOfCommands() - 1;
         }
         else if (NewCmdNum < 0)
         {
@@ -484,16 +484,16 @@ void CommandListPopup::_update(const SHORT originalDelta, const bool wrap)
         _bottomIndex += delta;
         if (_bottomIndex < Size - 1)
         {
-            _bottomIndex = gsl::narrow<SHORT>(Size - 1);
+            _bottomIndex = Size - 1;
         }
         Scroll = true;
     }
     else if (NewCmdNum > _bottomIndex)
     {
         _bottomIndex += delta;
-        if (_bottomIndex >= gsl::narrow<SHORT>(_history.GetNumberOfCommands()))
+        if (_bottomIndex >= _history.GetNumberOfCommands())
         {
-            _bottomIndex = gsl::narrow<SHORT>(_history.GetNumberOfCommands()) - 1;
+            _bottomIndex = _history.GetNumberOfCommands() - 1;
         }
         Scroll = true;
     }
@@ -516,7 +516,7 @@ void CommandListPopup::_update(const SHORT originalDelta, const bool wrap)
 // Arguments:
 // - OldCurrentCommand - The previous command highlighted
 // - NewCurrentCommand - The new command to be highlighted.
-void CommandListPopup::_updateHighlight(const SHORT OldCurrentCommand, const SHORT NewCurrentCommand)
+void CommandListPopup::_updateHighlight(const CommandHistory::Index OldCurrentCommand, const CommandHistory::Index NewCurrentCommand)
 {
     til::CoordType TopIndex;
     if (_bottomIndex < Height())
