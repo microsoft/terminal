@@ -1,7 +1,7 @@
 [
     {
         "MatchedPath": [
-            "**/net*/Microsoft.Terminal.Wpf.dll"
+            "**/Microsoft.Terminal.Wpf.dll"
         ],
         "SigningInfo": {
             "Operations": [
