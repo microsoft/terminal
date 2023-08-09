@@ -24,7 +24,7 @@ steps:
           $SignBatchFiles = $SignBatchFiles | Where-Object { ($_.Name -Split '\.')[3] -In $FragmentList }
         }
       }
-      Write-Host "Found $($SignBatchFiles.Length) Signing Configs"
+      Write-Host "Found $(@($SignBatchFiles).Length) Signing Configs"
       Write-Host ($SignBatchFiles.Name -Join ";")
       $FinalSignConfig = @{
         Version = "1.0.0";
