@@ -28,7 +28,10 @@ jobs:
 - job: ${{ parameters.jobName }}
   ${{ if ne(length(parameters.pool), 0) }}:
     pool: ${{ parameters.pool }}
-  displayName: Create and sign AppX/MSIX bundles
+  ${{ if eq(parameters.codeSign, true) }}:
+    displayName: Pack and Sign Terminal MSIXBundle
+  ${{ else }}:
+    displayName: Pack Terminal MSIXBundle
   strategy:
     matrix:
       ${{ each config in parameters.buildConfigurations }}:

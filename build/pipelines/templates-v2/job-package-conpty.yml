@@ -26,7 +26,10 @@ jobs:
 - job: ${{ parameters.jobName }}
   ${{ if ne(length(parameters.pool), 0) }}:
     pool: ${{ parameters.pool }}
-  displayName: Create and sign ConPTY package
+  ${{ if eq(parameters.codeSign, true) }}:
+    displayName: Pack and Sign Microsoft.Windows.Console.ConPTY
+  ${{ else }}:
+    displayName: Pack Microsoft.Windows.Console.ConPTY
   strategy:
     matrix:
       ${{ each config in parameters.buildConfigurations }}:
