@@ -72,7 +72,8 @@ jobs:
       msbuildArgs: >-
         /p:WindowsTerminalReleaseBuild=true;Version=$(XES_PACKAGEVERSIONNUMBER)
         /p:NoBuild=true
-        /t:Pack
+        /p:IncludeSymbols=true
+        /t:Terminal\wpf\WpfTerminalControl:Pack
       platform: Any CPU
       configuration: $(BuildConfiguration)
       maximumCpuCount: true
