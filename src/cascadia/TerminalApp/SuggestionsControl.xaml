@@ -101,49 +101,6 @@
                                                GeneralItemTemplate="{StaticResource GeneralItemTemplate}"
                                                NestedItemTemplate="{StaticResource NestedItemTemplate}" />
 
-            <ResourceDictionary.ThemeDictionaries>
-                <ResourceDictionary x:Key="Dark">
-
-                    <!--  KeyChordText styles  -->
-                    <Style x:Key="KeyChordBorderStyle"
-                           TargetType="Border">
-                        <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="CornerRadius" Value="2" />
-                        <Setter Property="Background" Value="Transparent" />
-                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-                    <Style x:Key="KeyChordTextBlockStyle"
-                           TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="Light">
-
-                    <!--  KeyChordText styles  -->
-                    <Style x:Key="KeyChordBorderStyle"
-                           TargetType="Border">
-                        <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="CornerRadius" Value="2" />
-                        <Setter Property="Background" Value="Transparent" />
-                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-                    <Style x:Key="KeyChordTextBlockStyle"
-                           TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="HighContrast">
-
-                    <!--  KeyChordText styles (use XAML defaults for High Contrast theme)  -->
-                    <Style x:Key="KeyChordBorderStyle"
-                           TargetType="Border" />
-                    <Style x:Key="KeyChordTextBlockStyle"
-                           TargetType="TextBlock" />
-
-                </ResourceDictionary>
-            </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
 
