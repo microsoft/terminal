@@ -1,7 +1,8 @@
 [
     {
         "MatchedPath": [
-            "**/Microsoft.Terminal.Wpf.dll"
+            "WpfTerminalControl/net472/Microsoft.Terminal.Wpf.dll",
+            "WpfTerminalControl/net6.0-windows/Microsoft.Terminal.Wpf.dll"
         ],
         "SigningInfo": {
             "Operations": [
