@@ -1450,8 +1450,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                             viewHeight,
                                                             bufferSize) };
 
-        if (_inUnitTests)
-            [[unlikely]]
+        if (_inUnitTests) [[unlikely]]
         {
             _ScrollPositionChangedHandlers(*this, update);
         }

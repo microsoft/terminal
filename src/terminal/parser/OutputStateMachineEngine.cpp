@@ -417,8 +417,7 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTPara
 bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameters parameters)
 {
     // Bail out if we receive subparameters, but we don't accept them in the sequence.
-    if (parameters.hasSubParams() && !_CanSeqAcceptSubParam(id, parameters))
-        [[unlikely]]
+    if (parameters.hasSubParams() && !_CanSeqAcceptSubParam(id, parameters)) [[unlikely]]
     {
         return false;
     }
