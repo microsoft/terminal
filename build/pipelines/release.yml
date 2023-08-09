@@ -192,16 +192,19 @@ stages:
             generateSbom: ${{ parameters.generateSbom }}
             codeSign: ${{ parameters.codeSign }}
 
-  - ${{ if and(containsValue(parameters.buildConfigurations, 'Release'), parameters.buildTerminal, parameters.publishVpackToWindows) }}:
-    - stage: Publish
-      displayName: Publish
-      dependsOn: [Build, Package]
-      jobs:
-        # We only support the vpack for Release builds that include Terminal
-        - ${{ if and(containsValue(parameters.buildConfigurations, 'Release'), parameters.buildTerminal, parameters.publishVpackToWindows) }}:
-          - template: ./templates-v2/job-submit-windows-vpack.yml
-            parameters:
-              buildConfiguration: Release
-              generateSbom: ${{ parameters.generateSbom }}
+  - stage: Publish
+    displayName: Publish
+    dependsOn: [Build, Package]
+    jobs:
+      # We only support the vpack for Release builds that include Terminal
+      - ${{ if and(containsValue(parameters.buildConfigurations, 'Release'), parameters.buildTerminal, parameters.publishVpackToWindows) }}:
+        - template: ./templates-v2/job-submit-windows-vpack.yml
+          parameters:
+            buildConfiguration: Release
+            generateSbom: ${{ parameters.generateSbom }}
+
+      - template: ./templates-v2/job-publish-symbols.yml
+        parameters:
+          includePublicSymbolServer: ${{ parameters.publishSymbolsToPublic }}
 
 ...
