@@ -13,11 +13,6 @@ steps:
     - task: DownloadPipelineArtifact@2
       displayName: Download artifacts for ${{ platform }} ${{ configuration }}
       inputs:
-        buildType: specific
-        project: Dart
-        definition: 70913
-        buildVersionToDownload: specific
-        pipelineId: 76542522
         # Make sure to download the entire artifact, because it includes the SPDX SBOM
         artifactName: build-${{ platform }}-${{ configuration }}${{ parameters.artifactStem }}
         # Downloading to the source directory should ensure that the later SBOM generator can see the earlier SBOMs.
