@@ -1771,7 +1771,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 const auto& last{ marks.back() };
                 const auto [start, end] = last.GetExtent();
-                if (terminalPosition >= end)
+                const auto lastNonSpace = _terminal->GetTextBuffer().GetLastNonSpaceCharacter();
+
+                // If the user clicked off to the right side of the prompt, we
+                // want to send keystrokes to the last character in the prompt +1.
+                //
+                // We don't want to send too many here. In CMD, if the user's
+                // last command is longer than what they've currently typed, and
+                // they press right arrow at the end of the prompt, COOKED_READ
+                // will fill in characters from the previous command.
+                //
+                // By only sending keypresses to the end of the command + 1, we
+                // should leave the cursor at the very end of the promtp,
+                // without adding any characters from a previous command.
+                auto clampedClick = terminalPosition;
+                if (terminalPosition > lastNonSpace)
+                {
+                    clampedClick = lastNonSpace + til::point{ 1, 0 };
+                    _terminal->GetTextBuffer().GetSize().Clamp(clampedClick);
+                }
+
+                if (clampedClick >= end)
                 {
                     // Get the distance between the cursor and the click, in cells.
                     const auto bufferSize = _terminal->GetTextBuffer().GetSize();
@@ -1779,9 +1799,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // First, make sure to iterate from the first point to the
                     // second. The user may have clicked _earlier_ in the
                     // buffer!
-                    auto goRight = terminalPosition > cursorPos;
-                    const auto startPoint = goRight ? cursorPos : terminalPosition;
-                    const auto endPoint = goRight ? terminalPosition : cursorPos;
+                    auto goRight = clampedClick > cursorPos;
+                    const auto startPoint = goRight ? cursorPos : clampedClick;
+                    const auto endPoint = goRight ? clampedClick : cursorPos;
 
                     const auto delta = _terminal->GetTextBuffer().GetCellDistance(startPoint, endPoint);
 
