@@ -48,7 +48,7 @@ jobs:
     continueOnError: True
     inputs:
       SymbolsFolder: '$(Build.SourcesDirectory)/bin'
-      SearchPattern: **/*.pdb
+      SearchPattern: '**/*.pdb'
       IndexSources: false
       DetailedLog: true
       SymbolsMaximumWaitTime: 30
@@ -64,7 +64,7 @@ jobs:
       continueOnError: True
       inputs:
         SymbolsFolder: '$(Build.SourcesDirectory)/bin'
-        SearchPattern: **/*.pdb
+        SearchPattern: '**/*.pdb'
         IndexSources: false
         DetailedLog: true
         SymbolsMaximumWaitTime: 30
