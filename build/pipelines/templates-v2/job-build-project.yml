@@ -171,6 +171,7 @@ jobs:
 
       $Items | Remove-Item -Recurse -Force -Verbose -ErrorAction:Ignore
     displayName: Clean up static libs and extra symbols
+    errorActionPreference: silentlyContinue # It's OK if this silently fails
 
   # We cannot index PDBs that we have deleted!
   - ${{ if eq(parameters.keepAllExpensiveBuildOutputs, true) }}:
