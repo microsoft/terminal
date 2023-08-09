@@ -1,6 +1,5 @@
 parameters:
   - name: branding
-    displayName: "Branding (Build Type)"
     type: string
     default: Dev
     values: [Release, Preview, Dev]
@@ -8,15 +7,15 @@ parameters:
     type: string
     default: ''
   - name: buildTerminal
-    displayName: "Build Windows Terminal MSIX"
     type: boolean
     default: true
   - name: buildConPTY
-    displayName: "Build ConPTY NuGet"
     type: boolean
     default: false
   - name: buildWPF
-    displayName: "Build Terminal WPF Control"
+    type: boolean
+    default: false
+  - name: buildWPFDotNetComponents # This weird hack is to make sure we sign and source index the .NET pieces
     type: boolean
     default: false
   - name: buildEverything
@@ -24,7 +23,6 @@ parameters:
     type: boolean
     default: false
   - name: pgoBuildMode
-    displayName: "PGO Build Mode"
     type: string
     default: None
     values: [Optimize, Instrument, None]
@@ -70,6 +68,8 @@ jobs:
             BuildPlatform: ${{ platform }}
             ${{ if eq(platform, 'x86') }}:
               OutputBuildPlatform: Win32
+            ${{ elseif eq(platform, 'Any CPU') }}:
+              OutputBuildPlatform: AnyCPU
             ${{ else }}:
               OutputBuildPlatform: ${{ platform }}
   variables:
@@ -97,6 +97,10 @@ jobs:
         If ([bool]::Parse("${{ parameters.buildTerminal }}")) {
           $BuildTargets += "Terminal\CascadiaPackage"
           $SignFragments += "terminal_constituents"
+        }
+        If ([bool]::Parse("${{ parameters.buildWPFDotNetComponents }}")) {
+          $BuildTargets += "Terminal\wpf\WpfTerminalControl"
+          $SignFragments += "wpfdotnet"
         }
         If ([bool]::Parse("${{ parameters.buildWPF }}")) {
           $BuildTargets += "Terminal\wpf\PublicTerminalCore"
@@ -236,17 +240,6 @@ jobs:
       displayName: Build Unpackaged Distribution (from MSIX)
       condition: and(succeeded(), ne(variables.WindowsTerminalPackagePath, ''))
 
-# - task: PublishSymbols@2
-#   displayName: Publish symbols path
-#   continueOnError: True
-#   inputs:
-#     SearchPattern: |
-#       $(Terminal.BinDir)/**/*.pdb
-#       $(Terminal.BinDir)/**/*.exe
-#       $(Terminal.BinDir)/**/*.dll
-#     IndexSources: false
-#     SymbolServerType: TeamServices
-  
   - ${{ if eq(parameters.generateSbom, true) }}:
     - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
       displayName: 'Generate SBOM manifest'

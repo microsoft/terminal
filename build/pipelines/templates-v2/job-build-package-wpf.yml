@@ -26,13 +26,19 @@ jobs:
 - job: ${{ parameters.jobName }}
   ${{ if ne(length(parameters.pool), 0) }}:
     pool: ${{ parameters.pool }}
-  displayName: Create and sign WPF Terminal package
+  ${{ if eq(parameters.codeSign, true) }}:
+    displayName: Pack and Sign Microsoft.Terminal.Wpf
+  ${{ else }}:
+    displayName: Pack Microsoft.Terminal.Wpf
   strategy:
     matrix:
       ${{ each config in parameters.buildConfigurations }}:
         ${{ config }}:
           BuildConfiguration: ${{ config }}
   dependsOn: ${{ parameters.dependsOn }}
+  variables:
+    OutputBuildPlatform: AnyCPU
+    Terminal.BinDir: $(Build.SourcesDirectory)/bin/$(OutputBuildPlatform)/$(BuildConfiguration)
   steps:
   - checkout: self
     clean: true
@@ -48,7 +54,9 @@ jobs:
 
   - template: steps-download-bin-dir-artifact.yml
     parameters:
-      buildPlatforms: ${{ parameters.buildPlatforms }}
+      buildPlatforms:
+        - ${{ parameters.buildPlatforms }}
+        - Any CPU # Make sure we grab the precompiled WPF bits
       # This build is already matrix'd on configuration, so
       # just pass a single config into the download template.
       buildConfigurations:
@@ -56,63 +64,6 @@ jobs:
       artifactStem: ${{ parameters.artifactStem }}
 
   - template: .\steps-restore-nuget.yml
-
-  - task: VSBuild@1
-    displayName: Build solution OpenConsole.sln for WPF Control (Compile)
-    inputs:
-      solution: 'OpenConsole.sln'
-      msbuildArgs: /p:WindowsTerminalReleaseBuild=true;Version=$(XES_PACKAGEVERSIONNUMBER)
-      platform: Any CPU
-      configuration: $(BuildConfiguration)
-      maximumCpuCount: true
-
-  - ${{ if eq(parameters.codeSign, true) }}:
-    - task: EsrpCodeSigning@1
-      displayName: Submit Microsoft.Terminal.Wpf.dll to ESRP for code signing
-      inputs:
-        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: bin/AnyCPU/$(BuildConfiguration)
-        Pattern: '**/Microsoft.Terminal.Wpf.dll'
-        UseMinimatch: true
-        signConfigType: inlineSignParams
-        inlineOperation: >-
-          [
-            {
-              "KeyCode": "CP-230012",
-              "OperationSetCode": "SigntoolSign",
-              "Parameters": [
-                {
-                  "parameterName": "OpusName",
-                  "parameterValue": "Microsoft"
-                },
-                {
-                  "parameterName": "OpusInfo",
-                  "parameterValue": "http://www.microsoft.com"
-                },
-                {
-                  "parameterName": "FileDigest",
-                  "parameterValue": "/fd \"SHA256\""
-                },
-                {
-                  "parameterName": "PageHash",
-                  "parameterValue": "/NPH"
-                },
-                {
-                  "parameterName": "TimeStamp",
-                  "parameterValue": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
-                }
-              ],
-              "ToolName": "sign",
-              "ToolVersion": "1.0"
-            },
-            {
-              "KeyCode": "CP-230012",
-              "OperationSetCode": "SigntoolVerify",
-              "Parameters": [],
-              "ToolName": "sign",
-              "ToolVersion": "1.0"
-            }
-          ]
 
   - task: VSBuild@1
     displayName: Build solution OpenConsole.sln for WPF Control (Pack)

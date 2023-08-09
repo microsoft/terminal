@@ -141,6 +141,28 @@ stages:
               parameters:
                 includePseudoLoc: true
 
+      - ${{ if eq(parameters.buildWPF, true) }}:
+        # Add an Any CPU build flavor for the WPF control bits
+        - template: ./templates-v2/job-build-project.yml
+          parameters:
+            pool:
+              name: SHINE-INT-L # Run the compilation on the large agent pool, rather than the default small one.
+              demands: ImageOverride -equals SHINE-VS17-Latest
+            branding: ${{ parameters.branding }}
+            buildTerminal: false
+            buildWPFDotNetComponents: true
+            buildConfigurations: ${{ parameters.buildConfigurations }}
+            buildPlatforms:
+              - Any CPU
+            generateSbom: ${{ parameters.generateSbom }}
+            codeSign: ${{ parameters.codeSign }}
+            beforeBuildSteps:
+              - task: PkgESSetupBuild@12
+                displayName: Package ES - Setup Build
+                inputs:
+                  disableOutputRedirect: true
+              # WPF doesn't need the localizations or the universal package, but if it does... put them here.
+
   - stage: Package
     displayName: Package
     dependsOn: [Build]

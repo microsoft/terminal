@@ -18,5 +18,7 @@ steps:
         # Downloading to the source directory should ensure that the later SBOM generator can see the earlier SBOMs.
         ${{ if eq(platform, 'x86') }}:
           downloadPath: '$(Build.SourcesDirectory)/bin/Win32/${{ configuration }}'
+        ${{ elseif eq(platform, 'Any CPU') }}:
+          downloadPath: '$(Build.SourcesDirectory)/bin/AnyCPU/${{ configuration }}'
         ${{ else }}:
           downloadPath: '$(Build.SourcesDirectory)/bin/${{ platform }}/${{ configuration }}'
