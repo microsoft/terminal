@@ -351,6 +351,14 @@ namespace winrt::TerminalApp::implementation
                 _toolTipContent().Inlines().Append(textRun);
                 _toolTipContent().Inlines().Append(Documents::LineBreak{});
             }
+
+            // TODO! These were all feigned attempts to allow us to focus the content of the teachingtip.
+            // We may want to keep IsTextSelectionEnabled in the XAML.
+            //
+            // I also have no idea if the FullDescriptionProperty thing worked at all.
+            _toolTipContent().AllowFocusOnInteraction(true);
+            _toolTipContent().IsTextSelectionEnabled(true);
+            DescriptionTip().SetValue(Automation::AutomationProperties::FullDescriptionProperty(), winrt::box_value(description));
         }
         co_return;
     }
@@ -446,7 +454,9 @@ namespace winrt::TerminalApp::implementation
         // If the user types a character while the menu (not in palette mode)
         // is open, then dismiss ourselves. That way, when you type a character,
         // we'll instead send it to the TermControl.
-        if (_mode == SuggestionsMode::Menu && !e.Handled())
+        if (_mode == SuggestionsMode::Menu &&
+            !e.Handled() &&
+            key != VirtualKey::F6)
         {
             _dismissPalette();
         }
@@ -513,7 +523,21 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
+        const auto& popups = Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(root);
+        const auto numPopups = popups.Size();
+        // TODO! I think _we_ are the first popup.
+        if (numPopups > 1)
+        {
+            // TODO! a test. If theres a popup, don't dismiss.
+            return;
+        }
+
+        // TODO! if the teaching tip is closed, re-focus the suggestions list
+
         auto focusedElementOrAncestor = Input::FocusManager::GetFocusedElement(root).try_as<DependencyObject>();
+        // TODO! if there wasn't a focused element in the main root, look
+        // instead underneath the teachingtip. left as an exersize to figure out
+        // _how_ to do that.
         while (focusedElementOrAncestor)
         {
             if (focusedElementOrAncestor == *this)

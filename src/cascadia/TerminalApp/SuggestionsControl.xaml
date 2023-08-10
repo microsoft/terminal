@@ -207,11 +207,9 @@
                       SelectionChanged="_listItemSelectionChanged"
                       SelectionMode="Single" />
             <mux:TeachingTip x:Name="DescriptionTip"
-                             Title=""
                              IsOpen="False"
                              PreferredPlacement="Right"
-                             ShouldConstrainToRootBounds="False"
-                             Subtitle="">
+                             ShouldConstrainToRootBounds="False">
                 <ScrollViewer HorizontalScrollBarVisibility="Hidden"
                               HorizontalScrollMode="Enabled">
                     <TextBlock x:Name="_toolTipContent" />
