@@ -1115,7 +1115,7 @@ void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
 
     const auto colors = &p.foregroundBitmap[p.colorBitmapRowStride * y];
 
-    // As explained in the beginning, column and clipLeft should by in multiples of columnAdvance
+    // As explained in the beginning, column and clipLeft should be in multiples of columnAdvance
     // and columnAdvanceInPx respectively, because that's how line renditions work.
     auto column = originalLeft / columnAdvanceInPx;
     auto clipLeft = column * columnAdvanceInPx;
