@@ -12,7 +12,7 @@ static constexpr WORD leftShiftScanCode = 0x2A;
 // Routine Description:
 // - naively determines the width of a UCS2 encoded wchar (with caveats noted above)
 #pragma warning(suppress : 4505) // this function will be deleted if numpad events are disabled
-static bool GetQuickCharWidthLegacyForNumpadEventSynthesis(const wchar_t wch) noexcept
+static bool IsCharFullWidth(const wchar_t wch) noexcept
 {
     return (0x1100 <= wch && wch <= 0x115f) || // From Unicode 9.0, Hangul Choseong is wide
            (0x2e80 <= wch && wch <= 0x303e) || // From Unicode 9.0, this range is wide (assorted languages)
@@ -47,7 +47,7 @@ void Microsoft::Console::Interactivity::CharToKeyEvents(const wchar_t wch, const
             WORD CharType = 0;
             GetStringTypeW(CT_CTYPE3, &wch, 1, &CharType);
 
-            if (WI_IsFlagClear(CharType, C3_ALPHA) && !GetQuickCharWidthLegacyForNumpadEventSynthesis(wch))
+            if (WI_IsFlagClear(CharType, C3_ALPHA) && !IsCharFullWidth(wch))
             {
                 // It wasn't alphanumeric or determined to be wide by the old algorithm
                 // if VkKeyScanW fails (char is not in kbd layout), we must
@@ -75,6 +75,8 @@ void Microsoft::Console::Interactivity::SynthesizeKeyboardEvents(const wchar_t w
 {
     const auto vk = LOBYTE(keyState);
     const auto sc = gsl::narrow<WORD>(OneCoreSafeMapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
+    // The caller provides us with the result of VkKeyScanW() in keyState.
+    // The magic constants below are the expected (documented) return values from VkKeyScanW().
     const auto modifierState = HIBYTE(keyState);
     const auto shiftSet = WI_IsFlagSet(modifierState, 1);
     const auto ctrlSet = WI_IsFlagSet(modifierState, 2);
