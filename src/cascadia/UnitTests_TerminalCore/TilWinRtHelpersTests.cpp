@@ -81,23 +81,23 @@ void TilWinRtHelpersTests::TestTruthiness()
     til::property<winrt::hstring> FullString{ L"Full" };
 
     VERIFY_IS_FALSE(Foo());
-    VERIFY_IS_FALSE(Foo);
+    VERIFY_IS_FALSE((bool)Foo);
 
     VERIFY_IS_FALSE(Bar());
-    VERIFY_IS_FALSE(Bar);
+    VERIFY_IS_FALSE((bool)Bar);
 
-    VERIFY_IS_FALSE(EmptyString);
+    VERIFY_IS_FALSE((bool)EmptyString);
     VERIFY_IS_FALSE(!EmptyString().empty());
 
     Foo(true);
     VERIFY_IS_TRUE(Foo());
-    VERIFY_IS_TRUE(Foo);
+    VERIFY_IS_TRUE((bool)Foo);
 
     Bar(11);
     VERIFY_IS_TRUE(Bar());
-    VERIFY_IS_TRUE(Bar);
+    VERIFY_IS_TRUE((bool)Bar);
 
-    VERIFY_IS_TRUE(FullString);
+    VERIFY_IS_TRUE((bool)FullString);
     VERIFY_IS_TRUE(!FullString().empty());
 }
 
