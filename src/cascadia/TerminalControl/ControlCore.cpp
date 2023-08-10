@@ -1898,7 +1898,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             bool markHasCommand = mark.commandEnd.has_value() &&
                                   mark.commandEnd != mark.end;
             if (!markHasCommand)
+            {
                 continue;
+            }
 
             // Get the text of the command
             const auto line = mark.end.y;

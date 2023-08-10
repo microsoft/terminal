@@ -949,12 +949,11 @@ std::wstring_view ROW::GetText() const noexcept
 
 std::wstring_view ROW::GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept
 {
-    // This ensures that `chEnd >= chBeg` will always be true.
-    // That way we can safely calculate `chEnd - chBeg`.
-    columnEnd = std::max(columnBegin, columnEnd);
-
-    const size_t chBeg = _uncheckedCharOffset(_clampedColumnInclusive(columnBegin));
-    const size_t chEnd = _uncheckedCharOffset(_clampedColumnInclusive(columnEnd));
+    const til::CoordType columns = _columnCount;
+    const auto colBeg = std::max(0, std::min(columns, columnBegin));
+    const auto colEnd = std::max(colBeg, std::min(columns, columnEnd));
+    const size_t chBeg = _uncheckedCharOffset(gsl::narrow_cast<size_t>(colBeg));
+    const size_t chEnd = _uncheckedCharOffset(gsl::narrow_cast<size_t>(colEnd));
 #pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
     return { _chars.data() + chBeg, chEnd - chBeg };
 }
