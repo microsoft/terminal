@@ -156,6 +156,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _focusedAppearance->UseAcrylic2(value);
         }
+        bool UseAcrylic() const noexcept
+        {
+            return _focusedAppearance->UseAcrylic();
+        }
+        void UseAcrylic(const bool& value) noexcept
+        {
+            _focusedAppearance->UseAcrylic(value);
+        }
 #undef APPEARANCE_GEN
 
         winrt::Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept

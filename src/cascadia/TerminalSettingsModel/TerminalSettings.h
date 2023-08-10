@@ -119,7 +119,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileName);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileSource);
 
-        
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAcrylic, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAcrylic2, false);
         INHERITABLE_SETTING(Model::TerminalSettings, double, Opacity, UseAcrylic2() ? 0.5 : 1.0);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, Padding, DEFAULT_PADDING);

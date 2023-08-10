@@ -93,6 +93,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, StartingDirectory);
         OBSERVABLE_PROJECTED_SETTING(_profile, AntialiasingMode);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), UseAcrylic2);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Foreground);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Background);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), SelectionBackground);

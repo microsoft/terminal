@@ -121,7 +121,8 @@ Author(s):
     X(hstring, BackgroundImagePath, "backgroundImage")                                                                                                             \
     X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                      \
     X(Core::AdjustTextMode, AdjustIndistinguishableColors, "adjustIndistinguishableColors", Core::AdjustTextMode::Never) \
-    X(bool, UseAcrylic2, "useAcrylic2", false)
+    X(bool, UseAcrylic2, "useAcrylic2", false) \
+    X(bool, UseAcrylic, "useAcrylic", false)
 
 // Intentionally omitted Appearance settings:
 // * ForegroundKey, BackgroundKey, SelectionBackgroundKey, CursorColorKey: all optional colors
