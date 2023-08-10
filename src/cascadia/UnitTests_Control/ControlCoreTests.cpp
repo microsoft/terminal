@@ -517,7 +517,7 @@ namespace ControlUnitTests
         // if the selection got updated with the renderer. Standing up a whole
         // dummy renderer for this test would be not very ergonomic. Instead, we
         // are relying on ControlCore::_updateSelectionUI both
-        // TriggerSelection'ing and also rasing this event
+        // TriggerSelection()'ing and also rasing this event
         bool expectedSelectionUpdate = false;
         bool gotSelectionUpdate = false;
         core->UpdateSelectionMarkers([&](auto&& /*sender*/, auto&& /*args*/) {

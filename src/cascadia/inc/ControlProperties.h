@@ -48,7 +48,7 @@
     X(bool, DetectURLs, true)                                                                                     \
     X(bool, VtPassthrough, false)                                                                                 \
     X(bool, AutoMarkPrompts)                                                                                      \
-    X(bool, MoveCursorWithMouse, false)
+    X(bool, RepositionCursorWithMouse, false)
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.

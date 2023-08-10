@@ -326,7 +326,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _RightClickContextMenu = profile.RightClickContextMenu();
 
-        _MoveCursorWithMouse = profile.MoveCursorWithMouse();
+        _RepositionCursorWithMouse = profile.RepositionCursorWithMouse();
     }
 
     // Method Description:

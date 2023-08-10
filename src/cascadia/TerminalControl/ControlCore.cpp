@@ -1751,10 +1751,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        else if (_settings->MoveCursorWithMouse()) // This is also mode==Char && !shiftEnabled
+        else if (_settings->RepositionCursorWithMouse()) // This is also mode==Char && !shiftEnabled
         {
             // If we're handling a single left click, without shift pressed, and
-            // outside mouse mode, AND the user has MoveCursorWithMouse turned
+            // outside mouse mode, AND the user has RepositionCursorWithMouse turned
             // on, let's try to move the cursor.
             //
             // We'll only move the cursor if the user has clicked after the last
