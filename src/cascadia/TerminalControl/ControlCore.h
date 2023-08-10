@@ -232,7 +232,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldShowSelectOutput();
 
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
-        RUNTIME_SETTING(bool, UseAcrylic2, _settings->UseAcrylic2());
+        RUNTIME_SETTING(bool, UseAcrylic2, _settings->UseAcrylic());
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off

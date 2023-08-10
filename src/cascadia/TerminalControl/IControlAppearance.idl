@@ -13,7 +13,6 @@ namespace Microsoft.Terminal.Control
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment { get; };
         // IntenseIsBold and IntenseIsBright are in Core Appearance
         Double Opacity { get; };
-        Boolean UseAcrylic2 { get; };
         Boolean UseAcrylic { get; };
 
         // Experimental settings

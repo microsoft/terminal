@@ -250,7 +250,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _AdjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
         _Opacity = appearance.Opacity();
-        _UseAcrylic2 = appearance.UseAcrylic();
+        _UseAcrylic = appearance.UseAcrylic();
     }
 
     // Method Description:

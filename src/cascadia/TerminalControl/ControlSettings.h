@@ -148,14 +148,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _focusedAppearance->PixelShaderPath(value);
         }
-        bool UseAcrylic2() const noexcept
-        {
-            return _focusedAppearance->UseAcrylic2();
-        }
-        void UseAcrylic2(const bool& value) noexcept
-        {
-            _focusedAppearance->UseAcrylic2(value);
-        }
         bool UseAcrylic() const noexcept
         {
             return _focusedAppearance->UseAcrylic();

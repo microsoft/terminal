@@ -671,7 +671,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto bgColor = til::color{ _core.FocusedAppearance().RetroTerminalEffect() };
 
 
-        bool useAcrylic2 = _core.UnfocusedAppearance().UseAcrylic2();
+        bool useAcrylic2 = _core.UnfocusedAppearance().UseAcrylic();
 
         hstring myhstring = useAcrylic2 ? L"true" : L"false";
         OutputDebugStringW(myhstring.c_str());

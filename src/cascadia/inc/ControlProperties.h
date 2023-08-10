@@ -27,7 +27,6 @@
     X(winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center)       \
     X(bool, RetroTerminalEffect, false)                                                                                                         \
     X(winrt::hstring, PixelShaderPath)  \
-    X(bool, UseAcrylic2, false)   \
     X(bool, UseAcrylic, false)   
 
 // --------------------------- Core Settings ---------------------------
