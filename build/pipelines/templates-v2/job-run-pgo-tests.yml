@@ -37,8 +37,11 @@ jobs:
       artifactName: build-${{ parameters.buildPlatform }}-$(BuildConfiguration)${{ parameters.artifactStem }}
       downloadPath: $(Terminal.BinDir)
 
+  # The tests expect Terminal to be an unpackaged distribution named terminal-0.0.1.0 (after the dev build version scheme)
+  # Extract to that folder explicitly and strip the embedded folder name from the unpackaged archive.
   - powershell: |-
-      & tar.exe -x -v -f (Get-Item "$(Terminal.BinDir)/_unpackaged/*.zip") -C "$(Terminal.BinDir)"
+      $TargetDirectory = New-Item -Type Directory (Join-Path "$(Terminal.BinDir)" "terminal-0.0.1.0")
+      & tar.exe -x -v -f (Get-Item "$(Terminal.BinDir)/_unpackaged/*.zip") -C $TargetDirectory.FullName --strip-components=1
     displayName: Extract the unpackaged build for PGO
 
   - template: steps-ensure-nuget-version.yml
