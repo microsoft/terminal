@@ -684,7 +684,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _runtimeOpacity = newOpacity;
 
         // Manually turn off acrylic if they turn off transparency.
-        _runtimeUseAcrylic2 = newOpacity < 1.0 && _settings->UseAcrylic();
+        _runtimeUseAcrylic = newOpacity < 1.0 && _settings->UseAcrylic();
 
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
@@ -815,7 +815,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _runtimeOpacity = std::nullopt;
 
         // Manually turn off acrylic if they turn off transparency.
-        _runtimeUseAcrylic2 = _settings->Opacity() < 1.0 && _settings->UseAcrylic();
+        _runtimeUseAcrylic = _settings->Opacity() < 1.0 && _settings->UseAcrylic();
 
         const auto sizeChanged = _setFontSizeUnderLock(_settings->FontSize());
 
