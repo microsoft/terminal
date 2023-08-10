@@ -43,7 +43,6 @@ static bool IsCommandLinePopupKey(const KEY_EVENT_RECORD& event)
             break;
         }
     }
-
     return false;
 }
 
@@ -78,7 +77,7 @@ static bool IsCommandLineEditingKey(const KEY_EVENT_RECORD& event)
             break;
         }
     }
-    if (WI_AreAllFlagsClear(event.dwControlKeyState, RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED))
+    if (WI_IsAnyFlagSet(event.dwControlKeyState, RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED))
     {
         switch (event.wVirtualKeyCode)
         {
@@ -91,8 +90,7 @@ static bool IsCommandLineEditingKey(const KEY_EVENT_RECORD& event)
             break;
         }
     }
-
-    if (WI_AreAllFlagsClear(event.dwControlKeyState, RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED))
+    if (WI_IsAnyFlagSet(event.dwControlKeyState, RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED))
     {
         switch (event.wVirtualKeyCode)
         {
