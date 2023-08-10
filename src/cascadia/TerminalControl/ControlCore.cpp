@@ -1782,7 +1782,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // will fill in characters from the previous command.
                 //
                 // By only sending keypresses to the end of the command + 1, we
-                // should leave the cursor at the very end of the promtp,
+                // should leave the cursor at the very end of the prompt,
                 // without adding any characters from a previous command.
                 auto clampedClick = terminalPosition;
                 if (terminalPosition > lastNonSpace)
