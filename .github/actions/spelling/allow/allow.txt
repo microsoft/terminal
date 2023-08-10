@@ -112,6 +112,7 @@ unregister
 versioned
 vsdevcmd
 walkthrough
+walkthroughs
 We'd
 wildcards
 XBox
