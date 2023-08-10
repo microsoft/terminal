@@ -1016,16 +1016,6 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
                 {
                     attr.SetUnderlineColor(*changeOps.underlineColor);
                 }
-                // remove underline style if the underline is no longer set.
-                if (!attr.IsUnderlined())
-                {
-                    attr.SetUnderlineStyle(UnderlineStyle::NoUnderline);
-                }
-                // incase of DECCARA, we might have received a new style. (we never pass ChangeOps with underlineStyle set in DECRARA)
-                else if (changeOps.underlineStyle)
-                {
-                    attr.SetUnderlineStyle(*changeOps.underlineStyle);
-                }
                 rowBuffer.ReplaceAttributes(col, col + 1, attr);
             }
         }
@@ -1161,10 +1151,6 @@ bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt
     const auto underlineColor = allAttrsOff.GetUnderlineColor();
     const auto underlineColorChanged = !underlineColor.IsDefault() || allAttrsOn.GetUnderlineColor().IsDefault();
     changeOps.underlineColor = underlineColorChanged ? std::optional{ underlineColor } : std::nullopt;
-
-    const auto underlineStyle = allAttrsOff.GetUnderlineStyle();
-    const auto underlineStyleChanged = allAttrsOff.IsUnderlined() || !allAttrsOn.IsUnderlined();
-    changeOps.underlineStyle = underlineStyleChanged ? std::optional{ underlineStyle } : std::nullopt;
 
     _ChangeRectOrStreamAttributes({ left, top, right, bottom }, changeOps);
 

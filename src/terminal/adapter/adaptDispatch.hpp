@@ -206,7 +206,6 @@ namespace Microsoft::Console::VirtualTerminal
             std::optional<TextColor> foreground;
             std::optional<TextColor> background;
             std::optional<TextColor> underlineColor;
-            std::optional<UnderlineStyle> underlineStyle;
         };
 
         void _WriteToBuffer(const std::wstring_view string);

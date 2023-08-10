@@ -7,7 +7,7 @@
 
 // Keeping TextColor compact helps us keeping TextAttribute compact,
 // which in turn ensures that our buffer memory usage is low.
-static_assert(sizeof(TextAttribute) == 18);
+static_assert(sizeof(TextAttribute) == 16);
 static_assert(alignof(TextAttribute) == 2);
 // Ensure that we can memcpy() and memmove() the struct for performance.
 static_assert(std::is_trivially_copyable_v<TextAttribute>);
@@ -163,7 +163,7 @@ TextColor TextAttribute::GetUnderlineColor() const noexcept
 
 UnderlineStyle TextAttribute::GetUnderlineStyle() const noexcept
 {
-    return _underlineStyle;
+    return _CharacterAttrToUnderlineStyle(_attrs);
 }
 
 void TextAttribute::SetForeground(const TextColor foreground) noexcept
@@ -293,11 +293,11 @@ bool TextAttribute::IsCrossedOut() const noexcept
 }
 
 // Method description:
-// - Returns true if the text is underlined with the any underline style,
-//   Eg. singly, doubly, curly, dotted, and dashed.
+// - Returns true if the text is underlined with the any underline style.
 bool TextAttribute::IsUnderlined() const noexcept
 {
-    return WI_IsFlagSet(_attrs, CharacterAttributes::Underlined);
+    const auto style = GetUnderlineStyle();
+    return style != UnderlineStyle::NoUnderline;
 }
 
 bool TextAttribute::IsDoublyUnderlined() const noexcept
@@ -354,34 +354,18 @@ void TextAttribute::SetUnderlined(bool isUnderlined) noexcept
 {
     if (isUnderlined)
     {
-        SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+        SetUnderlined(UnderlineStyle::SinglyUnderlined);
     }
     else
     {
-        SetUnderlineStyle(UnderlineStyle::NoUnderline);
+        SetUnderlined(UnderlineStyle::NoUnderline);
     }
 }
 
-void TextAttribute::SetUnderlineStyle(const UnderlineStyle underlineStyle) noexcept
+void TextAttribute::SetUnderlined(const UnderlineStyle style) noexcept
 {
-    switch (underlineStyle)
-    {
-    case UnderlineStyle::NoUnderline:
-        WI_ClearFlag(_attrs, CharacterAttributes::Underlined);
-        _underlineStyle = underlineStyle;
-        break;
-    case UnderlineStyle::SinglyUnderlined:
-    case UnderlineStyle::DoublyUnderlined:
-    case UnderlineStyle::CurlyUnderlined:
-    case UnderlineStyle::DottedUnderlined:
-    case UnderlineStyle::DashedUnderlined:
-        WI_SetFlag(_attrs, CharacterAttributes::Underlined);
-        _underlineStyle = underlineStyle;
-        break;
-    default:
-        /* do nothing */
-        break;
-    }
+    const auto styleAttrs = _UnderlineStyleToCharacterAttr(style);
+    _attrs = (_attrs & ~CharacterAttributes::UnderlineStyle) | styleAttrs;
 }
 
 // Method description:
@@ -437,7 +421,6 @@ void TextAttribute::SetDefaultUnderlineColor() noexcept
 void TextAttribute::SetDefaultRenditionAttributes() noexcept
 {
     _attrs &= ~CharacterAttributes::Rendition;
-    _underlineStyle = UnderlineStyle::NoUnderline;
 }
 
 // Method Description:
@@ -462,6 +445,5 @@ bool TextAttribute::BackgroundIsDefault() const noexcept
 void TextAttribute::SetStandardErase() noexcept
 {
     _attrs = CharacterAttributes::Normal;
-    _underlineStyle = UnderlineStyle::NoUnderline;
     _hyperlinkId = 0;
 }

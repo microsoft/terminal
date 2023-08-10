@@ -102,7 +102,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
     {
         auto style = textAttributes.GetUnderlineStyle();
         RETURN_IF_FAILED(_SetUnderlineExtended(style));
-        _lastTextAttributes.SetUnderlineStyle(style);
+        _lastTextAttributes.SetUnderlined(style);
     }
     if (textAttributes.IsDoublyUnderlined() && !_lastTextAttributes.IsDoublyUnderlined())
     {

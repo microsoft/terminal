@@ -27,7 +27,7 @@ Revision History:
 #include "WexTestClass.h"
 #endif
 
-enum class UnderlineStyle : uint8_t
+enum class UnderlineStyle
 {
     NoUnderline = 0,
     SinglyUnderlined = 1,
@@ -35,6 +35,7 @@ enum class UnderlineStyle : uint8_t
     CurlyUnderlined = 3,
     DottedUnderlined = 4,
     DashedUnderlined = 5,
+    Max = DashedUnderlined
 };
 
 class TextAttribute final
@@ -45,9 +46,7 @@ public:
         _foreground{},
         _background{},
         _hyperlinkId{ 0 },
-        _underlineColor{},
-        _underlineStyle{ UnderlineStyle::NoUnderline },
-        __unused{}
+        _underlineColor{}
     {
     }
 
@@ -56,9 +55,7 @@ public:
         _foreground{ gsl::at(s_legacyForegroundColorMap, wLegacyAttr & FG_ATTRS) },
         _background{ gsl::at(s_legacyBackgroundColorMap, (wLegacyAttr & BG_ATTRS) >> 4) },
         _hyperlinkId{ 0 },
-        _underlineColor{},
-        _underlineStyle{ UnderlineStyle::NoUnderline },
-        __unused{}
+        _underlineColor{}
     {
     }
 
@@ -68,20 +65,16 @@ public:
         _foreground{ rgbForeground },
         _background{ rgbBackground },
         _hyperlinkId{ 0 },
-        _underlineColor{},
-        _underlineStyle{ UnderlineStyle::NoUnderline },
-        __unused{}
+        _underlineColor{}
     {
     }
 
-    constexpr TextAttribute(const CharacterAttributes attrs, const TextColor foreground, const TextColor background, const uint16_t hyperlinkId, const TextColor underlineColor, const UnderlineStyle underlineStyle) noexcept :
+    constexpr TextAttribute(const CharacterAttributes attrs, const TextColor foreground, const TextColor background, const uint16_t hyperlinkId, const TextColor underlineColor) noexcept :
         _attrs{ attrs },
         _foreground{ foreground },
         _background{ background },
         _hyperlinkId{ hyperlinkId },
-        _underlineColor{ underlineColor },
-        _underlineStyle{ underlineStyle },
-        __unused{}
+        _underlineColor{ underlineColor }
     {
     }
 
@@ -129,7 +122,7 @@ public:
     void SetInvisible(bool isInvisible) noexcept;
     void SetCrossedOut(bool isCrossedOut) noexcept;
     void SetUnderlined(bool isUnderlined) noexcept;
-    void SetUnderlineStyle(const UnderlineStyle underlineStyle) noexcept;
+    void SetUnderlined(const UnderlineStyle underlineStyle) noexcept;
     void SetDoublyUnderlined(bool isDoublyUnderlined) noexcept;
     void SetOverlined(bool isOverlined) noexcept;
     void SetReverseVideo(bool isReversed) noexcept;
@@ -182,8 +175,8 @@ public:
         // global ^ local == false: the foreground attribute is the visible foreground, so we care about the backgrounds being identical
         const auto checkForeground = (inverted != IsReverseVideo());
         return !IsAnyGridLineEnabled() && // grid lines have a visual representation
-               // crossed out, doubly and singly underlined have a visual representation
-               WI_AreAllFlagsClear(_attrs, CharacterAttributes::CrossedOut | CharacterAttributes::DoublyUnderlined | CharacterAttributes::Underlined) &&
+               // underlined, doubly underlined and crossed out have a visual representation
+               !IsUnderlined() && WI_AreAllFlagsClear(_attrs, CharacterAttributes::CrossedOut | CharacterAttributes::DoublyUnderlined) &&
                // hyperlinks have a visual representation
                !IsHyperlink() &&
                // all other attributes do not have a visual representation
@@ -203,6 +196,19 @@ public:
     }
 
 private:
+    constexpr UnderlineStyle _CharacterAttrToUnderlineStyle(const CharacterAttributes attrs) const noexcept
+    {
+        const auto style = WI_EnumValue(attrs & CharacterAttributes::UnderlineStyle) >> UNDERLINE_STYLE_SHIFT;
+        assert((style >= 0) && (style <= WI_EnumValue(UnderlineStyle::Max)));
+        return static_cast<UnderlineStyle>(style);
+    }
+    constexpr CharacterAttributes _UnderlineStyleToCharacterAttr(const UnderlineStyle style) const noexcept
+    {
+        assert(WI_EnumValue(style) <= 0x07); // value must fit within 3 bits
+        const auto styleAttr = static_cast<UnderlineStyle>(WI_EnumValue(style) << UNDERLINE_STYLE_SHIFT);
+        return static_cast<CharacterAttributes>(styleAttr);
+    }
+
     static std::array<TextColor, 16> s_legacyForegroundColorMap;
     static std::array<TextColor, 16> s_legacyBackgroundColorMap;
 
@@ -211,8 +217,6 @@ private:
     TextColor _foreground; // sizeof: 4, alignof: 1
     TextColor _background; // sizeof: 4, alignof: 1
     TextColor _underlineColor; // sizeof: 4, alignof: 1
-    UnderlineStyle _underlineStyle; // sizeof: 1, alignof: 1
-    BYTE __unused; // sizeof: 1, alignof: 1 (avoids padding)
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
