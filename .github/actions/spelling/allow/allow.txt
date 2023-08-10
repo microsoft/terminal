@@ -111,6 +111,7 @@ und
 unregister
 versioned
 vsdevcmd
+walkthrough
 We'd
 wildcards
 XBox
