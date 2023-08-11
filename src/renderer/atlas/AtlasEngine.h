@@ -78,6 +78,7 @@ namespace Microsoft::Console::Render::Atlas
         [[nodiscard]] HRESULT SetWindowSize(til::size pixels) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept override;
         void UpdateHyperlinkHoveredId(uint16_t hoveredId) noexcept override;
+        void SetPadding(float x, float y) noexcept override;
 
     private:
         // AtlasEngine.cpp
@@ -164,6 +165,9 @@ namespace Microsoft::Console::Render::Atlas
             u16r invalidatedCursorArea = invalidatedAreaNone;
             range<u16> invalidatedRows = invalidatedRowsNone; // x is treated as "top" and y as "bottom"
             i16 scrollOffset = 0;
+
+            // SetPadding()
+            f32x2 topLeftOffsetInDip{ 0.f, 0.f };
         } _api;
     };
 }

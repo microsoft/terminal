@@ -379,6 +379,7 @@ namespace Microsoft::Console::Render::Atlas
         u32 selectionColor = 0x7fffffff;
         std::wstring customPixelShaderPath;
         bool useRetroTerminalEffect = false;
+        f32x2 topLeftOffset{ 0.f, 0.f };
     };
 
     struct Settings

@@ -176,6 +176,10 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
     if (_api.s->font->dpi != newDPI)
     {
         _api.s.write()->font.write()->dpi = newDPI;
+        _api.s.write()->misc.write()->topLeftOffset = {
+            .x = _api.topLeftOffsetInDip.x * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+            .y = _api.topLeftOffsetInDip.y * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+        };
     }
 
     return S_OK;
@@ -776,5 +780,17 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         fontMetrics->doubleUnderline[0] = { doubleUnderlinePosTopU16, thinLineWidthU16 };
         fontMetrics->doubleUnderline[1] = { doubleUnderlinePosBottomU16, thinLineWidthU16 };
         fontMetrics->overline = { 0, underlineWidthU16 };
+    }
+}
+
+void AtlasEngine::SetPadding(float x, float y) noexcept
+{
+    if (_api.topLeftOffsetInDip.x != x || _api.topLeftOffsetInDip.y != y)
+    {
+        _api.topLeftOffsetInDip = { x, y };
+        _api.s.write()->misc.write()->topLeftOffset = {
+            .x = _api.topLeftOffsetInDip.x * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+            .y = _api.topLeftOffsetInDip.y * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+        };
     }
 }
