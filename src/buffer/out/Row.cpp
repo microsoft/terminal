@@ -4,6 +4,7 @@
 #include "precomp.h"
 #include "Row.hpp"
 
+#include <isa_availability.h>
 #include <til/unicode.h>
 
 #include "textBuffer.hpp"
