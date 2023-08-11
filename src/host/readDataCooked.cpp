@@ -365,7 +365,7 @@ bool COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
         _flushBuffer();
 
         // The old implementation (all the way since the 90s) overwrote the character at the current cursor position with the given wch.
-        // But simultaneously it incremented the buffer length, which would've only worked if it was written at the end of the buffer.
+        // But simultaneously it incremented the buffer length, which would have only worked if it was written at the end of the buffer.
         // Press tab past the "f" in the string "foo" and you'd get "f\too " (a trailing whitespace; the initial contents of the buffer back then).
         // It's unclear whether the original intention was to write at the end of the buffer at all times or to implement an insert mode.
         // I went with insert mode.
