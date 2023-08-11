@@ -576,6 +576,7 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
     {
         VSConstBuffer data{};
         data.positionScale = { 2.0f / p.s->targetSize.x, -2.0f / p.s->targetSize.y };
+        data.padding = { p.s->misc->topLeftOffset.x, p.s->misc->topLeftOffset.y, 0.f, 0.f };
         p.deviceContext->UpdateSubresource(_vsConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
     {

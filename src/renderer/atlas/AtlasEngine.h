@@ -57,6 +57,7 @@ namespace Microsoft::Console::Render::Atlas
         [[nodiscard]] HRESULT IsGlyphWideByFont(std::wstring_view glyph, _Out_ bool* pResult) noexcept override;
         [[nodiscard]] HRESULT UpdateTitle(std::wstring_view newTitle) noexcept override;
         void UpdateHyperlinkHoveredId(uint16_t hoveredId) noexcept override;
+        void SetPadding(float x, float y) noexcept override;
 
         // getter
         [[nodiscard]] std::wstring_view GetPixelShaderPath() noexcept;
@@ -181,6 +182,9 @@ namespace Microsoft::Console::Render::Atlas
 
             // The position of the viewport inside the text buffer (in cells).
             u16x2 viewportOffset{ 0, 0 };
+
+            // SetPadding()
+            f32x2 topLeftOffsetInDip{ 0.f, 0.f };
         } _api;
     };
 }

@@ -5,6 +5,7 @@
 
 cbuffer ConstBuffer : register(b0)
 {
+    float4 padding;
     float2 positionScale;
 }
 
@@ -18,7 +19,7 @@ PSData main(VSData data)
     output.renditionScale = data.renditionScale;
     // positionScale is expected to be float2(2.0f / sizeInPixel.x, -2.0f / sizeInPixel.y). Together with the
     // addition below this will transform our "position" from pixel into normalized device coordinate (NDC) space.
-    output.position.xy = (data.position + data.vertex.xy * data.size) * positionScale + float2(-1.0f, 1.0f);
+    output.position.xy = (padding.xy + data.position + data.vertex.xy * data.size) * positionScale + float2(-1.0f, 1.0f);
     output.position.zw = float2(0, 1);
     output.texcoord = data.texcoord + data.vertex.xy * data.size;
     return output;

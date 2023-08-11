@@ -40,6 +40,8 @@ void BackendD2D::Render(RenderingPayload& p)
         _handleSettingsUpdate(p);
     }
 
+    const D2D1_MATRIX_3X2_F worldTransform{ _getDefaultTransform(p) };
+
     _renderTarget->BeginDraw();
     try
     {
@@ -48,6 +50,7 @@ void BackendD2D::Render(RenderingPayload& p)
         _renderTarget->Clear();
 #endif
         _drawBackground(p);
+        _renderTarget->SetTransform(&worldTransform);
         _drawCursorPart1(p);
         _drawText(p);
         _drawCursorPart2(p);
@@ -318,7 +321,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
 
         if (row->lineRendition != LineRendition::SingleWidth)
         {
-            _drawTextResetLineRendition(row);
+            _drawTextResetLineRendition(p, row);
         }
 
         if (row->bitmap.revision != 0)
@@ -505,17 +508,15 @@ void BackendD2D::_flushBuiltinGlyphs()
 f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, const ShapedRow* row, f32 baselineY) const noexcept
 {
     const auto lineRendition = row->lineRendition;
-    D2D1_MATRIX_3X2_F transform{
-        .m11 = 2.0f,
-        .m22 = 1.0f,
-    };
+    D2D1_MATRIX_3X2_F transform{ _getDefaultTransform(p) };
+    transform.m11 = 2.0f; // scale horizontally by 2.0
 
     if (lineRendition >= LineRendition::DoubleHeightTop)
     {
         D2D1_RECT_F clipRect{ 0, 0, static_cast<f32>(p.s->targetSize.x), static_cast<f32>(p.s->targetSize.y) };
 
         transform.m22 = 2.0f;
-        transform.dy = -1.0f * (baselineY + p.s->font->descender);
+        transform.dy += -1.0f * (baselineY + p.s->font->descender);
 
         // If you print the top half of a double height row (DECDHL), the expectation is that only
         // the top half is visible, which requires us to keep the clip rect at the bottom of the row.
@@ -539,9 +540,9 @@ f32 BackendD2D::_drawTextPrepareLineRendition(const RenderingPayload& p, const S
     return baselineY;
 }
 
-void BackendD2D::_drawTextResetLineRendition(const ShapedRow* row) const noexcept
+void BackendD2D::_drawTextResetLineRendition(const RenderingPayload& p, const ShapedRow* row) const noexcept
 {
-    static constexpr D2D1_MATRIX_3X2_F identity{ .m11 = 1, .m22 = 1 };
+    const auto identity{ _getDefaultTransform(p) };
     _renderTarget->SetTransform(&identity);
 
     if (row->lineRendition >= LineRendition::DoubleHeightTop)
@@ -1003,6 +1004,16 @@ void BackendD2D::_fillRectangle(const D2D1_RECT_F& rect, u32 color)
 {
     const auto brush = _brushWithColor(color);
     _renderTarget->FillRectangle(&rect, brush);
+}
+
+D2D_MATRIX_3X2_F BackendD2D::_getDefaultTransform(const RenderingPayload& p) const noexcept
+{
+    return {
+        .m11 = 1.f,
+        .m22 = 1.f,
+        .dx = p.s->misc->topLeftOffset.x,
+        .dy = p.s->misc->topLeftOffset.y,
+    };
 }
 
 TIL_FAST_MATH_END
