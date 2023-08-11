@@ -194,6 +194,10 @@ void AtlasEngine::_invalidateSpans(std::span<const til::point_span> spans, const
     if (_api.s->font->dpi != newDPI)
     {
         _api.s.write()->font.write()->dpi = newDPI;
+        _api.s.write()->misc.write()->topLeftOffset = {
+            .x = _api.topLeftOffsetInDip.x * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+            .y = _api.topLeftOffsetInDip.y * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+        };
     }
 
     return S_OK;
@@ -899,4 +903,16 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
 
     _api.s.write()->font.write()->fontCollection = std::move(collection);
     return true;
+}
+
+void AtlasEngine::SetPadding(float x, float y) noexcept
+{
+    if (_api.topLeftOffsetInDip.x != x || _api.topLeftOffsetInDip.y != y)
+    {
+        _api.topLeftOffsetInDip = { x, y };
+        _api.s.write()->misc.write()->topLeftOffset = {
+            .x = _api.topLeftOffsetInDip.x * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+            .y = _api.topLeftOffsetInDip.y * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+        };
+    }
 }

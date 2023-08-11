@@ -25,7 +25,7 @@ namespace Microsoft::Console::Render::Atlas
         D2D1_RECT_U _prepareBuiltinGlyph(const RenderingPayload& p, char32_t ch, u32 off);
         void _flushBuiltinGlyphs();
         ATLAS_ATTR_COLD f32 _drawTextPrepareLineRendition(const RenderingPayload& p, const ShapedRow* row, f32 baselineY) const noexcept;
-        ATLAS_ATTR_COLD void _drawTextResetLineRendition(const ShapedRow* row) const noexcept;
+        ATLAS_ATTR_COLD void _drawTextResetLineRendition(const RenderingPayload& p, const ShapedRow* row) const noexcept;
         ATLAS_ATTR_COLD f32r _getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY);
         ATLAS_ATTR_COLD void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
         ATLAS_ATTR_COLD void _drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y) const;
@@ -39,6 +39,8 @@ namespace Microsoft::Console::Render::Atlas
         ID2D1SolidColorBrush* _brushWithColor(u32 color);
         ATLAS_ATTR_COLD ID2D1SolidColorBrush* _brushWithColorUpdate(u32 color);
         void _fillRectangle(const D2D1_RECT_F& rect, u32 color);
+
+        D2D_MATRIX_3X2_F _getDefaultTransform(const RenderingPayload& p) const noexcept;
 
         wil::com_ptr<ID2D1DeviceContext> _renderTarget;
         wil::com_ptr<ID2D1DeviceContext4> _renderTarget4; // Optional. Supported since Windows 10 14393.

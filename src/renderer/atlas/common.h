@@ -399,6 +399,7 @@ namespace Microsoft::Console::Render::Atlas
         std::wstring customPixelShaderPath;
         std::wstring customPixelShaderImagePath;
         bool useRetroTerminalEffect = false;
+        f32x2 topLeftOffset{ 0.f, 0.f };
     };
 
     struct Settings

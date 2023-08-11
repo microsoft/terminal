@@ -29,6 +29,7 @@ namespace Microsoft::Console::Render::Atlas
             //   padding so that it is {u32; u32; u32; <4 byte padding>; u32x2}.
             // * bool will probably not work the way you want it to,
             //   because HLSL uses 32-bit bools and C++ doesn't.
+            alignas(sizeof(f32x4)) f32x4 padding;
             alignas(sizeof(f32x2)) f32x2 positionScale;
 #pragma warning(suppress : 4324) // 'VSConstBuffer': structure was padded due to alignment specifier
         };
