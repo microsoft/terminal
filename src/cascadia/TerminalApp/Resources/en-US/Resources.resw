@@ -841,6 +841,6 @@
     <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
   <data name="CmdAppendCommandLineDesc" xml:space="preserve">
-    <value>Lorem ipsum dolor sit amet, consectetur adipiscing elit</value>
+    <value>If set, the command will be appended to the profile's default command instead of replacing it.</value>
   </data>
 </root>
