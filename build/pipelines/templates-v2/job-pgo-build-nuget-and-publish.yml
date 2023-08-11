@@ -1,14 +1,26 @@
-# From our friends at MUX: https://github.com/microsoft/microsoft-ui-xaml/blob/main/build/AzurePipelinesTemplates/MUX-BuildAndPublishPGONuGet-Job.yml
-
 parameters:
-  dependsOn: ''
-  pgoArtifact: PGO
+  - name: buildConfiguration
+    type: string
+  - name: pool
+    type: object
+    default: []
+  - name: dependsOn
+    type: object
+    default: null
+  - name: artifactStem
+    type: string
+    default: ''
+  - name: jobName
+    type: string
+    default: BuildAndPublishPGONuget
 
 jobs:
-- job: BuildAndPublishPGONuGet
+- job: ${{ parameters.jobName }}
+  ${{ if ne(length(parameters.pool), 0) }}:
+    pool: ${{ parameters.pool }}
   dependsOn: ${{ parameters.dependsOn }}
-  pool:
-    vmImage: 'windows-2019'
+  displayName: Package and Publish PGO Databases
+
   variables:
     artifactsPath: $(Build.SourcesDirectory)\Artifacts
     pgoToolsPath: $(Build.SourcesDirectory)\build\PGO
@@ -16,19 +28,24 @@ jobs:
     nuspecFilename: PGO.nuspec
 
   steps:
-  - task: DownloadBuildArtifacts@0
+  - checkout: self
+    clean: true
+    # It is important that this be 0, otherwise git will not fetch the branch ref names that the PGO rules require.
+    fetchDepth: 0
+    submodules: false
+    persistCredentials: false
+
+  - task: DownloadPipelineArtifact@2
+    displayName: Download Final PGO Databases
     inputs:
-      artifactName: ${{ parameters.pgoArtifact }}
+      artifact: pgd-merged-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
       downloadPath: $(artifactsPath)
+
+  - template: steps-ensure-nuget-version.yml
 
   - task: NuGetAuthenticate@0
     inputs:
       nuGetServiceConnections: 'Terminal Public Artifact Feed'
-
-  - task: NuGetToolInstaller@0
-    displayName: 'Use NuGet 5.8.0'
-    inputs:
-      versionSpec: 5.8.0
 
   # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
   # This should be `task: NuGetCommand@2`
@@ -45,12 +62,11 @@ jobs:
     displayName: 'Create PGO Nuget'
     inputs:
       solution: $(pgoToolsPath)\PGO.DB.proj
-      msbuildArguments: '/t:CreatePGONuGet /p:PGOBuildMode=Instrument /p:PGDPathForAllArch=$(artifactsPath)\${{ parameters.pgoArtifact }} /p:PGOOutputPath=$(Build.ArtifactStagingDirectory)'
+      msbuildArguments: '/t:CreatePGONuGet /p:PGOBuildMode=Instrument /p:PGDPathForAllArch=$(artifactsPath) /p:PGOOutputPath=$(Build.ArtifactStagingDirectory)'
 
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathToPublish: $(Build.ArtifactStagingDirectory)
-      artifactName: ${{ parameters.pgoArtifact }}
+  - publish: $(Build.ArtifactStagingDirectory)
+    artifact: pgo-nupkg-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
+    displayName: "Publish Pipeline Artifact"
 
   - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
     displayName: 'NuGet push'
