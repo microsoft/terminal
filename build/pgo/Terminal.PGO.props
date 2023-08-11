@@ -46,6 +46,5 @@
     <PGOCopyRuntime Condition="'$(PGOBuildMode)' == 'Instrument'">true</PGOCopyRuntime>
   </PropertyGroup>
 
-  <!-- Import PGO-Helpers -->
-  <Import Project="$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.props" />
+  <!-- Do not import PGO-Helpers props here, as it is too early to detect the C++ tools directory -->
 </Project>
