@@ -2895,14 +2895,10 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:writeSingly", L"{false, true}")
-        TEST_METHOD_PROPERTY(L"Data:writeCharsLegacyMode", L"{0, 1, 2}")
     END_TEST_METHOD_PROPERTIES();
 
     bool writeSingly;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"writeSingly", writeSingly), L"Write one at a time = true, all at the same time = false");
-
-    DWORD writeCharsLegacyMode;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"writeCharsLegacyMode", writeCharsLegacyMode), L"");
 
     // Created for MSFT:19735050.
     // Kinda the same as above, but with WriteCharsLegacy instead.
@@ -2931,18 +2927,13 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
 
     if (writeSingly)
     {
-        auto str = L"X";
-        size_t seqCb = 2;
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, writeCharsLegacyMode, nullptr));
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, writeCharsLegacyMode, nullptr));
-        str = L"\x08";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, writeCharsLegacyMode, nullptr));
+        WriteCharsLegacy(si, L"X", false, nullptr);
+        WriteCharsLegacy(si, L"X", false, nullptr);
+        WriteCharsLegacy(si, L"\x08", false, nullptr);
     }
     else
     {
-        const auto str = L"XX\x08";
-        size_t seqCb = 6;
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, writeCharsLegacyMode, nullptr));
+        WriteCharsLegacy(si, L"XX\x08", false, nullptr);
     }
 
     TextAttribute expectedDefaults{};
@@ -7191,8 +7182,7 @@ void ScreenBufferTests::UpdateVirtualBottomWhenCursorMovesBelowIt()
 
     Log::Comment(L"Now write several lines of content using WriteCharsLegacy");
     const auto content = L"1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n";
-    auto numBytes = wcslen(content) * sizeof(wchar_t);
-    VERIFY_NT_SUCCESS(WriteCharsLegacy(si, content, content, content, &numBytes, nullptr, 0, 0, nullptr));
+    WriteCharsLegacy(si, content, false, nullptr);
 
     Log::Comment(L"Confirm that the cursor position has moved down 10 lines");
     const auto newCursorPos = til::point{ initialCursorPos.x, initialCursorPos.y + 10 };

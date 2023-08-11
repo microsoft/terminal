@@ -873,12 +873,7 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const til::rect* const prcClientNew
 
     // 1.a In some modes, the screen buffer size needs to change on window size,
     //      so do that first.
-    //      _AdjustScreenBuffer might hide the commandline. If it does so, it'll
-    //      return S_OK instead of S_FALSE. In that case, we'll need to re-show
-    //      the commandline ourselves once the viewport size is updated.
-    //      (See 1.b below)
-    const auto adjustBufferSizeResult = _AdjustScreenBuffer(prcClientNew);
-    LOG_IF_FAILED(adjustBufferSizeResult);
+    LOG_IF_FAILED(_AdjustScreenBuffer(prcClientNew));
 
     // 2. Now calculate how large the new viewport should be
     til::size coordViewportSize;
@@ -887,16 +882,6 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const til::rect* const prcClientNew
     // 3. And adjust the existing viewport to match the same dimensions.
     //      The old/new comparison is to figure out which side the window was resized from.
     _AdjustViewportSize(prcClientNew, prcClientOld, &coordViewportSize);
-
-    // 1.b  If we did actually change the buffer size, then we need to show the
-    //      commandline again. We hid it during _AdjustScreenBuffer, but we
-    //      couldn't turn it back on until the Viewport was updated to the new
-    //      size. See MSFT:19976291
-    if (SUCCEEDED(adjustBufferSizeResult) && adjustBufferSizeResult != S_FALSE)
-    {
-        auto& commandLine = CommandLine::Instance();
-        commandLine.Show();
-    }
 
     // 4. Finally, update the scroll bars.
     UpdateScrollBars();
@@ -1016,23 +1001,7 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const til::rect* const prcClientNew
     // Only attempt to modify the buffer if something changed. Expensive operation.
     if (coordBufferSizeOld != coordBufferSizeNew)
     {
-        auto& commandLine = CommandLine::Instance();
-
-        // TODO: Deleting and redrawing the command line during resizing can cause flickering. See: http://osgvsowi/658439
-        // 1. Delete input string if necessary (see menu.c)
-        commandLine.Hide(FALSE);
-
-        const auto savedCursorVisibility = _textBuffer->GetCursor().IsVisible();
-        _textBuffer->GetCursor().SetIsVisible(false);
-
-        // 2. Call the resize screen buffer method (expensive) to redimension the backing buffer (and reflow)
         LOG_IF_FAILED(ResizeScreenBuffer(coordBufferSizeNew, FALSE));
-
-        // MSFT:19976291 Don't re-show the commandline here. We need to wait for
-        //      the viewport to also get resized before we can re-show the commandline.
-        //      ProcessResizeWindow will call commandline.Show() for us.
-        _textBuffer->GetCursor().SetIsVisible(savedCursorVisibility);
-
         // Return S_OK, to indicate we succeeded and actually did something.
         hr = S_OK;
     }
@@ -1540,8 +1509,17 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     // cancel any active selection before resizing or it will not necessarily line up with the new buffer positions
     Selection::Instance().ClearSelection();
 
-    // cancel any popups before resizing or they will not necessarily line up with new buffer positions
-    CommandLine::Instance().EndAllPopups();
+    if (gci.HasPendingCookedRead())
+    {
+        gci.CookedReadData().EraseBeforeResize();
+    }
+    const auto cookedReadRestore = wil::scope_exit([]() {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (gci.HasPendingCookedRead())
+        {
+            gci.CookedReadData().RedrawAfterResize();
+        }
+    });
 
     const auto fWrapText = gci.GetWrapText();
     // GH#3493: Don't reflow the alt buffer.
@@ -1937,10 +1915,7 @@ void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
         // too much work.
         if (newBufferSize != oldScreenBufferSize)
         {
-            auto& commandLine = CommandLine::Instance();
-            commandLine.Hide(FALSE);
             LOG_IF_FAILED(siMain.ResizeScreenBuffer(newBufferSize, TRUE));
-            commandLine.Show();
         }
 
         // Not that the buffer is smaller, actually make sure to resize our
@@ -2098,7 +2073,7 @@ bool SCREEN_INFORMATION::_IsInVTMode() const
 // <none>
 // Return value:
 // - This screen buffer's attributes
-TextAttribute SCREEN_INFORMATION::GetAttributes() const
+const TextAttribute& SCREEN_INFORMATION::GetAttributes() const noexcept
 {
     return _textBuffer->GetCurrentAttributes();
 }
@@ -2109,7 +2084,7 @@ TextAttribute SCREEN_INFORMATION::GetAttributes() const
 // <none>
 // Return value:
 // - This screen buffer's popup attributes
-TextAttribute SCREEN_INFORMATION::GetPopupAttributes() const
+const TextAttribute& SCREEN_INFORMATION::GetPopupAttributes() const noexcept
 {
     return _PopupAttributes;
 }
@@ -2309,56 +2284,6 @@ void SCREEN_INFORMATION::SetTerminalConnection(_In_ VtEngine* const pTtyConnecti
         engine.SetTerminalConnection(nullptr,
                                      nullptr);
     }
-}
-
-// Routine Description:
-// - This routine copies a rectangular region from the screen buffer. no clipping is done.
-// Arguments:
-// - viewport - rectangle in source buffer to copy
-// Return Value:
-// - output cell rectangle copy of screen buffer data
-// Note:
-// - will throw exception on error.
-OutputCellRect SCREEN_INFORMATION::ReadRect(const Viewport viewport) const
-{
-    // If the viewport given doesn't fit inside this screen, it's not a valid argument.
-    THROW_HR_IF(E_INVALIDARG, !GetBufferSize().IsInBounds(viewport));
-
-    OutputCellRect result(viewport.Height(), viewport.Width());
-    const OutputCell paddingCell{ std::wstring_view{ &UNICODE_SPACE, 1 }, {}, GetAttributes() };
-    for (til::CoordType rowIndex = 0, height = viewport.Height(); rowIndex < height; ++rowIndex)
-    {
-        auto location = viewport.Origin();
-        location.y += rowIndex;
-
-        auto data = GetCellLineDataAt(location);
-        const auto span = result.GetRow(rowIndex);
-        auto it = span.begin();
-
-        // Copy row data while there still is data and we haven't run out of rect to store it into.
-        while (data && it < span.end())
-        {
-            *it++ = *data++;
-        }
-
-        // Pad out any remaining space.
-        while (it < span.end())
-        {
-            *it++ = paddingCell;
-        }
-
-        // if we're clipping a dbcs char then don't include it, add a space instead
-        if (span.begin()->DbcsAttr() == DbcsAttribute::Trailing)
-        {
-            *span.begin() = paddingCell;
-        }
-        if (span.rbegin()->DbcsAttr() == DbcsAttribute::Leading)
-        {
-            *span.rbegin() = paddingCell;
-        }
-    }
-
-    return result;
 }
 
 // Routine Description:

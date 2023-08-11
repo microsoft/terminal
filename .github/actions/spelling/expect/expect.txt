@@ -690,7 +690,7 @@ FSINFOCLASS
 fte
 Ftm
 Fullscreens
-fullwidth
+Fullwidth
 FUNCTIONCALL
 fuzzer
 fuzzmain
@@ -1117,6 +1117,7 @@ MDs
 MEASUREITEM
 megamix
 memallocator
+meme
 MENUCHAR
 MENUCONTROL
 MENUDROPALIGNMENT

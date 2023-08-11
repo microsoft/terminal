@@ -1554,60 +1554,20 @@ void TextBufferTests::TestBackspaceStringsAPI()
     //      should be the same.
     std::unique_ptr<WriteData> waiter;
 
-    size_t aCb = 2;
-    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, false, waiter));
-
-    size_t seqCb = 6;
     Log::Comment(NoThrowString().Format(
         L"Using WriteCharsLegacy, write \\b \\b as a single string."));
-    {
-        const auto str = L"\b \b";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
-
-        VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
-        VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
-
-        Log::Comment(NoThrowString().Format(
-            L"Using DoWriteConsole, write \\b \\b as a single string."));
-        VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, false, waiter));
-
-        VERIFY_SUCCEEDED(DoWriteConsole(str, &seqCb, si, false, waiter));
-        VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
-        VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
-    }
+    size_t aCb = 2;
+    size_t seqCb = 6;
+    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, false, waiter));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"\b \b", &seqCb, si, false, waiter));
+    VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
 
     seqCb = 2;
-
-    Log::Comment(NoThrowString().Format(
-        L"Using DoWriteConsole, write \\b \\b as separate strings."));
-
     VERIFY_SUCCEEDED(DoWriteConsole(L"a", &seqCb, si, false, waiter));
     VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, false, waiter));
     VERIFY_SUCCEEDED(DoWriteConsole(L" ", &seqCb, si, false, waiter));
     VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, false, waiter));
-
-    VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
-
-    Log::Comment(NoThrowString().Format(
-        L"Using WriteCharsLegacy, write \\b \\b as separate strings."));
-    {
-        const auto str = L"a";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
-    }
-    {
-        const auto str = L"\b";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
-    }
-    {
-        const auto str = L" ";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
-    }
-    {
-        const auto str = L"\b";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
-    }
-
     VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
     VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
 }

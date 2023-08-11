@@ -118,7 +118,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
         if (keyEvent.GetVirtualKeyCode() == 'C' && IsInProcessedInputMode())
         {
             HandleCtrlEvent(CTRL_C_EVENT);
-            if (gci.PopupCount == 0)
+            if (!gci.HasPendingPopup())
             {
                 gci.pInputBuffer->TerminateRead(WaitTerminationReason::CtrlC);
             }
@@ -134,7 +134,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
         {
             gci.pInputBuffer->Flush();
             HandleCtrlEvent(CTRL_BREAK_EVENT);
-            if (gci.PopupCount == 0)
+            if (!gci.HasPendingPopup())
             {
                 gci.pInputBuffer->TerminateRead(WaitTerminationReason::CtrlBreak);
             }

@@ -118,10 +118,15 @@ LineRendition ROW::GetLineRendition() const noexcept
     return _lineRendition;
 }
 
-uint16_t ROW::GetLineWidth() const noexcept
+// Returns the index 1 past the last (technically) valid column in the row.
+// The interplay between the old console and newer VT APIs which support line renditions is
+// still unclear so it might be necessary to add two kinds of this function in the future.
+// Console APIs treat the buffer as a large NxM matrix after all.
+til::CoordType ROW::GetLineWidth() const noexcept
 {
     const auto scale = _lineRendition != LineRendition::SingleWidth ? 1 : 0;
-    return _columnCount >> scale;
+    const auto padding = _doubleBytePadded ? 1 : 0;
+    return (_columnCount - padding) >> scale;
 }
 
 // Routine Description:
