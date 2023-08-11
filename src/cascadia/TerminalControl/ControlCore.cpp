@@ -511,7 +511,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // modifier key. We'll wait for a real keystroke to dismiss the
         // GH #7395 - don't update selection when taking PrintScreen
         // selection.
-        return HasSelection() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT;
+        return HasSelection() && ::Microsoft::Terminal::Core::Terminal::IsInputKey(vkey);
     }
 
     bool ControlCore::TryMarkModeKeybinding(const WORD vkey,
