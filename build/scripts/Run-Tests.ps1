@@ -9,7 +9,8 @@ Param(
     [Parameter(Mandatory=$false, Position=3)]
     [string]$LogPath,
     [Parameter(Mandatory=$false)]
-    [string]$Root = ".\bin\$Platform\$Configuration"
+    [string]$Root = ".\bin\$Platform\$Configuration",
+    [string[]]$AdditionalTaefArguments
 )
 
 # Find test DLLs based on the provided root, match pattern, and recursion
@@ -26,7 +27,7 @@ if ($LogPath) {
 }
 
 # Invoke the te.exe executable with arguments and test DLLs
-& "$Root\te.exe" $args $testDlls.FullName
+& "$Root\te.exe" $args $testDlls.FullName $AdditionalTaefArguments
 
 # Check the exit code of the te.exe process and exit accordingly
 if ($LASTEXITCODE -ne 0) {
