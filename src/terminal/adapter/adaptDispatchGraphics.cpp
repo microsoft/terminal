@@ -25,7 +25,7 @@ void AdaptDispatch::_SetUnderlineStyleHelper(const VTParameter option, TextAttri
     // Only apply the style if it's one of the valid underline styles (0-5).
     if ((style >= 0) && (style <= 5))
     {
-        attr.SetUnderlined(gsl::narrow_cast<UnderlineStyle>(style));
+        attr.SetUnderlineStyle(gsl::narrow_cast<UnderlineStyle>(style));
     }
 }
 
