@@ -1643,7 +1643,15 @@ public:
         attribute.SetReverseVideo(true);
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
-        _testGetSet->ValidateInputEvent(L"\033P1$r0;1;4:1;7m\033\\");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;1;4;7m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (extended underline style).");
+        _testGetSet->PrepData();
+        attribute = {};
+        attribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
+        _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;4:3m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (faint, blinking, invisible).");
         _testGetSet->PrepData();
@@ -1671,7 +1679,7 @@ public:
         attribute.SetOverlined(true);
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
-        _testGetSet->ValidateInputEvent(L"\033P1$r0;4:2;53m\033\\");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;21;53m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (standard colors).");
         _testGetSet->PrepData();
@@ -1696,18 +1704,20 @@ public:
         attribute = {};
         attribute.SetIndexedForeground256(123);
         attribute.SetIndexedBackground256(45);
+        attribute.SetUnderlineColor(TextColor{ 128, true });
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
-        _testGetSet->ValidateInputEvent(L"\033P1$r0;38:5:123;48:5:45m\033\\");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;38:5:123;48:5:45;58:5:128m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (ITU RGB colors).");
         _testGetSet->PrepData();
         attribute = {};
         attribute.SetForeground(RGB(12, 34, 56));
         attribute.SetBackground(RGB(65, 43, 21));
+        attribute.SetUnderlineColor(RGB(128, 222, 45));
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
-        _testGetSet->ValidateInputEvent(L"\033P1$r0;38:2::12:34:56;48:2::65:43:21m\033\\");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;38:2::12:34:56;48:2::65:43:21;58:2::128:222:45m\033\\");
 
         Log::Comment(L"Requesting DECSCA attributes (unprotected).");
         _testGetSet->PrepData();
