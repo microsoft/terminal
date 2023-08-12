@@ -4352,7 +4352,16 @@ void AdaptDispatch::_ReportCursorInformation()
     const auto pageNumber = 1;
 
     // Only some of the rendition attributes are reported.
-    auto renditionAttributes = L'@';
+    //   Bit    Attribute
+    //   1      bold
+    //   2      underlined
+    //   3      blink 
+    //   4      reverse video
+    //   5      invisible
+    //   6      extension indicator
+    //   7      Always 1 (on)
+    //   8      Always 0 (off)
+    auto renditionAttributes = L'@'; // (0100 0000)
     renditionAttributes += (attributes.IsIntense() ? 1 : 0);
     renditionAttributes += (attributes.IsUnderlined() ? 2 : 0);
     renditionAttributes += (attributes.IsBlinking() ? 4 : 0);
@@ -4473,7 +4482,7 @@ ITermDispatch::StringHandler AdaptDispatch::_RestoreCursorInformation()
                 {
                     auto attr = textBuffer.GetCurrentAttributes();
                     attr.SetIntense(state.value & 1);
-                    attr.SetUnderlined(state.value & 2 ? UnderlineStyle::SinglyUnderlined : UnderlineStyle::NoUnderline);
+                    attr.SetUnderlineStyle(state.value & 2 ? UnderlineStyle::SinglyUnderlined : UnderlineStyle::NoUnderline);
                     attr.SetBlinking(state.value & 4);
                     attr.SetReverseVideo(state.value & 8);
                     attr.SetInvisible(state.value & 16);
