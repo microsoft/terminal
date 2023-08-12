@@ -262,7 +262,7 @@ using namespace Microsoft::Console::Types;
     auto lastBg = _lastTextAttributes.GetBackground();
     auto lastUl = _lastTextAttributes.GetUnderlineColor();
 
-    // If the FG, BG and UL should be the defaults, emit a SGR reset.
+    // If the FG, BG and UL should be the defaults, emit an SGR reset.
     if (fg.IsDefault() && bg.IsDefault() && ul.IsDefault() && !(lastFg.IsDefault() && lastBg.IsDefault() && lastUl.IsDefault()))
     {
         // SGR Reset will clear all attributes (except hyperlink ID) - which means

@@ -1660,7 +1660,7 @@ class UiaTextRangeTests
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
             VERIFY_ARE_EQUAL(TextDecorationLineStyle_Double, result.lVal);
 
-            // No underline (Turning one off should turn the other off)
+            // No underline
             attr.SetUnderlineStyle(UnderlineStyle::NoUnderline);
             updateBuffer(attr);
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));

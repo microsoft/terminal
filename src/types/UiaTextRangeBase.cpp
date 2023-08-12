@@ -718,7 +718,7 @@ bool UiaTextRangeBase::_initializeAttrQuery(TEXTATTRIBUTEID attributeId, VARIANT
             return true;
         default:
             // TODO: Handle other underline styles once they're supported in the graphic renderer.
-            // For now, extended styles are treated as (and rendered as) single underline.
+            // For now, extended styles are treated (and rendered) as single underline.
             pRetVal->lVal = TextDecorationLineStyle_Single;
             return true;
         }
