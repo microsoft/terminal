@@ -825,13 +825,13 @@ public:
             Log::Comment(L"Testing graphics 'Underline'");
             startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
-            _testGetSet->_expectedAttribute.SetUnderlined(true);
+            _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
             break;
         case DispatchTypes::GraphicsOptions::DoublyUnderlined:
             Log::Comment(L"Testing graphics 'Doubly Underlined'");
             startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
-            _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+            _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
             break;
         case DispatchTypes::GraphicsOptions::Overline:
             Log::Comment(L"Testing graphics 'Overline'");
@@ -865,8 +865,7 @@ public:
         case DispatchTypes::GraphicsOptions::NoUnderline:
             Log::Comment(L"Testing graphics 'No Underline'");
             startingAttribute = TextAttribute{ 0 };
-            startingAttribute.SetUnderlined(true);
-            startingAttribute.SetDoublyUnderlined(true);
+            startingAttribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::NoOverline:
@@ -1216,7 +1215,7 @@ public:
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetIntense(true);
-        _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         cOptions = 1;
@@ -1225,14 +1224,14 @@ public:
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetIntense(true);
-        _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         rgOptions[0] = DispatchTypes::GraphicsOptions::NotIntenseOrFaint;
         _testGetSet->_expectedAttribute = {};
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
-        _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         // And then restore...
@@ -1640,11 +1639,11 @@ public:
         _testGetSet->PrepData();
         attribute = {};
         attribute.SetIntense(true);
-        attribute.SetUnderlined(true);
+        attribute.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
         attribute.SetReverseVideo(true);
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
-        _testGetSet->ValidateInputEvent(L"\033P1$r0;1;4;7m\033\\");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;1;4:1;7m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (faint, blinking, invisible).");
         _testGetSet->PrepData();
@@ -1668,11 +1667,11 @@ public:
         Log::Comment(L"Requesting SGR attributes (doubly underlined, overlined).");
         _testGetSet->PrepData();
         attribute = {};
-        attribute.SetDoublyUnderlined(true);
+        attribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         attribute.SetOverlined(true);
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
-        _testGetSet->ValidateInputEvent(L"\033P1$r0;21;53m\033\\");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;4:2;53m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (standard colors).");
         _testGetSet->PrepData();
@@ -1883,7 +1882,7 @@ public:
         });
         verifyChecksumReport(L"FECF");
         outputTextWithAttributes(L"A"sv, [](auto& attr) {
-            attr.SetUnderlined(true);
+            attr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
         });
         verifyChecksumReport(L"FF3F");
         outputTextWithAttributes(L"A"sv, [](auto& attr) {
@@ -1900,7 +1899,7 @@ public:
         verifyChecksumReport(L"FF47");
         outputTextWithAttributes(L"A"sv, [](auto& attr) {
             attr.SetIntense(true);
-            attr.SetUnderlined(true);
+            attr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
             attr.SetReverseVideo(true);
         });
         verifyChecksumReport(L"FE9F");
@@ -2010,7 +2009,7 @@ public:
         _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;A;@;@;0;2;@;BBBB\033\\");
 
         Log::Comment(L"Underlined rendition");
-        attributes.SetUnderlined(true);
+        attributes.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
         textBuffer.SetCurrentAttributes(attributes);
         _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
         _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;C;@;@;0;2;@;BBBB\033\\");
@@ -2095,15 +2094,19 @@ public:
         VERIFY_ARE_EQUAL(expectedPosition, textBuffer.GetCursor().GetPosition());
 
         Log::Comment(L"Restore rendition attributes");
+
+        // In the following sequence, U (0101 0101) represents the bold, blinking, invisible attributes to be active.
         stateMachine.ProcessString(L"\033P1$t1;1;1;U;@;@;0;2;@;BBBB\033\\");
         attributes = {};
-        attributes.SetIntense(true);
+        attributes.SetIntense(true); // bold
         attributes.SetBlinking(true);
         attributes.SetInvisible(true);
         VERIFY_ARE_EQUAL(attributes, textBuffer.GetCurrentAttributes());
+
+        // In the following sequence, J (0100 1010) represents the underline, reverse video attributes to be active. 
         stateMachine.ProcessString(L"\033P1$t1;1;1;J;A;@;0;2;@;BBBB\033\\");
         attributes = {};
-        attributes.SetUnderlined(true);
+        attributes.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
         attributes.SetReverseVideo(true);
         attributes.SetProtected(true);
         VERIFY_ARE_EQUAL(attributes, textBuffer.GetCurrentAttributes());

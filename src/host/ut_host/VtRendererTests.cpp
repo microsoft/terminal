@@ -714,23 +714,21 @@ void VtRendererTest::Xterm256TestExtendedAttributes()
         onSequences.push_back("\x1b[2m");
         offSequences.push_back("\x1b[22m");
     }
+    
+    // underlined and doublyUnderlined are mutually exclusive
     if (underlined)
     {
-        desiredAttrs.SetUnderlined(true);
+        desiredAttrs.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
         onSequences.push_back("\x1b[4m");
         offSequences.push_back("\x1b[24m");
     }
-    if (doublyUnderlined)
+    else if (doublyUnderlined)
     {
-        desiredAttrs.SetDoublyUnderlined(true);
+        desiredAttrs.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         onSequences.push_back("\x1b[21m");
-        // The two underlines share the same off sequence, so we
-        // only add it here if that hasn't already been done.
-        if (!underlined)
-        {
-            offSequences.push_back("\x1b[24m");
-        }
+        offSequences.push_back("\x1b[24m");
     }
+
     if (italics)
     {
         desiredAttrs.SetItalic(true);
@@ -835,11 +833,11 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
         break;
     case GraphicsOptions::Underline:
         Log::Comment(L"----Set Underline Attribute----");
-        textAttributes.SetUnderlined(true);
+        textAttributes.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
         break;
     case GraphicsOptions::DoublyUnderlined:
         Log::Comment(L"----Set Doubly Underlined Attribute----");
-        textAttributes.SetDoublyUnderlined(true);
+        textAttributes.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         break;
     case GraphicsOptions::Overline:
         Log::Comment(L"----Set Overline Attribute----");
@@ -1345,7 +1343,7 @@ void VtRendererTest::XtermTestAttributesAcrossReset()
         break;
     case GraphicsOptions::Underline:
         Log::Comment(L"----Set Underline Attribute----");
-        textAttributes.SetUnderlined(true);
+        textAttributes.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
         break;
     case GraphicsOptions::Negative:
         Log::Comment(L"----Set Negative Attribute----");
