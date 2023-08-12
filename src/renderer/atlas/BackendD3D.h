@@ -29,17 +29,16 @@ namespace Microsoft::Console::Render::Atlas
             //   padding so that it is {u32; u32; u32; <4 byte padding>; u32x2}.
             // * bool will probably not work the way you want it to,
             //   because HLSL uses 32-bit bools and C++ doesn't.
-            alignas(sizeof(f32x4)) f32x4 padding;
             alignas(sizeof(f32x2)) f32x2 positionScale;
+            alignas(sizeof(f32x2)) f32x2 positionOffset;
 #pragma warning(suppress : 4324) // 'VSConstBuffer': structure was padded due to alignment specifier
         };
 
         // WARNING: Same rules as for VSConstBuffer above apply.
         struct alignas(16) PSConstBuffer
         {
-            alignas(sizeof(f32x4)) f32x4 backgroundColor;
-            alignas(sizeof(f32x2)) f32x2 backgroundCellSize;
-            alignas(sizeof(f32x2)) f32x2 backgroundCellCount;
+            alignas(sizeof(f32x2)) f32x2 backgroundScale;
+            alignas(sizeof(f32x2)) f32x2 backgroundOffset;
             alignas(sizeof(f32x4)) f32 gammaRatios[4]{};
             alignas(sizeof(f32)) f32 enhancedContrast = 0;
             alignas(sizeof(f32)) f32 underlineWidth = 0;
@@ -231,7 +230,7 @@ namespace Microsoft::Console::Render::Atlas
         void _recreateCustomShader(const RenderingPayload& p);
         void _recreateCustomRenderTargetView(const RenderingPayload& p);
         void _recreateBackgroundColorBitmap(const RenderingPayload& p);
-        void _recreateConstBuffer(const RenderingPayload& p) const;
+        void _recreateConstBuffer(const RenderingPayload& p);
         void _setupDeviceContextState(const RenderingPayload& p);
         void _debugUpdateShaders(const RenderingPayload& p) noexcept;
         void _debugShowDirty(const RenderingPayload& p);
@@ -292,6 +291,7 @@ namespace Microsoft::Console::Render::Atlas
 
         wil::com_ptr<ID3D11Texture2D> _backgroundBitmap;
         wil::com_ptr<ID3D11ShaderResourceView> _backgroundBitmapView;
+        wil::com_ptr<ID3D11SamplerState> _backgroundSampler;
         til::generation_t _backgroundBitmapGeneration;
 
         wil::com_ptr<ID3D11Texture2D> _glyphAtlas;

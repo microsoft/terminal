@@ -6,9 +6,8 @@
 
 cbuffer ConstBuffer : register(b0)
 {
-    float4 backgroundColor;
-    float2 backgroundCellSize;
-    float2 backgroundCellCount;
+    float2 backgroundScale;
+    float2 backgroundOffset;
     float4 gammaRatios;
     float enhancedContrast;
     float underlineWidth;
@@ -17,6 +16,7 @@ cbuffer ConstBuffer : register(b0)
     float shadedGlyphDotSize;
 }
 
+SamplerState backgroundSampler;
 Texture2D<float4> background : register(t0);
 Texture2D<float4> glyphAtlas : register(t1);
 
@@ -37,8 +37,7 @@ Output main(PSData data) : SV_Target
     {
     case SHADING_TYPE_TEXT_BACKGROUND:
     {
-        float2 cell = data.position.xy / backgroundCellSize;
-        color = all(cell < backgroundCellCount) ? background[cell] : backgroundColor;
+        color = background.Sample(backgroundSampler, data.position.xy * backgroundScale + backgroundOffset);
         weights = float4(1, 1, 1, 1);
         break;
     }
