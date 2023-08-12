@@ -705,7 +705,7 @@ bool UiaTextRangeBase::_initializeAttrQuery(TEXTATTRIBUTEID attributeId, VARIANT
     {
         pRetVal->vt = VT_I4;
         const auto style = attr.GetUnderlineStyle();
-        switch(style)
+        switch (style)
         {
         case UnderlineStyle::SinglyUnderlined:
             pRetVal->lVal = TextDecorationLineStyle_Single;

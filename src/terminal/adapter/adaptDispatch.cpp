@@ -4355,7 +4355,7 @@ void AdaptDispatch::_ReportCursorInformation()
     //   Bit    Attribute
     //   1      bold
     //   2      underlined
-    //   3      blink 
+    //   3      blink
     //   4      reverse video
     //   5      invisible
     //   6      extension indicator

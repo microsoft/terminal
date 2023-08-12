@@ -2103,7 +2103,7 @@ public:
         attributes.SetInvisible(true);
         VERIFY_ARE_EQUAL(attributes, textBuffer.GetCurrentAttributes());
 
-        // In the following sequence, J (0100 1010) represents the underline, reverse video attributes to be active. 
+        // In the following sequence, J (0100 1010) represents the underline, reverse video attributes to be active.
         stateMachine.ProcessString(L"\033P1$t1;1;1;J;A;@;0;2;@;BBBB\033\\");
         attributes = {};
         attributes.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
