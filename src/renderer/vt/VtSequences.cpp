@@ -387,7 +387,7 @@ using namespace Microsoft::Console::Render;
     case UnderlineStyle::SinglyUnderlined:
         return _SetUnderlined(true);
     case UnderlineStyle::DoublyUnderlined:
-        return _SetDoublyUnderlined();
+        return _Write("\x1b[21m");
     case UnderlineStyle::CurlyUnderlined:
         return _Write("\x1b[4:3m");
     case UnderlineStyle::DottedUnderlined:
@@ -408,15 +408,6 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_SetUnderlined(const bool isUnderlined) noexcept
 {
     return _Write(isUnderlined ? "\x1b[4m" : "\x1b[24m");
-}
-
-// Method Description:
-// - Formats and writes a sequence to change the underline style of the following text to a double underline.
-// Return Value:
-// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetDoublyUnderlined() noexcept
-{
-    return _Write("\x1b[21m");
 }
 
 // Method Description:
