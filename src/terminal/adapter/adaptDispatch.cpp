@@ -4106,8 +4106,23 @@ void AdaptDispatch::_ReportSGRSetting() const
     addAttribute(L";2"sv, attr.IsFaint());
     addAttribute(L";3"sv, attr.IsItalic());
 
-    const auto ulStyle = WI_EnumValue(attr.GetUnderlineStyle());
-    addAttribute(fmt::format(FMT_COMPILE(";4:{}"sv), ulStyle), attr.IsUnderlined());
+    const auto ulStyle = attr.GetUnderlineStyle();
+    switch (ulStyle)
+    {
+    case UnderlineStyle::SinglyUnderlined:
+        addAttribute(L";4"sv, true);
+        break;
+    case UnderlineStyle::DoublyUnderlined:
+        addAttribute(L";21"sv, true);
+        break;
+    case UnderlineStyle::CurlyUnderlined:
+    case UnderlineStyle::DottedUnderlined:
+    case UnderlineStyle::DashedUnderlined:
+        addAttribute(fmt::format(FMT_COMPILE(";4:{}"sv), WI_EnumValue(ulStyle)), true);
+        break;
+    default:
+        break;
+    }
 
     addAttribute(L";5"sv, attr.IsBlinking());
     addAttribute(L";7"sv, attr.IsReverseVideo());
