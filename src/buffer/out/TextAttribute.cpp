@@ -178,6 +178,8 @@ void TextAttribute::SetBackground(const TextColor background) noexcept
 
 void TextAttribute::SetUnderlineColor(const TextColor color) noexcept
 {
+    // Index16 colors are not supported for underline colors.
+    assert(!color.IsIndex16());
     _underlineColor = color;
 }
 
