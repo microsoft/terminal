@@ -244,14 +244,13 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
         attr.SetReverseVideo(false);
         return 1;
     case Underline: // SGR 4 (without extended styling)
-        attr.SetUnderlined(true);
+        attr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
         return 1;
     case DoublyUnderlined:
-        attr.SetDoublyUnderlined(true);
+        attr.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         return 1;
     case NoUnderline:
-        attr.SetUnderlined(false);
-        attr.SetDoublyUnderlined(false);
+        attr.SetUnderlineStyle(UnderlineStyle::NoUnderline);
         return 1;
     case Overline:
         attr.SetOverlined(true);

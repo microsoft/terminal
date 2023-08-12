@@ -297,12 +297,7 @@ bool TextAttribute::IsCrossedOut() const noexcept
 bool TextAttribute::IsUnderlined() const noexcept
 {
     const auto style = GetUnderlineStyle();
-    return style != UnderlineStyle::NoUnderline;
-}
-
-bool TextAttribute::IsDoublyUnderlined() const noexcept
-{
-    return WI_IsFlagSet(_attrs, CharacterAttributes::DoublyUnderlined);
+    return (style != UnderlineStyle::NoUnderline);
 }
 
 bool TextAttribute::IsOverlined() const noexcept
@@ -350,32 +345,14 @@ void TextAttribute::SetCrossedOut(bool isCrossedOut) noexcept
     WI_UpdateFlag(_attrs, CharacterAttributes::CrossedOut, isCrossedOut);
 }
 
-void TextAttribute::SetUnderlined(bool isUnderlined) noexcept
-{
-    if (isUnderlined)
-    {
-        SetUnderlined(UnderlineStyle::SinglyUnderlined);
-    }
-    else
-    {
-        SetUnderlined(UnderlineStyle::NoUnderline);
-    }
-}
-
-void TextAttribute::SetUnderlined(const UnderlineStyle style) noexcept
+// Method description:
+// - Sets underline style to singly, doubly, or one of the extended styles.
+// Arguments:
+// - style - underline style to set.
+void TextAttribute::SetUnderlineStyle(const UnderlineStyle style) noexcept
 {
     const auto styleAttrs = _UnderlineStyleToCharacterAttr(style);
     _attrs = (_attrs & ~CharacterAttributes::UnderlineStyle) | styleAttrs;
-}
-
-// Method description:
-// - Sets doubly underlined in the attribute.
-// - This is used for SGR 21 sequences. (do not use with SGR 4:x)
-// Arguments:
-// - isDoublyUnderlined - whether to set doubly underlined or not.
-void TextAttribute::SetDoublyUnderlined(bool isDoublyUnderlined) noexcept
-{
-    WI_UpdateFlag(_attrs, CharacterAttributes::DoublyUnderlined, isDoublyUnderlined);
 }
 
 void TextAttribute::SetOverlined(bool isOverlined) noexcept

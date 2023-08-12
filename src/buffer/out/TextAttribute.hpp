@@ -110,7 +110,6 @@ public:
     bool IsInvisible() const noexcept;
     bool IsCrossedOut() const noexcept;
     bool IsUnderlined() const noexcept;
-    bool IsDoublyUnderlined() const noexcept;
     bool IsOverlined() const noexcept;
     bool IsReverseVideo() const noexcept;
     bool IsProtected() const noexcept;
@@ -121,9 +120,7 @@ public:
     void SetBlinking(bool isBlinking) noexcept;
     void SetInvisible(bool isInvisible) noexcept;
     void SetCrossedOut(bool isCrossedOut) noexcept;
-    void SetUnderlined(bool isUnderlined) noexcept;
-    void SetUnderlined(const UnderlineStyle underlineStyle) noexcept;
-    void SetDoublyUnderlined(bool isDoublyUnderlined) noexcept;
+    void SetUnderlineStyle(const UnderlineStyle underlineStyle) noexcept;
     void SetOverlined(bool isOverlined) noexcept;
     void SetReverseVideo(bool isReversed) noexcept;
     void SetProtected(bool isProtected) noexcept;
@@ -175,8 +172,8 @@ public:
         // global ^ local == false: the foreground attribute is the visible foreground, so we care about the backgrounds being identical
         const auto checkForeground = (inverted != IsReverseVideo());
         return !IsAnyGridLineEnabled() && // grid lines have a visual representation
-               // underlined, doubly underlined and crossed out have a visual representation
-               !IsUnderlined() && WI_AreAllFlagsClear(_attrs, CharacterAttributes::CrossedOut | CharacterAttributes::DoublyUnderlined) &&
+               // styled underline and crossed out have a visual representation
+               !IsUnderlined() && WI_IsFlagClear(_attrs, CharacterAttributes::CrossedOut) &&
                // hyperlinks have a visual representation
                !IsHyperlink() &&
                // all other attributes do not have a visual representation

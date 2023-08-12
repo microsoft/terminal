@@ -85,29 +85,13 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
         _lastTextAttributes.SetFaint(true);
     }
 
-    // Turning off the underline styles must be handled at the same time,
-    // since there is only one sequence that resets both of them.
-    const auto singleTurnedOff = !textAttributes.IsUnderlined() && _lastTextAttributes.IsUnderlined();
-    const auto doubleTurnedOff = !textAttributes.IsDoublyUnderlined() && _lastTextAttributes.IsDoublyUnderlined();
-    if (singleTurnedOff || doubleTurnedOff)
+    // We check the singly, doubly underlined and extended styling together,
+    // since only one of them can be active at a time.
+    const auto ulStyle = textAttributes.GetUnderlineStyle();
+    if (ulStyle != _lastTextAttributes.GetUnderlineStyle())
     {
-        RETURN_IF_FAILED(_SetUnderlined(false));
-        _lastTextAttributes.SetUnderlined(false);
-        _lastTextAttributes.SetDoublyUnderlined(false);
-    }
-
-    // Once we've handled the cases where they need to be turned off,
-    // we can then check if either should be turned back on again.
-    if (textAttributes.IsUnderlined() && !_lastTextAttributes.IsUnderlined())
-    {
-        auto style = textAttributes.GetUnderlineStyle();
-        RETURN_IF_FAILED(_SetUnderlineExtended(style));
-        _lastTextAttributes.SetUnderlined(style);
-    }
-    if (textAttributes.IsDoublyUnderlined() && !_lastTextAttributes.IsDoublyUnderlined())
-    {
-        RETURN_IF_FAILED(_SetDoublyUnderlined(true));
-        _lastTextAttributes.SetDoublyUnderlined(true);
+        RETURN_IF_FAILED(_SetUnderlineExtended(ulStyle));
+        _lastTextAttributes.SetUnderlineStyle(ulStyle);
     }
 
     if (textAttributes.IsOverlined() != _lastTextAttributes.IsOverlined())

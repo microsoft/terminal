@@ -19,10 +19,10 @@ enum class CharacterAttributes : uint16_t
     CrossedOut = 0x10,
     Faint = 0x20,
 
-    // 7th, 8th, 9th bit reserved for Underline styles
+    // 7th, 8th, 9th bit reserved for underline styles
     UnderlineStyle = 0x1C0,
 
-    DoublyUnderlined = 0x200,
+    Unused1 = 0x200,
     TopGridline = COMMON_LVB_GRID_HORIZONTAL, // 0x400
     LeftGridline = COMMON_LVB_GRID_LVERTICAL, // 0x800
     RightGridline = COMMON_LVB_GRID_RVERTICAL, // 0x1000

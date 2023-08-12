@@ -950,14 +950,17 @@ GridLineSet Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcep
         lines.set(GridLines::Strikethrough);
     }
 
-    if (textAttribute.IsUnderlined())
+    const auto underlineStyle = textAttribute.GetUnderlineStyle();
+    switch (underlineStyle)
     {
-        lines.set(GridLines::Underline);
-    }
-
-    if (textAttribute.IsDoublyUnderlined())
-    {
+    case UnderlineStyle::NoUnderline:
+        break;
+    case UnderlineStyle::DoublyUnderlined:
         lines.set(GridLines::DoubleUnderline);
+        break;
+    default:
+        lines.set(GridLines::Underline);
+        break;
     }
 
     if (textAttribute.IsHyperlink())
