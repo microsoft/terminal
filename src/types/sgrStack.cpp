@@ -136,10 +136,19 @@ namespace Microsoft::Console::VirtualTerminal
             result.SetItalic(savedAttribute.IsItalic());
         }
 
-        // Underline = 4,
-        if (validParts.test(SgrSaveRestoreStackOptions::Underline))
+        // Underline = 4 or DoublyUnderlined = 21
+        const auto isUnderlinedValid = validParts.test(SgrSaveRestoreStackOptions::Underline);
+        const auto isDoublyUnderlinedValid = validParts.test(SgrSaveRestoreStackOptions::DoublyUnderlined);
+        const auto ulStyle = savedAttribute.GetUnderlineStyle();
+        // if the doubly underline is valid, but not the underline, then restore the style only if it was doubly underlined.
+        if (isDoublyUnderlinedValid && !isUnderlinedValid && ulStyle == UnderlineStyle::DoublyUnderlined)
         {
-            result.SetUnderlined(savedAttribute.IsUnderlined());
+            result.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
+        }
+        // otherwise, if any of the two are valid, we can restore the underline style.
+        else if (isUnderlinedValid || isDoublyUnderlinedValid)
+        {
+            result.SetUnderlineStyle(ulStyle);
         }
 
         // Blink = 5,
@@ -164,12 +173,6 @@ namespace Microsoft::Console::VirtualTerminal
         if (validParts.test(SgrSaveRestoreStackOptions::CrossedOut))
         {
             result.SetCrossedOut(savedAttribute.IsCrossedOut());
-        }
-
-        // DoublyUnderlined = 21,
-        if (validParts.test(SgrSaveRestoreStackOptions::DoublyUnderlined))
-        {
-            result.SetDoublyUnderlined(savedAttribute.IsDoublyUnderlined());
         }
 
         // SaveForegroundColor = 30,
