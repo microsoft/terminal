@@ -295,7 +295,7 @@ bool TextAttribute::IsCrossedOut() const noexcept
 }
 
 // Method description:
-// - Returns true if the text is underlined with the any underline style.
+// - Returns true if the text is underlined with any underline style.
 bool TextAttribute::IsUnderlined() const noexcept
 {
     const auto style = GetUnderlineStyle();

@@ -714,7 +714,7 @@ void VtRendererTest::Xterm256TestExtendedAttributes()
         onSequences.push_back("\x1b[2m");
         offSequences.push_back("\x1b[22m");
     }
-    
+
     // underlined and doublyUnderlined are mutually exclusive
     if (underlined)
     {
