@@ -958,8 +958,13 @@ GridLineSet Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcep
     case UnderlineStyle::DoublyUnderlined:
         lines.set(GridLines::DoubleUnderline);
         break;
-    default:
+    case UnderlineStyle::SinglyUnderlined:
+    case UnderlineStyle::CurlyUnderlined:
+    case UnderlineStyle::DottedUnderlined:
+    case UnderlineStyle::DashedUnderlined:
         lines.set(GridLines::Underline);
+        break;
+    default:
         break;
     }
 
