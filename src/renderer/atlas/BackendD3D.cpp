@@ -571,19 +571,30 @@ void BackendD3D::_recreateBackgroundColorBitmap(const RenderingPayload& p)
     _backgroundBitmapGeneration = {};
 }
 
-void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
+void BackendD3D::_recreateConstBuffer(const RenderingPayload& p)
 {
     {
         VSConstBuffer data{};
-        data.positionScale = { 2.0f / p.s->targetSize.x, -2.0f / p.s->targetSize.y };
-        data.padding = { p.s->misc->topLeftOffset.x, p.s->misc->topLeftOffset.y, 0.f, 0.f };
+        data.positionScale = {
+            2.0f / p.s->targetSize.x,
+            -2.0f / p.s->targetSize.y,
+        };
+        data.positionOffset = {
+            data.positionScale.x * p.s->misc->topLeftOffset.x - 1.0f,
+            data.positionScale.y * p.s->misc->topLeftOffset.y + 1.0f,
+        };
         p.deviceContext->UpdateSubresource(_vsConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
     {
         PSConstBuffer data{};
-        data.backgroundColor = colorFromU32Premultiply<f32x4>(p.s->misc->backgroundColor);
-        data.backgroundCellSize = { static_cast<f32>(p.s->font->cellSize.x), static_cast<f32>(p.s->font->cellSize.y) };
-        data.backgroundCellCount = { static_cast<f32>(p.s->viewportCellCount.x), static_cast<f32>(p.s->viewportCellCount.y) };
+        data.viewportScale = {
+            1.0f / (p.s->font->cellSize.x * p.s->viewportCellCount.x),
+            1.0f / (p.s->font->cellSize.y * p.s->viewportCellCount.y),
+        };
+        data.viewportOffset = {
+            data.viewportScale.x * -p.s->misc->topLeftOffset.x,
+            data.viewportScale.y * -p.s->misc->topLeftOffset.y,
+        };
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);
         data.enhancedContrast = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
         data.underlineWidth = p.s->font->underline.height;
@@ -594,6 +605,23 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
         // We use half that for the `cellSize.y`, because usually cells have an aspect ratio of 1:2.
         data.shadedGlyphDotSize = std::max(1.0f, std::roundf(std::max(p.s->font->cellSize.x / 12.0f, p.s->font->cellSize.y / 24.0f)));
         p.deviceContext->UpdateSubresource(_psConstantBuffer.get(), 0, nullptr, &data, 0, 0);
+    }
+    {
+        const auto color = colorFromU32Premultiply<f32x4>(p.s->misc->backgroundColor);
+        const D3D11_SAMPLER_DESC desc{
+            .Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
+            .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
+            .AddressV = D3D11_TEXTURE_ADDRESS_BORDER,
+            .AddressW = D3D11_TEXTURE_ADDRESS_BORDER,
+            .MipLODBias = 0,
+            .MaxAnisotropy = 1,
+            .ComparisonFunc = D3D11_COMPARISON_NEVER,
+            //.BorderColor = { color.x, color.y, color.z, color.w },
+            .BorderColor = { 1.0f, 0.2f, 0.2f, 1.0f },
+            .MinLOD = -FLT_MAX,
+            .MaxLOD = FLT_MAX,
+        };
+        THROW_IF_FAILED(p.device->CreateSamplerState(&desc, _backgroundSampler.put()));
     }
 }
 
@@ -623,6 +651,7 @@ void BackendD3D::_setupDeviceContextState(const RenderingPayload& p)
     p.deviceContext->PSSetShader(_pixelShader.get(), nullptr, 0);
     p.deviceContext->PSSetConstantBuffers(0, 1, _psConstantBuffer.addressof());
     p.deviceContext->PSSetShaderResources(0, 2, &resources[0]);
+    p.deviceContext->PSSetSamplers(0, 1, _backgroundSampler.addressof());
 
     // OM: Output Merger
     p.deviceContext->OMSetBlendState(_blendState.get(), nullptr, 0xffffffff);
@@ -1073,6 +1102,10 @@ void BackendD3D::_drawBackground(const RenderingPayload& p)
 
     _appendQuad() = {
         .shadingType = static_cast<u16>(ShadingType::Background),
+        .position = {
+            static_cast<i16>(lrintf(-p.s->misc->topLeftOffset.x)),
+            static_cast<i16>(lrintf(-p.s->misc->topLeftOffset.x)),
+        },
         .size = p.s->targetSize,
     };
 }
@@ -2373,7 +2406,7 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
         p.deviceContext->PSSetShader(_pixelShader.get(), nullptr, 0);
         p.deviceContext->PSSetConstantBuffers(0, 1, _psConstantBuffer.addressof());
         p.deviceContext->PSSetShaderResources(0, 2, &resources[0]);
-        p.deviceContext->PSSetSamplers(0, 0, nullptr);
+        p.deviceContext->PSSetSamplers(0, 1, _backgroundSampler.addressof());
 
         // OM: Output Merger
         p.deviceContext->OMSetBlendState(_blendState.get(), nullptr, 0xffffffff);
