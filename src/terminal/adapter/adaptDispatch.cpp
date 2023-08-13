@@ -4094,6 +4094,7 @@ void AdaptDispatch::_ReportSGRSetting() const
     response.append(L"\033P1$r0"sv);
 
     const auto& attr = _api.GetTextBuffer().GetCurrentAttributes();
+    const auto ulStyle = attr.GetUnderlineStyle();
     // For each boolean attribute that is set, we add the appropriate
     // parameter value to the response string.
     const auto addAttribute = [&](const auto& parameter, const auto enabled) {
@@ -4105,29 +4106,15 @@ void AdaptDispatch::_ReportSGRSetting() const
     addAttribute(L";1"sv, attr.IsIntense());
     addAttribute(L";2"sv, attr.IsFaint());
     addAttribute(L";3"sv, attr.IsItalic());
-
-    const auto ulStyle = attr.GetUnderlineStyle();
-    switch (ulStyle)
-    {
-    case UnderlineStyle::SinglyUnderlined:
-        addAttribute(L";4"sv, true);
-        break;
-    case UnderlineStyle::DoublyUnderlined:
-        addAttribute(L";21"sv, true);
-        break;
-    case UnderlineStyle::CurlyUnderlined:
-    case UnderlineStyle::DottedUnderlined:
-    case UnderlineStyle::DashedUnderlined:
-        addAttribute(fmt::format(FMT_COMPILE(";4:{}"sv), WI_EnumValue(ulStyle)), true);
-        break;
-    default:
-        break;
-    }
-
+    addAttribute(L";4"sv, ulStyle == UnderlineStyle::SinglyUnderlined);
+    addAttribute(L";4:3"sv, ulStyle == UnderlineStyle::CurlyUnderlined);
+    addAttribute(L";4:4"sv, ulStyle == UnderlineStyle::DottedUnderlined);
+    addAttribute(L";4:5"sv, ulStyle == UnderlineStyle::DashedUnderlined);
     addAttribute(L";5"sv, attr.IsBlinking());
     addAttribute(L";7"sv, attr.IsReverseVideo());
     addAttribute(L";8"sv, attr.IsInvisible());
     addAttribute(L";9"sv, attr.IsCrossedOut());
+    addAttribute(L";21"sv, ulStyle == UnderlineStyle::DoublyUnderlined);
     addAttribute(L";53"sv, attr.IsOverlined());
 
     // We also need to add the appropriate color encoding parameters for
