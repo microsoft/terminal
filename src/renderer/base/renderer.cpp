@@ -953,8 +953,6 @@ GridLineSet Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcep
     const auto underlineStyle = textAttribute.GetUnderlineStyle();
     switch (underlineStyle)
     {
-    case UnderlineStyle::NoUnderline:
-        break;
     case UnderlineStyle::DoublyUnderlined:
         lines.set(GridLines::DoubleUnderline);
         break;
