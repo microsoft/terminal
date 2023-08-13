@@ -396,7 +396,7 @@ void TextAttribute::SetDefaultUnderlineColor() noexcept
 
 // Method description:
 // - Resets only the rendition character attributes, which includes everything
-//     except the Protected attribute. Additionally, resets the underline style.
+//     except the Protected attribute.
 void TextAttribute::SetDefaultRenditionAttributes() noexcept
 {
     _attrs &= ~CharacterAttributes::Rendition;
