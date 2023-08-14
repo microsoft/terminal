@@ -28,7 +28,9 @@ foreach ($assembly in $testResults.assemblies.assembly) {
     foreach ($collection in $assembly.collection) {
         foreach ($test in $collection.test) {
             if ($test.result -eq "Fail") {
-                # write the test name to to stderr
+                # This particular format is taken from the Azure DevOps documentation:
+                # https://github.com/microsoft/azure-pipelines-tasks/blob/master/docs/authoring/commands.md
+                # This will treat this line as an error message
                 Write-Output "##vso[task.logissue type=error]$($test.name) Failed"
             }
         }

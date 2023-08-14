@@ -66,7 +66,7 @@ jobs:
     condition: ne(variables['PGOBuildMode'], 'Instrument')
 
   - task: PowerShell@2
-    displayName: 'Manually log errors'
+    displayName: 'Manually log test failures'
     inputs:
       targetType: filePath
       filePath: build\Helix\OutputTestErrorsForAzureDevops.ps1
