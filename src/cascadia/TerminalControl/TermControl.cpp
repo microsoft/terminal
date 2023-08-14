@@ -1183,6 +1183,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                       const Input::KeyRoutedEventArgs& e)
     {
         _KeyHandler(e, true);
+
+        // GH#1304 - On <Escape> or <Enter> keypress, restore IME state to alphanumeric mode.
+        extern void SetIMERomanAlphabetMode() noexcept;
+        auto key = (WORD)e.Key();
+        if ((key == VK_RETURN || key == VK_ESCAPE) && !e.KeyStatus().IsExtendedKey && Settings().AlphaKbdOnEscKey())
+        {
+            SetIMERomanAlphabetMode();
+        }
     }
 
     void TermControl::_KeyUpHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
@@ -3594,4 +3602,47 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SelectionContextMenu().Hide();
         _core.ContextMenuSelectOutput();
     }
+}
+
+// GH#1304, PR#15590 - On <Escape> or <Enter> keypress, restore IME state to alphanumeric mode.
+// - It loads "IMM32.DLL" module dynamically.
+
+static HMODULE hModIMM = nullptr;
+static bool bHasModIMM = true;
+
+static HWND(WINAPI* _ImmGetDefaultIMEWnd)(IN HWND);
+static HIMC(WINAPI* _ImmGetContext)(IN HWND);
+static BOOL(WINAPI* _ImmGetOpenStatus)(IN HIMC);
+static BOOL(WINAPI* _ImmSetConversionStatus)(IN HIMC, IN DWORD, IN DWORD);
+static BOOL(WINAPI* _ImmReleaseContext)(IN HWND, IN HIMC);
+
+// Restore keyboard IME to roman alphabet input mode.
+void SetIMERomanAlphabetMode() noexcept
+{
+    if (!bHasModIMM)
+        return;
+
+    if (!hModIMM)
+    {
+        hModIMM = GetModuleHandleW(L"IMM32.DLL");
+        bHasModIMM = (bool)hModIMM;
+        if (!bHasModIMM)
+            return;
+
+        _ImmGetDefaultIMEWnd = GetProcAddressByFunctionDeclaration(hModIMM, ImmGetDefaultIMEWnd);
+        _ImmGetContext = GetProcAddressByFunctionDeclaration(hModIMM, ImmGetContext);
+        _ImmGetOpenStatus = GetProcAddressByFunctionDeclaration(hModIMM, ImmGetOpenStatus);
+        _ImmSetConversionStatus = GetProcAddressByFunctionDeclaration(hModIMM, ImmSetConversionStatus);
+        _ImmReleaseContext = GetProcAddressByFunctionDeclaration(hModIMM, ImmReleaseContext);
+    }
+
+    HWND hWnd = _ImmGetDefaultIMEWnd(nullptr);
+    HIMC hImc = _ImmGetContext(hWnd);
+    if (hWnd && hImc && _ImmGetOpenStatus(hImc))
+    {
+        _ImmSetConversionStatus(hImc, IME_CMODE_ALPHANUMERIC, IME_SMODE_NONE);
+    }
+    const auto cleanup = wil::scope_exit([&]() {
+        _ImmReleaseContext(hWnd, hImc);
+    });
 }

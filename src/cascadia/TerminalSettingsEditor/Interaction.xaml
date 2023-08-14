@@ -93,6 +93,12 @@
                 <ToggleSwitch IsOn="{x:Bind ViewModel.ConfirmCloseAllTabs, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
+
+            <!--  Restore keyboard IME to alphabet mode  -->
+            <local:SettingContainer x:Uid="Globals_AlphaKbdOnEscKey">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.AlphaKbdOnEscKey, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>
 </Page>
