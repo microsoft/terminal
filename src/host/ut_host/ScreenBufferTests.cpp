@@ -1421,9 +1421,9 @@ void ScreenBufferTests::VtResizePreservingAttributes()
     WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     // Set the attributes to something not supported by the legacy console.
-    auto testAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    auto testAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12), RGB(188, 20, 24) };
     testAttr.SetCrossedOut(true);
-    testAttr.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
+    testAttr.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
     testAttr.SetItalic(true);
     si.GetTextBuffer().SetCurrentAttributes(testAttr);
 
@@ -1600,10 +1600,10 @@ void ScreenBufferTests::VtNewlinePastViewport()
     cursor.SetPosition({ 0, initialViewport.BottomInclusive() });
 
     // Set the attributes that will be used to initialize new rows.
-    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12), RGB(18, 29, 55) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+    fillAttr.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -1675,10 +1675,10 @@ void ScreenBufferTests::VtNewlinePastEndOfBuffer()
     cursor.SetPosition({ 0, initialViewport.BottomInclusive() });
 
     // Set the attributes that will be used to initialize new rows.
-    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12), RGB(18, 29, 55) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+    fillAttr.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -3806,10 +3806,10 @@ void ScreenBufferTests::ScrollOperations()
     }
 
     // Set the attributes that will be used to fill the revealed area.
-    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12), RGB(18, 29, 55) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+    fillAttr.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -3897,10 +3897,10 @@ void ScreenBufferTests::InsertReplaceMode()
     _FillLine(targetRow, initialChars, initialAttr);
 
     // Set the attributes that will be used for the new content.
-    auto newAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    auto newAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12), RGB(18, 29, 55) };
     newAttr.SetCrossedOut(true);
     newAttr.SetReverseVideo(true);
-    newAttr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+    newAttr.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
     si.SetAttributes(newAttr);
 
     Log::Comment(L"Write additional content into a line of text with IRM mode enabled.");
@@ -4011,10 +4011,10 @@ void ScreenBufferTests::InsertChars()
     _FillLine({ viewportStart, insertLine }, textChars, textAttr);
 
     // Set the attributes that will be used to fill the revealed area.
-    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12), RGB(18, 29, 55) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+    fillAttr.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -4211,10 +4211,10 @@ void ScreenBufferTests::DeleteChars()
     _FillLine({ viewportStart, deleteLine }, textChars, textAttr);
 
     // Set the attributes that will be used to fill the revealed area.
-    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12), RGB(18, 29, 55) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+    fillAttr.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -4394,10 +4394,10 @@ void ScreenBufferTests::HorizontalScrollOperations()
     _FillLines(0, 25, bufferChars, bufferAttr);
 
     // Set the attributes that will be used to fill the revealed area.
-    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12), RGB(18, 29, 55) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+    fillAttr.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -4657,10 +4657,10 @@ void ScreenBufferTests::EraseTests()
     }
 
     // Set the attributes that will be used to fill the erased area.
-    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12), RGB(18, 29, 55) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+    fillAttr.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -8064,14 +8064,14 @@ void ScreenBufferTests::RectangularAreaOperations()
     si.SetViewport(Viewport::FromDimensions({ 5, 10 }, { bufferWidth - 10, 20 }), true);
     const auto viewport = si.GetViewport();
 
-    // Fill the entire buffer with Zs. Blue on Green and Underlined.
+    // Fill the entire buffer with Zs. Blue on Green and Red Curly Underlined.
     const auto bufferChar = L'Z';
-    auto bufferAttr = TextAttribute{ FOREGROUND_BLUE | BACKGROUND_GREEN };
-    bufferAttr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+    auto bufferAttr = TextAttribute{ RGB(0, 0, 255), RGB(0, 255, 0), RGB(255, 0, 0) };
+    bufferAttr.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
     _FillLines(0, bufferHeight, bufferChar, bufferAttr);
 
     // Set the active attributes to Red on Blue and Intense;
-    auto activeAttr = TextAttribute{ FOREGROUND_RED | BACKGROUND_BLUE };
+    auto activeAttr = TextAttribute{ RGB(255, 0, 0), RGB(0, 0, 255), RGB(255, 0, 0) };
     activeAttr.SetIntense(true);
     si.SetAttributes(activeAttr);
 
@@ -8117,9 +8117,11 @@ void ScreenBufferTests::RectangularAreaOperations()
         Log::Comment(L"DECCARA: update the attributes in a rectangle but leave the text unchanged");
         expectedAttr = bufferAttr;
         expectedAttr.SetReverseVideo(true);
+        expectedAttr.SetUnderlineStyle(UnderlineStyle::DottedUnderlined);
+        expectedAttr.SetUnderlineColor(RGB(55, 23, 28));
         expectedChar = bufferChar;
         // The final parameter specifies the reverse video attribute that will be set.
-        stateMachine.ProcessString(L"\033[3;27;6;54;7$r");
+        stateMachine.ProcessString(L"\033[3;27;6;54;7;4:4;58:2::55:23:28$r");
         break;
     case DECRARA:
         Log::Comment(L"DECRARA: reverse the attributes in a rectangle but leave the text unchanged");

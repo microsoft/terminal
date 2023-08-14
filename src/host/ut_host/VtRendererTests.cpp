@@ -68,6 +68,7 @@ class Microsoft::Console::Render::VtRendererTest
 
     TEST_METHOD(Xterm256TestInvalidate);
     TEST_METHOD(Xterm256TestColors);
+    TEST_METHOD(Xterm256TestITUColors);
     TEST_METHOD(Xterm256TestCursor);
     TEST_METHOD(Xterm256TestExtendedAttributes);
     TEST_METHOD(Xterm256TestAttributesAcrossReset);
@@ -417,7 +418,7 @@ void VtRendererTest::Xterm256TestColors()
         L"Test changing the text attributes"));
 
     Log::Comment(NoThrowString().Format(
-        L"Begin by setting some test values - FG,BG = (1,2,3), (4,5,6) to start"
+        L"Begin by setting some test values - FG,BG = (1,2,3), (4,5,6) to start. "
         L"These values were picked for ease of formatting raw COLORREF values."));
     qExpectedInput.push_back("\x1b[38;2;1;2;3m");
     qExpectedInput.push_back("\x1b[48;2;5;6;7m");
@@ -580,6 +581,115 @@ void VtRendererTest::Xterm256TestColors()
     });
 }
 
+void VtRendererTest::Xterm256TestITUColors()
+{
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+    RenderSettings renderSettings;
+    RenderData renderData;
+
+    VerifyFirstPaint(*engine);
+
+    auto view = SetUpViewport();
+
+    Log::Comment(NoThrowString().Format(
+        L"Test changing the text attributes"));
+
+    // Internally _lastTextAttributes starts with a fg and bg set to INVALID_COLOR(s),
+    // and initializing textAttributes with the default colors will output "\e[39m\e[49m"
+    // in the beginning.
+    auto textAttributes = TextAttribute{};
+    qExpectedInput.push_back("\x1b[39m");
+    qExpectedInput.push_back("\x1b[49m");
+
+    Log::Comment(NoThrowString().Format(
+        L"Begin by setting some test values - UL = (1,2,3) to start. "
+        L"This value is picked for ease of formatting raw COLORREF values."));
+    qExpectedInput.push_back("\x1b[58:2::1:2:3m");
+    textAttributes.SetUnderlineColor(RGB(1, 2, 3));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                  renderSettings,
+                                                  &renderData,
+                                                  false,
+                                                  false));
+
+    TestPaint(*engine, [&]() {
+        Log::Comment(NoThrowString().Format(
+            L"----Change the color----"));
+        qExpectedInput.push_back("\x1b[58:2::7:8:9m");
+        textAttributes.SetUnderlineColor(RGB(7, 8, 9));
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
+                                                      &renderData,
+                                                      false,
+                                                      false));
+    });
+
+    TestPaint(*engine, [&]() {
+        Log::Comment(NoThrowString().Format(
+            L"Make sure that color setting persists across EndPaint/StartPaint"));
+        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
+                                                      &renderData,
+                                                      false,
+                                                      false));
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
+    });
+
+    TestPaint(*engine, [&]() {
+        Log::Comment(NoThrowString().Format(
+            L"----Change the UL color to a 256-color index----"));
+        textAttributes.SetUnderlineColor(TextColor{ TextColor::DARK_RED, true });
+        qExpectedInput.push_back("\x1b[58:5:1m");
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
+                                                      &renderData,
+                                                      false,
+                                                      false));
+
+        // to test the sequence for the default underline color, temporarily modify fg and bg to be something else.
+        textAttributes.SetForeground(RGB(9, 10, 11));
+        qExpectedInput.push_back("\x1b[38;2;9;10;11m");
+        textAttributes.SetBackground(RGB(5, 6, 7));
+        qExpectedInput.push_back("\x1b[48;2;5;6;7m");
+
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the UL color to the 'Default'----"));
+        textAttributes.SetDefaultUnderlineColor();
+        qExpectedInput.push_back("\x1b[59m");
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
+                                                      &renderData,
+                                                      false,
+                                                      false));
+
+        Log::Comment(NoThrowString().Format(
+            L"----Back to defaults (all colors)----"));
+        textAttributes = {};
+        qExpectedInput.push_back("\x1b[m");
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
+                                                      renderSettings,
+                                                      &renderData,
+                                                      false,
+                                                      false));
+    });
+
+    TestPaint(*engine, [&]() {
+        Log::Comment(NoThrowString().Format(
+            L"Make sure that color setting persists across EndPaint/StartPaint"));
+        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+        VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({},
+                                                      renderSettings,
+                                                      &renderData,
+                                                      false,
+                                                      false));
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
+    });
+}
+
 void VtRendererTest::Xterm256TestCursor()
 {
     auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
@@ -720,8 +830,8 @@ void VtRendererTest::Xterm256TestExtendedAttributes()
     // underlined and doublyUnderlined are mutually exclusive
     if (underlined)
     {
-        desiredAttrs.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
-        onSequences.push_back("\x1b[4m");
+        desiredAttrs.SetUnderlineStyle(UnderlineStyle::DashedUnderlined);
+        onSequences.push_back("\x1b[4:5m");
         offSequences.push_back("\x1b[24m");
     }
     else if (doublyUnderlined)
@@ -803,7 +913,15 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"renditionAttribute", renditionAttribute));
 
     std::stringstream renditionSequence;
-    renditionSequence << "\x1b[" << renditionAttribute << "m";
+    // test underline with curly underlined
+    if (renditionAttribute == 4)
+    {
+        renditionSequence << "\x1b[4:3m";
+    }
+    else
+    {
+        renditionSequence << "\x1b[" << renditionAttribute << "m";
+    }
 
     auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
     auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
@@ -835,7 +953,7 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
         break;
     case GraphicsOptions::Underline:
         Log::Comment(L"----Set Underline Attribute----");
-        textAttributes.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+        textAttributes.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
         break;
     case GraphicsOptions::DoublyUnderlined:
         Log::Comment(L"----Set Doubly Underlined Attribute----");
