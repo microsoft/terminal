@@ -431,6 +431,14 @@ void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/) noexc
     // This is only needed in conhost. Terminal handles accessibility in another way.
 }
 
+void Terminal::InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength)
+{
+    if (_pfnCompletionsChanged)
+    {
+        _pfnCompletionsChanged(menuJson, replaceLength);
+    }
+}
+
 void Terminal::NotifyBufferRotation(const int delta)
 {
     // Update our selection, so it doesn't move as the buffer is cycled

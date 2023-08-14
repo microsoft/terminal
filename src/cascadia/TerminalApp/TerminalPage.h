@@ -117,6 +117,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ApplicationVersion();
 
         CommandPalette LoadCommandPalette();
+        SuggestionsControl LoadSuggestionsUI();
+
         winrt::fire_and_forget RequestQuit();
         winrt::fire_and_forget CloseWindow(bool bypassDialog);
 
@@ -280,6 +282,8 @@ namespace winrt::TerminalApp::implementation
 
         __declspec(noinline) CommandPalette _loadCommandPaletteSlowPath();
         bool _commandPaletteIs(winrt::Windows::UI::Xaml::Visibility visibility);
+        __declspec(noinline) SuggestionsControl _loadSuggestionsElementSlowPath();
+        bool _suggestionsControlIs(winrt::Windows::UI::Xaml::Visibility visibility);
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
@@ -481,6 +485,7 @@ namespace winrt::TerminalApp::implementation
         void _RunRestorePreviews();
         void _PreviewColorScheme(const Microsoft::Terminal::Settings::Model::SetColorSchemeArgs& args);
         void _PreviewAdjustOpacity(const Microsoft::Terminal::Settings::Model::AdjustOpacityArgs& args);
+
         winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs _lastPreviewedAction{ nullptr };
         std::vector<std::function<void()>> _restorePreviewFuncs{};
 
@@ -513,7 +518,11 @@ namespace winrt::TerminalApp::implementation
         void _updateAllTabCloseButtons(const winrt::TerminalApp::TabBase& focusedTab);
         void _updatePaneResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
 
-        void _ShowWindowChangedHandler(const IInspectable& sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
+        winrt::fire_and_forget _ControlCompletionsChangedHandler(const winrt::Windows::Foundation::IInspectable sender, const winrt::Microsoft::Terminal::Control::CompletionsChangedEventArgs args);
+        void _OpenSuggestions(const Microsoft::Terminal::Control::TermControl& sender, Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> commandsCollection, winrt::TerminalApp::SuggestionsMode mode);
+
+        void _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
+
         winrt::fire_and_forget _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
         void _onTabDragStarting(const winrt::Microsoft::UI::Xaml::Controls::TabView& sender, const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& e);
