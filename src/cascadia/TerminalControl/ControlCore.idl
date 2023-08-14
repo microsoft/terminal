@@ -175,5 +175,8 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> RestartTerminalRequested;
 
         event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
+
+        event Windows.Foundation.TypedEventHandler<Object, CompletionsChangedEventArgs> CompletionsChanged;
+
     };
 }

@@ -212,19 +212,7 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     }
     else
     {
-        try
-        {
-            for (size_t i = 0; i < cRecords; ++i)
-            {
-                if (outEvents.empty())
-                {
-                    break;
-                }
-                rgRecords[i] = outEvents.front()->ToInputRecord();
-                outEvents.pop_front();
-            }
-        }
-        CATCH_RETURN();
+        std::ranges::copy(outEvents, rgRecords);
     }
 
     if (SUCCEEDED(hr))

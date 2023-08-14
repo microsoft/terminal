@@ -94,5 +94,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, ShowMarks);
 
         INHERITABLE_PROFILE_SETTING(Boolean, RightClickContextMenu);
+        INHERITABLE_PROFILE_SETTING(Boolean, RepositionCursorWithMouse);
     }
 }
