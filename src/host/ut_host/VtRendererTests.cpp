@@ -6,6 +6,8 @@
 #include "../../inc/consoletaeftemplates.hpp"
 #include "../../types/inc/Viewport.hpp"
 
+#include "../../terminal/adapter/DispatchTypes.hpp"
+#include "../host/RenderData.hpp"
 #include "../../renderer/vt/Xterm256Engine.hpp"
 #include "../../renderer/vt/XtermEngine.hpp"
 #include "../Settings.hpp"
