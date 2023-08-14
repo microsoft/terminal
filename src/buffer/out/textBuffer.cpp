@@ -246,6 +246,27 @@ til::CoordType TextBuffer::TotalRowCount() const noexcept
     return _height;
 }
 
+// Method Description:
+// - Gets the number of glyphs in the buffer between two points.
+// - IMPORTANT: Make sure that start is before end, or this will never return!
+// Arguments:
+// - start - The starting point of the range to get the glyph count for.
+// - end - The ending point of the range to get the glyph count for.
+// Return Value:
+// - The number of glyphs in the buffer between the two points.
+size_t TextBuffer::GetCellDistance(const til::point from, const til::point to) const
+{
+    auto startCell = GetCellDataAt(from);
+    const auto endCell = GetCellDataAt(to);
+    auto delta = 0;
+    while (startCell != endCell)
+    {
+        ++startCell;
+        ++delta;
+    }
+    return delta;
+}
+
 // Routine Description:
 // - Retrieves read-only text iterator at the given buffer location
 // Arguments:

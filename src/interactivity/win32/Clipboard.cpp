@@ -134,17 +134,17 @@ void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
 // - deque of KeyEvents that represent the string passed in
 // Note:
 // - will throw exception on error
-std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
-                                                                    const size_t cchData,
-                                                                    const bool bracketedPaste)
+InputEventQueue Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
+                                           const size_t cchData,
+                                           const bool bracketedPaste)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, pData);
 
-    std::deque<std::unique_ptr<IInputEvent>> keyEvents;
+    InputEventQueue keyEvents;
     const auto pushControlSequence = [&](const std::wstring_view sequence) {
         std::for_each(sequence.begin(), sequence.end(), [&](const auto wch) {
-            keyEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, wch, 0));
-            keyEvents.push_back(std::make_unique<KeyEvent>(false, 1ui16, 0ui16, 0ui16, wch, 0));
+            keyEvents.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
+            keyEvents.push_back(SynthesizeKeyEvent(false, 1, 0, 0, wch, 0));
         });
     };
 
@@ -194,18 +194,14 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
         }
 
         const auto codepage = ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
-        auto convertedEvents = CharToKeyEvents(currentChar, codepage);
-        while (!convertedEvents.empty())
-        {
-            keyEvents.push_back(std::move(convertedEvents.front()));
-            convertedEvents.pop_front();
-        }
+        CharToKeyEvents(currentChar, codepage, keyEvents);
     }
 
     if (bracketedPaste)
     {
         pushControlSequence(L"\x1b[201~");
     }
+
     return keyEvents;
 }
 

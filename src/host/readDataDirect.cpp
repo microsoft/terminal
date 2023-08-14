@@ -47,7 +47,7 @@ DirectReadData::DirectReadData(_In_ InputBuffer* const pInputBuffer,
 // - pControlKeyState - For certain types of reads, this specifies
 // which modifier keys were held.
 // - pOutputData - a pointer to a
-// std::deque<std::unique_ptr<IInputEvent>> that is used to the read
+// InputEventQueue that is used to the read
 // input events back to the server
 // Return Value:
 // - true if the wait is done and result buffer/status code can be sent back to the client.
@@ -68,8 +68,6 @@ try
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;
     *pNumBytes = 0;
-
-    std::deque<std::unique_ptr<IInputEvent>> readEvents;
 
     // If ctrl-c or ctrl-break was seen, ignore it.
     if (WI_IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
@@ -119,7 +117,7 @@ try
     }
 
     // move events to pOutputData
-    const auto pOutputDeque = static_cast<std::deque<std::unique_ptr<IInputEvent>>* const>(pOutputData);
+    const auto pOutputDeque = static_cast<InputEventQueue* const>(pOutputData);
     *pNumBytes = _outEvents.size() * sizeof(INPUT_RECORD);
     *pOutputDeque = std::move(_outEvents);
 

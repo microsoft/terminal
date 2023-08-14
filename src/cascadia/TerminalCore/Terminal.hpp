@@ -60,6 +60,22 @@ class Microsoft::Terminal::Core::Terminal final :
     using RenderSettings = Microsoft::Console::Render::RenderSettings;
 
 public:
+    static constexpr bool IsInputKey(WORD vkey)
+    {
+        return vkey != VK_CONTROL &&
+               vkey != VK_LCONTROL &&
+               vkey != VK_RCONTROL &&
+               vkey != VK_MENU &&
+               vkey != VK_LMENU &&
+               vkey != VK_RMENU &&
+               vkey != VK_SHIFT &&
+               vkey != VK_LSHIFT &&
+               vkey != VK_RSHIFT &&
+               vkey != VK_LWIN &&
+               vkey != VK_RWIN &&
+               vkey != VK_SNAPSHOT;
+    }
+
     Terminal();
 
     void Create(til::size viewportSize,

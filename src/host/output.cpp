@@ -257,7 +257,7 @@ void ScreenBufferSizeChange(const til::size coordNewSize)
 
     try
     {
-        gci.pInputBuffer->Write(std::make_unique<WindowBufferSizeEvent>(coordNewSize));
+        gci.pInputBuffer->Write(SynthesizeWindowBufferSizeEvent(coordNewSize));
     }
     catch (...)
     {
