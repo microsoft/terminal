@@ -563,6 +563,23 @@ namespace HelixTestHelpers
                 }
 
                 
+                if (!result.Passed)
+                {
+                    if (result.Skipped)
+                    {
+                        var reason = new XElement("reason");
+                        reason.Add(new XCData("Test skipped"));
+                        test.Add(reason);
+                    }
+                    else {
+                        var failure = new XElement("failure");
+                        var message = new XElement("message");
+                        message.Add(new XCData("Test failed"));
+                        failure.Add(message);
+                        test.Add(failure);
+                    }
+                }
+
                 test.SetAttributeValue("result", resultString);
 
                 collection.Add(test);
