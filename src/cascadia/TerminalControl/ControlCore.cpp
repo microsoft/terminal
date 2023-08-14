@@ -1754,6 +1754,73 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
+        else if (_settings->RepositionCursorWithMouse()) // This is also mode==Char && !shiftEnabled
+        {
+            // If we're handling a single left click, without shift pressed, and
+            // outside mouse mode, AND the user has RepositionCursorWithMouse turned
+            // on, let's try to move the cursor.
+            //
+            // We'll only move the cursor if the user has clicked after the last
+            // mark, if there is one. That means the user also needs to set up
+            // shell integration to enable this feature.
+            //
+            // As noted in GH #8573, there's plenty of edge cases with this
+            // approach, but it's good enough to bring value to 90% of use cases.
+            const auto cursorPos{ _terminal->GetCursorPosition() };
+
+            // Does the current buffer line have a mark on it?
+            const auto& marks{ _terminal->GetScrollMarks() };
+            if (!marks.empty())
+            {
+                const auto& last{ marks.back() };
+                const auto [start, end] = last.GetExtent();
+                const auto lastNonSpace = _terminal->GetTextBuffer().GetLastNonSpaceCharacter();
+
+                // If the user clicked off to the right side of the prompt, we
+                // want to send keystrokes to the last character in the prompt +1.
+                //
+                // We don't want to send too many here. In CMD, if the user's
+                // last command is longer than what they've currently typed, and
+                // they press right arrow at the end of the prompt, COOKED_READ
+                // will fill in characters from the previous command.
+                //
+                // By only sending keypresses to the end of the command + 1, we
+                // should leave the cursor at the very end of the prompt,
+                // without adding any characters from a previous command.
+                auto clampedClick = terminalPosition;
+                if (terminalPosition > lastNonSpace)
+                {
+                    clampedClick = lastNonSpace + til::point{ 1, 0 };
+                    _terminal->GetTextBuffer().GetSize().Clamp(clampedClick);
+                }
+
+                if (clampedClick >= end)
+                {
+                    // Get the distance between the cursor and the click, in cells.
+                    const auto bufferSize = _terminal->GetTextBuffer().GetSize();
+
+                    // First, make sure to iterate from the first point to the
+                    // second. The user may have clicked _earlier_ in the
+                    // buffer!
+                    auto goRight = clampedClick > cursorPos;
+                    const auto startPoint = goRight ? cursorPos : clampedClick;
+                    const auto endPoint = goRight ? clampedClick : cursorPos;
+
+                    const auto delta = _terminal->GetTextBuffer().GetCellDistance(startPoint, endPoint);
+
+                    const WORD key = goRight ? VK_RIGHT : VK_LEFT;
+                    // Send an up and a down once per cell. This won't
+                    // accurately handle wide characters, or continuation
+                    // prompts, or cases where a single escape character in the
+                    // command (e.g. ^[) takes up two cells.
+                    for (size_t i = 0u; i < delta; i++)
+                    {
+                        _terminal->SendKeyEvent(key, 0, {}, true);
+                        _terminal->SendKeyEvent(key, 0, {}, false);
+                    }
+                }
+            }
+        }
         _updateSelectionUI();
     }
 
