@@ -1,0 +1,48 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "TabBase.idl";
+import "IDirectKeyListener.idl";
+import "HighlightedTextControl.idl";
+import "FilteredCommand.idl";
+
+namespace TerminalApp
+{
+
+    enum SuggestionsMode
+    {
+        Palette = 0,
+        Menu,
+        // Inline,
+    };
+
+    enum SuggestionsDirection {
+        TopDown,
+        BottomUp
+    };
+
+    [default_interface] runtimeclass SuggestionsControl : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener
+    {
+        SuggestionsControl();
+
+        String NoMatchesText { get; };
+        String SearchBoxPlaceholderText { get; };
+        String ControlName { get; };
+        String ParentCommandName { get; };
+
+        Windows.UI.Xaml.FrameworkElement SelectedItem { get; };
+
+        Windows.Foundation.Collections.IObservableVector<FilteredCommand> FilteredActions { get; };
+
+        SuggestionsMode Mode { get; set; };
+
+        void SetCommands(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> actions);
+        void SetActionMap(Microsoft.Terminal.Settings.Model.IActionMapView actionMap);
+        void SelectNextItem(Boolean moveDown);
+
+        void Open(SuggestionsMode mode, IVector<Microsoft.Terminal.Settings.Model.Command> commands, Windows.Foundation.Point anchor, Windows.Foundation.Size space, Single characterHeight);
+
+        event Windows.Foundation.TypedEventHandler<SuggestionsControl, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Command> PreviewAction;
+    }
+}

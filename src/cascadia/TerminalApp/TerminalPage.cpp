@@ -1466,6 +1466,11 @@ namespace winrt::TerminalApp::implementation
         {
             CommandPaletteElement().Visibility(Visibility::Collapsed);
         }
+        if (_suggestionsControlIs(Visibility::Visible) &&
+            cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+        {
+            SuggestionsElement().Visibility(Visibility::Collapsed);
+        }
 
         // Let's assume the user has bound the dead key "^" to a sendInput command that sends "b".
         // If the user presses the two keys "^a" it'll produce "bâ", despite us marking the key event as handled.
@@ -1654,6 +1659,12 @@ namespace winrt::TerminalApp::implementation
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
 
+        // Don't even register for the event if the feature is compiled off.
+        if constexpr (Feature_ShellCompletions::IsEnabled())
+        {
+            term.CompletionsChanged({ get_weak(), &TerminalPage::_ControlCompletionsChangedHandler });
+        }
+
         term.ContextMenu().Opening({ this, &TerminalPage::_ContextMenuOpened });
         term.SelectionContextMenu().Opening({ this, &TerminalPage::_SelectionMenuOpened });
     }
@@ -1820,6 +1831,37 @@ namespace winrt::TerminalApp::implementation
         p.DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
         p.CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
         p.SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
+        p.PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
+
+        return p;
+    }
+
+    SuggestionsControl TerminalPage::LoadSuggestionsUI()
+    {
+        if (const auto p = SuggestionsElement())
+        {
+            return p;
+        }
+
+        return _loadSuggestionsElementSlowPath();
+    }
+    bool TerminalPage::_suggestionsControlIs(WUX::Visibility visibility)
+    {
+        const auto p = SuggestionsElement();
+        return p && p.Visibility() == visibility;
+    }
+
+    SuggestionsControl TerminalPage::_loadSuggestionsElementSlowPath()
+    {
+        const auto p = FindName(L"SuggestionsElement").as<SuggestionsControl>();
+
+        p.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            if (SuggestionsElement().Visibility() == Visibility::Collapsed)
+            {
+                _FocusActiveControl(nullptr, nullptr);
+            }
+        });
+        p.DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
         p.PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
 
         return p;
@@ -2787,7 +2829,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender (not used)
     // - args: the arguments specifying how to set the display status to ShowWindow for our window handle
-    void TerminalPage::_ShowWindowChangedHandler(const IInspectable& /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
+    void TerminalPage::_ShowWindowChangedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
     {
         _ShowWindowChangedHandlers(*this, args);
     }
@@ -4647,6 +4689,79 @@ namespace winrt::TerminalApp::implementation
         // the settings, change active panes, etc.
         _activated = activated;
         _updateThemeColors();
+    }
+
+    winrt::fire_and_forget TerminalPage::_ControlCompletionsChangedHandler(const IInspectable sender,
+                                                                           const CompletionsChangedEventArgs args)
+    {
+        // This will come in on a background (not-UI, not output) thread.
+
+        // This won't even get hit if the velocity flag is disabled - we gate
+        // registering for the event based off of
+        // Feature_ShellCompletions::IsEnabled back in _RegisterTerminalEvents
+
+        // User must explicitly opt-in on Preview builds
+        if (!_settings.GlobalSettings().EnableShellCompletionMenu())
+        {
+            co_return;
+        }
+
+        // Parse the json string into a collection of actions
+        try
+        {
+            auto commandsCollection = Command::ParsePowerShellMenuComplete(args.MenuJson(),
+                                                                           args.ReplacementLength());
+
+            auto weakThis{ get_weak() };
+            Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis, commandsCollection, sender]() {
+                // On the UI thread...
+                if (const auto& page{ weakThis.get() })
+                {
+                    // Open the Suggestions UI with the commands from the control
+                    page->_OpenSuggestions(sender.try_as<TermControl>(), commandsCollection, SuggestionsMode::Menu);
+                }
+            });
+        }
+        CATCH_LOG();
+    }
+
+    void TerminalPage::_OpenSuggestions(
+        const TermControl& sender,
+        IVector<Command> commandsCollection,
+        winrt::TerminalApp::SuggestionsMode mode)
+    {
+        // ON THE UI THREAD
+        assert(Dispatcher().HasThreadAccess());
+
+        if (commandsCollection == nullptr)
+        {
+            return;
+        }
+        if (commandsCollection.Size() == 0)
+        {
+            if (const auto p = SuggestionsElement())
+            {
+                p.Visibility(Visibility::Collapsed);
+            }
+            return;
+        }
+
+        const auto& control{ sender ? sender : _GetActiveControl() };
+        if (!control)
+        {
+            return;
+        }
+
+        const auto& sxnUi{ LoadSuggestionsUI() };
+
+        const auto characterSize{ control.CharacterDimensions() };
+        // This is in control-relative space. We'll need to convert it to page-relative space.
+        const auto cursorPos{ control.CursorPositionInDips() };
+        const auto controlTransform = control.TransformToVisual(this->Root());
+        const auto realCursorPos{ controlTransform.TransformPoint({ cursorPos.X, cursorPos.Y }) }; // == controlTransform + cursorPos
+        const Windows::Foundation::Size windowDimensions{ gsl::narrow_cast<float>(ActualWidth()), gsl::narrow_cast<float>(ActualHeight()) };
+
+        sxnUi.Open(mode, commandsCollection, realCursorPos, windowDimensions, characterSize.Height);
     }
 
     void TerminalPage::_ContextMenuOpened(const IInspectable& sender,
