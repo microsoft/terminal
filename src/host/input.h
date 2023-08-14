@@ -78,7 +78,7 @@ bool ShouldTakeOverKeyboardShortcuts();
 void HandleMenuEvent(const DWORD wParam);
 void HandleFocusEvent(const BOOL fSetFocus);
 void HandleCtrlEvent(const DWORD EventType);
-void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak);
+void HandleGenericKeyEvent(INPUT_RECORD event, const bool generateBreak);
 
 void ProcessCtrlEvents();
 

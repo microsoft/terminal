@@ -69,6 +69,12 @@ Author(s):
     X(bool, IsolatedMode, "compatibility.isolatedMode", false)                                                                                                                                        \
     X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")
 
+// Also add these settings to:
+// * Profile.idl
+// * TerminalSettings.h
+// * TerminalSettings.cpp: TerminalSettings::_ApplyProfileSettings
+// * IControlSettings.idl or ICoreSettings.idl
+// * ControlProperties.h
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
     X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \
     X(bool, SnapOnInput, "snapOnInput", true)                                                                                                                  \
@@ -91,7 +97,8 @@ Author(s):
     X(bool, Elevate, "elevate", false)                                                                                                                         \
     X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
     X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)                                                                                            \
-    X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)
+    X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)                                                                                             \
+    X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)
 
 // Intentionally omitted Profile settings:
 // * Name
