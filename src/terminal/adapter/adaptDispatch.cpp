@@ -1125,7 +1125,7 @@ bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt
     // provides us with an OR mask and an AND mask which can then be applied to
     // each cell to set and reset the appropriate attribute bits.
     auto allAttrsOff = TextAttribute{};
-    auto allAttrsOn = TextAttribute{ 0, 0 };
+    auto allAttrsOn = TextAttribute{ 0, 0, 0 };
     allAttrsOn.SetCharacterAttributes(CharacterAttributes::All);
     _ApplyGraphicsOptions(attrs, allAttrsOff);
     _ApplyGraphicsOptions(attrs, allAttrsOn);

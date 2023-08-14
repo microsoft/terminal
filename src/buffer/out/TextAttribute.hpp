@@ -60,12 +60,13 @@ public:
     }
 
     constexpr TextAttribute(const COLORREF rgbForeground,
-                            const COLORREF rgbBackground) noexcept :
+                            const COLORREF rgbBackground,
+                            const COLORREF rgbUnderline = INVALID_COLOR) noexcept :
         _attrs{ CharacterAttributes::Normal },
         _foreground{ rgbForeground },
         _background{ rgbBackground },
         _hyperlinkId{ 0 },
-        _underlineColor{}
+        _underlineColor{ rgbUnderline }
     {
     }
 
