@@ -1473,10 +1473,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                             viewHeight,
                                                             bufferSize) };
 
-        if (_inUnitTests) [[unlikely]]
-        {
-            _ScrollPositionChangedHandlers(*this, update);
-        }
+        if (_inUnitTests)
+            [[unlikely]]
+            {
+                _ScrollPositionChangedHandlers(*this, update);
+            }
         else
         {
             const auto shared = _shared.lock_shared();
@@ -1618,6 +1619,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // Collect up all the matches on a BG thread.
                 co_await winrt::resume_background();
 
+                auto core = weakThis.get();
+                if (!core)
+                {
+                    // We've been destroyed since we started this coroutine.
+                    // Just bail
+                    co_return;
+                }
+                // here, `this` is safe to use for the rest of the method. `core` will keep us alive.
+
                 // We perform explicit search forward, so the first result will also be the earliest buffer location
                 // We will use goForward later to decide if we need to select 1 of n or n of n.
                 ::Search search(*GetRenderData(),
@@ -1644,6 +1654,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     co_return;
                 }
             }
+
             _searchState->matches.emplace(std::move(matches));
             _bufferChangedSinceSearch = false;
         }
@@ -1657,9 +1668,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                     const bool goForward,
                                     const bool caseSensitive)
     {
-        // Clear the selection reset the anchor
-        _terminal->ClearSelection();
-        _renderer->TriggerSelection();
+        {
+            auto lock = _terminal->LockForWriting();
+            // Clear the selection reset the anchor
+            _terminal->ClearSelection();
+            _renderer->TriggerSelection();
+        }
 
         const auto sensitivity = caseSensitive ? Search::Sensitivity::CaseSensitive : Search::Sensitivity::CaseInsensitive;
 
@@ -1779,20 +1793,30 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
     {
-        auto results = winrt::single_threaded_vector<int32_t>();
+        auto results = std::vector<int32_t>();
         if (_bufferChangedSinceSearch)
         {
-            return results;
+            return winrt::single_threaded_vector<int32_t>();
         }
+
+        // use a map to remove duplicates
+        std::map<int32_t, bool> rows;
 
         if (_searchState.has_value() && _searchState->matches.has_value())
         {
             for (auto&& [start, end] : *(_searchState->matches))
             {
-                results.Append(start.y);
+                const auto row = start.y;
+
+                // First check if it's in the map
+                if (rows.find(row) == rows.end())
+                {
+                    rows[row] = true;
+                    results.push_back(row);
+                }
             }
         }
-        return results;
+        return winrt::single_threaded_vector<int32_t>(std::move(results));
     }
 
     void ControlCore::Close()

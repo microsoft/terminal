@@ -67,6 +67,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
         }
 
+        // Why is this an optional vector, instead of just checking if it's empty?
+        // * No _searchState? Then we have no search started.
+        // * _searchState, no _matches? We haven't run the search yet.
+        // * _searchState, _matches has 0 results? We didn't find anything
         std::optional<std::vector<std::pair<til::point, til::point>>> matches;
 
         void UpdateIndex(bool goForward);

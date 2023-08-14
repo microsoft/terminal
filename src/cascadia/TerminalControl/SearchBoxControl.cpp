@@ -77,6 +77,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
         {
+            // If the buttons are disabled, then don't allow enter to search either.
+            if (!GoForwardButton().IsEnabled() || !GoBackwardButton().IsEnabled())
+            {
+                return;
+            }
+
             const auto state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
@@ -343,12 +349,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void SearchBoxControl::SetStatus(int32_t totalMatches, int32_t currentMatch)
     {
         const auto status = _FormatStatus(totalMatches, currentMatch);
-        const auto requiredWidth = _TextWidth(status, StatusBox().FontSize());
-        if (requiredWidth > StatusBox().Width())
-        {
-            StatusBox().Width(requiredWidth);
-        }
-
         StatusBox().Text(status);
     }
 

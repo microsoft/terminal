@@ -412,9 +412,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   search button or press enter.
     // In the live search mode it will be also triggered once every time search criteria changes
     // Arguments:
-    // - text: not used
+    // - text: the text to search
     // - goForward: boolean that represents if the current search direction is forward
-    // - caseSensitive: not used
+    // - caseSensitive: boolean that represents if the current search is case sensitive
     // Return Value:
     // - <none>
     void TermControl::_Search(const winrt::hstring& text,
