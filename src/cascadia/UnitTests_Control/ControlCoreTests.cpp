@@ -500,8 +500,6 @@ namespace ControlUnitTests
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }
-
-        VERIFY_IS_TRUE(false, L"for the sake of testing");
     }
 
     void ControlCoreTests::TestSimpleClickSelection()
