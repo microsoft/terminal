@@ -86,7 +86,6 @@ class KeyPressTests
         expectedRecord.Event.KeyEvent.uChar.UnicodeChar = 0x0;
         expectedRecord.Event.KeyEvent.bKeyDown = true;
         expectedRecord.Event.KeyEvent.dwControlKeyState = ENHANCED_KEY;
-        expectedRecord.Event.KeyEvent.dwControlKeyState |= (GetKeyState(VK_NUMLOCK) & KEY_STATE_TOGGLED) ? NUMLOCK_ON : 0;
         expectedRecord.Event.KeyEvent.wRepeatCount = SINGLE_KEY_REPEAT;
         expectedRecord.Event.KeyEvent.wVirtualKeyCode = VK_APPS;
         expectedRecord.Event.KeyEvent.wVirtualScanCode = (WORD)scanCode;

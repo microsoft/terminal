@@ -1,9 +1,8 @@
 parameters:
   configuration: 'Release'
   platform: ''
-  additionalBuildArguments: ''
-  artifactName: 'drop'
   testLogPath: '$(Build.BinariesDirectory)\$(BuildPlatform)\$(BuildConfiguration)\testsOnBuildMachine.wtl'
+  artifactStem: ''
 
 jobs:
 - job: Test${{ parameters.platform }}${{ parameters.configuration }}
@@ -11,6 +10,11 @@ jobs:
   variables:
     BuildConfiguration: ${{ parameters.configuration }}
     BuildPlatform: ${{ parameters.platform }}
+    ${{ if eq(parameters.platform, 'x86') }}:
+      OutputBuildPlatform: Win32
+    ${{ else }}:
+      OutputBuildPlatform: ${{ parameters.platform }}
+    Terminal.BinDir: $(Build.SourcesDirectory)/bin/$(OutputBuildPlatform)/$(BuildConfiguration)
   pool:
     ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
       ${{ if ne(parameters.platform, 'ARM64') }}:
@@ -28,26 +32,20 @@ jobs:
     submodules: false
     clean: true
     fetchDepth: 1
+    fetchTags: false # Tags still result in depth > 1 fetch; we don't need them here
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@2
+    displayName: Download artifacts
     inputs:
-      artifactName: ${{ parameters.artifactName }}
-
-  - task: PowerShell@2
-    displayName: 'Rationalize build platform'
-    inputs:
-      targetType: inline
-      script: |
-        $Arch = "$(BuildPlatform)"
-        If ($Arch -Eq "x86") { $Arch = "Win32" }
-        Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
+      artifactName: build-${{ parameters.platform }}-$(BuildConfiguration)${{ parameters.artifactStem }}
+      downloadPath: $(Terminal.BinDir)
 
   - task: PowerShell@2
     displayName: 'Run Unit Tests'
     inputs:
       targetType: filePath
       filePath: build\scripts\Run-Tests.ps1
-      arguments: -MatchPattern '*unit.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(System.ArtifactsDirectory)\\${{ parameters.artifactName }}\\$(BuildConfiguration)\\$(BuildPlatform)\\test"
+      arguments: -MatchPattern '*unit.test*.dll' -Platform '$(OutputBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(Terminal.BinDir)"
     condition: and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument'))
 
   - ${{ if or(eq(parameters.platform, 'x64'), eq(parameters.platform, 'arm64')) }}:
@@ -56,7 +54,7 @@ jobs:
       inputs:
         targetType: filePath
         filePath: build\scripts\Run-Tests.ps1
-        arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(System.ArtifactsDirectory)\\${{ parameters.artifactName }}\\$(BuildConfiguration)\\$(BuildPlatform)\\test"
+        arguments: -MatchPattern '*feature.test*.dll' -Platform '$(OutputBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(Terminal.BinDir)"
       condition: and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument'))
 
   - task: PowerShell@2
@@ -89,4 +87,4 @@ jobs:
       flattenFolders: true
 
   - publish: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test-logs'
-    artifact: TestLogs$(BuildPlatform)$(BuildConfiguration)
+    artifact: test-logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
