@@ -1473,11 +1473,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                             viewHeight,
                                                             bufferSize) };
 
-        if (_inUnitTests)
-            [[unlikely]]
-            {
-                _ScrollPositionChangedHandlers(*this, update);
-            }
+        if (_inUnitTests) [[unlikely]]
+        {
+            _ScrollPositionChangedHandlers(*this, update);
+        }
         else
         {
             const auto shared = _shared.lock_shared();
