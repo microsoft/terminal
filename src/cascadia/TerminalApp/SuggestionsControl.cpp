@@ -852,17 +852,12 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // TODO (for discussion):
+        // No sorting in palette mode, so results are still filtered, but in the
+        // original order. This feels more right for something like
+        // recentCommands.
         //
-        // Do we want sorting in the palette? I have it disabled, so results are
-        // filtered, but still in the original order. This seems more correct,
-        // but I could be convinced otherwise. It could maybe be a setting.
-
-        // if (_mode == SuggestionsMode::Palette)
-        // {
-        //     // We want to present the commands sorted
-        //     std::sort(actions.begin(), actions.end(), FilteredCommand::Compare);
-        // }
+        // This is in contrast to the Command Palette, which always sorts its
+        // actions.
 
         // Adjust the order of the results depending on if we're top-down or
         // bottom up. This way, the "first" / "best" match is always closest to
