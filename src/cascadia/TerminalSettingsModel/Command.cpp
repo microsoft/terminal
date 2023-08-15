@@ -64,6 +64,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _subcommands ? _subcommands.GetView() : nullptr;
     }
 
+    void Command::NestedCommands(const Windows::Foundation::Collections::IVectorView<Model::Command>& nested)
+    {
+        _subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+
+        for (const auto& n : nested)
+        {
+            _subcommands.Insert(n.Name(), n);
+        }
+    }
+
     // Function Description:
     // - reports if the current command has nested commands
     // - This CANNOT detect { "name": "foo", "commands": null }
@@ -752,7 +762,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Iterate in reverse over the history, so that most recent commands are first
         for (auto i = history.Size(); i > 0; i--)
         {
-            std::wstring_view line{ history.GetAt(i - 1) };
+            const auto& element{ history.GetAt(i - 1) };
+            std::wstring_view line{ element };
 
             if (line.empty())
             {

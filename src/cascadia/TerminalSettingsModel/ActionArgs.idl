@@ -112,11 +112,14 @@ namespace Microsoft.Terminal.Settings.Model
         ToCurrent,
         ToMouse,
     };
+
+    [flags]
     enum SuggestionsSource
     {
-        Tasks,
-        CommandHistory,
-        DirectoryHistory,
+        Tasks = 0x1,
+        CommandHistory = 0x2,
+        DirectoryHistory = 0x4,
+        All = 0xffffffff,
     };
 
     [default_interface] runtimeclass NewTerminalArgs {

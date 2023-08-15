@@ -499,12 +499,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FindMatchDirecti
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SuggestionsSource)
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SuggestionsSource)
 {
-    JSON_MAPPINGS(3) = {
+    static constexpr std::array<pair_type, 5> mappings = {
+        pair_type{ "none", AllClear },
         pair_type{ "tasks", ValueType::Tasks },
         pair_type{ "commandHistory", ValueType::CommandHistory },
-        pair_type{ "directoryHistory", ValueType::DirectoryHistory }
+        pair_type{ "directoryHistory", ValueType::DirectoryHistory },
+        pair_type{ "all", AllSet },
     };
 };
 
