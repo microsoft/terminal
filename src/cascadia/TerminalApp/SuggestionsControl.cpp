@@ -1051,6 +1051,7 @@ namespace winrt::TerminalApp::implementation
 
     void SuggestionsControl::Open(TerminalApp::SuggestionsMode mode,
                                   const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command>& commands,
+                                  winrt::hstring filter,
                                   Windows::Foundation::Point anchor,
                                   Windows::Foundation::Size space,
                                   float characterHeight)
@@ -1101,5 +1102,8 @@ namespace winrt::TerminalApp::implementation
             newMargin.Top = (_anchor.Y - actualSize.height);
         }
         Margin(newMargin);
+
+        _searchBox().Text(filter);
     }
+
 }

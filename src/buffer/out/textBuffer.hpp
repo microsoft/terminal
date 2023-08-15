@@ -276,6 +276,7 @@ public:
     void SetCurrentPromptEnd(const til::point pos) noexcept;
     void SetCurrentCommandEnd(const til::point pos) noexcept;
     void SetCurrentOutputEnd(const til::point pos, ::MarkCategory category) noexcept;
+    std::wstring_view CurrentCommand() const;
 
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);

@@ -709,12 +709,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring SuggestionsArgs::GenerateName() const
     {
+        auto base{ RS_(L"SuggestionsCommandKey") };
         switch (Source())
         {
         case SuggestionsSource::CommandHistory:
-            return RS_(L"SuggestionsCommandHistoryCommandKey");
+            base = RS_(L"SuggestionsCommandHistoryCommandKey");
         }
-        return RS_(L"SuggestionsCommandKey");
+
+        if (UseCommandline())
+        {
+            return winrt::hstring{
+                fmt::format(L"{}, useCommandline:true", std::wstring_view(base))
+            };
+        }
+        else
+        {
+            return base;
+        }
     }
 
     winrt::hstring FindMatchArgs::GenerateName() const

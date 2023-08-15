@@ -2985,6 +2985,22 @@ void TextBuffer::_trimMarksOutsideBuffer()
                  _marks.end());
 }
 
+std::wstring_view TextBuffer::CurrentCommand() const
+{
+    if (_marks.size() == 0)
+    {
+        return L"";
+    }
+
+    const auto& curr{ _marks.back() };
+    const auto& start{ curr.end };
+    const auto& end{ GetCursor().GetPosition() };
+
+    const auto line = start.y;
+    const auto& row = GetRowByOffset(line);
+    return row.GetText(start.x, end.x);
+}
+
 void TextBuffer::SetCurrentPromptEnd(const til::point pos) noexcept
 {
     if (_marks.empty())
