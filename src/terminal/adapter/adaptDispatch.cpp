@@ -1000,6 +1000,25 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
             for (auto col = changeRect.left; col < changeRect.right; col++)
             {
                 auto attr = rowBuffer.GetAttrByColumn(col);
+
+                // handle reverseUnderline first as we don't want to override
+                // the calculated characterAttributes. Note that changing the original
+                // attributes does not affect the calculated characterAttributes.
+                // This way we ensure DECCARA works as expected. Also, In DECRARA
+                // changeOps.xorAttrMask doesn't set any UnderlineStyle bits, so we
+                // don't need to worry about them being reversed later on.
+                if (changeOps.reverseUnderline)
+                {
+                    if (attr.IsUnderlined())
+                    {
+                        attr.SetUnderlineStyle(UnderlineStyle::NoUnderline);
+                    }
+                    else
+                    {
+                        attr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+                    }
+                }
+
                 auto characterAttributes = attr.GetCharacterAttributes();
                 characterAttributes &= changeOps.andAttrMask;
                 characterAttributes ^= changeOps.xorAttrMask;
@@ -1176,6 +1195,12 @@ bool AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTIn
     // then combine them with XOR, because if we're reversing the same attribute
     // twice, we'd expect the two instances to cancel each other out.
     auto reverseMask = CharacterAttributes::Normal;
+
+    // track underline reversal separately from reverseMask. Simply alternating
+    // the bits would lead to incorrect results, since each underline style is
+    // made up of 3 bits, and might be flipped in random order.
+    auto reverseUnderline = false;
+
     if (!attrs.empty())
     {
         for (size_t i = 0; i < attrs.size();)
@@ -1184,9 +1209,19 @@ bool AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTIn
             // rendition bits. But note that this shouldn't be triggered by an
             // empty attribute list, so we explicitly exclude that case in
             // the empty check above.
-            if (attrs.at(i).value_or(0) == 0)
+            const auto param = attrs.at(i).value_or(0);
+            if (param == 0)
             {
-                reverseMask ^= CharacterAttributes::Rendition;
+                reverseMask ^= CharacterAttributes::Rendition & ~CharacterAttributes::UnderlineStyle; // underline bits do not take part in reverseMask
+                reverseUnderline = !reverseUnderline;
+                i++;
+            }
+            else if (param == 4 || param == 21)
+            {
+                if (!attrs.hasSubParamsFor(i)) // ignore the 4:x format
+                {
+                    reverseUnderline = !reverseUnderline;
+                }
                 i++;
             }
             else
@@ -1198,10 +1233,10 @@ bool AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTIn
         }
     }
 
-    // If the accumulated mask ends up blank, there's nothing for us to do.
-    if (reverseMask != CharacterAttributes::Normal)
+    // If the accumulated mask ends up blank and reversing the underline is not required, there's nothing for us to do.
+    if (reverseMask != CharacterAttributes::Normal || reverseUnderline)
     {
-        _ChangeRectOrStreamAttributes({ left, top, right, bottom }, { .xorAttrMask = reverseMask });
+        _ChangeRectOrStreamAttributes({ left, top, right, bottom }, { .xorAttrMask = reverseMask, .reverseUnderline = reverseUnderline });
     }
 
     return true;
