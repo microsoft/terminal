@@ -95,6 +95,7 @@ slnt
 Sos
 ssh
 stakeholders
+sxn
 timeline
 timelines
 timestamped
@@ -111,6 +112,8 @@ und
 unregister
 versioned
 vsdevcmd
+walkthrough
+walkthroughs
 We'd
 wildcards
 XBox

@@ -63,9 +63,6 @@
     <ClCompile Include="VtRendererTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <Clcompile Include="..\..\types\IInputEventStreams.cpp">
-      <Filter>Source Files</Filter>
-    </Clcompile>
     <ClCompile Include="AliasTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

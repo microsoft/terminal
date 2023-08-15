@@ -3738,6 +3738,86 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     // modify the state of that mark as we go.
     return false;
 }
+// Method Description:
+// - Performs a VsCode action
+// - Currently, the actions we support are:
+//   * Completions: An experimental protocol for passing shell completion
+//     information from the shell to the terminal. This sequence is still under
+//     active development, and subject to change.
+// - Not actually used in conhost
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - false in conhost, true for the SetMark action, otherwise false.
+bool AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually to make sure this action happens at the right time.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    if constexpr (!Feature_ShellCompletions::IsEnabled())
+    {
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"Completions")
+    {
+        // The structure of the message is as follows:
+        // `e]633;
+        // 0:     Completions;
+        // 1:     $($completions.ReplacementIndex);
+        // 2:     $($completions.ReplacementLength);
+        // 3:     $($cursorIndex);
+        // 4:     $completions.CompletionMatches | ConvertTo-Json
+        unsigned int replacementIndex = 0;
+        unsigned int replacementLength = 0;
+        unsigned int cursorIndex = 0;
+
+        bool succeeded = (parts.size() >= 2) &&
+                         (Utils::StringToUint(til::at(parts, 1), replacementIndex));
+        succeeded &= (parts.size() >= 3) &&
+                     (Utils::StringToUint(til::at(parts, 2), replacementLength));
+        succeeded &= (parts.size() >= 4) &&
+                     (Utils::StringToUint(til::at(parts, 3), cursorIndex));
+
+        // VsCode is using cursorIndex and replacementIndex, but we aren't currently.
+        if (succeeded)
+        {
+            // Get the combined lengths of parts 0-3, plus the semicolons. We
+            // need this so that we can just pass the remainder of the string.
+            const auto prefixLength = til::at(parts, 0).size() + 1 +
+                                      til::at(parts, 1).size() + 1 +
+                                      til::at(parts, 2).size() + 1 +
+                                      til::at(parts, 3).size() + 1;
+            if (prefixLength > string.size())
+            {
+                return true;
+            }
+            // Get the remainder of the string
+            const auto remainder = string.substr(prefixLength);
+
+            _api.InvokeCompletions(parts.size() < 5 ? L"" : remainder,
+                                   replacementLength);
+        }
+
+        // If it's poorly formatted, just eat it
+        return true;
+    }
+    return false;
+}
 
 // Method Description:
 // - DECDLD - Downloads one or more characters of a dynamically redefinable

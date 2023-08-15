@@ -313,6 +313,7 @@ CPLINFO
 cplusplus
 CPPCORECHECK
 cppcorecheckrules
+cpprest
 cpprestsdk
 cppwinrt
 CProc
@@ -1440,6 +1441,7 @@ PPEB
 ppf
 ppguid
 ppidl
+pplx
 PPROC
 ppropvar
 ppsi
