@@ -1459,7 +1459,6 @@ std::wstring_view Terminal::CurrentCommand() const
     }
 
     return _activeBuffer().CurrentCommand();
-
 }
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)

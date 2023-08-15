@@ -56,8 +56,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     };
     struct CommandHistoryContext : CommandHistoryContextT<CommandHistoryContext>
     {
-        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<winrt::hstring>, History, winrt::single_threaded_vector<winrt::hstring>());
-        WINRT_PROPERTY(winrt::hstring, CurrentCommandline);
+        til::property<Windows::Foundation::Collections::IVector<winrt::hstring>> History;
+        til::property<winrt::hstring> CurrentCommandline;
+
+        CommandHistoryContext(std::vector<winrt::hstring>&& history)
+        {
+            History(winrt::single_threaded_vector<winrt::hstring>(std::move(history)));
+        }
     };
 
     struct ControlCore : ControlCoreT<ControlCore>
