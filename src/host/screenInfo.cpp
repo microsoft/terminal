@@ -1418,6 +1418,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
 [[nodiscard]] NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(const til::size coordNewScreenSize)
+try
 {
     if ((USHORT)coordNewScreenSize.width >= SHORT_MAX || (USHORT)coordNewScreenSize.height >= SHORT_MAX)
     {
@@ -1425,26 +1426,15 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         return STATUS_INVALID_PARAMETER;
     }
 
-    // First allocate a new text buffer to take the place of the current one.
-    std::unique_ptr<TextBuffer> newTextBuffer;
-
     // GH#3848 - Stash away the current attributes the old text buffer is using.
     // We'll initialize the new buffer with the default attributes, but after
     // the resize, we'll want to make sure that the new buffer's current
     // attributes (the ones used for printing new text) match the old buffer's.
-    const auto oldPrimaryAttributes = _textBuffer->GetCurrentAttributes();
-    try
-    {
-        newTextBuffer = std::make_unique<TextBuffer>(coordNewScreenSize,
-                                                     TextAttribute{},
-                                                     0, // temporarily set size to 0 so it won't render.
-                                                     _textBuffer->IsActiveBuffer(),
-                                                     _textBuffer->GetRenderer());
-    }
-    catch (...)
-    {
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-    }
+    auto newTextBuffer = std::make_unique<TextBuffer>(coordNewScreenSize,
+                                                      TextAttribute{},
+                                                      0, // temporarily set size to 0 so it won't render.
+                                                      _textBuffer->IsActiveBuffer(),
+                                                      _textBuffer->GetRenderer());
 
     // Save cursor's relative height versus the viewport
     const auto sCursorHeightInViewportBefore = _textBuffer->GetCursor().GetPosition().y - _viewport.Top();
@@ -1457,38 +1447,35 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     // we're capturing _textBuffer by reference here because when we exit, we want to EndDefer on the current active buffer.
     auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
 
-    auto hr = TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get(), std::nullopt, std::nullopt);
+    TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get());
 
-    if (SUCCEEDED(hr))
-    {
-        // Since the reflow doesn't preserve the virtual bottom, we try and
-        // estimate where it ought to be by making it the same distance from
-        // the cursor row as it was before the resize. However, we also need
-        // to make sure it is far enough down to include the last non-space
-        // row, and it shouldn't be less than the height of the viewport,
-        // otherwise the top of the virtual viewport would end up negative.
-        const auto cursorRow = newTextBuffer->GetCursor().GetPosition().y;
-        const auto lastNonSpaceRow = newTextBuffer->GetLastNonSpaceCharacter().y;
-        const auto estimatedBottom = cursorRow + cursorDistanceFromBottom;
-        const auto viewportBottom = _viewport.Height() - 1;
-        _virtualBottom = std::max({ lastNonSpaceRow, estimatedBottom, viewportBottom });
+    // Since the reflow doesn't preserve the virtual bottom, we try and
+    // estimate where it ought to be by making it the same distance from
+    // the cursor row as it was before the resize. However, we also need
+    // to make sure it is far enough down to include the last non-space
+    // row, and it shouldn't be less than the height of the viewport,
+    // otherwise the top of the virtual viewport would end up negative.
+    const auto cursorRow = newTextBuffer->GetCursor().GetPosition().y;
+    const auto lastNonSpaceRow = newTextBuffer->GetLastNonSpaceCharacter().y;
+    const auto estimatedBottom = cursorRow + cursorDistanceFromBottom;
+    const auto viewportBottom = _viewport.Height() - 1;
+    _virtualBottom = std::max({ lastNonSpaceRow, estimatedBottom, viewportBottom });
 
-        // We can't let it extend past the bottom of the buffer either.
-        _virtualBottom = std::min(_virtualBottom, newTextBuffer->GetSize().BottomInclusive());
+    // We can't let it extend past the bottom of the buffer either.
+    _virtualBottom = std::min(_virtualBottom, newTextBuffer->GetSize().BottomInclusive());
 
-        // Adjust the viewport so the cursor doesn't wildly fly off up or down.
-        const auto sCursorHeightInViewportAfter = cursorRow - _viewport.Top();
-        til::point coordCursorHeightDiff;
-        coordCursorHeightDiff.y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
-        LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, false));
+    // Adjust the viewport so the cursor doesn't wildly fly off up or down.
+    const auto sCursorHeightInViewportAfter = cursorRow - _viewport.Top();
+    til::point coordCursorHeightDiff;
+    coordCursorHeightDiff.y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
+    LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, false));
 
-        newTextBuffer->SetCurrentAttributes(oldPrimaryAttributes);
+    newTextBuffer->SetCurrentAttributes(_textBuffer->GetCurrentAttributes());
 
-        _textBuffer.swap(newTextBuffer);
-    }
-
-    return NTSTATUS_FROM_HRESULT(hr);
+    _textBuffer = std::move(newTextBuffer);
+    return STATUS_SUCCESS;
 }
+NT_CATCH_RETURN()
 
 //
 // Routine Description:
@@ -1498,11 +1485,14 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
 [[nodiscard]] NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const til::size coordNewScreenSize)
+try
 {
     _textBuffer->GetCursor().StartDeferDrawing();
     auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
-    return NTSTATUS_FROM_HRESULT(_textBuffer->ResizeTraditional(coordNewScreenSize));
+    _textBuffer->ResizeTraditional(coordNewScreenSize);
+    return STATUS_SUCCESS;
 }
+NT_CATCH_RETURN()
 
 //
 // Routine Description:

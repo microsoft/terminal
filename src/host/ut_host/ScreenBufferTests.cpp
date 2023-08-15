@@ -2307,7 +2307,7 @@ void ScreenBufferTests::GetWordBoundary()
 
     // Make the buffer as big as our test text.
     const til::size newBufferSize = { gsl::narrow<til::CoordType>(length), 10 };
-    VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(newBufferSize));
+    si.GetTextBuffer().ResizeTraditional(newBufferSize);
 
     const OutputCellIterator it(text, si.GetAttributes());
     si.Write(it, { 0, 0 });
@@ -2383,7 +2383,7 @@ void ScreenBufferTests::GetWordBoundaryTrimZeros(const bool on)
 
     // Make the buffer as big as our test text.
     const til::size newBufferSize = { gsl::narrow<til::CoordType>(length), 10 };
-    VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(newBufferSize));
+    si.GetTextBuffer().ResizeTraditional(newBufferSize);
 
     const OutputCellIterator it(text, si.GetAttributes());
     si.Write(it, { 0, 0 });

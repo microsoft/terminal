@@ -761,7 +761,7 @@ class ReflowTests
     static std::unique_ptr<TextBuffer> _textBufferByReflowingTextBuffer(TextBuffer& originalBuffer, const til::size newSize)
     {
         auto buffer = std::make_unique<TextBuffer>(newSize, TextAttribute{ 0x7 }, 0, false, renderer);
-        TextBuffer::Reflow(originalBuffer, *buffer, std::nullopt, std::nullopt);
+        TextBuffer::Reflow(originalBuffer, *buffer);
         return buffer;
     }
 

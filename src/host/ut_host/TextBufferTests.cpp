@@ -1795,7 +1795,7 @@ void TextBufferTests::ResizeTraditional()
     auto expectedSpace = UNICODE_SPACE;
     std::wstring_view expectedSpaceView(&expectedSpace, 1);
 
-    VERIFY_SUCCEEDED(buffer.ResizeTraditional(newSize));
+    buffer.ResizeTraditional(newSize);
 
     Log::Comment(L"Verify every cell in the X dimension is still the same as when filled and the new Y row is just empty default cells.");
     {
@@ -1861,7 +1861,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     _buffer->_SetFirstRowIndex(pos.y);
 
     // Perform resize to rotate the rows around
-    VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(bufferSize));
+    _buffer->ResizeTraditional(bufferSize);
 
     // Retrieve the text at the old and new positions.
     const auto shouldBeEmptyText = *_buffer->GetTextDataAt(pos);
@@ -1933,7 +1933,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
     // Perform resize to trim off the row of the buffer that included the emoji
     til::size trimmedBufferSize{ bufferSize.width, bufferSize.height - 1 };
 
-    VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(trimmedBufferSize));
+    _buffer->ResizeTraditional(trimmedBufferSize);
 }
 
 // This tests that columns removed from the buffer while resizing traditionally will also drop the high unicode
@@ -1963,7 +1963,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     // Perform resize to trim off the column of the buffer that included the emoji
     til::size trimmedBufferSize{ bufferSize.width - 1, bufferSize.height };
 
-    VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(trimmedBufferSize));
+    _buffer->ResizeTraditional(trimmedBufferSize);
 }
 
 void TextBufferTests::TestBurrito()

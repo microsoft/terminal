@@ -114,6 +114,8 @@ public:
 
     til::CoordType NavigateToPrevious(til::CoordType column) const noexcept;
     til::CoordType NavigateToNext(til::CoordType column) const noexcept;
+    til::CoordType AdjustBackward(til::CoordType column) const noexcept;
+    til::CoordType AdjustForward(til::CoordType column) const noexcept;
 
     void ClearCell(til::CoordType column);
     OutputCellIterator WriteCells(OutputCellIterator it, til::CoordType columnBegin, std::optional<bool> wrap = std::nullopt, std::optional<til::CoordType> limitRight = std::nullopt);

@@ -1340,7 +1340,7 @@ til::point UiaTextRangeBase::_getDocumentEnd() const
 {
     const auto optimizedBufferSize{ _getOptimizedBufferSize() };
     const auto& buffer{ _pData->GetTextBuffer() };
-    const auto lastCharPos{ buffer.GetLastNonSpaceCharacter(optimizedBufferSize) };
+    const auto lastCharPos{ buffer.GetLastNonSpaceCharacter(&optimizedBufferSize) };
     const auto cursorPos{ buffer.GetCursor().GetPosition() };
     return { optimizedBufferSize.Left(), std::max(lastCharPos.y, cursorPos.y) + 1 };
 }
