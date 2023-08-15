@@ -33,6 +33,7 @@
 #include "AddMarkArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
+#include "SuggestionsArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
 #include "PrevTabArgs.g.cpp"
 #include "NextTabArgs.g.cpp"
@@ -704,6 +705,27 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"ToggleCommandPaletteCommandLineModeCommandKey");
         }
         return RS_(L"ToggleCommandPaletteCommandKey");
+    }
+
+    winrt::hstring SuggestionsArgs::GenerateName() const
+    {
+        auto base{ RS_(L"SuggestionsCommandKey") };
+        switch (Source())
+        {
+        case SuggestionsSource::CommandHistory:
+            base = RS_(L"SuggestionsCommandHistoryCommandKey");
+        }
+
+        if (UseCommandline())
+        {
+            return winrt::hstring{
+                fmt::format(L"{}, useCommandline:true", std::wstring_view(base))
+            };
+        }
+        else
+        {
+            return base;
+        }
     }
 
     winrt::hstring FindMatchArgs::GenerateName() const

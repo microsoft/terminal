@@ -21,7 +21,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             _value = std::forward<decltype(arg)>(arg);
         }
-        operator bool() const noexcept
+        explicit operator bool() const noexcept
         {
             if constexpr (std::is_same_v<T, winrt::hstring>)
             {
