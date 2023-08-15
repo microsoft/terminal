@@ -88,8 +88,17 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
     // We check the singly, doubly underlined and extended styling together,
     // since only one of them can be active at a time.
     const auto ulStyle = textAttributes.GetUnderlineStyle();
-    if (ulStyle != _lastTextAttributes.GetUnderlineStyle())
+    const auto lastUlStyle = _lastTextAttributes.GetUnderlineStyle();
+    if (ulStyle != lastUlStyle)
     {
+        // Reset doubly underlined if it was previously set. Avoids an edge case
+        // where a pty client tracks doubly underlined and singly underlined separately,
+        // and setting single underlined would leave the text doubly underlined
+        // because it was never turned-off.
+        if (lastUlStyle == UnderlineStyle::DoublyUnderlined && ulStyle != UnderlineStyle::NoUnderline)
+        {
+            RETURN_IF_FAILED(_SetUnderlined(false));
+        }
         RETURN_IF_FAILED(_SetUnderlineExtended(ulStyle));
         _lastTextAttributes.SetUnderlineStyle(ulStyle);
     }

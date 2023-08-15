@@ -72,6 +72,7 @@ class Microsoft::Console::Render::VtRendererTest
     TEST_METHOD(Xterm256TestCursor);
     TEST_METHOD(Xterm256TestExtendedAttributes);
     TEST_METHOD(Xterm256TestAttributesAcrossReset);
+    TEST_METHOD(Xterm256TestDoublyUnderlinedResetBeforeSettingStyle);
 
     TEST_METHOD(XtermTestInvalidate);
     TEST_METHOD(XtermTestColors);
@@ -1004,6 +1005,48 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
     qExpectedInput.push_back("\x1b[m");
     qExpectedInput.push_back(renditionSequence.str());
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, renderSettings, &renderData, false, false));
+
+    VerifyExpectedInputsDrained();
+}
+
+void VtRendererTest::Xterm256TestDoublyUnderlinedResetBeforeSettingStyle()
+{
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    VerifyFirstPaint(*engine);
+
+    auto attrs = TextAttribute{};
+
+    Log::Comment(NoThrowString().Format(
+        L"----Testing Doubly underlined is properly reset before applying the new underline style----"));
+
+    Log::Comment(NoThrowString().Format(
+        L"----Set Doubly Underlined----"));
+    TestPaint(*engine, [&]() {
+        attrs.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
+        qExpectedInput.push_back("\x1b[21m");
+        VERIFY_SUCCEEDED(engine->_UpdateExtendedAttrs(attrs));
+    });
+
+    Log::Comment(NoThrowString().Format(
+        L"----Set Underline To Any Other Style----"));
+    TestPaint(*engine, [&]() {
+        attrs.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
+        qExpectedInput.push_back("\x1b[24m");
+        qExpectedInput.push_back("\x1b[4:3m");
+        VERIFY_SUCCEEDED(engine->_UpdateExtendedAttrs(attrs));
+    });
+
+    Log::Comment(NoThrowString().Format(
+        L"----Remove The Underline----"));
+    TestPaint(*engine, [&]() {
+        attrs.SetUnderlineStyle(UnderlineStyle::NoUnderline);
+        qExpectedInput.push_back("\x1b[24m");
+        VERIFY_SUCCEEDED(engine->_UpdateExtendedAttrs(attrs));
+    });
 
     VerifyExpectedInputsDrained();
 }
