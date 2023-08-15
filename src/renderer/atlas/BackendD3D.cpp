@@ -1086,11 +1086,15 @@ void BackendD3D::_drawText(RenderingPayload& p)
 //   < ! - -
 void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
 {
-    const auto& originalQuad = _getLastQuad();
+    auto& originalQuad = _getLastQuad();
 
+    // If the current row has a non-default line rendition then every glyph is scaled up by 2x horizontally.
+    // This requires us to make some changes: For instance, if the ligature occupies columns 3, 4 and 5 (0-indexed)
+    // then we need to get the foreground colors from columns 2 and 4, because columns 0,1 2,3 4,5 6,7 and so on form pairs.
+    // A wide glyph would be a total of 4 actual columns wide! In other words, we need to properly round our clip rects and columns.
     i32 columnAdvance = 1;
-    i32 columnAdvanceInPx{ p.s->font->cellSize.x };
-    i32 cellCount{ p.s->viewportCellCount.x };
+    i32 columnAdvanceInPx = p.s->font->cellSize.x;
+    i32 cellCount = p.s->viewportCellCount.x;
 
     if (p.rows[y]->lineRendition != LineRendition::SingleWidth)
     {
@@ -1104,12 +1108,27 @@ void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
     originalLeft = std::max(originalLeft, 0);
     originalRight = std::min(originalRight, cellCount * columnAdvanceInPx);
 
-    auto column = originalLeft / columnAdvanceInPx + 1;
+    if (originalLeft >= originalRight)
+    {
+        return;
+    }
+
+    const auto colors = &p.foregroundBitmap[p.colorBitmapRowStride * y];
+
+    // As explained in the beginning, column and clipLeft should be in multiples of columnAdvance
+    // and columnAdvanceInPx respectively, because that's how line renditions work.
+    auto column = originalLeft / columnAdvanceInPx;
     auto clipLeft = column * columnAdvanceInPx;
     column *= columnAdvance;
 
-    const auto colors = &p.foregroundBitmap[p.colorBitmapRowStride * y];
-    auto lastFg = originalQuad.color;
+    // Our loop below will split the ligature by processing it from left to right.
+    // Some fonts however implement ligatures by replacing a string like "&&" with a whitespace padding glyph,
+    // followed by the actual "&&" glyph which has a 1 column advance width. In that case the originalQuad
+    // will have the .color of the 2nd column and not of the 1st one. We need to fix that here.
+    auto lastFg = colors[column];
+    originalQuad.color = lastFg;
+    column += columnAdvance;
+    clipLeft += columnAdvanceInPx;
 
     // We must ensure to exit the loop while `column` is less than `cellCount.x`,
     // otherwise we cause a potential out of bounds access into foregroundBitmap.
