@@ -1265,7 +1265,7 @@ namespace winrt::TerminalApp::implementation
             if (const auto& realArgs = args.ActionArgs().try_as<SuggestionsArgs>())
             {
                 const auto source = realArgs.Source();
-                const auto commandsCollection = winrt::single_threaded_vector<Command>();
+                std::vector<Command> commandsCollection;
                 Control::CommandHistoryContext context{ nullptr };
                 winrt::hstring currentCommandline = L"";
 
@@ -1297,7 +1297,7 @@ namespace winrt::TerminalApp::implementation
                     const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(currentCommandline);
                     for (const auto& t : tasks)
                     {
-                        commandsCollection.Append(t);
+                        commandsCollection.push_back(t);
                     }
                 }
 
@@ -1310,13 +1310,13 @@ namespace winrt::TerminalApp::implementation
                     const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false);
                     for (const auto& t : recentCommands)
                     {
-                        commandsCollection.Append(t);
+                        commandsCollection.push_back(t);
                     }
                 }
 
                 // Open the palette with all these commands in it.
                 _OpenSuggestions(_GetActiveControl(),
-                                 commandsCollection,
+                                 winrt::single_threaded_vector<Command>(std::move(commandsCollection)),
                                  SuggestionsMode::Palette,
                                  currentCommandline);
                 args.Handled(true);

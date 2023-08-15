@@ -762,7 +762,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Iterate in reverse over the history, so that most recent commands are first
         for (auto i = history.Size(); i > 0; i--)
         {
-            std::wstring_view line{ history.GetAt(i - 1) };
+            const auto& element{ history.GetAt(i - 1) };
+            std::wstring_view line{ element };
 
             if (line.empty())
             {

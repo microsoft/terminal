@@ -742,7 +742,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         // Chop off the last ","
         auto result = ss.str();
-        return winrt::hstring{ result.substr(0, result.size() - 2) };
+        // use `resize`, to avoid duplicating the entire string. (substr doesn't create a view.)
+        result.resize(result.size() - 2);
+        return winrt::hstring{ result };
     }
 
     winrt::hstring FindMatchArgs::GenerateName() const

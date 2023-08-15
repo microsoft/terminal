@@ -937,8 +937,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto results = winrt::single_threaded_vector<Model::Command>();
 
-        auto backspaces = std::wstring(currentCommandline.size(), L'\x7f');
-
+        const auto numBackspaces = currentCommandline.size();
         // Helper to clone a sendInput command into a new Command, with the
         // input trimmed to account for the currentCommandline
         auto createInputAction = [&](const Model::Command& command) -> Model::Command {
@@ -948,7 +947,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const auto inArgs{ command.ActionAndArgs().Args().try_as<Model::SendInputArgs>() };
 
             auto args = winrt::make_self<SendInputArgs>(
-                winrt::hstring{ fmt::format(L"{}{}", backspaces, inArgs ? inArgs.Input() : L"") });
+                winrt::hstring{ fmt::format(FMT_COMPILE(L"{:\x7f^{}}{}"),
+                                            L"",
+                                            numBackspaces,
+                                            (std::wstring_view)(inArgs ? inArgs.Input() : L"")) });
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
 
             auto copy = cmdImpl->Copy();
