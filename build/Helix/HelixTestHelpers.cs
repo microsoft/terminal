@@ -202,17 +202,9 @@ namespace HelixTestHelpers
                         testsExecuting--;
 
                         // If any inner test fails, we'll still fail the outer
-                        if (element.Attribute("Result").Value == "Pass") {
-                            // do nothing special
-                        }
-                        else if (element.Attribute("Result").Value == "Skipped")
-                        {
-                            currentResult.Passed = false;
-                            currentResult.Skipped = true;
-                        }
-                        else { // Any other reason
-                            currentResult.Passed = false;
-                        }
+                        var value = element.Attribute("Result").Value;
+                        currentResult.Passed = value == "Pass";
+                        currentResult.Skipped = value == "Skipped";
 
                         // Only gather execution data if this is the outer test we ran initially
                         if (testsExecuting == 0)
