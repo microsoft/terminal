@@ -3377,6 +3377,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _core.ReadEntireBuffer();
     }
+    Control::CommandHistoryContext TermControl::CommandHistory() const
+    {
+        return _core.CommandHistory();
+    }
 
     Core::Scheme TermControl::ColorScheme() const noexcept
     {

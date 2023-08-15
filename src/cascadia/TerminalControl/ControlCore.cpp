@@ -1951,6 +1951,42 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return hstring{ str };
     }
 
+    // Get all of our recent commands. This will only really work if the user has enabled shell integration.
+    Control::CommandHistoryContext ControlCore::CommandHistory() const
+    {
+        auto terminalLock = _terminal->LockForWriting();
+        const auto& textBuffer = _terminal->GetTextBuffer();
+
+        std::vector<winrt::hstring> commands;
+        for (const auto& mark : _terminal->GetScrollMarks())
+        {
+            // The command text is between the `end` (which denotes the end of
+            // the prompt) and the `commandEnd`.
+            bool markHasCommand = mark.commandEnd.has_value() &&
+                                  mark.commandEnd != mark.end;
+            if (!markHasCommand)
+            {
+                continue;
+            }
+
+            // Get the text of the command
+            const auto line = mark.end.y;
+            const auto& row = textBuffer.GetRowByOffset(line);
+            const auto commandText = row.GetText(mark.end.x, mark.commandEnd->x);
+
+            // Trim off trailing spaces.
+            const auto strEnd = commandText.find_last_not_of(UNICODE_SPACE);
+            if (strEnd != std::string::npos)
+            {
+                const auto trimmed = commandText.substr(0, strEnd + 1);
+                commands.push_back(winrt::hstring{ trimmed });
+            }
+        }
+        auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
+
+        return *context;
+    }
+
     Core::Scheme ControlCore::ColorScheme() const noexcept
     {
         Core::Scheme s;

@@ -730,4 +730,53 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         return winrt::single_threaded_vector<Model::Command>(std::move(result));
     }
+
+    // Method description:
+    // * Convert the list of recent commands into a list of sendInput actions to
+    //   send those commands.
+    // * We'll give each command a "history" icon.
+    // * If directories is true, we'll prepend "cd " to each command, so that
+    //   the command will be run as a directory change instead.
+    IVector<Model::Command> Command::HistoryToCommands(IVector<winrt::hstring> history,
+                                                       winrt::hstring /*currentCommandline*/,
+                                                       bool directories)
+    {
+        std::wstring cdText = directories ? L"cd " : L"";
+        auto result = std::vector<Model::Command>();
+
+        // Use this map to discard duplicates.
+        std::unordered_map<std::wstring_view, bool> foundCommands{};
+
+        auto backspaces = std::wstring(::base::saturated_cast<size_t>(0), L'\x7f');
+
+        // Iterate in reverse over the history, so that most recent commands are first
+        for (auto i = history.Size(); i > 0; i--)
+        {
+            std::wstring_view line{ history.GetAt(i - 1) };
+
+            if (line.empty())
+            {
+                continue;
+            }
+            if (foundCommands.contains(line))
+            {
+                continue;
+            }
+            auto args = winrt::make_self<SendInputArgs>(
+                winrt::hstring{ fmt::format(L"{}{}{}", cdText, backspaces, line) });
+
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
+
+            auto command = winrt::make_self<Command>();
+            command->_ActionAndArgs = actionAndArgs;
+            command->_name = winrt::hstring{ line };
+            command->_iconPath = directories ?
+                                     L"\ue8da" : // OpenLocal (a folder with an arrow pointing up)
+                                     L"\ue81c"; // History icon
+            result.push_back(*command);
+            foundCommands[line] = true;
+        }
+
+        return winrt::single_threaded_vector<Model::Command>(std::move(result));
+    }
 }
