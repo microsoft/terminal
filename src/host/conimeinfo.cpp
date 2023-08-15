@@ -462,18 +462,13 @@ void ConsoleImeInfo::_InsertConvertedString(const std::wstring_view text)
     }
 
     const auto dwControlKeyState = GetControlKeyState(0);
-    std::deque<std::unique_ptr<IInputEvent>> inEvents;
-    KeyEvent keyEvent{ TRUE, // keydown
-                       1, // repeatCount
-                       0, // virtualKeyCode
-                       0, // virtualScanCode
-                       0, // charData
-                       dwControlKeyState }; // activeModifierKeys
+    InputEventQueue inEvents;
+    auto keyEvent = SynthesizeKeyEvent(true, 1, 0, 0, 0, dwControlKeyState);
 
     for (const auto& ch : text)
     {
-        keyEvent.SetCharData(ch);
-        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+        keyEvent.Event.KeyEvent.uChar.UnicodeChar = ch;
+        inEvents.push_back(keyEvent);
     }
 
     gci.pInputBuffer->Write(inEvents);

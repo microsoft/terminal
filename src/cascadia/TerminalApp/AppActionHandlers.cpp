@@ -1257,6 +1257,36 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleSuggestions(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SuggestionsArgs>())
+            {
+                auto source = realArgs.Source();
+
+                switch (source)
+                {
+                case SuggestionsSource::CommandHistory:
+                {
+                    if (const auto& control{ _GetActiveControl() })
+                    {
+                        const auto context = control.CommandHistory();
+                        const auto& currentCmd{ realArgs.UseCommandline() ? context.CurrentCommandline() : L"" };
+                        _OpenSuggestions(control,
+                                         Command::HistoryToCommands(context.History(), currentCmd, false),
+                                         SuggestionsMode::Palette,
+                                         currentCmd);
+                    }
+                    args.Handled(true);
+                }
+                break;
+                }
+            }
+        }
+    }
+
     void TerminalPage::_HandleColorSelection(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {

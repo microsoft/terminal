@@ -231,6 +231,12 @@ public:
     {
         Log::Comment(L"MarkCommandFinish MOCK called...");
     }
+    void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override
+    {
+        Log::Comment(L"InvokeCompletions MOCK called...");
+        VERIFY_ARE_EQUAL(_expectedMenuJson, menuJson);
+        VERIFY_ARE_EQUAL(_expectedReplaceLength, replaceLength);
+    }
 
     void PrepData()
     {
@@ -377,6 +383,9 @@ public:
     bool _setConsoleOutputCPResult = false;
     bool _getConsoleOutputCPResult = false;
     bool _expectedShowWindow = false;
+
+    std::wstring _expectedMenuJson{};
+    unsigned int _expectedReplaceLength = 0;
 
 private:
     HANDLE _hCon;
@@ -3003,6 +3012,33 @@ public:
         _pDispatch->WindowManipulation(DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters, NULL, NULL);
         const std::wstring expectedResponse = fmt::format(L"\033[8;{};{}t", _testGetSet->GetViewport().height(), _testGetSet->GetTextBuffer().GetSize().Width());
         _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+    }
+
+    TEST_METHOD(MenuCompletionsTests)
+    {
+        _testGetSet->PrepData();
+
+        Log::Comment(L"Not enough parameters");
+        VERIFY_IS_FALSE(_pDispatch->DoVsCodeAction(LR"(garbage)"));
+
+        Log::Comment(L"Not enough parameters");
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions)"));
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;)"));
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;)"));
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;20)"));
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;20;)"));
+        Log::Comment(L"No trailing semicolon");
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;20;3)"));
+
+        Log::Comment(L"Normal, good case");
+        _testGetSet->_expectedMenuJson = LR"({ "foo": 1, "bar": 2 })";
+        _testGetSet->_expectedReplaceLength = 2;
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;1;2;3;{ "foo": 1, "bar": 2 })"));
+
+        Log::Comment(L"JSON has a semicolon in it");
+        _testGetSet->_expectedMenuJson = LR"({ "foo": "what;ever", "bar": 2 })";
+        _testGetSet->_expectedReplaceLength = 20;
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;20;30;{ "foo": "what;ever", "bar": 2 })"));
     }
 
 private:

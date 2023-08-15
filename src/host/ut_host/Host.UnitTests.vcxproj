@@ -39,7 +39,6 @@
     <ClCompile Include="VtIoTests.cpp" />
     <ClCompile Include="VtRendererTests.cpp" />
     <ClCompile Include="ConptyOutputTests.cpp" />
-    <Clcompile Include="..\..\types\IInputEventStreams.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

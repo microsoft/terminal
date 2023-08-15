@@ -66,6 +66,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring IconPath() const noexcept;
         void IconPath(const hstring& val);
 
+        static Windows::Foundation::Collections::IVector<Model::Command> ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength);
+        static Windows::Foundation::Collections::IVector<Model::Command> HistoryToCommands(Windows::Foundation::Collections::IVector<winrt::hstring> history,
+                                                                                           winrt::hstring currentCommandline,
+                                                                                           bool directories);
+
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
         WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
 
