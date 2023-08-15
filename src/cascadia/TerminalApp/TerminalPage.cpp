@@ -4718,7 +4718,7 @@ namespace winrt::TerminalApp::implementation
                 if (const auto& page{ weakThis.get() })
                 {
                     // Open the Suggestions UI with the commands from the control
-                    page->_OpenSuggestions(sender.try_as<TermControl>(), commandsCollection, SuggestionsMode::Menu);
+                    page->_OpenSuggestions(sender.try_as<TermControl>(), commandsCollection, SuggestionsMode::Menu, L"");
                 }
             });
         }
@@ -4728,7 +4728,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OpenSuggestions(
         const TermControl& sender,
         IVector<Command> commandsCollection,
-        winrt::TerminalApp::SuggestionsMode mode)
+        winrt::TerminalApp::SuggestionsMode mode,
+        winrt::hstring filterText)
+
     {
         // ON THE UI THREAD
         assert(Dispatcher().HasThreadAccess());
@@ -4761,7 +4763,12 @@ namespace winrt::TerminalApp::implementation
         const auto realCursorPos{ controlTransform.TransformPoint({ cursorPos.X, cursorPos.Y }) }; // == controlTransform + cursorPos
         const Windows::Foundation::Size windowDimensions{ gsl::narrow_cast<float>(ActualWidth()), gsl::narrow_cast<float>(ActualHeight()) };
 
-        sxnUi.Open(mode, commandsCollection, realCursorPos, windowDimensions, characterSize.Height);
+        sxnUi.Open(mode,
+                   commandsCollection,
+                   filterText,
+                   realCursorPos,
+                   windowDimensions,
+                   characterSize.Height);
     }
 
     void TerminalPage::_ContextMenuOpened(const IInspectable& sender,

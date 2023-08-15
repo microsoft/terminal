@@ -40,7 +40,7 @@ namespace TerminalApp
         void SetActionMap(Microsoft.Terminal.Settings.Model.IActionMapView actionMap);
         void SelectNextItem(Boolean moveDown);
 
-        void Open(SuggestionsMode mode, IVector<Microsoft.Terminal.Settings.Model.Command> commands, Windows.Foundation.Point anchor, Windows.Foundation.Size space, Single characterHeight);
+        void Open(SuggestionsMode mode, IVector<Microsoft.Terminal.Settings.Model.Command> commands, String filterText, Windows.Foundation.Point anchor, Windows.Foundation.Size space, Single characterHeight);
 
         event Windows.Foundation.TypedEventHandler<SuggestionsControl, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Command> PreviewAction;
