@@ -60,8 +60,8 @@ namespace Microsoft.Terminal.Control
 
     [default_interface] runtimeclass CommandHistoryContext
     {
-        IVector<String> History;
-        String CurrentCommandline;
+        IVector<String> History { get; };
+        String CurrentCommandline { get; };
     };
 
     [default_interface] runtimeclass ControlCore : ICoreState

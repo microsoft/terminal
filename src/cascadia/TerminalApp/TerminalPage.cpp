@@ -4718,7 +4718,7 @@ namespace winrt::TerminalApp::implementation
                 if (const auto& page{ weakThis.get() })
                 {
                     // Open the Suggestions UI with the commands from the control
-                    page->_OpenSuggestions(sender.try_as<TermControl>(), commandsCollection, SuggestionsMode::Menu);
+                    page->_OpenSuggestions(sender.try_as<TermControl>(), commandsCollection, SuggestionsMode::Menu, L"");
                 }
             });
         }

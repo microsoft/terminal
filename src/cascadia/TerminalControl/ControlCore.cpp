@@ -1955,8 +1955,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Control::CommandHistoryContext ControlCore::CommandHistory() const
     {
         auto terminalLock = _terminal->LockForWriting();
-        auto context = winrt::make_self<CommandHistoryContext>();
         const auto& textBuffer = _terminal->GetTextBuffer();
+
+        std::vector<winrt::hstring> commands;
 
         for (const auto& mark : _terminal->GetScrollMarks())
         {
@@ -1979,10 +1980,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (strEnd != std::string::npos)
             {
                 const auto trimmed = commandText.substr(0, strEnd + 1);
-                context->History().Append(winrt::hstring{ trimmed });
+
+                commands.push_back(winrt::hstring{ trimmed });
             }
         }
-
+        auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
         context->CurrentCommandline(winrt::hstring{ _terminal->CurrentCommand() });
 
         return *context;

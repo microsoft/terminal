@@ -742,21 +742,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                        bool directories)
     {
         std::wstring cdText = directories ? L"cd " : L"";
-        auto result = winrt::single_threaded_vector<Model::Command>();
+        auto result = std::vector<Model::Command>();
 
         // Use this map to discard duplicates.
         std::unordered_map<std::wstring_view, bool> foundCommands{};
 
         auto backspaces = std::wstring(currentCommandline.size(), L'\x7f');
 
-        auto createAction = [&](std::wstring_view line) {
+        // Iterate in reverse over the history, so that most recent commands are first
+        for (auto i = history.Size(); i > 0; i--)
+        {
+            std::wstring_view line{ history.GetAt(i - 1) };
+
             if (line.empty())
             {
-                return;
+                continue;
             }
             if (foundCommands.contains(line))
             {
-                return;
+                continue;
             }
             auto args = winrt::make_self<SendInputArgs>(
                 winrt::hstring{ fmt::format(L"{}{}{}", cdText, backspaces, line) });
@@ -769,15 +773,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             command->_iconPath = directories ?
                                      L"\ue8da" : // OpenLocal (a folder with an arrow pointing up)
                                      L"\ue81c"; // History icon
-            result.Append(*command);
+            result.push_back(*command);
             foundCommands[line] = true;
-        };
-
-        // Iterate in reverse over the history, so that most recent commands are first
-        for (auto i = history.Size(); i > 0; i--)
-        {
-            createAction(history.GetAt(i - 1));
         }
-        return result;
+
+        return winrt::single_threaded_vector<Model::Command>(std::move(result));
     }
 }
