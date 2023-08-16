@@ -44,6 +44,10 @@
   </ItemGroup>
 
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
+
+  <!-- Import resources from the normal Terminal project, so there are images in our ms-appx -->
+  <Import Project="$(OpenConsoleDir)src\cascadia\CascadiaResources.build.items" />
+
   <ItemGroup>
     <ProjectReference Include="..\WindowExe\WindowExe.vcxproj" />
   </ItemGroup>

@@ -236,10 +236,40 @@ namespace winrt::SampleApp::implementation
         }
     }
 
-    winrt::fire_and_forget MyPage::_attemptTwo(const winrt::hstring& path)
+    winrt::fire_and_forget MyPage::_attemptTwo(winrt::hstring path)
     {
-        // Open the file, and load it into a SoftwareBitmap
-        auto file = co_await winrt::Windows::Storage::StorageFile::GetFileFromPathAsync(path);
+        // Create a URI from the path
+        const Windows::Foundation::Uri uri{ path };
+
+        winrt::Windows::Storage::IStorageFile file{ nullptr };
+
+        // Is the URI a ms-appx URI? then load it from the app package
+        if (uri.SchemeName() == L"ms-appx")
+        {
+            file = co_await winrt::Windows::Storage::StorageFile::GetFileFromApplicationUriAsync(uri);
+        }
+        // // Is it a web URI? then download it else if (uri.SchemeName() ==
+        // L"http" || uri.SchemeName() == L"https")
+        // {
+        //     auto downloader = winrt::Windows::Networking::BackgroundTransfer::BackgroundDownloader();
+        //     auto download = downloader.CreateDownload(uri, nullptr);
+        //     auto downloadOperation = download.StartAsync();
+        //     co_await downloadOperation;
+        //     file = download.ResultFile();
+        // }
+        //
+        // Actually, don't do anything for web URIs. BackgroundDownloader is not
+        // supported outside of packaged apps, but I think that also extends to
+        // centennial apps. Useless.
+        //
+        //
+        else
+        {
+            // Open the file, and load it into a SoftwareBitmap
+            auto file = co_await winrt::Windows::Storage::StorageFile::GetFileFromPathAsync(path);
+        }
+
+        // Get the software bitmap out of the file
         auto stream = co_await file.OpenAsync(winrt::Windows::Storage::FileAccessMode::Read);
         auto decoder = co_await winrt::Windows::Graphics::Imaging::BitmapDecoder::CreateAsync(stream);
         auto softwareBitmap = co_await decoder.GetSoftwareBitmapAsync();

@@ -49,6 +49,8 @@
 #include "winrt/Windows.Storage.Streams.h"
 #include <winrt/Windows.Graphics.Imaging.h>
 #include <winrt/Windows.UI.Xaml.Media.Imaging.h>
+// #include <winrt/Windows.Networking.h>
+#include <winrt/Windows.Networking.BackgroundTransfer.h>
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>

@@ -24,7 +24,7 @@ namespace winrt::SampleApp::implementation
         HWND _hwnd{ nullptr };
 
         void _attemptOne(const winrt::hstring& text);
-        winrt::fire_and_forget _attemptTwo(const winrt::hstring& text);
+        winrt::fire_and_forget _attemptTwo(winrt::hstring text);
         void _setTaskbarBadge(HICON hIcon);
     };
 }
