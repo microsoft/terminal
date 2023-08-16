@@ -12,6 +12,8 @@
 #include <Shlobj.h>
 #include <Shlobj_core.h>
 #include <wincodec.h>
+#include <propkey.h> // For PKEY_AppUserModel_ID
+#include <propsys.h> // For IPropertyStore and related functions
 
 #include "..\..\..\src\types\inc\utils.hpp"
 
@@ -383,7 +385,25 @@ namespace winrt::SampleApp::implementation
 
         const auto selectedComboItem = GroupSelector().SelectedItem().try_as<winrt::Windows::UI::Xaml::Controls::ComboBoxItem>();
         const auto groupText = winrt::unbox_value<winrt::hstring>(selectedComboItem.Content());
-        auto hr = SetCurrentProcessExplicitAppUserModelID(groupText.c_str());
+        // auto hr = SetCurrentProcessExplicitAppUserModelID(groupText.c_str());
+        // LOG_IF_FAILED(hr);
+        IPropertyStore* pPropertyStore = nullptr;
+        HRESULT hr = SHGetPropertyStoreForWindow(_hwnd, IID_PPV_ARGS(&pPropertyStore));
+        if (SUCCEEDED(hr))
+        {
+            // Set the System.AppUserModel.ID property (replace "YourAppID" with your desired ID)
+            PROPVARIANT propVar;
+            PropVariantInit(&propVar);
+            propVar.vt = VT_LPWSTR;
+            std::wstring s = groupText.c_str();
+            auto cstr = s.data();
+            propVar.pwszVal = cstr;
+
+            hr = pPropertyStore->SetValue(PKEY_AppUserModel_ID, propVar);
+
+            PropVariantClear(&propVar);
+            pPropertyStore->Release();
+        }
         LOG_IF_FAILED(hr);
 
         co_await winrt::resume_background();
