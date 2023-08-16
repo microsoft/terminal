@@ -239,6 +239,12 @@ namespace winrt::SampleApp::implementation
         }
     }
 
+    void MyPage::_setTaskbarIcon(HICON hIcon)
+    {
+        SendMessageW(_hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+        SendMessageW(_hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+    }
+
     // Method Description:
     // - Attempt to get the icon index from the icon path provided
     // Arguments:
@@ -353,6 +359,8 @@ namespace winrt::SampleApp::implementation
             // auto hBitmap = ConvertSoftwareBitmapToHBITMAP(softwareBitmap);
             // auto hIcon = _convertBitmapToHICON(hBitmap);
             auto hIcon = ConvertSoftwareBitmapToHICON(softwareBitmap);
+
+            _setTaskbarIcon(hIcon);
             _setTaskbarBadge(hIcon);
         }
         CATCH_LOG();
