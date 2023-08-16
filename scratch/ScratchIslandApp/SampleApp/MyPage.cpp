@@ -163,7 +163,7 @@ namespace winrt::SampleApp::implementation
             pFactory->Release();
     }
 
-    HBITMAP ConvertSoftwareBitmapToHBITMAP(winrt::Windows::Graphics::Imaging::SoftwareBitmap softwareBitmap)
+    HICON ConvertSoftwareBitmapToHICON(winrt::Windows::Graphics::Imaging::SoftwareBitmap softwareBitmap)
     {
         // Get the dimensions of the SoftwareBitmap
         int width = softwareBitmap.PixelWidth();
@@ -199,15 +199,11 @@ namespace winrt::SampleApp::implementation
             memcpy(pBits, pixelData, width * height * 4); // Assuming 32bpp RGBA format
         }
 
-        return hBitmap;
-    }
-    HICON _convertBitmapToHICON(HBITMAP hBitmap)
-    {
         ICONINFO iconInfo = {};
         iconInfo.fIcon = TRUE;
         // iconInfo.hbmMask = nullptr; // No mask is required for icons
-        // iconInfo.hbmMask = CreateBitmap(width, height, 1, 1, 0); // ^ that was a fuckin lie
-        iconInfo.hbmMask = CreateBitmap(64, 64, 1, 1, 0); // ^ that was a fuckin lie
+        iconInfo.hbmMask = CreateBitmap(width, height, 1, 1, 0); // ^ that was a fuckin lie
+        // iconInfo.hbmMask = CreateBitmap(64, 64, 1, 1, 0); // ^ that was a fuckin lie
         iconInfo.hbmColor = hBitmap;
 
         HICON hIcon = CreateIconIndirect(&iconInfo);
@@ -219,6 +215,8 @@ namespace winrt::SampleApp::implementation
             auto hr = HRESULT_FROM_WIN32(gle);
             LOG_IF_FAILED(hr);
         }
+
+        DeleteObject(hBitmap);
 
         return hIcon;
     }
@@ -247,8 +245,9 @@ namespace winrt::SampleApp::implementation
         auto softwareBitmap = co_await decoder.GetSoftwareBitmapAsync();
 
         // Convert the SoftwareBitmap to an HBITMAP, using Windows Imaging Component
-        auto hBitmap = ConvertSoftwareBitmapToHBITMAP(softwareBitmap);
-        auto hIcon = _convertBitmapToHICON(hBitmap);
+        // auto hBitmap = ConvertSoftwareBitmapToHBITMAP(softwareBitmap);
+        // auto hIcon = _convertBitmapToHICON(hBitmap);
+        auto hIcon = ConvertSoftwareBitmapToHICON(softwareBitmap);
         _setTaskbarBadge(hIcon);
     }
 
