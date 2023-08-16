@@ -1011,8 +1011,8 @@ D2D_MATRIX_3X2_F BackendD2D::_getDefaultTransform(const RenderingPayload& p) con
     return {
         .m11 = 1.f,
         .m22 = 1.f,
-        .dx = p.s->misc->topLeftOffset.x,
-        .dy = p.s->misc->topLeftOffset.y,
+        .dx = p.s->misc->padding.x,
+        .dy = p.s->misc->padding.y,
     };
 }
 

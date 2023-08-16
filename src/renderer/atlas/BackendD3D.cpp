@@ -580,20 +580,20 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p)
             -2.0f / p.s->targetSize.y,
         };
         data.positionOffset = {
-            data.positionScale.x * p.s->misc->topLeftOffset.x - 1.0f,
-            data.positionScale.y * p.s->misc->topLeftOffset.y + 1.0f,
+            data.positionScale.x * p.s->misc->padding.x - 1.0f,
+            data.positionScale.y * p.s->misc->padding.y + 1.0f,
         };
         p.deviceContext->UpdateSubresource(_vsConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
     {
         PSConstBuffer data{};
-        data.viewportScale = {
+        data.backgroundScale = {
             1.0f / (p.s->font->cellSize.x * p.s->viewportCellCount.x),
             1.0f / (p.s->font->cellSize.y * p.s->viewportCellCount.y),
         };
-        data.viewportOffset = {
-            data.viewportScale.x * -p.s->misc->topLeftOffset.x,
-            data.viewportScale.y * -p.s->misc->topLeftOffset.y,
+        data.backgroundOffset = {
+            data.backgroundScale.x * -p.s->misc->padding.x,
+            data.backgroundScale.y * -p.s->misc->padding.y,
         };
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);
         data.enhancedContrast = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
@@ -616,8 +616,8 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p)
             .MipLODBias = 0,
             .MaxAnisotropy = 1,
             .ComparisonFunc = D3D11_COMPARISON_NEVER,
-            //.BorderColor = { color.x, color.y, color.z, color.w },
-            .BorderColor = { 1.0f, 0.2f, 0.2f, 1.0f },
+            .BorderColor = { color.x, color.y, color.z, color.w },
+            //.BorderColor = { 1.0f, 0.2f, 0.2f, 1.0f },
             .MinLOD = -FLT_MAX,
             .MaxLOD = FLT_MAX,
         };
@@ -1103,8 +1103,8 @@ void BackendD3D::_drawBackground(const RenderingPayload& p)
     _appendQuad() = {
         .shadingType = static_cast<u16>(ShadingType::Background),
         .position = {
-            static_cast<i16>(lrintf(-p.s->misc->topLeftOffset.x)),
-            static_cast<i16>(lrintf(-p.s->misc->topLeftOffset.x)),
+            static_cast<i16>(lrintf(-p.s->misc->padding.x)),
+            static_cast<i16>(lrintf(-p.s->misc->padding.x)),
         },
         .size = p.s->targetSize,
     };
@@ -2344,10 +2344,11 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
             .time = time,
             .scale = static_cast<f32>(p.s->font->dpi) / static_cast<f32>(USER_DEFAULT_SCREEN_DPI),
             .resolution = {
-                static_cast<f32>(_viewportCellCount.x * p.s->font->cellSize.x),
-                static_cast<f32>(_viewportCellCount.y * p.s->font->cellSize.y),
+                static_cast<f32>(p.s->targetSize.x),
+                static_cast<f32>(p.s->targetSize.y),
             },
             .background = colorFromU32Premultiply<f32x4>(p.s->misc->backgroundColor),
+            .padding = p.s->misc->padding,
         };
 
         D3D11_MAPPED_SUBRESOURCE mapped{};
