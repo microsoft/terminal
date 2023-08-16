@@ -34,6 +34,7 @@ namespace winrt::SampleApp::implementation
                                                                                       nullptr,
                                                                                       32,
                                                                                       80,
+                                                                                      winrt::guid(),
                                                                                       winrt::guid()) };
 
         // "Microsoft.Terminal.TerminalConnection.ConptyConnection"
