@@ -347,7 +347,7 @@ namespace winrt::SampleApp::implementation
             else
             {
                 // Open the file, and load it into a SoftwareBitmap
-                auto file = co_await winrt::Windows::Storage::StorageFile::GetFileFromPathAsync(path);
+                file = co_await winrt::Windows::Storage::StorageFile::GetFileFromPathAsync(path);
             }
 
             // Get the software bitmap out of the file
