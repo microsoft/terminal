@@ -60,10 +60,6 @@ parameters:
     type: string
     default: '0.0.8'
 
-  - name: runCompliance
-    displayName: "Run Compliance and Security Build"
-    type: boolean
-    default: true
   - name: publishSymbolsToPublic
     displayName: "Publish Symbols to MSDL"
     type: boolean
