@@ -51,7 +51,15 @@
                   Padding="16"
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch"
-                  Background="#0000ff" />
+                  Background="#0000ff">
+                <StackPanel Orientation="Vertical">
+                    <TextBox x:Name="PathInput" />
+                    <Button x:Name="LoadIconButton"
+                            Click="OnLoadIconClick">
+                        Load Icon
+                    </Button>
+                </StackPanel>
+            </Grid>
 
 
 

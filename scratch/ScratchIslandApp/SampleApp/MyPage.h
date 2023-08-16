@@ -13,12 +13,15 @@ namespace winrt::SampleApp::implementation
     public:
         MyPage();
 
-        void Create();
+        void Create(uint64_t hwnd);
 
         hstring Title();
 
+        winrt::fire_and_forget OnLoadIconClick(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
+
     private:
         friend struct MyPageT<MyPage>; // for Xaml to bind events
+        HWND _hwnd{ nullptr };
     };
 }
 

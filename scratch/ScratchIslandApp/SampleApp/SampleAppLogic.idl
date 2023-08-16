@@ -9,7 +9,7 @@ namespace SampleApp
     {
         SampleAppLogic();
 
-        void Create();
+        void Create(UInt64 hwnd);
 
         Windows.UI.Xaml.UIElement GetRoot();
 

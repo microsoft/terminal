@@ -17,7 +17,7 @@ namespace winrt::SampleApp::implementation
         SampleAppLogic();
         ~SampleAppLogic() = default;
 
-        void Create();
+        void Create(uint64_t hwnd);
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
 

@@ -84,7 +84,7 @@ namespace winrt::SampleApp::implementation
             if (content == nullptr)
             {
                 auto logic = Logic();
-                logic.Create();
+                logic.Create(0u);
 
                 auto page = logic.GetRoot().as<MyPage>();
 

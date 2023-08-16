@@ -66,9 +66,9 @@ namespace winrt::SampleApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void SampleAppLogic::Create()
+    void SampleAppLogic::Create(uint64_t hwnd)
     {
-        _root->Create();
+        _root->Create(hwnd);
     }
 
     UIElement SampleAppLogic::GetRoot() noexcept

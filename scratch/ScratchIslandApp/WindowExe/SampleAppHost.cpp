@@ -49,7 +49,7 @@ void SampleAppHost::Initialize()
 {
     _window->Initialize();
 
-    _logic.Create();
+    _logic.Create((uint64_t)_window->GetHandle());
 
     _window->UpdateTitle(_logic.Title());
 
