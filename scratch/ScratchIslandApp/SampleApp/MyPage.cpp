@@ -13,6 +13,8 @@
 #include <Shlobj_core.h>
 #include <wincodec.h>
 
+#include "..\..\..\src\types\inc\utils.hpp"
+
 using namespace std::chrono_literals;
 using namespace winrt::Microsoft::Terminal;
 
@@ -32,6 +34,15 @@ namespace winrt::SampleApp::implementation
 {
     MyPage::MyPage()
     {
+        // Well this immediately fucks up loading an image using
+        // `GetFileFromPathAsync`. I'd bet it fucks up all sorts of things.
+
+        // // instantiate a random guid
+        // winrt::guid g{ ::Microsoft::Console::Utils::CreateGuid() };
+        // auto str{ ::Microsoft::Console::Utils::GuidToString(g) };
+
+        // SetCurrentProcessExplicitAppUserModelID(str.c_str());
+
         InitializeComponent();
     }
 
@@ -369,6 +380,11 @@ namespace winrt::SampleApp::implementation
     winrt::fire_and_forget MyPage::OnLoadIconClick(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e)
     {
         const auto text = PathInput().Text();
+
+        const auto selectedComboItem = GroupSelector().SelectedItem().try_as<winrt::Windows::UI::Xaml::Controls::ComboBoxItem>();
+        const auto groupText = winrt::unbox_value<winrt::hstring>(selectedComboItem.Content());
+        auto hr = SetCurrentProcessExplicitAppUserModelID(groupText.c_str());
+        LOG_IF_FAILED(hr);
 
         co_await winrt::resume_background();
 

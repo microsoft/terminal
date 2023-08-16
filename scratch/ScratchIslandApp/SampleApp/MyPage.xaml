@@ -27,6 +27,13 @@
                 Create
             </Button>
 
+            <ComboBox x:Name="GroupSelector">
+                <ComboBoxItem Content="M.T.S.One" />
+                <ComboBoxItem Content="M.T.S.Two" />
+                <ComboBoxItem Content="M.T.S.Three" />
+            </ComboBox>
+
+
         </StackPanel>
 
         <Grid x:Name="TabContent"
