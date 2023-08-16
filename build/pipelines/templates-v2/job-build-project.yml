@@ -57,6 +57,9 @@ parameters:
   - name: beforeBuildSteps
     type: stepList
     default: []
+  - name: afterBuildSteps
+    type: stepList
+    default: []
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -145,6 +148,8 @@ jobs:
     artifact: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
     condition: always()
     displayName: Publish Build Log
+
+  - ${{ parameters.afterBuildSteps }}
 
   # This saves ~2GiB per architecture. We won't need these later.
   # Removes:
