@@ -22,6 +22,10 @@ namespace winrt::SampleApp::implementation
     private:
         friend struct MyPageT<MyPage>; // for Xaml to bind events
         HWND _hwnd{ nullptr };
+
+        void _attemptOne(const winrt::hstring& text);
+        winrt::fire_and_forget _attemptTwo(const winrt::hstring& text);
+        void _setTaskbarBadge(HICON hIcon);
     };
 }
 
