@@ -57,6 +57,7 @@ jobs:
 
   - task: PowerShell@2
     displayName: 'Convert Test Logs from WTL to xUnit format'
+    condition: always()
     inputs:
       targetType: filePath
       filePath: build\Helix\ConvertWttLogToXUnit.ps1
@@ -64,6 +65,7 @@ jobs:
 
   - task: PowerShell@2
     displayName: 'Manually log test failures'
+    condition: always()
     inputs:
       targetType: filePath
       filePath: build\Helix\OutputTestErrorsForAzureDevops.ps1
@@ -71,6 +73,7 @@ jobs:
 
   - task: PublishTestResults@2
     displayName: 'Upload converted test logs'
+    condition: always()
     inputs:
       testResultsFormat: 'xUnit' # Options: JUnit, NUnit, VSTest, xUnit, cTest
       testResultsFiles: '**/onBuildMachineResults.xml'
@@ -80,6 +83,7 @@ jobs:
 
   - task: CopyFiles@2
     displayName: 'Copy result logs to Artifacts'
+    condition: always()
     inputs:
       Contents: |
        **/*.wtl
@@ -91,3 +95,4 @@ jobs:
 
   - publish: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test-logs'
     artifact: test-logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+    condition: always()
