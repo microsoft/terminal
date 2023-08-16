@@ -9,6 +9,9 @@
 
 #include <Shlwapi.h> // For PathCombine function
 #include <wincodec.h> // Windows Imaging Component
+#include <Shlobj.h>
+#include <Shlobj_core.h>
+#include <wincodec.h>
 
 using namespace std::chrono_literals;
 using namespace winrt::Microsoft::Terminal;
@@ -236,49 +239,123 @@ namespace winrt::SampleApp::implementation
         }
     }
 
+    // Method Description:
+    // - Attempt to get the icon index from the icon path provided
+    // Arguments:
+    // - iconPath: the full icon path, including the index if present
+    // - iconPathWithoutIndex: the place to store the icon path, sans the index if present
+    // Return Value:
+    // - nullopt if the iconPath is not an exe/dll/lnk file in the first place
+    // - 0 if the iconPath is an exe/dll/lnk file but does not contain an index (i.e. we default
+    //   to the first icon in the file)
+    // - the icon index if the iconPath is an exe/dll/lnk file and contains an index
+    std::optional<int> _getIconIndex(const winrt::hstring& iconPath, std::wstring_view& iconPathWithoutIndex)
+    {
+        const auto pathView = std::wstring_view{ iconPath };
+        // Does iconPath have a comma in it? If so, split the string on the
+        // comma and look for the index and extension.
+        const auto commaIndex = pathView.find(L',');
+
+        // split the path on the comma
+        iconPathWithoutIndex = pathView.substr(0, commaIndex);
+
+        // It's an exe, dll, or lnk, so we need to extract the icon from the file.
+        if (!til::ends_with(iconPathWithoutIndex, L".exe") &&
+            !til::ends_with(iconPathWithoutIndex, L".dll") &&
+            !til::ends_with(iconPathWithoutIndex, L".lnk"))
+        {
+            return std::nullopt;
+        }
+
+        if (commaIndex != std::wstring::npos)
+        {
+            // Convert the string iconIndex to a signed int to support negative numbers which represent an Icon's ID.
+            const auto index{ til::to_int(pathView.substr(commaIndex + 1)) };
+            if (index == til::to_int_error)
+            {
+                return std::nullopt;
+            }
+            return static_cast<int>(index);
+        }
+
+        // We had a binary path, but no index. Default to 0.
+        return 0;
+    }
+
     winrt::fire_and_forget MyPage::_attemptTwo(winrt::hstring path)
     {
-        // Create a URI from the path
-        const Windows::Foundation::Uri uri{ path };
+        // First things first:
+        // Is the path a path to an exe, a dll, or a resource in one of those files?
+        // If so, then we can use the icon from that file, without so much rigamarole.
 
-        winrt::Windows::Storage::IStorageFile file{ nullptr };
+        std::wstring_view iconPathWithoutIndex;
+        const auto indexOpt = _getIconIndex(path, iconPathWithoutIndex);
+        if (indexOpt.has_value())
+        {
+            // Here, we know we have a path to an exe, dll, or resource in one of those files.
+            auto iconSize = 32;
+            HICON hIcon = nullptr;
+            winrt::hstring iconPath{ iconPathWithoutIndex };
 
-        // Is the URI a ms-appx URI? then load it from the app package
-        if (uri.SchemeName() == L"ms-appx")
-        {
-            file = co_await winrt::Windows::Storage::StorageFile::GetFileFromApplicationUriAsync(uri);
-        }
-        // // Is it a web URI? then download it else if (uri.SchemeName() ==
-        // L"http" || uri.SchemeName() == L"https")
-        // {
-        //     auto downloader = winrt::Windows::Networking::BackgroundTransfer::BackgroundDownloader();
-        //     auto download = downloader.CreateDownload(uri, nullptr);
-        //     auto downloadOperation = download.StartAsync();
-        //     co_await downloadOperation;
-        //     file = download.ResultFile();
-        // }
-        //
-        // Actually, don't do anything for web URIs. BackgroundDownloader is not
-        // supported outside of packaged apps, but I think that also extends to
-        // centennial apps. Useless.
-        //
-        //
-        else
-        {
-            // Open the file, and load it into a SoftwareBitmap
-            auto file = co_await winrt::Windows::Storage::StorageFile::GetFileFromPathAsync(path);
+            LOG_IF_FAILED(SHDefExtractIcon(iconPath.c_str(),
+                                           indexOpt.value(),
+                                           0,
+                                           &hIcon,
+                                           nullptr,
+                                           iconSize));
+            if (hIcon)
+            {
+                _setTaskbarBadge(hIcon);
+            }
+            co_return;
         }
 
-        // Get the software bitmap out of the file
-        auto stream = co_await file.OpenAsync(winrt::Windows::Storage::FileAccessMode::Read);
-        auto decoder = co_await winrt::Windows::Graphics::Imaging::BitmapDecoder::CreateAsync(stream);
-        auto softwareBitmap = co_await decoder.GetSoftwareBitmapAsync();
+        // If not, then we'll have to do the rigamarole.
+        try
+        {
+            // Create a URI from the path
+            const Windows::Foundation::Uri uri{ path };
 
-        // Convert the SoftwareBitmap to an HBITMAP, using Windows Imaging Component
-        // auto hBitmap = ConvertSoftwareBitmapToHBITMAP(softwareBitmap);
-        // auto hIcon = _convertBitmapToHICON(hBitmap);
-        auto hIcon = ConvertSoftwareBitmapToHICON(softwareBitmap);
-        _setTaskbarBadge(hIcon);
+            winrt::Windows::Storage::IStorageFile file{ nullptr };
+
+            // Is the URI a ms-appx URI? then load it from the app package
+            if (uri.SchemeName() == L"ms-appx")
+            {
+                file = co_await winrt::Windows::Storage::StorageFile::GetFileFromApplicationUriAsync(uri);
+            }
+            // // Is it a web URI? then download it else if (uri.SchemeName() ==
+            // L"http" || uri.SchemeName() == L"https")
+            // {
+            //     auto downloader = winrt::Windows::Networking::BackgroundTransfer::BackgroundDownloader();
+            //     auto download = downloader.CreateDownload(uri, nullptr);
+            //     auto downloadOperation = download.StartAsync();
+            //     co_await downloadOperation;
+            //     file = download.ResultFile();
+            // }
+            //
+            // Actually, don't do anything for web URIs. BackgroundDownloader is not
+            // supported outside of packaged apps, but I think that also extends to
+            // centennial apps. Useless.
+            //
+
+            else
+            {
+                // Open the file, and load it into a SoftwareBitmap
+                auto file = co_await winrt::Windows::Storage::StorageFile::GetFileFromPathAsync(path);
+            }
+
+            // Get the software bitmap out of the file
+            auto stream = co_await file.OpenAsync(winrt::Windows::Storage::FileAccessMode::Read);
+            auto decoder = co_await winrt::Windows::Graphics::Imaging::BitmapDecoder::CreateAsync(stream);
+            auto softwareBitmap = co_await decoder.GetSoftwareBitmapAsync();
+
+            // Convert the SoftwareBitmap to an HBITMAP, using Windows Imaging Component
+            // auto hBitmap = ConvertSoftwareBitmapToHBITMAP(softwareBitmap);
+            // auto hIcon = _convertBitmapToHICON(hBitmap);
+            auto hIcon = ConvertSoftwareBitmapToHICON(softwareBitmap);
+            _setTaskbarBadge(hIcon);
+        }
+        CATCH_LOG();
     }
 
     winrt::fire_and_forget MyPage::OnLoadIconClick(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e)
