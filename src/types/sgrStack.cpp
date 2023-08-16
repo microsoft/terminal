@@ -117,6 +117,9 @@ namespace Microsoft::Console::VirtualTerminal
         //              Ps = 3 1  -> Background color.
         //
         //  (some closing braces for people with editors that get thrown off without them: }})
+        //
+        //  Additionally, we support extended underline styles to be pushed/popped
+        //  using Parameter 4, except doubly underlined, which uses Parameter 21.
 
         // Intense = 1,
         if (validParts.test(SgrSaveRestoreStackOptions::Intense))
@@ -136,19 +139,55 @@ namespace Microsoft::Console::VirtualTerminal
             result.SetItalic(savedAttribute.IsItalic());
         }
 
-        // Underline = 4 or DoublyUnderlined = 21
-        const auto isUnderlinedValid = validParts.test(SgrSaveRestoreStackOptions::Underline);
-        const auto isDoublyUnderlinedValid = validParts.test(SgrSaveRestoreStackOptions::DoublyUnderlined);
-        const auto ulStyle = savedAttribute.GetUnderlineStyle();
-        // if the doubly underline is valid, but not the underline, then restore the style only if it was doubly underlined.
-        if (isDoublyUnderlinedValid && !isUnderlinedValid && ulStyle == UnderlineStyle::DoublyUnderlined)
+        // Underline = 4, DoublyUnderlined = 21,
+        const bool isUnderlinedValid = validParts.test(SgrSaveRestoreStackOptions::Underline);
+        const bool isDoublyUnderlinedValid = validParts.test(SgrSaveRestoreStackOptions::DoublyUnderlined);
+        if (isUnderlinedValid && isDoublyUnderlinedValid)
         {
-            result.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
+            // all the styles are valid, we can simply apply the saved style.
+            result.SetUnderlineStyle(savedAttribute.GetUnderlineStyle());
         }
-        // otherwise, if any of the two are valid, we can restore the underline style.
-        else if (isUnderlinedValid || isDoublyUnderlinedValid)
+        else if (isUnderlinedValid)
         {
-            result.SetUnderlineStyle(ulStyle);
+            const auto savedUl = savedAttribute.GetUnderlineStyle();
+            const auto isUnderlinedOn = savedUl != UnderlineStyle::NoUnderline &&
+                                        savedUl != UnderlineStyle::DoublyUnderlined;
+            if (isUnderlinedOn)
+            {
+                result.SetUnderlineStyle(savedUl);
+            }
+            else
+            {
+                // Turn off singly and extended styles, but if the current style is
+                // doubly underlined, no need to overwrite it. This mimics having
+                // two flags each for singly and doubly underlined, where flag for
+                // doubly underlined would be left 'on' even if we had turned off
+                // the singly underlined.
+                if (result.GetUnderlineStyle() != UnderlineStyle::DoublyUnderlined)
+                {
+                    result.SetUnderlineStyle(UnderlineStyle::NoUnderline);
+                }
+            }
+        }
+        else if (isDoublyUnderlinedValid)
+        {
+            const auto isDoublyUnderlinedOn = savedAttribute.GetUnderlineStyle() == UnderlineStyle::DoublyUnderlined;
+            if (isDoublyUnderlinedOn)
+            {
+                result.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
+            }
+            else
+            {
+                // Turn off doubly underlined, but if the current style is
+                // singly underlined (or extended style), no need to overwrite it.
+                // This mimics having two flags each for singly and doubly
+                // underlined, where flag for singly underlined would be left 'on'
+                // even if we had turned off the doubly underlined.
+                if (result.GetUnderlineStyle() == UnderlineStyle::DoublyUnderlined)
+                {
+                    result.SetUnderlineStyle(UnderlineStyle::NoUnderline);
+                }
+            }
         }
 
         // Blink = 5,

@@ -1112,8 +1112,11 @@ public:
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
         VTParameter rgOptions[16];
+        VTParameter rgSubParams[16];
+        std::pair<BYTE, BYTE> subParamRanges[16];
         VTParameter rgStackOptions[16];
         size_t cOptions = 1;
+        size_t cSubParams = 1;
 
         Log::Comment(L"Test 1: Basic push and pop");
 
@@ -1240,6 +1243,78 @@ public:
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_BLUE);
         _testGetSet->_expectedAttribute.SetIntense(true);
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        Log::Comment(L"Test 5: Save 'no singly underline' state, set singly underlined, and pop. "
+                     L"Singly underlined is off after the pop.");
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::NoUnderline;
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::NoUnderline);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // save 'no underlined' state
+        cOptions = 1;
+        rgStackOptions[0] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::Underline;
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        // set underlined
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::Underline;
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // restore, expect no underline
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::NoUnderline);
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        Log::Comment(L"Test 6: Save 'no singly underlined' state, set doubly underlined, and pop. "
+                     L"Doubly underlined is retained after the pop.");
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::NoUnderline;
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::NoUnderline);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // save no underline state
+        cOptions = 1;
+        rgStackOptions[0] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::Underline;
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        // set doubly underlined
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::DoublyUnderlined;
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // restore, expect doubly underlined
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        Log::Comment(L"Test 7: Save 'curly underlined' state, set doubly underlined, and pop. "
+                     L"Curly underlined is restored after the pop.");
+
+        cOptions = 1;
+        cSubParams = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::Underline;
+        rgSubParams[0] = 3;
+        subParamRanges[0] = { (BYTE)0, (BYTE)1 };
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ std::span{ rgOptions, cOptions }, std::span{ rgSubParams, cSubParams }, std::span{ subParamRanges, cOptions } }));
+
+        // save curly underlined state
+        cOptions = 1;
+        rgStackOptions[0] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::Underline;
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        // set doubly underlined
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::DoublyUnderlined;
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // restore, expect curly underlined
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
         VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
     }
 
