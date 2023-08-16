@@ -158,6 +158,7 @@ namespace Microsoft::Console::Render
         int _dpi;
         float _scale;
         float _prevScale;
+        DirectX::XMFLOAT4 _padding;
 
         std::function<void(const HANDLE)> _pfn;
         std::function<void(const HRESULT)> _pfnWarningCallback;
@@ -279,6 +280,7 @@ namespace Microsoft::Console::Render
             float Scale;
             DirectX::XMFLOAT2 Resolution;
             DirectX::XMFLOAT4 Background;
+            DirectX::XMFLOAT4 Padding;
 #pragma warning(suppress : 4324) // structure was padded due to __declspec(align())
         } _pixelShaderSettings;
 

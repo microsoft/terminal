@@ -111,7 +111,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT SetWindowSize(const til::size pixels) noexcept { return E_NOTIMPL; }
         [[nodiscard]] virtual HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept { return E_NOTIMPL; }
         virtual void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept {}
-        virtual void SetPadding(float x, float y) noexcept {}
+        virtual void SetPadding(float left, float top, float right, float bottom) noexcept {}
     };
 }
 #pragma warning(pop)
