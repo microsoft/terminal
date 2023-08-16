@@ -71,7 +71,7 @@ jobs:
       inputs:
         targetType: filePath
         filePath: build\scripts\Run-Tests.ps1
-        arguments: -MatchPattern '*LocalTests*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(System.ArtifactsDirectory)\\${{ parameters.artifactName }}\\$(BuildConfiguration)\\$(BuildPlatform)\\test"
+        arguments: -MatchPattern '*LocalTests*.dll' -Platform '$(OutputBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(Terminal.BinDir)"
       condition: and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument'))
 
   - task: PowerShell@2
