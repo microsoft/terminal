@@ -59,6 +59,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT GetDirtyArea(std::span<const til::rect>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ til::size* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
+        void SetPadding(float, float, float, float) noexcept override {}
 
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept override;

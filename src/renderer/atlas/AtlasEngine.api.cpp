@@ -194,9 +194,11 @@ void AtlasEngine::_invalidateSpans(std::span<const til::point_span> spans, const
     if (_api.s->font->dpi != newDPI)
     {
         _api.s.write()->font.write()->dpi = newDPI;
-        _api.s.write()->misc.write()->topLeftOffset = {
-            .x = _api.topLeftOffsetInDip.x * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
-            .y = _api.topLeftOffsetInDip.y * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+        _api.s.write()->misc.write()->padding = {
+            .x = _api.paddingInDip.x * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+            .y = _api.paddingInDip.y * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+            .z = _api.paddingInDip.z * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+            .w = _api.paddingInDip.w * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
         };
     }
 
@@ -905,14 +907,17 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
     return true;
 }
 
-void AtlasEngine::SetPadding(float x, float y) noexcept
+void AtlasEngine::SetPadding(float left, float top, float right, float bottom) noexcept
 {
-    if (_api.topLeftOffsetInDip.x != x || _api.topLeftOffsetInDip.y != y)
+    f32x4 newPadding{ left, top, right, bottom };
+    if (_api.paddingInDip != newPadding)
     {
-        _api.topLeftOffsetInDip = { x, y };
-        _api.s.write()->misc.write()->topLeftOffset = {
-            .x = _api.topLeftOffsetInDip.x * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
-            .y = _api.topLeftOffsetInDip.y * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+        _api.paddingInDip = newPadding;
+        _api.s.write()->misc.write()->padding = {
+            .x = _api.paddingInDip.x * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+            .y = _api.paddingInDip.y * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+            .z = _api.paddingInDip.z * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
+            .w = _api.paddingInDip.w * (_api.s->font->dpi / USER_DEFAULT_SCREEN_DPI),
         };
     }
 }

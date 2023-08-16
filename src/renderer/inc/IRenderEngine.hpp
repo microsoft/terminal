@@ -94,7 +94,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT IsGlyphWideByFont(std::wstring_view glyph, _Out_ bool* pResult) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateTitle(std::wstring_view newTitle) noexcept = 0;
         virtual void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept = 0;
-        virtual void SetPadding(float x, float y) noexcept = 0;
+        virtual void SetPadding(float left, float top, float right, float bottom) noexcept = 0;
     };
 }
 #pragma warning(pop)
