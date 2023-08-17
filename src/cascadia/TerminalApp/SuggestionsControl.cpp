@@ -725,10 +725,12 @@ namespace winrt::TerminalApp::implementation
         // here will ensure that we can check this case appropriately.
         _lastFilterTextWasEmpty = _searchBox().Text().empty();
 
+        const auto lastSelectedIndex = _filteredActionsView().SelectedIndex();
+
         _updateFilteredActions();
 
         // In the command line mode we want the user to explicitly select the command
-        _filteredActionsView().SelectedIndex(0);
+        _filteredActionsView().SelectedIndex(std::min<int32_t>(lastSelectedIndex, _filteredActionsView().Items().Size() - 1));
 
         const auto currentNeedleHasResults{ _filteredActions.Size() > 0 };
         _noMatchesText().Visibility(currentNeedleHasResults ? Visibility::Collapsed : Visibility::Visible);
@@ -1088,6 +1090,14 @@ namespace winrt::TerminalApp::implementation
 
         _searchBox().Text(filter);
 
+        // If we're in bottom-up mode, make sure to re-select the _last_ item in
+        // the list, so that it's like we're starting with the most recent one
+        // selected.
+        if (_direction == TerminalApp::SuggestionsDirection::BottomUp)
+        {
+            const auto last = _filteredActionsView().Items().Size() - 1;
+            _filteredActionsView().SelectedIndex(last);
+        }
         // Move the cursor to the very last position, so it starts immediately
         // after the text. This is apparently done by starting a 0-wide
         // selection starting at the end of the string.
