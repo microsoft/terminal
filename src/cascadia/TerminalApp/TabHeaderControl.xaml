@@ -21,6 +21,7 @@
                           MinWidth="0"
                           MinHeight="0"
                           Margin="3,0,8,0"
+                          Foreground="Red"
                           IsActive="{x:Bind TabStatus.IsProgressRingActive, Mode=OneWay}"
                           IsIndeterminate="{x:Bind TabStatus.IsProgressRingIndeterminate, Mode=OneWay}"
                           Visibility="{x:Bind TabStatus.IsProgressRingActive, Mode=OneWay}"
