@@ -4,6 +4,7 @@
 #pragma once
 
 #include "TerminalTabStatus.g.h"
+#include <winrt/windows.ui.core.h>
 
 namespace winrt::TerminalApp::implementation
 {
@@ -19,6 +20,7 @@ namespace winrt::TerminalApp::implementation
         WINRT_OBSERVABLE_PROPERTY(bool, IsReadOnlyActive, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(uint32_t, ProgressValue, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(bool, IsInputBroadcastActive, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::SolidColorBrush, ProgressColor, _PropertyChangedHandlers, winrt::Windows::UI::Colors::Green());
     };
 }
 

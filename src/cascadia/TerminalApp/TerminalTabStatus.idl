@@ -14,5 +14,6 @@ namespace TerminalApp
         UInt32 ProgressValue { get; set; };
         Boolean IsReadOnlyActive { get; set; };
         Boolean IsInputBroadcastActive { get; set; };
+        Windows.UI.Xaml.Media.SolidColorBrush ProgressColor { get; set; };
     }
 }
