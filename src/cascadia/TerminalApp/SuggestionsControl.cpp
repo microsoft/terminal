@@ -781,8 +781,6 @@ namespace winrt::TerminalApp::implementation
 
     void SuggestionsControl::_switchToMode()
     {
-        const auto currentlyVisible{ Visibility() == Visibility::Visible };
-
         ParsedCommandLineText(L"");
         _searchBox().Text(L"");
         _searchBox().Select(_searchBox().Text().size(), 0);
@@ -1089,6 +1087,11 @@ namespace winrt::TerminalApp::implementation
         Margin(newMargin);
 
         _searchBox().Text(filter);
+
+        // Move the cursor to the very last position, so it starts immediately
+        // after the text. This is apparently done by starting a 0-wide
+        // selection starting at the end of the string.
+        _searchBox().Select(filter.size(), 0);
     }
 
 }
