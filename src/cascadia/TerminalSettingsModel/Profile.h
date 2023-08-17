@@ -102,6 +102,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::IAppearanceConfig DefaultAppearance();
         Model::FontConfig FontInfo();
 
+        winrt::hstring EvaluatedIcon() const;
+
         void _FinalizeInheritance() override;
 
         // Special fields

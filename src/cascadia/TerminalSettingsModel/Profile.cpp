@@ -336,3 +336,7 @@ Json::Value Profile::ToJson() const
 
     return json;
 }
+winrt::hstring Profile::EvaluatedIcon() const
+{
+    return Icon().empty() ? Commandline() : Icon();
+}

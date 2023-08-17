@@ -515,8 +515,12 @@ void CascadiaSettings::_validateMediaResources()
             }
         }
 
-        // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol,
-        // so treat it as an invalid path.
+        // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol, so treat
+        // it as an invalid path.
+        //
+        // Explicitly just use the Icon here, not the EvaluatedIcon. We don't
+        // want to blow up if we fell back to the commandline and the
+        // commandline _isn't an icon_.
         if (const auto icon = profile.Icon(); icon.size() > 2)
         {
             const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(icon.c_str()) };

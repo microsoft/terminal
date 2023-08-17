@@ -602,7 +602,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                 // - Escape the profile name for JSON appropriately
                 auto escapedProfileName = _escapeForJson(til::u16u8(p.Name()));
-                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.Icon()));
+                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.EvaluatedIcon()));
                 auto newJsonString = til::replace_needle_in_haystack(oldJsonString,
                                                                      ProfileNameToken,
                                                                      escapedProfileName);

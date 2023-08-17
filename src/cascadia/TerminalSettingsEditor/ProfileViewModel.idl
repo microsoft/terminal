@@ -75,6 +75,8 @@ namespace Microsoft.Terminal.Settings.Editor
         AppearanceViewModel UnfocusedAppearance { get; };
         Boolean VtPassthroughAvailable { get; };
 
+        String EvaluatedIcon { get; };
+
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
 

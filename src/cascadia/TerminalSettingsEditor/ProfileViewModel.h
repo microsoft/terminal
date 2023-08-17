@@ -58,6 +58,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Padding(to_hstring(value));
         }
 
+        winrt::hstring EvaluatedIcon() const
+        {
+            return _profile.EvaluatedIcon();
+        }
+
         // starting directory
         bool UseParentProcessDirectory();
         void UseParentProcessDirectory(const bool useParent);
