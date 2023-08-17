@@ -1042,8 +1042,8 @@ namespace winrt::TerminalApp::implementation
                     (taskbarState == 2) ?
                         winrt::Windows::UI::Colors::Red() :
                         ((taskbarState == 4) ?
-                            winrt::Windows::UI::Colors::Orange() :
-                            winrt::Windows::UI::Colors::Green());
+                             winrt::Windows::UI::Colors::Orange() :
+                             winrt::Windows::UI::Colors::Green());
                 _tabStatus.ProgressColor(winrt::Windows::UI::Xaml::Media::SolidColorBrush(color));
             }
             // Hide the tab icon (the progress ring is placed over it)
