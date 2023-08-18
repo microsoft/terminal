@@ -1133,6 +1133,52 @@ public:
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
     }
 
+    TEST_METHOD(GraphicsSingleWithSubParamTests)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{38, 48}") // corresponds to options in DispatchTypes::GraphicsOptions
+        END_TEST_METHOD_PROPERTIES()
+
+        Log::Comment(L"Starting test...");
+        _testGetSet->PrepData();
+
+        // Modify variables based on type of this test
+        DispatchTypes::GraphicsOptions graphicsOption;
+        std::vector<VTParameter> subParams;
+        std::vector<std::pair<BYTE, BYTE>> subParamRanges;
+        size_t uiGraphicsOption;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiGraphicsOptions", uiGraphicsOption));
+        graphicsOption = (DispatchTypes::GraphicsOptions)uiGraphicsOption;
+
+        VTParameter rgOptions[16];
+        size_t cOptions = 1;
+        rgOptions[0] = graphicsOption;
+
+        TextAttribute startingAttribute;
+        switch (graphicsOption)
+        {
+        case DispatchTypes::GraphicsOptions::ForegroundExtended:
+            Log::Comment(L"Testing graphics 'ForegroundExtended'.");
+            _testGetSet->MakeSubParamsAndRanges({ { DispatchTypes::GraphicsOptions::BlinkOrXterm256Index, TextColor::DARK_RED } }, subParams, subParamRanges);
+            startingAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_RED);
+            break;
+        case DispatchTypes::GraphicsOptions::BackgroundExtended:
+            Log::Comment(L"Testing graphics 'BackgroundExtended'");
+            _testGetSet->MakeSubParamsAndRanges({ { DispatchTypes::GraphicsOptions::BlinkOrXterm256Index, TextColor::BRIGHT_WHITE } }, subParams, subParamRanges);
+            startingAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetIndexedBackground256(TextColor::BRIGHT_WHITE);
+            break;
+        default:
+            VERIFY_FAIL(L"Test not implemented yet!");
+            break;
+        }
+        _testGetSet->_textBuffer->SetCurrentAttributes(startingAttribute);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ std::span{ rgOptions, cOptions }, subParams, subParamRanges }));
+    }
+
     TEST_METHOD(GraphicsPushPopTests)
     {
         Log::Comment(L"Starting test...");
