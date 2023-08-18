@@ -1259,6 +1259,11 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noe
     return _taskbarProgress;
 }
 
+void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept
+{
+    _pfnCompletionsChanged.swap(pfn);
+}
+
 Scheme Terminal::GetColorScheme() const
 {
     Scheme s;
@@ -1444,6 +1449,16 @@ til::color Terminal::GetColorForMark(const ScrollMark& mark) const
         return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
     }
     }
+}
+
+std::wstring_view Terminal::CurrentCommand() const
+{
+    if (_currentPromptState != PromptState::Command)
+    {
+        return L"";
+    }
+
+    return _activeBuffer().CurrentCommand();
 }
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)

@@ -52,6 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool HasNestedCommands() const;
         bool IsNestedCommand() const noexcept;
         Windows::Foundation::Collections::IMapView<winrt::hstring, Model::Command> NestedCommands() const;
+        void NestedCommands(const Windows::Foundation::Collections::IVectorView<Model::Command>& nested);
 
         bool HasName() const noexcept;
         hstring Name() const noexcept;
@@ -65,6 +66,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         hstring IconPath() const noexcept;
         void IconPath(const hstring& val);
+
+        static Windows::Foundation::Collections::IVector<Model::Command> ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength);
+        static Windows::Foundation::Collections::IVector<Model::Command> HistoryToCommands(Windows::Foundation::Collections::IVector<winrt::hstring> history,
+                                                                                           winrt::hstring currentCommandline,
+                                                                                           bool directories);
 
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
         WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);

@@ -119,6 +119,8 @@ public:
                  const til::point& end,
                  const bool fromUi);
 
+    std::wstring_view CurrentCommand() const;
+
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
     void ReturnResponse(const std::wstring_view response) override;
@@ -152,6 +154,9 @@ public:
     bool IsVtInputEnabled() const noexcept override;
     void NotifyAccessibilityChange(const til::rect& changedRect) noexcept override;
     void NotifyBufferRotation(const int delta) override;
+
+    void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
+
 #pragma endregion
 
     void ClearMark();
@@ -225,6 +230,7 @@ public:
     void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
     void SetShowWindowCallback(std::function<void(bool)> pfn) noexcept;
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
+    void CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
@@ -322,6 +328,7 @@ private:
     std::function<void()> _pfnTaskbarProgressChanged;
     std::function<void(bool)> _pfnShowWindowChanged;
     std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
+    std::function<void(std::wstring_view, unsigned int)> _pfnCompletionsChanged;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
