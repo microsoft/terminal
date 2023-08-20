@@ -1238,7 +1238,15 @@ Json::Value CascadiaSettings::ToJson() const
     // top-level json object
     auto json{ _globals->ToJson() };
     json["$help"] = "https://aka.ms/terminal-documentation";
-    json["$schema"] = "https://aka.ms/terminal-profiles-schema";
+    json["$schema"] =
+#if defined(WT_BRANDING_RELEASE)
+        "https://aka.ms/terminal-profiles-schema"
+#elif defined(WT_BRANDING_PREVIEW)
+        "https://aka.ms/terminal-profiles-schema-preview"
+#else
+        "https://raw.githubusercontent.com/microsoft/terminal/main/doc/cascadia/profiles.schema.json"
+#endif
+        ;
 
     // "profiles" will always be serialized as an object
     Json::Value profiles{ Json::ValueType::objectValue };
