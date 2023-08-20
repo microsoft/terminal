@@ -13,20 +13,20 @@ namespace Microsoft::Console
     struct HostSignalNotifyAppData
     {
         uint32_t sizeInBytes;
-        uint32_t processId;
+        uint32_t processId; // THIS IS A PID
     };
 
     struct HostSignalSetForegroundData
     {
         uint32_t sizeInBytes;
-        uint32_t processId;
+        uint32_t processId; // THIS IS A HANDLE, NOT A PID
         bool isForeground;
     };
 
     struct HostSignalEndTaskData
     {
         uint32_t sizeInBytes;
-        uint32_t processId;
+        uint32_t processId; // THIS IS A PID
         uint32_t eventType;
         uint32_t ctrlFlags;
     };

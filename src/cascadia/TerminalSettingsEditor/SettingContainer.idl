@@ -22,6 +22,9 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable SettingOverrideSource;
         static Windows.UI.Xaml.DependencyProperty SettingOverrideSourceProperty { get; };
 
+        Boolean StartExpanded;
+        static Windows.UI.Xaml.DependencyProperty StartExpandedProperty { get; };
+
         event Windows.Foundation.TypedEventHandler<SettingContainer, Object> ClearSettingValue;
     };
 }

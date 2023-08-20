@@ -32,6 +32,10 @@ if (%1) == (rel) (
     echo Manually building release
     set _LAST_BUILD_CONF=Release
 )
+if (%1) == (audit) (
+    echo Manually building audit mode
+    set _LAST_BUILD_CONF=AuditMode
+)
 if (%1) == (no_clean) (
     set _MSBUILD_TARGET=Build
 )
@@ -72,7 +76,8 @@ if "%_SKIP_NUGET_RESTORE%" == "1" (
     nuget.exe restore %OPENCON%\OpenConsole.sln
 )
 
-set _BUILD_CMDLINE="%MSBUILD%" %OPENCON%\OpenConsole.sln /t:"%_MSBUILD_TARGET%" /m /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% %_APPX_ARGS%
+@rem /p:GenerateAppxPackageOnBuild=false will prevent us from building the whole .msix package when building the wapproj project.
+set _BUILD_CMDLINE="%MSBUILD%" %OPENCON%\OpenConsole.sln /t:"%_MSBUILD_TARGET%" /m /p:Configuration=%_LAST_BUILD_CONF% /p:GenerateAppxPackageOnBuild=false /p:Platform=%ARCH% %_APPX_ARGS%
 
 echo %_BUILD_CMDLINE%
 echo Starting build...

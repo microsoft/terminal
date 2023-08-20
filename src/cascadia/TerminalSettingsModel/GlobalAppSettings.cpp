@@ -17,6 +17,7 @@ using namespace winrt::Microsoft::UI::Xaml::Controls;
 
 static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
 static constexpr std::string_view ActionsKey{ "actions" };
+static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 
@@ -32,6 +33,14 @@ void GlobalAppSettings::_FinalizeInheritance()
     {
         _actionMap->AddLeastImportantParent(parent->_actionMap);
         _keybindingsWarnings.insert(_keybindingsWarnings.end(), parent->_keybindingsWarnings.begin(), parent->_keybindingsWarnings.end());
+
+        for (const auto& [k, v] : parent->_themes)
+        {
+            if (!_themes.HasKey(k))
+            {
+                _themes.Insert(k, v);
+            }
+        }
     }
 }
 
@@ -56,6 +65,14 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
         {
             const auto schemeImpl{ winrt::get_self<ColorScheme>(kv.Value()) };
             globals->_colorSchemes.Insert(kv.Key(), *schemeImpl->Copy());
+        }
+    }
+    if (_themes)
+    {
+        for (auto kv : _themes)
+        {
+            const auto themeImpl{ winrt::get_self<implementation::Theme>(kv.Value()) };
+            globals->_themes.Insert(kv.Key(), *themeImpl->Copy());
         }
     }
 
@@ -184,4 +201,45 @@ Json::Value GlobalAppSettings::ToJson() const
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();
     return json;
+}
+
+winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
+{
+    auto requestedTheme = Model::Theme::IsSystemInDarkTheme() ?
+                              winrt::Windows::UI::Xaml::ElementTheme::Dark :
+                              winrt::Windows::UI::Xaml::ElementTheme::Light;
+
+    switch (requestedTheme)
+    {
+    case winrt::Windows::UI::Xaml::ElementTheme::Light:
+        return _themes.TryLookup(Theme().LightName());
+
+    case winrt::Windows::UI::Xaml::ElementTheme::Dark:
+        return _themes.TryLookup(Theme().DarkName());
+
+    case winrt::Windows::UI::Xaml::ElementTheme::Default:
+    default:
+        return nullptr;
+    }
+}
+
+void GlobalAppSettings::AddTheme(const Model::Theme& theme)
+{
+    _themes.Insert(theme.Name(), theme);
+}
+
+winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::Theme> GlobalAppSettings::Themes() noexcept
+{
+    return _themes.GetView();
+}
+
+void GlobalAppSettings::ExpandCommands(const winrt::Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
+                                       const winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes)
+{
+    _actionMap->ExpandCommands(profiles, schemes);
+}
+
+bool GlobalAppSettings::ShouldUsePersistedLayout() const
+{
+    return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout && !IsolatedMode();
 }

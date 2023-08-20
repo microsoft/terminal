@@ -114,7 +114,7 @@ The jumplist will have to be saved each time a profile change occurs but the fre
 
 #### Should it open a new instance of the terminal or open in a new tab?
 
-#### What should happen if a non existent profile is launched
+#### What should happen if a nonexistent profile is launched
 The jumplist is only updated when the application is running so the profiles could be modified or deleted outside and the jumplist will not be updated. Handling will be done by whatever handles the command line parsing.
 
 ## Future considerations

@@ -33,9 +33,9 @@ void MakeAltRasterFont(
     DWORD i;
     DWORD Find;
     ULONG FontIndex;
-    COORD FontSize = FontInfo[DefaultFontIndex].Size;
+    auto FontSize = FontInfo[DefaultFontIndex].Size;
     COORD FontDelta;
-    BOOL fDbcsCharSet = IS_ANY_DBCS_CHARSET(CodePageToCharSet(CodePage));
+    auto fDbcsCharSet = IS_ANY_DBCS_CHARSET(CodePageToCharSet(CodePage));
 
     FontIndex = 0;
     Find = (DWORD)-1;
@@ -221,7 +221,7 @@ int LanguageListCreate(
      * (i will be LB_ERR if no currently selected item).
      */
     lListIndex = (LONG)SendMessage(hWndLanguageCombo, CB_GETCURSEL, 0, 0L);
-    const int iRet = (int)SendMessage(hWndLanguageCombo, CB_GETITEMDATA, lListIndex, 0L);
+    const auto iRet = (int)SendMessage(hWndLanguageCombo, CB_GETITEMDATA, lListIndex, 0L);
 
     EnableWindow(hWndLanguageCombo, g_fEastAsianSystem);
 

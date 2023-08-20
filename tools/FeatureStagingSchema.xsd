@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xs:schema targetNamespace="http://microsoft.com/TilFeatureStaging-Schema.xsd"
     elementFormDefault="qualified"
     xmlns="http://microsoft.com/TilFeatureStaging-Schema.xsd"

@@ -12,7 +12,13 @@ namespace Microsoft.Terminal.TerminalConnection
         ConptyConnection();
         Guid Guid { get; };
         String Commandline { get; };
+        String StartingTitle { get; };
+        UInt16 ShowWindow { get; };
+
         void ClearBuffer();
+
+        void ShowHide(Boolean show);
+
         void ReparentWindow(UInt64 newParent);
 
         static event NewConnectionHandler NewConnection;
@@ -25,6 +31,7 @@ namespace Microsoft.Terminal.TerminalConnection
                                                                       IMapView<String, String> environment,
                                                                       UInt32 rows,
                                                                       UInt32 columns,
-                                                                      Guid guid);
+                                                                      Guid guid,
+                                                                      Guid profileGuid);
     };
 }

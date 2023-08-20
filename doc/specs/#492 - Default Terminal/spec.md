@@ -138,7 +138,7 @@ The delegation repeats the same dance as above as well:
 
 The terminal will be its own complete presentation and input solution on top of a ConPTY connection, separating the concerns between API servicing and the user experience.
 
-Today the Terminal knows how to start and then launches a ConPTY under it. The Terminal will need to be updated to accept a pre-existing ConPTY connection on launch (or when the multi-process model arrives, as an inbound connection), and connect that to a new tab/pane instead of using the `winconpty.lib` libraries to make its own.
+Today the Terminal knows how to start and then launches a ConPTY under it. The Terminal will need to be updated to accept a preexisting ConPTY connection on launch (or when the multi-process model arrives, as an inbound connection), and connect that to a new tab/pane instead of using the `winconpty.lib` libraries to make its own.
 
 For now, I'm considering only the fresh-start scenario.
 - The Terminal will have to detect the inbound connection through ~~its argument parsing (or through~~ a new entrypoint in the COM alternative ~~)~~ and store the PTY in/out/signal handles for that connection in the startup arguments information
@@ -201,7 +201,7 @@ Concerns:
 
 ### Accessibility
 
-Accessibility applications are the most likely to resort to a method of spelunking the process tree or window handles to attempt to find content to read out. Presuming they have hardcoded rules for console-type applications, these algorithms could be surprised by the substitution of another terminal environment.
+Accessibility applications are the most likely to resort to a method of spelunking the process tree or window handles to attempt to find content to read out. Presuming they have hard-coded rules for console-type applications, these algorithms could be surprised by the substitution of another terminal environment.
 
 The major players here that I am considering are NVDA, JAWS, and Narrator. As far as I am aware, all of these applications attempt to drive their interactivity through UI Automation where possible. And we have worked with all of these applications in the past in improving their support for both `conhost.exe` and the Windows Terminal product. I have relatively high confidence that we will be able to work with them again to help update these assistive products to understand the new UI delegation, if necessary.
 

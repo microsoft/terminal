@@ -20,18 +20,18 @@ class JsonTestClass
 public:
     static Json::Value VerifyParseSucceeded(const std::string_view& content)
     {
-        static const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        static const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
 
         Json::Value root;
         std::string errs;
-        const bool parseResult = reader->parse(content.data(), content.data() + content.size(), &root, &errs);
+        const auto parseResult = reader->parse(content.data(), content.data() + content.size(), &root, &errs);
         VERIFY_IS_TRUE(parseResult, winrt::to_hstring(errs).c_str());
         return root;
     };
 
     static std::string toString(const Json::Value& json)
     {
-        static const std::unique_ptr<Json::StreamWriter> writer{ Json::StreamWriterBuilder::StreamWriterBuilder().newStreamWriter() };
+        static const std::unique_ptr<Json::StreamWriter> writer{ Json::StreamWriterBuilder{}.newStreamWriter() };
 
         std::stringstream s;
         writer->write(json, &s);

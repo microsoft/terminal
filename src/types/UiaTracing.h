@@ -99,7 +99,7 @@ namespace Microsoft::Console::Types
         // Used to prevent multiple instances
         UiaTracing() noexcept;
         ~UiaTracing() noexcept;
-        UiaTracing(UiaTracing const&) = delete;
+        UiaTracing(const UiaTracing&) = delete;
         UiaTracing(UiaTracing&&) = delete;
         UiaTracing& operator=(const UiaTracing&) = delete;
         UiaTracing& operator=(UiaTracing&&) = delete;

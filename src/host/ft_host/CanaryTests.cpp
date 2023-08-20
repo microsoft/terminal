@@ -24,7 +24,7 @@ static PCWSTR pwszConhostV1Path = L"%WINDIR%\\system32\\conhostv1.dll";
 void CanaryTests::LaunchV1Console()
 {
     // First ensure that this system has the v1 console to test.
-    std::wstring ConhostV1Path = wil::ExpandEnvironmentStringsW<std::wstring>(pwszConhostV1Path);
+    auto ConhostV1Path = wil::ExpandEnvironmentStringsW<std::wstring>(pwszConhostV1Path);
 
     if (!CheckIfFileExists(ConhostV1Path.c_str()))
     {
@@ -38,7 +38,7 @@ void CanaryTests::LaunchV1Console()
 
     // Attempt to launch CMD.exe in a new window
     // Expand any environment variables present in the command line string.
-    std::wstring CmdLine = wil::ExpandEnvironmentStringsW<std::wstring>(pwszCmdPath);
+    auto CmdLine = wil::ExpandEnvironmentStringsW<std::wstring>(pwszCmdPath);
 
     // Create output handle for redirection. We'll read from it to make sure CMD started correctly.
     // We'll let it have a default input handle to make sure it binds to the new console host window that will be created.
@@ -91,10 +91,10 @@ void CanaryTests::LaunchV1Console()
     VERIFY_ARE_EQUAL(STILL_ACTIVE, dwExitCode);
 
     // Read out our redirected output to see that CMD's startup greeting has been printed
-    const size_t cchCmdGreeting = strlen(pszCmdGreeting);
-    wistd::unique_ptr<char[]> pszOutputBuffer = wil::make_unique_nothrow<char[]>(cchCmdGreeting + 1);
+    const auto cchCmdGreeting = strlen(pszCmdGreeting);
+    auto pszOutputBuffer = wil::make_unique_nothrow<char[]>(cchCmdGreeting + 1);
 
-    const DWORD dwReadExpected = static_cast<DWORD>((cchCmdGreeting * sizeof(char)));
+    const auto dwReadExpected = static_cast<DWORD>((cchCmdGreeting * sizeof(char)));
     DWORD dwReadActual = 0;
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(OutPipeRead.get(), pszOutputBuffer.get(), dwReadExpected, &dwReadActual, nullptr));
     VERIFY_ARE_EQUAL(dwReadExpected, dwReadActual);

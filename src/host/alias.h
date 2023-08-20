@@ -29,7 +29,6 @@ public:
                                             size_t& lineCount);
 
 private:
-    static void s_TrimLeadingSpaces(std::wstring& str);
     static void s_TrimTrailingCrLf(std::wstring& str);
     static std::deque<std::wstring> s_Tokenize(const std::wstring& str);
     static std::wstring s_GetArgString(const std::wstring& str);

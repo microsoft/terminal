@@ -38,14 +38,14 @@ Selection& Selection::Instance()
 // Arguments:
 // - <none> - Uses internal state to know what area is selected already.
 // Return Value:
-// - Returns a vector where each SMALL_RECT is one Row worth of the area to be selected.
+// - Returns a vector where each til::inclusive_rect is one Row worth of the area to be selected.
 // - Returns empty vector if no rows are selected.
 // - Throws exceptions for out of memory issues
-std::vector<SMALL_RECT> Selection::GetSelectionRects() const
+std::vector<til::inclusive_rect> Selection::GetSelectionRects() const
 {
     if (!_fSelectionVisible)
     {
-        return std::vector<SMALL_RECT>();
+        return std::vector<til::inclusive_rect>();
     }
 
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -53,9 +53,9 @@ std::vector<SMALL_RECT> Selection::GetSelectionRects() const
 
     // _coordSelectionAnchor is at one of the corners of _srSelectionRects
     // endSelectionAnchor is at the exact opposite corner
-    COORD endSelectionAnchor;
-    endSelectionAnchor.X = (_coordSelectionAnchor.X == _srSelectionRect.Left) ? _srSelectionRect.Right : _srSelectionRect.Left;
-    endSelectionAnchor.Y = (_coordSelectionAnchor.Y == _srSelectionRect.Top) ? _srSelectionRect.Bottom : _srSelectionRect.Top;
+    til::point endSelectionAnchor;
+    endSelectionAnchor.x = (_coordSelectionAnchor.x == _srSelectionRect.left) ? _srSelectionRect.right : _srSelectionRect.left;
+    endSelectionAnchor.y = (_coordSelectionAnchor.y == _srSelectionRect.top) ? _srSelectionRect.bottom : _srSelectionRect.top;
 
     const auto blockSelection = !IsLineSelection();
     return screenInfo.GetTextBuffer().GetTextRects(_coordSelectionAnchor, endSelectionAnchor, blockSelection, false);
@@ -129,7 +129,7 @@ void Selection::_PaintSelection() const
 // - coordBufferPos - Position in which user started a selection
 // Return Value:
 // - <none>
-void Selection::InitializeMouseSelection(const COORD coordBufferPos)
+void Selection::InitializeMouseSelection(const til::point coordBufferPos)
 {
     Scrolling::s_ClearScroll();
 
@@ -141,17 +141,17 @@ void Selection::InitializeMouseSelection(const COORD coordBufferPos)
     _coordSelectionAnchor = coordBufferPos;
 
     // since we've started with just a point, the rectangle is 1x1 on the point given
-    _srSelectionRect.Left = coordBufferPos.X;
-    _srSelectionRect.Right = coordBufferPos.X;
-    _srSelectionRect.Top = coordBufferPos.Y;
-    _srSelectionRect.Bottom = coordBufferPos.Y;
+    _srSelectionRect.left = coordBufferPos.x;
+    _srSelectionRect.right = coordBufferPos.x;
+    _srSelectionRect.top = coordBufferPos.y;
+    _srSelectionRect.bottom = coordBufferPos.y;
 
     // Check for ALT-Mouse Down "use alternate selection"
     // If in box mode, use line mode. If in line mode, use box mode.
     CheckAndSetAlternateSelection();
 
     // set window title to mouse selection mode
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    const auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
@@ -174,7 +174,7 @@ void Selection::InitializeMouseSelection(const COORD coordBufferPos)
 // - coordSelectionEnd - The linear final position or opposite corner of the anchor to represent the complete selection area.
 // Return Value:
 // - <none>
-void Selection::AdjustSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd)
+void Selection::AdjustSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd)
 {
     // modify the anchor and then just use extend to adjust the other portion of the selection rectangle
     _coordSelectionAnchor = coordSelectionStart;
@@ -189,10 +189,10 @@ void Selection::AdjustSelection(const COORD coordSelectionStart, const COORD coo
 // - coordBufferPos - Position to extend/contract the current selection up to.
 // Return Value:
 // - <none>
-void Selection::ExtendSelection(_In_ COORD coordBufferPos)
+void Selection::ExtendSelection(_In_ til::point coordBufferPos)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& screenInfo = gci.GetActiveOutputBuffer();
 
     _allowMouseDragSelection = true;
 
@@ -213,45 +213,45 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
         }
 
         // scroll if necessary to make cursor visible.
-        screenInfo.MakeCursorVisible(coordBufferPos, false);
+        screenInfo.MakeCursorVisible(coordBufferPos);
 
         _dwSelectionFlags |= CONSOLE_SELECTION_NOT_EMPTY;
-        _srSelectionRect.Left = _srSelectionRect.Right = _coordSelectionAnchor.X;
-        _srSelectionRect.Top = _srSelectionRect.Bottom = _coordSelectionAnchor.Y;
+        _srSelectionRect.left = _srSelectionRect.right = _coordSelectionAnchor.x;
+        _srSelectionRect.top = _srSelectionRect.bottom = _coordSelectionAnchor.y;
 
         ShowSelection();
     }
     else
     {
         // scroll if necessary to make cursor visible.
-        screenInfo.MakeCursorVisible(coordBufferPos, false);
+        screenInfo.MakeCursorVisible(coordBufferPos);
     }
 
     // remember previous selection rect
-    SMALL_RECT srNewSelection = _srSelectionRect;
+    auto srNewSelection = _srSelectionRect;
 
     // update selection rect
     // this adjusts the rectangle dimensions based on which way the move was requested
     // in respect to the original selection position (the anchor)
-    if (coordBufferPos.X <= _coordSelectionAnchor.X)
+    if (coordBufferPos.x <= _coordSelectionAnchor.x)
     {
-        srNewSelection.Left = coordBufferPos.X;
-        srNewSelection.Right = _coordSelectionAnchor.X;
+        srNewSelection.left = coordBufferPos.x;
+        srNewSelection.right = _coordSelectionAnchor.x;
     }
-    else if (coordBufferPos.X > _coordSelectionAnchor.X)
+    else if (coordBufferPos.x > _coordSelectionAnchor.x)
     {
-        srNewSelection.Right = coordBufferPos.X;
-        srNewSelection.Left = _coordSelectionAnchor.X;
+        srNewSelection.right = coordBufferPos.x;
+        srNewSelection.left = _coordSelectionAnchor.x;
     }
-    if (coordBufferPos.Y <= _coordSelectionAnchor.Y)
+    if (coordBufferPos.y <= _coordSelectionAnchor.y)
     {
-        srNewSelection.Top = coordBufferPos.Y;
-        srNewSelection.Bottom = _coordSelectionAnchor.Y;
+        srNewSelection.top = coordBufferPos.y;
+        srNewSelection.bottom = _coordSelectionAnchor.y;
     }
-    else if (coordBufferPos.Y > _coordSelectionAnchor.Y)
+    else if (coordBufferPos.y > _coordSelectionAnchor.y)
     {
-        srNewSelection.Bottom = coordBufferPos.Y;
-        srNewSelection.Top = _coordSelectionAnchor.Y;
+        srNewSelection.bottom = coordBufferPos.y;
+        srNewSelection.top = _coordSelectionAnchor.y;
     }
 
     // This function is called on WM_MOUSEMOVE.
@@ -285,8 +285,8 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
 // - <none>
 void Selection::_CancelMouseSelection()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& ScreenInfo = gci.GetActiveOutputBuffer();
 
     // invert old select rect.  if we're selecting by mouse, we
     // always have a selection rect.
@@ -295,7 +295,7 @@ void Selection::_CancelMouseSelection()
     // turn off selection flag
     _SetSelectingState(false);
 
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    const auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
@@ -313,8 +313,8 @@ void Selection::_CancelMouseSelection()
 // - <none>
 void Selection::_CancelMarkSelection()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& ScreenInfo = gci.GetActiveOutputBuffer();
 
     // Hide existing selection, if we have one.
     if (IsAreaSelected())
@@ -325,7 +325,7 @@ void Selection::_CancelMarkSelection()
     // Turn off selection flag.
     _SetSelectingState(false);
 
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    const auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
@@ -388,25 +388,25 @@ void Selection::ClearSelection(const bool fStartingNewSelection)
 // Arguments:
 // - psrRect - Rectangular area to fill with color
 // - attr - The color attributes to apply
-void Selection::ColorSelection(const SMALL_RECT& srRect, const TextAttribute attr)
+void Selection::ColorSelection(const til::inclusive_rect& srRect, const TextAttribute attr)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // Read selection rectangle, assumed already clipped to buffer.
-    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    auto& screenInfo = gci.GetActiveOutputBuffer();
 
-    COORD coordTargetSize;
-    coordTargetSize.X = CalcWindowSizeX(srRect);
-    coordTargetSize.Y = CalcWindowSizeY(srRect);
+    til::point coordTargetSize;
+    coordTargetSize.x = CalcWindowSizeX(srRect);
+    coordTargetSize.y = CalcWindowSizeY(srRect);
 
-    COORD coordTarget;
-    coordTarget.X = srRect.Left;
-    coordTarget.Y = srRect.Top;
+    til::point coordTarget;
+    coordTarget.x = srRect.left;
+    coordTarget.y = srRect.top;
 
     // Now color the selection a line at a time.
-    for (; (coordTarget.Y < srRect.Top + coordTargetSize.Y); ++coordTarget.Y)
+    for (; (coordTarget.y < srRect.top + coordTargetSize.y); ++coordTarget.y)
     {
-        const size_t cchWrite = gsl::narrow<size_t>(coordTargetSize.X);
+        const auto cchWrite = gsl::narrow<size_t>(coordTargetSize.x);
 
         try
         {
@@ -424,7 +424,7 @@ void Selection::ColorSelection(const SMALL_RECT& srRect, const TextAttribute att
 // - coordSelectionStart - Anchor point (start of selection) for the region to be colored
 // - coordSelectionEnd - Other point referencing the rectangle inscribing the selection area
 // - attr - Color to apply to region.
-void Selection::ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr)
+void Selection::ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute attr)
 {
     // Extract row-by-row selection rectangles for the selection area.
     try
@@ -449,7 +449,7 @@ void Selection::ColorSelection(const COORD coordSelectionStart, const COORD coor
 // - <none>
 void Selection::InitializeMarkSelection()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // clear any existing selection.
     ClearSelection(true);
 
@@ -460,12 +460,12 @@ void Selection::InitializeMarkSelection()
     _dwSelectionFlags = 0;
 
     // save old cursor position and make console cursor into selection cursor.
-    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    auto& screenInfo = gci.GetActiveOutputBuffer();
     const auto& cursor = screenInfo.GetTextBuffer().GetCursor();
     _SaveCursorData(cursor);
     screenInfo.SetCursorInformation(100, TRUE);
 
-    const COORD coordPosition = cursor.GetPosition();
+    const auto coordPosition = cursor.GetPosition();
     LOG_IF_FAILED(screenInfo.SetCursorPosition(coordPosition, true));
 
     // set the cursor position as the anchor position
@@ -474,7 +474,7 @@ void Selection::InitializeMarkSelection()
     _coordSelectionAnchor = coordPosition;
 
     // set frame title text
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    const auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
@@ -489,7 +489,7 @@ void Selection::InitializeMarkSelection()
 // - coordEnd - Position to select up to
 // Return Value:
 // - <none>
-void Selection::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
+void Selection::SelectNewRegion(const til::point coordStart, const til::point coordEnd)
 {
     // clear existing selection if applicable
     ClearSelection();
@@ -513,25 +513,25 @@ void Selection::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 // - <none>
 void Selection::SelectAll()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // save the old window position
-    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    auto& screenInfo = gci.GetActiveOutputBuffer();
 
-    COORD coordWindowOrigin = screenInfo.GetViewport().Origin();
+    auto coordWindowOrigin = screenInfo.GetViewport().Origin();
 
     // Get existing selection rectangle parameters
-    const bool fOldSelectionExisted = IsAreaSelected();
-    const SMALL_RECT srOldSelection = _srSelectionRect;
-    const COORD coordOldAnchor = _coordSelectionAnchor;
+    const auto fOldSelectionExisted = IsAreaSelected();
+    const auto srOldSelection = _srSelectionRect;
+    const auto coordOldAnchor = _coordSelectionAnchor;
 
     // Attempt to get the boundaries of the current input line.
-    COORD coordInputStart;
-    COORD coordInputEnd;
-    const bool fHasInputArea = s_GetInputLineBoundaries(&coordInputStart, &coordInputEnd);
+    til::point coordInputStart;
+    til::point coordInputEnd;
+    const auto fHasInputArea = s_GetInputLineBoundaries(&coordInputStart, &coordInputEnd);
 
     // These variables will be used to specify the new selection area when we're done
-    COORD coordNewSelStart;
-    COORD coordNewSelEnd;
+    til::point coordNewSelStart;
+    til::point coordNewSelEnd;
 
     // Now evaluate conditions and attempt to assign a new selection area.
     if (!fHasInputArea)
@@ -545,7 +545,7 @@ void Selection::SelectAll()
         {
             // Temporary workaround until MSFT: 614579 is completed.
             const auto bufferSize = screenInfo.GetBufferSize();
-            COORD coordOneAfterEnd = coordInputEnd;
+            auto coordOneAfterEnd = coordInputEnd;
             bufferSize.IncrementInBounds(coordOneAfterEnd);
 
             if (s_IsWithinBoundaries(screenInfo.GetTextBuffer().GetCursor().GetPosition(), coordInputStart, coordInputEnd))
@@ -572,15 +572,15 @@ void Selection::SelectAll()
             // This is the complex case. We had an existing selection and we have an input area.
 
             // To figure this out, we need the anchor (the point where the selection starts) and its opposite corner
-            COORD coordOldAnchorOpposite = Utils::s_GetOppositeCorner(srOldSelection, coordOldAnchor);
+            auto coordOldAnchorOpposite = Utils::s_GetOppositeCorner(srOldSelection, coordOldAnchor);
 
             // Check if both anchor and opposite corner fall within the input line
-            const bool fIsOldSelWithinInput =
+            const auto fIsOldSelWithinInput =
                 s_IsWithinBoundaries(coordOldAnchor, coordInputStart, coordInputEnd) &&
                 s_IsWithinBoundaries(coordOldAnchorOpposite, coordInputStart, coordInputEnd);
 
             // Check if both anchor and opposite corner are exactly the bounds of the input line
-            const bool fAllInputSelected =
+            const auto fAllInputSelected =
                 ((Utils::s_CompareCoords(coordInputStart, coordOldAnchor) == 0 && Utils::s_CompareCoords(coordInputEnd, coordOldAnchorOpposite) == 0) ||
                  (Utils::s_CompareCoords(coordInputStart, coordOldAnchorOpposite) == 0 && Utils::s_CompareCoords(coordInputEnd, coordOldAnchor) == 0));
 
@@ -602,12 +602,12 @@ void Selection::SelectAll()
     // or it won't be selecting all the text.
     if (!IsLineSelection())
     {
-        coordNewSelStart.X = 0;
-        coordNewSelEnd.X = screenInfo.GetBufferSize().RightInclusive();
+        coordNewSelStart.x = 0;
+        coordNewSelEnd.x = screenInfo.GetBufferSize().RightInclusive();
     }
 
     SelectNewRegion(coordNewSelStart, coordNewSelEnd);
 
     // restore the old window position
-    LOG_IF_FAILED(screenInfo.SetViewportOrigin(true, coordWindowOrigin, true));
+    LOG_IF_FAILED(screenInfo.SetViewportOrigin(true, coordWindowOrigin, false));
 }

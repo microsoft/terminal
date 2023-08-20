@@ -3,6 +3,15 @@
 
 #pragma once
 
+// This is a copy of how DirectXMath.h determines _XM_SSE_INTRINSICS_ and _XM_ARM_NEON_INTRINSICS_.
+#if (defined(_M_IX86) || defined(_M_X64) || __i386__ || __x86_64__) && !defined(_M_HYBRID_X86_ARM64) && !defined(_M_ARM64EC)
+#define TIL_SSE_INTRINSICS
+#elif defined(_M_ARM) || defined(_M_ARM64) || defined(_M_HYBRID_X86_ARM64) || defined(_M_ARM64EC) || __arm__ || __aarch64__
+#define TIL_ARM_NEON_INTRINSICS
+#else
+#define TIL_NO_INTRINSICS
+#endif
+
 #define _TIL_INLINEPREFIX __declspec(noinline) inline
 
 #include "til/at.h"
@@ -12,7 +21,6 @@
 #include "til/enumset.h"
 #include "til/pmr.h"
 #include "til/replace.h"
-#include "til/rle.h"
 #include "til/string.h"
 #include "til/u8u16convert.h"
 
@@ -120,3 +128,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }                                             \
         }                                                 \
     } while (0, 0)
+
+// clang-format off
+#define TIL_FAST_MATH_BEGIN                \
+    _Pragma("float_control(push)")         \
+    _Pragma("float_control(precise, off)") \
+    _Pragma("float_control(except, off)")  \
+    _Pragma("fenv_access(off)")            \
+    _Pragma("fp_contract(on)")
+
+#define TIL_FAST_MATH_END \
+    _Pragma("float_control(pop)")
+// clang-format on

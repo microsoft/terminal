@@ -20,16 +20,11 @@
                           Height="15"
                           MinWidth="0"
                           MinHeight="0"
-                          Margin="-7.5,0,8,0"
+                          Margin="3,0,8,0"
                           IsActive="{x:Bind TabStatus.IsProgressRingActive, Mode=OneWay}"
                           IsIndeterminate="{x:Bind TabStatus.IsProgressRingIndeterminate, Mode=OneWay}"
                           Visibility="{x:Bind TabStatus.IsProgressRingActive, Mode=OneWay}"
                           Value="{x:Bind TabStatus.ProgressValue, Mode=OneWay}" />
-        <!--
-            We want the progress ring to 'replace' the tab icon, but we don't have control
-            over the tab icon here (the tab view item does) - so we hide the tab icon there
-            and use a negative margin for the progress ring here to put it where the icon would be
-        -->
         <FontIcon x:Name="HeaderBellIndicator"
                   Margin="0,0,8,0"
                   FontFamily="{ThemeResource SymbolThemeFontFamily}"
@@ -48,6 +43,12 @@
                   FontSize="12"
                   Glyph="&#xE72E;"
                   Visibility="{x:Bind TabStatus.IsReadOnlyActive, Mode=OneWay}" />
+        <FontIcon x:Name="HeaderBroadcastIcon"
+                  Margin="0,0,8,0"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                  FontSize="12"
+                  Glyph="&#xEC05;"
+                  Visibility="{x:Bind TabStatus.IsInputBroadcastActive, Mode=OneWay}" />
         <TextBlock x:Name="HeaderTextBlock"
                    Text="{x:Bind Title, Mode=OneWay}"
                    Visibility="Visible" />

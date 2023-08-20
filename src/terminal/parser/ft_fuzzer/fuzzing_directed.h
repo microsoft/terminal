@@ -215,8 +215,8 @@ namespace fuzz
     class CFuzzRangeException
     {
     public:
-        CFuzzRangeException(){};
-        virtual ~CFuzzRangeException(){};
+        CFuzzRangeException() = default;
+        virtual ~CFuzzRangeException() = default;
     };
 
     // In an effort to avoid fuzzing code from scattering rand() throughout
@@ -301,8 +301,8 @@ namespace fuzz
         }
 
     private:
-        CFuzzChance() {}
-        virtual ~CFuzzChance() {}
+        CFuzzChance() = default;
+        virtual ~CFuzzChance() = default;
         static std::random_device m_rd;
     };
 
@@ -317,7 +317,7 @@ namespace fuzz
         CFuzzBase() :
             m_fFuzzed(FALSE),
             m_iPercentageTotal(100){};
-        virtual ~CFuzzBase(){};
+        virtual ~CFuzzBase() = default;
 
         // Converts a percentage into a valid range.  Note that riTotal
         // is a reference value, which allows for a running total to be
@@ -337,6 +337,9 @@ namespace fuzz
         FuzzTraits m_traits{ TRAIT_DEFAULT };
     };
 
+    template<typename _Type1, typename _Type2, typename... _Args>
+    class CFuzzArraySize;
+
     // The CFuzzArray class is designed to allow fuzzing of element
     // arrays, potentially reallocating a fuzzed version of the array
     // that is either larger or smaller than the template buffer.  Whether
@@ -353,8 +356,7 @@ namespace fuzz
     class CFuzzArray : public CFuzzBase
     {
     public:
-        template<typename _Type1, typename _Type2, typename... _Args>
-        friend class CFuzzArraySize;
+        friend class CFuzzArraySize<_Type1, _Type2, _Args...>;
 
         // Creates a CFuzzArray instance that wraps a buffer specified by
         // rg, together with its size (note that this is the number of elements
@@ -504,7 +506,7 @@ namespace fuzz
             if (!m_fFuzzed)
             {
                 m_fFuzzed = TRUE;
-                WORD wRandom = CFuzzChance::GetRandom<WORD>(100);
+                auto wRandom = CFuzzChance::GetRandom<WORD>(100);
                 for (auto& r : m_map)
                 {
                     if (r.range.iLow <= wRandom && wRandom < r.range.iHigh)
@@ -643,8 +645,7 @@ namespace fuzz
     class CFuzzArraySize
     {
     public:
-        template<class _Alloc, typename _Type1, typename _Type2, typename... _Args>
-        friend class CFuzzArray;
+        friend class CFuzzArray<__FUZZING_ALLOCATOR, _Type1, _Type2, _Args...>;
 
         CFuzzArraySize(__inout _Type2& cElems) :
             m_pcElems(&cElems),
@@ -847,7 +848,7 @@ namespace fuzz
             {
                 m_fFuzzed = TRUE;
                 m_t = m_tInit;
-                WORD wRandom = CFuzzChance::GetRandom<WORD>(100);
+                auto wRandom = CFuzzChance::GetRandom<WORD>(100);
                 for (auto& r : m_map)
                 {
                     if (r.range.iLow <= wRandom && wRandom < r.range.iHigh)
@@ -892,7 +893,7 @@ namespace fuzz
             __in ULONG cfte,
             __in _Type pt,
             __in _Args&&... args) :
-            CFuzzType(rgfte, cfte, pt, std::forward<_Args>(args)...)
+            CFuzzType<_Type, _Args...>(rgfte, cfte, pt, std::forward<_Args>(args)...)
         {
         }
 
@@ -933,7 +934,7 @@ namespace fuzz
             __in ULONG cfte,
             __in _Type* psz,
             __in _Args... args) :
-            CFuzzType(rgfte, cfte, psz, std::forward<_Args>(args)...)
+            CFuzzType<_Type, _Args...>(rgfte, cfte, psz, std::forward<_Args>(args)...)
         {
             OnFuzzedValueFromMap();
         }
@@ -962,7 +963,7 @@ namespace fuzz
         __inline virtual _Type** operator&() throw()
         {
             m_ftEffectiveTraits |= TRAIT_TRANSFER_ALLOCATION;
-            return (this->m_fFuzzed) ? &(this->m_t) : &CFuzzType<_Type, _Args...>::m_tInit;
+            return (this->m_fFuzzed) ? &(this->m_t) : &(this->m_tInit);
         }
 
     private:
@@ -986,9 +987,9 @@ namespace fuzz
                 _Type* pszFuzzed = psz;
                 if (psz && psz != this->m_tInit)
                 {
-                    size_t cb = (sizeof(_Type) == sizeof(char)) ?
-                                    (strlen(reinterpret_cast<LPSTR>(psz)) + 1) * sizeof(char) :
-                                    (wcslen(reinterpret_cast<LPWSTR>(psz)) + 1) * sizeof(WCHAR);
+                    auto cb = (sizeof(_Type) == sizeof(char)) ?
+                                  (strlen(reinterpret_cast<LPSTR>(psz)) + 1) * sizeof(char) :
+                                  (wcslen(reinterpret_cast<LPWSTR>(psz)) + 1) * sizeof(WCHAR);
                     m_pszFuzzed = reinterpret_cast<_Type*>(_Alloc::Allocate(cb));
                     if (m_pszFuzzed)
                     {
@@ -1061,7 +1062,7 @@ namespace fuzz
             __in ULONG cfte,
             __in _Type flags,
             __in _Args&&... args) :
-            CFuzzType(rgfte, cfte, flags, std::forward<_Args>(args)...)
+            CFuzzType<_Type, _Args...>(rgfte, cfte, flags, std::forward<_Args>(args)...)
         {
         }
 
@@ -1081,11 +1082,11 @@ namespace fuzz
                     // Generate a new random value during each map entry
                     // and use it to evaluate if each individual fuzz map
                     // entry should be applied.
-                    WORD wRandom = CFuzzChance::GetRandom<WORD>(100);
+                    auto wRandom = CFuzzChance::GetRandom<WORD>(100);
 
                     // Translate percentages to allow for each flag to be considered
                     // for inclusion independently.
-                    int iHigh = 100;
+                    auto iHigh = 100;
                     int iLow = iHigh - (r.range.iHigh - r.range.iLow);
                     if (iLow <= wRandom && wRandom < iHigh)
                     {

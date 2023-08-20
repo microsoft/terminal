@@ -29,7 +29,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 [[nodiscard]] HRESULT Xterm256Engine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                            const RenderSettings& /*renderSettings*/,
                                                            const gsl::not_null<IRenderData*> pData,
-                                                           const bool /*usingSoftFont*/,
+                                                           const bool usingSoftFont,
                                                            const bool isSettingDefaultBrushes) noexcept
 {
     RETURN_HR_IF(S_FALSE, _passthrough && isSettingDefaultBrushes);
@@ -37,6 +37,17 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
     RETURN_IF_FAILED(VtEngine::_RgbUpdateDrawingBrushes(textAttributes));
 
     RETURN_IF_FAILED(_UpdateHyperlinkAttr(textAttributes, pData));
+
+    // If we're using a soft font, it should have already been mapped into the
+    // G1 table, so we just need to switch between G0 and G1 when turning the
+    // soft font on and off. We don't want to do this when setting the default
+    // brushes, though, because that could result in an unnecessary G0 switch
+    // at the start of every frame.
+    if (usingSoftFont != _usingSoftFont && !isSettingDefaultBrushes)
+    {
+        RETURN_IF_FAILED(_Write(usingSoftFont ? "\x0E" : "\x0F"));
+        _usingSoftFont = usingSoftFont;
+    }
 
     // Only do extended attributes in xterm-256color, as to not break telnet.exe.
     return _UpdateExtendedAttrs(textAttributes);

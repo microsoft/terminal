@@ -21,9 +21,7 @@ Registry::Registry(_In_ Settings* const pSettings) :
 {
 }
 
-Registry::~Registry()
-{
-}
+Registry::~Registry() = default;
 
 // Routine Description:
 // - Reads extended edit keys and related registry information into the global state.
@@ -33,13 +31,13 @@ Registry::~Registry()
 // - <none>
 void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS Status;
     HKEY hCurrentUserKey = nullptr;
     if (hConsoleKey == nullptr)
     {
         Status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
-        if (!NT_SUCCESS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             return;
         }
@@ -53,7 +51,7 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status) && dwValue <= 1)
+    if (SUCCEEDED_NTSTATUS(Status) && dwValue <= 1)
     {
         gci.SetAltF4CloseAllowed(!!dwValue);
     }
@@ -83,7 +81,7 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
                                                  REG_DWORD,
                                                  reinterpret_cast<BYTE*>(&dwValue),
                                                  nullptr);
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         // the key isn't a REG_DWORD, try to read it as a REG_SZ
         const size_t bufferSize = 64;
@@ -95,11 +93,11 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
                                                      REG_SZ,
                                                      reinterpret_cast<BYTE*>(awchBuffer),
                                                      &cbWritten);
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             // we read something, set it as the word delimiters
             const std::wstring regWordDelimiters{ awchBuffer, cbWritten / sizeof(wchar_t) };
-            for (const wchar_t wch : regWordDelimiters)
+            for (const auto wch : regWordDelimiters)
             {
                 if (wch == '\0')
                 {
@@ -130,9 +128,9 @@ void Registry::_LoadMappedProperties(_In_reads_(cPropertyMappings) const Registr
     // Iterate through properties table and load each setting for common property types
     for (UINT iMapping = 0; iMapping < cPropertyMappings; iMapping++)
     {
-        const RegistrySerialization::RegPropertyMap* const pPropMap = &(rgPropertyMappings[iMapping]);
+        const auto pPropMap = &(rgPropertyMappings[iMapping]);
 
-        NTSTATUS Status = STATUS_SUCCESS;
+        auto Status = STATUS_SUCCESS;
 
         switch (pPropMap->propertyType)
         {
@@ -153,7 +151,7 @@ void Registry::_LoadMappedProperties(_In_reads_(cPropertyMappings) const Registr
         }
 
         // Don't log "file not found" messages. It's fine to not find a registry key. Log other types.
-        if (!NT_SUCCESS(Status) && NTSTATUS_FROM_WIN32(ERROR_FILE_NOT_FOUND) != Status)
+        if (FAILED_NTSTATUS(Status) && NTSTATUS_FROM_WIN32(ERROR_FILE_NOT_FOUND) != Status)
         {
             LOG_NTSTATUS(Status);
         }
@@ -170,9 +168,9 @@ void Registry::LoadGlobalsFromRegistry()
 {
     HKEY hCurrentUserKey;
     HKEY hConsoleKey;
-    NTSTATUS status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
+    auto status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         _LoadMappedProperties(RegistrySerialization::s_GlobalPropMappings, RegistrySerialization::s_GlobalPropMappingsSize, hConsoleKey);
 
@@ -202,14 +200,14 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
 {
     HKEY hCurrentUserKey;
     HKEY hConsoleKey;
-    NTSTATUS Status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
-    if (!NT_SUCCESS(Status))
+    auto Status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
+    if (FAILED_NTSTATUS(Status))
     {
         return;
     }
 
     // Open the console title subkey.
-    LPWSTR TranslatedConsoleTitle = TranslateConsoleTitle(pwszConsoleTitle, TRUE, TRUE);
+    auto TranslatedConsoleTitle = TranslateConsoleTitle(pwszConsoleTitle, TRUE, TRUE);
     if (TranslatedConsoleTitle == nullptr)
     {
         RegCloseKey(hConsoleKey);
@@ -222,7 +220,7 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
     delete[] TranslatedConsoleTitle;
     TranslatedConsoleTitle = nullptr;
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         TranslatedConsoleTitle = TranslateConsoleTitle(pwszConsoleTitle, TRUE, FALSE);
 
@@ -238,7 +236,7 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
         TranslatedConsoleTitle = nullptr;
     }
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         RegCloseKey(hConsoleKey);
         RegCloseKey(hCurrentUserKey);
@@ -253,7 +251,7 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
     const auto loadDWORD = [=](const auto valueName) {
         DWORD value;
         const auto status = RegistrySerialization::s_QueryValue(hTitleKey, valueName, sizeof(value), REG_DWORD, (PBYTE)&value, nullptr);
-        return NT_SUCCESS(status) ? std::optional{ value } : std::nullopt;
+        return SUCCEEDED_NTSTATUS(status) ? std::optional{ value } : std::nullopt;
     };
 
     // Window Origin Autopositioning Setting

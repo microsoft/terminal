@@ -133,7 +133,7 @@ CEditSessionObject::Release()
                                                          __in_ecount_opt(len) LPWSTR psz,
                                                          DWORD len)
 {
-    HRESULT hr = E_FAIL;
+    auto hr = E_FAIL;
     if (g_pConsoleTSF)
     {
         g_pConsoleTSF->SetModifyingDocFlag(TRUE);
@@ -165,7 +165,7 @@ CEditSessionObject::Release()
 
 [[nodiscard]] HRESULT CEditSessionObject::_GetCursorPosition(TfEditCookie ec, CCompCursorPos& CompCursorPos)
 {
-    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
+    auto pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
     if (pic == nullptr)
     {
         return E_FAIL;
@@ -235,7 +235,7 @@ CEditSessionObject::Release()
 {
     HRESULT hr;
 
-    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
+    auto pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
     if (pic == nullptr)
     {
         return E_FAIL;
@@ -279,7 +279,7 @@ CEditSessionObject::Release()
     while (enumComp->Next(1, &range, nullptr) == S_OK)
     {
         VARIANT var;
-        BOOL fCompExist = FALSE;
+        auto fCompExist = FALSE;
 
         hr = propComp->GetValue(ec, range.get(), &var);
         if (S_OK == hr)
@@ -291,7 +291,7 @@ CEditSessionObject::Release()
 
                 while (EnumPropVal->Next(1, &tfPropertyVal, nullptr) == S_OK)
                 {
-                    for (int i = 0; i < guid_size; i++)
+                    for (auto i = 0; i < guid_size; i++)
                     {
                         if (IsEqualGUID(tfPropertyVal.guidId, *guids[i]))
                         {
@@ -359,7 +359,7 @@ CEditSessionObject::Release()
             // Get display attribute data if some GUID_ATOM exist.
             //
             TF_DISPLAYATTRIBUTE da;
-            TfGuidAtom guidatom = TF_INVALID_GUIDATOM;
+            auto guidatom = TF_INVALID_GUIDATOM;
 
             LOG_IF_FAILED(pCicDispAttr->GetDisplayAttributeData(pCicCatMgr->GetCategoryMgr(),
                                                                 ec,
@@ -592,17 +592,17 @@ CEditSessionObject::Release()
                                                                       const int guid_size,
                                                                       ITfRange* no_display_attribute_range)
 {
-    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
+    auto pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
     if (pic == nullptr)
     {
         return E_FAIL;
     }
 
     wil::com_ptr_nothrow<ITfReadOnlyProperty> propComp;
-    HRESULT hr = pic->TrackProperties(guids, guid_size, // system property
-                                      nullptr,
-                                      0, // application property
-                                      &propComp);
+    auto hr = pic->TrackProperties(guids, guid_size, // system property
+                                   nullptr,
+                                   0, // application property
+                                   &propComp);
     if (FAILED(hr))
     {
         return hr;
@@ -620,7 +620,7 @@ CEditSessionObject::Release()
     while (enumComp->Next(1, &pRange, nullptr) == S_OK)
     {
         VARIANT var;
-        BOOL fCompExist = FALSE;
+        auto fCompExist = FALSE;
 
         hr = propComp->GetValue(ec, pRange.get(), &var);
         if (S_OK == hr)
@@ -632,7 +632,7 @@ CEditSessionObject::Release()
 
                 while (EnumPropVal->Next(1, &tfPropertyVal, nullptr) == S_OK)
                 {
-                    for (int i = 0; i < guid_size; i++)
+                    for (auto i = 0; i < guid_size; i++)
                     {
                         if (IsEqualGUID(tfPropertyVal.guidId, *guids[i]))
                         {
@@ -674,7 +674,7 @@ CEditSessionObject::Release()
 
 [[nodiscard]] HRESULT CEditSessionCompositionComplete::CompComplete(TfEditCookie ec)
 {
-    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
+    auto pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
     RETURN_HR_IF_NULL(E_FAIL, pic);
 
     // Get the whole text, finalize it, and set empty string in TOM
@@ -685,7 +685,7 @@ CEditSessionObject::Release()
 
     // Check if a part of the range has already been finalized but not removed yet.
     // Adjust the range appropriately to avoid inserting the same text twice.
-    long cchCompleted = g_pConsoleTSF->GetCompletedRangeLength();
+    auto cchCompleted = g_pConsoleTSF->GetCompletedRangeLength();
     if ((cchCompleted > 0) &&
         (cchCompleted < cch) &&
         SUCCEEDED(spRange->ShiftStart(ec, cchCompleted, &cchCompleted, NULL)))
@@ -699,7 +699,7 @@ CEditSessionObject::Release()
     }
 
     // Get conversion area service.
-    CConversionArea* conv_area = g_pConsoleTSF->GetConversionArea();
+    auto conv_area = g_pConsoleTSF->GetConversionArea();
     RETURN_HR_IF_NULL(E_FAIL, conv_area);
 
     // If there is no string in TextStore we don't have to do anything.
@@ -710,7 +710,7 @@ CEditSessionObject::Release()
         return S_OK;
     }
 
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     try
     {
         auto wstr = std::make_unique<WCHAR[]>(cch + 1);
@@ -747,14 +747,14 @@ CEditSessionObject::Release()
         return S_OK;
     }
 
-    HRESULT hr = E_FAIL;
-    ITfContext* pic = g_pConsoleTSF->GetInputContext();
+    auto hr = E_FAIL;
+    auto pic = g_pConsoleTSF->GetInputContext();
     if (pic != nullptr)
     {
         // Cleanup (empty the context range) after the last composition.
 
         hr = S_OK;
-        long cchCompleted = g_pConsoleTSF->GetCompletedRangeLength();
+        auto cchCompleted = g_pConsoleTSF->GetCompletedRangeLength();
         if (cchCompleted != 0)
         {
             wil::com_ptr_nothrow<ITfRange> spRange;
@@ -786,7 +786,7 @@ CEditSessionObject::Release()
 {
     HRESULT hr;
 
-    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
+    auto pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
     if (pic == nullptr)
     {
         return E_FAIL;
@@ -815,7 +815,7 @@ CEditSessionObject::Release()
     }
 
     wil::com_ptr_nothrow<ITfRange> InterimRange;
-    BOOL fInterim = FALSE;
+    auto fInterim = FALSE;
     if (FAILED(hr = _IsInterimSelection(ec, &InterimRange, &fInterim)))
     {
         return hr;
@@ -868,7 +868,7 @@ CEditSessionObject::Release()
                                                                                ITfRange** pInterimRange,
                                                                                BOOL* pfInterim)
 {
-    ITfContext* pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
+    auto pic = g_pConsoleTSF ? g_pConsoleTSF->GetInputContext() : nullptr;
     if (pic == nullptr)
     {
         return E_FAIL;
@@ -919,7 +919,7 @@ CEditSessionObject::Release()
     std::vector<TfGuidAtom> CompGuid;
     CCompCursorPos CompCursorPos;
     std::wstring ResultStr;
-    BOOL fIgnorePreviousCompositionResult = FALSE;
+    auto fIgnorePreviousCompositionResult = FALSE;
 
     RETURN_IF_FAILED(_GetTextAndAttribute(ec,
                                           FullTextRange,
@@ -941,18 +941,18 @@ CEditSessionObject::Release()
     RETURN_IF_FAILED(_GetCursorPosition(ec, CompCursorPos));
 
     // Get display attribute manager
-    ITfDisplayAttributeMgr* dam = pCicDispAttr->GetDisplayAttributeMgr();
+    auto dam = pCicDispAttr->GetDisplayAttributeMgr();
     RETURN_HR_IF_NULL(E_FAIL, dam);
 
     // Get category manager
-    ITfCategoryMgr* cat = pCicCatMgr->GetCategoryMgr();
+    auto cat = pCicCatMgr->GetCategoryMgr();
     RETURN_HR_IF_NULL(E_FAIL, cat);
 
     // Allocate and fill TF_DISPLAYATTRIBUTE
     try
     {
         // Get conversion area service.
-        CConversionArea* conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : nullptr;
+        auto conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : nullptr;
         RETURN_HR_IF_NULL(E_FAIL, conv_area);
 
         if (!ResultStr.empty() && !fIgnorePreviousCompositionResult)
@@ -961,7 +961,7 @@ CEditSessionObject::Release()
         }
         if (!CompStr.empty())
         {
-            const size_t cchDisplayAttribute = CompGuid.size();
+            const auto cchDisplayAttribute = CompGuid.size();
             std::vector<TF_DISPLAYATTRIBUTE> DisplayAttributes;
             DisplayAttributes.reserve(cchDisplayAttribute);
 
@@ -1061,23 +1061,23 @@ CEditSessionObject::Release()
                                           pCicDispAttr));
 
     // Get display attribute manager
-    ITfDisplayAttributeMgr* dam = pCicDispAttr->GetDisplayAttributeMgr();
+    auto dam = pCicDispAttr->GetDisplayAttributeMgr();
     RETURN_HR_IF_NULL(E_FAIL, dam);
 
     // Get category manager
-    ITfCategoryMgr* cat = pCicCatMgr->GetCategoryMgr();
+    auto cat = pCicCatMgr->GetCategoryMgr();
     RETURN_HR_IF_NULL(E_FAIL, cat);
 
     // Allocate and fill TF_DISPLAYATTRIBUTE
     try
     {
         // Get conversion area service.
-        CConversionArea* conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : nullptr;
+        auto conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : nullptr;
         RETURN_HR_IF_NULL(E_FAIL, conv_area);
 
         if (!CompStr.empty())
         {
-            const size_t cchDisplayAttribute = CompGuid.size();
+            const auto cchDisplayAttribute = CompGuid.size();
             std::vector<TF_DISPLAYATTRIBUTE> DisplayAttributes;
             DisplayAttributes.reserve(cchDisplayAttribute);
 
@@ -1119,7 +1119,7 @@ CEditSessionObject::Release()
     CicCategoryMgr** pCicCatMgr,
     CicDisplayAttributeMgr** pCicDispAttr)
 {
-    HRESULT hr = E_OUTOFMEMORY;
+    auto hr = E_OUTOFMEMORY;
 
     CicCategoryMgr* pTmpCat = nullptr;
     CicDisplayAttributeMgr* pTmpDispAttr = nullptr;
@@ -1132,7 +1132,7 @@ CEditSessionObject::Release()
     {
         if (SUCCEEDED(hr = pTmpCat->InitCategoryInstance()))
         {
-            ITfCategoryMgr* pcat = pTmpCat->GetCategoryMgr();
+            auto pcat = pTmpCat->GetCategoryMgr();
             if (pcat)
             {
                 //

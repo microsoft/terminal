@@ -22,9 +22,9 @@ Author(s):
 #define RECT_WIDTH(x) ((x)->right - (x)->left)
 #define RECT_HEIGHT(x) ((x)->bottom - (x)->top)
 
-short CalcWindowSizeX(const SMALL_RECT& rect) noexcept;
-short CalcWindowSizeY(const SMALL_RECT& rect) noexcept;
-short CalcCursorYOffsetInPixels(const short sFontSizeY, const ULONG ulSize) noexcept;
+til::CoordType CalcWindowSizeX(const til::inclusive_rect& rect) noexcept;
+til::CoordType CalcWindowSizeY(const til::inclusive_rect& rect) noexcept;
+til::CoordType CalcCursorYOffsetInPixels(const til::CoordType sFontSizeY, const ULONG ulSize) noexcept;
 WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR* const ppwchEnd) noexcept;
 
 std::wstring _LoadString(const UINT id);
@@ -37,8 +37,8 @@ static UINT s_LoadStringEx(_In_ HINSTANCE hModule,
 class Utils
 {
 public:
-    static int s_CompareCoords(const COORD bufferSize, const COORD first, const COORD second) noexcept;
-    static int s_CompareCoords(const COORD coordFirst, const COORD coordSecond) noexcept;
+    static int s_CompareCoords(const til::size bufferSize, const til::point first, const til::point second) noexcept;
+    static int s_CompareCoords(const til::point coordFirst, const til::point coordSecond) noexcept;
 
-    static COORD s_GetOppositeCorner(const SMALL_RECT srRectangle, const COORD coordCorner) noexcept;
+    static til::point s_GetOppositeCorner(const til::inclusive_rect& srRectangle, const til::point coordCorner) noexcept;
 };

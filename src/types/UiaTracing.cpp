@@ -78,8 +78,8 @@ try
 
     std::wstringstream stream;
     stream << " _id: " << utr.GetId();
-    stream << " _start: { " << start.X << ", " << start.Y << " }";
-    stream << " _end: { " << end.X << ", " << end.Y << " }";
+    stream << " _start: { " << start.x << ", " << start.y << " }";
+    stream << " _end: { " << end.x << ", " << end.y << " }";
     stream << " _degenerate: " << utr.IsDegenerate();
     stream << " _wordDelimiters: " << utr._wordDelimiters;
     stream << " content: " << utr._getTextValue();

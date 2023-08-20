@@ -29,8 +29,8 @@ protected:
 
 private:
     void _drawList();
-    void _update(const SHORT delta, const bool wrap = false);
-    void _updateHighlight(const SHORT oldCommand, const SHORT newCommand);
+    void _update(const CommandHistory::Index delta, const bool wrap = false);
+    void _updateHighlight(const CommandHistory::Index oldCommand, const CommandHistory::Index newCommand);
 
     void _handleReturn(COOKED_READ_DATA& cookedReadData);
     void _cycleSelectionToMatchingCommands(COOKED_READ_DATA& cookedReadData, const wchar_t wch);
@@ -40,8 +40,8 @@ private:
     [[nodiscard]] NTSTATUS _swapUp(COOKED_READ_DATA& cookedReadData) noexcept;
     [[nodiscard]] NTSTATUS _swapDown(COOKED_READ_DATA& cookedReadData) noexcept;
 
-    SHORT _currentCommand;
-    SHORT _bottomIndex; // number of command displayed on last line of popup
+    CommandHistory::Index _currentCommand;
+    CommandHistory::Index _bottomIndex; // number of command displayed on last line of popup
     const CommandHistory& _history;
 
 #ifdef UNIT_TESTING

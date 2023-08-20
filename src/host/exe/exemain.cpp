@@ -52,21 +52,42 @@ class DefaultOutOfProcModuleWithRegistrationFlag : public OutOfProcModuleWithReg
 // Holds the wwinmain open until COM tells us there are no more server connections
 wil::unique_event _comServerExitEvent;
 
+[[nodiscard]] static HRESULT ValidateServerHandle(const HANDLE handle)
+{
+    // Make sure this is a console file.
+    FILE_FS_DEVICE_INFORMATION DeviceInformation;
+    IO_STATUS_BLOCK IoStatusBlock;
+    const auto Status = NtQueryVolumeInformationFile(handle, &IoStatusBlock, &DeviceInformation, sizeof(DeviceInformation), FileFsDeviceInformation);
+    if (FAILED_NTSTATUS(Status))
+    {
+        RETURN_NTSTATUS(Status);
+    }
+    else if (DeviceInformation.DeviceType != FILE_DEVICE_CONSOLE)
+    {
+        return E_INVALIDARG;
+    }
+    else
+    {
+        return S_OK;
+    }
+}
+
+#if TIL_FEATURE_LEGACYCONHOST_ENABLED
 static bool useV2 = true;
 static bool ConhostV2ForcedInRegistry()
 {
     // If the registry value doesn't exist, or exists and is non-zero, we should default to using the v2 console.
     // Otherwise, in the case of an explicit value of 0, we should use the legacy console.
-    bool fShouldUseConhostV2 = true;
+    auto fShouldUseConhostV2 = true;
     PCSTR pszErrorDescription = nullptr;
-    bool fIgnoreError = false;
+    auto fIgnoreError = false;
     DWORD dwValue;
     DWORD dwType;
     DWORD cbValue = sizeof(dwValue);
 
     // open HKCU\Console
     wil::unique_hkey hConsoleSubKey;
-    LONG lStatus = NTSTATUS_FROM_WIN32(RegOpenKeyExW(HKEY_CURRENT_USER, L"Console", 0, KEY_READ, &hConsoleSubKey));
+    LONG lStatus = RegOpenKeyExW(HKEY_CURRENT_USER, L"Console", 0, KEY_READ, &hConsoleSubKey);
     if (ERROR_SUCCESS == lStatus)
     {
         // now get the value of the ForceV2 reg value, if it exists
@@ -101,26 +122,6 @@ static bool ConhostV2ForcedInRegistry()
     return fShouldUseConhostV2;
 }
 
-[[nodiscard]] static HRESULT ValidateServerHandle(const HANDLE handle)
-{
-    // Make sure this is a console file.
-    FILE_FS_DEVICE_INFORMATION DeviceInformation;
-    IO_STATUS_BLOCK IoStatusBlock;
-    NTSTATUS const Status = NtQueryVolumeInformationFile(handle, &IoStatusBlock, &DeviceInformation, sizeof(DeviceInformation), FileFsDeviceInformation);
-    if (!NT_SUCCESS(Status))
-    {
-        RETURN_NTSTATUS(Status);
-    }
-    else if (DeviceInformation.DeviceType != FILE_DEVICE_CONSOLE)
-    {
-        return E_INVALIDARG;
-    }
-    else
-    {
-        return S_OK;
-    }
-}
-
 static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
 {
     if (args.InConptyMode())
@@ -140,7 +141,7 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
 
 [[nodiscard]] static HRESULT ActivateLegacyConhost(const HANDLE handle)
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     // TraceLog that we're using the legacy console. We won't log new console
     // because there's already a count of how many total processes were launched.
@@ -152,7 +153,7 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
                       TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY),
                       TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-    const PCWSTR pszConhostDllName = L"ConhostV1.dll";
+    const auto pszConhostDllName = L"ConhostV1.dll";
 
     // Load our implementation, and then Load/Launch the IO thread.
     wil::unique_hmodule hConhostBin(LoadLibraryExW(pszConhostDllName, nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32));
@@ -160,7 +161,7 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
     {
         typedef NTSTATUS (*PFNCONSOLECREATEIOTHREAD)(__in HANDLE Server);
 
-        PFNCONSOLECREATEIOTHREAD pfnConsoleCreateIoThread = (PFNCONSOLECREATEIOTHREAD)GetProcAddress(hConhostBin.get(), "ConsoleCreateIoThread");
+        auto pfnConsoleCreateIoThread = (PFNCONSOLECREATEIOTHREAD)GetProcAddress(hConhostBin.get(), "ConsoleCreateIoThread");
         if (pfnConsoleCreateIoThread != nullptr)
         {
             hr = HRESULT_FROM_NT(pfnConsoleCreateIoThread(handle));
@@ -185,6 +186,7 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
 
     return hr;
 }
+#endif // TIL_FEATURE_LEGACYCONHOST_ENABLED
 
 // Routine Description:
 // - Called back when COM says there is nothing left for our server to do and we can tear down.
@@ -192,6 +194,15 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
 static void _releaseNotifier() noexcept
 {
     _comServerExitEvent.SetEvent();
+}
+
+// This method has the same behavior as gsl::narrow<T>, but instead of throwing an
+// exception on narrowing failure it'll return false. On success it returns true.
+template<typename T, typename U>
+constexpr bool narrow_maybe(U u, T& out) noexcept
+{
+    out = gsl::narrow_cast<T>(u);
+    return static_cast<U>(out) == u && (std::is_signed_v<T> == std::is_signed_v<U> || (out < T{}) == (u < U{}));
 }
 
 // Routine Description:
@@ -260,13 +271,12 @@ int CALLBACK wWinMain(
                           GetStdHandle(STD_INPUT_HANDLE),
                           GetStdHandle(STD_OUTPUT_HANDLE));
 
-    HRESULT hr = args.ParseCommandline();
+    auto hr = args.ParseCommandline();
     if (SUCCEEDED(hr))
     {
         // Only try to register as a handoff target if we are NOT a part of Windows.
 #if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
-        bool defAppEnabled = false;
-        if (args.ShouldRunAsComServer() && SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(defAppEnabled)) && defAppEnabled)
+        if (args.ShouldRunAsComServer() && Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
         {
             try
             {
@@ -295,6 +305,7 @@ int CALLBACK wWinMain(
         else
 #endif
         {
+#if TIL_FEATURE_LEGACYCONHOST_ENABLED
             if (ShouldUseLegacyConhost(args))
             {
                 useV2 = false;
@@ -313,6 +324,7 @@ int CALLBACK wWinMain(
                 }
             }
             if (useV2)
+#endif // TIL_FEATURE_LEGACYCONHOST_ENABLED
             {
                 if (args.ShouldCreateServerHandle())
                 {

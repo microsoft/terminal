@@ -43,9 +43,7 @@ public:
     {
     }
 
-    virtual ~CConsoleTSF()
-    {
-    }
+    virtual ~CConsoleTSF() = default;
     [[nodiscard]] HRESULT Initialize();
     void Uninitialize();
 
@@ -159,7 +157,7 @@ public:
             // Close (terminate) any open compositions when losing the input focus.
             if (_spITfInputContext)
             {
-                wil::com_ptr_nothrow<ITfContextOwnerCompositionServices> spCompositionServices(_spITfInputContext.try_query<ITfContextOwnerCompositionServices>());
+                auto spCompositionServices = _spITfInputContext.try_query<ITfContextOwnerCompositionServices>();
                 if (spCompositionServices)
                 {
                     spCompositionServices->TerminateComposition(nullptr);

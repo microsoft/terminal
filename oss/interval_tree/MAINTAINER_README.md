@@ -8,7 +8,7 @@ That provenance file is automatically read and inventoried by Microsoft systems 
 
 ## What should be done to update this in the future?
 
-1. Go to ekg/intervaltreerepository on GitHub.
+1. Go to the ekg/intervaltree repository on GitHub.
 2. Take the file IntervalTree.h wholesale and drop it into the directory here.
 3. Don't change anything about it.
 4. Validate that the license in the root of the repository didn't change and update it if so. It is sitting in the same directory as this readme.

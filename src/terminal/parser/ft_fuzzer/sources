@@ -3,7 +3,7 @@
 # - Console Virtual Terminal Parser Fuzzer
 # -------------------------------------
 
-!include $(OSDEPENDSROOT)\OSS\gsl\3.1.0\consume.inc
+!include $(PROJECT_ROOT)\vcpkg\consume.inc
 
 # This program will generate fuzz input for the parsing engine
 # and is to be used in conjunction with the fuzz wrapper tool.
@@ -45,6 +45,7 @@ C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
 # Compiler Settings
 # -------------------------------------
 
+USE_STD_CPP20           = 1
 MSC_WARNING_LEVEL       = /W4 /WX
 
 # -------------------------------------
@@ -71,7 +72,6 @@ INCLUDES = \
     $(CONSOLE_SRC_PATH)\..\oss\chromium; \
     $(CONSOLE_SRC_PATH)\..\oss\fmt\include; \
     $(CONSOLE_SRC_PATH)\..\oss\interval_tree; \
-    $(CONSOLE_SRC_PATH)\..\oss\boost\boost_1_73_0; \
     $(INCLUDES) \
 
 TARGETLIBS = \

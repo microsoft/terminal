@@ -7,24 +7,37 @@ namespace winrt::TerminalApp::implementation
     {
         using IXamlType = ::winrt::Windows::UI::Xaml::Markup::IXamlType;
 
-        IXamlType GetXamlType(::winrt::Windows::UI::Xaml::Interop::TypeName const& type)
+        IXamlType GetXamlType(const ::winrt::Windows::UI::Xaml::Interop::TypeName& type)
         {
-            return _appProvider.GetXamlType(type);
+            return AppProvider()->GetXamlType(type);
         }
 
-        IXamlType GetXamlType(::winrt::hstring const& fullName)
+        IXamlType GetXamlType(const ::winrt::hstring& fullName)
         {
-            return _appProvider.GetXamlType(fullName);
+            return AppProvider()->GetXamlType(fullName);
         }
 
         ::winrt::com_array<::winrt::Windows::UI::Xaml::Markup::XmlnsDefinition> GetXmlnsDefinitions()
         {
-            return _appProvider.GetXmlnsDefinitions();
+            return AppProvider()->GetXmlnsDefinitions();
+        }
+
+        void AddOtherProvider(const ::winrt::Windows::UI::Xaml::Markup::IXamlMetadataProvider& provider)
+        {
+            AppProvider()->AddOtherProvider(provider);
         }
 
     private:
         bool _contentLoaded{ false };
-        winrt::TerminalApp::XamlMetaDataProvider _appProvider;
+        winrt::com_ptr<XamlMetaDataProvider> _appProvider;
+        winrt::com_ptr<XamlMetaDataProvider> AppProvider()
+        {
+            if (!_appProvider)
+            {
+                _appProvider = winrt::make_self<XamlMetaDataProvider>();
+            }
+            return _appProvider;
+        }
     };
 
     template<typename D, typename... I>

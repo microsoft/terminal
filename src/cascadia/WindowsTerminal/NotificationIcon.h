@@ -3,6 +3,7 @@
 
 #include "pch.h"
 
+#pragma once
 // This enumerates all the possible actions
 // that our notification icon context menu could do.
 enum class NotificationIconMenuItemAction

@@ -14,7 +14,7 @@
 # Preprocessor Settings
 # -------------------------------------
 
-C_DEFINES               = $(C_DEFINES) -DBUILD_ONECORE_INTERACTIVITY
+C_DEFINES               = $(C_DEFINES)
 
 # -------------------------------------
 # Build System Settings
@@ -33,6 +33,7 @@ SOURCES= \
     ..\adaptDispatch.cpp \
     ..\FontBuffer.cpp \
     ..\InteractDispatch.cpp \
+    ..\MacroBuffer.cpp \
     ..\adaptDispatchGraphics.cpp \
     ..\terminalOutput.cpp \
     ..\telemetry.cpp \

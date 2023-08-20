@@ -9,13 +9,59 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::WRL;
 
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT TermControlUiaProvider::RuntimeClassInitialize(_In_ ::Microsoft::Console::Types::IUiaData* const uiaData,
+HRESULT TermControlUiaProvider::RuntimeClassInitialize(_In_ Console::Render::IRenderData* const renderData,
                                                        _In_ ::Microsoft::Console::Types::IControlAccessibilityInfo* controlInfo) noexcept
 {
-    RETURN_HR_IF_NULL(E_INVALIDARG, uiaData);
-    RETURN_IF_FAILED(ScreenInfoUiaProviderBase::RuntimeClassInitialize(uiaData));
+    RETURN_HR_IF_NULL(E_INVALIDARG, renderData);
+    RETURN_IF_FAILED(ScreenInfoUiaProviderBase::RuntimeClassInitialize(renderData));
 
     _controlInfo = controlInfo;
+    return S_OK;
+}
+
+// Implementation of IRawElementProviderSimple::get_PropertyValue.
+// Gets custom properties.
+IFACEMETHODIMP TermControlUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId,
+                                                        _Out_ VARIANT* pVariant) noexcept
+{
+    pVariant->vt = VT_EMPTY;
+
+    // Returning the default will leave the property as the default
+    // so we only really need to touch it for the properties we want to implement
+    switch (propertyId)
+    {
+    case UIA_ClassNamePropertyId:
+        pVariant->bstrVal = SysAllocString(L"TermControl");
+        if (pVariant->bstrVal != nullptr)
+        {
+            pVariant->vt = VT_BSTR;
+        }
+        break;
+    case UIA_ControlTypePropertyId:
+        pVariant->vt = VT_I4;
+        pVariant->lVal = UIA_TextControlTypeId;
+        break;
+    case UIA_LocalizedControlTypePropertyId:
+        // TODO: we should use RS_(L"TerminalControl_ControlType"),
+        // but that's exposed/defined in the TermControl project
+        pVariant->bstrVal = SysAllocString(L"terminal");
+        if (pVariant->bstrVal != nullptr)
+        {
+            pVariant->vt = VT_BSTR;
+        }
+        break;
+    case UIA_OrientationPropertyId:
+        pVariant->vt = VT_I4;
+        pVariant->lVal = OrientationType_Vertical;
+        break;
+    case UIA_LiveSettingPropertyId:
+        pVariant->vt = VT_I4;
+        pVariant->lVal = LiveSetting::Polite;
+        break;
+    default:
+        // fall back to the shared implementation
+        return ScreenInfoUiaProviderBase::GetPropertyValue(propertyId, pVariant);
+    }
     return S_OK;
 }
 
@@ -49,7 +95,7 @@ IFACEMETHODIMP TermControlUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRec
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangle, nullptr);
 
-    const RECT rc = _controlInfo->GetBounds();
+    const auto rc = _controlInfo->GetBounds();
 
     pRect->left = rc.left;
     pRect->top = rc.top;
@@ -89,22 +135,22 @@ IFACEMETHODIMP TermControlUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybe
     return S_OK;
 }
 
-const COORD TermControlUiaProvider::GetFontSize() const noexcept
+til::size TermControlUiaProvider::GetFontSize() const noexcept
 {
     return _controlInfo->GetFontSize();
 }
 
-const RECT TermControlUiaProvider::GetPadding() const noexcept
+til::rect TermControlUiaProvider::GetPadding() const noexcept
 {
     return _controlInfo->GetPadding();
 }
 
-const double TermControlUiaProvider::GetScaleFactor() const noexcept
+double TermControlUiaProvider::GetScaleFactor() const noexcept
 {
     return _controlInfo->GetScaleFactor();
 }
 
-void TermControlUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
+void TermControlUiaProvider::ChangeViewport(const til::inclusive_rect& NewWindow)
 {
     _controlInfo->ChangeViewport(NewWindow);
 }
@@ -150,8 +196,8 @@ HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* 
 }
 
 HRESULT TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                                const COORD start,
-                                                const COORD end,
+                                                const til::point start,
+                                                const til::point end,
                                                 const std::wstring_view wordDelimiters,
                                                 _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {

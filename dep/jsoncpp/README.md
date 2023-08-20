@@ -2,8 +2,8 @@
 
 [Amalgamated](https://github.com/open-source-parsers/jsoncpp/wiki/Amalgamated)
 from source commit
-[6aba23f](https://github.com/open-source-parsers/jsoncpp/commit/6aba23f4a8628d599a9ef7fa4811c4ff6e4070e2),
-release 1.9.3.
+[5defb4e](https://github.com/open-source-parsers/jsoncpp/commit/5defb4ed1a4293b8e2bf641e16b156fb9de498cc),
+release 1.9.5.
 
 > Generating amalgamated source and header JsonCpp is provided with a script to
 > generate a single header and a single source file to ease inclusion into an

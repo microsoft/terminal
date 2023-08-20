@@ -8,10 +8,11 @@ Param(
     [switch]$recursive
 )
 
-$debuggerPath = (Get-ItemProperty -path "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows Kits\Installed Roots" -name WindowsDebuggersRoot10).WindowsDebuggersRoot10
-$srcsrvPath = Join-Path $debuggerPath "x64\srcsrv"
-$srctoolExe = Join-Path $srcsrvPath "srctool.exe"
-$pdbstrExe = Join-Path $srcsrvPath "pdbstr.exe"
+$pdbStrPackage = ([xml](Get-Content "$SourceRoot\build\packages.config")).packages.package | Where-Object id -like "*PdbStr*"
+# This assumes that we rev PdbStr and SrcTool at the same time.
+$debugPackageVersions = $pdbStrPackage.version
+$srctoolExe = Join-Path $SourceRoot "packages" "Microsoft.Debugging.Tools.SrcTool.$debugPackageVersions" "content" "amd64" "srctool.exe"
+$pdbstrExe = Join-Path $SourceRoot "packages" "Microsoft.Debugging.Tools.PdbStr.$debugPackageVersions" "content" "amd64" "pdbstr.exe"
 
 $fileTable = @{}
 foreach ($gitFile in & git ls-files)

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "small_vector.h"
+
 #ifdef UNIT_TESTING
 class RunLengthEncodingTests;
 #endif
@@ -307,8 +309,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         // We don't check anywhere whether a size_type value is negative.
         // Having signed integers would break that.
-        static_assert(std::is_unsigned<size_type>::value, "the run length S must be unsigned");
-        static_assert(std::is_same<rle_type, typename Container::value_type>::value, "the value type of the Container must be rle_pair<T, S>");
+        static_assert(std::is_unsigned_v<size_type>, "the run length S must be unsigned");
+        static_assert(std::is_same_v<rle_type, typename Container::value_type>, "the value type of the Container must be rle_pair<T, S>");
 
         constexpr basic_rle() noexcept = default;
         ~basic_rle() = default;
@@ -378,7 +380,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         void swap(basic_rle& other) noexcept
         {
-            _runs.swap(other._runs);
+            std::swap(_runs, other._runs);
             std::swap(_total_length, other._total_length);
         }
 
@@ -396,6 +398,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // This method gives access to the raw run length encoded array
         // and allows users of this class to iterate over those.
         const container& runs() const noexcept
+        {
+            return _runs;
+        }
+
+        container& runs() noexcept
         {
             return _runs;
         }
@@ -471,10 +478,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // Replace the range [start_index, end_index) with replacements.
         // If end_index is larger than size() it's set to size().
         // start_index must be smaller or equal to end_index.
-        void replace(size_type start_index, size_type end_index, const gsl::span<const rle_type> replacements)
+        void replace(size_type start_index, size_type end_index, const std::span<const rle_type> replacements)
         {
             _check_indices(start_index, end_index);
             _replace_unchecked(start_index, end_index, replacements);
+        }
+
+        // Replace the range [start_index, end_index) with replacements.
+        // If end_index is larger than size() it's set to size().
+        // start_index must be smaller or equal to end_index.
+        void replace(size_type start_index, size_type end_index, const basic_rle& replacements)
+        {
+            _check_indices(start_index, end_index);
+            _replace_unchecked(start_index, end_index, replacements._runs);
         }
 
         // Replaces every instance of old_value in this vector with new_value.
@@ -507,7 +523,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                 run->length = ++pos;
 
-                _runs.erase(++run, _runs.cend());
+                _runs.erase(++run, _runs.end());
             }
             else if (new_size > _total_length)
             {
@@ -690,7 +706,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Replace the range [start_index, end_index) with replacements.
-        void _replace_unchecked(size_type start_index, size_type end_index, const gsl::span<const rle_type> replacements)
+        void _replace_unchecked(size_type start_index, size_type end_index, const std::span<const rle_type> replacements)
         {
             //
             //
@@ -938,7 +954,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             {
                 begin->length = begin_pos;
                 // begin is part of the to-be-replaced range.
-                // We've used the run begin is pointing to adjust it's length.
+                // We've used the run begin is pointing to adjust its length.
                 // --> We must increment it in order to not overwrite it in [Step4].
                 ++begin;
             }
@@ -1021,10 +1037,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     template<typename T, typename S = std::size_t>
     using rle = basic_rle<T, S, std::vector<rle_pair<T, S>>>;
 
-#ifdef BOOST_CONTAINER_CONTAINER_SMALL_VECTOR_HPP
     template<typename T, typename S = std::size_t, std::size_t N = 1>
-    using small_rle = basic_rle<T, S, boost::container::small_vector<rle_pair<T, S>, N>>;
-#endif
+    using small_rle = basic_rle<T, S, til::small_vector<rle_pair<T, S>, N>>;
 };
 
 #ifdef __WEX_COMMON_H__

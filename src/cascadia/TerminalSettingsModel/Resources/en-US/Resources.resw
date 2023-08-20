@@ -126,6 +126,10 @@
   <data name="SplitPaneParentCommandName" xml:space="preserve">
     <value>Split Pane...</value>
   </data>
+  <data name="ApplicationDisplayNamePortable" xml:space="preserve">
+    <value>Terminal (Portable)</value>
+    <comment>This display name is used when the Terminal application is running in a "portable" mode, where settings are not stored in a shared location.</comment>
+  </data>
   <data name="ApplicationDisplayNameUnpackaged" xml:space="preserve">
     <value>Terminal (Unpackaged)</value>
     <comment>This display name is used when the application's name cannot be determined</comment>
@@ -165,6 +169,13 @@
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>Move tab {0}</value>
     <comment>{0} will be replaced with a "forward" / "backward"</comment>
+  </data>
+  <data name="MoveTabToWindowCommandKey" xml:space="preserve">
+    <value>Move tab to window "{0}"</value>
+    <comment>{0} will be replaced with a user-specified name of a window</comment>
+  </data>
+  <data name="MoveTabToNewWindowCommandKey" xml:space="preserve">
+    <value>Move tab to a new window</value>
   </data>
   <data name="MoveTabDirectionForward" xml:space="preserve">
     <value>forward</value>
@@ -299,16 +310,19 @@
     <value>Next tab</value>
   </data>
   <data name="OpenBothSettingsFilesCommandKey" xml:space="preserve">
-    <value>Open both settings and default settings files</value>
+    <value>Open both settings and default settings files (JSON)</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenDefaultSettingsCommandKey" xml:space="preserve">
-    <value>Open default settings file</value>
+    <value>Open default settings file (JSON)</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenNewTabDropdownCommandKey" xml:space="preserve">
     <value>Open new tab dropdown</value>
   </data>
   <data name="OpenSettingsCommandKey" xml:space="preserve">
-    <value>Open settings file</value>
+    <value>Open settings file (JSON)</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
     <value>Set the tab color...</value>
@@ -368,6 +382,31 @@
   <data name="ScrollToBottomCommandKey" xml:space="preserve">
     <value>Scroll to the bottom of history</value>
   </data>
+  <data name="ScrollToPreviousMarkCommandKey" xml:space="preserve">
+    <value>Scroll to the previous mark</value>
+  </data>
+  <data name="ScrollToNextMarkCommandKey" xml:space="preserve">
+    <value>Scroll to the next mark</value>
+  </data>
+  <data name="ScrollToFirstMarkCommandKey" xml:space="preserve">
+    <value>Scroll to the first mark</value>
+  </data>
+  <data name="ScrollToLastMarkCommandKey" xml:space="preserve">
+    <value>Scroll to the last mark</value>
+  </data>
+  <data name="AddMarkCommandKey" xml:space="preserve">
+    <value>Add a scroll mark</value>
+  </data>
+  <data name="AddMarkWithColorCommandKey" xml:space="preserve">
+    <value>Add a scroll mark, color:{0}</value>
+    <comment>{Locked="color"}. "color" is a literal parameter name that shouldn't be translated. {0} will be replaced with a color in hexadecimal format, like `#123456`</comment>
+  </data>
+  <data name="ClearMarkCommandKey" xml:space="preserve">
+    <value>Clear mark</value>
+  </data>
+  <data name="ClearAllMarksCommandKey" xml:space="preserve">
+    <value>Clear all marks</value>
+  </data>
   <data name="SendInputCommandKey" xml:space="preserve">
     <value>Send Input: "{0}"</value>
     <comment>{0} will be replaced with a string of input as defined by the user</comment>
@@ -385,6 +424,9 @@
   </data>
   <data name="MovePaneCommandKey" xml:space="preserve">
     <value>Move pane</value>
+  </data>
+  <data name="MovePaneToNewWindowCommandKey" xml:space="preserve">
+    <value>Move pane to new window</value>
   </data>
   <data name="SplitPaneCommandKey" xml:space="preserve">
     <value>Split pane</value>
@@ -406,6 +448,12 @@
   </data>
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>
+  </data>
+  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
+    <value>Recent commands...</value>
+  </data>
+  <data name="SuggestionsCommandKey" xml:space="preserve">
+    <value>Open suggestions...</value>
   </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Toggle command palette in command line mode</value>
@@ -444,6 +492,12 @@
   <data name="TogglePaneReadOnlyCommandKey" xml:space="preserve">
     <value>Toggle pane read-only mode</value>
   </data>
+  <data name="EnablePaneReadOnlyCommandKey" xml:space="preserve">
+    <value>Enable pane read-only mode</value>
+  </data>
+  <data name="DisablePaneReadOnlyCommandKey" xml:space="preserve">
+    <value>Disable pane read-only mode</value>
+  </data>
   <data name="ToggleShaderEffectsCommandKey" xml:space="preserve">
     <value>Toggle terminal visual effects</value>
   </data>
@@ -462,6 +516,9 @@
   </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>Rename window...</value>
+  </data>
+  <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
+    <value>Display Terminal's current working directory</value>
   </data>
   <data name="GlobalSummonCommandKey" xml:space="preserve">
     <value>Show/Hide the Terminal window</value>
@@ -493,6 +550,10 @@
     <value>Clear scrollback</value>
     <comment>A command to clear the part of the buffer above the viewport</comment>
   </data>
+  <data name="DefaultWindowsConsoleName" xml:space="preserve">
+    <value>Let Windows decide</value>
+    <comment>This is the default option if a user doesn't choose to override Microsoft's choice of a Terminal.</comment>
+  </data>
   <data name="InboxWindowsConsoleAuthor" xml:space="preserve">
     <value>Microsoft Corporation</value>
     <comment>Paired with `InboxWindowsConsoleName`, this is the application author... which is us: Microsoft.</comment>
@@ -521,5 +582,142 @@
   </data>
   <data name="RestoreLastClosedCommandKey" xml:space="preserve">
     <value>Restore the last closed pane or tab</value>
+  </data>
+  <data name="SelectAllCommandKey" xml:space="preserve">
+    <value>Select all text</value>
+  </data>
+  <data name="MarkModeCommandKey" xml:space="preserve">
+    <value>Toggle mark mode</value>
+    <comment>A command that will toggle "mark mode". This is a mode in the application where the user can mark the text by selecting portions of the text.</comment>
+  </data>
+  <data name="ToggleBlockSelectionCommandKey" xml:space="preserve">
+    <value>Toggle block selection</value>
+  </data>
+  <data name="SwitchSelectionEndpointCommandKey" xml:space="preserve">
+    <value>Switch selection endpoint</value>
+  </data>
+  <data name="ColorSelection_allMatches" xml:space="preserve">
+    <value>all matches</value>
+    <comment>This is used in the description of an action which changes the color of selected text, to indicate that not only the selected text will be colored, but also all matching text.</comment>
+  </data>
+  <data name="ColorSelection_fg_action" xml:space="preserve">
+    <value>Color selection, foreground: {0}{1}</value>
+    <comment>This is the description of an action which changes the color of selected text. {0}: the color. {1}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_bg_action" xml:space="preserve">
+    <value>Color selection, background: {0}{1}</value>
+    <comment>This is the description of an action which changes the background color of selected text. {0}: the color. {1}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_fg_bg_action" xml:space="preserve">
+    <value>Color selection, foreground: {0}, background: {1}{2}</value>
+    <comment>This is the description of an action which changes the color of selected text and the background. {0}: the foreground color. {1}: the background color. {2}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_default_action" xml:space="preserve">
+    <value>Color selection, (default foreground/background){0}</value>
+    <comment>This is the description of an action which changes the color of selected text and the background to the default colors. {0}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_defaultColor" xml:space="preserve">
+    <value>[default]</value>
+    <comment>This is used in the description of an action which changes the color of selected text, as a placeholder for a color, to indicate that the default (foreground or background) color will be used.</comment>
+  </data>
+  <data name="ColorSelection_Black" xml:space="preserve">
+    <value>black</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Red" xml:space="preserve">
+    <value>red</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Green" xml:space="preserve">
+    <value>green</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Yellow" xml:space="preserve">
+    <value>yellow</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Blue" xml:space="preserve">
+    <value>blue</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Purple" xml:space="preserve">
+    <value>purple</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Cyan" xml:space="preserve">
+    <value>cyan</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_White" xml:space="preserve">
+    <value>white</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightBlack" xml:space="preserve">
+    <value>bright black</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightRed" xml:space="preserve">
+    <value>bright red</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightGreen" xml:space="preserve">
+    <value>bright green</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightYellow" xml:space="preserve">
+    <value>bright yellow</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightBlue" xml:space="preserve">
+    <value>bright blue</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightPurple" xml:space="preserve">
+    <value>bright purple</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightCyan" xml:space="preserve">
+    <value>bright cyan</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightWhite" xml:space="preserve">
+    <value>bright white</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ExpandSelectionToWordCommandKey" xml:space="preserve">
+    <value>Expand selection to word</value>
+  </data>
+  <data name="ShowContextMenuCommandKey" xml:space="preserve">
+    <value>Show context menu</value>
+  </data>
+  <data name="CloseOtherPanesCommandKey" xml:space="preserve">
+    <value>Close all other panes</value>
+  </data>
+  <data name="ToggleBroadcastInputCommandKey" xml:space="preserve">
+    <value>Toggle broadcast input to all panes</value>
+    <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
+  </data>
+  <data name="RestartConnectionKey" xml:space="preserve">
+    <value>Restart connection</value>
+  </data>
+  <data name="SelectOutputNextCommandKey" xml:space="preserve">
+    <value>Select next command output</value>
+  </data>
+  <data name="SelectOutputPreviousCommandKey" xml:space="preserve">
+    <value>Select previous command output</value>
+  </data>
+  <data name="SelectCommandNextCommandKey" xml:space="preserve">
+    <value>Select next command</value>
+  </data>
+  <data name="SelectCommandPreviousCommandKey" xml:space="preserve">
+    <value>Select previous command</value>
+  </data>
+  <data name="SearchForTextCommandKey" xml:space="preserve">
+    <value>Search {0}</value>
+    <comment>{0} will be replaced with a user-specified URL to a web page</comment>
+  </data>
+  <data name="SearchWebCommandKey" xml:space="preserve">
+    <value>Search the web for selected text</value>
+    <comment>This will open a web browser to search for some user-selected text</comment>
   </data>
 </root>

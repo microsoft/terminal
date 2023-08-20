@@ -56,6 +56,5 @@ extern COLORREF g_fakeCursorColor;
 extern HWND g_hTerminalDlg;
 extern HWND g_hOptionsDlg;
 
-extern bool g_defAppEnabled;
 extern std::vector<DelegationConfig::DelegationPackage> g_availablePackages;
 extern DelegationConfig::DelegationPackage g_selectedPackage;

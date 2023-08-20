@@ -282,13 +282,13 @@ winrt::guid Profile::_GenerateGuidForProfile(const std::wstring_view& name, cons
     // If we have a _source, then we can from a dynamic profile generator. Use
     // our source to build the namespace guid, instead of using the default GUID.
 
-    const GUID namespaceGuid = !source.empty() ?
-                                   Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(source))) :
+    const auto namespaceGuid = !source.empty() ?
+                                   Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, std::as_bytes(std::span{ source })) :
                                    RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID;
 
     // Always use the name to generate the temporary GUID. That way, across
     // reloads, we'll generate the same static GUID.
-    return { Utils::CreateV5Uuid(namespaceGuid, gsl::as_bytes(gsl::make_span(name))) };
+    return { Utils::CreateV5Uuid(namespaceGuid, std::as_bytes(std::span{ name })) };
 }
 
 // Method Description:
@@ -300,12 +300,12 @@ winrt::guid Profile::_GenerateGuidForProfile(const std::wstring_view& name, cons
 Json::Value Profile::ToJson() const
 {
     // Initialize the json with the appearance settings
-    Json::Value json{ winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance)->ToJson() };
+    auto json{ winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance)->ToJson() };
 
     // GH #9962:
     //   If the settings.json was missing, when we load the dynamic profiles, they are completely empty.
     //   This caused us to serialize empty profiles "{}" on accident.
-    const bool writeBasicSettings{ !Source().empty() };
+    const auto writeBasicSettings{ !Source().empty() };
 
     // Profile-specific Settings
     JsonUtils::SetValueForKey(json, NameKey, writeBasicSettings ? Name() : _Name);
@@ -324,11 +324,9 @@ Json::Value Profile::ToJson() const
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_TO_JSON)
 #undef PROFILE_SETTINGS_TO_JSON
 
-    // Font settings
-    const auto fontInfoImpl = winrt::get_self<FontConfig>(_FontInfo);
-    if (fontInfoImpl->HasAnyOptionSet())
+    if (auto fontJSON = winrt::get_self<FontConfig>(_FontInfo)->ToJson(); !fontJSON.empty())
     {
-        json[JsonKey(FontInfoKey)] = winrt::get_self<FontConfig>(_FontInfo)->ToJson();
+        json[JsonKey(FontInfoKey)] = std::move(fontJSON);
     }
 
     if (_UnfocusedAppearance)

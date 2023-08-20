@@ -61,6 +61,17 @@ Function Reject() {
     $Host.ExitNestedPrompt()
 }
 
+If ([String]::IsNullOrEmpty($Version)) {
+    $BranchVersionRegex = [Regex]"^release-(\d+(\.\d+)+)$"
+    $Branch = & git rev-parse --abbrev-ref HEAD
+    $Version = $BranchVersionRegex.Match($Branch).Groups[1].Value
+    If ([String]::IsNullOrEmpty($Version)) {
+        Write-Error "No version specified, and we can't infer it from the name of your branch ($Branch)."
+        Exit 1
+    }
+    Write-Host "Inferred servicing version $Version"
+}
+
 $Script:TodoColumnName = "To Cherry Pick"
 $Script:DoneColumnName = "Cherry Picked"
 $Script:RejectColumnName = "Rejected"

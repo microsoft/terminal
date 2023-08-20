@@ -15,20 +15,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         static Windows::UI::Xaml::DependencyProperty IsTargetProperty() { return _IsTargetProperty; }
 
-        static bool GetIsTarget(Windows::UI::Xaml::DependencyObject const& target)
+        static bool GetIsTarget(const Windows::UI::Xaml::DependencyObject& target)
         {
             return winrt::unbox_value<bool>(target.GetValue(_IsTargetProperty));
         }
 
-        static void SetIsTarget(Windows::UI::Xaml::DependencyObject const& target, bool value)
+        static void SetIsTarget(const Windows::UI::Xaml::DependencyObject& target, bool value)
         {
             target.SetValue(_IsTargetProperty, winrt::box_value(value));
         }
 
-        void OnConnected(Windows::UI::Xaml::UIElement const& newElement);
-        void OnDisconnected(Windows::UI::Xaml::UIElement const& oldElement);
+        void OnConnected(const Windows::UI::Xaml::UIElement& newElement);
+        void OnDisconnected(const Windows::UI::Xaml::UIElement& oldElement);
 
-        static void OnIsTargetChanged(Windows::UI::Xaml::DependencyObject const& d, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const& e);
+        static void OnIsTargetChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
 
         inline static winrt::hstring GetIdStatic()
         {

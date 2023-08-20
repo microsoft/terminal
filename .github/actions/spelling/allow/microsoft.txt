@@ -9,9 +9,11 @@ appxbundle
 appxerror
 appxmanifest
 ATL
+autoexec
 backplating
 bitmaps
 BOMs
+COMPUTERNAME
 CPLs
 cpptools
 cppvsdbg
@@ -26,6 +28,7 @@ dotnetfeed
 DTDs
 DWINRT
 enablewttlogging
+HOMESHARE
 Intelli
 IVisual
 libucrt
@@ -33,6 +36,7 @@ libucrtd
 LKG
 LOCKFILE
 Lxss
+makepri
 mfcribbon
 microsoft
 microsoftonline
@@ -50,14 +54,19 @@ pgo
 pgosweep
 powerrename
 powershell
+priconfig
+PRIINFO
 propkey
 pscustomobject
 QWORD
 regedit
+resfiles
 robocopy
 SACLs
+segoe
 sdkddkver
 Shobjidl
+sid
 Skype
 SRW
 sxs
@@ -70,6 +79,7 @@ tdbuildteamid
 ucrt
 ucrtd
 unvirtualized
+USERDNSDOMAIN
 VCRT
 vcruntime
 Virtualization

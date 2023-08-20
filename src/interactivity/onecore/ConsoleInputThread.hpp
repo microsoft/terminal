@@ -21,9 +21,9 @@ Author(s):
 
 namespace Microsoft::Console::Interactivity::OneCore
 {
-    class ConsoleInputThread sealed : public IConsoleInputThread
+    class ConsoleInputThread : public IConsoleInputThread
     {
     public:
-        HANDLE Start();
+        HANDLE Start() noexcept override;
     };
 }

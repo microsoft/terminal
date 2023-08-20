@@ -29,7 +29,6 @@ PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES= \
-    ..\AttrRow.cpp \
     ..\cursor.cpp    \
     ..\OutputCell.cpp \
     ..\OutputCellIterator.cpp \
@@ -41,10 +40,6 @@ SOURCES= \
     ..\textBuffer.cpp \
     ..\textBufferCellIterator.cpp \
     ..\textBufferTextIterator.cpp \
-    ..\CharRow.cpp \
-    ..\CharRowCell.cpp \
-    ..\CharRowCellReference.cpp \
-    ..\UnicodeStorage.cpp \
 	..\search.cpp \
 
 INCLUDES= \

@@ -8,7 +8,7 @@ Param(
     [Parameter(HelpMessage="Path to Windows Kit")]
     [ValidateScript({Test-Path $_ -Type Leaf})]
     [string]
-    $WindowsKitPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22000.0"
+    $WindowsKitPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0"
 )
 
 $ErrorActionPreference = "Stop"
@@ -70,23 +70,24 @@ Try {
 
     $dependencies = $Manifest.Package.Dependencies.PackageDependency.Name
     $depsHasVclibsDesktop = ("Microsoft.VCLibs.140.00.UWPDesktop" -in $dependencies) -or ("Microsoft.VCLibs.140.00.Debug.UWPDesktop" -in $dependencies)
-    $depsHasVcLibsAppX = ("Microsoft.VCLibs.140.00" -in $dependencies) -or ("Microsoft.VCLibs.140.00.Debug" -in $dependencies)
+    $depsHasVclibsAppX = ("Microsoft.VCLibs.140.00" -in $dependencies) -or ("Microsoft.VCLibs.140.00.Debug" -in $dependencies)
     $filesHasVclibsDesktop = ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140.dll" -EA:Ignore)) -or ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140d.dll" -EA:Ignore))
     $filesHasVclibsAppX = ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140_app.dll" -EA:Ignore)) -or ($null -ne (Get-Item "$AppxPackageRootPath\vcruntime140d_app.dll" -EA:Ignore))
 
-    If ($depsHasVclibsDesktop -Eq $filesHasVclibsDesktop) {
-        $eitherBoth = if ($depsHasVclibsDesktop) { "both" } else { "neither" }
-        $neitherNor = if ($depsHasVclibsDesktop) { "and" } else { "nor" }
-        Throw "Package has $eitherBoth Dependency $neitherNor Integrated Desktop VCLibs"
+    If ($filesHasVclibsDesktop) {
+        Throw "Package contains the desktop VCLibs"
     }
 
-    If ($depsHasVclibsAppx -Eq $filesHasVclibsAppx) {
-        if ($depsHasVclibsAppx) {
-            # We've shipped like this forever, so downgrade to warning.
-            Write-Warning "Package has both Dependency and Integrated AppX VCLibs"
-        } else {
-            Throw "Package has neither Dependency nor Integrated AppX VCLibs"
-        }
+    If ($depsHasVclibsDesktop) {
+        Throw "Package has a dependency on the desktop VCLibs"
+    }
+
+    If ($filesHasVclibsAppX) {
+        Throw "Package contains the AppX VCLibs"
+    }
+
+    If ($depsHasVclibsAppX) {
+        Throw "Package has a dependency on the AppX VCLibs"
     }
 
     ### Check that we have an App.xbf (which is a proxy for our resources having been merged)
@@ -94,11 +95,6 @@ Try {
     $AppXbf = $PRIFile.SelectSingleNode($resourceXpath)
     If ($null -eq $AppXbf) {
         Throw "Failed to find App.xbf (TerminalApp project) in resources.pri"
-    }
-
-    If (($null -eq (Get-Item "$AppxPackageRootPath\cpprest142_2_10.dll" -EA:Ignore)) -And
-        ($null -eq (Get-Item "$AppxPackageRootPath\cpprest142_2_10d.dll" -EA:Ignore))) {
-        Throw "Failed to find cpprest142_2_10.dll -- check the WAP packaging project"
     }
 
     If (($null -eq (Get-Item "$AppxPackageRootPath\wtd.exe" -EA:Ignore)) -And

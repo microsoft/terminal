@@ -80,7 +80,7 @@ private:
     // basic_string contains a small storage internally so we don't need
     // to worry about heap allocation for short strings.
     std::wstring _text;
-    DbcsAttribute _dbcsAttribute;
+    DbcsAttribute _dbcsAttribute = DbcsAttribute::Single;
     TextAttribute _textAttribute;
     TextAttributeBehavior _behavior;
 

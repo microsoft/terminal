@@ -29,13 +29,9 @@ Notes:
 //
 //----------------------------------------------------------------------------
 
-CicCategoryMgr::CicCategoryMgr()
-{
-}
+CicCategoryMgr::CicCategoryMgr() = default;
 
-CicCategoryMgr::~CicCategoryMgr()
-{
-}
+CicCategoryMgr::~CicCategoryMgr() = default;
 
 //+---------------------------------------------------------------------------
 //

@@ -10,13 +10,16 @@ import "FontConfig.idl";
     _BASE_INHERITABLE_SETTING(Type, Name);      \
     Microsoft.Terminal.Settings.Model.Profile Name##OverrideSource { get; }
 
+#define COMMA ,
+
 namespace Microsoft.Terminal.Settings.Model
 {
     enum CloseOnExitMode
     {
         Never = 0,
         Graceful,
-        Always
+        Always,
+        Automatic
     };
 
     [flags]
@@ -69,9 +72,17 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, SnapOnInput);
         INHERITABLE_PROFILE_SETTING(Boolean, AltGrAliasing);
         INHERITABLE_PROFILE_SETTING(BellStyle, BellStyle);
+
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IMap<String COMMA String>, EnvironmentVariables);
+
         INHERITABLE_PROFILE_SETTING(Boolean, UseAtlasEngine);
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IVector<String>, BellSound);
 
         INHERITABLE_PROFILE_SETTING(Boolean, Elevate);
+        INHERITABLE_PROFILE_SETTING(Boolean, AutoMarkPrompts);
+        INHERITABLE_PROFILE_SETTING(Boolean, ShowMarks);
+
+        INHERITABLE_PROFILE_SETTING(Boolean, RightClickContextMenu);
+        INHERITABLE_PROFILE_SETTING(Boolean, RepositionCursorWithMouse);
     }
 }

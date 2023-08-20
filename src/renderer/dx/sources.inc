@@ -35,6 +35,7 @@ SOURCES = \
     ..\DxRenderer.cpp \
     ..\DxFontInfo.cpp \
     ..\DxFontRenderData.cpp \
+    ..\DxSoftFont.cpp \
     ..\CustomTextRenderer.cpp \
     ..\CustomTextLayout.cpp \
 

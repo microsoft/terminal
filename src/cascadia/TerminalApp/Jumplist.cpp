@@ -89,12 +89,8 @@ winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings
         winrt::com_ptr<IObjectCollection> jumplistItems;
         jumplistItems.capture(jumplistInstance, &ICustomDestinationList::BeginList, &slots);
 
-        // It's easier to clear the list and re-add everything. The settings aren't
-        // updated often, and there likely isn't a huge amount of items to add.
-        THROW_IF_FAILED(jumplistItems->Clear());
-
         // Update the list of profiles.
-        THROW_IF_FAILED(_updateProfiles(jumplistItems.get(), strongSettings.ActiveProfiles().GetView()));
+        _updateProfiles(jumplistItems.get(), strongSettings.ActiveProfiles().GetView());
 
         // TODO GH#1571: Add items from the future customizable new tab dropdown as well.
         // This could either replace the default profiles, or be added alongside them.
@@ -116,26 +112,22 @@ winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings
 // - profiles - The profiles to add to the jumplist
 // Return Value:
 // - S_OK or HRESULT failure code.
-[[nodiscard]] HRESULT Jumplist::_updateProfiles(IObjectCollection* jumplistItems, winrt::Windows::Foundation::Collections::IVectorView<Profile> profiles) noexcept
+void Jumplist::_updateProfiles(IObjectCollection* jumplistItems, winrt::Windows::Foundation::Collections::IVectorView<Profile> profiles)
 {
-    try
+    // It's easier to clear the list and re-add everything. The settings aren't
+    // updated often, and there likely isn't a huge amount of items to add.
+    THROW_IF_FAILED(jumplistItems->Clear());
+
+    for (const auto& profile : profiles)
     {
-        for (const auto& profile : profiles)
-        {
-            // Craft the arguments following "wt.exe"
-            auto args = fmt::format(L"-p {}", to_hstring(profile.Guid()));
+        // Craft the arguments following "wt.exe"
+        auto args = fmt::format(L"-p {}", to_hstring(profile.Guid()));
 
-            // Create the shell link object for the profile
-            winrt::com_ptr<IShellLinkW> shLink;
-            const auto normalizedIconPath{ _normalizeIconPath(profile.Icon()) };
-            RETURN_IF_FAILED(_createShellLink(profile.Name(), normalizedIconPath, args, shLink.put()));
-
-            RETURN_IF_FAILED(jumplistItems->AddObject(shLink.get()));
-        }
-
-        return S_OK;
+        // Create the shell link object for the profile
+        const auto normalizedIconPath{ _normalizeIconPath(profile.Icon()) };
+        const auto shLink = _createShellLink(profile.Name(), normalizedIconPath, args);
+        THROW_IF_FAILED(jumplistItems->AddObject(shLink.get()));
     }
-    CATCH_RETURN();
 }
 
 // Method Description:
@@ -150,36 +142,48 @@ winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings
 // - shLink: The shell link object to return.
 // Return Value:
 // - S_OK or HRESULT failure code.
-[[nodiscard]] HRESULT Jumplist::_createShellLink(const std::wstring_view name,
-                                                 const std::wstring_view path,
-                                                 const std::wstring_view args,
-                                                 IShellLinkW** shLink) noexcept
+winrt::com_ptr<IShellLinkW> Jumplist::_createShellLink(const std::wstring_view name, const std::wstring_view path, const std::wstring_view args)
 {
-    try
+    auto sh = winrt::create_instance<IShellLinkW>(CLSID_ShellLink, CLSCTX_ALL);
+
+    const auto module{ GetWtExePath() };
+    THROW_IF_FAILED(sh->SetPath(module.data()));
+    THROW_IF_FAILED(sh->SetArguments(args.data()));
+    auto propStore{ sh.as<IPropertyStore>() };
+
+    PROPVARIANT titleProp;
+    titleProp.vt = VT_LPWSTR;
+    titleProp.pwszVal = const_cast<wchar_t*>(name.data());
+
+    // Check for a comma in the path. If we find one we have an indirect icon. Parse the path into a file path and index/id.
+    auto commaPosition = path.find(L",");
+    if (commaPosition != std::wstring_view::npos)
     {
-        auto sh = winrt::create_instance<IShellLinkW>(CLSID_ShellLink, CLSCTX_ALL);
+        const std::wstring iconPath{ path.substr(0, commaPosition) };
 
-        const auto module{ GetWtExePath() };
-        RETURN_IF_FAILED(sh->SetPath(module.data()));
-        RETURN_IF_FAILED(sh->SetArguments(args.data()));
-
-        PROPVARIANT titleProp;
-        titleProp.vt = VT_LPWSTR;
-        titleProp.pwszVal = const_cast<wchar_t*>(name.data());
-
+        // We dont want the comma included so add 1 to its position
+        int iconIndex = til::to_int(path.substr(commaPosition + 1));
+        if (iconIndex != til::to_int_error)
+        {
+            THROW_IF_FAILED(sh->SetIconLocation(iconPath.data(), iconIndex));
+        }
+    }
+    else if (til::ends_with(path, L"exe") || til::ends_with(path, L"dll"))
+    {
+        // We have a binary path but no index/id. Default to 0
+        THROW_IF_FAILED(sh->SetIconLocation(path.data(), 0));
+    }
+    else
+    {
         PROPVARIANT iconProp;
         iconProp.vt = VT_LPWSTR;
         iconProp.pwszVal = const_cast<wchar_t*>(path.data());
 
-        auto propStore{ sh.as<IPropertyStore>() };
-        RETURN_IF_FAILED(propStore->SetValue(PKEY_Title, titleProp));
-        RETURN_IF_FAILED(propStore->SetValue(PKEY_AppUserModel_DestListLogoUri, iconProp));
-
-        RETURN_IF_FAILED(propStore->Commit());
-
-        *shLink = sh.detach();
-
-        return S_OK;
+        THROW_IF_FAILED(propStore->SetValue(PKEY_AppUserModel_DestListLogoUri, iconProp));
     }
-    CATCH_RETURN();
+
+    THROW_IF_FAILED(propStore->SetValue(PKEY_Title, titleProp));
+    THROW_IF_FAILED(propStore->Commit());
+
+    return sh;
 }

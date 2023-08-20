@@ -1,6 +1,7 @@
 DIRS=\
      staging \
      buffer \
+     audio \
      interactivity \
      host \
      propsheet \

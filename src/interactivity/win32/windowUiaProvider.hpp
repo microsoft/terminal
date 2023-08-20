@@ -73,9 +73,9 @@ namespace Microsoft::Console::Interactivity::Win32
                                                         _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
         virtual IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
 
-        RECT GetWindowRect() const noexcept;
+        til::rect GetWindowRect() const noexcept;
         HWND GetWindowHandle() const;
-        void ChangeViewport(const SMALL_RECT NewWindow);
+        void ChangeViewport(const til::inclusive_rect& NewWindow);
 
     protected:
         // this is used to prevent the object from

@@ -54,5 +54,5 @@ namespace Microsoft::Console::VirtualTerminal
         IStateMachineEngine() = default;
     };
 
-    inline IStateMachineEngine::~IStateMachineEngine() {}
+    inline IStateMachineEngine::~IStateMachineEngine() = default;
 }

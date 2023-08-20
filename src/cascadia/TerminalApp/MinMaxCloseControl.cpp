@@ -66,19 +66,19 @@ namespace winrt::TerminalApp::implementation
 
     // These event handlers simply forward each buttons click events up to the
     // events we've exposed.
-    void MinMaxCloseControl::_MinimizeClick(winrt::Windows::Foundation::IInspectable const& /*sender*/,
-                                            RoutedEventArgs const& e)
+    void MinMaxCloseControl::_MinimizeClick(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                            const RoutedEventArgs& e)
     {
         _MinimizeClickHandlers(*this, e);
     }
 
-    void MinMaxCloseControl::_MaximizeClick(winrt::Windows::Foundation::IInspectable const& /*sender*/,
-                                            RoutedEventArgs const& e)
+    void MinMaxCloseControl::_MaximizeClick(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                            const RoutedEventArgs& e)
     {
         _MaximizeClickHandlers(*this, e);
     }
-    void MinMaxCloseControl::_CloseClick(winrt::Windows::Foundation::IInspectable const& /*sender*/,
-                                         RoutedEventArgs const& e)
+    void MinMaxCloseControl::_CloseClick(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                         const RoutedEventArgs& e)
     {
         _CloseClickHandlers(*this, e);
     }

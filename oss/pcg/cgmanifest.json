@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/component-detection-manifest.json",
   "Registrations": [
     {
       "component": {

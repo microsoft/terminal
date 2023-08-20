@@ -24,12 +24,18 @@
     <ClCompile Include="HwndTerminal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="HwndTerminalAutomationPeer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="HwndTerminal.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HwndTerminalAutomationPeer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -58,11 +58,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - e: event data
     // Return Value:
     // - <none>
-    void SearchBoxControl::TextBoxKeyDown(winrt::Windows::Foundation::IInspectable const& /*sender*/, Input::KeyRoutedEventArgs const& e)
+    void SearchBoxControl::TextBoxKeyDown(const winrt::Windows::Foundation::IInspectable& /*sender*/, const Input::KeyRoutedEventArgs& e)
     {
         if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
         {
-            auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
+            const auto state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
                 _SearchHandlers(TextBox().Text(), !_GoForward(), _CaseSensitive());
@@ -84,8 +84,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - e: event data
     // Return Value:
     // - <none>
-    void SearchBoxControl::_KeyDownHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
-                                           Input::KeyRoutedEventArgs const& e)
+    void SearchBoxControl::_KeyDownHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                           const Input::KeyRoutedEventArgs& e)
     {
         if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
         {
@@ -116,7 +116,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - text: string value to populate in the TextBox
     // Return Value:
     // - <none>
-    void SearchBoxControl::PopulateTextbox(winrt::hstring const& text)
+    void SearchBoxControl::PopulateTextbox(const winrt::hstring& text)
     {
         if (TextBox())
         {
@@ -151,7 +151,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - e: not used
     // Return Value:
     // - <none>
-    void SearchBoxControl::GoBackwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void SearchBoxControl::GoBackwardClicked(const winrt::Windows::Foundation::IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         GoBackwardButton().IsChecked(true);
         if (GoForwardButton().IsChecked())
@@ -172,7 +172,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - e: not used
     // Return Value:
     // - <none>
-    void SearchBoxControl::GoForwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    void SearchBoxControl::GoForwardClicked(const winrt::Windows::Foundation::IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         GoForwardButton().IsChecked(true);
         if (GoBackwardButton().IsChecked())
@@ -192,7 +192,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - e: event data
     // Return Value:
     // - <none>
-    void SearchBoxControl::CloseClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, RoutedEventArgs const& e)
+    void SearchBoxControl::CloseClick(const winrt::Windows::Foundation::IInspectable& /*sender*/, const RoutedEventArgs& e)
     {
         _ClosedHandlers(*this, e);
     }
@@ -205,7 +205,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - e: event data
     // Return Value:
     // - <none>
-    void SearchBoxControl::_CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/, Input::CharacterReceivedRoutedEventArgs const& e)
+    void SearchBoxControl::_CharacterHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/, const Input::CharacterReceivedRoutedEventArgs& e)
     {
         e.Handled(true);
     }

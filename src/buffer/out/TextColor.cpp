@@ -54,6 +54,8 @@ constexpr std::array<BYTE, 256> Index256ToIndex16 = {
 
 // We should only need 4B for TextColor. Any more than that is just waste.
 static_assert(sizeof(TextColor) == 4);
+// Assert that the use of memcmp() for comparisons is safe.
+static_assert(std::has_unique_object_representations_v<TextColor>);
 
 bool TextColor::CanBeBrightened() const noexcept
 {
@@ -62,7 +64,7 @@ bool TextColor::CanBeBrightened() const noexcept
 
 bool TextColor::IsLegacy() const noexcept
 {
-    return IsIndex16() || (IsIndex256() && _index < 16);
+    return (IsIndex16() || IsIndex256()) && _index < 16;
 }
 
 bool TextColor::IsIndex16() const noexcept
@@ -78,6 +80,11 @@ bool TextColor::IsIndex256() const noexcept
 bool TextColor::IsDefault() const noexcept
 {
     return _meta == ColorType::IsDefault;
+}
+
+bool TextColor::IsDefaultOrLegacy() const noexcept
+{
+    return _meta != ColorType::IsRgb && _index < 16;
 }
 
 bool TextColor::IsRgb() const noexcept
@@ -111,6 +118,8 @@ void TextColor::SetIndex(const BYTE index, const bool isIndex256) noexcept
 {
     _meta = isIndex256 ? ColorType::IsIndex256 : ColorType::IsIndex16;
     _index = index;
+    _green = 0;
+    _blue = 0;
 }
 
 // Method Description:
@@ -123,6 +132,9 @@ void TextColor::SetIndex(const BYTE index, const bool isIndex256) noexcept
 void TextColor::SetDefault() noexcept
 {
     _meta = ColorType::IsDefault;
+    _red = 0;
+    _green = 0;
+    _blue = 0;
 }
 
 // Method Description:

@@ -8,6 +8,7 @@ namespace Microsoft.Terminal.Wpf
     using System;
     using System.Threading;
     using System.Windows;
+    using System.Windows.Automation.Peers;
     using System.Windows.Controls;
     using System.Windows.Input;
     using System.Windows.Media;
@@ -19,14 +20,6 @@ namespace Microsoft.Terminal.Wpf
     public partial class TerminalControl : UserControl
     {
         private int accumulatedDelta = 0;
-
-        /// <summary>
-        /// Gets size of the terminal renderer.
-        /// </summary>
-        private Size TerminalRendererSize
-        {
-            get => this.termContainer.TerminalRendererSize;
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TerminalControl"/> class.
@@ -68,6 +61,14 @@ namespace Microsoft.Terminal.Wpf
         public ITerminalConnection Connection
         {
             set => this.termContainer.Connection = value;
+        }
+
+        /// <summary>
+        /// Gets size of the terminal renderer.
+        /// </summary>
+        private Size TerminalRendererSize
+        {
+            get => this.termContainer.TerminalRendererSize;
         }
 
         /// <summary>
@@ -123,7 +124,7 @@ namespace Microsoft.Terminal.Wpf
 
 #pragma warning disable VSTHRD001 // Avoid legacy thread switching APIs
             await this.Dispatcher.BeginInvoke(
-                new Action(delegate() { this.terminalGrid.Margin = this.CalculateMargins(); }),
+                new Action(delegate { this.terminalGrid.Margin = this.CalculateMargins(); }),
                 System.Windows.Threading.DispatcherPriority.Render);
 #pragma warning restore VSTHRD001 // Avoid legacy thread switching APIs
         }
@@ -150,6 +151,20 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <inheritdoc/>
+        protected override AutomationPeer OnCreateAutomationPeer()
+        {
+            var peer = FrameworkElementAutomationPeer.FromElement(this);
+            if (peer == null)
+            {
+                // Provide our own automation peer here that just sets IsContentElement/IsControlElement to false
+                // (aka AccessibilityView = Raw). This makes it not pop up in the UIA tree.
+                peer = new TermControlAutomationPeer(this);
+            }
+
+            return peer;
+        }
+
+        /// <inheritdoc/>
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
             var dpiScale = VisualTreeHelper.GetDpi(this);
@@ -160,7 +175,7 @@ namespace Microsoft.Terminal.Wpf
             var newSizeHeight = sizeInfo.NewSize.Height * dpiScale.DpiScaleY;
             newSizeHeight = newSizeHeight < 0 ? 0 : newSizeHeight;
 
-            this.termContainer.TerminalControlSize = new Size()
+            this.termContainer.TerminalControlSize = new Size
             {
                 Width = newSizeWidth,
                 Height = newSizeHeight,
@@ -191,7 +206,7 @@ namespace Microsoft.Terminal.Wpf
 
             if (controlSize == default)
             {
-                controlSize = new Size()
+                controlSize = new Size
                 {
                     Width = this.terminalUserControl.ActualWidth,
                     Height = this.terminalUserControl.ActualHeight,
@@ -265,6 +280,24 @@ namespace Microsoft.Terminal.Wpf
         {
             var viewTop = (int)e.NewValue;
             this.termContainer.UserScroll(viewTop);
+        }
+
+        private class TermControlAutomationPeer : UserControlAutomationPeer
+        {
+            public TermControlAutomationPeer(UserControl owner)
+                : base(owner)
+            {
+            }
+
+            protected override bool IsContentElementCore()
+            {
+                return false;
+            }
+
+            protected override bool IsControlElementCore()
+            {
+                return false;
+            }
         }
     }
 }

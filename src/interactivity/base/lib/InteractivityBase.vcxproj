@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{06EC74CB-9A12-429C-B551-8562EC964846}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -28,8 +28,10 @@
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\PseudoConsoleWindowAccessibilityProvider.cpp" />
     <ClCompile Include="..\RemoteConsoleControl.cpp" />
     <ClCompile Include="..\ServiceLocator.cpp" />
+    <ClCompile Include="..\VtApiRedirection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\IAccessibilityNotifier.hpp" />
@@ -41,12 +43,14 @@
     <ClInclude Include="..\..\inc\ISystemConfigurationProvider.hpp" />
     <ClInclude Include="..\..\inc\IWindowMetrics.hpp" />
     <ClInclude Include="..\..\inc\Module.hpp" />
+    <ClInclude Include="..\..\inc\VtApiRedirection.hpp" />
     <ClInclude Include="..\..\inc\EventSynthesis.hpp" />
     <ClInclude Include="..\ApiDetector.hpp" />
     <ClInclude Include="..\HostSignalInputThread.hpp" />
     <ClInclude Include="..\InteractivityFactory.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\..\inc\ServiceLocator.hpp" />
+    <ClInclude Include="..\PseudoConsoleWindowAccessibilityProvider.hpp" />
     <ClInclude Include="..\RemoteConsoleControl.hpp" />
   </ItemGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

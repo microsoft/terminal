@@ -2,10 +2,11 @@ constexpr std::wstring_view WtExe{ L"wt.exe" };
 constexpr std::wstring_view WtdExe{ L"wtd.exe" };
 constexpr std::wstring_view WindowsTerminalExe{ L"WindowsTerminal.exe" };
 constexpr std::wstring_view LocalAppDataAppsPath{ L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\" };
+constexpr std::wstring_view ElevateShimExe{ L"elevate-shim.exe" };
 
 _TIL_INLINEPREFIX bool IsPackaged()
 {
-    static const bool isPackaged = []() -> bool {
+    static const auto isPackaged = []() -> bool {
         try
         {
             const auto package = winrt::Windows::ApplicationModel::Package::Current();
@@ -32,7 +33,7 @@ _TIL_INLINEPREFIX bool IsPackaged()
 _TIL_INLINEPREFIX bool IsDevBuild()
 {
     // use C++11 magic statics to make sure we only do this once.
-    static const bool isDevBuild = []() -> bool {
+    static const auto isDevBuild = []() -> bool {
         if (IsPackaged())
         {
             try
@@ -63,7 +64,7 @@ _TIL_INLINEPREFIX bool IsDevBuild()
 // - the full path to the exe, one of `wt.exe`, `wtd.exe`, or `WindowsTerminal.exe`.
 _TIL_INLINEPREFIX const std::wstring& GetWtExePath()
 {
-    static const std::wstring exePath = []() -> std::wstring {
+    static const auto exePath = []() -> std::wstring {
         // First, check a packaged location for the exe. If we've got a package
         // family name, that means we're one of the packaged Dev build, packaged
         // Release build, or packaged Preview build.
@@ -82,7 +83,7 @@ _TIL_INLINEPREFIX const std::wstring& GetWtExePath()
                 if (!pfn.empty())
                 {
                     const std::filesystem::path windowsAppsPath{ wil::ExpandEnvironmentStringsW<std::wstring>(LocalAppDataAppsPath.data()) };
-                    const std::filesystem::path wtPath = windowsAppsPath / std::wstring_view{ pfn } / (IsDevBuild() ? WtdExe : WtExe);
+                    const auto wtPath = windowsAppsPath / std::wstring_view{ pfn } / (IsDevBuild() ? WtdExe : WtExe);
                     return wtPath;
                 }
             }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup Label="Globals">
     <ProjectGuid>{067F0A06-FCB7-472C-96E9-B03B54E8E18D}</ProjectGuid>
@@ -41,7 +41,7 @@
   <!-- Dependencies -->
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
-      <Project>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
+      <Project>{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}</Project>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
   </ItemGroup>

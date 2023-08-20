@@ -44,8 +44,8 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 {
     NTSTATUS Status;
 
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PCD_CREATE_OBJECT_INFORMATION const CreateInformation = &pMessage->CreateObject;
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto CreateInformation = &pMessage->CreateObject;
 
     LockConsole();
 
@@ -75,7 +75,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 
     case CD_IO_OBJECT_TYPE_CURRENT_OUTPUT:
     {
-        SCREEN_INFORMATION& ScreenInformation = gci.GetActiveOutputBuffer().GetMainBuffer();
+        auto& ScreenInformation = gci.GetActiveOutputBuffer().GetMainBuffer();
         Status = NTSTATUS_FROM_HRESULT(ScreenInformation.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
                                                                           CreateInformation->DesiredAccess,
                                                                           CreateInformation->ShareMode,
@@ -90,7 +90,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
         Status = STATUS_INVALID_PARAMETER;
     }
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         UnlockConsole();
         pMessage->SetReplyStatus(Status);
@@ -142,7 +142,7 @@ static bool _isInteractiveUserSession()
     }
 
     // don't call CloseWindowStation on GetProcessWindowStation handle or switch this to a unique_hwinsta
-    HWINSTA winsta{ GetProcessWindowStation() };
+    auto winsta{ GetProcessWindowStation() };
     if (winsta)
     {
         USEROBJECTFLAGS flags{};
@@ -178,27 +178,9 @@ static bool _shouldAttemptHandoff(const Globals& globals,
 
 #else
 
-    // Service desktops and non-interactive sessions should not
-    // try to hand off -- they probably don't have any terminals
-    // installed, and we don't want to risk breaking a service if
-    // they *do*.
-    if (!_isInteractiveUserSession())
-    {
-        return false;
-    }
-
-    // This console was started with a command line argument to
-    // specifically block handoff to another console. We presume
-    // this was for good reason (compatibility) and give up here.
-    if (globals.launchArgs.GetForceNoHandoff())
-    {
-        return false;
-    }
-
-    // Someone double clicked this console or explicitly tried
-    // to use it to launch a child process. Host it within this one
-    // and do not hand off.
-    if (globals.launchArgs.ShouldCreateServerHandle())
+    // If we're already a target for receiving another handoff,
+    // do not chain.
+    if (globals.handoffTarget)
     {
         return false;
     }
@@ -220,21 +202,33 @@ static bool _shouldAttemptHandoff(const Globals& globals,
         return false;
     }
 
+    // This console was started with a command line argument to
+    // specifically block handoff to another console. We presume
+    // this was for good reason (compatibility) and give up here.
+    if (globals.launchArgs.GetForceNoHandoff())
+    {
+        return false;
+    }
+
+    // Someone double clicked this console or explicitly tried
+    // to use it to launch a child process. Host it within this one
+    // and do not hand off.
+    if (globals.launchArgs.ShouldCreateServerHandle())
+    {
+        return false;
+    }
+
     // If it is a PTY session, do not attempt handoff.
     if (globals.launchArgs.IsHeadless())
     {
         return false;
     }
 
-    // If we do not have a registered handoff, do not attempt.
-    if (!globals.handoffConsoleClsid)
-    {
-        return false;
-    }
-
-    // If we're already a target for receiving another handoff,
-    // do not chain.
-    if (globals.handoffTarget)
+    // Service desktops and non-interactive sessions should not
+    // try to hand off -- they probably don't have any terminals
+    // installed, and we don't want to risk breaking a service if
+    // they *do*.
+    if (!_isInteractiveUserSession())
     {
         return false;
     }
@@ -269,6 +263,145 @@ static bool _shouldAttemptHandoff(const Globals& globals,
 #endif
 }
 
+static void attemptHandoff(Globals& Globals, const CONSOLE_INFORMATION& gci, CONSOLE_API_CONNECTINFO& cac, PCONSOLE_API_MSG pReceiveMsg)
+{
+    // _shouldAttemptHandoff does not check if there is a handoff target.
+    // this lets us break apart the check for logging purposes.
+    const bool shouldAttemptHandoff = _shouldAttemptHandoff(Globals, gci, cac);
+    if (!shouldAttemptHandoff)
+    {
+        // Non-interactive session, don't hand it off; emit no log
+        return;
+    }
+
+    // This session is interactive on the right desktop and window station
+
+    const bool hasHandoffTarget = Globals.delegationPair.IsCustom();
+    const bool handoffTargetChosenByWindows = Globals.defaultTerminalMarkerCheckRequired;
+
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "ConsoleHandoffSessionStarted",
+                      TraceLoggingDescription("a new interactive console session was started"),
+                      TraceLoggingGuid(Globals.delegationPair.console, "handoffCLSID"),
+                      TraceLoggingBool(handoffTargetChosenByWindows, "handoffTargetChosenByWindows"),
+                      TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                      TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+    if (!hasHandoffTarget)
+    {
+        // Nobody to hand off to. We emitted the log, so we're done here.
+        return;
+    }
+
+    try
+    {
+        // Go get ourselves some COM.
+        auto coinit = wil::CoInitializeEx(COINIT_MULTITHREADED);
+
+        // Get the class/interface to the handoff handler. Local machine only.
+        ::Microsoft::WRL::ComPtr<IConsoleHandoff> handoff;
+        THROW_IF_FAILED(CoCreateInstance(Globals.delegationPair.console, nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
+
+        // If we looked up the registered defterm pair, and it was left as the default (missing or {0}),
+        // AND velocity is enabled for DxD, then we switched the delegation pair to Terminal, with a notice
+        // that we still need to check whether Terminal actually wants to be the default Terminal.
+        // See ConsoleServerInitialization.
+        if (Globals.defaultTerminalMarkerCheckRequired)
+        {
+            ::Microsoft::WRL::ComPtr<IDefaultTerminalMarker> marker;
+            if (FAILED(handoff.As(&marker)))
+            {
+                Globals.delegationPair = DelegationConfig::ConhostDelegationPair;
+                Globals.defaultTerminalMarkerCheckRequired = false;
+                return;
+            }
+        }
+
+        // Pack up just enough of the attach message for the other console to process it.
+        // NOTE: It can and will pick up the size/title/etc parameters from the driver again.
+        CONSOLE_PORTABLE_ATTACH_MSG msg{};
+        msg.IdHighPart = pReceiveMsg->Descriptor.Identifier.HighPart;
+        msg.IdLowPart = pReceiveMsg->Descriptor.Identifier.LowPart;
+        msg.Process = pReceiveMsg->Descriptor.Process;
+        msg.Object = pReceiveMsg->Descriptor.Object;
+        msg.Function = pReceiveMsg->Descriptor.Function;
+        msg.InputSize = pReceiveMsg->Descriptor.InputSize;
+        msg.OutputSize = pReceiveMsg->Descriptor.OutputSize;
+
+        // Attempt to get server handle out of our own communication stack to pass it on.
+        HANDLE serverHandle;
+        THROW_IF_FAILED(Globals.pDeviceComm->GetServerHandle(&serverHandle));
+
+        wil::unique_hfile signalPipeTheirSide;
+        wil::unique_hfile signalPipeOurSide;
+
+        THROW_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), nullptr, 0));
+
+        // Give a copy of our own process handle to be tracked.
+        wil::unique_process_handle ourProcess;
+        THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
+                                                  GetCurrentProcess(),
+                                                  GetCurrentProcess(),
+                                                  ourProcess.addressof(),
+                                                  SYNCHRONIZE,
+                                                  FALSE,
+                                                  0));
+
+        wil::unique_process_handle clientProcess;
+
+        // Okay, moment of truth! If they say they successfully took it over, we're going to clean up.
+        // If they fail, we'll throw here and it'll log and we'll just start normally.
+        THROW_IF_FAILED(handoff->EstablishHandoff(serverHandle,
+                                                  Globals.hInputEvent.get(),
+                                                  &msg,
+                                                  signalPipeTheirSide.get(),
+                                                  ourProcess.get(),
+                                                  &clientProcess));
+
+        // Close handles for the things we gave to them
+        signalPipeTheirSide.reset();
+        ourProcess.reset();
+        Globals.hInputEvent.reset();
+
+        // Start a thread to listen for signals from their side that we must relay to the OS.
+        auto hostSignalThread = std::make_unique<Microsoft::Console::HostSignalInputThread>(std::move(signalPipeOurSide));
+
+        // Start it if it was successfully created.
+        THROW_IF_FAILED(hostSignalThread->Start());
+
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                          "ConsoleHandoffSucceeded",
+                          TraceLoggingDescription("successfully handed off console connection"),
+                          TraceLoggingGuid(Globals.delegationPair.console, "handoffCLSID"),
+                          TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                          TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        // Unlock in case anything tries to spool down as we exit.
+        UnlockConsole();
+
+        // We've handed off responsibility. Wait for child process to exit so we can maintain PID continuity for some clients.
+        WaitForSingleObject(clientProcess.get(), INFINITE);
+
+        // Exit process to clean up any outstanding things we have open.
+        ExitProcess(S_OK);
+    }
+    catch (...)
+    {
+        const auto hr = wil::ResultFromCaughtException();
+
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                          "ConsoleHandoffFailed",
+                          TraceLoggingDescription("failed while attempting handoff"),
+                          TraceLoggingGuid(Globals.delegationPair.console, "handoffCLSID"),
+                          TraceLoggingHResult(hr),
+                          TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                          TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        // Just log, don't do anything more. We'll move on to launching normally on failure.
+        LOG_CAUGHT_EXCEPTION();
+    }
+}
+
 // Routine Description:
 // - Used when a client application establishes an initial connection to this console server.
 // - This is supposed to represent accounting for the process, making the appropriate handles, etc.
@@ -278,8 +411,8 @@ static bool _shouldAttemptHandoff(const Globals& globals,
 // - The response data to this request message.
 PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API_MSG pReceiveMsg)
 {
-    Globals& Globals = ServiceLocator::LocateGlobals();
-    CONSOLE_INFORMATION& gci = Globals.getConsoleInformation();
+    auto& Globals = ServiceLocator::LocateGlobals();
+    auto& gci = Globals.getConsoleInformation();
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AttachConsole);
 
     ConsoleProcessHandle* ProcessData = nullptr;
@@ -288,7 +421,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     LockConsole();
 
     const auto cleanup = wil::scope_exit([&]() noexcept {
-        if (!NT_SUCCESS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             pReceiveMsg->SetReplyStatus(Status);
             if (ProcessData != nullptr)
@@ -302,121 +435,26 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         UnlockConsole();
     });
 
-    DWORD const dwProcessId = (DWORD)pReceiveMsg->Descriptor.Process;
-    DWORD const dwThreadId = (DWORD)pReceiveMsg->Descriptor.Object;
+    const auto dwProcessId = (DWORD)pReceiveMsg->Descriptor.Process;
+    const auto dwThreadId = (DWORD)pReceiveMsg->Descriptor.Object;
 
     CONSOLE_API_CONNECTINFO Cac;
     Status = ConsoleInitializeConnectInfo(pReceiveMsg, &Cac);
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return pReceiveMsg;
     }
 
     // If we pass the tests...
     // then attempt to delegate the startup to the registered replacement.
-    if (_shouldAttemptHandoff(Globals, gci, Cac))
-    {
-        try
-        {
-            // Go get ourselves some COM.
-            auto coinit = wil::CoInitializeEx(COINIT_MULTITHREADED);
-
-            // Get the class/interface to the handoff handler. Local machine only.
-            ::Microsoft::WRL::ComPtr<IConsoleHandoff> handoff;
-            THROW_IF_FAILED(CoCreateInstance(Globals.handoffConsoleClsid.value(), nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
-
-            // Pack up just enough of the attach message for the other console to process it.
-            // NOTE: It can and will pick up the size/title/etc parameters from the driver again.
-            CONSOLE_PORTABLE_ATTACH_MSG msg{};
-            msg.IdHighPart = pReceiveMsg->Descriptor.Identifier.HighPart;
-            msg.IdLowPart = pReceiveMsg->Descriptor.Identifier.LowPart;
-            msg.Process = pReceiveMsg->Descriptor.Process;
-            msg.Object = pReceiveMsg->Descriptor.Object;
-            msg.Function = pReceiveMsg->Descriptor.Function;
-            msg.InputSize = pReceiveMsg->Descriptor.InputSize;
-            msg.OutputSize = pReceiveMsg->Descriptor.OutputSize;
-
-            // Attempt to get server handle out of our own communication stack to pass it on.
-            HANDLE serverHandle;
-            THROW_IF_FAILED(Globals.pDeviceComm->GetServerHandle(&serverHandle));
-
-            wil::unique_hfile signalPipeTheirSide;
-            wil::unique_hfile signalPipeOurSide;
-
-            THROW_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), nullptr, 0));
-
-            // Give a copy of our own process handle to be tracked.
-            wil::unique_process_handle ourProcess;
-            THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
-                                                      GetCurrentProcess(),
-                                                      GetCurrentProcess(),
-                                                      ourProcess.addressof(),
-                                                      SYNCHRONIZE,
-                                                      FALSE,
-                                                      0));
-
-            wil::unique_process_handle clientProcess;
-
-            // Okay, moment of truth! If they say they successfully took it over, we're going to clean up.
-            // If they fail, we'll throw here and it'll log and we'll just start normally.
-            THROW_IF_FAILED(handoff->EstablishHandoff(serverHandle,
-                                                      Globals.hInputEvent.get(),
-                                                      &msg,
-                                                      signalPipeTheirSide.get(),
-                                                      ourProcess.get(),
-                                                      &clientProcess));
-
-            // Close handles for the things we gave to them
-            signalPipeTheirSide.reset();
-            ourProcess.reset();
-            Globals.hInputEvent.reset();
-
-            // Start a thread to listen for signals from their side that we must relay to the OS.
-            auto hostSignalThread = std::make_unique<Microsoft::Console::HostSignalInputThread>(std::move(signalPipeOurSide));
-
-            // Start it if it was successfully created.
-            THROW_IF_FAILED(hostSignalThread->Start());
-
-            TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                              "ConsoleHandoffSucceeded",
-                              TraceLoggingDescription("successfully handed off console connection"),
-                              TraceLoggingGuid(Globals.handoffConsoleClsid.value(), "handoffCLSID"),
-                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                              TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-            // Unlock in case anything tries to spool down as we exit.
-            UnlockConsole();
-
-            // We've handed off responsibility. Wait for child process to exit so we can maintain PID continuity for some clients.
-            WaitForSingleObject(clientProcess.get(), INFINITE);
-
-            // Exit process to clean up any outstanding things we have open.
-            ExitProcess(S_OK);
-        }
-        catch (...)
-        {
-            const auto hr = wil::ResultFromCaughtException();
-
-            TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                              "ConsoleHandoffFailed",
-                              TraceLoggingDescription("failed while attempting handoff"),
-                              TraceLoggingGuid(Globals.handoffConsoleClsid.value(), "handoffCLSID"),
-                              TraceLoggingHResult(hr),
-                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                              TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-            // Just log, don't do anything more. We'll move on to launching normally on failure.
-            LOG_CAUGHT_EXCEPTION();
-        }
-    }
+    attemptHandoff(Globals, gci, Cac, pReceiveMsg);
 
     Status = NTSTATUS_FROM_HRESULT(gci.ProcessHandleList.AllocProcessData(dwProcessId,
                                                                           dwThreadId,
                                                                           Cac.ProcessGroupId,
-                                                                          nullptr,
                                                                           &ProcessData));
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return pReceiveMsg;
     }
@@ -438,7 +476,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     if (WI_IsFlagClear(gci.Flags, CONSOLE_INITIALIZED))
     {
         Status = ConsoleAllocateConsole(&Cac);
-        if (!NT_SUCCESS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             return pReceiveMsg;
         }
@@ -469,7 +507,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     // not blanket granting the SetForeground right to all console apps when run
     // in ConPTY. It's the responsibility of the hosting terminal emulator to
     // always tell ConPTY when a particular instance is focused.
-    const bool hasFocus{ WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS) };
+    const auto hasFocus{ WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS) };
     const auto grantSetForeground{ hasFocus };
     gci.ProcessHandleList.ModifyConsoleProcessFocus(grantSetForeground);
 
@@ -480,7 +518,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
                                                                       FILE_SHARE_READ | FILE_SHARE_WRITE,
                                                                       ProcessData->pInputHandle));
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return pReceiveMsg;
     }
@@ -491,7 +529,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
                                                                FILE_SHARE_READ | FILE_SHARE_WRITE,
                                                                ProcessData->pOutputHandle));
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return pReceiveMsg;
     }
@@ -501,7 +539,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     pReceiveMsg->SetReplyInformation(sizeof(CD_CONNECTION_INFORMATION));
 
     auto deviceComm{ ServiceLocator::LocateGlobals().pDeviceComm };
-    CD_CONNECTION_INFORMATION ConnectionInformation = ProcessData->GetConnectionInformation(deviceComm);
+    auto ConnectionInformation = ProcessData->GetConnectionInformation(deviceComm);
     pReceiveMsg->Complete.Write.Data = &ConnectionInformation;
     pReceiveMsg->Complete.Write.Size = sizeof(CD_CONNECTION_INFORMATION);
 
@@ -526,7 +564,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleClientDisconnectRoutine(_In_ PCONSOLE_API
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FreeConsole);
 
-    ConsoleProcessHandle* const pProcessData = pMessage->GetProcessHandle();
+    const auto pProcessData = pMessage->GetProcessHandle();
 
     auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
     if (pNotifier)

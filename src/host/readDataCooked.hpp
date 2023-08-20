@@ -37,10 +37,10 @@ public:
                      _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                      SCREEN_INFORMATION& screenInfo,
                      _In_ size_t UserBufferSize,
-                     _In_ PWCHAR UserBuffer,
+                     _In_ char* UserBuffer,
                      _In_ ULONG CtrlWakeupMask,
                      _In_ const std::wstring_view exeName,
-                     _In_ const std::string_view initialData,
+                     _In_ const std::wstring_view initialData,
                      _In_ ConsoleProcessHandle* const pClientProcess);
 
     ~COOKED_READ_DATA() override;
@@ -57,8 +57,8 @@ public:
                 _Out_ DWORD* const pControlKeyState,
                 _Out_ void* const pOutputData) override;
 
-    gsl::span<wchar_t> SpanAtPointer();
-    gsl::span<wchar_t> SpanWholeBuffer();
+    std::span<wchar_t> SpanAtPointer();
+    std::span<wchar_t> SpanWholeBuffer();
 
     size_t Write(const std::wstring_view wstr);
 
@@ -80,10 +80,10 @@ public:
 
     SCREEN_INFORMATION& ScreenInfo() noexcept;
 
-    const COORD& OriginalCursorPosition() const noexcept;
-    COORD& OriginalCursorPosition() noexcept;
+    til::point OriginalCursorPosition() const noexcept;
+    til::point& OriginalCursorPosition() noexcept;
 
-    COORD& BeforeDialogCursorPosition() noexcept;
+    til::point& BeforeDialogCursorPosition() noexcept;
 
     bool IsEchoInput() const noexcept;
     bool IsInsertMode() const noexcept;
@@ -129,7 +129,7 @@ private:
     wchar_t* _backupLimit;
 
     size_t _userBufferSize; // doubled size in ansi case
-    wchar_t* _userBuffer;
+    char* _userBuffer;
 
     size_t* _pdwNumBytes;
 
@@ -147,8 +147,8 @@ private:
     SCREEN_INFORMATION& _screenInfo;
 
     // Note that cookedReadData's _originalCursorPosition is the position before ANY text was entered on the edit line.
-    COORD _originalCursorPosition;
-    COORD _beforeDialogCursorPosition; // Currently only used for F9 (ProcessCommandNumberInput) since it's the only pop-up to move the cursor when it starts.
+    til::point _originalCursorPosition;
+    til::point _beforeDialogCursorPosition; // Currently only used for F9 (ProcessCommandNumberInput) since it's the only pop-up to move the cursor when it starts.
 
     const bool _echoInput;
     const bool _lineInput;

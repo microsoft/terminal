@@ -47,6 +47,18 @@ inline std::string JsonKey(const std::string_view key)
 
 namespace Microsoft::Terminal::Settings::Model::JsonUtils
 {
+    template<typename T>
+    struct ConversionTrait
+    {
+        // Forward-declare these so the linker can pick up specializations from elsewhere!
+        T FromJson(const Json::Value&);
+        bool CanConvert(const Json::Value& json);
+
+        Json::Value ToJson(const T& val);
+
+        std::string TypeDescription() const { return "<unknown>"; }
+    };
+
     namespace Detail
     {
         // Function Description:
@@ -101,7 +113,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
     public:
         DeserializationError(const Json::Value& value) :
-            runtime_error(std::string("failed to deserialize ") + (value.isNull() ? "" : value.asString())),
+            runtime_error(std::string{ "failed to deserialize JSON value" }),
             jsonValue{ value } {}
 
         void SetKey(std::string_view newKey)
@@ -181,7 +193,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     template<typename T>
     bool GetValue(const Json::Value& json, T& target)
     {
-        return GetValue(json, target, ConversionTrait<typename std::decay<T>::type>{});
+        return GetValue(json, target, ConversionTrait<std::decay_t<T>>{});
     }
 
     // GetValue, forced return type, with automatic converter
@@ -189,7 +201,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     std::decay_t<T> GetValue(const Json::Value& json)
     {
         std::decay_t<T> local{};
-        GetValue(json, local, ConversionTrait<typename std::decay<T>::type>{});
+        GetValue(json, local, ConversionTrait<std::decay_t<T>>{});
         return local; // returns zero-initialized or value
     }
 
@@ -197,14 +209,14 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     template<typename T>
     bool GetValueForKey(const Json::Value& json, std::string_view key, T& target)
     {
-        return GetValueForKey(json, key, target, ConversionTrait<typename std::decay<T>::type>{});
+        return GetValueForKey(json, key, target, ConversionTrait<std::decay_t<T>>{});
     }
 
     // GetValueForKey, forced return type, with automatic converter
     template<typename T>
     std::decay_t<T> GetValueForKey(const Json::Value& json, std::string_view key)
     {
-        return GetValueForKey<T>(json, key, ConversionTrait<typename std::decay<T>::type>{});
+        return GetValueForKey<T>(json, key, ConversionTrait<std::decay_t<T>>{});
     }
 
     // Get multiple values for keys (json, k, &v, k, &v, k, &v, ...).
@@ -235,20 +247,8 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     template<typename T>
     void SetValueForKey(Json::Value& json, std::string_view key, const T& target)
     {
-        SetValueForKey(json, key, target, ConversionTrait<typename std::decay<T>::type>{});
+        SetValueForKey(json, key, target, ConversionTrait<std::decay_t<T>>{});
     }
-
-    template<typename T>
-    struct ConversionTrait
-    {
-        // Forward-declare these so the linker can pick up specializations from elsewhere!
-        T FromJson(const Json::Value&);
-        bool CanConvert(const Json::Value& json);
-
-        Json::Value ToJson(const T& val);
-
-        std::string TypeDescription() const { return "<unknown>"; }
-    };
 
     template<>
     struct ConversionTrait<std::string>
@@ -295,6 +295,62 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         std::string TypeDescription() const
         {
             return "string";
+        }
+    };
+
+    template<>
+    struct ConversionTrait<GUID>
+    {
+        GUID FromJson(const Json::Value& json)
+        {
+            return ::Microsoft::Console::Utils::GuidFromString(til::u8u16(Detail::GetStringView(json)).c_str());
+        }
+
+        bool CanConvert(const Json::Value& json)
+        {
+            if (!json.isString())
+            {
+                return false;
+            }
+
+            const auto string{ Detail::GetStringView(json) };
+            return string.length() == 38 && string.front() == '{' && string.back() == '}';
+        }
+
+        Json::Value ToJson(const GUID& val)
+        {
+            return til::u16u8(::Microsoft::Console::Utils::GuidToString(val));
+        }
+
+        std::string TypeDescription() const
+        {
+            return "guid";
+        }
+    };
+
+    // GUID and winrt::guid are mutually convertible,
+    // but IReference<winrt::guid> throws some of this off
+    template<>
+    struct ConversionTrait<winrt::guid>
+    {
+        winrt::guid FromJson(const Json::Value& json) const
+        {
+            return static_cast<winrt::guid>(ConversionTrait<GUID>{}.FromJson(json));
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            return ConversionTrait<GUID>{}.CanConvert(json);
+        }
+
+        Json::Value ToJson(const winrt::guid& val)
+        {
+            return ConversionTrait<GUID>{}.ToJson(val);
+        }
+
+        std::string TypeDescription() const
+        {
+            return ConversionTrait<GUID>{}.TypeDescription();
         }
     };
 
@@ -637,6 +693,30 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 
     template<>
+    struct ConversionTrait<uint64_t>
+    {
+        unsigned int FromJson(const Json::Value& json)
+        {
+            return json.asUInt();
+        }
+
+        bool CanConvert(const Json::Value& json)
+        {
+            return json.isUInt();
+        }
+
+        Json::Value ToJson(const uint64_t& val)
+        {
+            return val;
+        }
+
+        std::string TypeDescription() const
+        {
+            return "number (>= 0)";
+        }
+    };
+
+    template<>
     struct ConversionTrait<float>
     {
         float FromJson(const Json::Value& json)
@@ -681,62 +761,6 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         std::string TypeDescription() const
         {
             return "number";
-        }
-    };
-
-    template<>
-    struct ConversionTrait<GUID>
-    {
-        GUID FromJson(const Json::Value& json)
-        {
-            return ::Microsoft::Console::Utils::GuidFromString(til::u8u16(Detail::GetStringView(json)).c_str());
-        }
-
-        bool CanConvert(const Json::Value& json)
-        {
-            if (!json.isString())
-            {
-                return false;
-            }
-
-            const auto string{ Detail::GetStringView(json) };
-            return string.length() == 38 && string.front() == '{' && string.back() == '}';
-        }
-
-        Json::Value ToJson(const GUID& val)
-        {
-            return til::u16u8(::Microsoft::Console::Utils::GuidToString(val));
-        }
-
-        std::string TypeDescription() const
-        {
-            return "guid";
-        }
-    };
-
-    // GUID and winrt::guid are mutually convertible,
-    // but IReference<winrt::guid> throws some of this off
-    template<>
-    struct ConversionTrait<winrt::guid>
-    {
-        winrt::guid FromJson(const Json::Value& json) const
-        {
-            return static_cast<winrt::guid>(ConversionTrait<GUID>{}.FromJson(json));
-        }
-
-        bool CanConvert(const Json::Value& json) const
-        {
-            return ConversionTrait<GUID>{}.CanConvert(json);
-        }
-
-        Json::Value ToJson(const winrt::guid& val)
-        {
-            return ConversionTrait<GUID>{}.ToJson(val);
-        }
-
-        std::string TypeDescription() const
-        {
-            return ConversionTrait<GUID>{}.TypeDescription();
         }
     };
 
@@ -862,7 +886,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 #endif
 
-    template<typename T, typename TDelegatedConverter = ConversionTrait<typename std::decay<T>::type>, typename TOpt = std::optional<typename std::decay<T>::type>>
+    template<typename T, typename TDelegatedConverter = ConversionTrait<std::decay_t<T>>, typename TOpt = std::optional<std::decay_t<T>>>
     struct OptionalConverter
     {
         using Oracle = OptionOracle<TOpt>;

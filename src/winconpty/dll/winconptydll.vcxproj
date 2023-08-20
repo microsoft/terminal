@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{a22ec5f6-7851-4b88-ac52-47249d437a52}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -29,37 +29,37 @@
       <ModuleDefinitionFile>winconpty.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
-      <!-- Override GetPackagingOutputs to roll up our DLL.	
-       This is a heavily stripped version of the one in Microsoft.*.AppxPackage.targets.	
-  -->	
-  <PropertyGroup>	
-    <_ContinueOnError Condition="'$(BuildingProject)' == 'true'">true</_ContinueOnError>	
-    <_ContinueOnError Condition="'$(BuildingProject)' != 'true'">false</_ContinueOnError>	
-  </PropertyGroup>	
-  <Target Name="GetPackagingOutputs" Returns="@(PackagingOutputs)">	
-    <CallTarget Targets="BuiltProjectOutputGroup">	
-      <Output TaskParameter="TargetOutputs" ItemName="_BuiltProjectOutputGroupOutput" />	
-    </CallTarget>	
-    <ItemGroup>	
-      <_PackagingOutputsUnexpanded Include="%(_BuiltProjectOutputGroupOutput.FinalOutputPath)">	
-        <TargetPath>%(_BuiltProjectOutputGroupOutput.TargetPath)</TargetPath>	
-        <OutputGroup>BuiltProjectOutputGroup</OutputGroup>	
-        <ProjectName>$(ProjectName)</ProjectName>	
-      </_PackagingOutputsUnexpanded>	
-    </ItemGroup>	
-    <CallTarget Targets="DebugSymbolsProjectOutputGroup">	
-      <Output TaskParameter="TargetOutputs" ItemName="_DebugSymbolsProjectOutputGroupOutput" />	
-    </CallTarget>	
-    <ItemGroup>	
-      <_PackagingOutputsUnexpanded Include="%(_DebugSymbolsProjectOutputGroupOutput.FinalOutputPath)">	
-        <OutputGroup>DebugSymbolsProjectOutputGroup</OutputGroup>	
-        <ProjectName>$(ProjectName)</ProjectName>	
-      </_PackagingOutputsUnexpanded>	
-    </ItemGroup>	
-    <ItemGroup>	
-      <PackagingOutputs Include="@(_PackagingOutputsUnexpanded)">	
-        <TargetPath>%(Filename)%(Extension)</TargetPath>	
-      </PackagingOutputs>	
-    </ItemGroup>	
+      <!-- Override GetPackagingOutputs to roll up our DLL.
+       This is a heavily stripped version of the one in Microsoft.*.AppxPackage.targets.
+  -->
+  <PropertyGroup>
+    <_ContinueOnError Condition="'$(BuildingProject)' == 'true'">true</_ContinueOnError>
+    <_ContinueOnError Condition="'$(BuildingProject)' != 'true'">false</_ContinueOnError>
+  </PropertyGroup>
+  <Target Name="GetPackagingOutputs" Returns="@(PackagingOutputs)">
+    <CallTarget Targets="BuiltProjectOutputGroup">
+      <Output TaskParameter="TargetOutputs" ItemName="_BuiltProjectOutputGroupOutput" />
+    </CallTarget>
+    <ItemGroup>
+      <_PackagingOutputsUnexpanded Include="%(_BuiltProjectOutputGroupOutput.FinalOutputPath)">
+        <TargetPath>%(_BuiltProjectOutputGroupOutput.TargetPath)</TargetPath>
+        <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
+        <ProjectName>$(ProjectName)</ProjectName>
+      </_PackagingOutputsUnexpanded>
+    </ItemGroup>
+    <CallTarget Targets="DebugSymbolsProjectOutputGroup">
+      <Output TaskParameter="TargetOutputs" ItemName="_DebugSymbolsProjectOutputGroupOutput" />
+    </CallTarget>
+    <ItemGroup>
+      <_PackagingOutputsUnexpanded Include="%(_DebugSymbolsProjectOutputGroupOutput.FinalOutputPath)">
+        <OutputGroup>DebugSymbolsProjectOutputGroup</OutputGroup>
+        <ProjectName>$(ProjectName)</ProjectName>
+      </_PackagingOutputsUnexpanded>
+    </ItemGroup>
+    <ItemGroup>
+      <PackagingOutputs Include="@(_PackagingOutputsUnexpanded)">
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+      </PackagingOutputs>
+    </ItemGroup>
   </Target>
 </Project>

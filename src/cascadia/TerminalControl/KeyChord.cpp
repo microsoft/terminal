@@ -12,7 +12,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     static VirtualKeyModifiers modifiersFromBooleans(bool ctrl, bool alt, bool shift, bool win)
     {
-        VirtualKeyModifiers modifiers = VirtualKeyModifiers::None;
+        auto modifiers = VirtualKeyModifiers::None;
         WI_SetFlagIf(modifiers, VirtualKeyModifiers::Control, ctrl);
         WI_SetFlagIf(modifiers, VirtualKeyModifiers::Menu, alt);
         WI_SetFlagIf(modifiers, VirtualKeyModifiers::Shift, shift);

@@ -1,29 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "EnumEntry.idl";
+import "GlobalAppearanceViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass GlobalAppearancePageNavigationState
-    {
-        Microsoft.Terminal.Settings.Model.GlobalAppSettings Globals;
-    };
-
     [default_interface] runtimeclass GlobalAppearance : Windows.UI.Xaml.Controls.Page
     {
         GlobalAppearance();
-        GlobalAppearancePageNavigationState State { get; };
-
-        static String LanguageDisplayConverter(String tag);
-        Boolean LanguageSelectorAvailable { get; };
-        Windows.Foundation.Collections.IObservableVector<String> LanguageList { get; };
-        IInspectable CurrentLanguage;
-
-        IInspectable CurrentTheme;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ThemeList { get; };
-
-        IInspectable CurrentTabWidthMode;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TabWidthModeList { get; };
+        GlobalAppearanceViewModel ViewModel { get; };
     }
 }

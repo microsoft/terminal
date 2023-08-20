@@ -1,9 +1,0 @@
-parameters:
-  sdkVersion: 18362
-steps:
-  - task: powershell@2
-    inputs:
-      targetType: filePath
-      filePath: build\scripts\Install-WindowsSdkISO.ps1
-      arguments: ${{ parameters.sdkVersion }}
-    displayName: 'Install Windows SDK (${{ parameters.sdkVersion }})'

@@ -119,6 +119,7 @@
   </resheader>
   <data name="AppName" xml:space="preserve">
     <value>Terminal</value>
+    <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppNameDev" xml:space="preserve">
     <value>Terminal Dev</value>
@@ -126,9 +127,11 @@
   </data>
   <data name="AppNamePre" xml:space="preserve">
     <value>Terminal Preview</value>
+    <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppStoreName" xml:space="preserve">
     <value>Windows Terminal</value>
+    <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppStoreNameDev" xml:space="preserve">
     <value>Windows Terminal Dev</value>
@@ -136,9 +139,11 @@
   </data>
   <data name="AppStoreNamePre" xml:space="preserve">
     <value>Windows Terminal Preview</value>
+    <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppShortName" xml:space="preserve">
     <value>Terminal</value>
+    <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppShortNameDev" xml:space="preserve">
     <value>Terminal Dev</value>
@@ -146,6 +151,7 @@
   </data>
   <data name="AppShortNamePre" xml:space="preserve">
     <value>Terminal Preview</value>
+    <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppDescription" xml:space="preserve">
     <value>The New Windows Terminal</value>
@@ -158,15 +164,15 @@
     <value>Windows Terminal with a preview of upcoming features</value>
   </data>
   <data name="ShellExtension_OpenInTerminalMenuItem_Dev" xml:space="preserve">
-    <value>Open in Terminal (Dev)</value>
+    <value>Open in Terminal (&amp;Dev)</value>
     <comment>{Locked} The dev build will never be seen in multiple languages</comment>
   </data>
   <data name="ShellExtension_OpenInTerminalMenuItem_Preview" xml:space="preserve">
-    <value>Open in Terminal Preview</value>
-    <comment>This is a menu item that will be displayed in the Windows File Explorer that launches the Preview version of Windows Terminal</comment>
+    <value>Open in Terminal &amp;Preview</value>
+    <comment>This is a menu item that will be displayed in the Windows File Explorer that launches the Preview version of Windows Terminal. Please mark one of the characters to be an accelerator key.</comment>
   </data>
   <data name="ShellExtension_OpenInTerminalMenuItem" xml:space="preserve">
-    <value>Open in Terminal</value>
-    <comment>This is a menu item that will be displayed in the Windows File Explorer that launches the non-preview version of Windows Terminal</comment>
+    <value>Open in &amp;Terminal</value>
+    <comment>This is a menu item that will be displayed in the Windows File Explorer that launches the non-preview version of Windows Terminal. Please mark one of the characters to be an accelerator key.</comment>
   </data>
 </root>

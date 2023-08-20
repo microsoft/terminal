@@ -69,7 +69,7 @@ namespace Microsoft::Console::VirtualTerminal
                 _nextPushIndex--;
             }
 
-            SavedSgrAttributes& restoreMe = _storedSgrAttributes.at(_nextPushIndex);
+            auto& restoreMe = _storedSgrAttributes.at(_nextPushIndex);
 
             if (restoreMe.ValidParts.test(SgrSaveRestoreStackOptions::All))
             {
@@ -94,7 +94,7 @@ namespace Microsoft::Console::VirtualTerminal
         // before we even got here.
         FAIL_FAST_IF(validParts.test(SgrSaveRestoreStackOptions::All));
 
-        TextAttribute result = currentAttributes;
+        auto result = currentAttributes;
 
         // From xterm documentation:
         //

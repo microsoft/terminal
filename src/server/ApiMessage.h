@@ -20,6 +20,8 @@ Revision History:
 #include "ApiMessageState.h"
 #include "IApiRoutines.h"
 
+#include <til/small_vector.h>
+
 class ConsoleProcessHandle;
 class ConsoleHandleData;
 
@@ -39,9 +41,6 @@ typedef struct _CONSOLE_API_MSG
     ConsoleHandleData* GetObjectHandle() const;
 
     [[nodiscard]] HRESULT ReadMessageInput(const ULONG cbOffset, _Out_writes_bytes_(cbSize) PVOID pvBuffer, const ULONG cbSize);
-    [[nodiscard]] HRESULT GetAugmentedOutputBuffer(const ULONG cbFactor,
-                                                   _Outptr_result_bytebuffer_(*pcbSize) PVOID* ppvBuffer,
-                                                   _Out_ PULONG pcbSize);
     [[nodiscard]] HRESULT GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer, _Out_ ULONG* const pcbSize);
     [[nodiscard]] HRESULT GetInputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer, _Out_ ULONG* const pcbSize);
 
@@ -62,8 +61,8 @@ typedef struct _CONSOLE_API_MSG
     IDeviceComm* _pDeviceComm{ nullptr };
     IApiRoutines* _pApiRoutines{ nullptr };
 
-    boost::container::small_vector<BYTE, 128> _inputBuffer;
-    boost::container::small_vector<BYTE, 128> _outputBuffer;
+    til::small_vector<BYTE, 128> _inputBuffer;
+    til::small_vector<BYTE, 128> _outputBuffer;
 
     // From here down is the actual packet data sent/received.
     CD_IO_DESCRIPTOR Descriptor;

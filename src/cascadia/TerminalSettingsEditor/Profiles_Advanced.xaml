@@ -122,8 +122,7 @@
                 <local:SettingContainer x:Uid="Profile_UseAtlasEngine"
                                         ClearSettingValue="{x:Bind Profile.ClearUseAtlasEngine}"
                                         HasSettingValue="{x:Bind Profile.HasUseAtlasEngine, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.UseAtlasEngineOverrideSource, Mode=OneWay}"
-                                        Visibility="{x:Bind Profile.AtlasEngineAvailable}">
+                                        SettingOverrideSource="{x:Bind Profile.UseAtlasEngineOverrideSource, Mode=OneWay}">
                     <ToggleSwitch IsOn="{x:Bind Profile.UseAtlasEngine, Mode=TwoWay}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>

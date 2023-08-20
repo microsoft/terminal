@@ -102,7 +102,7 @@ public:
     // - an iterator on the first character after the expectedString.
     static TextBufferCellIterator VerifyExpectedString(const TextBuffer& tb,
                                                        std::wstring_view expectedString,
-                                                       const COORD pos)
+                                                       const til::point pos)
     {
         auto iter = tb.GetCellDataAt(pos);
         VerifyExpectedString(expectedString, iter);
@@ -168,15 +168,19 @@ public:
             auto actualAttrs = actual->TextAttr();
             auto expectedAttrs = expected->TextAttr();
 
-            auto mismatched = (actualChars != expectedChars || actualAttrs != expectedAttrs);
+            auto mismatched = ((!expectedChars.empty() && actualChars != expectedChars) || actualAttrs != expectedAttrs);
             if (mismatched)
             {
                 WEX::Logging::Log::Comment(WEX::Common::NoThrowString().Format(
                     L"Character or attribute at index %d was mismatched", charsProcessed));
             }
 
-            VERIFY_ARE_EQUAL(expectedChars, actualChars);
+            if (!expectedChars.empty())
+            {
+                VERIFY_ARE_EQUAL(expectedChars, actualChars);
+            }
             VERIFY_ARE_EQUAL(expectedAttrs, actualAttrs);
+
             if (mismatched)
             {
                 return false;
@@ -192,7 +196,7 @@ public:
     };
 
     template<class... T>
-    static TextBufferCellIterator VerifyLineContains(const TextBuffer& tb, COORD position, T&&... expectedContent)
+    static TextBufferCellIterator VerifyLineContains(const TextBuffer& tb, til::point position, T&&... expectedContent)
     {
         auto actual = tb.GetCellLineDataAt(position);
         VerifyLineContains(actual, std::forward<T>(expectedContent)...);

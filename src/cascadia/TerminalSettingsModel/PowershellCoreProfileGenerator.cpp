@@ -157,7 +157,7 @@ static void _accumulateTraditionalLayoutPowerShellInstancesInDirectory(std::wstr
             const auto executable = versionedPath / PWSH_EXE;
             if (std::filesystem::exists(executable))
             {
-                const auto preview = versionedPath.filename().wstring().find(L"-preview") != std::wstring::npos;
+                const auto preview = versionedPath.filename().native().find(L"-preview") != std::wstring::npos;
                 const auto previewFlag = preview ? PowerShellFlags::Preview : PowerShellFlags::None;
                 out.emplace_back(PowerShellInstance{ std::stoi(versionedPath.filename()),
                                                      PowerShellFlags::Traditional | flags | previewFlag,
@@ -303,7 +303,7 @@ std::wstring_view PowershellCoreProfileGenerator::GetNamespace() const noexcept
 void PowershellCoreProfileGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
 {
     const auto psInstances = _collectPowerShellInstances();
-    bool first = true;
+    auto first = true;
 
     for (const auto& psI : psInstances)
     {
@@ -319,7 +319,8 @@ void PowershellCoreProfileGenerator::GenerateProfiles(std::vector<winrt::com_ptr
         profile->Commandline(winrt::hstring{ quotedCommandline });
 
         profile->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
-        profile->DefaultAppearance().ColorSchemeName(L"Campbell");
+        profile->DefaultAppearance().DarkColorSchemeName(L"Campbell");
+        profile->DefaultAppearance().LightColorSchemeName(L"Campbell");
         profile->Icon(winrt::hstring{ WI_IsFlagSet(psI.flags, PowerShellFlags::Preview) ? POWERSHELL_PREVIEW_ICON : POWERSHELL_ICON });
 
         if (first)

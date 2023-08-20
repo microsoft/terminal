@@ -37,7 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto window{ CoreWindow::GetForCurrentThread() };
 
-        VirtualKeyModifiers flags = VirtualKeyModifiers::None;
+        auto flags = VirtualKeyModifiers::None;
         for (const auto mod : ModifierKeys)
         {
             const auto state = window.GetKeyState(mod);
@@ -93,12 +93,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void KeyChordListener::_OnKeysChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& e)
+    void KeyChordListener::_OnKeysChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& e)
     {
         if (auto control{ d.try_as<Editor::KeyChordListener>() })
         {
             auto controlImpl{ get_self<KeyChordListener>(control) };
-            TextBox tb{ controlImpl->FindName(L"KeyChordTextBox").as<TextBox>() };
+            auto tb{ controlImpl->FindName(L"KeyChordTextBox").as<TextBox>() };
             tb.Text(Model::KeyChordSerialization::ToString(unbox_value<Control::KeyChord>(e.NewValue())));
             if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(tb) })
             {
@@ -111,7 +111,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void KeyChordListener::KeyChordTextBox_KeyDown(IInspectable const& /*sender*/, KeyRoutedEventArgs const& e)
+    void KeyChordListener::KeyChordTextBox_KeyDown(const IInspectable& /*sender*/, const KeyRoutedEventArgs& e)
     {
         const auto key{ e.OriginalKey() };
         for (const auto mod : ModifierKeys)

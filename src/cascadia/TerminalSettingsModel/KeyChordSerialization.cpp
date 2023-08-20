@@ -101,7 +101,7 @@ static int32_t parseNumericCode(const std::wstring_view& str, const std::wstring
         return 0;
     }
 
-    const auto value = til::from_wchars({ str.data() + prefix.size(), str.size() - prefix.size() - suffix.size() });
+    const auto value = til::to_ulong({ str.data() + prefix.size(), str.size() - prefix.size() - suffix.size() });
     if (value > 0 && value < 256)
     {
         return gsl::narrow_cast<int32_t>(value);
@@ -124,7 +124,7 @@ static int32_t parseNumericCode(const std::wstring_view& str, const std::wstring
 static KeyChord _fromString(std::wstring_view wstr)
 {
     using nameToVkeyPair = std::pair<std::wstring_view, int32_t>;
-    static const til::static_map nameToVkey{
+    static constinit til::static_map nameToVkey{
     // The above VKEY_NAME_PAIRS macro contains a list of key-binding names for each virtual key.
     // This god-awful macro inverts VKEY_NAME_PAIRS and creates a static map of key-binding names to virtual keys.
     // clang-format off
@@ -142,9 +142,9 @@ static KeyChord _fromString(std::wstring_view wstr)
         // clang-format on
     };
 
-    VirtualKeyModifiers modifiers = VirtualKeyModifiers::None;
-    int32_t vkey = 0;
-    int32_t scanCode = 0;
+    auto modifiers = VirtualKeyModifiers::None;
+    auto vkey = 0;
+    auto scanCode = 0;
 
     while (!wstr.empty())
     {
@@ -240,7 +240,7 @@ static KeyChord _fromString(std::wstring_view wstr)
 static std::wstring _toString(const KeyChord& chord)
 {
     using vkeyToNamePair = std::pair<int32_t, std::wstring_view>;
-    static const til::static_map vkeyToName{
+    static constinit til::static_map vkeyToName{
     // The above VKEY_NAME_PAIRS macro contains a list of key-binding strings for each virtual key.
     // This macro picks the first (most preferred) name and creates a static map of virtual keys to key-binding names.
 #define GENERATOR(vkey, name1, ...) vkeyToNamePair{ vkey, name1 },

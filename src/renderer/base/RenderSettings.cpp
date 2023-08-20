@@ -11,19 +11,20 @@
 using namespace Microsoft::Console::Render;
 using Microsoft::Console::Utils::InitializeColorTable;
 
-static constexpr size_t AdjustedFgIndex{ 16 };
-static constexpr size_t AdjustedBgIndex{ 17 };
-
 RenderSettings::RenderSettings() noexcept
 {
     InitializeColorTable(_colorTable);
 
     SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
     SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
+    SetColorTableEntry(TextColor::FRAME_FOREGROUND, INVALID_COLOR);
+    SetColorTableEntry(TextColor::FRAME_BACKGROUND, INVALID_COLOR);
     SetColorTableEntry(TextColor::CURSOR_COLOR, INVALID_COLOR);
 
     SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DARK_WHITE);
     SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DARK_BLACK);
+    SetColorAliasIndex(ColorAlias::FrameForeground, TextColor::FRAME_FOREGROUND);
+    SetColorAliasIndex(ColorAlias::FrameBackground, TextColor::FRAME_BACKGROUND);
 }
 
 // Routine Description:
@@ -64,38 +65,6 @@ const std::array<COLORREF, TextColor::TABLE_SIZE>& RenderSettings::GetColorTable
 void RenderSettings::ResetColorTable() noexcept
 {
     InitializeColorTable({ _colorTable.data(), 16 });
-}
-
-// Routine Description:
-// - Creates the adjusted color array, which contains the possible foreground colors,
-//   adjusted for perceivability
-// - The adjusted color array is 2-d, and effectively maps a background and foreground
-//   color pair to the adjusted foreground for that color pair
-void RenderSettings::MakeAdjustedColorArray() noexcept
-{
-    // The color table has 16 colors, but the adjusted color table needs to be 18
-    // to include the default background and default foreground colors
-    std::array<COLORREF, 18> colorTableWithDefaults;
-    std::copy_n(std::begin(_colorTable), 16, std::begin(colorTableWithDefaults));
-    colorTableWithDefaults[AdjustedFgIndex] = GetColorAlias(ColorAlias::DefaultForeground);
-    colorTableWithDefaults[AdjustedBgIndex] = GetColorAlias(ColorAlias::DefaultBackground);
-
-    for (auto fgIndex = 0; fgIndex < 18; ++fgIndex)
-    {
-        const auto fg = til::at(colorTableWithDefaults, fgIndex);
-        for (auto bgIndex = 0; bgIndex < 18; ++bgIndex)
-        {
-            if (fgIndex == bgIndex)
-            {
-                _adjustedForegroundColors[bgIndex][fgIndex] = fg;
-            }
-            else
-            {
-                const auto bg = til::at(colorTableWithDefaults, bgIndex);
-                _adjustedForegroundColors[bgIndex][fgIndex] = ColorFix::GetPerceivableColor(fg, bg);
-            }
-        }
-    }
 }
 
 // Routine Description:
@@ -149,7 +118,10 @@ COLORREF RenderSettings::GetColorAlias(const ColorAlias alias) const
 // - tableIndex - The new position of the alias in the color table.
 void RenderSettings::SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept
 {
-    gsl::at(_colorAliasIndices, static_cast<size_t>(alias)) = tableIndex;
+    if (tableIndex < TextColor::TABLE_SIZE)
+    {
+        gsl::at(_colorAliasIndices, static_cast<size_t>(alias)) = tableIndex;
+    }
 }
 
 // Routine Description:
@@ -184,56 +156,37 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
     const auto dimFg = attr.IsFaint() || (_blinkShouldBeFaint && attr.IsBlinking());
     const auto swapFgAndBg = attr.IsReverseVideo() ^ GetRenderMode(Mode::ScreenReversed);
 
-    // We want to nudge the foreground color to make it more perceivable only for the
-    // default color pairs within the color table
-    if (Feature_AdjustIndistinguishableText::IsEnabled() &&
-        GetRenderMode(Mode::DistinguishableColors) &&
-        !dimFg &&
-        (fgTextColor.IsDefault() || fgTextColor.IsLegacy()) &&
-        (bgTextColor.IsDefault() || bgTextColor.IsLegacy()))
+    auto fg = fgTextColor.GetColor(_colorTable, defaultFgIndex, brightenFg);
+    auto bg = bgTextColor.GetColor(_colorTable, defaultBgIndex);
+
+    if (dimFg)
     {
-        const auto bgIndex = bgTextColor.IsDefault() ? AdjustedBgIndex : bgTextColor.GetIndex();
-        auto fgIndex = fgTextColor.IsDefault() ? AdjustedFgIndex : fgTextColor.GetIndex();
+        fg = (fg >> 1) & 0x7F7F7F; // Divide foreground color components by two.
+    }
+    if (swapFgAndBg)
+    {
+        std::swap(fg, bg);
+    }
+    if (attr.IsInvisible())
+    {
+        fg = bg;
+    }
 
-        if (fgTextColor.IsIndex16() && (fgIndex < 8) && brightenFg)
+    // We intentionally aren't _only_ checking for attr.IsInvisible here, because we also want to
+    // catch the cases where the fg was intentionally set to be the same as the bg. In either case,
+    // don't adjust the foreground.
+    if constexpr (Feature_AdjustIndistinguishableText::IsEnabled())
+    {
+        if (
+            _renderMode.any(Mode::IndexedDistinguishableColors, Mode::AlwaysDistinguishableColors) &&
+            fg != bg &&
+            (_renderMode.test(Mode::AlwaysDistinguishableColors) || (fgTextColor.IsDefaultOrLegacy() && bgTextColor.IsDefaultOrLegacy())))
         {
-            // There is a special case for intense here - we need to get the bright version of the foreground color
-            fgIndex += 8;
-        }
-
-        if (swapFgAndBg)
-        {
-            const auto fg = _adjustedForegroundColors[fgIndex][bgIndex];
-            const auto bg = fgTextColor.GetColor(_colorTable, defaultFgIndex);
-            return { fg, bg };
-        }
-        else
-        {
-            const auto fg = _adjustedForegroundColors[bgIndex][fgIndex];
-            const auto bg = bgTextColor.GetColor(_colorTable, defaultBgIndex);
-            return { fg, bg };
+            fg = ColorFix::GetPerceivableColor(fg, bg, 0.5f * 0.5f);
         }
     }
-    else
-    {
-        auto fg = fgTextColor.GetColor(_colorTable, defaultFgIndex, brightenFg);
-        auto bg = bgTextColor.GetColor(_colorTable, defaultBgIndex);
 
-        if (dimFg)
-        {
-            fg = (fg >> 1) & 0x7F7F7F; // Divide foreground color components by two.
-        }
-        if (swapFgAndBg)
-        {
-            std::swap(fg, bg);
-        }
-        if (attr.IsInvisible())
-        {
-            fg = bg;
-        }
-
-        return { fg, bg };
-    }
+    return { fg, bg };
 }
 
 // Routine Description:

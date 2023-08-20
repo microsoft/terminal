@@ -8,6 +8,7 @@
 #include "ApiDetector.hpp"
 
 #include "../inc/IInteractivityFactory.hpp"
+#include "PseudoConsoleWindowAccessibilityProvider.hpp"
 
 #include <map>
 
@@ -27,5 +28,21 @@ namespace Microsoft::Console::Interactivity
         [[nodiscard]] NTSTATUS CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider);
 
         [[nodiscard]] NTSTATUS CreatePseudoWindow(HWND& hwnd, const HWND owner);
+
+        // Wndproc
+        [[nodiscard]] static LRESULT CALLBACK s_PseudoWindowProc(_In_ HWND hwnd,
+                                                                 _In_ UINT uMsg,
+                                                                 _In_ WPARAM wParam,
+                                                                 _In_ LPARAM lParam);
+        [[nodiscard]] LRESULT CALLBACK PseudoWindowProc(_In_ HWND,
+                                                        _In_ UINT uMsg,
+                                                        _In_ WPARAM wParam,
+                                                        _In_ LPARAM lParam);
+
+    private:
+        void _WritePseudoWindowCallback(bool showOrHide);
+
+        HWND _pseudoConsoleWindowHwnd{ nullptr };
+        WRL::ComPtr<PseudoConsoleWindowAccessibilityProvider> _pPseudoConsoleUiaProvider{ nullptr };
     };
 }

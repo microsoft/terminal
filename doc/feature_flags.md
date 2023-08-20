@@ -5,7 +5,7 @@ Feature flags are controlled by an XML document stored at `src/features.xml`.
 ## Example Document
 
 ```xml
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="utf-8"?>
 <featureStaging xmlns="http://microsoft.com/TilFeatureStaging-Schema.xsd">
     <feature>
         <!-- This will produce Feature_XYZ::IsEnabled() and TIL_FEATURE_XYZ_ENABLED (preprocessor) -->

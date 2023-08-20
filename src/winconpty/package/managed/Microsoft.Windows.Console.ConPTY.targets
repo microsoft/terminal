@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Condition="'$(ConptyRequiresx86Host)'=='true'" Include="$(MSBuildThisFileDirectory)\native\runtimes\x86\OpenConsole.exe">
+      <Link>x86\OpenConsole.exe</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
+    <None Condition="'$(ConptyRequiresx64Host)'=='true'" Include="$(MSBuildThisFileDirectory)\native\runtimes\x64\OpenConsole.exe">
+      <Link>x64\OpenConsole.exe</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
+    <None Condition="'$(ConptyRequiresARM64Host)'=='true'" Include="$(MSBuildThisFileDirectory)\native\runtimes\arm64\OpenConsole.exe">
+      <Link>arm64\OpenConsole.exe</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+</Project>

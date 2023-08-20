@@ -63,11 +63,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma region IControlAccessibilityInfo Pattern
         // Inherited via IControlAccessibilityInfo
-        virtual COORD GetFontSize() const noexcept override;
-        virtual RECT GetBounds() const noexcept override;
-        virtual RECT GetPadding() const noexcept override;
+        virtual til::size GetFontSize() const noexcept override;
+        virtual til::rect GetBounds() const noexcept override;
+        virtual til::rect GetPadding() const noexcept override;
         virtual double GetScaleFactor() const noexcept override;
-        virtual void ChangeViewport(SMALL_RECT NewWindow) override;
+        virtual void ChangeViewport(const til::inclusive_rect& NewWindow) override;
         virtual HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) override;
 #pragma endregion
 

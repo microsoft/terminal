@@ -24,7 +24,7 @@ namespace Microsoft::Console::Render
     {
     public:
         constexpr Cluster() noexcept = default;
-        constexpr Cluster(const std::wstring_view text, const size_t columns) noexcept :
+        constexpr Cluster(const std::wstring_view text, const til::CoordType columns) noexcept :
             _text{ text },
             _columns{ columns }
         {
@@ -52,7 +52,7 @@ namespace Microsoft::Console::Render
 
         // Gets the number of columns in the grid that this character should consume
         // visually when rendered onto a line.
-        constexpr size_t GetColumns() const noexcept
+        constexpr til::CoordType GetColumns() const noexcept
         {
             return _columns;
         }
@@ -62,6 +62,6 @@ namespace Microsoft::Console::Render
         std::wstring_view _text;
 
         // This is how many columns we're expecting this cluster to take in the display grid
-        size_t _columns = 0;
+        til::CoordType _columns = 0;
     };
 }

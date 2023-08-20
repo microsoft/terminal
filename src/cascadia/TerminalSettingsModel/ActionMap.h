@@ -57,10 +57,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         com_ptr<ActionMap> Copy() const;
 
         // queries
-        Model::Command GetActionByKeyChord(Control::KeyChord const& keys) const;
-        bool IsKeyChordExplicitlyUnbound(Control::KeyChord const& keys) const;
-        Control::KeyChord GetKeyBindingForAction(ShortcutAction const& action) const;
-        Control::KeyChord GetKeyBindingForAction(ShortcutAction const& action, IActionArgs const& actionArgs) const;
+        Model::Command GetActionByKeyChord(const Control::KeyChord& keys) const;
+        bool IsKeyChordExplicitlyUnbound(const Control::KeyChord& keys) const;
+        Control::KeyChord GetKeyBindingForAction(const ShortcutAction& action) const;
+        Control::KeyChord GetKeyBindingForAction(const ShortcutAction& action, const IActionArgs& actionArgs) const;
 
         // population
         void AddAction(const Model::Command& cmd);
@@ -71,9 +71,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
 
         // modification
-        bool RebindKeys(Control::KeyChord const& oldKeys, Control::KeyChord const& newKeys);
-        void DeleteKeyBinding(Control::KeyChord const& keys);
+        bool RebindKeys(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys);
+        void DeleteKeyBinding(const Control::KeyChord& keys);
         void RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action);
+
+        Windows::Foundation::Collections::IVector<Model::Command> ExpandedCommands();
+        void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
+                            const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes);
+
+        winrt::Windows::Foundation::Collections::IVector<Model::Command> FilterToSendInput(winrt::hstring currentCommandline);
 
     private:
         std::optional<Model::Command> _GetActionByID(const InternalActionID actionID) const;
@@ -90,10 +96,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _TryUpdateName(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
         void _TryUpdateKeyChord(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
 
+        void _recursiveUpdateCommandKeybindingLabels();
+
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _GlobalHotkeysCache{ nullptr };
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _KeyBindingMapCache{ nullptr };
+
+        Windows::Foundation::Collections::IVector<Model::Command> _ExpandedCommandsCache{ nullptr };
 
         std::unordered_map<winrt::hstring, Model::Command> _NestedCommands;
         std::vector<Model::Command> _IterableCommands;

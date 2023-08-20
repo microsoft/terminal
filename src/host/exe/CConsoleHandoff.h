@@ -29,7 +29,7 @@ Author(s):
 using namespace Microsoft::WRL;
 
 struct __declspec(uuid(__CLSID_CConsoleHandoff))
-    CConsoleHandoff : public RuntimeClass<RuntimeClassFlags<ClassicCom>, IConsoleHandoff>
+    CConsoleHandoff : public RuntimeClass<RuntimeClassFlags<ClassicCom>, IConsoleHandoff, IDefaultTerminalMarker>
 {
 #pragma region IConsoleHandoff
     STDMETHODIMP EstablishHandoff(HANDLE server,

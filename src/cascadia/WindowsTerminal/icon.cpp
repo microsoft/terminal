@@ -37,7 +37,7 @@ HANDLE GetActiveAppIconHandle(bool smallIcon)
     const auto smYIcon = smallIcon ? SM_CYSMICON : SM_CYICON;
 
     // These handles are loaded with LR_SHARED, so they are safe to "leak".
-    HANDLE hIcon{ LoadImageW(wil::GetModuleInstanceHandle(), iconResource, IMAGE_ICON, GetSystemMetrics(smXIcon), GetSystemMetrics(smYIcon), LR_SHARED) };
+    auto hIcon{ LoadImageW(wil::GetModuleInstanceHandle(), iconResource, IMAGE_ICON, GetSystemMetrics(smXIcon), GetSystemMetrics(smYIcon), LR_SHARED) };
     LOG_LAST_ERROR_IF_NULL(hIcon);
 
     return hIcon;

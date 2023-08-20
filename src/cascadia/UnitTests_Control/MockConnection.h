@@ -16,7 +16,7 @@ namespace ControlUnitTests
 
         void Initialize(const winrt::Windows::Foundation::Collections::ValueSet& /*settings*/){};
         void Start() noexcept {};
-        void WriteInput(winrt::hstring const& data)
+        void WriteInput(const winrt::hstring& data)
         {
             _TerminalOutputHandlers(data);
         }

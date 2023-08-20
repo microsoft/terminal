@@ -10,6 +10,7 @@
     <ClCompile Include="..\DxFontInfo.cpp" />
     <ClCompile Include="..\DxFontRenderData.cpp" />
     <ClCompile Include="..\DxRenderer.cpp" />
+    <ClCompile Include="..\DxSoftFont.cpp" />
     <ClCompile Include="..\precomp.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -19,6 +20,7 @@
     <ClInclude Include="..\DxFontInfo.h" />
     <ClInclude Include="..\DxFontRenderData.h" />
     <ClInclude Include="..\DxRenderer.hpp" />
+    <ClInclude Include="..\DxSoftFont.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\ScreenPixelShader.h" />
     <ClInclude Include="..\ScreenVertexShader.h" />

@@ -163,13 +163,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             THROW_IF_FAILED(SafeArrayGetLBound(pReturnVal, 1, &lBound));
             THROW_IF_FAILED(SafeArrayGetUBound(pReturnVal, 1, &uBound));
 
-            long count = uBound - lBound + 1;
+            auto count = uBound - lBound + 1;
 
             std::vector<double> vec;
             vec.reserve(count);
-            for (int i = 0; i < count; i++)
+            for (auto i = 0; i < count; i++)
             {
-                double element = pVals[i];
+                auto element = pVals[i];
                 vec.push_back(element);
             }
 

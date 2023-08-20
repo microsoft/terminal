@@ -9,3 +9,4 @@
 #endif
 
 #include <LibraryIncludes.h>
+#include <UIAutomationCore.h>

@@ -38,6 +38,12 @@ C_DEFINES               = $(C_DEFINES) -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTIN
 # Code in the OneCore depot automatically excludes default Win32 libraries.
 
 # -------------------------------------
+# Compiler Settings
+# -------------------------------------
+
+USE_STD_CPP20           = 1
+
+# -------------------------------------
 # Sources, Headers, and Libraries
 # -------------------------------------
 

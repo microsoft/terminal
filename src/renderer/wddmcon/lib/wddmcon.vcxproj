@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{75C6F576-18E9-4566-978A-F0A301CAC090}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>wddmcon</RootNamespace>
+    <ProjectName>RendererWddmCon</ProjectName>
+    <TargetName>ConRenderWddmCon</TargetName>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <!--
+        C6001: Using uninitialized memory '...'.
+        C26408: Avoid malloc() and free(), prefer the nothrow version of new with delete (r.10).
+        C26429: Symbol '...' is never tested for nullness, it can be marked as not_null (f.23).
+        C26430: Symbol '...' is not tested for nullness on all paths (f.23).
+        C26432: If you define or delete any default operation in the type '...', define or delete them all (c.21).
+        C26446: Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
+        C26481: Don't use pointer arithmetic. Use span instead (bounds.1).
+        C26482: Only index into arrays using constant expressions (bounds.2).
+        C26490: Don't use reinterpret_cast (type.1).
+        C26494: Variable '...' is uninitialized. Always initialize an object (type.5).
+      -->
+      <DisableSpecificWarnings>6001;26408;26429;26430;26432;26446;26481;26482;26490;26494;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <PreprocessorDefinitions>IS_INTERACTIVITYBASE_CONSUMER;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\main.cxx" />
+    <ClCompile Include="..\precomp.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\WddmConRenderer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\main.h" />
+    <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\WddmConRenderer.hpp" />
+  </ItemGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
+</Project>

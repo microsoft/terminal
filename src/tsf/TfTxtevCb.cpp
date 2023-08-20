@@ -48,7 +48,7 @@ BOOL CConsoleTSF::_HasCompositionChanged(ITfContext* pInputContext, TfEditCookie
     wil::com_ptr_nothrow<ITfRange> FoundRange;
     wil::com_ptr_nothrow<ITfProperty> PropertyTrackComposition;
 
-    BOOL bFound = FALSE;
+    auto bFound = FALSE;
 
     if (SUCCEEDED(pInputContext->GetProperty(GUID_PROP_CONIME_TRACKCOMPOSITION, &Property)))
     {

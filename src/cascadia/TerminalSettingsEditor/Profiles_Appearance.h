@@ -5,6 +5,7 @@
 
 #include "Profiles_Appearance.g.h"
 #include "Utils.h"
+#include "PreviewConnection.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -16,16 +17,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
         void OnNavigatedFrom(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
-        void CreateUnfocusedAppearance_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
-        void DeleteUnfocusedAppearance_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
+        void CreateUnfocusedAppearance_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
+        void DeleteUnfocusedAppearance_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
+
+        Editor::IHostedInWindow WindowRoot() { return _windowRoot; };
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 
     private:
-        Microsoft::Terminal::Control::TermControl _previewControl;
+        void _onProfilePropertyChanged(const IInspectable&, const PropertyChangedEventArgs&) const;
+        bool _looksLikePowerlineFont() const;
+
+        winrt::com_ptr<PreviewConnection> _previewConnection{ nullptr };
+        Microsoft::Terminal::Control::TermControl _previewControl{ nullptr };
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _AppearanceViewModelChangedRevoker;
+        Editor::IHostedInWindow _windowRoot;
     };
 };
 

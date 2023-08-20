@@ -12,7 +12,7 @@ Abstract:
   ShouldCreateWindow is false, that implies that some other window process was
   given the commandline for handling, and the caller should just exit.
 - If ShouldCreateWindow is true, the Id property may or may not contain an ID
-  that the new window should use as it's ID.
+  that the new window should use as its ID.
 
 --*/
 

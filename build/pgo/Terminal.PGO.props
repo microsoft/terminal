@@ -14,16 +14,16 @@
     <!-- Mandatory.  Name of the NuGet package which will contain PGO databases for consumption by build system. -->
     <PGOPackageName>Microsoft.Internal.Windows.Terminal.PGODatabase</PGOPackageName>
 
-    <!-- Mandatory.  Major version number of the PGO database which should match the version of the product.  This can be hardcoded or obtained from other sources in build system. -->
+    <!-- Mandatory.  Major version number of the PGO database which should match the version of the product.  This can be hard-coded or obtained from other sources in build system. -->
     <PGOPackageVersionMajor>$(VersionMajor)</PGOPackageVersionMajor>
 
-    <!-- Mandatory.  Minor version number of the PGO database which should match the version of the product.  This can be hardcoded or obtained from other sources in build system. -->
+    <!-- Mandatory.  Minor version number of the PGO database which should match the version of the product.  This can be hard-coded or obtained from other sources in build system. -->
     <PGOPackageVersionMinor>$(VersionMinor)</PGOPackageVersionMinor>
 
-    <!-- Mandatory, defaults to 0.  Patch version number of the PGO database which should match the version of the product.  This can be hardcoded or obtained from other sources in build system. -->
+    <!-- Mandatory, defaults to 0.  Patch version number of the PGO database which should match the version of the product.  This can be hard-coded or obtained from other sources in build system. -->
     <PGOPackageVersionPatch>0</PGOPackageVersionPatch>
     
-    <!-- Optional, defaults to empty.  Prerelease version number of the PGO database which should match the version of the product.  This can be hardcoded or obtained from other sources in build system. -->
+    <!-- Optional, defaults to empty.  Prerelease version number of the PGO database which should match the version of the product.  This can be hard-coded or obtained from other sources in build system. -->
     <PGOPackageVersionPrerelease></PGOPackageVersionPrerelease>
 
     <!-- Mandatory.  Path to nuget.config file for the project.  Path is relative to where the props file will be. -->
@@ -46,6 +46,5 @@
     <PGOCopyRuntime Condition="'$(PGOBuildMode)' == 'Instrument'">true</PGOCopyRuntime>
   </PropertyGroup>
 
-  <!-- Import PGO-Helpers -->
-  <Import Project="$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.props" />
+  <!-- Do not import PGO-Helpers props here, as it is too early to detect the C++ tools directory -->
 </Project>

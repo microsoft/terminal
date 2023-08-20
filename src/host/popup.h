@@ -29,11 +29,11 @@ class CommandHistory;
 class Popup
 {
 public:
-    static constexpr unsigned int MINIMUM_COMMAND_PROMPT_SIZE = 5;
+    static constexpr til::CoordType MINIMUM_COMMAND_PROMPT_SIZE = 5;
 
     using UserInputFunction = std::function<NTSTATUS(COOKED_READ_DATA&, bool&, DWORD&, wchar_t&)>;
 
-    Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize);
+    Popup(SCREEN_INFORMATION& screenInfo, const til::size proposedSize);
     virtual ~Popup();
     [[nodiscard]] virtual NTSTATUS Process(COOKED_READ_DATA& cookedReadData) noexcept = 0;
 
@@ -41,10 +41,10 @@ public:
 
     void End();
 
-    SHORT Width() const noexcept;
-    SHORT Height() const noexcept;
+    til::CoordType Width() const noexcept;
+    til::CoordType Height() const noexcept;
 
-    COORD GetCursorPosition() const noexcept;
+    til::point GetCursorPosition() const noexcept;
 
 protected:
     // used in test code to alter how the popup fetches use input
@@ -61,13 +61,13 @@ protected:
     void _DrawPrompt(const UINT id);
     virtual void _DrawContent() = 0;
 
-    SMALL_RECT _region; // region popup occupies
+    til::inclusive_rect _region; // region popup occupies
     SCREEN_INFORMATION& _screenInfo;
     TextAttribute _attributes; // text attributes
 
 private:
-    COORD _CalculateSize(const SCREEN_INFORMATION& screenInfo, const COORD proposedSize);
-    COORD _CalculateOrigin(const SCREEN_INFORMATION& screenInfo, const COORD size);
+    til::size _CalculateSize(const SCREEN_INFORMATION& screenInfo, const til::size proposedSize);
+    til::point _CalculateOrigin(const SCREEN_INFORMATION& screenInfo, const til::size size);
 
     void _DrawBorder();
 
@@ -77,6 +77,6 @@ private:
                                                         wchar_t& wch) noexcept;
 
     OutputCellRect _oldContents; // contains data under popup
-    COORD _oldScreenSize;
+    til::size _oldScreenSize;
     UserInputFunction _userInputFunction;
 };

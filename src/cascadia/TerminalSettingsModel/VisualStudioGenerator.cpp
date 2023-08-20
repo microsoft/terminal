@@ -22,8 +22,8 @@ void VisualStudioGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implemen
     VsDevShellGenerator devShellGenerator;
 
     // Instances are ordered from latest to oldest. Hide all but the profiles for the latest instance.
-    bool hidden = false;
-    for (auto const& instance : instances)
+    auto hidden = false;
+    for (const auto& instance : instances)
     {
         devCmdGenerator.GenerateProfiles(instance, hidden, profiles);
         devShellGenerator.GenerateProfiles(instance, hidden, profiles);

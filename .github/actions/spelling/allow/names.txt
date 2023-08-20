@@ -1,6 +1,6 @@
 Anup
-austdi
 arkthur
+austdi
 Ballmer
 bhoj
 Bhojwani
@@ -23,6 +23,7 @@ Griese
 Hernan
 Howett
 Illhardt
+Imms
 iquilezles
 italo
 jantari
@@ -30,10 +31,11 @@ jerrysh
 Kaiyu
 kimwalisch
 KMehrain
-KODELIFE
 Kodelife
+KODELIFE
 Kourosh
 kowalczyk
+leonardder
 leonmsft
 Lepilleur
 lhecker
@@ -52,6 +54,7 @@ mikegr
 mikemaccana
 miloush
 miniksa
+nguyen
 niksa
 nvaccess
 nvda
@@ -59,6 +62,7 @@ oising
 oldnewthing
 opengl
 osgwiki
+Ottosson
 pabhojwa
 panos
 paulcam
@@ -77,15 +81,18 @@ sonpham
 stakx
 talo
 thereses
+Thysell
 Walisch
 WDX
 Wellons
+Westerman
 Wirt
 Wojciech
 zadjii
 Zamor
-Zamora
 zamora
+Zamora
+zljubisic
 Zoey
 zorio
 Zverovich

@@ -31,7 +31,7 @@ namespace Microsoft::Console::Interactivity
     class IInteractivityFactory
     {
     public:
-        virtual ~IInteractivityFactory() = 0;
+        virtual ~IInteractivityFactory() = default;
         [[nodiscard]] virtual NTSTATUS CreateConsoleControl(_Inout_ std::unique_ptr<IConsoleControl>& control) = 0;
         [[nodiscard]] virtual NTSTATUS CreateConsoleInputThread(_Inout_ std::unique_ptr<IConsoleInputThread>& thread) = 0;
 
@@ -42,6 +42,4 @@ namespace Microsoft::Console::Interactivity
 
         [[nodiscard]] virtual NTSTATUS CreatePseudoWindow(HWND& hwnd, const HWND owner) = 0;
     };
-
-    inline IInteractivityFactory::~IInteractivityFactory() {}
 }

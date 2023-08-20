@@ -35,7 +35,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                          _In_reads_bytes_(cBytes) const WCHAR* pwchBuffer,
                          _In_ size_t cWords,
                          _In_ size_t cBytes,
-                         _In_ SHORT sOriginalXPosition,
+                         _In_ til::CoordType sOriginalXPosition,
                          _In_ BOOL fPrintableControlChars);
 
 int ConvertToOem(const UINT uiCodePage,
@@ -43,8 +43,6 @@ int ConvertToOem(const UINT uiCodePage,
                  const UINT cchSource,
                  _Out_writes_(cchTarget) CHAR* const pchTarget,
                  const UINT cchTarget) noexcept;
-
-void SplitToOem(std::deque<std::unique_ptr<IInputEvent>>& events);
 
 int ConvertInputToUnicode(const UINT uiCodePage,
                           _In_reads_(cchSource) const CHAR* const pchSource,

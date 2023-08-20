@@ -74,7 +74,7 @@ Should not affect security.
 
 ### Reliability
 
-Aside from additional parsing required for the settings file (which inherently offers more locations for parsing to fail), we need to be careful about badly formed/non-existent feature tags or axes specified in the user-defined dictionaries. We must make sure to ignore such declarations (perhaps alongside emitting a warning to the user) and only apply those that are correctly formed and exist.
+Aside from additional parsing required for the settings file (which inherently offers more locations for parsing to fail), we need to be careful about badly formed/nonexistent feature tags or axes specified in the user-defined dictionaries. We must make sure to ignore such declarations (perhaps alongside emitting a warning to the user) and only apply those that are correctly formed and exist.
 
 ### Compatibility
 

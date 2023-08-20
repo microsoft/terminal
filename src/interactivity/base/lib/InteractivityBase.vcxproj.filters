@@ -36,6 +36,12 @@
     <ClCompile Include="..\HostSignalInputThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\VtApiRedirection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PseudoConsoleWindowAccessibilityProvider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\InteractivityFactory.hpp">
@@ -74,6 +80,9 @@
     <ClInclude Include="..\..\inc\Module.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\inc\VtApiRedirection.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\inc\EventSynthesis.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -84,6 +93,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\HostSignalInputThread.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PseudoConsoleWindowAccessibilityProvider.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

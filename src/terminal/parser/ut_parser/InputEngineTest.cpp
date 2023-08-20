@@ -18,6 +18,8 @@
 #include <string>
 #include <algorithm>
 
+#include "../../../interactivity/inc/VtApiRedirection.hpp"
+
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -52,10 +54,10 @@ bool IsCtrlPressed(const DWORD modifierState)
 
 bool ModifiersEquivalent(DWORD a, DWORD b)
 {
-    bool fShift = IsShiftPressed(a) == IsShiftPressed(b);
-    bool fAlt = IsAltPressed(a) == IsAltPressed(b);
-    bool fCtrl = IsCtrlPressed(a) == IsCtrlPressed(b);
-    bool fEnhanced = WI_IsFlagSet(a, ENHANCED_KEY) == WI_IsFlagSet(b, ENHANCED_KEY);
+    auto fShift = IsShiftPressed(a) == IsShiftPressed(b);
+    auto fAlt = IsAltPressed(a) == IsAltPressed(b);
+    auto fCtrl = IsCtrlPressed(a) == IsCtrlPressed(b);
+    auto fEnhanced = WI_IsFlagSet(a, ENHANCED_KEY) == WI_IsFlagSet(b, ENHANCED_KEY);
     return fShift && fCtrl && fAlt && fEnhanced;
 }
 
@@ -73,11 +75,10 @@ public:
     {
     }
 
-    void RoundtripTerminalInputCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+    void RoundtripTerminalInputCallback(_In_ const std::span<const INPUT_RECORD>& inputRecords)
     {
         // Take all the characters out of the input records here, and put them into
         //  the input state machine.
-        auto inputRecords = IInputEvent::ToInputRecords(inEvents);
         std::wstring vtseq = L"";
         for (auto& inRec : inputRecords)
         {
@@ -94,10 +95,8 @@ public:
         Log::Comment(L"String processed");
     }
 
-    void TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+    void TestInputCallback(const std::span<const INPUT_RECORD>& records)
     {
-        auto records = IInputEvent::ToInputRecords(inEvents);
-
         // This callback doesn't work super well for the Ctrl+C iteration of the
         // C0Test. For ^C, we always send a keydown and a key up event, however,
         // both calls to WriteCtrlKey happen in one single call to
@@ -110,8 +109,8 @@ public:
         }
         VERIFY_ARE_EQUAL(1u, vExpectedInput.size());
 
-        bool foundEqual = false;
-        INPUT_RECORD irExpected = vExpectedInput.back();
+        auto foundEqual = false;
+        auto irExpected = vExpectedInput.back();
 
         Log::Comment(
             NoThrowString().Format(L"\texpected:\t") +
@@ -126,7 +125,7 @@ public:
                 NoThrowString().Format(L"\tActual  :\t") +
                 VerifyOutputTraits<INPUT_RECORD>::ToString(inRec));
 
-            bool areEqual =
+            auto areEqual =
                 (irExpected.EventType == inRec.EventType) &&
                 (irExpected.Event.KeyEvent.bKeyDown == inRec.Event.KeyEvent.bKeyDown) &&
                 (irExpected.Event.KeyEvent.wRepeatCount == inRec.Event.KeyEvent.wRepeatCount) &&
@@ -144,10 +143,8 @@ public:
         vExpectedInput.clear();
     }
 
-    void TestInputStringCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+    void TestInputStringCallback(const std::span<const INPUT_RECORD>& records)
     {
-        auto records = IInputEvent::ToInputRecords(inEvents);
-
         for (auto expected : vExpectedInput)
         {
             Log::Comment(
@@ -155,7 +152,7 @@ public:
                 VerifyOutputTraits<INPUT_RECORD>::ToString(expected));
         }
 
-        INPUT_RECORD irExpected = vExpectedInput.front();
+        auto irExpected = vExpectedInput.front();
         Log::Comment(
             NoThrowString().Format(L"\tLooking for:\t") +
             VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected));
@@ -169,7 +166,7 @@ public:
                 NoThrowString().Format(L"\tActual  :\t") +
                 VerifyOutputTraits<INPUT_RECORD>::ToString(inRec));
 
-            bool areEqual =
+            auto areEqual =
                 (irExpected.EventType == inRec.EventType) &&
                 (irExpected.Event.KeyEvent.bKeyDown == inRec.Event.KeyEvent.bKeyDown) &&
                 (irExpected.Event.KeyEvent.wRepeatCount == inRec.Event.KeyEvent.wRepeatCount) &&
@@ -209,9 +206,9 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
 
     TestState testState;
 
-    void RoundtripTerminalInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-    void TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-    void TestInputStringCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+    void RoundtripTerminalInputCallback(const std::span<const INPUT_RECORD>& inEvents);
+    void TestInputCallback(const std::span<const INPUT_RECORD>& inEvents);
+    void TestInputStringCallback(const std::span<const INPUT_RECORD>& inEvents);
     std::wstring GenerateSgrMouseSequence(const CsiMouseButtonCodes button,
                                           const unsigned short modifiers,
                                           const til::point position,
@@ -316,11 +313,11 @@ void InputEngineTest::VerifyExpectedInputDrained()
 class Microsoft::Console::VirtualTerminal::TestInteractDispatch final : public IInteractDispatch
 {
 public:
-    TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn,
+    TestInteractDispatch(_In_ std::function<void(const std::span<const INPUT_RECORD>&)> pfn,
                          _In_ TestState* testState);
-    virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
+    virtual bool WriteInput(_In_ const std::span<const INPUT_RECORD>& inputEvents) override;
 
-    virtual bool WriteCtrlKey(const KeyEvent& event) override;
+    virtual bool WriteCtrlKey(const INPUT_RECORD& event) override;
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
                                     const VTParameter parameter1,
                                     const VTParameter parameter2) override; // DTTERM_WindowManipulation
@@ -334,29 +331,27 @@ public:
     virtual bool FocusChanged(const bool focused) const override;
 
 private:
-    std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteInputCallback;
+    std::function<void(const std::span<const INPUT_RECORD>&)> _pfnWriteInputCallback;
     TestState* _testState; // non-ownership pointer
 };
 
-TestInteractDispatch::TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn,
+TestInteractDispatch::TestInteractDispatch(_In_ std::function<void(const std::span<const INPUT_RECORD>&)> pfn,
                                            _In_ TestState* testState) :
     _pfnWriteInputCallback(pfn),
     _testState(testState)
 {
 }
 
-bool TestInteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents)
+bool TestInteractDispatch::WriteInput(_In_ const std::span<const INPUT_RECORD>& inputEvents)
 {
     _pfnWriteInputCallback(inputEvents);
     return true;
 }
 
-bool TestInteractDispatch::WriteCtrlKey(const KeyEvent& event)
+bool TestInteractDispatch::WriteCtrlKey(const INPUT_RECORD& event)
 {
     VERIFY_IS_TRUE(_testState->_expectSendCtrlC);
-    std::deque<std::unique_ptr<IInputEvent>> inputEvents;
-    inputEvents.push_back(std::make_unique<KeyEvent>(event));
-    return WriteInput(inputEvents);
+    return WriteInput({ &event, 1 });
 }
 
 bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
@@ -372,16 +367,13 @@ bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipul
 
 bool TestInteractDispatch::WriteString(const std::wstring_view string)
 {
-    std::deque<std::unique_ptr<IInputEvent>> keyEvents;
+    InputEventQueue keyEvents;
 
     for (const auto& wch : string)
     {
         // We're forcing the translation to CP_USA, so that it'll be constant
         //  regardless of the CP the test is running in
-        std::deque<std::unique_ptr<KeyEvent>> convertedEvents = Microsoft::Console::Interactivity::CharToKeyEvents(wch, CP_USA);
-        std::move(convertedEvents.begin(),
-                  convertedEvents.end(),
-                  std::back_inserter(keyEvents));
+        Microsoft::Console::Interactivity::CharToKeyEvents(wch, CP_USA, keyEvents);
     }
 
     return WriteInput(keyEvents);
@@ -416,38 +408,37 @@ void InputEngineTest::C0Test()
     testState._stateMachine = _stateMachine.get();
 
     Log::Comment(L"Sending 0x0-0x19 to parser to make sure they're translated correctly back to C-key");
-    DisableVerifyExceptions disable;
+
     for (wchar_t wch = '\x0'; wch < '\x20'; wch++)
     {
-        std::wstring inputSeq = std::wstring(&wch, 1);
+        auto inputSeq = std::wstring(&wch, 1);
         // In general, he actual key that we're going to generate for a C0 char
         //      is char+0x40 and with ctrl pressed.
-        wchar_t expectedWch = wch + 0x40;
-        bool writeCtrl = true;
-        // These two are weird exceptional cases.
+        wchar_t sentWch = wch;
+        wchar_t expectedWch = wch;
+        auto writeCtrl = true;
+
+        // Exceptional cases.
         switch (wch)
         {
         case L'\r': // Enter
-            expectedWch = wch;
             writeCtrl = false;
             break;
         case L'\x1b': // Escape
-            expectedWch = wch;
             writeCtrl = false;
             break;
         case L'\t': // Tab
             writeCtrl = false;
             break;
         case L'\b': // backspace
-            wch = '\x7f';
-            expectedWch = '\x7f';
+            sentWch = '\x7f';
             break;
         }
 
-        short keyscan = VkKeyScanW(expectedWch);
+        auto keyscan = OneCoreSafeVkKeyScanW(expectedWch);
         short vkey = keyscan & 0xff;
         short keyscanModifiers = (keyscan >> 8) & 0xff;
-        WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        auto scanCode = (WORD)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         DWORD dwModifierState = 0;
         if (writeCtrl)
@@ -462,23 +453,23 @@ void InputEngineTest::C0Test()
         }
 
         // Just make sure we write the same thing telnetd did:
-        if (wch == UNICODE_ETX)
+        if (sentWch == UNICODE_ETX)
         {
             Log::Comment(NoThrowString().Format(
                 L"We used to expect 0x%x, 0x%x, 0x%x, 0x%x here",
                 vkey,
                 scanCode,
-                wch,
+                sentWch,
                 dwModifierState));
             vkey = 'C';
             scanCode = 0;
-            wch = UNICODE_ETX;
+            sentWch = UNICODE_ETX;
             dwModifierState = LEFT_CTRL_PRESSED;
             Log::Comment(NoThrowString().Format(
                 L"Now we expect 0x%x, 0x%x, 0x%x, 0x%x here",
                 vkey,
                 scanCode,
-                wch,
+                sentWch,
                 dwModifierState));
             testState._expectSendCtrlC = true;
         }
@@ -487,7 +478,7 @@ void InputEngineTest::C0Test()
             testState._expectSendCtrlC = false;
         }
 
-        Log::Comment(NoThrowString().Format(L"Testing char 0x%x", wch));
+        Log::Comment(NoThrowString().Format(L"Testing char 0x%x", sentWch));
         Log::Comment(NoThrowString().Format(L"Input Sequence=\"%s\"", inputSeq.c_str()));
 
         INPUT_RECORD inputRec;
@@ -498,7 +489,7 @@ void InputEngineTest::C0Test()
         inputRec.Event.KeyEvent.wRepeatCount = 1;
         inputRec.Event.KeyEvent.wVirtualKeyCode = vkey;
         inputRec.Event.KeyEvent.wVirtualScanCode = scanCode;
-        inputRec.Event.KeyEvent.uChar.UnicodeChar = wch;
+        inputRec.Event.KeyEvent.uChar.UnicodeChar = sentWch;
 
         testState.vExpectedInput.push_back(inputRec);
 
@@ -520,11 +511,11 @@ void InputEngineTest::AlphanumericTest()
     DisableVerifyExceptions disable;
     for (wchar_t wch = '\x20'; wch < '\x7f'; wch++)
     {
-        std::wstring inputSeq = std::wstring(&wch, 1);
+        auto inputSeq = std::wstring(&wch, 1);
 
-        short keyscan = VkKeyScanW(wch);
+        auto keyscan = OneCoreSafeVkKeyScanW(wch);
         short vkey = keyscan & 0xff;
-        WORD scanCode = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        WORD scanCode = (wchar_t)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         short keyscanModifiers = (keyscan >> 8) & 0xff;
         // Because of course, these are not the same flags.
@@ -575,8 +566,8 @@ void InputEngineTest::RoundTripTest()
 
     for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
     {
-        wchar_t wch = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
-        WORD scanCode = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        wchar_t wch = (wchar_t)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
+        WORD scanCode = (wchar_t)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         unsigned int uiActualKeystate = 0;
 
@@ -636,8 +627,8 @@ void InputEngineTest::WindowManipulationTest()
 
     const auto param1 = 123;
     const auto param2 = 456;
-    const wchar_t* const wszParam1 = L"123";
-    const wchar_t* const wszParam2 = L"456";
+    const auto wszParam1 = L"123";
+    const auto wszParam2 = L"456";
 
     for (unsigned int i = 0; i < static_cast<unsigned int>(BYTE_MAX); i++)
     {
@@ -666,7 +657,7 @@ void InputEngineTest::WindowManipulationTest()
             testState._expectedWindowManipulation = static_cast<DispatchTypes::WindowManipulationType>(i);
         }
         seqBuilder << L"t";
-        std::wstring seq = seqBuilder.str();
+        auto seq = seqBuilder.str();
         Log::Comment(NoThrowString().Format(
             L"Processing \"%s\"", seq.c_str()));
         _stateMachine->ProcessString(seq);
@@ -700,7 +691,7 @@ void InputEngineTest::NonAsciiTest()
 
     // "Л", UTF-16: 0x041B, utf8: "\xd09b"
     std::wstring utf8Input = L"\x041B";
-    INPUT_RECORD test = proto;
+    auto test = proto;
     test.Event.KeyEvent.uChar.UnicodeChar = utf8Input[0];
 
     Log::Comment(NoThrowString().Format(
@@ -762,7 +753,7 @@ void InputEngineTest::CursorPositioningTest()
     inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED | SHIFT_PRESSED;
     inputRec.Event.KeyEvent.wRepeatCount = 1;
     inputRec.Event.KeyEvent.wVirtualKeyCode = VK_F3;
-    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_F3, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_F3, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\0';
 
     testState.vExpectedInput.push_back(inputRec);
@@ -788,7 +779,7 @@ void InputEngineTest::CSICursorBackTabTest()
     inputRec.Event.KeyEvent.dwControlKeyState = SHIFT_PRESSED;
     inputRec.Event.KeyEvent.wRepeatCount = 1;
     inputRec.Event.KeyEvent.wVirtualKeyCode = VK_TAB;
-    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(VK_TAB, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_TAB, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\t';
 
     testState.vExpectedInput.push_back(inputRec);
@@ -830,8 +821,8 @@ void InputEngineTest::EnhancedKeysTest()
     {
         INPUT_RECORD inputRec;
 
-        const wchar_t wch = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
-        const WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        const auto wch = (wchar_t)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
+        const auto scanCode = (WORD)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         inputRec.EventType = KEY_EVENT;
         inputRec.Event.KeyEvent.bKeyDown = TRUE;
@@ -874,8 +865,8 @@ void InputEngineTest::SS3CursorKeyTest()
     {
         INPUT_RECORD inputRec;
 
-        const wchar_t wch = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
-        const WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        const auto wch = (wchar_t)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
+        const auto scanCode = (WORD)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         inputRec.EventType = KEY_EVENT;
         inputRec.Event.KeyEvent.bKeyDown = TRUE;
@@ -910,7 +901,7 @@ void InputEngineTest::AltBackspaceTest()
     inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED;
     inputRec.Event.KeyEvent.wRepeatCount = 1;
     inputRec.Event.KeyEvent.wVirtualKeyCode = VK_BACK;
-    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(VK_BACK, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_BACK, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x08';
 
     testState.vExpectedInput.push_back(inputRec);
@@ -938,7 +929,7 @@ void InputEngineTest::AltCtrlDTest()
     inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED;
     inputRec.Event.KeyEvent.wRepeatCount = 1;
     inputRec.Event.KeyEvent.wVirtualKeyCode = 0x44; // D key
-    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(0x44, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(0x44, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x04';
 
     testState.vExpectedInput.push_back(inputRec);
@@ -959,35 +950,19 @@ void InputEngineTest::AltIntermediateTest()
     // We'll test this by creating both a TerminalInput and an
     // InputStateMachine, and piping the KeyEvents generated by the
     // InputStateMachine into the TerminalInput.
-    std::wstring expectedTranslation{};
-
-    // First create the callback TerminalInput will call - this will be
-    // triggered second, after both the state machine and the TerminalInput have
-    // translated the characters.
-    auto pfnTerminalInputCallback = [&](std::deque<std::unique_ptr<IInputEvent>>& inEvents) {
-        // Get all the characters:
-        std::wstring wstr = L"";
-        for (auto& ev : inEvents)
-        {
-            if (ev->EventType() == InputEventType::KeyEvent)
-            {
-                auto& k = static_cast<KeyEvent&>(*ev);
-                auto wch = k.GetCharData();
-                wstr += wch;
-            }
-        }
-
-        VERIFY_ARE_EQUAL(expectedTranslation, wstr);
-    };
-    TerminalInput terminalInput{ pfnTerminalInputCallback };
+    std::wstring translation;
+    TerminalInput terminalInput;
 
     // Create the callback that's fired when the state machine wants to write
     // input. We'll take the events and put them straight into the
     // TerminalInput.
-    auto pfnInputStateMachineCallback = [&](std::deque<std::unique_ptr<IInputEvent>>& inEvents) {
+    auto pfnInputStateMachineCallback = [&](const std::span<const INPUT_RECORD>& inEvents) {
         for (auto& ev : inEvents)
         {
-            terminalInput.HandleKey(ev.get());
+            if (const auto str = terminalInput.HandleKey(ev))
+            {
+                translation.append(*str);
+            }
         }
     };
     auto dispatch = std::make_unique<TestInteractDispatch>(pfnInputStateMachineCallback, &testState);
@@ -996,18 +971,20 @@ void InputEngineTest::AltIntermediateTest()
     VERIFY_IS_NOT_NULL(stateMachine);
     testState._stateMachine = stateMachine.get();
 
-    // Write a Alt+/, Ctrl+e pair to the input engine, then take it's output and
+    // Write a Alt+/, Ctrl+e pair to the input engine, then take its output and
     // run it through the terminalInput translator. We should get ^[/^E back
     // out.
     std::wstring seq = L"\x1b/";
-    expectedTranslation = seq;
+    translation.clear();
     Log::Comment(NoThrowString().Format(L"Processing \"\\x1b/\""));
     stateMachine->ProcessString(seq);
+    VERIFY_ARE_EQUAL(seq, translation);
 
     seq = L"\x05"; // 0x05 is ^E
-    expectedTranslation = seq;
+    translation.clear();
     Log::Comment(NoThrowString().Format(L"Processing \"\\x05\""));
     stateMachine->ProcessString(seq);
+    VERIFY_ARE_EQUAL(seq, translation);
 
     VerifyExpectedInputDrained();
 }
@@ -1033,7 +1010,7 @@ void InputEngineTest::AltBackspaceEnterTest()
     inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED;
     inputRec.Event.KeyEvent.wRepeatCount = 1;
     inputRec.Event.KeyEvent.wVirtualKeyCode = VK_BACK;
-    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(VK_BACK, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_BACK, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x08';
 
     // First, expect a alt+backspace.
@@ -1048,7 +1025,7 @@ void InputEngineTest::AltBackspaceEnterTest()
 
     inputRec.Event.KeyEvent.wVirtualKeyCode = VK_RETURN;
     inputRec.Event.KeyEvent.dwControlKeyState = 0;
-    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(VK_RETURN, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_RETURN, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x0d'; //maybe \xa
 
     // Then, expect a enter
@@ -1093,7 +1070,7 @@ std::wstring InputEngineTest::GenerateSgrMouseSequence(const CsiMouseButtonCodes
     const wchar_t prefixChar = direction[0];
     const wchar_t finalChar = direction[1];
 
-    return wil::str_printf_failfast<std::wstring>(L"\x1b[%c%d;%d;%d%c", prefixChar, static_cast<int>(actionCode), position.X, position.Y, finalChar);
+    return wil::str_printf_failfast<std::wstring>(L"\x1b[%c%d;%d;%d%c", prefixChar, static_cast<int>(actionCode), position.x, position.y, finalChar);
 }
 
 void InputEngineTest::VerifySGRMouseData(const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData)
@@ -1102,6 +1079,9 @@ void InputEngineTest::VerifySGRMouseData(const std::vector<std::tuple<SGR_PARAMS
 
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    // The tests may be running somewhere that doesn't report anything for GetDoubleClickTime.
+    // Let's force it to a high value to make the double click tests pass.
+    inputEngine->_doubleClickTime = std::chrono::milliseconds(1000);
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
@@ -1113,7 +1093,7 @@ void InputEngineTest::VerifySGRMouseData(const std::vector<std::tuple<SGR_PARAMS
     {
         // construct test input
         input = std::get<0>(testData[i]);
-        const std::wstring seq = GenerateSgrMouseSequence(std::get<0>(input), std::get<1>(input), std::get<2>(input), std::get<3>(input));
+        const auto seq = GenerateSgrMouseSequence(std::get<0>(input), std::get<1>(input), std::get<2>(input), std::get<3>(input));
 
         // construct expected result
         expected = std::get<1>(testData[i]);
@@ -1347,10 +1327,10 @@ void InputEngineTest::CtrlAltZCtrlAltXTest()
     {
         auto inputSeq = L"\x1b\x1a"; // ^[^Z
 
-        wchar_t expectedWch = L'Z';
-        short keyscan = VkKeyScanW(expectedWch);
+        auto expectedWch = L'Z';
+        auto keyscan = OneCoreSafeVkKeyScanW(expectedWch);
         short vkey = keyscan & 0xff;
-        WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        auto scanCode = (WORD)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         INPUT_RECORD inputRec;
 
@@ -1369,10 +1349,10 @@ void InputEngineTest::CtrlAltZCtrlAltXTest()
     {
         auto inputSeq = L"\x1b\x18"; // ^[^X
 
-        wchar_t expectedWch = L'X';
-        short keyscan = VkKeyScanW(expectedWch);
+        auto expectedWch = L'X';
+        auto keyscan = OneCoreSafeVkKeyScanW(expectedWch);
         short vkey = keyscan & 0xff;
-        WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        auto scanCode = (WORD)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         INPUT_RECORD inputRec;
 
@@ -1484,73 +1464,73 @@ void InputEngineTest::TestWin32InputParsing()
 
     {
         std::vector<VTParameter> params{ 1 };
-        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
-        VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
-        VERIFY_ARE_EQUAL(0, key.GetVirtualScanCode());
-        VERIFY_ARE_EQUAL(L'\0', key.GetCharData());
-        VERIFY_ARE_EQUAL(false, key.IsKeyDown());
-        VERIFY_ARE_EQUAL(0u, key.GetActiveModifierKeys());
-        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
+        auto key = engine->_GenerateWin32Key({ params.data(), params.size() }).Event.KeyEvent;
+        VERIFY_ARE_EQUAL(1, key.wVirtualKeyCode);
+        VERIFY_ARE_EQUAL(0, key.wVirtualScanCode);
+        VERIFY_ARE_EQUAL(L'\0', key.uChar.UnicodeChar);
+        VERIFY_ARE_EQUAL(FALSE, key.bKeyDown);
+        VERIFY_ARE_EQUAL(0u, key.dwControlKeyState);
+        VERIFY_ARE_EQUAL(1, key.wRepeatCount);
     }
     {
         std::vector<VTParameter> params{ 1, 2 };
-        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
-        VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
-        VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
-        VERIFY_ARE_EQUAL(L'\0', key.GetCharData());
-        VERIFY_ARE_EQUAL(false, key.IsKeyDown());
-        VERIFY_ARE_EQUAL(0u, key.GetActiveModifierKeys());
-        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
+        auto key = engine->_GenerateWin32Key({ params.data(), params.size() }).Event.KeyEvent;
+        VERIFY_ARE_EQUAL(1, key.wVirtualKeyCode);
+        VERIFY_ARE_EQUAL(2, key.wVirtualScanCode);
+        VERIFY_ARE_EQUAL(L'\0', key.uChar.UnicodeChar);
+        VERIFY_ARE_EQUAL(FALSE, key.bKeyDown);
+        VERIFY_ARE_EQUAL(0u, key.dwControlKeyState);
+        VERIFY_ARE_EQUAL(1, key.wRepeatCount);
     }
     {
         std::vector<VTParameter> params{ 1, 2, 3 };
-        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
-        VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
-        VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
-        VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
-        VERIFY_ARE_EQUAL(false, key.IsKeyDown());
-        VERIFY_ARE_EQUAL(0u, key.GetActiveModifierKeys());
-        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
+        auto key = engine->_GenerateWin32Key({ params.data(), params.size() }).Event.KeyEvent;
+        VERIFY_ARE_EQUAL(1, key.wVirtualKeyCode);
+        VERIFY_ARE_EQUAL(2, key.wVirtualScanCode);
+        VERIFY_ARE_EQUAL(L'\x03', key.uChar.UnicodeChar);
+        VERIFY_ARE_EQUAL(FALSE, key.bKeyDown);
+        VERIFY_ARE_EQUAL(0u, key.dwControlKeyState);
+        VERIFY_ARE_EQUAL(1, key.wRepeatCount);
     }
     {
         std::vector<VTParameter> params{ 1, 2, 3, 4 };
-        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
-        VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
-        VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
-        VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
-        VERIFY_ARE_EQUAL(true, key.IsKeyDown());
-        VERIFY_ARE_EQUAL(0u, key.GetActiveModifierKeys());
-        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
+        auto key = engine->_GenerateWin32Key({ params.data(), params.size() }).Event.KeyEvent;
+        VERIFY_ARE_EQUAL(1, key.wVirtualKeyCode);
+        VERIFY_ARE_EQUAL(2, key.wVirtualScanCode);
+        VERIFY_ARE_EQUAL(L'\x03', key.uChar.UnicodeChar);
+        VERIFY_ARE_EQUAL(TRUE, key.bKeyDown);
+        VERIFY_ARE_EQUAL(0u, key.dwControlKeyState);
+        VERIFY_ARE_EQUAL(1, key.wRepeatCount);
     }
     {
         std::vector<VTParameter> params{ 1, 2, 3, 1 };
-        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
-        VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
-        VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
-        VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
-        VERIFY_ARE_EQUAL(true, key.IsKeyDown());
-        VERIFY_ARE_EQUAL(0u, key.GetActiveModifierKeys());
-        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
+        auto key = engine->_GenerateWin32Key({ params.data(), params.size() }).Event.KeyEvent;
+        VERIFY_ARE_EQUAL(1, key.wVirtualKeyCode);
+        VERIFY_ARE_EQUAL(2, key.wVirtualScanCode);
+        VERIFY_ARE_EQUAL(L'\x03', key.uChar.UnicodeChar);
+        VERIFY_ARE_EQUAL(TRUE, key.bKeyDown);
+        VERIFY_ARE_EQUAL(0u, key.dwControlKeyState);
+        VERIFY_ARE_EQUAL(1, key.wRepeatCount);
     }
     {
         std::vector<VTParameter> params{ 1, 2, 3, 4, 5 };
-        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
-        VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
-        VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
-        VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
-        VERIFY_ARE_EQUAL(true, key.IsKeyDown());
-        VERIFY_ARE_EQUAL(0x5u, key.GetActiveModifierKeys());
-        VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
+        auto key = engine->_GenerateWin32Key({ params.data(), params.size() }).Event.KeyEvent;
+        VERIFY_ARE_EQUAL(1, key.wVirtualKeyCode);
+        VERIFY_ARE_EQUAL(2, key.wVirtualScanCode);
+        VERIFY_ARE_EQUAL(L'\x03', key.uChar.UnicodeChar);
+        VERIFY_ARE_EQUAL(TRUE, key.bKeyDown);
+        VERIFY_ARE_EQUAL(0x5u, key.dwControlKeyState);
+        VERIFY_ARE_EQUAL(1, key.wRepeatCount);
     }
     {
         std::vector<VTParameter> params{ 1, 2, 3, 4, 5, 6 };
-        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
-        VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
-        VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
-        VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
-        VERIFY_ARE_EQUAL(true, key.IsKeyDown());
-        VERIFY_ARE_EQUAL(0x5u, key.GetActiveModifierKeys());
-        VERIFY_ARE_EQUAL(6, key.GetRepeatCount());
+        auto key = engine->_GenerateWin32Key({ params.data(), params.size() }).Event.KeyEvent;
+        VERIFY_ARE_EQUAL(1, key.wVirtualKeyCode);
+        VERIFY_ARE_EQUAL(2, key.wVirtualScanCode);
+        VERIFY_ARE_EQUAL(L'\x03', key.uChar.UnicodeChar);
+        VERIFY_ARE_EQUAL(TRUE, key.bKeyDown);
+        VERIFY_ARE_EQUAL(0x5u, key.dwControlKeyState);
+        VERIFY_ARE_EQUAL(6, key.wRepeatCount);
     }
 }
 
@@ -1590,26 +1570,26 @@ void InputEngineTest::TestWin32InputOptionals()
             provideRepeatCount ? 6 : 0,
         };
 
-        KeyEvent key = engine->_GenerateWin32Key({ params.data(), numParams });
+        auto key = engine->_GenerateWin32Key({ params.data(), numParams }).Event.KeyEvent;
         VERIFY_ARE_EQUAL((provideVirtualKeyCode && numParams > 0) ? 1 : 0,
-                         key.GetVirtualKeyCode());
+                         key.wVirtualKeyCode);
         VERIFY_ARE_EQUAL((provideVirtualScanCode && numParams > 1) ? 2 : 0,
-                         key.GetVirtualScanCode());
+                         key.wVirtualScanCode);
         VERIFY_ARE_EQUAL((provideCharData && numParams > 2) ? L'\x03' : L'\0',
-                         key.GetCharData());
-        VERIFY_ARE_EQUAL((provideKeyDown && numParams > 3) ? true : false,
-                         key.IsKeyDown());
+                         key.uChar.UnicodeChar);
+        VERIFY_ARE_EQUAL((provideKeyDown && numParams > 3) ? TRUE : FALSE,
+                         key.bKeyDown);
         VERIFY_ARE_EQUAL((provideActiveModifierKeys && numParams > 4) ? 5u : 0u,
-                         key.GetActiveModifierKeys());
+                         key.dwControlKeyState);
         if (numParams == 6)
         {
             VERIFY_ARE_EQUAL((provideRepeatCount) ? 6 : 0,
-                             key.GetRepeatCount());
+                             key.wRepeatCount);
         }
         else
         {
             VERIFY_ARE_EQUAL((provideRepeatCount && numParams > 5) ? 6 : 1,
-                             key.GetRepeatCount());
+                             key.wRepeatCount);
         }
     }
 }

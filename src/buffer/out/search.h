@@ -17,10 +17,9 @@ Revision History:
 
 #pragma once
 
-#include <WinConTypes.h>
 #include "TextAttribute.hpp"
 #include "textBuffer.hpp"
-#include "../types/IUiaData.h"
+#include "../renderer/inc/IRenderData.hpp"
 
 // This used to be in find.h.
 #define SEARCH_STRING_LENGTH (80)
@@ -40,46 +39,46 @@ public:
         CaseSensitive
     };
 
-    Search(Microsoft::Console::Types::IUiaData& uiaData,
-           const std::wstring& str,
+    Search(Microsoft::Console::Render::IRenderData& renderData,
+           const std::wstring_view str,
            const Direction dir,
            const Sensitivity sensitivity);
 
-    Search(Microsoft::Console::Types::IUiaData& uiaData,
-           const std::wstring& str,
+    Search(Microsoft::Console::Render::IRenderData& renderData,
+           const std::wstring_view str,
            const Direction dir,
            const Sensitivity sensitivity,
-           const COORD anchor);
+           const til::point anchor);
 
     bool FindNext();
     void Select() const;
     void Color(const TextAttribute attr) const;
 
-    std::pair<COORD, COORD> GetFoundLocation() const noexcept;
+    std::pair<til::point, til::point> GetFoundLocation() const noexcept;
 
 private:
     wchar_t _ApplySensitivity(const wchar_t wch) const noexcept;
-    bool _FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) const;
+    bool _FindNeedleInHaystackAt(const til::point pos, til::point& start, til::point& end) const;
     bool _CompareChars(const std::wstring_view one, const std::wstring_view two) const noexcept;
     void _UpdateNextPosition();
 
-    void _IncrementCoord(COORD& coord) const noexcept;
-    void _DecrementCoord(COORD& coord) const noexcept;
+    void _IncrementCoord(til::point& coord) const noexcept;
+    void _DecrementCoord(til::point& coord) const noexcept;
 
-    static COORD s_GetInitialAnchor(Microsoft::Console::Types::IUiaData& uiaData, const Direction dir);
+    static til::point s_GetInitialAnchor(const Microsoft::Console::Render::IRenderData& renderData, const Direction dir);
 
-    static std::vector<std::vector<wchar_t>> s_CreateNeedleFromString(const std::wstring& wstr);
+    static std::vector<std::wstring> s_CreateNeedleFromString(const std::wstring_view wstr);
 
     bool _reachedEnd = false;
-    COORD _coordNext = { 0 };
-    COORD _coordSelStart = { 0 };
-    COORD _coordSelEnd = { 0 };
+    til::point _coordNext;
+    til::point _coordSelStart;
+    til::point _coordSelEnd;
 
-    const COORD _coordAnchor;
-    const std::vector<std::vector<wchar_t>> _needle;
+    const til::point _coordAnchor;
+    const std::vector<std::wstring> _needle;
     const Direction _direction;
     const Sensitivity _sensitivity;
-    Microsoft::Console::Types::IUiaData& _uiaData;
+    Microsoft::Console::Render::IRenderData& _renderData;
 
 #ifdef UNIT_TESTING
     friend class SearchTests;

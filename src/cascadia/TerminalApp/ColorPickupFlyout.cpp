@@ -1,9 +1,6 @@
 #include "pch.h"
 #include "ColorPickupFlyout.h"
 #include "ColorPickupFlyout.g.cpp"
-#include "winrt/Windows.UI.Xaml.Media.h"
-#include "winrt/Windows.UI.Xaml.Shapes.h"
-#include "winrt/Windows.UI.Xaml.Interop.h"
 #include <LibraryResources.h>
 
 namespace winrt::TerminalApp::implementation
@@ -31,7 +28,7 @@ namespace winrt::TerminalApp::implementation
     // - sender: the rectangle that got clicked
     // Return Value:
     // - <none>
-    void ColorPickupFlyout::ColorButton_Click(IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const&)
+    void ColorPickupFlyout::ColorButton_Click(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs&)
     {
         auto button{ sender.as<Windows::UI::Xaml::Controls::Button>() };
         auto rectClr{ button.Background().as<Windows::UI::Xaml::Media::SolidColorBrush>() };
@@ -46,7 +43,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void ColorPickupFlyout::ClearColorButton_Click(IInspectable const&, Windows::UI::Xaml::RoutedEventArgs const&)
+    void ColorPickupFlyout::ClearColorButton_Click(const IInspectable&, const Windows::UI::Xaml::RoutedEventArgs&)
     {
         _ColorClearedHandlers();
         Hide();
@@ -60,7 +57,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void ColorPickupFlyout::ShowColorPickerButton_Click(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::RoutedEventArgs const&)
+    void ColorPickupFlyout::ShowColorPickerButton_Click(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::RoutedEventArgs&)
     {
         auto visibility = customColorPanel().Visibility();
         if (visibility == winrt::Windows::UI::Xaml::Visibility::Collapsed)
@@ -80,7 +77,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void ColorPickupFlyout::CustomColorButton_Click(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::RoutedEventArgs const&)
+    void ColorPickupFlyout::CustomColorButton_Click(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::RoutedEventArgs&)
     {
         auto color = customColorPicker().Color();
         _ColorSelectedHandlers(color);

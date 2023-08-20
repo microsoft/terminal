@@ -34,9 +34,6 @@ Telemetry::Telemetry() :
     _rgiProcessFileNameIndex(),
     _rguiProcessFileNamesCount(),
     _rgiAlphabeticalIndex(),
-    _rguiProcessFileNamesCodesCount(),
-    _rguiProcessFileNamesFailedCodesCount(),
-    _rguiProcessFileNamesFailedOutsideCodesCount(),
     _rguiTimesApiUsed(),
     _rguiTimesApiUsedAnsi(),
     _uiNumberProcessFileNames(0),
@@ -214,38 +211,16 @@ void Telemetry::FindDialogClosed()
     _uiFindNextClickedTotal = 0;
 }
 
-// Total up all the used VT100 codes and assign them to the last process that was attached.
-// We originally did this when each process disconnected, but some processes don't
-// disconnect when the conhost process exits.  So we have to remember the last process that connected.
-void Telemetry::TotalCodesForPreviousProcess()
-{
-    using namespace Microsoft::Console::VirtualTerminal;
-    // Get the values even if we aren't recording the previously connected process, since we want to reset them to 0.
-    unsigned int _uiTimesUsedCurrent = TermTelemetry::Instance().GetAndResetTimesUsedCurrent();
-    unsigned int _uiTimesFailedCurrent = TermTelemetry::Instance().GetAndResetTimesFailedCurrent();
-    unsigned int _uiTimesFailedOutsideRangeCurrent = TermTelemetry::Instance().GetAndResetTimesFailedOutsideRangeCurrent();
-
-    if (_iProcessConnectedCurrently < c_iMaxProcessesConnected)
-    {
-        _rguiProcessFileNamesCodesCount[_iProcessConnectedCurrently] += _uiTimesUsedCurrent;
-        _rguiProcessFileNamesFailedCodesCount[_iProcessConnectedCurrently] += _uiTimesFailedCurrent;
-        _rguiProcessFileNamesFailedOutsideCodesCount[_iProcessConnectedCurrently] += _uiTimesFailedOutsideRangeCurrent;
-
-        // Don't total any more process connected telemetry, unless a new processes attaches that we want to gather.
-        _iProcessConnectedCurrently = SIZE_MAX;
-    }
-}
-
 // Tries to find the process name amongst our previous process names by doing a binary search.
 // The main difference between this and the standard bsearch library call, is that if this
 // can't find the string, it returns the position the new string should be inserted at.  This saves
 // us from having an additional search through the array, and improves performance.
 bool Telemetry::FindProcessName(const WCHAR* pszProcessName, _Out_ size_t* iPosition) const
 {
-    int iMin = 0;
-    int iMid = 0;
-    int iMax = _uiNumberProcessFileNames - 1;
-    int result = 0;
+    auto iMin = 0;
+    auto iMid = 0;
+    auto iMax = _uiNumberProcessFileNames - 1;
+    auto result = 0;
 
     while (iMin <= iMax)
     {
@@ -284,8 +259,6 @@ void Telemetry::LogProcessConnected(const HANDLE hProcess)
     // This is a bit of processing, so don't do it for the 95% of machines that aren't being sampled.
     if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, MICROSOFT_KEYWORD_MEASURES))
     {
-        TotalCodesForPreviousProcess();
-
         // Don't initialize wszFilePathAndName, QueryFullProcessImageName does that for us.  Use QueryFullProcessImageName instead of
         // GetProcessImageFileName because we need the path to begin with a drive letter and not a device name.
         WCHAR wszFilePathAndName[MAX_PATH];
@@ -294,7 +267,7 @@ void Telemetry::LogProcessConnected(const HANDLE hProcess)
         {
             // Stripping out the path also helps with PII issues in case they launched the program
             // from a path containing their username.
-            PWSTR pwszFileName = PathFindFileName(wszFilePathAndName);
+            auto pwszFileName = PathFindFileName(wszFilePathAndName);
 
             size_t iFileName;
             if (FindProcessName(pwszFileName, &iFileName))
@@ -341,7 +314,7 @@ void Telemetry::LogProcessConnected(const HANDLE hProcess)
                     _iProcessConnectedCurrently = _uiNumberProcessFileNames++;
 
                     // Packed arrays start with a UINT16 value indicating the number of elements in the array.
-                    BYTE* pbFileNames = reinterpret_cast<BYTE*>(_wchProcessFileNames);
+                    auto pbFileNames = reinterpret_cast<BYTE*>(_wchProcessFileNames);
                     pbFileNames[0] = (BYTE)_uiNumberProcessFileNames;
                     pbFileNames[1] = (BYTE)(_uiNumberProcessFileNames >> 8);
                 }
@@ -355,20 +328,13 @@ void Telemetry::LogProcessConnected(const HANDLE hProcess)
 // so we don't overwhelm our servers by sending a constant stream of telemetry while the console is being used.
 void Telemetry::WriteFinalTraceLog()
 {
-    const CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& renderSettings = gci.GetRenderSettings();
     // This is a bit of processing, so don't do it for the 95% of machines that aren't being sampled.
     if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, MICROSOFT_KEYWORD_MEASURES))
     {
-        // Normally we would set the activity Id earlier, but since we know the parser only sends
-        // one final log at the end, setting the activity this late should be fine.
-        Microsoft::Console::VirtualTerminal::TermTelemetry::Instance().SetActivityId(_activity.Id());
-        Microsoft::Console::VirtualTerminal::TermTelemetry::Instance().SetShouldWriteFinalLog(_fUserInteractiveForTelemetry);
-
         if (_fUserInteractiveForTelemetry)
         {
-            TotalCodesForPreviousProcess();
-
             // Send this back using "measures" since we want a good sampling of our entire userbase.
             time_t tEndedAt;
             time(&tEndedAt);
@@ -395,9 +361,6 @@ void Telemetry::WriteFinalTraceLog()
                                     // Casting to UINT should be fine, since our array size is only 2K.
                                     TraceLoggingPackedField(_wchProcessFileNames, static_cast<UINT>(sizeof(WCHAR) * _iProcessFileNamesNext), TlgInUNICODESTRING | TlgInVcount, "ProcessesConnected"),
                                     TraceLoggingUInt32Array(_rguiProcessFileNamesCount, _uiNumberProcessFileNames, "ProcessesConnectedCount"),
-                                    TraceLoggingUInt32Array(_rguiProcessFileNamesCodesCount, _uiNumberProcessFileNames, "ProcessesConnectedCodesCount"),
-                                    TraceLoggingUInt32Array(_rguiProcessFileNamesFailedCodesCount, _uiNumberProcessFileNames, "ProcessesConnectedFailedCodesCount"),
-                                    TraceLoggingUInt32Array(_rguiProcessFileNamesFailedOutsideCodesCount, _uiNumberProcessFileNames, "ProcessesConnectedFailedOutsideCount"),
                                     // Send back both starting and ending times separately instead just usage time (ending - starting).
                                     // This can help us determine if they were using multiple consoles at the same time.
                                     TraceLoggingInt32(static_cast<int>(_tStartedAt), "StartedUsingAtSeconds"),
@@ -423,17 +386,17 @@ void Telemetry::WriteFinalTraceLog()
                                     TraceLoggingUInt32Array((UINT32 const*)renderSettings.GetColorTable().data(), 16, "ColorTable"),
                                     TraceLoggingValue(gci.CP, "CodePageInput"),
                                     TraceLoggingValue(gci.OutputCP, "CodePageOutput"),
-                                    TraceLoggingValue(gci.GetFontSize().X, "FontSizeX"),
-                                    TraceLoggingValue(gci.GetFontSize().Y, "FontSizeY"),
+                                    TraceLoggingValue(gci.GetFontSize().width, "FontSizeX"),
+                                    TraceLoggingValue(gci.GetFontSize().height, "FontSizeY"),
                                     TraceLoggingValue(gci.GetHotKey(), "HotKey"),
-                                    TraceLoggingValue(gci.GetScreenBufferSize().X, "ScreenBufferSizeX"),
-                                    TraceLoggingValue(gci.GetScreenBufferSize().Y, "ScreenBufferSizeY"),
+                                    TraceLoggingValue(gci.GetScreenBufferSize().width, "ScreenBufferSizeX"),
+                                    TraceLoggingValue(gci.GetScreenBufferSize().height, "ScreenBufferSizeY"),
                                     TraceLoggingValue(gci.GetStartupFlags(), "StartupFlags"),
-                                    TraceLoggingValue(gci.GetVirtTermLevel(), "VirtualTerminalLevel"),
-                                    TraceLoggingValue(gci.GetWindowSize().X, "WindowSizeX"),
-                                    TraceLoggingValue(gci.GetWindowSize().Y, "WindowSizeY"),
-                                    TraceLoggingValue(gci.GetWindowOrigin().X, "WindowOriginX"),
-                                    TraceLoggingValue(gci.GetWindowOrigin().Y, "WindowOriginY"),
+                                    TraceLoggingValue(gci.GetDefaultVirtTermLevel(), "VirtualTerminalLevel"),
+                                    TraceLoggingValue(gci.GetWindowSize().width, "WindowSizeX"),
+                                    TraceLoggingValue(gci.GetWindowSize().height, "WindowSizeY"),
+                                    TraceLoggingValue(gci.GetWindowOrigin().width, "WindowOriginX"),
+                                    TraceLoggingValue(gci.GetWindowOrigin().height, "WindowOriginY"),
                                     TraceLoggingValue(gci.GetFaceName(), "FontName"),
                                     TraceLoggingBool(gci.IsAltF4CloseAllowed(), "AllowAltF4Close"),
                                     TraceLoggingBool(gci.GetCtrlKeyShortcutsDisabled(), "ControlKeyShortcutsDisabled"),
@@ -524,7 +487,7 @@ void Telemetry::WriteFinalTraceLog()
                                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                                     TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-            for (int n = 0; n < ARRAYSIZE(_rguiTimesApiUsedAnsi); n++)
+            for (auto n = 0; n < ARRAYSIZE(_rguiTimesApiUsedAnsi); n++)
             {
                 if (_rguiTimesApiUsedAnsi[n])
                 {
@@ -571,7 +534,7 @@ void Telemetry::LogRipMessage(_In_z_ const char* pszMessage, ...) const
     va_list args;
     va_start(args, pszMessage);
     char szMessageEvaluated[200] = "";
-    int cCharsWritten = vsprintf_s(szMessageEvaluated, ARRAYSIZE(szMessageEvaluated), pszMessage, args);
+    auto cCharsWritten = vsprintf_s(szMessageEvaluated, ARRAYSIZE(szMessageEvaluated), pszMessage, args);
     va_end(args);
 
 #if DBG

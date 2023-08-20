@@ -33,13 +33,10 @@ namespace Microsoft.Terminal.Settings.Model
 
         Boolean IsStatePath(String filename);
 
-        Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts { get; set; };
-
-        Windows.Foundation.Collections.IVector<String> RecentCommands { get; set; };
-
-        Windows.Foundation.Collections.IVector<InfoBarMessage> DismissedMessages { get; set; };
-
-        Windows.Foundation.Collections.IVector<String> AllowedCommandlines { get; set; };
-
+        String SettingsHash;
+        Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts;
+        Windows.Foundation.Collections.IVector<String> RecentCommands;
+        Windows.Foundation.Collections.IVector<InfoBarMessage> DismissedMessages;
+        Windows.Foundation.Collections.IVector<String> AllowedCommandlines;
     }
 }

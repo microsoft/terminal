@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{024052DE-83FB-4653-AEA4-90790D29D5BD}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -34,6 +34,10 @@
   <Import Project="$(SolutionDir)src\common.build.tests.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
   <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- By defining this here, we ensure that we don't try to dllimport conpty -->
+      <PreprocessorDefinitions>CONPTY_IMPEXP=;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <Link>
       <AdditionalDependencies>$(OutDir)\conptylib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
