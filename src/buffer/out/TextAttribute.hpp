@@ -29,12 +29,12 @@ Revision History:
 
 enum class UnderlineStyle
 {
-    NoUnderline = 0,
-    SinglyUnderlined = 1,
-    DoublyUnderlined = 2,
-    CurlyUnderlined = 3,
-    DottedUnderlined = 4,
-    DashedUnderlined = 5,
+    NoUnderline = 0U,
+    SinglyUnderlined = 1U,
+    DoublyUnderlined = 2U,
+    CurlyUnderlined = 3U,
+    DottedUnderlined = 4U,
+    DashedUnderlined = 5U,
     Max = DashedUnderlined
 };
 
@@ -194,19 +194,6 @@ public:
     }
 
 private:
-    constexpr UnderlineStyle _CharacterAttrToUnderlineStyle(const CharacterAttributes attrs) const noexcept
-    {
-        const auto style = WI_EnumValue(attrs & CharacterAttributes::UnderlineStyle) >> UNDERLINE_STYLE_SHIFT;
-        assert((style >= 0) && (style <= WI_EnumValue(UnderlineStyle::Max)));
-        return static_cast<UnderlineStyle>(style);
-    }
-    constexpr CharacterAttributes _UnderlineStyleToCharacterAttr(const UnderlineStyle style) const noexcept
-    {
-        assert(WI_EnumValue(style) <= 0x07); // value must fit within 3 bits
-        const auto styleAttr = static_cast<UnderlineStyle>(WI_EnumValue(style) << UNDERLINE_STYLE_SHIFT);
-        return static_cast<CharacterAttributes>(styleAttr);
-    }
-
     static std::array<TextColor, 16> s_legacyForegroundColorMap;
     static std::array<TextColor, 16> s_legacyBackgroundColorMap;
 

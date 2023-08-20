@@ -23,7 +23,7 @@ void AdaptDispatch::_SetUnderlineStyleHelper(const VTParameter option, TextAttri
 {
     const auto style = option.value_or(0);
     // Only apply the style if it's one of the valid underline styles (0-5).
-    if ((style >= 0) && (style <= 5))
+    if ((style >= 0) && (style <= WI_EnumValue(UnderlineStyle::Max)))
     {
         attr.SetUnderlineStyle(gsl::narrow_cast<UnderlineStyle>(style));
     }

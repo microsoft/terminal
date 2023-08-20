@@ -163,7 +163,8 @@ TextColor TextAttribute::GetUnderlineColor() const noexcept
 
 UnderlineStyle TextAttribute::GetUnderlineStyle() const noexcept
 {
-    return _CharacterAttrToUnderlineStyle(_attrs);
+    const auto styleAttr = WI_EnumValue(_attrs & CharacterAttributes::UnderlineStyle);
+    return static_cast<UnderlineStyle>(styleAttr >> UNDERLINE_STYLE_SHIFT);
 }
 
 void TextAttribute::SetForeground(const TextColor foreground) noexcept
@@ -353,8 +354,8 @@ void TextAttribute::SetCrossedOut(bool isCrossedOut) noexcept
 // - style - underline style to set.
 void TextAttribute::SetUnderlineStyle(const UnderlineStyle style) noexcept
 {
-    const auto styleAttrs = _UnderlineStyleToCharacterAttr(style);
-    _attrs = (_attrs & ~CharacterAttributes::UnderlineStyle) | styleAttrs;
+    const auto shiftedStyle = WI_EnumValue(style) << UNDERLINE_STYLE_SHIFT;
+    _attrs = (_attrs & ~CharacterAttributes::UnderlineStyle) | static_cast<CharacterAttributes>(shiftedStyle);
 }
 
 void TextAttribute::SetOverlined(bool isOverlined) noexcept
