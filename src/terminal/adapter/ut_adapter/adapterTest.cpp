@@ -1158,7 +1158,7 @@ public:
         switch (graphicsOption)
         {
         case DispatchTypes::GraphicsOptions::ForegroundExtended:
-            Log::Comment(L"Testing graphics 'ForegroundExtended'.");
+            Log::Comment(L"Testing graphics 'ForegroundExtended'");
             _testGetSet->MakeSubParamsAndRanges({ { DispatchTypes::GraphicsOptions::BlinkOrXterm256Index, TextColor::DARK_RED } }, subParams, subParamRanges);
             startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
