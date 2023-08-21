@@ -231,7 +231,7 @@ try
     const auto& textBuffer = *static_cast<const TextBuffer*>(ut->context);
     const auto y = accessCurrentRow(ut);
     const auto offset = ut->chunkNativeStart - nativeStart;
-    const auto text = textBuffer.GetRowByOffset(y).GetText().substr(offset);
+    const auto text = textBuffer.GetRowByOffset(y).GetText().substr(gsl::narrow_cast<size_t>(std::max<int64_t>(0, offset)));
     const auto length = std::min(gsl::narrow_cast<size_t>(destCapacity), text.size());
 
     memcpy(dest, text.data(), length * sizeof(char16_t));
@@ -292,7 +292,7 @@ til::point_span BufferRangeFromUText(UText* ut, int64_t nativeIndexBeg, int64_t 
     if (utextAccess(ut, nativeIndexBeg, true))
     {
         const auto y = accessCurrentRow(ut);
-        ret.start.x = textBuffer.GetRowByOffset(y).GetLeadingColumnAtCharOffset(nativeIndexBeg - ut->chunkNativeStart);
+        ret.start.x = textBuffer.GetRowByOffset(y).GetLeadingColumnAtCharOffset(gsl::narrow_cast<ptrdiff_t>(nativeIndexBeg - ut->chunkNativeStart));
         ret.start.y = y;
     }
     else
@@ -303,7 +303,7 @@ til::point_span BufferRangeFromUText(UText* ut, int64_t nativeIndexBeg, int64_t 
     if (utextAccess(ut, nativeIndexEnd, true))
     {
         const auto y = accessCurrentRow(ut);
-        ret.end.x = textBuffer.GetRowByOffset(y).GetTrailingColumnAtCharOffset(nativeIndexEnd - ut->chunkNativeStart);
+        ret.end.x = textBuffer.GetRowByOffset(y).GetTrailingColumnAtCharOffset(gsl::narrow_cast<ptrdiff_t>(nativeIndexEnd - ut->chunkNativeStart));
         ret.end.y = y;
     }
     else

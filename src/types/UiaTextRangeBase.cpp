@@ -623,7 +623,7 @@ try
         for (size_t i = highestIndex;; --i)
         {
             hit = &til::at(results, i);
-            if (hit->start < _end)
+            if (hit->end < _end)
             {
                 break;
             }
