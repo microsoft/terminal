@@ -111,12 +111,15 @@ catch (...)
 static UBool U_CALLCONV utextAccess(UText* ut, int64_t nativeIndex, UBool forward) noexcept
 try
 {
+    if (nativeIndex < 0)
+    {
+        nativeIndex = 0;
+    }
+
+    auto neededIndex = nativeIndex;
     if (!forward)
     {
-        // Even after reading the ICU documentation I'm a little unclear on how to handle the forward flag.
-        // I _think_ it's basically nothing but "nativeIndex--" for us, but I didn't want to verify it
-        // because right now we never use any ICU functions that require backwards text access anyways.
-        return false;
+        neededIndex--;
     }
 
     const auto& textBuffer = *static_cast<const TextBuffer*>(ut->context);
@@ -126,60 +129,58 @@ try
     auto y = accessCurrentRow(ut);
     std::wstring_view text;
 
-    if (nativeIndex >= start && nativeIndex < limit)
+    if (neededIndex < start || neededIndex >= limit)
     {
-        return true;
-    }
-
-    if (nativeIndex < start)
-    {
-        for (;;)
+        if (neededIndex < start)
         {
-            --y;
-            if (y < range.begin)
+            do
             {
-                return false;
-            }
+                --y;
+                if (y < range.begin)
+                {
+                    return false;
+                }
 
-            text = textBuffer.GetRowByOffset(y).GetText();
-            limit = start;
-            start -= text.size();
-
-            if (nativeIndex >= start)
-            {
-                break;
-            }
+                text = textBuffer.GetRowByOffset(y).GetText();
+                limit = start;
+                start -= text.size();
+            } while (neededIndex < start);
         }
-    }
-    else
-    {
-        for (;;)
+        else
         {
-            ++y;
-            if (y >= range.end)
+            do
             {
-                return false;
-            }
+                ++y;
+                if (y >= range.end)
+                {
+                    return false;
+                }
 
-            text = textBuffer.GetRowByOffset(y).GetText();
-            start = limit;
-            limit += text.size();
-
-            if (nativeIndex < limit)
-            {
-                break;
-            }
+                text = textBuffer.GetRowByOffset(y).GetText();
+                start = limit;
+                limit += text.size();
+            } while (neededIndex >= limit);
         }
-    }
 
-    accessCurrentRow(ut) = y;
-    ut->chunkNativeStart = start;
-    ut->chunkNativeLimit = limit;
-    ut->chunkOffset = gsl::narrow_cast<int32_t>(nativeIndex - start);
-    ut->chunkLength = gsl::narrow_cast<int32_t>(text.size());
+        accessCurrentRow(ut) = y;
+        ut->chunkNativeStart = start;
+        ut->chunkNativeLimit = limit;
+        ut->chunkLength = gsl::narrow_cast<int32_t>(text.size());
 #pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-    ut->chunkContents = reinterpret_cast<const char16_t*>(text.data());
-    ut->nativeIndexingLimit = ut->chunkLength;
+        ut->chunkContents = reinterpret_cast<const char16_t*>(text.data());
+        ut->nativeIndexingLimit = ut->chunkLength;
+    }
+
+    auto offset = gsl::narrow_cast<int32_t>(nativeIndex - start);
+
+    // Don't leave the offset on a trailing surrogate pair. See U16_SET_CP_START.
+    // This assumes that the TextBuffer contains valid UTF-16 which may theoretically not be the case.
+    if (offset > 0 && offset < ut->chunkLength && U16_IS_TRAIL(til::at(ut->chunkContents, offset)))
+    {
+        offset--;
+    }
+
+    ut->chunkOffset = offset;
     return true;
 }
 catch (...)
@@ -281,7 +282,8 @@ UText* UTextFromTextBuffer(UText* ut, const TextBuffer& textBuffer, til::CoordTy
     return ut;
 }
 
-// Returns an inclusive point range given a text start and end position. This function is designed to be used with uregex_start64/uregex_end64.
+// Returns an inclusive point range given a text start and end position.
+// This function is designed to be used with uregex_start64/uregex_end64.
 til::point_span BufferRangeFromUText(UText* ut, int64_t nativeIndexBeg, int64_t nativeIndexEnd)
 {
     // The parameters are given as a half-open [beg,end) range, but the point_span we return in closed [beg,end].
@@ -293,7 +295,7 @@ til::point_span BufferRangeFromUText(UText* ut, int64_t nativeIndexBeg, int64_t 
     if (utextAccess(ut, nativeIndexBeg, true))
     {
         const auto y = accessCurrentRow(ut);
-        ret.start.x = textBuffer.GetRowByOffset(y).GetLeadingColumnAtCharOffset(gsl::narrow_cast<ptrdiff_t>(nativeIndexBeg - ut->chunkNativeStart));
+        ret.start.x = textBuffer.GetRowByOffset(y).GetLeadingColumnAtCharOffset(ut->chunkOffset);
         ret.start.y = y;
     }
     else
@@ -304,7 +306,7 @@ til::point_span BufferRangeFromUText(UText* ut, int64_t nativeIndexBeg, int64_t 
     if (utextAccess(ut, nativeIndexEnd, true))
     {
         const auto y = accessCurrentRow(ut);
-        ret.end.x = textBuffer.GetRowByOffset(y).GetTrailingColumnAtCharOffset(gsl::narrow_cast<ptrdiff_t>(nativeIndexEnd - ut->chunkNativeStart));
+        ret.end.x = textBuffer.GetRowByOffset(y).GetTrailingColumnAtCharOffset(ut->chunkOffset);
         ret.end.y = y;
     }
     else

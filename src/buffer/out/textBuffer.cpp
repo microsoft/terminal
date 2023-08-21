@@ -2792,7 +2792,9 @@ PointTree TextBuffer::GetPatterns(const til::CoordType firstRow, const til::Coor
         {
             const auto nativeIndexBeg = uregex_start64(_urlRegex, 0, &status);
             const auto nativeIndexEnd = uregex_end64(_urlRegex, 0, &status);
-            const auto range = BufferRangeFromUText(&text, nativeIndexBeg, nativeIndexEnd);
+            auto range = BufferRangeFromUText(&text, nativeIndexBeg, nativeIndexEnd);
+            // PointTree uses half-open ranges.
+            range.end.x++;
             intervals.push_back(PointTree::interval(range.start, range.end, 0));
         } while (uregex_findNext(_urlRegex, &status));
     }
