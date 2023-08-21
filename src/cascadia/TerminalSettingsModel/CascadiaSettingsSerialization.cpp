@@ -1227,6 +1227,15 @@ void CascadiaSettings::WriteSettingsToDisk()
     }
 }
 
+#ifndef NDEBUG
+static [[maybe_unused]] std::string _getDevPathToSchema()
+{
+    std::filesystem::path filePath{ __FILE__ };
+    auto schemaPath = filePath.parent_path().parent_path().parent_path().parent_path() / "doc" / "cascadia" / "profiles.schema.json";
+    return "file:///" + schemaPath.generic_string();
+}
+#endif
+
 // Method Description:
 // - Create a new serialized JsonObject from an instance of this class
 // Arguments:
@@ -1243,7 +1252,9 @@ Json::Value CascadiaSettings::ToJson() const
         "https://aka.ms/terminal-profiles-schema"
 #elif defined(WT_BRANDING_PREVIEW)
         "https://aka.ms/terminal-profiles-schema-preview"
-#else
+#elif !defined(NDEBUG) // DEBUG mode
+        _getDevPathToSchema() // magic schema path that refers to the local source directory
+#else // All other brandings
         "https://raw.githubusercontent.com/microsoft/terminal/main/doc/cascadia/profiles.schema.json"
 #endif
         ;
