@@ -620,6 +620,7 @@ try
 
     if (searchBackward)
     {
+        // Find the last result that is in the [_start,_end) range.
         for (size_t i = highestIndex;; --i)
         {
             hit = &til::at(results, i);
@@ -628,6 +629,7 @@ try
                 break;
             }
 
+            // ...but exit when none are found.
             if (i <= 0)
             {
                 return S_OK;
@@ -636,6 +638,7 @@ try
     }
     else
     {
+        // Find the first result that is in the [_start,_end) range.
         for (size_t i = 0;; ++i)
         {
             hit = &til::at(results, i);
@@ -644,6 +647,7 @@ try
                 break;
             }
 
+            // ...but exit when none are found.
             if (i >= highestIndex)
             {
                 return S_OK;
@@ -651,12 +655,21 @@ try
         }
     }
 
-    RETURN_IF_FAILED(Clone(ppRetVal));
-    auto& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
-    range._start = hit->start;
-    range._end = hit->end;
+    const auto start = hit->start;
+    auto end = hit->end;
 
-    UiaTracing::TextRange::FindText(*this, queryText, searchBackward, ignoreCase, range);
+    // we need to increment the position of end because it's exclusive
+    _getOptimizedBufferSize().IncrementInBounds(end, true);
+
+    if (start >= _start && end <= _end)
+    {
+        RETURN_IF_FAILED(Clone(ppRetVal));
+        auto& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
+        range._start = start;
+        range._end = end;
+        UiaTracing::TextRange::FindText(*this, queryText, searchBackward, ignoreCase, range);
+    }
+
     return S_OK;
 }
 CATCH_RETURN();

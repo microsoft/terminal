@@ -232,11 +232,12 @@ try
     const auto y = accessCurrentRow(ut);
     const auto offset = ut->chunkNativeStart - nativeStart;
     const auto text = textBuffer.GetRowByOffset(y).GetText().substr(gsl::narrow_cast<size_t>(std::max<int64_t>(0, offset)));
-    const auto length = std::min(gsl::narrow_cast<size_t>(destCapacity), text.size());
+    const auto destCapacitySizeT = gsl::narrow_cast<size_t>(destCapacity);
+    const auto length = std::min(destCapacitySizeT, text.size());
 
     memcpy(dest, text.data(), length * sizeof(char16_t));
 
-    if (length < destCapacity)
+    if (length < destCapacitySizeT)
     {
 #pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
         dest[length] = 0;
