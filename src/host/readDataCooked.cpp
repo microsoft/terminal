@@ -110,11 +110,6 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     }
 }
 
-COOKED_READ_DATA::~COOKED_READ_DATA()
-{
-    OutputDebugStringA("");
-}
-
 // Routine Description:
 // - This routine is called to complete a cooked read that blocked in ReadInputBuffer.
 // - The context of the read was saved in the CookedReadData structure.
@@ -275,6 +270,7 @@ til::point_span COOKED_READ_DATA::GetBoundaries() const noexcept
 // conhost, notepad, Visual Studio and other "old" applications. If you look closely you can see how they're the exact
 // same "skip 1 char, skip x, skip not-x", but since the "x" between them is different (non-words for _wordPrev and
 // words for _wordNext) it results in the inconsistent feeling that these have compared to more modern algorithms.
+// TODO: GH#15787
 size_t COOKED_READ_DATA::_wordPrev(const std::wstring_view& chars, size_t position)
 {
     if (position != 0)
@@ -310,6 +306,13 @@ size_t COOKED_READ_DATA::_wordNext(const std::wstring_view& chars, size_t positi
         }
     }
     return position;
+}
+
+const std::wstring_view& COOKED_READ_DATA::_newlineSuffix() const noexcept
+{
+    static constexpr std::wstring_view cr{ L"\r" };
+    static constexpr std::wstring_view crlf{ L"\r\n" };
+    return WI_IsFlagSet(_pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT) ? crlf : cr;
 }
 
 // Reads text off of the InputBuffer and dispatches it to the current popup or otherwise into the _buffer contents.
@@ -366,7 +369,7 @@ bool COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
 
         // The old implementation (all the way since the 90s) overwrote the character at the current cursor position with the given wch.
         // But simultaneously it incremented the buffer length, which would have only worked if it was written at the end of the buffer.
-        // Press tab past the "f" in the string "foo" and you'd get "f\too " (a trailing whitespace; the initial contents of the buffer back then).
+        // Press tab past the "f" in the string "foo" and you'd get "f\to " (a trailing whitespace; the initial contents of the buffer back then).
         // It's unclear whether the original intention was to write at the end of the buffer at all times or to implement an insert mode.
         // I went with insert mode.
         _buffer.insert(_bufferCursor, 1, wch);
@@ -380,10 +383,7 @@ bool COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
     {
     case UNICODE_CARRIAGERETURN:
     {
-        static constexpr std::wstring_view cr{ L"\r" };
-        static constexpr std::wstring_view crlf{ L"\r\n" };
-        const auto processedInput = WI_IsFlagSet(_pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT);
-        _buffer.append(processedInput ? crlf : cr);
+        _buffer.append(_newlineSuffix());
         _bufferCursor = _buffer.size();
         _markAsDirty();
         return true;
@@ -637,11 +637,12 @@ void COOKED_READ_DATA::_handlePostCharInputLoop(const bool isUnicode, size_t& nu
 
     if (WI_IsFlagSet(_pInputBuffer->InputMode, ENABLE_ECHO_INPUT))
     {
-        // The last characters in line-read are a \r\n unless _ctrlWakeupMask was used.
-        // s_MatchAndCopyAlias doesn't want to know about them.
-        if (input.ends_with(L"\r\n"))
+        // The last characters in line-read are a \r or \r\n unless _ctrlWakeupMask was used.
+        // Neither History nor s_MatchAndCopyAlias want to know about them.
+        const auto& suffix = _newlineSuffix();
+        if (input.ends_with(suffix))
         {
-            input.remove_suffix(2);
+            input.remove_suffix(suffix.size());
 
             if (_history)
             {
@@ -1081,18 +1082,15 @@ void COOKED_READ_DATA::_popupHandleCommandNumberInput(Popup& popup, const wchar_
     _screenInfo.GetTextBuffer().Write(popup.contentRect.top, _screenInfo.GetPopupAttributes(), state);
 }
 
-bool COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t wch, const uint16_t vkey, const DWORD modifiers)
+void COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t wch, const uint16_t vkey, const DWORD modifiers)
 {
     auto& cl = popup.commandList;
 
     if (wch == UNICODE_CARRIAGERETURN)
     {
         _buffer.assign(_history->RetrieveNth(cl.selected));
-        _buffer.append(L"\r\n");
-        _bufferCursor = _buffer.size();
-        _markAsDirty();
         _popupDone();
-        return true;
+        return _handleChar(UNICODE_CARRIAGERETURN, modifiers);
     }
 
     switch (vkey)

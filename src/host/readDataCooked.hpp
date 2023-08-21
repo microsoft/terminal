@@ -19,8 +19,6 @@ public:
                      _In_ std::wstring_view initialData,
                      _In_ ConsoleProcessHandle* pClientProcess);
 
-    ~COOKED_READ_DATA() override;
-
     void MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer) noexcept override;
 
     bool Notify(WaitTerminationReason TerminationReason,
@@ -108,6 +106,7 @@ private:
     static size_t _wordPrev(const std::wstring_view& chars, size_t position);
     static size_t _wordNext(const std::wstring_view& chars, size_t position);
 
+    const std::wstring_view& _newlineSuffix() const noexcept;
     bool _readCharInputLoop();
     bool _handleChar(wchar_t wch, DWORD modifiers);
     void _handleVkey(uint16_t vkey, DWORD modifiers);
