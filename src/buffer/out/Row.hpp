@@ -157,8 +157,8 @@ public:
     DbcsAttribute DbcsAttrAt(til::CoordType column) const noexcept;
     std::wstring_view GetText() const noexcept;
     std::wstring_view GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept;
-    til::CoordType GetLeftAlignedColumnAtChar(ptrdiff_t offset) const noexcept;
-    til::CoordType GetRightAlignedColumnAtChar(ptrdiff_t offset) const noexcept;
+    til::CoordType GetLeadingColumnAtCharOffset(ptrdiff_t offset) const noexcept;
+    til::CoordType GetTrailingColumnAtCharOffset(ptrdiff_t offset) const noexcept;
     DelimiterClass DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept;
 
     auto AttrBegin() const noexcept { return _attr.begin(); }

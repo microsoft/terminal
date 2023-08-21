@@ -90,6 +90,8 @@ CharToColumnMapper::CharToColumnMapper(const wchar_t* chars, const uint16_t* cha
 {
 }
 
+// If given a position (`offset`) inside the ROW's text, this function will return the corresponding column.
+// This function in particular returns the glyph's first column.
 til::CoordType CharToColumnMapper::GetLeadingColumnAt(ptrdiff_t offset) noexcept
 {
     offset = offset < 0 ? 0 : (offset > _lastCharOffset ? _lastCharOffset : offset);
@@ -137,6 +139,8 @@ til::CoordType CharToColumnMapper::GetLeadingColumnAt(ptrdiff_t offset) noexcept
     return col;
 }
 
+// If given a position (`offset`) inside the ROW's text, this function will return the corresponding column.
+// This function in particular returns the glyph's last column (this matters for wide glyphs).
 til::CoordType CharToColumnMapper::GetTrailingColumnAt(ptrdiff_t offset) noexcept
 {
     auto col = GetLeadingColumnAt(offset);
@@ -1027,13 +1031,13 @@ std::wstring_view ROW::GetText(til::CoordType columnBegin, til::CoordType column
     return { _chars.data() + chBeg, chEnd - chBeg };
 }
 
-til::CoordType ROW::GetLeftAlignedColumnAtChar(const ptrdiff_t offset) const noexcept
+til::CoordType ROW::GetLeadingColumnAtCharOffset(const ptrdiff_t offset) const noexcept
 {
     auto mapper = _createCharToColumnMapper(offset);
     return mapper.GetLeadingColumnAt(offset);
 }
 
-til::CoordType ROW::GetRightAlignedColumnAtChar(const ptrdiff_t offset) const noexcept
+til::CoordType ROW::GetTrailingColumnAtCharOffset(const ptrdiff_t offset) const noexcept
 {
     auto mapper = _createCharToColumnMapper(offset);
     return mapper.GetTrailingColumnAt(offset);
