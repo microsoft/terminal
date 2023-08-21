@@ -1542,7 +1542,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
     {
         auto lock = _terminal->LockForWriting();
-        _terminal->SetBlockSelection(false);
 
         if (_searcher.IsStale() || _searcherText != text || _searcherGoForward != goForward || _searcherCaseSensitive != caseSensitive)
         {
@@ -1558,6 +1557,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // this is used for search,
             // DO NOT call _updateSelectionUI() here.
             // We don't want to show the markers so manually tell it to clear it.
+            _terminal->SetBlockSelection(false);
             _renderer->TriggerSelection();
             _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
         }

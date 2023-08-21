@@ -10,7 +10,7 @@
 #include "textBuffer.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 
-// It would be nice to add checked array access in the future, but it's a little annoying to do so without imparting
+// It would be nice to add checked array access in the future, but it's a little annoying to do so without impacting
 // performance (including Debug performance). Other languages are a little bit more ergonomic there than C++.
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).)
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
