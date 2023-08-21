@@ -1440,6 +1440,7 @@ prc
 prealigned
 prect
 prefast
+preflighting
 prefs
 prepopulated
 presorted
@@ -1953,6 +1954,7 @@ UAX
 UBool
 ucd
 uch
+UChars
 udk
 UDM
 uer
