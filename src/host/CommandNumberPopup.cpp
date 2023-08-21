@@ -29,25 +29,16 @@ CommandNumberPopup::CommandNumberPopup(SCREEN_INFORMATION& screenInfo) :
 // - wch - digit to handle
 void CommandNumberPopup::_handleNumber(COOKED_READ_DATA& cookedReadData, const wchar_t wch) noexcept
 {
-    if (_userInput.size() < COMMAND_NUMBER_LENGTH)
-    {
-        auto CharsToWrite = sizeof(wchar_t);
-        const auto realAttributes = cookedReadData.ScreenInfo().GetAttributes();
+    if (_userInput.size() < COMMAND_NUMBER_LENGTH) {
+        const auto numCharsToWrite = sizeof(wchar_t);
+        const auto realAttributes = cookedReadData.ScreenInfo().GetAttribute();
         cookedReadData.ScreenInfo().SetAttributes(_attributes);
-        size_t NumSpaces;
-        FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                                      _userInput.data(),
-                                                      _userInput.data() + _userInput.size(),
-                                                      &wch,
-                                                      &CharsToWrite,
-                                                      &NumSpaces,
-                                                      cookedReadData.OriginalCursorPosition().x,
-                                                      WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
-                                                      nullptr));
+        size_t numSpaces;
+        FAIL_FAST_IF_NTSTATUS_FAILED(
+            WriteCharsLegacy(cookedReadData.ScreenInfo(), _userInput.data(), _userInput.data() + _userInput.size(), &wch, &numCharsToWrite, &numSpaces, cookedReadData.OriginalCursorPosition().x, WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE, nullptr));
         cookedReadData.ScreenInfo().SetAttributes(realAttributes);
-        try
-        {
-            _push(wch);
+        try {
+            _push(wch, realAttributes);
         }
         CATCH_LOG();
     }
