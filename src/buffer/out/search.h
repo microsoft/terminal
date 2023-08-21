@@ -39,8 +39,4 @@ private:
     ptrdiff_t _index = 0;
     ptrdiff_t _step = 0;
     uint64_t _mutationCount = 0;
-
-#ifdef UNIT_TESTING
-    friend class SearchTests;
-#endif
 };
