@@ -111,7 +111,6 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     if (_mainBuffer)
     {
         // Clear the patterns first
-        _mainBuffer->ClearPatternRecognizers();
         _detectURLs = settings.DetectURLs();
         _updateUrlDetection();
     }
@@ -1337,9 +1336,6 @@ void Terminal::_updateUrlDetection()
 {
     if (_detectURLs)
     {
-        // Add regex pattern recognizers to the buffer
-        // For now, we only add the URI regex pattern
-        _hyperlinkPatternId = _activeBuffer().AddPatternRecognizer(linkPattern);
         UpdatePatternsUnderLock();
     }
     else
@@ -1483,12 +1479,8 @@ void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Termi
 
                 if (!text.empty())
                 {
-                    Search search(*this, text, Search::Direction::Forward, Search::Sensitivity::CaseInsensitive, { 0, 0 });
-
-                    while (search.FindNext())
-                    {
-                        search.Color(attr);
-                    }
+                    const Search search(*this, text, false, true);
+                    search.ColorAll(attr);
                 }
             }
         }

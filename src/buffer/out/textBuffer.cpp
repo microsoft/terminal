@@ -8,15 +8,42 @@
 #include <til/hash.h>
 #include <til/unicode.h>
 
-#include "../renderer/base/renderer.hpp"
-#include "../types/inc/utils.hpp"
-#include "../types/inc/convert.hpp"
+#include "UTextAdapter.h"
 #include "../../types/inc/GlyphWidth.hpp"
+#include "../renderer/base/renderer.hpp"
+#include "../types/inc/convert.hpp"
+#include "../types/inc/utils.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
 
 using PointTree = interval_tree::IntervalTree<til::point, size_t>;
+using unique_URegularExpression = wistd::unique_ptr<URegularExpression, wil::function_deleter<decltype(&uregex_close), &uregex_close>>;
+
+constexpr bool allWhitespace(const std::wstring_view& text) noexcept
+{
+    for (const auto ch : text)
+    {
+        if (ch != L' ')
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+static URegularExpression* createURegularExpression(const std::wstring_view& pattern, uint32_t flags, UErrorCode* error) noexcept
+{
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+    const auto re = uregex_open(reinterpret_cast<const char16_t*>(pattern.data()), gsl::narrow_cast<int32_t>(pattern.size()), flags, nullptr, error);
+    // ICU describes the time unit as being dependent on CPU performance and "typically [in] the order of milliseconds",
+    // but this claim seems highly outdated already. On my CPU from 2021, a limit of 4096 equals roughly 600ms.
+    uregex_setTimeLimit(re, 4096, error);
+    uregex_setStackLimit(re, 4 * 1024 * 1024, error);
+    return re;
+}
+
+static std::atomic<uint64_t> s_mutationCountInitialValue;
 
 // Routine Description:
 // - Creates a new instance of TextBuffer
@@ -36,6 +63,9 @@ TextBuffer::TextBuffer(til::size screenBufferSize,
                        Microsoft::Console::Render::Renderer& renderer) :
     _renderer{ renderer },
     _currentAttributes{ defaultAttributes },
+    // This way every TextBuffer will start with a ""unique"" _mutationCount
+    // and so it'll compare unequal with the counter of other TextBuffers.
+    _mutationCount{ s_mutationCountInitialValue.fetch_add(0x100000000) },
     _cursor{ cursorSize, *this },
     _isActiveBuffer{ isActiveBuffer }
 {
@@ -50,6 +80,10 @@ TextBuffer::~TextBuffer()
     if (_buffer)
     {
         _destroy();
+    }
+    if (_urlRegex)
+    {
+        uregex_close(_urlRegex);
     }
 }
 
@@ -166,6 +200,23 @@ ROW& TextBuffer::_getRowByOffsetDirect(size_t offset)
     return *reinterpret_cast<ROW*>(row);
 }
 
+ROW& TextBuffer::_getRow(til::CoordType y) const
+{
+    // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
+    auto offset = (_firstRow + y) % _height;
+
+    // Support negative wrap around. This way an index of -1 will
+    // wrap to _rowCount-1 and make implementing scrolling easier.
+    if (offset < 0)
+    {
+        offset += _height;
+    }
+
+    // We add 1 to the row offset, because row "0" is the one returned by GetScratchpadRow().
+#pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
+    return const_cast<TextBuffer*>(this)->_getRowByOffsetDirect(gsl::narrow_cast<size_t>(offset) + 1);
+}
+
 // Returns the "user-visible" index of the last committed row, which can be used
 // to short-circuit some algorithms that try to scan the entire buffer.
 // Returns 0 if no rows are committed in.
@@ -183,27 +234,15 @@ til::CoordType TextBuffer::_estimateOffsetOfLastCommittedRow() const noexcept
 // (what corresponds to the top row of the screen buffer).
 const ROW& TextBuffer::GetRowByOffset(const til::CoordType index) const
 {
-    // The const_cast is safe because "const" never had any meaning in C++ in the first place.
-#pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
-    return const_cast<TextBuffer*>(this)->GetRowByOffset(index);
+    return _getRow(index);
 }
 
 // Retrieves a row from the buffer by its offset from the first row of the text buffer
 // (what corresponds to the top row of the screen buffer).
-ROW& TextBuffer::GetRowByOffset(const til::CoordType index)
+ROW& TextBuffer::GetMutableRowByOffset(const til::CoordType index)
 {
-    // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
-    auto offset = (_firstRow + index) % _height;
-
-    // Support negative wrap around. This way an index of -1 will
-    // wrap to _rowCount-1 and make implementing scrolling easier.
-    if (offset < 0)
-    {
-        offset += _height;
-    }
-
-    // We add 1 to the row offset, because row "0" is the one returned by GetScratchpadRow().
-    return _getRowByOffsetDirect(gsl::narrow_cast<size_t>(offset) + 1);
+    _mutationCount++;
+    return _getRow(index);
 }
 
 // Returns a row filled with whitespace and the current attributes, for you to freely use.
@@ -346,91 +385,6 @@ TextBufferCellIterator TextBuffer::GetCellDataAt(const til::point at, const View
 }
 
 //Routine Description:
-// - Corrects and enforces consistent double byte character state (KAttrs line) within a row of the text buffer.
-// - This will take the given double byte information and check that it will be consistent when inserted into the buffer
-//   at the current cursor position.
-// - It will correct the buffer (by erasing the character prior to the cursor) if necessary to make a consistent state.
-//Arguments:
-// - dbcsAttribute - Double byte information associated with the character about to be inserted into the buffer
-//Return Value:
-// - True if it is valid to insert a character with the given double byte attributes. False otherwise.
-bool TextBuffer::_AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute)
-{
-    // To figure out if the sequence is valid, we have to look at the character that comes before the current one
-    const auto coordPrevPosition = _GetPreviousFromCursor();
-    auto& prevRow = GetRowByOffset(coordPrevPosition.y);
-    DbcsAttribute prevDbcsAttr = DbcsAttribute::Single;
-    try
-    {
-        prevDbcsAttr = prevRow.DbcsAttrAt(coordPrevPosition.x);
-    }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-        return false;
-    }
-
-    auto fValidSequence = true; // Valid until proven otherwise
-    auto fCorrectableByErase = false; // Can't be corrected until proven otherwise
-
-    // Here's the matrix of valid items:
-    // N = None (single byte)
-    // L = Lead (leading byte of double byte sequence
-    // T = Trail (trailing byte of double byte sequence
-    // Prev Curr    Result
-    // N    N       OK.
-    // N    L       OK.
-    // N    T       Fail, uncorrectable. Trailing byte must have had leading before it.
-    // L    N       Fail, OK with erase. Lead needs trailing pair. Can erase lead to correct.
-    // L    L       Fail, OK with erase. Lead needs trailing pair. Can erase prev lead to correct.
-    // L    T       OK.
-    // T    N       OK.
-    // T    L       OK.
-    // T    T       Fail, uncorrectable. New trailing byte must have had leading before it.
-
-    // Check for only failing portions of the matrix:
-    if (prevDbcsAttr == DbcsAttribute::Single && dbcsAttribute == DbcsAttribute::Trailing)
-    {
-        // N, T failing case (uncorrectable)
-        fValidSequence = false;
-    }
-    else if (prevDbcsAttr == DbcsAttribute::Leading)
-    {
-        if (dbcsAttribute == DbcsAttribute::Single || dbcsAttribute == DbcsAttribute::Leading)
-        {
-            // L, N and L, L failing cases (correctable)
-            fValidSequence = false;
-            fCorrectableByErase = true;
-        }
-    }
-    else if (prevDbcsAttr == DbcsAttribute::Trailing && dbcsAttribute == DbcsAttribute::Trailing)
-    {
-        // T, T failing case (uncorrectable)
-        fValidSequence = false;
-    }
-
-    // If it's correctable by erase, erase the previous character
-    if (fCorrectableByErase)
-    {
-        // Erase previous character into an N type.
-        try
-        {
-            prevRow.ClearCell(coordPrevPosition.x);
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
-            return false;
-        }
-
-        // Sequence is now N N or N L, which are both okay. Set sequence back to valid.
-        fValidSequence = true;
-    }
-
-    return fValidSequence;
-}
-
-//Routine Description:
 // - Call before inserting a character into the buffer.
 // - This will ensure a consistent double byte state (KAttrs line) within the text buffer
 // - It will attempt to correct the buffer if we're inserting an unexpected double byte character type
@@ -453,7 +407,7 @@ void TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
         if (cursorPosition.x == lineWidth - 1)
         {
             // set that we're wrapping for double byte reasons
-            auto& row = GetRowByOffset(cursorPosition.y);
+            auto& row = GetMutableRowByOffset(cursorPosition.y);
             row.SetDoubleBytePadded(true);
 
             // then move the cursor forward and onto the next row
@@ -482,7 +436,7 @@ size_t TextBuffer::GraphemePrev(const std::wstring_view& chars, size_t position)
 // You can continue calling the function on the same row as long as state.columnEnd < state.columnLimit.
 void TextBuffer::Write(til::CoordType row, const TextAttribute& attributes, RowWriteState& state)
 {
-    auto& r = GetRowByOffset(row);
+    auto& r = GetMutableRowByOffset(row);
     r.ReplaceText(state);
     r.ReplaceAttributes(state.columnBegin, state.columnEnd, attributes);
     TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, state.columnEndDirty, row + 1 }));
@@ -535,7 +489,7 @@ void TextBuffer::FillRect(const til::rect& rect, const std::wstring_view& fill, 
 
         for (auto y = rect.top; y < rect.bottom; ++y)
         {
-            auto& r = GetRowByOffset(y);
+            auto& r = GetMutableRowByOffset(y);
             r.CopyTextFrom(state);
             r.ReplaceAttributes(rect.left, rect.right, attributes);
             TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, y, state.columnEndDirty, y + 1 }));
@@ -616,7 +570,7 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
     }
 
     //  Get the row and write the cells
-    auto& row = GetRowByOffset(target.y);
+    auto& row = GetMutableRowByOffset(target.y);
     const auto newIt = row.WriteCells(givenIt, target.x, wrap, limitRight);
 
     // Take the cell distance written and notify that it needs to be repainted.
@@ -648,7 +602,7 @@ void TextBuffer::InsertCharacter(const std::wstring_view chars,
     const auto iCol = GetCursor().GetPosition().x; // column logical and array positions are equal.
 
     // Get the row associated with the given logical position
-    auto& Row = GetRowByOffset(iRow);
+    auto& Row = GetMutableRowByOffset(iRow);
 
     // Store character and double byte data
     switch (dbcsAttribute)
@@ -708,7 +662,7 @@ void TextBuffer::_AdjustWrapOnCurrentRow(const bool fSet)
     const auto uiCurrentRowOffset = GetCursor().GetPosition().y;
 
     // Set the wrap status as appropriate
-    GetRowByOffset(uiCurrentRowOffset).SetWrapForced(fSet);
+    GetMutableRowByOffset(uiCurrentRowOffset).SetWrapForced(fSet);
 }
 
 //Routine Description:
@@ -784,7 +738,7 @@ void TextBuffer::IncrementCircularBuffer(const TextAttribute& fillAttributes)
     _PruneHyperlinks();
 
     // Second, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
-    GetRowByOffset(0).Reset(fillAttributes);
+    GetMutableRowByOffset(0).Reset(fillAttributes);
     {
         // Now proceed to increment.
         // Incrementing it will cause the next line down to become the new "top" of the window (the new "0" in logical coordinates)
@@ -955,7 +909,7 @@ void TextBuffer::ScrollRows(const til::CoordType firstRow, til::CoordType size, 
 
     for (; y != end; y += step)
     {
-        GetRowByOffset(y + delta).CopyFrom(GetRowByOffset(y));
+        GetMutableRowByOffset(y + delta).CopyFrom(GetRowByOffset(y));
     }
 }
 
@@ -967,6 +921,11 @@ Cursor& TextBuffer::GetCursor() noexcept
 const Cursor& TextBuffer::GetCursor() const noexcept
 {
     return _cursor;
+}
+
+uint64_t TextBuffer::GetMutationCount() const noexcept
+{
+    return _mutationCount;
 }
 
 const TextAttribute& TextBuffer::GetCurrentAttributes() const noexcept
@@ -981,14 +940,14 @@ void TextBuffer::SetCurrentAttributes(const TextAttribute& currentAttributes) no
 
 void TextBuffer::SetWrapForced(const til::CoordType y, bool wrap)
 {
-    GetRowByOffset(y).SetWrapForced(wrap);
+    GetMutableRowByOffset(y).SetWrapForced(wrap);
 }
 
 void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition, const TextAttribute& fillAttributes)
 {
     const auto cursorPosition = GetCursor().GetPosition();
     const auto rowIndex = cursorPosition.y;
-    auto& row = GetRowByOffset(rowIndex);
+    auto& row = GetMutableRowByOffset(rowIndex);
     if (row.GetLineRendition() != lineRendition)
     {
         row.SetLineRendition(lineRendition);
@@ -1013,7 +972,7 @@ void TextBuffer::ResetLineRenditionRange(const til::CoordType startRow, const ti
 {
     for (auto row = startRow; row < endRow; row++)
     {
-        GetRowByOffset(row).SetLineRendition(LineRendition::SingleWidth);
+        GetMutableRowByOffset(row).SetLineRendition(LineRendition::SingleWidth);
     }
 }
 
@@ -1090,7 +1049,7 @@ void TextBuffer::Reset() noexcept
 
         for (; dstRow < copyableRows; ++dstRow, ++srcRow)
         {
-            newBuffer.GetRowByOffset(dstRow).CopyFrom(GetRowByOffset(srcRow));
+            newBuffer.GetMutableRowByOffset(dstRow).CopyFrom(GetRowByOffset(srcRow));
         }
 
         // NOTE: Keep this in sync with _reserve().
@@ -2446,7 +2405,7 @@ try
         const auto newBufferPos = newCursor.GetPosition();
         if (newBufferPos.x == 0)
         {
-            auto& newRow = newBuffer.GetRowByOffset(newBufferPos.y);
+            auto& newRow = newBuffer.GetMutableRowByOffset(newBufferPos.y);
             newRow.SetLineRendition(row.GetLineRendition());
         }
 
@@ -2516,7 +2475,7 @@ try
         //     copy attributes from the old row till the end of the new row, and
         //     move on.
         const auto newRowY = newCursor.GetPosition().y;
-        auto& newRow = newBuffer.GetRowByOffset(newRowY);
+        auto& newRow = newBuffer.GetMutableRowByOffset(newRowY);
         auto newAttrColumn = newCursor.GetPosition().x;
         const auto newWidth = newBuffer.GetLineWidth(newRowY);
         // Stop when we get to the end of the buffer width, or the new position
@@ -2631,7 +2590,7 @@ try
         // into the new one, and resize the row to match. We'll rely on the
         // behavior of ATTR_ROW::Resize to trim down when narrower, or extend
         // the last attr when wider.
-        auto& newRow = newBuffer.GetRowByOffset(newRowY);
+        auto& newRow = newBuffer.GetMutableRowByOffset(newRowY);
         const auto newWidth = newBuffer.GetLineWidth(newRowY);
         newRow.TransferAttributes(row.Attributes(), newWidth);
 
@@ -2641,7 +2600,6 @@ try
     // Finish copying remaining parameters from the old text buffer to the new one
     newBuffer.CopyProperties(oldBuffer);
     newBuffer.CopyHyperlinkMaps(oldBuffer);
-    newBuffer.CopyPatterns(oldBuffer);
 
     // If we found where to put the cursor while placing characters into the buffer,
     //   just put the cursor there. Otherwise we have to advance manually.
@@ -2804,103 +2762,87 @@ void TextBuffer::CopyHyperlinkMaps(const TextBuffer& other)
 }
 
 // Method Description:
-// - Adds a regex pattern we should search for
-// - The searching does not happen here, we only search when asked to by TerminalCore
-// Arguments:
-// - The regex pattern
-// Return value:
-// - An ID that the caller should associate with the given pattern
-const size_t TextBuffer::AddPatternRecognizer(const std::wstring_view regexString)
-{
-    ++_currentPatternId;
-    _idsAndPatterns.emplace(std::make_pair(_currentPatternId, regexString));
-    return _currentPatternId;
-}
-
-// Method Description:
-// - Clears the patterns we know of and resets the pattern ID counter
-void TextBuffer::ClearPatternRecognizers() noexcept
-{
-    _idsAndPatterns.clear();
-    _currentPatternId = 0;
-}
-
-// Method Description:
-// - Copies the patterns the other buffer knows about into this one
-// Arguments:
-// - The other buffer
-void TextBuffer::CopyPatterns(const TextBuffer& OtherBuffer)
-{
-    _idsAndPatterns = OtherBuffer._idsAndPatterns;
-    _currentPatternId = OtherBuffer._currentPatternId;
-}
-
-// Method Description:
 // - Finds patterns within the requested region of the text buffer
 // Arguments:
 // - The firstRow to start searching from
 // - The lastRow to search
 // Return value:
 // - An interval tree containing the patterns found
-PointTree TextBuffer::GetPatterns(const til::CoordType firstRow, const til::CoordType lastRow) const
+PointTree TextBuffer::GetPatterns(const til::CoordType firstRow, const til::CoordType lastRow)
 {
     PointTree::interval_vector intervals;
 
-    std::wstring concatAll;
-    const auto rowSize = GetRowByOffset(0).size();
-    concatAll.reserve(gsl::narrow_cast<size_t>(rowSize) * gsl::narrow_cast<size_t>(lastRow - firstRow + 1));
+    UErrorCode status = U_ZERO_ERROR;
+#pragma warning(suppress : 26477) // Use 'nullptr' rather than 0 or NULL (es.47).
+    UText text = UTEXT_INITIALIZER;
+    UTextFromTextBuffer(&text, *this, firstRow, lastRow + 1, &status);
 
-    // to deal with text that spans multiple lines, we will first concatenate
-    // all the text into one string and find the patterns in that string
-    for (til::CoordType i = firstRow; i <= lastRow; ++i)
+    if (!_urlRegex)
     {
-        auto& row = GetRowByOffset(i);
-        concatAll += row.GetText();
+        static constexpr std::wstring_view linkPattern{ LR"(\b(?:https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
+        _urlRegex = createURegularExpression(linkPattern, 0, &status);
+        assert(_urlRegex);
     }
 
-    // for each pattern we know of, iterate through the string
-    for (const auto& idAndPattern : _idsAndPatterns)
+    uregex_setUText(_urlRegex, &text, &status);
+
+    if (uregex_find(_urlRegex, -1, &status))
     {
-        std::wregex regexObj{ idAndPattern.second };
-
-        // search through the run with our regex object
-        auto words_begin = std::wsregex_iterator(concatAll.begin(), concatAll.end(), regexObj);
-        auto words_end = std::wsregex_iterator();
-
-        til::CoordType lenUpToThis = 0;
-        for (auto i = words_begin; i != words_end; ++i)
+        do
         {
-            // record the locations -
-            // when we find a match, the prefix is text that is between this
-            // match and the previous match, so we use the size of the prefix
-            // along with the size of the match to determine the locations
-            til::CoordType prefixSize = 0;
-            for (const auto str = i->prefix().str(); const auto& glyph : til::utf16_iterator{ str })
-            {
-                prefixSize += IsGlyphFullWidth(glyph) ? 2 : 1;
-            }
-            const auto start = lenUpToThis + prefixSize;
-            til::CoordType matchSize = 0;
-            for (const auto str = i->str(); const auto& glyph : til::utf16_iterator{ str })
-            {
-                matchSize += IsGlyphFullWidth(glyph) ? 2 : 1;
-            }
-            const auto end = start + matchSize;
-            lenUpToThis = end;
-
-            const til::point startCoord{ start % rowSize, start / rowSize };
-            const til::point endCoord{ end % rowSize, end / rowSize };
-
-            // store the intervals
-            // NOTE: these intervals are relative to the VIEWPORT not the buffer
-            // Keeping these relative to the viewport for now because its the renderer
-            // that actually uses these locations and the renderer works relative to
-            // the viewport
-            intervals.push_back(PointTree::interval(startCoord, endCoord, idAndPattern.first));
-        }
+            const auto nativeIndexBeg = uregex_start64(_urlRegex, 0, &status);
+            const auto nativeIndexEnd = uregex_end64(_urlRegex, 0, &status);
+            const auto range = BufferRangeFromUText(&text, nativeIndexBeg, nativeIndexEnd);
+            intervals.push_back(PointTree::interval(range.start, range.end, 0));
+        } while (uregex_findNext(_urlRegex, &status));
     }
-    PointTree result(std::move(intervals));
-    return result;
+
+    return PointTree{ std::move(intervals) };
+}
+
+// Searches through the entire (committed) text buffer for `needle` and returns the coordinates in absolute coordinates.
+// The end coordinates of the returned ranges are considered inclusive.
+std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& needle, bool caseInsensitive) const
+{
+    return SearchText(needle, caseInsensitive, 0, til::CoordTypeMax);
+}
+
+// Searches through the given rows [rowBeg,rowEnd) for `needle` and returns the coordinates in absolute coordinates.
+// While the end coordinates of the returned ranges are considered inclusive, the [rowBeg,rowEnd) range is half-open.
+std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& needle, bool caseInsensitive, til::CoordType rowBeg, til::CoordType rowEnd) const
+{
+    rowEnd = std::min(rowEnd, _estimateOffsetOfLastCommittedRow() + 1);
+
+    std::vector<til::point_span> results;
+
+    // All whitespace strings would match the not-yet-written parts of the TextBuffer which would be weird.
+    if (allWhitespace(needle) || rowBeg >= rowEnd)
+    {
+        return results;
+    }
+
+    uint32_t flags = UREGEX_LITERAL;
+    WI_SetFlagIf(flags, UREGEX_CASE_INSENSITIVE, caseInsensitive);
+
+    UErrorCode status = U_ZERO_ERROR;
+#pragma warning(suppress : 26477) // Use 'nullptr' rather than 0 or NULL (es.47).
+    UText text = UTEXT_INITIALIZER;
+    UTextFromTextBuffer(&text, *this, rowBeg, rowEnd, &status);
+
+    const unique_URegularExpression re{ createURegularExpression(needle, flags, &status) };
+    uregex_setUText(re.get(), &text, &status);
+
+    if (uregex_find(re.get(), -1, &status))
+    {
+        do
+        {
+            const auto nativeIndexBeg = uregex_start64(re.get(), 0, &status);
+            const auto nativeIndexEnd = uregex_end64(re.get(), 0, &status);
+            results.emplace_back(BufferRangeFromUText(&text, nativeIndexBeg, nativeIndexEnd));
+        } while (uregex_findNext(re.get(), &status));
+    }
+
+    return results;
 }
 
 const std::vector<ScrollMark>& TextBuffer::GetMarks() const noexcept

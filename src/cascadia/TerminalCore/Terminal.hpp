@@ -17,7 +17,6 @@
 
 #include <til/ticket_lock.h>
 
-inline constexpr std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
 inline constexpr size_t TaskbarMinProgress{ 10 };
 
 // You have to forward decl the ICoreSettings here, instead of including the header.

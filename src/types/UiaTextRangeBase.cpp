@@ -450,7 +450,7 @@ try
         // Technically, we'll truncate early if there's an embedded null in the BSTR.
         // But we're probably fine in this circumstance.
 
-        const std::wstring queryFontName{ val.bstrVal };
+        const std::wstring_view queryFontName{ val.bstrVal, SysStringLen(val.bstrVal) };
         if (queryFontName == _pData->GetFontInfo().GetFaceName())
         {
             Clone(ppRetVal);
@@ -608,45 +608,55 @@ try
     });
     RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
-    const std::wstring queryText{ text, SysStringLen(text) };
-    const auto bufferSize = _getOptimizedBufferSize();
-    const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
+    const std::wstring_view queryText{ text, SysStringLen(text) };
+    const auto results = _pData->GetTextBuffer().SearchText(queryText, ignoreCase != FALSE, _start.y, _end.y + 1);
+    if (results.empty())
+    {
+        return S_OK;
+    }
 
-    auto searchDirection = Search::Direction::Forward;
-    auto searchAnchor = _start;
+    const auto highestIndex = results.size() - 1;
+    const til::point_span* hit = nullptr;
+
     if (searchBackward)
     {
-        searchDirection = Search::Direction::Backward;
-
-        // we need to convert the end to inclusive
-        // because Search operates with an inclusive til::point
-        searchAnchor = _end;
-        bufferSize.DecrementInBounds(searchAnchor, true);
-    }
-
-    Search searcher{ *_pData, queryText, searchDirection, sensitivity, searchAnchor };
-
-    if (searcher.FindNext())
-    {
-        const auto foundLocation = searcher.GetFoundLocation();
-        const auto start = foundLocation.first;
-
-        // we need to increment the position of end because it's exclusive
-        auto end = foundLocation.second;
-        bufferSize.IncrementInBounds(end, true);
-
-        // make sure what was found is within the bounds of the current range
-        if ((searchDirection == Search::Direction::Forward && end < _end) ||
-            (searchDirection == Search::Direction::Backward && start > _start))
+        for (size_t i = highestIndex;; --i)
         {
-            RETURN_IF_FAILED(Clone(ppRetVal));
-            auto& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
-            range._start = start;
-            range._end = end;
+            hit = &til::at(results, i);
+            if (hit->start < _end)
+            {
+                break;
+            }
 
-            UiaTracing::TextRange::FindText(*this, queryText, searchBackward, ignoreCase, range);
+            if (i <= 0)
+            {
+                return S_OK;
+            }
         }
     }
+    else
+    {
+        for (size_t i = 0;; ++i)
+        {
+            hit = &til::at(results, i);
+            if (hit->start >= _start)
+            {
+                break;
+            }
+
+            if (i >= highestIndex)
+            {
+                return S_OK;
+            }
+        }
+    }
+
+    RETURN_IF_FAILED(Clone(ppRetVal));
+    auto& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
+    range._start = hit->start;
+    range._end = hit->end;
+
+    UiaTracing::TextRange::FindText(*this, queryText, searchBackward, ignoreCase, range);
     return S_OK;
 }
 CATCH_RETURN();
