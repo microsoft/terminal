@@ -52,7 +52,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                                          const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
                                                                          uint32_t rows,
                                                                          uint32_t columns,
-                                                                         const winrt::guid& guid);
+                                                                         const winrt::guid& guid,
+                                                                         const winrt::guid& profileGuid);
 
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
@@ -89,7 +90,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::wstring _u16Str{};
         std::array<char, 4096> _buffer{};
         bool _passthroughMode{};
+        bool _inheritCursor{ false };
         bool _reloadEnvironmentVariables{};
+        guid _profileGuid{};
 
         struct StartupInfoFromDefTerm
         {

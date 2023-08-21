@@ -52,7 +52,6 @@ namespace Microsoft.Terminal.Control
 
         String Commandline { get; };
         String StartingDirectory { get; };
-        String EnvironmentVariables { get; };
 
         TextAntialiasingMode AntialiasingMode { get; };
 
@@ -62,5 +61,6 @@ namespace Microsoft.Terminal.Control
         Boolean ShowMarks { get; };
         Boolean UseBackgroundImageForWindow { get; };
         Boolean RightClickContextMenu { get; };
+        Boolean RepositionCursorWithMouse { get; };
     };
 }

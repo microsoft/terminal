@@ -1102,7 +1102,7 @@ namespace TerminalAppLocalTests
             // If you don't do this, the palette will just stay open, and the
             // next time we call _HandleNextTab, we'll continue traversing the
             // MRU list, instead of just hoping one entry.
-            page->CommandPalette().Visibility(Visibility::Collapsed);
+            page->LoadCommandPalette().Visibility(Visibility::Collapsed);
         });
 
         TestOnUIThread([&page]() {
@@ -1123,7 +1123,7 @@ namespace TerminalAppLocalTests
             // If you don't do this, the palette will just stay open, and the
             // next time we call _HandleNextTab, we'll continue traversing the
             // MRU list, instead of just hoping one entry.
-            page->CommandPalette().Visibility(Visibility::Collapsed);
+            page->LoadCommandPalette().Visibility(Visibility::Collapsed);
         });
 
         TestOnUIThread([&page]() {
@@ -1239,7 +1239,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
         });
 
-        const auto palette = winrt::get_self<winrt::TerminalApp::implementation::CommandPalette>(page->CommandPalette());
+        const auto palette = winrt::get_self<winrt::TerminalApp::implementation::CommandPalette>(page->LoadCommandPalette());
 
         VERIFY_ARE_EQUAL(winrt::TerminalApp::implementation::CommandPaletteMode::TabSwitchMode, palette->_currentMode, L"Verify we are in the tab switcher mode");
         // At this point, the contents of the command palette's _mruTabs list is

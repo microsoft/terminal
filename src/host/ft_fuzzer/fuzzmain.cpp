@@ -142,7 +142,7 @@ extern "C" __declspec(dllexport) int LLVMFuzzerTestOneInput(const uint8_t* data,
                            &sizeInBytes,
                            nullptr,
                            0,
-                           WC_PRINTABLE_CONTROL_CHARS | WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE,
+                           WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                            &scrollY);
     return 0;
 }

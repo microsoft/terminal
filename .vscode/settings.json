@@ -103,7 +103,9 @@
     "files.exclude": {
         "**/bin/**": true,
         "**/obj/**": true,
-        "**/packages/**": true,
         "**/Generated Files/**": true
+    },
+    "search.exclude": {
+        "**/packages/**": true
     }
 }

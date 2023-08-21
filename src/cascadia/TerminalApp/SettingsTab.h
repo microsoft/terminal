@@ -36,7 +36,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
 
         void _MakeTabViewItem() override;
-        winrt::fire_and_forget _CreateIcon();
+        void _CreateIcon();
 
         virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() override;
     };

@@ -6,8 +6,6 @@
 
 #include <VersionHelpers.h>
 
-#include "../base/FontCache.h"
-
 static constexpr float POINTS_PER_INCH = 72.0f;
 static constexpr std::wstring_view FALLBACK_LOCALE = L"en-us";
 static constexpr size_t TAG_LENGTH = 4;
@@ -15,12 +13,11 @@ static constexpr size_t TAG_LENGTH = 4;
 using namespace Microsoft::Console::Render;
 
 DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwriteFactory) :
-    _dwriteFactory(dwriteFactory),
-    _nearbyCollection{ FontCache::GetCached() },
-    _fontSize{},
-    _glyphCell{},
+    _dwriteFactory(std::move(dwriteFactory)),
+    _defaultFontInfo{ _dwriteFactory.Get() },
+    _lineSpacing{},
     _lineMetrics{},
-    _lineSpacing{}
+    _fontSize{}
 {
 }
 
@@ -164,7 +161,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
         fontInfo.SetStretch(stretch);
 
         auto fontLocaleName = UserLocaleName();
-        auto fontFace = fontInfo.ResolveFontFaceWithFallback(_nearbyCollection.get(), fontLocaleName);
+        auto fontFace = fontInfo.ResolveFontFaceWithFallback(fontLocaleName);
 
         _fontFaceMap.emplace(_ToMapKey(weight, style, stretch), fontFace);
         return fontFace;
@@ -193,10 +190,12 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
         _boxDrawingEffect.Reset();
 
         // Initialize the default font info and build everything from here.
-        _defaultFontInfo = DxFontInfo(desired.GetFaceName(),
-                                      desired.GetWeight(),
-                                      DWRITE_FONT_STYLE_NORMAL,
-                                      DWRITE_FONT_STRETCH_NORMAL);
+        _defaultFontInfo = DxFontInfo(
+            _dwriteFactory.Get(),
+            desired.GetFaceName(),
+            static_cast<DWRITE_FONT_WEIGHT>(desired.GetWeight()),
+            DWRITE_FONT_STYLE_NORMAL,
+            DWRITE_FONT_STRETCH_NORMAL);
 
         _SetFeatures(features);
         _SetAxes(axes);
@@ -711,7 +710,7 @@ void DxFontRenderData::_BuildFontRenderData(const FontInfoDesired& desired, Font
     // This is the first attempt to resolve font face after `UpdateFont`.
     // Note that the following line may cause property changes _inside_ `_defaultFontInfo` because the desired font may not exist.
     // See the implementation of `ResolveFontFaceWithFallback` for details.
-    const auto face = _defaultFontInfo.ResolveFontFaceWithFallback(_nearbyCollection.get(), fontLocaleName);
+    const auto face = _defaultFontInfo.ResolveFontFaceWithFallback(fontLocaleName);
 
     DWRITE_FONT_METRICS1 fontMetrics;
     face->GetMetrics(&fontMetrics);
@@ -898,7 +897,7 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
 {
     Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
     THROW_IF_FAILED(_dwriteFactory->CreateTextFormat(fontInfo.GetFamilyName().data(),
-                                                     _nearbyCollection.get(),
+                                                     fontInfo.GetFontCollection(),
                                                      fontInfo.GetWeight(),
                                                      fontInfo.GetStyle(),
                                                      fontInfo.GetStretch(),

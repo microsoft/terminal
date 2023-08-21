@@ -28,51 +28,6 @@
 using Microsoft::Console::Interactivity::ServiceLocator;
 
 // Routine Description:
-// - This routine validates a string buffer and returns the pointers of where the strings start within the buffer.
-// Arguments:
-// - Unicode - Supplies a boolean that is TRUE if the buffer contains Unicode strings, FALSE otherwise.
-// - Buffer - Supplies the buffer to be validated.
-// - Size - Supplies the size, in bytes, of the buffer to be validated.
-// - Count - Supplies the expected number of strings in the buffer.
-// ... - Supplies a pair of arguments per expected string. The first one is the expected size, in bytes, of the string
-//       and the second one receives a pointer to where the string starts.
-// Return Value:
-// - TRUE if the buffer is valid, FALSE otherwise.
-bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...)
-{
-    va_list Marker;
-    va_start(Marker, Count);
-
-    while (Count > 0)
-    {
-        const auto StringSize = va_arg(Marker, ULONG);
-        const auto StringStart = va_arg(Marker, PVOID*);
-
-        // Make sure the string fits in the supplied buffer and that it is properly aligned.
-        if (StringSize > Size)
-        {
-            break;
-        }
-
-        if (Unicode && (StringSize % sizeof(WCHAR)) != 0)
-        {
-            break;
-        }
-
-        *StringStart = Buffer;
-
-        // Go to the next string.
-        Buffer = RtlOffsetToPointer(Buffer, StringSize);
-        Size -= StringSize;
-        Count -= 1;
-    }
-
-    va_end(Marker);
-
-    return Count == 0;
-}
-
-// Routine Description:
 // - Detects Word delimiters
 bool IsWordDelim(const wchar_t wch)
 {
@@ -251,7 +206,7 @@ void RedrawCommandLine(COOKED_READ_DATA& cookedReadData)
                                        &cookedReadData.BytesRead(),
                                        &cookedReadData.VisibleCharCount(),
                                        cookedReadData.OriginalCursorPosition().x,
-                                       WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                       WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                        &ScrollY);
         FAIL_FAST_IF_NTSTATUS_FAILED(Status);
 
@@ -268,14 +223,13 @@ void RedrawCommandLine(COOKED_READ_DATA& cookedReadData)
         {
             CursorPosition.x++;
         }
-        Status = AdjustCursorPosition(cookedReadData.ScreenInfo(), CursorPosition, TRUE, nullptr);
-        FAIL_FAST_IF_NTSTATUS_FAILED(Status);
+        AdjustCursorPosition(cookedReadData.ScreenInfo(), CursorPosition, TRUE, nullptr);
     }
 }
 
 // Routine Description:
 // - This routine copies the commandline specified by Index into the cooked read buffer
-void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ SHORT Index) // index, not command number
+void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ CommandHistory::Index Index) // index, not command number
 {
     DeleteCommandLine(cookedReadData, TRUE);
     FAIL_FAST_IF_FAILED(cookedReadData.History().RetrieveNth(Index,
@@ -292,7 +246,7 @@ void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ SHORT Index) /
                                                       &cookedReadData.BytesRead(),
                                                       &cookedReadData.VisibleCharCount(),
                                                       cookedReadData.OriginalCursorPosition().x,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                      WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                       &ScrollY));
         cookedReadData.OriginalCursorPosition().y += ScrollY;
     }
@@ -456,7 +410,7 @@ void CommandLine::_processHistoryCycling(COOKED_READ_DATA& cookedReadData,
                                                       &cookedReadData.BytesRead(),
                                                       &cookedReadData.VisibleCharCount(),
                                                       cookedReadData.OriginalCursorPosition().x,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                      WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                       &ScrollY));
         cookedReadData.OriginalCursorPosition().y += ScrollY;
     }
@@ -491,7 +445,7 @@ void CommandLine::_setPromptToOldestCommand(COOKED_READ_DATA& cookedReadData)
                                                           &cookedReadData.BytesRead(),
                                                           &cookedReadData.VisibleCharCount(),
                                                           cookedReadData.OriginalCursorPosition().x,
-                                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                          WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                           &ScrollY));
             cookedReadData.OriginalCursorPosition().y += ScrollY;
         }
@@ -527,7 +481,7 @@ void CommandLine::_setPromptToNewestCommand(COOKED_READ_DATA& cookedReadData)
                                                           &cookedReadData.BytesRead(),
                                                           &cookedReadData.VisibleCharCount(),
                                                           cookedReadData.OriginalCursorPosition().x,
-                                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                          WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                           &ScrollY));
             cookedReadData.OriginalCursorPosition().y += ScrollY;
         }
@@ -554,7 +508,7 @@ void CommandLine::DeletePromptAfterCursor(COOKED_READ_DATA& cookedReadData) noex
                                                       &cookedReadData.BytesRead(),
                                                       &cookedReadData.VisibleCharCount(),
                                                       cookedReadData.OriginalCursorPosition().x,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                      WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                       nullptr));
     }
 }
@@ -581,7 +535,7 @@ til::point CommandLine::_deletePromptBeforeCursor(COOKED_READ_DATA& cookedReadDa
                                                       &cookedReadData.BytesRead(),
                                                       &cookedReadData.VisibleCharCount(),
                                                       cookedReadData.OriginalCursorPosition().x,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                      WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                       nullptr));
     }
     return cookedReadData.OriginalCursorPosition();
@@ -870,7 +824,7 @@ til::point CommandLine::_moveCursorRight(COOKED_READ_DATA& cookedReadData) noexc
                                                               &CharsToWrite,
                                                               &NumSpaces,
                                                               cookedReadData.OriginalCursorPosition().x,
-                                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                              WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                               &ScrollY));
                 cookedReadData.OriginalCursorPosition().y += ScrollY;
                 cookedReadData.VisibleCharCount() += NumSpaces;
@@ -913,7 +867,7 @@ void CommandLine::_insertCtrlZ(COOKED_READ_DATA& cookedReadData) noexcept
                                                       &CharsToWrite,
                                                       &NumSpaces,
                                                       cookedReadData.OriginalCursorPosition().x,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                      WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                       &ScrollY));
         cookedReadData.OriginalCursorPosition().y += ScrollY;
         cookedReadData.VisibleCharCount() += NumSpaces;
@@ -963,7 +917,7 @@ void CommandLine::_fillPromptWithPreviousCommandFragment(COOKED_READ_DATA& cooke
                                                               &cchCount,
                                                               &NumSpaces,
                                                               cookedReadData.OriginalCursorPosition().x,
-                                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                              WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                               &ScrollY));
                 cookedReadData.OriginalCursorPosition().y += ScrollY;
                 cookedReadData.VisibleCharCount() += NumSpaces;
@@ -984,7 +938,7 @@ til::point CommandLine::_cycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& c
     auto cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
     if (cookedReadData.HasHistory())
     {
-        SHORT index;
+        CommandHistory::Index index;
         if (cookedReadData.History().FindMatchingCommand({ cookedReadData.BufferStartPtr(), cookedReadData.InsertionPoint() },
                                                          cookedReadData.History().LastDisplayed,
                                                          index,
@@ -994,7 +948,7 @@ til::point CommandLine::_cycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& c
             const auto CurrentPos = cookedReadData.InsertionPoint();
 
             DeleteCommandLine(cookedReadData, true);
-            THROW_IF_FAILED(cookedReadData.History().RetrieveNth((SHORT)index,
+            THROW_IF_FAILED(cookedReadData.History().RetrieveNth(index,
                                                                  cookedReadData.SpanWholeBuffer(),
                                                                  cookedReadData.BytesRead()));
             FAIL_FAST_IF(!(cookedReadData.BufferStartPtr() == cookedReadData.BufferCurrentPtr()));
@@ -1008,7 +962,7 @@ til::point CommandLine::_cycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& c
                                                               &cookedReadData.BytesRead(),
                                                               &cookedReadData.VisibleCharCount(),
                                                               cookedReadData.OriginalCursorPosition().x,
-                                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                              WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                               &ScrollY));
                 cookedReadData.OriginalCursorPosition().y += ScrollY;
                 cursorPosition.y += ScrollY;
@@ -1063,7 +1017,7 @@ til::point CommandLine::DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData
                                                           &cookedReadData.BytesRead(),
                                                           &cookedReadData.VisibleCharCount(),
                                                           cookedReadData.OriginalCursorPosition().x,
-                                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
+                                                          WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
                                                           nullptr));
         }
 
@@ -1298,8 +1252,7 @@ til::point CommandLine::DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData
 
     if (UpdateCursorPosition && cookedReadData.IsEchoInput())
     {
-        Status = AdjustCursorPosition(cookedReadData.ScreenInfo(), cursorPosition, true, nullptr);
-        FAIL_FAST_IF_NTSTATUS_FAILED(Status);
+        AdjustCursorPosition(cookedReadData.ScreenInfo(), cursorPosition, true, nullptr);
     }
 
     return STATUS_SUCCESS;

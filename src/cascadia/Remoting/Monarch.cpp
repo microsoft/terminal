@@ -302,6 +302,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             return 0;
         }
+        if (name == L"new")
+        {
+            return 0;
+        }
 
         uint64_t result = 0;
 
@@ -1106,8 +1110,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // In the case where window couldn't be found, then create a window
             // for that name / ID.
             //
-            // Don't let the window literally be named "-1", because that's silly
-            auto request = winrt::make_self<implementation::WindowRequestedArgs>(window == L"-1" ? L"" : window,
+            // Don't let the window literally be named "-1", because that's silly. Same with "new"
+            const bool nameIsReserved = window == L"-1" || window == L"new";
+            auto request = winrt::make_self<implementation::WindowRequestedArgs>(nameIsReserved ? L"" : window,
                                                                                  content,
                                                                                  windowBounds);
             _RequestNewWindowHandlers(*this, *request);

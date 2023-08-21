@@ -22,6 +22,7 @@ Author(s):
 
 using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
 using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
+using IEnvironmentVariableMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>;
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
@@ -143,7 +144,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, StartingDirectory);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, StartingTitle);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, SuppressApplicationTitle);
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, EnvironmentVariables);
+        INHERITABLE_SETTING(Model::TerminalSettings, IEnvironmentVariableMap, EnvironmentVariables);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAtlasEngine, false);
@@ -163,6 +164,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, AutoMarkPrompts, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ShowMarks, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, RightClickContextMenu, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, RepositionCursorWithMouse, false);
 
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;

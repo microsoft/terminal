@@ -65,11 +65,11 @@ namespace winrt::TerminalApp::implementation
 
         virtual void _MakeTabViewItem();
 
-        void _AppendCloseMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout);
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem _AppendCloseMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout);
         void _EnableCloseMenuItems();
         void _CloseTabsAfter();
         void _CloseOtherTabs();
-        winrt::fire_and_forget _UpdateSwitchToTabKeyChord();
+        void _UpdateSwitchToTabKeyChord();
         void _UpdateToolTip();
 
         void _RecalculateAndApplyTabColor();

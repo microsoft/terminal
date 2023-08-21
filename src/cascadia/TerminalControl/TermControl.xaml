@@ -37,6 +37,21 @@
                           x:Uid="PasteCommandButton"
                           Click="_PasteCommandHandler"
                           Icon="Paste" />
+            <mux:CommandBarFlyout.SecondaryCommands>
+                <AppBarButton x:Name="SelectCommandButton"
+                              x:Uid="SelectCommandButton"
+                              Click="_SelectCommandHandler">
+                    <AppBarButton.Icon>
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                  FontSize="11"
+                                  Glyph="&#xE756;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton x:Name="SelectOutputButton"
+                              x:Uid="SelectOutputButton"
+                              Click="_SelectOutputHandler"
+                              Icon="AlignLeft" />
+            </mux:CommandBarFlyout.SecondaryCommands>
         </mux:CommandBarFlyout>
 
         <mux:CommandBarFlyout x:Name="SelectionContextMenu">
@@ -53,6 +68,19 @@
                               x:Uid="SearchCommandButton"
                               Click="_SearchCommandHandler"
                               Icon="Find" />
+                <AppBarButton x:Name="SelectCommandWithSelectionButton"
+                              x:Uid="SelectCommandWithSelectionButton"
+                              Click="_SelectCommandHandler">
+                    <AppBarButton.Icon>
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                  FontSize="11"
+                                  Glyph="&#xE756;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton x:Name="SelectOutputWithSelectionButton"
+                              x:Uid="SelectOutputWithSelectionButton"
+                              Click="_SelectOutputHandler"
+                              Icon="AlignLeft" />
             </mux:CommandBarFlyout.SecondaryCommands>
         </mux:CommandBarFlyout>
 
@@ -72,14 +100,21 @@
             latest ControlsV2 version of the template can be found at:
             https://github.com/microsoft/microsoft-ui-xaml/blob/main/dev/CommonStyles/ScrollBar_themeresources.xaml#L218
             
-            We're also removing the corner radius, cause that should be flush
+            Additionally we have:
+            * removed the corner radius, because that should be flush
             with the top of the window above the TermControl.
+            * set ScrollBarExpandBeginTime to 0 so that the scrollbar, fades in instantly when it's expanded.
+            This makes it feel much better with cursors compared to the questionable standard 400ms delay in
+            the Win11-style WinUI ScrollView. If you also have the "Always show scrollbars" setting enabled in
+            the settings app (do it if you haven't already), it avoids any and all animations during startup which
+            makes the app start feel noticeably better and also shaves off another ~167ms of our "busy time".
             
             We're also planning on making this adjustable in the future
             (GH#9218), where we might need this anyways.
         -->
 
         <x:Double x:Key="ScrollBarSize">16</x:Double>
+        <x:String x:Key="ScrollBarExpandBeginTime">0</x:String>
 
         <Style x:Key="ForkedScrollbarTemplate"
                TargetType="ScrollBar">

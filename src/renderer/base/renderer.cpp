@@ -638,6 +638,7 @@ void Renderer::EnablePainting()
     // When the renderer is constructed, the initial viewport won't be available yet,
     // but once EnablePainting is called it should be safe to retrieve.
     _viewport = _pData->GetViewport();
+    _forceUpdateViewport = true;
 
     // When running the unit tests, we may be using a render without a render thread.
     if (_pThread)
@@ -913,55 +914,55 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 }
 
 // Method Description:
-// - Generates a IRenderEngine::GridLines structure from the values in the
+// - Generates a GridLines structure from the values in the
 //      provided textAttribute
 // Arguments:
 // - textAttribute: the TextAttribute to generate GridLines from.
 // Return Value:
 // - a GridLineSet containing all the gridline info from the TextAttribute
-IRenderEngine::GridLineSet Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcept
+GridLineSet Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcept
 {
     // Convert console grid line representations into rendering engine enum representations.
-    IRenderEngine::GridLineSet lines;
+    GridLineSet lines;
 
     if (textAttribute.IsTopHorizontalDisplayed())
     {
-        lines.set(IRenderEngine::GridLines::Top);
+        lines.set(GridLines::Top);
     }
 
     if (textAttribute.IsBottomHorizontalDisplayed())
     {
-        lines.set(IRenderEngine::GridLines::Bottom);
+        lines.set(GridLines::Bottom);
     }
 
     if (textAttribute.IsLeftVerticalDisplayed())
     {
-        lines.set(IRenderEngine::GridLines::Left);
+        lines.set(GridLines::Left);
     }
 
     if (textAttribute.IsRightVerticalDisplayed())
     {
-        lines.set(IRenderEngine::GridLines::Right);
+        lines.set(GridLines::Right);
     }
 
     if (textAttribute.IsCrossedOut())
     {
-        lines.set(IRenderEngine::GridLines::Strikethrough);
+        lines.set(GridLines::Strikethrough);
     }
 
     if (textAttribute.IsUnderlined())
     {
-        lines.set(IRenderEngine::GridLines::Underline);
+        lines.set(GridLines::Underline);
     }
 
     if (textAttribute.IsDoublyUnderlined())
     {
-        lines.set(IRenderEngine::GridLines::DoubleUnderline);
+        lines.set(GridLines::DoubleUnderline);
     }
 
     if (textAttribute.IsHyperlink())
     {
-        lines.set(IRenderEngine::GridLines::HyperlinkUnderline);
+        lines.set(GridLines::HyperlinkUnderline);
     }
     return lines;
 }
@@ -985,19 +986,10 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     auto lines = Renderer::s_GetGridlines(textAttribute);
 
     // For now, we dash underline patterns and switch to regular underline on hover
-    // Since we're only rendering pattern links on *hover*, there's no point in checking
-    // the pattern range if we aren't currently hovering.
-    if (_hoveredInterval.has_value())
+    if (_isHoveredHyperlink(textAttribute) || _isInHoveredInterval(coordTarget))
     {
-        const til::point coordTargetTil{ coordTarget };
-        if (_hoveredInterval->start <= coordTargetTil &&
-            coordTargetTil <= _hoveredInterval->stop)
-        {
-            if (_pData->GetPatternId(coordTarget).size() > 0)
-            {
-                lines.set(IRenderEngine::GridLines::Underline);
-            }
-        }
+        lines.reset(GridLines::HyperlinkUnderline);
+        lines.set(GridLines::Underline);
     }
 
     // Return early if there are no lines to paint.
@@ -1008,6 +1000,18 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
         // Draw the lines
         LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
     }
+}
+
+bool Renderer::_isHoveredHyperlink(const TextAttribute& textAttribute) const noexcept
+{
+    return _hyperlinkHoveredId && _hyperlinkHoveredId == textAttribute.GetHyperlinkId();
+}
+
+bool Renderer::_isInHoveredInterval(const til::point coordTarget) const noexcept
+{
+    return _hoveredInterval &&
+           _hoveredInterval->start <= coordTarget && coordTarget <= _hoveredInterval->stop &&
+           _pData->GetPatternId(coordTarget).size() > 0;
 }
 
 // Routine Description:
@@ -1360,6 +1364,15 @@ void Renderer::ResetErrorStateAndResume()
 {
     // because we're not stateful (we could be in the future), all we want to do is reenable painting.
     EnablePainting();
+}
+
+void Renderer::UpdateHyperlinkHoveredId(uint16_t id) noexcept
+{
+    _hyperlinkHoveredId = id;
+    FOREACH_ENGINE(pEngine)
+    {
+        pEngine->UpdateHyperlinkHoveredId(id);
+    }
 }
 
 void Renderer::UpdateLastHoveredInterval(const std::optional<PointTree::interval>& newInterval)

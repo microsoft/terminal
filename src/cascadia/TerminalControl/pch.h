@@ -70,6 +70,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
 
 #include "til.h"
 #include <til/mutex.h>
+#include <til/winrt.h>
 
 #include "ThrottledFunc.h"
 

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 struct VS_OUTPUT
 {
     float4 pos : SV_POSITION;

@@ -75,7 +75,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         template<typename TilMath, typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
-        constexpr size scale(TilMath math, const T scale) const
+        [[nodiscard]] constexpr size scale(TilMath math, const T scale) const
         {
             return {
                 math,
@@ -84,7 +84,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
-        constexpr size divide_ceil(const size other) const
+        [[nodiscard]] constexpr size divide_ceil(const size other) const
         {
             // The integer ceil division `((a - 1) / b) + 1` only works for numbers >0.
             // Support for negative numbers wasn't deemed useful at this point.

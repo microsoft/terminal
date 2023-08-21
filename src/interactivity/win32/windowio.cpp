@@ -30,10 +30,6 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // Bit 29 is whether ALT was held when the message was posted.
 #define WM_SYSKEYDOWN_ALT_PRESSED (0x20000000)
 
-// This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
-// "If the high-order bit is 1, the key is down; otherwise, it is up."
-static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
-
 // ----------------------------
 // Helpers
 // ----------------------------
@@ -119,30 +115,8 @@ bool HandleTerminalMouseEvent(const til::point cMousePosition,
                               const short sModifierKeystate,
                               const short sWheelDelta)
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    // If the modes don't align, this is unhandled by default.
-    auto fWasHandled = false;
-
-    // Virtual terminal input mode
-    if (IsInVirtualTerminalInputMode())
-    {
-        const TerminalInput::MouseButtonState state{
-            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_LBUTTON), KeyPressed),
-            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_MBUTTON), KeyPressed),
-            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_RBUTTON), KeyPressed)
-        };
-
-        // GH#6401: VT applications should be able to receive mouse events from outside the
-        // terminal buffer. This is likely to happen when the user drags the cursor offscreen.
-        // We shouldn't throw away perfectly good events when they're offscreen, so we just
-        // clamp them to be within the range [(0, 0), (W, H)].
-        auto clampedPosition{ cMousePosition };
-        const auto clampViewport{ gci.GetActiveOutputBuffer().GetViewport().ToOrigin() };
-        clampViewport.Clamp(clampedPosition);
-        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(clampedPosition, uiButton, sModifierKeystate, sWheelDelta, state);
-    }
-
-    return fWasHandled;
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.pInputBuffer->WriteMouseEvent(cMousePosition, uiButton, sModifierKeystate, sWheelDelta);
 }
 
 void HandleKeyEvent(const HWND hWnd,
@@ -153,12 +127,13 @@ void HandleKeyEvent(const HWND hWnd,
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(lParam) is a character
+    // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(wParam) is a character
     auto VirtualKeyCode = LOWORD(wParam);
     WORD VirtualScanCode = LOBYTE(HIWORD(lParam));
     const auto RepeatCount = LOWORD(lParam);
-    const auto ControlKeyState = GetControlKeyState(lParam);
+    auto ControlKeyState = GetControlKeyState(lParam);
     const BOOL bKeyDown = WI_IsFlagClear(lParam, KEY_TRANSITION_UP);
+    const bool IsCharacterMessage = (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR);
 
     if (bKeyDown)
     {
@@ -172,7 +147,7 @@ void HandleKeyEvent(const HWND hWnd,
 
     // Make sure we retrieve the key info first, or we could chew up
     // unneeded space in the key info table if we bail out early.
-    if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
+    if (IsCharacterMessage)
     {
         // --- START LOAD BEARING CODE ---
         // NOTE: We MUST match up the original data from the WM_KEYDOWN stroke (handled at some inexact moment in the
@@ -193,23 +168,37 @@ void HandleKeyEvent(const HWND hWnd,
         // --- END LOAD BEARING CODE ---
     }
 
-    KeyEvent keyEvent{ !!bKeyDown, RepeatCount, VirtualKeyCode, VirtualScanCode, UNICODE_NULL, 0 };
+    // Simulated key events (using `SendInput` or `SendMessage`) can have invalid
+    // virtual key code, and invalid scan code. We need to filter such events out,
+    // as some applications (e.g. WSL) treat those events as valid key events and
+    // translate them to an ascii NULL character. GH#15753
+    if (VirtualScanCode == 0 && !IsCharacterMessage) // `WM_[SYS][DEAD]CHAR` messages don't have this issue
+    {
+        // We try to infer the correct scan code from the virtual key code. If the
+        // virtual key code is invalid or we couldn't map it to a scan code,
+        // MapVirtualKeyEx will return 0.
+        auto FullVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VirtualKeyCode, MAPVK_VK_TO_VSC_EX));
+        VirtualScanCode = LOBYTE(FullVirtualScanCode);
+        ControlKeyState |= (HIBYTE(FullVirtualScanCode) == 0xE0) ? ENHANCED_KEY : 0;
+        if (VirtualScanCode == 0)
+        {
+            return;
+        }
+    }
 
-    if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
+    auto keyEvent = SynthesizeKeyEvent(bKeyDown, RepeatCount, VirtualKeyCode, VirtualScanCode, UNICODE_NULL, 0);
+
+    if (IsCharacterMessage)
     {
         // If this is a fake character, zero the scancode.
         if (lParam & 0x02000000)
         {
-            keyEvent.SetVirtualScanCode(0);
+            keyEvent.Event.KeyEvent.wVirtualScanCode = 0;
         }
-        keyEvent.SetActiveModifierKeys(GetControlKeyState(lParam));
+        keyEvent.Event.KeyEvent.dwControlKeyState = GetControlKeyState(lParam);
         if (Message == WM_CHAR || Message == WM_SYSCHAR)
         {
-            keyEvent.SetCharData(static_cast<wchar_t>(wParam));
-        }
-        else
-        {
-            keyEvent.SetCharData(L'\0');
+            keyEvent.Event.KeyEvent.uChar.UnicodeChar = static_cast<wchar_t>(wParam);
         }
     }
     else
@@ -219,8 +208,7 @@ void HandleKeyEvent(const HWND hWnd,
         {
             return;
         }
-        keyEvent.SetActiveModifierKeys(ControlKeyState);
-        keyEvent.SetCharData(L'\0');
+        keyEvent.Event.KeyEvent.dwControlKeyState = ControlKeyState;
     }
 
     const INPUT_KEY_INFO inputKeyInfo(VirtualKeyCode, ControlKeyState);
@@ -435,7 +423,7 @@ void HandleKeyEvent(const HWND hWnd,
     // ignore key strokes that will generate CHAR messages. this is only necessary while a dialog box is up.
     if (ServiceLocator::LocateGlobals().uiDialogBoxCount != 0)
     {
-        if (Message != WM_CHAR && Message != WM_SYSCHAR && Message != WM_DEADCHAR && Message != WM_SYSDEADCHAR)
+        if (!IsCharacterMessage)
         {
             WCHAR awch[MAX_CHARS_FROM_1_KEYSTROKE];
             BYTE KeyState[256];
@@ -929,26 +917,12 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         break;
     }
 
-    ULONG EventsWritten = 0;
-    try
-    {
-        auto mouseEvent = std::make_unique<MouseEvent>(
-            MousePosition,
-            ConvertMouseButtonState(ButtonFlags, static_cast<UINT>(wParam)),
-            GetControlKeyState(0),
-            EventFlags);
-        EventsWritten = static_cast<ULONG>(gci.pInputBuffer->Write(std::move(mouseEvent)));
-    }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-        EventsWritten = 0;
-    }
-
-    if (EventsWritten != 1)
-    {
-        RIPMSG1(RIP_WARNING, "PutInputInBuffer: EventsWritten != 1 (0x%x), 1 expected", EventsWritten);
-    }
+    const auto mouseEvent = SynthesizeMouseEvent(
+        MousePosition,
+        ConvertMouseButtonState(ButtonFlags, static_cast<UINT>(wParam)),
+        GetControlKeyState(0),
+        EventFlags);
+    gci.pInputBuffer->Write(mouseEvent);
 
     return FALSE;
 }

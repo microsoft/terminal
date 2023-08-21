@@ -63,9 +63,18 @@ Author(s):
     X(bool, ShowAdminShield, "showAdminShield", true)                                                                                                                                                 \
     X(bool, TrimPaste, "trimPaste", true)                                                                                                                                                             \
     X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                                                                         \
+    X(bool, EnableShellCompletionMenu, "experimental.enableShellCompletionMenu", false)                                                                                                               \
     X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} })) \
-    X(bool, IsolatedMode, "compatibility.isolatedMode", false)
+    X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
+    X(bool, IsolatedMode, "compatibility.isolatedMode", false)                                                                                                                                        \
+    X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")
 
+// Also add these settings to:
+// * Profile.idl
+// * TerminalSettings.h
+// * TerminalSettings.cpp: TerminalSettings::_ApplyProfileSettings
+// * IControlSettings.idl or ICoreSettings.idl
+// * ControlProperties.h
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
     X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \
     X(bool, SnapOnInput, "snapOnInput", true)                                                                                                                  \
@@ -81,13 +90,15 @@ Author(s):
     X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Automatic)                                                                                 \
     X(hstring, TabTitle, "tabTitle")                                                                                                                           \
     X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \
+    X(IEnvironmentVariableMap, EnvironmentVariables, "environment", nullptr)                                                                                   \
     X(bool, UseAtlasEngine, "useAtlasEngine", Feature_AtlasEngine::IsEnabled())                                                                                \
     X(bool, RightClickContextMenu, "experimental.rightClickContextMenu", false)                                                                                \
     X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
     X(bool, Elevate, "elevate", false)                                                                                                                         \
     X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
     X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)                                                                                            \
-    X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)
+    X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)                                                                                             \
+    X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)
 
 // Intentionally omitted Profile settings:
 // * Name
@@ -130,6 +141,9 @@ Author(s):
 
 #define MTSM_THEME_WINDOW_SETTINGS(X)                                                                                              \
     X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "applicationTheme", winrt::Windows::UI::Xaml::ElementTheme::Default) \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Frame, "frame", nullptr)                                            \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedFrame, "unfocusedFrame", nullptr)                          \
+    X(bool, RainbowFrame, "experimental.rainbowFrame", false)                                                                      \
     X(bool, UseMica, "useMica", false)
 
 #define MTSM_THEME_TABROW_SETTINGS(X)                                                             \

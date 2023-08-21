@@ -153,17 +153,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Called around the codebase to discover if this is a UWP where we need to turn off specific settings.
-    // Arguments:
-    // - <none> - reports internal state
-    // Return Value:
-    // - True if UWP, false otherwise.
-    bool AppLogic::IsUwp() const noexcept
-    {
-        return _isUwp;
-    }
-
-    // Method Description:
     // - Called around the codebase to discover if Terminal is running elevated
     // Arguments:
     // - <none> - reports internal state
@@ -176,18 +165,6 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::CanDragDrop() const noexcept
     {
         return _canDragDrop;
-    }
-
-    // Method Description:
-    // - Called by UWP context invoker to let us know that we may have to change some of our behaviors
-    //   for being a UWP
-    // Arguments:
-    // - <none> (sets to UWP = true, one way change)
-    // Return Value:
-    // - <none>
-    void AppLogic::RunAsUwp()
-    {
-        _isUwp = true;
     }
 
     // Method Description:
@@ -205,52 +182,7 @@ namespace winrt::TerminalApp::implementation
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
 
-        // In UWP mode, we cannot handle taking over the title bar for tabs,
-        // so this setting is overridden to false no matter what the preference is.
-        if (_isUwp)
-        {
-            _settings.GlobalSettings().ShowTabsInTitlebar(false);
-        }
-
-        // These used to be in `TerminalPage::Initialized`, so that they started
-        // _after_ the Terminal window was started and displayed. These could
-        // theoretically move there again too. TODO:GH#14957 - evaluate moving
-        // this after the Page is initialized
-        {
-            // Both LoadSettings and ReloadSettings are supposed to call this function,
-            // but LoadSettings skips it, so that the UI starts up faster.
-            // Now that the UI is present we can do them with a less significant UX impact.
-            _ProcessLazySettingsChanges();
-
-            FILETIME creationTime, exitTime, kernelTime, userTime, now;
-            if (GetThreadTimes(GetCurrentThread(), &creationTime, &exitTime, &kernelTime, &userTime))
-            {
-                static constexpr auto asInteger = [](const FILETIME& f) {
-                    ULARGE_INTEGER i;
-                    i.LowPart = f.dwLowDateTime;
-                    i.HighPart = f.dwHighDateTime;
-                    return i.QuadPart;
-                };
-                static constexpr auto asSeconds = [](uint64_t v) {
-                    return v * 1e-7f;
-                };
-
-                GetSystemTimeAsFileTime(&now);
-
-                const auto latency = asSeconds(asInteger(now) - asInteger(creationTime));
-
-                TraceLoggingWrite(
-                    g_hTerminalAppProvider,
-                    "AppInitialized",
-                    TraceLoggingDescription("Event emitted once the app is initialized"),
-                    TraceLoggingFloat32(latency, "latency"),
-                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-            }
-        }
-
         _ApplyLanguageSettingChange();
-        _ApplyStartupTaskStateChange();
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -271,7 +203,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            auto newSettings = _isUwp ? CascadiaSettings::LoadUniversal() : CascadiaSettings::LoadAll();
+            auto newSettings = CascadiaSettings::LoadAll();
 
             if (newSettings.GetLoadingError())
             {
@@ -423,33 +355,12 @@ namespace winrt::TerminalApp::implementation
     }
     CATCH_LOG()
 
-    // Function Description:
-    // Returns the current app package or nullptr.
-    // TRANSITIONAL
-    // Exists to work around a compiler bug. This function encapsulates the
-    // exception handling that we used to keep around calls to Package::Current,
-    // so that when it's called inside a coroutine and fails it doesn't explode
-    // terribly.
-    static winrt::Windows::ApplicationModel::Package GetCurrentPackageNoThrow() noexcept
-    {
-        try
-        {
-            return winrt::Windows::ApplicationModel::Package::Current();
-        }
-        catch (...)
-        {
-            // discard any exception -- literally pretend we're not in a package
-        }
-        return nullptr;
-    }
-
     fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
     try
     {
         // First, make sure we're running in a packaged context. This method
         // won't work, and will crash mysteriously if we're running unpackaged.
-        const auto package{ GetCurrentPackageNoThrow() };
-        if (package == nullptr)
+        if (!IsPackaged())
         {
             co_return;
         }
@@ -547,6 +458,47 @@ namespace winrt::TerminalApp::implementation
                                                           warnings,
                                                           _settings);
         _SettingsChangedHandlers(*this, *ev);
+    }
+
+    // This is a continuation of AppLogic::Create() and includes the more expensive parts.
+    void AppLogic::NotifyRootInitialized()
+    {
+        if (_notifyRootInitializedCalled.exchange(true, std::memory_order_relaxed))
+        {
+            return;
+        }
+
+        // Both LoadSettings and ReloadSettings are supposed to call this function,
+        // but LoadSettings skips it, so that the UI starts up faster.
+        // Now that the UI is present we can do them with a less significant UX impact.
+        _ApplyStartupTaskStateChange();
+        _ProcessLazySettingsChanges();
+
+        FILETIME creationTime, exitTime, kernelTime, userTime, now;
+        if (GetThreadTimes(GetCurrentThread(), &creationTime, &exitTime, &kernelTime, &userTime))
+        {
+            static constexpr auto asInteger = [](const FILETIME& f) {
+                ULARGE_INTEGER i;
+                i.LowPart = f.dwLowDateTime;
+                i.HighPart = f.dwHighDateTime;
+                return i.QuadPart;
+            };
+            static constexpr auto asSeconds = [](uint64_t v) {
+                return v * 1e-7f;
+            };
+
+            GetSystemTimeAsFileTime(&now);
+
+            const auto latency = asSeconds(asInteger(now) - asInteger(creationTime));
+
+            TraceLoggingWrite(
+                g_hTerminalAppProvider,
+                "AppInitialized",
+                TraceLoggingDescription("Event emitted once the app is initialized"),
+                TraceLoggingFloat32(latency, "latency"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
     }
 
     // Method Description:
@@ -703,6 +655,16 @@ namespace winrt::TerminalApp::implementation
                globals.MinimizeToNotificationArea();
     }
 
+    bool AppLogic::AllowHeadless()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            ReloadSettings();
+        }
+        return _settings.GlobalSettings().AllowHeadless();
+    }
+
     TerminalApp::TerminalWindow AppLogic::CreateNewWindow()
     {
         if (_settings == nullptr)
@@ -723,7 +685,6 @@ namespace winrt::TerminalApp::implementation
 
         auto window = winrt::make_self<implementation::TerminalWindow>(*ev, _contentManager);
 
-        this->SettingsChanged({ window->get_weak(), &implementation::TerminalWindow::UpdateSettingsHandler });
         if (_hasSettingsStartupActions)
         {
             window->SetSettingsStartupArgs(_settingsAppArgs.GetStartupActions());

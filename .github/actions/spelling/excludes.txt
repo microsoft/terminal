@@ -106,11 +106,14 @@
 ^src/terminal/parser/ft_fuzzwrapper/run\.bat$
 ^src/terminal/parser/ut_parser/Base64Test.cpp$
 ^src/terminal/parser/ut_parser/run\.bat$
+^src/tools/benchcat
 ^src/tools/integrity/packageuwp/ConsoleUWP\.appxSources$
 ^src/tools/lnkd/lnkd\.bat$
 ^src/tools/pixels/pixels\.bat$
+^src/tools/RenderingTests/main.cpp$
 ^src/tools/texttests/fira\.txt$
 ^src/tools/U8U16Test/(?:fr|ru|zh)\.txt$
+^src/types/ColorFix.cpp
 ^src/types/ut_types/UtilsTests.cpp$
 ^tools/ReleaseEngineering/ServicingPipeline.ps1$
 ignore$

@@ -326,7 +326,7 @@
 
   <!-- PowerShell version check, outputs error if the wrong version is installed. -->
   <Target Name="_WindowsPowershellVersionCheck" BeforeTargets="BeforeClCompile">
-    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\WindowsCheckPSVersion.ps1&quot;" />
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Unrestricted -File &quot;$(OpenConsoleDir)\tools\WindowsCheckPSVersion.ps1&quot;" />
   </Target>
   <Target Name="_PowershellVersionCheck" BeforeTargets="BeforeClCompile">
     <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CheckPSVersion.ps1&quot;" />
@@ -336,10 +336,6 @@
   failing to load the default settings at runtime. -->
   <Target Name="_TerminalAppGenerateDefaultsH" Inputs="defaults.json" Outputs="Generated Files\defaults.h" BeforeTargets="BeforeClCompile">
     <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1&quot; -JsonFile defaults.json -OutPath &quot;Generated Files\defaults.h&quot; -VariableName DefaultJson" />
-  </Target>
-  <!-- A different set of defaults for Universal variant -->
-  <Target Name="_TerminalAppGenerateDefaultsUniversalH" Inputs="defaults-universal.json" Outputs="Generated Files\defaults-universal.h" BeforeTargets="BeforeClCompile">
-    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1&quot; -JsonFile defaults-universal.json -OutPath &quot;Generated Files\defaults-universal.h&quot; -VariableName DefaultUniversalJson" />
   </Target>
   <!-- Same as above, but for the default settings.json template -->
   <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">

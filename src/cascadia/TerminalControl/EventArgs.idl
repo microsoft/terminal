@@ -40,6 +40,7 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass OpenHyperlinkEventArgs
     {
+        OpenHyperlinkEventArgs(String uri);
         String Uri { get; };
     }
 
@@ -87,5 +88,31 @@ namespace Microsoft.Terminal.Control
     runtimeclass UpdateSelectionMarkersEventArgs
     {
         Boolean ClearMarkers { get; };
+    }
+
+    runtimeclass CompletionsChangedEventArgs
+    {
+        String MenuJson { get; };
+        UInt32 ReplacementLength { get; };
+    }
+
+    runtimeclass KeySentEventArgs
+    {
+        UInt16 VKey { get; };
+        UInt16 ScanCode { get; };
+        Microsoft.Terminal.Core.ControlKeyStates Modifiers { get; };
+        Boolean KeyDown { get; };
+    }
+
+    runtimeclass CharSentEventArgs
+    {
+        Char Character { get; };
+        UInt16 ScanCode { get; };
+        Microsoft.Terminal.Core.ControlKeyStates Modifiers { get; };
+    }
+
+    runtimeclass StringSentEventArgs
+    {
+        String Text { get; };
     }
 }

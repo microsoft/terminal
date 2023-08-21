@@ -11,6 +11,7 @@
 
 static constexpr std::wstring_view WslHomeDirectory{ L"~" };
 static constexpr std::wstring_view DockerDistributionPrefix{ L"docker-desktop" };
+static constexpr std::wstring_view RancherDistributionPrefix{ L"rancher-desktop" };
 
 // The WSL entries are structured as such:
 // HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss
@@ -78,9 +79,9 @@ static void namesToProfiles(const std::vector<std::wstring>& names, std::vector<
 {
     for (const auto& distName : names)
     {
-        if (til::starts_with(distName, DockerDistributionPrefix))
+        if (til::starts_with(distName, DockerDistributionPrefix) || til::starts_with(distName, RancherDistributionPrefix))
         {
-            // Docker for Windows creates some utility distributions to handle Docker commands.
+            // Docker for Windows and Rancher for Windows creates some utility distributions to handle Docker commands.
             // Pursuant to GH#3556, because they are _not_ user-facing we want to hide them.
             continue;
         }

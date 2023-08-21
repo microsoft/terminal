@@ -112,4 +112,9 @@ namespace Microsoft::Console::Utils
     // testing easier.
     std::wstring_view TrimPaste(std::wstring_view textView) noexcept;
 
+    // Same deal, but in TerminalPage::_evaluatePathForCwd
+    std::wstring EvaluateStartingDirectory(std::wstring_view cwd, std::wstring_view startingDirectory);
+
+    bool IsWindows11() noexcept;
+
 }

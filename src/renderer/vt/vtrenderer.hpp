@@ -139,6 +139,7 @@ namespace Microsoft::Console::Render
 
         bool _resizeQuirk{ false };
         bool _passthrough{ false };
+        bool _noFlushOnEnd{ false };
         std::optional<TextColor> _newBottomLineBG{ std::nullopt };
 
         [[nodiscard]] HRESULT _WriteFill(const size_t n, const char c) noexcept;
@@ -227,7 +228,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _WriteTerminalAscii(const std::wstring_view str) noexcept;
         [[nodiscard]] HRESULT _WriteTerminalDrcs(const std::wstring_view str) noexcept;
 
-        [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept override;
+        [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept override;
 
         /////////////////////////// Unit Testing Helpers ///////////////////////////
 #ifdef UNIT_TESTING

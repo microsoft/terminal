@@ -96,17 +96,6 @@ public:
         Log::Comment(L"SetViewportPosition MOCK called...");
     }
 
-    void SetAutoWrapMode(const bool /*wrapAtEOL*/) override
-    {
-        Log::Comment(L"SetAutoWrapMode MOCK called...");
-    }
-
-    bool GetAutoWrapMode() const override
-    {
-        Log::Comment(L"GetAutoWrapMode MOCK called...");
-        return true;
-    }
-
     bool IsVtInputEnabled() const override
     {
         return false;
@@ -121,15 +110,21 @@ public:
         _textBuffer->SetCurrentAttributes(attrs);
     }
 
+    void SetSystemMode(const Mode mode, const bool enabled)
+    {
+        Log::Comment(L"SetSystemMode MOCK called...");
+        _systemMode.set(mode, enabled);
+    }
+
+    bool GetSystemMode(const Mode mode) const
+    {
+        Log::Comment(L"GetSystemMode MOCK called...");
+        return _systemMode.test(mode);
+    }
+
     void WarningBell() override
     {
         Log::Comment(L"WarningBell MOCK called...");
-    }
-
-    bool GetLineFeedMode() const override
-    {
-        Log::Comment(L"GetLineFeedMode MOCK called...");
-        return _getLineFeedModeResult;
     }
 
     void SetWindowTitle(const std::wstring_view title)
@@ -144,7 +139,7 @@ public:
         }
     }
 
-    void UseAlternateScreenBuffer() override
+    void UseAlternateScreenBuffer(const TextAttribute& /*attr*/) override
     {
         Log::Comment(L"UseAlternateScreenBuffer MOCK called...");
     }
@@ -184,17 +179,6 @@ public:
         return _expectedOutputCP;
     }
 
-    void SetBracketedPasteMode(const bool /*enabled*/) override
-    {
-        Log::Comment(L"SetBracketedPasteMode MOCK called...");
-    }
-
-    std::optional<bool> GetBracketedPasteMode() const override
-    {
-        Log::Comment(L"GetBracketedPasteMode MOCK called...");
-        return {};
-    }
-
     void CopyToClipboard(const std::wstring_view /*content*/)
     {
         Log::Comment(L"CopyToClipboard MOCK called...");
@@ -231,7 +215,7 @@ public:
         Log::Comment(L"NotifyBufferRotation MOCK called...");
     }
 
-    void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/) override
+    void MarkPrompt(const ScrollMark& /*mark*/) override
     {
         Log::Comment(L"MarkPrompt MOCK called...");
     }
@@ -246,6 +230,12 @@ public:
     void MarkCommandFinish(std::optional<unsigned int> /*error*/) override
     {
         Log::Comment(L"MarkCommandFinish MOCK called...");
+    }
+    void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override
+    {
+        Log::Comment(L"InvokeCompletions MOCK called...");
+        VERIFY_ARE_EQUAL(_expectedMenuJson, menuJson);
+        VERIFY_ARE_EQUAL(_expectedReplaceLength, replaceLength);
     }
 
     void PrepData()
@@ -386,13 +376,16 @@ public:
     bool _setTextAttributesResult = false;
     bool _returnResponseResult = false;
 
-    bool _getLineFeedModeResult = false;
+    til::enumset<Mode> _systemMode{ Mode::AutoWrap };
 
     bool _setWindowTitleResult = false;
     std::wstring_view _expectedWindowTitle{};
     bool _setConsoleOutputCPResult = false;
     bool _getConsoleOutputCPResult = false;
     bool _expectedShowWindow = false;
+
+    std::wstring _expectedMenuJson{};
+    unsigned int _expectedReplaceLength = 0;
 
 private:
     HANDLE _hCon;
@@ -412,7 +405,7 @@ public:
         if (fSuccess)
         {
             _testGetSet = std::move(api);
-            _terminalInput = TerminalInput{ nullptr };
+            _terminalInput = TerminalInput{};
             auto& renderer = _testGetSet->_renderer;
             auto& renderSettings = renderer._renderSettings;
             auto adapter = std::make_unique<AdaptDispatch>(*_testGetSet, renderer, renderSettings, _terminalInput);
@@ -1534,7 +1527,7 @@ public:
         _testGetSet->PrepData();
         VERIFY_IS_TRUE(_pDispatch->DeviceAttributes());
 
-        auto pwszExpectedResponse = L"\x1b[?1;0c";
+        auto pwszExpectedResponse = L"\x1b[?61;1;6;7;21;22;23;24;28;32;42c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
         Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");
@@ -1629,6 +1622,22 @@ public:
         requestSetting(L"r");
         _testGetSet->ValidateInputEvent(L"\033P1$r1;25r\033\\");
 
+        Log::Comment(L"Requesting DECSLRM margins (5 to 10).");
+        _testGetSet->PrepData();
+        // We need to enable DECLRMM for horizontal margins to work.
+        _pDispatch->SetMode(DispatchTypes::DECLRMM_LeftRightMarginMode);
+        _pDispatch->SetLeftRightScrollingMargins(5, 10);
+        requestSetting(L"s");
+        _testGetSet->ValidateInputEvent(L"\033P1$r5;10s\033\\");
+
+        Log::Comment(L"Requesting DECSLRM margins (full width).");
+        _testGetSet->PrepData();
+        _pDispatch->SetLeftRightScrollingMargins(0, 0);
+        requestSetting(L"s");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1;100s\033\\");
+        // Reset DECLRMM once we're done with horizontal margin testing.
+        _pDispatch->ResetMode(DispatchTypes::DECLRMM_LeftRightMarginMode);
+
         Log::Comment(L"Requesting SGR attributes (default).");
         _testGetSet->PrepData();
         TextAttribute attribute = {};
@@ -1699,7 +1708,7 @@ public:
         attribute.SetIndexedBackground256(45);
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
-        _testGetSet->ValidateInputEvent(L"\033P1$r0;38;5;123;48;5;45m\033\\");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;38:5:123;48:5:45m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (ITU RGB colors).");
         _testGetSet->PrepData();
@@ -1708,7 +1717,7 @@ public:
         attribute.SetBackground(RGB(65, 43, 21));
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
-        _testGetSet->ValidateInputEvent(L"\033P1$r0;38;2;12;34;56;48;2;65;43;21m\033\\");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;38:2::12:34:56;48:2::65:43:21m\033\\");
 
         Log::Comment(L"Requesting DECSCA attributes (unprotected).");
         _testGetSet->PrepData();
@@ -1755,7 +1764,39 @@ public:
         _testGetSet->ValidateInputEvent(L"\033P0$r\033\\");
     }
 
-    TEST_METHOD(RequestModeTests)
+    TEST_METHOD(RequestStandardModeTests)
+    {
+        // The mode numbers below correspond to the ANSIStandardMode values
+        // in the ModeParams enum in DispatchTypes.hpp.
+
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{4, 20}")
+        END_TEST_METHOD_PROPERTIES()
+
+        VTInt modeNumber;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"modeNumber", modeNumber));
+        const auto mode = DispatchTypes::ANSIStandardMode(modeNumber);
+
+        // DISABLE_
+        Log::Comment(NoThrowString().Format(L"Setting standard mode %d", modeNumber));
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->SetMode(mode));
+        VERIFY_IS_TRUE(_pDispatch->RequestMode(mode));
+
+        wchar_t expectedResponse[20];
+        swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[%d;1$y", modeNumber);
+        _testGetSet->ValidateInputEvent(expectedResponse);
+
+        Log::Comment(NoThrowString().Format(L"Resetting standard mode %d", modeNumber));
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(mode));
+        VERIFY_IS_TRUE(_pDispatch->RequestMode(mode));
+
+        swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[%d;2$y", modeNumber);
+        _testGetSet->ValidateInputEvent(expectedResponse);
+    }
+
+    TEST_METHOD(RequestPrivateModeTests)
     {
         // The mode numbers below correspond to the DECPrivateMode values
         // in the ModeParams enum in DispatchTypes.hpp. We don't include
@@ -1763,7 +1804,7 @@ public:
         // and DECRQM would not then be applicable.
 
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{1, 3, 5, 6, 8, 12, 25, 40, 66, 67, 1000, 1002, 1003, 1004, 1005, 1006, 1007, 1049, 9001}")
+            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{1, 3, 5, 6, 7, 8, 12, 25, 40, 66, 67, 69, 117, 1000, 1002, 1003, 1004, 1005, 1006, 1007, 1049, 2004, 9001}")
         END_TEST_METHOD_PROPERTIES()
 
         VTInt modeNumber;
@@ -2262,13 +2303,13 @@ public:
         VERIFY_ARE_EQUAL(til::point(0, 1), cursor.GetPosition());
 
         Log::Comment(L"Test 3: Line feed depends on mode, and mode reset.");
-        _testGetSet->_getLineFeedModeResult = false;
+        _testGetSet->_systemMode.reset(ITerminalApi::Mode::LineFeed);
         cursor.SetPosition({ 10, 0 });
         VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
         VERIFY_ARE_EQUAL(til::point(10, 1), cursor.GetPosition());
 
         Log::Comment(L"Test 4: Line feed depends on mode, and mode set.");
-        _testGetSet->_getLineFeedModeResult = true;
+        _testGetSet->_systemMode.set(ITerminalApi::Mode::LineFeed);
         cursor.SetPosition({ 10, 0 });
         VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
         VERIFY_ARE_EQUAL(til::point(0, 1), cursor.GetPosition());
@@ -2432,6 +2473,119 @@ public:
         rgOptions[4] = 123;
         _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 123));
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 5 }));
+
+        Log::Comment(L"Test 6: Ignore Rgb color when R, G or B is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgOptions[2] = 283;
+        rgOptions[3] = 182;
+        rgOptions[4] = 123;
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 5 }));
+
+        Log::Comment(L"Test 7: Ignore indexed color when index is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        rgOptions[2] = 283;
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 3 }));
+    }
+
+    TEST_METHOD(XtermExtendedSubParameterColorTest)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+
+        VTParameter rgOptions[1];
+        VTParameter rgSubParamOpts[16];
+        std::pair<BYTE, BYTE> subParamRanges[1];
+
+        _testGetSet->_expectedAttribute = _testGetSet->_textBuffer->GetCurrentAttributes();
+
+        Log::Comment(L"Test 1: Change Indexed Foreground with missing index sub parameter");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        subParamRanges[0] = { (BYTE)0, (BYTE)1 };
+        _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_BLACK);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 2: Change Indexed Background with default index sub parameter");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        rgSubParamOpts[1] = {};
+        subParamRanges[0] = { (BYTE)0, (BYTE)2 };
+        _testGetSet->_expectedAttribute.SetIndexedBackground256(TextColor::DARK_BLACK);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 3: Change RGB Foreground with all RGB sub parameters missing");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        subParamRanges[0] = { (BYTE)0, (BYTE)1 };
+        _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 0));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 4: Change RGB Background with some missing RGB sub parameters");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgSubParamOpts[1] = {}; // color-space-id
+        rgSubParamOpts[2] = 123;
+        subParamRanges[0] = { (BYTE)0, (BYTE)3 };
+        _testGetSet->_expectedAttribute.SetBackground(RGB(123, 0, 0));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 5: Change RGB Foreground with some default RGB sub parameters");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgSubParamOpts[1] = {}; // color-space-id
+        rgSubParamOpts[2] = {};
+        rgSubParamOpts[3] = {};
+        rgSubParamOpts[4] = 123;
+        subParamRanges[0] = { (BYTE)0, (BYTE)5 };
+        _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 123));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 6: Ignore color when ColorSpaceID is not empty");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgSubParamOpts[1] = 7; // color-space-id
+        rgSubParamOpts[2] = 182;
+        rgSubParamOpts[3] = 182;
+        rgSubParamOpts[4] = 123;
+        subParamRanges[0] = { (BYTE)0, (BYTE)5 };
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 7: Ignore Rgb color when R, G or B is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgSubParamOpts[1] = {}; // color-space-id
+        // Ensure r, g and b set a color that is different from current color.
+        // Otherwise, the test will pass even if the color is not ignored.
+        rgSubParamOpts[2] = 128;
+        rgSubParamOpts[3] = 283;
+        rgSubParamOpts[4] = 155;
+        subParamRanges[0] = { (BYTE)0, (BYTE)5 };
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 8: Ignore indexed color when index is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        rgSubParamOpts[1] = 283;
+        subParamRanges[0] = { (BYTE)0, (BYTE)2 };
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
     }
 
     TEST_METHOD(SetColorTableValue)
@@ -2852,8 +3006,43 @@ public:
         _pDispatch->_macroBuffer = nullptr;
     }
 
+    TEST_METHOD(WindowManipulationTypeTests)
+    {
+        _testGetSet->PrepData();
+        _pDispatch->WindowManipulation(DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters, NULL, NULL);
+        const std::wstring expectedResponse = fmt::format(L"\033[8;{};{}t", _testGetSet->GetViewport().height(), _testGetSet->GetTextBuffer().GetSize().Width());
+        _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+    }
+
+    TEST_METHOD(MenuCompletionsTests)
+    {
+        _testGetSet->PrepData();
+
+        Log::Comment(L"Not enough parameters");
+        VERIFY_IS_FALSE(_pDispatch->DoVsCodeAction(LR"(garbage)"));
+
+        Log::Comment(L"Not enough parameters");
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions)"));
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;)"));
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;)"));
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;20)"));
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;20;)"));
+        Log::Comment(L"No trailing semicolon");
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;20;3)"));
+
+        Log::Comment(L"Normal, good case");
+        _testGetSet->_expectedMenuJson = LR"({ "foo": 1, "bar": 2 })";
+        _testGetSet->_expectedReplaceLength = 2;
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;1;2;3;{ "foo": 1, "bar": 2 })"));
+
+        Log::Comment(L"JSON has a semicolon in it");
+        _testGetSet->_expectedMenuJson = LR"({ "foo": "what;ever", "bar": 2 })";
+        _testGetSet->_expectedReplaceLength = 20;
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;20;30;{ "foo": "what;ever", "bar": 2 })"));
+    }
+
 private:
-    TerminalInput _terminalInput{ nullptr };
+    TerminalInput _terminalInput;
     std::unique_ptr<TestGetSet> _testGetSet;
     AdaptDispatch* _pDispatch; // non-ownership pointer
     std::unique_ptr<StateMachine> _stateMachine;

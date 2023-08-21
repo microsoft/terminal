@@ -18,7 +18,6 @@
 
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
-    <TerminalVCRTForwarders>true</TerminalVCRTForwarders>
     <TerminalThemeHelpers>true</TerminalThemeHelpers>
     <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>

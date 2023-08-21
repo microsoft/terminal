@@ -34,17 +34,21 @@
 #include "AddMarkArgs.g.h"
 #include "MoveTabArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
+#include "SuggestionsArgs.g.h"
 #include "FindMatchArgs.g.h"
 #include "NewWindowArgs.g.h"
 #include "PrevTabArgs.g.h"
 #include "NextTabArgs.g.h"
 #include "RenameWindowArgs.g.h"
+#include "SearchForTextArgs.g.h"
 #include "GlobalSummonArgs.g.h"
 #include "FocusPaneArgs.g.h"
 #include "ExportBufferArgs.g.h"
 #include "ClearBufferArgs.g.h"
 #include "MultipleActionsArgs.g.h"
 #include "AdjustOpacityArgs.g.h"
+#include "SelectCommandArgs.g.h"
+#include "SelectOutputArgs.g.h"
 #include "ColorSelectionArgs.g.h"
 
 #include "JsonUtils.h"
@@ -56,12 +60,18 @@
 
 #include "ActionArgsMagic.h"
 
-#define ACTION_ARG(type, name, ...)                                                                    \
-public:                                                                                                \
-    type name() const noexcept { return _##name.has_value() ? _##name.value() : type{ __VA_ARGS__ }; } \
-    void name(const type& value) noexcept { _##name = value; }                                         \
-                                                                                                       \
-private:                                                                                               \
+#define ACTION_ARG(type, name, ...)                                         \
+public:                                                                     \
+    type name() const noexcept                                              \
+    {                                                                       \
+        return _##name.has_value() ? _##name.value() : type{ __VA_ARGS__ }; \
+    }                                                                       \
+    void name(const type& value) noexcept                                   \
+    {                                                                       \
+        _##name = value;                                                    \
+    }                                                                       \
+                                                                            \
+private:                                                                    \
     std::optional<type> _##name{ std::nullopt };
 
 // Notes on defining ActionArgs and ActionEventArgs:
@@ -91,8 +101,9 @@ private:                                                                        
 // false, if we don't really care if the parameter is required or not.
 
 ////////////////////////////////////////////////////////////////////////////////
-#define COPY_TEXT_ARGS(X)                           \
-    X(bool, SingleLine, "singleLine", false, false) \
+#define COPY_TEXT_ARGS(X)                                      \
+    X(bool, DismissSelection, "dismissSelection", false, true) \
+    X(bool, SingleLine, "singleLine", false, false)            \
     X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -204,6 +215,11 @@ private:                                                                        
     X(CommandPaletteLaunchMode, LaunchMode, "launchMode", false, CommandPaletteLaunchMode::Action)
 
 ////////////////////////////////////////////////////////////////////////////////
+#define SUGGESTIONS_ARGS(X)                                                 \
+    X(SuggestionsSource, Source, "source", false, SuggestionsSource::Tasks) \
+    X(bool, UseCommandline, "useCommandline", false, false)
+
+////////////////////////////////////////////////////////////////////////////////
 #define FIND_MATCH_ARGS(X) \
     X(FindMatchDirection, Direction, "direction", args->Direction() == FindMatchDirection::None, FindMatchDirection::None)
 
@@ -218,6 +234,10 @@ private:                                                                        
 ////////////////////////////////////////////////////////////////////////////////
 #define RENAME_WINDOW_ARGS(X) \
     X(winrt::hstring, Name, "name", false, L"")
+
+////////////////////////////////////////////////////////////////////////////////
+#define SEARCH_FOR_TEXT_ARGS(X) \
+    X(winrt::hstring, QueryUrl, "queryUrl", false, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define GLOBAL_SUMMON_ARGS(X)                                                               \
@@ -243,6 +263,14 @@ private:                                                                        
 #define ADJUST_OPACITY_ARGS(X)               \
     X(int32_t, Opacity, "opacity", false, 0) \
     X(bool, Relative, "relative", false, true)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SELECT_COMMAND_ARGS(X) \
+    X(SelectOutputDirection, Direction, "direction", false, SelectOutputDirection::Previous)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SELECT_OUTPUT_ARGS(X) \
+    X(SelectOutputDirection, Direction, "direction", false, SelectOutputDirection::Previous)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define COLOR_SELECTION_ARGS(X)                                                                      \
@@ -687,6 +715,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS);
 
+    ACTION_ARGS_STRUCT(SuggestionsArgs, SUGGESTIONS_ARGS);
+
     ACTION_ARGS_STRUCT(FindMatchArgs, FIND_MATCH_ARGS);
 
     ACTION_ARGS_STRUCT(PrevTabArgs, PREV_TAB_ARGS);
@@ -694,6 +724,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     ACTION_ARGS_STRUCT(NextTabArgs, NEXT_TAB_ARGS);
 
     ACTION_ARGS_STRUCT(RenameWindowArgs, RENAME_WINDOW_ARGS);
+
+    ACTION_ARGS_STRUCT(SearchForTextArgs, SEARCH_FOR_TEXT_ARGS);
 
     struct GlobalSummonArgs : public GlobalSummonArgsT<GlobalSummonArgs>
     {
@@ -772,6 +804,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(AdjustOpacityArgs, ADJUST_OPACITY_ARGS);
 
+    ACTION_ARGS_STRUCT(SelectCommandArgs, SELECT_COMMAND_ARGS);
+    ACTION_ARGS_STRUCT(SelectOutputArgs, SELECT_OUTPUT_ARGS);
+
     ACTION_ARGS_STRUCT(ColorSelectionArgs, COLOR_SELECTION_ARGS);
 
 }
@@ -779,6 +814,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
     BASIC_FACTORY(ActionEventArgs);
+    BASIC_FACTORY(CopyTextArgs);
     BASIC_FACTORY(SwitchToTabArgs);
     BASIC_FACTORY(NewTerminalArgs);
     BASIC_FACTORY(NewTabArgs);
@@ -808,4 +844,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(ClearBufferArgs);
     BASIC_FACTORY(MultipleActionsArgs);
     BASIC_FACTORY(AdjustOpacityArgs);
+    BASIC_FACTORY(SuggestionsArgs);
+    BASIC_FACTORY(SelectCommandArgs);
+    BASIC_FACTORY(SelectOutputArgs);
 }

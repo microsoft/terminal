@@ -132,7 +132,6 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
 
-        wil::com_ptr<IDWriteFontCollection> _nearbyCollection;
         std::wstring _userLocaleName;
         DxFontInfo _defaultFontInfo;
         til::size _glyphCell;
