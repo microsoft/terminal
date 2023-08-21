@@ -21,6 +21,12 @@ parameters:
   - name: jobName
     type: string
     default: PackConPTY
+  - name: variables
+    type: object
+    default: {}
+  - name: publishArtifacts
+    type: boolean
+    default: true
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -36,6 +42,10 @@ jobs:
         ${{ config }}:
           BuildConfiguration: ${{ config }}
   dependsOn: ${{ parameters.dependsOn }}
+  variables:
+    JobOutputDirectory: $(Build.ArtifactStagingDirectory)\nupkg
+    JobOutputArtifactName: conpty-nupkg-$(BuildConfiguration)${{ parameters.artifactStem }}
+    ${{ insert }}: ${{ parameters.variables }}
   steps:
   - checkout: self
     clean: true
@@ -113,6 +123,7 @@ jobs:
         ValidateSignature: true
         Verbosity: 'Verbose'
 
-  - publish: $(Build.ArtifactStagingDirectory)\nupkg
-    artifact: conpty-nupkg-$(BuildConfiguration)${{ parameters.artifactStem }}
-    displayName: Publish nupkg
+  - ${{ if eq(parameters.publishArtifacts, true) }}:
+    - publish: $(JobOutputDirectory)
+      artifact: $(JobOutputArtifactName)
+      displayName: Publish nupkg

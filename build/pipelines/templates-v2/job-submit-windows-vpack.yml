@@ -13,6 +13,12 @@ parameters:
   - name: artifactStem
     type: string
     default: ''
+  - name: variables
+    type: object
+    default: {}
+  - name: publishArtifacts
+    type: boolean
+    default: true
 
 jobs:
 - job: VPack
@@ -20,6 +26,10 @@ jobs:
     pool: ${{ parameters.pool }}
   displayName: Create and Submit Windows vPack
   dependsOn: ${{ parameters.dependsOn }}
+  variables:
+    JobOutputDirectory: $(XES_VPACKMANIFESTDIRECTORY)
+    JobOutputArtifactName: vpack-manifest${{ parameters.artifactStem }}
+    ${{ insert }}: ${{ parameters.variables }}
   steps:
   - checkout: self
     clean: true
@@ -57,9 +67,10 @@ jobs:
       owner: conhost
       githubToken: $(GitHubTokenForVpackProvenance)
 
-  - publish: $(XES_VPACKMANIFESTDIRECTORY)
-    artifact: vpack-manifest${{ parameters.artifactStem }}
-    displayName: 'Publish VPack Manifest to Drop'
+  - ${{ if eq(parameters.publishArtifacts, true) }}:
+    - publish: $(JobOutputDirectory)
+      artifact: $(JobOutputArtifactName)
+      displayName: 'Publish VPack Manifest to Drop'
 
   - task: PkgESFCIBGit@12
     displayName: 'Submit VPack Manifest to Windows'
