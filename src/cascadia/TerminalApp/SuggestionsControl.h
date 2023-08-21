@@ -42,6 +42,7 @@ namespace winrt::TerminalApp::implementation
 
         void Open(TerminalApp::SuggestionsMode mode,
                   const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command>& commands,
+                  winrt::hstring filterText,
                   Windows::Foundation::Point anchor,
                   Windows::Foundation::Size space,
                   float characterHeight);

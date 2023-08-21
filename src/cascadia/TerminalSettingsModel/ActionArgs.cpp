@@ -709,12 +709,42 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring SuggestionsArgs::GenerateName() const
     {
-        switch (Source())
+        std::wstringstream ss;
+        ss << RS_(L"SuggestionsCommandKey").c_str();
+
+        if (UseCommandline())
         {
-        case SuggestionsSource::CommandHistory:
-            return RS_(L"SuggestionsCommandHistoryCommandKey");
+            ss << L", useCommandline:true";
         }
-        return RS_(L"SuggestionsCommandKey");
+
+        // All of the source values will leave a trailing ", " that we need to chop later:
+        ss << L", source: ";
+        const auto source = Source();
+        if (source == SuggestionsSource::All)
+        {
+            ss << L"all, ";
+        }
+        else if (source == static_cast<SuggestionsSource>(0))
+        {
+            ss << L"none, ";
+        }
+        else
+        {
+            if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
+            {
+                ss << L"tasks, ";
+            }
+
+            if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory))
+            {
+                ss << L"commandHistory, ";
+            }
+        }
+        // Chop off the last ","
+        auto result = ss.str();
+        // use `resize`, to avoid duplicating the entire string. (substr doesn't create a view.)
+        result.resize(result.size() - 2);
+        return winrt::hstring{ result };
     }
 
     winrt::hstring FindMatchArgs::GenerateName() const

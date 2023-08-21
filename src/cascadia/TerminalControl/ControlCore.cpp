@@ -1958,6 +1958,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto& textBuffer = _terminal->GetTextBuffer();
 
         std::vector<winrt::hstring> commands;
+
         for (const auto& mark : _terminal->GetScrollMarks())
         {
             // The command text is between the `end` (which denotes the end of
@@ -1979,10 +1980,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (strEnd != std::string::npos)
             {
                 const auto trimmed = commandText.substr(0, strEnd + 1);
+
                 commands.push_back(winrt::hstring{ trimmed });
             }
         }
         auto context = winrt::make_self<CommandHistoryContext>(std::move(commands));
+        context->CurrentCommandline(winrt::hstring{ _terminal->CurrentCommand() });
 
         return *context;
     }

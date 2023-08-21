@@ -64,6 +64,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _subcommands ? _subcommands.GetView() : nullptr;
     }
 
+    void Command::NestedCommands(const Windows::Foundation::Collections::IVectorView<Model::Command>& nested)
+    {
+        _subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+
+        for (const auto& n : nested)
+        {
+            _subcommands.Insert(n.Name(), n);
+        }
+    }
+
     // Function Description:
     // - reports if the current command has nested commands
     // - This CANNOT detect { "name": "foo", "commands": null }
@@ -738,7 +748,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // * If directories is true, we'll prepend "cd " to each command, so that
     //   the command will be run as a directory change instead.
     IVector<Model::Command> Command::HistoryToCommands(IVector<winrt::hstring> history,
-                                                       winrt::hstring /*currentCommandline*/,
+                                                       winrt::hstring currentCommandline,
                                                        bool directories)
     {
         std::wstring cdText = directories ? L"cd " : L"";
@@ -747,12 +757,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Use this map to discard duplicates.
         std::unordered_map<std::wstring_view, bool> foundCommands{};
 
-        auto backspaces = std::wstring(::base::saturated_cast<size_t>(0), L'\x7f');
+        auto backspaces = std::wstring(currentCommandline.size(), L'\x7f');
 
         // Iterate in reverse over the history, so that most recent commands are first
         for (auto i = history.Size(); i > 0; i--)
         {
-            std::wstring_view line{ history.GetAt(i - 1) };
+            const auto& element{ history.GetAt(i - 1) };
+            std::wstring_view line{ element };
 
             if (line.empty())
             {
