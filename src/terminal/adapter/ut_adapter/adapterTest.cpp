@@ -1185,11 +1185,10 @@ public:
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
         VTParameter rgOptions[16];
-        VTParameter rgSubParams[16];
-        std::pair<BYTE, BYTE> subParamRanges[16];
+        std::vector<VTParameter> subParams;
+        std::vector<std::pair<BYTE, BYTE>> subParamRanges;
         VTParameter rgStackOptions[16];
         size_t cOptions = 1;
-        size_t cSubParams = 1;
 
         Log::Comment(L"Test 1: Basic push and pop");
 
@@ -1368,12 +1367,10 @@ public:
                      L"Curly underlined is restored after the pop.");
 
         cOptions = 1;
-        cSubParams = 1;
         rgOptions[0] = DispatchTypes::GraphicsOptions::Underline;
-        rgSubParams[0] = 3;
-        subParamRanges[0] = { (BYTE)0, (BYTE)1 };
+        _testGetSet->MakeSubParamsAndRanges({ { 3 } }, subParams, subParamRanges);
         _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
-        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ std::span{ rgOptions, cOptions }, std::span{ rgSubParams, cSubParams }, std::span{ subParamRanges, cOptions } }));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ std::span{ rgOptions, cOptions }, subParams, subParamRanges }));
 
         // save curly underlined state
         cOptions = 1;
