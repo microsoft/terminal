@@ -2,14 +2,10 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include "../precomp.h"
-#include <windows.h>
-#include <wextestclass.h>
-#include "../../inc/consoletaeftemplates.hpp"
-
-#include "../../input/terminalInput.hpp"
 
 #include "../../../interactivity/inc/VtApiRedirection.hpp"
+#include "../../input/terminalInput.hpp"
+#include "../types/inc/IInputEvent.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -182,9 +178,8 @@ void InputTest::TerminalInputTests()
             break;
         }
 
-        auto inputEvent = IInputEvent::Create(irTest);
         // Send key into object (will trigger callback and verification)
-        VERIFY_ARE_EQUAL(expected, input.HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
+        VERIFY_ARE_EQUAL(expected, input.HandleKey(irTest), L"Verify key was handled if it should have been.");
     }
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key UP.");
@@ -198,9 +193,8 @@ void InputTest::TerminalInputTests()
         irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
         irTest.Event.KeyEvent.bKeyDown = FALSE;
 
-        auto inputEvent = IInputEvent::Create(irTest);
         // Send key into object (will trigger callback and verification)
-        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(inputEvent.get()), L"Verify key was NOT handled.");
+        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(irTest), L"Verify key was NOT handled.");
     }
 
     Log::Comment(L"Verify other types of events are not handled/intercepted.");
@@ -209,18 +203,15 @@ void InputTest::TerminalInputTests()
 
     Log::Comment(L"Testing MOUSE_EVENT");
     irUnhandled.EventType = MOUSE_EVENT;
-    auto inputEvent = IInputEvent::Create(irUnhandled);
-    VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(inputEvent.get()), L"Verify MOUSE_EVENT was NOT handled.");
+    VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(irUnhandled), L"Verify MOUSE_EVENT was NOT handled.");
 
     Log::Comment(L"Testing WINDOW_BUFFER_SIZE_EVENT");
     irUnhandled.EventType = WINDOW_BUFFER_SIZE_EVENT;
-    inputEvent = IInputEvent::Create(irUnhandled);
-    VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(inputEvent.get()), L"Verify WINDOW_BUFFER_SIZE_EVENT was NOT handled.");
+    VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(irUnhandled), L"Verify WINDOW_BUFFER_SIZE_EVENT was NOT handled.");
 
     Log::Comment(L"Testing MENU_EVENT");
     irUnhandled.EventType = MENU_EVENT;
-    inputEvent = IInputEvent::Create(irUnhandled);
-    VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(inputEvent.get()), L"Verify MENU_EVENT was NOT handled.");
+    VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(irUnhandled), L"Verify MENU_EVENT was NOT handled.");
 
     // Testing FOCUS_EVENTs is handled by TestFocusEvents
 }
@@ -232,40 +223,13 @@ void InputTest::TestFocusEvents()
     // We're relying on the fact that the INPUT_RECORD version of the ctor is only called by the API
     TerminalInput input;
 
-    INPUT_RECORD irTest = { 0 };
-    irTest.EventType = FOCUS_EVENT;
-
-    {
-        irTest.Event.FocusEvent.bSetFocus = false;
-        auto inputEvent = IInputEvent::Create(irTest);
-        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT from API was NOT handled.");
-    }
-    {
-        irTest.Event.FocusEvent.bSetFocus = true;
-        auto inputEvent = IInputEvent::Create(irTest);
-        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT from API was NOT handled.");
-    }
-
-    VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleFocus(false), L"Verify FocusEvent from any other source was NOT handled.");
-    VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleFocus(true), L"Verify FocusEvent from any other source was NOT handled.");
-
-    Log::Comment(L"Enable focus event handling");
+    VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleFocus(false));
+    VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleFocus(true));
 
     input.SetInputMode(TerminalInput::Mode::FocusEvent, true);
 
-    {
-        irTest.Event.FocusEvent.bSetFocus = false;
-        auto inputEvent = IInputEvent::Create(irTest);
-        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT from API was NOT handled.");
-    }
-    {
-        irTest.Event.FocusEvent.bSetFocus = true;
-        auto inputEvent = IInputEvent::Create(irTest);
-        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT from API was NOT handled.");
-    }
-
-    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[O"), input.HandleFocus(false), L"Verify FocusEvent from any other source was handled.");
-    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[I"), input.HandleFocus(true), L"Verify FocusEvent from any other source was handled.");
+    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[O"), input.HandleFocus(false));
+    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[I"), input.HandleFocus(true));
 }
 
 void InputTest::TerminalInputModifierKeyTests()
@@ -482,9 +446,8 @@ void InputTest::TerminalInputModifierKeyTests()
             str[str.size() - 2] = L'1' + (fShift ? 1 : 0) + (fAlt ? 2 : 0) + (fCtrl ? 4 : 0);
         }
 
-        auto inputEvent = IInputEvent::Create(irTest);
         // Send key into object (will trigger callback and verification)
-        VERIFY_ARE_EQUAL(expected, input.HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
+        VERIFY_ARE_EQUAL(expected, input.HandleKey(irTest), L"Verify key was handled if it should have been.");
     }
 }
 
@@ -509,27 +472,23 @@ void InputTest::TerminalInputNullKeyTests()
     irTest.Event.KeyEvent.bKeyDown = TRUE;
 
     // Send key into object (will trigger callback and verification)
-    auto inputEvent = IInputEvent::Create(irTest);
-    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\0"sv), input.HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
+    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\0"sv), input.HandleKey(irTest), L"Verify key was handled if it should have been.");
 
     vkey = VK_SPACE;
     Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
     irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
     irTest.Event.KeyEvent.uChar.UnicodeChar = vkey;
-    inputEvent = IInputEvent::Create(irTest);
-    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\0"sv), input.HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
+    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\0"sv), input.HandleKey(irTest), L"Verify key was handled if it should have been.");
 
     uiKeystate = LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED;
     Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
     irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
-    inputEvent = IInputEvent::Create(irTest);
-    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b\0"sv), input.HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
+    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b\0"sv), input.HandleKey(irTest), L"Verify key was handled if it should have been.");
 
     uiKeystate = RIGHT_CTRL_PRESSED | LEFT_ALT_PRESSED;
     Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
     irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
-    inputEvent = IInputEvent::Create(irTest);
-    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b\0"sv), input.HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
+    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b\0"sv), input.HandleKey(irTest), L"Verify key was handled if it should have been.");
 }
 
 static void TestKey(const TerminalInput::OutputType& expected, TerminalInput& input, const unsigned int uiKeystate, const BYTE vkey, const wchar_t wch = 0)
@@ -545,8 +504,7 @@ static void TestKey(const TerminalInput::OutputType& expected, TerminalInput& in
     irTest.Event.KeyEvent.uChar.UnicodeChar = wch;
 
     // Send key into object (will trigger callback and verification)
-    auto inputEvent = IInputEvent::Create(irTest);
-    VERIFY_ARE_EQUAL(expected, input.HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
+    VERIFY_ARE_EQUAL(expected, input.HandleKey(irTest), L"Verify key was handled if it should have been.");
 }
 
 void InputTest::DifferentModifiersTest()
@@ -706,23 +664,23 @@ void InputTest::BackarrowKeyModeTest()
 
 void InputTest::AutoRepeatModeTest()
 {
-    const auto down = std::make_unique<KeyEvent>(true, 1ui16, 'A', 0ui16, 'A', 0ui16);
-    const auto up = std::make_unique<KeyEvent>(false, 1ui16, 'A', 0ui16, 'A', 0ui16);
+    static constexpr auto down = SynthesizeKeyEvent(true, 1, 'A', 0, 'A', 0);
+    static constexpr auto up = SynthesizeKeyEvent(false, 1, 'A', 0, 'A', 0);
     TerminalInput input;
 
     Log::Comment(L"Sending repeating keypresses with DECARM disabled.");
 
     input.SetInputMode(TerminalInput::Mode::AutoRepeat, false);
-    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"A"), input.HandleKey(down.get()));
-    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput({}), input.HandleKey(down.get()));
-    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput({}), input.HandleKey(down.get()));
-    VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(up.get()));
+    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"A"), input.HandleKey(down));
+    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput({}), input.HandleKey(down));
+    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput({}), input.HandleKey(down));
+    VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(up));
 
     Log::Comment(L"Sending repeating keypresses with DECARM enabled.");
 
     input.SetInputMode(TerminalInput::Mode::AutoRepeat, true);
-    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"A"), input.HandleKey(down.get()));
-    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"A"), input.HandleKey(down.get()));
-    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"A"), input.HandleKey(down.get()));
-    VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(up.get()));
+    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"A"), input.HandleKey(down));
+    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"A"), input.HandleKey(down));
+    VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"A"), input.HandleKey(down));
+    VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), input.HandleKey(up));
 }

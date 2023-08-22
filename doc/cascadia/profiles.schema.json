@@ -85,6 +85,32 @@
         }
       ]
     },
+    "BuiltinSuggestionSource": {
+      "enum": [
+        "commandHistory",
+        "tasks",
+        "all"
+      ],
+      "type": "string"
+    },
+    "SuggestionSource": {
+      "default": "all",
+      "description": "Either a single suggestion source, or an array of sources to concatenate. Built-in sources include `commandHistory`, `directoryHistory`, and `tasks`. The special value `all` indicates all suggestion sources should be included",
+      "$comment": "`tasks` and `local` are sources that would be added by the Tasks feature, as a follow-up",
+      "oneOf": [
+        {
+          "type": [ "string", "null", "BuiltinSuggestionSource" ]
+        },
+        {
+          "type": "array",
+          "items": { "type": "BuiltinSuggestionSource" }
+        },
+        {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      ]
+    },
     "AppearanceConfig": {
       "properties": {
         "colorScheme": {
@@ -398,6 +424,7 @@
         "sendInput",
         "setColorScheme",
         "setTabColor",
+        "showSuggestions",
         "splitPane",
         "switchToTab",
         "tabSearch",
@@ -1767,6 +1794,30 @@
         }
       ]
     },
+    "ShowSuggestionsAction": {
+      "description": "Arguments corresponding to a Open Suggestions Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "showSuggestions"
+            },
+            "source": {
+              "$ref": "#/$defs/SuggestionSource",
+              "description": "Which suggestion sources to filter."
+            },
+            "useCommandline": {
+              "default": false,
+              "description": "When set to `true`, the current commandline the user has typed will pre-populate the filter of the Suggestions UI. This requires that the user has enabled shell integration in their shell's config. When set to false, the filter will start empty."
+            }
+          }
+        }
+      ]
+    },
     "ShowCloseButton": {
       "enum": [
         "always",
@@ -2036,6 +2087,9 @@
             },
             {
               "$ref": "#/$defs/SearchWebAction"
+            },
+            {
+              "$ref": "#/$defs/ShowSuggestionsAction"
             },
             {
               "type": "null"

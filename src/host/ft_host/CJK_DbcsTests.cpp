@@ -1919,11 +1919,11 @@ void DbcsTests::TestMultibyteInputCoalescing()
 
     DWORD count;
     {
-        const auto record = KeyEvent{ true, 1, 123, 456, 0x82, 789 }.ToInputRecord();
+        const auto record = SynthesizeKeyEvent(true, 1, 123, 456, 0x82, 789);
         VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInputA(in, &record, 1, &count));
     }
     {
-        const auto record = KeyEvent{ true, 1, 234, 567, 0xA2, 890 }.ToInputRecord();
+        const auto record = SynthesizeKeyEvent(true, 1, 234, 567, 0xA2, 890);
         VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInputA(in, &record, 1, &count));
     }
 
@@ -1933,7 +1933,7 @@ void DbcsTests::TestMultibyteInputCoalescing()
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputW(in, &actual[0], 2, &count));
     VERIFY_ARE_EQUAL(1u, count);
 
-    const auto expected = KeyEvent{ true, 1, 123, 456, L'い', 789 }.ToInputRecord();
+    const auto expected = SynthesizeKeyEvent(true, 1, 123, 456, L'い', 789);
     VERIFY_ARE_EQUAL(expected, actual[0]);
 }
 

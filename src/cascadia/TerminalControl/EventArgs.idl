@@ -90,6 +90,12 @@ namespace Microsoft.Terminal.Control
         Boolean ClearMarkers { get; };
     }
 
+    runtimeclass CompletionsChangedEventArgs
+    {
+        String MenuJson { get; };
+        UInt32 ReplacementLength { get; };
+    }
+
     runtimeclass KeySentEventArgs
     {
         UInt16 VKey { get; };
