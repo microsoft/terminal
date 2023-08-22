@@ -375,10 +375,6 @@ private:
 
     Cursor _cursor;
     std::vector<ScrollMark> _marks;
-    // While safe RAII wrappers for URegularExpression* would improve maintainability, it would make
-    // it more difficult to avoid having to forward declare (or outright expose) more ICU stuff.
-    // This may make switching to other Unicode libraries easier in the distant future.
-    URegularExpression* _urlRegex = nullptr;
     bool _isActiveBuffer = false;
 
 #ifdef UNIT_TESTING

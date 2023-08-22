@@ -202,6 +202,9 @@ catch (...)
 // @param  destCapacity  The size, in UChars, of the destination buffer. May be zero for precomputing the required size.
 // @param  status        receives any error status. If U_BUFFER_OVERFLOW_ERROR: Returns number of UChars for preflighting.
 // @return Number of UChars in the data.  Does not include a trailing NUL.
+//
+// NOTE: utextExtract's correctness hasn't been verified yet. The code remains, just incase its functionality is needed in the future.
+#pragma warning(suppress : 4505) // 'utextExtract': unreferenced function with internal linkage has been removed
 static int32_t U_CALLCONV utextExtract(UText* ut, int64_t nativeStart, int64_t nativeLimit, char16_t* dest, int32_t destCapacity, UErrorCode* status) noexcept
 try
 {
@@ -258,11 +261,10 @@ static constexpr UTextFuncs utextFuncs{
     .clone = utextClone,
     .nativeLength = utextNativeLength,
     .access = utextAccess,
-    .extract = utextExtract,
 };
 
 // Creates a UText from the given TextBuffer that spans rows [rowBeg,RowEnd).
-UText UTextFromTextBuffer(const TextBuffer& textBuffer, til::CoordType rowBeg, til::CoordType rowEnd, UErrorCode* status) noexcept
+UText Microsoft::Console::ICU::UTextFromTextBuffer(const TextBuffer& textBuffer, til::CoordType rowBeg, til::CoordType rowEnd, UErrorCode* status) noexcept
 {
     __assume(status != nullptr);
 
@@ -277,7 +279,7 @@ UText UTextFromTextBuffer(const TextBuffer& textBuffer, til::CoordType rowBeg, t
     return ut;
 }
 
-URegularExpression* CreateURegularExpression(const std::wstring_view& pattern, uint32_t flags, UErrorCode* status) noexcept
+Microsoft::Console::ICU::unique_uregex Microsoft::Console::ICU::CreateRegex(const std::wstring_view& pattern, uint32_t flags, UErrorCode* status) noexcept
 {
 #pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
     const auto re = uregex_open(reinterpret_cast<const char16_t*>(pattern.data()), gsl::narrow_cast<int32_t>(pattern.size()), flags, nullptr, status);
@@ -285,12 +287,12 @@ URegularExpression* CreateURegularExpression(const std::wstring_view& pattern, u
     // but this claim seems highly outdated already. On my CPU from 2021, a limit of 4096 equals roughly 600ms.
     uregex_setTimeLimit(re, 4096, status);
     uregex_setStackLimit(re, 4 * 1024 * 1024, status);
-    return re;
+    return unique_uregex{ re };
 }
 
 // Returns an inclusive point range given a text start and end position.
 // This function is designed to be used with uregex_start64/uregex_end64.
-til::point_span BufferRangeFromMatch(UText* ut, URegularExpression* re)
+til::point_span Microsoft::Console::ICU::BufferRangeFromMatch(UText* ut, URegularExpression* re)
 {
     UErrorCode status = U_ZERO_ERROR;
     const auto nativeIndexBeg = uregex_start64(re, 0, &status);

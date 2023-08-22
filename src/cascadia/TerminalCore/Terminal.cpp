@@ -1346,11 +1346,11 @@ void Terminal::_updateUrlDetection()
 }
 
 // Interns URegularExpression instances so that they can be reused. This method is thread-safe.
-static unique_URegularExpression internURegularExpression(const std::wstring_view& pattern)
+static ICU::unique_uregex internURegularExpression(const std::wstring_view& pattern)
 {
     struct CacheValue
     {
-        unique_URegularExpression re;
+        ICU::unique_uregex re;
         size_t generation = 0;
     };
 
@@ -1380,14 +1380,14 @@ static unique_URegularExpression internURegularExpression(const std::wstring_vie
         const auto guard = shared.lock.lock_shared();
         if (const auto it = shared.set.find(pattern); it != shared.set.end())
         {
-            return unique_URegularExpression{ uregex_clone(it->second.re.get(), &status) };
+            return ICU::unique_uregex{ uregex_clone(it->second.re.get(), &status) };
         }
     }
 
     // Even if the URegularExpression creation failed, we'll insert it into the cache, because there's no point in retrying.
     // (Apart from OOM but in that case this application will crash anyways in 3.. 2.. 1..)
-    unique_URegularExpression re{ CreateURegularExpression(pattern, 0, &status) };
-    unique_URegularExpression clone{ uregex_clone(re.get(), &status) };
+    auto re = ICU::CreateRegex(pattern, 0, &status);
+    ICU::unique_uregex clone{ uregex_clone(re.get(), &status) };
     std::wstring key{ pattern };
 
     const auto guard = shared.lock.lock_exclusive();
@@ -1415,7 +1415,7 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
     PointTree::interval_vector intervals;
 
     UErrorCode status = U_ZERO_ERROR;
-    auto text = UTextFromTextBuffer(_activeBuffer(), beg, end + 1, &status);
+    auto text = ICU::UTextFromTextBuffer(_activeBuffer(), beg, end + 1, &status);
 
     for (size_t i = 0; i < patterns.size(); ++i)
     {
@@ -1426,7 +1426,7 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
         {
             do
             {
-                auto range = BufferRangeFromMatch(&text, re.get());
+                auto range = ICU::BufferRangeFromMatch(&text, re.get());
                 // PointTree uses half-open ranges.
                 range.end.x++;
                 intervals.push_back(PointTree::interval(range.start, range.end, 0));

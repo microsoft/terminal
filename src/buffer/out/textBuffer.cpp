@@ -69,10 +69,6 @@ TextBuffer::~TextBuffer()
     {
         _destroy();
     }
-    if (_urlRegex)
-    {
-        uregex_close(_urlRegex);
-    }
 }
 
 // I put these functions in a block at the start of the class, because they're the most
@@ -2774,16 +2770,16 @@ std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& nee
     WI_SetFlagIf(flags, UREGEX_CASE_INSENSITIVE, caseInsensitive);
 
     UErrorCode status = U_ZERO_ERROR;
-    auto text = UTextFromTextBuffer(*this, rowBeg, rowEnd, &status);
+    auto text = ICU::UTextFromTextBuffer(*this, rowBeg, rowEnd, &status);
 
-    const unique_URegularExpression re{ CreateURegularExpression(needle, flags, &status) };
+    const auto re = ICU::CreateRegex(needle, flags, &status);
     uregex_setUText(re.get(), &text, &status);
 
     if (uregex_find(re.get(), -1, &status))
     {
         do
         {
-            results.emplace_back(BufferRangeFromMatch(&text, re.get()));
+            results.emplace_back(ICU::BufferRangeFromMatch(&text, re.get()));
         } while (uregex_findNext(re.get(), &status));
     }
 
