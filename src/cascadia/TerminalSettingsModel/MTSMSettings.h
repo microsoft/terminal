@@ -68,7 +68,7 @@ Author(s):
     X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
     X(bool, IsolatedMode, "compatibility.isolatedMode", false)                                                                                                                                        \
     X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22") \
-    X(bool, EnableUnfocusedAcrylic, "enableUnfocusedAcrylic", true)
+    X(bool, EnableUnfocusedAcrylic, "compatibility.enableUnfocusedAcrylic", true)
 
 // Also add these settings to:
 // * Profile.idl

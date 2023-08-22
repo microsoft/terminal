@@ -495,7 +495,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // In the future, this might need to be changed to a
         // _InitializeBackgroundBrush call instead, because we may need to
         // switch from a solid color brush to an acrylic one.
-        _changeBackgroundColor(bg);
+        //_changeBackgroundColor(bg);
+        _InitializeBackgroundBrush();
 
         // Update selection markers
         Windows::UI::Xaml::Media::SolidColorBrush cursorColorBrush{ til::color{ newAppearance.CursorColor() } };
