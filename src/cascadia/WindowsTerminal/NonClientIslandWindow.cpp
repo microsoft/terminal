@@ -17,6 +17,9 @@ using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
 static constexpr int AutohideTaskbarSize = 2;
+static constexpr bool BottomTabs = true;
+static constexpr auto rowTop = 0;
+static constexpr auto rowBottom = 1;
 
 NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme) noexcept :
     IslandWindow{},
@@ -364,8 +367,9 @@ bool NonClientIslandWindow::Initialize()
     titlebarRow.Height(GridLengthHelper::Auto());
 
     _rootGrid.RowDefinitions().Clear();
-    _rootGrid.RowDefinitions().Append(titlebarRow);
+
     _rootGrid.RowDefinitions().Append(contentRow);
+    _rootGrid.RowDefinitions().InsertAt(BottomTabs ? rowBottom : rowTop, titlebarRow);
 
     // Create our titlebar control
     _titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
@@ -376,7 +380,7 @@ bool NonClientIslandWindow::Initialize()
 
     _rootGrid.Children().Append(_titlebar);
 
-    Controls::Grid::SetRow(_titlebar, 0);
+    Controls::Grid::SetRow( _titlebar, BottomTabs ? rowBottom : rowTop);
 
     // GH#3440 - When the titlebar is loaded (officially added to our UI tree),
     // then make sure to update its visual state to reflect if we're in the
@@ -410,7 +414,7 @@ void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement conte
     const auto fwe = content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
     if (fwe)
     {
-        Controls::Grid::SetRow(fwe, 1);
+        Controls::Grid::SetRow(fwe, BottomTabs ? rowTop : rowBottom);
     }
 }
 
