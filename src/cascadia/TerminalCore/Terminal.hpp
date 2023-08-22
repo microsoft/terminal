@@ -448,6 +448,7 @@ private:
     bool _inAltBuffer() const noexcept;
     TextBuffer& _activeBuffer() const noexcept;
     void _updateUrlDetection();
+    interval_tree::IntervalTree<til::point, size_t> _getPatterns(til::CoordType beg, til::CoordType end) const;
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp

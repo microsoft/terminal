@@ -18,7 +18,6 @@ using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
 
 using PointTree = interval_tree::IntervalTree<til::point, size_t>;
-using unique_URegularExpression = wistd::unique_ptr<URegularExpression, wil::function_deleter<decltype(&uregex_close), &uregex_close>>;
 
 constexpr bool allWhitespace(const std::wstring_view& text) noexcept
 {
@@ -30,17 +29,6 @@ constexpr bool allWhitespace(const std::wstring_view& text) noexcept
         }
     }
     return true;
-}
-
-static URegularExpression* createURegularExpression(const std::wstring_view& pattern, uint32_t flags, UErrorCode* error) noexcept
-{
-#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-    const auto re = uregex_open(reinterpret_cast<const char16_t*>(pattern.data()), gsl::narrow_cast<int32_t>(pattern.size()), flags, nullptr, error);
-    // ICU describes the time unit as being dependent on CPU performance and "typically [in] the order of milliseconds",
-    // but this claim seems highly outdated already. On my CPU from 2021, a limit of 4096 equals roughly 600ms.
-    uregex_setTimeLimit(re, 4096, error);
-    uregex_setStackLimit(re, 4 * 1024 * 1024, error);
-    return re;
 }
 
 static std::atomic<uint64_t> s_mutationCountInitialValue;
@@ -2761,47 +2749,6 @@ void TextBuffer::CopyHyperlinkMaps(const TextBuffer& other)
     _currentHyperlinkId = other._currentHyperlinkId;
 }
 
-// Method Description:
-// - Finds patterns within the requested region of the text buffer
-// Arguments:
-// - The firstRow to start searching from
-// - The lastRow to search
-// Return value:
-// - An interval tree containing the patterns found
-PointTree TextBuffer::GetPatterns(const til::CoordType firstRow, const til::CoordType lastRow)
-{
-    PointTree::interval_vector intervals;
-
-    UErrorCode status = U_ZERO_ERROR;
-#pragma warning(suppress : 26477) // Use 'nullptr' rather than 0 or NULL (es.47).
-    UText text = UTEXT_INITIALIZER;
-    UTextFromTextBuffer(&text, *this, firstRow, lastRow + 1, &status);
-
-    if (!_urlRegex)
-    {
-        static constexpr std::wstring_view linkPattern{ LR"(\b(?:https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
-        _urlRegex = createURegularExpression(linkPattern, 0, &status);
-        assert(_urlRegex);
-    }
-
-    uregex_setUText(_urlRegex, &text, &status);
-
-    if (uregex_find(_urlRegex, -1, &status))
-    {
-        do
-        {
-            const auto nativeIndexBeg = uregex_start64(_urlRegex, 0, &status);
-            const auto nativeIndexEnd = uregex_end64(_urlRegex, 0, &status);
-            auto range = BufferRangeFromUText(&text, nativeIndexBeg, nativeIndexEnd);
-            // PointTree uses half-open ranges.
-            range.end.x++;
-            intervals.push_back(PointTree::interval(range.start, range.end, 0));
-        } while (uregex_findNext(_urlRegex, &status));
-    }
-
-    return PointTree{ std::move(intervals) };
-}
-
 // Searches through the entire (committed) text buffer for `needle` and returns the coordinates in absolute coordinates.
 // The end coordinates of the returned ranges are considered inclusive.
 std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& needle, bool caseInsensitive) const
@@ -2827,20 +2774,16 @@ std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& nee
     WI_SetFlagIf(flags, UREGEX_CASE_INSENSITIVE, caseInsensitive);
 
     UErrorCode status = U_ZERO_ERROR;
-#pragma warning(suppress : 26477) // Use 'nullptr' rather than 0 or NULL (es.47).
-    UText text = UTEXT_INITIALIZER;
-    UTextFromTextBuffer(&text, *this, rowBeg, rowEnd, &status);
+    auto text = UTextFromTextBuffer(*this, rowBeg, rowEnd, &status);
 
-    const unique_URegularExpression re{ createURegularExpression(needle, flags, &status) };
+    const unique_URegularExpression re{ CreateURegularExpression(needle, flags, &status) };
     uregex_setUText(re.get(), &text, &status);
 
     if (uregex_find(re.get(), -1, &status))
     {
         do
         {
-            const auto nativeIndexBeg = uregex_start64(re.get(), 0, &status);
-            const auto nativeIndexEnd = uregex_end64(re.get(), 0, &status);
-            results.emplace_back(BufferRangeFromUText(&text, nativeIndexBeg, nativeIndexEnd));
+            results.emplace_back(BufferRangeFromMatch(&text, re.get()));
         } while (uregex_findNext(re.get(), &status));
     }
 

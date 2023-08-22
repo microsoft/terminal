@@ -495,7 +495,7 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
         const til::point bufferEnd{ bufferSize.RightInclusive(), ViewEndIndex() };
         while (!result && bufferSize.IsInBounds(searchStart) && bufferSize.IsInBounds(searchEnd) && searchStart <= searchEnd && bufferStart <= searchStart && searchEnd <= bufferEnd)
         {
-            auto patterns = _activeBuffer().GetPatterns(searchStart.y, searchEnd.y);
+            auto patterns = _getPatterns(searchStart.y, searchEnd.y);
             resultList = patterns.findContained(convertToSearchArea(searchStart), convertToSearchArea(searchEnd));
             result = extractResultFromList(resultList);
             if (!result)

@@ -262,30 +262,40 @@ static constexpr UTextFuncs utextFuncs{
 };
 
 // Creates a UText from the given TextBuffer that spans rows [rowBeg,RowEnd).
-UText* UTextFromTextBuffer(UText* ut, const TextBuffer& textBuffer, til::CoordType rowBeg, til::CoordType rowEnd, UErrorCode* status) noexcept
+UText UTextFromTextBuffer(const TextBuffer& textBuffer, til::CoordType rowBeg, til::CoordType rowEnd, UErrorCode* status) noexcept
 {
     __assume(status != nullptr);
 
-    ut = utext_setup(ut, 0, status);
-    if (*status > U_ZERO_ERROR)
-    {
-        return nullptr;
-    }
+    UText ut = UTEXT_INITIALIZER;
+    ut.providerProperties = (1 << UTEXT_PROVIDER_LENGTH_IS_EXPENSIVE) | (1 << UTEXT_PROVIDER_STABLE_CHUNKS);
+    ut.pFuncs = &utextFuncs;
+    ut.context = &textBuffer;
+    accessCurrentRow(&ut) = rowBeg - 1; // the utextAccess() below will advance this by 1.
+    accessRowRange(&ut) = { rowBeg, rowEnd };
 
-    ut->providerProperties = (1 << UTEXT_PROVIDER_LENGTH_IS_EXPENSIVE) | (1 << UTEXT_PROVIDER_STABLE_CHUNKS);
-    ut->pFuncs = &utextFuncs;
-    ut->context = &textBuffer;
-    accessCurrentRow(ut) = rowBeg - 1; // the utextAccess() below will advance this by 1.
-    accessRowRange(ut) = { rowBeg, rowEnd };
-
-    utextAccess(ut, 0, true);
+    utextAccess(&ut, 0, true);
     return ut;
+}
+
+URegularExpression* CreateURegularExpression(const std::wstring_view& pattern, uint32_t flags, UErrorCode* status) noexcept
+{
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+    const auto re = uregex_open(reinterpret_cast<const char16_t*>(pattern.data()), gsl::narrow_cast<int32_t>(pattern.size()), flags, nullptr, status);
+    // ICU describes the time unit as being dependent on CPU performance and "typically [in] the order of milliseconds",
+    // but this claim seems highly outdated already. On my CPU from 2021, a limit of 4096 equals roughly 600ms.
+    uregex_setTimeLimit(re, 4096, status);
+    uregex_setStackLimit(re, 4 * 1024 * 1024, status);
+    return re;
 }
 
 // Returns an inclusive point range given a text start and end position.
 // This function is designed to be used with uregex_start64/uregex_end64.
-til::point_span BufferRangeFromUText(UText* ut, int64_t nativeIndexBeg, int64_t nativeIndexEnd)
+til::point_span BufferRangeFromMatch(UText* ut, URegularExpression* re)
 {
+    UErrorCode status = U_ZERO_ERROR;
+    const auto nativeIndexBeg = uregex_start64(re, 0, &status);
+    auto nativeIndexEnd = uregex_end64(re, 0, &status);
+
     // The parameters are given as a half-open [beg,end) range, but the point_span we return in closed [beg,end].
     nativeIndexEnd--;
 

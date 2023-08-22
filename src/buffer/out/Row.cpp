@@ -94,7 +94,7 @@ CharToColumnMapper::CharToColumnMapper(const wchar_t* chars, const uint16_t* cha
 // This function in particular returns the glyph's first column.
 til::CoordType CharToColumnMapper::GetLeadingColumnAt(ptrdiff_t offset) noexcept
 {
-    offset = offset < 0 ? 0 : (offset > _lastCharOffset ? _lastCharOffset : offset);
+    offset = clamp(offset, 0, _lastCharOffset);
 
     auto col = _currentColumn;
     const auto currentOffset = _charOffsets[col];

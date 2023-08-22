@@ -9,7 +9,9 @@
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/colorTable.hpp"
 #include "../../buffer/out/search.h"
+#include "../../buffer/out/UTextAdapter.h"
 
+#include <til/hash.h>
 #include <winrt/Microsoft.Terminal.Core.h>
 
 using namespace winrt::Microsoft::Terminal::Core;
@@ -568,7 +570,7 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
     {
         // Hyperlink is outside of the current view.
         // We need to find if there's a pattern at that location.
-        const auto patterns = _activeBuffer().GetPatterns(bufferPos.y, bufferPos.y);
+        const auto patterns = _getPatterns(bufferPos.y, bufferPos.y);
 
         // NOTE: patterns is stored with top y-position being 0,
         //       so we need to cleverly set the y-pos to 0.
@@ -1207,9 +1209,8 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 // - INVARIANT: this function can only be called if the caller has the writing lock on the terminal
 void Terminal::UpdatePatternsUnderLock()
 {
-    auto oldTree = _patternIntervalTree;
-    _patternIntervalTree = _activeBuffer().GetPatterns(_VisibleStartIndex(), _VisibleEndIndex());
-    _InvalidatePatternTree(oldTree);
+    _InvalidatePatternTree(_patternIntervalTree);
+    _patternIntervalTree = _getPatterns(_VisibleStartIndex(), _VisibleEndIndex());
     _InvalidatePatternTree(_patternIntervalTree);
 }
 
@@ -1342,6 +1343,98 @@ void Terminal::_updateUrlDetection()
     {
         ClearPatternTree();
     }
+}
+
+// Interns URegularExpression instances so that they can be reused. This method is thread-safe.
+static unique_URegularExpression internURegularExpression(const std::wstring_view& pattern)
+{
+    struct CacheValue
+    {
+        unique_URegularExpression re;
+        size_t generation = 0;
+    };
+
+    struct CacheKeyHasher
+    {
+        using is_transparent = void;
+
+        std::size_t operator()(const std::wstring_view& str) const
+        {
+            return til::hash(str);
+        }
+    };
+
+    struct SharedState
+    {
+        wil::srwlock lock;
+        std::unordered_map<std::wstring, CacheValue, CacheKeyHasher, std::equal_to<>> set;
+        size_t totalInsertions = 0;
+    };
+
+    static SharedState shared;
+    static constexpr size_t cacheSizeLimit = 128;
+
+    UErrorCode status = U_ZERO_ERROR;
+
+    {
+        const auto guard = shared.lock.lock_shared();
+        if (const auto it = shared.set.find(pattern); it != shared.set.end())
+        {
+            return unique_URegularExpression{ uregex_clone(it->second.re.get(), &status) };
+        }
+    }
+
+    // Even if the URegularExpression creation failed, we'll insert it into the cache, because there's no point in retrying.
+    // (Apart from OOM but in that case this application will crash anyways in 3.. 2.. 1..)
+    unique_URegularExpression re{ CreateURegularExpression(pattern, 0, &status) };
+    unique_URegularExpression clone{ uregex_clone(re.get(), &status) };
+    std::wstring key{ pattern };
+
+    const auto guard = shared.lock.lock_exclusive();
+
+    shared.set.insert_or_assign(std::move(key), CacheValue{ std::move(re), shared.totalInsertions });
+    shared.totalInsertions++;
+
+    // If the cache is full remove the oldest element (oldest = lowest generation, just like with humans).
+    if (shared.set.size() > cacheSizeLimit)
+    {
+        shared.set.erase(std::min_element(shared.set.begin(), shared.set.end(), [](const auto& it, const auto& smallest) {
+            return it.second.generation < smallest.second.generation;
+        }));
+    }
+
+    return clone;
+}
+
+PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
+{
+    static constexpr std::array<std::wstring_view, 1> patterns{
+        LR"(\b(?:https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])",
+    };
+
+    PointTree::interval_vector intervals;
+
+    UErrorCode status = U_ZERO_ERROR;
+    auto text = UTextFromTextBuffer(_activeBuffer(), beg, end + 1, &status);
+
+    for (size_t i = 0; i < patterns.size(); ++i)
+    {
+        const auto re = internURegularExpression(patterns[i]);
+        uregex_setUText(re.get(), &text, &status);
+
+        if (uregex_find(re.get(), -1, &status))
+        {
+            do
+            {
+                auto range = BufferRangeFromMatch(&text, re.get());
+                // PointTree uses half-open ranges.
+                range.end.x++;
+                intervals.push_back(PointTree::interval(range.start, range.end, 0));
+            } while (uregex_findNext(re.get(), &status));
+        }
+    }
+
+    return PointTree{ std::move(intervals) };
 }
 
 // NOTE: This is the version of AddMark that comes from the UI. The VT api call into this too.
