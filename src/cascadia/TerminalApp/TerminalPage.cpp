@@ -2011,10 +2011,31 @@ namespace winrt::TerminalApp::implementation
             {
                 if (const auto pane{ terminalTab->GetActivePane() })
                 {
+                    // Get the tab title _before_ moving things around in case the tabIdx doesn't point to the right one after the move
+                    const auto tabTitle = _tabs.GetAt(tabIdx).Title();
+
                     auto startupActions = pane->BuildStartupActions(0, 1, true, true);
                     _DetachPaneFromWindow(pane);
-                    _MoveContent(std::move(startupActions.args), args.Window(), args.TabIndex());
+                    _MoveContent(std::move(startupActions.args), windowId, tabIdx);
                     focusedTab->DetachPane();
+
+                    if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
+                    {
+                        if (windowId == L"new")
+                        {
+                            autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                                                            Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                                                            RS_(L"TerminalPage_PaneMovedAnnouncement_NewWindow"),
+                                                            L"TerminalPageMovePaneToNewWindow" /* unique name for this notification category */);
+                        }
+                        else
+                        {
+                            autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                                                            Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                                                            fmt::format(std::wstring_view{ RS_(L"TerminalPage_PaneMovedAnnouncement_ExistingWindow") }, tabTitle, windowId),
+                                                            L"TerminalPageMovePaneToExistingWindow" /* unique name for this notification category */);
+                        }
+                    }
                     return true;
                 }
             }
@@ -2040,11 +2061,27 @@ namespace winrt::TerminalApp::implementation
             auto pane = focusedTab->DetachPane();
             targetTab->AttachPane(pane);
             _SetFocusedTab(*targetTab);
+
+            if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
+            {
+                const auto tabTitle = targetTab->Title();
+                autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                                                Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                                                fmt::format(std::wstring_view{ RS_(L"TerminalPage_PaneMovedAnnouncement_ExistingTab") }, tabTitle),
+                                                L"TerminalPageMovePaneToExistingTab" /* unique name for this notification category */);
+            }
         }
         else
         {
             auto pane = focusedTab->DetachPane();
             _CreateNewTabFromPane(pane);
+            if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
+            {
+                autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                                                Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                                                RS_(L"TerminalPage_PaneMovedAnnouncement_NewTab"),
+                                                L"TerminalPageMovePaneToNewTab" /* unique name for this notification category */);
+            }
         }
 
         return true;
@@ -2116,8 +2153,27 @@ namespace winrt::TerminalApp::implementation
             {
                 auto startupActions = terminalTab->BuildStartupActions(true);
                 _DetachTabFromWindow(terminalTab);
-                _MoveContent(std::move(startupActions), args.Window(), 0);
+                _MoveContent(std::move(startupActions), windowId, 0);
                 _RemoveTab(*terminalTab);
+
+                if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
+                {
+                    const auto tabTitle = terminalTab->Title();
+                    if (windowId == L"new")
+                    {
+                        autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                                                        Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                                                        fmt::format(std::wstring_view{ RS_(L"TerminalPage_TabMovedAnnouncement_NewWindow") }, tabTitle),
+                                                        L"TerminalPageMoveTabToNewWindow" /* unique name for this notification category */);
+                    }
+                    else
+                    {
+                        autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                                                        Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                                                        fmt::format(std::wstring_view{ RS_(L"TerminalPage_TabMovedAnnouncement_Default") }, tabTitle, windowId),
+                                                        L"TerminalPageMoveTabToExistingWindow" /* unique name for this notification category */);
+                    }
+                }
                 return true;
             }
         }
@@ -5010,5 +5066,4 @@ namespace winrt::TerminalApp::implementation
 
         return profileMenuItemFlyout;
     }
-
 }

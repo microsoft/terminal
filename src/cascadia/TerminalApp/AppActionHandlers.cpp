@@ -211,16 +211,6 @@ namespace winrt::TerminalApp::implementation
         else if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
         {
             const auto moved = _MovePane(realArgs);
-            if (moved)
-            {
-                if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
-                {
-                    autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
-                                                    Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                                                    RS_(L"TerminalPage_PaneMovedAnnouncement"),
-                                                    L"TerminalPageMovePane" /* unique name for this notification category */);
-                }
-            }
             args.Handled(moved);
         }
     }
@@ -823,17 +813,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<MoveTabArgs>())
         {
-            auto moved = _MoveTab(realArgs);
-            if (moved)
-            {
-                if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
-                {
-                    autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
-                                                    Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                                                    RS_(L"TerminalPage_TabMovedAnnouncement"),
-                                                    L"TerminalPageMoveTab" /* unique name for this notification category */);
-                }
-            }
+            const auto moved = _MoveTab(realArgs);
             actionArgs.Handled(moved);
         }
     }
