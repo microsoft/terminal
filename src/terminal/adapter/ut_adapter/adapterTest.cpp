@@ -1135,7 +1135,7 @@ public:
     TEST_METHOD(GraphicsSingleWithSubParamTests)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{38, 48}") // corresponds to options in DispatchTypes::GraphicsOptions
+            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{4, 38, 48, 58}") // corresponds to options in DispatchTypes::GraphicsOptions
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -1156,6 +1156,13 @@ public:
         TextAttribute startingAttribute;
         switch (graphicsOption)
         {
+        case DispatchTypes::GraphicsOptions::Underline:
+            Log::Comment(L"Testing graphics 'Underline'");
+            _testGetSet->MakeSubParamsAndRanges({ { 3 } }, subParams, subParamRanges);
+            startingAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
+            break;
         case DispatchTypes::GraphicsOptions::ForegroundExtended:
             Log::Comment(L"Testing graphics 'ForegroundExtended'");
             _testGetSet->MakeSubParamsAndRanges({ { DispatchTypes::GraphicsOptions::BlinkOrXterm256Index, TextColor::DARK_RED } }, subParams, subParamRanges);
@@ -1169,6 +1176,13 @@ public:
             startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute.SetIndexedBackground256(TextColor::BRIGHT_WHITE);
+            break;
+        case DispatchTypes::GraphicsOptions::UnderlineColor:
+            Log::Comment(L"Testing graphics 'UnderlineColor'");
+            _testGetSet->MakeSubParamsAndRanges({ { DispatchTypes::GraphicsOptions::BlinkOrXterm256Index, TextColor::DARK_RED } }, subParams, subParamRanges);
+            startingAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetUnderlineColor({ TextColor::DARK_RED, true });
             break;
         default:
             VERIFY_FAIL(L"Test not implemented yet!");
