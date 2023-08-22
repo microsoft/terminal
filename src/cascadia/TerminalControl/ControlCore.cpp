@@ -241,7 +241,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _setupDispatcherAndCallbacks();
         const auto actualNewSize = _actualFont.GetSize();
         // Bubble this up, so our new control knows how big we want the font.
-        _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, true);
+        _FontSizeChangedHandlers(*this, *winrt::make_self<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height, true));
 
         // The renderer will be re-enabled in Initialize
 
@@ -947,7 +947,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto actualNewSize = _actualFont.GetSize();
-        _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, initialUpdate);
+        _FontSizeChangedHandlers(*this, *winrt::make_self<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height, initialUpdate));
     }
 
     // Method Description:

@@ -248,7 +248,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
-        WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
+        TYPED_EVENT(FontSizeChanged,           IInspectable, Control::FontSizeChangedArgs);
 
         TYPED_EVENT(CopyToClipboard,           IInspectable, Control::CopyToClipboardEventArgs);
         TYPED_EVENT(TitleChanged,              IInspectable, Control::TitleChangedEventArgs);
