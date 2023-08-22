@@ -57,6 +57,12 @@ parameters:
   - name: beforeBuildSteps
     type: stepList
     default: []
+  - name: variables
+    type: object
+    default: {}
+  - name: publishArtifacts
+    type: boolean
+    default: true
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -84,6 +90,9 @@ jobs:
     # Yup.
     BuildTargetParameter: ' '
     SelectedSigningFragments: ' '
+    JobOutputDirectory: $(Terminal.BinDir)
+    JobOutputArtifactName: build-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+    ${{ insert }}: ${{ parameters.variables }}
   displayName: Build
   timeoutInMinutes: 240
   cancelTimeoutInMinutes: 1
@@ -141,10 +150,17 @@ jobs:
       configuration: $(BuildConfiguration)
       maximumCpuCount: true
 
-  - publish: $(Build.SourcesDirectory)/msbuild.binlog
-    artifact: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
-    condition: always()
-    displayName: Publish Build Log
+  - ${{ if eq(parameters.publishArtifacts, true) }}:
+    - publish: $(Build.SourcesDirectory)/msbuild.binlog
+      artifact: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+      condition: always()
+      displayName: Publish Build Log
+  - ${{ else }}:
+    - task: CopyFiles@2
+      displayName: Copy Build Log
+      inputs:
+        contents: $(Build.SourcesDirectory)/msbuild.binlog
+        TargetFolder: $(Terminal.BinDir)
 
   # This saves ~2GiB per architecture. We won't need these later.
   # Removes:
@@ -258,6 +274,7 @@ jobs:
         ValidateSignature: true
         Verbosity: 'Verbose'
 
-  - publish: $(Terminal.BinDir)
-    artifact: build-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
-    displayName: Publish All Outputs
+  - ${{ if eq(parameters.publishArtifacts, true) }}:
+    - publish: $(Terminal.BinDir)
+      artifact: $(JobOutputArtifactName)
+      displayName: Publish All Outputs

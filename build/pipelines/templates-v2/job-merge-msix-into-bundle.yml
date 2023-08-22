@@ -23,6 +23,12 @@ parameters:
   - name: jobName
     type: string
     default: Bundle
+  - name: variables
+    type: object
+    default: {}
+  - name: publishArtifacts
+    type: boolean
+    default: true
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -44,6 +50,9 @@ jobs:
       BundleStemName: Microsoft.WindowsTerminalPreview
     ${{ else }}:
       BundleStemName: WindowsTerminalDev
+    JobOutputDirectory: '$(System.ArtifactsDirectory)/bundle'
+    JobOutputArtifactName: appxbundle-$(BuildConfiguration)${{ parameters.artifactStem }}
+    ${{ insert }}: ${{ parameters.variables }}
   dependsOn: ${{ parameters.dependsOn }}
   steps:
   - checkout: self
@@ -128,6 +137,7 @@ jobs:
         ValidateSignature: true
         Verbosity: 'Verbose'
 
-  - publish: '$(System.ArtifactsDirectory)/bundle'
-    artifact: appxbundle-$(BuildConfiguration)${{ parameters.artifactStem }}
-    displayName: Publish msixbundle
+  - ${{ if eq(parameters.publishArtifacts, true) }}:
+    - publish: $(JobOutputDirectory)
+      artifact: $(JobOutputArtifactName)
+      displayName: Publish msixbundle
