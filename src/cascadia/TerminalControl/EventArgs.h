@@ -28,17 +28,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
     public:
         FontSizeChangedArgs(int32_t width,
-                            int32_t height,
-                            bool isInitialChange) :
+                            int32_t height) :
             Width(width),
-            Height(height),
-            IsInitialChange(isInitialChange)
+            Height(height)
         {
         }
 
         til::property<int32_t> Width;
         til::property<int32_t> Height;
-        til::property<bool> IsInitialChange;
     };
 
     struct TitleChangedEventArgs : public TitleChangedEventArgsT<TitleChangedEventArgs>

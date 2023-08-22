@@ -3307,12 +3307,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
         scaleMarker(SelectionStartMarker());
         scaleMarker(SelectionEndMarker());
-
-        // Don't try to inspect the core here. The Core is raising this while
-        // it's holding its write lock. If the handlers calls back to some
-        // method on the TermControl on the same thread, and that _method_ calls
-        // to ControlCore, we might be in danger of deadlocking.
-        FontSizeChanged.raise(*this, args);
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,

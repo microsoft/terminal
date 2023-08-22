@@ -16,7 +16,6 @@ namespace Microsoft.Terminal.Control
     {
         Int32 Width { get; };
         Int32 Height { get; };
-        Boolean IsInitialChange{ get; };
     }
 
     runtimeclass CopyToClipboardEventArgs
