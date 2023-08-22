@@ -1,0 +1,20 @@
+trigger: none
+pr: none
+schedules:
+  - cron: "30 3 * * 2-6" # Run at 03:30 UTC Tuesday through Saturday (After the work day in Pacific, Mon-Fri)
+    displayName: "Nightly Terminal Build"
+    branches:
+      include:
+        - main
+    always: false # only run if there's code changes!
+
+extends:
+  template: release.yml
+  parameters:
+    branding: Canary
+    buildTerminal: true
+    pgoBuildMode: Optimize
+    codeSign: true
+    generateSbom: true
+    publishSymbolsToPublic: true
+    publishVpackToWindows: false
