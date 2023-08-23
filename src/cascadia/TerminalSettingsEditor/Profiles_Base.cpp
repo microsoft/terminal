@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "Profiles_Base.h"
 #include "Profiles_Base.g.cpp"
-#include "Profiles.h"
+#include "ProfileViewModel.h"
 
 #include <LibraryResources.h>
 #include "..\WinRTUtils\inc\Utils.h"
@@ -29,8 +29,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Base::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        auto state{ e.Parameter().as<Editor::ProfilePageNavigationState>() };
-        _Profile = state.Profile();
+        const auto args = e.Parameter().as<Editor::NavigateToProfileArgs>();
+        _Profile = args.Profile();
+        _windowRoot = args.WindowRoot();
 
         // Check the use parent directory box if the starting directory is empty
         if (_Profile.StartingDirectory().empty())
@@ -38,7 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             StartingDirectoryUseParentCheckbox().IsChecked(true);
         }
 
-        _layoutUpdatedRevoker = LayoutUpdated(winrt::auto_revoke, [state, this](auto /*s*/, auto /*e*/) {
+        _layoutUpdatedRevoker = LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
             // This event fires every time the layout changes, but it is always the last one to fire
             // in any layout change chain. That gives us great flexibility in finding the right point
             // at which to initialize our renderer (and our terminal).
@@ -47,10 +48,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // Only let this succeed once.
             _layoutUpdatedRevoker.revoke();
 
-            if (state.FocusDeleteButton())
+            if (_Profile.FocusDeleteButton())
             {
                 DeleteButton().Focus(FocusState::Programmatic);
-                state.FocusDeleteButton(false);
+                _Profile.FocusDeleteButton(false);
                 ProfilesBase_ScrollView().ChangeView(nullptr, ProfilesBase_ScrollView().ScrollableHeight(), nullptr);
             }
         });
@@ -86,7 +87,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         };
 
         static constexpr winrt::guid clientGuidExecutables{ 0x2E7E4331, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
-        const auto parentHwnd{ reinterpret_cast<HWND>(winrt::get_self<ProfileViewModel>(_Profile)->WindowRoot().GetHostingWindow()) };
+        const auto parentHwnd{ reinterpret_cast<HWND>(_windowRoot.GetHostingWindow()) };
         auto path = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
             THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExecutables));
             try
@@ -110,7 +111,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto lifetime = get_strong();
 
-        const auto parentHwnd{ reinterpret_cast<HWND>(winrt::get_self<ProfileViewModel>(_Profile)->WindowRoot().GetHostingWindow()) };
+        const auto parentHwnd{ reinterpret_cast<HWND>(_windowRoot.GetHostingWindow()) };
         auto file = co_await OpenImagePicker(parentHwnd);
         if (!file.empty())
         {
@@ -121,7 +122,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     fire_and_forget Profiles_Base::StartingDirectory_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
-        const auto parentHwnd{ reinterpret_cast<HWND>(winrt::get_self<ProfileViewModel>(_Profile)->WindowRoot().GetHostingWindow()) };
+        const auto parentHwnd{ reinterpret_cast<HWND>(_windowRoot.GetHostingWindow()) };
         auto folder = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
             static constexpr winrt::guid clientGuidFolderPicker{ 0xAADAA433, 0xB04D, 0x4BAE, { 0xB1, 0xEA, 0x1E, 0x6C, 0xD1, 0xCD, 0xA6, 0x8B } };
             THROW_IF_FAILED(dialog->SetClientGuid(clientGuidFolderPicker));

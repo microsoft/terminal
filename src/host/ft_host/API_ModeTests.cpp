@@ -21,6 +21,7 @@ class ModeTests
 
     TEST_METHOD(TestConsoleModeInputScenario);
     TEST_METHOD(TestConsoleModeScreenBufferScenario);
+    TEST_METHOD(TestConsoleModeAcrossMultipleBuffers);
 
     TEST_METHOD(TestGetConsoleDisplayMode);
 
@@ -92,6 +93,55 @@ void ModeTests::TestConsoleModeScreenBufferScenario()
     dwOutputMode = (DWORD)-1;
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(Common::_hConsole, &dwOutputMode), L"Get zero output flags");
     VERIFY_ARE_EQUAL(dwOutputMode, (DWORD)0, L"Verify able to set zero output flags");
+}
+
+void ModeTests::TestConsoleModeAcrossMultipleBuffers()
+{
+    auto dwInitialMode = (DWORD)-1;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(Common::_hConsole, &dwInitialMode),
+                                L"Get initial output flags");
+
+    Log::Comment(L"Verify initial flags match the expected defaults");
+    VERIFY_IS_TRUE(WI_IsFlagSet(dwInitialMode, ENABLE_PROCESSED_OUTPUT));
+    VERIFY_IS_TRUE(WI_IsFlagSet(dwInitialMode, ENABLE_WRAP_AT_EOL_OUTPUT));
+    VERIFY_IS_TRUE(WI_IsFlagClear(dwInitialMode, DISABLE_NEWLINE_AUTO_RETURN));
+    VERIFY_IS_TRUE(WI_IsFlagClear(dwInitialMode, ENABLE_LVB_GRID_WORLDWIDE));
+
+    // The initial VT flag may vary, dependent on the VirtualTerminalLevel registry entry.
+    const auto defaultVtFlag = WI_IsFlagSet(dwInitialMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    auto dwUpdatedMode = dwInitialMode;
+    WI_ClearFlag(dwUpdatedMode, ENABLE_PROCESSED_OUTPUT);
+    WI_ClearFlag(dwUpdatedMode, ENABLE_WRAP_AT_EOL_OUTPUT);
+    WI_SetFlag(dwUpdatedMode, DISABLE_NEWLINE_AUTO_RETURN);
+    WI_SetFlag(dwUpdatedMode, ENABLE_LVB_GRID_WORLDWIDE);
+    WI_UpdateFlag(dwUpdatedMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING, !defaultVtFlag);
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(Common::_hConsole, dwUpdatedMode),
+                                L"Update flags to the opposite of their initial values");
+
+    auto hSecondBuffer = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE,
+                                                   0 /*dwShareMode*/,
+                                                   nullptr /*lpSecurityAttributes*/,
+                                                   CONSOLE_TEXTMODE_BUFFER,
+                                                   nullptr /*lpReserved*/);
+    VERIFY_ARE_NOT_EQUAL(INVALID_HANDLE_VALUE, hSecondBuffer, L"Create a second screen buffer");
+
+    auto dwSecondBufferMode = (DWORD)-1;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(hSecondBuffer, &dwSecondBufferMode),
+                                L"Get initial flags for second buffer");
+
+    VERIFY_ARE_EQUAL(dwInitialMode, dwSecondBufferMode, L"Verify second buffer initialized with defaults");
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hSecondBuffer, dwSecondBufferMode),
+                                L"Reapply mode to test if it affects the main buffer");
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(CloseHandle(hSecondBuffer), L"Close the second buffer");
+
+    auto dwFinalMode = (DWORD)-1;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(Common::_hConsole, &dwFinalMode),
+                                L"Get flags from the main buffer again");
+
+    VERIFY_ARE_EQUAL(dwUpdatedMode, dwFinalMode, L"Verify main buffer flags haven't changed");
 }
 
 void ModeTests::TestGetConsoleDisplayMode()

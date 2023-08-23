@@ -322,7 +322,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 // See: Win7: 390673, 447839 and then superseded by http://osgvsowi/638274 when FE/non-FE rendering condensed.
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
-[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                  const til::point coord,
                                                  const bool trimLeft,
                                                  const bool /*lineWrapped*/) noexcept

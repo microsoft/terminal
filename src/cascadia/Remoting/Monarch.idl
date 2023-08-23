@@ -18,6 +18,20 @@ namespace Microsoft.Terminal.Remoting
         Boolean ShouldCreateWindow { get; }; // If you name this `CreateWindow`, the compiler will explode
     }
 
+    [default_interface] runtimeclass WindowRequestedArgs {
+        WindowRequestedArgs(ProposeCommandlineResult windowInfo, CommandlineArgs command);
+
+        UInt64 Id { get; };
+        String WindowName { get; };
+
+        String[] Commandline { get; };
+        String CurrentDirectory { get; };
+        UInt32 ShowWindowCommand { get; };
+
+        String Content { get; };
+        Windows.Foundation.IReference<Windows.Foundation.Rect> InitialBounds { get; };
+    }
+
     [default_interface] runtimeclass SummonWindowSelectionArgs {
         SummonWindowSelectionArgs();
         SummonWindowSelectionArgs(String windowName);
@@ -31,8 +45,7 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.IReference<UInt64> WindowID;
     }
 
-    [default_interface] runtimeclass QuitAllRequestedArgs 
-    {
+    [default_interface] runtimeclass QuitAllRequestedArgs {
         QuitAllRequestedArgs();
         Windows.Foundation.IAsyncAction BeforeQuitAllAction;
     }
@@ -60,12 +73,17 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.Collections.IVectorView<PeasantInfo> GetPeasantInfos { get; };
         Windows.Foundation.Collections.IVector<String> GetAllWindowLayouts();
 
+        void RequestMoveContent(String window, String content, UInt32 tabIndex, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
+        void RequestSendContent(RequestReceiveContentArgs args);
+
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
         event Windows.Foundation.TypedEventHandler<Object, QuitAllRequestedArgs> QuitAllRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
     };
 
     runtimeclass Monarch : [default] IMonarch

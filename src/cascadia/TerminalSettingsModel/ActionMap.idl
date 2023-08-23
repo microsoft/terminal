@@ -20,6 +20,10 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.Collections.IMapView<String, Command> NameMap { get; };
         Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Command> KeyBindings { get; };
         Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Command> GlobalHotkeys { get; };
+
+        IVector<Command> ExpandedCommands { get; };
+
+        IVector<Command> FilterToSendInput(String CurrentCommandline);
     };
 
     [default_interface] runtimeclass ActionMap : IActionMapView

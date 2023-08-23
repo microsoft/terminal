@@ -49,7 +49,7 @@
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
     </ProjectReference>
-    <!-- Reference Microsoft.Terminal.RemotingLib here, so we can use it's winmd as
+    <!-- Reference Microsoft.Terminal.RemotingLib here, so we can use its winmd as
     our winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Remoting\Microsoft.Terminal.RemotingLib.vcxproj">

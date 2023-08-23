@@ -19,6 +19,8 @@ namespace Microsoft.Terminal.Wpf
     /// </summary>
     public partial class TerminalControl : UserControl
     {
+        private int accumulatedDelta = 0;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TerminalControl"/> class.
         /// </summary>
@@ -31,20 +33,6 @@ namespace Microsoft.Terminal.Wpf
             this.scrollbar.MouseWheel += this.Scrollbar_MouseWheel;
 
             this.GotFocus += this.TerminalControl_GotFocus;
-        }
-
-        /// <inheritdoc/>
-        protected override AutomationPeer OnCreateAutomationPeer()
-        {
-            var peer = FrameworkElementAutomationPeer.FromElement(this);
-            if (peer == null)
-            {
-                // Provide our own automation peer here that just sets IsContentElement/IsControlElement to false
-                // (aka AccessibilityView = Raw). This makes it not pop up in the UIA tree.
-                peer = new TermControlAutomationPeer(this);
-            }
-
-            return peer;
         }
 
         /// <summary>
@@ -82,8 +70,6 @@ namespace Microsoft.Terminal.Wpf
         {
             get => this.termContainer.TerminalRendererSize;
         }
-
-        private int accumulatedDelta = 0;
 
         /// <summary>
         /// Sets the theme for the terminal. This includes font family, size, color, as well as background and foreground colors.
@@ -162,6 +148,20 @@ namespace Microsoft.Terminal.Wpf
             this.termContainer.Resize(rendersize);
 
             return (this.Rows, this.Columns);
+        }
+
+        /// <inheritdoc/>
+        protected override AutomationPeer OnCreateAutomationPeer()
+        {
+            var peer = FrameworkElementAutomationPeer.FromElement(this);
+            if (peer == null)
+            {
+                // Provide our own automation peer here that just sets IsContentElement/IsControlElement to false
+                // (aka AccessibilityView = Raw). This makes it not pop up in the UIA tree.
+                peer = new TermControlAutomationPeer(this);
+            }
+
+            return peer;
         }
 
         /// <inheritdoc/>
@@ -284,7 +284,8 @@ namespace Microsoft.Terminal.Wpf
 
         private class TermControlAutomationPeer : UserControlAutomationPeer
         {
-            public TermControlAutomationPeer(UserControl owner) : base(owner)
+            public TermControlAutomationPeer(UserControl owner)
+                : base(owner)
             {
             }
 

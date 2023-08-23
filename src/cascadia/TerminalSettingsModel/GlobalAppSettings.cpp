@@ -212,7 +212,22 @@ Json::Value GlobalAppSettings::ToJson() const
 
 winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
 {
-    return _themes.TryLookup(Theme());
+    auto requestedTheme = Model::Theme::IsSystemInDarkTheme() ?
+                              winrt::Windows::UI::Xaml::ElementTheme::Dark :
+                              winrt::Windows::UI::Xaml::ElementTheme::Light;
+
+    switch (requestedTheme)
+    {
+    case winrt::Windows::UI::Xaml::ElementTheme::Light:
+        return _themes.TryLookup(Theme().LightName());
+
+    case winrt::Windows::UI::Xaml::ElementTheme::Dark:
+        return _themes.TryLookup(Theme().DarkName());
+
+    case winrt::Windows::UI::Xaml::ElementTheme::Default:
+    default:
+        return nullptr;
+    }
 }
 
 void GlobalAppSettings::AddTheme(const Model::Theme& theme)
@@ -223,4 +238,15 @@ void GlobalAppSettings::AddTheme(const Model::Theme& theme)
 winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::Theme> GlobalAppSettings::Themes() noexcept
 {
     return _themes.GetView();
+}
+
+void GlobalAppSettings::ExpandCommands(const winrt::Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
+                                       const winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes)
+{
+    _actionMap->ExpandCommands(profiles, schemes);
+}
+
+bool GlobalAppSettings::ShouldUsePersistedLayout() const
+{
+    return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout && !IsolatedMode();
 }

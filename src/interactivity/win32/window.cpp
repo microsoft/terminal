@@ -92,17 +92,17 @@ Window::~Window()
 {
     auto status = s_RegisterWindowClass();
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         auto pNewWindow = new (std::nothrow) Window();
 
         status = NT_TESTNULL(pNewWindow);
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = pNewWindow->_MakeWindow(pSettings, pScreen);
 
-            if (NT_SUCCESS(status))
+            if (SUCCEEDED_NTSTATUS(status))
             {
                 LOG_IF_FAILED(ServiceLocator::SetConsoleWindowInstance(pNewWindow));
             }
@@ -147,13 +147,14 @@ Window::~Window()
         // Load icons
         status = Icon::Instance().GetIcons(&wc.hIcon, &wc.hIconSm);
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             s_atomWindowClass = RegisterClassExW(&wc);
 
             if (s_atomWindowClass == 0)
             {
-                status = NTSTATUS_FROM_WIN32(GetLastError());
+                const auto gle = GetLastError();
+                status = NTSTATUS_FROM_WIN32(gle);
             }
         }
     }
@@ -249,7 +250,7 @@ void Window::_UpdateSystemMetrics() const
         status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         auto& siAttached = GetScreenInfo();
 
@@ -328,41 +329,43 @@ void Window::_UpdateSystemMetrics() const
             status = NTSTATUS_FROM_WIN32(gle);
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             _hWnd = hWnd;
 
 #if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
             if (pDxEngine)
             {
-                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->SetHwnd(hWnd))));
-
-                if (NT_SUCCESS(status))
+                HRESULT hr = S_OK;
+                if (SUCCEEDED(hr = pDxEngine->SetHwnd(hWnd)))
                 {
-                    status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->Enable())));
+                    hr = pDxEngine->Enable();
                 }
+                status = NTSTATUS_FROM_HRESULT(hr);
             }
             else
 #endif
 #if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
                 if (pAtlasEngine)
             {
-                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pAtlasEngine->SetHwnd(hWnd))));
+                const auto hr = pAtlasEngine->SetHwnd(hWnd);
+                status = NTSTATUS_FROM_HRESULT(hr);
             }
             else
 #endif
             {
-                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pGdiEngine->SetHwnd(hWnd))));
+                const auto hr = pGdiEngine->SetHwnd(hWnd);
+                status = NTSTATUS_FROM_HRESULT(hr);
             }
 
-            if (NT_SUCCESS(status))
+            if (SUCCEEDED_NTSTATUS(status))
             {
                 // Set alpha on window if requested
                 ApplyWindowOpacity();
 
                 status = Menu::CreateInstance(hWnd);
 
-                if (NT_SUCCESS(status))
+                if (SUCCEEDED_NTSTATUS(status))
                 {
                     gci.ConsoleIme.RefreshAreaAttributes();
 
@@ -430,7 +433,7 @@ void Window::_CloseWindow() const
         gci.Flags |= CONSOLE_IS_ICONIC;
     }
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         ShowWindow(hWnd, wShowWindow);
 
@@ -1274,7 +1277,7 @@ void Window::s_ReinitializeFontsForDPIChange()
     HKEY hCurrentUserKey, hConsoleKey, hTitleKey;
     // Open the current user registry key.
     auto Status = RegistrySerialization::s_OpenCurrentUserConsoleTitleKey(pwszTitle, &hCurrentUserKey, &hConsoleKey, &hTitleKey);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         // Save window size
         auto windowRect = pWindow->GetWindowRect();
@@ -1286,7 +1289,7 @@ void Window::s_ReinitializeFontsForDPIChange()
                                                       REG_DWORD,
                                                       reinterpret_cast<BYTE*>(&dwValue),
                                                       static_cast<DWORD>(sizeof(dwValue)));
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             const auto coordScreenBufferSize = gci.GetActiveOutputBuffer().GetBufferSize().Dimensions();
             auto screenBufferWidth = coordScreenBufferSize.width;
@@ -1298,7 +1301,7 @@ void Window::s_ReinitializeFontsForDPIChange()
                                                           REG_DWORD,
                                                           reinterpret_cast<BYTE*>(&dwValue),
                                                           static_cast<DWORD>(sizeof(dwValue)));
-            if (NT_SUCCESS(Status))
+            if (SUCCEEDED_NTSTATUS(Status))
             {
                 // Save window position
                 if (fAutoPos)
@@ -1336,7 +1339,7 @@ void Window::s_ReinitializeFontsForDPIChange()
 
     // Open the current user registry key.
     auto Status = RegistrySerialization::s_OpenCurrentUserConsoleTitleKey(pwszTitle, &hCurrentUserKey, &hConsoleKey, &hTitleKey);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         // Save window opacity
         DWORD dwValue;

@@ -26,7 +26,7 @@ CopyFromCharPopup::CopyFromCharPopup(SCREEN_INFORMATION& screenInfo) :
     auto PopupKeys = false;
     DWORD modifiers = 0;
     auto Status = _getUserInput(cookedReadData, PopupKeys, modifiers, Char);
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return Status;
     }

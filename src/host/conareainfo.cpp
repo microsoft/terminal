@@ -110,7 +110,7 @@ void ConversionAreaInfo::SetAttributes(const TextAttribute& attr)
 void ConversionAreaInfo::WriteText(const std::vector<OutputCell>& text,
                                    const til::CoordType column)
 {
-    gsl::span<const OutputCell> view(text.data(), text.size());
+    std::span<const OutputCell> view(text.data(), text.size());
     _screenBuffer->Write(view, { column, 0 });
 }
 

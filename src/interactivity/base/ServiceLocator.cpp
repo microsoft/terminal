@@ -138,11 +138,11 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
         {
             status = ServiceLocator::LoadInteractivityFactory();
         }
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = s_interactivityFactory->CreateConsoleInputThread(s_consoleInputThread);
 
-            if (NT_SUCCESS(status))
+            if (SUCCEEDED_NTSTATUS(status))
             {
                 *thread = s_consoleInputThread.get();
             }
@@ -232,7 +232,7 @@ IConsoleControl* ServiceLocator::LocateConsoleControl()
             status = ServiceLocator::LoadInteractivityFactory();
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = s_interactivityFactory->CreateConsoleControl(s_consoleControl);
         }
@@ -259,7 +259,7 @@ IHighDpiApi* ServiceLocator::LocateHighDpiApi()
             status = ServiceLocator::LoadInteractivityFactory();
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = s_interactivityFactory->CreateHighDpiApi(s_highDpiApi);
         }
@@ -281,7 +281,7 @@ IWindowMetrics* ServiceLocator::LocateWindowMetrics()
             status = ServiceLocator::LoadInteractivityFactory();
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = s_interactivityFactory->CreateWindowMetrics(s_windowMetrics);
         }
@@ -308,7 +308,7 @@ ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider(
             status = ServiceLocator::LoadInteractivityFactory();
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = s_interactivityFactory->CreateSystemConfigurationProvider(s_systemConfigurationProvider);
         }
@@ -341,7 +341,7 @@ HWND ServiceLocator::LocatePseudoWindow(const HWND owner)
             status = ServiceLocator::LoadInteractivityFactory();
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             HWND hwnd;
             status = s_interactivityFactory->CreatePseudoWindow(hwnd, owner);

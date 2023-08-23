@@ -21,35 +21,9 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 
-static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
-{
-    std::wstring wstr = L"";
-    for (const auto& ev : inEventsToWrite)
-    {
-        if (ev->EventType() == InputEventType::KeyEvent)
-        {
-            const auto& k = static_cast<KeyEvent&>(*ev);
-            const auto wch = k.GetCharData();
-            wstr += wch;
-        }
-    }
-    return wstr;
-}
-
 #pragma warning(suppress : 26455) // default constructor is throwing, too much effort to rearrange at this time.
 Terminal::Terminal()
 {
-    auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
-        if (!_pfnWriteInput)
-        {
-            return;
-        }
-        const auto wstr = _KeyEventsToText(inEventsToWrite);
-        _pfnWriteInput(wstr);
-    };
-
-    _terminalInput = std::make_unique<TerminalInput>(passAlongInput);
-
     _renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, RGB(255, 255, 255));
     _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, RGB(0, 0, 0));
 }
@@ -64,7 +38,7 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
     const UINT cursorSize = 12;
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, renderer);
 
-    auto dispatch = std::make_unique<AdaptDispatch>(*this, renderer, _renderSettings, *_terminalInput);
+    auto dispatch = std::make_unique<AdaptDispatch>(*this, renderer, _renderSettings, _terminalInput);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 
@@ -111,7 +85,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
 
-    _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
+    _terminalInput.ForceDisableWin32InputMode(settings.ForceVTInput());
 
     if (settings.TabColor() == nullptr)
     {
@@ -180,7 +154,6 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     {
         _renderSettings.SetColorTableEntry(i, til::color{ appearance.GetColorTableEntry(i) });
     }
-    _renderSettings.MakeAdjustedColorArray();
 
     auto cursorShape = CursorType::VerticalBar;
     switch (appearance.CursorShape())
@@ -236,7 +209,7 @@ void Terminal::EraseScrollback()
 
 bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
 {
-    return _bracketedPasteMode;
+    return _systemMode.test(Mode::BracketedPaste);
 }
 
 std::wstring_view Terminal::GetWorkingDirectory() noexcept
@@ -490,9 +463,7 @@ void Terminal::Write(std::wstring_view stringView)
     const til::point cursorPosAfter{ cursor.GetPosition() };
 
     // Firing the CursorPositionChanged event is very expensive so we try not to
-    // do that when the cursor does not need to be redrawn. We don't do this
-    // inside _AdjustCursorPosition, only once we're done writing the whole run
-    // of output.
+    // do that when the cursor does not need to be redrawn.
     if (cursorPosBefore != cursorPosAfter)
     {
         _NotifyTerminalCursorPositionChanged();
@@ -543,7 +514,7 @@ void Terminal::TrySnapOnInput()
 // - true, if we are tracking mouse input. False, otherwise
 bool Terminal::IsTrackingMouseInput() const noexcept
 {
-    return _terminalInput->IsTrackingMouseInput();
+    return _terminalInput.IsTrackingMouseInput();
 }
 
 // Routine Description:
@@ -557,7 +528,7 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 bool Terminal::ShouldSendAlternateScroll(const unsigned int uiButton,
                                          const int32_t delta) const noexcept
 {
-    return _terminalInput->ShouldSendAlternateScroll(uiButton, ::base::saturated_cast<short>(delta));
+    return _terminalInput.ShouldSendAlternateScroll(uiButton, ::base::saturated_cast<short>(delta));
 }
 
 // Method Description:
@@ -668,7 +639,7 @@ std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromViewportPos
 // - Character events (e.g. WM_CHAR) are generally the best way to properly receive
 //   keyboard input on Windows though, as the OS is suited best at handling the
 //   translation of the current keyboard layout, dead keys, etc.
-//   As a result of this false is returned for all key events that contain characters.
+//   As a result of this false is returned for all key down events that contain characters.
 //   SendCharEvent may then be called with the data obtained from a character event.
 // - As a special case we'll always handle VK_TAB key events.
 //   This must be done due to TermControl::_KeyDownHandler (one of the callers)
@@ -690,7 +661,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     // modifier key. We'll wait for a real keystroke to snap to the bottom.
     // GH#6481 - Additionally, make sure the key was actually pressed. This
     // check will make sure we behave the same as before GH#6309
-    if (!KeyEvent::IsModifierKey(vkey) && keyDown)
+    if (IsInputKey(vkey) && keyDown)
     {
         TrySnapOnInput();
     }
@@ -730,21 +701,21 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     const auto isSuppressedAltGrAlias = !_altGrAliasing && states.IsAltPressed() && states.IsCtrlPressed() && !states.IsAltGrPressed();
     const auto ch = isSuppressedAltGrAlias ? UNICODE_NULL : _CharacterFromKeyEvent(vkey, sc, states);
 
-    // Delegate it to the character event handler if this key event can be
-    // mapped to one (see method description above). For Alt+key combinations
+    // Delegate it to the character event handler if this is a key down event that
+    // can be mapped to one (see method description above). For Alt+key combinations
     // we'll not receive another character event for some reason though.
     // -> Don't delegate the event if this is a Alt+key combination.
     //
     // As a special case we'll furthermore always handle VK_TAB
     // key events here instead of in Terminal::SendCharEvent.
     // See the method description for more information.
-    if (!isAltOnlyPressed && vkey != VK_TAB && ch != UNICODE_NULL)
+    if (keyDown && !isAltOnlyPressed && vkey != VK_TAB && ch != UNICODE_NULL)
     {
         return false;
     }
 
-    const KeyEvent keyEv{ keyDown, 1, vkey, sc, ch, states.Value() };
-    return _terminalInput->HandleKey(&keyEv);
+    const auto keyEv = SynthesizeKeyEvent(keyDown, 1, vkey, sc, ch, states.Value());
+    return _handleTerminalInputResult(_terminalInput.HandleKey(keyEv));
 }
 
 // Method Description:
@@ -768,7 +739,7 @@ bool Terminal::SendMouseEvent(til::point viewportPos, const unsigned int uiButto
     // We shouldn't throw away perfectly good events when they're offscreen, so we just
     // clamp them to be within the range [(0, 0), (W, H)].
     _GetMutableViewport().ToOrigin().Clamp(viewportPos);
-    return _terminalInput->HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta, state);
+    return _handleTerminalInputResult(_terminalInput.HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta, state));
 }
 
 // Method Description:
@@ -820,15 +791,8 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         MarkOutputStart();
     }
 
-    // Unfortunately, the UI doesn't give us both a character down and a
-    // character up event, only a character received event. So fake sending both
-    // to the terminal input translator. Unless it's in win32-input-mode, it'll
-    // ignore the keyup.
-    const KeyEvent keyDown{ true, 1, vkey, scanCode, ch, states.Value() };
-    const KeyEvent keyUp{ false, 1, vkey, scanCode, ch, states.Value() };
-    const auto handledDown = _terminalInput->HandleKey(&keyDown);
-    const auto handledUp = _terminalInput->HandleKey(&keyUp);
-    return handledDown || handledUp;
+    const auto keyDown = SynthesizeKeyEvent(true, 1, vkey, scanCode, ch, states.Value());
+    return _handleTerminalInputResult(_terminalInput.HandleKey(keyDown));
 }
 
 // Method Description:
@@ -839,9 +803,9 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
 // - focused: true if we're focused, false otherwise.
 // Return Value:
 // - none
-void Terminal::FocusChanged(const bool focused) noexcept
+void Terminal::FocusChanged(const bool focused)
 {
-    _terminalInput->HandleFocus(focused);
+    _handleTerminalInputResult(_terminalInput.HandleFocus(focused));
 }
 
 // Method Description:
@@ -965,6 +929,20 @@ catch (...)
     return UNICODE_INVALID;
 }
 
+[[maybe_unused]] bool Terminal::_handleTerminalInputResult(TerminalInput::OutputType&& out) const
+{
+    if (out)
+    {
+        const auto& str = *out;
+        if (_pfnWriteInput && !str.empty())
+        {
+            _pfnWriteInput(str);
+        }
+        return true;
+    }
+    return false;
+}
+
 // Method Description:
 // - It's possible for a single scan code on a keyboard to
 //   produce different key codes depending on the keyboard state.
@@ -978,7 +956,7 @@ catch (...)
 // Arguments:
 // - vkey: The virtual key code.
 // - scanCode: The scan code.
-void Terminal::_StoreKeyEvent(const WORD vkey, const WORD scanCode)
+void Terminal::_StoreKeyEvent(const WORD vkey, const WORD scanCode) noexcept
 {
     _lastKeyEventCodes.emplace(KeyEventCodes{ vkey, scanCode });
 }
@@ -1078,212 +1056,16 @@ Viewport Terminal::_GetVisibleViewport() const noexcept
                                     size);
 }
 
-// Writes a string of text to the buffer, then moves the cursor (and viewport)
-//      in accordance with the written text.
-// This method is our proverbial `WriteCharsLegacy`, and great care should be made to
-//      keep it minimal and orderly, lest it become WriteCharsLegacy2ElectricBoogaloo
-// TODO: MSFT 21006766
-//       This needs to become stream logic on the buffer itself sooner rather than later
-//       because it's otherwise impossible to avoid the Electric Boogaloo-ness here.
-//       I had to make a bunch of hacks to get Japanese and emoji to work-ish.
-void Terminal::_WriteBuffer(const std::wstring_view& stringView)
+void Terminal::_PreserveUserScrollOffset(const int viewportDelta) noexcept
 {
-    auto& cursor = _activeBuffer().GetCursor();
-
-    // Defer the cursor drawing while we are iterating the string, for a better performance.
-    // We can not waste time displaying a cursor event when we know more text is coming right behind it.
-    cursor.StartDeferDrawing();
-
-    for (size_t i = 0; i < stringView.size(); i++)
+    // When the mutable viewport is moved down, and there's an active selection,
+    // or the visible viewport isn't already at the bottom, then we want to keep
+    // the visible viewport where it is. To do this, we adjust the scroll offset
+    // by the same amount that we've just moved down.
+    if (viewportDelta > 0 && (IsSelectionActive() || _scrollOffset != 0))
     {
-        const auto wch = stringView.at(i);
-        const auto cursorPosBefore = cursor.GetPosition();
-        auto proposedCursorPosition = cursorPosBefore;
-
-        // TODO: MSFT 21006766
-        // This is not great but I need it demoable. Fix by making a buffer stream writer.
-        //
-        // If wch is a surrogate character we need to read 2 code units
-        // from the stringView to form a single code point.
-        const auto isSurrogate = wch >= 0xD800 && wch <= 0xDFFF;
-        const auto view = stringView.substr(i, isSurrogate ? 2 : 1);
-        const OutputCellIterator it{ view, _activeBuffer().GetCurrentAttributes() };
-        const auto end = _activeBuffer().Write(it);
-        const auto cellDistance = end.GetCellDistance(it);
-        const auto inputDistance = end.GetInputDistance(it);
-
-        if (inputDistance > 0)
-        {
-            // If "wch" was a surrogate character, we just consumed 2 code units above.
-            // -> Increment "i" by 1 in that case and thus by 2 in total in this iteration.
-            proposedCursorPosition.x += cellDistance;
-            i += gsl::narrow_cast<size_t>(inputDistance - 1);
-        }
-        else
-        {
-            // If _WriteBuffer() is called with a consecutive string longer than the viewport/buffer width
-            // the call to _buffer->Write() will refuse to write anything on the current line.
-            // GetInputDistance() thus returns 0, which would in turn cause i to be
-            // decremented by 1 below and force the outer loop to loop forever.
-            // This if() basically behaves as if "\r\n" had been encountered above and retries the write.
-            // With well behaving shells during normal operation this safeguard should normally not be encountered.
-            proposedCursorPosition.x = 0;
-            proposedCursorPosition.y++;
-
-            // Try the character again.
-            i--;
-
-            // If we write the last cell of the row here, TextBuffer::Write will
-            // mark this line as wrapped for us. If the next character we
-            // process is a newline, the Terminal::CursorLineFeed will unmark
-            // this line as wrapped.
-
-            // TODO: GH#780 - This should really be a _deferred_ newline. If
-            // the next character to come in is a newline or a cursor
-            // movement or anything, then we should _not_ wrap this line
-            // here.
-        }
-
-        _AdjustCursorPosition(proposedCursorPosition);
-    }
-
-    // Notify UIA of new text.
-    // It's important to do this here instead of in TextBuffer, because here you have access to the entire line of text,
-    // whereas TextBuffer writes it one character at a time via the OutputCellIterator.
-    _activeBuffer().TriggerNewTextNotification(stringView);
-
-    cursor.EndDeferDrawing();
-}
-
-void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
-{
-#pragma warning(suppress : 26496) // cpp core checks wants this const but it's modified below.
-    auto proposedCursorPosition = proposedPosition;
-    auto& cursor = _activeBuffer().GetCursor();
-    const auto bufferSize = _activeBuffer().GetSize();
-
-    // If we're about to scroll past the bottom of the buffer, instead cycle the
-    // buffer.
-    til::CoordType rowsPushedOffTopOfBuffer = 0;
-    const auto newRows = std::max(0, proposedCursorPosition.y - bufferSize.Height() + 1);
-    if (proposedCursorPosition.y >= bufferSize.Height())
-    {
-        for (auto dy = 0; dy < newRows; dy++)
-        {
-            _activeBuffer().IncrementCircularBuffer();
-            proposedCursorPosition.y--;
-            rowsPushedOffTopOfBuffer++;
-
-            // Update our selection too, so it doesn't move as the buffer is cycled
-            if (_selection)
-            {
-                // If the start of the selection is above 0, we can reduce both the start and end by 1
-                if (_selection->start.y > 0)
-                {
-                    _selection->start.y -= 1;
-                    _selection->end.y -= 1;
-                }
-                else
-                {
-                    // The start of the selection is at 0, if the end is greater than 0, then only reduce the end
-                    if (_selection->end.y > 0)
-                    {
-                        _selection->start.x = 0;
-                        _selection->end.y -= 1;
-                    }
-                    else
-                    {
-                        // Both the start and end of the selection are at 0, clear the selection
-                        _selection.reset();
-                    }
-                }
-            }
-        }
-
-        // manually erase our pattern intervals since the locations have changed now
-        _patternIntervalTree = {};
-    }
-
-    // Update Cursor Position
-    cursor.SetPosition(proposedCursorPosition);
-
-    // Move the viewport down if the cursor moved below the viewport.
-    // Obviously, don't need to do this in the alt buffer.
-    if (!_inAltBuffer())
-    {
-        auto updatedViewport = false;
-        const auto scrollAmount = std::max(0, proposedCursorPosition.y - _mutableViewport.BottomInclusive());
-        if (scrollAmount > 0)
-        {
-            const auto newViewTop = std::max(0, proposedCursorPosition.y - (_mutableViewport.Height() - 1));
-            // In the alt buffer, we never need to adjust _mutableViewport, which is the viewport of the main buffer.
-            if (newViewTop != _mutableViewport.Top())
-            {
-                _mutableViewport = Viewport::FromDimensions({ 0, newViewTop },
-                                                            _mutableViewport.Dimensions());
-                updatedViewport = true;
-            }
-        }
-
-        // If the viewport moved, or we circled the buffer, we might need to update
-        // our _scrollOffset
-        if (updatedViewport || newRows != 0)
-        {
-            const auto oldScrollOffset = _scrollOffset;
-
-            // scroll if...
-            //   - no selection is active
-            //   - viewport is already at the bottom
-            const auto scrollToOutput = !IsSelectionActive() && _scrollOffset == 0;
-
-            _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
-
-            // Clamp the range to make sure that we don't scroll way off the top of the buffer
-            _scrollOffset = std::clamp(_scrollOffset,
-                                       0,
-                                       _activeBuffer().GetSize().Height() - _mutableViewport.Height());
-
-            // If the new scroll offset is different, then we'll still want to raise a scroll event
-            updatedViewport = updatedViewport || (oldScrollOffset != _scrollOffset);
-        }
-
-        // If the viewport moved, then send a scrolling notification.
-        if (updatedViewport)
-        {
-            _NotifyScrollEvent();
-        }
-    }
-
-    if (rowsPushedOffTopOfBuffer != 0)
-    {
-        if (_scrollMarks.size() > 0)
-        {
-            for (auto& mark : _scrollMarks)
-            {
-                // Move the mark up
-                mark.start.y -= rowsPushedOffTopOfBuffer;
-
-                // If the mark had sub-regions, then move those pointers too
-                if (mark.commandEnd.has_value())
-                {
-                    (*mark.commandEnd).y -= rowsPushedOffTopOfBuffer;
-                }
-                if (mark.outputEnd.has_value())
-                {
-                    (*mark.outputEnd).y -= rowsPushedOffTopOfBuffer;
-                }
-            }
-
-            _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
-                                              _scrollMarks.end(),
-                                              [](const VirtualTerminal::DispatchTypes::ScrollMark& m) { return m.start.y < 0; }),
-                               _scrollMarks.end());
-        }
-        // We have to report the delta here because we might have circled the text buffer.
-        // That didn't change the viewport and therefore the TriggerScroll(void)
-        // method can't detect the delta on its own.
-        const til::point delta{ 0, -rowsPushedOffTopOfBuffer };
-        _activeBuffer().TriggerScroll(delta);
+        const auto maxScrollOffset = _activeBuffer().GetSize().Height() - _mutableViewport.Height();
+        _scrollOffset = std::min(_scrollOffset + viewportDelta, maxScrollOffset);
     }
 }
 
@@ -1477,6 +1259,11 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noe
     return _taskbarProgress;
 }
 
+void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept
+{
+    _pfnCompletionsChanged.swap(pfn);
+}
+
 Scheme Terminal::GetColorScheme() const
 {
     Scheme s;
@@ -1530,8 +1317,6 @@ void Terminal::ApplyScheme(const Scheme& colorScheme)
 
     _renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, til::color{ colorScheme.CursorColor });
 
-    _renderSettings.MakeAdjustedColorArray();
-
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks whose color
     // may have changed.
@@ -1564,7 +1349,7 @@ void Terminal::_updateUrlDetection()
 }
 
 // NOTE: This is the version of AddMark that comes from the UI. The VT api call into this too.
-void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
+void Terminal::AddMark(const ScrollMark& mark,
                        const til::point& start,
                        const til::point& end,
                        const bool fromUi)
@@ -1574,17 +1359,18 @@ void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes:
         return;
     }
 
-    DispatchTypes::ScrollMark m = mark;
+    ScrollMark m = mark;
     m.start = start;
     m.end = end;
 
+    // If the mark came from the user adding a mark via the UI, don't make it the active prompt mark.
     if (fromUi)
     {
-        _scrollMarks.insert(_scrollMarks.begin(), m);
+        _activeBuffer().AddMark(m);
     }
     else
     {
-        _scrollMarks.push_back(m);
+        _activeBuffer().StartPromptMark(m);
     }
 
     // Tell the control that the scrollbar has somehow changed. Used as a
@@ -1609,15 +1395,7 @@ void Terminal::ClearMark()
         start = til::point{ GetSelectionAnchor() };
         end = til::point{ GetSelectionEnd() };
     }
-    auto inSelection = [&start, &end](const DispatchTypes::ScrollMark& m) {
-        return (m.start >= start && m.start <= end) ||
-               (m.end >= start && m.end <= end);
-    };
-
-    _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
-                                      _scrollMarks.end(),
-                                      inSelection),
-                       _scrollMarks.end());
+    _activeBuffer().ClearMarksInRange(start, end);
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
@@ -1625,23 +1403,22 @@ void Terminal::ClearMark()
 }
 void Terminal::ClearAllMarks() noexcept
 {
-    _scrollMarks.clear();
+    _activeBuffer().ClearAllMarks();
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
     _NotifyScrollEvent();
 }
 
-const std::vector<DispatchTypes::ScrollMark>& Terminal::GetScrollMarks() const noexcept
+const std::vector<ScrollMark>& Terminal::GetScrollMarks() const noexcept
 {
     // TODO: GH#11000 - when the marks are stored per-buffer, get rid of this.
     // We want to return _no_ marks when we're in the alt buffer, to effectively
     // hide them. We need to return a reference, so we can't just ctor an empty
     // list here just for when we're in the alt buffer.
-    static const std::vector<DispatchTypes::ScrollMark> _altBufferMarks{};
-    return _inAltBuffer() ? _altBufferMarks : _scrollMarks;
+    return _activeBuffer().GetMarks();
 }
 
-til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) const
+til::color Terminal::GetColorForMark(const ScrollMark& mark) const
 {
     if (mark.color.has_value())
     {
@@ -1650,28 +1427,38 @@ til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::
 
     switch (mark.category)
     {
-    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Prompt:
+    case MarkCategory::Prompt:
     {
         return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
     }
-    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Error:
+    case MarkCategory::Error:
     {
         return _renderSettings.GetColorTableEntry(TextColor::BRIGHT_RED);
     }
-    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Warning:
+    case MarkCategory::Warning:
     {
         return _renderSettings.GetColorTableEntry(TextColor::BRIGHT_YELLOW);
     }
-    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Success:
+    case MarkCategory::Success:
     {
         return _renderSettings.GetColorTableEntry(TextColor::BRIGHT_GREEN);
     }
     default:
-    case Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Info:
+    case MarkCategory::Info:
     {
         return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
     }
     }
+}
+
+std::wstring_view Terminal::CurrentCommand() const
+{
+    if (_currentPromptState != PromptState::Command)
+    {
+        return L"";
+    }
+
+    return _activeBuffer().CurrentCommand();
 }
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)

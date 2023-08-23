@@ -157,7 +157,7 @@ public:
     InputBuffer* const GetActiveInputBuffer() const override;
 #pragma endregion
 
-    bool CursorIsDoubleWidth() const noexcept;
+    bool CursorIsDoubleWidth() const;
 
     DWORD OutputMode;
     WORD ResizingWindow; // > 0 if we should ignore WM_SIZE messages
@@ -193,11 +193,7 @@ public:
 
     void MakeCursorVisible(const til::point CursorPosition);
 
-    Microsoft::Console::Types::Viewport GetRelativeScrollMargins() const;
-    Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
-    void SetScrollMargins(const Microsoft::Console::Types::Viewport margins);
-
-    [[nodiscard]] NTSTATUS UseAlternateScreenBuffer();
+    [[nodiscard]] NTSTATUS UseAlternateScreenBuffer(const TextAttribute& initAttributes);
     void UseMainScreenBuffer();
 
     SCREEN_INFORMATION& GetMainBuffer();
@@ -225,8 +221,6 @@ public:
 
     FontInfoDesired& GetDesiredFont() noexcept;
     const FontInfoDesired& GetDesiredFont() const noexcept;
-
-    void InitializeCursorRowAttributes();
 
     void SetIgnoreLegacyEquivalentVTAttributes() noexcept;
     void ResetIgnoreLegacyEquivalentVTAttributes() noexcept;
@@ -260,7 +254,8 @@ private:
     [[nodiscard]] NTSTATUS _InitializeOutputStateMachine();
     void _FreeOutputStateMachine();
 
-    [[nodiscard]] NTSTATUS _CreateAltBuffer(_Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer);
+    [[nodiscard]] NTSTATUS _CreateAltBuffer(const TextAttribute& initAttributes,
+                                            _Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer);
 
     bool _IsAltBuffer() const;
     bool _IsInPtyMode() const;
@@ -269,8 +264,6 @@ private:
     ConhostInternalGetSet _api;
 
     std::shared_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
-
-    Microsoft::Console::Types::Viewport _scrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
 
     // Specifies which coordinates of the screen buffer are visible in the
     //      window client (the "viewport" into the buffer)

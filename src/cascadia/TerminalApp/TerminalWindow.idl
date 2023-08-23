@@ -1,0 +1,148 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "TerminalPage.idl";
+import "ShortcutActionDispatch.idl";
+import "IDirectKeyListener.idl";
+
+namespace TerminalApp
+{
+    struct InitialPosition
+    {
+        Int64 X;
+        Int64 Y;
+    };
+
+    delegate void SystemMenuItemHandler();
+
+    enum SystemMenuChangeAction
+    {
+        Add = 0,
+        Remove = 1
+    };
+
+    [default_interface] runtimeclass SystemMenuChangeArgs {
+        String Name { get; };
+        SystemMenuChangeAction Action { get; };
+        SystemMenuItemHandler Handler { get; };
+    };
+
+    [default_interface] runtimeclass SettingsLoadEventArgs
+    {
+        Boolean Reload { get; };
+        UInt64 Result { get; };
+        IVector<Microsoft.Terminal.Settings.Model.SettingsLoadWarnings> Warnings { get; };
+        String ExceptionText { get; };
+
+        Microsoft.Terminal.Settings.Model.CascadiaSettings NewSettings { get; };
+
+    };
+
+    // See IDialogPresenter and TerminalPage's DialogPresenter for more
+    // information.
+    [default_interface] runtimeclass TerminalWindow : IDirectKeyListener, IDialogPresenter, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        TerminalWindow(SettingsLoadEventArgs result, ContentManager manager);
+
+        // For your own sanity, it's better to do setup outside the ctor.
+        // If you do any setup in the ctor that ends up throwing an exception,
+        // then it might look like TermApp just failed to activate, which will
+        // cause you to chase down the rabbit hole of "why is TermApp not
+        // registered?" when it definitely is.
+        void Create();
+
+        Boolean HasCommandlineArguments();
+
+        Int32 SetStartupCommandline(String[] commands, String cwd);
+        void SetStartupContent(String json, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
+        Int32 ExecuteCommandline(String[] commands, String cwd);
+        String ParseCommandlineMessage { get; };
+        Boolean ShouldExitEarly { get; };
+
+        Boolean ShouldImmediatelyHandoffToElevated();
+        void HandoffToElevated();
+
+        void Quit();
+
+        Windows.UI.Xaml.UIElement GetRoot();
+
+        String Title { get; };
+        Boolean FocusMode { get; };
+        Boolean Fullscreen { get; };
+        void Maximized(Boolean newMaximized);
+        Boolean AlwaysOnTop { get; };
+        Boolean AutoHideWindow { get; };
+
+        void IdentifyWindow();
+        void SetPersistedLayoutIdx(UInt32 idx);
+        void ClearPersistedWindowState();
+
+        void RenameFailed();
+        void RequestExitFullscreen();
+
+        Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
+        Boolean CenterOnLaunch { get; };
+
+        InitialPosition GetInitialPosition(Int64 defaultInitialX, Int64 defaultInitialY);
+        Windows.UI.Xaml.ElementTheme GetRequestedTheme();
+        Microsoft.Terminal.Settings.Model.LaunchMode GetLaunchMode();
+        Boolean GetShowTabsInTitlebar();
+        Boolean GetInitialAlwaysOnTop();
+        Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
+        void TitlebarClicked();
+        void CloseWindow(Microsoft.Terminal.Settings.Model.LaunchPosition position, Boolean isLastWindow);
+        void WindowVisibilityChanged(Boolean showOrHide);
+
+        TaskbarState TaskbarState{ get; };
+        Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
+        Windows.UI.Xaml.Media.Brush FrameBrush { get; };
+        void WindowActivated(Boolean activated);
+
+        String GetWindowLayoutJson(Microsoft.Terminal.Settings.Model.LaunchPosition position);
+
+        Boolean GetMinimizeToNotificationArea();
+        Boolean GetAlwaysShowNotificationIcon();
+        Boolean GetShowTitleInTitlebar();
+
+        // These already have accessors as a part of IWindowProperties, but we
+        // also want to be able to set them.
+        WindowProperties WindowProperties { get; };
+        void WindowName(String name);
+        void WindowId(UInt64 id);
+        Boolean IsQuakeWindow();
+
+        // See IDialogPresenter and TerminalPage's DialogPresenter for more
+        // information.
+        void DismissDialog();
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> Initialized;
+
+        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
+        event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Theme> RequestedThemeChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ChangeMaximizeRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RaiseVisualBell;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
+        event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
+        event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
+        event Windows.Foundation.TypedEventHandler<Object, TerminalApp.SystemMenuChangeArgs> SystemMenuChangeRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.ShowWindowArgs> ShowWindowChanged;
+
+        event Windows.Foundation.TypedEventHandler<Object, SettingsLoadEventArgs> SettingsChanged;
+
+        event Windows.Foundation.TypedEventHandler<Object, RequestMoveContentArgs> RequestMoveContent;
+        event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> RequestReceiveContent;
+
+        void AttachContent(String content, UInt32 tabIndex);
+        void SendContentToOther(RequestReceiveContentArgs args);
+    }
+}

@@ -2,13 +2,12 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "misc.h"
+
+#include <til/unicode.h>
+
 #include "dbcs.h"
-
-#include "../types/inc/convert.hpp"
 #include "../types/inc/GlyphWidth.hpp"
-
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
@@ -179,50 +178,6 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
     else
     {
         return CheckBisectStringW(pwchBuffer, cWords, cBytes);
-    }
-}
-
-// Routine Description:
-// - Converts all key events in the deque to the oem char data and adds
-// them back to events.
-// Arguments:
-// - events - on input the IInputEvents to convert. on output, the
-// converted input events
-// Note: may throw on error
-void SplitToOem(std::deque<std::unique_ptr<IInputEvent>>& events)
-{
-    const auto codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
-
-    // convert events to oem codepage
-    std::deque<std::unique_ptr<IInputEvent>> convertedEvents;
-    while (!events.empty())
-    {
-        auto currentEvent = std::move(events.front());
-        events.pop_front();
-        if (currentEvent->EventType() == InputEventType::KeyEvent)
-        {
-            const auto pKeyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
-            // convert from wchar to char
-            std::wstring wstr{ pKeyEvent->GetCharData() };
-            const auto str = ConvertToA(codepage, wstr);
-
-            for (auto& ch : str)
-            {
-                auto tempEvent = std::make_unique<KeyEvent>(*pKeyEvent);
-                tempEvent->SetCharData(ch);
-                convertedEvents.push_back(std::move(tempEvent));
-            }
-        }
-        else
-        {
-            convertedEvents.push_back(std::move(currentEvent));
-        }
-    }
-    // move all events back
-    while (!convertedEvents.empty())
-    {
-        events.push_back(std::move(convertedEvents.front()));
-        convertedEvents.pop_front();
     }
 }
 

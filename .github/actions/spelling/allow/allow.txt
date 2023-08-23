@@ -78,6 +78,8 @@ ok'd
 overlined
 pipeline
 postmodern
+Powerline
+powerline
 ptys
 qof
 qps
@@ -93,6 +95,7 @@ slnt
 Sos
 ssh
 stakeholders
+sxn
 timeline
 timelines
 timestamped
@@ -100,6 +103,7 @@ TLDR
 tokenizes
 tonos
 toolset
+truthiness
 tshe
 ubuntu
 uiatextrange
@@ -108,6 +112,8 @@ und
 unregister
 versioned
 vsdevcmd
+walkthrough
+walkthroughs
 We'd
 wildcards
 XBox

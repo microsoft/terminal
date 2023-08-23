@@ -499,6 +499,17 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FindMatchDirecti
     };
 };
 
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SuggestionsSource)
+{
+    static constexpr std::array<pair_type, 5> mappings = {
+        pair_type{ "none", AllClear },
+        pair_type{ "tasks", ValueType::Tasks },
+        pair_type{ "commandHistory", ValueType::CommandHistory },
+        pair_type{ "directoryHistory", ValueType::DirectoryHistory },
+        pair_type{ "all", AllSet },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::WindowingMode)
 {
     JSON_MAPPINGS(3) = {
@@ -633,10 +644,11 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility)
 {
-    JSON_MAPPINGS(3) = {
+    JSON_MAPPINGS(4) = {
         pair_type{ "always", ValueType::Always },
         pair_type{ "hover", ValueType::Hover },
         pair_type{ "never", ValueType::Never },
+        pair_type{ "activeOnly", ValueType::ActiveOnly },
     };
 };
 
@@ -669,6 +681,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FolderEntryInlin
     JSON_MAPPINGS(2) = {
         pair_type{ "never", ValueType::Never },
         pair_type{ "auto", ValueType::Auto },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SelectOutputDirection)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "prev", ValueType::Previous },
+        pair_type{ "next", ValueType::Next },
     };
 };
 

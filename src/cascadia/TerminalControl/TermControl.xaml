@@ -10,6 +10,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="using:Microsoft.Terminal.Control"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              HorizontalAlignment="Stretch"
              VerticalAlignment="Stretch"
              d:DesignHeight="768"
@@ -31,6 +32,58 @@
              mc:Ignorable="d">
     <UserControl.Resources>
 
+        <mux:CommandBarFlyout x:Name="ContextMenu">
+            <AppBarButton x:Name="PasteCommandButton"
+                          x:Uid="PasteCommandButton"
+                          Click="_PasteCommandHandler"
+                          Icon="Paste" />
+            <mux:CommandBarFlyout.SecondaryCommands>
+                <AppBarButton x:Name="SelectCommandButton"
+                              x:Uid="SelectCommandButton"
+                              Click="_SelectCommandHandler">
+                    <AppBarButton.Icon>
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                  FontSize="11"
+                                  Glyph="&#xE756;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton x:Name="SelectOutputButton"
+                              x:Uid="SelectOutputButton"
+                              Click="_SelectOutputHandler"
+                              Icon="AlignLeft" />
+            </mux:CommandBarFlyout.SecondaryCommands>
+        </mux:CommandBarFlyout>
+
+        <mux:CommandBarFlyout x:Name="SelectionContextMenu">
+            <AppBarButton x:Name="CopyCommandButton"
+                          x:Uid="CopyCommandButton"
+                          Click="_CopyCommandHandler"
+                          Icon="Copy" />
+            <AppBarButton x:Name="PasteWithSelectionCommandButton"
+                          x:Uid="PasteWithSelectionCommandButton"
+                          Click="_PasteCommandHandler"
+                          Icon="Paste" />
+            <mux:CommandBarFlyout.SecondaryCommands>
+                <AppBarButton x:Name="SearchCommandButton"
+                              x:Uid="SearchCommandButton"
+                              Click="_SearchCommandHandler"
+                              Icon="Find" />
+                <AppBarButton x:Name="SelectCommandWithSelectionButton"
+                              x:Uid="SelectCommandWithSelectionButton"
+                              Click="_SelectCommandHandler">
+                    <AppBarButton.Icon>
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                  FontSize="11"
+                                  Glyph="&#xE756;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton x:Name="SelectOutputWithSelectionButton"
+                              x:Uid="SelectOutputWithSelectionButton"
+                              Click="_SelectOutputHandler"
+                              Icon="AlignLeft" />
+            </mux:CommandBarFlyout.SecondaryCommands>
+        </mux:CommandBarFlyout>
+
         <!--
             BODGY: ControlsV2 changed the size of the scrollbars from 16dips to
             12dips. This is harder for folks to hit with the mouse, and isn't
@@ -47,16 +100,21 @@
             latest ControlsV2 version of the template can be found at:
             https://github.com/microsoft/microsoft-ui-xaml/blob/main/dev/CommonStyles/ScrollBar_themeresources.xaml#L218
             
-            We're also removing the corner radius, cause that should be flush
+            Additionally we have:
+            * removed the corner radius, because that should be flush
             with the top of the window above the TermControl.
+            * set ScrollBarExpandBeginTime to 0 so that the scrollbar, fades in instantly when it's expanded.
+            This makes it feel much better with cursors compared to the questionable standard 400ms delay in
+            the Win11-style WinUI ScrollView. If you also have the "Always show scrollbars" setting enabled in
+            the settings app (do it if you haven't already), it avoids any and all animations during startup which
+            makes the app start feel noticeably better and also shaves off another ~167ms of our "busy time".
             
             We're also planning on making this adjustable in the future
             (GH#9218), where we might need this anyways.
         -->
 
         <x:Double x:Key="ScrollBarSize">16</x:Double>
-        <CornerRadius x:Key="ScrollBarCornerRadius">0</CornerRadius>
-        <CornerRadius x:Key="ScrollBarThumbCornerRadius">3</CornerRadius>
+        <x:String x:Key="ScrollBarExpandBeginTime">0</x:String>
 
         <Style x:Key="ForkedScrollbarTemplate"
                TargetType="ScrollBar">
@@ -120,16 +178,16 @@
                                                                                     Value="{ThemeResource ScrollBarButtonArrowForegroundPressed}" />
                                                         </ObjectAnimationUsingKeyFrames>
                                                         <DoubleAnimationUsingKeyFrames RepeatBehavior="Forever"
-                                                                                       Storyboard.TargetName="ScaleTransform"
-                                                                                       Storyboard.TargetProperty="ScaleX">
+                                                                                       Storyboard.TargetName="Arrow"
+                                                                                       Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)">
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:0.016"
                                                                                     Value="{ThemeResource ScrollBarButtonArrowScalePressed}" />
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:30"
                                                                                     Value="{ThemeResource ScrollBarButtonArrowScalePressed}" />
                                                         </DoubleAnimationUsingKeyFrames>
                                                         <DoubleAnimationUsingKeyFrames RepeatBehavior="Forever"
-                                                                                       Storyboard.TargetName="ScaleTransform"
-                                                                                       Storyboard.TargetProperty="ScaleY">
+                                                                                       Storyboard.TargetName="Arrow"
+                                                                                       Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)">
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:0.016"
                                                                                     Value="{ThemeResource ScrollBarButtonArrowScalePressed}" />
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:30"
@@ -187,16 +245,16 @@
                                                                                     Value="{ThemeResource ScrollBarButtonArrowForegroundPressed}" />
                                                         </ObjectAnimationUsingKeyFrames>
                                                         <DoubleAnimationUsingKeyFrames RepeatBehavior="Forever"
-                                                                                       Storyboard.TargetName="ScaleTransform"
-                                                                                       Storyboard.TargetProperty="ScaleX">
+                                                                                       Storyboard.TargetName="Arrow"
+                                                                                       Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)">
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:0.016"
                                                                                     Value="{ThemeResource ScrollBarButtonArrowScalePressed}" />
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:30"
                                                                                     Value="{ThemeResource ScrollBarButtonArrowScalePressed}" />
                                                         </DoubleAnimationUsingKeyFrames>
                                                         <DoubleAnimationUsingKeyFrames RepeatBehavior="Forever"
-                                                                                       Storyboard.TargetName="ScaleTransform"
-                                                                                       Storyboard.TargetProperty="ScaleY">
+                                                                                       Storyboard.TargetName="Arrow"
+                                                                                       Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)">
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:0.016"
                                                                                     Value="{ThemeResource ScrollBarButtonArrowScalePressed}" />
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:30"
@@ -253,16 +311,16 @@
                                                                                     Value="{ThemeResource ScrollBarButtonArrowForegroundPressed}" />
                                                         </ObjectAnimationUsingKeyFrames>
                                                         <DoubleAnimationUsingKeyFrames RepeatBehavior="Forever"
-                                                                                       Storyboard.TargetName="ScaleTransform"
-                                                                                       Storyboard.TargetProperty="ScaleX">
+                                                                                       Storyboard.TargetName="Arrow"
+                                                                                       Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)">
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:0.016"
                                                                                     Value="{ThemeResource ScrollBarButtonArrowScalePressed}" />
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:30"
                                                                                     Value="{ThemeResource ScrollBarButtonArrowScalePressed}" />
                                                         </DoubleAnimationUsingKeyFrames>
                                                         <DoubleAnimationUsingKeyFrames RepeatBehavior="Forever"
-                                                                                       Storyboard.TargetName="ScaleTransform"
-                                                                                       Storyboard.TargetProperty="ScaleY">
+                                                                                       Storyboard.TargetName="Arrow"
+                                                                                       Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)">
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:0.016"
                                                                                     Value="{ThemeResource ScrollBarButtonArrowScalePressed}" />
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:30"
@@ -319,16 +377,16 @@
                                                                                     Value="{ThemeResource ScrollBarButtonArrowForegroundPressed}" />
                                                         </ObjectAnimationUsingKeyFrames>
                                                         <DoubleAnimationUsingKeyFrames RepeatBehavior="Forever"
-                                                                                       Storyboard.TargetName="ScaleTransform"
-                                                                                       Storyboard.TargetProperty="ScaleX">
+                                                                                       Storyboard.TargetName="Arrow"
+                                                                                       Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)">
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:0.016"
                                                                                     Value="{ThemeResource ScrollBarButtonArrowScalePressed}" />
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:30"
                                                                                     Value="{ThemeResource ScrollBarButtonArrowScalePressed}" />
                                                         </DoubleAnimationUsingKeyFrames>
                                                         <DoubleAnimationUsingKeyFrames RepeatBehavior="Forever"
-                                                                                       Storyboard.TargetName="ScaleTransform"
-                                                                                       Storyboard.TargetProperty="ScaleY">
+                                                                                       Storyboard.TargetName="Arrow"
+                                                                                       Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)">
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:0.016"
                                                                                     Value="{ThemeResource ScrollBarButtonArrowScalePressed}" />
                                                             <DiscreteDoubleKeyFrame KeyTime="0:0:30"
@@ -352,9 +410,11 @@
                                 <ControlTemplate x:Key="VerticalThumbTemplate"
                                                  TargetType="Thumb">
                                     <Rectangle x:Name="ThumbVisual"
+                                               contract7NotPresent:RadiusX="{Binding Source={ThemeResource ScrollBarCornerRadius}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter}}"
+                                               contract7NotPresent:RadiusY="{Binding Source={ThemeResource ScrollBarCornerRadius}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter}}"
+                                               contract7Present:RadiusX="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter}}"
+                                               contract7Present:RadiusY="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter}}"
                                                Fill="{TemplateBinding Background}"
-                                               RadiusX="{Binding Source={ThemeResource ScrollBarThumbCornerRadius}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter}}"
-                                               RadiusY="{Binding Source={ThemeResource ScrollBarThumbCornerRadius}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter}}"
                                                Stroke="{TemplateBinding BorderBrush}"
                                                StrokeThickness="{ThemeResource ScrollBarThumbStrokeThickness}">
                                         <VisualStateManager.VisualStateGroups>
@@ -409,6 +469,7 @@
                                 </ControlTemplate>
                             </Grid.Resources>
 
+                            <!--  Windows Terminal: This is another addition/customization made by us.  -->
                             <VisualStateManager.CustomVisualStateManager>
                                 <local:ScrollBarVisualStateManager />
                             </VisualStateManager.CustomVisualStateManager>
@@ -425,13 +486,13 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
+                                <!--
+                                    Windows Terminal: Here we've removed the corner radius
+                                    to make our scrollbars be flush with the window frame.
+                                -->
                                 <Rectangle x:Name="HorizontalTrackRect"
                                            Grid.ColumnSpan="5"
                                            Margin="0"
-                                           contract7NotPresent:RadiusX="{Binding Source={ThemeResource ScrollBarCornerRadius}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter2x}}"
-                                           contract7NotPresent:RadiusY="{Binding Source={ThemeResource ScrollBarCornerRadius}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter2x}}"
-                                           contract7Present:RadiusX="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter2x}}"
-                                           contract7Present:RadiusY="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter2x}}"
                                            Fill="{ThemeResource ScrollBarTrackFill}"
                                            Opacity="0"
                                            Stroke="{ThemeResource ScrollBarTrackStroke}"
@@ -520,13 +581,13 @@
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
+                                <!--
+                                    Windows Terminal: Here we've removed the corner radius
+                                    to make our scrollbars be flush with the window frame.
+                                -->
                                 <Rectangle x:Name="VerticalTrackRect"
                                            Grid.RowSpan="5"
                                            Margin="0"
-                                           contract7NotPresent:RadiusX="{Binding Source={ThemeResource ScrollBarCornerRadius}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter2x}}"
-                                           contract7NotPresent:RadiusY="{Binding Source={ThemeResource ScrollBarCornerRadius}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter2x}}"
-                                           contract7Present:RadiusX="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter2x}}"
-                                           contract7Present:RadiusY="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter2x}}"
                                            Fill="{ThemeResource ScrollBarTrackFill}"
                                            Opacity="0"
                                            Stroke="{ThemeResource ScrollBarTrackStroke}"
@@ -929,6 +990,7 @@
                                                              To="1"
                                                              Duration="{StaticResource ScrollBarOpacityChangeDuration}" />
 
+                                            <!--  Because of the blurriness caused by SCALE animation performed on the object with rounded corners, we have to use dependent animation on width to rerasterize the mask on every tick of the animation.  -->
                                             <DoubleAnimationUsingKeyFrames BeginTime="{StaticResource ScrollBarExpandBeginTime}"
                                                                            EnableDependentAnimation="True"
                                                                            Storyboard.TargetName="VerticalThumb"
@@ -1181,6 +1243,7 @@
         <Grid.Lights>
             <local:VisualBellLight x:Name="BellLight" />
         </Grid.Lights>
+
         <Image x:Name="BackgroundImage"
                AutomationProperties.AccessibilityView="Raw" />
         <Grid>
@@ -1200,7 +1263,6 @@
                 <SwapChainPanel x:Name="SwapChainPanel"
                                 CompositionScaleChanged="_SwapChainScaleChanged"
                                 SizeChanged="_SwapChainSizeChanged">
-
                     <Canvas x:Name="OverlayCanvas"
                             Visibility="Visible">
                         <Border x:Name="HyperlinkTooltipBorder"

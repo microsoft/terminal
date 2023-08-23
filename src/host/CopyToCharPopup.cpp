@@ -56,7 +56,7 @@ void CopyToCharPopup::_copyToChar(COOKED_READ_DATA& cookedReadData, const std::w
     auto popupKey = false;
     DWORD modifiers = 0;
     auto Status = _getUserInput(cookedReadData, popupKey, modifiers, wch);
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return Status;
     }

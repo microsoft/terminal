@@ -82,7 +82,7 @@
         <!--
             GH#12775 et. al: After switching to ControlsV2, it seems that
             delay-loading a dialog causes the ContentDialog to be assigned a
-            Height equal to it's content size. If we DON'T assign the
+            Height equal to its content size. If we DON'T assign the
             ContentDialog a Row, I believe it's assigned Row 0 by default. So,
             when the dialog gets opened, the dialog seemingly causes a giant
             hole to appear in the body of the app.
@@ -96,30 +96,9 @@
             just this weird hole that appeared in Row 0.
         -->
 
-        <ContentDialog x:Name="AboutDialog"
-                       x:Uid="AboutDialog"
-                       Grid.Row="2"
-                       x:Load="False"
-                       DefaultButton="Close"
-                       PrimaryButtonClick="_SendFeedbackOnClick">
-            <StackPanel Orientation="Vertical">
-                <TextBlock IsTextSelectionEnabled="True">
-                    <Run Text="{x:Bind ApplicationDisplayName}" /> <LineBreak />
-                    <Run x:Uid="AboutDialog_VersionLabel" />
-                    <Run Text="{x:Bind ApplicationVersion}" />
-                </TextBlock>
-                <HyperlinkButton x:Uid="AboutDialog_SourceCodeLink"
-                                 NavigateUri="https://go.microsoft.com/fwlink/?linkid=2203152" />
-                <HyperlinkButton x:Uid="AboutDialog_DocumentationLink"
-                                 NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125416" />
-                <HyperlinkButton x:Uid="AboutDialog_ReleaseNotesLink"
-                                 NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125417" />
-                <HyperlinkButton x:Uid="AboutDialog_PrivacyPolicyLink"
-                                 NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125418" />
-                <HyperlinkButton x:Uid="AboutDialog_ThirdPartyNoticesLink"
-                                 Click="_ThirdPartyNoticesOnClick" />
-            </StackPanel>
-        </ContentDialog>
+        <local:AboutDialog x:Name="AboutDialog"
+                           Grid.Row="2"
+                           x:Load="False" />
 
         <ContentDialog x:Name="QuitDialog"
                        x:Uid="QuitDialog"
@@ -189,11 +168,20 @@
             </TextBlock>
         </ContentDialog>
 
-        <local:CommandPalette x:Name="CommandPalette"
+        <local:CommandPalette x:Name="CommandPaletteElement"
                               Grid.Row="2"
                               VerticalAlignment="Stretch"
+                              x:Load="False"
                               PreviewKeyDown="_KeyDownHandler"
                               Visibility="Collapsed" />
+
+        <local:SuggestionsControl x:Name="SuggestionsElement"
+                                  Grid.Row="2"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Top"
+                                  x:Load="False"
+                                  PreviewKeyDown="_KeyDownHandler"
+                                  Visibility="Collapsed" />
 
         <!--
             A TeachingTip with IsLightDismissEnabled="True" will immediately
@@ -201,10 +189,10 @@
             tracked by MUX#4382
         -->
         <mux:TeachingTip x:Name="WindowIdToast"
-                         Title="{x:Bind WindowIdForDisplay}"
+                         Title="{x:Bind WindowProperties.WindowIdForDisplay}"
                          x:Load="False"
                          IsLightDismissEnabled="True"
-                         Subtitle="{x:Bind WindowNameForDisplay, Mode=OneWay}" />
+                         Subtitle="{x:Bind WindowProperties.WindowNameForDisplay, Mode=OneWay}" />
 
         <mux:TeachingTip x:Name="RenameFailedToast"
                          x:Uid="RenameFailedToast"
@@ -213,7 +201,7 @@
 
         <mux:TeachingTip x:Name="WindowRenamer"
                          x:Uid="WindowRenamer"
-                         Title="{x:Bind WindowIdForDisplay}"
+                         Title="{x:Bind WindowProperties.WindowIdForDisplay}"
                          x:Load="False"
                          ActionButtonClick="_WindowRenamerActionClick"
                          ActionButtonStyle="{ThemeResource AccentButtonStyle}"
@@ -222,8 +210,14 @@
                 <TextBox x:Name="WindowRenamerTextBox"
                          KeyDown="_WindowRenamerKeyDown"
                          KeyUp="_WindowRenamerKeyUp"
-                         Text="{x:Bind WindowName, Mode=OneWay}" />
+                         Text="{x:Bind WindowProperties.WindowName, Mode=OneWay}" />
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
+
+        <mux:TeachingTip x:Name="WindowCwdToast"
+                         x:Uid="WindowCwdToast"
+                         Title="{x:Bind WindowProperties.VirtualWorkingDirectory, Mode=OneWay}"
+                         x:Load="False"
+                         IsLightDismissEnabled="True" />
     </Grid>
 </Page>

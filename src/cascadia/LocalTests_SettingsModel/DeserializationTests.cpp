@@ -1530,7 +1530,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings->AllProfiles().Size());
         // Because the "parent" command didn't have a name, it couldn't be
-        // placed into the list of commands. It and it's children are just
+        // placed into the list of commands. It and its children are just
         // ignored.
         VERIFY_ARE_EQUAL(0u, settings->ActionMap().NameMap().Size());
     }

@@ -102,11 +102,11 @@ try
             }
             break;
         case WM_RBUTTONDOWN:
-            if (terminal->_terminal->IsSelectionActive())
+            if (const auto& termCore{ terminal->_terminal }; termCore && termCore->IsSelectionActive())
             {
                 try
                 {
-                    const auto bufferData = terminal->_terminal->RetrieveSelectedTextFromBuffer(false);
+                    const auto bufferData = termCore->RetrieveSelectedTextFromBuffer(false);
                     LOG_IF_FAILED(terminal->_CopyTextToSystemClipboard(bufferData, true));
                     TerminalClearSelection(terminal);
                 }
@@ -222,7 +222,7 @@ HRESULT HwndTerminal::Initialize()
 
     _renderEngine = std::move(dxEngine);
 
-    _terminal->Create({ 80, 25 }, 1000, *_renderer);
+    _terminal->Create({ 80, 25 }, 9001, *_renderer);
     _terminal->SetWriteInputCallback([=](std::wstring_view input) noexcept { _WriteTextToConnection(input); });
     localPointerToThread->EnablePainting();
 
@@ -260,6 +260,10 @@ CATCH_LOG();
 
 void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> callback)
 {
+    if (!_terminal)
+    {
+        return;
+    }
     _terminal->SetScrollPositionChangedCallback(callback);
 }
 
@@ -295,6 +299,10 @@ HWND HwndTerminal::GetHwnd() const noexcept
 
 void HwndTerminal::_UpdateFont(int newDpi)
 {
+    if (!_terminal)
+    {
+        return;
+    }
     _currentDpi = newDpi;
     auto lock = _terminal->LockForWriting();
 
@@ -311,6 +319,10 @@ IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
     {
         try
         {
+            if (!_terminal)
+            {
+                return nullptr;
+            }
             auto lock = _terminal->LockForWriting();
             LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<HwndTerminalAutomationPeer>(&_uiaProvider, this->GetRenderData(), this));
             _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(_uiaProvider.Get());
@@ -329,6 +341,7 @@ IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
 
 HRESULT HwndTerminal::Refresh(const til::size windowSize, _Out_ til::size* dimensions)
 {
+    RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _terminal);
     RETURN_HR_IF_NULL(E_INVALIDARG, dimensions);
 
     auto lock = _terminal->LockForWriting();
@@ -364,6 +377,10 @@ HRESULT HwndTerminal::Refresh(const til::size windowSize, _Out_ til::size* dimen
 
 void HwndTerminal::SendOutput(std::wstring_view data)
 {
+    if (!_terminal)
+    {
+        return;
+    }
     _terminal->Write(data);
 }
 
@@ -474,8 +491,10 @@ void _stdcall TerminalDpiChanged(void* terminal, int newDpi)
 
 void _stdcall TerminalUserScroll(void* terminal, int viewTop)
 {
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    publicTerminal->_terminal->UserScrollViewport(viewTop);
+    if (const auto publicTerminal = static_cast<const HwndTerminal*>(terminal); publicTerminal && publicTerminal->_terminal)
+    {
+        publicTerminal->_terminal->UserScrollViewport(viewTop);
+    }
 }
 
 const unsigned int HwndTerminal::_NumberOfClicks(til::point point, std::chrono::steady_clock::time_point timestamp) noexcept
@@ -497,6 +516,7 @@ const unsigned int HwndTerminal::_NumberOfClicks(til::point point, std::chrono::
 HRESULT HwndTerminal::_StartSelection(LPARAM lParam) noexcept
 try
 {
+    RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _terminal);
     const til::point cursorPosition{
         GET_X_LPARAM(lParam),
         GET_Y_LPARAM(lParam),
@@ -540,6 +560,7 @@ CATCH_RETURN();
 HRESULT HwndTerminal::_MoveSelection(LPARAM lParam) noexcept
 try
 {
+    RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _terminal);
     const til::point cursorPosition{
         GET_X_LPARAM(lParam),
         GET_Y_LPARAM(lParam),
@@ -578,6 +599,10 @@ CATCH_RETURN();
 void HwndTerminal::_ClearSelection() noexcept
 try
 {
+    if (!_terminal)
+    {
+        return;
+    }
     auto lock{ _terminal->LockForWriting() };
     _terminal->ClearSelection();
     _renderer->TriggerSelection();
@@ -592,15 +617,21 @@ void _stdcall TerminalClearSelection(void* terminal)
 
 bool _stdcall TerminalIsSelectionActive(void* terminal)
 {
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    const auto selectionActive = publicTerminal->_terminal->IsSelectionActive();
-    return selectionActive;
+    if (const auto publicTerminal = static_cast<const HwndTerminal*>(terminal); publicTerminal && publicTerminal->_terminal)
+    {
+        return publicTerminal->_terminal->IsSelectionActive();
+    }
+    return false;
 }
 
 // Returns the selected text in the terminal.
 const wchar_t* _stdcall TerminalGetSelection(void* terminal)
 {
     auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    if (!publicTerminal || !publicTerminal->_terminal)
+    {
+        return nullptr;
+    }
 
     const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
     publicTerminal->_ClearSelection();
@@ -652,12 +683,17 @@ bool HwndTerminal::_CanSendVTMouseInput() const noexcept
 {
     // Only allow the transit of mouse events if shift isn't pressed.
     const auto shiftPressed = GetKeyState(VK_SHIFT) < 0;
-    return !shiftPressed && _focused && _terminal->IsTrackingMouseInput();
+    return !shiftPressed && _focused && _terminal && _terminal->IsTrackingMouseInput();
 }
 
 bool HwndTerminal::_SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 try
 {
+    if (!_terminal)
+    {
+        return false;
+    }
+
     til::point cursorPosition{
         GET_X_LPARAM(lParam),
         GET_Y_LPARAM(lParam),
@@ -690,6 +726,11 @@ catch (...)
 void HwndTerminal::_SendKeyEvent(WORD vkey, WORD scanCode, WORD flags, bool keyDown) noexcept
 try
 {
+    if (!_terminal)
+    {
+        return;
+    }
+
     auto modifiers = getControlKeyState();
     if (WI_IsFlagSet(flags, ENHANCED_KEY))
     {
@@ -706,7 +747,11 @@ CATCH_LOG();
 void HwndTerminal::_SendCharEvent(wchar_t ch, WORD scanCode, WORD flags) noexcept
 try
 {
-    if (_terminal->IsSelectionActive())
+    if (!_terminal)
+    {
+        return;
+    }
+    else if (_terminal->IsSelectionActive())
     {
         _ClearSelection();
         if (ch == UNICODE_ESC)
@@ -754,6 +799,10 @@ void _stdcall DestroyTerminal(void* terminal)
 void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, til::CoordType fontSize, int newDpi)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    if (!publicTerminal || !publicTerminal->_terminal)
+    {
+        return;
+    }
     {
         auto lock = publicTerminal->_terminal->LockForWriting();
 
@@ -789,7 +838,7 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
 void _stdcall TerminalBlinkCursor(void* terminal)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    if (!publicTerminal->_terminal->IsCursorBlinkingAllowed() && publicTerminal->_terminal->IsCursorVisible())
+    if (!publicTerminal || !publicTerminal->_terminal || (!publicTerminal->_terminal->IsCursorBlinkingAllowed() && publicTerminal->_terminal->IsCursorVisible()))
     {
         return;
     }
@@ -800,6 +849,10 @@ void _stdcall TerminalBlinkCursor(void* terminal)
 void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+    if (!publicTerminal || !publicTerminal->_terminal)
+    {
+        return;
+    }
     publicTerminal->_terminal->SetCursorOn(visible);
 }
 
@@ -831,6 +884,7 @@ void __stdcall TerminalKillFocus(void* terminal)
 HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting)
 try
 {
+    RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _terminal);
     std::wstring finalString;
 
     // Concatenate strings into one giant string to put onto the clipboard.
@@ -987,6 +1041,10 @@ double HwndTerminal::GetScaleFactor() const noexcept
 
 void HwndTerminal::ChangeViewport(const til::inclusive_rect& NewWindow)
 {
+    if (!_terminal)
+    {
+        return;
+    }
     _terminal->UserScrollViewport(NewWindow.top);
 }
 

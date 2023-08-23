@@ -10,13 +10,13 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    inline static constexpr uint8_t ColorTableDivider{ 8 };
-    inline static constexpr uint8_t ColorTableSize{ 16 };
+    inline constexpr uint8_t ColorTableDivider{ 8 };
+    inline constexpr uint8_t ColorTableSize{ 16 };
 
-    inline static constexpr std::wstring_view ForegroundColorTag{ L"Foreground" };
-    inline static constexpr std::wstring_view BackgroundColorTag{ L"Background" };
-    inline static constexpr std::wstring_view CursorColorTag{ L"CursorColor" };
-    inline static constexpr std::wstring_view SelectionBackgroundColorTag{ L"SelectionBackground" };
+    inline constexpr std::wstring_view ForegroundColorTag{ L"Foreground" };
+    inline constexpr std::wstring_view BackgroundColorTag{ L"Background" };
+    inline constexpr std::wstring_view CursorColorTag{ L"CursorColor" };
+    inline constexpr std::wstring_view SelectionBackgroundColorTag{ L"SelectionBackground" };
 
     struct ColorSchemeViewModel : ColorSchemeViewModelT<ColorSchemeViewModel>, ViewModelHelper<ColorSchemeViewModel>
     {
@@ -25,10 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         winrt::hstring Name();
         void Name(winrt::hstring newName);
-        hstring ToString()
-        {
-            return Name();
-        }
+        hstring ToString();
 
         bool RequestRename(winrt::hstring newName);
 

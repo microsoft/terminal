@@ -1,20 +1,5 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
-Module Name:
-- inputBuffer.hpp
-
-Abstract:
-- storage area for incoming input events.
-
-Author:
-- Therese Stowell (Thereses) 12-Nov-1990. Adapted from OS/2 subsystem server\srvpipe.c
-
-Revision History:
-- Moved from input.h/input.cpp. (AustDi, 2017)
-- Refactored to class, added stl container usage (AustDi, 2017)
---*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 
@@ -41,17 +26,20 @@ public:
     bool fInComposition; // specifies if there's an ongoing text composition
 
     InputBuffer();
-    ~InputBuffer();
 
-    // storage API for partial dbcs bytes being read from the buffer
-    bool IsReadPartialByteSequenceAvailable();
-    std::unique_ptr<IInputEvent> FetchReadPartialByteSequence(_In_ bool peek);
-    void StoreReadPartialByteSequence(std::unique_ptr<IInputEvent> event);
+    // String oriented APIs
+    void Consume(bool isUnicode, std::wstring_view& source, std::span<char>& target);
+    void ConsumeCached(bool isUnicode, std::span<char>& target);
+    void Cache(std::wstring_view source);
+    // INPUT_RECORD oriented APIs
+    size_t ConsumeCached(bool isUnicode, size_t count, InputEventQueue& target);
+    size_t PeekCached(bool isUnicode, size_t count, InputEventQueue& target);
+    void Cache(bool isUnicode, InputEventQueue& source, size_t expectedSourceSize);
 
     // storage API for partial dbcs bytes being written to the buffer
-    bool IsWritePartialByteSequenceAvailable();
-    std::unique_ptr<IInputEvent> FetchWritePartialByteSequence(_In_ bool peek);
-    void StoreWritePartialByteSequence(std::unique_ptr<IInputEvent> event);
+    bool IsWritePartialByteSequenceAvailable() const noexcept;
+    const INPUT_RECORD& FetchWritePartialByteSequence() noexcept;
+    void StoreWritePartialByteSequence(const INPUT_RECORD& event) noexcept;
 
     void ReinitializeInputBuffer();
     void WakeUpReadersWaitingForData();
@@ -60,23 +48,18 @@ public:
     void Flush();
     void FlushAllButKeys();
 
-    [[nodiscard]] NTSTATUS Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEvents,
+    [[nodiscard]] NTSTATUS Read(_Out_ InputEventQueue& OutEvents,
                                 const size_t AmountToRead,
                                 const bool Peek,
                                 const bool WaitForData,
                                 const bool Unicode,
                                 const bool Stream);
 
-    [[nodiscard]] NTSTATUS Read(_Out_ std::unique_ptr<IInputEvent>& inEvent,
-                                const bool Peek,
-                                const bool WaitForData,
-                                const bool Unicode,
-                                const bool Stream);
-
-    size_t Prepend(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-
-    size_t Write(_Inout_ std::unique_ptr<IInputEvent> inEvent);
-    size_t Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+    size_t Prepend(const std::span<const INPUT_RECORD>& inEvents);
+    size_t Write(const INPUT_RECORD& inEvent);
+    size_t Write(const std::span<const INPUT_RECORD>& inEvents);
+    void WriteFocusEvent(bool focused) noexcept;
+    bool WriteMouseEvent(til::point position, unsigned int button, short keyState, short wheelDelta);
 
     bool IsInVirtualTerminalInputMode() const;
     Microsoft::Console::VirtualTerminal::TerminalInput& GetTerminalInput();
@@ -84,9 +67,24 @@ public:
     void PassThroughWin32MouseRequest(bool enable);
 
 private:
-    std::deque<std::unique_ptr<IInputEvent>> _storage;
-    std::unique_ptr<IInputEvent> _readPartialByteSequence;
-    std::unique_ptr<IInputEvent> _writePartialByteSequence;
+    enum class ReadingMode : uint8_t
+    {
+        StringA,
+        StringW,
+        InputEventsA,
+        InputEventsW,
+    };
+
+    std::string _cachedTextA;
+    std::string_view _cachedTextReaderA;
+    std::wstring _cachedTextW;
+    std::wstring_view _cachedTextReaderW;
+    std::deque<INPUT_RECORD> _cachedInputEvents;
+    ReadingMode _readingMode = ReadingMode::StringA;
+
+    std::deque<INPUT_RECORD> _storage;
+    INPUT_RECORD _writePartialByteSequence{};
+    bool _writePartialByteSequenceAvailable = false;
     Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
     Microsoft::Console::Render::VtEngine* _pTtyConnection;
 
@@ -96,24 +94,11 @@ private:
     // Otherwise, we should be calling them.
     bool _vtInputShouldSuppress{ false };
 
-    void _ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                     const size_t readCount,
-                     _Out_ size_t& eventsRead,
-                     const bool peek,
-                     _Out_ bool& resetWaitEvent,
-                     const bool unicode,
-                     const bool streamRead);
-
-    void _WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inRecords,
-                      _Out_ size_t& eventsWritten,
-                      _Out_ bool& setWaitEvent);
-
-    bool _CanCoalesce(const KeyEvent& a, const KeyEvent& b) const noexcept;
-    bool _CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-    bool _CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-    void _HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-
-    void _HandleTerminalInputCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+    void _switchReadingMode(ReadingMode mode);
+    void _switchReadingModeSlowPath(ReadingMode mode);
+    void _WriteBuffer(const std::span<const INPUT_RECORD>& inRecords, _Out_ size_t& eventsWritten, _Out_ bool& setWaitEvent);
+    bool _CoalesceEvent(const INPUT_RECORD& inEvent) noexcept;
+    void _HandleTerminalInputCallback(const Microsoft::Console::VirtualTerminal::TerminalInput::StringType& text);
 
 #ifdef UNIT_TESTING
     friend class InputBufferTests;

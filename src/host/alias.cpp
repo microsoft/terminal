@@ -137,7 +137,7 @@ std::unordered_map<std::wstring,
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 [[nodiscard]] HRESULT GetConsoleAliasWImplHelper(const std::wstring_view source,
-                                                 std::optional<gsl::span<wchar_t>> target,
+                                                 std::optional<std::span<wchar_t>> target,
                                                  size_t& writtenOrNeeded,
                                                  const std::wstring_view exeName)
 {
@@ -195,7 +195,7 @@ std::unordered_map<std::wstring,
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasAImpl(const std::string_view source,
-                                                        gsl::span<char> target,
+                                                        std::span<char> target,
                                                         size_t& written,
                                                         const std::string_view exeName) noexcept
 {
@@ -235,7 +235,7 @@ std::unordered_map<std::wstring,
         // Call the Unicode version of this method
         size_t targetWritten;
         RETURN_IF_FAILED(GetConsoleAliasWImplHelper(sourceW,
-                                                    gsl::span<wchar_t>(targetBuffer.get(), targetNeeded),
+                                                    std::span<wchar_t>(targetBuffer.get(), targetNeeded),
                                                     targetWritten,
                                                     exeNameW));
 
@@ -268,7 +268,7 @@ std::unordered_map<std::wstring,
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasWImpl(const std::wstring_view source,
-                                                        gsl::span<wchar_t> target,
+                                                        std::span<wchar_t> target,
                                                         size_t& written,
                                                         const std::wstring_view exeName) noexcept
 {
@@ -440,7 +440,7 @@ void Alias::s_ClearCmdExeAliases()
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 [[nodiscard]] HRESULT GetConsoleAliasesWImplHelper(const std::wstring_view exeName,
-                                                   std::optional<gsl::span<wchar_t>> aliasBuffer,
+                                                   std::optional<std::span<wchar_t>> aliasBuffer,
                                                    size_t& writtenOrNeeded)
 {
     // Ensure output variables are initialized.
@@ -527,7 +527,7 @@ void Alias::s_ClearCmdExeAliases()
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasesAImpl(const std::string_view exeName,
-                                                          gsl::span<char> alias,
+                                                          std::span<char> alias,
                                                           size_t& written) noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -563,7 +563,7 @@ void Alias::s_ClearCmdExeAliases()
 
         // Call the Unicode version of this method
         size_t bufferWritten;
-        RETURN_IF_FAILED(GetConsoleAliasesWImplHelper(exeNameW, gsl::span<wchar_t>(aliasBuffer.get(), bufferNeeded), bufferWritten));
+        RETURN_IF_FAILED(GetConsoleAliasesWImplHelper(exeNameW, std::span<wchar_t>(aliasBuffer.get(), bufferNeeded), bufferWritten));
 
         // Convert result to A
         const auto converted = ConvertToA(codepage, { aliasBuffer.get(), bufferWritten });
@@ -591,7 +591,7 @@ void Alias::s_ClearCmdExeAliases()
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasesWImpl(const std::wstring_view exeName,
-                                                          gsl::span<wchar_t> alias,
+                                                          std::span<wchar_t> alias,
                                                           size_t& written) noexcept
 {
     LockConsole();
@@ -688,7 +688,7 @@ void Alias::s_ClearCmdExeAliases()
 //                                        or how many characters would have been needed (if buffer is nullopt).
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]] HRESULT GetConsoleAliasExesWImplHelper(std::optional<gsl::span<wchar_t>> aliasExesBuffer,
+[[nodiscard]] HRESULT GetConsoleAliasExesWImplHelper(std::optional<std::span<wchar_t>> aliasExesBuffer,
                                                      size_t& writtenOrNeeded)
 {
     // Ensure output variables are initialized.
@@ -745,7 +745,7 @@ void Alias::s_ClearCmdExeAliases()
 // - written - Specifies how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesAImpl(gsl::span<char> aliasExes,
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesAImpl(std::span<char> aliasExes,
                                                             size_t& written) noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -777,7 +777,7 @@ void Alias::s_ClearCmdExeAliases()
 
         // Call the Unicode version of this method
         size_t bufferWritten;
-        RETURN_IF_FAILED(GetConsoleAliasExesWImplHelper(gsl::span<wchar_t>(targetBuffer.get(), bufferNeeded), bufferWritten));
+        RETURN_IF_FAILED(GetConsoleAliasExesWImplHelper(std::span<wchar_t>(targetBuffer.get(), bufferNeeded), bufferWritten));
 
         // Convert result to A
         const auto converted = ConvertToA(codepage, { targetBuffer.get(), bufferWritten });
@@ -804,7 +804,7 @@ void Alias::s_ClearCmdExeAliases()
 // - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesWImpl(gsl::span<wchar_t> aliasExes,
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesWImpl(std::span<wchar_t> aliasExes,
                                                             size_t& written) noexcept
 {
     LockConsole();

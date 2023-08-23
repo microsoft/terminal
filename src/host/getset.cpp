@@ -436,10 +436,6 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
             screenInfo.GetStateMachine().ResetState();
         }
 
-        gci.SetVirtTermLevel(WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? 1 : 0);
-        gci.SetAutomaticReturnOnNewline(WI_IsFlagSet(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN) ? false : true);
-        gci.SetGridRenderingAllowedWorldwide(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_LVB_GRID_WORLDWIDE));
-
         // if we changed rendering modes then redraw the output buffer,
         // but only do this if we're not in conpty mode.
         if (!gci.IsInVtIoMode() &&
@@ -1285,7 +1281,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 // - isOriginal - If true, gets the title when we booted up. If false, gets whatever it is set to right now.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]] HRESULT GetConsoleTitleWImplHelper(std::optional<gsl::span<wchar_t>> title,
+[[nodiscard]] HRESULT GetConsoleTitleWImplHelper(std::optional<std::span<wchar_t>> title,
                                                  size_t& written,
                                                  size_t& needed,
                                                  const bool isOriginal) noexcept
@@ -1336,7 +1332,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
 
-[[nodiscard]] HRESULT GetConsoleTitleAImplHelper(gsl::span<char> title,
+[[nodiscard]] HRESULT GetConsoleTitleAImplHelper(std::span<char> title,
                                                  size_t& written,
                                                  size_t& needed,
                                                  const bool isOriginal) noexcept
@@ -1366,7 +1362,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
         auto unicodeBuffer = std::make_unique<wchar_t[]>(unicodeSize);
         RETURN_IF_NULL_ALLOC(unicodeBuffer);
 
-        const gsl::span<wchar_t> unicodeSpan(unicodeBuffer.get(), unicodeSize);
+        const std::span<wchar_t> unicodeSpan(unicodeBuffer.get(), unicodeSize);
 
         // Retrieve the title in Unicode.
         RETURN_IF_FAILED(GetConsoleTitleWImplHelper(unicodeSpan, unicodeWritten, unicodeNeeded, isOriginal));
@@ -1424,7 +1420,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 // - needed - The number of characters we would need to completely write out the title.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::GetConsoleTitleAImpl(gsl::span<char> title,
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleTitleAImpl(std::span<char> title,
                                                         size_t& written,
                                                         size_t& needed) noexcept
 {
@@ -1447,7 +1443,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 // - needed - The number of characters we would need to completely write out the title.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::GetConsoleTitleWImpl(gsl::span<wchar_t> title,
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleTitleWImpl(std::span<wchar_t> title,
                                                         size_t& written,
                                                         size_t& needed) noexcept
 {
@@ -1470,7 +1466,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 // - needed - The number of characters we would need to completely write out the title.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(gsl::span<char> title,
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(std::span<char> title,
                                                                 size_t& written,
                                                                 size_t& needed) noexcept
 {
@@ -1493,7 +1489,7 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 // - needed - The number of characters we would need to completely write out the title.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]] HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(gsl::span<wchar_t> title,
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(std::span<wchar_t> title,
                                                                 size_t& written,
                                                                 size_t& needed) noexcept
 {
