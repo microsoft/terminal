@@ -215,10 +215,11 @@ LineRendition ROW::GetLineRendition() const noexcept
 // Console APIs treat the buffer as a large NxM matrix after all.
 til::CoordType ROW::GetReadableColumnCount() const noexcept
 {
-    const til::CoordType columnCount = _columnCount;
-    const til::CoordType scale = _lineRendition != LineRendition::SingleWidth;
-    const til::CoordType padding = _doubleBytePadded;
-    return (columnCount - padding) >> scale;
+    if (_lineRendition == LineRendition::SingleWidth) [[likely]]
+    {
+        return _columnCount - _doubleBytePadded;
+    }
+    return (_columnCount - (_doubleBytePadded << 1)) >> 1;
 }
 
 // Routine Description:
