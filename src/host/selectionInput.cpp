@@ -708,8 +708,12 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
 
                     Telemetry::Instance().LogColorSelectionUsed();
 
-                    const Search search(gci.renderData, str, false, true);
-                    search.ColorAll(selectionAttr);
+                    const auto& textBuffer = gci.renderData.GetTextBuffer();
+                    const auto hits = textBuffer.SearchText(str, true);
+                    for (const auto& s : hits)
+                    {
+                        ColorSelection(s.start, s.end, selectionAttr);
+                    }
                 }
             }
             CATCH_LOG();

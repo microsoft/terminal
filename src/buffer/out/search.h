@@ -17,7 +17,6 @@ Revision History:
 
 #pragma once
 
-#include "TextAttribute.hpp"
 #include "textBuffer.hpp"
 #include "../renderer/inc/IRenderData.hpp"
 
@@ -29,8 +28,6 @@ public:
 
     bool IsStale() const noexcept;
     bool SelectNext();
-
-    void ColorAll(const TextAttribute& attr) const;
 
 private:
     // _renderData is a pointer so that Search() is constexpr default constructable.

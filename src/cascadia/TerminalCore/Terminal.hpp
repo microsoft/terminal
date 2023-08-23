@@ -216,7 +216,6 @@ public:
     const til::point GetSelectionAnchor() const noexcept override;
     const til::point GetSelectionEnd() const noexcept override;
     const std::wstring_view GetConsoleTitle() const noexcept override;
-    void ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute) override;
     const bool IsUiaDataInitialized() const noexcept override;
 #pragma endregion
 

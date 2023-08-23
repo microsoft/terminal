@@ -5,7 +5,6 @@
 #include "search.h"
 
 #include "textBuffer.hpp"
-#include "../types/inc/GlyphWidth.hpp"
 
 using namespace Microsoft::Console::Types;
 
@@ -84,16 +83,4 @@ bool Search::SelectNext()
 
     _renderData->SelectNewRegion(selStart, selEnd);
     return true;
-}
-
-// Routine Description:
-// - Applies the supplied TextAttribute to all search results.
-// Arguments:
-// - attr - The attribute to apply to the result
-void Search::ColorAll(const TextAttribute& attr) const
-{
-    for (const auto& s : _results)
-    {
-        _renderData->ColorSelection(s.start, s.end, attr);
-    }
 }

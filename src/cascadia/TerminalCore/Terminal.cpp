@@ -1552,28 +1552,38 @@ std::wstring_view Terminal::CurrentCommand() const
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
 {
+    const auto colorSelection = [this](const til::point coordStart, const til::point coordEnd, const TextAttribute& attr) {
+        auto& textBuffer = _activeBuffer();
+        const auto spanLength = textBuffer.SpanLength(coordStart, coordEnd);
+        textBuffer.Write(OutputCellIterator(attr, spanLength), coordStart);
+    };
+
     for (const auto [start, end] : _GetSelectionSpans())
     {
         try
         {
             if (matchMode == winrt::Microsoft::Terminal::Core::MatchMode::None)
             {
-                ColorSelection(start, end, attr);
+                colorSelection(start, end, attr);
             }
             else if (matchMode == winrt::Microsoft::Terminal::Core::MatchMode::All)
             {
-                const auto textBuffer = _activeBuffer().GetPlainText(start, end);
-                std::wstring_view text{ textBuffer };
+                const auto& textBuffer = _activeBuffer();
+                const auto text = textBuffer.GetPlainText(start, end);
+                std::wstring_view textView{ text };
 
                 if (IsBlockSelection())
                 {
-                    text = Utils::TrimPaste(text);
+                    textView = Utils::TrimPaste(textView);
                 }
 
-                if (!text.empty())
+                if (!textView.empty())
                 {
-                    const Search search(*this, text, false, true);
-                    search.ColorAll(attr);
+                    const auto hits = textBuffer.SearchText(textView, true);
+                    for (const auto& s : hits)
+                    {
+                        colorSelection(s.start, s.end, attr);
+                    }
                 }
             }
         }
