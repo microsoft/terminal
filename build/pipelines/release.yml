@@ -14,6 +14,7 @@ parameters:
     values:
       - Release
       - Preview
+      - Canary
       - Dev
   - name: buildTerminal
     displayName: "Build Windows Terminal MSIX"
