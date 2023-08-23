@@ -2766,12 +2766,12 @@ std::vector<til::point_span> TextBuffer::SearchText(const std::wstring_view& nee
         return results;
     }
 
+    auto text = ICU::UTextFromTextBuffer(*this, rowBeg, rowEnd);
+
     uint32_t flags = UREGEX_LITERAL;
     WI_SetFlagIf(flags, UREGEX_CASE_INSENSITIVE, caseInsensitive);
 
     UErrorCode status = U_ZERO_ERROR;
-    auto text = ICU::UTextFromTextBuffer(*this, rowBeg, rowEnd, &status);
-
     const auto re = ICU::CreateRegex(needle, flags, &status);
     uregex_setUText(re.get(), &text, &status);
 

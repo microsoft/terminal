@@ -1412,10 +1412,9 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
         LR"(\b(?:https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])",
     };
 
-    PointTree::interval_vector intervals;
-
+    auto text = ICU::UTextFromTextBuffer(_activeBuffer(), beg, end + 1);
     UErrorCode status = U_ZERO_ERROR;
-    auto text = ICU::UTextFromTextBuffer(_activeBuffer(), beg, end + 1, &status);
+    PointTree::interval_vector intervals;
 
     for (size_t i = 0; i < patterns.size(); ++i)
     {
