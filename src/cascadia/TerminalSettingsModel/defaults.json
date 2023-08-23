@@ -500,7 +500,7 @@
 
             
         },   
-        { "command": "toggleAcrylic", "keys": "ctrl+space" },
+        { "command": "toggleAcrylic"},
 
         // Other commands
         {
