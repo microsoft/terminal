@@ -44,8 +44,6 @@ constexpr const auto SearchAfterChangeDelay = std::chrono::milliseconds(200);
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    // std::atomic<size_t> SearchState::_searchIdGenerator{ 0 };
-
     static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c)
     {
         Core::OptionalColor result;
@@ -1910,7 +1908,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (shared->updatePatternLocations)
             {
                 (*shared->updatePatternLocations)();
-                // _bufferChangedSinceSearch = true;
             }
         }
         catch (...)
