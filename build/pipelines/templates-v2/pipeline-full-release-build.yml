@@ -44,6 +44,9 @@ parameters:
   - name: publishSymbolsToPublic
     type: boolean
     default: true
+  - name: symbolExpiryTime
+    type: string
+    default: 36530 # This is the default from PublishSymbols@2
   - name: publishVpackToWindows
     type: boolean
     default: false
@@ -188,5 +191,6 @@ stages:
       - template: ./job-publish-symbols.yml
         parameters:
           includePublicSymbolServer: ${{ parameters.publishSymbolsToPublic }}
+          symbolExpiryTime: ${{ parameters.symbolExpiryTime }}
 
 ...
