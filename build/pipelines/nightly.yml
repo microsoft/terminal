@@ -8,8 +8,10 @@ schedules:
         - main
     always: false # only run if there's code changes!
 
+name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
+
 extends:
-  template: release.yml
+  template: templates-v2\pipeline-full-release-build.yml
   parameters:
     branding: Canary
     buildTerminal: true
