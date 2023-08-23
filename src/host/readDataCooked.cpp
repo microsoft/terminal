@@ -644,6 +644,9 @@ void COOKED_READ_DATA::_handlePostCharInputLoop(const bool isUnicode, size_t& nu
         {
             input.remove_suffix(suffix.size());
 
+            // Reset the cursor back to its regular size if it was previously changed by our VK_INSERT handler.
+            _screenInfo.SetCursorDBMode(false);
+
             if (_history)
             {
                 auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -996,14 +999,16 @@ bool COOKED_READ_DATA::_popupHandleInput(wchar_t wch, uint16_t vkey, DWORD modif
 
 void COOKED_READ_DATA::_popupHandleCopyToCharInput(Popup& /*popup*/, const wchar_t wch, const uint16_t vkey, const DWORD /*modifiers*/)
 {
-    if (vkey == VK_ESCAPE)
+    if (vkey)
     {
-        _popupDone();
-        return;
+        if (vkey == VK_ESCAPE)
+        {
+            _popupDone();
+        }
     }
-
-    if (wch)
+    else
     {
+        // See PopupKind::CopyToChar for more information about this code.
         const auto cmd = _history->GetLastCommand();
         const auto idx = cmd.find(wch, _bufferCursor);
 
@@ -1024,14 +1029,16 @@ void COOKED_READ_DATA::_popupHandleCopyToCharInput(Popup& /*popup*/, const wchar
 
 void COOKED_READ_DATA::_popupHandleCopyFromCharInput(Popup& /*popup*/, const wchar_t wch, const uint16_t vkey, const DWORD /*modifiers*/)
 {
-    if (vkey == VK_ESCAPE)
+    if (vkey)
     {
-        _popupDone();
-        return;
+        if (vkey == VK_ESCAPE)
+        {
+            _popupDone();
+        }
     }
-
-    if (wch)
+    else
     {
+        // See PopupKind::CopyFromChar for more information about this code.
         const auto idx = _buffer.find(wch, _bufferCursor);
         _buffer.erase(_bufferCursor, std::min(idx, _buffer.size()) - _bufferCursor);
         _markAsDirty();
@@ -1041,48 +1048,52 @@ void COOKED_READ_DATA::_popupHandleCopyFromCharInput(Popup& /*popup*/, const wch
 
 void COOKED_READ_DATA::_popupHandleCommandNumberInput(Popup& popup, const wchar_t wch, const uint16_t vkey, const DWORD /*modifiers*/)
 {
-    if (vkey == VK_ESCAPE)
+    if (vkey)
     {
-        _popupDone();
-        return;
-    }
-
-    if (wch == UNICODE_CARRIAGERETURN)
-    {
-        popup.commandNumber.buffer[popup.commandNumber.bufferSize++] = L'\0';
-        _replaceBuffer(_history->RetrieveNth(std::stoi(popup.commandNumber.buffer.data())));
-        _popupDone();
-        return;
-    }
-
-    if (wch >= L'0' && wch <= L'9')
-    {
-        if (popup.commandNumber.bufferSize < CommandNumberMaxInputLength)
+        if (vkey == VK_ESCAPE)
         {
-            popup.commandNumber.buffer[popup.commandNumber.bufferSize++] = wch;
-        }
-    }
-    else if (wch == UNICODE_BACKSPACE)
-    {
-        if (popup.commandNumber.bufferSize > 0)
-        {
-            popup.commandNumber.buffer[--popup.commandNumber.bufferSize] = L' ';
+            _popupDone();
         }
     }
     else
     {
-        return;
-    }
+        if (wch == UNICODE_CARRIAGERETURN)
+        {
+            popup.commandNumber.buffer[popup.commandNumber.bufferSize++] = L'\0';
+            _replaceBuffer(_history->RetrieveNth(std::stoi(popup.commandNumber.buffer.data())));
+            _popupDone();
+            return;
+        }
 
-    RowWriteState state{
-        .text = { popup.commandNumber.buffer.data(), CommandNumberMaxInputLength },
-        .columnBegin = popup.contentRect.right - CommandNumberMaxInputLength,
-        .columnLimit = popup.contentRect.right,
-    };
-    _screenInfo.GetTextBuffer().Write(popup.contentRect.top, _screenInfo.GetPopupAttributes(), state);
+        if (wch >= L'0' && wch <= L'9')
+        {
+            if (popup.commandNumber.bufferSize < CommandNumberMaxInputLength)
+            {
+                popup.commandNumber.buffer[popup.commandNumber.bufferSize++] = wch;
+            }
+        }
+        else if (wch == UNICODE_BACKSPACE)
+        {
+            if (popup.commandNumber.bufferSize > 0)
+            {
+                popup.commandNumber.buffer[--popup.commandNumber.bufferSize] = L' ';
+            }
+        }
+        else
+        {
+            return;
+        }
+
+        RowWriteState state{
+            .text = { popup.commandNumber.buffer.data(), CommandNumberMaxInputLength },
+            .columnBegin = popup.contentRect.right - CommandNumberMaxInputLength,
+            .columnLimit = popup.contentRect.right,
+        };
+        _screenInfo.GetTextBuffer().Write(popup.contentRect.top, _screenInfo.GetPopupAttributes(), state);
+    }
 }
 
-void COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t wch, const uint16_t vkey, const DWORD modifiers)
+bool COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t wch, const uint16_t vkey, const DWORD modifiers)
 {
     auto& cl = popup.commandList;
 
@@ -1119,6 +1130,7 @@ void COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t 
         {
             _history->Swap(cl.selected, cl.selected - 1);
         }
+        // _popupDrawCommandList() clamps all values to valid ranges in `cl`.
         cl.selected--;
         break;
     case VK_DOWN:
@@ -1126,18 +1138,22 @@ void COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t 
         {
             _history->Swap(cl.selected, cl.selected + 1);
         }
+        // _popupDrawCommandList() clamps all values to valid ranges in `cl`.
         cl.selected++;
         break;
     case VK_HOME:
         cl.selected = 0;
         break;
     case VK_END:
+        // _popupDrawCommandList() clamps all values to valid ranges in `cl`.
         cl.selected = INT_MAX;
         break;
     case VK_PRIOR:
+        // _popupDrawCommandList() clamps all values to valid ranges in `cl`.
         cl.selected -= popup.contentRect.height();
         break;
     case VK_NEXT:
+        // _popupDrawCommandList() clamps all values to valid ranges in `cl`.
         cl.selected += popup.contentRect.height();
         break;
     default:

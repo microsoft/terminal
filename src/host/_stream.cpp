@@ -241,6 +241,7 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
                 break;
             }
 
+            // In the interactive mode we replace C0 control characters (0x00-0x1f) with ASCII representetations like ^C (= 0x03).
             if (interactive && *it < L' ')
             {
                 const wchar_t wchs[2]{ L'^', static_cast<wchar_t>(*it + L'@') };
