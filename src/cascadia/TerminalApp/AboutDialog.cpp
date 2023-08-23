@@ -85,10 +85,6 @@ namespace winrt::TerminalApp::implementation
             co_await winrt::resume_after(std::chrono::seconds{ 3 });
             co_await wil::resume_foreground(strongThis->Dispatcher());
             UpdatesAvailable(true);
-#elif defined(WT_BRANDING_CANARY)
-
-            // Canary doesn't have a package context. Don't bother.
-
 #else // release build, likely has a store context
             if (auto storeContext{ winrt::Windows::Services::Store::StoreContext::GetDefault() })
             {

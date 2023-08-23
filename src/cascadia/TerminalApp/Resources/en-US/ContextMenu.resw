@@ -143,7 +143,7 @@
   </data>
   <data name="AppStoreNameCan" xml:space="preserve">
     <value>Windows Terminal Canary</value>
-    <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
+    <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}. "Canary" in this context means an unstable or nightly build of a software product, not the bird.</comment>
   </data>
   <data name="AppStoreNamePre" xml:space="preserve">
     <value>Windows Terminal Preview</value>
@@ -171,9 +171,6 @@
   <data name="AppDescriptionDev" xml:space="preserve">
     <value>The Windows Terminal, but Unofficial</value>
     <comment>{Locked} The dev build will never be seen in multiple languages</comment>
-  </data>
-  <data name="AppDescriptionDev" xml:space="preserve">
-    <value>The Windows Terminal, but Unofficial</value>
   </data>
   <data name="AppDescriptionCan" xml:space="preserve">
     <value>The Windows Terminal (Canary build)</value>
