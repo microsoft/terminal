@@ -166,7 +166,7 @@ public:
     Cursor& GetCursor() noexcept;
     const Cursor& GetCursor() const noexcept;
 
-    uint64_t GetMutationCount() const noexcept;
+    uint64_t GetLastMutationId() const noexcept;
     const til::CoordType GetFirstRowIndex() const noexcept;
 
     const Microsoft::Console::Types::Viewport GetSize() const noexcept;
@@ -371,7 +371,7 @@ private:
 
     TextAttribute _currentAttributes;
     til::CoordType _firstRow = 0; // indexes top row (not necessarily 0)
-    uint64_t _mutationCount = 0;
+    uint64_t _lastMutationId = 0;
 
     Cursor _cursor;
     std::vector<ScrollMark> _marks;

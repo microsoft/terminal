@@ -25,7 +25,7 @@ Search::Search(Microsoft::Console::Render::IRenderData& renderData, const std::w
     const auto& textBuffer = _renderData->GetTextBuffer();
 
     _results = textBuffer.SearchText(str, caseInsensitive);
-    _mutationCount = textBuffer.GetMutationCount();
+    _lastMutationId = textBuffer.GetLastMutationId();
 
     if (_results.empty())
     {
@@ -58,7 +58,7 @@ Search::Search(Microsoft::Console::Render::IRenderData& renderData, const std::w
 
 bool Search::IsStale() const noexcept
 {
-    return !_renderData || _renderData->GetTextBuffer().GetMutationCount() != _mutationCount;
+    return !_renderData || _renderData->GetTextBuffer().GetLastMutationId() != _lastMutationId;
 }
 
 // Routine Description:

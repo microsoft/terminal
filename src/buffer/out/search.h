@@ -35,5 +35,5 @@ private:
     std::vector<til::point_span> _results;
     ptrdiff_t _index = 0;
     ptrdiff_t _step = 0;
-    uint64_t _mutationCount = 0;
+    uint64_t _lastMutationId = 0;
 };

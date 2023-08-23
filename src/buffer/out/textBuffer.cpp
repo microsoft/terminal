@@ -31,7 +31,7 @@ constexpr bool allWhitespace(const std::wstring_view& text) noexcept
     return true;
 }
 
-static std::atomic<uint64_t> s_mutationCountInitialValue;
+static std::atomic<uint64_t> s_lastMutationIdInitialValue;
 
 // Routine Description:
 // - Creates a new instance of TextBuffer
@@ -51,9 +51,9 @@ TextBuffer::TextBuffer(til::size screenBufferSize,
                        Microsoft::Console::Render::Renderer& renderer) :
     _renderer{ renderer },
     _currentAttributes{ defaultAttributes },
-    // This way every TextBuffer will start with a ""unique"" _mutationCount
+    // This way every TextBuffer will start with a ""unique"" _lastMutationId
     // and so it'll compare unequal with the counter of other TextBuffers.
-    _mutationCount{ s_mutationCountInitialValue.fetch_add(0x100000000) },
+    _lastMutationId{ s_lastMutationIdInitialValue.fetch_add(0x100000000) },
     _cursor{ cursorSize, *this },
     _isActiveBuffer{ isActiveBuffer }
 {
@@ -225,7 +225,7 @@ const ROW& TextBuffer::GetRowByOffset(const til::CoordType index) const
 // (what corresponds to the top row of the screen buffer).
 ROW& TextBuffer::GetMutableRowByOffset(const til::CoordType index)
 {
-    _mutationCount++;
+    _lastMutationId++;
     return _getRow(index);
 }
 
@@ -907,9 +907,9 @@ const Cursor& TextBuffer::GetCursor() const noexcept
     return _cursor;
 }
 
-uint64_t TextBuffer::GetMutationCount() const noexcept
+uint64_t TextBuffer::GetLastMutationId() const noexcept
 {
-    return _mutationCount;
+    return _lastMutationId;
 }
 
 const TextAttribute& TextBuffer::GetCurrentAttributes() const noexcept
