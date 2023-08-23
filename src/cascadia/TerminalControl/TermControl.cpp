@@ -670,15 +670,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_InitializeBackgroundBrush()
     {
         auto settings{ _core.Settings() };
-        auto bgColor = til::color{ _core.FocusedAppearance().RetroTerminalEffect() };
-
-
-        bool useAcrylic2 = _core.UnfocusedAppearance().UseAcrylic();
-
-        hstring myhstring = useAcrylic2 ? L"true" : L"false";
-        OutputDebugStringW(myhstring.c_str());
-
-
+        auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() };
 
         auto transparentBg = settings.UseBackgroundImageForWindow();
         if (transparentBg)
@@ -698,13 +690,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (acrylic == nullptr)
             {
                 acrylic = Media::AcrylicBrush{};
+
                 if (_core.Settings().EnableUnfocusedAcrylic())
                     acrylic.BackgroundSource(Media::AcrylicBackgroundSource::Backdrop);
                 else
                     acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
             }
 
-            //JASWIR CODE::
+            // Replaces brush when settings EnableUnfocusedAcrylic gets changed at runtime
             else
             {
                 if (_core.Settings().EnableUnfocusedAcrylic())
