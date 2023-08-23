@@ -1575,6 +1575,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto foundMatch = _searcher.SelectNext();
+        auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(foundMatch);
         if (foundMatch)
         {
             // this is used for search,
@@ -1585,11 +1586,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
 
             _terminal->AlwaysNotifyOnBufferRotation(true);
+
+            foundResults->TotalMatches(gsl::narrow<int32_t>(_searcher.Results().size()));
+            foundResults->CurrentMatch(gsl::narrow<int32_t>(_searcher.CurrentMatch()));
         }
 
         // Raise a FoundMatch event, which the control will use to notify
         // narrator if there was any results in the buffer
-        _FoundMatchHandlers(*this, winrt::make<implementation::FoundResultsArgs>(foundMatch));
+        // _FoundMatchHandlers(*this, winrt::make<implementation::FoundResultsArgs>(foundMatch));
+
+        _FoundMatchHandlers(*this, *foundResults);
     }
 
     // // Method Description:

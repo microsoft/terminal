@@ -89,3 +89,8 @@ const std::vector<til::point_span>& Search::Results() const noexcept
 {
     return _results;
 }
+
+size_t Search::CurrentMatch() const noexcept
+{
+    return _index;
+}
