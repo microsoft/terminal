@@ -678,7 +678,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#11743: Make sure to use the Core's current UseAcrylic value, not
         // the one from the settings. The Core's runtime UseAcrylic may have
         // changed from what was in the original settings.
-        if (_core.UseAcrylic() && !transparentBg)
+        //
+        // Don't use acrylic even if the user asked for it, if we're fully opaque
+        if (_core.UseAcrylic() && !transparentBg && _core.Opacity() < 1.0)
         {
             // See if we've already got an acrylic background brush
             // to avoid the flicker when setting up a new one
