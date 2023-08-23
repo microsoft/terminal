@@ -39,8 +39,13 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
+// The delay before performing the search after change of search criteria
+constexpr const auto SearchAfterChangeDelay = std::chrono::milliseconds(200);
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    // std::atomic<size_t> SearchState::_searchIdGenerator{ 0 };
+
     static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c)
     {
         Core::OptionalColor result;
@@ -208,6 +213,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     core->_ScrollPositionChangedHandlers(*core, update);
                 }
             });
+
+        // shared->updateSearchStatus = std::make_shared<ThrottledFuncTrailing<SearchState>>(
+        //     _dispatcher,
+        //     SearchAfterChangeDelay,
+        //     [weakThis = get_weak()](const auto& update) {
+        //         if (auto core{ weakThis.get() })
+        //         {
+        //             // Begin a search
+        //             core->_terminal->AlwaysNotifyOnBufferRotation(true);
+        //             core->_searchState.emplace(update);
+        //             core->_SearchAsync(std::nullopt);
+        //         }
+        //     });
     }
 
     ControlCore::~ControlCore()
@@ -1347,6 +1365,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                        nullptr;
     }
 
+    til::color ControlCore::ForegroundColor() const
+    {
+        return _terminal->GetRenderSettings().GetColorAlias(ColorAlias::DefaultForeground);
+    }
+
     til::color ControlCore::BackgroundColor() const
     {
         return _terminal->GetRenderSettings().GetColorAlias(ColorAlias::DefaultBackground);
@@ -1560,6 +1583,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->SetBlockSelection(false);
             _renderer->TriggerSelection();
             _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
+
+            _terminal->AlwaysNotifyOnBufferRotation(true);
         }
 
         // Raise a FoundMatch event, which the control will use to notify
@@ -1567,9 +1592,260 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _FoundMatchHandlers(*this, winrt::make<implementation::FoundResultsArgs>(foundMatch));
     }
 
+    // // Method Description:
+    // // - Search text in text buffer.
+    // // This is triggered when the user starts typing, clicks on navigation or
+    // // when the search is active and the terminal text is changing
+    // // Arguments:
+    // // - goForward: optional boolean that represents if the current search direction is forward
+    // // - delay: time in milliseconds to wait before performing the search
+    // // (grace time to allow next search to start)
+    // // Return Value:
+    // // - <none>
+    // fire_and_forget ControlCore::_SearchAsync(std::optional<bool> goForward)
+    // {
+    //     // Run only if the search state was initialized
+    //     if (_closing || !_searchState.has_value())
+    //     {
+    //         co_return;
+    //     }
+
+    //     const auto originalSearchId = _searchState->searchId;
+    //     auto weakThis{ get_weak() };
+
+    //     // If no matches were computed it means we need to perform the search
+    //     if (!_searchState->matches.has_value())
+    //     {
+    //         std::vector<std::pair<til::point, til::point>> matches;
+    //         if (!_searchState->text.empty())
+    //         {
+    //             // Collect up all the matches on a BG thread.
+    //             co_await winrt::resume_background();
+
+    //             auto core = weakThis.get();
+    //             if (!core)
+    //             {
+    //                 // We've been destroyed since we started this coroutine.
+    //                 // Just bail
+    //                 co_return;
+    //             }
+    //             // here, `this` is safe to use for the rest of the method. `core` will keep us alive.
+
+    //             // We perform explicit search forward, so the first result will also be the earliest buffer location
+    //             // We will use goForward later to decide if we need to select 1 of n or n of n.
+    //             ::Search search(*GetRenderData(),
+    //                             _searchState->text.c_str(),
+    //                             Search::Direction::Forward,
+    //                             _searchState->sensitivity);
+
+    //             while (_SearchOne(search))
+    //             {
+    //                 // if search box was collapsed or the new one search was triggered - let's cancel this one
+    //                 if (!_searchState.has_value() ||
+    //                     _searchState->searchId != originalSearchId)
+    //                 {
+    //                     co_return;
+    //                 }
+
+    //                 matches.push_back(search.GetFoundLocation());
+    //             }
+
+    //             // if search box was collapsed or the new one search was triggered - let's cancel this one
+    //             if (!_searchState.has_value() ||
+    //                 _searchState->searchId != originalSearchId)
+    //             {
+    //                 co_return;
+    //             }
+    //         }
+
+    //         _searchState->matches.emplace(std::move(matches));
+    //         _bufferChangedSinceSearch = false;
+    //     }
+    //     if (auto core{ weakThis.get() })
+    //     {
+    //         _SelectSearchResult(_searchState->goForward);
+    //     }
+    // }
+
+    // void ControlCore::SearchChanged(const winrt::hstring& text,
+    //                                 const bool goForward,
+    //                                 const bool caseSensitive)
+    // {
+    //     {
+    //         auto lock = _terminal->LockForWriting();
+    //         // Clear the selection reset the anchor
+    //         _terminal->ClearSelection();
+    //         _renderer->TriggerSelection();
+    //     }
+
+    //     const auto sensitivity = caseSensitive ? Search::Sensitivity::CaseSensitive : Search::Sensitivity::CaseInsensitive;
+
+    //     const SearchState searchState{ text, sensitivity, goForward };
+
+    //     {
+    //         const auto shared = _shared.lock_shared();
+    //         if (shared->updateSearchStatus)
+    //         {
+    //             shared->updateSearchStatus->Run(searchState);
+    //         }
+    //     }
+    // }
+
+    // // Method Description:
+    // // - Selects one of precomputed search results in the terminal (if exist).
+    // // - Updates the search box control accordingly.
+    // // - The selection might be preceded by going to next / previous result
+    // // - goForward: if true, select next result; if false, select previous result;
+    // // if not set, remain at the current result.
+    // // Return Value:
+    // // - <none>
+    // void ControlCore::_SelectSearchResult(std::optional<bool> goForward)
+    // {
+    //     if (_searchState.has_value() && _searchState->matches.has_value())
+    //     {
+    //         auto& state = _searchState.value();
+    //         auto& matches = state.matches.value();
+
+    //         if (goForward.has_value())
+    //         {
+    //             state.UpdateIndex(goForward.value());
+
+    //             const auto currentMatch = state.GetCurrentMatch();
+    //             if (currentMatch.has_value())
+    //             {
+    //                 auto lock = _terminal->LockForWriting();
+    //                 _terminal->SetBlockSelection(false);
+    //                 _terminal->SelectNewRegion(currentMatch->first, currentMatch->second);
+    //                 _renderer->TriggerSelection();
+    //             }
+    //         }
+
+    //         // Let the control know we got one
+    //         auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(true);
+    //         foundResults->TotalMatches(gsl::narrow<int32_t>(matches.size()));
+    //         foundResults->CurrentMatch(state.currentMatchIndex);
+    //         _FoundMatchHandlers(*this, *foundResults);
+    //     }
+    // }
+
+    // // Method Description:
+    // // - Search for a single value. Takes the lock for the duration of the search.
+    // // Arguments:
+    // // - search: search object to use to find the next match.
+    // // Return Value:
+    // // - <none>
+    // bool ControlCore::_SearchOne(::Search& search)
+    // {
+    //     // We don't lock the terminal for the duration of the entire search,
+    //     // since if the terminal was modified the search ID will be updated.
+    //     auto lock = _terminal->LockForWriting();
+    //     return search.FindNext();
+    // }
+
+    // // Method Description:
+    // // - Updates the index of the current match according to the direction.
+    // // The index will remain unchanged (usually -1) if the number of matches is 0
+    // // Arguments:
+    // // - goForward: if true, move to the next match, else go to previous
+    // // Return Value:
+    // // - <none>
+    // void SearchState::UpdateIndex(bool goForward)
+    // {
+    //     if (matches.has_value())
+    //     {
+    //         const int numMatches = ::base::saturated_cast<int>(matches->size());
+    //         if (numMatches > 0)
+    //         {
+    //             if (currentMatchIndex == -1)
+    //             {
+    //                 currentMatchIndex = goForward ? 0 : numMatches - 1;
+    //             }
+    //             else
+    //             {
+    //                 currentMatchIndex = (numMatches + currentMatchIndex + (goForward ? 1 : -1)) % numMatches;
+    //             }
+    //         }
+    //     }
+    // }
+
+    // // Method Description:
+    // // - Retrieves the current match
+    // // Arguments:
+    // // - <none>
+    // // Return Value:
+    // // - current match, null-opt if current match is invalid
+    // // (e.g., when the index is -1 or there are no matches)
+    // std::optional<std::pair<til::point, til::point>> SearchState::GetCurrentMatch()
+    // {
+    //     if (matches.has_value() &&
+    //         currentMatchIndex > -1 &&
+    //         static_cast<size_t>(currentMatchIndex) < matches->size())
+    //     {
+    //         return til::at(matches.value(), currentMatchIndex);
+    //     }
+    //     else
+    //     {
+    //         return std::nullopt;
+    //     }
+    // }
+    // void ControlCore::ExitSearch()
+    // {
+    //     _terminal->AlwaysNotifyOnBufferRotation(false);
+    //     _searchState.reset();
+    // }
+
+    Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
+    {
+        // auto results = std::vector<int32_t>();
+        // if (_bufferChangedSinceSearch)
+        // {
+        //     return winrt::single_threaded_vector<int32_t>();
+        // }
+
+        // // use a map to remove duplicates
+        // std::map<int32_t, bool> rows;
+
+        // if (_searchState.has_value() && _searchState->matches.has_value())
+        // {
+        //     for (auto&& [start, end] : *(_searchState->matches))
+        //     {
+        //         const auto row = start.y;
+
+        //         // First check if it's in the map
+        //         if (rows.find(row) == rows.end())
+        //         {
+        //             rows[row] = true;
+        //             results.push_back(row);
+        //         }
+        //     }
+        // }
+        // return winrt::single_threaded_vector<int32_t>(std::move(results));
+
+        auto results = std::vector<int32_t>();
+        if (_searcher.IsStale())
+        {
+            return winrt::single_threaded_vector<int32_t>();
+        }
+        // use a map to remove duplicates
+        std::map<int32_t, bool> rows;
+        for (const auto& match : _searcher.Results())
+        {
+            const auto row = match.start.y;
+            // First check if it's in the map
+            if (rows.find(row) == rows.end())
+            {
+                rows[row] = true;
+                results.push_back(row);
+            }
+        }
+        return winrt::single_threaded_vector<int32_t>(std::move(results));
+    }
+
     void ControlCore::ClearSearch()
     {
+        _terminal->AlwaysNotifyOnBufferRotation(false);
         _searcher = {};
+        // >>>>>>> dev/migrie/fhl/search-marks
     }
 
     void ControlCore::Close()
@@ -1866,10 +2142,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->Write(hstr);
 
             // Start the throttled update of where our hyperlinks are.
+
             const auto shared = _shared.lock_shared();
             if (shared->updatePatternLocations)
             {
                 (*shared->updatePatternLocations)();
+                // _bufferChangedSinceSearch = true;
             }
         }
         catch (...)

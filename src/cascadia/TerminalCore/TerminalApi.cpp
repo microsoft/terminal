@@ -472,7 +472,7 @@ void Terminal::NotifyBufferRotation(const int delta)
 
     const auto oldScrollOffset = _scrollOffset;
     _PreserveUserScrollOffset(delta);
-    if (_scrollOffset != oldScrollOffset || hasScrollMarks)
+    if (_scrollOffset != oldScrollOffset || hasScrollMarks || AlwaysNotifyOnBufferRotation())
     {
         _NotifyScrollEvent();
     }

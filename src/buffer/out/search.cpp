@@ -84,3 +84,8 @@ bool Search::SelectNext()
     _renderData->SelectNewRegion(selStart, selEnd);
     return true;
 }
+
+const std::vector<til::point_span>& Search::Results() const noexcept
+{
+    return _results;
+}

@@ -29,6 +29,8 @@ public:
     bool IsStale() const noexcept;
     bool SelectNext();
 
+    const std::vector<til::point_span>& Results() const noexcept;
+
 private:
     // _renderData is a pointer so that Search() is constexpr default constructable.
     Microsoft::Console::Render::IRenderData* _renderData = nullptr;

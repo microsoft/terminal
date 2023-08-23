@@ -65,6 +65,35 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     };
 
+    // struct SearchState
+    // {
+    // public:
+    //     static std::atomic<size_t> _searchIdGenerator;
+
+    //     SearchState(const winrt::hstring& text, const Search::Sensitivity sensitivity, const bool forward) :
+    //         text(text),
+    //         sensitivity(sensitivity),
+    //         goForward(forward),
+    //         searchId(_searchIdGenerator.fetch_add(1))
+    //     {
+    //     }
+
+    //     // Why is this an optional vector, instead of just checking if it's empty?
+    //     // * No _searchState? Then we have no search started.
+    //     // * _searchState, no _matches? We haven't run the search yet.
+    //     // * _searchState, _matches has 0 results? We didn't find anything
+    //     std::optional<std::vector<std::pair<til::point, til::point>>> matches;
+
+    //     void UpdateIndex(bool goForward);
+    //     std::optional<std::pair<til::point, til::point>> GetCurrentMatch();
+
+    //     winrt::hstring text;
+    //     Search::Sensitivity sensitivity;
+    //     bool goForward{ true };
+    //     size_t searchId;
+    //     int32_t currentMatchIndex{ -1 };
+    // };
+
     struct ControlCore : ControlCoreT<ControlCore>
     {
     public:
@@ -106,6 +135,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::hstring FontFaceName() const noexcept;
         uint16_t FontWeight() const noexcept;
 
+        til::color ForegroundColor() const;
         til::color BackgroundColor() const;
 
         void SendInput(const winrt::hstring& wstr);
@@ -208,6 +238,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void ClearSearch();
 
+        Windows::Foundation::Collections::IVector<int32_t> SearchResultRows();
+
         void LeftClickOnTerminal(const til::point terminalPosition,
                                  const int numberOfClicks,
                                  const bool altEnabled,
@@ -283,6 +315,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             std::shared_ptr<ThrottledFuncTrailing<>> tsfTryRedrawCanvas;
             std::unique_ptr<til::throttled_func_trailing<>> updatePatternLocations;
             std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
+            // std::shared_ptr<ThrottledFuncTrailing<SearchState>> updateSearchStatus;
         };
 
         std::atomic<bool> _initializedTerminal{ false };
@@ -336,6 +369,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         uint64_t _owningHwnd{ 0 };
 
+        // std::optional<SearchState> _searchState;
+        // bool _bufferChangedSinceSearch{ true };
+
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
         til::shared_mutex<SharedState> _shared;
 
@@ -388,6 +424,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _isBackgroundTransparent();
         void _focusChanged(bool focused);
+
+        // fire_and_forget _SearchAsync(std::optional<bool> goForward);
+        // void _SelectSearchResult(std::optional<bool> goForward);
+        // bool _SearchOne(::Search& search);
 
         void _selectSpan(til::point_span s);
 
