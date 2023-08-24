@@ -1398,7 +1398,7 @@ private:
     {
         using is_transparent = void;
 
-        std::size_t operator()(const std::wstring_view& str) const
+        std::size_t operator()(const std::wstring_view& str) const noexcept
         {
             return til::hash(str);
         }
@@ -1424,7 +1424,7 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
 
     for (size_t i = 0; i < patterns.size(); ++i)
     {
-        const auto re = uregexInterner.Intern(patterns[i]);
+        const auto re = uregexInterner.Intern(patterns.at(i));
         uregex_setUText(re.get(), &text, &status);
 
         if (uregex_find(re.get(), -1, &status))
