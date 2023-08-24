@@ -2,7 +2,8 @@ parameters:
   configuration: 'Release'
   platform: ''
   testLogPath: '$(Build.BinariesDirectory)\$(BuildPlatform)\$(BuildConfiguration)\testsOnBuildMachine.wtl'
-  artifactStem: ''
+  inputArtifactStem: ''
+  outputArtifactStem: ''
 
 jobs:
 - job: Test${{ parameters.platform }}${{ parameters.configuration }}
@@ -37,7 +38,7 @@ jobs:
   - task: DownloadPipelineArtifact@2
     displayName: Download artifacts
     inputs:
-      artifactName: build-${{ parameters.platform }}-$(BuildConfiguration)${{ parameters.artifactStem }}
+      artifactName: build-${{ parameters.platform }}-$(BuildConfiguration)${{ parameters.inputArtifactStem }}
       downloadPath: $(Terminal.BinDir)
 
   - task: PowerShell@2
@@ -94,5 +95,5 @@ jobs:
       flattenFolders: true
 
   - publish: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test-logs'
-    artifact: test-logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+    artifact: test-logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.outputArtifactStem }}
     condition: always()

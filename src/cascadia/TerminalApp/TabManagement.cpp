@@ -168,61 +168,6 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        newTabImpl->DuplicateRequested([weakTab, weakThis{ get_weak() }]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-
-            if (page && tab)
-            {
-                page->_DuplicateTab(*tab);
-            }
-        });
-
-        newTabImpl->SplitTabRequested([weakTab, weakThis{ get_weak() }]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-
-            if (page && tab)
-            {
-                page->_SplitTab(*tab);
-            }
-        });
-
-        newTabImpl->MoveTabToNewWindowRequested([weakTab, weakThis{ get_weak() }]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-
-            if (page && tab)
-            {
-                MoveTabArgs args{ hstring{ L"new" }, MoveTabDirection::Forward };
-                page->_SetFocusedTab(*tab);
-                page->_MoveTab(args);
-            }
-        });
-
-        newTabImpl->ExportTabRequested([weakTab, weakThis{ get_weak() }]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-
-            if (page && tab)
-            {
-                // Passing empty string as the path to export tab will make it
-                // prompt for the path
-                page->_ExportTab(*tab, L"");
-            }
-        });
-
-        newTabImpl->FindRequested([weakTab, weakThis{ get_weak() }]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-
-            if (page && tab)
-            {
-                page->_SetFocusedTab(*tab);
-                page->_Find(*tab);
-            }
-        });
-
         auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().InsertAt(insertPosition, tabViewItem);
 
@@ -366,20 +311,6 @@ namespace winrt::TerminalApp::implementation
                     newTab->SetTabText(runtimeTabText);
                 }
             }
-        }
-        CATCH_LOG();
-    }
-
-    // Method Description:
-    // - Sets the specified tab as the focused tab and splits its active pane
-    // Arguments:
-    // - tab: tab to split
-    void TerminalPage::_SplitTab(TerminalTab& tab)
-    {
-        try
-        {
-            _SetFocusedTab(tab);
-            _SplitPane(tab, SplitDirection::Automatic, 0.5f, _MakePane(nullptr, tab));
         }
         CATCH_LOG();
     }
@@ -697,6 +628,21 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Returns the index in our list of tabs of the currently focused tab. If
+    //      no tab is currently selected, returns nullopt.
+    // Return Value:
+    // - the index of the currently focused tab if there is one, else nullopt
+    std::optional<uint32_t> TerminalPage::_GetTabIndex(const TerminalApp::TabBase& tab) const noexcept
+    {
+        uint32_t i;
+        if (_tabs.IndexOf(tab, i))
+        {
+            return i;
+        }
+        return std::nullopt;
+    }
+
+    // Method Description:
     // - returns the currently focused tab. This might return null,
     //   so make sure to check the result!
     winrt::TerminalApp::TabBase TerminalPage::_GetFocusedTab() const noexcept
@@ -751,7 +697,10 @@ namespace winrt::TerminalApp::implementation
         //          sometimes set focus to an incorrect tab after removing some tabs
         auto weakThis{ get_weak() };
 
-        co_await wil::resume_foreground(_tabView.Dispatcher());
+        if (!_tabView.Dispatcher().HasThreadAccess())
+        {
+            co_await winrt::resume_foreground(_tabView.Dispatcher());
+        }
 
         if (auto page{ weakThis.get() })
         {
