@@ -9,6 +9,7 @@
 #include "Utils.h"
 #include "ColorHelper.h"
 #include "AppLogic.h"
+#include "../inc/WindowingBehavior.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -1252,23 +1253,20 @@ namespace winrt::TerminalApp::implementation
 
         // "Color..."
         Controls::MenuFlyoutItem chooseColorMenuItem;
-        Controls::FontIcon colorPickSymbol;
-        colorPickSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
-        colorPickSymbol.Glyph(L"\xE790");
+        {
+            Controls::FontIcon colorPickSymbol;
+            colorPickSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+            colorPickSymbol.Glyph(L"\xE790");
 
-        chooseColorMenuItem.Click([weakThis](auto&&, auto&&) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->RequestColorPicker();
-            }
-        });
-        chooseColorMenuItem.Text(RS_(L"TabColorChoose"));
-        chooseColorMenuItem.Icon(colorPickSymbol);
+            chooseColorMenuItem.Click({ get_weak(), &TerminalTab::_chooseColorClicked });
+            chooseColorMenuItem.Text(RS_(L"TabColorChoose"));
+            chooseColorMenuItem.Icon(colorPickSymbol);
 
-        const auto chooseColorToolTip = RS_(L"ChooseColorToolTip");
+            const auto chooseColorToolTip = RS_(L"ChooseColorToolTip");
 
-        WUX::Controls::ToolTipService::SetToolTip(chooseColorMenuItem, box_value(chooseColorToolTip));
-        Automation::AutomationProperties::SetHelpText(chooseColorMenuItem, chooseColorToolTip);
+            WUX::Controls::ToolTipService::SetToolTip(chooseColorMenuItem, box_value(chooseColorToolTip));
+            Automation::AutomationProperties::SetHelpText(chooseColorMenuItem, chooseColorToolTip);
+        }
 
         Controls::MenuFlyoutItem renameTabMenuItem;
         {
@@ -1277,12 +1275,7 @@ namespace winrt::TerminalApp::implementation
             renameTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             renameTabSymbol.Glyph(L"\xE8AC"); // Rename
 
-            renameTabMenuItem.Click([weakThis](auto&&, auto&&) {
-                if (auto tab{ weakThis.get() })
-                {
-                    tab->ActivateTabRenamer();
-                }
-            });
+            renameTabMenuItem.Click({ get_weak(), &TerminalTab::_renameTabClicked });
             renameTabMenuItem.Text(RS_(L"RenameTabText"));
             renameTabMenuItem.Icon(renameTabSymbol);
 
@@ -1299,12 +1292,7 @@ namespace winrt::TerminalApp::implementation
             duplicateTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             duplicateTabSymbol.Glyph(L"\xF5ED");
 
-            duplicateTabMenuItem.Click([weakThis](auto&&, auto&&) {
-                if (auto tab{ weakThis.get() })
-                {
-                    tab->_DuplicateRequestedHandlers();
-                }
-            });
+            duplicateTabMenuItem.Click({ get_weak(), &TerminalTab::_duplicateTabClicked });
             duplicateTabMenuItem.Text(RS_(L"DuplicateTabText"));
             duplicateTabMenuItem.Icon(duplicateTabSymbol);
 
@@ -1321,12 +1309,7 @@ namespace winrt::TerminalApp::implementation
             splitTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             splitTabSymbol.Glyph(L"\xF246"); // ViewDashboard
 
-            splitTabMenuItem.Click([weakThis](auto&&, auto&&) {
-                if (auto tab{ weakThis.get() })
-                {
-                    tab->_SplitTabRequestedHandlers();
-                }
-            });
+            splitTabMenuItem.Click({ get_weak(), &TerminalTab::_splitTabClicked });
             splitTabMenuItem.Text(RS_(L"SplitTabText"));
             splitTabMenuItem.Icon(splitTabSymbol);
 
@@ -1339,12 +1322,7 @@ namespace winrt::TerminalApp::implementation
         Controls::MenuFlyoutItem closePaneMenuItem = _closePaneMenuItem;
         {
             // "Close Pane"
-            closePaneMenuItem.Click([weakThis](auto&&, auto&&) {
-                if (auto tab{ weakThis.get() })
-                {
-                    tab->ClosePane();
-                }
-            });
+            closePaneMenuItem.Click({ get_weak(), &TerminalTab::_closePaneClicked });
             closePaneMenuItem.Text(RS_(L"ClosePaneText"));
 
             const auto closePaneToolTip = RS_(L"ClosePaneToolTip");
@@ -1360,12 +1338,7 @@ namespace winrt::TerminalApp::implementation
             exportTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             exportTabSymbol.Glyph(L"\xE74E"); // Save
 
-            exportTabMenuItem.Click([weakThis](auto&&, auto&&) {
-                if (auto tab{ weakThis.get() })
-                {
-                    tab->_ExportTabRequestedHandlers();
-                }
-            });
+            exportTabMenuItem.Click({ get_weak(), &TerminalTab::_exportTextClicked });
             exportTabMenuItem.Text(RS_(L"ExportTabText"));
             exportTabMenuItem.Icon(exportTabSymbol);
 
@@ -1382,12 +1355,7 @@ namespace winrt::TerminalApp::implementation
             findSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             findSymbol.Glyph(L"\xF78B"); // SearchMedium
 
-            findMenuItem.Click([weakThis](auto&&, auto&&) {
-                if (auto tab{ weakThis.get() })
-                {
-                    tab->_FindRequestedHandlers();
-                }
-            });
+            findMenuItem.Click({ get_weak(), &TerminalTab::_findClicked });
             findMenuItem.Text(RS_(L"FindText"));
             findMenuItem.Icon(findSymbol);
 
@@ -1507,20 +1475,6 @@ namespace winrt::TerminalApp::implementation
             terminalBrush = c.BackgroundBrush();
         }
         return terminalBrush;
-    }
-
-    // Method Description:
-    // - Send an event to request for the color picker
-    // - The listener should attach the color picker via AttachColorPicker()
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalTab::RequestColorPicker()
-    {
-        ASSERT_UI_THREAD();
-
-        _ColorPickerRequestedHandlers();
     }
 
     // - Get the total number of leaf panes in this tab. This will be the number
@@ -1740,5 +1694,46 @@ namespace winrt::TerminalApp::implementation
         }
 
         return Title();
+    }
+
+    void TerminalTab::_chooseColorClicked(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                          const winrt::Windows::UI::Xaml::RoutedEventArgs& /* args */)
+    {
+        _dispatch.DoAction(*this, { ShortcutAction::OpenTabColorPicker, nullptr });
+    }
+    void TerminalTab::_renameTabClicked(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                        const winrt::Windows::UI::Xaml::RoutedEventArgs& /* args */)
+    {
+        ActivateTabRenamer();
+    }
+    void TerminalTab::_duplicateTabClicked(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                           const winrt::Windows::UI::Xaml::RoutedEventArgs& /* args */)
+    {
+        ActionAndArgs actionAndArgs{ ShortcutAction::DuplicateTab, nullptr };
+        _dispatch.DoAction(*this, actionAndArgs);
+    }
+    void TerminalTab::_splitTabClicked(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                       const winrt::Windows::UI::Xaml::RoutedEventArgs& /* args */)
+    {
+        ActionAndArgs actionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate } };
+        _dispatch.DoAction(*this, actionAndArgs);
+    }
+    void TerminalTab::_closePaneClicked(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                        const winrt::Windows::UI::Xaml::RoutedEventArgs& /* args */)
+    {
+        ClosePane();
+    }
+    void TerminalTab::_exportTextClicked(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                         const winrt::Windows::UI::Xaml::RoutedEventArgs& /* args */)
+    {
+        ActionAndArgs actionAndArgs{};
+        actionAndArgs.Action(ShortcutAction::ExportBuffer);
+        _dispatch.DoAction(*this, actionAndArgs);
+    }
+    void TerminalTab::_findClicked(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                   const winrt::Windows::UI::Xaml::RoutedEventArgs& /* args */)
+    {
+        ActionAndArgs actionAndArgs{ ShortcutAction::Find, nullptr };
+        _dispatch.DoAction(*this, actionAndArgs);
     }
 }
