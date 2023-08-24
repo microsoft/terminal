@@ -64,25 +64,32 @@ class SearchTests
         auto coordEndExpected = coordStartExpected;
         coordEndExpected.x += 1;
 
-        VERIFY_IS_TRUE(s.SelectNext());
+        s.FindNext();
+        VERIFY_IS_TRUE(s.SelectCurrent());
         VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
         VERIFY_ARE_EQUAL(coordEndExpected, gci.renderData.GetSelectionEnd());
 
         coordStartExpected.y += lineDelta;
         coordEndExpected.y += lineDelta;
-        VERIFY_IS_TRUE(s.SelectNext());
+
+        s.FindNext();
+        VERIFY_IS_TRUE(s.SelectCurrent());
         VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
         VERIFY_ARE_EQUAL(coordEndExpected, gci.renderData.GetSelectionEnd());
 
         coordStartExpected.y += lineDelta;
         coordEndExpected.y += lineDelta;
-        VERIFY_IS_TRUE(s.SelectNext());
+
+        s.FindNext();
+        VERIFY_IS_TRUE(s.SelectCurrent());
         VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
         VERIFY_ARE_EQUAL(coordEndExpected, gci.renderData.GetSelectionEnd());
 
         coordStartExpected.y += lineDelta;
         coordEndExpected.y += lineDelta;
-        VERIFY_IS_TRUE(s.SelectNext());
+
+        s.FindNext();
+        VERIFY_IS_TRUE(s.SelectCurrent());
         VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
         VERIFY_ARE_EQUAL(coordEndExpected, gci.renderData.GetSelectionEnd());
     }

@@ -598,14 +598,14 @@ IFACEMETHODIMP UiaTextRangeBase::FindText(_In_ BSTR text,
                                           _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) noexcept
 try
 {
-    THROW_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
 
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
-    THROW_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     const std::wstring_view queryText{ text, SysStringLen(text) };
     auto exclusiveBegin = _start;
@@ -630,7 +630,7 @@ try
 
     if (hitBeg >= _start && hitEnd <= _end)
     {
-        THROW_IF_FAILED(Clone(ppRetVal));
+        RETURN_IF_FAILED(Clone(ppRetVal));
         auto& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
         range._start = hitBeg;
         range._end = hitEnd;
