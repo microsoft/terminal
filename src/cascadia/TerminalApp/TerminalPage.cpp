@@ -1158,7 +1158,8 @@ namespace winrt::TerminalApp::implementation
             }
             if (altPressed && !debugTap)
             {
-                this->_SplitPane(SplitDirection::Automatic,
+                this->_SplitPane(_GetFocusedTabImpl(),
+                                 SplitDirection::Automatic,
                                  0.5f,
                                  newPane);
             }
@@ -1695,20 +1696,6 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        hostingTab.ColorPickerRequested([weakTab, weakThis]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-            if (page && tab)
-            {
-                if (!page->_tabColorPicker)
-                {
-                    page->_tabColorPicker = winrt::make<ColorPickupFlyout>();
-                }
-
-                tab->AttachColorPicker(page->_tabColorPicker);
-            }
-        });
-
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
@@ -2125,8 +2112,13 @@ namespace winrt::TerminalApp::implementation
         _RequestMoveContentHandlers(*this, *request);
     }
 
-    bool TerminalPage::_MoveTab(MoveTabArgs args)
+    bool TerminalPage::_MoveTab(winrt::com_ptr<TerminalTab> tab, MoveTabArgs args)
     {
+        if (!tab)
+        {
+            return false;
+        }
+
         // If there was a windowId in the action, try to move it to the
         // specified window instead of moving it in our tab row.
         const auto windowId{ args.Window() };
@@ -2139,12 +2131,12 @@ namespace winrt::TerminalApp::implementation
                 return true;
             }
 
-            if (const auto terminalTab{ _GetFocusedTabImpl() })
+            if (tab)
             {
-                auto startupActions = terminalTab->BuildStartupActions(true);
-                _DetachTabFromWindow(terminalTab);
+                auto startupActions = tab->BuildStartupActions(true);
+                _DetachTabFromWindow(tab);
                 _MoveContent(std::move(startupActions), args.Window(), 0);
-                _RemoveTab(*terminalTab);
+                _RemoveTab(*tab);
                 return true;
             }
         }
@@ -2152,9 +2144,13 @@ namespace winrt::TerminalApp::implementation
         const auto direction = args.Direction();
         if (direction != MoveTabDirection::None)
         {
-            if (auto focusedTabIndex = _GetFocusedTabIndex())
+            // Use the requested tab, if provided. Otherwise, use the currently
+            // focused tab.
+            const auto tabIndex = til::coalesce(_GetTabIndex(*tab),
+                                                _GetFocusedTabIndex());
+            if (tabIndex)
             {
-                const auto currentTabIndex = focusedTabIndex.value();
+                const auto currentTabIndex = tabIndex.value();
                 const auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
                 _TryMoveTab(currentTabIndex, currentTabIndex + delta);
             }
@@ -2231,19 +2227,20 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Split the focused pane either horizontally or vertically, and place the
-    //   given pane accordingly in the tree
+    // - Split the focused pane of the given tab, either horizontally or vertically, and place the
+    //   given pane accordingly
     // Arguments:
+    // - tab: The tab that is going to be split.
     // - newPane: the pane to add to our tree of panes
     // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
     // - splitSize: the size of the split
-    void TerminalPage::_SplitPane(const SplitDirection splitDirection,
+    void TerminalPage::_SplitPane(const winrt::com_ptr<TerminalTab>& tab,
+                                  const SplitDirection splitDirection,
                                   const float splitSize,
                                   std::shared_ptr<Pane> newPane)
     {
-        const auto focusedTab{ _GetFocusedTabImpl() };
-
+        auto activeTab = tab;
         // Clever hack for a crash in startup, with multiple sub-commands. Say
         // you have the following commandline:
         //
@@ -2259,38 +2256,19 @@ namespace winrt::TerminalApp::implementation
         // Instead, let's just promote this first split to be a tab instead.
         // Crash avoided, and we don't need to worry about inserting a new-tab
         // command in at the start.
-        if (!focusedTab)
+        if (!tab)
         {
             if (_tabs.Size() == 0)
             {
                 _CreateNewTabFromPane(newPane);
+                return;
             }
             else
             {
-                // The focused tab isn't a terminal tab
-                return;
+                activeTab = _GetFocusedTabImpl();
             }
         }
-        else
-        {
-            _SplitPane(*focusedTab, splitDirection, splitSize, newPane);
-        }
-    }
 
-    // Method Description:
-    // - Split the focused pane of the given tab, either horizontally or vertically, and place the
-    //   given pane accordingly
-    // Arguments:
-    // - tab: The tab that is going to be split.
-    // - newPane: the pane to add to our tree of panes
-    // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
-    //   new pane should be split from its parent.
-    // - splitSize: the size of the split
-    void TerminalPage::_SplitPane(TerminalTab& tab,
-                                  const SplitDirection splitDirection,
-                                  const float splitSize,
-                                  std::shared_ptr<Pane> newPane)
-    {
         // If the caller is calling us with the return value of _MakePane
         // directly, it's possible that nullptr was returned, if the connections
         // was supposed to be launched in an elevated window. In that case, do
@@ -2303,14 +2281,14 @@ namespace winrt::TerminalApp::implementation
         const auto contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
         const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
 
-        const auto realSplitType = tab.PreCalculateCanSplit(splitDirection, splitSize, availableSpace);
+        const auto realSplitType = activeTab->PreCalculateCanSplit(splitDirection, splitSize, availableSpace);
         if (!realSplitType)
         {
             return;
         }
 
         _UnZoomIfNeeded();
-        tab.SplitPane(*realSplitType, splitSize, newPane);
+        activeTab->SplitPane(*realSplitType, splitSize, newPane);
 
         // After GH#6586, the control will no longer focus itself
         // automatically when it's finished being laid out. Manually focus
