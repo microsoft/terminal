@@ -205,9 +205,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);
 
-        void Search(const winrt::hstring& text,
-                    const bool goForward,
-                    const bool caseSensitive);
+        void Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
+        void ClearSearch();
 
         void LeftClickOnTerminal(const til::point terminalPosition,
                                  const int numberOfClicks,
@@ -304,6 +303,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // (C++ class members are destroyed in reverse order.)
         std::unique_ptr<::Microsoft::Console::Render::IRenderEngine> _renderEngine{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
+
+        ::Search _searcher;
 
         winrt::handle _lastSwapChainHandle{ nullptr };
 

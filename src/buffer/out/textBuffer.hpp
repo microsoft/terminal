@@ -59,6 +59,8 @@ filling in the last row, and updating the screen.
 #include "../buffer/out/textBufferCellIterator.hpp"
 #include "../buffer/out/textBufferTextIterator.hpp"
 
+struct URegularExpression;
+
 namespace Microsoft::Console::Render
 {
     class Renderer;
@@ -122,7 +124,7 @@ public:
     ROW& GetScratchpadRow();
     ROW& GetScratchpadRow(const TextAttribute& attributes);
     const ROW& GetRowByOffset(til::CoordType index) const;
-    ROW& GetRowByOffset(til::CoordType index);
+    ROW& GetMutableRowByOffset(til::CoordType index);
 
     TextBufferCellIterator GetCellDataAt(const til::point at) const;
     TextBufferCellIterator GetCellLineDataAt(const til::point at) const;
@@ -164,6 +166,7 @@ public:
     Cursor& GetCursor() noexcept;
     const Cursor& GetCursor() const noexcept;
 
+    uint64_t GetLastMutationId() const noexcept;
     const til::CoordType GetFirstRowIndex() const noexcept;
 
     const Microsoft::Console::Types::Viewport GetSize() const noexcept;
@@ -262,10 +265,8 @@ public:
                           const std::optional<Microsoft::Console::Types::Viewport> lastCharacterViewport,
                           std::optional<std::reference_wrapper<PositionInformation>> positionInfo);
 
-    const size_t AddPatternRecognizer(const std::wstring_view regexString);
-    void ClearPatternRecognizers() noexcept;
-    void CopyPatterns(const TextBuffer& OtherBuffer);
-    interval_tree::IntervalTree<til::point, size_t> GetPatterns(const til::CoordType firstRow, const til::CoordType lastRow) const;
+    std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive) const;
+    std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive, til::CoordType rowBeg, til::CoordType rowEnd) const;
 
     const std::vector<ScrollMark>& GetMarks() const noexcept;
     void ClearMarksInRange(const til::point start, const til::point end);
@@ -285,6 +286,7 @@ private:
     void _construct(const std::byte* until) noexcept;
     void _destroy() const noexcept;
     ROW& _getRowByOffsetDirect(size_t offset);
+    ROW& _getRow(til::CoordType y) const;
     til::CoordType _estimateOffsetOfLastCommittedRow() const noexcept;
 
     void _SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept;
@@ -293,7 +295,6 @@ private:
     void _AdjustWrapOnCurrentRow(const bool fSet);
     // Assist with maintaining proper buffer state for Double Byte character sequences
     void _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);
-    bool _AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute);
     void _ExpandTextRow(til::inclusive_rect& selectionRow) const;
     DelimiterClass _GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const;
     til::point _GetWordStartForAccessibility(const til::point target, const std::wstring_view wordDelimiters) const;
@@ -310,9 +311,6 @@ private:
     std::unordered_map<uint16_t, std::wstring> _hyperlinkMap;
     std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;
     uint16_t _currentHyperlinkId = 1;
-
-    std::unordered_map<size_t, std::wstring> _idsAndPatterns;
-    size_t _currentPatternId = 0;
 
     // This block describes the state of the underlying virtual memory buffer that holds all ROWs, text and attributes.
     // Initially memory is only allocated with MEM_RESERVE to reduce the private working set of conhost.
@@ -373,12 +371,11 @@ private:
 
     TextAttribute _currentAttributes;
     til::CoordType _firstRow = 0; // indexes top row (not necessarily 0)
+    uint64_t _lastMutationId = 0;
 
     Cursor _cursor;
-
-    bool _isActiveBuffer = false;
-
     std::vector<ScrollMark> _marks;
+    bool _isActiveBuffer = false;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
