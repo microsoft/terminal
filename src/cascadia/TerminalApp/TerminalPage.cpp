@@ -2114,6 +2114,11 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalPage::_MoveTab(winrt::com_ptr<TerminalTab> tab, MoveTabArgs args)
     {
+        if (!tab)
+        {
+            return false;
+        }
+
         // If there was a windowId in the action, try to move it to the
         // specified window instead of moving it in our tab row.
         const auto windowId{ args.Window() };
@@ -2142,8 +2147,7 @@ namespace winrt::TerminalApp::implementation
             // Use the requested tab, if provided. Otherwise, use the currently
             // focused tab.
             const auto tabIndex = til::coalesce(_GetTabIndex(*tab),
-                                                _GetFocusedTabIndex(),
-                                                std::optional<uint32_t>{ std::nullopt });
+                                                _GetFocusedTabIndex());
             if (tabIndex)
             {
                 const auto currentTabIndex = tabIndex.value();

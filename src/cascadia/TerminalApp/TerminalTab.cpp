@@ -9,6 +9,7 @@
 #include "Utils.h"
 #include "ColorHelper.h"
 #include "AppLogic.h"
+#include "../inc/WindowingBehavior.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -1844,10 +1845,8 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_moveTabToNewWindowClicked(const winrt::Windows::Foundation::IInspectable& /* sender */,
                                                  const winrt::Windows::UI::Xaml::RoutedEventArgs& /* args */)
     {
-        ActionAndArgs actionAndArgs{};
-        MoveTabArgs args{ hstring{ L"new" }, MoveTabDirection::Forward };
-        actionAndArgs.Action(ShortcutAction::MoveTab);
-        actionAndArgs.Args(args);
+        MoveTabArgs args{ winrt::to_hstring(NewWindow), MoveTabDirection::Forward };
+        ActionAndArgs actionAndArgs{ ShortcutAction::MoveTab, args };
         _dispatch.DoAction(*this, actionAndArgs);
     }
     void TerminalTab::_findClicked(const winrt::Windows::Foundation::IInspectable& /* sender */,
