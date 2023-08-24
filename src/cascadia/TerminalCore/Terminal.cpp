@@ -1352,7 +1352,7 @@ struct URegularExpressionInterner
     // at ~400ns/op and would effectively double the time it takes to scan the viewport for patterns.
     //
     // An alternative approach would be to not make this method thread-safe and give each
-    // Terminal instance its own cache. I'm not sure which approach would've been better.
+    // Terminal instance its own cache. I'm not sure which approach would have been better.
     ICU::unique_uregex Intern(const std::wstring_view& pattern)
     {
         UErrorCode status = U_ZERO_ERROR;
