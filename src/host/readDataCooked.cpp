@@ -219,10 +219,7 @@ bool COOKED_READ_DATA::Read(const bool isUnicode, size_t& numBytes, ULONG& contr
 // To fix this, this function is called before a resize and will clear the input line. Afterwards, RedrawAfterResize() will restore it.
 void COOKED_READ_DATA::EraseBeforeResize()
 {
-    while (!_popups.empty())
-    {
-        _popupsDone();
-    }
+    _popupsDone();
 
     const auto& textBuffer = _screenInfo.GetTextBuffer();
     const auto eraseDistance = (_coordEnd.y - _coordBeg.y) * textBuffer.GetSize().Width() + _coordEnd.x - _coordBeg.x;
