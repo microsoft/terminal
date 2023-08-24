@@ -165,7 +165,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
 
         // These events are always called from the UI thread (bugs aside)
-        event FontSizeChangedEventArgs FontSizeChanged;
+        event Windows.Foundation.TypedEventHandler<Object, FontSizeChangedArgs> FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> CursorPositionChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ConnectionStateChanged;

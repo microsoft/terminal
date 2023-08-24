@@ -160,10 +160,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalConnection::ITerminalConnection Connection();
         void Connection(const TerminalConnection::ITerminalConnection& connection);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
-        WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         // UNDER NO CIRCUMSTANCES SHOULD YOU ADD A (PROJECTED_)FORWARDED_TYPED_EVENT HERE
         // Those attach the handler to the core directly, and will explode if
@@ -354,9 +353,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _hoveredHyperlinkChanged(const IInspectable& sender, const IInspectable& args);
         winrt::fire_and_forget _updateSelectionMarkers(IInspectable sender, Control::UpdateSelectionMarkersEventArgs args);
 
-        void _coreFontSizeChanged(const int fontWidth,
-                                  const int fontHeight,
-                                  const bool isInitialChange);
+        void _coreFontSizeChanged(const IInspectable& s, const Control::FontSizeChangedArgs& args);
         winrt::fire_and_forget _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);

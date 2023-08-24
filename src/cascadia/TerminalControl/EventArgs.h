@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "FontSizeChangedArgs.g.h"
 #include "TitleChangedEventArgs.g.h"
 #include "CopyToClipboardEventArgs.g.h"
 #include "ContextMenuRequestedEventArgs.g.h"
@@ -22,6 +23,21 @@
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+
+    struct FontSizeChangedArgs : public FontSizeChangedArgsT<FontSizeChangedArgs>
+    {
+    public:
+        FontSizeChangedArgs(int32_t width,
+                            int32_t height) :
+            Width(width),
+            Height(height)
+        {
+        }
+
+        til::property<int32_t> Width;
+        til::property<int32_t> Height;
+    };
+
     struct TitleChangedEventArgs : public TitleChangedEventArgsT<TitleChangedEventArgs>
     {
     public:

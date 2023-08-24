@@ -241,7 +241,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _setupDispatcherAndCallbacks();
         const auto actualNewSize = _actualFont.GetSize();
         // Bubble this up, so our new control knows how big we want the font.
-        _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, true);
+        _FontSizeChangedHandlers(*this, winrt::make<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height));
 
         // The renderer will be re-enabled in Initialize
 
@@ -344,7 +344,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
             // and react accordingly.
-            _updateFont(true);
+            _updateFont();
 
             const til::size windowSize{ til::math::rounding, windowWidth, windowHeight };
 
@@ -897,9 +897,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //      appropriately call _doResizeUnderLock after this method is called.
     // - The write lock should be held when calling this method.
     // Arguments:
-    // - initialUpdate: whether this font update should be considered as being
-    //   concerned with initialization process. Value forwarded to event handler.
-    void ControlCore::_updateFont(const bool initialUpdate)
+    // <none>
+    void ControlCore::_updateFont()
     {
         const auto newDpi = static_cast<int>(lrint(_compositionScale * USER_DEFAULT_SCREEN_DPI));
 
@@ -947,7 +946,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto actualNewSize = _actualFont.GetSize();
-        _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, initialUpdate);
+        _FontSizeChangedHandlers(*this, winrt::make<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height));
     }
 
     // Method Description:

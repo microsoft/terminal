@@ -3287,16 +3287,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return posInDIPs + marginsInDips;
     }
 
-    void TermControl::_coreFontSizeChanged(const int fontWidth,
-                                           const int fontHeight,
-                                           const bool isInitialChange)
+    void TermControl::_coreFontSizeChanged(const IInspectable& /*sender*/,
+                                           const Control::FontSizeChangedArgs& args)
     {
         // scale the selection markers to be the size of a cell
-        auto scaleMarker = [fontWidth, fontHeight, dpiScale{ SwapChainPanel().CompositionScaleX() }](const Windows::UI::Xaml::Shapes::Path& shape) {
+        auto scaleMarker = [args, dpiScale{ SwapChainPanel().CompositionScaleX() }](const Windows::UI::Xaml::Shapes::Path& shape) {
             // The selection markers were designed to be 5x14 in size,
             // so use those dimensions below for the scaling
-            const auto scaleX = fontWidth / 5.0 / dpiScale;
-            const auto scaleY = fontHeight / 14.0 / dpiScale;
+            const auto scaleX = args.Width() / 5.0 / dpiScale;
+            const auto scaleY = args.Height() / 14.0 / dpiScale;
 
             Windows::UI::Xaml::Media::ScaleTransform transform;
             transform.ScaleX(scaleX);
@@ -3308,12 +3307,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
         scaleMarker(SelectionStartMarker());
         scaleMarker(SelectionEndMarker());
-
-        // Don't try to inspect the core here. The Core is raising this while
-        // it's holding its write lock. If the handlers calls back to some
-        // method on the TermControl on the same thread, and that _method_ calls
-        // to ControlCore, we might be in danger of deadlocking.
-        _FontSizeChangedHandlers(fontWidth, fontHeight, isInitialChange);
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
