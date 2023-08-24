@@ -113,6 +113,15 @@ namespace Microsoft.Terminal.Settings.Model
         ToMouse,
     };
 
+    [flags]
+    enum SuggestionsSource
+    {
+        Tasks = 0x1,
+        CommandHistory = 0x2,
+        DirectoryHistory = 0x4,
+        All = 0xffffffff,
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
@@ -316,6 +325,14 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
     {
         CommandPaletteLaunchMode LaunchMode { get; };
+    };
+
+    [default_interface] runtimeclass SuggestionsArgs : IActionArgs
+    {
+        SuggestionsArgs();
+        SuggestionsArgs(SuggestionsSource source, Boolean useCommandline);
+        SuggestionsSource Source { get; };
+        Boolean UseCommandline { get; };
     };
 
     [default_interface] runtimeclass FindMatchArgs : IActionArgs

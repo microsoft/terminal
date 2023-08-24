@@ -197,17 +197,17 @@ namespace Microsoft::Console::VirtualTerminal
         void _GenerateWrappedSequence(const wchar_t wch,
                                       const short vkey,
                                       const DWORD modifierState,
-                                      std::vector<INPUT_RECORD>& input);
+                                      InputEventQueue& input);
 
         void _GetSingleKeypress(const wchar_t wch,
                                 const short vkey,
                                 const DWORD modifierState,
-                                std::vector<INPUT_RECORD>& input);
+                                InputEventQueue& input);
 
         bool _GetWindowManipulationType(const std::span<const size_t> parameters,
                                         unsigned int& function) const noexcept;
 
-        KeyEvent _GenerateWin32Key(const VTParameters parameters);
+        static INPUT_RECORD _GenerateWin32Key(const VTParameters& parameters);
 
         bool _DoControlCharacter(const wchar_t wch, const bool writeAlt);
 

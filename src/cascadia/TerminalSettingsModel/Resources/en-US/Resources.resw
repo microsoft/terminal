@@ -449,6 +449,12 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>
   </data>
+  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
+    <value>Recent commands...</value>
+  </data>
+  <data name="SuggestionsCommandKey" xml:space="preserve">
+    <value>Open suggestions...</value>
+  </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Toggle command palette in command line mode</value>
   </data>
