@@ -276,6 +276,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(RestartTerminalRequested,    IInspectable, IInspectable);
 
         TYPED_EVENT(Attached,                  IInspectable, IInspectable);
+
+        TYPED_EVENT(SendNotification,          IInspectable, Control::SendNotificationArgs);
         // clang-format on
 
     private:
@@ -364,6 +366,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::fire_and_forget _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
 
+        void _terminalSendNotification(const std::wstring_view title,
+                                       const std::wstring_view body);
 #pragma endregion
 
         MidiAudio _midiAudio;

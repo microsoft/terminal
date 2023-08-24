@@ -136,6 +136,7 @@ public:
     virtual bool DoITerm2Action(const std::wstring_view string) = 0;
 
     virtual bool DoFinalTermAction(const std::wstring_view string) = 0;
+    virtual bool DoUrxvtAction(const std::wstring_view string) = 0;
 
     virtual bool DoVsCodeAction(const std::wstring_view string) = 0;
 

@@ -14,6 +14,7 @@
 
 #include <inc/WindowingBehavior.h>
 #include <LibraryResources.h>
+#include <WtExeUtils.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
 
@@ -44,6 +45,9 @@ using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
 using namespace std::chrono_literals;
+
+using namespace winrt::Windows::UI::Notifications;
+using namespace winrt::Windows::Data::Xml::Dom;
 
 #define HOOKUP_ACTION(action) _actionDispatch->action({ this, &TerminalPage::_Handle##action });
 
@@ -1658,6 +1662,8 @@ namespace winrt::TerminalApp::implementation
 
         term.ContextMenu().Opening({ this, &TerminalPage::_ContextMenuOpened });
         term.SelectionContextMenu().Opening({ this, &TerminalPage::_SelectionMenuOpened });
+
+        term.SendNotification({ get_weak(), &TerminalPage::_SendNotificationHandler });
     }
 
     // Method Description:
@@ -2800,6 +2806,110 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_ShowWindowChangedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
     {
         _ShowWindowChangedHandlers(*this, args);
+    }
+
+    // Method Description:
+    // - Handler for a control's SendNotification event. `args` will contain the
+    //   title and body of the notification requested by the client application.
+    // - This will only actually send a notification when the sender is
+    //   - in an inactive window OR
+    //   - in an inactive tab.
+    winrt::fire_and_forget TerminalPage::_SendNotificationHandler(const IInspectable sender,
+                                                                  const Microsoft::Terminal::Control::SendNotificationArgs args)
+    {
+        // This never works as expected when we're an elevated instance. The
+        // notification will end up launching an unelevated instance to handle
+        // it, and there's no good way to get back to the elevated one.
+        // Possibly revisit after GH #13276.
+        //
+        // We're using CanDragDrop, because TODO! I bet this works with UAC disabled
+        if (!CanDragDrop())
+        {
+            co_return;
+        }
+
+        auto weakThis = get_weak();
+
+        co_await resume_foreground(Dispatcher());
+        auto page{ weakThis.get() };
+        if (page)
+        {
+            // If the window is inactive, we always want to send the notification.
+            //
+            // Otherwise, we only want to send the notification for panes in inactive tabs.
+            if (_activated)
+            {
+                auto foundControl = false;
+                if (const auto activeTab{ _GetFocusedTabImpl() })
+                {
+                    activeTab->GetRootPane()->WalkTree([&](auto&& pane) {
+                        if (const auto& term{ pane->GetTerminalControl() })
+                        {
+                            if (term == sender)
+                            {
+                                foundControl = true;
+                                return;
+                            }
+                        }
+                    });
+                }
+
+                // The control that sent this is in the active tab. We
+                // should only send the notification if the window was
+                // inactive.
+                if (foundControl)
+                {
+                    co_return;
+                }
+            }
+
+            _sendNotification(args.Title(), args.Body());
+        }
+    }
+
+    // Actually write the payload to a XML doc and load it into a ToastNotification.
+    void TerminalPage::_sendNotification(const std::wstring_view title,
+                                         const std::wstring_view body)
+    {
+        // ToastNotificationManager::CreateToastNotifier doesn't work in
+        // unpackaged scenarios without an AUMID. We probably don't have one if
+        // we're unpackaged. Unpackaged isn't a wholly supported scenario
+        // anyways, so let's just bail.
+
+        if (!IsPackaged())
+        {
+            return;
+        }
+
+        static winrt::hstring xmlTemplate{ L"\
+    <toast>\
+        <visual>\
+            <binding template=\"ToastGeneric\">\
+                <text></text>\
+                <text></text>\
+            </binding>\
+        </visual>\
+    </toast>" };
+
+        XmlDocument doc;
+        doc.LoadXml(xmlTemplate);
+        // Populate with text and values
+        auto payload{ fmt::format(L"window={}&tabIndex=0", WindowProperties().WindowId()) };
+        doc.DocumentElement().SetAttribute(L"launch", payload);
+        doc.SelectSingleNode(L"//text[1]").InnerText(title);
+        doc.SelectSingleNode(L"//text[2]").InnerText(body);
+
+        // Construct the notification
+        ToastNotification notif{ doc };
+
+        // lazy-init
+        if (!_toastNotifier)
+        {
+            _toastNotifier = ToastNotificationManager::CreateToastNotifier();
+        }
+
+        // And show it!
+        _toastNotifier.Show(notif);
     }
 
     // Method Description:

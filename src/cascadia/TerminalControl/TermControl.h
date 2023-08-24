@@ -191,6 +191,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(KeySent,                   IInspectable, Control::KeySentEventArgs);
         TYPED_EVENT(CharSent,                  IInspectable, Control::CharSentEventArgs);
         TYPED_EVENT(StringSent,                IInspectable, Control::StringSentEventArgs);
+        TYPED_EVENT(SendNotification,          IInspectable, Control::SendNotificationArgs);
         // clang-format on
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, BackgroundBrush, _PropertyChangedHandlers, nullptr);

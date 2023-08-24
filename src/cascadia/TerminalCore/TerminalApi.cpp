@@ -479,3 +479,12 @@ void Terminal::NotifyBufferRotation(const int delta)
         _NotifyScrollEvent();
     }
 }
+
+void Terminal::SendNotification(const std::wstring_view title,
+                                const std::wstring_view body)
+{
+    if (_pfnSendNotification)
+    {
+        _pfnSendNotification(title, body);
+    }
+}

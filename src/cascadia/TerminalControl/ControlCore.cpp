@@ -122,6 +122,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnCompletionsChanged = [=](auto&& menuJson, auto&& replaceLength) { _terminalCompletionsChanged(menuJson, replaceLength); };
         _terminal->CompletionsChangedCallback(pfnCompletionsChanged);
 
+        auto pfnSendNotification = std::bind(&ControlCore::_terminalSendNotification, this, std::placeholders::_1, std::placeholders::_2);
+        _terminal->SetSendNotificationCallback(pfnSendNotification);
+
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
         // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
@@ -1499,6 +1502,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto suspension = _terminal->SuspendLock();
         // This call will block for the duration, unless shutdown early.
         _midiAudio.PlayNote(reinterpret_cast<HWND>(_owningHwnd), noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
+    }
+
+    void ControlCore::_terminalSendNotification(const std::wstring_view title,
+                                                const std::wstring_view body)
+    {
+        const auto e = winrt::make_self<implementation::SendNotificationArgs>(title, body);
+        _SendNotificationHandlers(*this, *e);
     }
 
     bool ControlCore::HasSelection() const

@@ -76,6 +76,8 @@ public:
 
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
 
+    void SendNotification(const std::wstring_view /*title*/, const std::wstring_view /*body*/) noexcept override{};
+
 private:
     Microsoft::Console::IIoProvider& _io;
 };

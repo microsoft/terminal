@@ -215,6 +215,7 @@ namespace Microsoft::Console::VirtualTerminal
             ResetCursorColor = 112,
             FinalTermAction = 133,
             VsCodeAction = 633,
+            UrxvtAction = 777,
             ITerm2Action = 1337,
         };
 

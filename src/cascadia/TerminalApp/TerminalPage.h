@@ -285,6 +285,9 @@ namespace winrt::TerminalApp::implementation
         __declspec(noinline) SuggestionsControl _loadSuggestionsElementSlowPath();
         bool _suggestionsControlIs(winrt::Windows::UI::Xaml::Visibility visibility);
 
+        // todo! maybe move to TerminalWindow
+        winrt::Windows::UI::Notifications::ToastNotifier _toastNotifier{ nullptr };
+
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
         void _ShowAboutDialog();
@@ -542,6 +545,9 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::TermControl _senderOrActiveControl(const winrt::Windows::Foundation::IInspectable& sender);
         winrt::com_ptr<TerminalTab> _senderOrFocusedTab(const IInspectable& sender);
 
+        winrt::fire_and_forget _SendNotificationHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::SendNotificationArgs args);
+
+        void _sendNotification(const std::wstring_view title, const std::wstring_view body);
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);

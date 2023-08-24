@@ -29,6 +29,8 @@ namespace Microsoft.Terminal.Remoting
         void RequestMoveContent(String window, String content, UInt32 tabIndex, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
         void RequestSendContent(RequestReceiveContentArgs args);
 
+        static Boolean SummonForNotification(UInt64 windowId);
+
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
 
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;

@@ -115,4 +115,10 @@ namespace Microsoft.Terminal.Control
     {
         String Text { get; };
     }
+
+    runtimeclass SendNotificationArgs
+    {
+        String Title { get; };
+        String Body { get; };
+    }
 }

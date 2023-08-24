@@ -19,6 +19,7 @@
 #include "KeySentEventArgs.g.h"
 #include "CharSentEventArgs.g.h"
 #include "StringSentEventArgs.g.h"
+#include "SendNotificationArgs.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -232,6 +233,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _Text(text) {}
 
         WINRT_PROPERTY(winrt::hstring, Text);
+    };
+
+    struct SendNotificationArgs : public SendNotificationArgsT<SendNotificationArgs>
+    {
+    public:
+        SendNotificationArgs(const std::wstring_view title,
+                             const std::wstring_view body) :
+            _Title(title),
+            _Body(body)
+        {
+        }
+
+        WINRT_PROPERTY(winrt::hstring, Title);
+        WINRT_PROPERTY(winrt::hstring, Body);
     };
 }
 
