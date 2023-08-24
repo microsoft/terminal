@@ -49,11 +49,6 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 {
     TEST_CLASS(OutputEngineTest);
 
-    TEST_METHOD(Explode)
-    {
-        VERIFY_IS_TRUE(false);
-    }
-
     TEST_METHOD(TestEscapePath)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
