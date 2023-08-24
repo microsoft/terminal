@@ -28,11 +28,11 @@ public:
     bool ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive);
 
     void MovePastCurrentSelection();
-    void MovePastPoint(til::point anchor);
-    void FindNext();
+    void MovePastPoint(til::point anchor) noexcept;
+    void FindNext() noexcept;
 
     const til::point_span* GetCurrent() const noexcept;
-    bool SelectCurrent() const noexcept;
+    bool SelectCurrent() const;
 
 private:
     // _renderData is a pointer so that Search() is constexpr default constructable.

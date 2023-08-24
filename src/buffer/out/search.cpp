@@ -42,7 +42,7 @@ void Search::MovePastCurrentSelection()
     }
 }
 
-void Search::MovePastPoint(const til::point anchor)
+void Search::MovePastPoint(const til::point anchor) noexcept
 {
     if (_results.empty())
     {
@@ -69,7 +69,7 @@ void Search::MovePastPoint(const til::point anchor)
     _index = (index + count) % count;
 }
 
-void Search::FindNext()
+void Search::FindNext() noexcept
 {
     const auto count = gsl::narrow_cast<ptrdiff_t>(_results.size());
     _index = (_index + _step + count) % count;
@@ -87,7 +87,7 @@ const til::point_span* Search::GetCurrent() const noexcept
 
 // Routine Description:
 // - Takes the found word and selects it in the screen buffer
-bool Search::SelectCurrent() const noexcept
+bool Search::SelectCurrent() const
 {
     if (const auto s = GetCurrent())
     {
