@@ -305,9 +305,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
         ::Search _searcher;
-        winrt::hstring _searcherText;
-        bool _searcherGoForward = false;
-        bool _searcherCaseSensitive = false;
 
         winrt::handle _lastSwapChainHandle{ nullptr };
 

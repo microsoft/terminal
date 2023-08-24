@@ -1543,15 +1543,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
 
-        if (_searcher.IsStale() || _searcherText != text || _searcherGoForward != goForward || _searcherCaseSensitive != caseSensitive)
+        if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive))
         {
-            _searcher = { *GetRenderData(), text, !goForward, !caseSensitive };
-            _searcherText = text;
-            _searcherGoForward = goForward;
-            _searcherCaseSensitive = caseSensitive;
+            _searcher.MovePastCurrentSelection();
+        }
+        else
+        {
+            _searcher.FindNext();
         }
 
-        const auto foundMatch = _searcher.SelectNext();
+        const auto foundMatch = _searcher.SelectCurrent();
         if (foundMatch)
         {
             // this is used for search,

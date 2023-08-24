@@ -3,8 +3,7 @@
 
 #include "precomp.h"
 #include "UiaTextRangeBase.hpp"
-#include "ScreenInfoUiaProviderBase.h"
-#include "../buffer/out/search.h"
+
 #include "UiaTracing.h"
 
 using namespace Microsoft::Console::Types;
@@ -599,74 +598,42 @@ IFACEMETHODIMP UiaTextRangeBase::FindText(_In_ BSTR text,
                                           _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) noexcept
 try
 {
-    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    THROW_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
 
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
-    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
+    THROW_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     const std::wstring_view queryText{ text, SysStringLen(text) };
-    const auto results = _pData->GetTextBuffer().SearchText(queryText, ignoreCase != FALSE, _start.y, _end.y + 1);
-    if (results.empty())
+    auto exclusiveBegin = _start;
+
+    // MovePastPoint() moves *past* the given point.
+    // -> We need to turn [_beg,_end) into (_beg,_end).
+    exclusiveBegin.x--;
+
+    _searcher.ResetIfStale(*_pData, queryText, searchBackward, ignoreCase);
+    _searcher.MovePastPoint(searchBackward ? _end : exclusiveBegin);
+
+    til::point hitBeg{ til::CoordTypeMax, til::CoordTypeMax };
+    til::point hitEnd{ til::CoordTypeMin, til::CoordTypeMin };
+
+    if (const auto hit = _searcher.GetCurrent())
     {
-        return S_OK;
+        hitBeg = hit->start;
+        hitEnd = hit->end;
+        // we need to increment the position of end because it's exclusive
+        _pData->GetTextBuffer().GetSize().IncrementInBounds(hitEnd, true);
     }
 
-    const auto highestIndex = results.size() - 1;
-    const til::point_span* hit = nullptr;
-
-    if (searchBackward)
+    if (hitBeg >= _start && hitEnd <= _end)
     {
-        // Find the last result that is in the [_start,_end) range.
-        for (size_t i = highestIndex;; --i)
-        {
-            hit = &til::at(results, i);
-            if (hit->end < _end)
-            {
-                break;
-            }
-
-            // ...but exit when none are found.
-            if (i <= 0)
-            {
-                return S_OK;
-            }
-        }
-    }
-    else
-    {
-        // Find the first result that is in the [_start,_end) range.
-        for (size_t i = 0;; ++i)
-        {
-            hit = &til::at(results, i);
-            if (hit->start >= _start)
-            {
-                break;
-            }
-
-            // ...but exit when none are found.
-            if (i >= highestIndex)
-            {
-                return S_OK;
-            }
-        }
-    }
-
-    const auto start = hit->start;
-    auto end = hit->end;
-
-    // we need to increment the position of end because it's exclusive
-    _getOptimizedBufferSize().IncrementInBounds(end, true);
-
-    if (start >= _start && end <= _end)
-    {
-        RETURN_IF_FAILED(Clone(ppRetVal));
+        THROW_IF_FAILED(Clone(ppRetVal));
         auto& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
-        range._start = start;
-        range._end = end;
+        range._start = hitBeg;
+        range._end = hitEnd;
         UiaTracing::TextRange::FindText(*this, queryText, searchBackward, ignoreCase, range);
     }
 
