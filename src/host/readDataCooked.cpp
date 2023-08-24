@@ -446,25 +446,34 @@ void COOKED_READ_DATA::_handleVkey(uint16_t vkey, DWORD modifiers)
     switch (vkey)
     {
     case VK_ESCAPE:
-        _buffer.clear();
-        _bufferCursor = 0;
-        _markAsDirty();
+        if (!_buffer.empty())
+        {
+            _buffer.clear();
+            _bufferCursor = 0;
+            _markAsDirty();
+        }
         break;
     case VK_HOME:
-        if (ctrlPressed)
+        if (_bufferCursor > 0)
         {
-            _buffer.erase(0, _bufferCursor);
+            if (ctrlPressed)
+            {
+                _buffer.erase(0, _bufferCursor);
+            }
+            _bufferCursor = 0;
+            _markAsDirty();
         }
-        _bufferCursor = 0;
-        _markAsDirty();
         break;
     case VK_END:
-        if (ctrlPressed)
+        if (_bufferCursor < _buffer.size())
         {
-            _buffer.erase(_bufferCursor);
+            if (ctrlPressed)
+            {
+                _buffer.erase(_bufferCursor);
+            }
+            _bufferCursor = _buffer.size();
+            _markAsDirty();
         }
-        _bufferCursor = _buffer.size();
-        _markAsDirty();
         break;
     case VK_LEFT:
         if (_bufferCursor != 0)
@@ -528,8 +537,11 @@ void COOKED_READ_DATA::_handleVkey(uint16_t vkey, DWORD modifiers)
         _markAsDirty();
         break;
     case VK_DELETE:
-        _buffer.erase(_bufferCursor, TextBuffer::GraphemeNext(_buffer, _bufferCursor) - _bufferCursor);
-        _markAsDirty();
+        if (_bufferCursor < _buffer.size())
+        {
+            _buffer.erase(_bufferCursor, TextBuffer::GraphemeNext(_buffer, _bufferCursor) - _bufferCursor);
+            _markAsDirty();
+        }
         break;
     case VK_UP:
     case VK_F5:
