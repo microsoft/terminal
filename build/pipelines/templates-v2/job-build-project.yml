@@ -2,7 +2,6 @@ parameters:
   - name: branding
     type: string
     default: Dev
-    values: [Release, Preview, Dev]
   - name: additionalBuildOptions
     type: string
     default: ''
