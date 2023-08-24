@@ -65,10 +65,6 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     THROW_IF_FAILED(_screenInfo.AllocateIoHandle(ConsoleHandleData::HandleType::Output, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, _tempHandle));
 #endif
 
-    _coordBeg = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
-    _coordEnd = _coordBeg;
-    _coordCursor = _coordBeg;
-
     if (!initialData.empty())
     {
         _buffer.assign(initialData);
@@ -87,12 +83,12 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
         // Solving these issues is technically possible, but it's also quite difficult to do so correctly.
         //
         // But unfortunately (or fortunately) the initial (from the 1990s up to 2023) looked something like that:
-        //   _coordBeg = cursor.GetPosition();
-        //   _coordBeg.x -= initialData.size();
-        //   while (_coordBeg.x < 0)
+        //   cursor = cursor.GetPosition();
+        //   cursor.x -= initialData.size();
+        //   while (cursor.x < 0)
         //   {
-        //       _coordBeg.x += textBuffer.Width();
-        //       _coordBeg.y -= 1;
+        //       cursor.x += textBuffer.Width();
+        //       cursor.y -= 1;
         //   }
         //
         // In other words, it assumed that the number of code units in the initial data corresponds 1:1 to
@@ -100,13 +96,21 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
         // The new implementation still doesn't support tabs, but it does fix support for wide glyphs.
         // That seemed like a good trade-off.
 
+        // NOTE: You can't just "measure" the length of the string in columns either, because previously written
+        // wide glyphs might have resulted in padding whitespace in the text buffer (see ROW::WasDoubleBytePadded).
+        // The alternative to the loop below is counting the number of padding glyphs while iterating backwards. Either approach is fine.
         til::CoordType distance = 0;
         for (size_t i = 0; i < initialData.size(); i = TextBuffer::GraphemeNext(initialData, i))
         {
             --distance;
         }
 
-        _coordBeg = _screenInfo.GetTextBuffer().NavigateCursor(_coordBeg, distance);
+        const auto& textBuffer = _screenInfo.GetTextBuffer();
+        const auto& cursor = textBuffer.GetCursor();
+        const auto end = cursor.GetPosition();
+        const auto beg = textBuffer.NavigateCursor(end, distance);
+        _distanceCursor = (end.y - beg.y) * textBuffer.GetSize().Width() + end.x - beg.x;
+        _distanceEnd = _distanceCursor;
     }
 }
 
@@ -221,24 +225,19 @@ void COOKED_READ_DATA::EraseBeforeResize()
 {
     _popupsDone();
 
-    const auto& textBuffer = _screenInfo.GetTextBuffer();
-    const auto eraseDistance = (_coordEnd.y - _coordBeg.y) * textBuffer.GetSize().Width() + _coordEnd.x - _coordBeg.x;
-
-    std::ignore = _screenInfo.SetCursorPosition(_coordBeg, true);
-    _erase(eraseDistance);
-
-    std::ignore = _screenInfo.SetCursorPosition(_coordBeg, true);
-    _coordEnd = _coordBeg;
-    _coordCursor = _coordBeg;
+    if (_distanceEnd)
+    {
+        _unwindCursorPosition(_distanceCursor);
+        _erase(_distanceEnd);
+        _unwindCursorPosition(_distanceEnd);
+        _distanceCursor = 0;
+        _distanceEnd = 0;
+    }
 }
 
 // The counter-part to EraseBeforeResize().
 void COOKED_READ_DATA::RedrawAfterResize()
 {
-    _coordBeg = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
-    _coordEnd = _coordBeg;
-    _coordCursor = _coordBeg;
-
     _markAsDirty();
     _flushBuffer();
 }
@@ -260,7 +259,11 @@ bool COOKED_READ_DATA::PresentingPopup() const noexcept
 
 til::point_span COOKED_READ_DATA::GetBoundaries() const noexcept
 {
-    return { _coordBeg, _coordEnd };
+    const auto& textBuffer = _screenInfo.GetTextBuffer();
+    const auto& cursor = textBuffer.GetCursor();
+    const auto beg = _offsetPosition(cursor.GetPosition(), -_distanceCursor);
+    const auto end = _offsetPosition(beg, _distanceEnd);
+    return { beg, end };
 }
 
 // _wordPrev and _wordNext implement the classic Windows word-wise cursor movement algorithm, as traditionally used by
@@ -743,25 +746,20 @@ void COOKED_READ_DATA::_flushBuffer()
 
     if (WI_IsFlagSet(_pInputBuffer->InputMode, ENABLE_ECHO_INPUT))
     {
-        const auto& textBuffer = _screenInfo.GetTextBuffer();
-        const auto& cursor = textBuffer.GetCursor();
+        _unwindCursorPosition(_distanceCursor);
+
         const std::wstring_view view{ _buffer };
-
-        std::ignore = _screenInfo.SetCursorPosition(_coordBeg, true);
-
-        _writeChars(view.substr(0, _bufferCursor));
-        _coordCursor = cursor.GetPosition();
-        _writeChars(view.substr(_bufferCursor));
-
-        const auto coordEndNew = cursor.GetPosition();
-        const auto eraseDistance = (_coordEnd.y - coordEndNew.y) * textBuffer.GetSize().Width() + _coordEnd.x - coordEndNew.x;
-        _coordEnd = coordEndNew;
+        const auto distanceBeforeCursor = _writeChars(view.substr(0, _bufferCursor));
+        const auto distanceAfterCursor = _writeChars(view.substr(_bufferCursor));
+        const auto distanceEnd = distanceBeforeCursor + distanceAfterCursor;
+        const auto eraseDistance = std::max(0, _distanceEnd - distanceEnd);
 
         // If the contents of _buffer became shorter we'll have to erase the previously printed contents.
         _erase(eraseDistance);
+        _unwindCursorPosition(distanceAfterCursor + eraseDistance);
 
-        std::ignore = _screenInfo.SetCursorPosition(_coordCursor, true);
-        _screenInfo.MakeCursorVisible(_coordCursor);
+        _distanceCursor = distanceBeforeCursor;
+        _distanceEnd = distanceEnd;
     }
 
     _bufferDirty = false;
@@ -774,24 +772,68 @@ void COOKED_READ_DATA::_erase(const til::CoordType distance)
     if (distance > 0)
     {
         const std::wstring str(gsl::narrow_cast<size_t>(distance), L' ');
-        _writeChars(str);
+        std::ignore = _writeChars(str);
     }
 }
 
-// A helper to write text while keeping track of buffer scrolling. When writing text in the last line of the
-// buffer, all of the text will shift upwards, which means that our cached coordinates need to shift as well.
-void COOKED_READ_DATA::_writeChars(const std::wstring_view& text)
+// A helper to write text and calculate the number of cells we've written.
+// _unwindCursorPosition then allows us to go that many cells back. Tracking cells instead of explicit
+// buffer positions allows us to pay no further mind to whether the buffer scrolled up or not.
+til::CoordType COOKED_READ_DATA::_writeChars(const std::wstring_view& text) const
 {
     if (text.empty())
     {
+        return 0;
+    }
+
+    const auto& textBuffer = _screenInfo.GetTextBuffer();
+    const auto& cursor = textBuffer.GetCursor();
+    const auto width = textBuffer.GetSize().Width();
+    const auto initialCursorPos = cursor.GetPosition();
+    til::CoordType scrollY = 0;
+
+    WriteCharsLegacy(_screenInfo, text, true, &scrollY);
+
+    const auto finalCursorPos = cursor.GetPosition();
+    return (finalCursorPos.y - initialCursorPos.y + scrollY) * width + finalCursorPos.x - initialCursorPos.x;
+}
+
+// Moves the given point by the given distance inside the text buffer, as if moving a cursor with the left/right arrow keys.
+til::point COOKED_READ_DATA::_offsetPosition(til::point pos, til::CoordType distance) const
+{
+    const auto size = _screenInfo.GetTextBuffer().GetSize().Dimensions();
+    const auto w = static_cast<ptrdiff_t>(size.width);
+    const auto h = static_cast<ptrdiff_t>(size.height);
+    const auto area = w * h;
+
+    auto off = w * pos.y + pos.x;
+    off += distance;
+    off = off < 0 ? 0 : (off > area ? area : off);
+
+    return {
+        gsl::narrow_cast<til::CoordType>(off % w),
+        gsl::narrow_cast<til::CoordType>(off / w),
+    };
+}
+
+// This moves the cursor `distance`-many cells back up in the buffer.
+// It's intended to be used in combination with _writeChars.
+void COOKED_READ_DATA::_unwindCursorPosition(til::CoordType distance) const
+{
+    if (distance <= 0)
+    {
+        // If all the code in this file works correctly, negative distances should not occur.
+        // If they do occur it would indicate a bug that would need to be fixed urgently.
+        assert(distance == 0);
         return;
     }
 
-    til::CoordType scrollY = 0;
-    WriteCharsLegacy(_screenInfo, text, true, &scrollY);
-    _coordBeg.y = std::max(0, _coordBeg.y + scrollY);
-    _coordCursor.y = std::max(0, _coordCursor.y + scrollY);
-    _coordEnd.y = std::max(0, _coordEnd.y + scrollY);
+    const auto& textBuffer = _screenInfo.GetTextBuffer();
+    const auto& cursor = textBuffer.GetCursor();
+    const auto pos = _offsetPosition(cursor.GetPosition(), -distance);
+
+    std::ignore = _screenInfo.SetCursorPosition(pos, true);
+    _screenInfo.MakeCursorVisible(pos);
 }
 
 // Just a simple helper to replace the entire buffer contents.

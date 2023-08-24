@@ -114,7 +114,9 @@ private:
     void _markAsDirty();
     void _flushBuffer();
     void _erase(til::CoordType distance);
-    void _writeChars(const std::wstring_view& text);
+    til::CoordType _writeChars(const std::wstring_view& text) const;
+    til::point _offsetPosition(til::point pos, til::CoordType distance) const;
+    void _unwindCursorPosition(til::CoordType distance) const;
     void _replaceBuffer(const std::wstring_view& str);
 
     void _popupPush(PopupKind kind);
@@ -138,9 +140,8 @@ private:
 
     std::wstring _buffer;
     size_t _bufferCursor = 0;
-    til::point _coordBeg;
-    til::point _coordCursor;
-    til::point _coordEnd;
+    til::CoordType _distanceCursor;
+    til::CoordType _distanceEnd;
     bool _bufferDirty = false;
     bool _insertMode = false;
 
