@@ -122,11 +122,13 @@ LineRendition ROW::GetLineRendition() const noexcept
 // The interplay between the old console and newer VT APIs which support line renditions is
 // still unclear so it might be necessary to add two kinds of this function in the future.
 // Console APIs treat the buffer as a large NxM matrix after all.
-til::CoordType ROW::GetLineWidth() const noexcept
+til::CoordType ROW::GetReadableColumnCount() const noexcept
 {
-    const auto scale = _lineRendition != LineRendition::SingleWidth ? 1 : 0;
-    const auto padding = _doubleBytePadded ? 1 : 0;
-    return (_columnCount - padding) >> scale;
+    if (_lineRendition == LineRendition::SingleWidth) [[likely]]
+    {
+        return _columnCount - _doubleBytePadded;
+    }
+    return (_columnCount - (_doubleBytePadded << 1)) >> 1;
 }
 
 // Routine Description:

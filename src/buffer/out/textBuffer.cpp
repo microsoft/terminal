@@ -481,7 +481,7 @@ size_t TextBuffer::GraphemePrev(const std::wstring_view& chars, size_t position)
 // Pretend as if `position` is a regular cursor in the TextBuffer.
 // This function will then pretend as if you pressed the left/right arrow
 // keys `distance` amount of times (negative = left, positive = right).
-til::point TextBuffer::NavigateCursor(til::point position, til::CoordType distance)
+til::point TextBuffer::NavigateCursor(til::point position, til::CoordType distance) const
 {
     const til::CoordType maxX = _width - 1;
     const til::CoordType maxY = _height - 1;
@@ -505,13 +505,13 @@ til::point TextBuffer::NavigateCursor(til::point position, til::CoordType distan
             {
                 --y;
                 row = &GetRowByOffset(y);
-                x = row->GetLineWidth() - 1;
+                x = row->GetReadableColumnCount() - 1;
             }
         } while (++distance != 0);
     }
     else if (distance > 0)
     {
-        auto rowWidth = row->GetLineWidth();
+        auto rowWidth = row->GetReadableColumnCount();
 
         do
         {
@@ -527,7 +527,7 @@ til::point TextBuffer::NavigateCursor(til::point position, til::CoordType distan
             {
                 ++y;
                 row = &GetRowByOffset(y);
-                rowWidth = row->GetLineWidth();
+                rowWidth = row->GetReadableColumnCount();
                 x = 0;
             }
         } while (--distance != 0);
