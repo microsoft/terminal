@@ -17,6 +17,8 @@ using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::ApplicationModel;
+using namespace winrt::Windows::UI::Notifications;
 using namespace ::Microsoft::Console;
 using namespace std::chrono_literals;
 using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
@@ -80,9 +82,74 @@ void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
         args.emplace_back(L"wt.exe");
     }
 }
+bool WindowEmperor::_handleLaunchArgs()
+try
+{
+    // AppInstance::GetActivatedEventArgs will throw when unpackaged.
+    if (!IsPackaged())
+    {
+        return false;
+    }
+    // If someone clicks on a notification, then a fresh instance of
+    // windowsterminal.exe will spawn. We certainly don't want to create a new
+    // window for that - we only want to activate the window that created the
+    // actual notification. In the toast arg's payload will be the window id
+    // that sent the notification. We'll ask the window manager to try and
+    // activate that window ID, without even bothering to register as the
+    // monarch ourselves (if we can't find a monarch, then there are no windows
+    // running, so whoever sent it must have died.)
+
+    const auto activatedArgs = AppInstance::GetActivatedEventArgs();
+    if (activatedArgs != nullptr &&
+        activatedArgs.Kind() == Activation::ActivationKind::ToastNotification)
+    {
+        if (const auto& toastArgs{ activatedArgs.try_as<Activation::ToastNotificationActivatedEventArgs>() })
+        {
+            // Obtain the arguments from the notification
+            const auto args = toastArgs.Argument();
+
+            // Args is gonna look like
+            //
+            // "window=id&foo=bar&..."
+            //
+            // We need to first split on &, then split those pairs on =
+
+            // tabIndex code here is left as reference for parsing multiple
+            // arguments, despite it not being used currently.
+            uint32_t window;
+            // uint32_t tabIndex = 0;
+
+            const std::wstring_view argsView{ args };
+            const auto pairs = Utils::SplitString(argsView, L'&');
+            for (const auto& pair : pairs)
+            {
+                const auto pairParts = Utils::SplitString(pair, L'=');
+                if (pairParts.size() == 2)
+                {
+                    if (til::at(pairParts, 0) == L"window")
+                    {
+                        window = std::wcstoul(pairParts[1].data(), nullptr, 10);
+                    }
+                    // else if (pairParts[0] == L"tabIndex")
+                    // {
+                    //     // convert a wide string to a uint
+                    //     tabIndex = std::wcstoul(pairParts[1].data(), nullptr, 10);
+                    // }
+                }
+            }
+            return winrt::Microsoft::Terminal::Remoting::WindowManager::SummonForNotification(window);
+        }
+    }
+
+    return false;
+}
+CATCH_LOG_RETURN_HR(false)
 
 bool WindowEmperor::HandleCommandlineArgs()
 {
+    if (_handleLaunchArgs())
+        return false;
+
     std::vector<winrt::hstring> args;
     _buildArgsFromCommandline(args);
     const auto cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
