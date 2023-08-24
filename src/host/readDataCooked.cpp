@@ -221,7 +221,7 @@ void COOKED_READ_DATA::EraseBeforeResize()
 {
     while (!_popups.empty())
     {
-        _popupDone();
+        _popupsDone();
     }
 
     const auto& textBuffer = _screenInfo.GetTextBuffer();
@@ -429,7 +429,7 @@ bool COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
     }
     else
     {
-        // TODO: If the input grapheme is >1 char, then this will replace >1 grapheme
+        // TODO GH#15875: If the input grapheme is >1 char, then this will replace >1 grapheme
         // --> We should accumulate input text as much as possible and then call _processInput with wstring_view.
         const auto nextGraphemeLength = TextBuffer::GraphemeNext(_buffer, _bufferCursor) - _bufferCursor;
         _buffer.replace(_bufferCursor, nextGraphemeLength, 1, wch);
@@ -497,22 +497,31 @@ void COOKED_READ_DATA::_handleVkey(uint16_t vkey, DWORD modifiers)
             }
             _markAsDirty();
         }
-        else
+        else if (_history)
         {
-            // Traditionally pressing right at the end of an input line will paste characters from the previous command.
-            // I'd rather remove this "feature" than make it work with modern Unicode expectations.
-            // Unfortunately the time for that decision is not here yet, so here's the incorrect approach...
-            if (_history)
+            // Traditionally pressing right at the end of an input line would paste characters from the previous command.
+            const auto cmd = _history->GetLastCommand();
+            const auto bufferSize = _buffer.size();
+            const auto cmdSize = cmd.size();
+            size_t bufferBeg = 0;
+            size_t cmdBeg = 0;
+
+            // We cannot just check if the cmd is longer than the _buffer, because we want to copy graphemes,
+            // not characters and there's no correlation between the number of graphemes and their byte length.
+            while (cmdBeg < cmdSize)
             {
-                const auto cmd = _history->GetLastCommand();
-                const auto beg = _bufferCursor;
-                if (beg < cmd.size())
+                const auto cmdEnd = TextBuffer::GraphemeNext(cmd, cmdBeg);
+
+                if (bufferBeg >= bufferSize)
                 {
-                    const auto end = TextBuffer::GraphemeNext(cmd, beg);
-                    _buffer.append(cmd, beg, end - beg);
+                    _buffer.append(cmd, cmdBeg, cmdEnd - cmdBeg);
                     _bufferCursor = _buffer.size();
                     _markAsDirty();
+                    break;
                 }
+
+                bufferBeg = TextBuffer::GraphemeNext(_buffer, bufferBeg);
+                cmdBeg = cmdEnd;
             }
         }
         break;
@@ -643,9 +652,6 @@ void COOKED_READ_DATA::_handlePostCharInputLoop(const bool isUnicode, size_t& nu
         if (input.ends_with(suffix))
         {
             input.remove_suffix(suffix.size());
-
-            // Reset the cursor back to its regular size if it was previously changed by our VK_INSERT handler.
-            _screenInfo.SetCursorDBMode(false);
 
             if (_history)
             {
@@ -941,15 +947,15 @@ try
 catch (...)
 {
     LOG_CAUGHT_EXCEPTION();
-    // Using _popupDone() is a convenient way to restore the buffer contents if anything in this call failed.
+    // Using _popupsDone() is a convenient way to restore the buffer contents if anything in this call failed.
     // This could technically dismiss an unrelated popup that was already in _popups, but reaching this point is unlikely anyways.
-    _popupDone();
+    _popupsDone();
 }
 
 // Dismisses all current popups at once. Right now we don't need support for just dismissing the topmost popup.
 // In fact, there's only a single situation right now where there can be >1 popup:
 // Pressing F7 followed by F9 (CommandNumber on top of CommandList).
-void COOKED_READ_DATA::_popupDone()
+void COOKED_READ_DATA::_popupsDone()
 {
     while (!_popups.empty())
     {
@@ -1003,7 +1009,7 @@ void COOKED_READ_DATA::_popupHandleCopyToCharInput(Popup& /*popup*/, const wchar
     {
         if (vkey == VK_ESCAPE)
         {
-            _popupDone();
+            _popupsDone();
         }
     }
     else
@@ -1023,7 +1029,7 @@ void COOKED_READ_DATA::_popupHandleCopyToCharInput(Popup& /*popup*/, const wchar
             _markAsDirty();
         }
 
-        _popupDone();
+        _popupsDone();
     }
 }
 
@@ -1033,7 +1039,7 @@ void COOKED_READ_DATA::_popupHandleCopyFromCharInput(Popup& /*popup*/, const wch
     {
         if (vkey == VK_ESCAPE)
         {
-            _popupDone();
+            _popupsDone();
         }
     }
     else
@@ -1042,7 +1048,7 @@ void COOKED_READ_DATA::_popupHandleCopyFromCharInput(Popup& /*popup*/, const wch
         const auto idx = _buffer.find(wch, _bufferCursor);
         _buffer.erase(_bufferCursor, std::min(idx, _buffer.size()) - _bufferCursor);
         _markAsDirty();
-        _popupDone();
+        _popupsDone();
     }
 }
 
@@ -1052,7 +1058,7 @@ void COOKED_READ_DATA::_popupHandleCommandNumberInput(Popup& popup, const wchar_
     {
         if (vkey == VK_ESCAPE)
         {
-            _popupDone();
+            _popupsDone();
         }
     }
     else
@@ -1061,7 +1067,7 @@ void COOKED_READ_DATA::_popupHandleCommandNumberInput(Popup& popup, const wchar_
         {
             popup.commandNumber.buffer[popup.commandNumber.bufferSize++] = L'\0';
             _replaceBuffer(_history->RetrieveNth(std::stoi(popup.commandNumber.buffer.data())));
-            _popupDone();
+            _popupsDone();
             return;
         }
 
@@ -1100,14 +1106,14 @@ bool COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t 
     if (wch == UNICODE_CARRIAGERETURN)
     {
         _buffer.assign(_history->RetrieveNth(cl.selected));
-        _popupDone();
+        _popupsDone();
         return _handleChar(UNICODE_CARRIAGERETURN, modifiers);
     }
 
     switch (vkey)
     {
     case VK_ESCAPE:
-        _popupDone();
+        _popupsDone();
         return false;
     case VK_F9:
         _popupPush(PopupKind::CommandNumber);
@@ -1116,14 +1122,14 @@ bool COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t 
         _history->Remove(cl.selected);
         if (_history->GetNumberOfCommands() <= 0)
         {
-            _popupDone();
+            _popupsDone();
             return false;
         }
         break;
     case VK_LEFT:
     case VK_RIGHT:
         _replaceBuffer(_history->RetrieveNth(cl.selected));
-        _popupDone();
+        _popupsDone();
         return false;
     case VK_UP:
         if (WI_IsFlagSet(modifiers, SHIFT_PRESSED))

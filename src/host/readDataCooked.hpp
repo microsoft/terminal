@@ -118,7 +118,7 @@ private:
     void _replaceBuffer(const std::wstring_view& str);
 
     void _popupPush(PopupKind kind);
-    void _popupDone();
+    void _popupsDone();
     void _popupHandleCopyToCharInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
     void _popupHandleCopyFromCharInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
     void _popupHandleCommandNumberInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
