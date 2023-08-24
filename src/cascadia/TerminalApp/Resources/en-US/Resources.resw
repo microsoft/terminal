@@ -590,6 +590,26 @@
     <value>Enter a wt commandline to run</value>
     <comment>{Locked="wt"} </comment>
   </data>
+  <data name="SuggestionsControl_NestedCommandAnnouncement" xml:space="preserve">
+    <value>More options for "{}"</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
+  <data name="SuggestionsControl_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>Type a command name...</value>
+  </data>
+  <data name="SuggestionsControl_NoMatchesText.Text" xml:space="preserve">
+    <value>No matching commands</value>
+  </data>
+  <data name="SuggestionsControlName" xml:space="preserve">
+    <value>Suggestions menu</value>
+  </data>
+  <data name="SuggestionsControl_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>More options</value>
+  </data>
+  <data name="SuggestionsControl_MatchesAvailable" xml:space="preserve">
+    <value>Suggestions found: {0}</value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
   <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Crimson</value>
   </data>
