@@ -67,6 +67,7 @@ private:
         CLI::Option* tabColorOption;
         CLI::Option* suppressApplicationTitleOption;
         CLI::Option* colorSchemeOption;
+        CLI::Option* appendCommandLineOption;
     };
 
     struct NewPaneSubcommand : public NewTerminalSubcommand
@@ -105,6 +106,7 @@ private:
 
     // _commandline will contain the command line with which we'll be spawning a new terminal
     std::vector<std::string> _commandline;
+    bool _appendCommandLineOption{ false };
 
     bool _splitVertical{ false };
     bool _splitHorizontal{ false };
