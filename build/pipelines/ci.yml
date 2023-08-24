@@ -98,7 +98,7 @@ stages:
             parameters:
               platform: ${{ platform }}
               # The tests might be run more than once; log one artifact per attempt.
-              outputAtifactStem: -$(System.JobAttempt)
+              outputArtifactStem: -$(System.JobAttempt)
 
   - ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
     - stage: CodeIndexer
