@@ -97,6 +97,9 @@ stages:
           - template: ./templates-v2/job-test-project.yml
             parameters:
               platform: ${{ platform }}
+              # The tests might be run more than once; log one artifact per attempt.
+              ${{ if ne(variables['System.JobAttempt'], '1') }}:
+                artifactStem: -$(System.JobAttempt)
 
   - ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
     - stage: CodeIndexer
