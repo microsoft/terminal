@@ -1345,9 +1345,49 @@ void Terminal::_updateUrlDetection()
     }
 }
 
-// Interns URegularExpression instances so that they can be reused. This method is thread-safe.
-static ICU::unique_uregex internURegularExpression(const std::wstring_view& pattern)
+struct URegularExpressionInterner
 {
+    // Interns (caches) URegularExpression instances so that they can be reused. This method is thread-safe.
+    // uregex_open is not terribly expensive at ~10us/op, but it's also much more expensive than uregex_clone
+    // at ~400ns/op and would effectively double the time it takes to scan the viewport for patterns.
+    //
+    // An alternative approach would be to not make this method thread-safe and give each
+    // Terminal instance its own cache. I'm not sure which approach would've been better.
+    ICU::unique_uregex Intern(const std::wstring_view& pattern)
+    {
+        UErrorCode status = U_ZERO_ERROR;
+
+        {
+            const auto guard = _lock.lock_shared();
+            if (const auto it = _cache.find(pattern); it != _cache.end())
+            {
+                return ICU::unique_uregex{ uregex_clone(it->second.re.get(), &status) };
+            }
+        }
+
+        // Even if the URegularExpression creation failed, we'll insert it into the cache, because there's no point in retrying.
+        // (Apart from OOM but in that case this application will crash anyways in 3.. 2.. 1..)
+        auto re = ICU::CreateRegex(pattern, 0, &status);
+        ICU::unique_uregex clone{ uregex_clone(re.get(), &status) };
+        std::wstring key{ pattern };
+
+        const auto guard = _lock.lock_exclusive();
+
+        _cache.insert_or_assign(std::move(key), CacheValue{ std::move(re), _totalInsertions });
+        _totalInsertions++;
+
+        // If the cache is full remove the oldest element (oldest = lowest generation, just like with humans).
+        if (_cache.size() > cacheSizeLimit)
+        {
+            _cache.erase(std::min_element(_cache.begin(), _cache.end(), [](const auto& it, const auto& smallest) {
+                return it.second.generation < smallest.second.generation;
+            }));
+        }
+
+        return clone;
+    }
+
+private:
     struct CacheValue
     {
         ICU::unique_uregex re;
@@ -1364,47 +1404,13 @@ static ICU::unique_uregex internURegularExpression(const std::wstring_view& patt
         }
     };
 
-    struct SharedState
-    {
-        wil::srwlock lock;
-        std::unordered_map<std::wstring, CacheValue, CacheKeyHasher, std::equal_to<>> set;
-        size_t totalInsertions = 0;
-    };
-
-    static SharedState shared;
     static constexpr size_t cacheSizeLimit = 128;
+    wil::srwlock _lock;
+    std::unordered_map<std::wstring, CacheValue, CacheKeyHasher, std::equal_to<>> _cache;
+    size_t _totalInsertions = 0;
+};
 
-    UErrorCode status = U_ZERO_ERROR;
-
-    {
-        const auto guard = shared.lock.lock_shared();
-        if (const auto it = shared.set.find(pattern); it != shared.set.end())
-        {
-            return ICU::unique_uregex{ uregex_clone(it->second.re.get(), &status) };
-        }
-    }
-
-    // Even if the URegularExpression creation failed, we'll insert it into the cache, because there's no point in retrying.
-    // (Apart from OOM but in that case this application will crash anyways in 3.. 2.. 1..)
-    auto re = ICU::CreateRegex(pattern, 0, &status);
-    ICU::unique_uregex clone{ uregex_clone(re.get(), &status) };
-    std::wstring key{ pattern };
-
-    const auto guard = shared.lock.lock_exclusive();
-
-    shared.set.insert_or_assign(std::move(key), CacheValue{ std::move(re), shared.totalInsertions });
-    shared.totalInsertions++;
-
-    // If the cache is full remove the oldest element (oldest = lowest generation, just like with humans).
-    if (shared.set.size() > cacheSizeLimit)
-    {
-        shared.set.erase(std::min_element(shared.set.begin(), shared.set.end(), [](const auto& it, const auto& smallest) {
-            return it.second.generation < smallest.second.generation;
-        }));
-    }
-
-    return clone;
-}
+static URegularExpressionInterner uregexInterner;
 
 PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
 {
@@ -1418,7 +1424,7 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
 
     for (size_t i = 0; i < patterns.size(); ++i)
     {
-        const auto re = internURegularExpression(patterns[i]);
+        const auto re = uregexInterner.Intern(patterns[i]);
         uregex_setUText(re.get(), &text, &status);
 
         if (uregex_find(re.get(), -1, &status))
