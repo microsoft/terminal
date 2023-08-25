@@ -1,29 +1,5 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
-Module Name:
-- readDataCooked.hpp
-
-Abstract:
-- This file defines the read data structure for reading the command line.
-- Cooked reads specifically refer to when the console host acts as a command line on behalf
-  of another console application (e.g. aliases, command history, completion, line manipulation, etc.)
-- The data struct will help store context across multiple calls or in the case of a wait condition.
-- Wait conditions happen frequently for cooked reads because they're virtually always waiting for
-  the user to finish "manipulating" the edit line before hitting enter and submitting the final
-  result to the client application.
-- A cooked read is also limited specifically to string/textual information. Only keyboard-type input applies.
-- This can be triggered via ReadConsole A/W and ReadFile A/W calls.
-
-Author:
-- Austin Diviness (AustDi) 1-Mar-2017
-- Michael Niksa (MiNiksa) 1-Mar-2017
-
-Revision History:
-- Pulled from original authoring by Therese Stowell (ThereseS, 1990)
-- Separated from cmdline.h/cmdline.cpp (AustDi, 2017)
---*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 
@@ -33,132 +9,141 @@ Revision History:
 class COOKED_READ_DATA final : public ReadData
 {
 public:
-    COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
-                     _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
+    COOKED_READ_DATA(_In_ InputBuffer* pInputBuffer,
+                     _In_ INPUT_READ_HANDLE_DATA* pInputReadHandleData,
                      SCREEN_INFORMATION& screenInfo,
                      _In_ size_t UserBufferSize,
                      _In_ char* UserBuffer,
                      _In_ ULONG CtrlWakeupMask,
-                     _In_ const std::wstring_view exeName,
-                     _In_ const std::wstring_view initialData,
-                     _In_ ConsoleProcessHandle* const pClientProcess);
+                     _In_ std::wstring_view exeName,
+                     _In_ std::wstring_view initialData,
+                     _In_ ConsoleProcessHandle* pClientProcess);
 
-    ~COOKED_READ_DATA() override;
-    COOKED_READ_DATA(COOKED_READ_DATA&&) = default;
+    void MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer) noexcept override;
 
-    bool AtEol() const noexcept;
+    bool Notify(WaitTerminationReason TerminationReason,
+                bool fIsUnicode,
+                _Out_ NTSTATUS* pReplyStatus,
+                _Out_ size_t* pNumBytes,
+                _Out_ DWORD* pControlKeyState,
+                _Out_ void* pOutputData) noexcept override;
 
-    void MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer) override;
+    bool Read(bool isUnicode, size_t& numBytes, ULONG& controlKeyState);
 
-    bool Notify(const WaitTerminationReason TerminationReason,
-                const bool fIsUnicode,
-                _Out_ NTSTATUS* const pReplyStatus,
-                _Out_ size_t* const pNumBytes,
-                _Out_ DWORD* const pControlKeyState,
-                _Out_ void* const pOutputData) override;
+    void EraseBeforeResize();
+    void RedrawAfterResize();
 
-    std::span<wchar_t> SpanAtPointer();
-    std::span<wchar_t> SpanWholeBuffer();
-
-    size_t Write(const std::wstring_view wstr);
-
-    void ProcessAliases(DWORD& lineCount);
-
-    [[nodiscard]] HRESULT Read(const bool isUnicode,
-                               size_t& numBytes,
-                               ULONG& controlKeyState) noexcept;
-
-    bool ProcessInput(const wchar_t wch,
-                      const DWORD keyState,
-                      NTSTATUS& status);
-
-    CommandHistory& History() noexcept;
-    bool HasHistory() const noexcept;
-
-    const size_t& VisibleCharCount() const noexcept;
-    size_t& VisibleCharCount() noexcept;
-
-    SCREEN_INFORMATION& ScreenInfo() noexcept;
-
-    til::point OriginalCursorPosition() const noexcept;
-    til::point& OriginalCursorPosition() noexcept;
-
-    til::point& BeforeDialogCursorPosition() noexcept;
-
-    bool IsEchoInput() const noexcept;
-    bool IsInsertMode() const noexcept;
-    void SetInsertMode(const bool mode) noexcept;
-    bool IsUnicode() const noexcept;
-
-    size_t UserBufferSize() const noexcept;
-
-    wchar_t* BufferStartPtr() noexcept;
-    wchar_t* BufferCurrentPtr() noexcept;
-    void SetBufferCurrentPtr(wchar_t* ptr) noexcept;
-
-    const size_t& BytesRead() const noexcept;
-    size_t& BytesRead() noexcept;
-
-    const size_t& InsertionPoint() const noexcept;
-    size_t& InsertionPoint() noexcept;
-
-    void SetReportedByteCount(const size_t count) noexcept;
-
-    void Erase() noexcept;
-    size_t SavePromptToUserBuffer(const size_t cch);
-    void SavePendingInput(const size_t cch, const bool multiline);
-
-#if UNIT_TESTING
-    friend class CommandLineTests;
-    friend class CopyToCharPopupTests;
-    friend class CommandNumberPopupTests;
-    friend class CommandListPopupTests;
-    friend class PopupTestHelper;
-#endif
+    void SetInsertMode(bool insertMode) noexcept;
+    bool IsEmpty() const noexcept;
+    bool PresentingPopup() const noexcept;
+    til::point_span GetBoundaries() const noexcept;
 
 private:
-    size_t _bufferSize; // size in bytes
-    size_t _bytesRead;
+    static constexpr uint8_t CommandNumberMaxInputLength = 5;
 
-    // insertion position into the buffer (where the conceptual prompt cursor is)
-    size_t _currentPosition; // char position, not byte position
+    enum class PopupKind
+    {
+        // Copies text from the previous command between the current cursor position and the first instance
+        // of a given char (but not including it) into the current prompt line at the current cursor position.
+        // Basically, F3 and this prompt have identical behavior, but the prompt searches for a terminating character.
+        //
+        // Let's say your last command was:
+        //   echo hello
+        // And you type the following with the cursor at "^":
+        //   echo abcd efgh
+        //       ^
+        // Then this command, given the char "o" will turn it into
+        //   echo hell efgh
+        CopyToChar,
+        // Erases text between the current cursor position and the first instance of a given char (but not including it).
+        // It's unknown to me why this is was historically called "copy from char" as it conhost never copied anything.
+        CopyFromChar,
+        // Let's you choose to replace the current prompt with one from the command history by index.
+        CommandNumber,
+        // Let's you choose to replace the current prompt with one from the command history via a
+        // visual select dialog. Among all the popups this one is the most widely used one by far.
+        CommandList,
+    };
 
-    wchar_t* _bufPtr; // current position to insert chars at
+    struct Popup
+    {
+        PopupKind kind;
 
-    // should be const. the first char of the buffer
-    wchar_t* _backupLimit;
+        // The inner rectangle of the popup, excluding the border that we draw.
+        // In absolute TextBuffer coordinates.
+        til::rect contentRect;
+        // The area we've backed up and need to restore when we dismiss the popup.
+        // It'll practically always be 1 larger than contentRect in all 4 directions.
+        Microsoft::Console::Types::Viewport backupRect;
+        // The backed up buffer contents. Uses CHAR_INFO for convenience.
+        std::vector<CHAR_INFO> backup;
 
-    size_t _userBufferSize; // doubled size in ansi case
-    char* _userBuffer;
+        // Using a std::variant would be preferable in modern C++ but is practically equally annoying to use.
+        union
+        {
+            // Used by PopupKind::CommandNumber
+            struct
+            {
+                // Keep 1 char space for the trailing \0 char.
+                std::array<wchar_t, CommandNumberMaxInputLength + 1> buffer;
+                uint8_t bufferSize;
+            } commandNumber;
 
-    size_t* _pdwNumBytes;
+            // Used by PopupKind::CommandList
+            struct
+            {
+                // Command history index of the first row we draw in the popup.
+                CommandHistory::Index top;
+                // Command history index of the currently selected row.
+                CommandHistory::Index selected;
+                // Tracks the part of the popup that has previously been drawn and needs to be redrawn in the next paint.
+                // This becomes relevant when the length of the history changes while the popup is open (= when deleting entries).
+                til::CoordType dirtyHeight;
+            } commandList;
+        };
+    };
 
-    std::unique_ptr<byte[]> _buffer;
+    static size_t _wordPrev(const std::wstring_view& chars, size_t position);
+    static size_t _wordNext(const std::wstring_view& chars, size_t position);
+
+    const std::wstring_view& _newlineSuffix() const noexcept;
+    bool _readCharInputLoop();
+    bool _handleChar(wchar_t wch, DWORD modifiers);
+    void _handleVkey(uint16_t vkey, DWORD modifiers);
+    void _handlePostCharInputLoop(bool isUnicode, size_t& numBytes, ULONG& controlKeyState);
+    void _markAsDirty();
+    void _flushBuffer();
+    void _erase(til::CoordType distance);
+    til::CoordType _writeChars(const std::wstring_view& text) const;
+    til::point _offsetPosition(til::point pos, til::CoordType distance) const;
+    void _unwindCursorPosition(til::CoordType distance) const;
+    void _replaceBuffer(const std::wstring_view& str);
+
+    void _popupPush(PopupKind kind);
+    void _popupsDone();
+    void _popupHandleCopyToCharInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
+    void _popupHandleCopyFromCharInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
+    void _popupHandleCommandNumberInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
+    bool _popupHandleCommandListInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
+    bool _popupHandleInput(wchar_t wch, uint16_t vkey, DWORD keyState);
+    void _popupDrawPrompt(const Popup& popup, UINT id) const;
+    void _popupDrawCommandList(Popup& popup) const;
+
+    SCREEN_INFORMATION& _screenInfo;
+    std::span<char> _userBuffer;
     std::wstring _exeName;
+    ConsoleProcessHandle* _processHandle = nullptr;
+    CommandHistory* _history = nullptr;
+    ULONG _ctrlWakeupMask = 0;
+    ULONG _controlKeyState = 0;
     std::unique_ptr<ConsoleHandleData> _tempHandle;
 
-    // TODO MSFT:11285829 make this something other than a deletable pointer
-    // non-ownership pointer
-    CommandHistory* _commandHistory;
+    std::wstring _buffer;
+    size_t _bufferCursor = 0;
+    til::CoordType _distanceCursor;
+    til::CoordType _distanceEnd;
+    bool _bufferDirty = false;
+    bool _insertMode = false;
 
-    ULONG _controlKeyState;
-    ULONG _ctrlWakeupMask;
-    size_t _visibleCharCount; // TODO MSFT:11285829 is this cells or glyphs? ie. is a wide char counted as 1 or 2?
-    SCREEN_INFORMATION& _screenInfo;
-
-    // Note that cookedReadData's _originalCursorPosition is the position before ANY text was entered on the edit line.
-    til::point _originalCursorPosition;
-    til::point _beforeDialogCursorPosition; // Currently only used for F9 (ProcessCommandNumberInput) since it's the only pop-up to move the cursor when it starts.
-
-    const bool _echoInput;
-    const bool _lineInput;
-    const bool _processedInput;
-    bool _insertMode;
-    bool _unicode;
-
-    ConsoleProcessHandle* const _clientProcess;
-
-    [[nodiscard]] NTSTATUS _readCharInputLoop(const bool isUnicode, size_t& numBytes) noexcept;
-
-    [[nodiscard]] NTSTATUS _handlePostCharInputLoop(const bool isUnicode, size_t& numBytes, ULONG& controlKeyState) noexcept;
+    std::vector<Popup> _popups;
 };

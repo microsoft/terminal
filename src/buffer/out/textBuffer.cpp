@@ -416,6 +416,64 @@ size_t TextBuffer::GraphemePrev(const std::wstring_view& chars, size_t position)
     return til::utf16_iterate_prev(chars, position);
 }
 
+// Pretend as if `position` is a regular cursor in the TextBuffer.
+// This function will then pretend as if you pressed the left/right arrow
+// keys `distance` amount of times (negative = left, positive = right).
+til::point TextBuffer::NavigateCursor(til::point position, til::CoordType distance) const
+{
+    const til::CoordType maxX = _width - 1;
+    const til::CoordType maxY = _height - 1;
+    auto x = std::clamp(position.x, 0, maxX);
+    auto y = std::clamp(position.y, 0, maxY);
+    auto row = &GetRowByOffset(y);
+
+    if (distance < 0)
+    {
+        do
+        {
+            if (x > 0)
+            {
+                x = row->NavigateToPrevious(x);
+            }
+            else if (y <= 0)
+            {
+                break;
+            }
+            else
+            {
+                --y;
+                row = &GetRowByOffset(y);
+                x = row->GetReadableColumnCount() - 1;
+            }
+        } while (++distance != 0);
+    }
+    else if (distance > 0)
+    {
+        auto rowWidth = row->GetReadableColumnCount();
+
+        do
+        {
+            if (x < rowWidth)
+            {
+                x = row->NavigateToNext(x);
+            }
+            else if (y >= maxY)
+            {
+                break;
+            }
+            else
+            {
+                ++y;
+                row = &GetRowByOffset(y);
+                rowWidth = row->GetReadableColumnCount();
+                x = 0;
+            }
+        } while (--distance != 0);
+    }
+
+    return { x, y };
+}
+
 // This function is intended for writing regular "lines" of text as it'll set the wrap flag on the given row.
 // You can continue calling the function on the same row as long as state.columnEnd < state.columnLimit.
 void TextBuffer::Write(til::CoordType row, const TextAttribute& attributes, RowWriteState& state)

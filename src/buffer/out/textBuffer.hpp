@@ -138,6 +138,8 @@ public:
     static size_t GraphemeNext(const std::wstring_view& chars, size_t position) noexcept;
     static size_t GraphemePrev(const std::wstring_view& chars, size_t position) noexcept;
 
+    til::point NavigateCursor(til::point position, til::CoordType distance) const;
+
     // Text insertion functions
     void Write(til::CoordType row, const TextAttribute& attributes, RowWriteState& state);
     void FillRect(const til::rect& rect, const std::wstring_view& fill, const TextAttribute& attributes);
