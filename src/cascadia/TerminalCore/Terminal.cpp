@@ -234,16 +234,16 @@ try
         return S_FALSE;
     }
 
-    // GH#3494: We don't need to reflow the alt buffer. Apps that use the
-    // alt buffer will redraw themselves. This prevents graphical artifacts.
-    //
-    // This is consistent with VTE
     if (_inAltBuffer())
     {
         // _deferredResize will indicate to UseMainScreenBuffer() that it needs to reflow the main buffer.
-        // It's unknown why we defer the reflow to a later time. Performance perhaps?
+        // Deferring the reflow of the main buffer has the benefit that it avoids destroying the state
+        // of the text buffer any more than necessary. For ConPTY in particular a reflow is destructive,
+        // because it "forgets" text that wraps beyond the top of its viewport when shrinking it.
         _deferredResize = viewportSize;
 
+        // GH#3494: We don't need to reflow the alt buffer. Apps that use the alt buffer will
+        // redraw themselves. This prevents graphical artifacts and is consistent with VTE.
         _altBuffer->ResizeTraditional(viewportSize);
 
         _altBufferSize = viewportSize;
