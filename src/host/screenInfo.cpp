@@ -1426,9 +1426,8 @@ try
         return STATUS_INVALID_PARAMETER;
     }
 
-    // GH#3848 - Stash away the current attributes the old text buffer is using.
-    // We'll initialize the new buffer with the default attributes, but after
-    // the resize, we'll want to make sure that the new buffer's current
+    // GH#3848 - We'll initialize the new buffer with the default attributes,
+    // but after the resize, we'll want to make sure that the new buffer's current
     // attributes (the ones used for printing new text) match the old buffer's.
     auto newTextBuffer = std::make_unique<TextBuffer>(coordNewScreenSize,
                                                       TextAttribute{},
