@@ -1,5 +1,4 @@
-![terminal-logos](https://user-images.githubusercontent.com/48369326/115790869-4c852b00-a37c-11eb-97f1-f61972c7800c.png)
-
+"[terminal]["terminal=".$_-0/build.config-dotnet-tools.json"https://github.com/lostleolotus/terminal/blob/dotnet-tools.json-main/.config/dotnet-tools.json][!terminal-logos]("https://user-images.githubusercontent.com/48369326/115790869-4c852b00-a37c-11eb-97f1-f61972c7800c.png")]"===---___
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
 This repository contains the source code for:
