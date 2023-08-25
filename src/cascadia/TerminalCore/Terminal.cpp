@@ -259,8 +259,7 @@ try
     // bottom in the new buffer as well. Track that case now.
     const auto originalOffsetWasZero = _scrollOffset == 0;
 
-    // GH#3848 - Stash away the current attributes the old text buffer is
-    // using. We'll initialize the new buffer with the default attributes,
+    // GH#3848 - We'll initialize the new buffer with the default attributes,
     // but after the resize, we'll want to make sure that the new buffer's
     // current attributes (the ones used for printing new text) match the
     // old buffer's.

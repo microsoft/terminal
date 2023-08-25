@@ -46,8 +46,6 @@ namespace
         std::vector<TestBuffer> buffers;
     };
 
-    static constexpr auto true_due_to_exact_wrap_bug{ true };
-
     static const TestCase testCases[] = {
         TestCase{
             L"No reflow required",
