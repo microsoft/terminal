@@ -766,14 +766,28 @@ void COOKED_READ_DATA::_flushBuffer()
 }
 
 // This is just a small helper to fill the next N cells starting at the current cursor position with whitespace.
-// The implementation is inefficient for `count`s larger than 7, but such calls are uncommon to happen (namely only when resizing the window).
-void COOKED_READ_DATA::_erase(const til::CoordType distance)
+void COOKED_READ_DATA::_erase(const til::CoordType distance) const
 {
-    if (distance > 0)
+    if (distance <= 0)
     {
-        const std::wstring str(gsl::narrow_cast<size_t>(distance), L' ');
-        std::ignore = _writeChars(str);
+        return;
     }
+
+    std::array<wchar_t, 128> whitespace;
+    auto remaining = gsl::narrow_cast<size_t>(distance);
+    auto nextWriteSize = std::min(remaining, whitespace.size());
+
+    // If we only need to erase 1 character worth of whitespace,
+    // we don't need to initialize 256 bytes worth of a whitespace array.
+    // nextWriteSize can only ever shrink past this point if anything.
+    std::fill_n(whitespace.begin(), nextWriteSize, L' ');
+
+    do
+    {
+        std::ignore = _writeChars({ whitespace.data(), nextWriteSize });
+        remaining -= nextWriteSize;
+        nextWriteSize = std::min(remaining, whitespace.size());
+    } while (remaining != 0);
 }
 
 // A helper to write text and calculate the number of cells we've written.
