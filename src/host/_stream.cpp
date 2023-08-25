@@ -206,7 +206,7 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
                 // Otherwise handling backspacing tabs/whitespace can turn up complex and bug-prone.
                 assert(!interactive);
                 auto pos = cursor.GetPosition();
-                pos.x = textBuffer.GetRowByOffset(pos.y).NavigateToPrevious(pos.x);
+                pos.x = textBuffer.GetMutableRowByOffset(pos.y).NavigateToPrevious(pos.x);
                 AdjustCursorPosition(screenInfo, pos, interactive, psScrollY);
                 continue;
             }
@@ -225,7 +225,7 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
                     pos.x = 0;
                 }
 
-                textBuffer.GetRowByOffset(pos.y).SetWrapForced(false);
+                textBuffer.GetMutableRowByOffset(pos.y).SetWrapForced(false);
                 pos.y = pos.y + 1;
                 AdjustCursorPosition(screenInfo, pos, interactive, psScrollY);
                 continue;

@@ -237,7 +237,7 @@ public:
 
         for (til::CoordType iRow = 0; iRow < cRowsToFill; iRow++)
         {
-            ROW& row = textBuffer.GetRowByOffset(iRow);
+            ROW& row = textBuffer.GetMutableRowByOffset(iRow);
             FillRow(&row, iRow & 1);
         }
 

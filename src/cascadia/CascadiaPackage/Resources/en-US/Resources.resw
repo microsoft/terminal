@@ -125,6 +125,10 @@
     <value>Terminal Dev</value>
     <comment>{Locked}</comment>
   </data>
+  <data name="AppNameCan" xml:space="preserve">
+    <value>Terminal Canary</value>
+    <comment>{Locked}</comment>
+  </data>
   <data name="AppNamePre" xml:space="preserve">
     <value>Terminal Preview</value>
     <comment>{Locked}</comment>
@@ -135,6 +139,10 @@
   </data>
   <data name="AppStoreNameDev" xml:space="preserve">
     <value>Windows Terminal Dev</value>
+    <comment>{Locked}</comment>
+  </data>
+  <data name="AppStoreNameCan" xml:space="preserve">
+    <value>Windows Terminal Canary</value>
     <comment>{Locked}</comment>
   </data>
   <data name="AppStoreNamePre" xml:space="preserve">
@@ -149,6 +157,10 @@
     <value>Terminal Dev</value>
     <comment>{Locked}</comment>
   </data>
+  <data name="AppShortNameCan" xml:space="preserve">
+    <value>Terminal Canary</value>
+    <comment>{Locked}</comment>
+  </data>
   <data name="AppShortNamePre" xml:space="preserve">
     <value>Terminal Preview</value>
     <comment>{Locked}</comment>
@@ -159,6 +171,10 @@
   </data>
   <data name="AppDescriptionDev" xml:space="preserve">
     <value>The Windows Terminal, but Unofficial</value>
+    <comment>{Locked}</comment>
+  </data>
+  <data name="AppDescriptionCan" xml:space="preserve">
+    <value>The Windows Terminal (Canary build)</value>
     <comment>{Locked}</comment>
   </data>
   <data name="AppDescriptionPre" xml:space="preserve">
