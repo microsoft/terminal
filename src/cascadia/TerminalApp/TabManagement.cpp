@@ -1050,7 +1050,7 @@ namespace winrt::TerminalApp::implementation
                 const auto tabTitle = tab.Title();
                 autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
                                                 Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                                                fmt::format(std::wstring_view{ RS_(L"TerminalPage_TabMovedAnnouncement_Direction") }, tabTitle, newTabIndex),
+                                                fmt::format(std::wstring_view{ RS_(L"TerminalPage_TabMovedAnnouncement_Direction") }, tabTitle, newTabIndex + 1),
                                                 L"TerminalPageMoveTabWithDirection" /* unique name for this notification category */);
             }
         }
