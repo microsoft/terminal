@@ -8,7 +8,6 @@
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
 #include "Utils.h"
-#include <LibraryResources.h>
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
