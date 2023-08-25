@@ -2280,6 +2280,7 @@ YCast
 YCENTER
 YCount
 YDPI
+YLimit
 YOffset
 YSubstantial
 YVIRTUALSCREEN

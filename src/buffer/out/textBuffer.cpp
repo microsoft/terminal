@@ -2365,12 +2365,14 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
     til::CoordType newY = 0;
     til::CoordType newX = 0;
     til::CoordType newWidth = newBuffer.GetSize().Width();
+    til::CoordType newYLimit = til::CoordTypeMax;
+
     const auto oldHeight = std::max(lastRowWithText, oldCursorPos.y) + 1;
     const auto newHeight = newBuffer.GetSize().Height();
     const auto newWidthU16 = gsl::narrow_cast<uint16_t>(newWidth);
 
     // Copy oldBuffer into newBuffer until oldBuffer has been fully consumed.
-    for (; oldY < oldHeight; ++oldY)
+    for (; oldY < oldHeight && newY < newYLimit; ++oldY)
     {
         const auto& oldRow = oldBuffer.GetRowByOffset(oldY);
 
@@ -2400,7 +2402,7 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
 
             if (oldY == oldCursorPos.y)
             {
-                newCursorPos = { oldCursorPos.x, newY };
+                newCursorPos = { newRow.AdjustBackward(oldCursorPos.x), newY };
             }
             if (oldY >= mutableViewportTop)
             {
@@ -2419,7 +2421,17 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
 
         // Rows don't store any information for what column the last written character is in.
         // We simply truncate all trailing whitespace in this implementation.
-        const auto oldRowLimit = oldRow.MeasureRight();
+        auto oldRowLimit = oldRow.MeasureRight();
+        if (oldY == oldCursorPos.y)
+        {
+            // REFLOW_JANK_CURSOR_WRAP:
+            // Pretending as if there's always at least whitespace in front of the cursor has the benefit that
+            // * the cursor retains its distance from any preceding text.
+            // * when a client application starts writing on this new, empty line,
+            //   enlarging the buffer unwraps the text onto the preceding line.
+            oldRowLimit = std::max(oldRowLimit, oldCursorPos.x + 1);
+        }
+
         til::CoordType oldX = 0;
 
         // Copy oldRow into newBuffer until oldRow has been fully consumed.
@@ -2444,6 +2456,11 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
             // We don't need to be smart about this. Reset() is fast and shrinking doesn't occur often.
             if (newY >= newHeight && newX == 0)
             {
+                // We need to ensure not to overwrite the row the cursor is on.
+                if (newY >= newYLimit)
+                {
+                    break;
+                }
                 newBuffer.GetMutableRowByOffset(newY).Reset(newBuffer._initialAttributes);
             }
 
@@ -2466,7 +2483,10 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
 
             if (oldY == oldCursorPos.y && oldCursorPos.x >= oldX)
             {
-                newCursorPos = { newRow.AdjustForward(oldCursorPos.x - oldX + newX), newY };
+                // In theory AdjustBackward ensures we don't put the cursor on a trailing wide glyph.
+                // In practice I don't think that this can possibly happen. Better safe than sorry.
+                newCursorPos = { newRow.AdjustBackward(oldCursorPos.x - oldX + newX), newY };
+                newYLimit = newY + newHeight;
             }
             if (oldY >= mutableViewportTop)
             {
@@ -2505,44 +2525,17 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
         newAttr.resize_trailing_extent(newWidthU16);
     }
 
-    // This replicates the conhost behavior where the cursor is always
-    // within the buffer boundaries (= no delay wrap, etc.).
-    // In other words: If the cursor is out of bounds, we line-wrap it.
-    if (newCursorPos.x >= newWidth)
-    {
-        newBuffer.GetMutableRowByOffset(newCursorPos.y).SetWrapForced(true);
-        newCursorPos.x = 0;
-        newCursorPos.y++;
-
-        // If we line-wrap the cursor past the end of the buffer we need to circle the buffer, just like we do for text.
-        if (newCursorPos.y >= newY)
-        {
-            newBuffer.GetMutableRowByOffset(newY).Reset(newBuffer._initialAttributes);
-            newX = 0;
-            newY++;
-            // Fundamentally, newY is a past-the-end index (it equals the line count that we copied), whereas newCursorPos isn't.
-            // As such, the above if condition might as well been newCursorPos.y == newY. This assertion ensures the math is right.
-            assert(newCursorPos.y < newY);
-        }
-    }
-    // We recalculate newCursorPos.y relative to the end of the buffer, so that a
-    // cursor 10 lines above the end of the buffer stays 10 lines above the end.
-    // NOTE: If newCursorPos.y >= newHeight, then also newY > newHeight.
-    if (newCursorPos.y >= newHeight)
-    {
-        newCursorPos.y += newHeight - newY;
-        if (newCursorPos.y < 0)
-        {
-            newCursorPos = {};
-        }
-    }
-
     // Since we didn't use IncrementCircularBuffer() we need to compute the proper
     // _firstRow offset now, in a way that replicates IncrementCircularBuffer().
     // We need to do the same for newCursorPos.y for basically the same reason.
     if (newY > newHeight)
     {
         newBuffer._firstRow = newY % newHeight;
+        // _firstRow maps from API coordinates that always start at 0,0 in the top left corner of the
+        // terminal's scrollback, to the underlying buffer Y coordinate via `(y + _firstRow) % height`.
+        // Here, we need to un-map the `newCursorPos.y` from the underlying Y coordinate to the API coordinate
+        // and so we do `(y - _firstRow) % height`, but we add `+ newHeight` to avoid getting negative results.
+        newCursorPos.y = (newCursorPos.y - newBuffer._firstRow + newHeight) % newHeight;
     }
 
     newBuffer.CopyProperties(oldBuffer);
