@@ -860,6 +860,34 @@
     <value>Run as Administrator</value>
     <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
+    <value>Active pane moved to "{0}" tab</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Default" xml:space="preserve">
+    <value>"{0}" tab moved to "{1}" window</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window the tab was moved to.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>"{0}" tab moved to new window</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Direction" xml:space="preserve">
+    <value>"{0}" tab moved to position "{1}"</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the new tab index in the tab row.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow" xml:space="preserve">
+    <value>Active pane moved to "{0}" tab in "{1}" window</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to. {1} is the name of the window the pane was moved to.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>Active pane moved to new window</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new window.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewTab" xml:space="preserve">
+    <value>Active pane moved to new tab</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new tab within the existing window.</comment>
+  </data>
   <data name="CmdAppendCommandLineDesc" xml:space="preserve">
     <value>If set, the command will be appended to the profile's default command instead of replacing it.</value>
   </data>
