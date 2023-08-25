@@ -17,6 +17,7 @@
 
 #include "ControlCore.g.h"
 #include "SelectionColor.g.h"
+#include "CommandHistoryContext.g.h"
 #include "ControlSettings.h"
 #include "../../audio/midi/MidiAudio.hpp"
 #include "../../renderer/base/Renderer.hpp"
@@ -52,6 +53,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::property<til::color> Color;
         til::property<bool> IsIndex16;
+    };
+    struct CommandHistoryContext : CommandHistoryContextT<CommandHistoryContext>
+    {
+        til::property<Windows::Foundation::Collections::IVector<winrt::hstring>> History;
+        til::property<winrt::hstring> CurrentCommandline;
+
+        CommandHistoryContext(std::vector<winrt::hstring>&& history)
+        {
+            History(winrt::single_threaded_vector<winrt::hstring>(std::move(history)));
+        }
     };
 
     struct ControlCore : ControlCoreT<ControlCore>
@@ -194,9 +205,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);
 
-        void Search(const winrt::hstring& text,
-                    const bool goForward,
-                    const bool caseSensitive);
+        void Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
+        void ClearSearch();
 
         void LeftClickOnTerminal(const til::point terminalPosition,
                                  const int numberOfClicks,
@@ -213,6 +223,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetReadOnlyMode(const bool readOnlyState);
 
         hstring ReadEntireBuffer() const;
+        Control::CommandHistoryContext CommandHistory() const;
 
         static bool IsVintageOpacityAvailable() noexcept;
 
@@ -236,7 +247,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
-        WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
+        TYPED_EVENT(FontSizeChanged,           IInspectable, Control::FontSizeChangedArgs);
 
         TYPED_EVENT(CopyToClipboard,           IInspectable, Control::CopyToClipboardEventArgs);
         TYPED_EVENT(TitleChanged,              IInspectable, Control::TitleChangedEventArgs);
@@ -258,6 +269,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(ShowWindowChanged,         IInspectable, Control::ShowWindowArgs);
         TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
+        TYPED_EVENT(CompletionsChanged,        IInspectable, Control::CompletionsChangedEventArgs);
+
         TYPED_EVENT(CloseTerminalRequested,    IInspectable, IInspectable);
         TYPED_EVENT(RestartTerminalRequested,    IInspectable, IInspectable);
 
@@ -290,6 +303,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // (C++ class members are destroyed in reverse order.)
         std::unique_ptr<::Microsoft::Console::Render::IRenderEngine> _renderEngine{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
+
+        ::Search _searcher;
 
         winrt::handle _lastSwapChainHandle{ nullptr };
 
@@ -326,7 +341,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _setupDispatcherAndCallbacks();
 
         bool _setFontSizeUnderLock(float fontSize);
-        void _updateFont(const bool initialUpdate = false);
+        void _updateFont();
         void _refreshSizeUnderLock();
         void _updateSelectionUI();
         bool _shouldTryUpdateSelection(const WORD vkey);
@@ -347,6 +362,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalPlayMidiNote(const int noteNumber,
                                    const int velocity,
                                    const std::chrono::microseconds duration);
+
+        winrt::fire_and_forget _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
+
 #pragma endregion
 
         MidiAudio _midiAudio;

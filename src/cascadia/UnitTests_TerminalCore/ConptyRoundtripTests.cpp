@@ -2891,8 +2891,7 @@ void ConptyRoundtripTests::TestResizeWithCookedRead()
     m_state->PrepareReadHandle();
     // TODO GH#5618: This string will get mangled, but we don't really care
     // about the buffer contents in this test, so it doesn't really matter.
-    const std::string_view cookedReadContents{ "This is some cooked read data" };
-    m_state->PrepareCookedReadData(cookedReadContents);
+    m_state->PrepareCookedReadData(L"This is some cooked read data");
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());

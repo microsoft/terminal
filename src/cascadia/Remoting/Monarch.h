@@ -15,6 +15,7 @@
 //
 // * Release: {06171993-7eb1-4f3e-85f5-8bdd7386cce3}
 // * Preview: {04221993-7eb1-4f3e-85f5-8bdd7386cce3}
+// * Canary:  {09222022-7eb1-4f3e-85f5-8bdd7386cce3}
 // * Dev:     {08302020-7eb1-4f3e-85f5-8bdd7386cce3}
 constexpr GUID Monarch_clsid
 {
@@ -22,6 +23,8 @@ constexpr GUID Monarch_clsid
     0x06171993,
 #elif defined(WT_BRANDING_PREVIEW)
     0x04221993,
+#elif defined(WT_BRANDING_CANARY)
+    0x09222022,
 #else
     0x08302020,
 #endif
