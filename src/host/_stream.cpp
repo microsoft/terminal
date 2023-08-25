@@ -247,7 +247,7 @@ try
                     AdjustCursorPosition(screenInfo, pos, keepCursorVisible, psScrollY);
 
                     const auto y = cursor.GetPosition().y;
-                    auto& row = textBuffer.GetRowByOffset(y);
+                    auto& row = textBuffer.GetMutableRowByOffset(y);
 
                     pos.x = textBuffer.GetSize().RightExclusive();
                     pos.y = y;
@@ -408,7 +408,7 @@ try
                     pos.x = 0;
                 }
 
-                textBuffer.GetRowByOffset(pos.y).SetWrapForced(false);
+                textBuffer.GetMutableRowByOffset(pos.y).SetWrapForced(false);
                 pos.y = pos.y + 1;
                 AdjustCursorPosition(screenInfo, pos, keepCursorVisible, psScrollY);
                 continue;

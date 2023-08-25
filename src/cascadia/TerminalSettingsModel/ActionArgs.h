@@ -34,6 +34,7 @@
 #include "AddMarkArgs.g.h"
 #include "MoveTabArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
+#include "SuggestionsArgs.g.h"
 #include "FindMatchArgs.g.h"
 #include "NewWindowArgs.g.h"
 #include "PrevTabArgs.g.h"
@@ -214,6 +215,11 @@ private:                                                                    \
     X(CommandPaletteLaunchMode, LaunchMode, "launchMode", false, CommandPaletteLaunchMode::Action)
 
 ////////////////////////////////////////////////////////////////////////////////
+#define SUGGESTIONS_ARGS(X)                                                 \
+    X(SuggestionsSource, Source, "source", false, SuggestionsSource::Tasks) \
+    X(bool, UseCommandline, "useCommandline", false, false)
+
+////////////////////////////////////////////////////////////////////////////////
 #define FIND_MATCH_ARGS(X) \
     X(FindMatchDirection, Direction, "direction", args->Direction() == FindMatchDirection::None, FindMatchDirection::None)
 
@@ -303,6 +309,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ACTION_ARG(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
         ACTION_ARG(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
         ACTION_ARG(winrt::hstring, Profile, L"");
+        ACTION_ARG(bool, AppendCommandLine, false);
         ACTION_ARG(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, nullptr);
         ACTION_ARG(winrt::hstring, ColorScheme);
         ACTION_ARG(Windows::Foundation::IReference<bool>, Elevate, nullptr);
@@ -314,6 +321,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr std::string_view TabColorKey{ "tabColor" };
         static constexpr std::string_view ProfileIndexKey{ "index" };
         static constexpr std::string_view ProfileKey{ "profile" };
+        static constexpr std::string_view AppendCommandLineKey{ "appendCommandLine" };
         static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
         static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
         static constexpr std::string_view ElevateKey{ "elevate" };
@@ -334,6 +342,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                        otherAsUs->_TabColor == _TabColor &&
                        otherAsUs->_ProfileIndex == _ProfileIndex &&
                        otherAsUs->_Profile == _Profile &&
+                       otherAsUs->_AppendCommandLine == _AppendCommandLine &&
                        otherAsUs->_SuppressApplicationTitle == _SuppressApplicationTitle &&
                        otherAsUs->_ColorScheme == _ColorScheme &&
                        otherAsUs->_Elevate == _Elevate &&
@@ -709,6 +718,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS);
 
+    ACTION_ARGS_STRUCT(SuggestionsArgs, SUGGESTIONS_ARGS);
+
     ACTION_ARGS_STRUCT(FindMatchArgs, FIND_MATCH_ARGS);
 
     ACTION_ARGS_STRUCT(PrevTabArgs, PREV_TAB_ARGS);
@@ -836,6 +847,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(ClearBufferArgs);
     BASIC_FACTORY(MultipleActionsArgs);
     BASIC_FACTORY(AdjustOpacityArgs);
+    BASIC_FACTORY(SuggestionsArgs);
     BASIC_FACTORY(SelectCommandArgs);
     BASIC_FACTORY(SelectOutputArgs);
 }

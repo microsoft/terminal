@@ -64,6 +64,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _subcommands ? _subcommands.GetView() : nullptr;
     }
 
+    void Command::NestedCommands(const Windows::Foundation::Collections::IVectorView<Model::Command>& nested)
+    {
+        _subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+
+        for (const auto& n : nested)
+        {
+            _subcommands.Insert(n.Name(), n);
+        }
+    }
+
     // Function Description:
     // - reports if the current command has nested commands
     // - This CANNOT detect { "name": "foo", "commands": null }
@@ -726,6 +736,56 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // If we instead only got a single element back, just parse the root element.
             parseElement(root);
+        }
+
+        return winrt::single_threaded_vector<Model::Command>(std::move(result));
+    }
+
+    // Method description:
+    // * Convert the list of recent commands into a list of sendInput actions to
+    //   send those commands.
+    // * We'll give each command a "history" icon.
+    // * If directories is true, we'll prepend "cd " to each command, so that
+    //   the command will be run as a directory change instead.
+    IVector<Model::Command> Command::HistoryToCommands(IVector<winrt::hstring> history,
+                                                       winrt::hstring currentCommandline,
+                                                       bool directories)
+    {
+        std::wstring cdText = directories ? L"cd " : L"";
+        auto result = std::vector<Model::Command>();
+
+        // Use this map to discard duplicates.
+        std::unordered_map<std::wstring_view, bool> foundCommands{};
+
+        auto backspaces = std::wstring(currentCommandline.size(), L'\x7f');
+
+        // Iterate in reverse over the history, so that most recent commands are first
+        for (auto i = history.Size(); i > 0; i--)
+        {
+            const auto& element{ history.GetAt(i - 1) };
+            std::wstring_view line{ element };
+
+            if (line.empty())
+            {
+                continue;
+            }
+            if (foundCommands.contains(line))
+            {
+                continue;
+            }
+            auto args = winrt::make_self<SendInputArgs>(
+                winrt::hstring{ fmt::format(L"{}{}{}", cdText, backspaces, line) });
+
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
+
+            auto command = winrt::make_self<Command>();
+            command->_ActionAndArgs = actionAndArgs;
+            command->_name = winrt::hstring{ line };
+            command->_iconPath = directories ?
+                                     L"\ue8da" : // OpenLocal (a folder with an arrow pointing up)
+                                     L"\ue81c"; // History icon
+            result.push_back(*command);
+            foundCommands[line] = true;
         }
 
         return winrt::single_threaded_vector<Model::Command>(std::move(result));

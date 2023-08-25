@@ -7,7 +7,6 @@ ABCF
 abgr
 abi
 ABORTIFHUNG
-ACCESSTOKEN
 acidev
 ACIOSS
 ACover
@@ -117,10 +116,8 @@ binplace
 binplaced
 bitcoin
 bitcrazed
-bitflag
 bitmask
 BITOPERATION
-bitsets
 BKCOLOR
 BKGND
 Bksp
@@ -149,12 +146,12 @@ bufferout
 buffersize
 buflen
 buildtransitive
-BUILDURI
 burriter
 BValue
 bytebuffer
 cac
 cacafire
+CALLCONV
 capslock
 CARETBLINKINGENABLED
 CARRIAGERETURN
@@ -198,7 +195,6 @@ CHT
 Cic
 cielab
 Cielab
-Clcompile
 CLE
 cleartype
 CLICKACTIVE
@@ -229,7 +225,6 @@ codepage
 codepath
 codepoints
 coinit
-COLLECTIONURI
 colorizing
 COLORMATRIX
 COLORREFs
@@ -307,7 +302,6 @@ coordnew
 COPYCOLOR
 CORESYSTEM
 cotaskmem
-countof
 CPG
 cpinfo
 CPINFOEX
@@ -315,7 +309,6 @@ CPLINFO
 cplusplus
 CPPCORECHECK
 cppcorecheckrules
-cpprest
 cpprestsdk
 cppwinrt
 CProc
@@ -382,7 +375,6 @@ dai
 DATABLOCK
 DBatch
 dbcs
-DBCSCHAR
 DBCSFONT
 dbg
 DBGALL
@@ -504,7 +496,6 @@ devicecode
 Dext
 DFactory
 DFF
-dhandler
 dialogbox
 directio
 DIRECTX
@@ -522,7 +513,6 @@ dllmain
 DLLVERSIONINFO
 DLOAD
 DLOOK
-dmp
 DONTCARE
 doskey
 dotnet
@@ -600,7 +590,6 @@ eplace
 EPres
 EQU
 ERASEBKGND
-etcoreapp
 ETW
 EUDC
 EVENTID
@@ -642,7 +631,6 @@ FGs
 FILEDESCRIPTION
 FILESUBTYPE
 FILESYSPATH
-fileurl
 FILEW
 FILLATTR
 FILLCONSOLEOUTPUT
@@ -824,7 +812,6 @@ HIWORD
 HKCU
 hkey
 hkl
-HKLM
 hlocal
 hlsl
 HMB
@@ -832,7 +819,6 @@ HMK
 hmod
 hmodule
 hmon
-homeglyphs
 homoglyph
 HORZ
 hostable
@@ -920,6 +906,7 @@ INSERTMODE
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
 INTERNALNAME
+Interner
 intsafe
 INVALIDARG
 INVALIDATERECT
@@ -941,7 +928,6 @@ IUI
 IUnknown
 ivalid
 IWIC
-IXMP
 IXP
 jconcpp
 JOBOBJECT
@@ -965,7 +951,6 @@ kernelbasestaging
 KEYBDINPUT
 keychord
 keydown
-keyevent
 KEYFIRST
 KEYLAST
 Keymapping
@@ -1012,7 +997,6 @@ LINEWRAP
 LINKERRCAP
 LINKERROR
 linputfile
-listproperties
 listptr
 listptrsize
 lld
@@ -1131,7 +1115,6 @@ MIIM
 milli
 mincore
 mindbogglingly
-minimizeall
 minkernel
 MINMAXINFO
 minwin
@@ -1318,7 +1301,7 @@ onecoreuuid
 ONECOREWINDOWS
 onehalf
 oneseq
-ONLCR
+OOM
 openbash
 opencode
 opencon
@@ -1328,13 +1311,6 @@ openps
 openvt
 ORIGINALFILENAME
 osc
-OSCBG
-OSCCT
-OSCFG
-OSCRCC
-OSCSCB
-OSCSCC
-OSCWT
 OSDEPENDSROOT
 OSG
 OSGENG
@@ -1453,7 +1429,6 @@ PPEB
 ppf
 ppguid
 ppidl
-pplx
 PPROC
 ppropvar
 ppsi
@@ -1467,8 +1442,8 @@ prc
 prealigned
 prect
 prefast
+preflighting
 prefs
-preinstalled
 prepopulated
 presorted
 PREVENTPINNING
@@ -1481,7 +1456,6 @@ prioritization
 processenv
 processhost
 PROCESSINFOCLASS
-procs
 PROPERTYID
 PROPERTYKEY
 PROPERTYVAL
@@ -1496,7 +1470,6 @@ propvariant
 propvarutil
 psa
 PSECURITY
-pseudocode
 pseudoconsole
 pseudoterminal
 psh
@@ -1776,7 +1749,6 @@ SND
 SOLIDBOX
 Solutiondir
 somefile
-SOURCEBRANCH
 sourced
 spammy
 SRCCODEPAGE
@@ -1828,7 +1800,6 @@ SUBLANG
 subresource
 subsystemconsole
 subsystemwindows
-suiteless
 swapchain
 swapchainpanel
 swappable
@@ -1873,7 +1844,6 @@ tcommands
 Tdd
 TDelegated
 TDP
-TEAMPROJECT
 tearoff
 Teb
 Techo
@@ -1885,23 +1855,18 @@ terminalrenderdata
 TERMINALSCROLLING
 terminfo
 TEs
-testbuildplatform
 testcon
 testd
-testdlls
 testenv
 testlab
 testlist
 testmd
-testmode
 testname
-testnameprefix
 TESTNULL
 testpass
 testpasses
 testtestabc
 testtesttesttesttest
-testtimeout
 TEXCOORD
 texel
 TExpected
@@ -1929,7 +1894,6 @@ TJson
 TLambda
 TLDP
 TLEN
-Tlgdata
 TMAE
 TMPF
 TMult
@@ -1989,11 +1953,14 @@ UAC
 uap
 uapadmin
 UAX
+UBool
 ucd
 uch
+UChars
 udk
 UDM
 uer
+UError
 uget
 uia
 UIACCESS
@@ -2023,13 +1990,14 @@ unknwn
 UNORM
 unparseable
 unregistering
-untests
 untextured
 untimes
 UPDATEDISPLAY
 UPDOWN
 UPKEY
 UPSS
+uregex
+URegular
 usebackq
 USECALLBACK
 USECOLOR
@@ -2051,6 +2019,9 @@ USESIZE
 USESTDHANDLES
 usp
 USRDLL
+utext
+UText
+UTEXT
 utr
 UVWX
 UVWXY
@@ -2134,7 +2105,6 @@ WDDMCONSOLECONTEXT
 wdm
 webpage
 websites
-websockets
 wekyb
 wex
 wextest
@@ -2162,7 +2132,6 @@ windbg
 WINDEF
 windll
 WINDOWALPHA
-Windowbuffer
 windowdpiapi
 WINDOWEDGE
 windowext
@@ -2306,7 +2275,6 @@ xunit
 xutr
 XVIRTUALSCREEN
 XWalk
-xxyyzz
 yact
 YCast
 YCENTER

@@ -3650,7 +3650,7 @@ void _FillLine(til::point position, T fillContent, TextAttribute fillAttr)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
-    auto& row = si.GetTextBuffer().GetRowByOffset(position.y);
+    auto& row = si.GetTextBuffer().GetMutableRowByOffset(position.y);
     row.WriteCells({ fillContent, fillAttr }, position.x, false);
 }
 

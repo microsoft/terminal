@@ -96,17 +96,17 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // Focusing the ListView when the Command Palette control is set to Visible
-        // for the first time fails because the ListView hasn't finished loading by
-        // the time Focus is called. Luckily, We can listen to SizeChanged to know
-        // when the ListView has been measured out and is ready, and we'll immediately
-        // revoke the handler because we only needed to handle it once on initialization.
         _sizeChangedRevoker = _filteredActionsView().SizeChanged(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-            // This does only fire once, when the size changes, which is the
-            // very first time it's opened. It does not fire for subsequent
-            // openings.
-
-            _sizeChangedRevoker.revoke();
+            // When we're in BottomUp mode, we need to adjust our own position
+            // so that our bottom is aligned with our origin. This will ensure
+            // that as the menu changes in size (as we filter results), the menu
+            // stays "attached" to the cursor.
+            if (Visibility() == Visibility::Visible && _direction == TerminalApp::SuggestionsDirection::BottomUp)
+            {
+                auto m = this->Margin();
+                m.Top = (_anchor.Y - ActualHeight());
+                this->Margin(m);
+            }
         });
 
         _filteredActionsView().SelectionChanged({ this, &SuggestionsControl::_selectedCommandChanged });
@@ -584,7 +584,7 @@ namespace winrt::TerminalApp::implementation
             automationPeer.RaiseNotificationEvent(
                 Automation::Peers::AutomationNotificationKind::ActionCompleted,
                 Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
-                fmt::format(std::wstring_view{ RS_(L"CommandPalette_NestedCommandAnnouncement") }, ParentCommandName()),
+                fmt::format(std::wstring_view{ RS_(L"SuggestionsControl_NestedCommandAnnouncement") }, ParentCommandName()),
                 L"SuggestionsControlNestingLevelChanged" /* unique name for this notification category */);
         }
     }
@@ -725,10 +725,12 @@ namespace winrt::TerminalApp::implementation
         // here will ensure that we can check this case appropriately.
         _lastFilterTextWasEmpty = _searchBox().Text().empty();
 
+        const auto lastSelectedIndex = _filteredActionsView().SelectedIndex();
+
         _updateFilteredActions();
 
         // In the command line mode we want the user to explicitly select the command
-        _filteredActionsView().SelectedIndex(0);
+        _filteredActionsView().SelectedIndex(std::min<int32_t>(lastSelectedIndex, _filteredActionsView().Items().Size() - 1));
 
         const auto currentNeedleHasResults{ _filteredActions.Size() > 0 };
         _noMatchesText().Visibility(currentNeedleHasResults ? Visibility::Collapsed : Visibility::Visible);
@@ -738,7 +740,7 @@ namespace winrt::TerminalApp::implementation
                 Automation::Peers::AutomationNotificationKind::ActionCompleted,
                 Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
                 currentNeedleHasResults ?
-                    winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"CommandPalette_MatchesAvailable") }, _filteredActions.Size()) } :
+                    winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"SuggestionsControl_MatchesAvailable") }, _filteredActions.Size()) } :
                     NoMatchesText(), // what to announce if results were found
                 L"SuggestionsControlResultAnnouncement" /* unique name for this group of notifications */);
         }
@@ -781,9 +783,6 @@ namespace winrt::TerminalApp::implementation
 
     void SuggestionsControl::_switchToMode()
     {
-        const auto currentlyVisible{ Visibility() == Visibility::Visible };
-
-        auto modeAnnouncementResourceKey{ USES_RESOURCE(L"CommandPaletteModeAnnouncement_ActionMode") };
         ParsedCommandLineText(L"");
         _searchBox().Text(L"");
         _searchBox().Select(_searchBox().Text().size(), 0);
@@ -795,23 +794,9 @@ namespace winrt::TerminalApp::implementation
         // guarantees that the correct text is shown for the mode
         // whenever _switchToMode is called.
 
-        SearchBoxPlaceholderText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
-        NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
-        ControlName(RS_(L"CommandPaletteControlName"));
-        // modeAnnouncementResourceKey is already set to _ActionMode
-        // We did this above to deduce the type (and make it easier on ourselves later).
-
-        if (currentlyVisible)
-        {
-            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
-            {
-                automationPeer.RaiseNotificationEvent(
-                    Automation::Peers::AutomationNotificationKind::ActionCompleted,
-                    Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
-                    GetLibraryResourceString(modeAnnouncementResourceKey),
-                    L"SuggestionsControlModeSwitch" /* unique ID for this notification */);
-            }
-        }
+        SearchBoxPlaceholderText(RS_(L"SuggestionsControl_SearchBox/PlaceholderText"));
+        NoMatchesText(RS_(L"SuggestionsControl_NoMatchesText/Text"));
+        ControlName(RS_(L"SuggestionsControlName"));
 
         // The smooth remove/add animations that happen during
         // UpdateFilteredActions don't work very well when switching between
@@ -851,11 +836,13 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         }
-        if (_mode == SuggestionsMode::Palette)
-        {
-            // We want to present the commands sorted
-            std::sort(actions.begin(), actions.end(), FilteredCommand::Compare);
-        }
+
+        // No sorting in palette mode, so results are still filtered, but in the
+        // original order. This feels more right for something like
+        // recentCommands.
+        //
+        // This is in contrast to the Command Palette, which always sorts its
+        // actions.
 
         // Adjust the order of the results depending on if we're top-down or
         // bottom up. This way, the "first" / "best" match is always closest to
@@ -1002,7 +989,7 @@ namespace winrt::TerminalApp::implementation
 
                 if (dataTemplate == _itemTemplateSelector.NestedItemTemplate())
                 {
-                    const auto helpText = winrt::box_value(RS_(L"CommandPalette_MoreOptions/[using:Windows.UI.Xaml.Automation]AutomationProperties/HelpText"));
+                    const auto helpText = winrt::box_value(RS_(L"SuggestionsControl_MoreOptions/[using:Windows.UI.Xaml.Automation]AutomationProperties/HelpText"));
                     listViewItem.SetValue(Automation::AutomationProperties::HelpTextProperty(), helpText);
                 }
 
@@ -1049,6 +1036,7 @@ namespace winrt::TerminalApp::implementation
 
     void SuggestionsControl::Open(TerminalApp::SuggestionsMode mode,
                                   const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command>& commands,
+                                  winrt::hstring filter,
                                   Windows::Foundation::Point anchor,
                                   Windows::Foundation::Size space,
                                   float characterHeight)
@@ -1099,5 +1087,21 @@ namespace winrt::TerminalApp::implementation
             newMargin.Top = (_anchor.Y - actualSize.height);
         }
         Margin(newMargin);
+
+        _searchBox().Text(filter);
+
+        // If we're in bottom-up mode, make sure to re-select the _last_ item in
+        // the list, so that it's like we're starting with the most recent one
+        // selected.
+        if (_direction == TerminalApp::SuggestionsDirection::BottomUp)
+        {
+            const auto last = _filteredActionsView().Items().Size() - 1;
+            _filteredActionsView().SelectedIndex(last);
+        }
+        // Move the cursor to the very last position, so it starts immediately
+        // after the text. This is apparently done by starting a 0-wide
+        // selection starting at the end of the string.
+        _searchBox().Select(filter.size(), 0);
     }
+
 }

@@ -58,6 +58,12 @@ namespace Microsoft.Terminal.Control
         Boolean IsIndex16;
     };
 
+    [default_interface] runtimeclass CommandHistoryContext
+    {
+        IVector<String> History { get; };
+        String CurrentCommandline { get; };
+    };
+
     [default_interface] runtimeclass ControlCore : ICoreState
     {
         ControlCore(IControlSettings settings,
@@ -122,6 +128,7 @@ namespace Microsoft.Terminal.Control
         void ResumeRendering();
         void BlinkAttributeTick();
         void Search(String text, Boolean goForward, Boolean caseSensitive);
+        void ClearSearch();
         Microsoft.Terminal.Core.Color BackgroundColor { get; };
 
         SelectionData SelectionInfo { get; };
@@ -136,6 +143,7 @@ namespace Microsoft.Terminal.Control
         void EnablePainting();
 
         String ReadEntireBuffer();
+        CommandHistoryContext CommandHistory();
 
         void AdjustOpacity(Double Opacity, Boolean relative);
         void WindowVisibilityChanged(Boolean showOrHide);
@@ -158,7 +166,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
 
         // These events are always called from the UI thread (bugs aside)
-        event FontSizeChangedEventArgs FontSizeChanged;
+        event Windows.Foundation.TypedEventHandler<Object, FontSizeChangedArgs> FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> CursorPositionChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ConnectionStateChanged;

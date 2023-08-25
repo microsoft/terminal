@@ -361,7 +361,7 @@ class UiaTextRangeTests
         for (auto i = 0; i < _pTextBuffer->TotalRowCount() / 2; ++i)
         {
             const std::wstring_view glyph{ i % 2 == 0 ? L" " : L"X" };
-            auto& row = _pTextBuffer->GetRowByOffset(i);
+            auto& row = _pTextBuffer->GetMutableRowByOffset(i);
             const auto width = row.size();
 
             for (uint16_t x = 0; x < width; ++x)
@@ -489,7 +489,7 @@ class UiaTextRangeTests
         // Let's start by filling the text buffer with something useful:
         for (auto i = 0; i < _pTextBuffer->TotalRowCount(); ++i)
         {
-            auto& row = _pTextBuffer->GetRowByOffset(i);
+            auto& row = _pTextBuffer->GetMutableRowByOffset(i);
             const auto width = row.size();
 
             for (uint16_t x = 0; x < width; ++x)

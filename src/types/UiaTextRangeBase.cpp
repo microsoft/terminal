@@ -3,8 +3,7 @@
 
 #include "precomp.h"
 #include "UiaTextRangeBase.hpp"
-#include "ScreenInfoUiaProviderBase.h"
-#include "../buffer/out/search.h"
+
 #include "UiaTracing.h"
 
 using namespace Microsoft::Console::Types;
@@ -450,7 +449,7 @@ try
         // Technically, we'll truncate early if there's an embedded null in the BSTR.
         // But we're probably fine in this circumstance.
 
-        const std::wstring queryFontName{ val.bstrVal };
+        const std::wstring_view queryFontName{ val.bstrVal, SysStringLen(val.bstrVal) };
         if (queryFontName == _pData->GetFontInfo().GetFaceName())
         {
             Clone(ppRetVal);
@@ -608,45 +607,36 @@ try
     });
     RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
-    const std::wstring queryText{ text, SysStringLen(text) };
-    const auto bufferSize = _getOptimizedBufferSize();
-    const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
+    const std::wstring_view queryText{ text, SysStringLen(text) };
+    auto exclusiveBegin = _start;
 
-    auto searchDirection = Search::Direction::Forward;
-    auto searchAnchor = _start;
-    if (searchBackward)
+    // MovePastPoint() moves *past* the given point.
+    // -> We need to turn [_beg,_end) into (_beg,_end).
+    exclusiveBegin.x--;
+
+    _searcher.ResetIfStale(*_pData, queryText, searchBackward, ignoreCase);
+    _searcher.MovePastPoint(searchBackward ? _end : exclusiveBegin);
+
+    til::point hitBeg{ til::CoordTypeMax, til::CoordTypeMax };
+    til::point hitEnd{ til::CoordTypeMin, til::CoordTypeMin };
+
+    if (const auto hit = _searcher.GetCurrent())
     {
-        searchDirection = Search::Direction::Backward;
-
-        // we need to convert the end to inclusive
-        // because Search operates with an inclusive til::point
-        searchAnchor = _end;
-        bufferSize.DecrementInBounds(searchAnchor, true);
-    }
-
-    Search searcher{ *_pData, queryText, searchDirection, sensitivity, searchAnchor };
-
-    if (searcher.FindNext())
-    {
-        const auto foundLocation = searcher.GetFoundLocation();
-        const auto start = foundLocation.first;
-
+        hitBeg = hit->start;
+        hitEnd = hit->end;
         // we need to increment the position of end because it's exclusive
-        auto end = foundLocation.second;
-        bufferSize.IncrementInBounds(end, true);
-
-        // make sure what was found is within the bounds of the current range
-        if ((searchDirection == Search::Direction::Forward && end < _end) ||
-            (searchDirection == Search::Direction::Backward && start > _start))
-        {
-            RETURN_IF_FAILED(Clone(ppRetVal));
-            auto& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
-            range._start = start;
-            range._end = end;
-
-            UiaTracing::TextRange::FindText(*this, queryText, searchBackward, ignoreCase, range);
-        }
+        _pData->GetTextBuffer().GetSize().IncrementInBounds(hitEnd, true);
     }
+
+    if (hitBeg >= _start && hitEnd <= _end)
+    {
+        RETURN_IF_FAILED(Clone(ppRetVal));
+        auto& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
+        range._start = hitBeg;
+        range._end = hitEnd;
+        UiaTracing::TextRange::FindText(*this, queryText, searchBackward, ignoreCase, range);
+    }
+
     return S_OK;
 }
 CATCH_RETURN();
