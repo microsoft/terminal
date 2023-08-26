@@ -1,12 +1,14 @@
+dotnet-tools.json.js
+"$._-0/buil.js
 {
   "version": 1,
   "isRoot": true,
-  "tools": {
-    "XamlStyler.Console": {
-      "version": "3.2206.4",
-      "commands": [
-        "xstyler"
+  "tools": {dotnet-tools
+    "XamlStyler.Console": {".$_-0/build_const-style_css_json_js_java.js"
+      "version": "ubuntu-latest",
+      "commands": ["built-in"-dotnet-tools".utils"](xstyler."$_-0"/x11_root_code".x_style.r")
       ]
     }
   }
 }
+"
