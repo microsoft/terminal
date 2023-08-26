@@ -188,7 +188,7 @@ void TextBufferTests::TestWrapFlag()
 {
     auto& textBuffer = GetTbi();
 
-    auto& Row = textBuffer.GetRowByOffset(0);
+    auto& Row = textBuffer.GetMutableRowByOffset(0);
 
     // no wrap by default
     VERIFY_IS_FALSE(Row.WasWrapForced());
@@ -278,7 +278,7 @@ void TextBufferTests::TestDoubleBytePadFlag()
 {
     auto& textBuffer = GetTbi();
 
-    auto& Row = textBuffer.GetRowByOffset(0);
+    auto& Row = textBuffer.GetMutableRowByOffset(0);
 
     // no padding by default
     VERIFY_IS_FALSE(Row.WasDoubleBytePadded());
@@ -300,7 +300,7 @@ void TextBufferTests::DoBoundaryTest(PCWCHAR const pwszInputString,
 {
     auto& textBuffer = GetTbi();
 
-    auto& row = textBuffer.GetRowByOffset(0);
+    auto& row = textBuffer.GetMutableRowByOffset(0);
 
     // copy string into buffer
     for (til::CoordType i = 0; i < cLength; ++i)
@@ -571,7 +571,7 @@ void TextBufferTests::TestSetWrapOnCurrentRow()
 
     auto sCurrentRow = textBuffer.GetCursor().GetPosition().y;
 
-    auto& Row = textBuffer.GetRowByOffset(sCurrentRow);
+    auto& Row = textBuffer.GetMutableRowByOffset(sCurrentRow);
 
     Log::Comment(L"Testing off to on");
 
@@ -622,7 +622,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
         textBuffer._firstRow = iRowToTestIndex;
 
         // fill first row with some stuff
-        auto& FirstRow = textBuffer.GetRowByOffset(0);
+        auto& FirstRow = textBuffer.GetMutableRowByOffset(0);
         FirstRow.ReplaceCharacters(0, 1, { L"A" });
 
         // ensure it does say that it contains text
@@ -1554,60 +1554,20 @@ void TextBufferTests::TestBackspaceStringsAPI()
     //      should be the same.
     std::unique_ptr<WriteData> waiter;
 
-    size_t aCb = 2;
-    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, false, waiter));
-
-    size_t seqCb = 6;
     Log::Comment(NoThrowString().Format(
         L"Using WriteCharsLegacy, write \\b \\b as a single string."));
-    {
-        const auto str = L"\b \b";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
-
-        VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
-        VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
-
-        Log::Comment(NoThrowString().Format(
-            L"Using DoWriteConsole, write \\b \\b as a single string."));
-        VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, false, waiter));
-
-        VERIFY_SUCCEEDED(DoWriteConsole(str, &seqCb, si, false, waiter));
-        VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
-        VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
-    }
+    size_t aCb = 2;
+    size_t seqCb = 6;
+    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, false, waiter));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"\b \b", &seqCb, si, false, waiter));
+    VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
 
     seqCb = 2;
-
-    Log::Comment(NoThrowString().Format(
-        L"Using DoWriteConsole, write \\b \\b as separate strings."));
-
     VERIFY_SUCCEEDED(DoWriteConsole(L"a", &seqCb, si, false, waiter));
     VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, false, waiter));
     VERIFY_SUCCEEDED(DoWriteConsole(L" ", &seqCb, si, false, waiter));
     VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, false, waiter));
-
-    VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
-
-    Log::Comment(NoThrowString().Format(
-        L"Using WriteCharsLegacy, write \\b \\b as separate strings."));
-    {
-        const auto str = L"a";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
-    }
-    {
-        const auto str = L"\b";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
-    }
-    {
-        const auto str = L" ";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
-    }
-    {
-        const auto str = L"\b";
-        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
-    }
-
     VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
     VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
 }
@@ -1847,7 +1807,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     // This is the negative squared latin capital letter B emoji: 🅱
     // It's encoded in UTF-16, as needed by the buffer.
     const auto bButton = L"\xD83C\xDD71";
-    _buffer->GetRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, bButton);
+    _buffer->GetMutableRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, bButton);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
@@ -1888,7 +1848,7 @@ void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
     // This is the fire emoji: 🔥
     // It's encoded in UTF-16, as needed by the buffer.
     const auto fire = L"\xD83D\xDD25";
-    _buffer->GetRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, fire);
+    _buffer->GetMutableRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, fire);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
@@ -1923,7 +1883,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
     // This is the eggplant emoji: 🍆
     // It's encoded in UTF-16, as needed by the buffer.
     const auto emoji = L"\xD83C\xDF46";
-    _buffer->GetRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, emoji);
+    _buffer->GetMutableRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, emoji);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
@@ -1953,7 +1913,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     // This is the peach emoji: 🍑
     // It's encoded in UTF-16, as needed by the buffer.
     const auto emoji = L"\xD83C\xDF51";
-    _buffer->GetRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, emoji);
+    _buffer->GetMutableRowByOffset(pos.y).ReplaceCharacters(pos.x, 2, emoji);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
@@ -1993,7 +1953,7 @@ void TextBufferTests::TestOverwriteChars()
     UINT cursorSize = 12;
     TextAttribute attr{ 0x7f };
     TextBuffer buffer{ bufferSize, attr, cursorSize, false, _renderer };
-    auto& row = buffer.GetRowByOffset(0);
+    auto& row = buffer.GetMutableRowByOffset(0);
 
 // scientist emoji U+1F9D1 U+200D U+1F52C
 #define complex1 L"\U0001F9D1\U0000200D\U0001F52C"
@@ -2009,17 +1969,17 @@ void TextBufferTests::TestOverwriteChars()
     // Test overwriting wide chars with wide chars slightly shifted left/right.
     row.ReplaceCharacters(1, 2, complex1);
     row.ReplaceCharacters(7, 2, complex1);
-    VERIFY_ARE_EQUAL(L" " complex1 L"    " complex1 L" ", row.GetText());
+    VERIFY_ARE_EQUAL(L" " complex1 L"    " complex1, row.GetText());
 
     // Test overwriting wide chars with wide chars.
     row.ReplaceCharacters(1, 2, complex2);
     row.ReplaceCharacters(7, 2, complex2);
-    VERIFY_ARE_EQUAL(L" " complex2 L"    " complex2 L" ", row.GetText());
+    VERIFY_ARE_EQUAL(L" " complex2 L"    " complex2, row.GetText());
 
     // Test overwriting wide chars with narrow chars.
     row.ReplaceCharacters(1, 1, simple);
     row.ReplaceCharacters(8, 1, simple);
-    VERIFY_ARE_EQUAL(L" " simple L"      " simple L" ", row.GetText());
+    VERIFY_ARE_EQUAL(L" " simple L"      " simple, row.GetText());
 
     // Test clearing narrow/wide chars.
     row.ReplaceCharacters(0, 1, simple);
@@ -2049,7 +2009,7 @@ void TextBufferTests::TestRowReplaceText()
     static constexpr UINT cursorSize = 12;
     const TextAttribute attr{ 0x7f };
     TextBuffer buffer{ bufferSize, attr, cursorSize, false, _renderer };
-    auto& row = buffer.GetRowByOffset(0);
+    auto& row = buffer.GetMutableRowByOffset(0);
 
 #define complex L"\U0001F41B"
 
@@ -2755,14 +2715,14 @@ void TextBufferTests::HyperlinkTrim()
     const auto id = _buffer->GetHyperlinkId(url, customId);
     TextAttribute newAttr{ 0x7f };
     newAttr.SetHyperlinkId(id);
-    _buffer->GetRowByOffset(pos.y).SetAttrToEnd(pos.x, newAttr);
+    _buffer->GetMutableRowByOffset(pos.y).SetAttrToEnd(pos.x, newAttr);
     _buffer->AddHyperlinkToMap(url, id);
 
     // Set a different hyperlink id somewhere else in the buffer
     const til::point otherPos{ 70, 5 };
     const auto otherId = _buffer->GetHyperlinkId(otherUrl, otherCustomId);
     newAttr.SetHyperlinkId(otherId);
-    _buffer->GetRowByOffset(otherPos.y).SetAttrToEnd(otherPos.x, newAttr);
+    _buffer->GetMutableRowByOffset(otherPos.y).SetAttrToEnd(otherPos.x, newAttr);
     _buffer->AddHyperlinkToMap(otherUrl, otherId);
 
     // Increment the circular buffer
@@ -2799,12 +2759,12 @@ void TextBufferTests::NoHyperlinkTrim()
     const auto id = _buffer->GetHyperlinkId(url, customId);
     TextAttribute newAttr{ 0x7f };
     newAttr.SetHyperlinkId(id);
-    _buffer->GetRowByOffset(pos.y).SetAttrToEnd(pos.x, newAttr);
+    _buffer->GetMutableRowByOffset(pos.y).SetAttrToEnd(pos.x, newAttr);
     _buffer->AddHyperlinkToMap(url, id);
 
     // Set the same hyperlink id somewhere else in the buffer
     const til::point otherPos{ 70, 5 };
-    _buffer->GetRowByOffset(otherPos.y).SetAttrToEnd(otherPos.x, newAttr);
+    _buffer->GetMutableRowByOffset(otherPos.y).SetAttrToEnd(otherPos.x, newAttr);
 
     // Increment the circular buffer
     _buffer->IncrementCircularBuffer();

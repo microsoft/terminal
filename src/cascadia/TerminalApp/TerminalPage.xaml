@@ -175,6 +175,14 @@
                               PreviewKeyDown="_KeyDownHandler"
                               Visibility="Collapsed" />
 
+        <local:SuggestionsControl x:Name="SuggestionsElement"
+                                  Grid.Row="2"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Top"
+                                  x:Load="False"
+                                  PreviewKeyDown="_KeyDownHandler"
+                                  Visibility="Collapsed" />
+
         <!--
             A TeachingTip with IsLightDismissEnabled="True" will immediately
             dismiss itself if the window is unfocused (In Xaml Islands). This is
@@ -205,5 +213,11 @@
                          Text="{x:Bind WindowProperties.WindowName, Mode=OneWay}" />
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
+
+        <mux:TeachingTip x:Name="WindowCwdToast"
+                         x:Uid="WindowCwdToast"
+                         Title="{x:Bind WindowProperties.VirtualWorkingDirectory, Mode=OneWay}"
+                         x:Load="False"
+                         IsLightDismissEnabled="True" />
     </Grid>
 </Page>

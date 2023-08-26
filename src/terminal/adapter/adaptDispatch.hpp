@@ -139,6 +139,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool DoFinalTermAction(const std::wstring_view string) override;
 
+        bool DoVsCodeAction(const std::wstring_view string) override;
+
         StringHandler DownloadDRCS(const VTInt fontNumber,
                                    const VTParameter startChar,
                                    const DispatchTypes::DrcsEraseControl eraseControl,
@@ -297,12 +299,15 @@ namespace Microsoft::Console::VirtualTerminal
         size_t _SetRgbColorsHelper(const VTParameters options,
                                    TextAttribute& attr,
                                    const bool isForeground) noexcept;
+        void _SetRgbColorsHelperFromSubParams(const VTParameter colorItem,
+                                              const VTSubParameters options,
+                                              TextAttribute& attr) noexcept;
         size_t _ApplyGraphicsOption(const VTParameters options,
                                     const size_t optionIndex,
                                     TextAttribute& attr) noexcept;
-        void _ApplyGraphicsOptionSubParam(const VTParameter option,
-                                          const VTSubParameters subParams,
-                                          TextAttribute& attr) noexcept;
+        void _ApplyGraphicsOptionWithSubParams(const VTParameter option,
+                                               const VTSubParameters subParams,
+                                               TextAttribute& attr) noexcept;
         void _ApplyGraphicsOptions(const VTParameters options,
                                    TextAttribute& attr) noexcept;
 

@@ -449,6 +449,12 @@
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>
   </data>
+  <data name="SuggestionsCommandHistoryCommandKey" xml:space="preserve">
+    <value>Recent commands...</value>
+  </data>
+  <data name="SuggestionsCommandKey" xml:space="preserve">
+    <value>Open suggestions...</value>
+  </data>
   <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
     <value>Toggle command palette in command line mode</value>
   </data>
@@ -510,6 +516,9 @@
   </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>Rename window...</value>
+  </data>
+  <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
+    <value>Display Terminal's current working directory</value>
   </data>
   <data name="GlobalSummonCommandKey" xml:space="preserve">
     <value>Show/Hide the Terminal window</value>

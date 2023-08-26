@@ -193,7 +193,6 @@ void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
     const auto cursorSize = _mainBuffer->GetCursor().GetSize();
 
     ClearSelection();
-    _mainBuffer->ClearPatternRecognizers();
 
     // Create a new alt buffer
     _altBuffer = std::make_unique<TextBuffer>(_altBufferSize,
@@ -272,7 +271,6 @@ void Terminal::UseMainScreenBuffer()
     }
 
     // update all the hyperlinks on the screen
-    _mainBuffer->ClearPatternRecognizers();
     _updateUrlDetection();
 
     // GH#3321: Make sure we let the TerminalInput know that we switched
@@ -429,6 +427,14 @@ bool Terminal::IsVtInputEnabled() const noexcept
 void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/) noexcept
 {
     // This is only needed in conhost. Terminal handles accessibility in another way.
+}
+
+void Terminal::InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength)
+{
+    if (_pfnCompletionsChanged)
+    {
+        _pfnCompletionsChanged(menuJson, replaceLength);
+    }
 }
 
 void Terminal::NotifyBufferRotation(const int delta)
