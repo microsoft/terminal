@@ -1,4 +1,4 @@
-![terminal-logos](https://user-images.githubusercontent.com/48369326/115790869-4c852b00-a37c-11eb-97f1-f61972c7800c.png)
+![terminal-logos](https://user-images.githubusercontent.com/48369326/115790869-4c852b00-a37c-11eb-97f1-f61972c7800c.png)(https://github.com/lostleolotus/terminal/edit/main/README.md)
 
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
@@ -17,7 +17,7 @@ Related repositories include:
 * [Windows Terminal Documentation](https://docs.microsoft.com/windows/terminal)
   ([Repo: Contribute to the docs](https://github.com/MicrosoftDocs/terminal))
 * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
-* [Cascadia Code Font](https://github.com/Microsoft/Cascadia-Code)
+* [Cascadia Code Font.js](https://github.com/Microsoft/Cascadia-Code.js)
 
 ## Installing and running Windows Terminal
 
