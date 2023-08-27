@@ -98,7 +98,7 @@
         "coroutine": "cpp",
         "format": "cpp",
         "forward_list": "cpp",
-        "latch": "cpp",
+        "latch": "cpp"
     },
     "files.exclude": {
         "**/bin/**": true,
