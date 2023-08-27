@@ -309,6 +309,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ACTION_ARG(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
         ACTION_ARG(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
         ACTION_ARG(winrt::hstring, Profile, L"");
+        ACTION_ARG(bool, AppendCommandLine, false);
         ACTION_ARG(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, nullptr);
         ACTION_ARG(winrt::hstring, ColorScheme);
         ACTION_ARG(Windows::Foundation::IReference<bool>, Elevate, nullptr);
@@ -320,6 +321,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr std::string_view TabColorKey{ "tabColor" };
         static constexpr std::string_view ProfileIndexKey{ "index" };
         static constexpr std::string_view ProfileKey{ "profile" };
+        static constexpr std::string_view AppendCommandLineKey{ "appendCommandLine" };
         static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
         static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
         static constexpr std::string_view ElevateKey{ "elevate" };
@@ -340,6 +342,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                        otherAsUs->_TabColor == _TabColor &&
                        otherAsUs->_ProfileIndex == _ProfileIndex &&
                        otherAsUs->_Profile == _Profile &&
+                       otherAsUs->_AppendCommandLine == _AppendCommandLine &&
                        otherAsUs->_SuppressApplicationTitle == _SuppressApplicationTitle &&
                        otherAsUs->_ColorScheme == _ColorScheme &&
                        otherAsUs->_Elevate == _Elevate &&

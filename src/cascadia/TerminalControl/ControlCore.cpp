@@ -241,7 +241,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _setupDispatcherAndCallbacks();
         const auto actualNewSize = _actualFont.GetSize();
         // Bubble this up, so our new control knows how big we want the font.
-        _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, true);
+        _FontSizeChangedHandlers(*this, winrt::make<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height));
 
         // The renderer will be re-enabled in Initialize
 
@@ -344,7 +344,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
             // and react accordingly.
-            _updateFont(true);
+            _updateFont();
 
             const til::size windowSize{ til::math::rounding, windowWidth, windowHeight };
 
@@ -913,9 +913,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //      appropriately call _doResizeUnderLock after this method is called.
     // - The write lock should be held when calling this method.
     // Arguments:
-    // - initialUpdate: whether this font update should be considered as being
-    //   concerned with initialization process. Value forwarded to event handler.
-    void ControlCore::_updateFont(const bool initialUpdate)
+    // <none>
+    void ControlCore::_updateFont()
     {
         const auto newDpi = static_cast<int>(lrint(_compositionScale * USER_DEFAULT_SCREEN_DPI));
 
@@ -963,7 +962,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto actualNewSize = _actualFont.GetSize();
-        _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, initialUpdate);
+        _FontSizeChangedHandlers(*this, winrt::make<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height));
     }
 
     // Method Description:
@@ -1555,42 +1554,38 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - caseSensitive: boolean that represents if the current search is case sensitive
     // Return Value:
     // - <none>
-    void ControlCore::Search(const winrt::hstring& text,
-                             const bool goForward,
-                             const bool caseSensitive)
+    void ControlCore::Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
     {
-        if (text.size() == 0)
+        auto lock = _terminal->LockForWriting();
+
+        if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive))
         {
-            return;
+            _searcher.MovePastCurrentSelection();
+        }
+        else
+        {
+            _searcher.FindNext();
         }
 
-        const auto direction = goForward ?
-                                   Search::Direction::Forward :
-                                   Search::Direction::Backward;
-
-        const auto sensitivity = caseSensitive ?
-                                     Search::Sensitivity::CaseSensitive :
-                                     Search::Sensitivity::CaseInsensitive;
-
-        ::Search search(*GetRenderData(), text.c_str(), direction, sensitivity);
-        auto lock = _terminal->LockForWriting();
-        const auto foundMatch{ search.FindNext() };
+        const auto foundMatch = _searcher.SelectCurrent();
         if (foundMatch)
         {
-            _terminal->SetBlockSelection(false);
-            search.Select();
-
             // this is used for search,
             // DO NOT call _updateSelectionUI() here.
             // We don't want to show the markers so manually tell it to clear it.
+            _terminal->SetBlockSelection(false);
             _renderer->TriggerSelection();
             _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
         }
 
         // Raise a FoundMatch event, which the control will use to notify
         // narrator if there was any results in the buffer
-        auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(foundMatch);
-        _FoundMatchHandlers(*this, *foundResults);
+        _FoundMatchHandlers(*this, winrt::make<implementation::FoundResultsArgs>(foundMatch));
+    }
+
+    void ControlCore::ClearSearch()
+    {
+        _searcher = {};
     }
 
     void ControlCore::Close()

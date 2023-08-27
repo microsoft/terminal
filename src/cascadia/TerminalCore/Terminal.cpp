@@ -9,7 +9,9 @@
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/colorTable.hpp"
 #include "../../buffer/out/search.h"
+#include "../../buffer/out/UTextAdapter.h"
 
+#include <til/hash.h>
 #include <winrt/Microsoft.Terminal.Core.h>
 
 using namespace winrt::Microsoft::Terminal::Core;
@@ -111,7 +113,6 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     if (_mainBuffer)
     {
         // Clear the patterns first
-        _mainBuffer->ClearPatternRecognizers();
         _detectURLs = settings.DetectURLs();
         _updateUrlDetection();
     }
@@ -569,7 +570,7 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
     {
         // Hyperlink is outside of the current view.
         // We need to find if there's a pattern at that location.
-        const auto patterns = _activeBuffer().GetPatterns(bufferPos.y, bufferPos.y);
+        const auto patterns = _getPatterns(bufferPos.y, bufferPos.y);
 
         // NOTE: patterns is stored with top y-position being 0,
         //       so we need to cleverly set the y-pos to 0.
@@ -1208,9 +1209,8 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 // - INVARIANT: this function can only be called if the caller has the writing lock on the terminal
 void Terminal::UpdatePatternsUnderLock()
 {
-    auto oldTree = _patternIntervalTree;
-    _patternIntervalTree = _activeBuffer().GetPatterns(_VisibleStartIndex(), _VisibleEndIndex());
-    _InvalidatePatternTree(oldTree);
+    _InvalidatePatternTree(_patternIntervalTree);
+    _patternIntervalTree = _getPatterns(_VisibleStartIndex(), _VisibleEndIndex());
     _InvalidatePatternTree(_patternIntervalTree);
 }
 
@@ -1337,15 +1337,109 @@ void Terminal::_updateUrlDetection()
 {
     if (_detectURLs)
     {
-        // Add regex pattern recognizers to the buffer
-        // For now, we only add the URI regex pattern
-        _hyperlinkPatternId = _activeBuffer().AddPatternRecognizer(linkPattern);
         UpdatePatternsUnderLock();
     }
     else
     {
         ClearPatternTree();
     }
+}
+
+struct URegularExpressionInterner
+{
+    // Interns (caches) URegularExpression instances so that they can be reused. This method is thread-safe.
+    // uregex_open is not terribly expensive at ~10us/op, but it's also much more expensive than uregex_clone
+    // at ~400ns/op and would effectively double the time it takes to scan the viewport for patterns.
+    //
+    // An alternative approach would be to not make this method thread-safe and give each
+    // Terminal instance its own cache. I'm not sure which approach would have been better.
+    ICU::unique_uregex Intern(const std::wstring_view& pattern)
+    {
+        UErrorCode status = U_ZERO_ERROR;
+
+        {
+            const auto guard = _lock.lock_shared();
+            if (const auto it = _cache.find(pattern); it != _cache.end())
+            {
+                return ICU::unique_uregex{ uregex_clone(it->second.re.get(), &status) };
+            }
+        }
+
+        // Even if the URegularExpression creation failed, we'll insert it into the cache, because there's no point in retrying.
+        // (Apart from OOM but in that case this application will crash anyways in 3.. 2.. 1..)
+        auto re = ICU::CreateRegex(pattern, 0, &status);
+        ICU::unique_uregex clone{ uregex_clone(re.get(), &status) };
+        std::wstring key{ pattern };
+
+        const auto guard = _lock.lock_exclusive();
+
+        _cache.insert_or_assign(std::move(key), CacheValue{ std::move(re), _totalInsertions });
+        _totalInsertions++;
+
+        // If the cache is full remove the oldest element (oldest = lowest generation, just like with humans).
+        if (_cache.size() > cacheSizeLimit)
+        {
+            _cache.erase(std::min_element(_cache.begin(), _cache.end(), [](const auto& it, const auto& smallest) {
+                return it.second.generation < smallest.second.generation;
+            }));
+        }
+
+        return clone;
+    }
+
+private:
+    struct CacheValue
+    {
+        ICU::unique_uregex re;
+        size_t generation = 0;
+    };
+
+    struct CacheKeyHasher
+    {
+        using is_transparent = void;
+
+        std::size_t operator()(const std::wstring_view& str) const noexcept
+        {
+            return til::hash(str);
+        }
+    };
+
+    static constexpr size_t cacheSizeLimit = 128;
+    wil::srwlock _lock;
+    std::unordered_map<std::wstring, CacheValue, CacheKeyHasher, std::equal_to<>> _cache;
+    size_t _totalInsertions = 0;
+};
+
+static URegularExpressionInterner uregexInterner;
+
+PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
+{
+    static constexpr std::array<std::wstring_view, 1> patterns{
+        LR"(\b(?:https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])",
+    };
+
+    auto text = ICU::UTextFromTextBuffer(_activeBuffer(), beg, end + 1);
+    UErrorCode status = U_ZERO_ERROR;
+    PointTree::interval_vector intervals;
+
+    for (size_t i = 0; i < patterns.size(); ++i)
+    {
+        const auto re = uregexInterner.Intern(patterns.at(i));
+        uregex_setUText(re.get(), &text, &status);
+
+        if (uregex_find(re.get(), -1, &status))
+        {
+            do
+            {
+                auto range = ICU::BufferRangeFromMatch(&text, re.get());
+                // PointTree uses half-open ranges.
+                range.end.x++;
+                intervals.push_back(PointTree::interval(range.start, range.end, 0));
+            } while (uregex_findNext(re.get(), &status));
+        }
+    }
+
+    return PointTree{ std::move(intervals) };
 }
 
 // NOTE: This is the version of AddMark that comes from the UI. The VT api call into this too.
@@ -1463,31 +1557,37 @@ std::wstring_view Terminal::CurrentCommand() const
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
 {
+    const auto colorSelection = [this](const til::point coordStart, const til::point coordEnd, const TextAttribute& attr) {
+        auto& textBuffer = _activeBuffer();
+        const auto spanLength = textBuffer.SpanLength(coordStart, coordEnd);
+        textBuffer.Write(OutputCellIterator(attr, spanLength), coordStart);
+    };
+
     for (const auto [start, end] : _GetSelectionSpans())
     {
         try
         {
             if (matchMode == winrt::Microsoft::Terminal::Core::MatchMode::None)
             {
-                ColorSelection(start, end, attr);
+                colorSelection(start, end, attr);
             }
             else if (matchMode == winrt::Microsoft::Terminal::Core::MatchMode::All)
             {
-                const auto textBuffer = _activeBuffer().GetPlainText(start, end);
-                std::wstring_view text{ textBuffer };
+                const auto& textBuffer = _activeBuffer();
+                const auto text = textBuffer.GetPlainText(start, end);
+                std::wstring_view textView{ text };
 
                 if (IsBlockSelection())
                 {
-                    text = Utils::TrimPaste(text);
+                    textView = Utils::TrimPaste(textView);
                 }
 
-                if (!text.empty())
+                if (!textView.empty())
                 {
-                    Search search(*this, text, Search::Direction::Forward, Search::Sensitivity::CaseInsensitive, { 0, 0 });
-
-                    while (search.FindNext())
+                    const auto hits = textBuffer.SearchText(textView, true);
+                    for (const auto& s : hits)
                     {
-                        search.Color(attr);
+                        colorSelection(s.start, s.end, attr);
                     }
                 }
             }
