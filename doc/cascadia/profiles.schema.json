@@ -2706,7 +2706,7 @@
         },
         "experimental.showMarksOnScrollbar": {
           "default": false,
-          "description": "dragons flying high in the sky",
+          "description": "When set to true, marks added to the buffer via the addMark action will appear on the scrollbar.",
           "type": "boolean"
         },
         "experimental.pixelShaderPath": {
