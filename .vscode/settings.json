@@ -99,8 +99,6 @@
         "format": "cpp",
         "forward_list": "cpp",
         "latch": "cpp",
-        "any": "cpp",
-        "ranges": "cpp"
     },
     "files.exclude": {
         "**/bin/**": true,
