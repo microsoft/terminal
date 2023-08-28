@@ -25,6 +25,7 @@ class Search final
 public:
     Search() = default;
 
+    bool ResetIfStale(Microsoft::Console::Render::IRenderData& renderData);
     bool ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive);
 
     void MovePastCurrentSelection();
@@ -36,6 +37,7 @@ public:
 
     const std::vector<til::point_span>& Results() const noexcept;
     size_t CurrentMatch() const noexcept;
+    bool CurrentDirection() const noexcept;
 
 private:
     // _renderData is a pointer so that Search() is constexpr default constructable.

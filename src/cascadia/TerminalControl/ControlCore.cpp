@@ -1570,10 +1570,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderer->TriggerSelection();
             _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
 
-            _terminal->AlwaysNotifyOnBufferRotation(true);
-
             foundResults->TotalMatches(gsl::narrow<int32_t>(_searcher.Results().size()));
             foundResults->CurrentMatch(gsl::narrow<int32_t>(_searcher.CurrentMatch()));
+
+            _terminal->AlwaysNotifyOnBufferRotation(true);
         }
 
         // Raise a FoundMatch event, which the control will use to notify
@@ -1583,6 +1583,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
     {
+        auto lock = _terminal->LockForWriting();
+        _searcher.ResetIfStale(*GetRenderData());
+
         auto results = std::vector<int32_t>();
 
         // use a map to remove duplicates

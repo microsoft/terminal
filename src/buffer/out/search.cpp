@@ -8,6 +8,14 @@
 
 using namespace Microsoft::Console::Types;
 
+bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData)
+{
+    return ResetIfStale(renderData,
+                        _needle,
+                        _step == -1, // this is the opposite of the initializer below
+                        _caseInsensitive);
+}
+
 bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive)
 {
     const auto& textBuffer = renderData.GetTextBuffer();

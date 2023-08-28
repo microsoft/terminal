@@ -330,15 +330,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 drawPip(m.Start.Y, false, brush);
             }
 
-            const auto searchMatches{ _core.SearchResultRows() };
-            if (searchMatches.Size() > 0 && _searchBox->Visibility() == Visibility::Visible)
+            if (_searchBox)
             {
-                const til::color fgColor{ _core.ForegroundColor() };
-                Media::SolidColorBrush searchMarkBrush{};
-                searchMarkBrush.Color(fgColor);
-                for (const auto m : searchMatches)
+                const auto searchMatches{ _core.SearchResultRows() };
+                if (searchMatches.Size() > 0 && _searchBox->Visibility() == Visibility::Visible)
                 {
-                    drawPip(m, true, searchMarkBrush);
+                    const til::color fgColor{ _core.ForegroundColor() };
+                    Media::SolidColorBrush searchMarkBrush{};
+                    searchMarkBrush.Color(fgColor);
+                    for (const auto m : searchMatches)
+                    {
+                        drawPip(m, true, searchMarkBrush);
+                    }
                 }
             }
         }
