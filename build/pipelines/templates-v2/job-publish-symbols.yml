@@ -14,6 +14,9 @@ parameters:
   - name: jobName
     type: string
     default: PublishSymbols
+  - name: symbolExpiryTime
+    type: string
+    default: 36530 # This is the default from PublishSymbols@2
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -55,6 +58,7 @@ jobs:
       SymbolServerType: 'TeamServices'
       SymbolsProduct: 'Windows Terminal Converged Symbols'
       SymbolsVersion: '$(XES_APPXMANIFESTVERSION)'
+      SymbolExpirationInDays: ${{ parameters.symbolExpiryTime }}
     env:
       LIB: $(Build.SourcesDirectory)
 
@@ -71,6 +75,7 @@ jobs:
         SymbolServerType: 'TeamServices'
         SymbolsProduct: 'Windows Terminal Converged Symbols'
         SymbolsVersion: '$(XES_APPXMANIFESTVERSION)'
+        SymbolExpirationInDays: ${{ parameters.symbolExpiryTime }}
         # The ADO task does not support indexing of GitHub sources.
       # There is a bug which causes this task to fail if LIB includes an inaccessible path (even though it does not depend on it).
       # To work around this issue, we just force LIB to be any dir that we know exists.

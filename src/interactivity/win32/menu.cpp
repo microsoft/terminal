@@ -507,13 +507,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
         if (coordBuffer.width != coordScreenBufferSize.width ||
             coordBuffer.height != coordScreenBufferSize.height)
         {
-            const auto pCommandLine = &CommandLine::Instance();
-
-            pCommandLine->Hide(FALSE);
-
             LOG_IF_FAILED(ScreenInfo.ResizeScreenBuffer(coordBuffer, TRUE));
-
-            pCommandLine->Show();
         }
 
         // Finally, restrict window size to the maximum possible size for the given buffer now that it's processed.

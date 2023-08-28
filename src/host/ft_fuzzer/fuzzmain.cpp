@@ -3,15 +3,13 @@
 
 #include "precomp.h"
 
+#include <til/u8u16convert.h>
+
 #include "../ConsoleArguments.hpp"
 #include "../srvinit.h"
-#include "../../server/Entrypoints.h"
-#include "../../interactivity/inc/ServiceLocator.hpp"
-#include "../../server/DeviceHandle.h"
-#include "../../server/IoThread.h"
 #include "../_stream.h"
-#include "../getset.h"
-#include <til/u8u16convert.h>
+#include "../../interactivity/inc/ServiceLocator.hpp"
+#include "../../server/IoThread.h"
 
 struct NullDeviceComm : public IDeviceComm
 {
@@ -132,17 +130,8 @@ extern "C" __declspec(dllexport) int LLVMFuzzerTestOneInput(const uint8_t* data,
 
     const auto u16String{ til::u8u16(std::string_view{ reinterpret_cast<const char*>(data), size }) };
     til::CoordType scrollY{};
-    auto sizeInBytes{ u16String.size() * 2 };
     gci.LockConsole();
     auto u = wil::scope_exit([&]() { gci.UnlockConsole(); });
-    (void)WriteCharsLegacy(gci.GetActiveOutputBuffer(),
-                           u16String.data(),
-                           u16String.data(),
-                           u16String.data(),
-                           &sizeInBytes,
-                           nullptr,
-                           0,
-                           WC_INTERACTIVE | WC_KEEP_CURSOR_VISIBLE,
-                           &scrollY);
+    WriteCharsLegacy(gci.GetActiveOutputBuffer(), u16String, true, &scrollY);
     return 0;
 }
