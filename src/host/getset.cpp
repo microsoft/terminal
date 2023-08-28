@@ -598,13 +598,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         const auto requestedBufferSize = til::wrap_coord_size(data.dwSize);
         if (requestedBufferSize != coordScreenBufferSize)
         {
-            auto& commandLine = CommandLine::Instance();
-
-            commandLine.Hide(FALSE);
-
             LOG_IF_FAILED(context.ResizeScreenBuffer(requestedBufferSize, TRUE));
-
-            commandLine.Show();
         }
         const auto newBufferSize = context.GetBufferSize().Dimensions();
 
@@ -655,15 +649,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         if (NewSize.width != context.GetViewport().Width() ||
             NewSize.height != context.GetViewport().Height())
         {
-            // GH#1856 - make sure to hide the commandline _before_ we execute
-            // the resize, and the re-display it after the resize. If we leave
-            // it displayed, we'll crash during the resize when we try to figure
-            // out if the bounds of the old commandline fit within the new
-            // window (it might not).
-            auto& commandLine = CommandLine::Instance();
-            commandLine.Hide(FALSE);
             context.SetViewportSize(&NewSize);
-            commandLine.Show();
 
             const auto pWindow = ServiceLocator::LocateConsoleWindow();
             if (pWindow != nullptr)

@@ -266,6 +266,7 @@ static constexpr UTextFuncs utextFuncs{
 // Creates a UText from the given TextBuffer that spans rows [rowBeg,RowEnd).
 UText Microsoft::Console::ICU::UTextFromTextBuffer(const TextBuffer& textBuffer, til::CoordType rowBeg, til::CoordType rowEnd) noexcept
 {
+#pragma warning(suppress : 26477) // Use 'nullptr' rather than 0 or NULL (es.47).
     UText ut = UTEXT_INITIALIZER;
     ut.providerProperties = (1 << UTEXT_PROVIDER_LENGTH_IS_EXPENSIVE) | (1 << UTEXT_PROVIDER_STABLE_CHUNKS);
     ut.pFuncs = &utextFuncs;

@@ -24,10 +24,15 @@ class Search final
 {
 public:
     Search() = default;
-    Search(Microsoft::Console::Render::IRenderData& renderData, std::wstring_view str, bool reverse, bool caseInsensitive);
 
-    bool IsStale() const noexcept;
-    bool SelectNext();
+    bool ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive);
+
+    void MovePastCurrentSelection();
+    void MovePastPoint(til::point anchor) noexcept;
+    void FindNext() noexcept;
+
+    const til::point_span* GetCurrent() const noexcept;
+    bool SelectCurrent() const;
 
     const std::vector<til::point_span>& Results() const noexcept;
     size_t CurrentMatch() const noexcept;
@@ -35,8 +40,12 @@ public:
 private:
     // _renderData is a pointer so that Search() is constexpr default constructable.
     Microsoft::Console::Render::IRenderData* _renderData = nullptr;
+    std::wstring_view _needle;
+    bool _reverse = false;
+    bool _caseInsensitive = false;
+    uint64_t _lastMutationId = 0;
+
     std::vector<til::point_span> _results;
     ptrdiff_t _index = 0;
     ptrdiff_t _step = 0;
-    uint64_t _lastMutationId = 0;
 };

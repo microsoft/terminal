@@ -8,81 +8,100 @@
 
 using namespace Microsoft::Console::Types;
 
-// Routine Description:
-// - Constructs a Search object.
-// - Make a Search object then call .FindNext() to locate items.
-// - Once you've found something, you can perform actions like .Select() or .Color()
-// Arguments:
-// - textBuffer - The screen text buffer to search through (the "haystack")
-// - renderData - The IRenderData type reference, it is for providing selection methods
-// - str - The search term you want to find (the "needle")
-// - reverse - True when searching backward/upwards in the buffer
-// - caseInsensitive - As the name indicates: case insensitivity
-Search::Search(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view str, bool reverse, bool caseInsensitive) :
-    _renderData{ &renderData },
-    _step{ reverse ? -1 : 1 }
+bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive)
 {
-    const auto& textBuffer = _renderData->GetTextBuffer();
+    const auto& textBuffer = renderData.GetTextBuffer();
+    const auto lastMutationId = textBuffer.GetLastMutationId();
 
-    _results = textBuffer.SearchText(str, caseInsensitive);
-    _lastMutationId = textBuffer.GetLastMutationId();
+    if (_needle == needle &&
+        _reverse == reverse &&
+        _caseInsensitive == caseInsensitive &&
+        _lastMutationId == lastMutationId)
+    {
+        return false;
+    }
 
+    _renderData = &renderData;
+    _needle = needle;
+    _reverse = reverse;
+    _caseInsensitive = caseInsensitive;
+    _lastMutationId = lastMutationId;
+
+    _results = textBuffer.SearchText(needle, caseInsensitive);
+    _index = reverse ? gsl::narrow_cast<ptrdiff_t>(_results.size()) - 1 : 0;
+    _step = reverse ? -1 : 1;
+
+    return true;
+}
+
+void Search::MovePastCurrentSelection()
+{
+    if (_renderData->IsSelectionActive())
+    {
+        MovePastPoint(_renderData->GetTextBuffer().ScreenToBufferPosition(_renderData->GetSelectionAnchor()));
+    }
+}
+
+void Search::MovePastPoint(const til::point anchor) noexcept
+{
     if (_results.empty())
     {
         return;
     }
 
-    const auto highestIndex = gsl::narrow_cast<ptrdiff_t>(_results.size()) - 1;
-    auto firstIndex = reverse ? highestIndex : 0;
+    const auto count = gsl::narrow_cast<ptrdiff_t>(_results.size());
+    const auto highestIndex = count - 1;
+    auto index = _reverse ? highestIndex : 0;
 
-    if (_renderData->IsSelectionActive())
+    if (_reverse)
     {
-        const auto anchor = textBuffer.ScreenToBufferPosition(_renderData->GetSelectionAnchor());
-        if (reverse)
+        for (; index >= 0 && til::at(_results, index).start >= anchor; --index)
         {
-            for (; firstIndex >= 0 && til::at(_results, firstIndex).start >= anchor; --firstIndex)
-            {
-            }
         }
-        else
+    }
+    else
+    {
+        for (; index <= highestIndex && til::at(_results, index).start <= anchor; ++index)
         {
-            for (; firstIndex <= highestIndex && til::at(_results, firstIndex).start <= anchor; ++firstIndex)
-            {
-            }
         }
     }
 
-    // We reverse the _index by 1 so that the first call to FindNext() moves it to the firstIndex we found.
-    _index = firstIndex - _step;
+    _index = (index + count) % count;
 }
 
-bool Search::IsStale() const noexcept
+void Search::FindNext() noexcept
 {
-    return !_renderData || _renderData->GetTextBuffer().GetLastMutationId() != _lastMutationId;
+    const auto count = gsl::narrow_cast<ptrdiff_t>(_results.size());
+    _index = (_index + _step + count) % count;
+}
+
+const til::point_span* Search::GetCurrent() const noexcept
+{
+    const auto index = gsl::narrow_cast<size_t>(_index);
+    if (index < _results.size())
+    {
+        return &til::at(_results, index);
+    }
+    return nullptr;
 }
 
 // Routine Description:
 // - Takes the found word and selects it in the screen buffer
-bool Search::SelectNext()
+
+bool Search::SelectCurrent() const
 {
-    if (_results.empty())
+    if (const auto s = GetCurrent())
     {
-        return false;
+        // Convert buffer selection offsets into the equivalent screen coordinates
+        // required by SelectNewRegion, taking line renditions into account.
+        const auto& textBuffer = _renderData->GetTextBuffer();
+        const auto selStart = textBuffer.BufferToScreenPosition(s->start);
+        const auto selEnd = textBuffer.BufferToScreenPosition(s->end);
+        _renderData->SelectNewRegion(selStart, selEnd);
+        return true;
     }
 
-    const auto count = gsl::narrow_cast<ptrdiff_t>(_results.size());
-    const auto& textBuffer = _renderData->GetTextBuffer();
-
-    _index = (_index + _step + count) % count;
-
-    const auto& s = til::at(_results, _index);
-    // Convert buffer selection offsets into the equivalent screen coordinates
-    // required by SelectNewRegion, taking line renditions into account.
-    const auto selStart = textBuffer.BufferToScreenPosition(s.start);
-    const auto selEnd = textBuffer.BufferToScreenPosition(s.end);
-
-    _renderData->SelectNewRegion(selStart, selEnd);
-    return true;
+    return false;
 }
 
 const std::vector<til::point_span>& Search::Results() const noexcept

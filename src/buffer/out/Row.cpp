@@ -1034,14 +1034,12 @@ std::wstring_view ROW::GetText(til::CoordType columnBegin, til::CoordType column
 
 til::CoordType ROW::GetLeadingColumnAtCharOffset(const ptrdiff_t offset) const noexcept
 {
-    auto mapper = _createCharToColumnMapper(offset);
-    return mapper.GetLeadingColumnAt(offset);
+    return _createCharToColumnMapper(offset).GetLeadingColumnAt(offset);
 }
 
 til::CoordType ROW::GetTrailingColumnAtCharOffset(const ptrdiff_t offset) const noexcept
 {
-    auto mapper = _createCharToColumnMapper(offset);
-    return mapper.GetTrailingColumnAt(offset);
+    return _createCharToColumnMapper(offset).GetTrailingColumnAt(offset);
 }
 
 DelimiterClass ROW::DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept

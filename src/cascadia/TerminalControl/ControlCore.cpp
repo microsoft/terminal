@@ -244,7 +244,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _setupDispatcherAndCallbacks();
         const auto actualNewSize = _actualFont.GetSize();
         // Bubble this up, so our new control knows how big we want the font.
-        _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, true);
+        _FontSizeChangedHandlers(*this, winrt::make<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height));
 
         // The renderer will be re-enabled in Initialize
 
@@ -347,7 +347,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
             // and react accordingly.
-            _updateFont(true);
+            _updateFont();
 
             const til::size windowSize{ til::math::rounding, windowWidth, windowHeight };
 
@@ -900,9 +900,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //      appropriately call _doResizeUnderLock after this method is called.
     // - The write lock should be held when calling this method.
     // Arguments:
-    // - initialUpdate: whether this font update should be considered as being
-    //   concerned with initialization process. Value forwarded to event handler.
-    void ControlCore::_updateFont(const bool initialUpdate)
+    // <none>
+    void ControlCore::_updateFont()
     {
         const auto newDpi = static_cast<int>(lrint(_compositionScale * USER_DEFAULT_SCREEN_DPI));
 
@@ -950,7 +949,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto actualNewSize = _actualFont.GetSize();
-        _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, initialUpdate);
+        _FontSizeChangedHandlers(*this, winrt::make<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height));
     }
 
     // Method Description:
@@ -1551,15 +1550,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto lock = _terminal->LockForWriting();
 
-        if (_searcher.IsStale() || _searcherText != text || _searcherGoForward != goForward || _searcherCaseSensitive != caseSensitive)
+        if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive))
         {
-            _searcher = { *GetRenderData(), text, !goForward, !caseSensitive };
-            _searcherText = text;
-            _searcherGoForward = goForward;
-            _searcherCaseSensitive = caseSensitive;
+            _searcher.MovePastCurrentSelection();
+        }
+        else
+        {
+            _searcher.FindNext();
         }
 
-        const auto foundMatch = _searcher.SelectNext();
+        const auto foundMatch = _searcher.SelectCurrent();
         auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(foundMatch);
         if (foundMatch)
         {
@@ -1584,10 +1584,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
     {
         auto results = std::vector<int32_t>();
-        if (_searcher.IsStale())
-        {
-            return winrt::single_threaded_vector<int32_t>();
-        }
+
         // use a map to remove duplicates
         std::map<int32_t, bool> rows;
         for (const auto& match : _searcher.Results())

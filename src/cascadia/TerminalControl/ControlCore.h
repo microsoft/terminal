@@ -250,7 +250,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
-        WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
+        TYPED_EVENT(FontSizeChanged,           IInspectable, Control::FontSizeChangedArgs);
 
         TYPED_EVENT(CopyToClipboard,           IInspectable, Control::CopyToClipboardEventArgs);
         TYPED_EVENT(TitleChanged,              IInspectable, Control::TitleChangedEventArgs);
@@ -308,9 +308,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
         ::Search _searcher;
-        winrt::hstring _searcherText;
-        bool _searcherGoForward = false;
-        bool _searcherCaseSensitive = false;
 
         winrt::handle _lastSwapChainHandle{ nullptr };
 
@@ -347,7 +344,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _setupDispatcherAndCallbacks();
 
         bool _setFontSizeUnderLock(float fontSize);
-        void _updateFont(const bool initialUpdate = false);
+        void _updateFont();
         void _refreshSizeUnderLock();
         void _updateSelectionUI();
         bool _shouldTryUpdateSelection(const WORD vkey);

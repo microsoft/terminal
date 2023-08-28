@@ -41,23 +41,27 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
         {
         case IDOK:
         {
+            auto length = SendDlgItemMessageW(hWnd, ID_CONSOLE_FINDSTR, WM_GETTEXTLENGTH, 0, 0);
+            lastFindString.resize(length);
+            length = GetDlgItemTextW(hWnd, ID_CONSOLE_FINDSTR, lastFindString.data(), gsl::narrow_cast<int>(length + 1));
+            lastFindString.resize(length);
+
+            caseInsensitive = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDCASE) == 0;
+            reverse = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDDOWN) == 0;
+
             LockConsole();
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-            if (searcher.IsStale())
+            if (searcher.ResetIfStale(gci.renderData, lastFindString, reverse, caseInsensitive))
             {
-                auto length = SendDlgItemMessageW(hWnd, ID_CONSOLE_FINDSTR, WM_GETTEXTLENGTH, 0, 0);
-                lastFindString.resize(length);
-                length = GetDlgItemTextW(hWnd, ID_CONSOLE_FINDSTR, lastFindString.data(), gsl::narrow_cast<int>(length + 1));
-                lastFindString.resize(length);
-
-                caseInsensitive = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDCASE) == 0;
-                reverse = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDDOWN) == 0;
-
-                searcher = Search{ gci.renderData, lastFindString, reverse, caseInsensitive };
+                searcher.MovePastCurrentSelection();
+            }
+            else
+            {
+                searcher.FindNext();
             }
 
-            if (searcher.SelectNext())
+            if (searcher.SelectCurrent())
             {
                 return TRUE;
             }
@@ -69,19 +73,6 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
             EndDialog(hWnd, 0);
             searcher = Search{};
             return TRUE;
-        case ID_CONSOLE_FINDSTR:
-        case ID_CONSOLE_FINDCASE:
-        case ID_CONSOLE_FINDUP:
-        case ID_CONSOLE_FINDDOWN:
-        {
-            const auto hi = HIWORD(wParam);
-            // ID_CONSOLE_FINDSTR emits EN_CHANGE and the other 3 emit 0 when changing.
-            if (hi == 0 || hi == EN_CHANGE)
-            {
-                searcher = Search{};
-            }
-            break;
-        }
         default:
             break;
         }
