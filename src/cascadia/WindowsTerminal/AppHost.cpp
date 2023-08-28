@@ -158,7 +158,7 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
         }
         else if (args)
         {
-            const auto result = _windowLogic.SetStartupCommandline(args.Commandline(), args.CurrentDirectory());
+            const auto result = _windowLogic.SetStartupCommandline(args.Commandline(), args.CurrentDirectory(), args.CurrentEnvironment());
             const auto message = _windowLogic.ParseCommandlineMessage();
             if (!message.empty())
             {

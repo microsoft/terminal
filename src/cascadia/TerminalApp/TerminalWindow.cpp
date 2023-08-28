@@ -1024,7 +1024,9 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - the result of the first command who's parsing returned a non-zero code,
     //   or 0. (see TerminalWindow::_ParseArgs)
-    int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args, winrt::hstring cwd)
+    int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args,
+                                                  winrt::hstring cwd,
+                                                  winrt::hstring /*env*/)
     {
         _WindowProperties->SetInitialCwd(std::move(cwd));
 
