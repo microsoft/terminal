@@ -6,7 +6,6 @@
 
 #include <conpty-static.h>
 #include <til/string.h>
-#include <til/env.h>
 #include <winternl.h>
 
 #include "CTerminalHandoff.h"
@@ -96,7 +95,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
         else
         {
-            environment = til::env::from_current_environment();
+            environment = _initialEnv; // til::env::from_current_environment();
         }
 
         {
@@ -235,7 +234,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     Windows::Foundation::Collections::ValueSet ConptyConnection::CreateSettings(const winrt::hstring& cmdline,
                                                                                 const winrt::hstring& startingDirectory,
                                                                                 const winrt::hstring& startingTitle,
-                                                                                const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
+                                                                                bool reloadEnvironmentVariables,
+                                                                                const winrt::hstring& initialEnvironment,
+                                                                                const Windows::Foundation::Collections::IMapView<hstring, hstring>& environmentOverrides,
                                                                                 uint32_t rows,
                                                                                 uint32_t columns,
                                                                                 const winrt::guid& guid,
@@ -246,19 +247,25 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         vs.Insert(L"commandline", Windows::Foundation::PropertyValue::CreateString(cmdline));
         vs.Insert(L"startingDirectory", Windows::Foundation::PropertyValue::CreateString(startingDirectory));
         vs.Insert(L"startingTitle", Windows::Foundation::PropertyValue::CreateString(startingTitle));
+        vs.Insert(L"reloadEnvironmentVariables", Windows::Foundation::PropertyValue::CreateBoolean(reloadEnvironmentVariables));
         vs.Insert(L"initialRows", Windows::Foundation::PropertyValue::CreateUInt32(rows));
         vs.Insert(L"initialCols", Windows::Foundation::PropertyValue::CreateUInt32(columns));
         vs.Insert(L"guid", Windows::Foundation::PropertyValue::CreateGuid(guid));
         vs.Insert(L"profileGuid", Windows::Foundation::PropertyValue::CreateGuid(profileGuid));
 
-        if (environment)
+        if (environmentOverrides)
         {
             Windows::Foundation::Collections::ValueSet env{};
-            for (const auto& [k, v] : environment)
+            for (const auto& [k, v] : environmentOverrides)
             {
                 env.Insert(k, Windows::Foundation::PropertyValue::CreateString(v));
             }
             vs.Insert(L"environment", env);
+        }
+
+        if (!initialEnvironment.empty())
+        {
+            vs.Insert(L"initialEnvironment", Windows::Foundation::PropertyValue::CreateString(initialEnvironment));
         }
         return vs;
     }
@@ -286,6 +293,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _reloadEnvironmentVariables = winrt::unbox_value_or<bool>(settings.TryLookup(L"reloadEnvironmentVariables").try_as<Windows::Foundation::IPropertyValue>(),
                                                                       _reloadEnvironmentVariables);
             _profileGuid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"profileGuid").try_as<Windows::Foundation::IPropertyValue>(), _profileGuid);
+
+            const auto& initialEnvironment{ winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"initialEnvironment").try_as<Windows::Foundation::IPropertyValue>(), L"") };
+            if (!initialEnvironment.empty())
+            {
+                _initialEnv = til::env{ initialEnvironment.c_str() };
+            }
+            else
+            {
+                // If we were not explicitly provided an "initial" env block to
+                // treat as our original one, then just use our actual current
+                // env block.
+                _initialEnv = til::env::from_current_environment();
+            }
         }
 
         if (_guid == guid{})
