@@ -101,6 +101,7 @@ namespace winrt::TerminalApp::implementation
         void SetSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings, bool needRefreshUI);
 
         void Create();
+        Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
 
         bool ShouldImmediatelyHandoffToElevated(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
         void HandoffToElevated(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);

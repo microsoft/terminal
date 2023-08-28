@@ -232,7 +232,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
         {
-            auto moved = _MovePane(realArgs);
+            const auto moved = _MovePane(realArgs);
             args.Handled(moved);
         }
     }
@@ -839,7 +839,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<MoveTabArgs>())
         {
-            auto moved = _MoveTab(_senderOrFocusedTab(sender), realArgs);
+            const auto moved = _MoveTab(_senderOrFocusedTab(sender), realArgs);
             actionArgs.Handled(moved);
         }
     }

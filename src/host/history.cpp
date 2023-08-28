@@ -167,47 +167,9 @@ const std::vector<std::wstring>& CommandHistory::GetCommands() const noexcept
     return _commands;
 }
 
-[[nodiscard]] HRESULT CommandHistory::RetrieveNth(const Index index, std::span<wchar_t> buffer, size_t& commandSize)
+std::wstring_view CommandHistory::Retrieve(const SearchDirection searchDirection)
 {
-    LastDisplayed = index;
-
-    try
-    {
-        const auto& cmd = _commands.at(index);
-        if (cmd.size() > buffer.size())
-        {
-            commandSize = buffer.size(); // room for CRLF?
-        }
-        else
-        {
-            commandSize = cmd.size();
-        }
-
-        std::copy_n(cmd.cbegin(), commandSize, buffer.begin());
-
-        commandSize *= sizeof(wchar_t);
-
-        return S_OK;
-    }
-    CATCH_RETURN();
-}
-
-[[nodiscard]] HRESULT CommandHistory::Retrieve(const SearchDirection searchDirection,
-                                               const std::span<wchar_t> buffer,
-                                               size_t& commandSize)
-{
-    FAIL_FAST_IF(!(WI_IsFlagSet(Flags, CLE_ALLOCATED)));
-
-    if (_commands.size() == 0)
-    {
-        return E_FAIL;
-    }
-
-    if (_commands.size() == 1)
-    {
-        LastDisplayed = 0;
-    }
-    else if (searchDirection == SearchDirection::Previous)
+    if (searchDirection == SearchDirection::Previous)
     {
         // if this is the first time for this read that a command has
         // been retrieved, return the current command.  otherwise, return
@@ -218,15 +180,27 @@ const std::vector<std::wstring>& CommandHistory::GetCommands() const noexcept
         }
         else
         {
-            _Prev(LastDisplayed);
+            LastDisplayed--;
         }
     }
     else
     {
-        _Next(LastDisplayed);
+        LastDisplayed++;
     }
 
-    return RetrieveNth(LastDisplayed, buffer, commandSize);
+    return RetrieveNth(LastDisplayed);
+}
+
+std::wstring_view CommandHistory::RetrieveNth(Index index)
+{
+    if (_commands.empty())
+    {
+        LastDisplayed = 0;
+        return {};
+    }
+
+    LastDisplayed = std::clamp(index, 0, GetNumberOfCommands() - 1);
+    return _commands.at(LastDisplayed);
 }
 
 std::wstring_view CommandHistory::GetLastCommand() const

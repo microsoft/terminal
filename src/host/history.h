@@ -43,13 +43,8 @@ public:
     [[nodiscard]] HRESULT Add(const std::wstring_view command,
                               const bool suppressDuplicates);
 
-    [[nodiscard]] HRESULT Retrieve(const SearchDirection searchDirection,
-                                   const std::span<wchar_t> buffer,
-                                   size_t& commandSize);
-
-    [[nodiscard]] HRESULT RetrieveNth(const Index index,
-                                      const std::span<wchar_t> buffer,
-                                      size_t& commandSize);
+    std::wstring_view Retrieve(const SearchDirection searchDirection);
+    std::wstring_view RetrieveNth(Index index);
 
     Index GetNumberOfCommands() const;
     std::wstring_view GetNth(Index index) const;
