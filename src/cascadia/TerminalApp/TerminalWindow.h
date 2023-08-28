@@ -56,6 +56,8 @@ namespace winrt::TerminalApp::implementation
         // Used for setting the initial CWD, before we have XAML set up for property change notifications.
         void SetInitialCwd(winrt::hstring cwd) { _VirtualWorkingDirectory = std::move(cwd); };
 
+        til::property<winrt::hstring> VirtualEnvVars;
+
     private:
         winrt::hstring _WindowName{};
         uint64_t _WindowId{ 0 };

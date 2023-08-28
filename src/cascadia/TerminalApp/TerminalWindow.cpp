@@ -1026,9 +1026,10 @@ namespace winrt::TerminalApp::implementation
     //   or 0. (see TerminalWindow::_ParseArgs)
     int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args,
                                                   winrt::hstring cwd,
-                                                  winrt::hstring /*env*/)
+                                                  winrt::hstring env)
     {
         _WindowProperties->SetInitialCwd(std::move(cwd));
+        _WindowProperties->VirtualEnvVars(std::move(env));
 
         // This is called in AppHost::ctor(), before we've created the window
         // (or called TerminalWindow::Initialize)

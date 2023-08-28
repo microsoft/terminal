@@ -154,7 +154,8 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
                                                      const bool initial,
-                                                     const winrt::hstring cwd = L"");
+                                                     const winrt::hstring cwd = L"",
+                                                     const winrt::hstring env = L"");
 
         TerminalApp::WindowProperties WindowProperties() const noexcept { return _WindowProperties; };
 
