@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cassert>
+#include <cstdio>
 
 // Another variant of "defer" for C++.
 namespace

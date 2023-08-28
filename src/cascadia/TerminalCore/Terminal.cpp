@@ -661,7 +661,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     // modifier key. We'll wait for a real keystroke to snap to the bottom.
     // GH#6481 - Additionally, make sure the key was actually pressed. This
     // check will make sure we behave the same as before GH#6309
-    if (!KeyEvent::IsModifierKey(vkey) && keyDown)
+    if (IsInputKey(vkey) && keyDown)
     {
         TrySnapOnInput();
     }
@@ -714,8 +714,8 @@ bool Terminal::SendKeyEvent(const WORD vkey,
         return false;
     }
 
-    const KeyEvent keyEv{ keyDown, 1, vkey, sc, ch, states.Value() };
-    return _handleTerminalInputResult(_terminalInput.HandleKey(&keyEv));
+    const auto keyEv = SynthesizeKeyEvent(keyDown, 1, vkey, sc, ch, states.Value());
+    return _handleTerminalInputResult(_terminalInput.HandleKey(keyEv));
 }
 
 // Method Description:
@@ -791,8 +791,8 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         MarkOutputStart();
     }
 
-    const KeyEvent keyDown{ true, 1, vkey, scanCode, ch, states.Value() };
-    return _handleTerminalInputResult(_terminalInput.HandleKey(&keyDown));
+    const auto keyDown = SynthesizeKeyEvent(true, 1, vkey, scanCode, ch, states.Value());
+    return _handleTerminalInputResult(_terminalInput.HandleKey(keyDown));
 }
 
 // Method Description:
@@ -1259,6 +1259,11 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noe
     return _taskbarProgress;
 }
 
+void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept
+{
+    _pfnCompletionsChanged.swap(pfn);
+}
+
 Scheme Terminal::GetColorScheme() const
 {
     Scheme s;
@@ -1444,6 +1449,16 @@ til::color Terminal::GetColorForMark(const ScrollMark& mark) const
         return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
     }
     }
+}
+
+std::wstring_view Terminal::CurrentCommand() const
+{
+    if (_currentPromptState != PromptState::Command)
+    {
+        return L"";
+    }
+
+    return _activeBuffer().CurrentCommand();
 }
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)

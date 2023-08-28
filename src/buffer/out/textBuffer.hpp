@@ -131,8 +131,12 @@ public:
     TextBufferTextIterator GetTextLineDataAt(const til::point at) const;
     TextBufferTextIterator GetTextDataAt(const til::point at, const Microsoft::Console::Types::Viewport limit) const;
 
+    size_t GetCellDistance(const til::point from, const til::point to) const;
+
+    static size_t GraphemeNext(const std::wstring_view& chars, size_t position) noexcept;
+    static size_t GraphemePrev(const std::wstring_view& chars, size_t position) noexcept;
+
     // Text insertion functions
-    static void ConsumeGrapheme(std::wstring_view& chars) noexcept;
     void Write(til::CoordType row, const TextAttribute& attributes, RowWriteState& state);
     void FillRect(const til::rect& rect, const std::wstring_view& fill, const TextAttribute& attributes);
 
@@ -272,6 +276,7 @@ public:
     void SetCurrentPromptEnd(const til::point pos) noexcept;
     void SetCurrentCommandEnd(const til::point pos) noexcept;
     void SetCurrentOutputEnd(const til::point pos, ::MarkCategory category) noexcept;
+    std::wstring_view CurrentCommand() const;
 
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);

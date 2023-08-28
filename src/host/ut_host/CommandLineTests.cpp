@@ -420,7 +420,7 @@ class CommandLineTests
 
         auto& commandLine = CommandLine::Instance();
         commandLine._deleteCommandHistory(cookedReadData);
-        VERIFY_ARE_EQUAL(m_pHistory->GetNumberOfCommands(), 0u);
+        VERIFY_ARE_EQUAL(m_pHistory->GetNumberOfCommands(), 0);
     }
 
     TEST_METHOD(CanFillPromptWithPreviousCommandFragment)

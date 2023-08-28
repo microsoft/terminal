@@ -246,6 +246,27 @@ til::CoordType TextBuffer::TotalRowCount() const noexcept
     return _height;
 }
 
+// Method Description:
+// - Gets the number of glyphs in the buffer between two points.
+// - IMPORTANT: Make sure that start is before end, or this will never return!
+// Arguments:
+// - start - The starting point of the range to get the glyph count for.
+// - end - The ending point of the range to get the glyph count for.
+// Return Value:
+// - The number of glyphs in the buffer between the two points.
+size_t TextBuffer::GetCellDistance(const til::point from, const til::point to) const
+{
+    auto startCell = GetCellDataAt(from);
+    const auto endCell = GetCellDataAt(to);
+    auto delta = 0;
+    while (startCell != endCell)
+    {
+        ++startCell;
+        ++delta;
+    }
+    return delta;
+}
+
 // Routine Description:
 // - Retrieves read-only text iterator at the given buffer location
 // Arguments:
@@ -441,11 +462,20 @@ void TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
     }
 }
 
-void TextBuffer::ConsumeGrapheme(std::wstring_view& chars) noexcept
+// Given the character offset `position` in the `chars` string, this function returns the starting position of the next grapheme.
+// For instance, given a `chars` of L"x\uD83D\uDE42y" and a `position` of 1 it'll return 3.
+// GraphemePrev would do the exact inverse of this operation.
+// In the future, these functions are expected to also deliver information about how many columns a grapheme occupies.
+// (I know that mere UTF-16 code point iteration doesn't handle graphemes, but that's what we're working towards.)
+size_t TextBuffer::GraphemeNext(const std::wstring_view& chars, size_t position) noexcept
 {
-    // This function is supposed to mirror the behavior of ROW::Write, when it reads characters off of `chars`.
-    // (I know that a UTF-16 code point is not a grapheme, but that's what we're working towards.)
-    chars = til::utf16_pop(chars);
+    return til::utf16_iterate_next(chars, position);
+}
+
+// It's the counterpart to GraphemeNext. See GraphemeNext.
+size_t TextBuffer::GraphemePrev(const std::wstring_view& chars, size_t position) noexcept
+{
+    return til::utf16_iterate_prev(chars, position);
 }
 
 // This function is intended for writing regular "lines" of text as it'll set the wrap flag on the given row.
@@ -2953,6 +2983,22 @@ void TextBuffer::_trimMarksOutsideBuffer()
                                            (m.start.y >= height);
                                 }),
                  _marks.end());
+}
+
+std::wstring_view TextBuffer::CurrentCommand() const
+{
+    if (_marks.size() == 0)
+    {
+        return L"";
+    }
+
+    const auto& curr{ _marks.back() };
+    const auto& start{ curr.end };
+    const auto& end{ GetCursor().GetPosition() };
+
+    const auto line = start.y;
+    const auto& row = GetRowByOffset(line);
+    return row.GetText(start.x, end.x);
 }
 
 void TextBuffer::SetCurrentPromptEnd(const til::point pos) noexcept
