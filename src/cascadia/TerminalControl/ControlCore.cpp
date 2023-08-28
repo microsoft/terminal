@@ -851,7 +851,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Updates the appearance of the current terminal.
     // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
-    void ControlCore::ApplyAppearance(const bool& focused) 
+    void ControlCore::ApplyAppearance(const bool& focused)
     {
         auto lock = _terminal->LockForWriting();
         const auto& newAppearance{ focused ? _settings->FocusedAppearance() : _settings->UnfocusedAppearance() };
@@ -867,12 +867,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
             _renderer->TriggerRedrawAll();
 
-
             // No need to switch Acrylic if UnfocusedAcrylic is disabled
             if (_settings->EnableUnfocusedAcrylic())
             {
                 // Manually turn off acrylic if they turn off transparency.
-                _runtimeUseAcrylic = _settings->Opacity() < 1.0 && newAppearance->UseAcrylic();
+                _runtimeUseAcrylic = Opacity() < 1.0 && newAppearance->UseAcrylic();
 
                 // Update the renderer as well. It might need to fall back from
                 // cleartype -> grayscale if the BG is transparent / acrylic.
