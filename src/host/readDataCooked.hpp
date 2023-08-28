@@ -113,7 +113,7 @@ private:
     void _handlePostCharInputLoop(bool isUnicode, size_t& numBytes, ULONG& controlKeyState);
     void _markAsDirty();
     void _flushBuffer();
-    void _erase(til::CoordType distance);
+    void _erase(til::CoordType distance) const;
     til::CoordType _writeChars(const std::wstring_view& text) const;
     til::point _offsetPosition(til::point pos, til::CoordType distance) const;
     void _unwindCursorPosition(til::CoordType distance) const;
