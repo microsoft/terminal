@@ -1271,7 +1271,7 @@ namespace winrt::TerminalApp::implementation
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
                                                                                  newWorkingDirectory,
                                                                                  settings.StartingTitle(),
-                                                                                 settings.ReloadEnvironmentVariables(), // _settings.GlobalSettings().ReloadEnvironmentVariables(),
+                                                                                 settings.ReloadEnvironmentVariables(),
                                                                                  _WindowProperties.VirtualEnvVars(),
                                                                                  environment,
                                                                                  settings.InitialRows(),
