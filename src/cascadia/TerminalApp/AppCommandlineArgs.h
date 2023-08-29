@@ -68,6 +68,7 @@ private:
         CLI::Option* suppressApplicationTitleOption;
         CLI::Option* colorSchemeOption;
         CLI::Option* appendCommandLineOption;
+        CLI::Option* inheritEnvOption;
     };
 
     struct NewPaneSubcommand : public NewTerminalSubcommand
@@ -100,6 +101,7 @@ private:
     std::string _startingTabColor;
     std::string _startingColorScheme;
     bool _suppressApplicationTitle{ false };
+    bool _inheritEnvironment{ false };
 
     winrt::Microsoft::Terminal::Settings::Model::FocusDirection _moveFocusDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };
     winrt::Microsoft::Terminal::Settings::Model::FocusDirection _swapPaneDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };

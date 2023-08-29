@@ -185,6 +185,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 defaultSettings.Elevate(newTerminalArgs.Elevate().Value());
             }
+
+            if (newTerminalArgs.ReloadEnvironmentVariables())
+            {
+                defaultSettings.ReloadEnvironmentVariables(newTerminalArgs.ReloadEnvironmentVariables().Value());
+            }
         }
 
         return settingsPair;
@@ -334,6 +339,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _RightClickContextMenu = profile.RightClickContextMenu();
 
         _RepositionCursorWithMouse = profile.RepositionCursorWithMouse();
+
+        _ReloadEnvironmentVariables = profile.ReloadEnvironmentVariables();
     }
 
     // Method Description:

@@ -98,7 +98,8 @@ Author(s):
     X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
     X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)                                                                                            \
     X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)                                                                                             \
-    X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)
+    X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                        \
+    X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)
 
 // Intentionally omitted Profile settings:
 // * Name

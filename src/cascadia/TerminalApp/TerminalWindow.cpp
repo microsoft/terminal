@@ -1084,7 +1084,8 @@ namespace winrt::TerminalApp::implementation
     // - the result of the first command who's parsing returned a non-zero code,
     //   or 0. (see TerminalWindow::_ParseArgs)
     int32_t TerminalWindow::ExecuteCommandline(array_view<const winrt::hstring> args,
-                                               const winrt::hstring& cwd)
+                                               const winrt::hstring& cwd,
+                                               const winrt::hstring& env)
     {
         ::TerminalApp::AppCommandlineArgs appArgs;
         auto result = appArgs.ParseArgs(args);
@@ -1092,7 +1093,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(appArgs.GetStartupActions()));
 
-            _root->ProcessStartupActions(actions, false, cwd);
+            _root->ProcessStartupActions(actions, false, cwd, env);
 
             if (appArgs.IsHandoffListener())
             {
