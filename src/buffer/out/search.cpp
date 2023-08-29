@@ -79,8 +79,10 @@ void Search::MovePastPoint(const til::point anchor) noexcept
 
 void Search::FindNext() noexcept
 {
-    const auto count = gsl::narrow_cast<ptrdiff_t>(_results.size());
-    _index = (_index + _step + count) % count;
+    if (const auto count{ gsl::narrow_cast<ptrdiff_t>(_results.size()) })
+    {
+        _index = (_index + _step + count) % count;
+    }
 }
 
 const til::point_span* Search::GetCurrent() const noexcept
