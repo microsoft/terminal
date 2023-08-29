@@ -27,10 +27,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return _ColorTable.at(index);
         }
-        void SetColorTableEntry(int32_t index,
-                                winrt::Microsoft::Terminal::Core::Color color) noexcept
+
+        winrt::Microsoft::Terminal::Core::Scheme ToCoreScheme() const noexcept
         {
-            _ColorTable.at(index) = color;
+            winrt::Microsoft::Terminal::Core::Scheme coreScheme{};
+            coreScheme.Foreground = DefaultForeground();
+            coreScheme.Background = DefaultBackground();
+            coreScheme.CursorColor = CursorColor();
+            coreScheme.SelectionBackground = SelectionBackground();
+            std::copy_n(_ColorTable.data(), COLOR_TABLE_SIZE, &coreScheme.Black);
+            return coreScheme;
+        }
+
+        void ApplyCoreScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme) noexcept
+        {
+            _DefaultForeground = til::color{ scheme.Foreground };
+            _DefaultBackground = til::color{ scheme.Background };
+            _CursorColor = til::color{ scheme.CursorColor };
+            _SelectionBackground = til::color{ scheme.SelectionBackground };
+            std::copy_n(&scheme.Black, COLOR_TABLE_SIZE, _ColorTable.data());
         }
 
         ControlAppearance(Control::IControlAppearance appearance)

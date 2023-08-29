@@ -21,5 +21,6 @@ namespace Microsoft.Terminal.Settings.Model
         void SetColorTableEntry(UInt8 index, Microsoft.Terminal.Core.Color value);
 
         Microsoft.Terminal.Core.Scheme ToCoreScheme();
+        void ApplyCoreScheme(Microsoft.Terminal.Core.Scheme scheme);
     }
 }

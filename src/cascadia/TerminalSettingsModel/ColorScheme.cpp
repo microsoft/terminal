@@ -164,27 +164,20 @@ void ColorScheme::SetColorTableEntry(uint8_t index, const Core::Color& value) no
 
 winrt::Microsoft::Terminal::Core::Scheme ColorScheme::ToCoreScheme() const noexcept
 {
-    winrt::Microsoft::Terminal::Core::Scheme coreScheme{};
+    Core::Scheme scheme{};
+    scheme.Foreground = Foreground();
+    scheme.Background = Background();
+    scheme.CursorColor = CursorColor();
+    scheme.SelectionBackground = SelectionBackground();
+    std::copy_n(_table.data(), COLOR_TABLE_SIZE, &scheme.Black);
+    return scheme;
+}
 
-    coreScheme.Foreground = Foreground();
-    coreScheme.Background = Background();
-    coreScheme.CursorColor = CursorColor();
-    coreScheme.SelectionBackground = SelectionBackground();
-    coreScheme.Black = Table()[0];
-    coreScheme.Red = Table()[1];
-    coreScheme.Green = Table()[2];
-    coreScheme.Yellow = Table()[3];
-    coreScheme.Blue = Table()[4];
-    coreScheme.Purple = Table()[5];
-    coreScheme.Cyan = Table()[6];
-    coreScheme.White = Table()[7];
-    coreScheme.BrightBlack = Table()[8];
-    coreScheme.BrightRed = Table()[9];
-    coreScheme.BrightGreen = Table()[10];
-    coreScheme.BrightYellow = Table()[11];
-    coreScheme.BrightBlue = Table()[12];
-    coreScheme.BrightPurple = Table()[13];
-    coreScheme.BrightCyan = Table()[14];
-    coreScheme.BrightWhite = Table()[15];
-    return coreScheme;
+void ColorScheme::ApplyCoreScheme(const Core::Scheme& scheme) noexcept
+{
+    _Foreground = scheme.Foreground;
+    _Background = scheme.Background;
+    _CursorColor = scheme.CursorColor;
+    _SelectionBackground = scheme.SelectionBackground;
+    std::copy_n(&scheme.Black, COLOR_TABLE_SIZE, _table.data());
 }

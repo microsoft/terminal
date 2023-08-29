@@ -1266,56 +1266,45 @@ void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::functi
 
 Scheme Terminal::GetColorScheme() const
 {
-    Scheme s;
+    const auto& renderSettings = GetRenderSettings();
 
-    s.Foreground = til::color{ _renderSettings.GetColorAlias(ColorAlias::DefaultForeground) };
-    s.Background = til::color{ _renderSettings.GetColorAlias(ColorAlias::DefaultBackground) };
+    Scheme s;
+    s.Foreground = til::color{ renderSettings.GetColorAlias(ColorAlias::DefaultForeground) };
+    s.Background = til::color{ renderSettings.GetColorAlias(ColorAlias::DefaultBackground) };
 
     // SelectionBackground is stored in the ControlAppearance
-    s.CursorColor = til::color{ _renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR) };
+    s.CursorColor = til::color{ renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR) };
 
-    s.Black = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_BLACK) };
-    s.Red = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_RED) };
-    s.Green = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_GREEN) };
-    s.Yellow = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_YELLOW) };
-    s.Blue = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_BLUE) };
-    s.Purple = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_MAGENTA) };
-    s.Cyan = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_CYAN) };
-    s.White = til::color{ _renderSettings.GetColorTableEntry(TextColor::DARK_WHITE) };
-    s.BrightBlack = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_BLACK) };
-    s.BrightRed = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_RED) };
-    s.BrightGreen = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_GREEN) };
-    s.BrightYellow = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_YELLOW) };
-    s.BrightBlue = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_BLUE) };
-    s.BrightPurple = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_MAGENTA) };
-    s.BrightCyan = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_CYAN) };
-    s.BrightWhite = til::color{ _renderSettings.GetColorTableEntry(TextColor::BRIGHT_WHITE) };
+    auto target = &s.Black;
+    // Scheme stores the 16 basic VT colors as members, but they're conceptually a list. Their order is well defined.
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+    for (size_t i = 0; i < 16; ++i, ++target)
+    {
+        *target = til::color{ renderSettings.GetColorTableEntry(i) };
+    }
+
     return s;
 }
 
 void Terminal::ApplyScheme(const Scheme& colorScheme)
 {
-    _renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, til::color{ colorScheme.Foreground });
-    _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, til::color{ colorScheme.Background });
+    auto& renderSettings = GetRenderSettings();
 
-    _renderSettings.SetColorTableEntry(TextColor::DARK_BLACK, til::color{ colorScheme.Black });
-    _renderSettings.SetColorTableEntry(TextColor::DARK_RED, til::color{ colorScheme.Red });
-    _renderSettings.SetColorTableEntry(TextColor::DARK_GREEN, til::color{ colorScheme.Green });
-    _renderSettings.SetColorTableEntry(TextColor::DARK_YELLOW, til::color{ colorScheme.Yellow });
-    _renderSettings.SetColorTableEntry(TextColor::DARK_BLUE, til::color{ colorScheme.Blue });
-    _renderSettings.SetColorTableEntry(TextColor::DARK_MAGENTA, til::color{ colorScheme.Purple });
-    _renderSettings.SetColorTableEntry(TextColor::DARK_CYAN, til::color{ colorScheme.Cyan });
-    _renderSettings.SetColorTableEntry(TextColor::DARK_WHITE, til::color{ colorScheme.White });
-    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_BLACK, til::color{ colorScheme.BrightBlack });
-    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_RED, til::color{ colorScheme.BrightRed });
-    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_GREEN, til::color{ colorScheme.BrightGreen });
-    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_YELLOW, til::color{ colorScheme.BrightYellow });
-    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_BLUE, til::color{ colorScheme.BrightBlue });
-    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_MAGENTA, til::color{ colorScheme.BrightPurple });
-    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_CYAN, til::color{ colorScheme.BrightCyan });
-    _renderSettings.SetColorTableEntry(TextColor::BRIGHT_WHITE, til::color{ colorScheme.BrightWhite });
+    renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, til::color{ colorScheme.Foreground });
+    renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, til::color{ colorScheme.Background });
 
-    _renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, til::color{ colorScheme.CursorColor });
+    renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, til::color{ colorScheme.CursorColor });
+
+    // Go home MSVC, you're drunk.
+#pragma warning(suppress : 26429) // Symbol 'source' is never tested for nullness, it can be marked as not_null (f.23).
+    auto source = &colorScheme.Black;
+
+    // Scheme stores the 16 basic VT colors as members, but they're conceptually a list. Their order is well defined.
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+    for (size_t i = 0; i < 16; ++i, ++source)
+    {
+        renderSettings.SetColorTableEntry(i, til::color{ *source });
+    }
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks whose color

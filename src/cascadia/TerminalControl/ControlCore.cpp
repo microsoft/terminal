@@ -2010,27 +2010,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // back.
         if (HasUnfocusedAppearance())
         {
-            s.Foreground = _settings->FocusedAppearance()->DefaultForeground();
-            s.Background = _settings->FocusedAppearance()->DefaultBackground();
-
-            s.CursorColor = _settings->FocusedAppearance()->CursorColor();
-
-            s.Black = _settings->FocusedAppearance()->GetColorTableEntry(0);
-            s.Red = _settings->FocusedAppearance()->GetColorTableEntry(1);
-            s.Green = _settings->FocusedAppearance()->GetColorTableEntry(2);
-            s.Yellow = _settings->FocusedAppearance()->GetColorTableEntry(3);
-            s.Blue = _settings->FocusedAppearance()->GetColorTableEntry(4);
-            s.Purple = _settings->FocusedAppearance()->GetColorTableEntry(5);
-            s.Cyan = _settings->FocusedAppearance()->GetColorTableEntry(6);
-            s.White = _settings->FocusedAppearance()->GetColorTableEntry(7);
-            s.BrightBlack = _settings->FocusedAppearance()->GetColorTableEntry(8);
-            s.BrightRed = _settings->FocusedAppearance()->GetColorTableEntry(9);
-            s.BrightGreen = _settings->FocusedAppearance()->GetColorTableEntry(10);
-            s.BrightYellow = _settings->FocusedAppearance()->GetColorTableEntry(11);
-            s.BrightBlue = _settings->FocusedAppearance()->GetColorTableEntry(12);
-            s.BrightPurple = _settings->FocusedAppearance()->GetColorTableEntry(13);
-            s.BrightCyan = _settings->FocusedAppearance()->GetColorTableEntry(14);
-            s.BrightWhite = _settings->FocusedAppearance()->GetColorTableEntry(15);
+            s = _settings->UnfocusedAppearance()->ToCoreScheme();
         }
         else
         {
@@ -2057,34 +2037,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::ColorScheme(const Core::Scheme& scheme)
     {
-        auto l{ _terminal->LockForWriting() };
+        _settings->FocusedAppearance()->ApplyCoreScheme(scheme);
 
-        _settings->FocusedAppearance()->DefaultForeground(scheme.Foreground);
-        _settings->FocusedAppearance()->DefaultBackground(scheme.Background);
-        _settings->FocusedAppearance()->CursorColor(scheme.CursorColor);
-        _settings->FocusedAppearance()->SelectionBackground(scheme.SelectionBackground);
-
-        _settings->FocusedAppearance()->SetColorTableEntry(0, scheme.Black);
-        _settings->FocusedAppearance()->SetColorTableEntry(1, scheme.Red);
-        _settings->FocusedAppearance()->SetColorTableEntry(2, scheme.Green);
-        _settings->FocusedAppearance()->SetColorTableEntry(3, scheme.Yellow);
-        _settings->FocusedAppearance()->SetColorTableEntry(4, scheme.Blue);
-        _settings->FocusedAppearance()->SetColorTableEntry(5, scheme.Purple);
-        _settings->FocusedAppearance()->SetColorTableEntry(6, scheme.Cyan);
-        _settings->FocusedAppearance()->SetColorTableEntry(7, scheme.White);
-        _settings->FocusedAppearance()->SetColorTableEntry(8, scheme.BrightBlack);
-        _settings->FocusedAppearance()->SetColorTableEntry(9, scheme.BrightRed);
-        _settings->FocusedAppearance()->SetColorTableEntry(10, scheme.BrightGreen);
-        _settings->FocusedAppearance()->SetColorTableEntry(11, scheme.BrightYellow);
-        _settings->FocusedAppearance()->SetColorTableEntry(12, scheme.BrightBlue);
-        _settings->FocusedAppearance()->SetColorTableEntry(13, scheme.BrightPurple);
-        _settings->FocusedAppearance()->SetColorTableEntry(14, scheme.BrightCyan);
-        _settings->FocusedAppearance()->SetColorTableEntry(15, scheme.BrightWhite);
-
+        const auto lock = _terminal->LockForWriting();
         _terminal->ApplyScheme(scheme);
-
         _renderEngine->SetSelectionBackground(til::color{ _settings->SelectionBackground() });
-
         _renderer->TriggerRedrawAll(true);
     }
 
