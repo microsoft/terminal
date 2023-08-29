@@ -42,6 +42,8 @@ namespace SettingsModelLocalTests
         TEST_METHOD(CascadiaSettings);
         TEST_METHOD(LegacyFontSettings);
 
+        TEST_METHOD(RoundtripReloadEnvVars);
+
     private:
         // Method Description:
         // - deserializes and reserializes a json string representing a settings object model of type T
@@ -512,5 +514,74 @@ namespace SettingsModelLocalTests
         const auto jsonOutput{ VerifyParseSucceeded(expectedOutput) };
 
         VERIFY_ARE_EQUAL(toString(jsonOutput), toString(result));
+    }
+
+    void SerializationTests::RoundtripReloadEnvVars()
+    {
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "compatibility.reloadEnvironmentVariables": false,
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": "closePane",
+                    "keys": "ctrl+shift+w"
+                }
+            ]
+        })" };
+
+        static constexpr std::string_view newSettingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles":
+            {
+                "defaults":
+                {
+                    "compatibility.reloadEnvironmentVariables": false
+                },
+                "list":
+                [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "historySize": 1,
+                        "commandline": "cmd.exe"
+                    }
+                ],
+
+            }
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": "closePane",
+                    "keys": "ctrl+shift+w"
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, DefaultJson };
+        oldLoader.MergeInboxIntoUserSettings();
+        oldLoader.FinalizeLayering();
+        VERIFY_IS_TRUE(oldLoader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
+        const auto oldResult{ oldSettings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ oldSettingsJson, DefaultJson };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        newLoader.FixupUserSettings();
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
     }
 }

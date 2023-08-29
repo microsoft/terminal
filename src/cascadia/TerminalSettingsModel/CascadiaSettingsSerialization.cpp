@@ -450,6 +450,13 @@ bool SettingsLoader::FixupUserSettings()
         }
     }
 
+    if (!userSettings.globals->LegacyReloadEnvironmentVariables())
+    {
+        // migrate the user's opt-out to the profiles.defaults
+        userSettings.baseLayerProfile->ReloadEnvironmentVariables(false);
+        fixedUp = true;
+    }
+
     return fixedUp;
 }
 
