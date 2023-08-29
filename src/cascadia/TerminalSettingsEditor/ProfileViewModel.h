@@ -92,47 +92,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
         OBSERVABLE_PROJECTED_SETTING(_profile, StartingDirectory);
         OBSERVABLE_PROJECTED_SETTING(_profile, AntialiasingMode);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Foreground);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Background);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), SelectionBackground);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), CursorColor);
-
-    public:
-        auto Opacity() const noexcept
-        {
-            return _profile.DefaultAppearance().Opacity();
-        };
-        template<typename T>
-        void Opacity(const T& value)
-        {
-            if (Opacity() != value)
-            {
-                _profile.DefaultAppearance().Opacity(value);
-                _NotifyChanges(L"Has"
-                               "Opacity",
-                               L"Opacity");
-            }
-        }
-        bool HasOpacity()
-        {
-            return _profile.DefaultAppearance().HasOpacity();
-        }
-        void ClearOpacity()
-        {
-            const auto hadValue{ _profile.DefaultAppearance().HasOpacity() };
-            _profile.DefaultAppearance().ClearOpacity();
-            if (hadValue)
-            {
-                _NotifyChanges(L"Has"
-                               "Opacity",
-                               L"Opacity");
-            }
-        }
-        auto OpacityOverrideSource()
-        {
-            return _profile.DefaultAppearance().OpacityOverrideSource();
-        };
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Opacity);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile, HistorySize);
         OBSERVABLE_PROJECTED_SETTING(_profile, SnapOnInput);
         OBSERVABLE_PROJECTED_SETTING(_profile, AltGrAliasing);
