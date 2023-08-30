@@ -113,6 +113,10 @@ stages:
               inputs:
                 disableOutputRedirect: true
 
+            - pwsh: |-
+                Write-Host "##vso[build.updatebuildnumber]${{ parameters.branding }} $(XES_APPXMANIFESTVERSION)"
+              displayName: Update Build Number
+
             - task: UniversalPackages@0
               displayName: Download terminal-internal Universal Package
               inputs:
