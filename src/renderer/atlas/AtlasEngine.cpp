@@ -251,6 +251,16 @@ try
 {
     _flushBufferLine();
 
+    // PaintCursor() is only called when the cursor is visible, but we need to invalidate the cursor area
+    // even if it isn't. Otherwise a transition from a visible to an invisible cursor wouldn't be rendered.
+    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
+    {
+        _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, r.left * _p.s->font->cellSize.x);
+        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, r.top * _p.s->font->cellSize.y);
+        _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, r.right * _p.s->font->cellSize.x);
+        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, r.bottom * _p.s->font->cellSize.y);
+    }
+
     _api.invalidatedCursorArea = invalidatedAreaNone;
     _api.invalidatedRows = invalidatedRowsNone;
     _api.scrollOffset = 0;
@@ -421,15 +431,6 @@ try
             *_api.s.write()->cursor.write() = cachedOptions;
             *_p.s.write()->cursor.write() = cachedOptions;
         }
-    }
-
-    // Clear the previous cursor
-    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
-    {
-        _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, r.left * _p.s->font->cellSize.x);
-        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, r.top * _p.s->font->cellSize.y);
-        _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, r.right * _p.s->font->cellSize.x);
-        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, r.bottom * _p.s->font->cellSize.y);
     }
 
     if (options.isOn)
