@@ -80,6 +80,10 @@ variables:
       NuGetPackBetaVersion: preview
   ${{ elseif eq(variables['Build.SourceBranchName'], 'main') }}:
     NuGetPackBetaVersion: experimental
+  ${{ if eq(parameters.codeSign, true) }}:
+    BuildSlug: ${{ parameters.branding }}
+  ${{ else }}:
+    BuildSlug: ${{ parameters.branding }} Unsigned
 
 resources:
   repositories:
@@ -114,7 +118,7 @@ stages:
                 disableOutputRedirect: true
 
             - pwsh: |-
-                Write-Host "##vso[build.updatebuildnumber]${{ parameters.branding }} $(XES_APPXMANIFESTVERSION)"
+                Write-Host "##vso[build.updatebuildnumber]$(BuildSlug) $(XES_APPXMANIFESTVERSION)"
               displayName: Update Build Number
 
             - task: UniversalPackages@0
