@@ -28,6 +28,7 @@ CYICON
 Dacl
 dataobject
 dcomp
+debugbreak
 delayimp
 DERR
 dlldata
