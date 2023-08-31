@@ -1584,23 +1584,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
     {
         auto lock = _terminal->LockForWriting();
-        _searcher.ResetIfStale(*GetRenderData());
-
-        auto results = std::vector<int32_t>();
-
-        // use a map to remove duplicates
-        std::map<int32_t, bool> rows;
-        for (const auto& match : _searcher.Results())
+        if (_searcher.ResetIfStale(*GetRenderData()))
         {
-            const auto row = match.start.y;
-            // First check if it's in the map
-            if (rows.find(row) == rows.end())
+            auto results = std::vector<int32_t>();
+
+            auto lastRow = til::CoordTypeMin;
+            for (const auto& match : _searcher.Results())
             {
-                rows[row] = true;
-                results.push_back(row);
+                const auto row{ match.start.y };
+                if (row != lastRow)
+                {
+                    results.push_back(row);
+                    lastRow = row;
+                }
             }
+            _cachedSearchResultRows = winrt::single_threaded_vector<int32_t>(std::move(results));
         }
-        return winrt::single_threaded_vector<int32_t>(std::move(results));
+
+        return _cachedSearchResultRows;
     }
 
     void ControlCore::ClearSearch()
