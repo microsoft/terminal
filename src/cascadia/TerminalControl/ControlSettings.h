@@ -76,7 +76,86 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
         CORE_APPEARANCE_SETTINGS(APPEARANCE_GEN)
-        CONTROL_APPEARANCE_SETTINGS(APPEARANCE_GEN)
+        til::color SelectionBackground() const noexcept
+        {
+            return _focusedAppearance->SelectionBackground();
+        }
+        void SelectionBackground(const til::color& value) noexcept
+        {
+            _focusedAppearance->SelectionBackground(value);
+        }
+        double Opacity() const noexcept
+        {
+            return _focusedAppearance->Opacity();
+        }
+        void Opacity(const double& value) noexcept
+        {
+            _focusedAppearance->Opacity(value);
+        }
+        winrt::hstring BackgroundImage() const noexcept
+        {
+            return _focusedAppearance->BackgroundImage();
+        }
+        void BackgroundImage(const winrt::hstring& value) noexcept
+        {
+            _focusedAppearance->BackgroundImage(value);
+        }
+        double BackgroundImageOpacity() const noexcept
+        {
+            return _focusedAppearance->BackgroundImageOpacity();
+        }
+        void BackgroundImageOpacity(const double& value) noexcept
+        {
+            _focusedAppearance->BackgroundImageOpacity(value);
+        }
+        winrt::Windows::UI::Xaml::Media::Stretch BackgroundImageStretchMode() const noexcept
+        {
+            return _focusedAppearance->BackgroundImageStretchMode();
+        }
+        void BackgroundImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch& value) noexcept
+        {
+            _focusedAppearance->BackgroundImageStretchMode(value);
+        }
+        winrt::Windows::UI::Xaml::HorizontalAlignment BackgroundImageHorizontalAlignment() const noexcept
+        {
+            return _focusedAppearance->BackgroundImageHorizontalAlignment();
+        }
+        void BackgroundImageHorizontalAlignment(const winrt::Windows::UI::Xaml::HorizontalAlignment& value) noexcept
+        {
+            _focusedAppearance->BackgroundImageHorizontalAlignment(value);
+        }
+        winrt::Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() const noexcept
+        {
+            return _focusedAppearance->BackgroundImageVerticalAlignment();
+        }
+        void BackgroundImageVerticalAlignment(const winrt::Windows::UI::Xaml::VerticalAlignment& value) noexcept
+        {
+            _focusedAppearance->BackgroundImageVerticalAlignment(value);
+        }
+        bool RetroTerminalEffect() const noexcept
+        {
+            return _focusedAppearance->RetroTerminalEffect();
+        }
+        void RetroTerminalEffect(const bool& value) noexcept
+        {
+            _focusedAppearance->RetroTerminalEffect(value);
+        }
+        winrt::hstring PixelShaderPath() const noexcept
+        {
+            return _focusedAppearance->PixelShaderPath();
+        }
+        void PixelShaderPath(const winrt::hstring& value) noexcept
+        {
+            _focusedAppearance->PixelShaderPath(value);
+        }
+        bool UseAcrylic() const noexcept
+        {
+            return _focusedAppearance->UseAcrylic();
+        }
+        void UseAcrylic(const bool& value) noexcept
+        {
+            _focusedAppearance->UseAcrylic(value);
+        }
 #undef APPEARANCE_GEN
 
         winrt::Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept
