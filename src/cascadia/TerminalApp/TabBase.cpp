@@ -25,10 +25,6 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    WUX::FocusState TabBase::FocusState() const noexcept
-    {
-        return _focusState;
-    }
 
     // Method Description:
     // - Prepares this tab for being removed from the UI hierarchy
@@ -590,4 +586,49 @@ namespace winrt::TerminalApp::implementation
             VisualStateManager::GoToState(item, L"Normal", true);
         }
     }
+
+    TabCloseButtonVisibility TabBase::CloseButtonVisibility()
+    {
+        return _closeButtonVisibility;
+    }
+
+    void TabBase::CloseButtonVisibility(TabCloseButtonVisibility visibility)
+    {
+        _closeButtonVisibility = visibility;
+        _updateIsClosable();
+    }
+
+    void TabBase::_updateIsClosable()
+    {
+        if (ReadOnly())
+        {
+            TabViewItem().IsClosable(false);
+        }
+        else
+        {
+            switch (_closeButtonVisibility)
+            {
+            case TabCloseButtonVisibility::Never:
+                TabViewItem().IsClosable(false);
+                break;
+            case TabCloseButtonVisibility::Hover:
+                TabViewItem().IsClosable(true);
+                break;
+            case TabCloseButtonVisibility::ActiveOnly:
+            {
+                TabViewItem().IsClosable(_focused());
+                break;
+            }
+            default:
+                TabViewItem().IsClosable(true);
+                break;
+            }
+        }
+    }
+
+    bool TabBase::_focused() const noexcept
+    {
+        return _focusState != FocusState::Unfocused;
+    }
+
 }
