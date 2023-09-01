@@ -205,7 +205,6 @@ namespace Microsoft::Console::VirtualTerminal
         {
             CharacterAttributes andAttrMask = CharacterAttributes::All;
             CharacterAttributes xorAttrMask = CharacterAttributes::Normal;
-            bool reverseUnderline = false; // underline needs to be reversed separately from other attributes
             std::optional<TextColor> foreground;
             std::optional<TextColor> background;
             std::optional<TextColor> underlineColor;
