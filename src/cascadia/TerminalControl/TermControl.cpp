@@ -497,7 +497,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // _InitializeBackgroundBrush call instead, because we may need to
         // switch from a solid color brush to an acrylic one.
         _changeBackgroundColor(bg);
-        _InitializeBackgroundBrush();
 
         // Update selection markers
         Windows::UI::Xaml::Media::SolidColorBrush cursorColorBrush{ til::color{ newAppearance.CursorColor() } };
@@ -692,15 +691,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 acrylic = Media::AcrylicBrush{};
 
-                if (_core.Settings().EnableUnfocusedAcrylic())
-                    acrylic.BackgroundSource(Media::AcrylicBackgroundSource::Backdrop);
-                else
-                    acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-            }
-
-            // Replaces brush when settings EnableUnfocusedAcrylic gets changed at runtime
-            else
-            {
                 if (_core.Settings().EnableUnfocusedAcrylic())
                     acrylic.BackgroundSource(Media::AcrylicBackgroundSource::Backdrop);
                 else

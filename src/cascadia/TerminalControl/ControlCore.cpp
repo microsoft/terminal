@@ -869,16 +869,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // No need to switch Acrylic if UnfocusedAcrylic is disabled
             if (_settings->EnableUnfocusedAcrylic())
             {
-                hstring focusedstate = focused ? L"true" : L"false";
-                hstring focusstring = hstring(L"\nFocusstate: ") + focusedstate;
-
-                OutputDebugStringW(focusstring.c_str());
-
                 // Manually turn off acrylic if they turn off transparency.
                 _runtimeUseAcrylic = Opacity() < 1.0 && newAppearance->UseAcrylic();
-
-                hstring v = L"\nOpacity: " + to_hstring(_settings->Opacity());
-                OutputDebugStringW(v.c_str());
 
                 // Update the renderer as well. It might need to fall back from
                 // cleartype -> grayscale if the BG is transparent / acrylic.
