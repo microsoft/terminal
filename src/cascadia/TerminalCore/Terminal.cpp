@@ -1432,7 +1432,9 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
             do
             {
                 auto range = ICU::BufferRangeFromMatch(&text, re.get());
-                // PointTree uses half-open ranges.
+                // PointTree uses half-open ranges and viewport-relative coordinates.
+                range.start.y -= beg;
+                range.end.y -= beg;
                 range.end.x++;
                 intervals.push_back(PointTree::interval(range.start, range.end, 0));
             } while (uregex_findNext(re.get(), &status));
