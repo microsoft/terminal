@@ -256,8 +256,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
 
         _AdjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
-        _UseAcrylic = appearance.UseAcrylic();
         _Opacity = appearance.Opacity();
+        _UseAcrylic = appearance.UseAcrylic();
     }
 
     // Method Description:
@@ -277,7 +277,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
         _ProfileSource = profile.Source();
-        //_UseAcrylic = profile.UseAcrylic();
 
         const auto fontInfo = profile.FontInfo();
         _FontFace = fontInfo.FontFace();
