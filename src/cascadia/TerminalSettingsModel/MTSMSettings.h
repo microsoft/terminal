@@ -67,7 +67,7 @@ Author(s):
     X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} })) \
     X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
     X(bool, IsolatedMode, "compatibility.isolatedMode", false)                                                                                                                                        \
-    X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22") \
+    X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")                                                                                       \
     X(bool, EnableUnfocusedAcrylic, "compatibility.enableUnfocusedAcrylic", true)
 
 // Also add these settings to:
@@ -98,7 +98,7 @@ Author(s):
     X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
     X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)                                                                                            \
     X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)                                                                                             \
-    X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false) 
+    X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)
 
 // Intentionally omitted Profile settings:
 // * Name
@@ -128,7 +128,7 @@ Author(s):
     X(ConvergedAlignment, BackgroundImageAlignment, "backgroundImageAlignment", ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center)       \
     X(hstring, BackgroundImagePath, "backgroundImage")                                                                                                             \
     X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                      \
-    X(Core::AdjustTextMode, AdjustIndistinguishableColors, "adjustIndistinguishableColors", Core::AdjustTextMode::Never) \
+    X(Core::AdjustTextMode, AdjustIndistinguishableColors, "adjustIndistinguishableColors", Core::AdjustTextMode::Never)                                           \
     X(bool, UseAcrylic, "useAcrylic", false)
 
 // Intentionally omitted Appearance settings:
