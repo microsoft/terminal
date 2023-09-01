@@ -29,7 +29,6 @@
     X(bool, RetroTerminalEffect, false)                                                                                                         \
     X(winrt::hstring, PixelShaderPath)  
 
-
 // --------------------------- Core Settings ---------------------------
 //  All of these settings are defined in ICoreSettings.
 #define CORE_SETTINGS(X)                                                                                          \
