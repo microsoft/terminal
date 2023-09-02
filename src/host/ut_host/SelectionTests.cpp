@@ -10,7 +10,6 @@
 #include "globals.h"
 
 #include "selection.hpp"
-#include "cmdline.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
@@ -380,89 +379,6 @@ class SelectionInputTests
         delete m_state;
 
         return true;
-    }
-
-    TEST_METHOD(TestGetInputLineBoundaries)
-    {
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        // 80x80 box
-        const til::CoordType sRowWidth = 80;
-
-        til::inclusive_rect srectEdges;
-        srectEdges.left = srectEdges.top = 0;
-        srectEdges.right = srectEdges.bottom = sRowWidth - 1;
-
-        // false when no cooked read data exists
-        VERIFY_IS_FALSE(gci.HasPendingCookedRead());
-
-        auto fResult = Selection::s_GetInputLineBoundaries(nullptr, nullptr);
-        VERIFY_IS_FALSE(fResult);
-
-        // prepare some read data
-        m_state->PrepareReadHandle();
-        auto cleanupReadHandle = wil::scope_exit([&]() { m_state->CleanupReadHandle(); });
-
-        m_state->PrepareCookedReadData();
-        // set up to clean up read data later
-        auto cleanupCookedRead = wil::scope_exit([&]() { m_state->CleanupCookedReadData(); });
-
-        auto& readData = gci.CookedReadData();
-
-        // backup text info position over remainder of text execution duration
-        auto& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
-        til::point coordOldTextInfoPos;
-        coordOldTextInfoPos.x = textBuffer.GetCursor().GetPosition().x;
-        coordOldTextInfoPos.y = textBuffer.GetCursor().GetPosition().y;
-
-        // set various cursor positions
-        readData.OriginalCursorPosition().x = 15;
-        readData.OriginalCursorPosition().y = 3;
-
-        readData.VisibleCharCount() = 200;
-
-        textBuffer.GetCursor().SetXPosition(35);
-        textBuffer.GetCursor().SetYPosition(35);
-
-        // try getting boundaries with no pointers. parameters should be fully optional.
-        fResult = Selection::s_GetInputLineBoundaries(nullptr, nullptr);
-        VERIFY_IS_TRUE(fResult);
-
-        // now let's get some actual data
-        til::point coordStart;
-        til::point coordEnd;
-
-        fResult = Selection::s_GetInputLineBoundaries(&coordStart, &coordEnd);
-        VERIFY_IS_TRUE(fResult);
-
-        // starting position/boundary should always be where the input line started
-        VERIFY_ARE_EQUAL(coordStart.x, readData.OriginalCursorPosition().x);
-        VERIFY_ARE_EQUAL(coordStart.y, readData.OriginalCursorPosition().y);
-
-        // ending position can vary. it's in one of two spots
-        // 1. If the original cooked cursor was valid (which it was this first time), it's NumberOfVisibleChars ahead.
-        til::point coordFinalPos;
-
-        const auto cCharsToAdjust = ((til::CoordType)readData.VisibleCharCount() - 1); // then -1 to be on the last piece of text, not past it
-
-        coordFinalPos.x = (readData.OriginalCursorPosition().x + cCharsToAdjust) % sRowWidth;
-        coordFinalPos.y = readData.OriginalCursorPosition().y + ((readData.OriginalCursorPosition().x + cCharsToAdjust) / sRowWidth);
-
-        VERIFY_ARE_EQUAL(coordEnd.x, coordFinalPos.x);
-        VERIFY_ARE_EQUAL(coordEnd.y, coordFinalPos.y);
-
-        // 2. if the original cooked cursor is invalid, then it's the text info cursor position
-        readData.OriginalCursorPosition().x = -1;
-        readData.OriginalCursorPosition().y = -1;
-
-        fResult = Selection::s_GetInputLineBoundaries(nullptr, &coordEnd);
-        VERIFY_IS_TRUE(fResult);
-
-        VERIFY_ARE_EQUAL(coordEnd.x, textBuffer.GetCursor().GetPosition().x - 1); // -1 to be on the last piece of text, not past it
-        VERIFY_ARE_EQUAL(coordEnd.y, textBuffer.GetCursor().GetPosition().y);
-
-        // restore text buffer info position
-        textBuffer.GetCursor().SetXPosition(coordOldTextInfoPos.x);
-        textBuffer.GetCursor().SetYPosition(coordOldTextInfoPos.y);
     }
 
     TEST_METHOD(TestWordByWordPrevious)

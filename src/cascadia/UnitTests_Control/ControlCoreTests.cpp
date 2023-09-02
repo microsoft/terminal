@@ -41,6 +41,8 @@ namespace ControlUnitTests
         TEST_METHOD(TestSelectCommandSimple);
         TEST_METHOD(TestSelectOutputSimple);
 
+        TEST_METHOD(TestSimpleClickSelection);
+
         TEST_CLASS_SETUP(ModuleSetup)
         {
             winrt::init_apartment(winrt::apartment_type::single_threaded);
@@ -498,5 +500,69 @@ namespace ControlUnitTests
             VERIFY_ARE_EQUAL(expectedStart, start);
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }
+    }
+
+    void ControlCoreTests::TestSimpleClickSelection()
+    {
+        // Create a simple selection with the mouse, then click somewhere else,
+        // and confirm the selection got updated.
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        // Here, we're using the UpdateSelectionMarkers as a stand-in to check
+        // if the selection got updated with the renderer. Standing up a whole
+        // dummy renderer for this test would be not very ergonomic. Instead, we
+        // are relying on ControlCore::_updateSelectionUI both
+        // TriggerSelection()'ing and also rasing this event
+        bool expectedSelectionUpdate = false;
+        bool gotSelectionUpdate = false;
+        core->UpdateSelectionMarkers([&](auto&& /*sender*/, auto&& /*args*/) {
+            VERIFY_IS_TRUE(expectedSelectionUpdate);
+            expectedSelectionUpdate = false;
+            gotSelectionUpdate = true;
+        });
+
+        auto needToCopy = false;
+        expectedSelectionUpdate = true;
+        core->LeftClickOnTerminal(til::point{ 1, 1 },
+                                  1,
+                                  false,
+                                  true,
+                                  false,
+                                  needToCopy);
+
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 1, 1 };
+            const til::point expectedEnd{ 1, 1 };
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+        VERIFY_IS_TRUE(gotSelectionUpdate);
+
+        expectedSelectionUpdate = true;
+        core->LeftClickOnTerminal(til::point{ 1, 2 },
+                                  1,
+                                  false,
+                                  true,
+                                  false,
+                                  needToCopy);
+
+        VERIFY_IS_TRUE(core->HasSelection());
+        {
+            const auto& start = core->_terminal->GetSelectionAnchor();
+            const auto& end = core->_terminal->GetSelectionEnd();
+            const til::point expectedStart{ 1, 1 };
+            const til::point expectedEnd{ 1, 2 };
+            VERIFY_ARE_EQUAL(expectedStart, start);
+            VERIFY_ARE_EQUAL(expectedEnd, end);
+        }
+        VERIFY_IS_TRUE(gotSelectionUpdate);
     }
 }

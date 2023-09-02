@@ -176,7 +176,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             //   we tried writing a wide glyph into the last column which can't work.
             if (textPositionBefore == textPositionAfter && (state.columnBegin == 0 || !wrapAtEOL))
             {
-                textBuffer.ConsumeGrapheme(state.text);
+                state.text = state.text.substr(textBuffer.GraphemeNext(state.text, 0));
             }
 
             if (wrapAtEOL)
@@ -894,7 +894,7 @@ void AdaptDispatch::_SelectiveEraseRect(TextBuffer& textBuffer, const til::rect&
     {
         for (auto row = eraseRect.top; row < eraseRect.bottom; row++)
         {
-            auto& rowBuffer = textBuffer.GetRowByOffset(row);
+            auto& rowBuffer = textBuffer.GetMutableRowByOffset(row);
             for (auto col = eraseRect.left; col < eraseRect.right; col++)
             {
                 // Only unprotected cells are affected.
@@ -996,7 +996,7 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
     {
         for (auto row = changeRect.top; row < changeRect.bottom; row++)
         {
-            auto& rowBuffer = textBuffer.GetRowByOffset(row);
+            auto& rowBuffer = textBuffer.GetMutableRowByOffset(row);
             for (auto col = changeRect.left; col < changeRect.right; col++)
             {
                 auto attr = rowBuffer.GetAttrByColumn(col);
@@ -2407,7 +2407,7 @@ void AdaptDispatch::_DoLineFeed(TextBuffer& textBuffer, const bool withReturn, c
 
     // If the line was forced to wrap, set the wrap status.
     // When explicitly moving down a row, clear the wrap status.
-    textBuffer.GetRowByOffset(currentPosition.y).SetWrapForced(wrapForced);
+    textBuffer.GetMutableRowByOffset(currentPosition.y).SetWrapForced(wrapForced);
 
     // If a carriage return was requested, we move to the leftmost column or
     // the left margin, depending on whether we started within the margins.
@@ -2453,7 +2453,7 @@ void AdaptDispatch::_DoLineFeed(TextBuffer& textBuffer, const bool withReturn, c
         else
         {
             const auto eraseAttributes = _GetEraseAttributes(textBuffer);
-            textBuffer.GetRowByOffset(newPosition.y).Reset(eraseAttributes);
+            textBuffer.GetMutableRowByOffset(newPosition.y).Reset(eraseAttributes);
         }
     }
     else
@@ -3736,6 +3736,86 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     // simple state machine here to track the most recently emitted mark from
     // this set of sequences, and which sequence was emitted last, so we can
     // modify the state of that mark as we go.
+    return false;
+}
+// Method Description:
+// - Performs a VsCode action
+// - Currently, the actions we support are:
+//   * Completions: An experimental protocol for passing shell completion
+//     information from the shell to the terminal. This sequence is still under
+//     active development, and subject to change.
+// - Not actually used in conhost
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - false in conhost, true for the SetMark action, otherwise false.
+bool AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually to make sure this action happens at the right time.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    if constexpr (!Feature_ShellCompletions::IsEnabled())
+    {
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"Completions")
+    {
+        // The structure of the message is as follows:
+        // `e]633;
+        // 0:     Completions;
+        // 1:     $($completions.ReplacementIndex);
+        // 2:     $($completions.ReplacementLength);
+        // 3:     $($cursorIndex);
+        // 4:     $completions.CompletionMatches | ConvertTo-Json
+        unsigned int replacementIndex = 0;
+        unsigned int replacementLength = 0;
+        unsigned int cursorIndex = 0;
+
+        bool succeeded = (parts.size() >= 2) &&
+                         (Utils::StringToUint(til::at(parts, 1), replacementIndex));
+        succeeded &= (parts.size() >= 3) &&
+                     (Utils::StringToUint(til::at(parts, 2), replacementLength));
+        succeeded &= (parts.size() >= 4) &&
+                     (Utils::StringToUint(til::at(parts, 3), cursorIndex));
+
+        // VsCode is using cursorIndex and replacementIndex, but we aren't currently.
+        if (succeeded)
+        {
+            // Get the combined lengths of parts 0-3, plus the semicolons. We
+            // need this so that we can just pass the remainder of the string.
+            const auto prefixLength = til::at(parts, 0).size() + 1 +
+                                      til::at(parts, 1).size() + 1 +
+                                      til::at(parts, 2).size() + 1 +
+                                      til::at(parts, 3).size() + 1;
+            if (prefixLength > string.size())
+            {
+                return true;
+            }
+            // Get the remainder of the string
+            const auto remainder = string.substr(prefixLength);
+
+            _api.InvokeCompletions(parts.size() < 5 ? L"" : remainder,
+                                   replacementLength);
+        }
+
+        // If it's poorly formatted, just eat it
+        return true;
+    }
     return false;
 }
 
