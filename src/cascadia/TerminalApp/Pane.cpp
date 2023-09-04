@@ -1393,7 +1393,7 @@ Profile Pane::GetFocusedProfile()
 // - true if the connection state of this Pane is closed.
 bool Pane::IsConnectionClosed() const
 {
-    return _connectionState >= ConnectionState::Closed;
+    return _control && _control.ConnectionState() >= ConnectionState::Closed;
 }
 
 // Method Description:

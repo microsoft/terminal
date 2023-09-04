@@ -1096,7 +1096,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_RestartActivePaneConnection()
     {
         ActionAndArgs restartConnection{ ShortcutAction::RestartConnection, nullptr };
-        _dispatch.DoAction(restartConnection);
+        _dispatch.DoAction(*this, restartConnection);
     }
 
     // Method Description:
