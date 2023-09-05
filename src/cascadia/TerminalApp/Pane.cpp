@@ -3174,7 +3174,9 @@ void Pane::EnableBroadcast(bool enabled)
     if (_IsLeaf())
     {
         _broadcastEnabled = enabled;
-        // _control.DisplayCursorWhileBlurred(enabled);
+        _control.CursorVisibility(enabled ?
+                                      CursorDisplayState::Shown :
+                                      CursorDisplayState::Default);
         UpdateVisuals();
     }
     else

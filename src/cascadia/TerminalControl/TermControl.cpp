@@ -1005,8 +1005,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // _cursorTimer doesn't exist, and it would never turn on the
             // cursor. To mitigate, we'll initialize the cursor's 'on' state
             // with `_focused` here.
-            _core.CursorOn(_focused || DisplayCursorWhileBlurred);
-            if (DisplayCursorWhileBlurred)
+            _core.CursorOn(_focused || _displayCursorWhileBlurred());
+            if (_displayCursorWhileBlurred())
             {
                 _cursorTimer->Start();
             }
@@ -1922,7 +1922,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             TSFInputControl().NotifyFocusLeave();
         }
 
-        if (_cursorTimer && !DisplayCursorWhileBlurred)
+        if (_cursorTimer && !_displayCursorWhileBlurred())
         {
             _cursorTimer->Stop();
             _core.CursorOn(false);
@@ -3591,5 +3591,41 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ContextMenu().Hide();
         SelectionContextMenu().Hide();
         _core.ContextMenuSelectOutput();
+    }
+
+    // Should the text cursor be displayed, even when the control isn't focused?
+    // n.b. "blur" is the opposite of "focus".
+    bool TermControl::_displayCursorWhileBlurred() const noexcept
+    {
+        return CursorVisibility() == Control::CursorDisplayState::Shown;
+    }
+    Control::CursorDisplayState TermControl::CursorVisibility() const noexcept
+    {
+        return _cursorVisibility;
+    }
+    void TermControl::CursorVisibility(Control::CursorDisplayState cursorVisibility)
+    {
+        _cursorVisibility = cursorVisibility;
+        if (!_initializedTerminal)
+        {
+            return;
+        }
+        if (_displayCursorWhileBlurred())
+        {
+            _core.CursorOn(true);
+            if (_cursorTimer.has_value())
+            {
+                _cursorTimer->Start();
+            }
+        }
+        else
+        {
+            const auto focused = FocusState() != FocusState::Unfocused;
+            if (!focused && _cursorTimer.has_value())
+            {
+                _cursorTimer->Stop();
+            }
+            _core.CursorOn(focused);
+        }
     }
 }
