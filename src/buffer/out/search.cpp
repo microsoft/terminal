@@ -8,6 +8,14 @@
 
 using namespace Microsoft::Console::Types;
 
+bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData)
+{
+    return ResetIfStale(renderData,
+                        _needle,
+                        _step == -1, // this is the opposite of the initializer below
+                        _caseInsensitive);
+}
+
 bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive)
 {
     const auto& textBuffer = renderData.GetTextBuffer();
@@ -71,8 +79,10 @@ void Search::MovePastPoint(const til::point anchor) noexcept
 
 void Search::FindNext() noexcept
 {
-    const auto count = gsl::narrow_cast<ptrdiff_t>(_results.size());
-    _index = (_index + _step + count) % count;
+    if (const auto count{ gsl::narrow_cast<ptrdiff_t>(_results.size()) })
+    {
+        _index = (_index + _step + count) % count;
+    }
 }
 
 const til::point_span* Search::GetCurrent() const noexcept
@@ -87,6 +97,7 @@ const til::point_span* Search::GetCurrent() const noexcept
 
 // Routine Description:
 // - Takes the found word and selects it in the screen buffer
+
 bool Search::SelectCurrent() const
 {
     if (const auto s = GetCurrent())
@@ -101,4 +112,14 @@ bool Search::SelectCurrent() const
     }
 
     return false;
+}
+
+const std::vector<til::point_span>& Search::Results() const noexcept
+{
+    return _results;
+}
+
+size_t Search::CurrentMatch() const noexcept
+{
+    return _index;
 }
