@@ -648,6 +648,9 @@ void AtlasEngine::_flushBufferLine()
 
         const auto initialIndicesCount = row.glyphIndices.size();
 
+        // GetTextComplexity() returns as many glyph indices as its textLength parameter (here: mappedLength).
+        // This block ensures that the buffer has sufficient capacity. It also initializes the glyphProps buffer because it and
+        // glyphIndices sort of form a "pair" in the _mapComplex() code and are always simultaneously resized there as well.
         if (mappedLength > _api.glyphIndices.size())
         {
             auto size = _api.glyphIndices.size();
@@ -658,33 +661,40 @@ void AtlasEngine::_flushBufferLine()
             _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ size };
         }
 
-        // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
-        for (u32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
+        if (_api.s->font->fontFeatures.empty())
         {
-            BOOL isTextSimple = FALSE;
-            THROW_IF_FAILED(_p.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + idx, mappedEnd - idx, mappedFontFace.get(), &isTextSimple, &complexityLength, _api.glyphIndices.data()));
-
-            if (isTextSimple)
+            // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
+            for (u32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
             {
-                const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
-                const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
+                BOOL isTextSimple = FALSE;
+                THROW_IF_FAILED(_p.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + idx, mappedEnd - idx, mappedFontFace.get(), &isTextSimple, &complexityLength, _api.glyphIndices.data()));
 
-                for (size_t i = 0; i < complexityLength; ++i)
+                if (isTextSimple)
                 {
-                    const size_t col1 = _api.bufferLineColumn[idx + i + 0];
-                    const size_t col2 = _api.bufferLineColumn[idx + i + 1];
-                    const auto glyphAdvance = (col2 - col1) * _p.s->font->cellSize.x;
-                    const auto fg = colors[col1 << shift];
-                    row.glyphIndices.emplace_back(_api.glyphIndices[i]);
-                    row.glyphAdvances.emplace_back(static_cast<f32>(glyphAdvance));
-                    row.glyphOffsets.emplace_back();
-                    row.colors.emplace_back(fg);
+                    const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
+                    const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
+
+                    for (size_t i = 0; i < complexityLength; ++i)
+                    {
+                        const size_t col1 = _api.bufferLineColumn[idx + i + 0];
+                        const size_t col2 = _api.bufferLineColumn[idx + i + 1];
+                        const auto glyphAdvance = (col2 - col1) * _p.s->font->cellSize.x;
+                        const auto fg = colors[col1 << shift];
+                        row.glyphIndices.emplace_back(_api.glyphIndices[i]);
+                        row.glyphAdvances.emplace_back(static_cast<f32>(glyphAdvance));
+                        row.glyphOffsets.emplace_back();
+                        row.colors.emplace_back(fg);
+                    }
+                }
+                else
+                {
+                    _mapComplex(mappedFontFace.get(), idx, complexityLength, row);
                 }
             }
-            else
-            {
-                _mapComplex(mappedFontFace.get(), idx, complexityLength, row);
-            }
+        }
+        else
+        {
+            _mapComplex(mappedFontFace.get(), idx, mappedLength, row);
         }
 
         const auto indicesCount = row.glyphIndices.size();
