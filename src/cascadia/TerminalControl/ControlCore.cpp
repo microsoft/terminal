@@ -1601,7 +1601,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _cachedSearchResultRows = winrt::single_threaded_vector<int32_t>(std::move(results));
         }
 
-        return _cachedSearchResultRows ? _cachedSearchResultRows : winrt::single_threaded_vector<int32_t>();
+        return _cachedSearchResultRows;
     }
 
     void ControlCore::ClearSearch()
@@ -1904,7 +1904,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->Write(hstr);
 
             // Start the throttled update of where our hyperlinks are.
-
             const auto shared = _shared.lock_shared();
             if (shared->updatePatternLocations)
             {

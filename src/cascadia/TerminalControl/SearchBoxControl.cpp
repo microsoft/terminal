@@ -358,9 +358,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - enable: if true, the buttons should be enabled
     // Return Value:
     // - <none>
-    void SearchBoxControl::SetNavigationEnabled(bool enabled)
+    void SearchBoxControl::NavigationEnabled(bool enabled)
     {
         GoBackwardButton().IsEnabled(enabled);
         GoForwardButton().IsEnabled(enabled);
+    }
+    bool SearchBoxControl::NavigationEnabled()
+    {
+        return GoBackwardButton().IsEnabled() || GoForwardButton().IsEnabled();
     }
 }

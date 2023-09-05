@@ -413,9 +413,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Search text in text buffer. This is triggered if the user click
-    //   search button or press enter.
-    // In the live search mode it will be also triggered once every time search criteria changes
+    // - Search text in text buffer. This is triggered if the user clicks the
+    //   search button, presses enter, or changes the search criteria.
     // Arguments:
     // - text: the text to search
     // - goForward: boolean that represents if the current search direction is forward
@@ -3494,7 +3493,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_searchBox)
         {
             _searchBox->SetStatus(args.TotalMatches(), args.CurrentMatch());
-            _searchBox->SetNavigationEnabled(true);
+            _searchBox->NavigationEnabled(true);
         }
     }
 

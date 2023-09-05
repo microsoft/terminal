@@ -42,7 +42,7 @@ public:
 private:
     // _renderData is a pointer so that Search() is constexpr default constructable.
     Microsoft::Console::Render::IRenderData* _renderData = nullptr;
-    std::wstring_view _needle;
+    std::wstring _needle;
     bool _reverse = false;
     bool _caseInsensitive = false;
     uint64_t _lastMutationId = 0;

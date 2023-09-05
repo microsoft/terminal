@@ -34,7 +34,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void PopulateTextbox(const winrt::hstring& text);
         bool ContainsFocus();
         void SetStatus(int32_t totalMatches, int32_t currentMatch);
-        void SetNavigationEnabled(bool enabled);
+        bool NavigationEnabled();
+        void NavigationEnabled(bool enabled);
 
         void GoBackwardClicked(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/);
         void GoForwardClicked(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/);
