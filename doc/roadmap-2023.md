@@ -11,12 +11,12 @@ We've settled on a roughly quarterly release cycle - about once every three mont
 New features will go into [Windows Terminal Preview](https://aka.ms/terminal-preview) first. Typically, one release after they've been in Preview, those features will move into [Windows Terminal](https://aka.ms/terminal) ("Terminal Stable"). In the case of some more risky or experimental features, we might hold them to only Preview builds for an extended period[^1].
 
 
-| Quarter | Date    | Release Version | Preview Release Blog Post |
-| --------|---------|--------- | -------------- | ------------------------- |
+| Quarter | Date       | Release Version | Preview Release Blog Post |
+| --------|------------|---------------- | ------------------------- |
 | CY23 Q1 | 2023-01-24 | [Terminal 1.17] | [Windows Terminal Preview 1.17 Release] |
 | CY23 Q2 | 2023-05-23 | [Terminal 1.18] | [Windows Terminal Preview 1.18 Release] |
-| CY23 Q3 |     | [Terminal 1.19]| [Windows Terminal Preview 1.19 Release] |
-| CY23 Q4 |     | [Terminal 1.20]| [Windows Terminal Preview 1.20 Release] |
+| CY23 Q3 |            | [Terminal 1.19] | [Windows Terminal Preview 1.19 Release] |
+| CY23 Q4 |            | [Terminal 1.20] | [Windows Terminal Preview 1.20 Release] |
 
 Within a single milestone, we typically reserve the last month as "bake time", to polish off bugfixes and get the release ready to ship. In this last month, we'll likely slow down our ingestion of community PRs just to stabilize what's already in `main`. For example, a given release might look like:
 
