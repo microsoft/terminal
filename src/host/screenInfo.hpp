@@ -123,8 +123,6 @@ public:
     static void s_InsertScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
     static void s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
 
-    OutputCellRect ReadRect(const Microsoft::Console::Types::Viewport location) const;
-
     TextBufferCellIterator GetCellDataAt(const til::point at) const;
     TextBufferCellIterator GetCellLineDataAt(const til::point at) const;
     TextBufferCellIterator GetCellDataAt(const til::point at, const Microsoft::Console::Types::Viewport limit) const;
@@ -202,8 +200,8 @@ public:
     SCREEN_INFORMATION& GetActiveBuffer();
     const SCREEN_INFORMATION& GetActiveBuffer() const;
 
-    TextAttribute GetAttributes() const;
-    TextAttribute GetPopupAttributes() const;
+    const TextAttribute& GetAttributes() const noexcept;
+    const TextAttribute& GetPopupAttributes() const noexcept;
 
     void SetAttributes(const TextAttribute& attributes);
     void SetPopupAttributes(const TextAttribute& popupAttributes);

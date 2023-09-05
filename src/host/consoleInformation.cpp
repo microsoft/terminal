@@ -130,6 +130,11 @@ bool CONSOLE_INFORMATION::HasPendingCookedRead() const noexcept
     return _cookedReadData != nullptr;
 }
 
+bool CONSOLE_INFORMATION::HasPendingPopup() const noexcept
+{
+    return _cookedReadData && _cookedReadData->PresentingPopup();
+}
+
 const COOKED_READ_DATA& CONSOLE_INFORMATION::CookedReadData() const noexcept
 {
     return *_cookedReadData;

@@ -397,7 +397,7 @@ void HandleKeyEvent(const HWND hWnd,
         }
     }
     // we need to check if there is an active popup because otherwise they won't be able to receive shift+key events
-    if (pSelection->s_IsValidKeyboardLineSelection(&inputKeyInfo) && IsInProcessedInputMode() && gci.PopupCount.load() == 0)
+    if (pSelection->s_IsValidKeyboardLineSelection(&inputKeyInfo) && IsInProcessedInputMode() && !gci.HasPendingPopup())
     {
         if (!bKeyDown || pSelection->HandleKeyboardLineSelectionEvent(&inputKeyInfo))
         {

@@ -17,7 +17,6 @@ ADDALIAS
 ADDREF
 ADDSTRING
 ADDTOOL
-AEnd
 AFew
 AFill
 AFX
@@ -679,7 +678,7 @@ FSINFOCLASS
 fte
 Ftm
 Fullscreens
-fullwidth
+Fullwidth
 FUNCTIONCALL
 fuzzer
 fuzzmain
@@ -923,7 +922,6 @@ itermcolors
 ITerminal
 itf
 Ith
-itoa
 IUI
 IUnknown
 ivalid
@@ -1102,6 +1100,7 @@ MDs
 MEASUREITEM
 megamix
 memallocator
+meme
 MENUCHAR
 MENUCONTROL
 MENUDROPALIGNMENT
@@ -1588,7 +1587,6 @@ rgrc
 rgs
 rgui
 rgw
-rgwch
 RIGHTALIGN
 RIGHTBUTTON
 riid
@@ -1783,7 +1781,6 @@ STDMETHODCALLTYPE
 STDMETHODIMP
 STGM
 stl
-stoutapot
 Stri
 Stringable
 STRINGTABLE
@@ -1838,7 +1835,6 @@ TBM
 tchar
 TCHFORMAT
 TCI
-tcome
 tcommandline
 tcommands
 Tdd
@@ -1865,8 +1861,7 @@ testname
 TESTNULL
 testpass
 testpasses
-testtestabc
-testtesttesttesttest
+testtimeout
 TEXCOORD
 texel
 TExpected
@@ -2083,7 +2078,6 @@ vtseq
 vtterm
 vttest
 VWX
-waaay
 waitable
 WANSUNG
 WANTARROWS
@@ -2201,7 +2195,6 @@ wprp
 wprpi
 wregex
 writeback
-writechar
 WRITECONSOLE
 WRITECONSOLEINPUT
 WRITECONSOLEOUTPUT

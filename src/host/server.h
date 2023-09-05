@@ -16,19 +16,16 @@ Revision History:
 
 #pragma once
 
-#include "IIoProvider.hpp"
-
-#include "settings.hpp"
-
 #include "conimeinfo.h"
-#include "VtIo.hpp"
 #include "CursorBlinker.hpp"
-
+#include "IIoProvider.hpp"
+#include "readDataCooked.hpp"
+#include "settings.hpp"
+#include "VtIo.hpp"
+#include "../audio/midi/MidiAudio.hpp"
+#include "../host/RenderData.hpp"
 #include "../server/ProcessList.h"
 #include "../server/WaitQueue.h"
-
-#include "../host/RenderData.hpp"
-#include "../audio/midi/MidiAudio.hpp"
 
 #include <til/ticket_lock.h>
 
@@ -91,8 +88,6 @@ public:
 
     DWORD Flags = 0;
 
-    std::atomic<WORD> PopupCount = 0;
-
     // the following fields are used for ansi-unicode translation
     UINT CP = 0;
     UINT OutputCP = 0;
@@ -121,6 +116,7 @@ public:
 
     bool IsInVtIoMode() const;
     bool HasPendingCookedRead() const noexcept;
+    bool HasPendingPopup() const noexcept;
     const COOKED_READ_DATA& CookedReadData() const noexcept;
     COOKED_READ_DATA& CookedReadData() noexcept;
     void SetCookedReadData(COOKED_READ_DATA* readData) noexcept;
@@ -166,8 +162,6 @@ private:
     Microsoft::Console::CursorBlinker _blinker;
     MidiAudio _midiAudio;
 };
-
-#define ConsoleLocked() (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)
 
 #define CONSOLE_STATUS_WAIT 0xC0030001
 #define CONSOLE_STATUS_READ_COMPLETE 0xC0030002
