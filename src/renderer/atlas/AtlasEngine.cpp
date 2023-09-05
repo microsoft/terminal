@@ -87,6 +87,7 @@ try
         _api.invalidatedRows.start = std::min(_api.invalidatedRows.start, _p.s->cellCount.y);
         _api.invalidatedRows.end = clamp(_api.invalidatedRows.end, _api.invalidatedRows.start, _p.s->cellCount.y);
     }
+    if (_api.scrollOffset)
     {
         const auto limit = gsl::narrow_cast<i16>(_p.s->cellCount.y & 0x7fff);
         const auto offset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
