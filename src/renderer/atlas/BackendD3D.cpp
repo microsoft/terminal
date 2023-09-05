@@ -1206,6 +1206,29 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
         .glyphIndices = &glyphEntry.glyphIndex,
     };
 
+    // To debug issues with this function it may be helpful to know which file
+    // a given font face corresponds to. This code works for most cases.
+#if 0
+    wchar_t filePath[MAX_PATH]{};
+    {
+        UINT32 fileCount = 1;
+        wil::com_ptr<IDWriteFontFile> file;
+        if (SUCCEEDED(fontFaceEntry.fontFace->GetFiles(&fileCount, file.addressof())))
+        {
+            wil::com_ptr<IDWriteFontFileLoader> loader;
+            THROW_IF_FAILED(file->GetLoader(loader.addressof()));
+
+            if (const auto localLoader = loader.try_query<IDWriteLocalFontFileLoader>())
+            {
+                void const* fontFileReferenceKey;
+                UINT32 fontFileReferenceKeySize;
+                THROW_IF_FAILED(file->GetReferenceKey(&fontFileReferenceKey, &fontFileReferenceKeySize));
+                THROW_IF_FAILED(localLoader->GetFilePathFromKey(fontFileReferenceKey, fontFileReferenceKeySize, &filePath[0], MAX_PATH));
+            }
+        }
+    }
+#endif
+
     // It took me a while to figure out how to rasterize glyphs manually with DirectWrite without depending on Direct2D.
     // The benefits are a reduction in memory usage, an increase in performance under certain circumstances and most
     // importantly, the ability to debug the renderer more easily, because many graphics debuggers don't support Direct2D.
