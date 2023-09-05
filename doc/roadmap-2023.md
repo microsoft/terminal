@@ -18,7 +18,7 @@ New features will go into [Windows Terminal Preview](https://aka.ms/terminal-pre
 | CY23 Q3 |     | [Terminal 1.19]| [Windows Terminal Preview 1.19 Release] |
 | CY23 Q4 |     | [Terminal 1.20]| [Windows Terminal Preview 1.20 Release] |
 
-Within a single milestone, we typically reserve the last month as "bake time", to polish off bugfixes and get the release ready to ship. In this last month, we'll likely slow down our ingestion of community PRs just to stablilize what's already in `main`. For example, a given release might look like:
+Within a single milestone, we typically reserve the last month as "bake time", to polish off bugfixes and get the release ready to ship. In this last month, we'll likely slow down our ingestion of community PRs just to stabilize what's already in `main`. For example, a given release might look like:
 
 ```mermaid
 gantt
@@ -64,7 +64,7 @@ For a more fluid take on what each of the team's personal goals are, head on ove
 [Windows Terminal Preview 1.18 Release]: https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-18-release/
 
 [@DHowett]: https://github.com/DHowett
-[@zadji-msft]: https://github.com/zadji-msft
+[@zadjii-msft]: https://github.com/zadjii-msft
 [@lhecker]: https://github.com/lhecker
 [@carlos-zamora]: https://github.com/carlos-zamora
 [@PankajBhojwani]: https://github.com/PankajBhojwani
