@@ -341,7 +341,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::point _contextMenuBufferPosition{ 0, 0 };
 
-        Windows::Foundation::Collections::IVector<int32_t> _cachedSearchResultRows{ winrt::single_threaded_vector<int32_t>() };
+        Windows::Foundation::Collections::IVector<int32_t> _cachedSearchResultRows{ nullptr };
 
         void _setupDispatcherAndCallbacks();
 

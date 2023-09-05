@@ -1601,7 +1601,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _cachedSearchResultRows = winrt::single_threaded_vector<int32_t>(std::move(results));
         }
 
-        return _cachedSearchResultRows;
+        return _cachedSearchResultRows ? _cachedSearchResultRows : winrt::single_threaded_vector<int32_t>();
     }
 
     void ControlCore::ClearSearch()

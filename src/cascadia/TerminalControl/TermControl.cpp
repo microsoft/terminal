@@ -333,7 +333,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (_searchBox)
             {
                 const auto searchMatches{ _core.SearchResultRows() };
-                if (searchMatches.Size() > 0 && _searchBox->Visibility() == Visibility::Visible)
+                if (searchMatches &&
+                    searchMatches.Size() > 0 &&
+                    _searchBox->Visibility() == Visibility::Visible)
                 {
                     const til::color fgColor{ _core.ForegroundColor() };
                     Media::SolidColorBrush searchMarkBrush{};
