@@ -27,7 +27,7 @@ I would highly recommend that Gulp convert to using PowerShell scripts and that 
 
 Original Source: https://github.com/microsoft/terminal/issues/217#issuecomment-404240443
 
-_Addenda_: cmd.exe is the literal embodiment of [xkcd#1172]([url](https://xkcd.com/1172/)). Every change, no matter how small, will break _someone_. 
+_Addendum_: cmd.exe is the literal embodiment of [xkcd#1172]([url](https://xkcd.com/1172/)). Every change, no matter how small, will break _someone_. 
 
 ## <a name="screenPerf"></a>Why is typing-to-screen performance better than every other app?
 
