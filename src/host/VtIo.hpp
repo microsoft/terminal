@@ -40,9 +40,6 @@ namespace Microsoft::Console::VirtualTerminal
         void CloseInput();
         void CloseOutput();
 
-        void BeginResize();
-        void EndResize();
-
 #ifdef UNIT_TESTING
         void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);
 #endif

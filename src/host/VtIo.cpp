@@ -463,40 +463,6 @@ void VtIo::SendCloseEvent()
     }
 }
 
-// Method Description:
-// - Tell the vt renderer to begin a resize operation. During a resize
-//   operation, the vt renderer should _not_ request to be repainted during a
-//   text buffer circling event. Any callers of this method should make sure to
-//   call EndResize to make sure the renderer returns to normal behavior.
-//   See GH#1795 for context on this method.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void VtIo::BeginResize()
-{
-    if (_pVtRenderEngine)
-    {
-        _pVtRenderEngine->BeginResizeRequest();
-    }
-}
-
-// Method Description:
-// - Tell the vt renderer to end a resize operation.
-//   See BeginResize for more details.
-//   See GH#1795 for context on this method.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void VtIo::EndResize()
-{
-    if (_pVtRenderEngine)
-    {
-        _pVtRenderEngine->EndResizeRequest();
-    }
-}
-
 #ifdef UNIT_TESTING
 // Method Description:
 // - This is a test helper method. It can be used to trick VtIo into responding
