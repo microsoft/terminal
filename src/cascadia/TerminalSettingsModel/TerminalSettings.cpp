@@ -257,6 +257,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _AdjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
         _Opacity = appearance.Opacity();
+        _UseAcrylic = appearance.UseAcrylic();
     }
 
     // Method Description:
@@ -276,7 +277,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
         _ProfileSource = profile.Source();
-        _UseAcrylic = profile.UseAcrylic();
 
         const auto fontInfo = profile.FontInfo();
         _FontFace = fontInfo.FontFace();
@@ -356,6 +356,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _ForceVTInput = globalSettings.ForceVTInput();
         _TrimBlockSelection = globalSettings.TrimBlockSelection();
         _DetectURLs = globalSettings.DetectURLs();
+        _EnableUnfocusedAcrylic = globalSettings.EnableUnfocusedAcrylic();
     }
 
     // Method Description:

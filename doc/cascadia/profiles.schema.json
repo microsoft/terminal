@@ -269,6 +269,10 @@
         "experimental.pixelShaderPath": {
           "description": "Use to set a path to a pixel shader to use with the Terminal when unfocused. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"
+        },
+        "useAcrylic":{
+          "description": "When set to true, the window will have an acrylic material background when unfocused. When set to false, the window will have a plain, untextured background when unfocused.",
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -2171,6 +2175,11 @@
         "alwaysShowTabs": {
           "default": true,
           "description": "When set to true, tabs are always displayed. When set to false and \"showTabsInTitlebar\" is set to false, tabs only appear after opening a new tab.",
+          "type": "boolean"
+        },
+        "compatibility.enableUnfocusedAcrylic":{
+          "default": true,
+          "description": "When set to true, unfocused windows can have acrylic instead of opaque.",
           "type": "boolean"
         },
         "centerOnLaunch": {
