@@ -70,13 +70,50 @@ static void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point
 
     if (coordCursor.y >= bufferSize.height)
     {
-        // At the end of the buffer. Scroll contents of screen buffer so new position is visible.
-        StreamScrollRegion(screenInfo);
+        const auto vtIo = ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo();
+        const auto renderer = ServiceLocator::LocateGlobals().pRender;
+        const auto needsConPTYWorkaround = interactive && vtIo->IsUsingVt();
+        auto& buffer = screenInfo.GetTextBuffer();
+        const auto isActiveBuffer = buffer.IsActiveBuffer();
 
-        if (nullptr != psScrollY)
+        // ConPTY translates scrolling into newlines. We don't want that during cooked reads (= "cmd.exe prompts")
+        // because the entire prompt is supposed to fit into the VT viewport, with no scrollback. If we didn't do that,
+        // any prompt larger than the viewport will cause >1 lines to be added to scrollback, even if typing backspaces.
+        // You can test this by removing this branch, launch Windows Terminal, and fill the entire viewport with text in cmd.exe.
+        if (needsConPTYWorkaround)
         {
-            *psScrollY += bufferSize.height - coordCursor.y - 1;
+            buffer.SetAsActiveBuffer(false);
+            buffer.IncrementCircularBuffer(buffer.GetCurrentAttributes());
+            buffer.SetAsActiveBuffer(isActiveBuffer);
+
+            if (isActiveBuffer && renderer)
+            {
+                renderer->TriggerRedrawAll();
+            }
         }
+        else
+        {
+            buffer.IncrementCircularBuffer(buffer.GetCurrentAttributes());
+
+            if (isActiveBuffer)
+            {
+                if (const auto notifier = ServiceLocator::LocateAccessibilityNotifier())
+                {
+                    notifier->NotifyConsoleUpdateScrollEvent(0, -1);
+                }
+                if (renderer)
+                {
+                    static constexpr til::point delta{ 0, -1 };
+                    renderer->TriggerScroll(&delta);
+                }
+            }
+        }
+
+        if (psScrollY)
+        {
+            *psScrollY += 1;
+        }
+
         coordCursor.y = bufferSize.height - 1;
     }
 
