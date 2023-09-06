@@ -107,5 +107,8 @@
     },
     "search.exclude": {
         "**/packages/**": true
-    }
+    },
+    "githubPullRequests.ignoredPullRequestBranches": [
+        "main"
+    ]
 }

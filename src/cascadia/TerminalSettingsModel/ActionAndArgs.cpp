@@ -84,6 +84,7 @@ static constexpr std::string_view ClearBufferKey{ "clearBuffer" };
 static constexpr std::string_view MultipleActionsKey{ "multipleActions" };
 static constexpr std::string_view QuitKey{ "quit" };
 static constexpr std::string_view AdjustOpacityKey{ "adjustOpacity" };
+static constexpr std::string_view ToggleAcrylicKey{ "toggleAcrylic" };
 static constexpr std::string_view RestoreLastClosedKey{ "restoreLastClosed" };
 static constexpr std::string_view SelectAllKey{ "selectAll" };
 static constexpr std::string_view SelectCommandKey{ "selectCommand" };
@@ -418,6 +419,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::MultipleActions, MustGenerate },
                 { ShortcutAction::Quit, RS_(L"QuitCommandKey") },
                 { ShortcutAction::AdjustOpacity, MustGenerate },
+                { ShortcutAction::ToggleAcrylic, RS_(L"ToggleAcrylicCommandKey") },
                 { ShortcutAction::RestoreLastClosed, RS_(L"RestoreLastClosedCommandKey") },
                 { ShortcutAction::SelectCommand, MustGenerate },
                 { ShortcutAction::SelectOutput, MustGenerate },

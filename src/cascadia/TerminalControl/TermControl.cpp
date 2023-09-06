@@ -3438,6 +3438,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.AdjustOpacity(opacity, relative);
     }
 
+    void TermControl::ToggleAcrylic()
+    {
+        _core.ToggleAcrylic();
+    }
+
     // - You'd think this should just be "Opacity", but UIElement already
     //   defines an "Opacity", which we're actually not setting at all. We're
     //   not overriding or changing _that_ value. Callers that want the opacity

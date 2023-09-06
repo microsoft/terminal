@@ -150,6 +150,7 @@ namespace Microsoft.Terminal.Control
         CommandHistoryContext CommandHistory();
 
         void AdjustOpacity(Double Opacity, Boolean relative);
+        void ToggleAcrylic();
         void WindowVisibilityChanged(Boolean showOrHide);
 
         void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);

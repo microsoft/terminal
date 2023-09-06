@@ -580,6 +580,9 @@
     <value>Set background opacity to {0}%</value>
     <comment>A command to change how transparent the background of the window is</comment>
   </data>
+  <data name="ToggleAcrylicCommandKey" xml:space="preserve">
+    <value>Toggle Acrylic</value>
+  </data>
   <data name="RestoreLastClosedCommandKey" xml:space="preserve">
     <value>Restore the last closed pane or tab</value>
   </data>

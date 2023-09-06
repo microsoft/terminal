@@ -690,7 +690,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _runtimeOpacity = newOpacity;
 
         // Manually turn off acrylic if they turn off transparency.
-        _runtimeUseAcrylic = newOpacity < 1.0 && _settings->UseAcrylic();
+        _runtimeUseAcrylic = newOpacity < 1.0 && _acrylicToggle;
 
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
@@ -701,6 +701,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
+        _TransparencyChangedHandlers(*this, *eventArgs);
+    }
+
+    void ControlCore::ToggleAcrylic()
+    {
+        // Don't Toggle Acrylic if they have transparency turned off
+        if (Opacity() < 1.0)
+        {
+            UseAcrylic(!_acrylicToggle);
+            _acrylicToggle = UseAcrylic();
+        }
+
+        // Update the renderer as well. It might need to fall back from
+        // cleartype -> grayscale if the BG is transparent / acrylic.
+        if (_renderEngine)
+        {
+            _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+            _renderer->NotifyPaintFrame();
+        }
+
+        auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(0.0);
         _TransparencyChangedHandlers(*this, *eventArgs);
     }
 
@@ -822,6 +843,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Manually turn off acrylic if they turn off transparency.
         _runtimeUseAcrylic = _settings->Opacity() < 1.0 && _settings->UseAcrylic();
+        _acrylicToggle = _settings->UseAcrylic();
 
         const auto sizeChanged = _setFontSizeUnderLock(_settings->FontSize());
 
