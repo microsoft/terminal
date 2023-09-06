@@ -2411,8 +2411,17 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
     const auto& oldCursor = oldBuffer.GetCursor();
     auto& newCursor = newBuffer.GetCursor();
 
-    const auto oldCursorPos = oldCursor.GetPosition();
+    til::point oldCursorPos = oldCursor.GetPosition();
     til::point newCursorPos;
+
+    // BODGY: We use oldCursorPos in two critical places below:
+    // * To compute an oldHeight that includes at a minimum the cursor row
+    // * For REFLOW_JANK_CURSOR_WRAP (see comment below)
+    // Both of these would break the reflow algorithm, but the latter of the two in particular
+    // would cause the main copy loop below to deadlock. In other words, these two lines
+    // protect this function against yet-unknown bugs in other parts of the code base.
+    oldCursorPos.x = std::clamp(oldCursorPos.x, 0, oldBuffer._width - 1);
+    oldCursorPos.y = std::clamp(oldCursorPos.y, 0, oldBuffer._height - 1);
 
     const auto lastRowWithText = oldBuffer.GetLastNonSpaceCharacter(lastCharacterViewport).y;
 
