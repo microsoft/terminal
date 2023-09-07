@@ -69,6 +69,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"CurrentScrollState");
             }
+            else if (viewModelProperty == L"Icon")
+            {
+                _NotifyChanges(L"HideIcon");
+            }
         });
 
         // Do the same for the starting directory
@@ -345,6 +349,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 StartingDirectory(_lastStartingDirectoryPath);
             }
+        }
+    }
+
+    bool ProfileViewModel::HideIcon()
+    {
+        return Icon() == L"none";
+    }
+    void ProfileViewModel::HideIcon(const bool hide)
+    {
+        if (hide)
+        {
+            // Stash the current value of Icon. If the user
+            // checks and un-checks the "Hide Icon" checkbox, we want
+            // the path that we display in the text box to remain unchanged.
+            _lastIcon = Icon();
+            Icon(L"none");
+        }
+        else
+        {
+            Icon(_lastIcon);
         }
     }
 

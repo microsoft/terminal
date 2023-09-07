@@ -1034,6 +1034,14 @@
     <value>If enabled, this profile will spawn in the directory from which Terminal was launched.</value>
     <comment>A description for what the supplementary "use parent process directory" setting does. Presented near "Profile_StartingDirectoryUseParentCheckbox".</comment>
   </data>
+  <data name="Profile_HideIconCheckbox.Content" xml:space="preserve">
+    <value>Hide icon</value>
+    <comment>A supplementary setting to the "icon" setting.</comment>
+  </data>
+  <data name="Profile_HideIconCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>If enabled, this will have no icon.</value>
+    <comment>A description for what the supplementary "Hide icon" setting does. Presented near "Profile_HideIconCheckbox".</comment>
+  </data>
   <data name="Profile_SuppressApplicationTitle.Header" xml:space="preserve">
     <value>Suppress title changes</value>
     <comment>Header for a control to toggle changes in the app title.</comment>

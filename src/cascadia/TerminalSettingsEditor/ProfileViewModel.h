@@ -68,6 +68,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UseParentProcessDirectory(const bool useParent);
         bool UseCustomStartingDirectory();
 
+        // icon
+        bool HideIcon();
+        void HideIcon(const bool hide);
+
         // general profile knowledge
         winrt::guid OriginalProfileGuid() const noexcept;
         bool CanDeleteProfile() const;
@@ -124,6 +128,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::guid _originalProfileGuid;
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
+        winrt::hstring _lastIcon;
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
 
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
