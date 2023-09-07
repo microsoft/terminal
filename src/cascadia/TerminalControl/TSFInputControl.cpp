@@ -310,15 +310,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TSFInputControl::_textRequestedHandler(CoreTextEditContext sender, const CoreTextTextRequestedEventArgs& args)
     {
-        try
-        {
-            const auto range = args.Request().Range();
-            const auto text = _inputBuffer.substr(
-                range.StartCaretPosition,
-                range.EndCaretPosition - range.StartCaretPosition);
-            args.Request().Text(text);
-        }
-        CATCH_LOG();
+        const auto request = args.Request();
+        const auto range = request.Range();
+        const auto [beg, len] = _convertRangeIntoBeginAndLength(range);
+        const auto text = std::wstring_view{ _inputBuffer }.substr(beg, len);
+        request.Text(text);
     }
 
     // Method Description:
@@ -366,14 +362,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto incomingText = args.Text();
             const auto range = args.Range();
-
-            _inputBuffer = _inputBuffer.replace(
-                range.StartCaretPosition,
-                range.EndCaretPosition - range.StartCaretPosition,
-                incomingText);
+            const auto [beg, len] = _convertRangeIntoBeginAndLength(range);
+            _inputBuffer.replace(beg, len, incomingText);
             _selection = args.NewSelection();
             // GH#5054: Pressing backspace might move the caret before the _activeTextStart.
-            _activeTextStart = std::min(_activeTextStart, _inputBuffer.size());
+            _activeTextStart = std::min(_activeTextStart, beg);
 
             // Emojis/Kaomojis/Symbols chosen through the IME without starting composition
             // will be sent straight through to the terminal.
@@ -384,7 +377,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             else
             {
                 Canvas().Visibility(Visibility::Visible);
-                const auto text = _inputBuffer.substr(_activeTextStart);
+                const auto text = std::wstring_view{ _inputBuffer }.substr(_activeTextStart);
                 TextBlock().Text(text);
             }
 
@@ -400,9 +393,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    // CoreTextRange uses int32 start/end indices whereas _inputBuffer uses unsigned size_t
+    // for a start index and length. This method safely converts the former to the latter,
+    // while making sure that out-of-range indices are clamped to the size of _inputBuffer.
+    std::pair<size_t, size_t> TSFInputControl::_convertRangeIntoBeginAndLength(CoreTextRange range) const noexcept
+    {
+        auto beg = gsl::narrow_cast<size_t>(std::max(0, range.StartCaretPosition));
+        auto end = gsl::narrow_cast<size_t>(std::max(0, range.EndCaretPosition));
+
+        end = std::min(end, _inputBuffer.size());
+        beg = std::min(beg, end);
+
+        return { beg, end - beg };
+    }
+
     void TSFInputControl::_SendAndClearText()
     {
-        const auto text = _inputBuffer.substr(_activeTextStart);
+        const auto text = std::wstring_view{ _inputBuffer }.substr(_activeTextStart);
         if (text.empty())
         {
             return;

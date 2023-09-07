@@ -58,6 +58,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _textUpdatingHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextTextUpdatingEventArgs& args);
         void _formatUpdatingHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextFormatUpdatingEventArgs& args);
 
+        std::pair<size_t, size_t> _convertRangeIntoBeginAndLength(winrt::Windows::UI::Text::Core::CoreTextRange range) const noexcept;
         void _SendAndClearText();
         void _RedrawCanvas();
 
