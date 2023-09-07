@@ -274,6 +274,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _UpdateSettingsFromUIThread();
         void _UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance);
+
         void _ApplyUISettings();
         winrt::fire_and_forget UpdateAppearance(Control::IControlAppearance newAppearance);
         void _SetBackgroundImage(const IControlAppearance& newAppearance);
@@ -343,6 +344,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
+
+        void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
 
         // TSFInputControl Handlers
@@ -357,7 +360,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::fire_and_forget _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
-        void _coreFoundMatch(const IInspectable& sender, const Control::FoundResultsArgs& args);
+        winrt::fire_and_forget _coreFoundMatch(const IInspectable& sender, Control::FoundResultsArgs args);
 
         til::point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);

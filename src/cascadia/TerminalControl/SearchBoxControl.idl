@@ -11,8 +11,12 @@ namespace Microsoft.Terminal.Control
         void SetFocusOnTextbox();
         void PopulateTextbox(String text);
         Boolean ContainsFocus();
+        void SetStatus(Int32 totalMatches, Int32 currentMatch);
+
+        Boolean NavigationEnabled;
 
         event SearchHandler Search;
+        event SearchHandler SearchChanged;
         event Windows.Foundation.TypedEventHandler<SearchBoxControl, Windows.UI.Xaml.RoutedEventArgs> Closed;
     }
 }
