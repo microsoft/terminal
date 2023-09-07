@@ -16,6 +16,7 @@
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
 #include <til/ticket_lock.h>
+#include <til/winrt.h>
 
 inline constexpr size_t TaskbarMinProgress{ 10 };
 
@@ -117,6 +118,8 @@ public:
                  const til::point& start,
                  const til::point& end,
                  const bool fromUi);
+
+    til::property<bool> AlwaysNotifyOnBufferRotation;
 
     std::wstring_view CurrentCommand() const;
 

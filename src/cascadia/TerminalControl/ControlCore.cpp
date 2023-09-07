@@ -39,6 +39,9 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
+// The delay before performing the search after change of search criteria
+constexpr const auto SearchAfterChangeDelay = std::chrono::milliseconds(200);
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c)
@@ -1346,6 +1349,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                        nullptr;
     }
 
+    til::color ControlCore::ForegroundColor() const
+    {
+        return _terminal->GetRenderSettings().GetColorAlias(ColorAlias::DefaultForeground);
+    }
+
     til::color ControlCore::BackgroundColor() const
     {
         return _terminal->GetRenderSettings().GetColorAlias(ColorAlias::DefaultBackground);
@@ -1552,6 +1560,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto foundMatch = _searcher.SelectCurrent();
+        auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(foundMatch);
         if (foundMatch)
         {
             // this is used for search,
@@ -1560,15 +1569,44 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->SetBlockSelection(false);
             _renderer->TriggerSelection();
             _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
+
+            foundResults->TotalMatches(gsl::narrow<int32_t>(_searcher.Results().size()));
+            foundResults->CurrentMatch(gsl::narrow<int32_t>(_searcher.CurrentMatch()));
+
+            _terminal->AlwaysNotifyOnBufferRotation(true);
         }
 
         // Raise a FoundMatch event, which the control will use to notify
         // narrator if there was any results in the buffer
-        _FoundMatchHandlers(*this, winrt::make<implementation::FoundResultsArgs>(foundMatch));
+        _FoundMatchHandlers(*this, *foundResults);
+    }
+
+    Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
+    {
+        auto lock = _terminal->LockForWriting();
+        if (_searcher.ResetIfStale(*GetRenderData()))
+        {
+            auto results = std::vector<int32_t>();
+
+            auto lastRow = til::CoordTypeMin;
+            for (const auto& match : _searcher.Results())
+            {
+                const auto row{ match.start.y };
+                if (row != lastRow)
+                {
+                    results.push_back(row);
+                    lastRow = row;
+                }
+            }
+            _cachedSearchResultRows = winrt::single_threaded_vector<int32_t>(std::move(results));
+        }
+
+        return _cachedSearchResultRows;
     }
 
     void ControlCore::ClearSearch()
     {
+        _terminal->AlwaysNotifyOnBufferRotation(false);
         _searcher = {};
     }
 
