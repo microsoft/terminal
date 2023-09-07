@@ -877,7 +877,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
                 _renderer->NotifyPaintFrame();
 
-                auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(1.0);
+                auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(Opacity());
+
                 _TransparencyChangedHandlers(*this, *eventArgs);
             }
 
