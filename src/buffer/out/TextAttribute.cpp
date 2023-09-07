@@ -161,6 +161,14 @@ TextColor TextAttribute::GetUnderlineColor() const noexcept
     return _underlineColor;
 }
 
+// Method description:
+// - Retrieves the underline style of the text.
+// - If the attribute is not the **current** attribute of the text buffer,
+//   (eg. reading an attribute from another part of the text buffer, which
+//   was modified using DECRARA), this might return an invalid style. In this
+//   case, treat the style as singly underlined.
+// Return value:
+// - The underline style.
 UnderlineStyle TextAttribute::GetUnderlineStyle() const noexcept
 {
     const auto styleAttr = WI_EnumValue(_attrs & CharacterAttributes::UnderlineStyle);

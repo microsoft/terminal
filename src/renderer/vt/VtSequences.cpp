@@ -395,7 +395,7 @@ using namespace Microsoft::Console::Render;
     case UnderlineStyle::DashedUnderlined:
         return _Write("\x1b[4:5m");
     default:
-        return S_OK;
+        return _SetUnderlined(true); // treat unknown style as singly underlined
     }
 }
 
