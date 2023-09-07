@@ -87,7 +87,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, TabTitle);
         OBSERVABLE_PROJECTED_SETTING(_profile, TabColor);
         OBSERVABLE_PROJECTED_SETTING(_profile, SuppressApplicationTitle);
-        OBSERVABLE_PROJECTED_SETTING(_profile, UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile, ScrollState);
         OBSERVABLE_PROJECTED_SETTING(_profile, Padding);
         OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
@@ -98,6 +97,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), SelectionBackground);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), CursorColor);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Opacity);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile, HistorySize);
         OBSERVABLE_PROJECTED_SETTING(_profile, SnapOnInput);
         OBSERVABLE_PROJECTED_SETTING(_profile, AltGrAliasing);
