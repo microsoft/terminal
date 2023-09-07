@@ -587,7 +587,7 @@ namespace SettingsModelLocalTests
 
     void SerializationTests::DontRoundtripNoReloadEnvVars()
     {
-        // Kinda like the above test, but confirming that _nothing_ happends if
+        // Kinda like the above test, but confirming that _nothing_ happens if
         // we don't have a setting to migrate.
 
         static constexpr std::string_view oldSettingsJson{ R"(
