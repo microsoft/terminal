@@ -30,13 +30,13 @@
                 <Setter Property="LargeChange" Value="10" />
                 <Setter Property="Minimum" Value="1" />
             </Style>
-			<Style x:Key="LaunchPositionNumberBoxStyle"
+            <Style x:Key="LaunchPositionNumberBoxStyle"
                    BasedOn="{StaticResource NumberBoxSettingStyle}"
                    TargetType="muxc:NumberBox">
                 <Setter Property="SmallChange" Value="1" />
                 <Setter Property="LargeChange" Value="10" />
                 <Setter Property="Minimum" Value="-2147483648" />
-				<Setter Property="Maximum" Value="2147483647" />
+                <Setter Property="Maximum" Value="2147483647" />
             </Style>
         </ResourceDictionary>
     </Page.Resources>
