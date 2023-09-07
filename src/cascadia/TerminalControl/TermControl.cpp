@@ -692,9 +692,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 acrylic = Media::AcrylicBrush{};
 
                 if (_core.Settings().EnableUnfocusedAcrylic())
+                {
                     acrylic.BackgroundSource(Media::AcrylicBackgroundSource::Backdrop);
+                }
                 else
+                {
                     acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+                }
             }
 
             // see GH#1082: Initialize background color so we don't get a
