@@ -372,7 +372,7 @@
     <comment>{Locked="\"tabTitle\""}</comment>
   </data>
   <data name="CmdInheritEnvDesc" xml:space="preserve">
-    <value>Open the new tab by inheriting the environment variables, rather than reloading a fresh environment block. This defaults to set when a "command" is passed. </value>
+    <value>Inherit the terminal's own environment variables when creating the new tab or pane, rather than creating a fresh environment block. This defaults to set when a "command" is passed. </value>
     <comment>{Locked="\"command\""}</comment>
   </data>
   <data name="CmdColorSchemeArgDesc" xml:space="preserve">

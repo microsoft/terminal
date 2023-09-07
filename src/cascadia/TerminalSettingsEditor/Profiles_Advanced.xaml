@@ -137,7 +137,7 @@
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
 
-                <!--  VtPassthrough  -->
+                <!--  ReloadEnvVars  -->
                 <local:SettingContainer x:Uid="Profile_ReloadEnvVars"
                                         ClearSettingValue="{x:Bind Profile.ClearReloadEnvironmentVariables}"
                                         HasSettingValue="{x:Bind Profile.HasReloadEnvironmentVariables, Mode=OneWay}"

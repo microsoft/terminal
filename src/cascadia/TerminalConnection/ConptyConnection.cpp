@@ -95,7 +95,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
         else
         {
-            environment = _initialEnv; // til::env::from_current_environment();
+            environment = _initialEnv;
         }
 
         {

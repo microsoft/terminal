@@ -43,6 +43,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(LegacyFontSettings);
 
         TEST_METHOD(RoundtripReloadEnvVars);
+        TEST_METHOD(DontRoundtripNoReloadEnvVars);
 
     private:
         // Method Description:
@@ -556,9 +557,8 @@ namespace SettingsModelLocalTests
                         "historySize": 1,
                         "commandline": "cmd.exe"
                     }
-                ],
-
-            }
+                ]
+            },
             "actions": [
                 {
                     "name": "foo",
@@ -572,6 +572,48 @@ namespace SettingsModelLocalTests
         oldLoader.MergeInboxIntoUserSettings();
         oldLoader.FinalizeLayering();
         VERIFY_IS_TRUE(oldLoader.FixupUserSettings(), L"Validate that this will indicate we need to write them back to disk");
+        const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
+        const auto oldResult{ oldSettings->ToJson() };
+
+        implementation::SettingsLoader newLoader{ newSettingsJson, DefaultJson };
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        newLoader.FixupUserSettings();
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+        const auto newResult{ newSettings->ToJson() };
+
+        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+    }
+
+    void SerializationTests::DontRoundtripNoReloadEnvVars()
+    {
+        // Kinda like the above test, but confirming that _nothing_ happends if
+        // we don't have a setting to migrate.
+
+        static constexpr std::string_view oldSettingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "name": "foo",
+                    "command": "closePane",
+                    "keys": "ctrl+shift+w"
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader oldLoader{ oldSettingsJson, DefaultJson };
+        oldLoader.MergeInboxIntoUserSettings();
+        oldLoader.FinalizeLayering();
+        oldLoader.FixupUserSettings();
         const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
         const auto oldResult{ oldSettings->ToJson() };
 

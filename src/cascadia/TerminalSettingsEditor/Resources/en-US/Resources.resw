@@ -1143,7 +1143,7 @@
     <comment>{Locked="AtlasEngine"}</comment>
   </data>
   <data name="Profile_ReloadEnvVars.Header" xml:space="preserve">
-    <value>Reload environment variables</value>
+    <value>Launch this application with a new environment block</value>
     <comment>"environment variables" are user-definable values that can affect the way running processes will behave on a computer</comment>
   </data>
   <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
