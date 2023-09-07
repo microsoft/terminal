@@ -617,13 +617,13 @@ namespace SettingsModelLocalTests
         const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(oldLoader));
         const auto oldResult{ oldSettings->ToJson() };
 
-        implementation::SettingsLoader newLoader{ oldSettingsJson, DefaultJson };
+        Log::Comment(L"Now, create a _new_ settings object from the re-serialization of the first");
+        implementation::SettingsLoader newLoader{ toString(oldResult), DefaultJson };
         newLoader.MergeInboxIntoUserSettings();
         newLoader.FinalizeLayering();
         newLoader.FixupUserSettings();
         const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
-        const auto newResult{ newSettings->ToJson() };
-
-        VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+        VERIFY_IS_FALSE(newSettings->ProfileDefaults().HasReloadEnvironmentVariables(),
+                        L"Ensure that the new settings object didn't find a reloadEnvironmentVariables");
     }
 }
