@@ -4,3 +4,4 @@ appshellintegration
 mdtauk
 gfycat
 Guake
+xkcd
