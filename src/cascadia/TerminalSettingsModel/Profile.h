@@ -102,7 +102,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::IAppearanceConfig DefaultAppearance();
         Model::FontConfig FontInfo();
 
-        winrt::hstring EvaluatedIcon() const;
+        winrt::hstring EvaluatedIcon();
+
+        static std::wstring NormalizeCommandLine(LPCWSTR commandLine);
 
         void _FinalizeInheritance() override;
 
@@ -130,9 +132,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
         Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
+
+        std::optional<winrt::hstring> _evaluatedIcon{ std::nullopt };
+
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;
+
+        winrt::hstring _evaluateIcon() const;
 
         friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::ProfileTests;
