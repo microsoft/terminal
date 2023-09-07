@@ -3610,8 +3610,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
+
         if (_displayCursorWhileBlurred())
         {
+            // If we should be ALWAYS displaying the cursor, turn it on and start blinking.
             _core.CursorOn(true);
             if (_cursorTimer.has_value())
             {
@@ -3620,6 +3622,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
+            // Otherwise, if we're unfocused, then turn the cursor off and stop
+            // blinking. (if we're focused, then we're already doing the right
+            // thing)
             const auto focused = FocusState() != FocusState::Unfocused;
             if (!focused && _cursorTimer.has_value())
             {
