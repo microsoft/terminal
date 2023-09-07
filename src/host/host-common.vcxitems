@@ -3,10 +3,6 @@
   <ItemGroup>
     <ClCompile Include="..\alias.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
-    <ClCompile Include="..\CommandNumberPopup.cpp" />
-    <ClCompile Include="..\CommandListPopup.cpp" />
-    <ClCompile Include="..\CopyFromCharPopup.cpp" />
-    <ClCompile Include="..\CopyToCharPopup.cpp" />
     <ClCompile Include="..\ConsoleArguments.cpp" />
     <ClCompile Include="..\CursorBlinker.cpp" />
     <ClCompile Include="..\readDataCooked.cpp" />
@@ -29,7 +25,6 @@
     <ClCompile Include="..\ntprivapi.cpp" />
     <ClCompile Include="..\output.cpp" />
     <ClCompile Include="..\outputStream.cpp" />
-    <ClCompile Include="..\popup.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -64,10 +59,6 @@
     <ClInclude Include="..\alias.h" />
     <ClInclude Include="..\ApiRoutines.h" />
     <ClInclude Include="..\cmdline.h" />
-    <ClInclude Include="..\CommandNumberPopup.hpp" />
-    <ClInclude Include="..\CommandListPopup.hpp" />
-    <ClInclude Include="..\CopyFromCharPopup.hpp" />
-    <ClInclude Include="..\CopyToCharPopup.hpp" />
     <ClInclude Include="..\conapi.h" />
     <ClInclude Include="..\conddkrefs.h" />
     <ClInclude Include="..\conareainfo.h" />
@@ -90,7 +81,6 @@
     <ClInclude Include="..\ntprivapi.hpp" />
     <ClInclude Include="..\output.h" />
     <ClInclude Include="..\outputStream.hpp" />
-    <ClInclude Include="..\popup.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\readData.hpp" />
     <ClInclude Include="..\readDataCooked.hpp" />

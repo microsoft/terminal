@@ -584,7 +584,7 @@ namespace winrt::TerminalApp::implementation
             automationPeer.RaiseNotificationEvent(
                 Automation::Peers::AutomationNotificationKind::ActionCompleted,
                 Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
-                fmt::format(std::wstring_view{ RS_(L"CommandPalette_NestedCommandAnnouncement") }, ParentCommandName()),
+                fmt::format(std::wstring_view{ RS_(L"SuggestionsControl_NestedCommandAnnouncement") }, ParentCommandName()),
                 L"SuggestionsControlNestingLevelChanged" /* unique name for this notification category */);
         }
     }
@@ -725,10 +725,12 @@ namespace winrt::TerminalApp::implementation
         // here will ensure that we can check this case appropriately.
         _lastFilterTextWasEmpty = _searchBox().Text().empty();
 
+        const auto lastSelectedIndex = _filteredActionsView().SelectedIndex();
+
         _updateFilteredActions();
 
         // In the command line mode we want the user to explicitly select the command
-        _filteredActionsView().SelectedIndex(0);
+        _filteredActionsView().SelectedIndex(std::min<int32_t>(lastSelectedIndex, _filteredActionsView().Items().Size() - 1));
 
         const auto currentNeedleHasResults{ _filteredActions.Size() > 0 };
         _noMatchesText().Visibility(currentNeedleHasResults ? Visibility::Collapsed : Visibility::Visible);
@@ -738,7 +740,7 @@ namespace winrt::TerminalApp::implementation
                 Automation::Peers::AutomationNotificationKind::ActionCompleted,
                 Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
                 currentNeedleHasResults ?
-                    winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"CommandPalette_MatchesAvailable") }, _filteredActions.Size()) } :
+                    winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"SuggestionsControl_MatchesAvailable") }, _filteredActions.Size()) } :
                     NoMatchesText(), // what to announce if results were found
                 L"SuggestionsControlResultAnnouncement" /* unique name for this group of notifications */);
         }
@@ -781,9 +783,6 @@ namespace winrt::TerminalApp::implementation
 
     void SuggestionsControl::_switchToMode()
     {
-        const auto currentlyVisible{ Visibility() == Visibility::Visible };
-
-        auto modeAnnouncementResourceKey{ USES_RESOURCE(L"CommandPaletteModeAnnouncement_ActionMode") };
         ParsedCommandLineText(L"");
         _searchBox().Text(L"");
         _searchBox().Select(_searchBox().Text().size(), 0);
@@ -795,23 +794,9 @@ namespace winrt::TerminalApp::implementation
         // guarantees that the correct text is shown for the mode
         // whenever _switchToMode is called.
 
-        SearchBoxPlaceholderText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
-        NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
-        ControlName(RS_(L"CommandPaletteControlName"));
-        // modeAnnouncementResourceKey is already set to _ActionMode
-        // We did this above to deduce the type (and make it easier on ourselves later).
-
-        if (currentlyVisible)
-        {
-            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
-            {
-                automationPeer.RaiseNotificationEvent(
-                    Automation::Peers::AutomationNotificationKind::ActionCompleted,
-                    Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
-                    GetLibraryResourceString(modeAnnouncementResourceKey),
-                    L"SuggestionsControlModeSwitch" /* unique ID for this notification */);
-            }
-        }
+        SearchBoxPlaceholderText(RS_(L"SuggestionsControl_SearchBox/PlaceholderText"));
+        NoMatchesText(RS_(L"SuggestionsControl_NoMatchesText/Text"));
+        ControlName(RS_(L"SuggestionsControlName"));
 
         // The smooth remove/add animations that happen during
         // UpdateFilteredActions don't work very well when switching between
@@ -1004,7 +989,7 @@ namespace winrt::TerminalApp::implementation
 
                 if (dataTemplate == _itemTemplateSelector.NestedItemTemplate())
                 {
-                    const auto helpText = winrt::box_value(RS_(L"CommandPalette_MoreOptions/[using:Windows.UI.Xaml.Automation]AutomationProperties/HelpText"));
+                    const auto helpText = winrt::box_value(RS_(L"SuggestionsControl_MoreOptions/[using:Windows.UI.Xaml.Automation]AutomationProperties/HelpText"));
                     listViewItem.SetValue(Automation::AutomationProperties::HelpTextProperty(), helpText);
                 }
 
@@ -1104,6 +1089,19 @@ namespace winrt::TerminalApp::implementation
         Margin(newMargin);
 
         _searchBox().Text(filter);
+
+        // If we're in bottom-up mode, make sure to re-select the _last_ item in
+        // the list, so that it's like we're starting with the most recent one
+        // selected.
+        if (_direction == TerminalApp::SuggestionsDirection::BottomUp)
+        {
+            const auto last = _filteredActionsView().Items().Size() - 1;
+            _filteredActionsView().SelectedIndex(last);
+        }
+        // Move the cursor to the very last position, so it starts immediately
+        // after the text. This is apparently done by starting a 0-wide
+        // selection starting at the end of the string.
+        _searchBox().Select(filter.size(), 0);
     }
 
 }

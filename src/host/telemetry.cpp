@@ -21,10 +21,6 @@ TRACELOGGING_DEFINE_PROVIDER(g_hConhostV2EventTraceProvider,
 // Disable 4351 so we can initialize the arrays to 0 without a warning.
 #pragma warning(disable : 4351)
 Telemetry::Telemetry() :
-    _fpFindStringLengthAverage(0),
-    _fpDirectionDownAverage(0),
-    _fpMatchCaseAverage(0),
-    _uiFindNextClickedTotal(0),
     _uiColorSelectionUsed(0),
     _tStartedAt(0),
     _wchProcessFileNames(),
@@ -175,40 +171,6 @@ void Telemetry::LogApiCall(const ApiCall api, const BOOLEAN fUnicode)
 void Telemetry::LogApiCall(const ApiCall api)
 {
     _rguiTimesApiUsed[api]++;
-}
-
-// Log usage of the Find Dialog.
-void Telemetry::LogFindDialogNextClicked(const unsigned int uiStringLength, const bool fDirectionDown, const bool fMatchCase)
-{
-    // Don't send telemetry for every time it's used, as this will help reduce the load on our servers.
-    // Instead just create a running average of the string length, the direction down radio
-    // button, and match case checkbox.
-    _fpFindStringLengthAverage = ((_fpFindStringLengthAverage * _uiFindNextClickedTotal + uiStringLength) / (_uiFindNextClickedTotal + 1));
-    _fpDirectionDownAverage = ((_fpDirectionDownAverage * _uiFindNextClickedTotal + (fDirectionDown ? 1 : 0)) / (_uiFindNextClickedTotal + 1));
-    _fpMatchCaseAverage = ((_fpMatchCaseAverage * _uiFindNextClickedTotal + (fMatchCase ? 1 : 0)) / (_uiFindNextClickedTotal + 1));
-    _uiFindNextClickedTotal++;
-}
-
-// Find dialog was closed, now send out the telemetry.
-void Telemetry::FindDialogClosed()
-{
-    // clang-format off
-#pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
-    // clang-format on
-    TraceLoggingWriteTagged(_activity,
-                            "FindDialogUsed",
-                            TraceLoggingValue(_fpFindStringLengthAverage, "StringLengthAverage"),
-                            TraceLoggingValue(_fpDirectionDownAverage, "DirectionDownAverage"),
-                            TraceLoggingValue(_fpMatchCaseAverage, "MatchCaseAverage"),
-                            TraceLoggingValue(_uiFindNextClickedTotal, "FindNextButtonClickedTotal"),
-                            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-    // Get ready for the next time the dialog is used.
-    _fpFindStringLengthAverage = 0;
-    _fpDirectionDownAverage = 0;
-    _fpMatchCaseAverage = 0;
-    _uiFindNextClickedTotal = 0;
 }
 
 // Tries to find the process name amongst our previous process names by doing a binary search.

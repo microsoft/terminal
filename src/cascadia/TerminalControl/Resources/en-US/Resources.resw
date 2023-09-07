@@ -178,6 +178,18 @@
   <data name="HowToOpenRun.Text" xml:space="preserve">
     <value>Ctrl+Click to follow link</value>
   </data>
+  <data name="TermControl_NoMatch" xml:space="preserve">
+    <value>No results</value>
+    <comment>Will be presented near the search box when Find operation returned no results.</comment>
+  </data>
+  <data name="TermControl_Searching" xml:space="preserve">
+    <value>Searching...</value>
+    <comment>Will be presented near the search box when Find operation is running.</comment>
+  </data>
+  <data name="TermControl_NumResults" xml:space="preserve">
+    <value>{0}/{1}</value>
+    <comment>Will be displayed to indicate what result the user has selected, of how many total results. {0} will be replaced with the index of the current result. {1} will be replaced with the total number of results.</comment>
+  </data>
   <data name="InvalidUri" xml:space="preserve">
     <value>Invalid URI</value>
     <comment>Whenever we encounter an invalid URI or URL we show this string as a warning.</comment>
