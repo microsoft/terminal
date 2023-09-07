@@ -26,6 +26,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
 
+    static constexpr std::wstring_view HideIconValue{ L"none" };
+
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings) :
         _profile{ profile },
         _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) },
@@ -354,7 +356,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool ProfileViewModel::HideIcon()
     {
-        return Icon() == L"none";
+        return Icon() == HideIconValue;
     }
     void ProfileViewModel::HideIcon(const bool hide)
     {
@@ -364,7 +366,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // checks and un-checks the "Hide Icon" checkbox, we want
             // the path that we display in the text box to remain unchanged.
             _lastIcon = Icon();
-            Icon(L"none");
+            Icon(HideIconValue);
         }
         else
         {
