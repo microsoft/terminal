@@ -17,11 +17,12 @@ enum class CharacterAttributes : uint16_t
     Blinking = 0x04,
     Invisible = 0x08,
     CrossedOut = 0x10,
-    Underlined = 0x20,
-    DoublyUnderlined = 0x40,
-    Faint = 0x80,
-    Unused1 = 0x100,
-    Unused2 = 0x200,
+    Faint = 0x20,
+
+    // 7th, 8th, 9th bit reserved for underline styles
+    UnderlineStyle = 0x1C0,
+
+    Unused1 = 0x200,
     TopGridline = COMMON_LVB_GRID_HORIZONTAL, // 0x400
     LeftGridline = COMMON_LVB_GRID_LVERTICAL, // 0x800
     RightGridline = COMMON_LVB_GRID_RVERTICAL, // 0x1000
@@ -33,6 +34,8 @@ enum class CharacterAttributes : uint16_t
     Rendition = All & ~Protected // Only rendition attributes (everything except Protected)
 };
 DEFINE_ENUM_FLAG_OPERATORS(CharacterAttributes);
+
+constexpr uint8_t UNDERLINE_STYLE_SHIFT = 6;
 
 enum class CursorType : unsigned int
 {
