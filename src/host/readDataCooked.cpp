@@ -752,7 +752,7 @@ void COOKED_READ_DATA::_flushBuffer()
         const auto distanceBeforeCursor = _writeChars(view.substr(0, _bufferCursor));
         const auto distanceAfterCursor = _writeChars(view.substr(_bufferCursor));
         const auto distanceEnd = distanceBeforeCursor + distanceAfterCursor;
-        const auto eraseDistance = std::max(0, _distanceEnd - distanceEnd);
+        const auto eraseDistance = std::max<ptrdiff_t>(0, _distanceEnd - distanceEnd);
 
         // If the contents of _buffer became shorter we'll have to erase the previously printed contents.
         _erase(eraseDistance);
@@ -766,7 +766,7 @@ void COOKED_READ_DATA::_flushBuffer()
 }
 
 // This is just a small helper to fill the next N cells starting at the current cursor position with whitespace.
-void COOKED_READ_DATA::_erase(const til::CoordType distance) const
+void COOKED_READ_DATA::_erase(ptrdiff_t distance) const
 {
     if (distance <= 0)
     {
@@ -793,7 +793,7 @@ void COOKED_READ_DATA::_erase(const til::CoordType distance) const
 // A helper to write text and calculate the number of cells we've written.
 // _unwindCursorPosition then allows us to go that many cells back. Tracking cells instead of explicit
 // buffer positions allows us to pay no further mind to whether the buffer scrolled up or not.
-til::CoordType COOKED_READ_DATA::_writeChars(const std::wstring_view& text) const
+ptrdiff_t COOKED_READ_DATA::_writeChars(const std::wstring_view& text) const
 {
     if (text.empty())
     {
@@ -802,18 +802,20 @@ til::CoordType COOKED_READ_DATA::_writeChars(const std::wstring_view& text) cons
 
     const auto& textBuffer = _screenInfo.GetTextBuffer();
     const auto& cursor = textBuffer.GetCursor();
-    const auto width = textBuffer.GetSize().Width();
+    const auto width = static_cast<ptrdiff_t>(textBuffer.GetSize().Width());
     const auto initialCursorPos = cursor.GetPosition();
     til::CoordType scrollY = 0;
 
     WriteCharsLegacy(_screenInfo, text, true, &scrollY);
 
     const auto finalCursorPos = cursor.GetPosition();
-    return (finalCursorPos.y - initialCursorPos.y + scrollY) * width + finalCursorPos.x - initialCursorPos.x;
+    const auto distance = (finalCursorPos.y - initialCursorPos.y + scrollY) * width + finalCursorPos.x - initialCursorPos.x;
+    assert(distance >= 0);
+    return distance;
 }
 
 // Moves the given point by the given distance inside the text buffer, as if moving a cursor with the left/right arrow keys.
-til::point COOKED_READ_DATA::_offsetPosition(til::point pos, til::CoordType distance) const
+til::point COOKED_READ_DATA::_offsetPosition(til::point pos, ptrdiff_t distance) const
 {
     const auto size = _screenInfo.GetTextBuffer().GetSize().Dimensions();
     const auto w = static_cast<ptrdiff_t>(size.width);
@@ -832,7 +834,7 @@ til::point COOKED_READ_DATA::_offsetPosition(til::point pos, til::CoordType dist
 
 // This moves the cursor `distance`-many cells back up in the buffer.
 // It's intended to be used in combination with _writeChars.
-void COOKED_READ_DATA::_unwindCursorPosition(til::CoordType distance) const
+void COOKED_READ_DATA::_unwindCursorPosition(ptrdiff_t distance) const
 {
     if (distance <= 0)
     {
