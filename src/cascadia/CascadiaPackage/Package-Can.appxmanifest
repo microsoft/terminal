@@ -149,4 +149,8 @@
     <rescap:Capability Name="unvirtualizedResources" />
     <rescap:Capability Name="appLicensing" />
   </Capabilities>
+
+  <mp:PhoneIdentity
+    PhoneProductId="348ff861-8d83-47b2-a740-15f8a096dcae"
+    PhonePublisherId="00000000-0000-0000-0000-000000000000" />
 </Package>
