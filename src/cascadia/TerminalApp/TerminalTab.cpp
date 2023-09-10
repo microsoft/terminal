@@ -278,16 +278,21 @@ namespace winrt::TerminalApp::implementation
     // - iconPath: The new path string to use as the IconPath for our TabViewItem
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateIcon(const winrt::hstring iconPath)
+    void TerminalTab::UpdateIcon(const winrt::hstring iconPath, const winrt::Microsoft::Terminal::Settings::Model::IconStyle& iconStyle)
     {
         ASSERT_UI_THREAD();
 
+        if (iconStyle == IconStyle::Hidden)
+        {
+            // we want to return early here
+            HideIcon(true);
+            return;    
+        }
         // Don't reload our icon if it hasn't changed.
         if (iconPath == _lastIconPath)
         {
             return;
         }
-
         _lastIconPath = iconPath;
 
         // If the icon is currently hidden, just return here (but only after setting _lastIconPath to the new path
