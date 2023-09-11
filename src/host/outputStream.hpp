@@ -74,6 +74,8 @@ public:
     void MarkOutputStart() override;
     void MarkCommandFinish(std::optional<unsigned int> error) override;
 
+    void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
+
 private:
     Microsoft::Console::IIoProvider& _io;
 };

@@ -121,6 +121,7 @@
         <!-- Did it this way instead of "release tokens" to ensure it won't go into Windows Inbox either... -->
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
             <brandingToken>Preview</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
@@ -142,6 +143,7 @@
         <!-- Did it this way instead of "release tokens" to ensure it won't go into Windows Inbox either... -->
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
             <brandingToken>Preview</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
@@ -160,6 +162,18 @@
         <stage>AlwaysDisabled</stage>
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_ShellCompletions</name>
+        <description>An experimental escape sequence for client applications to request the Terminal display a list of suggestions.</description>
+        <id>3121</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+            <brandingToken>Preview</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
 

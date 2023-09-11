@@ -25,10 +25,6 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    WUX::FocusState TabBase::FocusState() const noexcept
-    {
-        return _focusState;
-    }
 
     // Method Description:
     // - Prepares this tab for being removed from the UI hierarchy
@@ -37,7 +33,6 @@ namespace winrt::TerminalApp::implementation
         ASSERT_UI_THREAD();
 
         Content(nullptr);
-        _ClosedHandlers(nullptr, nullptr);
     }
 
     // Method Description:
@@ -591,4 +586,63 @@ namespace winrt::TerminalApp::implementation
             VisualStateManager::GoToState(item, L"Normal", true);
         }
     }
+
+    TabCloseButtonVisibility TabBase::CloseButtonVisibility()
+    {
+        return _closeButtonVisibility;
+    }
+
+    // Method Description:
+    // - set our internal state to track if we were requested to have a visible
+    //   tab close button or not.
+    // - This is called every time the active tab changes. That way, the changes
+    //   in focused tab can be reflected for the "ActiveOnly" state.
+    void TabBase::CloseButtonVisibility(TabCloseButtonVisibility visibility)
+    {
+        _closeButtonVisibility = visibility;
+        _updateIsClosable();
+    }
+
+    // Method Description:
+    // - Update our close button's visibility, to reflect both the ReadOnly
+    //   state of the tab content, and also if if we were told to have a visible
+    //   close button at all.
+    //   - the tab being read-only takes precedence. That will always suppress
+    //     the close button.
+    //   - Otherwise we'll use the state set in CloseButtonVisibility to control
+    //     the tab's visibility.
+    void TabBase::_updateIsClosable()
+    {
+        bool isClosable = true;
+
+        if (ReadOnly())
+        {
+            isClosable = false;
+        }
+        else
+        {
+            switch (_closeButtonVisibility)
+            {
+            case TabCloseButtonVisibility::Never:
+                isClosable = false;
+                break;
+            case TabCloseButtonVisibility::Hover:
+                isClosable = true;
+                break;
+            case TabCloseButtonVisibility::ActiveOnly:
+                isClosable = _focused();
+                break;
+            default:
+                isClosable = true;
+                break;
+            }
+        }
+        TabViewItem().IsClosable(isClosable);
+    }
+
+    bool TabBase::_focused() const noexcept
+    {
+        return _focusState != FocusState::Unfocused;
+    }
+
 }

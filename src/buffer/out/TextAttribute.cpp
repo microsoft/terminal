@@ -7,7 +7,7 @@
 
 // Keeping TextColor compact helps us keeping TextAttribute compact,
 // which in turn ensures that our buffer memory usage is low.
-static_assert(sizeof(TextAttribute) == 12);
+static_assert(sizeof(TextAttribute) == 16);
 static_assert(alignof(TextAttribute) == 2);
 // Ensure that we can memcpy() and memmove() the struct for performance.
 static_assert(std::is_trivially_copyable_v<TextAttribute>);
@@ -156,6 +156,25 @@ uint16_t TextAttribute::GetHyperlinkId() const noexcept
     return _hyperlinkId;
 }
 
+TextColor TextAttribute::GetUnderlineColor() const noexcept
+{
+    return _underlineColor;
+}
+
+// Method description:
+// - Retrieves the underline style of the text.
+// - If the attribute is not the **current** attribute of the text buffer,
+//   (eg. reading an attribute from another part of the text buffer, which
+//   was modified using DECRARA), this might return an invalid style. In this
+//   case, treat the style as singly underlined.
+// Return value:
+// - The underline style.
+UnderlineStyle TextAttribute::GetUnderlineStyle() const noexcept
+{
+    const auto styleAttr = WI_EnumValue(_attrs & CharacterAttributes::UnderlineStyle);
+    return static_cast<UnderlineStyle>(styleAttr >> UNDERLINE_STYLE_SHIFT);
+}
+
 void TextAttribute::SetForeground(const TextColor foreground) noexcept
 {
     _foreground = foreground;
@@ -164,6 +183,13 @@ void TextAttribute::SetForeground(const TextColor foreground) noexcept
 void TextAttribute::SetBackground(const TextColor background) noexcept
 {
     _background = background;
+}
+
+void TextAttribute::SetUnderlineColor(const TextColor color) noexcept
+{
+    // Index16 colors are not supported for underline colors.
+    assert(!color.IsIndex16());
+    _underlineColor = color;
 }
 
 void TextAttribute::SetForeground(const COLORREF rgbForeground) noexcept
@@ -277,14 +303,12 @@ bool TextAttribute::IsCrossedOut() const noexcept
     return WI_IsFlagSet(_attrs, CharacterAttributes::CrossedOut);
 }
 
+// Method description:
+// - Returns true if the text is underlined with any underline style.
 bool TextAttribute::IsUnderlined() const noexcept
 {
-    return WI_IsFlagSet(_attrs, CharacterAttributes::Underlined);
-}
-
-bool TextAttribute::IsDoublyUnderlined() const noexcept
-{
-    return WI_IsFlagSet(_attrs, CharacterAttributes::DoublyUnderlined);
+    const auto style = GetUnderlineStyle();
+    return (style != UnderlineStyle::NoUnderline);
 }
 
 bool TextAttribute::IsOverlined() const noexcept
@@ -332,14 +356,14 @@ void TextAttribute::SetCrossedOut(bool isCrossedOut) noexcept
     WI_UpdateFlag(_attrs, CharacterAttributes::CrossedOut, isCrossedOut);
 }
 
-void TextAttribute::SetUnderlined(bool isUnderlined) noexcept
+// Method description:
+// - Sets underline style to singly, doubly, or one of the extended styles.
+// Arguments:
+// - style - underline style to set.
+void TextAttribute::SetUnderlineStyle(const UnderlineStyle style) noexcept
 {
-    WI_UpdateFlag(_attrs, CharacterAttributes::Underlined, isUnderlined);
-}
-
-void TextAttribute::SetDoublyUnderlined(bool isDoublyUnderlined) noexcept
-{
-    WI_UpdateFlag(_attrs, CharacterAttributes::DoublyUnderlined, isDoublyUnderlined);
+    const auto shiftedStyle = WI_EnumValue(style) << UNDERLINE_STYLE_SHIFT;
+    _attrs = (_attrs & ~CharacterAttributes::UnderlineStyle) | static_cast<CharacterAttributes>(shiftedStyle);
 }
 
 void TextAttribute::SetOverlined(bool isOverlined) noexcept
@@ -372,6 +396,11 @@ void TextAttribute::SetDefaultForeground() noexcept
 void TextAttribute::SetDefaultBackground() noexcept
 {
     _background = TextColor();
+}
+
+void TextAttribute::SetDefaultUnderlineColor() noexcept
+{
+    _underlineColor = TextColor{};
 }
 
 // Method description:

@@ -739,7 +739,7 @@ class ReflowTests
         til::CoordType y = 0;
         for (const auto& testRow : testBuffer.rows)
         {
-            auto& row{ buffer->GetRowByOffset(y) };
+            auto& row{ buffer->GetMutableRowByOffset(y) };
 
             row.SetWrapForced(testRow.wrap);
 

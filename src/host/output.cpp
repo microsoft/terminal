@@ -257,7 +257,7 @@ void ScreenBufferSizeChange(const til::size coordNewSize)
 
     try
     {
-        gci.pInputBuffer->Write(std::make_unique<WindowBufferSizeEvent>(coordNewSize));
+        gci.pInputBuffer->Write(SynthesizeWindowBufferSizeEvent(coordNewSize));
     }
     catch (...)
     {
@@ -291,38 +291,6 @@ static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& source
     textBuffer.TriggerRedraw(target);
     // Also redraw anything that was filled.
     textBuffer.TriggerRedraw(fill);
-}
-
-// Routine Description:
-// - This routine is a special-purpose scroll for use by AdjustCursorPosition.
-// Arguments:
-// - screenInfo - reference to screen buffer info.
-// Return Value:
-// - true if we succeeded in scrolling the buffer, otherwise false (if we're out of memory)
-void StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
-{
-    // Rotate the circular buffer around and wipe out the previous final line.
-    auto& buffer = screenInfo.GetTextBuffer();
-    buffer.IncrementCircularBuffer(buffer.GetCurrentAttributes());
-
-    // Trigger a graphical update if we're active.
-    if (screenInfo.IsActiveScreenBuffer())
-    {
-        til::point coordDelta;
-        coordDelta.y = -1;
-
-        auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        if (pNotifier)
-        {
-            // Notify accessibility that a scroll has occurred.
-            pNotifier->NotifyConsoleUpdateScrollEvent(coordDelta.x, coordDelta.y);
-        }
-
-        if (ServiceLocator::LocateGlobals().pRender != nullptr)
-        {
-            ServiceLocator::LocateGlobals().pRender->TriggerScroll(&coordDelta);
-        }
-    }
 }
 
 // Routine Description:

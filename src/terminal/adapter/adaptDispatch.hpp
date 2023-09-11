@@ -139,6 +139,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool DoFinalTermAction(const std::wstring_view string) override;
 
+        bool DoVsCodeAction(const std::wstring_view string) override;
+
         StringHandler DownloadDRCS(const VTInt fontNumber,
                                    const VTParameter startChar,
                                    const DispatchTypes::DrcsEraseControl eraseControl,
@@ -205,6 +207,7 @@ namespace Microsoft::Console::VirtualTerminal
             CharacterAttributes xorAttrMask = CharacterAttributes::Normal;
             std::optional<TextColor> foreground;
             std::optional<TextColor> background;
+            std::optional<TextColor> underlineColor;
         };
 
         void _WriteToBuffer(const std::wstring_view string);
@@ -294,6 +297,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         SgrStack _sgrStack;
 
+        void _SetUnderlineStyleHelper(const VTParameter option, TextAttribute& attr) noexcept;
         size_t _SetRgbColorsHelper(const VTParameters options,
                                    TextAttribute& attr,
                                    const bool isForeground) noexcept;
