@@ -11,6 +11,7 @@
   <Import Project="..\..\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ExtensionCode.cpp" />
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>

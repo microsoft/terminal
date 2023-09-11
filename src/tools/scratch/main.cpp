@@ -4,15 +4,22 @@
 #include <windows.h>
 #include <string>
 
+#include "ExtensionInterface.h"
+
 // Used by window structures to place our special frozen-console painting data
 #define GWL_CONSOLE_WNDALLOC (3 * sizeof(DWORD))
 
 HANDLE g_stdOut{ nullptr };
 LRESULT CALLBACK s_ExtensionWindowProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK _ourExtensionWindowProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
+
+// TODO! hax for now
+void StartExtension();
 
 HWND g_parent;
 HWND g_child;
 HWND g_extension;
+WNDPROC g_extensionProc{ nullptr };
 
 LRESULT CALLBACK s_ScratchWindowProc(HWND hWnd,
                                      UINT Message,
@@ -247,6 +254,10 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     auto extnClassAtom{ RegisterClassExW(&extClass) };
     const auto extensionStyle = WS_VISIBLE | WS_CHILD;
     const auto extensionStyleEx = 0;
+
+    // HAX set up the extension proc BEFORE we set up the window so it can get a WM_CREATE
+    StartExtension();
+
     g_extension = CreateWindowExW(extensionStyleEx, // WS_EX_LAYERED,
                                   reinterpret_cast<LPCWSTR>(extnClassAtom),
                                   L"Hello Extension",
@@ -274,49 +285,55 @@ int __cdecl wmain(int argc, WCHAR* argv[])
 //TODO! much later:
 // * The Terminal doesn't think it's active, cause it's HWND... isn't. The extension's is
 
-HBRUSH g_magentaBrush;
-
 LRESULT CALLBACK s_ExtensionWindowProc(HWND hWnd,
                                        UINT Message,
                                        WPARAM wParam,
                                        LPARAM lParam)
 {
+    const auto ourResult = _ourExtensionWindowProc(hWnd, Message, wParam, lParam);
+    if (ourResult != 0)
+    {
+        return ourResult;
+    }
+    if (g_extensionProc != nullptr)
+    {
+        const auto theirResult = g_extensionProc(hWnd, Message, wParam, lParam);
+        if (theirResult != 0)
+        {
+            return theirResult;
+        }
+    }
+    return DefWindowProcW(hWnd, Message, wParam, lParam);
+}
+
+LRESULT CALLBACK _ourExtensionWindowProc(HWND hWnd,
+                                         UINT Message,
+                                         WPARAM wParam,
+                                         LPARAM lParam)
+{
+    wParam;
+    lParam;
+
     switch (Message)
     {
     case WM_CREATE:
     {
         // Show the window
         ShowWindow(hWnd, SW_SHOWDEFAULT);
-
-        // Create a magenta brush for later
-        g_magentaBrush = CreateSolidBrush(RGB(255, 0, 255));
-        break;
-    }
-    case WM_SIZE:
-    {
-        const auto width = LOWORD(lParam);
-        const auto height = HIWORD(lParam);
-        wprintf(L"resized to: %d, %d\n", width, height);
-        break;
-    }
-    case WM_PAINT:
-    {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hWnd, &ps);
-
-        // All painting occurs here, between BeginPaint and EndPaint.
-        // FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_HIGHLIGHT + 1));
-        FillRect(hdc, &ps.rcPaint, g_magentaBrush);
-
-        EndPaint(hWnd, &ps);
         break;
     }
     case WM_DESTROY:
     {
         PostQuitMessage(0);
+        return 1;
         break;
     }
     }
-    // If we get this far, call the default window proc
-    return DefWindowProcW(hWnd, Message, wParam, lParam);
+
+    return 0;
+}
+
+void SetExtensionWindowProc(WNDPROC proc)
+{
+    g_extensionProc = proc;
 }
