@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "FontSizeChangedArgs.g.h"
 #include "TitleChangedEventArgs.g.h"
 #include "CopyToClipboardEventArgs.g.h"
 #include "ContextMenuRequestedEventArgs.g.h"
@@ -15,12 +16,28 @@
 #include "FoundResultsArgs.g.h"
 #include "ShowWindowArgs.g.h"
 #include "UpdateSelectionMarkersEventArgs.g.h"
+#include "CompletionsChangedEventArgs.g.h"
 #include "KeySentEventArgs.g.h"
 #include "CharSentEventArgs.g.h"
 #include "StringSentEventArgs.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+
+    struct FontSizeChangedArgs : public FontSizeChangedArgsT<FontSizeChangedArgs>
+    {
+    public:
+        FontSizeChangedArgs(int32_t width,
+                            int32_t height) :
+            Width(width),
+            Height(height)
+        {
+        }
+
+        til::property<int32_t> Width;
+        til::property<int32_t> Height;
+    };
+
     struct TitleChangedEventArgs : public TitleChangedEventArgsT<TitleChangedEventArgs>
     {
     public:
@@ -159,6 +176,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         WINRT_PROPERTY(bool, FoundMatch);
+        WINRT_PROPERTY(int32_t, TotalMatches);
+        WINRT_PROPERTY(int32_t, CurrentMatch);
     };
 
     struct ShowWindowArgs : public ShowWindowArgsT<ShowWindowArgs>
@@ -181,6 +200,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         WINRT_PROPERTY(bool, ClearMarkers, false);
+    };
+
+    struct CompletionsChangedEventArgs : public CompletionsChangedEventArgsT<CompletionsChangedEventArgs>
+    {
+    public:
+        CompletionsChangedEventArgs(const winrt::hstring menuJson, const unsigned int replaceLength) :
+            _MenuJson(menuJson),
+            _ReplacementLength(replaceLength)
+        {
+        }
+
+        WINRT_PROPERTY(winrt::hstring, MenuJson, L"");
+        WINRT_PROPERTY(uint32_t, ReplacementLength, 0);
     };
 
     struct KeySentEventArgs : public KeySentEventArgsT<KeySentEventArgs>

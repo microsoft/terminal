@@ -43,6 +43,9 @@
     <AppxManifest Include="Package-Pre.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='Preview'">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <AppxManifest Include="Package-Can.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='Canary'">
+      <SubType>Designer</SubType>
+    </AppxManifest>
     <AppxManifest Include="Package-Dev.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='' or '$(WindowsTerminalBranding)'=='Dev'">
       <SubType>Designer</SubType>
     </AppxManifest>
@@ -62,6 +65,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(WindowsTerminalBranding)'=='Preview'">
     <WindowsTerminalAssetSuffix>-Pre</WindowsTerminalAssetSuffix>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(WindowsTerminalBranding)'=='Canary'">
+    <WindowsTerminalAssetSuffix>-Can</WindowsTerminalAssetSuffix>
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)..\CascadiaResources.build.items" />

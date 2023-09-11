@@ -65,6 +65,28 @@ struct RowCopyTextFromState
     til::CoordType sourceColumnEnd = 0; // OUT
 };
 
+// This structure is basically an inverse of ROW::_charOffsets. If you have a pointer
+// into a ROW's text this class can tell you what cell that pointer belongs to.
+struct CharToColumnMapper
+{
+    CharToColumnMapper(const wchar_t* chars, const uint16_t* charOffsets, ptrdiff_t lastCharOffset, til::CoordType currentColumn) noexcept;
+
+    til::CoordType GetLeadingColumnAt(ptrdiff_t offset) noexcept;
+    til::CoordType GetTrailingColumnAt(ptrdiff_t offset) noexcept;
+    til::CoordType GetLeadingColumnAt(const wchar_t* str) noexcept;
+    til::CoordType GetTrailingColumnAt(const wchar_t* str) noexcept;
+
+private:
+    // See ROW and its members with identical name.
+    static constexpr uint16_t CharOffsetsTrailer = 0x8000;
+    static constexpr uint16_t CharOffsetsMask = 0x7fff;
+
+    const wchar_t* _chars;
+    const uint16_t* _charOffsets;
+    ptrdiff_t _lastCharOffset;
+    til::CoordType _currentColumn;
+};
+
 class ROW final
 {
 public:
@@ -106,7 +128,7 @@ public:
     bool WasDoubleBytePadded() const noexcept;
     void SetLineRendition(const LineRendition lineRendition) noexcept;
     LineRendition GetLineRendition() const noexcept;
-    uint16_t GetLineWidth() const noexcept;
+    til::CoordType GetReadableColumnCount() const noexcept;
 
     void Reset(const TextAttribute& attr) noexcept;
     void TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth);
@@ -128,7 +150,6 @@ public:
     TextAttribute GetAttrByColumn(til::CoordType column) const;
     std::vector<uint16_t> GetHyperlinks() const;
     uint16_t size() const noexcept;
-    til::CoordType LineRenditionColumns() const noexcept;
     til::CoordType MeasureLeft() const noexcept;
     til::CoordType MeasureRight() const noexcept;
     bool ContainsText() const noexcept;
@@ -136,6 +157,8 @@ public:
     DbcsAttribute DbcsAttrAt(til::CoordType column) const noexcept;
     std::wstring_view GetText() const noexcept;
     std::wstring_view GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept;
+    til::CoordType GetLeadingColumnAtCharOffset(ptrdiff_t offset) const noexcept;
+    til::CoordType GetTrailingColumnAtCharOffset(ptrdiff_t offset) const noexcept;
     DelimiterClass DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept;
 
     auto AttrBegin() const noexcept { return _attr.begin(); }
@@ -206,16 +229,21 @@ private:
     template<typename T>
     constexpr uint16_t _clampedColumnInclusive(T v) const noexcept;
 
-    uint16_t _adjustBackward(uint16_t column) const noexcept;
-    uint16_t _adjustForward(uint16_t column) const noexcept;
-
-    wchar_t _uncheckedChar(size_t off) const noexcept;
     uint16_t _charSize() const noexcept;
-    uint16_t _uncheckedCharOffset(size_t col) const noexcept;
-    bool _uncheckedIsTrailer(size_t col) const noexcept;
+    template<typename T>
+    wchar_t _uncheckedChar(T off) const noexcept;
+    template<typename T>
+    uint16_t _uncheckedCharOffset(T col) const noexcept;
+    template<typename T>
+    bool _uncheckedIsTrailer(T col) const noexcept;
+    template<typename T>
+    T _adjustBackward(T column) const noexcept;
+    template<typename T>
+    T _adjustForward(T column) const noexcept;
 
     void _init() noexcept;
     void _resizeChars(uint16_t colEndDirty, uint16_t chBegDirty, size_t chEndDirty, uint16_t chEndDirtyOld);
+    CharToColumnMapper _createCharToColumnMapper(ptrdiff_t offset) const noexcept;
 
     // These fields are a bit "wasteful", but it makes all this a bit more robust against
     // programming errors during initial development (which is when this comment was written).

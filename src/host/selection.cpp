@@ -104,7 +104,10 @@ void Selection::_SetSelectionVisibility(const bool fMakeVisible)
 
         _PaintSelection();
     }
-    LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow()->SignalUia(UIA_Text_TextSelectionChangedEventId));
+    if (const auto window = ServiceLocator::LocateConsoleWindow())
+    {
+        LOG_IF_FAILED(window->SignalUia(UIA_Text_TextSelectionChangedEventId));
+    }
 }
 
 // Routine Description:
@@ -269,12 +272,14 @@ void Selection::ExtendSelection(_In_ til::point coordBufferPos)
     _PaintSelection();
 
     // Fire off an event to let accessibility apps know the selection has changed.
-    auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-    if (pNotifier)
+    if (const auto pNotifier = ServiceLocator::LocateAccessibilityNotifier())
     {
         pNotifier->NotifyConsoleCaretEvent(IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection, PACKCOORD(coordBufferPos));
     }
-    LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow()->SignalUia(UIA_Text_TextSelectionChangedEventId));
+    if (const auto window = ServiceLocator::LocateConsoleWindow())
+    {
+        LOG_IF_FAILED(window->SignalUia(UIA_Text_TextSelectionChangedEventId));
+    }
 }
 
 // Routine Description:
@@ -366,7 +371,10 @@ void Selection::ClearSelection(const bool fStartingNewSelection)
         {
             _CancelMarkSelection();
         }
-        LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow()->SignalUia(UIA_Text_TextSelectionChangedEventId));
+        if (const auto window = ServiceLocator::LocateConsoleWindow())
+        {
+            LOG_IF_FAILED(window->SignalUia(UIA_Text_TextSelectionChangedEventId));
+        }
 
         _dwSelectionFlags = 0;
 

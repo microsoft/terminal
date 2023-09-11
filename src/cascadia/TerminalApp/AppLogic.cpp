@@ -597,11 +597,11 @@ namespace winrt::TerminalApp::implementation
                 // use as a title though!
                 //
                 // First, check the reserved keywords:
-                if (parsedTarget == "new")
+                if (parsedTarget == NewWindow)
                 {
                     return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew);
                 }
-                else if (parsedTarget == "last")
+                else if (parsedTarget == MostRecentlyUsedWindow)
                 {
                     return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseExisting);
                 }

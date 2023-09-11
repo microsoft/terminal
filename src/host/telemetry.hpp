@@ -44,9 +44,7 @@ public:
     void LogQuickEditPasteRawUsed();
     void LogColorSelectionUsed();
 
-    void LogFindDialogNextClicked(const unsigned int iStringLength, const bool fDirectionDown, const bool fMatchCase);
     void LogProcessConnected(const HANDLE hProcess);
-    void FindDialogClosed();
     void WriteFinalTraceLog();
 
     void LogRipMessage(_In_z_ const char* pszMessage, ...) const;
@@ -138,10 +136,6 @@ private:
 
     TraceLoggingActivity<g_hConhostV2EventTraceProvider> _activity;
 
-    float _fpFindStringLengthAverage;
-    float _fpDirectionDownAverage;
-    float _fpMatchCaseAverage;
-    unsigned int _uiFindNextClickedTotal;
     unsigned int _uiColorSelectionUsed;
     time_t _tStartedAt;
     WCHAR const* const c_pwszBashExeName = L"bash.exe";
