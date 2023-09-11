@@ -110,6 +110,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::UI::Xaml::Controls::MenuFlyoutItem _closePaneMenuItem;
 
+        winrt::Microsoft::Terminal::Settings::Model::IconStyle _lastIconStyle;
         winrt::hstring _lastIconPath{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
