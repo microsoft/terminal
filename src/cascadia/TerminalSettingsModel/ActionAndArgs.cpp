@@ -459,7 +459,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto data = winrt::to_string(content);
 
         std::string errs;
-        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
         Json::Value root;
         if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
         {
