@@ -104,6 +104,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.ConnectionStateChanged = _core.ConnectionStateChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleConnectionStateChanged });
         _revokers.ShowWindowChanged = _core.ShowWindowChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleShowWindowChanged });
         _revokers.CloseTerminalRequested = _core.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCloseTerminalRequested });
+        _revokers.CompletionsChanged = _core.CompletionsChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCompletionsChanged });
         _revokers.RestartTerminalRequested = _core.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleRestartTerminalRequested });
 
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
@@ -301,6 +302,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto fullHeight{ ScrollBarCanvas().ActualHeight() };
             const auto totalBufferRows{ update.newMaximum + update.newViewportSize };
 
+            auto drawPip = [&](const auto row, const auto rightAlign, const auto& brush) {
+                Windows::UI::Xaml::Shapes::Rectangle r;
+                r.Fill(brush);
+                r.Width(16.0f / 3.0f); // pip width - 1/3rd of the scrollbar width.
+                r.Height(2);
+                const auto fractionalHeight = row / totalBufferRows;
+                const auto relativePos = fractionalHeight * fullHeight;
+                ScrollBarCanvas().Children().Append(r);
+                Windows::UI::Xaml::Controls::Canvas::SetTop(r, relativePos);
+                if (rightAlign)
+                {
+                    Windows::UI::Xaml::Controls::Canvas::SetLeft(r, 16.0f * .66f);
+                }
+            };
+
             for (const auto m : marks)
             {
                 Windows::UI::Xaml::Shapes::Rectangle r;
@@ -311,14 +327,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // pre-evaluate that for us, and shove the real value into the
                 // Color member, regardless if the mark has a literal value set.
                 brush.Color(static_cast<til::color>(m.Color.Color));
-                r.Fill(brush);
-                r.Width(16.0f / 3.0f); // pip width - 1/3rd of the scrollbar width.
-                r.Height(2);
-                const auto markRow = m.Start.Y;
-                const auto fractionalHeight = markRow / totalBufferRows;
-                const auto relativePos = fractionalHeight * fullHeight;
-                ScrollBarCanvas().Children().Append(r);
-                Windows::UI::Xaml::Controls::Canvas::SetTop(r, relativePos);
+                drawPip(m.Start.Y, false, brush);
+            }
+
+            if (_searchBox)
+            {
+                const auto searchMatches{ _core.SearchResultRows() };
+                if (searchMatches &&
+                    searchMatches.Size() > 0 &&
+                    _searchBox->Visibility() == Visibility::Visible)
+                {
+                    const til::color fgColor{ _core.ForegroundColor() };
+                    Media::SolidColorBrush searchMarkBrush{};
+                    searchMarkBrush.Color(fgColor);
+                    for (const auto m : searchMatches)
+                    {
+                        drawPip(m, true, searchMarkBrush);
+                    }
+                }
             }
         }
     }
@@ -387,8 +413,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Search text in text buffer. This is triggered if the user click
-    //   search button or press enter.
+    // - Search text in text buffer. This is triggered if the user clicks the
+    //   search button, presses enter, or changes the search criteria.
     // Arguments:
     // - text: the text to search
     // - goForward: boolean that represents if the current search direction is forward
@@ -403,6 +429,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
+    // - The handler for the "search criteria changed" event. Clears selection and initiates a new search.
+    // Arguments:
+    // - text: the text to search
+    // - goForward: indicates whether the search should be performed forward (if set to true) or backward
+    // - caseSensitive: boolean that represents if the current search is case sensitive
+    // Return Value:
+    // - <none>
+    void TermControl::_SearchChanged(const winrt::hstring& text,
+                                     const bool goForward,
+                                     const bool caseSensitive)
+    {
+        if (_searchBox && _searchBox->Visibility() == Visibility::Visible)
+        {
+            _core.Search(text, goForward, caseSensitive);
+        }
+    }
+
+    // Method Description:
     // - The handler for the close button or pressing "Esc" when focusing on the
     //   search dialog.
     // Arguments:
@@ -413,6 +457,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                              const RoutedEventArgs& /*args*/)
     {
+        _core.ClearSearch();
         _searchBox->Visibility(Visibility::Collapsed);
 
         // Set focus back to terminal control
@@ -688,7 +733,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (acrylic == nullptr)
             {
                 acrylic = Media::AcrylicBrush{};
-                acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+
+                if (_core.Settings().EnableUnfocusedAcrylic())
+                {
+                    acrylic.BackgroundSource(Media::AcrylicBackgroundSource::Backdrop);
+                }
+                else
+                {
+                    acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+                }
             }
 
             // see GH#1082: Initialize background color so we don't get a
@@ -2349,7 +2402,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Method Description:
     // - Get the size of a single character of this control. The size is in
-    //   DIPs. If you need it in _pixels_, you'll need to multiply by the
+    //   _pixels_. If you want it in DIPs, you'll need to DIVIDE by the
     //   current display scaling.
     // Arguments:
     // - <none>
@@ -3286,16 +3339,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return posInDIPs + marginsInDips;
     }
 
-    void TermControl::_coreFontSizeChanged(const int fontWidth,
-                                           const int fontHeight,
-                                           const bool isInitialChange)
+    void TermControl::_coreFontSizeChanged(const IInspectable& /*sender*/,
+                                           const Control::FontSizeChangedArgs& args)
     {
         // scale the selection markers to be the size of a cell
-        auto scaleMarker = [fontWidth, fontHeight, dpiScale{ SwapChainPanel().CompositionScaleX() }](const Windows::UI::Xaml::Shapes::Path& shape) {
+        auto scaleMarker = [args, dpiScale{ SwapChainPanel().CompositionScaleX() }](const Windows::UI::Xaml::Shapes::Path& shape) {
             // The selection markers were designed to be 5x14 in size,
             // so use those dimensions below for the scaling
-            const auto scaleX = fontWidth / 5.0 / dpiScale;
-            const auto scaleY = fontHeight / 14.0 / dpiScale;
+            const auto scaleX = args.Width() / 5.0 / dpiScale;
+            const auto scaleY = args.Height() / 14.0 / dpiScale;
 
             Windows::UI::Xaml::Media::ScaleTransform transform;
             transform.ScaleX(scaleX);
@@ -3307,12 +3359,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
         scaleMarker(SelectionStartMarker());
         scaleMarker(SelectionEndMarker());
-
-        // Don't try to inspect the core here. The Core is raising this while
-        // it's holding its write lock. If the handlers calls back to some
-        // method on the TermControl on the same thread, and that _method_ calls
-        // to ControlCore, we might be in danger of deadlocking.
-        _FontSizeChangedHandlers(fontWidth, fontHeight, isInitialChange);
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
@@ -3376,6 +3422,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _core.ReadEntireBuffer();
     }
+    Control::CommandHistoryContext TermControl::CommandHistory() const
+    {
+        return _core.CommandHistory();
+    }
 
     Core::Scheme TermControl::ColorScheme() const noexcept
     {
@@ -3421,8 +3471,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: contains information about the results that were or were not found.
     // Return Value:
     // - <none>
-    void TermControl::_coreFoundMatch(const IInspectable& /*sender*/, const Control::FoundResultsArgs& args)
+    winrt::fire_and_forget TermControl::_coreFoundMatch(const IInspectable& /*sender*/, Control::FoundResultsArgs args)
     {
+        co_await wil::resume_foreground(Dispatcher());
         if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this) })
         {
             automationPeer.RaiseNotificationEvent(
@@ -3430,6 +3481,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
                 args.FoundMatch() ? RS_(L"SearchBox_MatchesAvailable") : RS_(L"SearchBox_NoMatches"), // what to announce if results were found
                 L"SearchBoxResultAnnouncement" /* unique name for this group of notifications */);
+        }
+
+        // Manually send a scrollbar update, now, on the UI thread. We're
+        // already UI-driven, so that's okay. We're not really changing the
+        // scrollbar, but we do want to update the position of any marks. The
+        // Core might send a scrollbar updated event too, but if the first
+        // search hit is in the visible viewport, then the pips won't display
+        // until the user first scrolls.
+        auto scrollBar = ScrollBar();
+        ScrollBarUpdate update{
+            .newValue = scrollBar.Value(),
+            .newMaximum = scrollBar.Maximum(),
+            .newMinimum = scrollBar.Minimum(),
+            .newViewportSize = scrollBar.ViewportSize(),
+        };
+        _throttledUpdateScrollbar(update);
+
+        if (_searchBox)
+        {
+            _searchBox->SetStatus(args.TotalMatches(), args.CurrentMatch());
+            _searchBox->NavigationEnabled(true);
         }
     }
 
@@ -3469,6 +3541,34 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Core::MatchMode matchMode)
     {
         _core.ColorSelection(fg, bg, matchMode);
+    }
+
+    // Returns the text cursor's position relative to our origin, in DIPs.
+    Windows::Foundation::Point TermControl::CursorPositionInDips()
+    {
+        const til::point cursorPos{ _core.CursorPosition() };
+
+        // CharacterDimensions returns a font size in pixels.
+        const auto fontSize{ CharacterDimensions() };
+
+        // Convert text buffer cursor position to client coordinate position
+        // within the window. This point is in _pixels_
+        const Windows::Foundation::Point clientCursorPos{ cursorPos.x * fontSize.Width,
+                                                          cursorPos.y * fontSize.Height };
+
+        // Get scale factor for view
+        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+
+        // Adjust to DIPs
+        const til::point clientCursorInDips{ til::math::rounding, clientCursorPos.X / scaleFactor, clientCursorPos.Y / scaleFactor };
+
+        // Account for the margins, which are in DIPs
+        auto padding{ GetPadding() };
+        til::point relativeToOrigin{ til::math::flooring,
+                                     clientCursorInDips.x + padding.Left,
+                                     clientCursorInDips.y + padding.Top };
+
+        return relativeToOrigin.to_winrt_point();
     }
 
     void TermControl::_contextMenuHandler(IInspectable /*sender*/,

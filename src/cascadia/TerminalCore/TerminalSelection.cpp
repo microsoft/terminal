@@ -495,7 +495,7 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
         const til::point bufferEnd{ bufferSize.RightInclusive(), ViewEndIndex() };
         while (!result && bufferSize.IsInBounds(searchStart) && bufferSize.IsInBounds(searchEnd) && searchStart <= searchEnd && bufferStart <= searchStart && searchEnd <= bufferEnd)
         {
-            auto patterns = _activeBuffer().GetPatterns(searchStart.y, searchEnd.y);
+            auto patterns = _getPatterns(searchStart.y, searchEnd.y);
             resultList = patterns.findContained(convertToSearchArea(searchStart), convertToSearchArea(searchEnd));
             result = extractResultFromList(resultList);
             if (!result)
@@ -886,17 +886,4 @@ void Terminal::_ScrollToPoint(const til::point pos)
         _NotifyScrollEvent();
         _activeBuffer().TriggerScroll();
     }
-}
-
-// Method Description:
-// - apply the TextAttribute "attr" to the active buffer
-// Arguments:
-// - coordStart - where to begin applying attr
-// - coordEnd - where to end applying attr (inclusive)
-// - attr - the text attributes to apply
-void Terminal::ColorSelection(const til::point coordStart, const til::point coordEnd, const TextAttribute attr)
-{
-    const auto spanLength = _activeBuffer().SpanLength(coordStart, coordEnd);
-
-    _activeBuffer().Write(OutputCellIterator(attr, spanLength), coordStart);
 }

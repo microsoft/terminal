@@ -30,6 +30,14 @@
                 <Setter Property="LargeChange" Value="10" />
                 <Setter Property="Minimum" Value="1" />
             </Style>
+            <Style x:Key="LaunchPositionNumberBoxStyle"
+                   BasedOn="{StaticResource NumberBoxSettingStyle}"
+                   TargetType="muxc:NumberBox">
+                <Setter Property="SmallChange" Value="1" />
+                <Setter Property="LargeChange" Value="10" />
+                <Setter Property="Minimum" Value="-2147483648" />
+                <Setter Property="Maximum" Value="2147483647" />
+            </Style>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -84,18 +92,18 @@
 
                                     <Grid.ColumnDefinitions>
                                         <!--  icon  -->
-                                        <ColumnDefinition Width="24" />
-                                        <!--  profile name and author  -->
-                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="auto" />
+                                        <!--  terminal name and author  -->
+                                        <ColumnDefinition Width="auto" />
                                         <!--  version  -->
-                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="auto" />
                                     </Grid.ColumnDefinitions>
 
                                     <Grid.RowDefinitions>
-                                        <!--  profile name  -->
-                                        <RowDefinition Height="20" />
+                                        <!--  terminal name  -->
+                                        <RowDefinition Height="auto" />
                                         <!--  author and version  -->
-                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="auto" />
                                     </Grid.RowDefinitions>
 
                                     <IconSourceElement Grid.Row="0"
@@ -109,13 +117,11 @@
                                     <TextBlock Grid.Row="0"
                                                Grid.Column="1"
                                                Grid.ColumnSpan="2"
-                                               Height="20"
                                                AutomationProperties.AccessibilityView="Raw"
                                                Text="{x:Bind Name}" />
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="1"
-                                               Height="20"
                                                AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Author}"
@@ -123,7 +129,6 @@
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="2"
-                                               Height="20"
                                                AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Version}"
@@ -245,7 +250,7 @@
                                             Grid.Column="0"
                                             Width="118"
                                             IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
-                                            Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                            Style="{StaticResource LaunchPositionNumberBoxStyle}"
                                             Value="{x:Bind ViewModel.InitialPosX, Mode=TwoWay}" />
                             <muxc:NumberBox x:Name="PosYBox"
                                             x:Uid="Globals_InitialPosYBox"
@@ -253,7 +258,7 @@
                                             Grid.Column="1"
                                             Width="118"
                                             IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
-                                            Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                            Style="{StaticResource LaunchPositionNumberBoxStyle}"
                                             Value="{x:Bind ViewModel.InitialPosY, Mode=TwoWay}" />
                             <CheckBox x:Name="UseDefaultLaunchPositionCheckbox"
                                       x:Uid="Globals_DefaultLaunchPositionCheckbox"

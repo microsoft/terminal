@@ -46,7 +46,6 @@ SOURCES = \
     ..\scrolling.cpp \
     ..\cmdline.cpp   \
     ..\CursorBlinker.cpp   \
-    ..\popup.cpp   \
     ..\alias.cpp   \
     ..\history.cpp   \
     ..\VtIo.cpp   \
@@ -89,10 +88,6 @@ SOURCES = \
     ..\conareainfo.cpp \
     ..\conimeinfo.cpp \
     ..\ConsoleArguments.cpp \
-    ..\CommandNumberPopup.cpp \
-    ..\CommandListPopup.cpp \
-    ..\CopyFromCharPopup.cpp \
-    ..\CopyToCharPopup.cpp \
     ..\VtApiRoutines.cpp \
 
 

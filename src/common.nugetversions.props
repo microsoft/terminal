@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- PGO -->
-  <Import Condition="'$(PgoTarget)' == 'true' And '$(Platform)'=='x64' And '$(PGOBuildMode)'!='' And Exists('$(SolutionDir)\build\PGO\Terminal.PGO.props')" Project="$(SolutionDir)\build\PGO\Terminal.PGO.props" />
+  <Import Condition="'$(PgoTarget)' == 'true' And ('$(Platform)'=='x64' or '$(Platform)'=='arm64') And '$(PGOBuildMode)'!='' And Exists('$(SolutionDir)\build\PGO\Terminal.PGO.props')" Project="$(SolutionDir)\build\PGO\Terminal.PGO.props" />
 
   <!-- CppWinrt -->
   <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.props" Condition="'$(TerminalCppWinrt)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.props')" />

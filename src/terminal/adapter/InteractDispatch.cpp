@@ -17,7 +17,6 @@
 #include "../../interactivity/inc/ServiceLocator.hpp"
 #include "../../interactivity/inc/EventSynthesis.hpp"
 #include "../../types/inc/Viewport.hpp"
-#include "../../inc/unicode.hpp"
 
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Types;
@@ -38,7 +37,7 @@ InteractDispatch::InteractDispatch() :
 // - inputEvents: a collection of IInputEvents
 // Return Value:
 // - True.
-bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents)
+bool InteractDispatch::WriteInput(const std::span<const INPUT_RECORD>& inputEvents)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.GetActiveInputBuffer()->Write(inputEvents);
@@ -52,17 +51,14 @@ bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inpu
 //   client application.
 // Arguments:
 // - event: The key to send to the host.
-// Return Value:
-// - True.
-bool InteractDispatch::WriteCtrlKey(const KeyEvent& event)
+bool InteractDispatch::WriteCtrlKey(const INPUT_RECORD& event)
 {
     HandleGenericKeyEvent(event, false);
     return true;
 }
 
 // Method Description:
-// - Writes a string of input to the host. The string is converted to keystrokes
-//      that will faithfully represent the input by CharToKeyEvents.
+// - Writes a string of input to the host.
 // Arguments:
 // - string : a string to write to the console.
 // Return Value:
@@ -72,15 +68,11 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
     if (!string.empty())
     {
         const auto codepage = _api.GetConsoleOutputCP();
-        std::deque<std::unique_ptr<IInputEvent>> keyEvents;
+        InputEventQueue keyEvents;
 
         for (const auto& wch : string)
         {
-            auto convertedEvents = CharToKeyEvents(wch, codepage);
-
-            std::move(convertedEvents.begin(),
-                      convertedEvents.end(),
-                      std::back_inserter(keyEvents));
+            CharToKeyEvents(wch, codepage, keyEvents);
         }
 
         WriteInput(keyEvents);

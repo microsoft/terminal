@@ -21,7 +21,6 @@
 #include "../host/readDataCooked.hpp"
 #include "../host/output.h"
 #include "../host/_stream.h" // For WriteCharsLegacy
-#include "../host/cmdline.h" // For WC_INTERACTIVE
 #include "test/CommonState.hpp"
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
@@ -2891,8 +2890,7 @@ void ConptyRoundtripTests::TestResizeWithCookedRead()
     m_state->PrepareReadHandle();
     // TODO GH#5618: This string will get mangled, but we don't really care
     // about the buffer contents in this test, so it doesn't really matter.
-    const std::string_view cookedReadContents{ "This is some cooked read data" };
-    m_state->PrepareCookedReadData(cookedReadContents);
+    m_state->PrepareCookedReadData(L"This is some cooked read data");
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
@@ -3166,20 +3164,6 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
     verifyBuffer(*termTb, term->_mutableViewport.ToExclusive());
 }
 
-void doWriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view string, DWORD flags = 0)
-{
-    auto dwNumBytes = string.size() * sizeof(wchar_t);
-    VERIFY_NT_SUCCESS(WriteCharsLegacy(screenInfo,
-                                       string.data(),
-                                       string.data(),
-                                       string.data(),
-                                       &dwNumBytes,
-                                       nullptr,
-                                       screenInfo.GetTextBuffer().GetCursor().GetPosition().x,
-                                       flags,
-                                       nullptr));
-}
-
 void ConptyRoundtripTests::WrapNewLineAtBottom()
 {
     // The actual bug case is
@@ -3221,11 +3205,6 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         return;
     }
 
-    // I've tested this with 0x0, 0x4, 0x80, 0x84, and 0-8, and none of these
-    // flags seem to make a difference. So we're just assuming 0 here, so we
-    // don't test a bunch of redundant cases.
-    const auto writeCharsLegacyMode = 0;
-
     // This test was originally written for
     //   https://github.com/microsoft/terminal/issues/5691
     //
@@ -3264,7 +3243,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         }
         else if (writingMethod == PrintWithWriteCharsLegacy)
         {
-            doWriteCharsLegacy(si, str, writeCharsLegacyMode);
+            WriteCharsLegacy(si, str, false, nullptr);
         }
     };
 
@@ -3422,7 +3401,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
         }
         else if (writingMethod == PrintWithWriteCharsLegacy)
         {
-            doWriteCharsLegacy(si, str, WC_INTERACTIVE);
+            WriteCharsLegacy(si, str, false, nullptr);
         }
     };
 

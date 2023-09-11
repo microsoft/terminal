@@ -398,7 +398,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         // as well as the Faint/Blink options.
         RGBColorOrFaint = 2, // 2 is also Faint, decreased intensity (ISO 6429).
         Italics = 3,
-        Underline = 4,
+        Underline = 4, // same for extended underline styles `SGR 4:x`.
         BlinkOrXterm256Index = 5, // 5 is also Blink.
         RapidBlink = 6,
         Negative = 7,
@@ -434,6 +434,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BackgroundDefault = 49,
         Overline = 53,
         NoOverline = 55,
+        UnderlineColor = 58,
+        UnderlineColorDefault = 59,
         BrightForegroundBlack = 90,
         BrightForegroundRed = 91,
         BrightForegroundGreen = 92,

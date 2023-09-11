@@ -2,9 +2,8 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include <wextestclass.h>
-#include "../../inc/consoletaeftemplates.hpp"
 
+#include "../types/inc/IInputEvent.hpp"
 #include "../terminal/input/terminalInput.hpp"
 
 using namespace WEX::Common;

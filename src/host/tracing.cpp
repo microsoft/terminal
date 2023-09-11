@@ -173,16 +173,17 @@ void Tracing::s_TraceInputRecord(const INPUT_RECORD& inputRecord)
     }
 }
 
-void Tracing::s_TraceCookedRead(_In_ ConsoleProcessHandle* const pConsoleProcessHandle, _In_reads_(cchCookedBufferLength) const wchar_t* pwchCookedBuffer, _In_ ULONG cchCookedBufferLength)
+void Tracing::s_TraceCookedRead(_In_ ConsoleProcessHandle* const pConsoleProcessHandle, const std::wstring_view& text)
 {
     if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, TraceKeywords::CookedRead))
     {
+        const auto length = ::base::saturated_cast<ULONG>(text.size());
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "CookedRead",
             TraceLoggingPid(pConsoleProcessHandle->dwProcessId, "AttachedProcessId"),
-            TraceLoggingCountedWideString(pwchCookedBuffer, cchCookedBufferLength, "ReadBuffer"),
-            TraceLoggingULong(cchCookedBufferLength, "ReadBufferLength"),
+            TraceLoggingCountedWideString(text.data(), length, "ReadBuffer"),
+            TraceLoggingULong(length, "ReadBufferLength"),
             TraceLoggingFileTime(pConsoleProcessHandle->GetProcessCreationTime(), "AttachedProcessCreationTime"),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::CookedRead));
