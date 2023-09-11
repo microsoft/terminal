@@ -1228,7 +1228,7 @@ void CascadiaSettings::WriteSettingsToDisk()
 }
 
 #ifndef NDEBUG
-static [[maybe_unused]] std::string _getDevPathToSchema()
+[[maybe_unused]] static std::string _getDevPathToSchema()
 {
     std::filesystem::path filePath{ __FILE__ };
     auto schemaPath = filePath.parent_path().parent_path().parent_path().parent_path() / "doc" / "cascadia" / "profiles.schema.json";
