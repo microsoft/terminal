@@ -54,12 +54,31 @@ LRESULT CALLBACK s_ScratchWindowProc(HWND hWnd,
     return DefWindowProcW(hWnd, Message, wParam, lParam);
 }
 HWND g_parent;
-void setupHooks(HWND parent, HWND /*child*/)
+HWND g_child;
+void resizeChildToMatchParent(HWND parent, HWND child)
+{
+    // get the position of the parent window
+    RECT rect;
+    GetWindowRect(parent, &rect);
+
+    // resize the child window to match
+    // (leave a 48px margin around the child window, for debug)
+    SetWindowPos(child,
+                 nullptr,
+                 rect.left + 48,
+                 rect.top + 48,
+                 rect.right - rect.left - 96,
+                 rect.bottom - rect.top - 96,
+                 /* SWP_NOZORDER |  */ SWP_NOACTIVATE);
+}
+
+void setupHooks(HWND parent, HWND child)
 {
     // get pid and tid for parent window
     DWORD pid = 0;
     DWORD tid = GetWindowThreadProcessId(parent, &pid);
     g_parent = parent;
+    g_child = child;
 
     // Ala
     // https://devblogs.microsoft.com/oldnewthing/20210104-00/?p=104656
@@ -74,7 +93,8 @@ void setupHooks(HWND parent, HWND /*child*/)
                                  DWORD /* dwmsEventTime */) {
         if (hwnd == g_parent)
         {
-            wprintf(L"Got a location change\n");
+            // wprintf(L"Got a location change\n");
+            resizeChildToMatchParent(g_parent, g_child);
         }
     };
 
@@ -115,15 +135,19 @@ void setupHooks(HWND parent, HWND /*child*/)
         nullptr,
         [](HWINEVENTHOOK /* hWinEventHook */,
            DWORD /* event */,
-           HWND /* hwnd */,
+           HWND hwnd,
            LONG /* idObject */,
            LONG /* idChild */,
            DWORD /* dwEventThread */,
            DWORD /* dwmsEventTime */) {
-            // if (hwnd == g_hWnd)
-            // {
-            //     wprintf(L"Got a reorder change\n");
-            // }
+            // n.b. not sure this is ever actually called
+
+            if (hwnd == g_parent)
+            {
+                wprintf(L"Got a reorder change\n");
+                // just bring us to the top
+                SetWindowPos(g_child, g_parent /* HWND_TOP */, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+            }
         },
         pid,
         tid,
@@ -171,18 +195,18 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     auto windowClassAtom{ RegisterClassExW(&scratchClass) };
 
     // Create a window
-    const auto style = WS_VISIBLE |
-                       (ownerHandle == 0 ? WS_OVERLAPPEDWINDOW : WS_THICKFRAME | WS_CAPTION | WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
+    // const auto style = WS_VISIBLE | WS_OVERLAPPEDWINDOW;
+    const auto style = 0; // WS_VISIBLE | WS_OVERLAPPED; // no resize border, no caption, etc.
 
     HWND hwnd = CreateWindowExW(0, // WS_EX_LAYERED,
                                 reinterpret_cast<LPCWSTR>(windowClassAtom),
                                 L"Hello World",
                                 style,
-                                100, // CW_USEDEFAULT,
-                                100, // CW_USEDEFAULT,
-                                100, // CW_USEDEFAULT,
-                                100, // CW_USEDEFAULT,
-                                reinterpret_cast<HWND>(ownerHandle), // owner
+                                200, // CW_USEDEFAULT,
+                                200, // CW_USEDEFAULT,
+                                200, // CW_USEDEFAULT,
+                                200, // CW_USEDEFAULT,
+                                0, // owner
                                 nullptr,
                                 nullptr,
                                 nullptr); // gwl
@@ -194,11 +218,15 @@ int __cdecl wmain(int argc, WCHAR* argv[])
         return gle;
     }
 
-    setupHooks(reinterpret_cast<HWND>(ownerHandle), hwnd);
+    SetWindowLong(hwnd, GWL_STYLE, 0); //remove all window styles, cause it's created with WS_CAPTION even if we didn't ask for it
+    ShowWindow(hwnd, SW_SHOW); //display window
 
-    // You know, if you just resize the Terminal window here, you actually do
-    // get a hole in the Terminal where this window should be. It just doesn't
-    // actually paint the child window.
+    // Add hooks so that we can be informed when the child process gets resized.
+    setupHooks(reinterpret_cast<HWND>(ownerHandle), hwnd);
+    // Immediately resize to the right size
+    resizeChildToMatchParent(g_parent, g_child);
+    // Set our HWND as owned by the parent's. We're always on top of them, but not explicitly a _child_.
+    ::SetWindowLongPtrW(g_child, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(g_parent));
 
     // pump messages
     MSG msg = { 0 };
@@ -210,3 +238,6 @@ int __cdecl wmain(int argc, WCHAR* argv[])
 
     return 0;
 }
+
+//TODO! much later:
+// * The Terminal doesn't think it's active, cause it's HWND... isn't. The extension's is
