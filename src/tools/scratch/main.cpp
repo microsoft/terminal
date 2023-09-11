@@ -53,6 +53,102 @@ LRESULT CALLBACK s_ScratchWindowProc(HWND hWnd,
     // If we get this far, call the default window proc
     return DefWindowProcW(hWnd, Message, wParam, lParam);
 }
+HWND g_parent;
+void setupHooks(HWND parent, HWND /*child*/)
+{
+    // get pid and tid for parent window
+    DWORD pid = 0;
+    DWORD tid = GetWindowThreadProcessId(parent, &pid);
+    g_parent = parent;
+
+    // Ala
+    // https://devblogs.microsoft.com/oldnewthing/20210104-00/?p=104656
+    // circa 2021
+
+    WINEVENTPROC sizeChange = [](HWINEVENTHOOK /* hWinEventHook */,
+                                 DWORD /* event */,
+                                 HWND hwnd,
+                                 LONG /* idObject */,
+                                 LONG /* idChild */,
+                                 DWORD /* dwEventThread */,
+                                 DWORD /* dwmsEventTime */) {
+        if (hwnd == g_parent)
+        {
+            wprintf(L"Got a location change\n");
+        }
+    };
+
+    // Listen for changes in size and pos of the ownerhandle
+    SetWinEventHook(
+        EVENT_OBJECT_LOCATIONCHANGE,
+        EVENT_OBJECT_LOCATIONCHANGE,
+        nullptr,
+        reinterpret_cast<WINEVENTPROC>(sizeChange),
+        pid,
+        tid,
+        WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+
+    // Listen for changes in the ownerhandle's visibility
+    SetWinEventHook(
+        EVENT_OBJECT_SHOW,
+        EVENT_OBJECT_HIDE,
+        nullptr,
+        [](HWINEVENTHOOK /* hWinEventHook */,
+           DWORD /* event */,
+           HWND /* hwnd */,
+           LONG /* idObject */,
+           LONG /* idChild */,
+           DWORD /* dwEventThread */,
+           DWORD /* dwmsEventTime */) {
+            // if (hwnd == g_hWnd)
+            // {
+            //     wprintf(L"Got a visibility change\n");
+            // }
+        },
+        pid,
+        tid,
+        WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+
+    SetWinEventHook(
+        EVENT_OBJECT_REORDER,
+        EVENT_OBJECT_REORDER,
+        nullptr,
+        [](HWINEVENTHOOK /* hWinEventHook */,
+           DWORD /* event */,
+           HWND /* hwnd */,
+           LONG /* idObject */,
+           LONG /* idChild */,
+           DWORD /* dwEventThread */,
+           DWORD /* dwmsEventTime */) {
+            // if (hwnd == g_hWnd)
+            // {
+            //     wprintf(L"Got a reorder change\n");
+            // }
+        },
+        pid,
+        tid,
+        WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+
+    SetWinEventHook(
+        EVENT_OBJECT_DESTROY,
+        EVENT_OBJECT_DESTROY,
+        nullptr,
+        [](HWINEVENTHOOK /* hWinEventHook */,
+           DWORD /* event */,
+           HWND /* hwnd */,
+           LONG /* idObject */,
+           LONG /* idChild */,
+           DWORD /* dwEventThread */,
+           DWORD /* dwmsEventTime */) {
+            // if (hwnd == g_hWnd)
+            // {
+            //     wprintf(L"Got a destroy change\n");
+            // }
+        },
+        pid,
+        tid,
+        WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+}
 
 // This wmain exists for help in writing scratch programs while debugging.
 int __cdecl wmain(int argc, WCHAR* argv[])
@@ -68,7 +164,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     static const auto SCRATCH_WINDOW_CLASS = L"scratch_window_class";
     WNDCLASSEXW scratchClass{ 0 };
     scratchClass.cbSize = sizeof(WNDCLASSEXW);
-    scratchClass.style = CS_HREDRAW | CS_VREDRAW | CS_PARENTDC | CS_DBLCLKS;
+    scratchClass.style = CS_HREDRAW | CS_VREDRAW | /*CS_PARENTDC |*/ CS_DBLCLKS;
     scratchClass.lpszClassName = SCRATCH_WINDOW_CLASS;
     scratchClass.lpfnWndProc = s_ScratchWindowProc;
     scratchClass.cbWndExtra = GWL_CONSOLE_WNDALLOC; // this is required to store the owning thread/process override in NTUSER
@@ -97,6 +193,12 @@ int __cdecl wmain(int argc, WCHAR* argv[])
 
         return gle;
     }
+
+    setupHooks(reinterpret_cast<HWND>(ownerHandle), hwnd);
+
+    // You know, if you just resize the Terminal window here, you actually do
+    // get a hole in the Terminal where this window should be. It just doesn't
+    // actually paint the child window.
 
     // pump messages
     MSG msg = { 0 };
