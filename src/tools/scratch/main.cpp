@@ -20,6 +20,10 @@ LRESULT CALLBACK s_ScratchWindowProc(HWND hWnd,
     {
         // Show the window
         ShowWindow(hWnd, SW_SHOWDEFAULT);
+
+        // // Make the window a topmost window cause islands are weird
+        // SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        // Nope, that didn't work
         break;
     }
     case WM_SIZE:
@@ -35,7 +39,7 @@ LRESULT CALLBACK s_ScratchWindowProc(HWND hWnd,
         HDC hdc = BeginPaint(hWnd, &ps);
 
         // All painting occurs here, between BeginPaint and EndPaint.
-        FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
+        FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_HIGHLIGHT + 1));
 
         EndPaint(hWnd, &ps);
         break;
@@ -51,28 +55,38 @@ LRESULT CALLBACK s_ScratchWindowProc(HWND hWnd,
 }
 
 // This wmain exists for help in writing scratch programs while debugging.
-int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
+int __cdecl wmain(int argc, WCHAR* argv[])
 {
     g_stdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    // Parse out the handle provided on the command line. It's in hexadecimal.
+    const auto ownerHandle = argc < 2 ?
+                                 0 :
+                                 std::stoul(argv[1], nullptr, 16);
+    wprintf(L"handle: %d\n", ownerHandle);
 
     static const auto SCRATCH_WINDOW_CLASS = L"scratch_window_class";
     WNDCLASSEXW scratchClass{ 0 };
     scratchClass.cbSize = sizeof(WNDCLASSEXW);
+    scratchClass.style = CS_HREDRAW | CS_VREDRAW | CS_PARENTDC | CS_DBLCLKS;
     scratchClass.lpszClassName = SCRATCH_WINDOW_CLASS;
     scratchClass.lpfnWndProc = s_ScratchWindowProc;
     scratchClass.cbWndExtra = GWL_CONSOLE_WNDALLOC; // this is required to store the owning thread/process override in NTUSER
     auto windowClassAtom{ RegisterClassExW(&scratchClass) };
 
     // Create a window
-    HWND hwnd = CreateWindowExW(0,
+    const auto style = WS_VISIBLE |
+                       (ownerHandle == 0 ? WS_OVERLAPPEDWINDOW : WS_THICKFRAME | WS_CAPTION | WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
+
+    HWND hwnd = CreateWindowExW(0, // WS_EX_LAYERED,
                                 reinterpret_cast<LPCWSTR>(windowClassAtom),
                                 L"Hello World",
-                                WS_OVERLAPPEDWINDOW,
-                                CW_USEDEFAULT,
-                                CW_USEDEFAULT,
-                                CW_USEDEFAULT,
-                                CW_USEDEFAULT,
-                                nullptr, // owner
+                                style,
+                                100, // CW_USEDEFAULT,
+                                100, // CW_USEDEFAULT,
+                                100, // CW_USEDEFAULT,
+                                100, // CW_USEDEFAULT,
+                                reinterpret_cast<HWND>(ownerHandle), // owner
                                 nullptr,
                                 nullptr,
                                 nullptr); // gwl
