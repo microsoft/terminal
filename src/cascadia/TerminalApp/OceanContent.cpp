@@ -18,9 +18,12 @@ namespace winrt::TerminalApp::implementation
         _root.VerticalAlignment(VerticalAlignment::Stretch);
         _root.HorizontalAlignment(HorizontalAlignment::Stretch);
 
-        auto res = Windows::UI::Xaml::Application::Current().Resources();
-        auto bg = res.Lookup(winrt::box_value(L"UnfocusedBorderBrush"));
-        _root.Background(bg.try_as<Media::Brush>());
+        // auto res = Windows::UI::Xaml::Application::Current().Resources();
+        // auto bg = res.Lookup(winrt::box_value(L"UnfocusedBorderBrush"));
+        // _root.Background(bg.try_as<Media::Brush>());
+
+        // transparent
+        // return winrt::Windows::UI::Xaml::Media::SolidColorBrush{ winrt::Windows::UI::Colors::Transparent() };
 
         // _box = winrt::Windows::UI::Xaml::Controls::TextBox{};
         // _box.Margin({ 10, 10, 10, 10 });
@@ -32,31 +35,36 @@ namespace winrt::TerminalApp::implementation
 
         // Add a size change handler to the root grid.
         _sizeChangedRevoker = _root.SizeChanged(winrt::auto_revoke, [this](auto&&, auto&&) {
-            const auto widthInDips = _root.ActualWidth();
-            const auto heightInDips = _root.ActualHeight();
-            // wprintf(L"resized to: %f, %f\n", width, height);
-
-            // adjust for DPI
-            const auto dpi = Windows::Graphics::Display::DisplayInformation::GetForCurrentView().LogicalDpi();
-            const auto dpiScale = dpi / 96.0f;
-            const auto widthInPixels = widthInDips * dpiScale;
-            const auto heightInPixels = heightInDips * dpiScale;
-
-            // Get the actual location of our _root, relative to the screen
-            const auto transform = _root.TransformToVisual(nullptr);
-            const auto point = transform.TransformPoint({ 0, 0 });
-
-            // scale from DIPs to pixels:
-
-            // Resize our ocean HWND
-            SetWindowPos(_window.get(),
-                         nullptr,
-                         gsl::narrow_cast<int>(point.X * dpiScale) + 48,
-                         gsl::narrow_cast<int>(point.Y * dpiScale) + 48,
-                         gsl::narrow_cast<int>(widthInPixels) - 96,
-                         gsl::narrow_cast<int>(heightInPixels) - 96,
-                         /* SWP_NOZORDER | SWP_NOMOVE */ SWP_NOACTIVATE);
+            _resizeToMatch();
         });
+    }
+
+    void OceanContent::_resizeToMatch()
+    {
+        const auto widthInDips = _root.ActualWidth();
+        const auto heightInDips = _root.ActualHeight();
+        // wprintf(L"resized to: %f, %f\n", width, height);
+
+        // adjust for DPI
+        const auto dpi = Windows::Graphics::Display::DisplayInformation::GetForCurrentView().LogicalDpi();
+        const auto dpiScale = dpi / 96.0f;
+        const auto widthInPixels = widthInDips * dpiScale;
+        const auto heightInPixels = heightInDips * dpiScale;
+
+        // Get the actual location of our _root, relative to the screen
+        const auto transform = _root.TransformToVisual(nullptr);
+        const auto point = transform.TransformPoint({ 0, 0 });
+
+        // scale from DIPs to pixels:
+
+        // Resize our ocean HWND
+        SetWindowPos(_window.get(),
+                     _hostingHwnd, // set it behind the parent
+                     gsl::narrow_cast<int>(point.X * dpiScale) + 48,
+                     gsl::narrow_cast<int>(point.Y * dpiScale) + 48,
+                     gsl::narrow_cast<int>(widthInPixels) - 96,
+                     gsl::narrow_cast<int>(heightInPixels) - 96,
+                     /* SWP_NOZORDER | SWP_NOMOVE */ SWP_NOACTIVATE);
     }
 
     static OceanContent* GetThisFromHandle(HWND const window) noexcept
@@ -144,13 +152,14 @@ namespace winrt::TerminalApp::implementation
 
         SetWindowLong(_window.get(), GWL_STYLE, 0); //remove all window styles, cause it's created with WS_CAPTION even if we didn't ask for it
         ShowWindow(_window.get(), SW_SHOW); //display window
+        _resizeToMatch();
     }
 
     void OceanContent::SetHostingWindow(uint64_t hostingWindow) noexcept
     {
-        const auto casted = reinterpret_cast<HWND>(hostingWindow);
+        _hostingHwnd = reinterpret_cast<HWND>(hostingWindow);
         // Set our HWND as owned by the parent's. We're always on top of them, but not explicitly a _child_.
-        ::SetWindowLongPtrW(_window.get(), GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(casted));
+        ::SetWindowLongPtrW(_window.get(), GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(_hostingHwnd));
     }
 
     void OceanContent::UpdateSettings(const CascadiaSettings& /*settings*/)

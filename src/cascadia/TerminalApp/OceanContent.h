@@ -41,9 +41,11 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::Grid _root{ nullptr };
 
         wil::unique_hwnd _window;
+        HWND _hostingHwnd;
         winrt::Windows::UI::Xaml::Controls::Grid::SizeChanged_revoker _sizeChangedRevoker;
 
         void _createOcean();
+        void _resizeToMatch();
 
         LRESULT _messageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam);
         static LRESULT __stdcall s_WndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
