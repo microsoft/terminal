@@ -6,6 +6,7 @@
 
 #include "TerminalPage.h"
 #include "ScratchpadContent.h"
+#include "OceanContent.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
 #include "Utils.h"
@@ -1426,7 +1427,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (Feature_ScratchpadPane::IsEnabled())
         {
-            auto scratchPane{ winrt::make_self<ScratchpadContent>() };
+            auto scratchPane{ winrt::make_self<OceanContent>() };
+            scratchPane->SetHostingWindow(reinterpret_cast<uint64_t>(*_hostingHwnd));
             // auto scratchPane{ winrt::make_self<SettingsPaneContent>(_settings) };
 
             // This is maybe a little wacky - add our key event handler to the pane
