@@ -8,6 +8,11 @@
 #define GWL_CONSOLE_WNDALLOC (3 * sizeof(DWORD))
 
 HANDLE g_stdOut{ nullptr };
+LRESULT CALLBACK s_ExtensionWindowProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
+
+HWND g_parent;
+HWND g_child;
+HWND g_extension;
 
 LRESULT CALLBACK s_ScratchWindowProc(HWND hWnd,
                                      UINT Message,
@@ -31,6 +36,9 @@ LRESULT CALLBACK s_ScratchWindowProc(HWND hWnd,
         const auto width = LOWORD(lParam);
         const auto height = HIWORD(lParam);
         wprintf(L"resized to: %d, %d\n", width, height);
+
+        // Resize the g_extension to match
+        SetWindowPos(g_extension, nullptr, 0, 0, width, height, SWP_NOZORDER);
         break;
     }
     case WM_PAINT:
@@ -53,8 +61,6 @@ LRESULT CALLBACK s_ScratchWindowProc(HWND hWnd,
     // If we get this far, call the default window proc
     return DefWindowProcW(hWnd, Message, wParam, lParam);
 }
-HWND g_parent;
-HWND g_child;
 void resizeChildToMatchParent(HWND parent, HWND child)
 {
     // get the position of the parent window
@@ -228,6 +234,32 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     // Set our HWND as owned by the parent's. We're always on top of them, but not explicitly a _child_.
     ::SetWindowLongPtrW(g_child, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(g_parent));
 
+    // Now, create a child window of this first hwnd.
+    // This is the one that will be the actual extension's HWND.
+
+    static const auto EXTN_WINDOW_CLASS = L"my_extension_window_class";
+    WNDCLASSEXW extClass{ 0 };
+    extClass.cbSize = sizeof(WNDCLASSEXW);
+    extClass.style = CS_HREDRAW | CS_VREDRAW | /*CS_PARENTDC |*/ CS_DBLCLKS;
+    extClass.lpszClassName = EXTN_WINDOW_CLASS;
+    extClass.lpfnWndProc = s_ExtensionWindowProc;
+    extClass.cbWndExtra = GWL_CONSOLE_WNDALLOC; // this is required to store the owning thread/process override in NTUSER
+    auto extnClassAtom{ RegisterClassExW(&extClass) };
+    const auto extensionStyle = WS_VISIBLE | WS_CHILD;
+    const auto extensionStyleEx = 0;
+    g_extension = CreateWindowExW(extensionStyleEx, // WS_EX_LAYERED,
+                                  reinterpret_cast<LPCWSTR>(extnClassAtom),
+                                  L"Hello Extension",
+                                  extensionStyle,
+                                  0, // CW_USEDEFAULT,
+                                  0, // CW_USEDEFAULT,
+                                  50, // CW_USEDEFAULT,
+                                  50, // CW_USEDEFAULT,
+                                  hwnd, // owner
+                                  nullptr,
+                                  nullptr,
+                                  nullptr);
+
     // pump messages
     MSG msg = { 0 };
     while (GetMessageW(&msg, nullptr, 0, 0))
@@ -241,3 +273,50 @@ int __cdecl wmain(int argc, WCHAR* argv[])
 
 //TODO! much later:
 // * The Terminal doesn't think it's active, cause it's HWND... isn't. The extension's is
+
+HBRUSH g_magentaBrush;
+
+LRESULT CALLBACK s_ExtensionWindowProc(HWND hWnd,
+                                       UINT Message,
+                                       WPARAM wParam,
+                                       LPARAM lParam)
+{
+    switch (Message)
+    {
+    case WM_CREATE:
+    {
+        // Show the window
+        ShowWindow(hWnd, SW_SHOWDEFAULT);
+
+        // Create a magenta brush for later
+        g_magentaBrush = CreateSolidBrush(RGB(255, 0, 255));
+        break;
+    }
+    case WM_SIZE:
+    {
+        const auto width = LOWORD(lParam);
+        const auto height = HIWORD(lParam);
+        wprintf(L"resized to: %d, %d\n", width, height);
+        break;
+    }
+    case WM_PAINT:
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+
+        // All painting occurs here, between BeginPaint and EndPaint.
+        // FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_HIGHLIGHT + 1));
+        FillRect(hdc, &ps.rcPaint, g_magentaBrush);
+
+        EndPaint(hWnd, &ps);
+        break;
+    }
+    case WM_DESTROY:
+    {
+        PostQuitMessage(0);
+        break;
+    }
+    }
+    // If we get this far, call the default window proc
+    return DefWindowProcW(hWnd, Message, wParam, lParam);
+}
