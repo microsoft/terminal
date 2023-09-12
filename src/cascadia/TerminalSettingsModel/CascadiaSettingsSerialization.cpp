@@ -572,7 +572,7 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
     }
 
     {
-        settings.baseWindowSettings = WindowSettings::FromJson(json.windowDefaults);
+        settings.baseWindowSettings = WindowSettings::FromJson(json.root);
 
         for (const auto& windowJson : json.windowsList)
         {
@@ -703,11 +703,15 @@ SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& 
     auto root = content.empty() ? Json::Value{ Json::ValueType::objectValue } : _parseJSON(content);
     const auto& colorSchemes = _getJSONValue(root, SchemesKey);
     const auto& themes = _getJSONValue(root, ThemesKey);
+
     const auto& profilesObject = _getJSONValue(root, ProfilesKey);
     const auto& profileDefaults = _getJSONValue(profilesObject, DefaultSettingsKey);
     const auto& profilesList = profilesObject.isArray() ? profilesObject : _getJSONValue(profilesObject, ProfilesListKey);
+
+    const auto& windowsDefaults = content.empty() ? Json::Value{ Json::ValueType::objectValue } : _parseJSON(content);
     const auto& windowsList = _getJSONValue(root, WindowsListKey);
-    return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList, themes, root, windowsList };
+    // DebugBreak();
+    return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList, themes, windowsDefaults, windowsList };
 }
 
 // Just a common helper function between _parse and _parseFragment.

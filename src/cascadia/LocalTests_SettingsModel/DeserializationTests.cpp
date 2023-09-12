@@ -153,6 +153,8 @@ namespace SettingsModelLocalTests
             "profiles": []
         })" };
 
+        // DebugBreak();
+
         {
             // Case 1: Good settings
             auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsWithProfiles);
