@@ -1086,7 +1086,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Change the tab switch order to MRU switching");
         TestOnUIThread([&page]() {
-            page->_settings.GlobalSettings().TabSwitcherMode(TabSwitcherMode::MostRecentlyUsed);
+            page->_currentWindowSettings().TabSwitcherMode(TabSwitcherMode::MostRecentlyUsed);
         });
 
         Log::Comment(L"Switch to the next MRU tab, which is the fourth tab");
@@ -1132,7 +1132,7 @@ namespace TerminalAppLocalTests
         });
 
         Log::Comment(L"Change the tab switch order to in-order switching");
-        page->_settings.GlobalSettings().TabSwitcherMode(TabSwitcherMode::InOrder);
+        page->_currentWindowSettings().TabSwitcherMode(TabSwitcherMode::InOrder);
 
         Log::Comment(L"Switch to the next in-order tab, which is the third tab");
         TestOnUIThread([&page]() {
@@ -1144,7 +1144,7 @@ namespace TerminalAppLocalTests
         });
 
         Log::Comment(L"Change the tab switch order to not use the tab switcher (which is in-order always)");
-        page->_settings.GlobalSettings().TabSwitcherMode(TabSwitcherMode::Disabled);
+        page->_currentWindowSettings().TabSwitcherMode(TabSwitcherMode::Disabled);
 
         Log::Comment(L"Switch to the next in-order tab, which is the fourth tab");
         TestOnUIThread([&page]() {
@@ -1202,7 +1202,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Change the tab switch order to MRU switching");
         TestOnUIThread([&page]() {
-            page->_settings.GlobalSettings().TabSwitcherMode(TabSwitcherMode::MostRecentlyUsed);
+            page->_currentWindowSettings().TabSwitcherMode(TabSwitcherMode::MostRecentlyUsed);
         });
 
         Log::Comment(L"Select the tabs from 0 to 3");

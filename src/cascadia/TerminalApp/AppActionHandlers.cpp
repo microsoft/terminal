@@ -926,7 +926,7 @@ namespace winrt::TerminalApp::implementation
             newTerminalArgs = NewTerminalArgs();
         }
 
-        const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
+        const auto profile{ _settings.GetProfileForArgs(newTerminalArgs, _currentWindowSettings()) };
 
         // Manually fill in the evaluated profile.
         newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
@@ -1085,7 +1085,7 @@ namespace winrt::TerminalApp::implementation
                 // use global default if query URL is unspecified
                 if (queryUrl.empty())
                 {
-                    queryUrl = _settings.GlobalSettings().SearchWebDefaultQueryUrl().c_str();
+                    queryUrl = _currentWindowSettings().SearchWebDefaultQueryUrl().c_str();
                 }
 
                 constexpr std::wstring_view queryToken{ L"%s" };

@@ -205,6 +205,8 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _contentStringToActions(const winrt::hstring& content,
                                                                                                                                       const bool replaceFirstWithNewTab);
 
+        Microsoft::Terminal::Settings::Model::WindowSettings _currentWindowSettings();
+
         // These are events that are handled by the TerminalPage, but are
         // exposed through the AppLogic. This macro is used to forward the event
         // directly to them.

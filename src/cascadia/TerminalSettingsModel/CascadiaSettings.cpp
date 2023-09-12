@@ -204,7 +204,14 @@ Model::WindowSettings CascadiaSettings::WindowSettingsDefaults() const
 
 Model::WindowSettings CascadiaSettings::WindowSettings(const winrt::hstring& windowName) const
 {
-    return _windows.TryLookup(windowName);
+    if (const auto& forName = _windows.TryLookup(windowName))
+    {
+        return forName;
+    }
+    else
+    {
+        return *_baseWindowSettings;
+    }
 }
 
 // Method Description:

@@ -66,14 +66,14 @@ namespace winrt::TerminalApp::implementation
     HRESULT TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection)
     try
     {
-        const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
+        const auto profile{ _settings.GetProfileForArgs(newTerminalArgs, _currentWindowSettings()) };
         // GH#11114: GetProfileForArgs can return null if the index is higher
         // than the number of available profiles.
         if (!profile)
         {
             return S_FALSE;
         }
-        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
+        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, _currentWindowSettings(), newTerminalArgs, *_bindings) };
 
         // Try to handle auto-elevation
         if (_maybeElevate(newTerminalArgs, settings, profile))
@@ -104,7 +104,7 @@ namespace winrt::TerminalApp::implementation
         if (insertPosition == -1)
         {
             insertPosition = _tabs.Size();
-            if (_settings.GlobalSettings().NewTabPosition() == NewTabPosition::AfterCurrentTab)
+            if (_currentWindowSettings().NewTabPosition() == NewTabPosition::AfterCurrentTab)
             {
                 auto currentTabIndex = _GetFocusedTabIndex();
                 if (currentTabIndex.has_value())
@@ -249,7 +249,7 @@ namespace winrt::TerminalApp::implementation
     // - Handle changes to the tab width set by the user
     void TerminalPage::_UpdateTabWidthMode()
     {
-        _tabView.TabWidthMode(_settings.GlobalSettings().TabWidthMode());
+        _tabView.TabWidthMode(_currentWindowSettings().TabWidthMode());
     }
 
     // Method Description:
@@ -260,9 +260,9 @@ namespace winrt::TerminalApp::implementation
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
         const auto isVisible = (!_isFullscreen && !_isInFocusMode) &&
-                               (_settings.GlobalSettings().ShowTabsInTitlebar() ||
+                               (_currentWindowSettings().ShowTabsInTitlebar() ||
                                 (_tabs.Size() > 1) ||
-                                _settings.GlobalSettings().AlwaysShowTabs());
+                                _currentWindowSettings().AlwaysShowTabs());
 
         if (_tabView)
         {
@@ -484,7 +484,7 @@ namespace winrt::TerminalApp::implementation
             // 1. We want to customize this behavior (e.g., use MRU logic)
             // 2. In fullscreen (GH#5799) and focus (GH#7916) modes the _OnTabItemsChanged is not fired
             // 3. When rearranging tabs (GH#7916) _OnTabItemsChanged is suppressed
-            const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
+            const auto tabSwitchMode = _currentWindowSettings().TabSwitcherMode();
 
             if (tabSwitchMode == TabSwitcherMode::MostRecentlyUsed)
             {
@@ -535,7 +535,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode)
     {
         const auto index{ _GetFocusedTabIndex().value_or(0) };
-        const auto tabSwitchMode = customTabSwitcherMode ? customTabSwitcherMode.Value() : _settings.GlobalSettings().TabSwitcherMode();
+        const auto tabSwitchMode = customTabSwitcherMode ? customTabSwitcherMode.Value() : _currentWindowSettings().TabSwitcherMode();
         if (tabSwitchMode == TabSwitcherMode::Disabled)
         {
             auto tabCount = _tabs.Size();
@@ -942,7 +942,7 @@ namespace winrt::TerminalApp::implementation
             tab.TabViewItem().StartBringIntoView();
 
             // Raise an event that our title changed
-            if (_settings.GlobalSettings().ShowTitleInTitlebar())
+            if (_currentWindowSettings().ShowTitleInTitlebar())
             {
                 _TitleChangedHandlers(*this, tab.Title());
             }
@@ -961,7 +961,7 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_UpdateBackground(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile)
     {
-        if (profile && _settings.GlobalSettings().UseBackgroundImageForWindow())
+        if (profile && _currentWindowSettings().UseBackgroundImageForWindow())
         {
             _SetBackgroundImage(profile.DefaultAppearance());
         }

@@ -188,7 +188,6 @@ namespace winrt::TerminalApp::implementation
             g_hTerminalAppProvider,
             "AppCreated",
             TraceLoggingDescription("Event emitted when the application is started"),
-            TraceLoggingBool(_settings.GlobalSettings().ShowTabsInTitlebar(), "TabsInTitlebar"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
@@ -223,25 +222,30 @@ namespace winrt::TerminalApp::implementation
             }
 
             _hasSettingsStartupActions = false;
-            const auto startupActions = newSettings.GlobalSettings().StartupActions();
-            if (!startupActions.empty())
-            {
-                _settingsAppArgs.FullResetState();
+            // TODO! Try to handle startup actions. These should be per-window
+            // settings. But I think here, we're parsing them on the initial
+            // settings load. We need to handle these closer to when the
+            // TerminalWindow is created, after teh name is assigned to it.
 
-                ExecuteCommandlineArgs args{ newSettings.GlobalSettings().StartupActions() };
-                auto result = _settingsAppArgs.ParseArgs(args);
-                if (result == 0)
-                {
-                    _hasSettingsStartupActions = true;
+            // const auto startupActions = newSettings.GlobalSettings().StartupActions();
+            // if (!startupActions.empty())
+            // {
+            //     _settingsAppArgs.FullResetState();
 
-                    // Validation also injects new-tab command if implicit new-tab was provided.
-                    _settingsAppArgs.ValidateStartupCommands();
-                }
-                else
-                {
-                    _warnings.push_back(SettingsLoadWarnings::FailedToParseStartupActions);
-                }
-            }
+            //     ExecuteCommandlineArgs args{ newSettings.GlobalSettings().StartupActions() };
+            //     auto result = _settingsAppArgs.ParseArgs(args);
+            //     if (result == 0)
+            //     {
+            //         _hasSettingsStartupActions = true;
+
+            //         // Validation also injects new-tab command if implicit new-tab was provided.
+            //         _settingsAppArgs.ValidateStartupCommands();
+            //     }
+            //     else
+            //     {
+            //         _warnings.push_back(SettingsLoadWarnings::FailedToParseStartupActions);
+            //     }
+            // }
 
             _settings = std::move(newSettings);
 
@@ -630,11 +634,6 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().ActionMap().GlobalHotkeys();
     }
 
-    Microsoft::Terminal::Settings::Model::Theme AppLogic::Theme()
-    {
-        return _settings.GlobalSettings().CurrentTheme();
-    }
-
     bool AppLogic::IsolatedMode()
     {
         if (!_loadedInitialSettings)
@@ -651,8 +650,11 @@ namespace winrt::TerminalApp::implementation
             ReloadSettings();
         }
         const auto& globals{ _settings.GlobalSettings() };
-        return globals.AlwaysShowNotificationIcon() ||
-               globals.MinimizeToNotificationArea();
+
+        // TODO! I'm pretty sure individual windows can already indicate somehow that they want a tray icon. We should fold the MinimizeToNotificationArea logic in with that.
+
+        return globals.AlwaysShowNotificationIcon() /* ||
+               globals.MinimizeToNotificationArea()*/;
     }
 
     bool AppLogic::AllowHeadless()

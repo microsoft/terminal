@@ -263,6 +263,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    Microsoft::Terminal::Settings::Model::WindowSettings TerminalWindow::_currentWindowSettings()
+    {
+        return _settings.WindowSettings(_WindowProperties->WindowName());
+    }
+
     winrt::Windows::UI::Xaml::ElementTheme TerminalWindow::GetRequestedTheme()
     {
         return Theme().RequestedTheme();
@@ -270,17 +275,17 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalWindow::GetShowTabsInTitlebar()
     {
-        return _settings.GlobalSettings().ShowTabsInTitlebar();
+        return _currentWindowSettings().ShowTabsInTitlebar();
     }
 
     bool TerminalWindow::GetInitialAlwaysOnTop()
     {
-        return _settings.GlobalSettings().AlwaysOnTop();
+        return _currentWindowSettings().AlwaysOnTop();
     }
 
     bool TerminalWindow::GetMinimizeToNotificationArea()
     {
-        return _settings.GlobalSettings().MinimizeToNotificationArea();
+        return _currentWindowSettings().MinimizeToNotificationArea();
     }
 
     bool TerminalWindow::GetAlwaysShowNotificationIcon()
@@ -290,12 +295,12 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalWindow::GetShowTitleInTitlebar()
     {
-        return _settings.GlobalSettings().ShowTitleInTitlebar();
+        return _currentWindowSettings().ShowTitleInTitlebar();
     }
 
     Microsoft::Terminal::Settings::Model::Theme TerminalWindow::Theme()
     {
-        return _settings.GlobalSettings().CurrentTheme();
+        return _settings.GlobalSettings().CurrentTheme(_currentWindowSettings());
     }
     // Method Description:
     // - Show a ContentDialog with buttons to take further action. Uses the
@@ -341,7 +346,7 @@ namespace winrt::TerminalApp::implementation
         // details here, but it does have the desired effect.
         // It's not enough to set the theme on the dialog alone.
         auto themingLambda{ [this](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
-            auto theme{ _settings.GlobalSettings().CurrentTheme() };
+            auto theme{ Theme() };
             auto requestedTheme{ theme.RequestedTheme() };
             auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
             while (element)
@@ -570,7 +575,7 @@ namespace winrt::TerminalApp::implementation
         if (_appArgs.GetSize().has_value() || (proposedSize.Width == 0 && proposedSize.Height == 0))
         {
             // Use the default profile to determine how big of a window we need.
-            const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
+            const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, _currentWindowSettings(), nullptr, nullptr) };
 
             const til::size emptySize{};
             const auto commandlineSize = _appArgs.GetSize().value_or(emptySize);
@@ -594,7 +599,7 @@ namespace winrt::TerminalApp::implementation
         // GH#2061 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add
         // the height of the tab bar here.
-        if (_settings.GlobalSettings().ShowTabsInTitlebar())
+        if (_currentWindowSettings().ShowTabsInTitlebar())
         {
             // In the past, we used to actually instantiate a TitlebarControl
             // and use Measure() to determine the DesiredSize of the control, to
@@ -612,7 +617,7 @@ namespace winrt::TerminalApp::implementation
             static constexpr auto titlebarHeight = 40;
             proposedSize.Height += (titlebarHeight)*scale;
         }
-        else if (_settings.GlobalSettings().AlwaysShowTabs())
+        else if (_currentWindowSettings().AlwaysShowTabs())
         {
             // Same comment as above, but with a TabRowControl.
             //
@@ -645,7 +650,7 @@ namespace winrt::TerminalApp::implementation
 
         // GH#4620/#5801 - If the user passed --maximized or --fullscreen on the
         // commandline, then use that to override the value from the settings.
-        const auto valueFromSettings = _settings.GlobalSettings().LaunchMode();
+        const auto valueFromSettings = _currentWindowSettings().LaunchMode();
         const auto valueFromCommandlineArgs = _appArgs.GetLaunchMode();
         if (const auto layout = LoadPersistedLayout())
         {
@@ -671,7 +676,7 @@ namespace winrt::TerminalApp::implementation
     // - a point containing the requested initial position in pixels.
     TerminalApp::InitialPosition TerminalWindow::GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY)
     {
-        auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
+        auto initialPosition{ _currentWindowSettings().InitialPosition() };
 
         if (const auto layout = LoadPersistedLayout())
         {
@@ -720,7 +725,7 @@ namespace winrt::TerminalApp::implementation
 
         return !_contentBounds &&
                !hadPersistedPosition &&
-               _settings.GlobalSettings().CenterOnLaunch() &&
+               _currentWindowSettings().CenterOnLaunch() &&
                !_appArgs.GetPosition().has_value();
     }
 
@@ -1183,7 +1188,7 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalWindow::AutoHideWindow()
     {
-        return _settings.GlobalSettings().AutoHideWindow();
+        return _currentWindowSettings().AutoHideWindow();
     }
 
     void TerminalWindow::UpdateSettingsHandler(const winrt::IInspectable& /*sender*/,

@@ -63,7 +63,6 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
 
-        Microsoft::Terminal::Settings::Model::Theme Theme();
         bool IsolatedMode();
         bool AllowHeadless();
         bool RequestsTrayIcon();

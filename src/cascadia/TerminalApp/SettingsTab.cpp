@@ -45,7 +45,7 @@ namespace winrt::TerminalApp::implementation
 
         // Stash away the current requested theme of the app. We'll need that in
         // _BackgroundBrush() to do a theme-aware resource lookup
-        _requestedTheme = settings.GlobalSettings().CurrentTheme().RequestedTheme();
+        _requestedTheme = settings.GlobalSettings().CurrentTheme(settings.WindowSettingsDefaults()).RequestedTheme();
     }
 
     // Method Description:

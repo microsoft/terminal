@@ -1108,7 +1108,7 @@ void _frameColorHelper(const HWND h, const COLORREF color)
 
 void AppHost::_updateTheme()
 {
-    auto theme = _appLogic.Theme();
+    auto theme = _windowLogic.Theme();
 
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
