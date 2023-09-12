@@ -47,7 +47,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     constexpr std::wstring_view legacyDarkThemeName{ L"legacyDark" };
     constexpr std::wstring_view legacyLightThemeName{ L"legacyLight" };
 
-    GlobalAppearanceViewModel::GlobalAppearanceViewModel(Model::GlobalAppSettings globalSettings) :
+    GlobalAppearanceViewModel::GlobalAppearanceViewModel(Model::GlobalAppSettings globalSettings, Model::WindowSettings windowSettings) :
+        _windowSettings{ windowSettings },
         _GlobalSettings{ globalSettings },
         _ThemeList{ single_threaded_observable_vector<Model::Theme>() }
     {
@@ -211,7 +212,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::Windows::Foundation::IInspectable GlobalAppearanceViewModel::CurrentTheme()
     {
-        return _GlobalSettings.CurrentTheme();
+        return _GlobalSettings.CurrentTheme(_windowSettings);
     }
 
     // Get the name out of the newly selected item, stash that as the Theme name
@@ -221,7 +222,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (const auto& theme{ tag.try_as<Model::Theme>() })
         {
-            _GlobalSettings.Theme(Model::ThemePair{ theme.Name() });
+            _windowSettings.Theme(Model::ThemePair{ theme.Name() });
         }
     }
 
@@ -268,12 +269,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool GlobalAppearanceViewModel::InvertedDisableAnimations()
     {
-        return !_GlobalSettings.DisableAnimations();
+        return !_windowSettings.DisableAnimations();
     }
 
     void GlobalAppearanceViewModel::InvertedDisableAnimations(bool value)
     {
-        _GlobalSettings.DisableAnimations(!value);
+        _windowSettings.DisableAnimations(!value);
     }
 
     void GlobalAppearanceViewModel::ShowTitlebarToggled(const winrt::Windows::Foundation::IInspectable& /* sender */, const RoutedEventArgs& /* args */)

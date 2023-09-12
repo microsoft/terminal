@@ -9,7 +9,8 @@ namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass GlobalAppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        GlobalAppearanceViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
+        GlobalAppearanceViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings,
+                                  Microsoft.Terminal.Settings.Model.WindowSettings windowSettings);
 
         static String LanguageDisplayConverter(String tag);
         Boolean LanguageSelectorAvailable { get; };

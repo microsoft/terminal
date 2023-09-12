@@ -13,8 +13,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         explicit RenderingViewModel(Model::CascadiaSettings settings) noexcept;
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.ProfileDefaults(), UseAtlasEngine);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.GlobalSettings(), ForceFullRepaintRendering);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.GlobalSettings(), SoftwareRendering);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.WindowSettingsDefaults(), ForceFullRepaintRendering);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.WindowSettingsDefaults(), SoftwareRendering);
 
     private:
         Model::CascadiaSettings _settings{ nullptr };

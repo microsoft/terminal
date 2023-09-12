@@ -38,10 +38,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, _Settings.GlobalSettings().FirstWindowPreference);
         GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, _Settings.GlobalSettings().WindowingBehavior);
 
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.GlobalSettings(), CenterOnLaunch);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.WindowSettingsDefaults(), CenterOnLaunch);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.GlobalSettings(), StartOnUserLogin);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.GlobalSettings(), InitialRows);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.GlobalSettings(), InitialCols);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.WindowSettingsDefaults(), InitialRows);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.WindowSettingsDefaults(), InitialCols);
 
     private:
         Model::CascadiaSettings _Settings;

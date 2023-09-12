@@ -12,14 +12,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct GlobalAppearanceViewModel : GlobalAppearanceViewModelT<GlobalAppearanceViewModel>, ViewModelHelper<GlobalAppearanceViewModel>
     {
     public:
-        GlobalAppearanceViewModel(Model::GlobalAppSettings globalSettings);
+        GlobalAppearanceViewModel(Model::GlobalAppSettings globalSettings, Model::WindowSettings windowSettings);
 
         // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
         using ViewModelHelper<GlobalAppearanceViewModel>::PropertyChanged;
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::Theme>, ThemeList, nullptr);
-        GETSET_BINDABLE_ENUM_SETTING(NewTabPosition, Model::NewTabPosition, _GlobalSettings.NewTabPosition);
-        GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, _GlobalSettings.TabWidthMode);
+        GETSET_BINDABLE_ENUM_SETTING(NewTabPosition, Model::NewTabPosition, _windowSettings.NewTabPosition);
+        GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, _windowSettings.TabWidthMode);
 
     public:
         // LanguageDisplayConverter maps the given BCP 47 tag to a localized string.
@@ -41,16 +41,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void ShowTitlebarToggled(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
 
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AlwaysShowTabs);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ShowTabsInTitlebar);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, UseAcrylicInTabRow);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ShowTitleInTitlebar);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AlwaysOnTop);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AutoHideWindow);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_windowSettings, AlwaysShowTabs);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_windowSettings, ShowTabsInTitlebar);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_windowSettings, UseAcrylicInTabRow);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_windowSettings, ShowTitleInTitlebar);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_windowSettings, AlwaysOnTop);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_windowSettings, AutoHideWindow);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AlwaysShowNotificationIcon);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, MinimizeToNotificationArea);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_windowSettings, MinimizeToNotificationArea);
 
     private:
+        Model::WindowSettings _windowSettings;
         Model::GlobalAppSettings _GlobalSettings;
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> _languageList;
         winrt::Windows::Foundation::IInspectable _currentLanguage;

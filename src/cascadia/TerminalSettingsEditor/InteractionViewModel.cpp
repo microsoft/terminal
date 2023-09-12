@@ -12,8 +12,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    InteractionViewModel::InteractionViewModel(Model::GlobalAppSettings globalSettings) :
-        _GlobalSettings{ globalSettings }
+    InteractionViewModel::InteractionViewModel(Model::WindowSettings windowSettings) :
+        _windowSettings{ windowSettings }
     {
         INITIALIZE_BINDABLE_ENUM_SETTING(TabSwitcherMode, TabSwitcherMode, TabSwitcherMode, L"Globals_TabSwitcherMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(CopyFormat, CopyFormat, winrt::Microsoft::Terminal::Control::CopyFormat, L"Globals_CopyFormat", L"Content");
