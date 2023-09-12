@@ -261,7 +261,7 @@ namespace SettingsModelLocalTests
                 VERIFY_IS_NULL(bar.TabRow().Background());
             }
 
-            const auto currentTheme{ settings->GlobalSettings().CurrentTheme() };
+            const auto currentTheme{ settings->GlobalSettings().CurrentTheme(settings->WindowSettingsDefaults()) };
             VERIFY_IS_NOT_NULL(currentTheme);
             VERIFY_ARE_EQUAL(L"system", currentTheme.Name());
         }

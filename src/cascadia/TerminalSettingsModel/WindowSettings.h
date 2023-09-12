@@ -60,6 +60,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
         //                     const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes);
 
+        til::property<winrt::hstring> Name;
+
         INHERITABLE_SETTING(Model::WindowSettings, hstring, UnparsedDefaultProfile, L"");
 
 #define WINDOW_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \

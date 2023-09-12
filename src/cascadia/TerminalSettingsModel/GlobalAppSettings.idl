@@ -78,6 +78,8 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass WindowSettings {
 
+        String Name { get; };
+
         Guid DefaultProfile;
         INHERITABLE_SETTING(String, UnparsedDefaultProfile);
 

@@ -54,7 +54,7 @@ namespace SettingsModelLocalTests
 
             VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
 
-            const auto& entries = settings->GlobalSettings().NewTabMenu();
+            const auto& entries = settings->WindowSettingsDefaults().NewTabMenu();
             VERIFY_ARE_EQUAL(1u, entries.Size());
             VERIFY_ARE_EQUAL(winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntryType::RemainingProfiles, entries.GetAt(0).Type());
         }
@@ -88,7 +88,7 @@ namespace SettingsModelLocalTests
 
             VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
 
-            const auto& entries = settings->GlobalSettings().NewTabMenu();
+            const auto& entries = settings->WindowSettingsDefaults().NewTabMenu();
             VERIFY_ARE_EQUAL(1u, entries.Size());
         }
         catch (const SettingsException& ex)

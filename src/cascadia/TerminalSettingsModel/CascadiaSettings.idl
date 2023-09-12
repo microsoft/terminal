@@ -30,6 +30,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         GlobalAppSettings GlobalSettings();
         WindowSettings WindowSettings(String windowName);
+        WindowSettings WindowSettingsDefaults();
 
         Profile ProfileDefaults { get; };
 

@@ -112,8 +112,10 @@ void ParsedSettings::clear()
 {
     globals = {};
     baseLayerProfile = {};
+    baseWindowSettings = {};
     profiles.clear();
     profilesByGuid.clear();
+    windowsByName.clear();
 }
 
 // This is a convenience method used by the CascadiaSettings constructor.
@@ -570,6 +572,18 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
     }
 
     {
+        settings.baseWindowSettings = WindowSettings::FromJson(json.windowDefaults);
+
+        for (const auto& windowJson : json.windowsList)
+        {
+            if (auto window = WindowSettings::FromJson(windowJson))
+            {
+                settings.windowsByName.insert({ window->Name(), window });
+            }
+        }
+    }
+
+    {
         for (const auto& themeJson : json.themes)
         {
             if (const auto theme = Theme::FromJson(themeJson))
@@ -693,7 +707,7 @@ SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& 
     const auto& profileDefaults = _getJSONValue(profilesObject, DefaultSettingsKey);
     const auto& profilesList = profilesObject.isArray() ? profilesObject : _getJSONValue(profilesObject, ProfilesListKey);
     const auto& windowsList = _getJSONValue(root, WindowsListKey);
-    return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList, themes, windowsList };
+    return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList, themes, root, windowsList };
 }
 
 // Just a common helper function between _parse and _parseFragment.

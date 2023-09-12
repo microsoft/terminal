@@ -241,7 +241,7 @@ namespace SettingsModelLocalTests
             const auto settings = createSettings(goodProfiles);
             VERIFY_ARE_EQUAL(static_cast<size_t>(0), settings->Warnings().Size());
             VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->AllProfiles().Size());
-            VERIFY_ARE_EQUAL(settings->GlobalSettings().DefaultProfile(), settings->AllProfiles().GetAt(0).Guid());
+            VERIFY_ARE_EQUAL(settings->WindowSettingsDefaults().DefaultProfile(), settings->AllProfiles().GetAt(0).Guid());
         }
         {
             // Case 2: Bad settings
@@ -252,7 +252,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingDefaultProfile, settings->Warnings().GetAt(0));
 
             VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->AllProfiles().Size());
-            VERIFY_ARE_EQUAL(settings->GlobalSettings().DefaultProfile(), settings->AllProfiles().GetAt(0).Guid());
+            VERIFY_ARE_EQUAL(settings->WindowSettingsDefaults().DefaultProfile(), settings->AllProfiles().GetAt(0).Guid());
         }
         {
             // Case 2: Bad settings
@@ -263,7 +263,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingDefaultProfile, settings->Warnings().GetAt(0));
 
             VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->AllProfiles().Size());
-            VERIFY_ARE_EQUAL(settings->GlobalSettings().DefaultProfile(), settings->AllProfiles().GetAt(0).Guid());
+            VERIFY_ARE_EQUAL(settings->WindowSettingsDefaults().DefaultProfile(), settings->AllProfiles().GetAt(0).Guid());
         }
         {
             // Case 4: Good settings, default profile is a string
@@ -272,7 +272,7 @@ namespace SettingsModelLocalTests
             const auto settings = createSettings(goodProfilesSpecifiedByName);
             VERIFY_ARE_EQUAL(static_cast<size_t>(0), settings->Warnings().Size());
             VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->AllProfiles().Size());
-            VERIFY_ARE_EQUAL(settings->GlobalSettings().DefaultProfile(), settings->AllProfiles().GetAt(1).Guid());
+            VERIFY_ARE_EQUAL(settings->WindowSettingsDefaults().DefaultProfile(), settings->AllProfiles().GetAt(1).Guid());
         }
     }
 
@@ -360,7 +360,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingDefaultProfile, settings->Warnings().GetAt(1));
 
         VERIFY_ARE_EQUAL(3u, settings->AllProfiles().Size());
-        VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(0).Guid(), settings->GlobalSettings().DefaultProfile());
+        VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(0).Guid(), settings->WindowSettingsDefaults().DefaultProfile());
     }
 
     void DeserializationTests::LayerGlobalProperties()
@@ -382,10 +382,10 @@ namespace SettingsModelLocalTests
         })" };
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings, inboxSettings);
-        VERIFY_ARE_EQUAL(true, settings->GlobalSettings().AlwaysShowTabs());
-        VERIFY_ARE_EQUAL(240, settings->GlobalSettings().InitialCols());
-        VERIFY_ARE_EQUAL(60, settings->GlobalSettings().InitialRows());
-        VERIFY_ARE_EQUAL(false, settings->GlobalSettings().ShowTabsInTitlebar());
+        VERIFY_ARE_EQUAL(true, settings->WindowSettingsDefaults().AlwaysShowTabs());
+        VERIFY_ARE_EQUAL(240, settings->WindowSettingsDefaults().InitialCols());
+        VERIFY_ARE_EQUAL(60, settings->WindowSettingsDefaults().InitialRows());
+        VERIFY_ARE_EQUAL(false, settings->WindowSettingsDefaults().ShowTabsInTitlebar());
     }
 
     void DeserializationTests::ValidateProfileOrdering()
@@ -1033,7 +1033,7 @@ namespace SettingsModelLocalTests
 
         VERIFY_IS_NOT_NULL(settings->ProfileDefaults());
 
-        VERIFY_ARE_EQUAL(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}", settings->GlobalSettings().UnparsedDefaultProfile());
+        VERIFY_ARE_EQUAL(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}", settings->WindowSettingsDefaults().UnparsedDefaultProfile());
         VERIFY_ARE_EQUAL(2u, settings->AllProfiles().Size());
 
         VERIFY_ARE_EQUAL(2345, settings->AllProfiles().GetAt(0).HistorySize());
@@ -1071,7 +1071,7 @@ namespace SettingsModelLocalTests
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, DefaultJson);
 
-        VERIFY_ARE_EQUAL(guid1String, settings->GlobalSettings().UnparsedDefaultProfile());
+        VERIFY_ARE_EQUAL(guid1String, settings->WindowSettingsDefaults().UnparsedDefaultProfile());
         VERIFY_ARE_EQUAL(4u, settings->AllProfiles().Size());
         VERIFY_ARE_EQUAL(guid1, settings->AllProfiles().GetAt(0).Guid());
         VERIFY_ARE_NOT_EQUAL(guid1, settings->AllProfiles().GetAt(1).Guid());
@@ -1775,7 +1775,7 @@ namespace SettingsModelLocalTests
         const auto copyImpl{ winrt::get_self<implementation::CascadiaSettings>(copy) };
 
         // test globals
-        VERIFY_ARE_EQUAL(settings->GlobalSettings().DefaultProfile(), copyImpl->GlobalSettings().DefaultProfile());
+        VERIFY_ARE_EQUAL(settings->WindowSettingsDefaults().DefaultProfile(), copyImpl->WindowSettingsDefaults().DefaultProfile());
 
         // test profiles
         VERIFY_ARE_EQUAL(settings->AllProfiles().Size(), copyImpl->AllProfiles().Size());
@@ -1793,9 +1793,9 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(nameMapOriginal.Size(), nameMapCopy.Size());
 
         // Test that changing the copy should not change the original
-        VERIFY_ARE_EQUAL(settings->GlobalSettings().WordDelimiters(), copyImpl->GlobalSettings().WordDelimiters());
-        copyImpl->GlobalSettings().WordDelimiters(L"changed value");
-        VERIFY_ARE_NOT_EQUAL(settings->GlobalSettings().WordDelimiters(), copyImpl->GlobalSettings().WordDelimiters());
+        VERIFY_ARE_EQUAL(settings->WindowSettingsDefaults().WordDelimiters(), copyImpl->WindowSettingsDefaults().WordDelimiters());
+        copyImpl->WindowSettingsDefaults().WordDelimiters(L"changed value");
+        VERIFY_ARE_NOT_EQUAL(settings->WindowSettingsDefaults().WordDelimiters(), copyImpl->WindowSettingsDefaults().WordDelimiters());
     }
 
     void DeserializationTests::TestCloneInheritanceTree()
@@ -1829,7 +1829,7 @@ namespace SettingsModelLocalTests
         const auto copyImpl{ winrt::get_self<implementation::CascadiaSettings>(copy) };
 
         // test globals
-        VERIFY_ARE_EQUAL(settings->GlobalSettings().DefaultProfile(), copyImpl->GlobalSettings().DefaultProfile());
+        VERIFY_ARE_EQUAL(settings->WindowSettingsDefaults().DefaultProfile(), copyImpl->WindowSettingsDefaults().DefaultProfile());
 
         // test profiles
         VERIFY_ARE_EQUAL(settings->AllProfiles().Size(), copyImpl->AllProfiles().Size());
