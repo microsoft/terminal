@@ -50,21 +50,30 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return { horizAlign, vertAlign };
     }
 
-    winrt::com_ptr<implementation::TerminalSettings> TerminalSettings::_CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::Profile& profile)
+    winrt::com_ptr<implementation::TerminalSettings> TerminalSettings::_CreateWithProfileCommon(
+        const Model::CascadiaSettings& appSettings,
+        const Model::WindowSettings& currentWindowSettings,
+        const Model::Profile& profile)
     {
         auto settings{ winrt::make_self<TerminalSettings>() };
 
         const auto globals = appSettings.GlobalSettings();
         settings->_ApplyProfileSettings(profile);
         settings->_ApplyGlobalSettings(globals);
-        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes(), globals.CurrentTheme());
+        settings->_ApplyWindowSettings(currentWindowSettings);
+        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(),
+                                           globals.ColorSchemes(),
+                                           globals.CurrentTheme(currentWindowSettings));
 
         return settings;
     }
 
-    Model::TerminalSettings TerminalSettings::CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::Profile& profile)
+    Model::TerminalSettings TerminalSettings::CreateForPreview(
+        const Model::CascadiaSettings& appSettings,
+        const Model::WindowSettings& currentWindowSettings,
+        const Model::Profile& profile)
     {
-        const auto settings = _CreateWithProfileCommon(appSettings, profile);
+        const auto settings = _CreateWithProfileCommon(appSettings, currentWindowSettings, profile);
         settings->UseBackgroundImageForWindow(false);
         return *settings;
     }
@@ -81,9 +90,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - A TerminalSettingsCreateResult, which contains a pair of TerminalSettings objects,
     //   one for when the terminal is focused and the other for when the terminal is unfocused
-    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithProfile(const Model::CascadiaSettings& appSettings, const Model::Profile& profile, const IKeyBindings& keybindings)
+    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithProfile(
+        const Model::CascadiaSettings& appSettings,
+        const Model::WindowSettings& currentWindowSettings,
+        const Model::Profile& profile,
+        const IKeyBindings& keybindings)
     {
-        const auto settings = _CreateWithProfileCommon(appSettings, profile);
+        const auto settings = _CreateWithProfileCommon(appSettings, currentWindowSettings, profile);
         settings->_KeyBindings = keybindings;
 
         Model::TerminalSettings child{ nullptr };
@@ -116,12 +129,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - A TerminalSettingsCreateResult object, which contains a pair of TerminalSettings
     //   objects. One for when the terminal is focused and one for when the terminal is unfocused.
-    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithNewTerminalArgs(const CascadiaSettings& appSettings,
-                                                                                    const NewTerminalArgs& newTerminalArgs,
-                                                                                    const IKeyBindings& keybindings)
+    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithNewTerminalArgs(
+        const CascadiaSettings& appSettings,
+        const Model::WindowSettings& currentWindowSettings,
+        const NewTerminalArgs& newTerminalArgs,
+        const IKeyBindings& keybindings)
     {
         const auto profile = appSettings.GetProfileForArgs(newTerminalArgs);
-        auto settingsPair{ CreateWithProfile(appSettings, profile, keybindings) };
+        auto settingsPair{ CreateWithProfile(appSettings, currentWindowSettings, profile, keybindings) };
         auto defaultSettings = settingsPair.DefaultSettings();
 
         if (newTerminalArgs)
@@ -343,6 +358,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - <none>
     void TerminalSettings::_ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept
+    {
+        // I'm not sure there are any global settings that apply to profiles
+        // anymore, after moving most global settings to be per-window name
+    }
+
+    // Method Description:
+    // - Applies appropriate settings from the globals into the TerminalSettings object.
+    // Arguments:
+    // - globalSettings: the global property values we're applying.
+    // Return Value:
+    // - <none>
+    void TerminalSettings::_ApplyWindowSettings(const Model::WindowSettings& windowSettings) noexcept
     {
         _InitialRows = globalSettings.InitialRows();
         _InitialCols = globalSettings.InitialCols();

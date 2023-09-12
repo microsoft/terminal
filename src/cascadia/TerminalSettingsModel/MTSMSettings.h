@@ -18,7 +18,20 @@ Author(s):
 // Macro format (defaultArgs are optional):
 // (type, name, jsonKey, defaultArgs)
 
-#define MTSM_GLOBAL_SETTINGS(X)                                                                                                                                                                       \
+#define MTSM_GLOBAL_SETTINGS(X)                                                                                                    \
+    X(hstring, Language, "language")                                                                                               \
+    X(bool, InputServiceWarning, "inputServiceWarning", true)                                                                      \
+    X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)         \
+    X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                           \
+    X(bool, StartOnUserLogin, "startOnUserLogin", false)                                                                           \
+    X(Model::WindowingMode, WindowingBehavior, "windowingBehavior", Model::WindowingMode::UseNew)                                  \
+    X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                       \
+    X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr) \
+    X(bool, TrimPaste, "trimPaste", true)                                                                                          \
+    X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                   \
+    X(bool, IsolatedMode, "compatibility.isolatedMode", false)
+
+#define MTSM_WINDOW_SETTINGS(X)                                                                                                                                                                       \
     X(int32_t, InitialRows, "initialRows", 30)                                                                                                                                                        \
     X(int32_t, InitialCols, "initialCols", 80)                                                                                                                                                        \
     X(hstring, WordDelimiters, "wordDelimiters", DEFAULT_WORD_DELIMITERS)                                                                                                                             \
@@ -36,38 +49,29 @@ Author(s):
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                                                                 \
     X(bool, ConfirmCloseAllTabs, "confirmCloseAllTabs", true)                                                                                                                                         \
     X(Model::ThemePair, Theme, "theme")                                                                                                                                                               \
-    X(hstring, Language, "language")                                                                                                                                                                  \
     X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal)                                            \
     X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                                                                          \
     X(bool, ShowTabsInTitlebar, "showTabsInTitlebar", true)                                                                                                                                           \
-    X(bool, InputServiceWarning, "inputServiceWarning", true)                                                                                                                                         \
     X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, "copyFormatting", 0)                                                                                                           \
     X(bool, WarnAboutLargePaste, "largePasteWarning", true)                                                                                                                                           \
     X(bool, WarnAboutMultiLinePaste, "multiLinePasteWarning", true)                                                                                                                                   \
     X(Model::LaunchPosition, InitialPosition, "initialPosition", nullptr, nullptr)                                                                                                                    \
     X(bool, CenterOnLaunch, "centerOnLaunch", false)                                                                                                                                                  \
-    X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)                                                                            \
     X(Model::LaunchMode, LaunchMode, "launchMode", LaunchMode::DefaultMode)                                                                                                                           \
     X(bool, SnapToGridOnResize, "snapToGridOnResize", true)                                                                                                                                           \
-    X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                                                                                              \
-    X(bool, StartOnUserLogin, "startOnUserLogin", false)                                                                                                                                              \
     X(bool, AlwaysOnTop, "alwaysOnTop", false)                                                                                                                                                        \
     X(bool, AutoHideWindow, "autoHideWindow", false)                                                                                                                                                  \
+    X(bool, MinimizeToNotificationArea, "minimizeToNotificationArea", false)                                                                                                                          \
     X(Model::TabSwitcherMode, TabSwitcherMode, "tabSwitcherMode", Model::TabSwitcherMode::InOrder)                                                                                                    \
     X(bool, DisableAnimations, "disableAnimations", false)                                                                                                                                            \
     X(hstring, StartupActions, "startupActions", L"")                                                                                                                                                 \
     X(Model::WindowingMode, WindowingBehavior, "windowingBehavior", Model::WindowingMode::UseNew)                                                                                                     \
-    X(bool, MinimizeToNotificationArea, "minimizeToNotificationArea", false)                                                                                                                          \
-    X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                                                                                          \
-    X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)                                                                    \
     X(bool, ShowAdminShield, "showAdminShield", true)                                                                                                                                                 \
     X(bool, TrimPaste, "trimPaste", true)                                                                                                                                                             \
     X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                                                                         \
     X(bool, EnableShellCompletionMenu, "experimental.enableShellCompletionMenu", false)                                                                                                               \
     X(bool, EnableUnfocusedAcrylic, "compatibility.enableUnfocusedAcrylic", true)                                                                                                                     \
     X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} })) \
-    X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
-    X(bool, IsolatedMode, "compatibility.isolatedMode", false)                                                                                                                                        \
     X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")
 
 // Also add these settings to:

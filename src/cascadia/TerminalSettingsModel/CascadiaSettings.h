@@ -115,7 +115,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // user settings
         winrt::hstring Hash() const noexcept;
         Model::CascadiaSettings Copy() const;
-        Model::GlobalAppSettings GlobalSettings() const;
+        Model::GlobalAppSettings GlobalSettings(const winrt::hstring& windowName) const;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> AllProfiles() const noexcept;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
         Model::ActionMap ActionMap() const noexcept;
@@ -125,7 +125,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::Profile CreateNewProfile();
         Model::Profile FindProfile(const winrt::guid& guid) const noexcept;
         void UpdateColorSchemeReferences(const winrt::hstring& oldName, const winrt::hstring& newName);
-        Model::Profile GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const;
+        Model::Profile GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs, const Model::WindowSettings& currentWindowSettings) const;
         Model::Profile GetProfileByName(const winrt::hstring& name) const;
         Model::Profile GetProfileByIndex(uint32_t index) const;
         Model::Profile DuplicateProfile(const Model::Profile& source);

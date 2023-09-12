@@ -25,6 +25,7 @@ Author(s):
 #include "Theme.h"
 #include "NewTabMenuEntry.h"
 #include "RemainingProfilesEntry.h"
+#include "WindowSettings.h"
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
@@ -61,13 +62,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Windows::Foundation::Collections::IMapView<hstring, Model::Theme> Themes() noexcept;
         void AddTheme(const Model::Theme& theme);
-        Model::Theme CurrentTheme() noexcept;
+        Model::Theme CurrentTheme(const Model::WindowSettings& window) noexcept;
         bool ShouldUsePersistedLayout() const;
 
         void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
                             const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes);
 
-        INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
+        // INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
 
 #define GLOBAL_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING(Model::GlobalAppSettings, type, name, ##__VA_ARGS__)
@@ -81,7 +82,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr bool debugFeaturesDefault{ true };
 #endif
 
-        winrt::guid _defaultProfile;
+        // winrt::guid _defaultProfile;
         winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };
 
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;

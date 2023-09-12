@@ -55,9 +55,9 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
 {
     auto globals{ winrt::make_self<GlobalAppSettings>() };
 
-    globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
+    // globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
 
-    globals->_defaultProfile = _defaultProfile;
+    // globals->_defaultProfile = _defaultProfile;
     globals->_actionMap = _actionMap->Copy();
     globals->_keybindingsWarnings = _keybindingsWarnings;
 
@@ -97,16 +97,16 @@ winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microso
 
 #pragma region DefaultProfile
 
-void GlobalAppSettings::DefaultProfile(const winrt::guid& defaultProfile) noexcept
-{
-    _defaultProfile = defaultProfile;
-    _UnparsedDefaultProfile = Utils::GuidToString(defaultProfile);
-}
+// void GlobalAppSettings::DefaultProfile(const winrt::guid& defaultProfile) noexcept
+// {
+//     _defaultProfile = defaultProfile;
+//     _UnparsedDefaultProfile = Utils::GuidToString(defaultProfile);
+// }
 
-winrt::guid GlobalAppSettings::DefaultProfile() const
-{
-    return _defaultProfile;
-}
+// winrt::guid GlobalAppSettings::DefaultProfile() const
+// {
+//     return _defaultProfile;
+// }
 
 #pragma endregion
 
@@ -130,11 +130,11 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value&
 
 void GlobalAppSettings::LayerJson(const Json::Value& json)
 {
-    JsonUtils::GetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
-    // GH#8076 - when adding enum values to this key, we also changed it from
-    // "useTabSwitcher" to "tabSwitcherMode". Continue supporting
-    // "useTabSwitcher", but prefer "tabSwitcherMode"
-    JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode);
+    // JsonUtils::GetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
+    // // GH#8076 - when adding enum values to this key, we also changed it from
+    // // "useTabSwitcher" to "tabSwitcherMode". Continue supporting
+    // // "useTabSwitcher", but prefer "tabSwitcherMode"
+    // JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode);
 
 #define GLOBAL_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);
@@ -210,19 +210,20 @@ Json::Value GlobalAppSettings::ToJson() const
     return json;
 }
 
-winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
+winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme(const Model::WindowSettings& window) noexcept
 {
     auto requestedTheme = Model::Theme::IsSystemInDarkTheme() ?
                               winrt::Windows::UI::Xaml::ElementTheme::Dark :
                               winrt::Windows::UI::Xaml::ElementTheme::Light;
 
+    const auto& themePair{ window.Theme() };
     switch (requestedTheme)
     {
     case winrt::Windows::UI::Xaml::ElementTheme::Light:
-        return _themes.TryLookup(Theme().LightName());
+        return _themes.TryLookup(themePair.LightName());
 
     case winrt::Windows::UI::Xaml::ElementTheme::Dark:
-        return _themes.TryLookup(Theme().DarkName());
+        return _themes.TryLookup(themePair.DarkName());
 
     case winrt::Windows::UI::Xaml::ElementTheme::Default:
     default:

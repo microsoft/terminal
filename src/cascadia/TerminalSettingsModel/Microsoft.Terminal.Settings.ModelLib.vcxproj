@@ -80,6 +80,9 @@
     <ClInclude Include="GlobalAppSettings.h">
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="WindowSettings.h">
+      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="IInheritable.h" />
     <ClInclude Include="MTSMSettings.h" />
     <ClInclude Include="IDynamicProfileGenerator.h" />
@@ -163,6 +166,9 @@
     <ClCompile Include="DynamicProfileUtils.cpp" />
     <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="GlobalAppSettings.cpp">
+      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="WindowSettings.cpp">
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="KeyChordSerialization.cpp">

@@ -28,7 +28,8 @@ namespace Microsoft.Terminal.Settings.Model
 
         String Hash { get; };
 
-        GlobalAppSettings GlobalSettings { get; };
+        GlobalAppSettings GlobalSettings();
+        WindowSettings WindowSettings(String windowName);
 
         Profile ProfileDefaults { get; };
 
@@ -47,7 +48,7 @@ namespace Microsoft.Terminal.Settings.Model
         Profile FindProfile(Guid profileGuid);
         void UpdateColorSchemeReferences(String oldName, String newName);
 
-        Profile GetProfileForArgs(NewTerminalArgs newTerminalArgs);
+        Profile GetProfileForArgs(NewTerminalArgs newTerminalArgs, WindowSettings currentWindowSettings);
 
         static Boolean IsDefaultTerminalAvailable { get; };
         static Boolean IsDefaultTerminalSet { get; };

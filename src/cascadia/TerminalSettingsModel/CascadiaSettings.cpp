@@ -583,7 +583,9 @@ void CascadiaSettings::_validateProfileEnvironmentVariables()
 //   and attempt to look the profile up by name instead.
 // Return Value:
 // - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
-Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const
+Model::Profile CascadiaSettings::GetProfileForArgs(
+    const Model::NewTerminalArgs& newTerminalArgs,
+    const Model::WindowSettings& currentWindowSettings) const
 {
     if (newTerminalArgs)
     {
@@ -627,7 +629,7 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
     // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
     // TODO GH#10952: Detect the profile based on the commandline (add matching support)
     return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
-               FindProfile(GlobalSettings().DefaultProfile()) :
+               FindProfile(currentWindowSettings().DefaultProfile()) :
                ProfileDefaults();
 }
 

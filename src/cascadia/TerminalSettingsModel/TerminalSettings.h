@@ -56,13 +56,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         TerminalSettings() = default;
 
-        static Model::TerminalSettings CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::Profile& profile);
+        static Model::TerminalSettings CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& currentWindowSettings, const Model::Profile& profile);
 
         static Model::TerminalSettingsCreateResult CreateWithProfile(const Model::CascadiaSettings& appSettings,
+                                                                     const Model::WindowSettings& currentWindowSettings,
                                                                      const Model::Profile& profile,
                                                                      const Control::IKeyBindings& keybindings);
 
         static Model::TerminalSettingsCreateResult CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
+                                                                             const Model::WindowSettings& currentWindowSettings,
                                                                              const Model::NewTerminalArgs& newTerminalArgs,
                                                                              const Control::IKeyBindings& keybindings);
 
@@ -171,10 +173,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;
         std::span<Microsoft::Terminal::Core::Color> _getColorTableImpl();
 
-        static winrt::com_ptr<implementation::TerminalSettings> _CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::Profile& profile);
+        static winrt::com_ptr<implementation::TerminalSettings> _CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& currentWindowSettings, const Model::Profile& profile);
         void _ApplyProfileSettings(const Model::Profile& profile);
 
         void _ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept;
+        void _ApplyWindowSettings(const Model::WindowSettings& windowSettings) noexcept;
         void _ApplyAppearanceSettings(const Microsoft::Terminal::Settings::Model::IAppearanceConfig& appearance,
                                       const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes,
                                       const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme);
