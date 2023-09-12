@@ -710,7 +710,7 @@ SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& 
 
     const auto& windowsDefaults = content.empty() ? Json::Value{ Json::ValueType::objectValue } : _parseJSON(content);
     const auto& windowsList = _getJSONValue(root, WindowsListKey);
-    // DebugBreak();
+
     return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList, themes, windowsDefaults, windowsList };
 }
 
@@ -1083,6 +1083,7 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     std::vector<Model::Profile> allProfiles;
     std::vector<Model::Profile> activeProfiles;
     std::vector<Model::SettingsLoadWarnings> warnings;
+    std::map<winrt::hstring, Model::WindowSettings> windows;
 
     allProfiles.reserve(loader.userSettings.profiles.size());
     activeProfiles.reserve(loader.userSettings.profiles.size());
@@ -1124,6 +1125,12 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
         warnings.emplace_back(Model::SettingsLoadWarnings::DuplicateProfile);
     }
 
+    for (const auto& [name, window] : loader.userSettings.windowsByName)
+    {
+        // TODO! handle layering
+        windows.insert({ name, *window });
+    }
+
     // SettingsLoader and ParsedSettings are supposed to always
     // create these two members. We don't want null-pointer exceptions.
     assert(loader.userSettings.globals != nullptr);
@@ -1133,6 +1140,8 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _baseLayerProfile = loader.userSettings.baseLayerProfile;
     _allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
     _activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
+    _baseWindowSettings = loader.userSettings.baseWindowSettings;
+    _windows = winrt::single_threaded_map<winrt::hstring, Model::WindowSettings>(std::move(windows));
     _warnings = winrt::single_threaded_vector(std::move(warnings));
 
     _resolveDefaultProfile();
@@ -1330,14 +1339,14 @@ void CascadiaSettings::_resolveDefaultProfile() const
 {
     const auto firstProfileGuid{ _allProfiles.GetAt(0).Guid() };
     bool raisedWarning = false;
-    for (const auto& [name, window] : _windows)
-    {
+
+    const auto resolveDefaultProfileForWindow = [&](auto& window) {
         if (const auto unparsedDefaultProfile = window.UnparsedDefaultProfile(); !unparsedDefaultProfile.empty())
         {
             if (const auto profile = GetProfileByName(unparsedDefaultProfile))
             {
                 window.DefaultProfile(profile.Guid());
-                break;
+                return;
             }
             if (!raisedWarning)
             {
@@ -1348,6 +1357,13 @@ void CascadiaSettings::_resolveDefaultProfile() const
 
         // Use the first profile as the new default.
         window.DefaultProfile(firstProfileGuid);
+    };
+
+    resolveDefaultProfileForWindow(*_baseWindowSettings);
+
+    for (const auto& [_, window] : _windows)
+    {
+        resolveDefaultProfileForWindow(window);
     }
 }
 

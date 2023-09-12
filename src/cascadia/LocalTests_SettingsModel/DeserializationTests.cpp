@@ -243,7 +243,9 @@ namespace SettingsModelLocalTests
             const auto settings = createSettings(goodProfiles);
             VERIFY_ARE_EQUAL(static_cast<size_t>(0), settings->Warnings().Size());
             VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->AllProfiles().Size());
-            VERIFY_ARE_EQUAL(settings->WindowSettingsDefaults().DefaultProfile(), settings->AllProfiles().GetAt(0).Guid());
+            const auto expected{ settings->WindowSettingsDefaults().DefaultProfile() };
+            const auto actual{ settings->AllProfiles().GetAt(0).Guid() };
+            VERIFY_ARE_EQUAL(expected, actual);
         }
         {
             // Case 2: Bad settings
