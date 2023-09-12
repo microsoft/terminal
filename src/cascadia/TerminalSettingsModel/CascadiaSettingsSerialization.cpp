@@ -338,6 +338,7 @@ void SettingsLoader::FinalizeLayering()
 {
     // Layer default globals -> user globals
     userSettings.globals->AddLeastImportantParent(inboxSettings.globals);
+    userSettings.baseWindowSettings->AddLeastImportantParent(inboxSettings.baseWindowSettings);
 
     // Actions are currently global, so if we want to conditionally light up a bunch of
     // actions, this is the time to do it.
@@ -367,6 +368,25 @@ void SettingsLoader::FinalizeLayering()
             profile->Name(profile->Name());
             profile->Hidden(profile->Hidden());
         }
+    }
+
+    // TODO! update comments. I literally just copy-pasted this
+    // Layer user profile defaults -> user profiles
+    for (const auto& [_, window] : userSettings.windowsByName)
+    {
+        window->AddMostImportantParent(userSettings.baseWindowSettings);
+
+        // This completes the parenting process that was started in _addUserProfileParent().
+        window->_FinalizeInheritance();
+        // TODO! do we need this?
+        // if (window->Origin() == OriginTag::None)
+        // {
+        //     // If you add more fields here, make sure to do the same in
+        //     // implementation::CreateChild().
+        //     window->Origin(OriginTag::User);
+        //     window->Name(profile->Name());
+        //     window->Hidden(profile->Hidden());
+        // }
     }
 }
 

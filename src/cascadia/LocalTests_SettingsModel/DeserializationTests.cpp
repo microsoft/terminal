@@ -153,8 +153,6 @@ namespace SettingsModelLocalTests
             "profiles": []
         })" };
 
-        // DebugBreak();
-
         {
             // Case 1: Good settings
             auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsWithProfiles);
@@ -550,7 +548,6 @@ namespace SettingsModelLocalTests
         })" };
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(settings0String, DefaultJson);
-
         VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
         VERIFY_ARE_EQUAL(4u, settings->AllProfiles().Size());
         VERIFY_IS_TRUE(settings->AllProfiles().GetAt(0).HasGuid());

@@ -104,6 +104,9 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
         settings->_globals = _globals->Copy();
         settings->_allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
         settings->_activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
+        settings->_baseWindowSettings = _baseWindowSettings->Copy();
+        // TODO!
+        // settings->_windows = _windows->Copy();
     }
 
     // load errors
@@ -1241,8 +1244,7 @@ void CascadiaSettings::_validateThemeExists()
         _baseWindowSettings->Theme(Model::ThemePair{ L"system" });
     }
 
-    for (const auto& [name, window] : _windows)
-    {
+    const auto validateThemeForWindow = [&](auto& window) {
         const auto& theme{ window.Theme() };
         if (theme.DarkName() == theme.LightName())
         {
@@ -1269,6 +1271,12 @@ void CascadiaSettings::_validateThemeExists()
                 theme.DarkName(L"dark");
             }
         }
+    };
+
+    validateThemeForWindow(*_baseWindowSettings);
+    for (const auto& [name, window] : _windows)
+    {
+        validateThemeForWindow(window);
     }
 }
 
