@@ -47,6 +47,7 @@ static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 static constexpr std::string_view ThemesKey{ "themes" };
+static constexpr std::string_view WindowsListKey{ "windows" };
 
 constexpr std::wstring_view systemThemeName{ L"system" };
 constexpr std::wstring_view darkThemeName{ L"dark" };
@@ -191,7 +192,7 @@ void SettingsLoader::ApplyRuntimeInitialSettings()
             }
         }
 
-        userSettings.globals->DefaultProfile(guid);
+        userSettings.baseWindowSettings->DefaultProfile(guid);
     }
 
     // 2.
@@ -691,7 +692,8 @@ SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& 
     const auto& profilesObject = _getJSONValue(root, ProfilesKey);
     const auto& profileDefaults = _getJSONValue(profilesObject, DefaultSettingsKey);
     const auto& profilesList = profilesObject.isArray() ? profilesObject : _getJSONValue(profilesObject, ProfilesListKey);
-    return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList, themes };
+    const auto& windowsList = _getJSONValue(root, WindowsListKey);
+    return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList, themes, windowsList };
 }
 
 // Just a common helper function between _parse and _parseFragment.

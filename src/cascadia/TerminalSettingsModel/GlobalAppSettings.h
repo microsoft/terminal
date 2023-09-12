@@ -55,10 +55,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         const std::vector<SettingsLoadWarnings>& KeybindingsWarnings() const;
 
-        // This DefaultProfile() setter is called by CascadiaSettings,
-        // when it parses UnparsedDefaultProfile in _finalizeSettings().
-        void DefaultProfile(const guid& defaultProfile) noexcept;
-        guid DefaultProfile() const;
+        // // This DefaultProfile() setter is called by CascadiaSettings,
+        // // when it parses UnparsedDefaultProfile in _finalizeSettings().
+        // void DefaultProfile(const guid& defaultProfile) noexcept;
+        // guid DefaultProfile() const;
 
         Windows::Foundation::Collections::IMapView<hstring, Model::Theme> Themes() noexcept;
         void AddTheme(const Model::Theme& theme);

@@ -42,8 +42,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         winrt::com_ptr<implementation::GlobalAppSettings> globals;
         winrt::com_ptr<implementation::Profile> baseLayerProfile;
+        winrt::com_ptr<implementation::WindowSettings> baseWindowSettings;
         std::vector<winrt::com_ptr<implementation::Profile>> profiles;
         std::unordered_map<winrt::guid, winrt::com_ptr<implementation::Profile>> profilesByGuid;
+        std::unordered_map<winrt::guid, winrt::com_ptr<implementation::WindowSettings>> windowsByName;
 
         void clear();
     };
@@ -74,6 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const Json::Value& profileDefaults;
             const Json::Value& profilesList;
             const Json::Value& themes;
+            const Json::Value& windowsList;
         };
 
         static std::pair<size_t, size_t> _lineAndColumnFromPosition(const std::string_view& string, const size_t position);
