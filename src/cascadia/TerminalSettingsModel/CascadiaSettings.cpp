@@ -197,6 +197,16 @@ Model::Profile CascadiaSettings::ProfileDefaults() const
     return *_baseLayerProfile;
 }
 
+Model::WindowSettings CascadiaSettings::WindowSettingsDefaults() const
+{
+    return *_baseWindowSettings;
+}
+
+Model::WindowSettings CascadiaSettings::WindowSettings(const winrt::hstring& windowName) const
+{
+    return _windows.TryLookup(windowName);
+}
+
 // Method Description:
 // - Create a new profile based off the default profile settings.
 // Arguments:
@@ -629,7 +639,7 @@ Model::Profile CascadiaSettings::GetProfileForArgs(
     // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
     // TODO GH#10952: Detect the profile based on the commandline (add matching support)
     return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
-               FindProfile(currentWindowSettings().DefaultProfile()) :
+               FindProfile(currentWindowSettings.DefaultProfile()) :
                ProfileDefaults();
 }
 
@@ -1221,33 +1231,36 @@ void CascadiaSettings::_validateThemeExists()
         auto newTheme = winrt::make_self<Theme>();
         newTheme->Name(L"system");
         _globals->AddTheme(*newTheme);
-        _globals->Theme(Model::ThemePair{ L"system" });
+        _baseWindowSettings->Theme(Model::ThemePair{ L"system" });
     }
 
-    const auto& theme{ _globals->Theme() };
-    if (theme.DarkName() == theme.LightName())
+    for (const auto& [name, window] : _windows)
     {
-        // Only one theme. We'll treat it as such.
-        if (!themes.HasKey(theme.DarkName()))
+        const auto& theme{ window.Theme() };
+        if (theme.DarkName() == theme.LightName())
         {
-            _warnings.Append(SettingsLoadWarnings::UnknownTheme);
-            // safely fall back to system as the theme.
-            _globals->Theme(*winrt::make_self<ThemePair>(L"system"));
+            // Only one theme. We'll treat it as such.
+            if (!themes.HasKey(theme.DarkName()))
+            {
+                _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+                // safely fall back to system as the theme.
+                window.Theme(*winrt::make_self<ThemePair>(L"system"));
+            }
         }
-    }
-    else
-    {
-        // Two different themes. Check each separately, and fall back to a
-        // reasonable default contextually
-        if (!themes.HasKey(theme.LightName()))
+        else
         {
-            _warnings.Append(SettingsLoadWarnings::UnknownTheme);
-            theme.LightName(L"light");
-        }
-        if (!themes.HasKey(theme.DarkName()))
-        {
-            _warnings.Append(SettingsLoadWarnings::UnknownTheme);
-            theme.DarkName(L"dark");
+            // Two different themes. Check each separately, and fall back to a
+            // reasonable default contextually
+            if (!themes.HasKey(theme.LightName()))
+            {
+                _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+                theme.LightName(L"light");
+            }
+            if (!themes.HasKey(theme.DarkName()))
+            {
+                _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+                theme.DarkName(L"dark");
+            }
         }
     }
 }

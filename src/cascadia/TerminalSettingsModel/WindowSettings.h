@@ -53,6 +53,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void DefaultProfile(const guid& defaultProfile) noexcept;
         guid DefaultProfile() const;
 
+        void ResolveNewTabMenuProfiles(const winrt::Windows::Foundation::Collections::IVectorView<Model::Profile>& activeProfiles);
+
         // Model::Theme CurrentTheme() noexcept;
 
         // void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
@@ -67,5 +69,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         winrt::guid _defaultProfile;
+
+        void _resolveNewTabMenuProfilesSet(const winrt::Windows::Foundation::Collections::IVectorView<Model::Profile>& activeProfiles,
+                                           const winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> entries,
+                                           winrt::Windows::Foundation::Collections::IMap<int, Model::Profile>& remainingProfiles,
+                                           Model::RemainingProfilesEntry& remainingProfilesEntry) const;
     };
 }

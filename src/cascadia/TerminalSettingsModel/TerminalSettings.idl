@@ -30,9 +30,9 @@ namespace Microsoft.Terminal.Settings.Model
 
         Windows.Foundation.Collections.IMap<String COMMA String> EnvironmentVariables;
 
-        static TerminalSettings CreateForPreview(CascadiaSettings appSettings, Profile profile);
-        static TerminalSettingsCreateResult CreateWithProfile(CascadiaSettings appSettings, Profile profile, Microsoft.Terminal.Control.IKeyBindings keybindings);
-        static TerminalSettingsCreateResult CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.Control.IKeyBindings keybindings);
+        static TerminalSettings CreateForPreview(CascadiaSettings appSettings, WindowSettings windowSettings, Profile profile);
+        static TerminalSettingsCreateResult CreateWithProfile(CascadiaSettings appSettings, WindowSettings windowSettings, Profile profile, Microsoft.Terminal.Control.IKeyBindings keybindings);
+        static TerminalSettingsCreateResult CreateWithNewTerminalArgs(CascadiaSettings appSettings, WindowSettings windowSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.Control.IKeyBindings keybindings);
 
         void ApplyColorScheme(ColorScheme scheme);
 

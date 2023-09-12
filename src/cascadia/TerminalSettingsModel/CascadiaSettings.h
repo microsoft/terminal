@@ -115,7 +115,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // user settings
         winrt::hstring Hash() const noexcept;
         Model::CascadiaSettings Copy() const;
-        Model::GlobalAppSettings GlobalSettings(const winrt::hstring& windowName) const;
+        Model::GlobalAppSettings GlobalSettings() const;
+
+        Model::WindowSettings WindowSettingsDefaults() const;
+        Model::WindowSettings WindowSettings(const winrt::hstring& windowName) const;
+
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> AllProfiles() const noexcept;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
         Model::ActionMap ActionMap() const noexcept;
@@ -156,7 +160,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _resolveDefaultProfile() const;
         void _resolveNewTabMenuProfiles() const;
-        void _resolveNewTabMenuProfilesSet(const winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> entries, winrt::Windows::Foundation::Collections::IMap<int, Model::Profile>& remainingProfiles, Model::RemainingProfilesEntry& remainingProfilesEntry) const;
+        // void _resolveNewTabMenuProfilesSet(const winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> entries, winrt::Windows::Foundation::Collections::IMap<int, Model::Profile>& remainingProfiles, Model::RemainingProfilesEntry& remainingProfilesEntry) const;
 
         void _validateSettings();
         void _validateAllSchemesExist();
@@ -172,6 +176,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // user settings
         winrt::hstring _hash;
         winrt::com_ptr<implementation::GlobalAppSettings> _globals = winrt::make_self<implementation::GlobalAppSettings>();
+
+        winrt::com_ptr<implementation::WindowSettings> _baseWindowSettings = winrt::make_self<implementation::WindowSettings>();
+        Windows::Foundation::Collections::IMap<winrt::hstring, Model::WindowSettings> _windows{ winrt::single_threaded_map<winrt::hstring, Model::WindowSettings>() };
+
         winrt::com_ptr<implementation::Profile> _baseLayerProfile = winrt::make_self<implementation::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles = winrt::single_threaded_observable_vector<Model::Profile>();

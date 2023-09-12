@@ -104,7 +104,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             const auto globals = appSettings.GlobalSettings();
             auto childImpl = settings->CreateChild();
-            childImpl->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes(), globals.CurrentTheme());
+            childImpl->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes(), globals.CurrentTheme(currentWindowSettings));
             child = *childImpl;
         }
 
@@ -135,7 +135,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const NewTerminalArgs& newTerminalArgs,
         const IKeyBindings& keybindings)
     {
-        const auto profile = appSettings.GetProfileForArgs(newTerminalArgs);
+        const auto profile = appSettings.GetProfileForArgs(newTerminalArgs, currentWindowSettings);
         auto settingsPair{ CreateWithProfile(appSettings, currentWindowSettings, profile, keybindings) };
         auto defaultSettings = settingsPair.DefaultSettings();
 
@@ -357,7 +357,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - globalSettings: the global property values we're applying.
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept
+    void TerminalSettings::_ApplyGlobalSettings(const Model::GlobalAppSettings& /*globalSettings*/) noexcept
     {
         // I'm not sure there are any global settings that apply to profiles
         // anymore, after moving most global settings to be per-window name
@@ -371,19 +371,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     void TerminalSettings::_ApplyWindowSettings(const Model::WindowSettings& windowSettings) noexcept
     {
-        _InitialRows = globalSettings.InitialRows();
-        _InitialCols = globalSettings.InitialCols();
+        _InitialRows = windowSettings.InitialRows();
+        _InitialCols = windowSettings.InitialCols();
 
-        _WordDelimiters = globalSettings.WordDelimiters();
-        _CopyOnSelect = globalSettings.CopyOnSelect();
-        _FocusFollowMouse = globalSettings.FocusFollowMouse();
-        _ForceFullRepaintRendering = globalSettings.ForceFullRepaintRendering();
-        _SoftwareRendering = globalSettings.SoftwareRendering();
-        _UseBackgroundImageForWindow = globalSettings.UseBackgroundImageForWindow();
-        _ForceVTInput = globalSettings.ForceVTInput();
-        _TrimBlockSelection = globalSettings.TrimBlockSelection();
-        _DetectURLs = globalSettings.DetectURLs();
-        _EnableUnfocusedAcrylic = globalSettings.EnableUnfocusedAcrylic();
+        _WordDelimiters = windowSettings.WordDelimiters();
+        _CopyOnSelect = windowSettings.CopyOnSelect();
+        _FocusFollowMouse = windowSettings.FocusFollowMouse();
+        _ForceFullRepaintRendering = windowSettings.ForceFullRepaintRendering();
+        _SoftwareRendering = windowSettings.SoftwareRendering();
+        _UseBackgroundImageForWindow = windowSettings.UseBackgroundImageForWindow();
+        _ForceVTInput = windowSettings.ForceVTInput();
+        _TrimBlockSelection = windowSettings.TrimBlockSelection();
+        _DetectURLs = windowSettings.DetectURLs();
+        _EnableUnfocusedAcrylic = windowSettings.EnableUnfocusedAcrylic();
     }
 
     // Method Description:

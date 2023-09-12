@@ -959,8 +959,8 @@ void CascadiaSettings::_researchOnLoad()
 
         // ----------------------------- RE: Themes ----------------------------
         const auto numThemes = GlobalSettings().Themes().Size();
-        const auto themeInUse = GlobalSettings().CurrentTheme().Name();
-        const auto changedTheme = GlobalSettings().HasTheme();
+        const auto themeInUse = GlobalSettings().CurrentTheme(*_baseWindowSettings).Name();
+        const auto changedTheme = _baseWindowSettings->HasTheme();
 
         // system: 0
         // light: 1
@@ -1308,19 +1308,27 @@ Json::Value CascadiaSettings::ToJson() const
 //   and stores it back to the globals.
 void CascadiaSettings::_resolveDefaultProfile() const
 {
-    if (const auto unparsedDefaultProfile = _globals->UnparsedDefaultProfile(); !unparsedDefaultProfile.empty())
+    const auto firstProfileGuid{ _allProfiles.GetAt(0).Guid() };
+    bool raisedWarning = false;
+    for (const auto& [name, window] : _windows)
     {
-        if (const auto profile = GetProfileByName(unparsedDefaultProfile))
+        if (const auto unparsedDefaultProfile = window.UnparsedDefaultProfile(); !unparsedDefaultProfile.empty())
         {
-            _globals->DefaultProfile(profile.Guid());
-            return;
+            if (const auto profile = GetProfileByName(unparsedDefaultProfile))
+            {
+                window.DefaultProfile(profile.Guid());
+                break;
+            }
+            if (!raisedWarning)
+            {
+                _warnings.Append(SettingsLoadWarnings::MissingDefaultProfile);
+                raisedWarning = true;
+            }
         }
 
-        _warnings.Append(SettingsLoadWarnings::MissingDefaultProfile);
+        // Use the first profile as the new default.
+        window.DefaultProfile(firstProfileGuid);
     }
-
-    // Use the first profile as the new default.
-    GlobalSettings().DefaultProfile(_allProfiles.GetAt(0).Guid());
 }
 
 // Method Description:
@@ -1332,152 +1340,158 @@ void CascadiaSettings::_resolveDefaultProfile() const
 //   multiple of these entries are found.
 void CascadiaSettings::_resolveNewTabMenuProfiles() const
 {
-    Model::RemainingProfilesEntry remainingProfilesEntry = nullptr;
+    // TODO!
+    // foreach window : windows
+    //   window->ResolveNewTabMenuProfiles(_activeProfiles)
+    //
+    // Something like that.
 
-    // The TerminalPage needs to know which profile has which profile ID. To prevent
-    // continuous lookups in the _activeProfiles vector, we create a map <int, Profile>
-    // to store these indices in-flight.
-    auto remainingProfilesMap = std::map<int, Model::Profile>{};
-    auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
-    for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
-    {
-        remainingProfilesMap.emplace(profileIndex, _activeProfiles.GetAt(profileIndex));
-    }
+    // Model::RemainingProfilesEntry remainingProfilesEntry = nullptr;
 
-    // We keep track of the "remaining profiles" - those that have not yet been resolved
-    // in either a "profile" or "source" entry. They will possibly be assigned to a
-    // "remainingProfiles" entry
-    auto remainingProfiles = single_threaded_map(std::move(remainingProfilesMap));
+    // // The TerminalPage needs to know which profile has which profile ID. To prevent
+    // // continuous lookups in the _activeProfiles vector, we create a map <int, Profile>
+    // // to store these indices in-flight.
+    // auto remainingProfilesMap = std::map<int, Model::Profile>{};
+    // auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
+    // for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
+    // {
+    //     remainingProfilesMap.emplace(profileIndex, _activeProfiles.GetAt(profileIndex));
+    // }
 
-    // We call a recursive helper function to process the entries
-    auto entries = _globals->NewTabMenu();
-    _resolveNewTabMenuProfilesSet(entries, remainingProfiles, remainingProfilesEntry);
+    // // We keep track of the "remaining profiles" - those that have not yet been resolved
+    // // in either a "profile" or "source" entry. They will possibly be assigned to a
+    // // "remainingProfiles" entry
+    // auto remainingProfiles = single_threaded_map(std::move(remainingProfilesMap));
 
-    // If a "remainingProfiles" entry has been found, assign to it the remaining profiles
-    if (remainingProfilesEntry != nullptr)
-    {
-        remainingProfilesEntry.Profiles(remainingProfiles);
-    }
+    // // We call a recursive helper function to process the entries
+    // auto entries = _globals->NewTabMenu();
+    // _resolveNewTabMenuProfilesSet(entries, remainingProfiles, remainingProfilesEntry);
 
-    // If the configuration does not have a "newTabMenu" field, GlobalAppSettings
-    // will return a default value containing just a "remainingProfiles" entry. However,
-    // this value is regenerated on every "get" operation, so the effect of setting
-    // the remaining profiles above will be undone. So only in the case that no custom
-    // value is present in GlobalAppSettings, we will store the modified default value.
-    if (!_globals->HasNewTabMenu())
-    {
-        _globals->NewTabMenu(entries);
-    }
+    // // If a "remainingProfiles" entry has been found, assign to it the remaining profiles
+    // if (remainingProfilesEntry != nullptr)
+    // {
+    //     remainingProfilesEntry.Profiles(remainingProfiles);
+    // }
+
+    // // If the configuration does not have a "newTabMenu" field, GlobalAppSettings
+    // // will return a default value containing just a "remainingProfiles" entry. However,
+    // // this value is regenerated on every "get" operation, so the effect of setting
+    // // the remaining profiles above will be undone. So only in the case that no custom
+    // // value is present in GlobalAppSettings, we will store the modified default value.
+    // if (!_globals->HasNewTabMenu())
+    // {
+    //     _globals->NewTabMenu(entries);
+    // }
 }
 
-// Method Description:
-// - Helper function that processes a set of tab menu entries and resolves any profile names
-//   or source fields as necessary - see function above for a more detailed explanation.
-void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTabMenuEntry> entries, IMap<int, Model::Profile>& remainingProfilesMap, Model::RemainingProfilesEntry& remainingProfilesEntry) const
-{
-    if (entries == nullptr || entries.Size() == 0)
-    {
-        return;
-    }
+// // Method Description:
+// // - Helper function that processes a set of tab menu entries and resolves any profile names
+// //   or source fields as necessary - see function above for a more detailed explanation.
+// void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTabMenuEntry> entries, IMap<int, Model::Profile>& remainingProfilesMap, Model::RemainingProfilesEntry& remainingProfilesEntry) const
+// {
+//     if (entries == nullptr || entries.Size() == 0)
+//     {
+//         return;
+//     }
 
-    for (const auto& entry : entries)
-    {
-        if (entry == nullptr)
-        {
-            continue;
-        }
+//     for (const auto& entry : entries)
+//     {
+//         if (entry == nullptr)
+//         {
+//             continue;
+//         }
 
-        switch (entry.Type())
-        {
-        // For a simple profile entry, the "profile" field can either be a name or a GUID. We
-        // use the GetProfileByName function to resolve this name to a profile instance, then
-        // find the index of that profile, and store this information in the entry.
-        case NewTabMenuEntryType::Profile:
-        {
-            // We need to access the unresolved profile name, a field that is not exposed
-            // in the projected class. So, we need to first obtain our implementation struct
-            // instance, to access this field.
-            const auto profileEntry{ winrt::get_self<implementation::ProfileEntry>(entry.as<Model::ProfileEntry>()) };
+//         switch (entry.Type())
+//         {
+//         // For a simple profile entry, the "profile" field can either be a name or a GUID. We
+//         // use the GetProfileByName function to resolve this name to a profile instance, then
+//         // find the index of that profile, and store this information in the entry.
+//         case NewTabMenuEntryType::Profile:
+//         {
+//             // We need to access the unresolved profile name, a field that is not exposed
+//             // in the projected class. So, we need to first obtain our implementation struct
+//             // instance, to access this field.
+//             const auto profileEntry{ winrt::get_self<implementation::ProfileEntry>(entry.as<Model::ProfileEntry>()) };
 
-            // Find the profile by name
-            const auto profile = GetProfileByName(profileEntry->ProfileName());
+//             // Find the profile by name
+//             const auto profile = GetProfileByName(profileEntry->ProfileName());
 
-            // If not found, or if the profile is hidden, skip it
-            if (profile == nullptr || profile.Hidden())
-            {
-                profileEntry->Profile(nullptr); // override "default" profile
-                break;
-            }
+//             // If not found, or if the profile is hidden, skip it
+//             if (profile == nullptr || profile.Hidden())
+//             {
+//                 profileEntry->Profile(nullptr); // override "default" profile
+//                 break;
+//             }
 
-            // Find the index of the resulting profile and store the result in the entry
-            uint32_t profileIndex;
-            _activeProfiles.IndexOf(profile, profileIndex);
+//             // Find the index of the resulting profile and store the result in the entry
+//             uint32_t profileIndex;
+//             _activeProfiles.IndexOf(profile, profileIndex);
 
-            profileEntry->Profile(profile);
-            profileEntry->ProfileIndex(profileIndex);
+//             profileEntry->Profile(profile);
+//             profileEntry->ProfileIndex(profileIndex);
 
-            // Remove from remaining profiles list (map)
-            remainingProfilesMap.TryRemove(profileIndex);
+//             // Remove from remaining profiles list (map)
+//             remainingProfilesMap.TryRemove(profileIndex);
 
-            break;
-        }
+//             break;
+//         }
 
-        // For a remainingProfiles entry, we store it in the variable that is passed back to our caller,
-        // except when that one has already been set (so we found a second/third/...) instance, which will
-        // trigger a warning. We then ignore this entry.
-        case NewTabMenuEntryType::RemainingProfiles:
-        {
-            if (remainingProfilesEntry != nullptr)
-            {
-                _warnings.Append(SettingsLoadWarnings::DuplicateRemainingProfilesEntry);
-            }
-            else
-            {
-                remainingProfilesEntry = entry.as<Model::RemainingProfilesEntry>();
-            }
-            break;
-        }
+//         // For a remainingProfiles entry, we store it in the variable that is passed back to our caller,
+//         // except when that one has already been set (so we found a second/third/...) instance, which will
+//         // trigger a warning. We then ignore this entry.
+//         case NewTabMenuEntryType::RemainingProfiles:
+//         {
+//             if (remainingProfilesEntry != nullptr)
+//             {
+//                 _warnings.Append(SettingsLoadWarnings::DuplicateRemainingProfilesEntry);
+//             }
+//             else
+//             {
+//                 remainingProfilesEntry = entry.as<Model::RemainingProfilesEntry>();
+//             }
+//             break;
+//         }
 
-        // For a folder, we simply call this method recursively
-        case NewTabMenuEntryType::Folder:
-        {
-            // We need to access the unfiltered entry list, a field that is not exposed
-            // in the projected class. So, we need to first obtain our implementation struct
-            // instance, to access this field.
-            const auto folderEntry{ winrt::get_self<implementation::FolderEntry>(entry.as<Model::FolderEntry>()) };
+//         // For a folder, we simply call this method recursively
+//         case NewTabMenuEntryType::Folder:
+//         {
+//             // We need to access the unfiltered entry list, a field that is not exposed
+//             // in the projected class. So, we need to first obtain our implementation struct
+//             // instance, to access this field.
+//             const auto folderEntry{ winrt::get_self<implementation::FolderEntry>(entry.as<Model::FolderEntry>()) };
 
-            auto folderEntries = folderEntry->RawEntries();
-            _resolveNewTabMenuProfilesSet(folderEntries, remainingProfilesMap, remainingProfilesEntry);
-            break;
-        }
+//             auto folderEntries = folderEntry->RawEntries();
+//             _resolveNewTabMenuProfilesSet(folderEntries, remainingProfilesMap, remainingProfilesEntry);
+//             break;
+//         }
 
-        // For a "matchProfiles" entry, we iterate through the list of all profiles and
-        // find all those matching: generated by the same source, having the same name, or
-        // having the same commandline. This can be expanded with regex support in the future.
-        // We make sure that none of the matches are included in the "remaining profiles" section.
-        case NewTabMenuEntryType::MatchProfiles:
-        {
-            // We need to access the matching function, which is not exposed in the projected class.
-            // So, we need to first obtain our implementation struct instance, to access this field.
-            const auto matchEntry{ winrt::get_self<implementation::MatchProfilesEntry>(entry.as<Model::MatchProfilesEntry>()) };
+//         // For a "matchProfiles" entry, we iterate through the list of all profiles and
+//         // find all those matching: generated by the same source, having the same name, or
+//         // having the same commandline. This can be expanded with regex support in the future.
+//         // We make sure that none of the matches are included in the "remaining profiles" section.
+//         case NewTabMenuEntryType::MatchProfiles:
+//         {
+//             // We need to access the matching function, which is not exposed in the projected class.
+//             // So, we need to first obtain our implementation struct instance, to access this field.
+//             const auto matchEntry{ winrt::get_self<implementation::MatchProfilesEntry>(entry.as<Model::MatchProfilesEntry>()) };
 
-            matchEntry->Profiles(single_threaded_map<int, Model::Profile>());
+//             matchEntry->Profiles(single_threaded_map<int, Model::Profile>());
 
-            auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
-            for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
-            {
-                const auto profile = _activeProfiles.GetAt(profileIndex);
+//             auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
+//             for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
+//             {
+//                 const auto profile = _activeProfiles.GetAt(profileIndex);
 
-                // On a match, we store it in the entry and remove it from the remaining list
-                if (matchEntry->MatchesProfile(profile))
-                {
-                    matchEntry->Profiles().Insert(profileIndex, profile);
-                    remainingProfilesMap.TryRemove(profileIndex);
-                }
-            }
+//                 // On a match, we store it in the entry and remove it from the remaining list
+//                 if (matchEntry->MatchesProfile(profile))
+//                 {
+//                     matchEntry->Profiles().Insert(profileIndex, profile);
+//                     remainingProfilesMap.TryRemove(profileIndex);
+//                 }
+//             }
 
-            break;
-        }
-        }
-    }
-}
+//             break;
+//         }
+//         }
+//     }
+// }

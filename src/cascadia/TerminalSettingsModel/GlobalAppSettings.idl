@@ -61,6 +61,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(IVector<String>, DisabledProfileSources);
         INHERITABLE_SETTING(Boolean, IsolatedMode);
         INHERITABLE_SETTING(Boolean, AllowHeadless);
+        INHERITABLE_SETTING(Boolean, EnableColorSelection); // Conditionally lights up a bunch of keybindings, so that should be global
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
@@ -115,7 +116,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, MinimizeToNotificationArea);
         INHERITABLE_SETTING(Boolean, ShowAdminShield);
         INHERITABLE_SETTING(IVector<NewTabMenuEntry>, NewTabMenu);
-        INHERITABLE_SETTING(Boolean, EnableColorSelection);
         INHERITABLE_SETTING(Boolean, EnableShellCompletionMenu);
         INHERITABLE_SETTING(Boolean, EnableUnfocusedAcrylic);
         INHERITABLE_SETTING(String, SearchWebDefaultQueryUrl);
