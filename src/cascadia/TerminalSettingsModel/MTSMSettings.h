@@ -27,7 +27,6 @@ Author(s):
     X(Model::WindowingMode, WindowingBehavior, "windowingBehavior", Model::WindowingMode::UseNew)                                  \
     X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                       \
     X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr) \
-    X(bool, TrimPaste, "trimPaste", true)                                                                                          \
     X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                   \
     X(bool, IsolatedMode, "compatibility.isolatedMode", false)                                                                     \
     X(bool, EnableColorSelection, "experimental.enableColorSelection", false)
