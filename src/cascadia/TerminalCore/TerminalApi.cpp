@@ -193,7 +193,6 @@ void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
     const auto cursorSize = _mainBuffer->GetCursor().GetSize();
 
     ClearSelection();
-    _mainBuffer->ClearPatternRecognizers();
 
     // Create a new alt buffer
     _altBuffer = std::make_unique<TextBuffer>(_altBufferSize,
@@ -272,7 +271,6 @@ void Terminal::UseMainScreenBuffer()
     }
 
     // update all the hyperlinks on the screen
-    _mainBuffer->ClearPatternRecognizers();
     _updateUrlDetection();
 
     // GH#3321: Make sure we let the TerminalInput know that we switched
@@ -474,7 +472,7 @@ void Terminal::NotifyBufferRotation(const int delta)
 
     const auto oldScrollOffset = _scrollOffset;
     _PreserveUserScrollOffset(delta);
-    if (_scrollOffset != oldScrollOffset || hasScrollMarks)
+    if (_scrollOffset != oldScrollOffset || hasScrollMarks || AlwaysNotifyOnBufferRotation())
     {
         _NotifyScrollEvent();
     }

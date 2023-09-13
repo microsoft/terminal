@@ -39,6 +39,9 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
+// The delay before performing the search after change of search criteria
+constexpr const auto SearchAfterChangeDelay = std::chrono::milliseconds(200);
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c)
@@ -241,7 +244,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _setupDispatcherAndCallbacks();
         const auto actualNewSize = _actualFont.GetSize();
         // Bubble this up, so our new control knows how big we want the font.
-        _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, true);
+        _FontSizeChangedHandlers(*this, winrt::make<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height));
 
         // The renderer will be re-enabled in Initialize
 
@@ -344,7 +347,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
             // and react accordingly.
-            _updateFont(true);
+            _updateFont();
 
             const til::size windowSize{ til::math::rounding, windowWidth, windowHeight };
 
@@ -865,7 +868,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetSelectionBackground(til::color{ newAppearance->SelectionBackground() });
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
-            _renderer->TriggerRedrawAll();
+
+            // No need to update Acrylic if UnfocusedAcrylic is disabled
+            if (_settings->EnableUnfocusedAcrylic())
+            {
+                // Manually turn off acrylic if they turn off transparency.
+                _runtimeUseAcrylic = Opacity() < 1.0 && newAppearance->UseAcrylic();
+
+                // Update the renderer as well. It might need to fall back from
+                // cleartype -> grayscale if the BG is transparent / acrylic.
+                _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+                _renderer->NotifyPaintFrame();
+
+                auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(Opacity());
+
+                _TransparencyChangedHandlers(*this, *eventArgs);
+            }
+
+            _renderer->TriggerRedrawAll(true, true);
         }
     }
 
@@ -897,9 +917,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //      appropriately call _doResizeUnderLock after this method is called.
     // - The write lock should be held when calling this method.
     // Arguments:
-    // - initialUpdate: whether this font update should be considered as being
-    //   concerned with initialization process. Value forwarded to event handler.
-    void ControlCore::_updateFont(const bool initialUpdate)
+    // <none>
+    void ControlCore::_updateFont()
     {
         const auto newDpi = static_cast<int>(lrint(_compositionScale * USER_DEFAULT_SCREEN_DPI));
 
@@ -947,7 +966,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto actualNewSize = _actualFont.GetSize();
-        _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, initialUpdate);
+        _FontSizeChangedHandlers(*this, winrt::make<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height));
     }
 
     // Method Description:
@@ -1347,6 +1366,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                        nullptr;
     }
 
+    til::color ControlCore::ForegroundColor() const
+    {
+        return _terminal->GetRenderSettings().GetColorAlias(ColorAlias::DefaultForeground);
+    }
+
     til::color ControlCore::BackgroundColor() const
     {
         return _terminal->GetRenderSettings().GetColorAlias(ColorAlias::DefaultBackground);
@@ -1539,42 +1563,68 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - caseSensitive: boolean that represents if the current search is case sensitive
     // Return Value:
     // - <none>
-    void ControlCore::Search(const winrt::hstring& text,
-                             const bool goForward,
-                             const bool caseSensitive)
+    void ControlCore::Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
     {
-        if (text.size() == 0)
+        auto lock = _terminal->LockForWriting();
+
+        if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive))
         {
-            return;
+            _searcher.MovePastCurrentSelection();
+        }
+        else
+        {
+            _searcher.FindNext();
         }
 
-        const auto direction = goForward ?
-                                   Search::Direction::Forward :
-                                   Search::Direction::Backward;
-
-        const auto sensitivity = caseSensitive ?
-                                     Search::Sensitivity::CaseSensitive :
-                                     Search::Sensitivity::CaseInsensitive;
-
-        ::Search search(*GetRenderData(), text.c_str(), direction, sensitivity);
-        auto lock = _terminal->LockForWriting();
-        const auto foundMatch{ search.FindNext() };
+        const auto foundMatch = _searcher.SelectCurrent();
+        auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(foundMatch);
         if (foundMatch)
         {
-            _terminal->SetBlockSelection(false);
-            search.Select();
-
             // this is used for search,
             // DO NOT call _updateSelectionUI() here.
             // We don't want to show the markers so manually tell it to clear it.
+            _terminal->SetBlockSelection(false);
             _renderer->TriggerSelection();
             _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
+
+            foundResults->TotalMatches(gsl::narrow<int32_t>(_searcher.Results().size()));
+            foundResults->CurrentMatch(gsl::narrow<int32_t>(_searcher.CurrentMatch()));
+
+            _terminal->AlwaysNotifyOnBufferRotation(true);
         }
 
         // Raise a FoundMatch event, which the control will use to notify
         // narrator if there was any results in the buffer
-        auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(foundMatch);
         _FoundMatchHandlers(*this, *foundResults);
+    }
+
+    Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
+    {
+        auto lock = _terminal->LockForWriting();
+        if (_searcher.ResetIfStale(*GetRenderData()))
+        {
+            auto results = std::vector<int32_t>();
+
+            auto lastRow = til::CoordTypeMin;
+            for (const auto& match : _searcher.Results())
+            {
+                const auto row{ match.start.y };
+                if (row != lastRow)
+                {
+                    results.push_back(row);
+                    lastRow = row;
+                }
+            }
+            _cachedSearchResultRows = winrt::single_threaded_vector<int32_t>(std::move(results));
+        }
+
+        return _cachedSearchResultRows;
+    }
+
+    void ControlCore::ClearSearch()
+    {
+        _terminal->AlwaysNotifyOnBufferRotation(false);
+        _searcher = {};
     }
 
     void ControlCore::Close()

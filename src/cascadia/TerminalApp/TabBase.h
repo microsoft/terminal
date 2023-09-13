@@ -16,7 +16,6 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         virtual void Focus(winrt::Windows::UI::Xaml::FocusState focusState) = 0;
-        winrt::Windows::UI::Xaml::FocusState FocusState() const noexcept;
 
         virtual void Shutdown();
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
@@ -29,6 +28,9 @@ namespace winrt::TerminalApp::implementation
         void ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& focused,
                         const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& unfocused,
                         const til::color& tabRowColor);
+
+        Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility CloseButtonVisibility();
+        void CloseButtonVisibility(Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility visible);
 
         WINRT_CALLBACK(RequestFocusActiveControl, winrt::delegate<void()>);
 
@@ -60,6 +62,8 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::ThemeColor _unfocusedThemeColor{ nullptr };
         til::color _tabRowColor;
 
+        Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility _closeButtonVisibility{ Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility::Always };
+
         virtual void _CreateContextMenu();
         virtual winrt::hstring _CreateToolTipTitle();
 
@@ -77,6 +81,9 @@ namespace winrt::TerminalApp::implementation
         void _ClearTabBackgroundColor();
         void _RefreshVisualState();
         virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() = 0;
+
+        bool _focused() const noexcept;
+        void _updateIsClosable();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

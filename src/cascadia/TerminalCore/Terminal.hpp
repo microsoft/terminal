@@ -16,8 +16,8 @@
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
 #include <til/ticket_lock.h>
+#include <til/winrt.h>
 
-inline constexpr std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
 inline constexpr size_t TaskbarMinProgress{ 10 };
 
 // You have to forward decl the ICoreSettings here, instead of including the header.
@@ -119,6 +119,8 @@ public:
                  const til::point& end,
                  const bool fromUi);
 
+    til::property<bool> AlwaysNotifyOnBufferRotation;
+
     std::wstring_view CurrentCommand() const;
 
 #pragma region ITerminalApi
@@ -217,7 +219,6 @@ public:
     const til::point GetSelectionAnchor() const noexcept override;
     const til::point GetSelectionEnd() const noexcept override;
     const std::wstring_view GetConsoleTitle() const noexcept override;
-    void ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute) override;
     const bool IsUiaDataInitialized() const noexcept override;
 #pragma endregion
 
@@ -449,6 +450,7 @@ private:
     bool _inAltBuffer() const noexcept;
     TextBuffer& _activeBuffer() const noexcept;
     void _updateUrlDetection();
+    interval_tree::IntervalTree<til::point, size_t> _getPatterns(til::CoordType beg, til::CoordType end) const;
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
