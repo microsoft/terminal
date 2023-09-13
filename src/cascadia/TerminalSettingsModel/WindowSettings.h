@@ -21,6 +21,7 @@ Author(s):
 #include "IInheritable.h"
 #include "MTSMSettings.h"
 
+#include "TerminalSettingsSerializationHelpers.h"
 #include "ColorScheme.h"
 #include "Theme.h"
 #include "NewTabMenuEntry.h"

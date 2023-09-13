@@ -1446,7 +1446,7 @@ void CascadiaSettings::_resolveNewTabMenuProfilesForWindow(const Model::WindowSe
 
     // We call a recursive helper function to process the entries
     auto entries = windowImpl->NewTabMenu();
-    _resolveNewTabMenuProfilesSet(window, entries, remainingProfiles, remainingProfilesEntry);
+    _resolveNewTabMenuProfilesSet(entries, remainingProfiles, remainingProfilesEntry);
 
     // If a "remainingProfiles" entry has been found, assign to it the remaining profiles
     if (remainingProfilesEntry != nullptr)

@@ -211,6 +211,13 @@ Model::WindowSettings CascadiaSettings::WindowSettings(const winrt::hstring& win
     {
         return forName;
     }
+    else if (windowName == L"_quake")
+    {
+        const auto& quakeSettings{ winrt::make_self<implementation::WindowSettings>() };
+        quakeSettings->AddLeastImportantParent(_baseWindowSettings);
+        quakeSettings->LaunchMode(LaunchMode::FocusMode);
+        return *quakeSettings;
+    }
     else
     {
         return *_baseWindowSettings;
