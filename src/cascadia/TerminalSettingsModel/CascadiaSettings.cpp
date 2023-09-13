@@ -16,6 +16,7 @@
 #include <shlwapi.h>
 #include <til/latch.h>
 #include <til/string.h>
+#include "../inc/WindowingBehavior.h"
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -211,11 +212,11 @@ Model::WindowSettings CascadiaSettings::WindowSettings(const winrt::hstring& win
     {
         return forName;
     }
-    else if (windowName == L"_quake")
+    else if (windowName == QuakeWindowName)
     {
         const auto& quakeSettings{ winrt::make_self<implementation::WindowSettings>() };
         quakeSettings->AddLeastImportantParent(_baseWindowSettings);
-        quakeSettings->LaunchMode(LaunchMode::FocusMode);
+        quakeSettings->InitializeForQuakeMode();
         return *quakeSettings;
     }
     else

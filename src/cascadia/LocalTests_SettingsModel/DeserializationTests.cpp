@@ -2115,8 +2115,8 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_NOT_EQUAL(settings->WindowSettingsDefaults(), windowSettings);
             VERIFY_ARE_EQUAL(25, windowSettings.InitialRows());
             VERIFY_ARE_EQUAL(15, windowSettings.InitialCols());
-            // _not_ focus. They're doing their own thing
-            VERIFY_ARE_EQUAL(LaunchMode::DefaultMode, windowSettings.LaunchMode());
+            // The user didn't specify a launch mode, but we defaulted to focus mode
+            VERIFY_ARE_EQUAL(LaunchMode::FocusMode, windowSettings.LaunchMode());
         }
         {
             const auto& windowSettings{ settings->WindowSettings(L"I sure don't exist") };

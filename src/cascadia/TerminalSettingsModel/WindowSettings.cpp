@@ -8,6 +8,7 @@
 #include "../../types/inc/Utils.hpp"
 #include "JsonUtils.h"
 #include "KeyChordSerialization.h"
+#include "../inc/WindowingBehavior.h"
 
 #include "WindowSettings.g.cpp"
 
@@ -112,6 +113,13 @@ winrt::com_ptr<WindowSettings> WindowSettings::FromJson(const Json::Value& json)
 void WindowSettings::LayerJson(const Json::Value& json)
 {
     JsonUtils::GetValueForKey(json, NameKey, Name);
+
+    // sneaky: is the name _quake? then set up some default window settings here:
+    if (Name() == QuakeWindowName)
+    {
+        InitializeForQuakeMode();
+    }
+
     JsonUtils::GetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
     // GH#8076 - when adding enum values to this key, we also changed it from
     // "useTabSwitcher" to "tabSwitcherMode". Continue supporting
@@ -142,4 +150,10 @@ Json::Value WindowSettings::ToJson() const
 #undef WINDOW_SETTINGS_TO_JSON
 
     return json;
+}
+
+// Set up anything that we need that's quake-mode specific.
+void WindowSettings::InitializeForQuakeMode()
+{
+    LaunchMode(LaunchMode::FocusMode);
 }

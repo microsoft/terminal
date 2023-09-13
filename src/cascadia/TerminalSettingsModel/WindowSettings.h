@@ -47,6 +47,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Json::Value ToJson() const;
 
+        void InitializeForQuakeMode();
+
         // This DefaultProfile() setter is called by CascadiaSettings,
         // when it parses UnparsedDefaultProfile in _finalizeSettings().
         void DefaultProfile(const guid& defaultProfile) noexcept;
