@@ -67,19 +67,19 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(toString(json), toString(result));
         }
 
-        // // Helper to remove the `$schema` property from a json object. We
-        // // populate that based off the local path to the settings file. Of
-        // // course, that's entirely unpredictable in tests. So cut it out before
-        // // we do any sort of roundtrip testing.
-        // static Json::Value removeSchema(Json::Value json)
-        // {
-        //     // DebugBreak();
-        //     if (json.isMember("$schema"))
-        //     {
-        //         json.removeMember("$schema");
-        //     }
-        //     return json;
-        // }
+        // Helper to remove the `$schema` property from a json object. We
+        // populate that based off the local path to the settings file. Of
+        // course, that's entirely unpredictable in tests. So cut it out before
+        // we do any sort of roundtrip testing.
+        static Json::Value removeSchema(Json::Value json)
+        {
+            // DebugBreak();
+            if (json.isMember("$schema"))
+            {
+                json.removeMember("$schema");
+            }
+            return json;
+        }
     };
 
     void SerializationTests::GlobalSettings()
@@ -515,10 +515,8 @@ namespace SettingsModelLocalTests
         const auto settings{ winrt::make_self<implementation::CascadiaSettings>(settingsString) };
 
         const auto result{ settings->ToJson() };
-        // VERIFY_ARE_EQUAL(toString(removeSchema(VerifyParseSucceeded(settingsString))),
-        //                  toString(removeSchema(result)));
-        VERIFY_ARE_EQUAL(toString(VerifyParseSucceeded(settingsString)),
-                         toString(result));
+        VERIFY_ARE_EQUAL(toString(removeSchema(VerifyParseSucceeded(settingsString))),
+                         toString(removeSchema(result)));
     }
 
     void SerializationTests::LegacyFontSettings()
