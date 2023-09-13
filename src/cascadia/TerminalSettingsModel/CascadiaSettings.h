@@ -44,6 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::Profile> baseLayerProfile;
         winrt::com_ptr<implementation::WindowSettings> baseWindowSettings;
         std::vector<winrt::com_ptr<implementation::Profile>> profiles;
+        std::vector<winrt::com_ptr<implementation::WindowSettings>> windows;
         std::unordered_map<winrt::guid, winrt::com_ptr<implementation::Profile>> profilesByGuid;
         std::unordered_map<winrt::hstring, winrt::com_ptr<implementation::WindowSettings>> windowsByName;
 
@@ -90,7 +91,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static JsonSettings _parseJson(const std::string_view& content);
         static winrt::com_ptr<implementation::Profile> _parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson);
         void _appendProfile(winrt::com_ptr<Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings);
+        void _appendWindow(winrt::com_ptr<WindowSettings>&& window, const winrt::hstring& name, ParsedSettings& settings);
         void _addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile);
+        void _addUserWindowParent(const winrt::com_ptr<implementation::WindowSettings>& window);
         void _executeGenerator(const IDynamicProfileGenerator& generator);
 
         std::unordered_set<std::wstring_view> _ignoredNamespaces;

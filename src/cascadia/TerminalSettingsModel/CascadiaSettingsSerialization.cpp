@@ -115,6 +115,7 @@ void ParsedSettings::clear()
     baseWindowSettings = {};
     profiles.clear();
     profilesByGuid.clear();
+    windows.clear();
     windowsByName.clear();
 }
 
@@ -218,6 +219,11 @@ void SettingsLoader::MergeInboxIntoUserSettings()
     for (const auto& profile : inboxSettings.profiles)
     {
         _addUserProfileParent(profile);
+    }
+    // DebugBreak();
+    for (const auto& window : inboxSettings.windows)
+    {
+        _addUserWindowParent(window);
     }
 }
 
@@ -372,7 +378,8 @@ void SettingsLoader::FinalizeLayering()
 
     // TODO! update comments. I literally just copy-pasted this
     // Layer user profile defaults -> user profiles
-    for (const auto& [_, window] : userSettings.windowsByName)
+    // for (const auto& [_, window] : userSettings.windows)
+    for (const auto& window : userSettings.windows)
     {
         window->AddMostImportantParent(userSettings.baseWindowSettings);
 
@@ -598,7 +605,11 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
         {
             if (auto window = WindowSettings::FromJson(windowJson))
             {
-                settings.windowsByName.insert({ window->Name(), window });
+                // settings.windowsByName.insert({ window->Name(), window });
+                if (!window->Name().empty())
+                {
+                    _appendWindow(std::move(window), window->Name(), settings);
+                }
             }
         }
     }
@@ -775,6 +786,23 @@ void SettingsLoader::_appendProfile(winrt::com_ptr<Profile>&& profile, const win
     }
 }
 
+// TODO! comments are bad
+// Adds a profile to the ParsedSettings instance. Takes ownership of the profile.
+// It ensures no duplicate GUIDs are added to the ParsedSettings instance.
+void SettingsLoader::_appendWindow(winrt::com_ptr<WindowSettings>&& window, const winrt::hstring& name, ParsedSettings& settings)
+{
+    // FYI: The static_cast ensures we don't move the profile into
+    // `profilesByGuid`, even though we still need it later for `profiles`.
+    if (settings.windowsByName.emplace(name, static_cast<const winrt::com_ptr<WindowSettings>&>(window)).second)
+    {
+        settings.windows.emplace_back(window);
+    }
+    // else
+    // {
+    //     duplicateProfile = true;
+    // }
+}
+
 // If the given ParsedSettings instance contains a profile with the given profile's GUID,
 // the profile is added as a parent. Otherwise a new child profile is created.
 void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile)
@@ -817,6 +845,53 @@ void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::
 
         it->second = child;
         userSettings.profiles.emplace_back(std::move(child));
+    }
+}
+
+// If the given ParsedSettings instance contains a profile with the given profile's GUID,
+// the profile is added as a parent. Otherwise a new child profile is created.
+void SettingsLoader::_addUserWindowParent(const winrt::com_ptr<implementation::WindowSettings>& window)
+{
+    if (const auto [it, inserted] = userSettings.windowsByName.emplace(window->Name(), nullptr); !inserted)
+    {
+        // If inserted is false, we got a matching user profile with identical GUID.
+        // --> The generated profile is a parent of the existing user profile.
+        it->second->AddLeastImportantParent(window);
+    }
+    else
+    {
+        // don't think we need this
+
+        // // If inserted is true, then this is a generated profile that doesn't exist
+        // // in the user's settings (which makes this branch somewhat unlikely).
+        // //
+        // // When a user modifies a profile they shouldn't modify the (static/constant)
+        // // inbox profile of course. That's why we need to create a child.
+        // // And since we previously added the (now) parent profile into profilesByGuid
+        // // we'll have to replace it->second with the (new) child profile.
+        // //
+        // // These additional things are required to complete a (user) profile:
+        // // * A call to _FinalizeInheritance()
+        // // * Every profile should at least have Origin(), Name() and Hidden() set
+        // // They're handled by SettingsLoader::FinalizeLayering() and detected by
+        // // the missing Origin(). Setting these fields as late as possible ensures
+        // // that we pick up the correct, inherited values of all of the child's parents.
+        // //
+        // // If you add more fields here, make sure to do the same in
+        // // implementation::CreateChild().
+        auto child = winrt::make_self<WindowSettings>();
+        child->AddLeastImportantParent(window);
+        child->Name(window->Name());
+
+        // // If profile is a dynamic/generated profile, a fragment's
+        // // Source() should have no effect on this user profile.
+        // if (profile->HasSource())
+        // {
+        //     child->Source(profile->Source());
+        // }
+
+        it->second = child;
+        userSettings.windows.emplace_back(std::move(child));
     }
 }
 
@@ -1145,10 +1220,13 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
         warnings.emplace_back(Model::SettingsLoadWarnings::DuplicateProfile);
     }
 
-    for (const auto& [name, window] : loader.userSettings.windowsByName)
+    // for (const auto& [name, window] : loader.userSettings.windowsByName)
+    for (const auto& window : loader.userSettings.windows)
     {
         // TODO! handle layering
-        windows.insert({ name, *window });
+        // windows.insert({ name, *window });
+        const auto& windowProjection{ *window };
+        windows.emplace(window->Name(), windowProjection);
     }
 
     // SettingsLoader and ParsedSettings are supposed to always
@@ -1446,7 +1524,7 @@ void CascadiaSettings::_resolveNewTabMenuProfilesForWindow(const Model::WindowSe
 
     // We call a recursive helper function to process the entries
     auto entries = windowImpl->NewTabMenu();
-    _resolveNewTabMenuProfilesSet(window, entries, remainingProfiles, remainingProfilesEntry);
+    _resolveNewTabMenuProfilesSet(entries, remainingProfiles, remainingProfilesEntry);
 
     // If a "remainingProfiles" entry has been found, assign to it the remaining profiles
     if (remainingProfilesEntry != nullptr)

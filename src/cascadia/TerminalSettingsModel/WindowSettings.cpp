@@ -11,6 +11,8 @@
 
 #include "WindowSettings.g.cpp"
 
+#include "ActionMap.h"
+#include "Command.h"
 #include "ProfileEntry.h"
 #include "FolderEntry.h"
 #include "MatchProfilesEntry.h"

@@ -550,5 +550,11 @@
                 { "command": { "action": "adjustOpacity", "opacity": 100, "relative": false } }
             ]
         }
+    ],
+    "windows": [
+        {
+            "name": "_quake",
+            "launchMode": "focus"
+        }
     ]
 }
