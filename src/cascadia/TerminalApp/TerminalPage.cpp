@@ -5139,6 +5139,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::Microsoft::Terminal::Settings::Model::WindowSettings TerminalPage::_currentWindowSettings() const
     {
-        return _settings.WindowSettings(_WindowProperties.WindowName());
+        const auto& currentName{ _WindowProperties.WindowName() };
+        return _settings.WindowSettings(currentName);
     }
 }
