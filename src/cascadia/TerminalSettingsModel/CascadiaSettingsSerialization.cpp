@@ -1349,6 +1349,25 @@ Json::Value CascadiaSettings::ToJson() const
     }
     json[JsonKey(ThemesKey)] = themes;
 
+    Json::Value baseWindowSettings{ _baseWindowSettings->ToJson() };
+    // merge the base window settings into the globals
+    for (const auto& key : baseWindowSettings.getMemberNames())
+    {
+        json[key] = baseWindowSettings[key];
+    }
+
+    // Now serialize any windows too, if we had some.
+    if (_windows.Size() > 0)
+    {
+        Json::Value windows{ Json::ValueType::arrayValue };
+        for (const auto& [_, projectedWindow] : _windows)
+        {
+            const auto& window{ winrt::get_self<implementation::WindowSettings>(projectedWindow) };
+            windows.append(window->ToJson());
+        }
+        json[JsonKey(WindowsListKey)] = windows;
+    }
+
     return json;
 }
 

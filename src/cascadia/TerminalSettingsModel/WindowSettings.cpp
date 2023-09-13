@@ -246,7 +246,7 @@ void WindowSettings::_resolveNewTabMenuProfilesSet(
             const auto profileEntry{ winrt::get_self<implementation::ProfileEntry>(entry.as<Model::ProfileEntry>()) };
 
             // Find the profile by name
-            // TODO! only cascadiasettings knows this 
+            // TODO! only cascadiasettings knows this
             const Model::Profile& profile = nullptr; // GetProfileByName(profileEntry->ProfileName());
 
             // If not found, or if the profile is hidden, skip it
@@ -276,7 +276,7 @@ void WindowSettings::_resolveNewTabMenuProfilesSet(
         {
             if (remainingProfilesEntry != nullptr)
             {
-                // TODO! only cascadiasettings knows this 
+                // TODO! only cascadiasettings knows this
                 // _warnings.Append(SettingsLoadWarnings::DuplicateRemainingProfilesEntry);
             }
             else

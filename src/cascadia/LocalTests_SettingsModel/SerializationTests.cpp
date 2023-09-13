@@ -36,6 +36,7 @@ namespace SettingsModelLocalTests
         END_TEST_CLASS()
 
         TEST_METHOD(GlobalSettings);
+        TEST_METHOD(WindowSettings);
         TEST_METHOD(Profile);
         TEST_METHOD(ColorScheme);
         TEST_METHOD(Actions);
@@ -65,11 +66,45 @@ namespace SettingsModelLocalTests
             // written alphabetically.
             VERIFY_ARE_EQUAL(toString(json), toString(result));
         }
+
+        // Helper to remove the `$schema` property from a json object. We
+        // populate that based off the local path to the settings file. Of
+        // course, that's entirely unpredictable in tests. So cut it out before
+        // we do any sort of roundtrip testing.
+        static Json::Value removeSchema(Json::Value json)
+        {
+            // DebugBreak();
+            if (json.isMember("$schema"))
+            {
+                json.removeMember("$schema");
+            }
+            return json;
+        }
     };
 
     void SerializationTests::GlobalSettings()
     {
+        // TODO! TrimPaste shouldn't be a global....
         static constexpr std::string_view globalsString{ R"(
+            {
+                "trimPaste": true,
+
+                "inputServiceWarning": true,
+                "startOnUserLogin": false,
+                "actions": []
+            })" };
+
+        static constexpr std::string_view smallGlobalsString{ R"(
+            {
+                "actions": []
+            })" };
+
+        RoundtripTest<implementation::GlobalAppSettings>(globalsString);
+        RoundtripTest<implementation::GlobalAppSettings>(smallGlobalsString);
+    }
+    void SerializationTests::WindowSettings()
+    {
+        static constexpr std::string_view windowString{ R"(
             {
                 "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
 
@@ -106,14 +141,14 @@ namespace SettingsModelLocalTests
                 "actions": []
             })" };
 
-        static constexpr std::string_view smallGlobalsString{ R"(
+        static constexpr std::string_view smallWindowString{ R"(
             {
                 "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
                 "actions": []
             })" };
 
-        RoundtripTest<implementation::GlobalAppSettings>(globalsString);
-        RoundtripTest<implementation::GlobalAppSettings>(smallGlobalsString);
+        RoundtripTest<implementation::WindowSettings>(windowString);
+        RoundtripTest<implementation::WindowSettings>(smallWindowString);
     }
 
     void SerializationTests::Profile()
@@ -480,7 +515,8 @@ namespace SettingsModelLocalTests
         const auto settings{ winrt::make_self<implementation::CascadiaSettings>(settingsString) };
 
         const auto result{ settings->ToJson() };
-        VERIFY_ARE_EQUAL(toString(VerifyParseSucceeded(settingsString)), toString(result));
+        VERIFY_ARE_EQUAL(toString(removeSchema(VerifyParseSucceeded(settingsString))),
+                         toString(removeSchema(result)));
     }
 
     void SerializationTests::LegacyFontSettings()

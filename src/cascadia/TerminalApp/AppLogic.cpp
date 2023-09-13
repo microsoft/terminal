@@ -654,7 +654,8 @@ namespace winrt::TerminalApp::implementation
         // TODO! I'm pretty sure individual windows can already indicate somehow that they want a tray icon. We should fold the MinimizeToNotificationArea logic in with that.
 
         return globals.AlwaysShowNotificationIcon() /* ||
-               globals.MinimizeToNotificationArea()*/;
+               globals.MinimizeToNotificationArea()*/
+            ;
     }
 
     bool AppLogic::AllowHeadless()
