@@ -72,6 +72,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestCloneInheritanceTree);
         TEST_METHOD(TestValidDefaults);
         TEST_METHOD(TestInheritedCommand);
+        TEST_METHOD(LayeredWindowSettings);
         TEST_METHOD(LoadFragmentsWithMultipleUpdates);
 
     private:
@@ -1987,6 +1988,60 @@ namespace SettingsModelLocalTests
             // Verify ActionMap::GetKeyBindingForAction API
             const auto& actualKeyChord{ settings->ActionMap().GetKeyBindingForAction(ShortcutAction::ClosePane) };
             VERIFY_IS_NULL(actualKeyChord);
+        }
+    }
+
+    void DeserializationTests::LayeredWindowSettings()
+    {
+        static constexpr std::string_view settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "initialRows": 5,
+            "initialCols": 15,
+            "windows": [
+                {
+                    "name": "test",
+                    "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "initialRows": 25,
+                }
+            ],
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "cmd.exe"
+                }
+            ]
+        })" };
+
+        const auto settings{ winrt::make_self<implementation::CascadiaSettings>(settingsJson, DefaultJson) };
+
+        VERIFY_ARE_EQUAL(1u, settings->AllWindowSettings().Size());
+
+        {
+            const auto& windowSettings{ settings->WindowSettingsDefaults() };
+            VERIFY_IS_NOT_NULL(windowSettings);
+            VERIFY_ARE_EQUAL(5, windowSettings.InitialRows());
+            VERIFY_ARE_EQUAL(15, windowSettings.InitialCols());
+        }
+        {
+            const auto& windowSettings{ settings->WindowSettings(L"test") };
+            VERIFY_IS_NOT_NULL(windowSettings);
+            VERIFY_ARE_EQUAL(25, windowSettings.InitialRows());
+            VERIFY_ARE_EQUAL(15, windowSettings.InitialCols());
+        }
+        {
+            const auto& windowSettings{ settings->WindowSettings(L"I sure don't exist") };
+            VERIFY_IS_NOT_NULL(windowSettings);
+            VERIFY_ARE_EQUAL(5, windowSettings.InitialRows());
+            VERIFY_ARE_EQUAL(15, windowSettings.InitialCols());
         }
     }
 

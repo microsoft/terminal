@@ -72,6 +72,7 @@ namespace TerminalApp
         void Maximized(Boolean newMaximized);
         Boolean AlwaysOnTop { get; };
         Boolean AutoHideWindow { get; };
+        Microsoft.Terminal.Settings.Model.Theme Theme { get; };
 
         void IdentifyWindow();
         void SetPersistedLayoutIdx(UInt32 idx);

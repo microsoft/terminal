@@ -25,8 +25,7 @@ using namespace winrt::Microsoft::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::Foundation::Collections;
 
-static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
-static constexpr std::string_view ActionsKey{ "actions" };
+static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
@@ -112,6 +111,7 @@ winrt::com_ptr<WindowSettings> WindowSettings::FromJson(const Json::Value& json)
 
 void WindowSettings::LayerJson(const Json::Value& json)
 {
+    JsonUtils::GetValueForKey(json, NameKey, Name);
     JsonUtils::GetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
     // GH#8076 - when adding enum values to this key, we also changed it from
     // "useTabSwitcher" to "tabSwitcherMode". Continue supporting

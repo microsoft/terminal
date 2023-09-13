@@ -123,6 +123,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Model::WindowSettings WindowSettingsDefaults() const;
         Model::WindowSettings WindowSettings(const winrt::hstring& windowName) const;
+        Windows::Foundation::Collections::IMap<winrt::hstring, Model::WindowSettings> AllWindowSettings() const noexcept;
 
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> AllProfiles() const noexcept;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;

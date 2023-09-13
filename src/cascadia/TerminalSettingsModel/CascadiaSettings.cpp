@@ -217,6 +217,11 @@ Model::WindowSettings CascadiaSettings::WindowSettings(const winrt::hstring& win
     }
 }
 
+IMap<winrt::hstring, Model::WindowSettings> CascadiaSettings::AllWindowSettings() const noexcept
+{
+    return _windows;
+}
+
 // Method Description:
 // - Create a new profile based off the default profile settings.
 // Arguments:

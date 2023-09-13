@@ -15,6 +15,7 @@ Author(s):
 #pragma once
 
 #include <json.h>
+#include <til/winrt.h>
 
 #include "../types/inc/utils.hpp"
 
@@ -351,6 +352,30 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         std::string TypeDescription() const
         {
             return ConversionTrait<GUID>{}.TypeDescription();
+        }
+    };
+
+    template<typename T>
+    struct ConversionTrait<til::property<T>>
+    {
+        til::property<T> FromJson(const Json::Value& json) const
+        {
+            return til::property<T>(static_cast<T>(ConversionTrait<T>{}.FromJson(json)));
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            return ConversionTrait<T>{}.CanConvert(json);
+        }
+
+        Json::Value ToJson(const til::property<T>& val)
+        {
+            return ConversionTrait<T>{}.ToJson(val());
+        }
+
+        std::string TypeDescription() const
+        {
+            return ConversionTrait<T>{}.TypeDescription();
         }
     };
 
