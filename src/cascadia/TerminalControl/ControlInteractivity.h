@@ -144,7 +144,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _focused{ false };
 
+        // Auto scroll occurs when user, while selecting, drags cursor outside
+        // viewport. View is then scrolled to 'follow' the cursor.
+        double _autoScrollVelocity;
+        std::optional<uint32_t> _autoScrollingPointerId;
+        std::optional<Core::Point> _autoScrollingPointerPoint;
+        wil::unique_threadpool_timer _autoScrollTimer;
+        std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
         bool _pointerPressedInBounds{ false };
+
+        void _tryStartAutoScroll(const uint32_t id, const Core::Point& point, const double scrollVelocity);
+        void _tryStopAutoScroll(const uint32_t pointerId);
+        static void CALLBACK _autoScrollTimerCallback(PTP_CALLBACK_INSTANCE instance, void* context, PTP_TIMER timer);
+        void _updateAutoScroll();
+        double _getAutoScrollSpeed(double cursorDistanceFromBorder) const;
+
+        void _createInteractivityTimers();
 
         unsigned int _numberOfClicks(Core::Point clickPos, Timestamp clickTime);
         void _updateSystemParameterSettings() noexcept;

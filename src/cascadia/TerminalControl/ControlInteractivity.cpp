@@ -56,6 +56,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 self->_AttachedHandlers(*self, nullptr);
             }
         });
+
+        _createInteractivityTimers();
     }
 
     uint64_t ControlInteractivity::Id()
@@ -88,6 +90,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlInteractivity::AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
     {
         _core->AttachToNewControl(keyBindings);
+        _createInteractivityTimers();
     }
 
     // Method Description:
@@ -119,10 +122,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlInteractivity::Close()
     {
         _ClosedHandlers(*this, nullptr);
+        _autoScrollTimer.reset(); // Cancel and wait for completion
         if (_core)
         {
             _core->Close();
         }
+    }
+
+    void ControlInteractivity::_createInteractivityTimers()
+    {
+        _autoScrollTimer.reset(CreateThreadpoolTimer(&ControlInteractivity::_autoScrollTimerCallback, this, nullptr));
     }
 
     // Method Description:
@@ -347,7 +356,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _touchAnchor = contactPoint;
     }
 
-    void ControlInteractivity::PointerMoved(const uint32_t /*pointerId*/,
+    void ControlInteractivity::PointerMoved(const uint32_t pointerId,
                                             Control::MouseButtonState buttonState,
                                             const unsigned int pointerUpdateKind,
                                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
@@ -392,6 +401,40 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             SetEndSelectionPoint(pixelPosition);
+
+            // GH#9109 - Only start an auto-scroll when the drag actually
+            // started within our bounds. Otherwise, someone could start a drag
+            // outside the terminal control, drag into the padding, and trick us
+            // into starting to scroll.
+            {
+                // We want to find the distance relative to the bounds of the
+                // SwapChainPanel, not the entire control. If they drag out of
+                // the bounds of the text, into the padding, we still what that
+                // to auto-scroll
+                const auto height = _core->ViewHeight() * _core->FontSize().Height;
+                const auto cursorBelowBottomDist = pixelPosition.Y - height;
+                const auto cursorAboveTopDist = -1 * pixelPosition.Y;
+
+                constexpr auto MinAutoScrollDist = 2.0; // Arbitrary value
+                auto newAutoScrollVelocity = 0.0;
+                if (cursorBelowBottomDist > MinAutoScrollDist)
+                {
+                    newAutoScrollVelocity = _getAutoScrollSpeed(cursorBelowBottomDist);
+                }
+                else if (cursorAboveTopDist > MinAutoScrollDist)
+                {
+                    newAutoScrollVelocity = -1.0 * _getAutoScrollSpeed(cursorAboveTopDist);
+                }
+
+                if (newAutoScrollVelocity != 0)
+                {
+                    _tryStartAutoScroll(pointerId, pixelPosition, newAutoScrollVelocity);
+                }
+                else
+                {
+                    _tryStopAutoScroll(pointerId);
+                }
+            }
         }
 
         _core->SetHoveredCell(terminalPosition.to_core_point());
@@ -433,7 +476,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlInteractivity::PointerReleased(const uint32_t /*pointerId*/,
+    void ControlInteractivity::PointerReleased(const uint32_t pointerId,
                                                Control::MouseButtonState buttonState,
                                                const unsigned int pointerUpdateKind,
                                                const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
@@ -464,6 +507,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _singleClickTouchdownPos = std::nullopt;
+        _tryStopAutoScroll(pointerId);
     }
 
     void ControlInteractivity::TouchReleased()
@@ -755,4 +799,110 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _core->Settings().ProfileSource() == L"Windows.Terminal.Wsl";
     }
+
+    // Method Description:
+    // - Calculates speed of single axis of auto scrolling. It has to allow for both
+    //      fast and precise selection.
+    // Arguments:
+    // - cursorDistanceFromBorder: distance from viewport border to cursor, in pixels. Must be non-negative.
+    // Return Value:
+    // - positive speed in characters / sec
+    double ControlInteractivity::_getAutoScrollSpeed(double cursorDistanceFromBorder) const
+    {
+        // The numbers below just feel well, feel free to change.
+        // TODO: Maybe account for space beyond border that user has available
+        return std::pow(cursorDistanceFromBorder, 2.0) / 25.0 + 2.0;
+    }
+
+    // Method Description:
+    // - Starts new pointer related auto scroll behavior, or continues existing one.
+    //      Does nothing when there is already auto scroll associated with another pointer.
+    // Arguments:
+    // - pointerId, point: info about pointer that causes auto scroll. Pointer's position
+    //      is later used to update selection.
+    // - scrollVelocity: target velocity of scrolling in characters / sec
+    void ControlInteractivity::_tryStartAutoScroll(const uint32_t pointerId, const Core::Point& point, const double scrollVelocity)
+    {
+        // Allow only one pointer at the time
+        if (!_autoScrollingPointerId ||
+            _autoScrollingPointerId == pointerId)
+        {
+            _autoScrollingPointerId = pointerId;
+            _autoScrollingPointerPoint = point;
+            _autoScrollVelocity = scrollVelocity;
+
+            // If this is first time the auto scroll update is about to be called,
+            //      kick-start it by initializing its time delta as if it started now
+            if (!_lastAutoScrollUpdateTime)
+            {
+                _lastAutoScrollUpdateTime = std::chrono::high_resolution_clock::now();
+            }
+
+            if (!IsThreadpoolTimerSet(_autoScrollTimer.get()))
+            {
+                static constexpr auto AutoScrollUpdateInterval = std::chrono::milliseconds(33); // 1/30th of a second
+                FILETIME updateIntervalDeadline{
+                    .dwLowDateTime = -1 * static_cast<DWORD>(AutoScrollUpdateInterval.count() * 10000 /* convert ms to 100-ns */),
+                    .dwHighDateTime = 0xFFFFFFFF
+                };
+                SetThreadpoolTimer(
+                    _autoScrollTimer.get(),
+                    &updateIntervalDeadline,
+                    static_cast<DWORD>(AutoScrollUpdateInterval.count()),
+                    0);
+            }
+        }
+    }
+
+    // Method Description:
+    // - Stops auto scroll if it's active and is associated with supplied pointer id.
+    // Arguments:
+    // - pointerId: id of pointer for which to stop auto scroll
+    void ControlInteractivity::_tryStopAutoScroll(const uint32_t pointerId)
+    {
+        if (_autoScrollingPointerId &&
+            pointerId == _autoScrollingPointerId)
+        {
+            _autoScrollingPointerId = std::nullopt;
+            _autoScrollingPointerPoint = std::nullopt;
+            _autoScrollVelocity = 0;
+            _lastAutoScrollUpdateTime = std::nullopt;
+
+            SetThreadpoolTimer(_autoScrollTimer.get(), nullptr, 0, 0);
+        }
+    }
+
+    void CALLBACK ControlInteractivity::_autoScrollTimerCallback(PTP_CALLBACK_INSTANCE, void* context, PTP_TIMER)
+    {
+        // **INVARIANT**
+        // This timer only fires while ControlInteractivity is alive.
+        auto pThis{ static_cast<ControlInteractivity*>(context) };
+        pThis->_updateAutoScroll();
+    }
+
+    // Method Description:
+    // - Called continuously to gradually scroll viewport when user is mouse
+    //   selecting outside it (to 'follow' the cursor).
+    void ControlInteractivity::_updateAutoScroll()
+    {
+        if (_autoScrollVelocity != 0)
+        {
+            const auto timeNow = std::chrono::high_resolution_clock::now();
+
+            if (_lastAutoScrollUpdateTime)
+            {
+                static constexpr auto microSecPerSec = 1000000.0;
+                const auto deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(timeNow - *_lastAutoScrollUpdateTime).count() / microSecPerSec;
+                UpdateScrollbar(_core->ScrollOffset() + _autoScrollVelocity * deltaTime);
+
+                if (_autoScrollingPointerPoint)
+                {
+                    SetEndSelectionPoint(*_autoScrollingPointerPoint);
+                }
+            }
+
+            _lastAutoScrollUpdateTime = timeNow;
+        }
+    }
+
 }
