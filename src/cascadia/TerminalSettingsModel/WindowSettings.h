@@ -18,6 +18,7 @@ Author(s):
 #pragma once
 
 #include "WindowSettings.g.h"
+#include "Docking.g.h"
 #include "IInheritable.h"
 #include "MTSMSettings.h"
 
@@ -66,4 +67,57 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         winrt::guid _defaultProfile;
     };
+
+    struct Docking : DockingT<Docking>
+    {
+        Docking() = default;
+
+        til::property<Model::DockPosition> Side{ Model::DockPosition::None };
+        til::property<double> Width{ 1.0 };
+        til::property<double> Height{ 1.0 };
+
+        static com_ptr<Docking> FromJson(const Json::Value& json);
+        Json::Value ToJson() const;
+        com_ptr<Docking> Copy() const;
+    };
+}
+
+namespace Microsoft::Terminal::Settings::Model::JsonUtils
+{
+    using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+    template<>
+    struct ConversionTrait<Docking>
+    {
+        Docking FromJson(const Json::Value& json)
+        {
+            const auto entry = implementation::Docking::FromJson(json);
+            if (entry == nullptr)
+            {
+                return nullptr;
+            }
+
+            return *entry;
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            return json.isObject();
+        }
+
+        Json::Value ToJson(const Docking& val)
+        {
+            return winrt::get_self<implementation::Docking>(val)->ToJson();
+        }
+
+        std::string TypeDescription() const
+        {
+            return "Docking";
+        }
+    };
+}
+
+namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
+{
+    BASIC_FACTORY(Docking);
 }

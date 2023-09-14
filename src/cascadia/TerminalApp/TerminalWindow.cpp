@@ -302,6 +302,12 @@ namespace winrt::TerminalApp::implementation
     {
         return _settings.GlobalSettings().CurrentTheme(_currentWindowSettings());
     }
+
+    Microsoft::Terminal::Settings::Model::Docking TerminalWindow::Docking()
+    {
+        return _currentWindowSettings().DockWindow();
+    }
+
     // Method Description:
     // - Show a ContentDialog with buttons to take further action. Uses the
     //   FrameworkElements provided as the title and content of this dialog, and

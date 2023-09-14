@@ -49,6 +49,23 @@ namespace Microsoft.Terminal.Settings.Model
         AfterCurrentTab,
     };
 
+    enum DockPosition
+    {
+        None,
+        Top,
+        Bottom,
+        Left,
+        Right
+    };
+
+    [default_interface] runtimeclass Docking
+    {
+        Docking();
+        DockPosition Side { get; };
+        Double Width { get; };
+        Double Height { get; };
+    };
+
     [default_interface] runtimeclass GlobalAppSettings {
 
         INHERITABLE_SETTING(String, Language);
@@ -121,7 +138,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, EnableShellCompletionMenu);
         INHERITABLE_SETTING(Boolean, EnableUnfocusedAcrylic);
         INHERITABLE_SETTING(String, SearchWebDefaultQueryUrl);
-
         INHERITABLE_SETTING(ThemePair, Theme);
+        INHERITABLE_SETTING(Docking, DockWindow);
     }
 }

@@ -49,6 +49,7 @@ Author(s):
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                                                                 \
     X(bool, ConfirmCloseAllTabs, "confirmCloseAllTabs", true)                                                                                                                                         \
     X(Model::ThemePair, Theme, "theme")                                                                                                                                                               \
+    X(Model::Docking, DockWindow, "dockWindow", nullptr)                                                                                                                                              \
     X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal)                                            \
     X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                                                                          \
     X(bool, ShowTabsInTitlebar, "showTabsInTitlebar", true)                                                                                                                                           \

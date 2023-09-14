@@ -73,6 +73,7 @@ namespace TerminalApp
         Boolean AlwaysOnTop { get; };
         Boolean AutoHideWindow { get; };
         Microsoft.Terminal.Settings.Model.Theme Theme { get; };
+        Microsoft.Terminal.Settings.Model.Docking Docking { get; };
 
         void IdentifyWindow();
         void SetPersistedLayoutIdx(UInt32 idx);

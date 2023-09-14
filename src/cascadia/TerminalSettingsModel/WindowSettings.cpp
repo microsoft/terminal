@@ -11,6 +11,7 @@
 #include "../inc/WindowingBehavior.h"
 
 #include "WindowSettings.g.cpp"
+#include "Docking.g.cpp"
 
 #include "ProfileEntry.h"
 #include "FolderEntry.h"
@@ -156,4 +157,45 @@ Json::Value WindowSettings::ToJson() const
 void WindowSettings::InitializeForQuakeMode()
 {
     LaunchMode(LaunchMode::FocusMode);
+
+    auto dockSettings{ winrt::make_self<Docking>() };
+    dockSettings->Side(Model::DockPosition::Top);
+    dockSettings->Width(1.0);
+    dockSettings->Height(0.5);
+    _DockWindow = *dockSettings;
+}
+
+static constexpr std::string_view SideKey{ "side" };
+static constexpr std::string_view WidthKey{ "width" };
+static constexpr std::string_view HeightKey{ "height" };
+
+winrt::com_ptr<Docking> Docking::FromJson(const Json::Value& json)
+{
+    auto result = winrt::make_self<Docking>();
+
+    if (json.isObject())
+    {
+        JsonUtils::GetValueForKey(json, SideKey, result->Side);
+        JsonUtils::GetValueForKey(json, WidthKey, result->Width);
+        JsonUtils::GetValueForKey(json, HeightKey, result->Height);
+    }
+    return result;
+}
+
+Json::Value Docking::ToJson() const
+{
+    Json::Value json{ Json::ValueType::objectValue };
+
+    JsonUtils::SetValueForKey(json, SideKey, Side);
+    JsonUtils::SetValueForKey(json, WidthKey, Width);
+    JsonUtils::SetValueForKey(json, HeightKey, Height);
+    return json;
+}
+winrt::com_ptr<Docking> Docking::Copy() const
+{
+    auto pair{ winrt::make_self<Docking>() };
+    pair->Side = Side;
+    pair->Width = Width;
+    pair->Height = Height;
+    return pair;
 }

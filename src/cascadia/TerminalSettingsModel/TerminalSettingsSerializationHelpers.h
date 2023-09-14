@@ -749,3 +749,14 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
         return "SelectionColor (#rrggbb, #rgb, #rrggbbaa, iNN)";
     }
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::DockPosition)
+{
+    JSON_MAPPINGS(5) = {
+        pair_type{ "none", ValueType::None },
+        pair_type{ "top", ValueType::Top },
+        pair_type{ "bottom", ValueType::Bottom },
+        pair_type{ "left", ValueType::Left },
+        pair_type{ "right", ValueType::Right },
+    };
+};

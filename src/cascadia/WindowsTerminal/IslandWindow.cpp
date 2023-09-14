@@ -695,16 +695,17 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             if (til::rect{ proposedInfo.rcMonitor } !=
                 til::rect{ currentInfo.rcMonitor })
             {
-                const auto newWindowRect{ _getQuakeModeSize(proposed) };
+                // TODO! update me for docking, too
+                // const auto newWindowRect{ _getQuakeModeSize(proposed) };
 
-                // Inform User32 that we want to be placed at the position
-                // and dimensions that _getQuakeModeSize returned. When we
-                // snap across monitor boundaries, this will re-evaluate our
-                // size for the new monitor.
-                lpwpos->x = newWindowRect.left;
-                lpwpos->y = newWindowRect.top;
-                lpwpos->cx = newWindowRect.width();
-                lpwpos->cy = newWindowRect.height();
+                // // Inform User32 that we want to be placed at the position
+                // // and dimensions that _getQuakeModeSize returned. When we
+                // // snap across monitor boundaries, this will re-evaluate our
+                // // size for the new monitor.
+                // lpwpos->x = newWindowRect.left;
+                // lpwpos->y = newWindowRect.top;
+                // lpwpos->cx = newWindowRect.width();
+                // lpwpos->cy = newWindowRect.height();
 
                 return 0;
             }

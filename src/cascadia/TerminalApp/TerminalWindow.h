@@ -140,6 +140,7 @@ namespace winrt::TerminalApp::implementation
         void DismissDialog();
 
         Microsoft::Terminal::Settings::Model::Theme Theme();
+        Microsoft::Terminal::Settings::Model::Docking Docking();
         void UpdateSettingsHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::SettingsLoadEventArgs& arg);
 
         void WindowName(const winrt::hstring& value);

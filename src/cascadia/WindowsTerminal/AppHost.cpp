@@ -704,21 +704,65 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect propo
     til::point origin{ (proposedRect.left + nonClientFrame.left),
                        (proposedRect.top) };
 
-    if (_windowLogic.IsQuakeWindow())
+    // if (_windowLogic.IsQuakeWindow())
+    if (const auto dockingSettings{ _windowLogic.Docking() })
     {
         // If we just use rcWork by itself, we'll fail to account for the invisible
         // space reserved for the resize handles. So retrieve that size here.
         const auto availableSpace = desktopDimensions + nonClientSize;
+        const auto singleBorderWidth = nonClientSize.width / 2;
+        const auto singleBorderHeight = nonClientSize.height / 2;
 
-        origin = {
-            (nearestMonitorInfo.rcWork.left - (nonClientSize.width / 2)),
-            (nearestMonitorInfo.rcWork.top)
-        };
-        dimensions = {
-            availableSpace.width,
-            availableSpace.height / 2
-        };
-        launchMode = LaunchMode::FocusMode;
+        // If it's >1, then use that as a number of px.
+        // If it's <= 1, then use that as a multiplier on the available space
+        const auto settingsWidth = dockingSettings.Width();
+        const auto width{ settingsWidth > 1.0 ? settingsWidth : (availableSpace.width * settingsWidth) };
+        const auto settingsHeight = dockingSettings.Height();
+        const auto height{ settingsHeight > 1.0 ? settingsHeight : (availableSpace.height * settingsHeight) };
+
+        dimensions = { til::math::rounding,
+                       width,
+                       height };
+
+        // TODO! account for centerOnLaunch too
+
+        switch (dockingSettings.Side())
+        {
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Top:
+        {
+            origin = {
+                (nearestMonitorInfo.rcWork.left - (singleBorderWidth)),
+                (nearestMonitorInfo.rcWork.top)
+            };
+            break;
+        }
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Bottom:
+        {
+            origin = {
+                (nearestMonitorInfo.rcWork.left - (singleBorderWidth)),
+                (nearestMonitorInfo.rcWork.bottom - singleBorderHeight - (dimensions.height))
+            };
+            break;
+        }
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Left:
+        {
+            origin = {
+                (nearestMonitorInfo.rcWork.left - (singleBorderWidth)),
+                (nearestMonitorInfo.rcWork.top)
+            };
+            break;
+        }
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Right:
+        {
+            origin = {
+                (nearestMonitorInfo.rcWork.right - (singleBorderWidth) - (dimensions.width)),
+                (nearestMonitorInfo.rcWork.top)
+            };
+            break;
+        }
+        }
+
+        // launchMode = LaunchMode::FocusMode;
     }
     else if (centerOnLaunch)
     {
