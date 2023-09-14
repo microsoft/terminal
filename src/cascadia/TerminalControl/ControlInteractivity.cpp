@@ -242,7 +242,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->PasteText(winrt::hstring{ wstr });
     }
 
-    void ControlInteractivity::PointerPressed(Control::MouseButtonState buttonState,
+    void ControlInteractivity::PointerPressed(const uint32_t /*pointerId*/,
+                                              Control::MouseButtonState buttonState,
                                               const unsigned int pointerUpdateKind,
                                               const uint64_t timestamp,
                                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
@@ -338,7 +339,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _touchAnchor = contactPoint;
     }
 
-    void ControlInteractivity::PointerMoved(Control::MouseButtonState buttonState,
+    void ControlInteractivity::PointerMoved(const uint32_t /*pointerId*/,
+                                            Control::MouseButtonState buttonState,
                                             const unsigned int pointerUpdateKind,
                                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                             const bool focused,
@@ -426,7 +428,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlInteractivity::PointerReleased(Control::MouseButtonState buttonState,
+    void ControlInteractivity::PointerReleased(const uint32_t /*pointerId*/,
+                                               Control::MouseButtonState buttonState,
                                                const unsigned int pointerUpdateKind,
                                                const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                                const Core::Point pixelPosition)

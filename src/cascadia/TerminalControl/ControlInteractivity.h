@@ -51,14 +51,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
 #pragma region Input Methods
-        void PointerPressed(Control::MouseButtonState buttonState,
+        void PointerPressed(const uint32_t pointerId,
+                            Control::MouseButtonState buttonState,
                             const unsigned int pointerUpdateKind,
                             const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                             const Core::Point pixelPosition);
         void TouchPressed(const Core::Point contactPoint);
 
-        void PointerMoved(Control::MouseButtonState buttonState,
+        void PointerMoved(const uint32_t pointerId,
+                          Control::MouseButtonState buttonState,
                           const unsigned int pointerUpdateKind,
                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                           const bool focused,
@@ -67,7 +69,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void TouchMoved(const Core::Point newTouchPoint,
                         const bool focused);
 
-        void PointerReleased(Control::MouseButtonState buttonState,
+        void PointerReleased(const uint32_t pointerId,
+                             Control::MouseButtonState buttonState,
                              const unsigned int pointerUpdateKind,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                              const Core::Point pixelPosition);
