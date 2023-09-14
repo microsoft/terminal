@@ -227,13 +227,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //         control->_core.Visible(control->Visibility() == Visibility::Visible);
         //     }
         // });
-
-        LayoutUpdated([weakThis = get_weak()](auto&&, auto&&) {
-            if (auto control{ weakThis.get() }; !control->_IsClosing())
-            {
-                control->_core.Visible(control->Parent() != nullptr);
-            }
-        });
+        //
+        // LayoutUpdated([weakThis = get_weak()](auto&&, auto&&) {
+        //     if (auto control{ weakThis.get() }; !control->_IsClosing())
+        //     {
+        //         control->_core.Visible(control->Parent() != nullptr);
+        //     }
+        // });
     }
 
     // Function Description:

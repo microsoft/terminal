@@ -212,20 +212,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
-        shared->lookForOutput = std::make_unique<ThrottledFuncTrailing<>>(
+        shared->updateAutoProgress = std::make_unique<ThrottledFuncTrailing<>>(
             _dispatcher,
             SearchAfterChangeDelay,
-            [/*weakTerminal = std::weak_ptr{ _terminal }, */ weakThis = get_weak()]() {
+            [weakThis = get_weak()]() {
                 // if (const auto t = weakTerminal.lock())
                 if (auto core{ weakThis.get() }; !core->_IsClosing())
                 {
-                    auto lock = core->_terminal->LockForWriting();
-                    if (core->_terminal->HasContentAfter(core->_restartedAt))
-                    {
-                        core->_gotFirstByte = true;
-                        core->_automaticProgressState = DispatchTypes::TaskbarState::Clear;
-                        core->_TaskbarProgressChangedHandlers(*core, nullptr);
-                    }
+                    core->_autodetectProgressState();
+                    // auto lock = core->_terminal->LockForWriting();
+                    // if (core->_terminal->HasContentAfter(core->_restartedAt))
+                    // {
+                    //     core->_gotFirstByte = true;
+                    //     core->_automaticProgressState = DispatchTypes::TaskbarState::Clear;
+                    //     core->_TaskbarProgressChangedHandlers(*core, nullptr);
+                    // }
                 }
             });
     }
@@ -1963,12 +1964,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     void ControlCore::_connectionOutputHandler(const hstring& hstr)
     {
-        if (!_gotFirstByte)
         {
             const auto shared = _shared.lock_shared();
-            if (shared->lookForOutput)
+            // if (!_gotFirstByte)
+            // {
+            if (shared->updateAutoProgress)
             {
-                shared->lookForOutput->Run();
+                shared->updateAutoProgress->Run();
             }
 
             // // ConPTY is known to send
@@ -1990,15 +1992,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //     // Though i guess the first one does too so that's okay
             //     _TaskbarProgressChangedHandlers(*this, nullptr);
             // }
-        }
-        else
-        {
+            // }
+            // else
+            // {
             // TODO! throttle
-            if (!_visible && _terminal->InOutputState())
-            {
-                _automaticProgressState = DispatchTypes::TaskbarState::Indeterminate;
-                _TaskbarProgressChangedHandlers(*this, nullptr);
-            }
+            // if (!_visible && _terminal->InOutputState())
+            // {
+            //     _automaticProgressState = DispatchTypes::TaskbarState::Indeterminate;
+            //     _TaskbarProgressChangedHandlers(*this, nullptr);
+            // }
+            // }
         }
 
         try
@@ -2711,10 +2714,37 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::Visible(bool visible)
     {
         _visible = visible;
-        if (visible && _automaticProgressState == DispatchTypes::TaskbarState::Indeterminate)
+        // if (visible && _automaticProgressState == DispatchTypes::TaskbarState::Indeterminate)
+        // {
+        //     _automaticProgressState = DispatchTypes::TaskbarState::Clear;
+        //     _TaskbarProgressChangedHandlers(*this, nullptr);
+        // }
+    }
+
+    void ControlCore::_autodetectProgressState()
+    {
+        auto lock = _terminal->LockForWriting();
+        if (!_gotFirstByte)
         {
-            _automaticProgressState = DispatchTypes::TaskbarState::Clear;
-            _TaskbarProgressChangedHandlers(*this, nullptr);
+            if (_terminal->HasContentAfter(_restartedAt))
+            {
+                _gotFirstByte = true;
+                _automaticProgressState = DispatchTypes::TaskbarState::Clear;
+                _TaskbarProgressChangedHandlers(*this, nullptr);
+            }
+        }
+        else
+        {
+            if (_terminal->InOutputState())
+            {
+                _automaticProgressState = DispatchTypes::TaskbarState::Indeterminate;
+                _TaskbarProgressChangedHandlers(*this, nullptr);
+            }
+            else if (_automaticProgressState == DispatchTypes::TaskbarState::Indeterminate)
+            {
+                _automaticProgressState = DispatchTypes::TaskbarState::Clear;
+                _TaskbarProgressChangedHandlers(*this, nullptr);
+            }
         }
     }
 }

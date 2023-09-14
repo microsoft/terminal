@@ -288,7 +288,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             std::shared_ptr<ThrottledFuncTrailing<>> tsfTryRedrawCanvas;
             std::unique_ptr<til::throttled_func_trailing<>> updatePatternLocations;
             std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
-            std::shared_ptr<ThrottledFuncTrailing<>> lookForOutput;
+            std::shared_ptr<ThrottledFuncTrailing<>> updateAutoProgress;
         };
 
         std::atomic<bool> _initializedTerminal{ false };
@@ -408,6 +408,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             til::point_span (*getSpan)(const ::ScrollMark&));
 
         bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::ScrollMark&));
+
+        void _autodetectProgressState();
 
         inline bool _IsClosing() const noexcept
         {
