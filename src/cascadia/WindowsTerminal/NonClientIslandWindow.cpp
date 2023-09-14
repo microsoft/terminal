@@ -748,23 +748,26 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 
     if (originalRet != HTCLIENT)
     {
-        // If we're the quake window, suppress resizing on any side except the
-        // bottom. I don't believe that this actually works on the top. That's
-        // handled below.
-        if (IsQuakeWindow())
-        {
-            switch (originalRet)
-            {
-            case HTBOTTOMRIGHT:
-            case HTRIGHT:
-            case HTTOPRIGHT:
-            case HTTOP:
-            case HTTOPLEFT:
-            case HTLEFT:
-            case HTBOTTOMLEFT:
-                return HTCLIENT;
-            }
-        }
+        // TODO! I don't think we really need this anymore.
+        // _maybe_ for the side we're docked to? 
+        // 
+        //// If we're the quake window, suppress resizing on any side except the
+        //// bottom. I don't believe that this actually works on the top. That's
+        //// handled below.
+        //if (IsQuakeWindow())
+        //{
+        //    switch (originalRet)
+        //    {
+        //    case HTBOTTOMRIGHT:
+        //    case HTRIGHT:
+        //    case HTTOPRIGHT:
+        //    case HTTOP:
+        //    case HTTOPLEFT:
+        //    case HTLEFT:
+        //    case HTBOTTOMLEFT:
+        //        return HTCLIENT;
+        //    }
+        //}
         return originalRet;
     }
 
@@ -786,7 +789,10 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     {
         // However, if we're the quake window, then just return HTCAPTION so we
         // don't get a resize handle on the top.
-        return IsQuakeWindow() ? HTCAPTION : HTTOP;
+        // return IsQuakeWindow() ? HTCAPTION : HTTOP;
+
+        // TODO! if we're docked to the top and on the top, return caption? 
+        return HTTOP;
     }
 
     return HTCAPTION;

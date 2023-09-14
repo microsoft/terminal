@@ -163,6 +163,7 @@ void WindowSettings::InitializeForQuakeMode()
     dockSettings->Width(1.0);
     dockSettings->Height(0.5);
     _DockWindow = *dockSettings;
+    _MinimizeToNotificationArea = true;
 }
 
 static constexpr std::string_view SideKey{ "side" };

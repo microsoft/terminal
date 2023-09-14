@@ -1271,7 +1271,8 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                     const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->IsQuakeWindow(_windowLogic.IsQuakeWindow());
+    // _window->IsQuakeWindow(_windowLogic.IsQuakeWindow());
+    _window->DockSettings(_windowLogic.Docking());
 }
 
 // Raised from our Peasant. We handle by propagating the call to our terminal window.

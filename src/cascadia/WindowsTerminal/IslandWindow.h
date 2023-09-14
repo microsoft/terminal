@@ -57,8 +57,8 @@ public:
 
     winrt::fire_and_forget SummonWindow(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
-    bool IsQuakeWindow() const noexcept;
-    void IsQuakeWindow(bool isQuakeWindow) noexcept;
+    winrt::Microsoft::Terminal::Settings::Model::Docking DockSettings() const noexcept;
+    void DockSettings(winrt::Microsoft::Terminal::Settings::Model::Docking settings) noexcept;
     void SetAutoHideWindow(bool autoHideWindow) noexcept;
 
     void HideWindow();
@@ -146,11 +146,12 @@ protected:
     void _moveToMonitorOf(HWND foregroundWindow);
     void _moveToMonitor(const MONITORINFO activeMonitor);
 
-    bool _isQuakeWindow{ false };
+    winrt::Microsoft::Terminal::Settings::Model::Docking _dockingSettings{ nullptr };
     bool _autoHideWindow{ false };
 
-    void _enterQuakeMode();
-    til::rect _getQuakeModeSize(HMONITOR hmon);
+    void _applyDocking();
+    til::rect _getDockedSize(HMONITOR hmon);
+    bool _docked() const noexcept;
 
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 

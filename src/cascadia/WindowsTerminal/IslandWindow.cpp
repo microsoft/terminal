@@ -18,6 +18,7 @@ using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal;
@@ -201,6 +202,14 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     UpdateWindowIconForActiveMetrics(_window.get());
 }
 
+bool _preventSizingForDocked(const Model::DockPosition side, const WPARAM sizingSide)
+{
+    return (side == Model::DockPosition::Top && sizingSide == WMSZ_TOP) ||
+           (side == Model::DockPosition::Bottom && sizingSide == WMSZ_BOTTOM) ||
+           (side == Model::DockPosition::Left && sizingSide == WMSZ_LEFT) ||
+           (side == Model::DockPosition::Right && sizingSide == WMSZ_RIGHT);
+}
+
 // Method Description:
 // - Handles a WM_SIZING message, which occurs when user drags a window border
 //   or corner. It intercepts this resize action and applies 'snapping' i.e.
@@ -244,15 +253,27 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
 
     auto clientHeight = winRect->bottom - winRect->top - nonClientSize.height;
 
-    // If we're the quake window, prevent resizing on all sides except the
-    // bottom. This also applies to resizing with the Alt+Space menu
-    if (IsQuakeWindow() && wParam != WMSZ_BOTTOM)
+    // I think it's okay to resize a docked window on any side that's not the side we're docked to.
+    if (_docked())
     {
-        // Stuff our current window size into the lParam, and return true. This
-        // will tell User32 to use our current dimensions to resize to.
-        ::GetWindowRect(_window.get(), winRect);
-        return true;
+        if (_preventSizingForDocked(_dockingSettings.Side(), wParam))
+        {
+            // Stuff our current window size into the lParam, and return true. This
+            // will tell User32 to use our current dimensions to resize to.
+            ::GetWindowRect(_window.get(), winRect);
+            return true;
+        }
     }
+
+    // // If we're the quake window, prevent resizing on all sides except the
+    // // bottom. This also applies to resizing with the Alt+Space menu
+    // if (IsQuakeWindow() && wParam != WMSZ_BOTTOM)
+    // {
+    //     // Stuff our current window size into the lParam, and return true. This
+    //     // will tell User32 to use our current dimensions to resize to.
+    //     ::GetWindowRect(_window.get(), winRect);
+    //     return true;
+    // }
 
     if (wParam != WMSZ_TOP && wParam != WMSZ_BOTTOM)
     {
@@ -322,7 +343,7 @@ LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
 
     // If we're the quake window, prevent moving the window. If we don't do
     // this, then Alt+Space...Move will still be able to move the window.
-    if (IsQuakeWindow())
+    if (_docked())
     {
         // Stuff our current window into the lParam, and return true. This
         // will tell User32 to use our current position to move to.
@@ -524,7 +545,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
 
         if (_autoHideWindow && !activated)
         {
-            if (_isQuakeWindow || _minimizeToNotificationArea)
+            if (_minimizeToNotificationArea)
             {
                 HideWindow();
             }
@@ -573,7 +594,8 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         if (wparam == SIZE_MINIMIZED)
         {
             _WindowVisibilityChangedHandlers(false);
-            if (_isQuakeWindow)
+            // TODO! This used to just be quake. Should this have _always_ been for all _minimizeToNotificationArea windows?
+            if (_minimizeToNotificationArea)
             {
                 ShowWindow(GetHandle(), SW_HIDE);
                 return 0;
@@ -659,7 +681,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         // GH#10274 - if the quake window gets moved to another monitor via aero
         // snap (win+shift+arrows), then re-adjust the size for the new monitor.
-        if (IsQuakeWindow())
+        if (_docked())
         {
             // Retrieve the suggested dimensions and make a rect and size.
             auto lpwpos = (LPWINDOWPOS)lparam;
@@ -695,17 +717,16 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             if (til::rect{ proposedInfo.rcMonitor } !=
                 til::rect{ currentInfo.rcMonitor })
             {
-                // TODO! update me for docking, too
-                // const auto newWindowRect{ _getQuakeModeSize(proposed) };
+                const auto newWindowRect{ _getDockedSize(proposed) };
 
-                // // Inform User32 that we want to be placed at the position
-                // // and dimensions that _getQuakeModeSize returned. When we
-                // // snap across monitor boundaries, this will re-evaluate our
-                // // size for the new monitor.
-                // lpwpos->x = newWindowRect.left;
-                // lpwpos->y = newWindowRect.top;
-                // lpwpos->cx = newWindowRect.width();
-                // lpwpos->cy = newWindowRect.height();
+                 // Inform User32 that we want to be placed at the position
+                 // and dimensions that _getQuakeModeSize returned. When we
+                 // snap across monitor boundaries, this will re-evaluate our
+                 // size for the new monitor.
+                 lpwpos->x = newWindowRect.left;
+                 lpwpos->y = newWindowRect.top;
+                 lpwpos->cx = newWindowRect.width();
+                 lpwpos->cy = newWindowRect.height();
 
                 return 0;
             }
@@ -1689,31 +1710,39 @@ void IslandWindow::_moveToMonitor(const MONITORINFO activeMonitor)
                      currentWindowRect.height(),
                      SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
 
-        // GH#10274, GH#10182: Re-evaluate the size of the quake window when we
-        // move to another monitor.
-        if (IsQuakeWindow())
-        {
-            _enterQuakeMode();
-        }
+        // // GH#10274, GH#10182: Re-evaluate the size of the quake window when we
+        // // move to another monitor.
+        // if (IsQuakeWindow())
+        // {
+        _applyDocking();
+        // }
     }
 }
 
-bool IslandWindow::IsQuakeWindow() const noexcept
+Docking IslandWindow::DockSettings() const noexcept
 {
-    return _isQuakeWindow;
+    return _dockingSettings;
 }
 
-void IslandWindow::IsQuakeWindow(bool isQuakeWindow) noexcept
+void IslandWindow::DockSettings(Docking settings) noexcept
 {
-    if (_isQuakeWindow != isQuakeWindow)
+    if (_dockingSettings != settings)
     {
-        _isQuakeWindow = isQuakeWindow;
+        _dockingSettings = settings;
+
+        // TODO! comment
         // Don't enter quake mode if we don't have an HWND yet
-        if (IsQuakeWindow() && _window)
+        if (settings && _window)
         {
-            _enterQuakeMode();
+            // _enterQuakeMode();
+            _applyDocking();
         }
     }
+}
+
+bool IslandWindow::_docked() const noexcept
+{
+    return _dockingSettings != nullptr && _dockingSettings.Side() != Model::DockPosition::None;
 }
 
 void IslandWindow::SetAutoHideWindow(bool autoHideWindow) noexcept
@@ -1722,15 +1751,16 @@ void IslandWindow::SetAutoHideWindow(bool autoHideWindow) noexcept
 }
 
 // Method Description:
+// TODO! comment
 // - Enter quake mode for the monitor this window is currently on. This involves
 //   resizing it to the top half of the monitor.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void IslandWindow::_enterQuakeMode()
+void IslandWindow::_applyDocking()
 {
-    if (!_window)
+    if (!_window || !_dockingSettings || _dockingSettings.Side() == Model::DockPosition::None)
     {
         return;
     }
@@ -1739,7 +1769,7 @@ void IslandWindow::_enterQuakeMode()
     auto hmon = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
 
     // Get the size and position of the window that we should occupy
-    const auto newRect{ _getQuakeModeSize(hmon) };
+    const auto newRect{ _getDockedSize(hmon) };
 
     SetWindowPos(GetHandle(),
                  HWND_TOP,
@@ -1758,7 +1788,7 @@ void IslandWindow::_enterQuakeMode()
 // - <none>
 // Return Value:
 // - <none>
-til::rect IslandWindow::_getQuakeModeSize(HMONITOR hmon)
+til::rect IslandWindow::_getDockedSize(HMONITOR hmon)
 {
     MONITORINFO nearestMonitorInfo;
 
@@ -1779,17 +1809,69 @@ til::rect IslandWindow::_getQuakeModeSize(HMONITOR hmon)
     const til::size ncSize{ GetTotalNonClientExclusiveSize(dpix) };
     const auto availableSpace = desktopDimensions + ncSize;
 
-    // GH#10201 - The borders are still visible in quake mode, so make us 1px
-    // smaller on either side to account for that, so they don't hang onto
-    // adjacent monitors.
-    const til::point origin{
-        ::base::ClampSub(nearestMonitorInfo.rcWork.left, (ncSize.width / 2)) + 1,
-        (nearestMonitorInfo.rcWork.top)
-    };
-    const til::size dimensions{
-        availableSpace.width - 2,
-        availableSpace.height / 2
-    };
+    // // GH#10201 - The borders are still visible in quake mode, so make us 1px
+    // // smaller on either side to account for that, so they don't hang onto
+    // // adjacent monitors.
+    // const til::point origin{
+    //     ::base::ClampSub(nearestMonitorInfo.rcWork.left, (ncSize.width / 2)) + 1,
+    //     (nearestMonitorInfo.rcWork.top)
+    // };
+    // const til::size dimensions{
+    //     availableSpace.width - 2,
+    //     availableSpace.height / 2
+    // };
+
+    const auto singleBorderWidth = ncSize.width / 2;
+    const auto singleBorderHeight = ncSize.height / 2;
+
+    // If it's >1, then use that as a number of px.
+    // If it's <= 1, then use that as a multiplier on the available space
+    const auto settingsWidth = _dockingSettings.Width();
+    const auto width{ settingsWidth > 1.0 ? settingsWidth : (availableSpace.width * settingsWidth) };
+    const auto settingsHeight = _dockingSettings.Height();
+    const auto height{ settingsHeight > 1.0 ? settingsHeight : (availableSpace.height * settingsHeight) };
+
+    const til::size dimensions = { til::math::rounding,
+                                   width,
+                                   height };
+
+    // TODO! account for centerOnLaunch too
+    til::point origin;
+    switch (_dockingSettings.Side())
+    {
+    case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Top:
+    {
+        origin = {
+            (nearestMonitorInfo.rcWork.left - (singleBorderWidth)),
+            (nearestMonitorInfo.rcWork.top)
+        };
+        break;
+    }
+    case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Bottom:
+    {
+        origin = {
+            (nearestMonitorInfo.rcWork.left - (singleBorderWidth)),
+            (nearestMonitorInfo.rcWork.bottom - singleBorderHeight - (dimensions.height))
+        };
+        break;
+    }
+    case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Left:
+    {
+        origin = {
+            (nearestMonitorInfo.rcWork.left - (singleBorderWidth)),
+            (nearestMonitorInfo.rcWork.top)
+        };
+        break;
+    }
+    case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Right:
+    {
+        origin = {
+            (nearestMonitorInfo.rcWork.right - (singleBorderWidth) - (dimensions.width)),
+            (nearestMonitorInfo.rcWork.top)
+        };
+        break;
+    }
+    }
 
     return { origin, dimensions };
 }
