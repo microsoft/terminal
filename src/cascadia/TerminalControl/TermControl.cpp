@@ -219,6 +219,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
         });
+
+        // TODO! almost certainly need a revoker
+        // RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [weakThis = get_weak()](auto&&, auto&&) {
+        //     if (auto control{ weakThis.get() }; !control->_IsClosing())
+        //     {
+        //         control->_core.Visible(control->Visibility() == Visibility::Visible);
+        //     }
+        // });
+
+        LayoutUpdated([weakThis = get_weak()](auto&&, auto&&) {
+            if (auto control{ weakThis.get() }; !control->_IsClosing())
+            {
+                control->_core.Visible(control->Parent() != nullptr);
+            }
+        });
     }
 
     // Function Description:

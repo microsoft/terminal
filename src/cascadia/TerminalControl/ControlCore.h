@@ -139,6 +139,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode);
 
+        void Visible(bool visible);
+
         void Close();
 
 #pragma region ICoreState
@@ -346,6 +348,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         size_t _automaticProgress = 0;
         bool _gotFirstByte{ false };
         til::point _restartedAt{ 0, 0 };
+        bool _visible{ true };
 
         Windows::Foundation::Collections::IVector<int32_t> _cachedSearchResultRows{ nullptr };
 

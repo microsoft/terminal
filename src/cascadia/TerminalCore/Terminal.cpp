@@ -1631,3 +1631,7 @@ bool Terminal::HasContentAfter(const til::point p)
 {
     return p < _activeBuffer().GetLastNonSpaceCharacter();
 }
+bool Terminal::InOutputState() const
+{
+    return _currentPromptState == PromptState::Output;
+}

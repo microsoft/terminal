@@ -240,6 +240,7 @@ public:
     void ClearPatternTree();
 
     bool HasContentAfter(const til::point at);
+    bool InOutputState() const;
 
     const std::optional<til::color> GetTabColor() const;
 

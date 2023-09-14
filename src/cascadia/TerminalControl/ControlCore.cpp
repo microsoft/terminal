@@ -1419,6 +1419,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return progressStateFromApp;
         }
+        else if (!_gotFirstByte)
+        {
+            return static_cast<size_t>(DispatchTypes::TaskbarState::Indeterminate);
+        }
         return static_cast<size_t>(_automaticProgressState); // _terminal->GetTaskbarState();
     }
 
@@ -1986,6 +1990,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //     // Though i guess the first one does too so that's okay
             //     _TaskbarProgressChangedHandlers(*this, nullptr);
             // }
+        }
+        else
+        {
+            // TODO! throttle
+            if (!_visible && _terminal->InOutputState())
+            {
+                _automaticProgressState = DispatchTypes::TaskbarState::Indeterminate;
+                _TaskbarProgressChangedHandlers(*this, nullptr);
+            }
         }
 
         try
@@ -2693,5 +2706,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Relies on the anchor set in AnchorContextMenu
         return _clickedOnMark(_contextMenuBufferPosition,
                               [](const ::ScrollMark& m) -> bool { return !m.HasOutput(); });
+    }
+
+    void ControlCore::Visible(bool visible)
+    {
+        _visible = visible;
+        if (visible && _automaticProgressState == DispatchTypes::TaskbarState::Indeterminate)
+        {
+            _automaticProgressState = DispatchTypes::TaskbarState::Clear;
+            _TaskbarProgressChangedHandlers(*this, nullptr);
+        }
     }
 }
