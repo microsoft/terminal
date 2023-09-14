@@ -239,6 +239,8 @@ public:
     void UpdatePatternsUnderLock();
     void ClearPatternTree();
 
+    bool HasContentAfter(const til::point at);
+
     const std::optional<til::color> GetTabColor() const;
 
     winrt::Microsoft::Terminal::Core::Scheme GetColorScheme() const;

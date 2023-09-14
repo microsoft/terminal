@@ -286,6 +286,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             std::shared_ptr<ThrottledFuncTrailing<>> tsfTryRedrawCanvas;
             std::unique_ptr<til::throttled_func_trailing<>> updatePatternLocations;
             std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
+            std::shared_ptr<ThrottledFuncTrailing<>> lookForOutput;
         };
 
         std::atomic<bool> _initializedTerminal{ false };
@@ -340,6 +341,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::shared_mutex<SharedState> _shared;
 
         til::point _contextMenuBufferPosition{ 0, 0 };
+
+        ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState _automaticProgressState = ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState::Clear;
+        size_t _automaticProgress = 0;
+        bool _gotFirstByte{ false };
+        til::point _restartedAt{ 0, 0 };
 
         Windows::Foundation::Collections::IVector<int32_t> _cachedSearchResultRows{ nullptr };
 

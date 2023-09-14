@@ -211,6 +211,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     core->_ScrollPositionChangedHandlers(*core, update);
                 }
             });
+
+        shared->lookForOutput = std::make_unique<ThrottledFuncTrailing<>>(
+            _dispatcher,
+            SearchAfterChangeDelay,
+            [/*weakTerminal = std::weak_ptr{ _terminal }, */ weakThis = get_weak()]() {
+                // if (const auto t = weakTerminal.lock())
+                if (auto core{ weakThis.get() }; !core->_IsClosing())
+                {
+                    auto lock = core->_terminal->LockForWriting();
+                    if (core->_terminal->HasContentAfter(core->_restartedAt))
+                    {
+                        core->_gotFirstByte = true;
+                        core->_automaticProgressState = DispatchTypes::TaskbarState::Clear;
+                        core->_TaskbarProgressChangedHandlers(*core, nullptr);
+                    }
+                }
+            });
     }
 
     ControlCore::~ControlCore()
@@ -276,6 +293,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // Subscribe to the connection's disconnected event and call our connection closed handlers.
             _connectionStateChangedRevoker = newConnection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
+                // if (_connection.State() > TerminalConnection::ConnectionState::Connecting &&
+                //     _automaticProgressState == DispatchTypes::TaskbarState::Indeterminate)
+                // {
+                //     _automaticProgressState = DispatchTypes::TaskbarState::Clear;
+                //     _TaskbarProgressChangedHandlers(*this, nullptr);
+                // }
                 _ConnectionStateChangedHandlers(*this, nullptr);
             });
 
@@ -296,6 +319,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // This event is explicitly revoked in the destructor: does not need weak_ref
             _connectionOutputEventRevoker = _connection.TerminalOutput(winrt::auto_revoke, { this, &ControlCore::_connectionOutputHandler });
+
+            if (_connection.State() < TerminalConnection::ConnectionState::Connected)
+            {
+                _gotFirstByte = false;
+                _automaticProgressState = DispatchTypes::TaskbarState::Indeterminate;
+                _restartedAt = _initializedTerminal.load(std::memory_order_relaxed) ? _terminal->GetTextBuffer().GetLastNonSpaceCharacter() : _restartedAt;
+                _TaskbarProgressChangedHandlers(*this, nullptr);
+            }
         }
 
         // Fire off a connection state changed notification, to let our hosting
@@ -1382,7 +1413,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - The taskbar state of this control
     const size_t ControlCore::TaskbarState() const noexcept
     {
-        return _terminal->GetTaskbarState();
+        // The CLI's progress always takes precedence.
+        if (const auto progressStateFromApp{ _terminal->GetTaskbarState() };
+            static_cast<DispatchTypes::TaskbarState>(progressStateFromApp) != DispatchTypes::TaskbarState::Clear)
+        {
+            return progressStateFromApp;
+        }
+        return static_cast<size_t>(_automaticProgressState); // _terminal->GetTaskbarState();
     }
 
     // Method Description:
@@ -1391,7 +1428,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - The taskbar progress of this control
     const size_t ControlCore::TaskbarProgress() const noexcept
     {
-        return _terminal->GetTaskbarProgress();
+        // The CLI's progress always takes precedence.
+        if (const auto progressStateFromApp{ _terminal->GetTaskbarState() };
+            static_cast<DispatchTypes::TaskbarState>(progressStateFromApp) != DispatchTypes::TaskbarState::Clear)
+        {
+            return _terminal->GetTaskbarProgress();
+        }
+        return _automaticProgress; // _terminal->GetTaskbarState();
     }
 
     int ControlCore::ScrollOffset()
@@ -1916,6 +1959,35 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     void ControlCore::_connectionOutputHandler(const hstring& hstr)
     {
+        if (!_gotFirstByte)
+        {
+            const auto shared = _shared.lock_shared();
+            if (shared->lookForOutput)
+            {
+                shared->lookForOutput->Run();
+            }
+
+            // // ConPTY is known to send
+            // // * L"\x1b[?9001h\x1b[?1004h"
+            // // * L"\x1b[6n"
+            // //
+            // // on startup. It might be changed in the future. You might think a
+            // // useful heuristic would be wait till we get a sequence that
+            // // doesn't start with an esc char. You'd be wrong - for something
+            // // like bash, it's going to write a lot of frames that start with an
+            // // ESC. Even just typing - turns the cursor on and off, moves it,
+            // // clears the input line, etc.
+            // // if (!hstr.empty() && hstr != L'\x1b')
+            // if (hstr != L"\x1b[?9001h\x1b[?1004h" && hstr != L"\x1b[6n")
+            // {
+            //     _gotFirstByte = true;
+            //     _automaticProgressState = DispatchTypes::TaskbarState::Clear;
+            //     // TODO! not on the output thread dingus
+            //     // Though i guess the first one does too so that's okay
+            //     _TaskbarProgressChangedHandlers(*this, nullptr);
+            // }
+        }
+
         try
         {
             _terminal->Write(hstr);

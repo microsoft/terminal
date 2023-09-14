@@ -1626,3 +1626,8 @@ extern "C" SHORT OneCoreSafeGetKeyState(_In_ int nVirtKey)
 {
     return GetKeyState(nVirtKey);
 }
+
+bool Terminal::HasContentAfter(const til::point p)
+{
+    return p < _activeBuffer().GetLastNonSpaceCharacter();
+}
