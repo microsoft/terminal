@@ -61,8 +61,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollingPointerPoint{ std::nullopt },
         _autoScrollTimer{},
         _lastAutoScrollUpdateTime{ std::nullopt },
-        _cursorTimer{},
-        _blinkTimer{},
         _searchBox{ nullptr }
     {
         InitializeComponent();
@@ -1080,53 +1078,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Set up blinking cursor
         int blinkTime = GetCaretBlinkTime();
-        if (blinkTime != INFINITE)
-        {
-            // Create a timer
-            DispatcherTimer cursorTimer;
-            cursorTimer.Interval(std::chrono::milliseconds(blinkTime));
-            cursorTimer.Tick({ get_weak(), &TermControl::_CursorTimerTick });
-            _cursorTimer.emplace(std::move(cursorTimer));
-            // As of GH#6586, don't start the cursor timer immediately, and
-            // don't show the cursor initially. We'll show the cursor and start
-            // the timer when the control is first focused.
-            //
-            // As of GH#11411, turn on the cursor if we've already been marked
-            // as focused. We suspect that it's possible for the Focused event
-            // to fire before the LayoutUpdated. In that case, the
-            // _GotFocusHandler would mark us _focused, but find that a
-            // _cursorTimer doesn't exist, and it would never turn on the
-            // cursor. To mitigate, we'll initialize the cursor's 'on' state
-            // with `_focused` here.
-            _core.CursorOn(_focused || _displayCursorWhileBlurred());
-            if (_displayCursorWhileBlurred())
-            {
-                _cursorTimer->Start();
-            }
-        }
-        else
-        {
-            // The user has disabled cursor blinking
-            _cursorTimer = std::nullopt;
-        }
-
-        // Set up blinking attributes
         auto animationsEnabled = TRUE;
         SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
-        if (animationsEnabled && blinkTime != INFINITE)
-        {
-            // Create a timer
-            DispatcherTimer blinkTimer;
-            blinkTimer.Interval(std::chrono::milliseconds(blinkTime));
-            blinkTimer.Tick({ get_weak(), &TermControl::_BlinkTimerTick });
-            blinkTimer.Start();
-            _blinkTimer.emplace(std::move(blinkTimer));
-        }
-        else
-        {
-            // The user has disabled blinking
-            _blinkTimer = std::nullopt;
-        }
+        _core.CursorBlinkTime(std::chrono::milliseconds(blinkTime == INFINITE ? 0 : blinkTime));
+        _core.VtBlinkEnabled(animationsEnabled);
 
         // Now that the renderer is set up, update the appearance for initialization
         _UpdateAppearanceFromUIThread(_core.FocusedAppearance());
@@ -1487,14 +1442,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (vkey && keyDown && _automationPeer)
         {
             get_self<TermControlAutomationPeer>(_automationPeer)->RecordKeyEvent(vkey);
-        }
-
-        if (_cursorTimer)
-        {
-            // Manually show the cursor when a key is pressed. Restarting
-            // the timer prevents flickering.
-            _core.CursorOn(_core.SelectionMode() != SelectionInteractionMode::Mark);
-            _cursorTimer->Start();
         }
 
         return handled;
@@ -1965,18 +1912,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             TSFInputControl().NotifyFocusEnter();
         }
 
-        if (_cursorTimer)
-        {
-            // When the terminal focuses, show the cursor immediately
-            _core.CursorOn(_core.SelectionMode() != SelectionInteractionMode::Mark);
-            _cursorTimer->Start();
-        }
-
-        if (_blinkTimer)
-        {
-            _blinkTimer->Start();
-        }
-
         // Only update the appearance here if an unfocused config exists - if an
         // unfocused config does not exist then we never would have switched
         // appearances anyway so there's no need to switch back upon gaining
@@ -2013,17 +1948,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (TSFInputControl() != nullptr)
         {
             TSFInputControl().NotifyFocusLeave();
-        }
-
-        if (_cursorTimer && !_displayCursorWhileBlurred())
-        {
-            _cursorTimer->Stop();
-            _core.CursorOn(false);
-        }
-
-        if (_blinkTimer)
-        {
-            _blinkTimer->Stop();
         }
 
         // Check if there is an unfocused config we should set the appearance to
@@ -2089,34 +2013,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto scaleX = sender.CompositionScaleX();
 
         _core.ScaleChanged(scaleX);
-    }
-
-    // Method Description:
-    // - Toggle the cursor on and off when called by the cursor blink timer.
-    // Arguments:
-    // - sender: not used
-    // - e: not used
-    void TermControl::_CursorTimerTick(const Windows::Foundation::IInspectable& /* sender */,
-                                       const Windows::Foundation::IInspectable& /* e */)
-    {
-        if (!_IsClosing())
-        {
-            _core.BlinkCursor();
-        }
-    }
-
-    // Method Description:
-    // - Toggle the blinking rendition state when called by the blink timer.
-    // Arguments:
-    // - sender: not used
-    // - e: not used
-    void TermControl::_BlinkTimerTick(const Windows::Foundation::IInspectable& /* sender */,
-                                      const Windows::Foundation::IInspectable& /* e */)
-    {
-        if (!_IsClosing())
-        {
-            _core.BlinkAttributeTick();
-        }
     }
 
     // Method Description:

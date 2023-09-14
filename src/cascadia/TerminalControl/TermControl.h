@@ -244,9 +244,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellDarkAnimation{ nullptr };
         Windows::UI::Xaml::DispatcherTimer _bellLightTimer{ nullptr };
 
-        std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
-        std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
-
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         bool _showMarksInScrollbar{ false };
 
@@ -313,8 +310,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::fire_and_forget _HyperlinkHandler(Windows::Foundation::IInspectable sender, Control::OpenHyperlinkEventArgs e);
 
-        void _CursorTimerTick(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
-        void _BlinkTimerTick(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
         void _BellLightOff(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
 
         void _SetEndSelectionPointAtCursor(const Windows::Foundation::Point& cursorPosition);

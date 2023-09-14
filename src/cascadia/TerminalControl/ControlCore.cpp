@@ -212,6 +212,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     core->_ScrollPositionChangedHandlers(*core, update);
                 }
             });
+
+        _cursorTimer = _dispatcher.CreateTimer();
+        _blinkTimer = _dispatcher.CreateTimer();
+
+        _cursorTimer.IsRepeating(true);
+        _blinkTimer.IsRepeating(true);
+
+        _cursorTimer.Tick({ get_weak(), &ControlCore::_cursorTimerTick });
+        _blinkTimer.Tick({ get_weak(), &ControlCore::_blinkTimerTick });
     }
 
     ControlCore::~ControlCore()
@@ -237,6 +246,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         shared->tsfTryRedrawCanvas.reset();
         shared->updatePatternLocations.reset();
         shared->updateScrollBar.reset();
+        if (_cursorTimer)
+        {
+            _cursorTimer.Stop();
+            _cursorTimer = nullptr;
+        }
+        if (_blinkTimer)
+        {
+            _blinkTimer.Stop();
+            _blinkTimer = nullptr;
+        }
     }
 
     void ControlCore::AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
@@ -409,6 +428,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _initializedTerminal.store(true, std::memory_order_relaxed);
         } // scope for TerminalLock
+
+        // Set the original intervals and start the timers
+        _updateTimers();
 
         // Start the connection outside of lock, because it could
         // start writing output immediately.
@@ -632,6 +654,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 return true;
             }
+        }
+
+        // Force the cursor to be visible
+        if (_cursorTimer)
+        {
+            CursorOn(SelectionMode() != SelectionInteractionMode::Mark);
+            _cursorTimer.Start();
         }
 
         // If the terminal translated the key, mark the event as handled.
@@ -1438,6 +1467,46 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->GetBufferHeight();
     }
 
+    void ControlCore::_updateTimers()
+    {
+        if (_cursorTimer)
+        {
+            _cursorTimer.Interval(_cursorBlinkTime);
+            if (_cursorBlinkTime == std::chrono::milliseconds(0))
+            {
+                _cursorTimer.Stop();
+            }
+            else
+            {
+                _cursorTimer.Start();
+            }
+        }
+        if (_blinkTimer)
+        {
+            _blinkTimer.Interval(_cursorBlinkTime);
+            if (_cursorBlinkTime == std::chrono::milliseconds(0) || !_blinkAnimationEnabled)
+            {
+                _blinkTimer.Stop();
+            }
+            else
+            {
+                _blinkTimer.Start();
+            }
+        }
+    }
+
+    void ControlCore::CursorBlinkTime(Windows::Foundation::TimeSpan t)
+    {
+        _cursorBlinkTime = t;
+        _updateTimers();
+    }
+
+    void ControlCore::VtBlinkEnabled(bool b)
+    {
+        _blinkAnimationEnabled = b;
+        _updateTimers();
+    }
+
     void ControlCore::_terminalWarningBell()
     {
         // Since this can only ever be triggered by output from the connection,
@@ -1648,6 +1717,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _closing = true;
 
+            _cursorTimer.Stop();
+            _blinkTimer.Stop();
+
             // Ensure Close() doesn't hang, waiting for MidiAudio to finish playing an hour long song.
             _midiAudio.BeginSkip();
 
@@ -1703,7 +1775,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _TabColorChangedHandlers(*this, nullptr);
     }
 
-    void ControlCore::BlinkAttributeTick()
+    void ControlCore::_blinkTimerTick(const IInspectable&, const IInspectable&)
     {
         const auto lock = _terminal->LockForWriting();
 
@@ -1711,7 +1783,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         renderSettings.ToggleBlinkRendition(*_renderer);
     }
 
-    void ControlCore::BlinkCursor()
+    void ControlCore::_cursorTimerTick(const IInspectable&, const IInspectable&)
     {
         const auto lock = _terminal->LockForWriting();
         _terminal->BlinkCursor();
@@ -2214,12 +2286,30 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::GotFocus()
     {
         _focusChanged(true);
+        if (_cursorTimer)
+        {
+            CursorOn(SelectionMode() != SelectionInteractionMode::Mark);
+            _cursorTimer.Start();
+        }
+        if (_blinkTimer)
+        {
+            _blinkTimer.Start();
+        }
     }
 
     // See GotFocus.
     void ControlCore::LostFocus()
     {
         _focusChanged(false);
+        if (_cursorTimer && !false /*TODO DH*/)
+        {
+            _cursorTimer.Stop();
+            CursorOn(false);
+        }
+        if (_blinkTimer)
+        {
+            _blinkTimer.Stop();
+        }
     }
 
     void ControlCore::_focusChanged(bool focused)

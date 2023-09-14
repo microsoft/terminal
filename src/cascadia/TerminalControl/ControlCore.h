@@ -192,8 +192,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma endregion
 
-        void BlinkAttributeTick();
-        void BlinkCursor();
         bool CursorOn() const;
         void CursorOn(const bool isCursorOn);
 
@@ -244,6 +242,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool ShouldShowSelectCommand();
         bool ShouldShowSelectOutput();
+
+        Windows::Foundation::TimeSpan CursorBlinkTime() { return _cursorBlinkTime; }
+        bool VtBlinkEnabled() { return _blinkAnimationEnabled; }
+        void CursorBlinkTime(Windows::Foundation::TimeSpan v);
+        void VtBlinkEnabled(bool v);
 
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
@@ -337,6 +340,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t _owningHwnd{ 0 };
 
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
+        winrt::Windows::System::DispatcherQueueTimer _cursorTimer{ nullptr };
+        winrt::Windows::System::DispatcherQueueTimer _blinkTimer{ nullptr };
         til::shared_mutex<SharedState> _shared;
 
         til::point _contextMenuBufferPosition{ 0, 0 };
@@ -375,6 +380,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         MidiAudio _midiAudio;
         winrt::Windows::System::DispatcherQueueTimer _midiAudioSkipTimer{ nullptr };
 
+        winrt::Windows::Foundation::TimeSpan _cursorBlinkTime{ std::chrono::milliseconds(500) };
+        bool _blinkAnimationEnabled{ true };
+
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr);
         winrt::fire_and_forget _renderEngineSwapChainChanged(const HANDLE handle);
@@ -399,6 +407,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             til::point_span (*getSpan)(const ::ScrollMark&));
 
         bool _clickedOnMark(const til::point& pos, bool (*filter)(const ::ScrollMark&));
+
+        void _updateTimers();
+        void _cursorTimerTick(const IInspectable&, const IInspectable&);
+        void _blinkTimerTick(const IInspectable&, const IInspectable&);
 
         inline bool _IsClosing() const noexcept
         {

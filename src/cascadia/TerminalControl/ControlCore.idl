@@ -126,7 +126,6 @@ namespace Microsoft.Terminal.Control
 
         Microsoft.Terminal.Core.Point CursorPosition { get; };
         void ResumeRendering();
-        void BlinkAttributeTick();
 
         void Search(String text, Boolean goForward, Boolean caseSensitive);
         void ClearSearch();
@@ -141,7 +140,6 @@ namespace Microsoft.Terminal.Control
         String HoveredUriText { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };
 
-        void BlinkCursor();
         Boolean IsInReadOnlyMode { get; };
         Boolean CursorOn;
         void EnablePainting();
@@ -158,6 +156,9 @@ namespace Microsoft.Terminal.Control
         void ContextMenuSelectOutput();
         Boolean ShouldShowSelectCommand();
         Boolean ShouldShowSelectOutput();
+
+        Windows.Foundation.TimeSpan CursorBlinkTime { get; set; };
+        Boolean VtBlinkEnabled { get; set; };
 
         // These events are called from some background thread
         event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
