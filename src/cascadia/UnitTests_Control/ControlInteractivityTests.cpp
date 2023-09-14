@@ -309,6 +309,8 @@ namespace ControlUnitTests
 
         const til::size fontSize{ 9, 21 };
 
+        interactivity->GotFocus();
+
         Log::Comment(L"Click on the terminal");
         const til::point terminalPosition0{ 0, 0 };
         const auto cursorPosition0 = terminalPosition0 * fontSize;
@@ -330,9 +332,7 @@ namespace ControlUnitTests
                                     leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
-                                    true, // focused,
-                                    cursorPosition1.to_core_point(),
-                                    true);
+                                    cursorPosition1.to_core_point());
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
@@ -344,9 +344,7 @@ namespace ControlUnitTests
                                     leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
-                                    true, // focused,
-                                    cursorPosition2.to_core_point(),
-                                    true);
+                                    cursorPosition2.to_core_point());
         Log::Comment(L"Verify that there's now two selections (one on each row)");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(2u, core->_terminal->GetSelectionRects().size());
@@ -381,9 +379,7 @@ namespace ControlUnitTests
                                     leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
-                                    true, // focused,
-                                    cursorPosition4.to_core_point(),
-                                    true);
+                                    cursorPosition4.to_core_point());
         Log::Comment(L"Verify that there's now one selection");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
@@ -415,6 +411,8 @@ namespace ControlUnitTests
 
         const til::size fontSize{ 9, 21 };
 
+        interactivity->GotFocus();
+
         Log::Comment(L"Click on the terminal");
         const til::point terminalPosition0{ 5, 5 };
         const auto cursorPosition0{ terminalPosition0 * fontSize };
@@ -438,9 +436,7 @@ namespace ControlUnitTests
                                     leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
-                                    true, // focused,
-                                    cursorPosition1.to_core_point(),
-                                    true);
+                                    cursorPosition1.to_core_point());
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
@@ -567,6 +563,8 @@ namespace ControlUnitTests
 
         const til::size fontSize{ 9, 21 };
 
+        interactivity->GotFocus();
+
         Log::Comment(L"Click on the terminal");
         const til::point cursorPosition0{ 6, 0 };
         interactivity->PointerPressed(0,
@@ -588,9 +586,7 @@ namespace ControlUnitTests
                                     leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
-                                    true, // focused,
-                                    cursorPosition1.to_core_point(),
-                                    true);
+                                    cursorPosition1.to_core_point());
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
@@ -612,6 +608,8 @@ namespace ControlUnitTests
         const auto modifiers = ControlKeyStates();
         const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
         const Control::MouseButtonState noMouseDown{};
+
+        interactivity->GotFocus();
 
         const til::size fontSize{ 9, 21 };
         Log::Comment(L"Click on the terminal");
@@ -635,9 +633,7 @@ namespace ControlUnitTests
                                     leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
-                                    true, // focused,
-                                    cursorPosition1.to_core_point(),
-                                    true);
+                                    cursorPosition1.to_core_point());
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
@@ -663,9 +659,7 @@ namespace ControlUnitTests
                                     leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
-                                    true, // focused,
-                                    cursorPosition2.to_core_point(),
-                                    false);
+                                    cursorPosition2.to_core_point());
 
         Log::Comment(L"The selection should be unchanged.");
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
@@ -691,6 +685,8 @@ namespace ControlUnitTests
         auto expectedTop = 0;
         auto expectedViewHeight = 20;
         auto expectedBufferHeight = 20;
+
+        interactivity->GotFocus();
 
         auto scrollChangedHandler = [&](auto&&, const Control::ScrollPositionChangedArgs& args) mutable {
             VERIFY_ARE_EQUAL(expectedTop, args.ViewTop());
@@ -756,9 +752,7 @@ namespace ControlUnitTests
                                     leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
-                                    true, // focused,
-                                    cursorPosition1.to_core_point(),
-                                    true);
+                                    cursorPosition1.to_core_point());
         Log::Comment(L"Verify that there's still no selection");
         VERIFY_IS_FALSE(core->HasSelection());
     }
@@ -788,6 +782,8 @@ namespace ControlUnitTests
 
         const til::size fontSize{ 9, 21 };
 
+        interactivity->GotFocus();
+
         Log::Comment(L"Click on the terminal");
         const til::point terminalPosition0{ 5, 5 };
         const auto cursorPosition0{ terminalPosition0 * fontSize };
@@ -811,9 +807,7 @@ namespace ControlUnitTests
                                     leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
-                                    true, // focused,
-                                    cursorPosition1.to_core_point(),
-                                    true);
+                                    cursorPosition1.to_core_point());
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
@@ -872,9 +866,7 @@ namespace ControlUnitTests
                                     leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
-                                    true, // focused,
-                                    cursorPosition0.to_core_point(),
-                                    true);
+                                    cursorPosition0.to_core_point());
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
         {
@@ -898,9 +890,7 @@ namespace ControlUnitTests
                                     leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
-                                    true, // focused,
-                                    cursorPosition1.to_core_point(),
-                                    true);
+                                    cursorPosition1.to_core_point());
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
         {

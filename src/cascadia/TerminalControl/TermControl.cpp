@@ -1490,10 +1490,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Focus(FocusState::Pointer);
         }
 
-        // Mark that this pointer event actually started within our bounds.
-        // We'll need this later, for PointerMoved events.
-        _pointerPressedInBounds = true;
-
         if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             const auto contactRect = point.Properties().ContactRect();
@@ -1547,9 +1543,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                         TermControl::GetPressedMouseButtons(point),
                                         TermControl::GetPointerUpdateKind(point),
                                         ControlKeyStates(args.KeyModifiers()),
-                                        _focused,
-                                        pixelPosition.to_core_point(),
-                                        _pointerPressedInBounds);
+                                        pixelPosition.to_core_point());
 
             // GH#9109 - Only start an auto-scroll when the drag actually
             // started within our bounds. Otherwise, someone could start a drag
@@ -1590,7 +1584,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto contactRect = point.Properties().ContactRect();
             til::point newTouchPoint{ til::math::rounding, contactRect.X, contactRect.Y };
 
-            _interactivity.TouchMoved(newTouchPoint.to_core_point(), _focused);
+            _interactivity.TouchMoved(newTouchPoint.to_core_point());
         }
 
         args.Handled(true);
@@ -1609,8 +1603,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-
-        _pointerPressedInBounds = false;
 
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);

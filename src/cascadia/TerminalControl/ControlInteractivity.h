@@ -63,11 +63,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                           Control::MouseButtonState buttonState,
                           const unsigned int pointerUpdateKind,
                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                          const bool focused,
-                          const Core::Point pixelPosition,
-                          const bool pointerPressedInBounds);
-        void TouchMoved(const Core::Point newTouchPoint,
-                        const bool focused);
+                          const Core::Point pixelPosition);
+        void TouchMoved(const Core::Point newTouchPoint);
 
         void PointerReleased(const uint32_t pointerId,
                              Control::MouseButtonState buttonState,
@@ -144,6 +141,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         uint64_t _id;
         static std::atomic<uint64_t> _nextId;
+
+        bool _focused{ false };
+
+        bool _pointerPressedInBounds{ false };
 
         unsigned int _numberOfClicks(Core::Point clickPos, Timestamp clickTime);
         void _updateSystemParameterSettings() noexcept;

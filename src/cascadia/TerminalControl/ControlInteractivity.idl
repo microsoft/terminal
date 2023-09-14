@@ -48,12 +48,9 @@ namespace Microsoft.Terminal.Control
                           MouseButtonState buttonState,
                           UInt32 pointerUpdateKind,
                           Microsoft.Terminal.Core.ControlKeyStates modifiers,
-                          Boolean focused,
-                          Microsoft.Terminal.Core.Point pixelPosition,
-                          Boolean pointerPressedInBounds);
+                          Microsoft.Terminal.Core.Point pixelPosition);
 
-        void TouchMoved(Microsoft.Terminal.Core.Point newTouchPoint,
-                        Boolean focused);
+        void TouchMoved(Microsoft.Terminal.Core.Point newTouchPoint);
 
         void PointerReleased(UInt32 pointerId,
                              MouseButtonState buttonState,

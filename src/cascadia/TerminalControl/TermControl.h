@@ -238,7 +238,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::optional<Windows::UI::Input::PointerPoint> _autoScrollingPointerPoint;
         Windows::UI::Xaml::DispatcherTimer _autoScrollTimer;
         std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
-        bool _pointerPressedInBounds{ false };
 
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellDarkAnimation{ nullptr };
