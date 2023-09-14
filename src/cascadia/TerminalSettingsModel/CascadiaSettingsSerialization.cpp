@@ -1371,38 +1371,40 @@ Json::Value CascadiaSettings::ToJson() const
     return json;
 }
 
+bool CascadiaSettings::_resolveDefaultProfileForWindow(const Model::WindowSettings& window,
+                                                       const winrt::guid firstProfileGuid) const
+{
+    if (const auto unparsedDefaultProfile = window.UnparsedDefaultProfile();
+        !unparsedDefaultProfile.empty())
+    {
+        if (const auto profile = GetProfileByName(unparsedDefaultProfile))
+        {
+            window.DefaultProfile(profile.Guid());
+            return false;
+        }
+        return true;
+    }
+
+    // Use the first profile as the new default.
+    window.DefaultProfile(firstProfileGuid);
+    return false;
+}
+
 // Method Description:
 // - Resolves the "defaultProfile", which can be a profile name, to a GUID
 //   and stores it back to the globals.
 void CascadiaSettings::_resolveDefaultProfile() const
 {
     const auto firstProfileGuid{ _allProfiles.GetAt(0).Guid() };
-    bool raisedWarning = false;
-
-    const auto resolveDefaultProfileForWindow = [&](auto& window) {
-        if (const auto unparsedDefaultProfile = window.UnparsedDefaultProfile(); !unparsedDefaultProfile.empty())
-        {
-            if (const auto profile = GetProfileByName(unparsedDefaultProfile))
-            {
-                window.DefaultProfile(profile.Guid());
-                return;
-            }
-            if (!raisedWarning)
-            {
-                _warnings.Append(SettingsLoadWarnings::MissingDefaultProfile);
-                raisedWarning = true;
-            }
-        }
-
-        // Use the first profile as the new default.
-        window.DefaultProfile(firstProfileGuid);
-    };
-
-    resolveDefaultProfileForWindow(*_baseWindowSettings);
+    bool shouldRaiseWarning = _resolveDefaultProfileForWindow(*_baseWindowSettings, firstProfileGuid);
 
     for (const auto& [_, window] : _windows)
     {
-        resolveDefaultProfileForWindow(window);
+        shouldRaiseWarning = _resolveDefaultProfileForWindow(window, firstProfileGuid) || shouldRaiseWarning;
+    }
+    if (shouldRaiseWarning)
+    {
+        _warnings.Append(SettingsLoadWarnings::MissingDefaultProfile);
     }
 }
 

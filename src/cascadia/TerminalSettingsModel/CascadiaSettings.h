@@ -164,6 +164,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _refreshDefaultTerminals();
 
         void _resolveDefaultProfile() const;
+        bool _resolveDefaultProfileForWindow(const Model::WindowSettings& window,
+                                             const winrt::guid firstProfileGuid) const;
         void _resolveNewTabMenuProfiles() const;
         void _resolveNewTabMenuProfilesForWindow(const Model::WindowSettings& window) const;
         void _resolveNewTabMenuProfilesSet(const winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> entries,

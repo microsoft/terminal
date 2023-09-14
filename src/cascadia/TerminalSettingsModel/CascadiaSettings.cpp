@@ -216,7 +216,9 @@ Model::WindowSettings CascadiaSettings::WindowSettings(const winrt::hstring& win
     {
         const auto& quakeSettings{ winrt::make_self<implementation::WindowSettings>() };
         quakeSettings->AddLeastImportantParent(_baseWindowSettings);
+        _resolveDefaultProfileForWindow(*quakeSettings, _allProfiles.GetAt(0).Guid());
         quakeSettings->InitializeForQuakeMode();
+
         return *quakeSettings;
     }
     else

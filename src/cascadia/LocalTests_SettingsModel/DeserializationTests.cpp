@@ -75,6 +75,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(DefaultQuakeWindowSettings);
         TEST_METHOD(LayeredWindowSettings);
         TEST_METHOD(LayeredOnDefaultWindowSettings);
+        TEST_METHOD(TestGeneratedQuakeWindowSettings);
         TEST_METHOD(LoadFragmentsWithMultipleUpdates);
 
     private:
@@ -2081,6 +2082,10 @@ namespace SettingsModelLocalTests
                     "name": "_quake",
                     "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
                     "initialRows": 25,
+                    "dockWindow": {
+                        "side": "bottom",
+                        "height": 0.5
+                    }
                 }
             ],
             "profiles": [
@@ -2117,12 +2122,100 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(15, windowSettings.InitialCols());
             // The user didn't specify a launch mode, but we defaulted to focus mode
             VERIFY_ARE_EQUAL(LaunchMode::FocusMode, windowSettings.LaunchMode());
+
+            // They did, however, ask for custom docking positioning:
+            VERIFY_ARE_EQUAL(DockPosition::Bottom, windowSettings.DockWindow().Side());
         }
         {
             const auto& windowSettings{ settings->WindowSettings(L"I sure don't exist") };
             VERIFY_IS_NOT_NULL(windowSettings);
             VERIFY_ARE_EQUAL(5, windowSettings.InitialRows());
             VERIFY_ARE_EQUAL(15, windowSettings.InitialCols());
+        }
+    }
+
+    void DeserializationTests::TestGeneratedQuakeWindowSettings()
+    {
+        static constexpr std::string_view settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "initialRows": 5,
+            "initialCols": 15,
+            "windows": [
+                {
+                    "name": "foo",
+                    "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "initialRows": 25,
+                }
+            ],
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "one.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "two.exe"
+                }
+            ]
+        })" };
+
+        const auto settings{ winrt::make_self<implementation::CascadiaSettings>(settingsJson, DefaultJson) };
+
+        VERIFY_ARE_EQUAL(1u, settings->AllWindowSettings().Size());
+
+        {
+            const auto& windowSettings{ settings->WindowSettingsDefaults() };
+            VERIFY_IS_NOT_NULL(windowSettings);
+            VERIFY_ARE_EQUAL(5, windowSettings.InitialRows());
+            VERIFY_ARE_EQUAL(15, windowSettings.InitialCols());
+
+            NewTerminalArgs args{};
+            auto profile{ settings->GetProfileForArgs(args, windowSettings) };
+            VERIFY_IS_NOT_NULL(profile);
+            VERIFY_ARE_EQUAL(L"one.exe", profile.Commandline());
+        }
+        {
+            const auto& windowSettings{ settings->WindowSettings(L"_quake") };
+            VERIFY_IS_NOT_NULL(windowSettings);
+            VERIFY_ARE_NOT_EQUAL(settings->WindowSettingsDefaults(), windowSettings);
+            VERIFY_ARE_EQUAL(5, windowSettings.InitialRows());
+            VERIFY_ARE_EQUAL(15, windowSettings.InitialCols());
+            // The user didn't specify a launch mode, but we defaulted to focus mode
+            VERIFY_ARE_EQUAL(LaunchMode::FocusMode, windowSettings.LaunchMode());
+
+            NewTerminalArgs args{};
+            auto profile{ settings->GetProfileForArgs(args, windowSettings) };
+            VERIFY_IS_NOT_NULL(profile);
+            VERIFY_ARE_EQUAL(L"one.exe", profile.Commandline());
+        }
+        {
+            const auto& windowSettings{ settings->WindowSettings(L"foo") };
+            VERIFY_IS_NOT_NULL(windowSettings);
+            VERIFY_ARE_NOT_EQUAL(settings->WindowSettingsDefaults(), windowSettings);
+            VERIFY_ARE_EQUAL(25, windowSettings.InitialRows());
+            VERIFY_ARE_EQUAL(15, windowSettings.InitialCols());
+            VERIFY_ARE_EQUAL(LaunchMode::DefaultMode, windowSettings.LaunchMode());
+
+            NewTerminalArgs args{};
+            auto profile{ settings->GetProfileForArgs(args, windowSettings) };
+            VERIFY_IS_NOT_NULL(profile);
+            VERIFY_ARE_EQUAL(L"two.exe", profile.Commandline());
+        }
+        {
+            const auto& windowSettings{ settings->WindowSettings(L"I sure don't exist") };
+            VERIFY_IS_NOT_NULL(windowSettings);
+            VERIFY_ARE_EQUAL(5, windowSettings.InitialRows());
+            VERIFY_ARE_EQUAL(15, windowSettings.InitialCols());
+
+            NewTerminalArgs args{};
+            auto profile{ settings->GetProfileForArgs(args, windowSettings) };
+            VERIFY_IS_NOT_NULL(profile);
+            VERIFY_ARE_EQUAL(L"one.exe", profile.Commandline());
         }
     }
 
