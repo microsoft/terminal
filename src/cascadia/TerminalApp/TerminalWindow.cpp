@@ -218,7 +218,7 @@ namespace winrt::TerminalApp::implementation
             // that the window size is _first_ set up as something sensible, so
             // leaving fullscreen returns to a reasonable size.
             const auto launchMode = this->GetLaunchMode();
-            if (_WindowProperties->IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
+            if (WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
             {
                 _root->SetFocusMode(true);
             }
@@ -230,7 +230,7 @@ namespace winrt::TerminalApp::implementation
                 _root->Maximized(true);
             }
 
-            if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode) && !_WindowProperties->IsQuakeWindow())
+            if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode))
             {
                 _root->SetFullscreen(true);
             }
@@ -1221,19 +1221,17 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalWindow::WindowName(const winrt::hstring& name)
     {
-        const auto oldIsQuakeMode = _WindowProperties->IsQuakeWindow();
+        const auto oldName = _WindowProperties->WindowName();
         _WindowProperties->WindowName(name);
         if (!_root)
         {
             return;
         }
-        const auto newIsQuakeMode = _WindowProperties->IsQuakeWindow();
-        if (newIsQuakeMode != oldIsQuakeMode)
+
+        if (oldName != name)
         {
-            // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
-            // If we're entering Quake Mode from Focus Mode, then this will do nothing
-            // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
-            _root->SetFocusMode(true);
+            // TODO! reload settings
+
             _IsQuakeWindowChangedHandlers(*this, nullptr);
         }
     }
@@ -1395,11 +1393,6 @@ namespace winrt::TerminalApp::implementation
         return _WindowName.empty() ?
                    winrt::hstring{ fmt::format(L"<{}>", RS_(L"UnnamedWindowName")) } :
                    _WindowName;
-    }
-
-    bool WindowProperties::IsQuakeWindow() const noexcept
-    {
-        return _WindowName == QuakeWindowName;
     }
 
 };

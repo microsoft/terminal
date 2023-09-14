@@ -52,8 +52,6 @@ namespace TerminalApp
         String WindowIdForDisplay { get; };
 
         String VirtualWorkingDirectory { get; set; };
-
-        Boolean IsQuakeWindow();
     };
 
     [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener

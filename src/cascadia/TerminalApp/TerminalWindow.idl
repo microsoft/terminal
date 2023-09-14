@@ -111,7 +111,6 @@ namespace TerminalApp
         WindowProperties WindowProperties { get; };
         void WindowName(String name);
         void WindowId(UInt64 id);
-        Boolean IsQuakeWindow();
 
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.

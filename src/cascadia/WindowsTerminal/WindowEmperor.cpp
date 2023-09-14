@@ -827,13 +827,13 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
     // RequestsTrayIcon setting value, and combine that with the result of each
     // window (which won't change during a settings reload).
     bool needsIcon = _app.Logic().RequestsTrayIcon();
-    {
-        auto windows{ _windows.lock_shared() };
-        for (const auto& _windowThread : *windows)
-        {
-            needsIcon |= _windowThread->Logic().IsQuakeWindow();
-        }
-    }
+    //{
+    //    auto windows{ _windows.lock_shared() };
+    //    for (const auto& _windowThread : *windows)
+    //    {
+    //        needsIcon |= _windowThread->Logic().IsQuakeWindow();
+    //    }
+    //}
 
     if (needsIcon)
     {

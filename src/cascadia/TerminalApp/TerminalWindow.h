@@ -46,7 +46,6 @@ namespace winrt::TerminalApp::implementation
         void WindowId(const uint64_t& value);
         winrt::hstring WindowIdForDisplay() const noexcept;
         winrt::hstring WindowNameForDisplay() const noexcept;
-        bool IsQuakeWindow() const noexcept;
 
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, VirtualWorkingDirectory, _PropertyChangedHandlers, L"");
 
@@ -146,7 +145,6 @@ namespace winrt::TerminalApp::implementation
         void WindowName(const winrt::hstring& value);
         void WindowId(const uint64_t& value);
 
-        bool IsQuakeWindow() const noexcept { return _WindowProperties->IsQuakeWindow(); }
         TerminalApp::WindowProperties WindowProperties() { return *_WindowProperties; }
 
         void AttachContent(winrt::hstring content, uint32_t tabIndex);
