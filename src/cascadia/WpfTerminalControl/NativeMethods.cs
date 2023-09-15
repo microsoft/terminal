@@ -207,12 +207,6 @@ namespace Microsoft.Terminal.Wpf
         public static extern void TerminalUserScroll(IntPtr terminal, int viewTop);
 
         [DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = false)]
-        public static extern uint TerminalStartSelection(IntPtr terminal, TilPoint cursorPosition, bool altPressed);
-
-        [DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = false)]
-        public static extern uint TerminalMoveSelection(IntPtr terminal, TilPoint cursorPosition);
-
-        [DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = false)]
         public static extern void TerminalClearSelection(IntPtr terminal);
 
         [DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = false)]

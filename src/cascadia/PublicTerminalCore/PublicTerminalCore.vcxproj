@@ -14,12 +14,8 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="HwndTerminal.cpp" />
-    <ClCompile Include="HwndTerminalAutomationPeer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="HwndTerminal.hpp" />
-    <ClInclude Include="HwndTerminalAutomationPeer.hpp" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
