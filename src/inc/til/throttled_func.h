@@ -172,7 +172,7 @@ namespace til
                 _func();
             }
 
-            SetThreadpoolTimerEx(_timer.get(), &_delay, 0, 0);
+            SetThreadpoolTimer(_timer.get(), &_delay, 0, 0);
         }
 
         void _trailing_edge()

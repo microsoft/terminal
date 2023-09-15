@@ -1,3 +1,20 @@
 EXPORTS
 DllCanUnloadNow = WINRT_CanUnloadNow                    PRIVATE
 DllGetActivationFactory = WINRT_GetActivationFactory    PRIVATE
+CreateTerminal
+DestroyTerminal
+TerminalSendOutput
+TerminalRegisterScrollCallback
+TerminalTriggerResize
+TerminalTriggerResizeWithDimension
+TerminalCalculateResize
+TerminalDpiChanged
+TerminalUserScroll
+TerminalGetSelection
+TerminalIsSelectionActive
+TerminalSetTheme
+TerminalRegisterWriteCallback
+TerminalSendKeyEvent
+TerminalSendCharEvent
+TerminalBlinkCursor
+TerminalSetCursorVisible
