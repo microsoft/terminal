@@ -373,10 +373,6 @@ public:
         return {};
     }
 
-    void ColorSelection(const til::point /*coordSelectionStart*/, const til::point /*coordSelectionEnd*/, const TextAttribute /*attr*/)
-    {
-    }
-
     const bool IsUiaDataInitialized() const noexcept
     {
         return true;

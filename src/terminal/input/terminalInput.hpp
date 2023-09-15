@@ -1,21 +1,7 @@
-/*+
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
-Module Name:
-- terminalInput.hpp
-
-Abstract:
-- This serves as an adapter between virtual key input from a user and the virtual terminal sequences that are
-  typically emitted by an xterm-compatible console.
-
-Author(s):
-- Michael Niksa (MiNiksa) 30-Oct-2015
---*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
-
-#include "../../types/inc/IInputEvent.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -32,9 +18,9 @@ namespace Microsoft::Console::VirtualTerminal
             bool isRightButtonDown;
         };
 
-        static [[nodiscard]] OutputType MakeUnhandled() noexcept;
-        static [[nodiscard]] OutputType MakeOutput(const std::wstring_view& str);
-        [[nodiscard]] OutputType HandleKey(const IInputEvent* const pInEvent);
+        [[nodiscard]] static OutputType MakeUnhandled() noexcept;
+        [[nodiscard]] static OutputType MakeOutput(const std::wstring_view& str);
+        [[nodiscard]] OutputType HandleKey(const INPUT_RECORD& pInEvent);
         [[nodiscard]] OutputType HandleFocus(bool focused) const;
         [[nodiscard]] OutputType HandleMouse(til::point position, unsigned int button, short modifierKeyState, short delta, MouseButtonState state);
 
@@ -88,9 +74,9 @@ namespace Microsoft::Console::VirtualTerminal
         bool _forceDisableWin32InputMode{ false };
 
         [[nodiscard]] OutputType _makeCharOutput(wchar_t ch);
-        static [[nodiscard]] OutputType _makeEscapedOutput(wchar_t wch);
-        static [[nodiscard]] OutputType _makeWin32Output(const KeyEvent& key);
-        static [[nodiscard]] OutputType _searchWithModifier(const KeyEvent& keyEvent);
+        [[nodiscard]] static OutputType _makeEscapedOutput(wchar_t wch);
+        [[nodiscard]] static OutputType _makeWin32Output(const KEY_EVENT_RECORD& key);
+        [[nodiscard]] static OutputType _searchWithModifier(const KEY_EVENT_RECORD& keyEvent);
 
 #pragma region MouseInputState Management
         // These methods are defined in mouseInputState.cpp
@@ -106,9 +92,9 @@ namespace Microsoft::Console::VirtualTerminal
 #pragma endregion
 
 #pragma region MouseInput
-        static [[nodiscard]] OutputType _GenerateDefaultSequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
-        static [[nodiscard]] OutputType _GenerateUtf8Sequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
-        static [[nodiscard]] OutputType _GenerateSGRSequence(til::point position, unsigned int button, bool isDown, bool isHover, short modifierKeyState, short delta);
+        [[nodiscard]] static OutputType _GenerateDefaultSequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
+        [[nodiscard]] static OutputType _GenerateUtf8Sequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
+        [[nodiscard]] static OutputType _GenerateSGRSequence(til::point position, unsigned int button, bool isDown, bool isHover, short modifierKeyState, short delta);
 
         [[nodiscard]] OutputType _makeAlternateScrollOutput(short delta) const;
 

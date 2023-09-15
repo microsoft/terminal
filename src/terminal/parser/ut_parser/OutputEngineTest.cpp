@@ -391,7 +391,113 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
 
-    TEST_METHOD(TestCsiIgnore)
+    TEST_METHOD(TestCsiSubParam)
+    {
+        auto dispatch = std::make_unique<DummyDispatch>();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        // "\e[:3;9:5::8J"
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L'[');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
+        mach.ProcessCharacter(L':');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        mach.ProcessCharacter(L'3');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        mach.ProcessCharacter(L';');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+        mach.ProcessCharacter(L'9');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+        mach.ProcessCharacter(L':');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        mach.ProcessCharacter(L'5');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        mach.ProcessCharacter(L':');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        mach.ProcessCharacter(L':');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        mach.ProcessCharacter(L'8');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        mach.ProcessCharacter(L'J');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+
+        VERIFY_ARE_EQUAL(mach._parameters.size(), 2u);
+        VERIFY_IS_FALSE(mach._parameters.at(0).has_value());
+        VERIFY_ARE_EQUAL(mach._parameters.at(1), 9);
+
+        VERIFY_ARE_EQUAL(mach._subParameters.size(), 4u);
+        VERIFY_ARE_EQUAL(mach._subParameters.at(0), 3);
+        VERIFY_ARE_EQUAL(mach._subParameters.at(1), 5);
+        VERIFY_IS_FALSE(mach._subParameters.at(2).has_value());
+        VERIFY_ARE_EQUAL(mach._subParameters.at(3), 8);
+
+        VERIFY_ARE_EQUAL(mach._subParameterRanges.at(0).first, 0);
+        VERIFY_ARE_EQUAL(mach._subParameterRanges.at(0).second, 1);
+        VERIFY_ARE_EQUAL(mach._subParameterRanges.at(1).first, 1);
+        VERIFY_ARE_EQUAL(mach._subParameterRanges.at(1).second, 4);
+
+        VERIFY_ARE_EQUAL(mach._subParameterRanges.size(), mach._parameters.size());
+        VERIFY_IS_TRUE(
+            (mach._subParameterRanges.back().second == mach._subParameters.size() - 1) // lastIndex
+            || (mach._subParameterRanges.back().second == mach._subParameters.size()) // or lastIndex + 1
+        );
+    }
+
+    TEST_METHOD(TestCsiMaxSubParamCount)
+    {
+        auto dispatch = std::make_unique<DummyDispatch>();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        Log::Comment(L"Output two parameters with 100 sub parameters each");
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L'[');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
+        for (size_t nParam = 0; nParam < 2; nParam++)
+        {
+            mach.ProcessCharacter(L'3');
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+            for (size_t i = 0; i < 100; i++)
+            {
+                mach.ProcessCharacter(L':');
+                VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+                mach.ProcessCharacter(L'0' + i % 10);
+                VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+            }
+            Log::Comment(L"Receiving 100 sub parameters should set the overflow flag");
+            VERIFY_IS_TRUE(mach._subParameterLimitOverflowed);
+            mach.ProcessCharacter(L';');
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+            VERIFY_IS_FALSE(mach._subParameterLimitOverflowed);
+        }
+        mach.ProcessCharacter(L'J');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+
+        Log::Comment(L"Only MAX_SUBPARAMETER_COUNT (6) sub parameters should be stored for each parameter");
+        VERIFY_ARE_EQUAL(mach._subParameters.size(), 12u);
+
+        // Verify that first 6 sub parameters are stored for each parameter.
+        // subParameters = { 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5 }
+        for (size_t i = 0; i < 12; i++)
+        {
+            VERIFY_IS_TRUE(mach._subParameters.at(i).has_value());
+            VERIFY_ARE_EQUAL(mach._subParameters.at(i).value(), gsl::narrow_cast<VTInt>(i % 6));
+        }
+
+        auto firstRange = mach._subParameterRanges.at(0);
+        auto secondRange = mach._subParameterRanges.at(1);
+        VERIFY_ARE_EQUAL(firstRange.first, 0);
+        VERIFY_ARE_EQUAL(firstRange.second, 6);
+        VERIFY_ARE_EQUAL(secondRange.first, 6);
+        VERIFY_ARE_EQUAL(secondRange.second, 12);
+    }
+
+    TEST_METHOD(TestLeadingZeroCsiSubParam)
     {
         auto dispatch = std::make_unique<DummyDispatch>();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -402,12 +508,30 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L'[');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
-        mach.ProcessCharacter(L':');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiIgnore);
         mach.ProcessCharacter(L'3');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiIgnore);
-        mach.ProcessCharacter(L'q');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+        mach.ProcessCharacter(L':');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        for (auto i = 0; i < 50; i++) // Any number of leading zeros should be supported
+        {
+            mach.ProcessCharacter(L'0');
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        }
+        for (auto i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
+        {
+            mach.ProcessCharacter((wchar_t)(L'1' + i));
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiSubParam);
+        }
+        VERIFY_ARE_EQUAL(mach._subParameters.back(), 12345);
+        mach.ProcessCharacter(L'J');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+    }
+
+    TEST_METHOD(TestCsiIgnore)
+    {
+        auto dispatch = std::make_unique<DummyDispatch>();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
 
         mach.ProcessCharacter(AsciiChars::ESC);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
@@ -417,7 +541,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
         mach.ProcessCharacter(L';');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
-        mach.ProcessCharacter(L':');
+        mach.ProcessCharacter(L'=');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiIgnore);
         mach.ProcessCharacter(L'8');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiIgnore);

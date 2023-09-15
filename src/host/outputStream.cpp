@@ -33,18 +33,17 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 // - <none>
 void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
 {
-    std::deque<std::unique_ptr<IInputEvent>> inEvents;
+    InputEventQueue inEvents;
 
     // generate a paired key down and key up event for every
     // character to be sent into the console's input buffer
     for (const auto& wch : response)
     {
         // This wasn't from a real keyboard, so we're leaving key/scan codes blank.
-        KeyEvent keyEvent{ TRUE, 1, 0, 0, wch, 0 };
-
-        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-        keyEvent.SetKeyDown(false);
-        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+        auto keyEvent = SynthesizeKeyEvent(true, 1, 0, 0, wch, 0);
+        inEvents.push_back(keyEvent);
+        keyEvent.Event.KeyEvent.bKeyDown = false;
+        inEvents.push_back(keyEvent);
     }
 
     // TODO GH#4954 During the input refactor we may want to add a "priority" input list
@@ -435,7 +434,7 @@ void ConhostInternalGetSet::NotifyBufferRotation(const int delta)
     }
 }
 
-void ConhostInternalGetSet::MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/)
+void ConhostInternalGetSet::MarkPrompt(const ::ScrollMark& /*mark*/)
 {
     // Not implemented for conhost.
 }
@@ -451,6 +450,10 @@ void ConhostInternalGetSet::MarkOutputStart()
 }
 
 void ConhostInternalGetSet::MarkCommandFinish(std::optional<unsigned int> /*error*/)
+{
+    // Not implemented for conhost.
+}
+void ConhostInternalGetSet::InvokeCompletions(std::wstring_view /*menuJson*/, unsigned int /*replaceLength*/)
 {
     // Not implemented for conhost.
 }

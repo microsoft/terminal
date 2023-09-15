@@ -2,9 +2,11 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
+
 #include <io.h>
 #include <fcntl.h>
-#include <iostream>
+
+#include "../../types/inc/IInputEvent.hpp"
 
 #define JAPANESE_CP 932u
 
@@ -115,6 +117,7 @@ class DbcsTests
     // This test must come before ones that launch another process as launching another process can tamper with the codepage
     // in ways that this test is not expecting.
     TEST_METHOD(TestMultibyteInputRetrieval);
+    TEST_METHOD(TestMultibyteInputCoalescing);
 
     BEGIN_TEST_METHOD(TestDbcsWriteRead)
         TEST_METHOD_PROPERTY(L"Data:fUseTrueTypeFont", L"{true, false}")
@@ -1904,6 +1907,34 @@ void DbcsTests::TestMultibyteInputRetrieval()
     }
 
     FlushConsoleInputBuffer(hIn);
+}
+
+// This test ensures that two separate WriteConsoleInputA with trailing/leading DBCS are joined (coalesced) into a single wide character.
+void DbcsTests::TestMultibyteInputCoalescing()
+{
+    SetConsoleCP(932);
+
+    const auto in = GetStdHandle(STD_INPUT_HANDLE);
+    FlushConsoleInputBuffer(in);
+
+    DWORD count;
+    {
+        const auto record = SynthesizeKeyEvent(true, 1, 123, 456, 0x82, 789);
+        VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInputA(in, &record, 1, &count));
+    }
+    {
+        const auto record = SynthesizeKeyEvent(true, 1, 234, 567, 0xA2, 890);
+        VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInputA(in, &record, 1, &count));
+    }
+
+    // Asking for 2 records and asserting we only got 1 ensures
+    // that we receive the exact number of expected records.
+    INPUT_RECORD actual[2];
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputW(in, &actual[0], 2, &count));
+    VERIFY_ARE_EQUAL(1u, count);
+
+    const auto expected = SynthesizeKeyEvent(true, 1, 123, 456, L'い', 789);
+    VERIFY_ARE_EQUAL(expected, actual[0]);
 }
 
 void DbcsTests::TestDbcsOneByOne()

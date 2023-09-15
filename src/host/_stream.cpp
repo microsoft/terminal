@@ -39,7 +39,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 // - coordCursor - New location of cursor.
 // - fKeepCursorVisible - TRUE if changing window origin desirable when hit right edge
 // Return Value:
-void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point coordCursor, const BOOL fKeepCursorVisible, _Inout_opt_ til::CoordType* psScrollY)
+static void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point coordCursor, const bool interactive, _Inout_opt_ til::CoordType* psScrollY)
 {
     const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
     if (coordCursor.x < 0)
@@ -70,14 +70,51 @@ void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point coordC
 
     if (coordCursor.y >= bufferSize.height)
     {
-        // At the end of the buffer. Scroll contents of screen buffer so new position is visible.
-        StreamScrollRegion(screenInfo);
+        const auto vtIo = ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo();
+        const auto renderer = ServiceLocator::LocateGlobals().pRender;
+        const auto needsConPTYWorkaround = interactive && vtIo->IsUsingVt();
+        auto& buffer = screenInfo.GetTextBuffer();
+        const auto isActiveBuffer = buffer.IsActiveBuffer();
 
-        if (nullptr != psScrollY)
+        // ConPTY translates scrolling into newlines. We don't want that during cooked reads (= "cmd.exe prompts")
+        // because the entire prompt is supposed to fit into the VT viewport, with no scrollback. If we didn't do that,
+        // any prompt larger than the viewport will cause >1 lines to be added to scrollback, even if typing backspaces.
+        // You can test this by removing this branch, launch Windows Terminal, and fill the entire viewport with text in cmd.exe.
+        if (needsConPTYWorkaround)
         {
-            *psScrollY += bufferSize.height - coordCursor.y - 1;
+            buffer.SetAsActiveBuffer(false);
+            buffer.IncrementCircularBuffer(buffer.GetCurrentAttributes());
+            buffer.SetAsActiveBuffer(isActiveBuffer);
+
+            if (isActiveBuffer && renderer)
+            {
+                renderer->TriggerRedrawAll();
+            }
         }
-        coordCursor.y += bufferSize.height - coordCursor.y - 1;
+        else
+        {
+            buffer.IncrementCircularBuffer(buffer.GetCurrentAttributes());
+
+            if (isActiveBuffer)
+            {
+                if (const auto notifier = ServiceLocator::LocateAccessibilityNotifier())
+                {
+                    notifier->NotifyConsoleUpdateScrollEvent(0, -1);
+                }
+                if (renderer)
+                {
+                    static constexpr til::point delta{ 0, -1 };
+                    renderer->TriggerScroll(&delta);
+                }
+            }
+        }
+
+        if (psScrollY)
+        {
+            *psScrollY += 1;
+        }
+
+        coordCursor.y = bufferSize.height - 1;
     }
 
     const auto cursorMovedPastViewport = coordCursor.y > screenInfo.GetViewport().BottomInclusive();
@@ -91,21 +128,19 @@ void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point coordC
         LOG_IF_FAILED(screenInfo.SetViewportOrigin(false, WindowOrigin, true));
     }
 
-    if (fKeepCursorVisible)
+    if (interactive)
     {
         screenInfo.MakeCursorVisible(coordCursor);
     }
-    LOG_IF_FAILED(screenInfo.SetCursorPosition(coordCursor, !!fKeepCursorVisible));
+    LOG_IF_FAILED(screenInfo.SetCursorPosition(coordCursor, interactive));
 }
 
 // As the name implies, this writes text without processing its control characters.
-static size_t _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const DWORD dwFlags, til::CoordType* const psScrollY, const std::wstring_view& text)
+static void _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const std::wstring_view& text, const bool interactive, til::CoordType* psScrollY)
 {
-    const auto keepCursorVisible = WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE);
     const auto wrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
     const auto hasAccessibilityEventing = screenInfo.HasAccessibilityEventing();
     auto& textBuffer = screenInfo.GetTextBuffer();
-    size_t numSpaces = 0;
 
     RowWriteState state{
         .text = text,
@@ -120,8 +155,6 @@ static size_t _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const
         textBuffer.Write(cursorPosition.y, textBuffer.GetCurrentAttributes(), state);
         cursorPosition.x = state.columnEnd;
 
-        numSpaces += gsl::narrow_cast<size_t>(state.columnEnd - state.columnBegin);
-
         if (wrapAtEOL && state.columnEnd >= state.columnLimit)
         {
             textBuffer.SetWrapForced(cursorPosition.y, true);
@@ -132,50 +165,22 @@ static size_t _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const
             screenInfo.NotifyAccessibilityEventing(state.columnBegin, cursorPosition.y, state.columnEnd - 1, cursorPosition.y);
         }
 
-        AdjustCursorPosition(screenInfo, cursorPosition, keepCursorVisible, psScrollY);
+        AdjustCursorPosition(screenInfo, cursorPosition, interactive, psScrollY);
     }
-
-    return numSpaces;
 }
 
-// Routine Description:
-// - This routine writes a string to the screen, processing any embedded
-//   unicode characters.  The string is also copied to the input buffer, if
-//   the output mode is line mode.
-// Arguments:
-// - screenInfo - reference to screen buffer information structure.
-// - pwchBufferBackupLimit - Pointer to beginning of buffer.
-// - pwchBuffer - Pointer to buffer to copy string to.  assumed to be at least as long as pwchRealUnicode.
-//                This pointer is updated to point to the next position in the buffer.
-// - pwchRealUnicode - Pointer to string to write.
-// - pcb - On input, number of bytes to write.  On output, number of bytes written.
-// - pcSpaces - On output, the number of spaces consumed by the written characters.
-// - dwFlags -
-//      WC_INTERACTIVE             backspace overwrites characters, control characters are expanded (as in, to "^X")
-//      WC_KEEP_CURSOR_VISIBLE     change window origin desirable when hit rt. edge
-// Return Value:
-// Note:
-// - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
-[[nodiscard]] NTSTATUS WriteCharsLegacy(SCREEN_INFORMATION& screenInfo,
-                                        _In_range_(<=, pwchBuffer) const wchar_t* const pwchBufferBackupLimit,
-                                        _In_ const wchar_t* pwchBuffer,
-                                        _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
-                                        _Inout_ size_t* const pcb,
-                                        _Out_opt_ size_t* const pcSpaces,
-                                        const til::CoordType sOriginalXPosition,
-                                        const DWORD dwFlags,
-                                        _Inout_opt_ til::CoordType* const psScrollY)
-try
+// This routine writes a string to the screen while handling control characters.
+// `interactive` exists for COOKED_READ_DATA which uses it to transform control characters into visible text like "^X".
+// Similarly, `psScrollY` is also used by it to track whether the underlying buffer circled. It requires this information to know where the input line moved to.
+void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& text, const bool interactive, til::CoordType* psScrollY)
 {
     static constexpr wchar_t tabSpaces[8]{ L' ', L' ', L' ', L' ', L' ', L' ', L' ', L' ' };
 
     auto& textBuffer = screenInfo.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
-    const auto keepCursorVisible = WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE);
     const auto wrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
-    auto it = pwchRealUnicode;
-    const auto end = it + *pcb / sizeof(wchar_t);
-    size_t numSpaces = 0;
+    auto it = text.begin();
+    const auto end = text.end();
 
     // In VT mode, when you have a 120-column terminal you can write 120 columns without the cursor wrapping.
     // Whenever the cursor is in that 120th column IsDelayedEOLWrap() will return true. I'm not sure why the VT parts
@@ -192,7 +197,7 @@ try
         {
             pos.x = 0;
             pos.y++;
-            AdjustCursorPosition(screenInfo, pos, keepCursorVisible, psScrollY);
+            AdjustCursorPosition(screenInfo, pos, interactive, psScrollY);
         }
     }
 
@@ -200,7 +205,7 @@ try
     // If it's not set, we can just straight up give everything to _writeCharsLegacyUnprocessed.
     if (WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
     {
-        numSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { it, end });
+        _writeCharsLegacyUnprocessed(screenInfo, { it, end }, interactive, psScrollY);
         it = end;
     }
 
@@ -209,7 +214,7 @@ try
         const auto nextControlChar = std::find_if(it, end, [](const auto& wch) { return !IS_GLYPH_CHAR(wch); });
         if (nextControlChar != it)
         {
-            numSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { it, nextControlChar });
+            _writeCharsLegacyUnprocessed(screenInfo, { it, nextControlChar }, interactive, psScrollY);
             it = nextControlChar;
         }
 
@@ -218,14 +223,14 @@ try
             switch (*it)
             {
             case UNICODE_NULL:
-                if (WI_IsFlagSet(dwFlags, WC_INTERACTIVE))
+                if (interactive)
                 {
                     break;
                 }
-                numSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { &tabSpaces[0], 1 });
+                _writeCharsLegacyUnprocessed(screenInfo, { &tabSpaces[0], 1 }, interactive, psScrollY);
                 continue;
             case UNICODE_BELL:
-                if (WI_IsFlagSet(dwFlags, WC_INTERACTIVE))
+                if (interactive)
                 {
                     break;
                 }
@@ -233,171 +238,20 @@ try
                 continue;
             case UNICODE_BACKSPACE:
             {
+                // Backspace handling for interactive mode should happen in COOKED_READ_DATA
+                // where it has full control over the text and can delete it directly.
+                // Otherwise handling backspacing tabs/whitespace can turn up complex and bug-prone.
+                assert(!interactive);
                 auto pos = cursor.GetPosition();
-
-                if (WI_IsFlagClear(dwFlags, WC_INTERACTIVE))
-                {
-                    pos.x = textBuffer.GetRowByOffset(pos.y).NavigateToPrevious(pos.x);
-                    AdjustCursorPosition(screenInfo, pos, keepCursorVisible, psScrollY);
-                    continue;
-                }
-
-                const auto moveUp = [&]() {
-                    pos.x = -1;
-                    AdjustCursorPosition(screenInfo, pos, keepCursorVisible, psScrollY);
-
-                    const auto y = cursor.GetPosition().y;
-                    auto& row = textBuffer.GetRowByOffset(y);
-
-                    pos.x = textBuffer.GetSize().RightExclusive();
-                    pos.y = y;
-
-                    if (row.WasDoubleBytePadded())
-                    {
-                        pos.x--;
-                        numSpaces--;
-                    }
-
-                    row.SetWrapForced(false);
-                    row.SetDoubleBytePadded(false);
-                };
-
-                // We have to move up early because the tab handling code below needs to be on
-                // the row of the tab already, so that we can call GetText() for precedingText.
-                if (pos.x == 0 && pos.y != 0)
-                {
-                    moveUp();
-                }
-
-                til::CoordType glyphCount = 1;
-
-                if (pwchBuffer != pwchBufferBackupLimit)
-                {
-                    const auto lastChar = pwchBuffer[-1];
-
-                    // Deleting tabs is a bit tricky, because they have a variable width between 1 and 8 spaces,
-                    // are stored as whitespace but are technically distinct from whitespace.
-                    if (lastChar == UNICODE_TAB)
-                    {
-                        const auto precedingText = textBuffer.GetRowByOffset(pos.y).GetText(pos.x - 8, pos.x);
-
-                        // First, we measure the amount of spaces that precede the cursor in the text buffer,
-                        // which is generally the amount of spaces that we end up deleting. We do it this way,
-                        // because we don't know what kind of complex mix of wide/narrow glyphs precede the tab.
-                        // Basically, by asking the text buffer we get the size information of the preceding text.
-                        if (precedingText.size() >= 2 && precedingText.back() == L' ')
-                        {
-                            auto textIt = precedingText.rbegin() + 1;
-                            const auto textEnd = precedingText.rend();
-
-                            for (; textIt != textEnd && *textIt == L' '; ++textIt)
-                            {
-                                glyphCount++;
-                            }
-                        }
-
-                        // But there's a problem: When you print "  \t" it should delete 6 spaces and not 8.
-                        // In other words, we shouldn't delete any actual preceding whitespaces. We can ask
-                        // the "backup" buffer (= preceding text in the commandline) for this information.
-                        //
-                        // backupEnd points to the character immediately preceding the tab (LastChar).
-                        const auto backupEnd = pwchBuffer - 1;
-                        // backupLimit points to how far back we need to search. Even if we have 9000 characters in our command line,
-                        // we'll only need to check a total of 8 whitespaces. "pwchBuffer - pwchBufferBackupLimit" will
-                        // always be at least 1 because that's the \t character in the backup buffer. In other words,
-                        // backupLimit will at a minimum be equal to backupEnd, or precede it by 7 more characters.
-                        const auto backupLimit = pwchBuffer - std::min<ptrdiff_t>(8, pwchBuffer - pwchBufferBackupLimit);
-                        // Now count how many spaces precede the \t character. "backupEnd - backupBeg" will be the amount.
-                        auto backupBeg = backupEnd;
-                        for (; backupBeg != backupLimit && backupBeg[-1] == L' '; --backupBeg, --glyphCount)
-                        {
-                        }
-
-                        // There's one final problem: A prompt like...
-                        //   fputs("foo: ", stdout);
-                        //   fgets(buffer, stdin);
-                        // ...has a trailing whitespace in front of our pwchBufferBackupLimit which we should not backspace over.
-                        // sOriginalXPosition stores the start of the prompt at the pwchBufferBackupLimit.
-                        if (backupBeg == pwchBufferBackupLimit)
-                        {
-                            glyphCount = pos.x - sOriginalXPosition;
-                        }
-
-                        // Now that we finally know how many columns precede the cursor we can
-                        // subtract the previously determined amount of ' ' from the '\t'.
-                        glyphCount -= gsl::narrow_cast<til::CoordType>(backupEnd - backupBeg);
-
-                        // Can the above code leave glyphCount <= 0? Let's just not find out!
-                        glyphCount = std::max(1, glyphCount);
-                    }
-                    // Control chars in interactive mode were previously written out
-                    // as ^X for instance, so now we also need to delete 2 glyphs.
-                    else if (IS_CONTROL_CHAR(lastChar))
-                    {
-                        glyphCount = 2;
-                    }
-                }
-
-                for (;;)
-                {
-                    // We've already moved up if the cursor was in the first column so
-                    // we need to start off with overwriting the text with whitespace.
-                    // It wouldn't make sense to check the cursor position again already.
-                    {
-                        const auto previousColumn = pos.x;
-                        pos.x = textBuffer.GetRowByOffset(pos.y).NavigateToPrevious(previousColumn);
-
-                        RowWriteState state{
-                            .text = { &tabSpaces[0], 8 },
-                            .columnBegin = pos.x,
-                            .columnLimit = previousColumn,
-                        };
-                        textBuffer.Write(pos.y, textBuffer.GetCurrentAttributes(), state);
-                        numSpaces -= previousColumn - pos.x;
-                    }
-
-                    // The cursor movement logic is a little different for the last iteration, so we exit early here.
-                    glyphCount--;
-                    if (glyphCount <= 0)
-                    {
-                        break;
-                    }
-
-                    // Otherwise, in case we need to delete 2 or more glyphs, we need to ensure we properly wrap lines back up.
-                    if (pos.x == 0 && pos.y != 0)
-                    {
-                        moveUp();
-                    }
-                }
-
-                // After the last iteration the cursor might now be in the first column after a line
-                // that was previously padded with a whitespace in the last column due to a wide glyph.
-                // Now that the wide glyph is presumably gone, we can move up a line.
-                if (pos.x == 0 && pos.y != 0 && textBuffer.GetRowByOffset(pos.y - 1).WasDoubleBytePadded())
-                {
-                    moveUp();
-                }
-                else
-                {
-                    AdjustCursorPosition(screenInfo, pos, keepCursorVisible, psScrollY);
-                }
-
-                // Notify accessibility to read the backspaced character.
-                // See GH:12735, MSFT:31748387
-                if (screenInfo.HasAccessibilityEventing())
-                {
-                    if (const auto pConsoleWindow = ServiceLocator::LocateConsoleWindow())
-                    {
-                        LOG_IF_FAILED(pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId));
-                    }
-                }
+                pos.x = textBuffer.GetRowByOffset(pos.y).NavigateToPrevious(pos.x);
+                AdjustCursorPosition(screenInfo, pos, interactive, psScrollY);
                 continue;
             }
             case UNICODE_TAB:
             {
                 const auto pos = cursor.GetPosition();
-                const auto tabCount = gsl::narrow_cast<size_t>(NUMBER_OF_SPACES_IN_TAB(pos.x));
-                numSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { &tabSpaces[0], tabCount });
+                const auto tabCount = gsl::narrow_cast<size_t>(8 - (pos.x & 7));
+                _writeCharsLegacyUnprocessed(screenInfo, { &tabSpaces[0], tabCount }, interactive, psScrollY);
                 continue;
             }
             case UNICODE_LINEFEED:
@@ -408,26 +262,27 @@ try
                     pos.x = 0;
                 }
 
-                textBuffer.GetRowByOffset(pos.y).SetWrapForced(false);
+                textBuffer.GetMutableRowByOffset(pos.y).SetWrapForced(false);
                 pos.y = pos.y + 1;
-                AdjustCursorPosition(screenInfo, pos, keepCursorVisible, psScrollY);
+                AdjustCursorPosition(screenInfo, pos, interactive, psScrollY);
                 continue;
             }
             case UNICODE_CARRIAGERETURN:
             {
                 auto pos = cursor.GetPosition();
                 pos.x = 0;
-                AdjustCursorPosition(screenInfo, pos, keepCursorVisible, psScrollY);
+                AdjustCursorPosition(screenInfo, pos, interactive, psScrollY);
                 continue;
             }
             default:
                 break;
             }
 
-            if (WI_IsFlagSet(dwFlags, WC_INTERACTIVE) && IS_CONTROL_CHAR(*it))
+            // In the interactive mode we replace C0 control characters (0x00-0x1f) with ASCII representations like ^C (= 0x03).
+            if (interactive && *it < L' ')
             {
                 const wchar_t wchs[2]{ L'^', static_cast<wchar_t>(*it + L'@') };
-                numSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { &wchs[0], 2 });
+                _writeCharsLegacyUnprocessed(screenInfo, { &wchs[0], 2 }, interactive, psScrollY);
             }
             else
             {
@@ -439,76 +294,12 @@ try
                 const auto result = MultiByteToWideChar(cp, MB_USEGLYPHCHARS, &ch, 1, &wch, 1);
                 if (result == 1)
                 {
-                    numSpaces += _writeCharsLegacyUnprocessed(screenInfo, dwFlags, psScrollY, { &wch, 1 });
+                    _writeCharsLegacyUnprocessed(screenInfo, { &wch, 1 }, interactive, psScrollY);
                 }
             }
         }
     }
-
-    if (pcSpaces)
-    {
-        *pcSpaces = numSpaces;
-    }
-
-    return S_OK;
 }
-NT_CATCH_RETURN()
-
-// Routine Description:
-// - This routine writes a string to the screen, processing any embedded
-//   unicode characters.  The string is also copied to the input buffer, if
-//   the output mode is line mode.
-// Arguments:
-// - screenInfo - reference to screen buffer information structure.
-// - pwchBufferBackupLimit - Pointer to beginning of buffer.
-// - pwchBuffer - Pointer to buffer to copy string to.  assumed to be at least as long as pwchRealUnicode.
-//              This pointer is updated to point to the next position in the buffer.
-// - pwchRealUnicode - Pointer to string to write.
-// - pcb - On input, number of bytes to write.  On output, number of bytes written.
-// - pcSpaces - On output, the number of spaces consumed by the written characters.
-// - dwFlags -
-//      WC_INTERACTIVE             backspace overwrites characters, control characters are expanded (as in, to "^X")
-//      WC_KEEP_CURSOR_VISIBLE     change window origin (viewport) desirable when hit rt. edge
-// Return Value:
-// Note:
-// - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
-[[nodiscard]] NTSTATUS WriteChars(SCREEN_INFORMATION& screenInfo,
-                                  _In_range_(<=, pwchBuffer) const wchar_t* const pwchBufferBackupLimit,
-                                  _In_ const wchar_t* pwchBuffer,
-                                  _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
-                                  _Inout_ size_t* const pcb,
-                                  _Out_opt_ size_t* const pcSpaces,
-                                  const til::CoordType sOriginalXPosition,
-                                  const DWORD dwFlags,
-                                  _Inout_opt_ til::CoordType* const psScrollY)
-try
-{
-    if (WI_IsAnyFlagClear(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_PROCESSED_OUTPUT))
-    {
-        return WriteCharsLegacy(screenInfo,
-                                pwchBufferBackupLimit,
-                                pwchBuffer,
-                                pwchRealUnicode,
-                                pcb,
-                                pcSpaces,
-                                sOriginalXPosition,
-                                dwFlags,
-                                psScrollY);
-    }
-
-    auto& machine = screenInfo.GetStateMachine();
-    const auto cch = *pcb / sizeof(WCHAR);
-
-    machine.ProcessString({ pwchRealUnicode, cch });
-
-    if (nullptr != pcSpaces)
-    {
-        *pcSpaces = 0;
-    }
-
-    return STATUS_SUCCESS;
-}
-NT_CATCH_RETURN()
 
 // Routine Description:
 // - Takes the given text and inserts it into the given screen buffer.
@@ -530,23 +321,16 @@ NT_CATCH_RETURN()
                                       SCREEN_INFORMATION& screenInfo,
                                       bool requiresVtQuirk,
                                       std::unique_ptr<WriteData>& waiter)
+try
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (WI_IsAnyFlagSet(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
-        try
-        {
-            waiter = std::make_unique<WriteData>(screenInfo,
-                                                 pwchBuffer,
-                                                 *pcbBuffer,
-                                                 gci.OutputCP,
-                                                 requiresVtQuirk);
-        }
-        catch (...)
-        {
-            return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-        }
-
+        waiter = std::make_unique<WriteData>(screenInfo,
+                                             pwchBuffer,
+                                             *pcbBuffer,
+                                             gci.OutputCP,
+                                             requiresVtQuirk);
         return CONSOLE_STATUS_WAIT;
     }
 
@@ -563,17 +347,20 @@ NT_CATCH_RETURN()
         restoreVtQuirk.release();
     }
 
-    const auto& textBuffer = screenInfo.GetTextBuffer();
-    return WriteChars(screenInfo,
-                      pwchBuffer,
-                      pwchBuffer,
-                      pwchBuffer,
-                      pcbBuffer,
-                      nullptr,
-                      textBuffer.GetCursor().GetPosition().x,
-                      0,
-                      nullptr);
+    const std::wstring_view str{ pwchBuffer, *pcbBuffer / sizeof(WCHAR) };
+
+    if (WI_IsAnyFlagClear(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_PROCESSED_OUTPUT))
+    {
+        WriteCharsLegacy(screenInfo, str, false, nullptr);
+    }
+    else
+    {
+        screenInfo.GetStateMachine().ProcessString(str);
+    }
+
+    return STATUS_SUCCESS;
 }
+NT_CATCH_RETURN()
 
 // Routine Description:
 // - This method performs the actual work of attempting to write to the console, converting data types as necessary

@@ -74,3 +74,5 @@ Author(s):
 #include "../../inc/DefaultSettings.h"
 
 #include <cppwinrt_utils.h>
+
+#include <til/winrt.h>

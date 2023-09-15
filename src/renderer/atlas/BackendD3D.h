@@ -37,8 +37,8 @@ namespace Microsoft::Console::Render::Atlas
         struct alignas(16) PSConstBuffer
         {
             alignas(sizeof(f32x4)) f32x4 backgroundColor;
-            alignas(sizeof(f32x2)) f32x2 cellSize;
-            alignas(sizeof(f32x2)) f32x2 cellCount;
+            alignas(sizeof(f32x2)) f32x2 backgroundCellSize;
+            alignas(sizeof(f32x2)) f32x2 backgroundCellCount;
             alignas(sizeof(f32x4)) f32 gammaRatios[4]{};
             alignas(sizeof(f32)) f32 enhancedContrast = 0;
             alignas(sizeof(f32)) f32 underlineWidth = 0;
@@ -218,7 +218,7 @@ namespace Microsoft::Console::Render::Atlas
         void _drawText(RenderingPayload& p);
         ATLAS_ATTR_COLD void _drawTextOverlapSplit(const RenderingPayload& p, u16 y);
         ATLAS_ATTR_COLD static void _initializeFontFaceEntry(AtlasFontFaceEntryInner& fontFaceEntry);
-        ATLAS_ATTR_COLD [[nodiscard]] bool _drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
+        [[nodiscard]] ATLAS_ATTR_COLD bool _drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         bool _drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         void _drawGlyphPrepareRetry(const RenderingPayload& p);
         void _splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
@@ -281,7 +281,7 @@ namespace Microsoft::Console::Render::Atlas
         til::generation_t _fontGeneration;
         til::generation_t _miscGeneration;
         u16x2 _targetSize{};
-        u16x2 _cellCount{};
+        u16x2 _viewportCellCount{};
         ShadingType _textShadingType = ShadingType::Default;
 
         // An empty-box cursor spanning a wide glyph that has different

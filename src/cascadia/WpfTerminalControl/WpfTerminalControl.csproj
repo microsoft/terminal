@@ -46,6 +46,19 @@
         <Pack>true</Pack>
         <PackagePath>runtimes\win-arm64\native\</PackagePath>
       </None>
+
+      <None Include="$(RepoBinPath)\Win32\$(Configuration)\PublicTerminalCore.pdb">
+        <Pack>true</Pack>
+        <PackagePath>runtimes\win-x86\native\</PackagePath>
+      </None>
+      <None Include="$(RepoBinPath)\x64\$(Configuration)\PublicTerminalCore.pdb">
+        <Pack>true</Pack>
+        <PackagePath>runtimes\win-x64\native\</PackagePath>
+      </None>
+      <None Include="$(RepoBinPath)\ARM64\$(Configuration)\PublicTerminalCore.pdb">
+        <Pack>true</Pack>
+        <PackagePath>runtimes\win-arm64\native\</PackagePath>
+      </None>
     </ItemGroup>
   </Target>
 

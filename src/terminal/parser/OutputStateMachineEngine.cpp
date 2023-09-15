@@ -416,6 +416,12 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTPara
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameters parameters)
 {
+    // Bail out if we receive subparameters, but we don't accept them in the sequence.
+    if (parameters.hasSubParams() && !_CanSeqAcceptSubParam(id, parameters)) [[unlikely]]
+    {
+        return false;
+    }
+
     auto success = false;
 
     switch (id)
@@ -862,6 +868,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         success = _dispatch->DoFinalTermAction(string);
         break;
     }
+    case OscActionCodes::VsCodeAction:
+    {
+        success = _dispatch->DoVsCodeAction(string);
+        break;
+    }
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;
@@ -1096,6 +1107,26 @@ bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view strin
 // Log_IfFailed has the following description: "Should be decorated WI_NOEXCEPT, but conflicts with forceinline."
 #pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
     return SUCCEEDED_LOG(Base64::Decode(substr, content));
+}
+
+// Routine Description:
+// - Takes a sequence id ("final byte") and determines if it accepts sub parameters.
+// Arguments:
+// - id - The sequence id to check for.
+// Return Value:
+// - True, if it accepts sub parameters or else False.
+bool OutputStateMachineEngine::_CanSeqAcceptSubParam(const VTID id, const VTParameters& parameters) noexcept
+{
+    switch (id)
+    {
+    case SGR_SetGraphicsRendition:
+        return true;
+    case DECCARA_ChangeAttributesRectangularArea:
+    case DECRARA_ReverseAttributesRectangularArea:
+        return !parameters.hasSubParamsFor(0) && !parameters.hasSubParamsFor(1) && !parameters.hasSubParamsFor(2) && !parameters.hasSubParamsFor(3);
+    default:
+        return false;
+    }
 }
 
 // Method Description:

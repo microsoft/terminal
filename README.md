@@ -21,7 +21,8 @@ Related repositories include:
 
 ## Installing and running Windows Terminal
 
-> **Note**: Windows Terminal requires Windows 10 2004 (build 19041) or later
+> **Note**\
+> Windows Terminal requires Windows 10 2004 (build 19041) or later
 
 ### Microsoft Store [Recommended]
 
@@ -52,9 +53,10 @@ fails for any reason, you can try the following command at a PowerShell prompt:
 Add-AppxPackage Microsoft.WindowsTerminal_<versionNumber>.msixbundle
 ```
 
-> **Note**: If you install Terminal manually:
+> **Note**\
+> If you install Terminal manually:
 >
-> * You may need to install the [VC++ v14 Desktop Framework Package](https://docs.microsoft.com/troubleshoot/cpp/c-runtime-packages-desktop-bridge#how-to-install-and-update-desktop-framework-packages).  
+> * You may need to install the [VC++ v14 Desktop Framework Package](https://docs.microsoft.com/troubleshoot/cpp/c-runtime-packages-desktop-bridge#how-to-install-and-update-desktop-framework-packages).
 >   This should only be necessary on older builds of Windows 10 and only if you get an error about missing framework packages.
 > * Terminal will not auto-update when new builds are released so you will need
 >   to regularly install the latest Terminal release to receive all the latest
@@ -69,6 +71,9 @@ package:
 ```powershell
 winget install --id Microsoft.WindowsTerminal -e
 ```
+
+> **Note**\
+> Due to [a dependency issue](https://github.com/microsoft/terminal/issues/15663), Terminal's current versions cannot be installed via the Windows Package Manager CLI. To install the stable release 1.17 or later, or the Preview release 1.18 or later, please use an alternative installation method.
 
 #### Via Chocolatey (unofficial)
 
@@ -115,7 +120,7 @@ repository.
 
 ## Windows Terminal Roadmap
 
-The plan for the Windows Terminal [is described here](/doc/roadmap-2022.md) and
+The plan for the Windows Terminal [is described here](/doc/roadmap-2023.md) and
 will be updated as the project proceeds.
 
 ## Project Build Status
@@ -235,7 +240,8 @@ Cause: You're launching the incorrect solution in Visual Studio.
 Solution: Make sure you're building & deploying the `CascadiaPackage` project in
 Visual Studio.
 
-> **Note**: `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic
+> **Note**\
+> `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic
 > Windows Console that hosts Windows' command-line infrastructure. OpenConsole
 > is used by Windows Terminal to connect to and communicate with command-line
 > applications (via
@@ -271,10 +277,10 @@ similar open/closed preexisting issues before creating a new issue.**
 If you would like to ask a question that you feel doesn't warrant an issue
 (yet), please reach out to us via Twitter:
 
-* Kayla Cinnamon, Program Manager:
-  [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
+* Christopher Nguyen, Product Manager:
+  [@nguyen_dows](https://twitter.com/nguyen_dows)
 * Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
-* Mike Griese, Senior Developer: [@zadjii](https://twitter.com/zadjii)
+* Mike Griese, Senior Developer: [@zadjii@mastodon.social](https://mastodon.social/@zadjii)
 * Carlos Zamora, Developer: [@cazamor_msft](https://twitter.com/cazamor_msft)
 * Pankaj Bhojwani, Developer
 * Leonard Hecker, Developer: [@LeonardHecker](https://twitter.com/LeonardHecker)

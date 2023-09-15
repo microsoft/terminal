@@ -40,7 +40,6 @@ namespace Microsoft.Terminal.Control
 
         Microsoft.Terminal.Control.IControlSettings Settings { get; };
 
-        event FontSizeChangedEventArgs FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
@@ -53,6 +52,13 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, CompletionsChangedEventArgs> CompletionsChanged;
+
+        event Windows.Foundation.TypedEventHandler<Object, KeySentEventArgs> KeySent;
+        event Windows.Foundation.TypedEventHandler<Object, CharSentEventArgs> CharSent;
+        event Windows.Foundation.TypedEventHandler<Object, StringSentEventArgs> StringSent;
+
 
         Microsoft.UI.Xaml.Controls.CommandBarFlyout ContextMenu { get; };
         Microsoft.UI.Xaml.Controls.CommandBarFlyout SelectionContextMenu { get; };
@@ -67,7 +73,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> RestartTerminalRequested;
 
-        Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
+        Boolean CopySelectionToClipboard(Boolean dismissSelection, Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
         void SelectAll();
         Boolean ToggleBlockSelection();
@@ -94,6 +100,9 @@ namespace Microsoft.Terminal.Control
 
         void ToggleShaderEffects();
         void SendInput(String input);
+        Boolean RawWriteKeyEvent(UInt16 vkey, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers, Boolean keyDown);
+        Boolean RawWriteChar(Char character, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers);
+        void RawWriteString(String text);
 
         void BellLightOn();
 
@@ -102,6 +111,7 @@ namespace Microsoft.Terminal.Control
         void SetReadOnly(Boolean readOnlyState);
 
         String ReadEntireBuffer();
+        CommandHistoryContext CommandHistory();
 
         void AdjustOpacity(Double Opacity, Boolean relative);
 
@@ -116,6 +126,8 @@ namespace Microsoft.Terminal.Control
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
 
         void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
+
+        Windows.Foundation.Point CursorPositionInDips { get; };
 
         void ShowContextMenu();
 

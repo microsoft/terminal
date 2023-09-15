@@ -64,6 +64,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _subcommands ? _subcommands.GetView() : nullptr;
     }
 
+    void Command::NestedCommands(const Windows::Foundation::Collections::IVectorView<Model::Command>& nested)
+    {
+        _subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+
+        for (const auto& n : nested)
+        {
+            _subcommands.Insert(n.Name(), n);
+        }
+    }
+
     // Function Description:
     // - reports if the current command has nested commands
     // - This CANNOT detect { "name": "foo", "commands": null }
@@ -631,5 +641,153 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return newCommands;
+    }
+
+    winrt::Windows::Foundation::Collections::IVector<Model::Command> Command::ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength)
+    {
+        if (json.empty())
+        {
+            return nullptr;
+        }
+        auto data = winrt::to_string(json);
+
+        std::string errs;
+        static std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
+        Json::Value root;
+        if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+        {
+            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+        }
+
+        std::vector<Model::Command> result;
+
+        const auto parseElement = [&](const auto& element) {
+            winrt::hstring completionText;
+            winrt::hstring listText;
+            JsonUtils::GetValueForKey(element, "CompletionText", completionText);
+            JsonUtils::GetValueForKey(element, "ListItemText", listText);
+
+            auto args = winrt::make_self<SendInputArgs>(
+                winrt::hstring{ fmt::format(FMT_COMPILE(L"{:\x7f^{}}{}"),
+                                            L"",
+                                            replaceLength,
+                                            static_cast<std::wstring_view>(completionText)) });
+
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
+
+            auto c = winrt::make_self<Command>();
+            c->_name = listText;
+            c->_ActionAndArgs = actionAndArgs;
+
+            // Try to assign a sensible icon based on the result type. These are
+            // roughly chosen to align with the icons in
+            // https://github.com/PowerShell/PowerShellEditorServices/pull/1738
+            // as best as possible.
+            if (const auto resultType{ JsonUtils::GetValueForKey<int>(element, "ResultType") })
+            {
+                // PowerShell completion result -> Segoe Fluent icon value & name
+                switch (resultType)
+                {
+                case 1: // History          -> 0xe81c History
+                    c->_iconPath = L"\ue81c";
+                    break;
+                case 2: // Command          -> 0xecaa AppIconDefault
+                    c->_iconPath = L"\uecaa";
+                    break;
+                case 3: // ProviderItem     -> 0xe8e4 AlignLeft
+                    c->_iconPath = L"\ue8e4";
+                    break;
+                case 4: // ProviderContainer  -> 0xe838 FolderOpen
+                    c->_iconPath = L"\ue838";
+                    break;
+                case 5: // Property         -> 0xe7c1 Flag
+                    c->_iconPath = L"\ue7c1";
+                    break;
+                case 6: // Method           -> 0xecaa AppIconDefault
+                    c->_iconPath = L"\uecaa";
+                    break;
+                case 7: // ParameterName    -> 0xe7c1 Flag
+                    c->_iconPath = L"\ue7c1";
+                    break;
+                case 8: // ParameterValue   -> 0xf000 KnowledgeArticle
+                    c->_iconPath = L"\uf000";
+                    break;
+                case 10: // Namespace       -> 0xe943 Code
+                    c->_iconPath = L"\ue943";
+                    break;
+                case 13: // DynamicKeyword  -> 0xe945 LightningBolt
+                    c->_iconPath = L"\ue945";
+                    break;
+                }
+            }
+
+            result.push_back(*c);
+        };
+
+        if (root.isArray())
+        {
+            // If we got a whole array of suggestions, parse each one.
+            for (const auto& element : root)
+            {
+                parseElement(element);
+            }
+        }
+        else if (root.isObject())
+        {
+            // If we instead only got a single element back, just parse the root element.
+            parseElement(root);
+        }
+
+        return winrt::single_threaded_vector<Model::Command>(std::move(result));
+    }
+
+    // Method description:
+    // * Convert the list of recent commands into a list of sendInput actions to
+    //   send those commands.
+    // * We'll give each command a "history" icon.
+    // * If directories is true, we'll prepend "cd " to each command, so that
+    //   the command will be run as a directory change instead.
+    IVector<Model::Command> Command::HistoryToCommands(IVector<winrt::hstring> history,
+                                                       winrt::hstring currentCommandline,
+                                                       bool directories)
+    {
+        std::wstring cdText = directories ? L"cd " : L"";
+        auto result = std::vector<Model::Command>();
+
+        // Use this map to discard duplicates.
+        std::unordered_map<std::wstring_view, bool> foundCommands{};
+
+        auto backspaces = std::wstring(currentCommandline.size(), L'\x7f');
+
+        // Iterate in reverse over the history, so that most recent commands are first
+        for (auto i = history.Size(); i > 0; i--)
+        {
+            const auto& element{ history.GetAt(i - 1) };
+            std::wstring_view line{ element };
+
+            if (line.empty())
+            {
+                continue;
+            }
+            if (foundCommands.contains(line))
+            {
+                continue;
+            }
+            auto args = winrt::make_self<SendInputArgs>(
+                winrt::hstring{ fmt::format(L"{}{}{}", cdText, backspaces, line) });
+
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
+
+            auto command = winrt::make_self<Command>();
+            command->_ActionAndArgs = actionAndArgs;
+            command->_name = winrt::hstring{ line };
+            command->_iconPath = directories ?
+                                     L"\ue8da" : // OpenLocal (a folder with an arrow pointing up)
+                                     L"\ue81c"; // History icon
+            result.push_back(*command);
+            foundCommands[line] = true;
+        }
+
+        return winrt::single_threaded_vector<Model::Command>(std::move(result));
     }
 }

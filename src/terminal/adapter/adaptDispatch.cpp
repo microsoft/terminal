@@ -77,7 +77,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
     auto& cursor = textBuffer.GetCursor();
     auto cursorPosition = cursor.GetPosition();
     const auto wrapAtEOL = _api.GetSystemMode(ITerminalApi::Mode::AutoWrap);
-    const auto attributes = textBuffer.GetCurrentAttributes();
+    const auto& attributes = textBuffer.GetCurrentAttributes();
 
     const auto viewport = _api.GetViewport();
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
@@ -176,7 +176,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             //   we tried writing a wide glyph into the last column which can't work.
             if (textPositionBefore == textPositionAfter && (state.columnBegin == 0 || !wrapAtEOL))
             {
-                textBuffer.ConsumeGrapheme(state.text);
+                state.text = state.text.substr(textBuffer.GraphemeNext(state.text, 0));
             }
 
             if (wrapAtEOL)
@@ -502,7 +502,7 @@ bool AdaptDispatch::CursorSaveState()
     // First retrieve some information about the buffer
     const auto viewport = _api.GetViewport();
     const auto& textBuffer = _api.GetTextBuffer();
-    const auto attributes = textBuffer.GetCurrentAttributes();
+    const auto& attributes = textBuffer.GetCurrentAttributes();
 
     // The cursor is given to us by the API as relative to the whole buffer.
     // But in VT speak, the cursor row should be relative to the current viewport top.
@@ -894,7 +894,7 @@ void AdaptDispatch::_SelectiveEraseRect(TextBuffer& textBuffer, const til::rect&
     {
         for (auto row = eraseRect.top; row < eraseRect.bottom; row++)
         {
-            auto& rowBuffer = textBuffer.GetRowByOffset(row);
+            auto& rowBuffer = textBuffer.GetMutableRowByOffset(row);
             for (auto col = eraseRect.left; col < eraseRect.right; col++)
             {
                 // Only unprotected cells are affected.
@@ -996,7 +996,7 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
     {
         for (auto row = changeRect.top; row < changeRect.bottom; row++)
         {
-            auto& rowBuffer = textBuffer.GetRowByOffset(row);
+            auto& rowBuffer = textBuffer.GetMutableRowByOffset(row);
             for (auto col = changeRect.left; col < changeRect.right; col++)
             {
                 auto attr = rowBuffer.GetAttrByColumn(col);
@@ -1011,6 +1011,10 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
                 if (changeOps.background)
                 {
                     attr.SetBackground(*changeOps.background);
+                }
+                if (changeOps.underlineColor)
+                {
+                    attr.SetUnderlineColor(*changeOps.underlineColor);
                 }
                 rowBuffer.ReplaceAttributes(col, col + 1, attr);
             }
@@ -1121,7 +1125,7 @@ bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt
     // provides us with an OR mask and an AND mask which can then be applied to
     // each cell to set and reset the appropriate attribute bits.
     auto allAttrsOff = TextAttribute{};
-    auto allAttrsOn = TextAttribute{ 0, 0 };
+    auto allAttrsOn = TextAttribute{ 0, 0, 0 };
     allAttrsOn.SetCharacterAttributes(CharacterAttributes::All);
     _ApplyGraphicsOptions(attrs, allAttrsOff);
     _ApplyGraphicsOptions(attrs, allAttrsOn);
@@ -1144,6 +1148,10 @@ bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt
     changeOps.foreground = foregroundChanged ? std::optional{ foreground } : std::nullopt;
     changeOps.background = backgroundChanged ? std::optional{ background } : std::nullopt;
 
+    const auto underlineColor = allAttrsOff.GetUnderlineColor();
+    const auto underlineColorChanged = !underlineColor.IsDefault() || allAttrsOn.GetUnderlineColor().IsDefault();
+    changeOps.underlineColor = underlineColorChanged ? std::optional{ underlineColor } : std::nullopt;
+
     _ChangeRectOrStreamAttributes({ left, top, right, bottom }, changeOps);
 
     return true;
@@ -1152,6 +1160,8 @@ bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt
 // Routine Description:
 // - DECRARA - Reverses the attributes in a rectangular area. The affected range
 //   is dependent on the change extent setting defined by DECSACE.
+//   Note: Reversing the underline style has some unexpected consequences.
+//         See https://github.com/microsoft/terminal/pull/15795#issuecomment-1702559350.
 // Arguments:
 // - top - The first row of the area.
 // - left - The first column of the area.
@@ -1168,6 +1178,7 @@ bool AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTIn
     // then combine them with XOR, because if we're reversing the same attribute
     // twice, we'd expect the two instances to cancel each other out.
     auto reverseMask = CharacterAttributes::Normal;
+
     if (!attrs.empty())
     {
         for (size_t i = 0; i < attrs.size();)
@@ -1178,7 +1189,9 @@ bool AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTIn
             // the empty check above.
             if (attrs.at(i).value_or(0) == 0)
             {
-                reverseMask ^= CharacterAttributes::Rendition;
+                // With param 0, we only reverse the SinglyUnderlined bit.
+                const auto singlyUnderlinedAttr = static_cast<CharacterAttributes>(WI_EnumValue(UnderlineStyle::SinglyUnderlined) << UNDERLINE_STYLE_SHIFT);
+                reverseMask ^= (CharacterAttributes::Rendition & ~CharacterAttributes::UnderlineStyle) | singlyUnderlinedAttr;
                 i++;
             }
             else
@@ -2407,7 +2420,7 @@ void AdaptDispatch::_DoLineFeed(TextBuffer& textBuffer, const bool withReturn, c
 
     // If the line was forced to wrap, set the wrap status.
     // When explicitly moving down a row, clear the wrap status.
-    textBuffer.GetRowByOffset(currentPosition.y).SetWrapForced(wrapForced);
+    textBuffer.GetMutableRowByOffset(currentPosition.y).SetWrapForced(wrapForced);
 
     // If a carriage return was requested, we move to the leftmost column or
     // the left margin, depending on whether we started within the margins.
@@ -2453,7 +2466,7 @@ void AdaptDispatch::_DoLineFeed(TextBuffer& textBuffer, const bool withReturn, c
         else
         {
             const auto eraseAttributes = _GetEraseAttributes(textBuffer);
-            textBuffer.GetRowByOffset(newPosition.y).Reset(eraseAttributes);
+            textBuffer.GetMutableRowByOffset(newPosition.y).Reset(eraseAttributes);
         }
     }
     else
@@ -3145,6 +3158,12 @@ bool AdaptDispatch::_EraseScrollback()
     auto& cursor = textBuffer.GetCursor();
     const auto row = cursor.GetPosition().y;
 
+    // Clear all the marks below the new viewport position.
+    textBuffer.ClearMarksInRange(til::point{ 0, height },
+                                 til::point{ bufferSize.width, bufferSize.height });
+    // Then scroll all the remaining marks up. This will trim ones that are now "outside" the buffer
+    textBuffer.ScrollMarks(-top);
+
     // Scroll the viewport content to the top of the buffer.
     textBuffer.ScrollRows(top, height, -top);
     // Clear everything after the viewport.
@@ -3226,6 +3245,10 @@ bool AdaptDispatch::_EraseAll()
 
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(newViewportTop, newViewportBottom);
+
+    // Clear any marks that remain below the start of the
+    textBuffer.ClearMarksInRange(til::point{ 0, newViewportTop },
+                                 til::point{ bufferSize.Width(), bufferSize.Height() });
 
     // GH#5683 - If this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this ED sequence to the connected
@@ -3633,8 +3656,8 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
 
     if (action == L"SetMark")
     {
-        DispatchTypes::ScrollMark mark;
-        mark.category = DispatchTypes::MarkCategory::Prompt;
+        ScrollMark mark;
+        mark.category = MarkCategory::Prompt;
         _api.MarkPrompt(mark);
         return true;
     }
@@ -3681,8 +3704,8 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         case L'A': // FTCS_PROMPT
         {
             // Simply just mark this line as a prompt line.
-            DispatchTypes::ScrollMark mark;
-            mark.category = DispatchTypes::MarkCategory::Prompt;
+            ScrollMark mark;
+            mark.category = MarkCategory::Prompt;
             _api.MarkPrompt(mark);
             return true;
         }
@@ -3726,6 +3749,86 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     // simple state machine here to track the most recently emitted mark from
     // this set of sequences, and which sequence was emitted last, so we can
     // modify the state of that mark as we go.
+    return false;
+}
+// Method Description:
+// - Performs a VsCode action
+// - Currently, the actions we support are:
+//   * Completions: An experimental protocol for passing shell completion
+//     information from the shell to the terminal. This sequence is still under
+//     active development, and subject to change.
+// - Not actually used in conhost
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - false in conhost, true for the SetMark action, otherwise false.
+bool AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually to make sure this action happens at the right time.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    if constexpr (!Feature_ShellCompletions::IsEnabled())
+    {
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"Completions")
+    {
+        // The structure of the message is as follows:
+        // `e]633;
+        // 0:     Completions;
+        // 1:     $($completions.ReplacementIndex);
+        // 2:     $($completions.ReplacementLength);
+        // 3:     $($cursorIndex);
+        // 4:     $completions.CompletionMatches | ConvertTo-Json
+        unsigned int replacementIndex = 0;
+        unsigned int replacementLength = 0;
+        unsigned int cursorIndex = 0;
+
+        bool succeeded = (parts.size() >= 2) &&
+                         (Utils::StringToUint(til::at(parts, 1), replacementIndex));
+        succeeded &= (parts.size() >= 3) &&
+                     (Utils::StringToUint(til::at(parts, 2), replacementLength));
+        succeeded &= (parts.size() >= 4) &&
+                     (Utils::StringToUint(til::at(parts, 3), cursorIndex));
+
+        // VsCode is using cursorIndex and replacementIndex, but we aren't currently.
+        if (succeeded)
+        {
+            // Get the combined lengths of parts 0-3, plus the semicolons. We
+            // need this so that we can just pass the remainder of the string.
+            const auto prefixLength = til::at(parts, 0).size() + 1 +
+                                      til::at(parts, 1).size() + 1 +
+                                      til::at(parts, 2).size() + 1 +
+                                      til::at(parts, 3).size() + 1;
+            if (prefixLength > string.size())
+            {
+                return true;
+            }
+            // Get the remainder of the string
+            const auto remainder = string.substr(prefixLength);
+
+            _api.InvokeCompletions(parts.size() < 5 ? L"" : remainder,
+                                   replacementLength);
+        }
+
+        // If it's poorly formatted, just eat it
+        return true;
+    }
     return false;
 }
 
@@ -4075,7 +4178,8 @@ void AdaptDispatch::_ReportSGRSetting() const
     fmt::basic_memory_buffer<wchar_t, 64> response;
     response.append(L"\033P1$r0"sv);
 
-    const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+    const auto& attr = _api.GetTextBuffer().GetCurrentAttributes();
+    const auto ulStyle = attr.GetUnderlineStyle();
     // For each boolean attribute that is set, we add the appropriate
     // parameter value to the response string.
     const auto addAttribute = [&](const auto& parameter, const auto enabled) {
@@ -4087,12 +4191,15 @@ void AdaptDispatch::_ReportSGRSetting() const
     addAttribute(L";1"sv, attr.IsIntense());
     addAttribute(L";2"sv, attr.IsFaint());
     addAttribute(L";3"sv, attr.IsItalic());
-    addAttribute(L";4"sv, attr.IsUnderlined());
+    addAttribute(L";4"sv, ulStyle == UnderlineStyle::SinglyUnderlined);
+    addAttribute(L";4:3"sv, ulStyle == UnderlineStyle::CurlyUnderlined);
+    addAttribute(L";4:4"sv, ulStyle == UnderlineStyle::DottedUnderlined);
+    addAttribute(L";4:5"sv, ulStyle == UnderlineStyle::DashedUnderlined);
     addAttribute(L";5"sv, attr.IsBlinking());
     addAttribute(L";7"sv, attr.IsReverseVideo());
     addAttribute(L";8"sv, attr.IsInvisible());
     addAttribute(L";9"sv, attr.IsCrossedOut());
-    addAttribute(L";21"sv, attr.IsDoublyUnderlined());
+    addAttribute(L";21"sv, ulStyle == UnderlineStyle::DoublyUnderlined);
     addAttribute(L";53"sv, attr.IsOverlined());
 
     // We also need to add the appropriate color encoding parameters for
@@ -4107,18 +4214,19 @@ void AdaptDispatch::_ReportSGRSetting() const
         else if (color.IsIndex256())
         {
             const auto index = color.GetIndex();
-            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{};5;{}"), base + 8, index);
+            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{}:5:{}"), base + 8, index);
         }
         else if (color.IsRgb())
         {
             const auto r = GetRValue(color.GetRGB());
             const auto g = GetGValue(color.GetRGB());
             const auto b = GetBValue(color.GetRGB());
-            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{};2;{};{};{}"), base + 8, r, g, b);
+            fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{}:2::{}:{}:{}"), base + 8, r, g, b);
         }
     };
     addColor(30, attr.GetForeground());
     addColor(40, attr.GetBackground());
+    addColor(50, attr.GetUnderlineColor());
 
     // The 'm' indicates this is an SGR response, and ST ends the sequence.
     response.append(L"m\033\\"sv);
@@ -4187,7 +4295,7 @@ void AdaptDispatch::_ReportDECSCASetting() const
     fmt::basic_memory_buffer<wchar_t, 64> response;
     response.append(L"\033P1$r"sv);
 
-    const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+    const auto& attr = _api.GetTextBuffer().GetCurrentAttributes();
     response.append(attr.IsProtected() ? L"1"sv : L"0"sv);
 
     // The '"q' indicates this is an DECSCA response, and ST ends the sequence.
@@ -4209,7 +4317,6 @@ void AdaptDispatch::_ReportDECSACESetting() const
     fmt::basic_memory_buffer<wchar_t, 64> response;
     response.append(L"\033P1$r"sv);
 
-    const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
     response.append(_modes.test(Mode::RectangularChangeExtent) ? L"2"sv : L"1"sv);
 
     // The '*x' indicates this is an DECSACE response, and ST ends the sequence.
@@ -4309,7 +4416,7 @@ void AdaptDispatch::_ReportCursorInformation()
     const auto viewport = _api.GetViewport();
     const auto& textBuffer = _api.GetTextBuffer();
     const auto& cursor = textBuffer.GetCursor();
-    const auto attributes = textBuffer.GetCurrentAttributes();
+    const auto& attributes = textBuffer.GetCurrentAttributes();
 
     // First pull the cursor position relative to the entire buffer out of the console.
     til::point cursorPosition{ cursor.GetPosition() };
@@ -4332,7 +4439,16 @@ void AdaptDispatch::_ReportCursorInformation()
     const auto pageNumber = 1;
 
     // Only some of the rendition attributes are reported.
-    auto renditionAttributes = L'@';
+    //   Bit    Attribute
+    //   1      bold
+    //   2      underlined
+    //   3      blink
+    //   4      reverse video
+    //   5      invisible
+    //   6      extension indicator
+    //   7      Always 1 (on)
+    //   8      Always 0 (off)
+    auto renditionAttributes = L'@'; // (0100 0000)
     renditionAttributes += (attributes.IsIntense() ? 1 : 0);
     renditionAttributes += (attributes.IsUnderlined() ? 2 : 0);
     renditionAttributes += (attributes.IsBlinking() ? 4 : 0);
@@ -4453,7 +4569,7 @@ ITermDispatch::StringHandler AdaptDispatch::_RestoreCursorInformation()
                 {
                     auto attr = textBuffer.GetCurrentAttributes();
                     attr.SetIntense(state.value & 1);
-                    attr.SetUnderlined(state.value & 2);
+                    attr.SetUnderlineStyle(state.value & 2 ? UnderlineStyle::SinglyUnderlined : UnderlineStyle::NoUnderline);
                     attr.SetBlinking(state.value & 4);
                     attr.SetReverseVideo(state.value & 8);
                     attr.SetInvisible(state.value & 16);

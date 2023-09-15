@@ -269,7 +269,7 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
 
     const auto fontChanged = _fontGeneration != p.s->font.generation();
     const auto miscChanged = _miscGeneration != p.s->misc.generation();
-    const auto cellCountChanged = _cellCount != p.s->cellCount;
+    const auto cellCountChanged = _viewportCellCount != p.s->viewportCellCount;
 
     if (fontChanged)
     {
@@ -298,7 +298,7 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     _fontGeneration = p.s->font.generation();
     _miscGeneration = p.s->misc.generation();
     _targetSize = p.s->targetSize;
-    _cellCount = p.s->cellCount;
+    _viewportCellCount = p.s->viewportCellCount;
 }
 
 void BackendD3D::_updateFontDependents(const RenderingPayload& p)
@@ -509,8 +509,8 @@ void BackendD3D::_recreateBackgroundColorBitmap(const RenderingPayload& p)
     _backgroundBitmapView.reset();
 
     const D3D11_TEXTURE2D_DESC desc{
-        .Width = p.s->cellCount.x,
-        .Height = p.s->cellCount.y,
+        .Width = p.s->viewportCellCount.x,
+        .Height = p.s->viewportCellCount.y,
         .MipLevels = 1,
         .ArraySize = 1,
         .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
@@ -534,8 +534,8 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
     {
         PSConstBuffer data{};
         data.backgroundColor = colorFromU32Premultiply<f32x4>(p.s->misc->backgroundColor);
-        data.cellSize = { static_cast<f32>(p.s->font->cellSize.x), static_cast<f32>(p.s->font->cellSize.y) };
-        data.cellCount = { static_cast<f32>(p.s->cellCount.x), static_cast<f32>(p.s->cellCount.y) };
+        data.backgroundCellSize = { static_cast<f32>(p.s->font->cellSize.x), static_cast<f32>(p.s->font->cellSize.y) };
+        data.backgroundCellCount = { static_cast<f32>(p.s->viewportCellCount.x), static_cast<f32>(p.s->viewportCellCount.y) };
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);
         data.enhancedContrast = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
         data.underlineWidth = p.s->font->underline.height;
@@ -891,7 +891,7 @@ void BackendD3D::_flushQuads(const RenderingPayload& p)
 void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
 {
     // We use the viewport size of the terminal as the initial estimate for the amount of instances we'll see.
-    const auto minCapacity = static_cast<size_t>(p.s->cellCount.x) * p.s->cellCount.y;
+    const auto minCapacity = static_cast<size_t>(p.s->viewportCellCount.x) * p.s->viewportCellCount.y;
     auto newCapacity = std::max(_instancesCount, minCapacity);
     auto newSize = newCapacity * sizeof(QuadInstance);
     // Round up to multiples of 64kB to avoid reallocating too often.
@@ -1086,11 +1086,15 @@ void BackendD3D::_drawText(RenderingPayload& p)
 //   < ! - -
 void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
 {
-    const auto& originalQuad = _getLastQuad();
+    auto& originalQuad = _getLastQuad();
 
+    // If the current row has a non-default line rendition then every glyph is scaled up by 2x horizontally.
+    // This requires us to make some changes: For instance, if the ligature occupies columns 3, 4 and 5 (0-indexed)
+    // then we need to get the foreground colors from columns 2 and 4, because columns 0,1 2,3 4,5 6,7 and so on form pairs.
+    // A wide glyph would be a total of 4 actual columns wide! In other words, we need to properly round our clip rects and columns.
     i32 columnAdvance = 1;
-    i32 columnAdvanceInPx{ p.s->font->cellSize.x };
-    i32 cellCount{ p.s->cellCount.x };
+    i32 columnAdvanceInPx = p.s->font->cellSize.x;
+    i32 cellCount = p.s->viewportCellCount.x;
 
     if (p.rows[y]->lineRendition != LineRendition::SingleWidth)
     {
@@ -1104,12 +1108,27 @@ void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
     originalLeft = std::max(originalLeft, 0);
     originalRight = std::min(originalRight, cellCount * columnAdvanceInPx);
 
-    auto column = originalLeft / columnAdvanceInPx + 1;
+    if (originalLeft >= originalRight)
+    {
+        return;
+    }
+
+    const auto colors = &p.foregroundBitmap[p.colorBitmapRowStride * y];
+
+    // As explained in the beginning, column and clipLeft should be in multiples of columnAdvance
+    // and columnAdvanceInPx respectively, because that's how line renditions work.
+    auto column = originalLeft / columnAdvanceInPx;
     auto clipLeft = column * columnAdvanceInPx;
     column *= columnAdvance;
 
-    const auto colors = &p.foregroundBitmap[p.colorBitmapRowStride * y];
-    auto lastFg = originalQuad.color;
+    // Our loop below will split the ligature by processing it from left to right.
+    // Some fonts however implement ligatures by replacing a string like "&&" with a whitespace padding glyph,
+    // followed by the actual "&&" glyph which has a 1 column advance width. In that case the originalQuad
+    // will have the .color of the 2nd column and not of the 1st one. We need to fix that here.
+    auto lastFg = colors[column];
+    originalQuad.color = lastFg;
+    column += columnAdvance;
+    clipLeft += columnAdvanceInPx;
 
     // We must ensure to exit the loop while `column` is less than `cellCount.x`,
     // otherwise we cause a potential out of bounds access into foregroundBitmap.
@@ -1186,6 +1205,29 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
         .glyphCount = 1,
         .glyphIndices = &glyphEntry.glyphIndex,
     };
+
+    // To debug issues with this function it may be helpful to know which file
+    // a given font face corresponds to. This code works for most cases.
+#if 0
+    wchar_t filePath[MAX_PATH]{};
+    {
+        UINT32 fileCount = 1;
+        wil::com_ptr<IDWriteFontFile> file;
+        if (SUCCEEDED(fontFaceEntry.fontFace->GetFiles(&fileCount, file.addressof())))
+        {
+            wil::com_ptr<IDWriteFontFileLoader> loader;
+            THROW_IF_FAILED(file->GetLoader(loader.addressof()));
+
+            if (const auto localLoader = loader.try_query<IDWriteLocalFontFileLoader>())
+            {
+                void const* fontFileReferenceKey;
+                UINT32 fontFileReferenceKeySize;
+                THROW_IF_FAILED(file->GetReferenceKey(&fontFileReferenceKey, &fontFileReferenceKeySize));
+                THROW_IF_FAILED(localLoader->GetFilePathFromKey(fontFileReferenceKey, fontFileReferenceKeySize, &filePath[0], MAX_PATH));
+            }
+        }
+    }
+#endif
 
     // It took me a while to figure out how to rasterize glyphs manually with DirectWrite without depending on Direct2D.
     // The benefits are a reduction in memory usage, an increase in performance under certain circumstances and most
@@ -2092,8 +2134,8 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
             .time = std::chrono::duration<f32>(std::chrono::steady_clock::now() - _customShaderStartTime).count(),
             .scale = static_cast<f32>(p.s->font->dpi) / static_cast<f32>(USER_DEFAULT_SCREEN_DPI),
             .resolution = {
-                static_cast<f32>(_cellCount.x * p.s->font->cellSize.x),
-                static_cast<f32>(_cellCount.y * p.s->font->cellSize.y),
+                static_cast<f32>(_viewportCellCount.x * p.s->font->cellSize.x),
+                static_cast<f32>(_viewportCellCount.y * p.s->font->cellSize.y),
             },
             .background = colorFromU32Premultiply<f32x4>(p.s->misc->backgroundColor),
         };

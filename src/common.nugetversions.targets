@@ -37,7 +37,8 @@
 
   <ImportGroup Label="ExtensionTargets">
     <!--  PGO -->
-    <Import Condition="'$(PgoTarget)' == 'true' And '$(Platform)'=='x64' And '$(PGOBuildMode)'!='' and Exists('$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.targets')" Project="$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.targets" />
+    <Import Condition="'$(PgoTarget)' == 'true' And ('$(Platform)'=='x64' or '$(Platform)'=='arm64') And '$(PGOBuildMode)'!='' and Exists('$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.props')" Project="$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.props" />
+    <Import Condition="'$(PgoTarget)' == 'true' And ('$(Platform)'=='x64' or '$(Platform)'=='arm64') And '$(PGOBuildMode)'!='' and Exists('$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.targets')" Project="$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.targets" />
 
     <!-- CppWinrt -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.targets" Condition="'$(TerminalCppWinrt)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.targets')" />
@@ -46,7 +47,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets" Condition="'$(TerminalTAEF)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets')" />
 
     <!-- TerminalThemeHelpers -->
-    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.6.220404001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets" Condition="'$(TerminalThemeHelpers)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.6.220404001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" />
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.7.230706001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets" Condition="'$(TerminalThemeHelpers)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.7.230706001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" />
 
     <!-- VisualStudioSetup -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets" Condition="'$(TerminalVisualStudioSetup)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets')" />
@@ -71,8 +72,8 @@
     </PropertyGroup>
 
     <!--  PGO -->
-    <Import Condition="'$(PgoTarget)' == 'true' And '$(Platform)'=='x64' And '$(PGOBuildMode)'!='' AND !Exists('$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.props')" Text="$([System.String]::Format('$(ErrorText)', '$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.props))" />
-    <Import Condition="'$(PgoTarget)' == 'true' And '$(Platform)'=='x64' And '$(PGOBuildMode)'!='' AND !Exists('$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.targets))" />
+    <Error Condition="'$(PgoTarget)' == 'true' And ('$(Platform)'=='x64' or '$(Platform)'=='arm64') And '$(PGOBuildMode)'!='' AND !Exists('$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.props')" Text="$([System.String]::Format('$(ErrorText)', '$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.props))" />
+    <Error Condition="'$(PgoTarget)' == 'true' And ('$(Platform)'=='x64' or '$(Platform)'=='arm64') And '$(PGOBuildMode)'!='' AND !Exists('$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.targets))" />
 
     <!-- CppWinrt -->
     <Error Condition="'$(TerminalCppWinrt)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.props'))" />
@@ -82,7 +83,7 @@
     <Error Condition="'$(TerminalTAEF)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets'))" />
 
     <!-- TerminalThemeHelpers -->
-    <Error Condition="'$(TerminalThemeHelpers)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.6.220404001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.6.220404001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets'))" />
+    <Error Condition="'$(TerminalThemeHelpers)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.7.230706001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.7.230706001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets'))" />
 
     <!-- VisualStudioSetup -->
     <Error Condition="'$(TerminalVisualStudioSetup)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets'))" />

@@ -266,9 +266,7 @@ VOID ConIoSrvComm::ServiceInputPipe()
             case CIS_EVENT_TYPE_INPUT:
                 try
                 {
-                    const auto keyRecord = Event.InputEvent.Record.Event.KeyEvent;
-                    const KeyEvent keyEvent{ keyRecord };
-                    HandleGenericKeyEvent(keyEvent, false);
+                    HandleGenericKeyEvent(Event.InputEvent.Record, false);
                 }
                 catch (...)
                 {

@@ -73,7 +73,6 @@ namespace Microsoft::Console::Render
         virtual void SelectNewRegion(const til::point coordStart, const til::point coordEnd) = 0;
         virtual const til::point GetSelectionAnchor() const noexcept = 0;
         virtual const til::point GetSelectionEnd() const noexcept = 0;
-        virtual void ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute attr) = 0;
         virtual const bool IsUiaDataInitialized() const noexcept = 0;
     };
 }

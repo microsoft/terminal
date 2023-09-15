@@ -45,9 +45,28 @@
         </Expand>
     </Type>
 
-    <Type Name="KeyEvent">
-        <DisplayString Condition="_keyDown">{{↓ wch:{_charData} mod:{_activeModifierKeys} repeat:{_repeatCount} vk:{_virtualKeyCode} vsc:{_virtualScanCode}}</DisplayString>
-        <DisplayString Condition="!_keyDown">{{↑ wch:{_charData} mod:{_activeModifierKeys} repeat:{_repeatCount} vk:{_virtualKeyCode} vsc:{_virtualScanCode}}</DisplayString>
+    <Type Name="_KEY_EVENT_RECORD">
+        <DisplayString Condition="bKeyDown != 0">↓ rep:{wRepeatCount} vk:{wVirtualKeyCode} sc:{wVirtualScanCode} ch:{uChar.UnicodeChar} ctrl:{(unsigned short)dwControlKeyState,x}</DisplayString>
+        <DisplayString Condition="bKeyDown == 0">↑ rep:{wRepeatCount} vk:{wVirtualKeyCode} sc:{wVirtualScanCode} ch:{uChar.UnicodeChar} ctrl:{(unsigned short)dwControlKeyState,x}</DisplayString>
+    </Type>
+    <Type Name="_MOUSE_EVENT_RECORD">
+        <DisplayString>pos:{dwMousePosition.X},{dwMousePosition.Y} state:{dwButtonState,x} ctrl:{(unsigned short)dwControlKeyState,x} flags:{(unsigned short)dwEventFlags,x}</DisplayString>
+    </Type>
+    <Type Name="_WINDOW_BUFFER_SIZE_RECORD">
+        <DisplayString>size:{dwSize.X},{dwSize.Y}</DisplayString>
+    </Type>
+    <Type Name="_MENU_EVENT_RECORD">
+        <DisplayString>id:{dwCommandId}</DisplayString>
+    </Type>
+    <Type Name="_FOCUS_EVENT_RECORD">
+        <DisplayString>focus:{bSetFocus}</DisplayString>
+    </Type>
+    <Type Name="_INPUT_RECORD">
+        <DisplayString Condition="EventType == 0x0001">Key {Event.KeyEvent}</DisplayString>
+        <DisplayString Condition="EventType == 0x0002">Mouse {Event.MouseEvent}</DisplayString>
+        <DisplayString Condition="EventType == 0x0004">WindowBufferSize {Event.WindowBufferSizeEvent}</DisplayString>
+        <DisplayString Condition="EventType == 0x0008">Menu {Event.MenuEvent}</DisplayString>
+        <DisplayString Condition="EventType == 0x0010">Focus {Event.FocusEvent}</DisplayString>
     </Type>
 
     <Type Name="til::size">
@@ -146,11 +165,18 @@
         <DisplayString Condition="_occupied">{glyphIndex}</DisplayString>
     </Type>
 
-    <Type Name="Microsoft::Console::Render::Atlas::BackendD3D::AtlasFontFaceEntry">
-        <DisplayString Condition="!_occupied">(empty)</DisplayString>
-        <DisplayString Condition="_occupied">{(void*)fontFace.m_ptr}, {lineRendition}</DisplayString>
+    <Type Name="Microsoft::Console::Render::Atlas::BackendD3D::AtlasFontFaceEntryInner">
+        <DisplayString>{(void*)fontFace.m_ptr}, {lineRendition}</DisplayString>
         <Expand>
             <ExpandedItem>glyphs</ExpandedItem>
+        </Expand>
+    </Type>
+
+    <Type Name="Microsoft::Console::Render::Atlas::BackendD3D::AtlasFontFaceEntry">
+        <DisplayString Condition="!inner._Mypair._Myval2">(empty)</DisplayString>
+        <DisplayString Condition="inner._Mypair._Myval2">{*inner._Mypair._Myval2}</DisplayString>
+        <Expand>
+            <ExpandedItem>*inner._Mypair._Myval2</ExpandedItem>
         </Expand>
     </Type>
 </AutoVisualizer>

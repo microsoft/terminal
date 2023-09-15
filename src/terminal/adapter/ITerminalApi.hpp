@@ -81,9 +81,11 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void NotifyAccessibilityChange(const til::rect& changedRect) = 0;
         virtual void NotifyBufferRotation(const int delta) = 0;
 
-        virtual void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) = 0;
+        virtual void MarkPrompt(const ScrollMark& mark) = 0;
         virtual void MarkCommandStart() = 0;
         virtual void MarkOutputStart() = 0;
         virtual void MarkCommandFinish(std::optional<unsigned int> error) = 0;
+
+        virtual void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) = 0;
     };
 }
