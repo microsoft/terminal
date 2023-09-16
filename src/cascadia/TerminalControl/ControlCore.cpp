@@ -858,11 +858,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
     void ControlCore::ApplyAppearance(const bool& focused)
     {
-        OutputDebugStringW(L"\nApplying Appearance");
-
-        hstring debugString = hstring(L"\nFocused: ") + (focused ? L"True\n" : L"False\n");
-        OutputDebugStringW(debugString.c_str());
-
         auto lock = _terminal->LockForWriting();
         const auto& newAppearance{ focused ? _settings->FocusedAppearance() : _settings->UnfocusedAppearance() };
         // Update the terminal core with its new Core settings
@@ -876,15 +871,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
 
-            bool acrylicBuggyToggle = !_settings->EnableUnfocusedAcrylic() && UseAcrylic();
-            if (!focused && !acrylicBuggyToggle)
-            {
-                _setOpacity(newAppearance->Opacity(), false);
-            }
-            else
-            {
-                _setOpacity(FocusedOpacity());
-            }
+            // Skip Unfocused Opacity when EnableUnfocusedAcrylic is false
+            // and Acrylic is true as this results into seeing the opacity going
+            // from solid to unfocused to focused bug. 
+            bool skipUnfocusedOpacity = !_settings->EnableUnfocusedAcrylic() && UseAcrylic();
+            double newOpacity = skipUnfocusedOpacity ? FocusedOpacity() : newAppearance->Opacity();
+            _setOpacity(newOpacity, focused);
 
             // No need to update Acrylic if UnfocusedAcrylic is disabled
             if (_settings->EnableUnfocusedAcrylic())
