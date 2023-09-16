@@ -873,7 +873,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Skip Unfocused Opacity when EnableUnfocusedAcrylic is false
             // and Acrylic is true as this results into seeing the opacity going
-            // from solid to unfocused to focused bug. 
+            // from solid to unfocused to focused bug.
             bool skipUnfocusedOpacity = !_settings->EnableUnfocusedAcrylic() && UseAcrylic();
             double newOpacity = skipUnfocusedOpacity ? FocusedOpacity() : newAppearance->Opacity();
             _setOpacity(newOpacity, focused);
