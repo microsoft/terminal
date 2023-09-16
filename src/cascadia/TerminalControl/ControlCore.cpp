@@ -675,7 +675,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _setOpacity(Opacity() + adjustment);
     }
 
-    void ControlCore::_setOpacity(const double opacity)
+    void ControlCore::_setOpacity(const double opacity, bool focusedRuntime)
     {
         const auto newOpacity = std::clamp(opacity,
                                            0.0,
@@ -688,6 +688,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Update our runtime opacity value
         _runtimeOpacity = newOpacity;
+        _runtimeFocusedOpacity = focusedRuntime ? newOpacity : _runtimeFocusedOpacity;
 
         // Manually turn off acrylic if they turn off transparency.
         _runtimeUseAcrylic = newOpacity < 1.0 && _settings->UseAcrylic();
@@ -819,6 +820,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _cellWidth = CSSLengthPercentage::FromString(_settings->CellWidth().c_str());
         _cellHeight = CSSLengthPercentage::FromString(_settings->CellHeight().c_str());
         _runtimeOpacity = std::nullopt;
+        _runtimeFocusedOpacity = std::nullopt;
 
         // Manually turn off acrylic if they turn off transparency.
         _runtimeUseAcrylic = _settings->Opacity() < 1.0 && _settings->UseAcrylic();
@@ -874,23 +876,30 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
 
+            bool acrylicBuggyToggle = !_settings->EnableUnfocusedAcrylic() && UseAcrylic();
+            if (!focused && !acrylicBuggyToggle)
+            {
+                _setOpacity(newAppearance->Opacity(), false);
+            }
+            else
+            {
+                _setOpacity(FocusedOpacity());
+            }
+
             // No need to update Acrylic if UnfocusedAcrylic is disabled
             if (_settings->EnableUnfocusedAcrylic())
             {
-                _setOpacity(newAppearance->Opacity());
-
                 // Manually turn off acrylic if they turn off transparency.
                 _runtimeUseAcrylic = Opacity() < 1.0 && newAppearance->UseAcrylic();
-
-                // Update the renderer as well. It might need to fall back from
-                // cleartype -> grayscale if the BG is transparent / acrylic.
-                _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
-                _renderer->NotifyPaintFrame();
-
-                auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(Opacity());
-
-                _TransparencyChangedHandlers(*this, *eventArgs);
             }
+
+            // Update the renderer as well. It might need to fall back from
+            // cleartype -> grayscale if the BG is transparent / acrylic.
+            _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+            _renderer->NotifyPaintFrame();
+
+            auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(Opacity());
+            _TransparencyChangedHandlers(*this, *eventArgs);
 
             _renderer->TriggerRedrawAll(true, true);
         }
