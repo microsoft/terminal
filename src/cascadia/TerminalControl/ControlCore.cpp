@@ -856,6 +856,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
     void ControlCore::ApplyAppearance(const bool& focused)
     {
+        OutputDebugStringW(L"\nApplying Appearance");
+
+        hstring debugString = hstring(L"\nFocused: ") + (focused ? L"True\n" : L"False\n");
+        OutputDebugStringW(debugString.c_str());
+
         auto lock = _terminal->LockForWriting();
         const auto& newAppearance{ focused ? _settings->FocusedAppearance() : _settings->UnfocusedAppearance() };
         // Update the terminal core with its new Core settings
@@ -872,6 +877,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // No need to update Acrylic if UnfocusedAcrylic is disabled
             if (_settings->EnableUnfocusedAcrylic())
             {
+                _setOpacity(newAppearance->Opacity());
+
                 // Manually turn off acrylic if they turn off transparency.
                 _runtimeUseAcrylic = Opacity() < 1.0 && newAppearance->UseAcrylic();
 
