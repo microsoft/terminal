@@ -90,13 +90,13 @@ private:
                     }
                     CATCH_LOG();
 
-                    SetThreadpoolTimer(self->_timer.get(), &self->_delay, 0, 0);
+                    SetThreadpoolTimerEx(self->_timer.get(), &self->_delay, 0, 0);
                 }
             });
         }
         else
         {
-            SetThreadpoolTimer(_timer.get(), &_delay, 0, 0);
+            SetThreadpoolTimerEx(_timer.get(), &_delay, 0, 0);
         }
     }
 
