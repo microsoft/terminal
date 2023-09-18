@@ -69,9 +69,14 @@ namespace Microsoft::Console::Render::Atlas
     // std::clamp<T, Predicate>(T, T, T, Predicate) with std::less{} as the argument,
     // which introduces branching. While not perfect, this is still better than std::clamp.
     template<typename T>
-    constexpr T clamp(T val, T min, T max)
+    constexpr T clamp(T val, T min, T max) noexcept
     {
         return val < min ? min : (max < val ? max : val);
+    }
+
+    constexpr bool isSoftFontChar(wchar_t ch) noexcept
+    {
+        return ch >= 0xEF20 && ch < 0xEF80;
     }
 
     inline constexpr D2D1_RECT_F GlyphRunEmptyBounds{ 1e38f, 1e38f, -1e38f, -1e38f };
