@@ -220,6 +220,7 @@ namespace Microsoft::Console::Render::Atlas
         ATLAS_ATTR_COLD static void _initializeFontFaceEntry(AtlasFontFaceEntryInner& fontFaceEntry);
         [[nodiscard]] ATLAS_ATTR_COLD bool _drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         bool _drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
+        void _drawSoftFontGlyphInBitmap(const RenderingPayload& p, const AtlasGlyphEntry& glyphEntry) const;
         void _drawGlyphPrepareRetry(const RenderingPayload& p);
         void _splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         void _drawGridlines(const RenderingPayload& p, u16 y);
