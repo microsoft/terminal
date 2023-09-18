@@ -720,4 +720,8 @@
     <value>Search the web for selected text</value>
     <comment>This will open a web browser to search for some user-selected text</comment>
   </data>
+  <data name="OpenAboutCommandKey" xml:space="preserve">
+    <value>Open about dialog</value>
+    <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
 </root>
