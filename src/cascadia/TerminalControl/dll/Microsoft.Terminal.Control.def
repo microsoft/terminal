@@ -1,23 +1,4 @@
+; Microsoft.Terminal.Control.dll exposes only activatable WinRT classes
 EXPORTS
-DllCanUnloadNow = WINRT_CanUnloadNow                    PRIVATE
-DllGetActivationFactory = WINRT_GetActivationFactory    PRIVATE
-CreateTerminal
-DestroyTerminal
-TerminalBlinkCursor
-TerminalCalculateResize
-TerminalClearSelection
-TerminalDpiChanged
-TerminalGetSelection
-TerminalIsSelectionActive
-TerminalKillFocus
-TerminalRegisterScrollCallback
-TerminalRegisterWriteCallback
-TerminalSendCharEvent
-TerminalSendKeyEvent
-TerminalSendOutput
-TerminalSetCursorVisible
-TerminalSetFocus
-TerminalSetTheme
-TerminalTriggerResize
-TerminalTriggerResizeWithDimension
-TerminalUserScroll
+  DllCanUnloadNow = WINRT_CanUnloadNow                    PRIVATE
+  DllGetActivationFactory = WINRT_GetActivationFactory    PRIVATE
