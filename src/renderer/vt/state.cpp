@@ -46,7 +46,6 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _circled(false),
     _firstPaint(true),
     _skipCursor(false),
-    _exitResult{ S_OK },
     _terminalOwner{ nullptr },
     _newBottomLine{ false },
     _deferredCursorPos{ INVALID_COORDS },
@@ -136,25 +135,39 @@ CATCH_RETURN();
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT VtEngine::_Flush() noexcept
+void VtEngine::_Flush() noexcept
+{
+    if (!_corked && !_buffer.empty())
+    {
+        _flushImpl();
+    }
+}
+
+// _corked is often true and separating _flushImpl() out allows _flush() to be inlined.
+void VtEngine::_flushImpl() noexcept
 {
     if (_hFile)
     {
-        auto fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
+        const auto fSuccess = WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
         _buffer.clear();
         if (!fSuccess)
         {
-            _exitResult = HRESULT_FROM_WIN32(GetLastError());
+            LOG_LAST_ERROR();
             _hFile.reset();
             if (_terminalOwner)
             {
                 _terminalOwner->CloseOutput();
             }
-            return _exitResult;
         }
     }
+}
 
-    return S_OK;
+// The name of this method is an analogy to TCP_CORK. It instructs
+// the VT renderer to stop flushing its buffer to the output pipe.
+// Don't forget to uncork it!
+void VtEngine::Cork(bool corked) noexcept
+{
+    _corked = corked;
 }
 
 // Method Description:
@@ -425,7 +438,7 @@ void VtEngine::SetTerminalOwner(Microsoft::Console::VirtualTerminal::VtIo* const
 HRESULT VtEngine::RequestCursor() noexcept
 {
     RETURN_IF_FAILED(_RequestCursor());
-    RETURN_IF_FAILED(_Flush());
+    _Flush();
     return S_OK;
 }
 
@@ -546,13 +559,20 @@ HRESULT VtEngine::RequestWin32Input() noexcept
     // in the connected terminal after passing through an RIS sequence.
     RETURN_IF_FAILED(_RequestWin32Input());
     RETURN_IF_FAILED(_RequestFocusEventMode());
-    RETURN_IF_FAILED(_Flush());
+    _Flush();
     return S_OK;
 }
 
 HRESULT VtEngine::SwitchScreenBuffer(const bool useAltBuffer) noexcept
 {
     RETURN_IF_FAILED(_SwitchScreenBuffer(useAltBuffer));
-    RETURN_IF_FAILED(_Flush());
+    _Flush();
     return S_OK;
+}
+
+HRESULT VtEngine::RequestMouseMode(const bool enable) noexcept
+{
+    const auto status = _WriteFormatted(FMT_COMPILE("\x1b[?1003;1006{}"), enable ? 'h' : 'l');
+    _Flush();
+    return status;
 }
