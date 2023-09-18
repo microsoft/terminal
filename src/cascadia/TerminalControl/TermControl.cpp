@@ -733,16 +733,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (acrylic == nullptr)
             {
                 acrylic = Media::AcrylicBrush{};
-
-                if (_core.Settings().EnableUnfocusedAcrylic())
-                {
-                    acrylic.BackgroundSource(Media::AcrylicBackgroundSource::Backdrop);
-                }
-                else
-                {
-                    acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-                }
             }
+
+            const auto backdropStyle =
+                _core.Settings().EnableUnfocusedAcrylic() ? Media::AcrylicBackgroundSource::Backdrop : Media::AcrylicBackgroundSource::HostBackdrop;
+            acrylic.BackgroundSource(backdropStyle);
 
             // see GH#1082: Initialize background color so we don't get a
             // fade/flash when _BackgroundColorChanged is called
