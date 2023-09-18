@@ -95,6 +95,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.interactivityOpenHyperlink = _interactivity.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
         _revokers.interactivityScrollPositionChanged = _interactivity.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
         _revokers.ContextMenuRequested = _interactivity.ContextMenuRequested(winrt::auto_revoke, { get_weak(), &TermControl::_contextMenuHandler });
+        _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_customPasteFromClipboard });
 
         // "Bubbled" events - ones we want to handle, by raising our own event.
         _revokers.CopyToClipboard = _core.CopyToClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCopyToClipboard });
@@ -106,8 +107,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.CloseTerminalRequested = _core.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCloseTerminalRequested });
         _revokers.CompletionsChanged = _core.CompletionsChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCompletionsChanged });
         _revokers.RestartTerminalRequested = _core.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleRestartTerminalRequested });
-
-        _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -2923,6 +2922,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _StringSentHandlers(*this, winrt::make<StringSentEventArgs>(text));
         }
         _core.PasteText(text);
+    }
+
+    // Methog Description:
+    // - Event handler for the interactivity's PasteFromClipboard event. This is
+    //   triggered when the control itself wants to ask for a paste. Think:
+    //   right-click-to-paste.
+    // - Instead of just bubbling this up to the app for it to fill, we will
+    //   create a different event, with _our_ callback in it. That'll let us
+    //   call our _StringSentHandlers if required.
+    void TermControl::_customPasteFromClipboard(const IInspectable&, const Control::PasteFromClipboardEventArgs& args)
+    {
+        // RELPACE the handler we were given with a new handler _we_ implemented.
+        auto clipboardDataHandler = [weak = get_weak()](std::wstring_view text) {
+            if (const auto control{ weak.get() })
+            {
+                control->_pasteTextWithBroadcast(winrt::hstring{ text });
+            }
+        };
+
+        // send paste event up to TermApp
+        _PasteFromClipboardHandlers(*this,
+                                    winrt::make<PasteFromClipboardEventArgs>(clipboardDataHandler,
+                                                                             args.BracketedPasteEnabled()));
     }
 
     // Method Description:

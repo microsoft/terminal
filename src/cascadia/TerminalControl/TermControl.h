@@ -180,8 +180,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         BUBBLED_FORWARDED_TYPED_EVENT(CompletionsChanged,     IInspectable, Control::CompletionsChangedEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(RestartTerminalRequested, IInspectable, IInspectable);
 
-        BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
 
+        TYPED_EVENT(PasteFromClipboard,        IInspectable, Control::PasteFromClipboardEventArgs);
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(RaiseNotice,               IInspectable, Control::NoticeEventArgs);
         TYPED_EVENT(HidePointerCursor,         IInspectable, IInspectable);
@@ -379,6 +379,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _SelectCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _SelectOutputHandler(const IInspectable& sender, const IInspectable& args);
         bool _displayCursorWhileBlurred() const noexcept;
+
+        void _customPasteFromClipboard(const IInspectable&, const Control::PasteFromClipboardEventArgs& args);
 
         struct Revokers
         {
