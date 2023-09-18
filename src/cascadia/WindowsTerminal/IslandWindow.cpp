@@ -719,14 +719,14 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             {
                 const auto newWindowRect{ _getDockedSize(proposed) };
 
-                 // Inform User32 that we want to be placed at the position
-                 // and dimensions that _getQuakeModeSize returned. When we
-                 // snap across monitor boundaries, this will re-evaluate our
-                 // size for the new monitor.
-                 lpwpos->x = newWindowRect.left;
-                 lpwpos->y = newWindowRect.top;
-                 lpwpos->cx = newWindowRect.width();
-                 lpwpos->cy = newWindowRect.height();
+                // Inform User32 that we want to be placed at the position
+                // and dimensions that _getQuakeModeSize returned. When we
+                // snap across monitor boundaries, this will re-evaluate our
+                // size for the new monitor.
+                lpwpos->x = newWindowRect.left;
+                lpwpos->y = newWindowRect.top;
+                lpwpos->cx = newWindowRect.width();
+                lpwpos->cy = newWindowRect.height();
 
                 return 0;
             }
@@ -1724,8 +1724,9 @@ Docking IslandWindow::DockSettings() const noexcept
     return _dockingSettings;
 }
 
-void IslandWindow::DockSettings(Docking settings) noexcept
+void IslandWindow::DockSettings(Docking settings, const bool centered) noexcept
 {
+    _centered = centered;
     if (_dockingSettings != settings)
     {
         _dockingSettings = settings;
@@ -1835,14 +1836,18 @@ til::rect IslandWindow::_getDockedSize(HMONITOR hmon)
                                    width,
                                    height };
 
-    // TODO! account for centerOnLaunch too
+    // Account for centerOnLaunch too
+    const til::size fromSide = _centered ? (til::size{ til::math::rounding,
+                                                       (availableSpace.width - width) / 2.0,
+                                                       (availableSpace.height - height) / 2.0 }) :
+                                           (til::size{ 0, 0 });
     til::point origin;
     switch (_dockingSettings.Side())
     {
     case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Top:
     {
         origin = {
-            (nearestMonitorInfo.rcWork.left - (singleBorderWidth)),
+            (nearestMonitorInfo.rcWork.left - (singleBorderWidth) + fromSide.width),
             (nearestMonitorInfo.rcWork.top)
         };
         break;
@@ -1850,7 +1855,7 @@ til::rect IslandWindow::_getDockedSize(HMONITOR hmon)
     case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Bottom:
     {
         origin = {
-            (nearestMonitorInfo.rcWork.left - (singleBorderWidth)),
+            (nearestMonitorInfo.rcWork.left - (singleBorderWidth) + fromSide.width),
             (nearestMonitorInfo.rcWork.bottom - singleBorderHeight - (dimensions.height))
         };
         break;
@@ -1859,7 +1864,7 @@ til::rect IslandWindow::_getDockedSize(HMONITOR hmon)
     {
         origin = {
             (nearestMonitorInfo.rcWork.left - (singleBorderWidth)),
-            (nearestMonitorInfo.rcWork.top)
+            (nearestMonitorInfo.rcWork.top) + fromSide.height
         };
         break;
     }
@@ -1867,7 +1872,7 @@ til::rect IslandWindow::_getDockedSize(HMONITOR hmon)
     {
         origin = {
             (nearestMonitorInfo.rcWork.right - (singleBorderWidth) - (dimensions.width)),
-            (nearestMonitorInfo.rcWork.top)
+            (nearestMonitorInfo.rcWork.top) + fromSide.height
         };
         break;
     }

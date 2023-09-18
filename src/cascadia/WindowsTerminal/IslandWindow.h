@@ -58,7 +58,7 @@ public:
     winrt::fire_and_forget SummonWindow(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
     winrt::Microsoft::Terminal::Settings::Model::Docking DockSettings() const noexcept;
-    void DockSettings(winrt::Microsoft::Terminal::Settings::Model::Docking settings) noexcept;
+    void DockSettings(winrt::Microsoft::Terminal::Settings::Model::Docking settings, const bool centered) noexcept;
     void SetAutoHideWindow(bool autoHideWindow) noexcept;
 
     void HideWindow();
@@ -147,6 +147,7 @@ protected:
     void _moveToMonitor(const MONITORINFO activeMonitor);
 
     winrt::Microsoft::Terminal::Settings::Model::Docking _dockingSettings{ nullptr };
+    bool _centered{ false };
     bool _autoHideWindow{ false };
 
     void _applyDocking();

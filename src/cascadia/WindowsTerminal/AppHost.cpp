@@ -724,14 +724,18 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect propo
                        width,
                        height };
 
-        // TODO! account for centerOnLaunch too
+        // Account for centerOnLaunch too
+        const til::size fromSide = centerOnLaunch ? (til::size{ til::math::rounding,
+                                                                (availableSpace.width - width) / 2.0,
+                                                                (availableSpace.height - height) / 2.0 }) :
+                                                    (til::size{ 0, 0 });
 
         switch (dockingSettings.Side())
         {
         case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Top:
         {
             origin = {
-                (nearestMonitorInfo.rcWork.left - (singleBorderWidth)),
+                (nearestMonitorInfo.rcWork.left - (singleBorderWidth) + fromSide.width),
                 (nearestMonitorInfo.rcWork.top)
             };
             break;
@@ -739,7 +743,7 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect propo
         case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Bottom:
         {
             origin = {
-                (nearestMonitorInfo.rcWork.left - (singleBorderWidth)),
+                (nearestMonitorInfo.rcWork.left - (singleBorderWidth) + fromSide.width),
                 (nearestMonitorInfo.rcWork.bottom - singleBorderHeight - (dimensions.height))
             };
             break;
@@ -748,7 +752,7 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect propo
         {
             origin = {
                 (nearestMonitorInfo.rcWork.left - (singleBorderWidth)),
-                (nearestMonitorInfo.rcWork.top)
+                (nearestMonitorInfo.rcWork.top) + fromSide.height
             };
             break;
         }
@@ -756,7 +760,7 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect propo
         {
             origin = {
                 (nearestMonitorInfo.rcWork.right - (singleBorderWidth) - (dimensions.width)),
-                (nearestMonitorInfo.rcWork.top)
+                (nearestMonitorInfo.rcWork.top) + fromSide.height
             };
             break;
         }
@@ -1272,7 +1276,7 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
                                     const winrt::Windows::Foundation::IInspectable&)
 {
     // _window->IsQuakeWindow(_windowLogic.IsQuakeWindow());
-    _window->DockSettings(_windowLogic.Docking());
+    _window->DockSettings(_windowLogic.Docking(), _windowLogic.CenterOnLaunch());
 }
 
 // Raised from our Peasant. We handle by propagating the call to our terminal window.
