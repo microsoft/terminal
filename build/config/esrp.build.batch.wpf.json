@@ -1,7 +1,7 @@
 [
     {
         "MatchedPath": [
-            "PublicTerminalCore.dll"
+            "Microsoft.Terminal.Control.ABI.dll"
         ],
         "SigningInfo": {
             "Operations": [
