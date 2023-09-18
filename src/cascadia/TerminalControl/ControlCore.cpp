@@ -868,7 +868,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetSelectionBackground(til::color{ newAppearance->SelectionBackground() });
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
-            _renderer->TriggerRedrawAll();
+
+            // No need to update Acrylic if UnfocusedAcrylic is disabled
+            if (_settings->EnableUnfocusedAcrylic())
+            {
+                // Manually turn off acrylic if they turn off transparency.
+                _runtimeUseAcrylic = Opacity() < 1.0 && newAppearance->UseAcrylic();
+
+                // Update the renderer as well. It might need to fall back from
+                // cleartype -> grayscale if the BG is transparent / acrylic.
+                _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+                _renderer->NotifyPaintFrame();
+
+                auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(Opacity());
+
+                _TransparencyChangedHandlers(*this, *eventArgs);
+            }
+
+            _renderer->TriggerRedrawAll(true, true);
         }
     }
 

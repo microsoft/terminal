@@ -20,6 +20,7 @@
 #define CONTROL_APPEARANCE_SETTINGS(X)                                                                                                          \
     X(til::color, SelectionBackground, DEFAULT_FOREGROUND)                                                                                      \
     X(double, Opacity, 1.0)                                                                                                                     \
+    X(bool, UseAcrylic, false)                                                                                                                  \
     X(winrt::hstring, BackgroundImage)                                                                                                          \
     X(double, BackgroundImageOpacity, 1.0)                                                                                                      \
     X(winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill)            \
@@ -55,7 +56,7 @@
 #define CONTROL_SETTINGS(X)                                                                                                                              \
     X(winrt::hstring, ProfileName)                                                                                                                       \
     X(winrt::hstring, ProfileSource)                                                                                                                     \
-    X(bool, UseAcrylic, false)                                                                                                                           \
+    X(bool, EnableUnfocusedAcrylic, false)                                                                                                               \
     X(winrt::hstring, Padding, DEFAULT_PADDING)                                                                                                          \
     X(winrt::hstring, FontFace, L"Consolas")                                                                                                             \
     X(float, FontSize, DEFAULT_FONT_SIZE)                                                                                                                \

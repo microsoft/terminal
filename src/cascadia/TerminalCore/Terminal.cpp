@@ -288,7 +288,7 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
         // but after the resize, we'll want to make sure that the new buffer's
         // current attributes (the ones used for printing new text) match the
         // old buffer's.
-        const auto oldBufferAttributes = _mainBuffer->GetCurrentAttributes();
+        const auto& oldBufferAttributes = _mainBuffer->GetCurrentAttributes();
         newTextBuffer = std::make_unique<TextBuffer>(bufferSize,
                                                      TextAttribute{},
                                                      0, // temporarily set size to 0 so it won't render.
