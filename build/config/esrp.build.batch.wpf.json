@@ -1,7 +1,7 @@
 [
     {
         "MatchedPath": [
-            "Microsoft.Terminal.Control.ABI.dll"
+            "Microsoft.Terminal.Control/Microsoft.Terminal.Control.dll"
         ],
         "SigningInfo": {
             "Operations": [
