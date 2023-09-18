@@ -163,8 +163,9 @@ constexpr HRESULT vec2_narrow(U x, U y, vec2<T>& out) noexcept
 [[nodiscard]] HRESULT AtlasEngine::UpdateSoftFont(const std::span<const uint16_t> bitPattern, const til::size cellSize, const size_t centeringHint) noexcept
 {
     const auto softFont = _api.s.write()->font.write();
-    softFont->softFontPattern = std::vector(bitPattern.begin(), bitPattern.end());
-    softFont->softFontCellSize = cellSize;
+    softFont->softFontPattern.assign(bitPattern.begin(), bitPattern.end());
+    softFont->softFontCellSize.width = std::max(0, cellSize.width);
+    softFont->softFontCellSize.height = std::max(0, cellSize.height);
     return S_OK;
 }
 
