@@ -8,9 +8,6 @@
 #include <Shlobj_core.h>
 #include <wincodec.h>
 
-#include <d2d1.h>
-#include <d2d1effects_2.h>
-
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
