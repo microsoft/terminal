@@ -42,7 +42,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(ParseNullWindowTheme);
         TEST_METHOD(ParseThemeWithNullThemeColor);
         TEST_METHOD(InvalidCurrentTheme);
-        
+
         static Core::Color rgb(uint8_t r, uint8_t g, uint8_t b) noexcept
         {
             return Core::Color{ r, g, b, 255 };

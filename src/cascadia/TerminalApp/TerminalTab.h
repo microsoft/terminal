@@ -41,7 +41,7 @@ namespace winrt::TerminalApp::implementation
                        std::shared_ptr<Pane> newPane);
 
         void ToggleSplitOrientation();
-        void UpdateIcon(const winrt::hstring iconPath, const winrt::Microsoft::Terminal::Settings::Model::IconStyle& iconStyle);
+        void UpdateIcon(const winrt::hstring iconPath, const winrt::Microsoft::Terminal::Settings::Model::IconStyle iconStyle);
         void HideIcon(const bool hide);
 
         void ShowBellIndicator(const bool show);

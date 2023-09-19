@@ -335,7 +335,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     MUX::Controls::IconSource IconPathConverter::IconSourceMUX(const winrt::hstring& iconPath,
                                                                const bool monochrome)
     {
-
         std::wstring_view iconPathWithoutIndex;
         const auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
         if (!indexOpt.has_value())
@@ -344,7 +343,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         const auto bitmapSource = _getImageIconSourceForBinary(iconPathWithoutIndex, indexOpt.value());
-      
+
         MUX::Controls::ImageIconSource imageIconSource{};
         imageIconSource.ImageSource(bitmapSource);
 
