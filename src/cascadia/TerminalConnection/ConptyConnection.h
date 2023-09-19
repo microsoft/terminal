@@ -94,7 +94,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::array<char, 4096> _buffer{};
         bool _passthroughMode{};
         bool _inheritCursor{ false };
-        bool _reloadEnvironmentVariables{};
+
         til::env _initialEnv{};
         guid _profileGuid{};
 

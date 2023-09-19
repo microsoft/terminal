@@ -89,14 +89,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         });
 
         // Populate the environment map with the current environment.
-        if (_reloadEnvironmentVariables)
-        {
-            environment.regenerate();
-        }
-        else
-        {
-            environment = _initialEnv;
-        }
+        environment = _initialEnv;
 
         {
             // Convert connection Guid to string and ignore the enclosing '{}'.
@@ -290,27 +283,36 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 _passthroughMode = winrt::unbox_value_or<bool>(settings.TryLookup(L"passthroughMode").try_as<Windows::Foundation::IPropertyValue>(), _passthroughMode);
             }
             _inheritCursor = winrt::unbox_value_or<bool>(settings.TryLookup(L"inheritCursor").try_as<Windows::Foundation::IPropertyValue>(), _inheritCursor);
-            _reloadEnvironmentVariables = winrt::unbox_value_or<bool>(settings.TryLookup(L"reloadEnvironmentVariables").try_as<Windows::Foundation::IPropertyValue>(),
-                                                                      _reloadEnvironmentVariables);
             _profileGuid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"profileGuid").try_as<Windows::Foundation::IPropertyValue>(), _profileGuid);
 
             const auto& initialEnvironment{ winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"initialEnvironment").try_as<Windows::Foundation::IPropertyValue>(), L"") };
-            if (!initialEnvironment.empty())
+
+            const bool reloadEnvironmentVariables = winrt::unbox_value_or<bool>(settings.TryLookup(L"reloadEnvironmentVariables").try_as<Windows::Foundation::IPropertyValue>(),
+                                                                                false);
+
+            if (reloadEnvironmentVariables)
             {
-                _initialEnv = til::env{ initialEnvironment.c_str() };
+                _initialEnv.regenerate();
             }
             else
             {
-                // If we were not explicitly provided an "initial" env block to
-                // treat as our original one, then just use our actual current
-                // env block.
-                _initialEnv = til::env::from_current_environment();
+                if (!initialEnvironment.empty())
+                {
+                    _initialEnv = til::env{ initialEnvironment.c_str() };
+                }
+                else
+                {
+                    // If we were not explicitly provided an "initial" env block to
+                    // treat as our original one, then just use our actual current
+                    // env block.
+                    _initialEnv = til::env::from_current_environment();
+                }
             }
-        }
 
-        if (_guid == guid{})
-        {
-            _guid = Utils::CreateGuid();
+            if (_guid == guid{})
+            {
+                _guid = Utils::CreateGuid();
+            }
         }
     }
 
@@ -754,5 +756,4 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         co_await winrt::resume_background(); // move to background
         connection.reset(); // explicitly destruct
     }
-
 }
