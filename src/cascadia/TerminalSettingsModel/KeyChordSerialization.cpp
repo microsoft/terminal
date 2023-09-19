@@ -348,7 +348,7 @@ KeyChord ConversionTrait<KeyChord>::FromJson(const Json::Value& json)
         {
             throw winrt::hresult_invalid_argument{};
         }
-        return _fromString(til::u8u16(keyChordText));
+        return keyChordText.empty()? nullptr : _fromString(til::u8u16(keyChordText));
     }
     catch (...)
     {
