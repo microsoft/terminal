@@ -263,6 +263,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return vs;
     }
 
+    template<typename T>
+    T unbox_prop_or(const Windows::Foundation::Collections::ValueSet& blob, std::wstring_view key, T defaultValue)
+    {
+        return winrt::unbox_value_or<T>(blob.TryLookup(key).try_as<Windows::Foundation::IPropertyValue>(), defaultValue);
+    }
+
     void ConptyConnection::Initialize(const Windows::Foundation::Collections::ValueSet& settings)
     {
         if (settings)
@@ -271,24 +277,23 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // auto bad = unbox_value_or<hstring>(settings.TryLookup(L"foo").try_as<IPropertyValue>(), nullptr);
             // It'll just return null
 
-            _commandline = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"commandline").try_as<Windows::Foundation::IPropertyValue>(), _commandline);
-            _startingDirectory = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingDirectory").try_as<Windows::Foundation::IPropertyValue>(), _startingDirectory);
-            _startingTitle = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingTitle").try_as<Windows::Foundation::IPropertyValue>(), _startingTitle);
-            _rows = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _rows);
-            _cols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _cols);
-            _guid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"guid").try_as<Windows::Foundation::IPropertyValue>(), _guid);
+            _commandline = unbox_prop_or<winrt::hstring>(settings, L"commandline", _commandline);
+            _startingDirectory = unbox_prop_or<winrt::hstring>(settings, L"startingDirectory", _startingDirectory);
+            _startingTitle = unbox_prop_or<winrt::hstring>(settings, L"startingTitle", _startingTitle);
+            _rows = unbox_prop_or<uint32_t>(settings, L"initialRows", _rows);
+            _cols = unbox_prop_or<uint32_t>(settings, L"initialCols", _cols);
+            _guid = unbox_prop_or<winrt::guid>(settings, L"guid", _guid);
             _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
             {
-                _passthroughMode = winrt::unbox_value_or<bool>(settings.TryLookup(L"passthroughMode").try_as<Windows::Foundation::IPropertyValue>(), _passthroughMode);
+                _passthroughMode = unbox_prop_or<bool>(settings, L"passthroughMode", _passthroughMode);
             }
-            _inheritCursor = winrt::unbox_value_or<bool>(settings.TryLookup(L"inheritCursor").try_as<Windows::Foundation::IPropertyValue>(), _inheritCursor);
-            _profileGuid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"profileGuid").try_as<Windows::Foundation::IPropertyValue>(), _profileGuid);
+            _inheritCursor = unbox_prop_or<bool>(settings, L"inheritCursor", _inheritCursor);
+            _profileGuid = unbox_prop_or<winrt::guid>(settings, L"profileGuid", _profileGuid);
 
-            const auto& initialEnvironment{ winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"initialEnvironment").try_as<Windows::Foundation::IPropertyValue>(), L"") };
+            const auto& initialEnvironment{ unbox_prop_or<winrt::hstring>(settings, L"initialEnvironment", L"") };
 
-            const bool reloadEnvironmentVariables = winrt::unbox_value_or<bool>(settings.TryLookup(L"reloadEnvironmentVariables").try_as<Windows::Foundation::IPropertyValue>(),
-                                                                                false);
+            const bool reloadEnvironmentVariables = unbox_prop_or<bool>(settings, L"reloadEnvironmentVariables", false);
 
             if (reloadEnvironmentVariables)
             {
