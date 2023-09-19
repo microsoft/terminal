@@ -152,14 +152,14 @@ til::CoordType CharToColumnMapper::GetTrailingColumnAt(ptrdiff_t offset) noexcep
     return col;
 }
 
-// If given a pointer pointer inside the ROW's text buffer, this function will return the corresponding column.
+// If given a pointer inside the ROW's text buffer, this function will return the corresponding column.
 // This function in particular returns the glyph's first column.
 til::CoordType CharToColumnMapper::GetLeadingColumnAt(const wchar_t* str) noexcept
 {
     return GetLeadingColumnAt(str - _chars);
 }
 
-// If given a pointer pointer inside the ROW's text buffer, this function will return the corresponding column.
+// If given a pointer inside the ROW's text buffer, this function will return the corresponding column.
 // This function in particular returns the glyph's last column (this matters for wide glyphs).
 til::CoordType CharToColumnMapper::GetTrailingColumnAt(const wchar_t* str) noexcept
 {
