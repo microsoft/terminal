@@ -437,6 +437,7 @@
         { "command": { "action": "swapPane", "direction": "previousInOrder"} },
         { "command": { "action": "swapPane", "direction": "nextInOrder"} },
         { "command": { "action": "swapPane", "direction": "first" } },
+        { "command": "toggleBroadcastInput" },
         { "command": "togglePaneZoom" },
         { "command": "toggleSplitOrientation" },
         { "command": "toggleReadOnlyMode" },

@@ -4698,6 +4698,21 @@ namespace winrt::TerminalApp::implementation
         // the settings, change active panes, etc.
         _activated = activated;
         _updateThemeColors();
+
+        if (const auto& tab{ _GetFocusedTabImpl() })
+        {
+            if (tab->TabStatus().IsInputBroadcastActive())
+            {
+                tab->GetRootPane()->WalkTree([activated](const auto& p) {
+                    if (const auto& control{ p->GetTerminalControl() })
+                    {
+                        control.CursorVisibility(activated ?
+                                                     Microsoft::Terminal::Control::CursorDisplayState::Shown :
+                                                     Microsoft::Terminal::Control::CursorDisplayState::Default);
+                    }
+                });
+            }
+        }
     }
 
     winrt::fire_and_forget TerminalPage::_ControlCompletionsChangedHandler(const IInspectable sender,
