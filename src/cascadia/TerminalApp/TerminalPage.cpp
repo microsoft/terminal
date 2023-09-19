@@ -3283,44 +3283,23 @@ namespace winrt::TerminalApp::implementation
         // Begin Theme handling
         _updateThemeColors();
 
-        _updateAllTabCloseButtons(_GetFocusedTab());
+        _updateAllTabCloseButtons();
     }
 
-    void TerminalPage::_updateAllTabCloseButtons(const winrt::TerminalApp::TabBase& focusedTab)
+    void TerminalPage::_updateAllTabCloseButtons()
     {
         // Update the state of the CloseButtonOverlayMode property of
         // our TabView, to match the tab.showCloseButton property in the theme.
         //
         // Also update every tab's individual IsClosable to match the same property.
         const auto theme = _settings.GlobalSettings().CurrentTheme();
-        const auto visibility = theme && theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
+        const auto visibility = (theme && theme.Tab()) ?
+                                    theme.Tab().ShowCloseButton() :
+                                    Settings::Model::TabCloseButtonVisibility::Always;
 
         for (const auto& tab : _tabs)
         {
-            switch (visibility)
-            {
-            case Settings::Model::TabCloseButtonVisibility::Never:
-                tab.TabViewItem().IsClosable(false);
-                break;
-            case Settings::Model::TabCloseButtonVisibility::Hover:
-                tab.TabViewItem().IsClosable(true);
-                break;
-            case Settings::Model::TabCloseButtonVisibility::ActiveOnly:
-            {
-                if (focusedTab && focusedTab == tab)
-                {
-                    tab.TabViewItem().IsClosable(true);
-                }
-                else
-                {
-                    tab.TabViewItem().IsClosable(false);
-                }
-                break;
-            }
-            default:
-                tab.TabViewItem().IsClosable(true);
-                break;
-            }
+            tab.CloseButtonVisibility(visibility);
         }
 
         switch (visibility)

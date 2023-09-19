@@ -1,5 +1,9 @@
 # Terminal 2022 Roadmap
 
+> **NOTE**
+>
+> This document has been superseded by the [Terminal 2023 Roadmap]. Please refer to that document for the updated roadmap.
+
 ## Overview 
 
 This document outlines the roadmap of features we're planning for the Windows Terminal during 2022. This serves as a successor to the [Terminal v2 Roadmap], to reflect changes to our planning going forward.
@@ -126,3 +130,5 @@ Incoming issues/asks/etc. are triaged several times a week, labeled appropriatel
 [Windows Terminal Preview 1.12 Release]: https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-12-release/
 [Windows Terminal Preview 1.13 Release]: https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-13-release/
 [Windows Terminal Preview 1.14 Release]: https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-14-release/
+
+[Terminal 2023 Roadmap]: https://github.com/microsoft/terminal/tree/main/doc/roadmap-2023.md

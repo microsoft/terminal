@@ -373,7 +373,8 @@
         { "command": "quakeMode", "keys":"win+sc(41)" },
         { "command": "openSystemMenu", "keys": "alt+space" },
         { "command": "quit" },
-        { "command": "restoreLastClosed"},
+        { "command": "restoreLastClosed" },
+        { "command": "openAbout" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.

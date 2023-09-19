@@ -223,7 +223,7 @@ namespace winrt::TerminalApp::implementation
 
         _focusState = focusState;
 
-        if (_focusState != FocusState::Unfocused)
+        if (_focused())
         {
             auto lastFocusedControl = GetActiveTerminalControl();
             if (lastFocusedControl)
@@ -961,7 +961,7 @@ namespace winrt::TerminalApp::implementation
             co_await wil::resume_foreground(dispatcher);
             if (const auto tab{ weakThis.get() })
             {
-                if (tab->_focusState != FocusState::Unfocused)
+                if (tab->_focused())
                 {
                     if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
                     {
@@ -1693,7 +1693,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         ReadOnly(_rootPane->ContainsReadOnly());
-        TabViewItem().IsClosable(!ReadOnly());
+        _updateIsClosable();
     }
 
     std::shared_ptr<Pane> TerminalTab::GetActivePane() const

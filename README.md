@@ -120,7 +120,7 @@ repository.
 
 ## Windows Terminal Roadmap
 
-The plan for the Windows Terminal [is described here](/doc/roadmap-2022.md) and
+The plan for the Windows Terminal [is described here](/doc/roadmap-2023.md) and
 will be updated as the project proceeds.
 
 ## Project Build Status

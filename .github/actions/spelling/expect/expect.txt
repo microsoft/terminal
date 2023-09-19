@@ -1908,6 +1908,7 @@ touchpad
 Tpp
 Tpqrst
 tprivapi
+tput
 tracelog
 tracelogging
 traceloggingprovider
