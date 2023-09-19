@@ -633,13 +633,12 @@ void AtlasEngine::_flushBufferLine()
 
     auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
 
-    wil::com_ptr<IDWriteFontFace2> mappedFontFace;
-
 #pragma warning(suppress : 26494) // Variable 'mappedEnd' is uninitialized. Always initialize an object (type.5).
     for (u32 idx = 0, mappedEnd; idx < _api.bufferLine.size(); idx = mappedEnd)
     {
         u32 mappedLength = 0;
-        _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx, &mappedLength, mappedFontFace.put());
+        wil::com_ptr<IDWriteFontFace2> mappedFontFace;
+        _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx, &mappedLength, mappedFontFace.addressof());
         mappedEnd = idx + mappedLength;
 
         if (!mappedFontFace)
@@ -944,10 +943,6 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
     {
         return;
     }
-
-    static constexpr auto isSoftFontChar = [](wchar_t ch) noexcept {
-        return ch >= 0xEF20 && ch < 0xEF80;
-    };
 
     auto pos1 = from;
     auto pos2 = pos1;

@@ -30,6 +30,14 @@
                 <Setter Property="LargeChange" Value="10" />
                 <Setter Property="Minimum" Value="1" />
             </Style>
+            <Style x:Key="LaunchPositionNumberBoxStyle"
+                   BasedOn="{StaticResource NumberBoxSettingStyle}"
+                   TargetType="muxc:NumberBox">
+                <Setter Property="SmallChange" Value="1" />
+                <Setter Property="LargeChange" Value="10" />
+                <Setter Property="Minimum" Value="-2147483648" />
+                <Setter Property="Maximum" Value="2147483647" />
+            </Style>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -242,7 +250,7 @@
                                             Grid.Column="0"
                                             Width="118"
                                             IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
-                                            Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                            Style="{StaticResource LaunchPositionNumberBoxStyle}"
                                             Value="{x:Bind ViewModel.InitialPosX, Mode=TwoWay}" />
                             <muxc:NumberBox x:Name="PosYBox"
                                             x:Uid="Globals_InitialPosYBox"
@@ -250,7 +258,7 @@
                                             Grid.Column="1"
                                             Width="118"
                                             IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
-                                            Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                            Style="{StaticResource LaunchPositionNumberBoxStyle}"
                                             Value="{x:Bind ViewModel.InitialPosY, Mode=TwoWay}" />
                             <CheckBox x:Name="UseDefaultLaunchPositionCheckbox"
                                       x:Uid="Globals_DefaultLaunchPositionCheckbox"

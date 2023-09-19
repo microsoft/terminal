@@ -2518,6 +2518,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
         _profile = nullptr;
         _control = { nullptr };
         _firstChild->_isDefTermSession = _isDefTermSession;
+        _firstChild->_broadcastEnabled = _broadcastEnabled;
     }
 
     _splitState = actualSplitType;
@@ -3173,6 +3174,9 @@ void Pane::EnableBroadcast(bool enabled)
     if (_IsLeaf())
     {
         _broadcastEnabled = enabled;
+        _control.CursorVisibility(enabled ?
+                                      CursorDisplayState::Shown :
+                                      CursorDisplayState::Default);
         UpdateVisuals();
     }
     else
