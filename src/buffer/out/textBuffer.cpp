@@ -2469,7 +2469,7 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
 
             if (oldY == oldCursorPos.y)
             {
-                newCursorPos = { newRow.AdjustBackward(oldCursorPos.x), newY };
+                newCursorPos = { newRow.AdjustToGlyphStart(oldCursorPos.x), newY };
             }
             if (oldY >= mutableViewportTop)
             {
@@ -2550,9 +2550,13 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
 
             if (oldY == oldCursorPos.y && oldCursorPos.x >= oldX)
             {
-                // In theory AdjustBackward ensures we don't put the cursor on a trailing wide glyph.
+                // In theory AdjustToGlyphStart ensures we don't put the cursor on a trailing wide glyph.
                 // In practice I don't think that this can possibly happen. Better safe than sorry.
-                newCursorPos = { newRow.AdjustBackward(oldCursorPos.x - oldX + newX), newY };
+                newCursorPos = { newRow.AdjustToGlyphStart(oldCursorPos.x - oldX + newX), newY };
+                // Imagine that the terminal has no scrollback (= TextBuffer is as tall as the viewport).
+                // If we make the window significantly less taller (for instance 1/3rd), we need to ensure
+                // we don't continue copying so much text that it overwrites the row the cursor was on.
+                // In other words, newYLimit ensures that the row with the cursor remains visible.
                 newYLimit = newY + newHeight;
             }
             if (oldY >= mutableViewportTop)

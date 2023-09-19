@@ -152,11 +152,15 @@ til::CoordType CharToColumnMapper::GetTrailingColumnAt(ptrdiff_t offset) noexcep
     return col;
 }
 
+// If given a pointer pointer inside the ROW's text buffer, this function will return the corresponding column.
+// This function in particular returns the glyph's first column.
 til::CoordType CharToColumnMapper::GetLeadingColumnAt(const wchar_t* str) noexcept
 {
     return GetLeadingColumnAt(str - _chars);
 }
 
+// If given a pointer pointer inside the ROW's text buffer, this function will return the corresponding column.
+// This function in particular returns the glyph's last column (this matters for wide glyphs).
 til::CoordType CharToColumnMapper::GetTrailingColumnAt(const wchar_t* str) noexcept
 {
     return GetTrailingColumnAt(str - _chars);
@@ -390,14 +394,14 @@ til::CoordType ROW::NavigateToNext(til::CoordType column) const noexcept
     return _adjustForward(_clampedColumnInclusive(column + 1));
 }
 
-til::CoordType ROW::AdjustBackward(til::CoordType column) const noexcept
+// Returns the starting column of the glyph at the given column.
+// In other words, if you have 3 wide glyphs
+//   AA BB CC
+//   01 23 45  <-- column
+// then `AdjustToGlyphStart(3)` returns 2.
+til::CoordType ROW::AdjustToGlyphStart(til::CoordType column) const noexcept
 {
     return _adjustBackward(_clampedColumn(column));
-}
-
-til::CoordType ROW::AdjustForward(til::CoordType column) const noexcept
-{
-    return _adjustForward(_clampedColumnInclusive(column));
 }
 
 // Routine Description:
