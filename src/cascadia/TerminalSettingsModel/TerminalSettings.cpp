@@ -178,6 +178,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 defaultSettings.Elevate(newTerminalArgs.Elevate().Value());
             }
+
+            if (newTerminalArgs.ReloadEnvironmentVariables())
+            {
+                defaultSettings.ReloadEnvironmentVariables(newTerminalArgs.ReloadEnvironmentVariables().Value());
+            }
         }
 
         return settingsPair;
@@ -325,6 +330,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _ShowMarks = Feature_ScrollbarMarks::IsEnabled() && profile.ShowMarks();
 
         _RightClickContextMenu = profile.RightClickContextMenu();
+
+        _ReloadEnvironmentVariables = profile.ReloadEnvironmentVariables();
     }
 
     // Method Description:

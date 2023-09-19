@@ -104,7 +104,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
         OBSERVABLE_PROJECTED_SETTING(_profile, UseAtlasEngine);
         OBSERVABLE_PROJECTED_SETTING(_profile, Elevate);
-        OBSERVABLE_PROJECTED_SETTING(_profile, VtPassthrough)
+        OBSERVABLE_PROJECTED_SETTING(_profile, VtPassthrough);
+        OBSERVABLE_PROJECTED_SETTING(_profile, ReloadEnvironmentVariables);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);

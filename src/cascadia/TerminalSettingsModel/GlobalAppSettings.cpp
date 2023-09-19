@@ -20,6 +20,7 @@ static constexpr std::string_view ActionsKey{ "actions" };
 static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
+static constexpr std::string_view LegacyReloadEnvironmentVariablesKey{ "compatibility.reloadEnvironmentVariables" };
 
 // Method Description:
 // - Copies any extraneous data from the parent before completing a CreateChild call
@@ -157,6 +158,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
             _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
         }
     }
+
+    JsonUtils::GetValueForKey(json, LegacyReloadEnvironmentVariablesKey, _legacyReloadEnvironmentVariables);
 }
 
 // Method Description:

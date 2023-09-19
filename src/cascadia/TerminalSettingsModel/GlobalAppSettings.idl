@@ -79,7 +79,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, ForceFullRepaintRendering);
         INHERITABLE_SETTING(Boolean, SoftwareRendering);
         INHERITABLE_SETTING(Boolean, UseBackgroundImageForWindow);
-        INHERITABLE_SETTING(Boolean, ReloadEnvironmentVariables);
         INHERITABLE_SETTING(Boolean, ForceVTInput);
         INHERITABLE_SETTING(Boolean, DebugFeaturesEnabled);
         INHERITABLE_SETTING(Boolean, StartOnUserLogin);

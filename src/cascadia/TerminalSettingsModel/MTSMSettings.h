@@ -27,7 +27,6 @@ Author(s):
     X(bool, ForceFullRepaintRendering, "experimental.rendering.forceFullRepaint", false)                                                                                                              \
     X(bool, SoftwareRendering, "experimental.rendering.software", false)                                                                                                                              \
     X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                                                           \
-    X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                                                             \
     X(bool, ForceVTInput, "experimental.input.forceVT", false)                                                                                                                                        \
     X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                                                           \
     X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                                                              \
@@ -89,7 +88,8 @@ Author(s):
     X(bool, Elevate, "elevate", false)                                                                                                                         \
     X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
     X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)                                                                                            \
-    X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)
+    X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)                                                                                             \
+    X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)
 
 // Intentionally omitted Profile settings:
 // * Name

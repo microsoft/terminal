@@ -568,6 +568,11 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
     subcommand.colorSchemeOption = subcommand.subcommand->add_option("--colorScheme",
                                                                      _startingColorScheme,
                                                                      RS_A(L"CmdColorSchemeArgDesc"));
+    subcommand.inheritEnvOption = subcommand.subcommand->add_flag(
+        "--inheritEnvironment,!--reloadEnvironment",
+        _inheritEnvironment,
+        RS_A(L"CmdInheritEnvDesc"));
+
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
     // There's an alternate construction where we make all subcommands "prefix commands",
@@ -589,7 +594,8 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
 {
     NewTerminalArgs args{};
 
-    if (!_commandline.empty())
+    const auto hasCommandline{ !_commandline.empty() };
+    if (hasCommandline)
     {
         std::ostringstream cmdlineBuffer;
 
@@ -654,6 +660,13 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
     {
         args.ColorScheme(winrt::to_hstring(_startingColorScheme));
     }
+
+    bool inheritEnv = hasCommandline;
+    if (*subcommand.inheritEnvOption)
+    {
+        inheritEnv = _inheritEnvironment;
+    }
+    args.ReloadEnvironmentVariables(!inheritEnv);
 
     return args;
 }

@@ -53,9 +53,9 @@ namespace TerminalApp
 
         Boolean HasCommandlineArguments();
 
-        Int32 SetStartupCommandline(String[] commands, String cwd);
+        Int32 SetStartupCommandline(String[] commands, String cwd, String env);
         void SetStartupContent(String json, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
-        Int32 ExecuteCommandline(String[] commands, String cwd);
+        Int32 ExecuteCommandline(String[] commands, String cwd, String env);
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
 

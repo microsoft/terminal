@@ -12,6 +12,7 @@
 
 #include "resource.h"
 #include "NotificationIcon.h"
+#include <til/env.h>
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
@@ -105,7 +106,9 @@ bool WindowEmperor::HandleCommandlineArgs()
     GetStartupInfoW(&si);
     const uint32_t showWindow = WI_IsFlagSet(si.dwFlags, STARTF_USESHOWWINDOW) ? si.wShowWindow : SW_SHOW;
 
-    Remoting::CommandlineArgs eventArgs{ { args }, { cwd }, showWindow };
+    const auto currentEnv{ til::env::from_current_environment() };
+
+    Remoting::CommandlineArgs eventArgs{ { args }, { cwd }, showWindow, winrt::hstring{ currentEnv.to_string() } };
 
     const auto isolatedMode{ _app.Logic().IsolatedMode() };
 
