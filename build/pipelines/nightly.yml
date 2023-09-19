@@ -21,3 +21,21 @@ extends:
     publishSymbolsToPublic: true
     publishVpackToWindows: false
     symbolExpiryTime: 15 # Nightly builds do not keep symbols for very long!
+    stages:
+      - stage: Deploy
+        dependsOn: [Publish, Build]
+        pool:
+          name: SHINE-INT-S
+        jobs:
+          - job: PublishCanaryToAzure
+            displayName: Deploy Canary to Azure
+            steps:
+              - task: AzureFileCopy@4
+                inputs:
+                  sourcePath: README.md
+                  azureSubscription: SHINE Prod Managed Identity ARM
+                  Destination: AzureBlob
+                  storage: terminalbuilds
+                  ContainerName: nightly
+
+
