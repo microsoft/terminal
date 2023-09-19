@@ -302,6 +302,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto fullHeight{ ScrollBarCanvas().ActualHeight() };
             const auto totalBufferRows{ update.newMaximum + update.newViewportSize };
 
+            auto drawPip = [&](const auto row, const auto rightAlign, const auto& brush) {
+                Windows::UI::Xaml::Shapes::Rectangle r;
+                r.Fill(brush);
+                r.Width(16.0f / 3.0f); // pip width - 1/3rd of the scrollbar width.
+                r.Height(2);
+                const auto fractionalHeight = row / totalBufferRows;
+                const auto relativePos = fractionalHeight * fullHeight;
+                ScrollBarCanvas().Children().Append(r);
+                Windows::UI::Xaml::Controls::Canvas::SetTop(r, relativePos);
+                if (rightAlign)
+                {
+                    Windows::UI::Xaml::Controls::Canvas::SetLeft(r, 16.0f * .66f);
+                }
+            };
+
             for (const auto m : marks)
             {
                 Windows::UI::Xaml::Shapes::Rectangle r;
@@ -312,14 +327,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // pre-evaluate that for us, and shove the real value into the
                 // Color member, regardless if the mark has a literal value set.
                 brush.Color(static_cast<til::color>(m.Color.Color));
-                r.Fill(brush);
-                r.Width(16.0f / 3.0f); // pip width - 1/3rd of the scrollbar width.
-                r.Height(2);
-                const auto markRow = m.Start.Y;
-                const auto fractionalHeight = markRow / totalBufferRows;
-                const auto relativePos = fractionalHeight * fullHeight;
-                ScrollBarCanvas().Children().Append(r);
-                Windows::UI::Xaml::Controls::Canvas::SetTop(r, relativePos);
+                drawPip(m.Start.Y, false, brush);
+            }
+
+            if (_searchBox)
+            {
+                const auto searchMatches{ _core.SearchResultRows() };
+                if (searchMatches &&
+                    searchMatches.Size() > 0 &&
+                    _searchBox->Visibility() == Visibility::Visible)
+                {
+                    const til::color fgColor{ _core.ForegroundColor() };
+                    Media::SolidColorBrush searchMarkBrush{};
+                    searchMarkBrush.Color(fgColor);
+                    for (const auto m : searchMatches)
+                    {
+                        drawPip(m, true, searchMarkBrush);
+                    }
+                }
             }
         }
     }
@@ -388,8 +413,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Search text in text buffer. This is triggered if the user click
-    //   search button or press enter.
+    // - Search text in text buffer. This is triggered if the user clicks the
+    //   search button, presses enter, or changes the search criteria.
     // Arguments:
     // - text: the text to search
     // - goForward: boolean that represents if the current search direction is forward
@@ -401,6 +426,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                               const bool caseSensitive)
     {
         _core.Search(text, goForward, caseSensitive);
+    }
+
+    // Method Description:
+    // - The handler for the "search criteria changed" event. Clears selection and initiates a new search.
+    // Arguments:
+    // - text: the text to search
+    // - goForward: indicates whether the search should be performed forward (if set to true) or backward
+    // - caseSensitive: boolean that represents if the current search is case sensitive
+    // Return Value:
+    // - <none>
+    void TermControl::_SearchChanged(const winrt::hstring& text,
+                                     const bool goForward,
+                                     const bool caseSensitive)
+    {
+        if (_searchBox && _searchBox->Visibility() == Visibility::Visible)
+        {
+            _core.Search(text, goForward, caseSensitive);
+        }
     }
 
     // Method Description:
@@ -690,8 +733,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (acrylic == nullptr)
             {
                 acrylic = Media::AcrylicBrush{};
-                acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
             }
+
+            const auto backdropStyle =
+                _core.Settings().EnableUnfocusedAcrylic() ? Media::AcrylicBackgroundSource::Backdrop : Media::AcrylicBackgroundSource::HostBackdrop;
+            acrylic.BackgroundSource(backdropStyle);
 
             // see GH#1082: Initialize background color so we don't get a
             // fade/flash when _BackgroundColorChanged is called
@@ -1005,8 +1051,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // _cursorTimer doesn't exist, and it would never turn on the
             // cursor. To mitigate, we'll initialize the cursor's 'on' state
             // with `_focused` here.
-            _core.CursorOn(_focused || DisplayCursorWhileBlurred);
-            if (DisplayCursorWhileBlurred)
+            _core.CursorOn(_focused || _displayCursorWhileBlurred());
+            if (_displayCursorWhileBlurred())
             {
                 _cursorTimer->Start();
             }
@@ -1922,7 +1968,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             TSFInputControl().NotifyFocusLeave();
         }
 
-        if (_cursorTimer && !DisplayCursorWhileBlurred)
+        if (_cursorTimer && !_displayCursorWhileBlurred())
         {
             _cursorTimer->Stop();
             _core.CursorOn(false);
@@ -3420,8 +3466,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: contains information about the results that were or were not found.
     // Return Value:
     // - <none>
-    void TermControl::_coreFoundMatch(const IInspectable& /*sender*/, const Control::FoundResultsArgs& args)
+    winrt::fire_and_forget TermControl::_coreFoundMatch(const IInspectable& /*sender*/, Control::FoundResultsArgs args)
     {
+        co_await wil::resume_foreground(Dispatcher());
         if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this) })
         {
             automationPeer.RaiseNotificationEvent(
@@ -3429,6 +3476,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
                 args.FoundMatch() ? RS_(L"SearchBox_MatchesAvailable") : RS_(L"SearchBox_NoMatches"), // what to announce if results were found
                 L"SearchBoxResultAnnouncement" /* unique name for this group of notifications */);
+        }
+
+        // Manually send a scrollbar update, now, on the UI thread. We're
+        // already UI-driven, so that's okay. We're not really changing the
+        // scrollbar, but we do want to update the position of any marks. The
+        // Core might send a scrollbar updated event too, but if the first
+        // search hit is in the visible viewport, then the pips won't display
+        // until the user first scrolls.
+        auto scrollBar = ScrollBar();
+        ScrollBarUpdate update{
+            .newValue = scrollBar.Value(),
+            .newMaximum = scrollBar.Maximum(),
+            .newMinimum = scrollBar.Minimum(),
+            .newViewportSize = scrollBar.ViewportSize(),
+        };
+        _throttledUpdateScrollbar(update);
+
+        if (_searchBox)
+        {
+            _searchBox->SetStatus(args.TotalMatches(), args.CurrentMatch());
+            _searchBox->NavigationEnabled(true);
         }
     }
 
@@ -3591,5 +3659,46 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ContextMenu().Hide();
         SelectionContextMenu().Hide();
         _core.ContextMenuSelectOutput();
+    }
+
+    // Should the text cursor be displayed, even when the control isn't focused?
+    // n.b. "blur" is the opposite of "focus".
+    bool TermControl::_displayCursorWhileBlurred() const noexcept
+    {
+        return CursorVisibility() == Control::CursorDisplayState::Shown;
+    }
+    Control::CursorDisplayState TermControl::CursorVisibility() const noexcept
+    {
+        return _cursorVisibility;
+    }
+    void TermControl::CursorVisibility(Control::CursorDisplayState cursorVisibility)
+    {
+        _cursorVisibility = cursorVisibility;
+        if (!_initializedTerminal)
+        {
+            return;
+        }
+
+        if (_displayCursorWhileBlurred())
+        {
+            // If we should be ALWAYS displaying the cursor, turn it on and start blinking.
+            _core.CursorOn(true);
+            if (_cursorTimer.has_value())
+            {
+                _cursorTimer->Start();
+            }
+        }
+        else
+        {
+            // Otherwise, if we're unfocused, then turn the cursor off and stop
+            // blinking. (if we're focused, then we're already doing the right
+            // thing)
+            const auto focused = FocusState() != FocusState::Unfocused;
+            if (!focused && _cursorTimer.has_value())
+            {
+                _cursorTimer->Stop();
+            }
+            _core.CursorOn(focused);
+        }
     }
 }

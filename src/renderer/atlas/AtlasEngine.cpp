@@ -87,6 +87,7 @@ try
         _api.invalidatedRows.start = std::min(_api.invalidatedRows.start, _p.s->viewportCellCount.y);
         _api.invalidatedRows.end = clamp(_api.invalidatedRows.end, _api.invalidatedRows.start, _p.s->viewportCellCount.y);
     }
+    if (_api.scrollOffset)
     {
         const auto limit = gsl::narrow_cast<i16>(_p.s->viewportCellCount.y & 0x7fff);
         const auto offset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
@@ -250,6 +251,16 @@ CATCH_RETURN()
 try
 {
     _flushBufferLine();
+
+    // PaintCursor() is only called when the cursor is visible, but we need to invalidate the cursor area
+    // even if it isn't. Otherwise a transition from a visible to an invisible cursor wouldn't be rendered.
+    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
+    {
+        _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, r.left * _p.s->font->cellSize.x);
+        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, r.top * _p.s->font->cellSize.y);
+        _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, r.right * _p.s->font->cellSize.x);
+        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, r.bottom * _p.s->font->cellSize.y);
+    }
 
     _api.invalidatedCursorArea = invalidatedAreaNone;
     _api.invalidatedRows = invalidatedRowsNone;
@@ -421,15 +432,6 @@ try
             *_api.s.write()->cursor.write() = cachedOptions;
             *_p.s.write()->cursor.write() = cachedOptions;
         }
-    }
-
-    // Clear the previous cursor
-    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
-    {
-        _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, r.left * _p.s->font->cellSize.x);
-        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, r.top * _p.s->font->cellSize.y);
-        _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, r.right * _p.s->font->cellSize.x);
-        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, r.bottom * _p.s->font->cellSize.y);
     }
 
     if (options.isOn)
@@ -631,13 +633,12 @@ void AtlasEngine::_flushBufferLine()
 
     auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
 
-    wil::com_ptr<IDWriteFontFace2> mappedFontFace;
-
 #pragma warning(suppress : 26494) // Variable 'mappedEnd' is uninitialized. Always initialize an object (type.5).
     for (u32 idx = 0, mappedEnd; idx < _api.bufferLine.size(); idx = mappedEnd)
     {
         u32 mappedLength = 0;
-        _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx, &mappedLength, mappedFontFace.put());
+        wil::com_ptr<IDWriteFontFace2> mappedFontFace;
+        _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx, &mappedLength, mappedFontFace.addressof());
         mappedEnd = idx + mappedLength;
 
         if (!mappedFontFace)
@@ -942,10 +943,6 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
     {
         return;
     }
-
-    static constexpr auto isSoftFontChar = [](wchar_t ch) noexcept {
-        return ch >= 0xEF20 && ch < 0xEF80;
-    };
 
     auto pos1 = from;
     auto pos2 = pos1;

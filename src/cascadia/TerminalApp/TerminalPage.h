@@ -511,7 +511,7 @@ namespace winrt::TerminalApp::implementation
         static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
 
         void _updateThemeColors();
-        void _updateAllTabCloseButtons(const winrt::TerminalApp::TabBase& focusedTab);
+        void _updateAllTabCloseButtons();
         void _updatePaneResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
 
         winrt::fire_and_forget _ControlCompletionsChangedHandler(const winrt::Windows::Foundation::IInspectable sender, const winrt::Microsoft::Terminal::Control::CompletionsChangedEventArgs args);

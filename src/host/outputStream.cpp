@@ -95,9 +95,11 @@ til::rect ConhostInternalGetSet::GetViewport() const
 void ConhostInternalGetSet::SetViewportPosition(const til::point position)
 {
     auto& info = _io.GetActiveOutputBuffer();
-    const auto dimensions = info.GetViewport().Dimensions();
-    const auto windowRect = til::rect{ position, dimensions }.to_inclusive_rect();
-    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api->SetConsoleWindowInfoImpl(info, true, windowRect));
+    THROW_IF_FAILED(info.SetViewportOrigin(true, position, false));
+    // SetViewportOrigin() only updates the virtual bottom (the bottom coordinate of the area
+    // in the text buffer a VT client writes its output into) when it's moving downwards.
+    // But this function is meant to truly move the viewport no matter what. Otherwise `tput reset` breaks.
+    info.UpdateBottom();
 }
 
 // Method Description:

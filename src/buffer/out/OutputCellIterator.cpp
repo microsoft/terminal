@@ -11,7 +11,7 @@
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../inc/conattrs.hpp"
 
-static constexpr TextAttribute InvalidTextAttribute{ INVALID_COLOR, INVALID_COLOR };
+static constexpr TextAttribute InvalidTextAttribute{ INVALID_COLOR, INVALID_COLOR, INVALID_COLOR };
 
 // Routine Description:
 // - This is a fill-mode iterator for one particular wchar. It will repeat forever if fillLimit is 0.
