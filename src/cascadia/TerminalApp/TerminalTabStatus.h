@@ -12,6 +12,7 @@ namespace winrt::TerminalApp::implementation
         TerminalTabStatus() = default;
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_OBSERVABLE_PROPERTY(bool, IsConnectionClosed, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(bool, IsPaneZoomed, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(bool, IsProgressRingActive, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(bool, IsProgressRingIndeterminate, _PropertyChangedHandlers);
