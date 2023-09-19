@@ -41,7 +41,7 @@ namespace winrt::TerminalApp::implementation
                        std::shared_ptr<Pane> newPane);
 
         void ToggleSplitOrientation();
-        void UpdateIcon(const winrt::hstring iconPath);
+        void UpdateIcon(const winrt::hstring iconPath, const winrt::Microsoft::Terminal::Settings::Model::IconStyle iconStyle);
         void HideIcon(const bool hide);
 
         void ShowBellIndicator(const bool show);
@@ -111,6 +111,7 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::Controls::MenuFlyoutItem _closePaneMenuItem;
         Windows::UI::Xaml::Controls::MenuFlyoutItem _restartConnectionMenuItem;
 
+        winrt::Microsoft::Terminal::Settings::Model::IconStyle _lastIconStyle;
         winrt::hstring _lastIconPath{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};

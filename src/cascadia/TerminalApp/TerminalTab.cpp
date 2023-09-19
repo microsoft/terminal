@@ -280,17 +280,17 @@ namespace winrt::TerminalApp::implementation
     // - iconPath: The new path string to use as the IconPath for our TabViewItem
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateIcon(const winrt::hstring iconPath)
+    void TerminalTab::UpdateIcon(const winrt::hstring iconPath, const winrt::Microsoft::Terminal::Settings::Model::IconStyle iconStyle)
     {
         ASSERT_UI_THREAD();
 
-        // Don't reload our icon if it hasn't changed.
-        if (iconPath == _lastIconPath)
+        // Don't reload our icon and iconStyle hasn't changed.
+        if (iconPath == _lastIconPath && iconStyle == _lastIconStyle)
         {
             return;
         }
-
         _lastIconPath = iconPath;
+        _lastIconStyle = iconStyle;
 
         // If the icon is currently hidden, just return here (but only after setting _lastIconPath to the new path
         // for when we show the icon again)
@@ -299,9 +299,18 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
-        Icon(_lastIconPath);
-        TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
+        if (iconStyle == IconStyle::Hidden)
+        {
+            // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
+            Icon({});
+            TabViewItem().IconSource(IconSource{ nullptr });
+        }
+        else
+        {
+            Icon(_lastIconPath);
+            bool isMonochrome = iconStyle == IconStyle::Monochrome;
+            TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath, isMonochrome));
+        }
     }
 
     // Method Description:
@@ -323,7 +332,7 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 Icon(_lastIconPath);
-                TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
+                TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath, _lastIconStyle == IconStyle::Monochrome));
             }
             _iconHidden = hide;
         }
