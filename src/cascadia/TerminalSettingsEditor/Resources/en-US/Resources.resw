@@ -1142,6 +1142,14 @@
     <value>Use the new text renderer ("AtlasEngine")</value>
     <comment>{Locked="AtlasEngine"}</comment>
   </data>
+  <data name="Profile_ReloadEnvVars.Header" xml:space="preserve">
+    <value>Launch this application with a new environment block</value>
+    <comment>"environment variables" are user-definable values that can affect the way running processes will behave on a computer</comment>
+  </data>
+  <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
+    <value>When enabled, the Terminal will generate a new environment block when creating new tabs or panes with this profile. When disabled, the tab/pane will instead inherit the variables the Terminal was started with.</value>
+    <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
+  </data>
   <data name="Profile_VtPassthrough.Header" xml:space="preserve">
     <value>Enable experimental virtual terminal passthrough</value>
     <comment>An option to enable experimental virtual terminal passthrough connectivity option with the underlying ConPTY</comment>

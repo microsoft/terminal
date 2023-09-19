@@ -556,7 +556,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     winrt::fire_and_forget TerminalPage::ProcessStartupActions(Windows::Foundation::Collections::IVector<ActionAndArgs> actions,
                                                                const bool initial,
-                                                               const winrt::hstring cwd)
+                                                               const winrt::hstring cwd,
+                                                               const winrt::hstring env)
     {
         auto weakThis{ get_weak() };
 
@@ -576,6 +577,12 @@ namespace winrt::TerminalApp::implementation
             _WindowProperties.VirtualWorkingDirectory(originalVirtualCwd);
         });
 
+        // Literally the same thing with env vars too
+        auto originalVirtualEnv{ _WindowProperties.VirtualEnvVars() };
+        auto restoreEnv = wil::scope_exit([&originalVirtualEnv, this]() {
+            _WindowProperties.VirtualEnvVars(originalVirtualEnv);
+        });
+
         if (cwd.empty())
         {
             // We didn't actually need to change the virtual CWD, so we don't
@@ -585,6 +592,15 @@ namespace winrt::TerminalApp::implementation
         else
         {
             _WindowProperties.VirtualWorkingDirectory(cwd);
+        }
+
+        if (env.empty())
+        {
+            restoreEnv.release();
+        }
+        else
+        {
+            _WindowProperties.VirtualEnvVars(env);
         }
 
         if (auto page{ weakThis.get() })
@@ -1213,6 +1229,8 @@ namespace winrt::TerminalApp::implementation
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.native(),
                                                                                  L".",
                                                                                  L"Azure",
+                                                                                 false,
+                                                                                 L"",
                                                                                  nullptr,
                                                                                  settings.InitialRows(),
                                                                                  settings.InitialCols(),
@@ -1253,6 +1271,8 @@ namespace winrt::TerminalApp::implementation
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
                                                                                  newWorkingDirectory,
                                                                                  settings.StartingTitle(),
+                                                                                 settings.ReloadEnvironmentVariables(),
+                                                                                 _WindowProperties.VirtualEnvVars(),
                                                                                  environment,
                                                                                  settings.InitialRows(),
                                                                                  settings.InitialCols(),
@@ -1260,8 +1280,6 @@ namespace winrt::TerminalApp::implementation
                                                                                  profile.Guid());
 
             valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
-            valueSet.Insert(L"reloadEnvironmentVariables",
-                            Windows::Foundation::PropertyValue::CreateBoolean(_settings.GlobalSettings().ReloadEnvironmentVariables()));
 
             if (inheritCursor)
             {
