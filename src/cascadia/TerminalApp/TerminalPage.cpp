@@ -2348,7 +2348,12 @@ namespace winrt::TerminalApp::implementation
         }
 
         _UnZoomIfNeeded();
-        activeTab->SplitPane(*realSplitType, splitSize, newPane);
+        auto [original, _] = activeTab->SplitPane(*realSplitType, splitSize, newPane);
+
+        // When we split the pane, the Pane itself will create a _new_ Pane
+        // instance for the original content. We need to make sure we also
+        // re-add our event handler to that newly created pane.
+        original->RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
 
         // After GH#6586, the control will no longer focus itself
         // automatically when it's finished being laid out. Manually focus
