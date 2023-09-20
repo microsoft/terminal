@@ -345,6 +345,7 @@ namespace winrt::TerminalApp::implementation
         void _InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl, uint32_t insertPosition = -1);
         void _RegisterTerminalEvents(Microsoft::Terminal::Control::TermControl term);
         void _RegisterTabEvents(TerminalTab& hostingTab);
+        void _RegisterPaneEvents(std::shared_ptr<Pane>& pane);
 
         void _DismissTabContextMenus();
         void _FocusCurrentTab(const bool focusAlways);

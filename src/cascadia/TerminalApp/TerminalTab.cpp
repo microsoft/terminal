@@ -506,9 +506,9 @@ namespace winrt::TerminalApp::implementation
     //         could itself be a parent pane/the root node of a tree of panes
     // Return Value:
     // - <none>
-    void TerminalTab::SplitPane(SplitDirection splitType,
-                                const float splitSize,
-                                std::shared_ptr<Pane> pane)
+    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> TerminalTab::SplitPane(SplitDirection splitType,
+                                                                                   const float splitSize,
+                                                                                   std::shared_ptr<Pane> pane)
     {
         ASSERT_UI_THREAD();
 
@@ -553,6 +553,8 @@ namespace winrt::TerminalApp::implementation
         // possible that the focus events won't propagate immediately. Updating
         // the focus here will give the same effect though.
         _UpdateActivePane(newPane);
+
+        return { original, newPane };
     }
 
     // Method Description:

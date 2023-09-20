@@ -1724,6 +1724,11 @@ namespace winrt::TerminalApp::implementation
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
     }
 
+    void TerminalPage::_RegisterPaneEvents(std::shared_ptr<Pane>& pane)
+    {
+        pane->RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
+    }
+
     // Method Description:
     // - Helper to manually exit "zoom" when certain actions take place.
     //   Anything that modifies the state of the pane tree should probably
@@ -2366,7 +2371,14 @@ namespace winrt::TerminalApp::implementation
         }
 
         _UnZoomIfNeeded();
-        activeTab->SplitPane(*realSplitType, splitSize, newPane);
+        auto [original, _] = activeTab->SplitPane(*realSplitType, splitSize, newPane);
+
+        // When we split the pane, the Pane itself will create a _new_ Pane
+        // instance for the original content. We need to make sure we also
+        // re-add our event handler to that newly created pane.
+        //
+        // _MakePane will already call this for the newly created pane.
+        _RegisterPaneEvents(original);
 
         // After GH#6586, the control will no longer focus itself
         // automatically when it's finished being laid out. Manually focus
@@ -3116,7 +3128,7 @@ namespace winrt::TerminalApp::implementation
             original->SetActive();
         }
 
-        resultPane->RestartTerminalRequested({ get_weak(), &TerminalPage::_restartPaneConnection });
+        _RegisterPaneEvents(resultPane);
 
         return resultPane;
     }
