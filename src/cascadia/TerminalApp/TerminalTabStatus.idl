@@ -7,6 +7,7 @@ namespace TerminalApp
     {
         TerminalTabStatus();
 
+        Boolean IsConnectionClosed { get; set; };
         Boolean IsPaneZoomed { get; set; };
         Boolean IsProgressRingActive { get; set; };
         Boolean IsProgressRingIndeterminate { get; set; };

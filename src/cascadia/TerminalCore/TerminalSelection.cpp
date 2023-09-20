@@ -92,6 +92,7 @@ std::vector<til::point_span> Terminal::_GetSelectionSpans() const noexcept
 // - None
 const til::point Terminal::GetSelectionAnchor() const noexcept
 {
+    _assertLocked();
     return _selection->start;
 }
 
@@ -103,6 +104,7 @@ const til::point Terminal::GetSelectionAnchor() const noexcept
 // - None
 const til::point Terminal::GetSelectionEnd() const noexcept
 {
+    _assertLocked();
     return _selection->end;
 }
 
@@ -155,11 +157,13 @@ const Terminal::SelectionEndpoint Terminal::SelectionEndpointTarget() const noex
 // - bool representing if selection is active. Used to decide copy/paste on right click
 const bool Terminal::IsSelectionActive() const noexcept
 {
+    _assertLocked();
     return _selection.has_value();
 }
 
 const bool Terminal::IsBlockSelection() const noexcept
 {
+    _assertLocked();
     return _blockSelection;
 }
 
@@ -188,6 +192,8 @@ void Terminal::MultiClickSelection(const til::point viewportPos, SelectionExpans
 // - position: the (x,y) coordinate on the visible viewport
 void Terminal::SetSelectionAnchor(const til::point viewportPos)
 {
+    _assertLocked();
+
     _selection = SelectionAnchors{};
     _selection->pivot = _ConvertToBufferCell(viewportPos);
 
@@ -205,7 +211,7 @@ void Terminal::SetSelectionAnchor(const til::point viewportPos)
 // - newExpansionMode: overwrites the _multiClickSelectionMode for this function call. Used for ShiftClick
 void Terminal::SetSelectionEnd(const til::point viewportPos, std::optional<SelectionExpansion> newExpansionMode)
 {
-    if (!_selection.has_value())
+    if (!IsSelectionActive())
     {
         // capture a log for spurious endpoint sets without an active selection
         LOG_HR(E_ILLEGAL_STATE_CHANGE);
@@ -817,6 +823,7 @@ void Terminal::_MoveByBuffer(SelectionDirection direction, til::point& pos) noex
 #pragma warning(disable : 26440) // changing this to noexcept would require a change to ConHost's selection model
 void Terminal::ClearSelection()
 {
+    _assertLocked();
     _selection = std::nullopt;
     _selectionMode = SelectionInteractionMode::None;
     _selectionIsTargetingUrl = false;
@@ -832,8 +839,6 @@ void Terminal::ClearSelection()
 // - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
 const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool singleLine)
 {
-    auto lock = LockForReading();
-
     const auto selectionRects = _GetSelectionRects();
 
     const auto GetAttributeColors = [&](const auto& attr) {
