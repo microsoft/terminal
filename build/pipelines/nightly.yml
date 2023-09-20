@@ -30,12 +30,24 @@ extends:
           - job: PublishCanaryToAzure
             displayName: Deploy Canary to Azure
             steps:
+              - task: DownloadPipelineArtifact@2
+                displayName: Download the MSIX bundle
+                inputs:
+                  artifactName: appxbundle-release
+                  downloadPath: _out
+                  itemPattern: '**/*.msixbundle'
+
+              - pwsh: |-
+                  $b = Get-Item _out/*.msixbundle
+                  ./build/scripts/New-AppInstallerFromTemplateAndBundle.ps1 -BundlePath $b.FullName -AppInstallerTemplatePath ./build/config/template.appinstaller -AppInstallerRoot $(AppInstallerRootURL) -OutputPath _out/Microsoft.WindowsTerminalCanary.appinstaller
+                displayName: "Produce AppInstaller and MSIX bundle"
+
               - task: AzureFileCopy@4
                 inputs:
-                  sourcePath: README.md
+                  sourcePath: _out/*
                   azureSubscription: SHINE Prod Managed Identity ARM
                   Destination: AzureBlob
-                  storage: terminalbuilds
-                  ContainerName: nightly
+                  storage: $(AzureStorageAccount)
+                  ContainerName: $(AzureStorageContainer)
 
 
