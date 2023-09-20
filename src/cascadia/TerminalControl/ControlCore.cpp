@@ -1380,6 +1380,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     til::color ControlCore::ForegroundColor() const
     {
+        const auto lock = _terminal->LockForReading();
         return _terminal->GetRenderSettings().GetColorAlias(ColorAlias::DefaultForeground);
     }
 
