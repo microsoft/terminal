@@ -296,56 +296,102 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_showMarksInScrollbar)
         {
-            // Update scrollbar marks
-            ScrollBarCanvas().Children().Clear();
-            const auto marks{ _core.ScrollMarks() };
-            const auto fullHeight{ ScrollBarCanvas().ActualHeight() };
-            const auto totalBufferRows{ update.newMaximum + update.newViewportSize };
+            const auto scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+            const auto scrollBarWidthInDIP = scrollBar.ActualWidth();
+            const auto scrollBarHeightInDIP = scrollBar.ActualHeight();
+            const auto scrollBarWidthInPx = gsl::narrow_cast<int32_t>(lrint(scrollBarWidthInDIP * scaleFactor));
+            const auto scrollBarHeightInPx = gsl::narrow_cast<int32_t>(lrint(scrollBarHeightInDIP * scaleFactor));
 
-            auto drawPip = [&](const auto row, const auto rightAlign, const auto& brush) {
-                Windows::UI::Xaml::Shapes::Rectangle r;
-                r.Fill(brush);
-                r.Width(16.0f / 3.0f); // pip width - 1/3rd of the scrollbar width.
-                r.Height(2);
-                const auto fractionalHeight = row / totalBufferRows;
-                const auto relativePos = fractionalHeight * fullHeight;
-                ScrollBarCanvas().Children().Append(r);
-                Windows::UI::Xaml::Controls::Canvas::SetTop(r, relativePos);
-                if (rightAlign)
+            const auto canvas = FindName(L"ScrollBarCanvas").as<Controls::Image>();
+            auto source = canvas.Source().try_as<Media::Imaging::WriteableBitmap>();
+
+            if (!source || scrollBarWidthInPx != source.PixelWidth() || scrollBarHeightInPx != source.PixelHeight())
+            {
+                source = Media::Imaging::WriteableBitmap{ scrollBarWidthInPx, scrollBarHeightInPx };
+                canvas.Source(source);
+                canvas.Width(scrollBarWidthInDIP);
+                canvas.Height(scrollBarHeightInDIP);
+            }
+
+            const auto buffer = source.PixelBuffer();
+            const auto data = buffer.data();
+            const auto stride = scrollBarWidthInPx * sizeof(til::color);
+
+            // The bitmap has the size of the entire scrollbar, but we want the marks to only show in the range the "thumb"
+            // (the scroll indicator) can move. That's why we need to add an offset to the start of the drawable bitmap area
+            // (to offset the decrease button) and subtract twice that (to offset the increase button as well).
+            //
+            // The WinUI standard scrollbar defines a Margin="2,0,2,0" for the "VerticalPanningThumb" and a Padding="0,4,0,0"
+            // for the "VerticalDecrementTemplate" (and similar for the increment), but it seems neither of those is correct,
+            // because a padding for 3 DIPs seem to be the exact right amount to add.
+            const auto increaseDecreaseButtonHeight = scrollBarWidthInPx + lround(3 * scaleFactor);
+            const auto drawableDataStart = data + stride * increaseDecreaseButtonHeight;
+            const auto drawableRange = scrollBarHeightInPx - 2 * increaseDecreaseButtonHeight;
+
+            // Protect the remaining code against negative offsets. This normally can't happen
+            // and this code just exists so it doesn't crash if I'm ever wrong about this.
+            // (The window has a min. size that ensures that there's always a scrollbar thumb.)
+            if (drawableRange < 0)
+            {
+                assert(false);
+                return;
+            }
+
+            // The scrollbar bitmap is divided into 3 evenly sized stripes:
+            // Left: Regular marks
+            // Center: nothing
+            // Right: Search marks
+            const auto pipWidth = (scrollBarWidthInPx + 1) / 3;
+            const auto pipHeight = lround(1 * scaleFactor);
+
+            const auto maxOffsetY = drawableRange - pipHeight;
+            const auto offsetScale = maxOffsetY / gsl::narrow_cast<float>(update.newMaximum + update.newViewportSize);
+            // A helper to turn a TextBuffer row offset into a bitmap offset.
+            const auto dataAt = [&](til::CoordType row) [[msvc::forceinline]] {
+                const auto y = std::clamp<long>(lrintf(row * offsetScale), 0, maxOffsetY);
+                return drawableDataStart + stride * y;
+            };
+            // A helper to draw a single pip (mark) at the given location.
+            const auto drawPip = [&](uint8_t* beg, til::color color) [[msvc::forceinline]] {
+                const auto end = beg + pipHeight * stride;
+                for (; beg < end; beg += stride)
                 {
-                    Windows::UI::Xaml::Controls::Canvas::SetLeft(r, 16.0f * .66f);
+                    // Coincidentally a til::color has the same RGBA format as the bitmap.
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+                    std::fill_n(reinterpret_cast<til::color*>(beg), pipWidth, color);
                 }
             };
 
-            for (const auto m : marks)
+            memset(data, 0, buffer.Length());
+
+            if (const auto marks = _core.ScrollMarks())
             {
-                Windows::UI::Xaml::Shapes::Rectangle r;
-                Media::SolidColorBrush brush{};
-                // Sneaky: technically, a mark doesn't need to have a color set,
-                // it might want to just use the color from the palette for that
-                // kind of mark. Fortunately, ControlCore is kind enough to
-                // pre-evaluate that for us, and shove the real value into the
-                // Color member, regardless if the mark has a literal value set.
-                brush.Color(static_cast<til::color>(m.Color.Color));
-                drawPip(m.Start.Y, false, brush);
+                for (const auto& m : marks)
+                {
+                    const auto row = m.Start.Y;
+                    const til::color color{ m.Color.Color };
+                    const auto base = dataAt(row);
+                    drawPip(base, color);
+                }
             }
 
-            if (_searchBox)
+            if (_searchBox && _searchBox->Visibility() == Visibility::Visible)
             {
-                const auto searchMatches{ _core.SearchResultRows() };
-                if (searchMatches &&
-                    searchMatches.Size() > 0 &&
-                    _searchBox->Visibility() == Visibility::Visible)
+                if (const auto searchMatches = _core.SearchResultRows())
                 {
-                    const til::color fgColor{ _core.ForegroundColor() };
-                    Media::SolidColorBrush searchMarkBrush{};
-                    searchMarkBrush.Color(fgColor);
-                    for (const auto m : searchMatches)
+                    const til::color color{ _core.ForegroundColor() };
+                    const auto rightAlignedOffset = (scrollBarWidthInPx - pipWidth) * sizeof(til::color);
+
+                    for (const auto row : searchMatches)
                     {
-                        drawPip(m, true, searchMarkBrush);
+                        const auto base = dataAt(row) + rightAlignedOffset;
+                        drawPip(base, color);
                     }
                 }
             }
+
+            source.Invalidate();
+            canvas.Visibility(Visibility::Visible);
         }
     }
 
@@ -620,14 +666,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // achieve the intended effect.
             ScrollBar().IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::None);
             ScrollBar().Visibility(Visibility::Collapsed);
-            ScrollMarksGrid().Visibility(Visibility::Collapsed);
         }
         else // (default or Visible)
         {
             // Default behavior
             ScrollBar().IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::MouseIndicator);
             ScrollBar().Visibility(Visibility::Visible);
-            ScrollMarksGrid().Visibility(Visibility::Visible);
         }
 
         _interactivity.UpdateSettings();
@@ -640,8 +684,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _showMarksInScrollbar = settings.ShowMarks();
-        // Clear out all the current marks
-        ScrollBarCanvas().Children().Clear();
+        // Hide all scrollbar marks since they might be disabled now.
+        if (const auto canvas = ScrollBarCanvas())
+        {
+            canvas.Visibility(Visibility::Collapsed);
+        }
         // When we hot reload the settings, the core will send us a scrollbar
         // update. If we enabled scrollbar marks, then great, when we handle
         // that message, we'll redraw them.
