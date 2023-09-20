@@ -90,10 +90,13 @@ namespace winrt::TerminalApp::implementation
             {
                 const auto updates = co_await storeContext.GetAppAndOptionalStorePackageUpdatesAsync();
                 co_await wil::resume_foreground(strongThis->Dispatcher());
-                const auto numUpdates = updates.Size();
-                if (numUpdates > 0)
+                if (updates)
                 {
-                    UpdatesAvailable(true);
+                    const auto numUpdates = updates.Size();
+                    if (numUpdates > 0)
+                    {
+                        UpdatesAvailable(true);
+                    }
                 }
             }
 #endif
