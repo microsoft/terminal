@@ -41,7 +41,7 @@ namespace winrt::TerminalApp::implementation
                        std::shared_ptr<Pane> newPane);
 
         void ToggleSplitOrientation();
-        void UpdateIcon(const winrt::hstring iconPath);
+        void UpdateIcon(const winrt::hstring iconPath, const winrt::Microsoft::Terminal::Settings::Model::IconStyle iconStyle);
         void HideIcon(const bool hide);
 
         void ShowBellIndicator(const bool show);
@@ -109,7 +109,9 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> _zoomedPane{ nullptr };
 
         Windows::UI::Xaml::Controls::MenuFlyoutItem _closePaneMenuItem;
+        Windows::UI::Xaml::Controls::MenuFlyoutItem _restartConnectionMenuItem;
 
+        winrt::Microsoft::Terminal::Settings::Model::IconStyle _lastIconStyle;
         winrt::hstring _lastIconPath{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
@@ -125,6 +127,7 @@ namespace winrt::TerminalApp::implementation
             winrt::event_token titleToken;
             winrt::event_token colorToken;
             winrt::event_token taskbarToken;
+            winrt::event_token stateToken;
             winrt::event_token readOnlyToken;
             winrt::event_token focusToken;
 
@@ -170,6 +173,9 @@ namespace winrt::TerminalApp::implementation
         void _RecalculateAndApplyReadOnly();
 
         void _UpdateProgressState();
+
+        void _UpdateConnectionClosedState();
+        void _RestartActivePaneConnection();
 
         void _DuplicateTab();
 

@@ -556,7 +556,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     winrt::fire_and_forget TerminalPage::ProcessStartupActions(Windows::Foundation::Collections::IVector<ActionAndArgs> actions,
                                                                const bool initial,
-                                                               const winrt::hstring cwd)
+                                                               const winrt::hstring cwd,
+                                                               const winrt::hstring env)
     {
         auto weakThis{ get_weak() };
 
@@ -576,6 +577,12 @@ namespace winrt::TerminalApp::implementation
             _WindowProperties.VirtualWorkingDirectory(originalVirtualCwd);
         });
 
+        // Literally the same thing with env vars too
+        auto originalVirtualEnv{ _WindowProperties.VirtualEnvVars() };
+        auto restoreEnv = wil::scope_exit([&originalVirtualEnv, this]() {
+            _WindowProperties.VirtualEnvVars(originalVirtualEnv);
+        });
+
         if (cwd.empty())
         {
             // We didn't actually need to change the virtual CWD, so we don't
@@ -585,6 +592,15 @@ namespace winrt::TerminalApp::implementation
         else
         {
             _WindowProperties.VirtualWorkingDirectory(cwd);
+        }
+
+        if (env.empty())
+        {
+            restoreEnv.release();
+        }
+        else
+        {
+            _WindowProperties.VirtualEnvVars(env);
         }
 
         if (auto page{ weakThis.get() })
@@ -1213,6 +1229,8 @@ namespace winrt::TerminalApp::implementation
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.native(),
                                                                                  L".",
                                                                                  L"Azure",
+                                                                                 false,
+                                                                                 L"",
                                                                                  nullptr,
                                                                                  settings.InitialRows(),
                                                                                  settings.InitialCols(),
@@ -1253,6 +1271,8 @@ namespace winrt::TerminalApp::implementation
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
                                                                                  newWorkingDirectory,
                                                                                  settings.StartingTitle(),
+                                                                                 settings.ReloadEnvironmentVariables(),
+                                                                                 _WindowProperties.VirtualEnvVars(),
                                                                                  environment,
                                                                                  settings.InitialRows(),
                                                                                  settings.InitialCols(),
@@ -1260,8 +1280,6 @@ namespace winrt::TerminalApp::implementation
                                                                                  profile.Guid());
 
             valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
-            valueSet.Insert(L"reloadEnvironmentVariables",
-                            Windows::Foundation::PropertyValue::CreateBoolean(_settings.GlobalSettings().ReloadEnvironmentVariables()));
 
             if (inheritCursor)
             {
@@ -4698,6 +4716,21 @@ namespace winrt::TerminalApp::implementation
         // the settings, change active panes, etc.
         _activated = activated;
         _updateThemeColors();
+
+        if (const auto& tab{ _GetFocusedTabImpl() })
+        {
+            if (tab->TabStatus().IsInputBroadcastActive())
+            {
+                tab->GetRootPane()->WalkTree([activated](const auto& p) {
+                    if (const auto& control{ p->GetTerminalControl() })
+                    {
+                        control.CursorVisibility(activated ?
+                                                     Microsoft::Terminal::Control::CursorDisplayState::Shown :
+                                                     Microsoft::Terminal::Control::CursorDisplayState::Default);
+                    }
+                });
+            }
+        }
     }
 
     winrt::fire_and_forget TerminalPage::_ControlCompletionsChangedHandler(const IInspectable sender,
@@ -4795,8 +4828,7 @@ namespace winrt::TerminalApp::implementation
                                             const bool withSelection)
     {
         // withSelection can be used to add actions that only appear if there's
-        // selected text, like "search the web". In this initial draft, it's not
-        // actually augmented by the TerminalPage, so it's left commented out.
+        // selected text, like "search the web"
 
         const auto& menu{ sender.try_as<MUX::Controls::CommandBarFlyout>() };
         if (!menu)
@@ -4847,6 +4879,14 @@ namespace winrt::TerminalApp::implementation
         if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
         {
             makeItem(RS_(L"PaneClose"), L"\xE89F", ActionAndArgs{ ShortcutAction::ClosePane, nullptr });
+        }
+
+        if (const auto pane{ _GetFocusedTabImpl()->GetActivePane() })
+        {
+            if (pane->IsConnectionClosed())
+            {
+                makeItem(RS_(L"RestartConnectionText"), L"\xE72C", ActionAndArgs{ ShortcutAction::RestartConnection, nullptr });
+            }
         }
 
         if (withSelection)
