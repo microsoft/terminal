@@ -114,7 +114,7 @@ jobs:
           $SignFragments += "wpfdotnet"
         }
         If ([bool]::Parse("${{ parameters.buildWPF }}")) {
-          $BuildTargets += "Terminal\wpf\PublicTerminalCore"
+          $BuildTargets += "Terminal\Control\Microsoft_Terminal_Control"
           $SignFragments += "wpf"
         }
         If ([bool]::Parse("${{ parameters.buildConPTY }}")) {
