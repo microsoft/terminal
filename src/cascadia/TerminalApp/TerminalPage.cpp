@@ -1678,9 +1678,19 @@ namespace winrt::TerminalApp::implementation
         {
             term.CompletionsChanged({ get_weak(), &TerminalPage::_ControlCompletionsChangedHandler });
         }
-
-        term.ContextMenu().Opening({ this, &TerminalPage::_ContextMenuOpened });
-        term.SelectionContextMenu().Opening({ this, &TerminalPage::_SelectionMenuOpened });
+        winrt::weak_ref<TermControl> weakTerm{ term };
+        term.ContextMenu().Opening([weak = get_weak(), weakTerm](auto&& sender, auto&& /*args*/) {
+            if (const auto& page{ weak.get() })
+            {
+                page->_PopulateContextMenu(weakTerm.get(), sender.try_as<MUX::Controls::CommandBarFlyout>(), false);
+            }
+        });
+        term.SelectionContextMenu().Opening([weak = get_weak(), weakTerm](auto&& sender, auto&& /*args*/) {
+            if (const auto& page{ weak.get() })
+            {
+                page->_PopulateContextMenu(weakTerm.get(), sender.try_as<MUX::Controls::CommandBarFlyout>(), true);
+            }
+        });
     }
 
     // Method Description:
@@ -4825,25 +4835,14 @@ namespace winrt::TerminalApp::implementation
                    characterSize.Height);
     }
 
-    void TerminalPage::_ContextMenuOpened(const IInspectable& sender,
-                                          const IInspectable& /*args*/)
-    {
-        _PopulateContextMenu(sender, false /*withSelection*/);
-    }
-    void TerminalPage::_SelectionMenuOpened(const IInspectable& sender,
-                                            const IInspectable& /*args*/)
-    {
-        _PopulateContextMenu(sender, true /*withSelection*/);
-    }
-
-    void TerminalPage::_PopulateContextMenu(const IInspectable& sender,
+    void TerminalPage::_PopulateContextMenu(const TermControl& control,
+                                            const MUX::Controls::CommandBarFlyout& menu,
                                             const bool withSelection)
     {
         // withSelection can be used to add actions that only appear if there's
         // selected text, like "search the web"
 
-        const auto& menu{ sender.try_as<MUX::Controls::CommandBarFlyout>() };
-        if (!menu)
+        if (!control || !menu)
         {
             return;
         }
@@ -4893,12 +4892,9 @@ namespace winrt::TerminalApp::implementation
             makeItem(RS_(L"PaneClose"), L"\xE89F", ActionAndArgs{ ShortcutAction::ClosePane, nullptr });
         }
 
-        if (const auto pane{ _GetFocusedTabImpl()->GetActivePane() })
+        if (control.ConnectionState() >= ConnectionState::Closed)
         {
-            if (pane->IsConnectionClosed())
-            {
-                makeItem(RS_(L"RestartConnectionText"), L"\xE72C", ActionAndArgs{ ShortcutAction::RestartConnection, nullptr });
-            }
+            makeItem(RS_(L"RestartConnectionText"), L"\xE72C", ActionAndArgs{ ShortcutAction::RestartConnection, nullptr });
         }
 
         if (withSelection)
