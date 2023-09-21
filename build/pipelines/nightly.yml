@@ -27,29 +27,8 @@ extends:
         pool:
           name: SHINE-INT-S
         jobs:
-          - job: PublishCanaryToAzure
-            displayName: Deploy Canary to Azure
-            steps:
-              - task: DownloadPipelineArtifact@2
-                displayName: Download the MSIX bundle
-                inputs:
-                  artifactName: appxbundle-release
-                  downloadPath: _out
-                  itemPattern: '**/*.msixbundle'
-
-              - pwsh: |-
-                  $b = Get-Item _out/*.msixbundle
-                  ./build/scripts/New-AppInstallerFromTemplateAndBundle.ps1 -BundlePath $b.FullName -AppInstallerTemplatePath ./build/config/template.appinstaller -AppInstallerRoot $(AppInstallerRootURL) -OutputPath _out/Microsoft.WindowsTerminalCanary.appinstaller
-                displayName: "Produce AppInstaller and MSIX bundle"
-
-              - task: AzureFileCopy@5
-                displayName: Publish to Storage Account
-                inputs:
-                  sourcePath: _out/*
-                  azureSubscription: $(AzureSubscriptionName)
-                  Destination: AzureBlob
-                  storage: $(AzureStorageAccount)
-                  ContainerName: $(AzureStorageContainer)
-                  AdditionalArgumentsForBlobCopy: "--content-type application/octet-stream"
-
+          - template: templates-v2/job-deploy-to-azure-storage.yml
+            parameters:
+              buildConfiguration: Release
+              environment: production.canary
 
