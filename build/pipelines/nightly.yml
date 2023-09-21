@@ -30,5 +30,5 @@ extends:
           - template: job-deploy-to-azure-storage.yml
             parameters:
               buildConfiguration: Release
-              environment: production.canary
+              environment: production-canary
 
