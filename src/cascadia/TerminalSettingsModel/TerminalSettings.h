@@ -167,6 +167,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, RightClickContextMenu, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, RepositionCursorWithMouse, false);
 
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, ReloadEnvironmentVariables, true);
+
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;
         std::span<Microsoft::Terminal::Core::Color> _getColorTableImpl();

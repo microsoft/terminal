@@ -2280,11 +2280,6 @@
           "description": "When set to true, the background image for the currently focused profile is expanded to encompass the entire window, beneath other panes.",
           "type": "boolean"
         },
-        "compatibility.reloadEnvironmentVariables": {
-          "default": true,
-          "description": "When set to true, when opening a new tab or pane it will get reloaded environment variables.",
-          "type": "boolean"
-        },
         "initialCols": {
           "default": 120,
           "description": "The number of columns displayed in the window upon first load. If \"launchMode\" is set to \"maximized\" (or \"maximizedFocus\"), this property is ignored.",
@@ -2532,6 +2527,11 @@
             "string",
             "null"
           ]
+        },
+        "compatibility.reloadEnvironmentVariables": {
+          "default": true,
+          "description": "When set to true, when opening a new tab or pane it will get reloaded environment variables.",
+          "type": "boolean"
         },
         "unfocusedAppearance": {
           "$ref": "#/$defs/AppearanceConfig",
