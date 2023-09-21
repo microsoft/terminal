@@ -40,8 +40,6 @@ extends:
               - pwsh: |-
                   $b = Get-Item _out/*.msixbundle
                   ./build/scripts/New-AppInstallerFromTemplateAndBundle.ps1 -BundlePath $b.FullName -AppInstallerTemplatePath ./build/config/template.appinstaller -AppInstallerRoot $(AppInstallerRootURL) -OutputPath _out/Microsoft.WindowsTerminalCanary.appinstaller
-                  $mapping = Get-Item build/config/azcopy_mime_mapping.json
-                  Write-Host "##vso[task.setvariable variable=AZCOPY_CONTENT_TYPE_MAP]$($mapping.FullName)"
                 displayName: "Produce AppInstaller and MSIX bundle"
 
               - task: AzureFileCopy@5
@@ -52,5 +50,6 @@ extends:
                   Destination: AzureBlob
                   storage: $(AzureStorageAccount)
                   ContainerName: $(AzureStorageContainer)
+                  AdditionalArgumentsForBlobCopy: "--content-type application/octet-stream"
 
 

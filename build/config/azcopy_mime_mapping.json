@@ -1,6 +1,0 @@
-{
-  "MIMETypeMapping": {
-    ".msixbundle": "application/msixbundle",
-    ".appinstaller": "application/appinstaller"
-  }
-}
