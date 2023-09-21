@@ -136,6 +136,15 @@
                     <ToggleSwitch IsOn="{x:Bind Profile.VtPassthrough, Mode=TwoWay}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
+
+                <!--  ReloadEnvVars  -->
+                <local:SettingContainer x:Uid="Profile_ReloadEnvVars"
+                                        ClearSettingValue="{x:Bind Profile.ClearReloadEnvironmentVariables}"
+                                        HasSettingValue="{x:Bind Profile.HasReloadEnvironmentVariables, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.ReloadEnvironmentVariablesOverrideSource, Mode=OneWay}">
+                    <ToggleSwitch IsOn="{x:Bind Profile.ReloadEnvironmentVariables, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
             </StackPanel>
         </ScrollViewer>
     </Grid>

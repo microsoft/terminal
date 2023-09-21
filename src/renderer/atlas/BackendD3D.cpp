@@ -1498,7 +1498,7 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
     if (!_softFontBitmap)
     {
         // Allocating such a tiny texture is very wasteful (min. texture size on GPUs
-        // right now is 64kB), but this is a seldomly used feature so it's fine...
+        // right now is 64kB), but this is a seldom used feature so it's fine...
         const D2D1_SIZE_U size{
             static_cast<UINT32>(p.s->font->softFontCellSize.width),
             static_cast<UINT32>(p.s->font->softFontCellSize.height),
@@ -1511,30 +1511,6 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
         THROW_IF_FAILED(_d2dRenderTarget->CreateBitmap(size, nullptr, 0, &bitmapProperties, _softFontBitmap.addressof()));
     }
 
-    {
-        const auto width = static_cast<size_t>(p.s->font->softFontCellSize.width);
-        const auto height = static_cast<size_t>(p.s->font->softFontCellSize.height);
-
-        auto bitmapData = Buffer<u32>{ width * height };
-        const auto glyphIndex = glyphEntry.glyphIndex - 0xEF20u;
-        auto src = p.s->font->softFontPattern.begin() + height * glyphIndex;
-        auto dst = bitmapData.begin();
-
-        for (size_t y = 0; y < height; y++)
-        {
-            auto srcBits = *src++;
-            for (size_t x = 0; x < width; x++)
-            {
-                const auto srcBitIsSet = (srcBits & 0x8000) != 0;
-                *dst++ = srcBitIsSet ? 0xffffffff : 0x00000000;
-                srcBits <<= 1;
-            }
-        }
-
-        const auto pitch = static_cast<UINT32>(width * sizeof(u32));
-        THROW_IF_FAILED(_softFontBitmap->CopyFromMemory(nullptr, bitmapData.data(), pitch));
-    }
-
     const auto interpolation = p.s->font->antialiasingMode == AntialiasingMode::Aliased ? D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR : D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC;
     const D2D1_RECT_F dest{
         static_cast<f32>(rect.x),
@@ -1544,6 +1520,7 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
     };
 
     _d2dBeginDrawing();
+    _drawSoftFontGlyphInBitmap(p, glyphEntry);
     _d2dRenderTarget->DrawBitmap(_softFontBitmap.get(), &dest, 1, interpolation, nullptr, nullptr);
 
     glyphEntry.data.shadingType = static_cast<u16>(ShadingType::TextGrayscale);
@@ -1561,6 +1538,51 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
     }
 
     return true;
+}
+
+void BackendD3D::_drawSoftFontGlyphInBitmap(const RenderingPayload& p, const AtlasGlyphEntry& glyphEntry) const
+{
+    if (!isSoftFontChar(glyphEntry.glyphIndex))
+    {
+        // AtlasEngine::_mapReplacementCharacter should have filtered inputs with isSoftFontChar already.
+        assert(false);
+        return;
+    }
+
+    const auto width = static_cast<size_t>(p.s->font->softFontCellSize.width);
+    const auto height = static_cast<size_t>(p.s->font->softFontCellSize.height);
+    const auto& softFontPattern = p.s->font->softFontPattern;
+
+    // The isSoftFontChar() range is [0xEF20,0xEF80).
+    const auto offset = glyphEntry.glyphIndex - 0xEF20u;
+    const auto offsetBeg = offset * height;
+    const auto offsetEnd = offsetBeg + height;
+
+    if (offsetEnd > softFontPattern.size())
+    {
+        // Out of range values should not occur, but they do and it's unknown why: GH#15553
+        assert(false);
+        return;
+    }
+
+    Buffer<u32> bitmapData{ width * height };
+    auto dst = bitmapData.begin();
+    auto it = softFontPattern.begin() + offsetBeg;
+    const auto end = softFontPattern.begin() + offsetEnd;
+
+    while (it != end)
+    {
+        auto srcBits = *it++;
+        for (size_t x = 0; x < width; x++)
+        {
+            const auto srcBitIsSet = (srcBits & 0x8000) != 0;
+            *dst++ = srcBitIsSet ? 0xffffffff : 0x00000000;
+            srcBits <<= 1;
+        }
+    }
+
+    const auto pitch = static_cast<UINT32>(width * sizeof(u32));
+    THROW_IF_FAILED(_softFontBitmap->CopyFromMemory(nullptr, bitmapData.data(), pitch));
 }
 
 void BackendD3D::_drawGlyphPrepareRetry(const RenderingPayload& p)

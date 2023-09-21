@@ -101,8 +101,8 @@ public:
     // WritePastedText comes from our input and goes back to the PTY's input channel
     void WritePastedText(std::wstring_view stringView);
 
-    [[nodiscard]] std::unique_lock<til::recursive_ticket_lock> LockForReading();
-    [[nodiscard]] std::unique_lock<til::recursive_ticket_lock> LockForWriting();
+    [[nodiscard]] std::unique_lock<til::recursive_ticket_lock> LockForReading() const noexcept;
+    [[nodiscard]] std::unique_lock<til::recursive_ticket_lock> LockForWriting() noexcept;
     til::recursive_ticket_lock_suspension SuspendLock() noexcept;
 
     til::CoordType GetBufferHeight() const noexcept;
@@ -110,8 +110,8 @@ public:
     int ViewStartIndex() const noexcept;
     int ViewEndIndex() const noexcept;
 
-    RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
-    const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
+    RenderSettings& GetRenderSettings() noexcept;
+    const RenderSettings& GetRenderSettings() const noexcept;
 
     const std::vector<ScrollMark>& GetScrollMarks() const noexcept;
     void AddMark(const ScrollMark& mark,
@@ -162,7 +162,7 @@ public:
 #pragma endregion
 
     void ClearMark();
-    void ClearAllMarks() noexcept;
+    void ClearAllMarks();
     til::color GetColorForMark(const ScrollMark& mark) const;
 
 #pragma region ITerminalInput
@@ -233,11 +233,10 @@ public:
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
     void CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept;
 
-    void SetCursorOn(const bool isOn);
-    bool IsCursorBlinkingAllowed() const noexcept;
+    void BlinkCursor() noexcept;
+    void SetCursorOn(const bool isOn) noexcept;
 
     void UpdatePatternsUnderLock();
-    void ClearPatternTree();
 
     const std::optional<til::color> GetTabColor() const;
 
@@ -406,7 +405,8 @@ private:
     //      Either way, we should make this behavior controlled by a setting.
 
     interval_tree::IntervalTree<til::point, size_t> _patternIntervalTree;
-    void _InvalidatePatternTree(const interval_tree::IntervalTree<til::point, size_t>& tree);
+    void _clearPatternTree();
+    void _InvalidatePatternTree();
     void _InvalidateFromCoords(const til::point start, const til::point end);
 
     // Since virtual keys are non-zero, you assume that this field is empty/invalid if it is.
@@ -435,6 +435,10 @@ private:
     void _StoreKeyEvent(const WORD vkey, const WORD scanCode) noexcept;
     WORD _TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept;
 
+    void _assertLocked() const noexcept;
+    Console::VirtualTerminal::TerminalInput& _getTerminalInput() noexcept;
+    const Console::VirtualTerminal::TerminalInput& _getTerminalInput() const noexcept;
+
     int _VisibleStartIndex() const noexcept;
     int _VisibleEndIndex() const noexcept;
 
@@ -443,7 +447,7 @@ private:
 
     void _PreserveUserScrollOffset(const int viewportDelta) noexcept;
 
-    void _NotifyScrollEvent() noexcept;
+    void _NotifyScrollEvent();
 
     void _NotifyTerminalCursorPositionChanged() noexcept;
 

@@ -313,6 +313,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ACTION_ARG(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, nullptr);
         ACTION_ARG(winrt::hstring, ColorScheme);
         ACTION_ARG(Windows::Foundation::IReference<bool>, Elevate, nullptr);
+        ACTION_ARG(Windows::Foundation::IReference<bool>, ReloadEnvironmentVariables, nullptr);
         ACTION_ARG(uint64_t, ContentId);
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
@@ -325,6 +326,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
         static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
         static constexpr std::string_view ElevateKey{ "elevate" };
+        static constexpr std::string_view ReloadEnvironmentVariablesKey{ "reloadEnvironmentVariables" };
         static constexpr std::string_view ContentKey{ "__content" };
 
     public:
@@ -346,6 +348,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                        otherAsUs->_SuppressApplicationTitle == _SuppressApplicationTitle &&
                        otherAsUs->_ColorScheme == _ColorScheme &&
                        otherAsUs->_Elevate == _Elevate &&
+                       otherAsUs->_ReloadEnvironmentVariables == _ReloadEnvironmentVariables &&
                        otherAsUs->_ContentId == _ContentId;
             }
             return false;
@@ -363,6 +366,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
             JsonUtils::GetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
             JsonUtils::GetValueForKey(json, ElevateKey, args->_Elevate);
+            JsonUtils::GetValueForKey(json, ReloadEnvironmentVariablesKey, args->_ReloadEnvironmentVariables);
             JsonUtils::GetValueForKey(json, ContentKey, args->_ContentId);
             return *args;
         }
@@ -383,6 +387,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
             JsonUtils::SetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
             JsonUtils::SetValueForKey(json, ElevateKey, args->_Elevate);
+            JsonUtils::SetValueForKey(json, ReloadEnvironmentVariablesKey, args->_ReloadEnvironmentVariables);
             JsonUtils::SetValueForKey(json, ContentKey, args->_ContentId);
             return json;
         }
@@ -398,6 +403,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_SuppressApplicationTitle = _SuppressApplicationTitle;
             copy->_ColorScheme = _ColorScheme;
             copy->_Elevate = _Elevate;
+            copy->_ReloadEnvironmentVariables = _ReloadEnvironmentVariables;
             copy->_ContentId = _ContentId;
             return *copy;
         }
@@ -418,6 +424,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(SuppressApplicationTitle());
             h.write(ColorScheme());
             h.write(Elevate());
+            h.write(ReloadEnvironmentVariables());
             h.write(ContentId());
         }
     };

@@ -371,6 +371,10 @@
     <value>Open the tab with tabTitle overriding default title and suppressing title change messages from the application</value>
     <comment>{Locked="\"tabTitle\""}</comment>
   </data>
+  <data name="CmdInheritEnvDesc" xml:space="preserve">
+    <value>Inherit the terminal's own environment variables when creating the new tab or pane, rather than creating a fresh environment block. This defaults to set when a "command" is passed. </value>
+    <comment>{Locked="\"command\""}</comment>
+  </data>
   <data name="CmdColorSchemeArgDesc" xml:space="preserve">
     <value>Open the tab with the specified color scheme, instead of the profile's set "colorScheme"</value>
     <comment>{Locked="\"colorScheme\""}</comment>
@@ -890,5 +894,11 @@
   </data>
   <data name="CmdAppendCommandLineDesc" xml:space="preserve">
     <value>If set, the command will be appended to the profile's default command instead of replacing it.</value>
+  </data>
+  <data name="RestartConnectionText" xml:space="preserve">
+    <value>Restart Connection</value>
+  </data>
+  <data name="RestartConnectionToolTip" xml:space="preserve">
+    <value>Restart the active pane connection</value>
   </data>
 </root>

@@ -8,30 +8,21 @@
 
 using namespace Microsoft::Console::Types;
 
-bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData)
-{
-    return ResetIfStale(renderData,
-                        _needle,
-                        _step == -1, // this is the opposite of the initializer below
-                        _caseInsensitive);
-}
-
 bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive)
 {
     const auto& textBuffer = renderData.GetTextBuffer();
     const auto lastMutationId = textBuffer.GetLastMutationId();
 
     if (_needle == needle &&
-        _reverse == reverse &&
         _caseInsensitive == caseInsensitive &&
         _lastMutationId == lastMutationId)
     {
+        _step = reverse ? -1 : 1;
         return false;
     }
 
     _renderData = &renderData;
     _needle = needle;
-    _reverse = reverse;
     _caseInsensitive = caseInsensitive;
     _lastMutationId = lastMutationId;
 
@@ -42,12 +33,38 @@ bool Search::ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, c
     return true;
 }
 
-void Search::MovePastCurrentSelection()
+void Search::MoveToCurrentSelection()
 {
     if (_renderData->IsSelectionActive())
     {
-        MovePastPoint(_renderData->GetTextBuffer().ScreenToBufferPosition(_renderData->GetSelectionAnchor()));
+        MoveToPoint(_renderData->GetTextBuffer().ScreenToBufferPosition(_renderData->GetSelectionAnchor()));
     }
+}
+
+void Search::MoveToPoint(const til::point anchor) noexcept
+{
+    if (_results.empty())
+    {
+        return;
+    }
+
+    const auto count = gsl::narrow_cast<ptrdiff_t>(_results.size());
+    ptrdiff_t index = 0;
+
+    if (_step < 0)
+    {
+        for (index = count - 1; index >= 0 && til::at(_results, index).start > anchor; --index)
+        {
+        }
+    }
+    else
+    {
+        for (index = 0; index < count && til::at(_results, index).start < anchor; ++index)
+        {
+        }
+    }
+
+    _index = (index + count) % count;
 }
 
 void Search::MovePastPoint(const til::point anchor) noexcept
@@ -58,18 +75,17 @@ void Search::MovePastPoint(const til::point anchor) noexcept
     }
 
     const auto count = gsl::narrow_cast<ptrdiff_t>(_results.size());
-    const auto highestIndex = count - 1;
-    auto index = _reverse ? highestIndex : 0;
+    ptrdiff_t index = 0;
 
-    if (_reverse)
+    if (_step < 0)
     {
-        for (; index >= 0 && til::at(_results, index).start >= anchor; --index)
+        for (index = count - 1; index >= 0 && til::at(_results, index).start >= anchor; --index)
         {
         }
     }
     else
     {
-        for (; index <= highestIndex && til::at(_results, index).start <= anchor; ++index)
+        for (index = 0; index < count && til::at(_results, index).start <= anchor; ++index)
         {
         }
     }
@@ -119,7 +135,7 @@ const std::vector<til::point_span>& Search::Results() const noexcept
     return _results;
 }
 
-size_t Search::CurrentMatch() const noexcept
+ptrdiff_t Search::CurrentMatch() const noexcept
 {
     return _index;
 }
