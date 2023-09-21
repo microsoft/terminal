@@ -27,7 +27,7 @@ extends:
         pool:
           name: SHINE-INT-S
         jobs:
-          - template: templates-v2/job-deploy-to-azure-storage.yml
+          - template: job-deploy-to-azure-storage.yml
             parameters:
               buildConfiguration: Release
               environment: production.canary
