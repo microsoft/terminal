@@ -187,4 +187,15 @@
         </alwaysEnabledBrandingTokens>
     </feature>
 
+    <feature>
+        <name>Feature_ConPtyHwndStyles</name>
+        <description>Experiment with different window styles for the conpty window</description>
+        <id>15219</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
 </featureStaging>
