@@ -1584,7 +1584,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive))
         {
-            _searcher.MovePastCurrentSelection();
+            _searcher.MoveToCurrentSelection();
+            _cachedSearchResultRows = {};
         }
         else
         {
@@ -1615,12 +1616,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
     {
-        auto lock = _terminal->LockForWriting();
-        if (_searcher.ResetIfStale(*GetRenderData()))
+        const auto lock = _terminal->LockForReading();
+
+        if (!_cachedSearchResultRows)
         {
             auto results = std::vector<int32_t>();
-
             auto lastRow = til::CoordTypeMin;
+
             for (const auto& match : _searcher.Results())
             {
                 const auto row{ match.start.y };
@@ -1630,6 +1632,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     lastRow = row;
                 }
             }
+
             _cachedSearchResultRows = winrt::single_threaded_vector<int32_t>(std::move(results));
         }
 
@@ -2266,27 +2269,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Windows::Foundation::Collections::IVector<Control::ScrollMark> ControlCore::ScrollMarks() const
     {
         const auto lock = _terminal->LockForReading();
-        const auto& internalMarks{ _terminal->GetScrollMarks() };
-        auto v = winrt::single_threaded_observable_vector<Control::ScrollMark>();
+        const auto& internalMarks = _terminal->GetScrollMarks();
+        std::vector<Control::ScrollMark> v;
+
+        v.reserve(internalMarks.size());
+
         for (const auto& mark : internalMarks)
         {
-            Control::ScrollMark m{};
-
-            // sneaky: always evaluate the color of the mark to a real value
-            // before shoving it into the optional. If the mark doesn't have a
-            // specific color set, we'll use the value from the color table
-            // that's appropriate for this category of mark. If we do have a
-            // color set, then great we'll use that. The TermControl can then
-            // always use the value in the Mark regardless if it was actually
-            // set or not.
-            m.Color = OptionalFromColor(_terminal->GetColorForMark(mark));
-            m.Start = mark.start.to_core_point();
-            m.End = mark.end.to_core_point();
-
-            v.Append(m);
+            v.emplace_back(
+                mark.start.to_core_point(),
+                mark.end.to_core_point(),
+                OptionalFromColor(_terminal->GetColorForMark(mark)));
         }
 
-        return v;
+        return winrt::single_threaded_vector(std::move(v));
     }
 
     void ControlCore::AddMark(const Control::ScrollMark& mark)
