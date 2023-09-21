@@ -450,6 +450,17 @@ bool SettingsLoader::FixupUserSettings()
         }
     }
 
+    // Terminal 1.19: Migrate the global
+    // `compatibility.reloadEnvironmentVariables` to being a per-profile
+    // setting. If the user had it disabled in 1.18, then set the
+    // profiles.defaults value to false to match.
+    if (!userSettings.globals->LegacyReloadEnvironmentVariables())
+    {
+        // migrate the user's opt-out to the profiles.defaults
+        userSettings.baseLayerProfile->ReloadEnvironmentVariables(false);
+        fixedUp = true;
+    }
+
     return fixedUp;
 }
 
@@ -1228,7 +1239,7 @@ void CascadiaSettings::WriteSettingsToDisk()
 }
 
 #ifndef NDEBUG
-static [[maybe_unused]] std::string _getDevPathToSchema()
+[[maybe_unused]] static std::string _getDevPathToSchema()
 {
     std::filesystem::path filePath{ __FILE__ };
     auto schemaPath = filePath.parent_path().parent_path().parent_path().parent_path() / "doc" / "cascadia" / "profiles.schema.json";

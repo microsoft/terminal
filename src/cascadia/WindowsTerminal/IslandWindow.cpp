@@ -199,6 +199,8 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     UpdateWindow(_window.get());
 
     UpdateWindowIconForActiveMetrics(_window.get());
+
+    _currentSystemThemeIsDark = Theme::IsSystemInDarkTheme();
 }
 
 // Method Description:
@@ -745,7 +747,16 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             // themes, color schemes that might depend on the OS theme
             if (param == L"ImmersiveColorSet")
             {
-                _UpdateSettingsRequestedHandlers();
+                // GH#15732: Don't update the settings, unless the theme
+                // _actually_ changed. ImmersiveColorSet gets sent more often
+                // than just on a theme change. It notably gets sent when the PC
+                // is locked, or the UAC prompt opens.
+                auto isCurrentlyDark = Theme::IsSystemInDarkTheme();
+                if (isCurrentlyDark != _currentSystemThemeIsDark)
+                {
+                    _currentSystemThemeIsDark = isCurrentlyDark;
+                    _UpdateSettingsRequestedHandlers();
+                }
             }
         }
         break;
