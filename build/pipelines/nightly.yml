@@ -21,14 +21,16 @@ extends:
     publishSymbolsToPublic: true
     publishVpackToWindows: false
     symbolExpiryTime: 15 # Nightly builds do not keep symbols for very long!
-    stages:
-      - stage: Deploy
-        dependsOn: [Publish, Build]
-        pool:
-          name: SHINE-INT-S
-        jobs:
-          - template: job-deploy-to-azure-storage.yml
-            parameters:
-              buildConfiguration: Release
-              environment: production-canary
+    extraPublishJobs:
+      - template: job-deploy-to-azure-storage.yml
+        parameters:
+          pool:
+            name: SHINE-INT-S
+          dependsOn: [PublishSymbols]
+          storagePublicRootURL: $(AppInstallerRootURL)
+          subscription: $(AzureSubscriptionName)
+          storageAccount: $(AzureStorageAccount)
+          storageContainer: $(AzureStorageContainer)
+          buildConfiguration: Release
+          environment: production-canary
 

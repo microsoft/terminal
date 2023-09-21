@@ -15,6 +15,14 @@ parameters:
     default: {}
   - name: environment
     type: string
+  - name: storagePublicRootURL
+    type: string
+  - name: subscription
+    type: string
+  - name: storageAccount
+    type: string
+  - name: storageContainer
+    type: string
 
 jobs:
 - deployment: DeployAzure
@@ -29,6 +37,8 @@ jobs:
     runOnce:
       deploy:
         steps:
+        - download: none
+
         - checkout: self
           clean: true
           fetchDepth: 1
@@ -45,16 +55,16 @@ jobs:
 
         - pwsh: |-
             $b = Get-Item _out/*.msixbundle
-            ./build/scripts/New-AppInstallerFromTemplateAndBundle.ps1 -BundlePath $b.FullName -AppInstallerTemplatePath ./build/config/template.appinstaller -AppInstallerRoot $(AppInstallerRootURL) -OutputPath _out/Microsoft.WindowsTerminalCanary.appinstaller
+            ./build/scripts/New-AppInstallerFromTemplateAndBundle.ps1 -BundlePath $b.FullName -AppInstallerTemplatePath ./build/config/template.appinstaller -AppInstallerRoot "${{ parameters.storagePublicRootURL }}" -OutputPath _out/Microsoft.WindowsTerminalCanary.appinstaller
           displayName: "Produce AppInstaller for MSIX bundle"
 
         - task: AzureFileCopy@5
           displayName: Publish to Storage Account
           inputs:
             sourcePath: _out/*
-            azureSubscription: $(AzureSubscriptionName)
             Destination: AzureBlob
-            storage: $(AzureStorageAccount)
-            ContainerName: $(AzureStorageContainer)
+            azureSubscription: ${{ parameters.subscription }}
+            storage: ${{ parameters.storageAccount }}
+            ContainerName: ${{ parameters.storageContainer }}
             AdditionalArgumentsForBlobCopy: "--content-type application/octet-stream"
 
