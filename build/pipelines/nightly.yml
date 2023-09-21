@@ -14,11 +14,12 @@ extends:
   template: templates-v2\pipeline-full-release-build.yml
   parameters:
     branding: Canary
+    buildPlatforms: [ x64 ]
     buildTerminal: true
     pgoBuildMode: Optimize
-    codeSign: true
-    generateSbom: true
-    publishSymbolsToPublic: true
+    codeSign: false
+    generateSbom: false
+    publishSymbolsToPublic: false
     publishVpackToWindows: false
     symbolExpiryTime: 15 # Nightly builds do not keep symbols for very long!
     extraPublishJobs:
