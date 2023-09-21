@@ -58,3 +58,13 @@ jobs:
             ./build/scripts/New-AppInstallerFromTemplateAndBundle.ps1 -BundlePath $b.FullName -AppInstallerTemplatePath ./build/config/template.appinstaller -AppInstallerRoot "${{ parameters.storagePublicRootURL }}" -OutputPath _out/Microsoft.WindowsTerminalCanary.appinstaller
           displayName: "Produce AppInstaller for MSIX bundle"
 
+        - task: AzureFileCopy@5
+          displayName: Publish to Storage Account
+          inputs:
+            sourcePath: _out/*
+            Destination: AzureBlob
+            azureSubscription: ${{ parameters.subscription }}
+            storage: ${{ parameters.storageAccount }}
+            ContainerName: ${{ parameters.storageContainer }}
+            AdditionalArgumentsForBlobCopy: "--content-type application/octet-stream"
+
