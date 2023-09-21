@@ -63,8 +63,6 @@ public:
 
     bool IsInVirtualTerminalInputMode() const;
     Microsoft::Console::VirtualTerminal::TerminalInput& GetTerminalInput();
-    void SetTerminalConnection(_In_ Microsoft::Console::Render::VtEngine* const pTtyConnection);
-    void PassThroughWin32MouseRequest(bool enable);
 
 private:
     enum class ReadingMode : uint8_t
@@ -86,7 +84,6 @@ private:
     INPUT_RECORD _writePartialByteSequence{};
     bool _writePartialByteSequenceAvailable = false;
     Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
-    Microsoft::Console::Render::VtEngine* _pTtyConnection;
 
     // This flag is used in _HandleTerminalInputCallback
     // If the InputBuffer leads to a _HandleTerminalInputCallback call,

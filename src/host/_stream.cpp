@@ -334,17 +334,24 @@ try
         return CONSOLE_STATUS_WAIT;
     }
 
-    auto restoreVtQuirk{
-        wil::scope_exit([&]() { screenInfo.ResetIgnoreLegacyEquivalentVTAttributes(); })
-    };
-
+    const auto vtIo = ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo();
+    const auto restoreVtQuirk = wil::scope_exit([&]() {
+        if (requiresVtQuirk)
+        {
+            screenInfo.ResetIgnoreLegacyEquivalentVTAttributes();
+        }
+        if (vtIo->IsUsingVt())
+        {
+            vtIo->CorkRenderer(false);
+        }
+    });
     if (requiresVtQuirk)
     {
         screenInfo.SetIgnoreLegacyEquivalentVTAttributes();
     }
-    else
+    if (vtIo->IsUsingVt())
     {
-        restoreVtQuirk.release();
+        vtIo->CorkRenderer(true);
     }
 
     const std::wstring_view str{ pwchBuffer, *pcbBuffer / sizeof(WCHAR) };
