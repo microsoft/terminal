@@ -129,7 +129,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // Override commandline, starting directory if they exist in newTerminalArgs
             if (!newTerminalArgs.Commandline().empty())
             {
-                defaultSettings.Commandline(newTerminalArgs.Commandline());
+                if (!newTerminalArgs.AppendCommandLine())
+                {
+                    defaultSettings.Commandline(newTerminalArgs.Commandline());
+                }
+                else
+                {
+                    defaultSettings.Commandline(defaultSettings.Commandline() + L" " + newTerminalArgs.Commandline());
+                }
             }
             if (!newTerminalArgs.StartingDirectory().empty())
             {
@@ -177,6 +184,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (newTerminalArgs.Elevate())
             {
                 defaultSettings.Elevate(newTerminalArgs.Elevate().Value());
+            }
+
+            if (newTerminalArgs.ReloadEnvironmentVariables())
+            {
+                defaultSettings.ReloadEnvironmentVariables(newTerminalArgs.ReloadEnvironmentVariables().Value());
             }
         }
 
@@ -250,6 +262,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _AdjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
         _Opacity = appearance.Opacity();
+        _UseAcrylic = appearance.UseAcrylic();
     }
 
     // Method Description:
@@ -269,7 +282,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
         _ProfileSource = profile.Source();
-        _UseAcrylic = profile.UseAcrylic();
 
         const auto fontInfo = profile.FontInfo();
         _FontFace = fontInfo.FontFace();
@@ -325,6 +337,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _ShowMarks = Feature_ScrollbarMarks::IsEnabled() && profile.ShowMarks();
 
         _RightClickContextMenu = profile.RightClickContextMenu();
+
+        _RepositionCursorWithMouse = profile.RepositionCursorWithMouse();
+
+        _ReloadEnvironmentVariables = profile.ReloadEnvironmentVariables();
     }
 
     // Method Description:
@@ -347,6 +363,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _ForceVTInput = globalSettings.ForceVTInput();
         _TrimBlockSelection = globalSettings.TrimBlockSelection();
         _DetectURLs = globalSettings.DetectURLs();
+        _EnableUnfocusedAcrylic = globalSettings.EnableUnfocusedAcrylic();
     }
 
     // Method Description:

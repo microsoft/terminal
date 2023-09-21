@@ -32,7 +32,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _usingLineRenditions(false),
     _stopUsingLineRenditions(false),
     _usingSoftFont(false),
-    _lastTextAttributes(INVALID_COLOR, INVALID_COLOR),
+    _lastTextAttributes(INVALID_COLOR, INVALID_COLOR, INVALID_COLOR),
     _lastViewport(initialViewport),
     _pool(til::pmr::get_default_resource()),
     _invalidMap(initialViewport.Dimensions(), false, &_pool),
@@ -541,6 +541,9 @@ void VtEngine::SetTerminalCursorTextPosition(const til::point cursor) noexcept
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::RequestWin32Input() noexcept
 {
+    // It's important that any additional modes set here are also mirrored in
+    // the AdaptDispatch::HardReset method, since that needs to re-enable them
+    // in the connected terminal after passing through an RIS sequence.
     RETURN_IF_FAILED(_RequestWin32Input());
     RETURN_IF_FAILED(_RequestFocusEventMode());
     RETURN_IF_FAILED(_Flush());

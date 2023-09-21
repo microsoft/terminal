@@ -72,7 +72,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - An IconElement with its IconSource set, if possible.
     template<typename TIconSource>
-    TIconSource _getColoredBitmapIcon(const winrt::hstring& path)
+    TIconSource _getColoredBitmapIcon(const winrt::hstring& path, bool monochrome)
     {
         // FontIcon uses glyphs in the private use area, whereas valid URIs only contain ASCII characters.
         // To skip throwing on Uri construction, we can quickly check if the first character is ASCII.
@@ -85,7 +85,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // Make sure to set this to false, so we keep the RGB data of the
                 // image. Otherwise, the icon will be white for all the
                 // non-transparent pixels in the image.
-                iconSource.ShowAsMonochrome(false);
+                iconSource.ShowAsMonochrome(monochrome);
                 iconSource.UriSource(iconUri);
                 return iconSource;
             }
@@ -121,14 +121,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - An IconElement with its IconSource set, if possible.
     template<typename TIconSource>
-    TIconSource _getIconSource(const winrt::hstring& iconPath)
+    TIconSource _getIconSource(const winrt::hstring& iconPath, bool monochrome)
     {
         TIconSource iconSource{ nullptr };
 
         if (iconPath.size() != 0)
         {
             const auto expandedIconPath{ _expandIconPath(iconPath) };
-            iconSource = _getColoredBitmapIcon<TIconSource>(expandedIconPath);
+            iconSource = _getColoredBitmapIcon<TIconSource>(expandedIconPath, monochrome);
 
             // If we fail to set the icon source using the "icon" as a path,
             // let's try it as a symbol/emoji.
@@ -197,7 +197,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                         const hstring& /* language */)
     {
         const auto& iconPath = winrt::unbox_value_or<winrt::hstring>(value, L"");
-        return _getIconSource<Controls::IconSource>(iconPath);
+        return _getIconSource<Controls::IconSource>(iconPath, false);
     }
 
     // unused for one-way bindings
@@ -211,12 +211,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     Windows::UI::Xaml::Controls::IconSource _IconSourceWUX(hstring path)
     {
-        return _getIconSource<Windows::UI::Xaml::Controls::IconSource>(path);
+        return _getIconSource<Windows::UI::Xaml::Controls::IconSource>(path, false);
     }
 
-    Microsoft::UI::Xaml::Controls::IconSource _IconSourceMUX(hstring path)
+    Microsoft::UI::Xaml::Controls::IconSource _IconSourceMUX(hstring path, bool monochrome)
     {
-        return _getIconSource<Microsoft::UI::Xaml::Controls::IconSource>(path);
+        return _getIconSource<Microsoft::UI::Xaml::Controls::IconSource>(path, monochrome);
     }
 
     SoftwareBitmap _convertToSoftwareBitmap(HICON hicon,
@@ -329,13 +329,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return bitmapSource;
     }
 
-    MUX::Controls::IconSource IconPathConverter::IconSourceMUX(const winrt::hstring& iconPath)
+    MUX::Controls::IconSource IconPathConverter::IconSourceMUX(const winrt::hstring& iconPath,
+                                                               const bool monochrome)
     {
         std::wstring_view iconPathWithoutIndex;
         const auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
         if (!indexOpt.has_value())
         {
-            return _IconSourceMUX(iconPath);
+            return _IconSourceMUX(iconPath, monochrome);
         }
 
         const auto bitmapSource = _getImageIconSourceForBinary(iconPathWithoutIndex, indexOpt.value());

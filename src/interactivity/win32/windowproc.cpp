@@ -735,7 +735,7 @@ using namespace Microsoft::Console::Types;
         }
         break;
     }
-#endif DBG
+#endif // DBG
 
     case EVENT_CONSOLE_CARET:
     case EVENT_CONSOLE_UPDATE_REGION:

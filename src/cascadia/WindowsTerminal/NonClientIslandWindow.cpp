@@ -57,6 +57,12 @@ static constexpr const wchar_t* dragBarClassName{ L"DRAG_BAR_WINDOW_CLASS" };
 
 void NonClientIslandWindow::MakeWindow() noexcept
 {
+    if (_window)
+    {
+        // no-op if we already have a window.
+        return;
+    }
+
     IslandWindow::MakeWindow();
 
     static auto dragBarWindowClass{ []() {
@@ -335,9 +341,17 @@ void NonClientIslandWindow::OnAppInitialized()
     IslandWindow::OnAppInitialized();
 }
 
-void NonClientIslandWindow::Initialize()
+void NonClientIslandWindow::Refrigerate() noexcept
 {
-    IslandWindow::Initialize();
+    IslandWindow::Refrigerate();
+
+    // Revoke all our XAML callbacks.
+    _callbacks = {};
+}
+
+bool NonClientIslandWindow::Initialize()
+{
+    const bool coldInit = IslandWindow::Initialize();
 
     _UpdateFrameMargins();
 
@@ -349,6 +363,7 @@ void NonClientIslandWindow::Initialize()
     Controls::RowDefinition contentRow{};
     titlebarRow.Height(GridLengthHelper::Auto());
 
+    _rootGrid.RowDefinitions().Clear();
     _rootGrid.RowDefinitions().Append(titlebarRow);
     _rootGrid.RowDefinitions().Append(contentRow);
 
@@ -356,8 +371,8 @@ void NonClientIslandWindow::Initialize()
     _titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
     _dragBar = _titlebar.DragBar();
 
-    _dragBar.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
-    _rootGrid.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
+    _callbacks.dragBarSizeChanged = _dragBar.SizeChanged(winrt::auto_revoke, { this, &NonClientIslandWindow::_OnDragBarSizeChanged });
+    _callbacks.rootGridSizeChanged = _rootGrid.SizeChanged(winrt::auto_revoke, { this, &NonClientIslandWindow::_OnDragBarSizeChanged });
 
     _rootGrid.Children().Append(_titlebar);
 
@@ -366,7 +381,15 @@ void NonClientIslandWindow::Initialize()
     // GH#3440 - When the titlebar is loaded (officially added to our UI tree),
     // then make sure to update its visual state to reflect if we're in the
     // maximized state on launch.
-    _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
+    _callbacks.titlebarLoaded = _titlebar.Loaded(winrt::auto_revoke, [this](auto&&, auto&&) { _OnMaximizeChange(); });
+
+    // LOAD BEARING: call _ResizeDragBarWindow to update the position of our
+    // XAML island to reflect our current bounds. In the case of a "warm init"
+    // (i.e. re-using an existing window), we need to manually update the
+    // island's position to fill the new window bounds.
+    _ResizeDragBarWindow();
+
+    return coldInit;
 }
 
 // Method Description:

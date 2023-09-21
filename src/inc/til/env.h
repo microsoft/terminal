@@ -313,6 +313,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                             if (valueNameSize)
                             {
+                                const bool isPathVar = is_path_var(valueName);
+
+                                // On some systems we've seen path variables that are REG_SZ instead
+                                // of REG_EXPAND_SZ. We should always treat them as REG_EXPAND_SZ.
+                                if (isPathVar && type == REG_SZ)
+                                {
+                                    type = REG_EXPAND_SZ;
+                                }
+
                                 std::wstring data;
                                 if (pass == 0 && (type == REG_SZ) && valueDataSize >= sizeof(wchar_t))
                                 {
@@ -335,7 +344,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                                 if (!data.empty())
                                 {
-                                    if (is_path_var(valueName))
+                                    if (isPathVar)
                                     {
                                         concat_var(valueName, std::move(data));
                                     }
@@ -550,7 +559,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             get_vars_from_registry(HKEY_CURRENT_USER, fmt::format(til::details::vars::reg::user_volatile_session_env_var_root_pattern, NtCurrentTeb()->ProcessEnvironmentBlock->SessionId));
         }
 
-        std::wstring to_string()
+        std::wstring to_string() const
         {
             std::wstring result;
             for (const auto& [name, value] : _envMap)

@@ -499,6 +499,17 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FindMatchDirecti
     };
 };
 
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SuggestionsSource)
+{
+    static constexpr std::array<pair_type, 5> mappings = {
+        pair_type{ "none", AllClear },
+        pair_type{ "tasks", ValueType::Tasks },
+        pair_type{ "commandHistory", ValueType::CommandHistory },
+        pair_type{ "directoryHistory", ValueType::DirectoryHistory },
+        pair_type{ "all", AllSet },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::WindowingMode)
 {
     JSON_MAPPINGS(3) = {
@@ -638,6 +649,15 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVi
         pair_type{ "hover", ValueType::Hover },
         pair_type{ "never", ValueType::Never },
         pair_type{ "activeOnly", ValueType::ActiveOnly },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IconStyle)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "default", ValueType::Default },
+        pair_type{ "hidden", ValueType::Hidden },
+        pair_type{ "monochrome", ValueType::Monochrome },
     };
 };
 

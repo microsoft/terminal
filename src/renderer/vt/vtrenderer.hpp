@@ -182,6 +182,10 @@ namespace Microsoft::Console::Render
                                                             const bool fIsForeground) noexcept;
         [[nodiscard]] HRESULT _SetGraphicsRenditionDefaultColor(const bool fIsForeground) noexcept;
 
+        [[nodiscard]] HRESULT _SetGraphicsRenditionUnderline256Color(const BYTE index) noexcept;
+        [[nodiscard]] HRESULT _SetGraphicsRenditionUnderlineRGBColor(const COLORREF color) noexcept;
+        [[nodiscard]] HRESULT _SetGraphicsRenditionUnderlineDefaultColor() noexcept;
+
         [[nodiscard]] HRESULT _SetGraphicsDefault() noexcept;
 
         [[nodiscard]] HRESULT _ResizeWindow(const til::CoordType sWidth, const til::CoordType sHeight) noexcept;
@@ -189,7 +193,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _SetIntense(const bool isIntense) noexcept;
         [[nodiscard]] HRESULT _SetFaint(const bool isFaint) noexcept;
         [[nodiscard]] HRESULT _SetUnderlined(const bool isUnderlined) noexcept;
-        [[nodiscard]] HRESULT _SetDoublyUnderlined(const bool isUnderlined) noexcept;
+        [[nodiscard]] HRESULT _SetUnderlineExtended(const UnderlineStyle style) noexcept;
         [[nodiscard]] HRESULT _SetOverlined(const bool isOverlined) noexcept;
         [[nodiscard]] HRESULT _SetItalic(const bool isItalic) noexcept;
         [[nodiscard]] HRESULT _SetBlinking(const bool isBlinking) noexcept;
@@ -228,7 +232,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _WriteTerminalAscii(const std::wstring_view str) noexcept;
         [[nodiscard]] HRESULT _WriteTerminalDrcs(const std::wstring_view str) noexcept;
 
-        [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept override;
+        [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept override;
 
         /////////////////////////// Unit Testing Helpers ///////////////////////////
 #ifdef UNIT_TESTING

@@ -30,7 +30,7 @@
           DependsOnTargets="_ConsoleMapWinmdsToManifestFiles">
 
     <!-- This target is batched and a new Exec is spawned for each entry in _ConsoleWinmdManifest. -->
-    <Exec Command="mt.exe -winmd:%(_ConsoleWinmdManifest.WinMDPath) -dll:%(_ConsoleWinmdManifest.Implementation) -out:%(_ConsoleWinmdManifest.Identity)" />
+    <Exec Command="mt.exe -winmd:&quot;%(_ConsoleWinmdManifest.WinMDPath)&quot; -dll:%(_ConsoleWinmdManifest.Implementation) -out:&quot;%(_ConsoleWinmdManifest.Identity)&quot;" />
 
     <ItemGroup>
       <!-- Emit the generated manifest into the Link inputs. -->

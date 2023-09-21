@@ -79,6 +79,8 @@ ok'd
 overlined
 pipeline
 postmodern
+Powerline
+powerline
 ptys
 qof
 qps
@@ -94,6 +96,7 @@ slnt
 Sos
 ssh
 stakeholders
+sxn
 timeline
 timelines
 timestamped
@@ -110,6 +113,8 @@ und
 unregister
 versioned
 vsdevcmd
+walkthrough
+walkthroughs
 We'd
 wildcards
 XBox

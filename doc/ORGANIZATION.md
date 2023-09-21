@@ -32,7 +32,6 @@
 		* `/src/cascadia/TerminalApp` - This DLL represents the implementation of the Windows Terminal application. This includes parsing settings, hosting tabs & panes with Terminals in them, and displaying other UI elements. This DLL is almost entirely UWP-like code, and shouldn't be doing any Win32-like UI work.
 		* `/src/cascadia/WindowsTerminal` - This EXE provides Win32 hosting for the TerminalApp. It will set up XAML islands, and is responsible for drawing the window, either as a standard window or with content in the titlebar (non-client area).
 		* `/src/cascadia/CascadiaPackage` - This is a project for packaging the Windows Terminal and its dependencies into an .appx/.msix for deploying to the machine.
-		* `/src/cascadia/PublicTerminalCore` - This is a DLL wrapper for the TerminalCore and Renderer, similar to `TermControl`, which exposes some exported functions that so the Terminal can be used from C#.
 		* `/src/cascadia/WpfTerminalControl` - A DLL implementing a WPF version of the Terminal Control.
 	* `/src/host` – The meat of the windows console host. This includes buffer, input, output, windowing, server management, clipboard, and most interactions with the console host window that aren’t stated anywhere else. We’re trying to pull things out that are reusable into other libraries, but it’s a work in progress
 		* `/src/host/lib` – Builds the reusable LIB copy of the host

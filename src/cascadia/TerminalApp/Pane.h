@@ -55,6 +55,7 @@ struct PaneResources
 {
     winrt::Windows::UI::Xaml::Media::SolidColorBrush focusedBorderBrush{ nullptr };
     winrt::Windows::UI::Xaml::Media::SolidColorBrush unfocusedBorderBrush{ nullptr };
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush broadcastBorderBrush{ nullptr };
 };
 
 class Pane : public std::enable_shared_from_this<Pane>
@@ -74,6 +75,7 @@ public:
     winrt::Microsoft::Terminal::Control::TermControl GetLastFocusedTerminalControl();
     winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl();
     winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile();
+    bool IsConnectionClosed() const;
 
     // Method Description:
     // - If this is a leaf pane, return its profile.
@@ -141,6 +143,11 @@ public:
     void FinalizeConfigurationGivenDefault();
 
     bool ContainsReadOnly() const;
+
+    void EnableBroadcast(bool enabled);
+    void BroadcastKey(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
+    void BroadcastChar(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const wchar_t vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+    void BroadcastString(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const winrt::hstring& text);
 
     void UpdateResources(const PaneResources& resources);
 
@@ -251,6 +258,7 @@ private:
         winrt::Microsoft::Terminal::Control::TermControl::WarningBell_revoker _WarningBell;
         winrt::Microsoft::Terminal::Control::TermControl::CloseTerminalRequested_revoker _CloseTerminalRequested;
         winrt::Microsoft::Terminal::Control::TermControl::RestartTerminalRequested_revoker _RestartTerminalRequested;
+        winrt::Microsoft::Terminal::Control::TermControl::ReadOnlyChanged_revoker _ReadOnlyChanged;
     } _controlEvents;
     void _setupControlEvents();
     void _removeControlEvents();
@@ -258,11 +266,10 @@ private:
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
 
-    std::shared_mutex _createCloseLock{};
-
     Borders _borders{ Borders::None };
 
     bool _zoomed{ false };
+    bool _broadcastEnabled{ false };
 
     winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
     bool _bellPlayerCreated{ false };
@@ -281,6 +288,7 @@ private:
     void _SetupEntranceAnimation();
     void _UpdateBorders();
     Borders _GetCommonBorders();
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush _ComputeBorderColor();
 
     bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
 
@@ -296,17 +304,20 @@ private:
                                             const PanePoint offset);
 
     void _CloseChild(const bool closeFirst, const bool isDetaching);
-    winrt::fire_and_forget _CloseChildRoutine(const bool closeFirst);
+    void _CloseChildRoutine(const bool closeFirst);
 
     void _Focus();
     void _FocusFirstChild();
-    void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+    winrt::fire_and_forget _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
     void _ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                     const winrt::Windows::Foundation::IInspectable& e);
     void _ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                  const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
     void _ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                   const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+
+    void _ControlReadOnlyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& e);
+
     void _CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
     void _RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
 

@@ -325,7 +325,7 @@ public:
         return 12ul;
     }
 
-    bool IsCursorDoubleWidth() const noexcept override
+    bool IsCursorDoubleWidth() const override
     {
         return false;
     }
@@ -371,10 +371,6 @@ public:
     const til::point GetSelectionEnd() const noexcept
     {
         return {};
-    }
-
-    void ColorSelection(const til::point /*coordSelectionStart*/, const til::point /*coordSelectionEnd*/, const TextAttribute /*attr*/)
-    {
     }
 
     const bool IsUiaDataInitialized() const noexcept

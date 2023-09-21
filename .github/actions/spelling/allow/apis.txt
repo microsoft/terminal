@@ -28,6 +28,8 @@ CYICON
 Dacl
 dataobject
 dcomp
+debugbreak
+delayimp
 DERR
 dlldata
 DNE
@@ -51,6 +53,7 @@ futex
 GETDESKWALLPAPER
 GETHIGHCONTRAST
 GETMOUSEHOVERTIME
+GETTEXTLENGTH
 Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
@@ -75,6 +78,7 @@ IConnection
 ICustom
 IDialog
 IDirect
+Idn
 IExplorer
 IFACEMETHOD
 IFile
@@ -86,6 +90,7 @@ IObject
 iosfwd
 IPackage
 IPeasant
+isa
 ISetup
 isspace
 IStorage
@@ -107,12 +112,14 @@ lsass
 LSHIFT
 LTGRAY
 MAINWINDOW
+MAXIMIZEBOX
 memchr
 memicmp
 MENUCOMMAND
 MENUDATA
 MENUINFO
 MENUITEMINFOW
+MINIMIZEBOX
 mmeapi
 MOUSELEAVE
 mov
@@ -165,6 +172,7 @@ roundf
 RSHIFT
 SACL
 schandle
+SEH
 semver
 serializer
 SETVERSION
@@ -180,6 +188,7 @@ snprintf
 spsc
 sregex
 SRWLOC
+srwlock
 SRWLOCK
 STDCPP
 STDMETHOD
@@ -196,6 +205,7 @@ TABROW
 TASKBARCREATED
 TBPF
 THEMECHANGED
+THICKFRAME
 tlg
 TME
 tmp
@@ -212,6 +222,7 @@ UOI
 UPDATEINIFILE
 userenv
 USEROBJECTFLAGS
+Vcpp
 Viewbox
 virtualalloc
 vsnwprintf

@@ -49,51 +49,25 @@ public:
     [[nodiscard]] HRESULT GetNumberOfConsoleInputEventsImpl(const InputBuffer& context,
                                                             ULONG& events) noexcept override;
 
-    [[nodiscard]] HRESULT PeekConsoleInputAImpl(IConsoleInputObject& context,
-                                                std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                const size_t eventsToRead,
-                                                INPUT_READ_HANDLE_DATA& readHandleState,
-                                                std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
+    [[nodiscard]] HRESULT GetConsoleInputImpl(IConsoleInputObject& context,
+                                              InputEventQueue& outEvents,
+                                              const size_t eventReadCount,
+                                              INPUT_READ_HANDLE_DATA& readHandleState,
+                                              const bool IsUnicode,
+                                              const bool IsPeek,
+                                              std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
 
-    [[nodiscard]] HRESULT PeekConsoleInputWImpl(IConsoleInputObject& context,
-                                                std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                const size_t eventsToRead,
-                                                INPUT_READ_HANDLE_DATA& readHandleState,
-                                                std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
-
-    [[nodiscard]] HRESULT ReadConsoleInputAImpl(IConsoleInputObject& context,
-                                                std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                const size_t eventsToRead,
-                                                INPUT_READ_HANDLE_DATA& readHandleState,
-                                                std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
-
-    [[nodiscard]] HRESULT ReadConsoleInputWImpl(IConsoleInputObject& context,
-                                                std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                const size_t eventsToRead,
-                                                INPUT_READ_HANDLE_DATA& readHandleState,
-                                                std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
-
-    [[nodiscard]] HRESULT ReadConsoleAImpl(IConsoleInputObject& context,
-                                           std::span<char> buffer,
-                                           size_t& written,
-                                           std::unique_ptr<IWaitRoutine>& waiter,
-                                           const std::string_view initialData,
-                                           const std::wstring_view exeName,
-                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                           const HANDLE clientHandle,
-                                           const DWORD controlWakeupMask,
-                                           DWORD& controlKeyState) noexcept override;
-
-    [[nodiscard]] HRESULT ReadConsoleWImpl(IConsoleInputObject& context,
-                                           std::span<char> buffer,
-                                           size_t& written,
-                                           std::unique_ptr<IWaitRoutine>& waiter,
-                                           const std::string_view initialData,
-                                           const std::wstring_view exeName,
-                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                           const HANDLE clientHandle,
-                                           const DWORD controlWakeupMask,
-                                           DWORD& controlKeyState) noexcept override;
+    [[nodiscard]] HRESULT ReadConsoleImpl(IConsoleInputObject& context,
+                                          std::span<char> buffer,
+                                          size_t& written,
+                                          std::unique_ptr<IWaitRoutine>& waiter,
+                                          const std::wstring_view initialData,
+                                          const std::wstring_view exeName,
+                                          INPUT_READ_HANDLE_DATA& readHandleState,
+                                          const bool IsUnicode,
+                                          const HANDLE clientHandle,
+                                          const DWORD controlWakeupMask,
+                                          DWORD& controlKeyState) noexcept override;
 
     [[nodiscard]] HRESULT WriteConsoleAImpl(IConsoleOutputObject& context,
                                             const std::string_view buffer,

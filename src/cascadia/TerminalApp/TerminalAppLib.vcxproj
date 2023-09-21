@@ -16,6 +16,11 @@
     -->
     <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+    <!--
+      Disable automatic provider generation so that we can control when they initialize.
+      We do this so we can delay the Settings UI DLL loading until absolutely necessary.
+    -->
+    <XamlCodeGenerationControlFlags>DoNotGenerateOtherProviders</XamlCodeGenerationControlFlags>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
@@ -61,6 +66,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="CommandPalette.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="SuggestionsControl.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
@@ -154,6 +162,9 @@
       <DependentUpon>TerminalWindow.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Toast.h" />
+    <ClInclude Include="SuggestionsControl.h">
+      <DependentUpon>SuggestionsControl.xaml</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -257,6 +268,9 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
+    <ClCompile Include="SuggestionsControl.cpp">
+      <DependentUpon>SuggestionsControl.xaml</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -318,6 +332,10 @@
     </Midl>
     <Midl Include="CommandPalette.idl">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SuggestionsControl.idl">
+      <DependentUpon>SuggestionsControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="FilteredCommand.idl" />

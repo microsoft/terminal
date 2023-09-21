@@ -85,6 +85,32 @@
         }
       ]
     },
+    "BuiltinSuggestionSource": {
+      "enum": [
+        "commandHistory",
+        "tasks",
+        "all"
+      ],
+      "type": "string"
+    },
+    "SuggestionSource": {
+      "default": "all",
+      "description": "Either a single suggestion source, or an array of sources to concatenate. Built-in sources include `commandHistory`, `directoryHistory`, and `tasks`. The special value `all` indicates all suggestion sources should be included",
+      "$comment": "`tasks` and `local` are sources that would be added by the Tasks feature, as a follow-up",
+      "oneOf": [
+        {
+          "type": [ "string", "null", "BuiltinSuggestionSource" ]
+        },
+        {
+          "type": "array",
+          "items": { "type": "BuiltinSuggestionSource" }
+        },
+        {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      ]
+    },
     "AppearanceConfig": {
       "properties": {
         "colorScheme": {
@@ -243,6 +269,10 @@
         "experimental.pixelShaderPath": {
           "description": "Use to set a path to a pixel shader to use with the Terminal when unfocused. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"
+        },
+        "useAcrylic":{
+          "description": "When set to true, the window will have an acrylic material background when unfocused. When set to false, the window will have a plain, untextured background when unfocused.",
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -260,7 +290,8 @@
           "description": "Name of the scheme to use when the app is using dark theme",
           "type": "string"
         }
-      }
+      },
+      "type": "object"
     },
     "FontConfig": {
       "properties": {
@@ -347,8 +378,12 @@
     },
     "ShortcutActionName": {
       "enum": [
+        "addMark",
         "adjustFontSize",
+        "adjustOpacity",
+        "clearAllMarks",
         "clearBuffer",
+        "clearMark",
         "closeOtherPanes",
         "closeOtherTabs",
         "closePane",
@@ -359,6 +394,7 @@
         "copy",
         "duplicateTab",
         "expandSelectionToWord",
+        "experimental.colorSelection",
         "exportBuffer",
         "find",
         "findMatch",
@@ -366,62 +402,60 @@
         "globalSummon",
         "identifyWindow",
         "identifyWindows",
+        "markMode",
         "moveFocus",
         "movePane",
-        "swapPane",
-        "markMode",
         "moveTab",
         "multipleActions",
         "newTab",
         "newWindow",
         "nextTab",
+        "openAbout",
         "openNewTabDropdown",
         "openSettings",
+        "openSystemMenu",
         "openTabColorPicker",
+        "openTabRenamer",
         "openWindowRenamer",
         "paste",
         "prevTab",
-        "renameTab",
-        "openSystemMenu",
-        "openTabRenamer",
         "quakeMode",
+        "quit",
+        "renameTab",
+        "renameWindow",
         "resetFontSize",
         "resizePane",
-        "renameWindow",
+        "restoreLastClosed",
         "scrollDown",
         "scrollDownPage",
+        "scrollToBottom",
+        "scrollToMark",
+        "scrollToTop",
         "scrollUp",
         "scrollUpPage",
-        "scrollToBottom",
-        "scrollToTop",
+        "searchWeb",
+        "selectAll",
         "sendInput",
         "setColorScheme",
+        "setFocusMode",
+        "setFullScreen",
+        "setMaximized",
         "setTabColor",
+        "showSuggestions",
         "splitPane",
+        "swapPane",
+        "switchSelectionEndpoint",
         "switchToTab",
         "tabSearch",
         "toggleAlwaysOnTop",
         "toggleBlockSelection",
         "toggleFocusMode",
-        "selectAll",
-        "setFocusMode",
-        "switchSelectionEndpoint",
         "toggleFullscreen",
-        "setFullScreen",
-        "setMaximized",
         "togglePaneZoom",
-        "toggleSplitOrientation",
         "toggleReadOnlyMode",
         "toggleShaderEffects",
+        "toggleSplitOrientation",
         "wt",
-        "quit",
-        "adjustOpacity",
-        "restoreLastClosed",
-        "addMark",
-        "scrollToMark",
-        "clearMark",
-        "clearAllMarks",
-        "experimental.colorSelection",
         "unbound"
       ],
       "type": "string"
@@ -797,6 +831,11 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the copied content will be copied as a single line (even if there are hard line breaks present in the text). If false, newlines persist from the selected text."
+            },
+            "dismissSelection": {
+              "type": "boolean",
+              "default": true,
+              "description": "If false, the copied content will be copied and the selection will not be dismissed. If true, the selection will be dismissed."
             },
             "copyFormatting": {
               "default": null,
@@ -1709,6 +1748,29 @@
         }
       ]
     },
+    "SearchWebAction": {
+      "description": "Search the web for selected text",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "searchWeb"
+            },
+            "queryUrl": {
+              "type": "string",
+              "description": "URL of the web page to launch, %s is replaced with the selected text"
+            }
+          }
+        }
+      ],
+      "required": [
+        "queryUrl"
+      ]
+    },
     "AdjustOpacityAction": {
       "description": "Changes the opacity of the active Terminal window. If `relative` is specified, then this action will increase/decrease relative to the current opacity.",
       "allOf": [
@@ -1732,6 +1794,30 @@
               "type": "boolean",
               "default": true,
               "description": "If true, then adjust the current opacity by the given `opacity` parameter, additively. If false, set the opacity to exactly that value."
+            }
+          }
+        }
+      ]
+    },
+    "ShowSuggestionsAction": {
+      "description": "Arguments corresponding to a Open Suggestions Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "showSuggestions"
+            },
+            "source": {
+              "$ref": "#/$defs/SuggestionSource",
+              "description": "Which suggestion sources to filter."
+            },
+            "useCommandline": {
+              "default": false,
+              "description": "When set to `true`, the current commandline the user has typed will pre-populate the filter of the Suggestions UI. This requires that the user has enabled shell integration in their shell's config. When set to false, the filter will start empty."
             }
           }
         }
@@ -1813,6 +1899,19 @@
           "description": "True if the Terminal should use a Mica backdrop for the window. This will apply underneath all controls (including the terminal panes and the titlebar)",
           "type": "boolean",
           "default": false
+        },
+        "experimental.rainbowFrame": {
+          "description": "When enabled, the frame of the window will cycle through all the colors. Enabling this will override the `frame` and `unfocusedFrame` settings.",
+          "type": "boolean",
+          "default": false
+        },
+        "frame": {
+          "description": "The color of the window frame when the window is inactive. This only works on Windows 11",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "unfocusedFrame": {
+          "description": "The color of the window frame when the window is inactive. This only works on Windows 11",
+          "$ref": "#/$defs/ThemeColor"
         }
       }
     },
@@ -1992,6 +2091,12 @@
               "$ref": "#/$defs/ColorSelectionAction"
             },
             {
+              "$ref": "#/$defs/SearchWebAction"
+            },
+            {
+              "$ref": "#/$defs/ShowSuggestionsAction"
+            },
+            {
               "type": "null"
             }
           ]
@@ -2071,6 +2176,11 @@
         "alwaysShowTabs": {
           "default": true,
           "description": "When set to true, tabs are always displayed. When set to false and \"showTabsInTitlebar\" is set to false, tabs only appear after opening a new tab.",
+          "type": "boolean"
+        },
+        "compatibility.enableUnfocusedAcrylic":{
+          "default": true,
+          "description": "When set to true, unfocused windows can have acrylic instead of opaque.",
           "type": "boolean"
         },
         "centerOnLaunch": {
@@ -2168,11 +2278,6 @@
         "experimental.useBackgroundImageForWindow": {
           "default": false,
           "description": "When set to true, the background image for the currently focused profile is expanded to encompass the entire window, beneath other panes.",
-          "type": "boolean"
-        },
-        "compatibility.reloadEnvironmentVariables": {
-          "default": true,
-          "description": "When set to true, when opening a new tab or pane it will get reloaded environment variables.",
           "type": "boolean"
         },
         "initialCols": {
@@ -2422,6 +2527,11 @@
             "string",
             "null"
           ]
+        },
+        "compatibility.reloadEnvironmentVariables": {
+          "default": true,
+          "description": "When set to true, when opening a new tab or pane it will get reloaded environment variables.",
+          "type": "boolean"
         },
         "unfocusedAppearance": {
           "$ref": "#/$defs/AppearanceConfig",

@@ -47,7 +47,5 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
 
 VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData);
 
-bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo);
-
 // For handling process handle state, not the window state itself.
 void CloseConsoleProcessState();

@@ -33,18 +33,17 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 // - <none>
 void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
 {
-    std::deque<std::unique_ptr<IInputEvent>> inEvents;
+    InputEventQueue inEvents;
 
     // generate a paired key down and key up event for every
     // character to be sent into the console's input buffer
     for (const auto& wch : response)
     {
         // This wasn't from a real keyboard, so we're leaving key/scan codes blank.
-        KeyEvent keyEvent{ TRUE, 1, 0, 0, wch, 0 };
-
-        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-        keyEvent.SetKeyDown(false);
-        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+        auto keyEvent = SynthesizeKeyEvent(true, 1, 0, 0, wch, 0);
+        inEvents.push_back(keyEvent);
+        keyEvent.Event.KeyEvent.bKeyDown = false;
+        inEvents.push_back(keyEvent);
     }
 
     // TODO GH#4954 During the input refactor we may want to add a "priority" input list
@@ -96,9 +95,11 @@ til::rect ConhostInternalGetSet::GetViewport() const
 void ConhostInternalGetSet::SetViewportPosition(const til::point position)
 {
     auto& info = _io.GetActiveOutputBuffer();
-    const auto dimensions = info.GetViewport().Dimensions();
-    const auto windowRect = til::rect{ position, dimensions }.to_inclusive_rect();
-    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api->SetConsoleWindowInfoImpl(info, true, windowRect));
+    THROW_IF_FAILED(info.SetViewportOrigin(true, position, false));
+    // SetViewportOrigin() only updates the virtual bottom (the bottom coordinate of the area
+    // in the text buffer a VT client writes its output into) when it's moving downwards.
+    // But this function is meant to truly move the viewport no matter what. Otherwise `tput reset` breaks.
+    info.UpdateBottom();
 }
 
 // Method Description:
@@ -183,11 +184,13 @@ void ConhostInternalGetSet::SetWindowTitle(std::wstring_view title)
 // - Swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
 //     screen buffer and an alternate. This creates a new alternate, and switches to it.
 //     If there is an already existing alternate, it is discarded.
+// Arguments:
+// - attrs - the attributes the buffer is initialized with.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::UseAlternateScreenBuffer()
+void ConhostInternalGetSet::UseAlternateScreenBuffer(const TextAttribute& attrs)
 {
-    THROW_IF_NTSTATUS_FAILED(_io.GetActiveOutputBuffer().UseAlternateScreenBuffer());
+    THROW_IF_NTSTATUS_FAILED(_io.GetActiveOutputBuffer().UseAlternateScreenBuffer(attrs));
 }
 
 // Routine Description:
@@ -404,7 +407,7 @@ bool ConhostInternalGetSet::IsVtInputEnabled() const
 void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRect)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
-    if (screenInfo.HasAccessibilityEventing())
+    if (screenInfo.HasAccessibilityEventing() && changedRect)
     {
         screenInfo.NotifyAccessibilityEventing(
             changedRect.left,
@@ -433,7 +436,7 @@ void ConhostInternalGetSet::NotifyBufferRotation(const int delta)
     }
 }
 
-void ConhostInternalGetSet::MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/)
+void ConhostInternalGetSet::MarkPrompt(const ::ScrollMark& /*mark*/)
 {
     // Not implemented for conhost.
 }
@@ -449,6 +452,10 @@ void ConhostInternalGetSet::MarkOutputStart()
 }
 
 void ConhostInternalGetSet::MarkCommandFinish(std::optional<unsigned int> /*error*/)
+{
+    // Not implemented for conhost.
+}
+void ConhostInternalGetSet::InvokeCompletions(std::wstring_view /*menuJson*/, unsigned int /*replaceLength*/)
 {
     // Not implemented for conhost.
 }
