@@ -330,8 +330,12 @@ using namespace Microsoft::Console::Interactivity;
                 // will return the console handle again, not the owning
                 // terminal's handle. It's not entirely clear why, but WS_POPUP
                 // is absolutely vital for this to work correctly.
-                const auto windowStyle = WS_OVERLAPPEDWINDOW | WS_POPUP;
-                const auto exStyles = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_NOACTIVATE;
+                //
+                // We're doing WS_MINIMIZEBOX | WS_SYSMENU to get a "minimize
+                // button" for the window, but not the rest of WS_OVERLAPPED, so
+                // that we don't have an actual border, caption, nothing
+                const auto windowStyle = WS_OVERLAPPED | (WS_MINIMIZEBOX | WS_SYSMENU) | WS_POPUP;
+                const auto exStyles = WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_NOACTIVATE;
 
                 // Attempt to create window.
                 hwnd = CreateWindowExW(exStyles,
@@ -395,6 +399,20 @@ using namespace Microsoft::Console::Interactivity;
 
         InteractivityFactory* const pFactory = reinterpret_cast<InteractivityFactory*>(pCreateStruct->lpCreateParams);
         SetWindowLongPtrW(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pFactory));
+
+        WINDOWPLACEMENT place{};
+        place.length = sizeof(WINDOWPLACEMENT);
+        if (GetWindowPlacement(hWnd, &place))
+        {
+            POINT& ptMinMaybe = place.ptMinPosition;
+            auto x = ptMinMaybe.x;
+            auto y = ptMinMaybe.y;
+            auto f = x + y;
+            f;
+            ptMinMaybe.x = ptMinMaybe.y = -32000;
+            place.flags = WPF_SETMINPOSITION;
+            LOG_IF_WIN32_BOOL_FALSE(SetWindowPlacement(hWnd, &place));
+        }
     }
 
     // Dispatch the message to the specific class instance
@@ -448,6 +466,16 @@ using namespace Microsoft::Console::Interactivity;
         }
         break;
     }
+    // case WM_GETMINMAXINFO:
+    // {
+    //     auto lpMinMaxInfo = reinterpret_cast<LPMINMAXINFO>(lParam);
+    //     POINT ptMinMaybe = lpMinMaxInfo->ptReserved;
+    //     auto x = ptMinMaybe.x;
+    //     auto y = ptMinMaybe.y;
+    //     auto f = x + y;
+    //     f;
+    //     break;
+    // }
     // case WM_WINDOWPOSCHANGING:
     //     As long as user32 didn't eat the `ShowWindow` call because the window state requested
     //     matches the existing WS_VISIBLE state of the HWND... we should hear from it in WM_WINDOWPOSCHANGING.
@@ -461,8 +489,23 @@ using namespace Microsoft::Console::Interactivity;
     {
         if (0 == lParam) // Someone explicitly called ShowWindow on us.
         {
+            // WINDOWPLACEMENT place{};
+            // place.length = sizeof(WINDOWPLACEMENT);
+            // if (GetWindowPlacement(hWnd, &place))
+            // {
+            //     POINT& ptMinMaybe = place.ptMinPosition;
+            //     auto x = ptMinMaybe.x;
+            //     auto y = ptMinMaybe.y;
+            //     auto f = x + y;
+            //     f;
+            //     ptMinMaybe.x = ptMinMaybe.y = -32000;
+            //     place.flags = WPF_SETMINPOSITION;
+            //     LOG_IF_WIN32_BOOL_FALSE(SetWindowPlacement(hWnd, &place));
+            // }
+
             _WritePseudoWindowCallback((bool)wParam);
         }
+        break;
     }
     case WM_GETOBJECT:
     {
