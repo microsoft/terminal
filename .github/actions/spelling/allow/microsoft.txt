@@ -4,6 +4,7 @@ advapi
 altform
 altforms
 appendwttlogging
+appinstaller
 appx
 appxbundle
 appxerror
