@@ -1322,28 +1322,14 @@
                        ValueChanged="_ScrollbarChangeHandler"
                        ViewportSize="10" />
 
-            <Grid x:Name="ScrollMarksGrid"
-                  Grid.Column="1"
-                  Width="{StaticResource ScrollBarSize}"
-                  HorizontalAlignment="Right"
-                  VerticalAlignment="Stretch">
-
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
-                <Border Grid.Row="0"
-                        Height="{StaticResource ScrollBarSize}" />
-                <Canvas x:Name="ScrollBarCanvas"
-                        Grid.Row="1"
-                        Width="{StaticResource ScrollBarSize}"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Stretch" />
-                <Border Grid.Row="2"
-                        Height="{StaticResource ScrollBarSize}" />
-            </Grid>
+            <Image x:Name="ScrollBarCanvas"
+                   Grid.Column="1"
+                   Width="{StaticResource ScrollBarSize}"
+                   HorizontalAlignment="Right"
+                   VerticalAlignment="Stretch"
+                   x:Load="False"
+                   IsHitTestVisible="False"
+                   Visibility="Collapsed" />
 
         </Grid>
 

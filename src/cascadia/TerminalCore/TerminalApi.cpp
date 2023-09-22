@@ -44,6 +44,7 @@ til::rect Terminal::GetViewport() const noexcept
 }
 
 void Terminal::SetViewportPosition(const til::point position) noexcept
+try
 {
     // The viewport is fixed at 0,0 for the alt buffer, so this is a no-op.
     if (!_inAltBuffer())
@@ -55,6 +56,7 @@ void Terminal::SetViewportPosition(const til::point position) noexcept
         _NotifyScrollEvent();
     }
 }
+CATCH_LOG()
 
 void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
 {
@@ -63,11 +65,13 @@ void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
 
 void Terminal::SetSystemMode(const Mode mode, const bool enabled) noexcept
 {
+    _assertLocked();
     _systemMode.set(mode, enabled);
 }
 
 bool Terminal::GetSystemMode(const Mode mode) const noexcept
 {
+    _assertLocked();
     return _systemMode.test(mode);
 }
 
@@ -78,6 +82,7 @@ void Terminal::WarningBell()
 
 void Terminal::SetWindowTitle(const std::wstring_view title)
 {
+    _assertLocked();
     if (!_suppressApplicationTitle)
     {
         _title.emplace(title);
@@ -87,6 +92,7 @@ void Terminal::SetWindowTitle(const std::wstring_view title)
 
 CursorType Terminal::GetUserDefaultCursorStyle() const noexcept
 {
+    _assertLocked();
     return _defaultCursorShape;
 }
 
@@ -121,6 +127,8 @@ void Terminal::CopyToClipboard(std::wstring_view content)
 // - <none>
 void Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress)
 {
+    _assertLocked();
+
     _taskbarState = static_cast<size_t>(state);
 
     switch (state)
@@ -164,6 +172,8 @@ void Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::D
 
 void Terminal::SetWorkingDirectory(std::wstring_view uri)
 {
+    _assertLocked();
+
     static bool logged = false;
     if (!logged)
     {
@@ -187,6 +197,8 @@ void Terminal::PlayMidiNote(const int noteNumber, const int velocity, const std:
 
 void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
 {
+    _assertLocked();
+
     // the new alt buffer is exactly the size of the viewport.
     _altBufferSize = _mutableViewport.Dimensions();
 
@@ -222,7 +234,7 @@ void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
 
     // GH#3321: Make sure we let the TerminalInput know that we switched
     // buffers. This might affect how we interpret certain mouse events.
-    _terminalInput.UseAlternateScreenBuffer();
+    _getTerminalInput().UseAlternateScreenBuffer();
 
     // Update scrollbars
     _NotifyScrollEvent();
@@ -275,7 +287,7 @@ void Terminal::UseMainScreenBuffer()
 
     // GH#3321: Make sure we let the TerminalInput know that we switched
     // buffers. This might affect how we interpret certain mouse events.
-    _terminalInput.UseMainScreenBuffer();
+    _getTerminalInput().UseMainScreenBuffer();
 
     // Update scrollbars
     _NotifyScrollEvent();
@@ -291,6 +303,8 @@ void Terminal::UseMainScreenBuffer()
 // NOTE: This is the version of AddMark that comes from VT
 void Terminal::MarkPrompt(const ScrollMark& mark)
 {
+    _assertLocked();
+
     static bool logged = false;
     if (!logged)
     {
@@ -315,6 +329,8 @@ void Terminal::MarkPrompt(const ScrollMark& mark)
 
 void Terminal::MarkCommandStart()
 {
+    _assertLocked();
+
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
 
     if ((_currentPromptState == PromptState::Prompt) &&
@@ -341,6 +357,8 @@ void Terminal::MarkCommandStart()
 
 void Terminal::MarkOutputStart()
 {
+    _assertLocked();
+
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
 
     if ((_currentPromptState == PromptState::Command) &&
@@ -367,6 +385,8 @@ void Terminal::MarkOutputStart()
 
 void Terminal::MarkCommandFinish(std::optional<unsigned int> error)
 {
+    _assertLocked();
+
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
     auto category = MarkCategory::Prompt;
     if (error.has_value())

@@ -67,6 +67,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
 #include <shellapi.h>
 #include <ShlObj_core.h>
 #include <WinUser.h>
+#include <UIAutomationCore.h>
 
 #include "til.h"
 #include <til/mutex.h>

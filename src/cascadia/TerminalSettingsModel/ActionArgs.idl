@@ -147,6 +147,8 @@ namespace Microsoft.Terminal.Settings.Model
         // This needs to be an optional so that the default value (null) does
         // not modify whatever the profile's value is (either true or false)
         Windows.Foundation.IReference<Boolean> Elevate;
+        // Similarly with ReloadEnvironmentVariables
+        Windows.Foundation.IReference<Boolean> ReloadEnvironmentVariables;
 
         UInt64 ContentId{ get; set; };
 
