@@ -33,6 +33,6 @@
 
   <UpdateSettings>
     <OnLaunch
-      HoursBetweenUpdateChecks="0" />
+      HoursBetweenUpdateChecks="6" />
   </UpdateSettings>
 </AppInstaller>
