@@ -2640,62 +2640,91 @@ namespace winrt::TerminalApp::implementation
     // - Does some of this in a background thread, as to not hang/crash the UI thread.
     // Arguments:
     // - eventArgs: the PasteFromClipboard event sent from the TermControl
-    fire_and_forget TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/,
-                                                             const PasteFromClipboardEventArgs eventArgs)
+    fire_and_forget TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/, const PasteFromClipboardEventArgs eventArgs)
+    try
     {
-        const auto data = Clipboard::GetContent();
+        // The old Win32 clipboard API as used below is somewhere in the order of 300-1000x faster than
+        // the WinRT one on average, depending on CPU load. Don't use the WinRT clipboard API if you can.
+        const auto weakThis = get_weak();
+        const auto dispatcher = Dispatcher();
+        const auto globalSettings = _settings.GlobalSettings();
+        winrt::hstring text;
 
-        // This will switch the execution of the function to a background (not
-        // UI) thread. This is IMPORTANT, because the getting the clipboard data
-        // will crash on the UI thread, because the main thread is a STA.
+        // GetClipboardData might block for up to 30s for delay-rendered contents.
         co_await winrt::resume_background();
 
-        try
         {
-            hstring text = L"";
-            if (data.Contains(StandardDataFormats::Text()))
+            // According to various reports on the internet, OpenClipboard might
+            // fail to acquire the internal lock, for instance due to rdpclip.exe.
+            for (int attempts = 1;;)
             {
-                text = co_await data.GetTextAsync();
-            }
-            // Windows Explorer's "Copy address" menu item stores a StorageItem in the clipboard, and no text.
-            else if (data.Contains(StandardDataFormats::StorageItems()))
-            {
-                auto items = co_await data.GetStorageItemsAsync();
-                if (items.Size() > 0)
+                if (OpenClipboard(nullptr))
                 {
-                    auto item = items.GetAt(0);
-                    text = item.Path();
+                    break;
                 }
-            }
 
-            if (_settings.GlobalSettings().TrimPaste())
-            {
-                text = { Utils::TrimPaste(text) };
-                if (text.empty())
+                if (attempts > 5)
                 {
-                    // Text is all white space, nothing to paste
                     co_return;
                 }
+
+                attempts++;
+                Sleep(10 * attempts);
             }
 
-            // If the requesting terminal is in bracketed paste mode, then we don't need to warn about a multi-line paste.
-            auto warnMultiLine = _settings.GlobalSettings().WarnAboutMultiLinePaste() &&
-                                 !eventArgs.BracketedPasteEnabled();
-            if (warnMultiLine)
+            const auto clipboardCleanup = wil::scope_exit([]() {
+                CloseClipboard();
+            });
+
+            const auto data = GetClipboardData(CF_UNICODETEXT);
+            if (!data)
             {
-                const auto isNewLineLambda = [](auto c) { return c == L'\n' || c == L'\r'; };
-                const auto hasNewLine = std::find_if(text.cbegin(), text.cend(), isNewLineLambda) != text.cend();
-                warnMultiLine = hasNewLine;
+                co_return;
             }
 
-            constexpr const std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
-            const auto warnLargeText = text.size() > minimumSizeForWarning &&
-                                       _settings.GlobalSettings().WarnAboutLargePaste();
-
-            if (warnMultiLine || warnLargeText)
+            const auto str = static_cast<const wchar_t*>(GlobalLock(data));
+            if (!str)
             {
-                co_await wil::resume_foreground(Dispatcher());
+                co_return;
+            }
 
+            const auto dataCleanup = wil::scope_exit([&]() {
+                GlobalUnlock(data);
+            });
+
+            const auto maxLength = GlobalSize(data) / sizeof(wchar_t);
+            const auto length = wcsnlen(str, maxLength);
+            text = winrt::hstring{ str, gsl::narrow_cast<uint32_t>(length) };
+        }
+
+        if (globalSettings.TrimPaste())
+        {
+            text = { Utils::TrimPaste(text) };
+            if (text.empty())
+            {
+                // Text is all white space, nothing to paste
+                co_return;
+            }
+        }
+
+        // If the requesting terminal is in bracketed paste mode, then we don't need to warn about a multi-line paste.
+        auto warnMultiLine = globalSettings.WarnAboutMultiLinePaste() && !eventArgs.BracketedPasteEnabled();
+        if (warnMultiLine)
+        {
+            const auto isNewLineLambda = [](auto c) { return c == L'\n' || c == L'\r'; };
+            const auto hasNewLine = std::find_if(text.cbegin(), text.cend(), isNewLineLambda) != text.cend();
+            warnMultiLine = hasNewLine;
+        }
+
+        constexpr const std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
+        const auto warnLargeText = text.size() > minimumSizeForWarning && globalSettings.WarnAboutLargePaste();
+
+        if (warnMultiLine || warnLargeText)
+        {
+            co_await wil::resume_foreground(dispatcher);
+
+            if (const auto strongThis = weakThis.get())
+            {
                 // We have to initialize the dialog here to be able to change the text of the text block within it
                 FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>();
                 ClipboardText().Text(text);
@@ -2723,10 +2752,15 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            eventArgs.HandleClipboardData(text);
+            co_await winrt::resume_background();
         }
-        CATCH_LOG();
+
+        // This will end up calling ConptyConnection::WriteInput which calls WriteFile which may block for
+        // an indefinite amount of time. Avoid freezes and deadlocks by running this on a background thread.
+        assert(!dispatcher.HasThreadAccess());
+        eventArgs.HandleClipboardData(std::move(text));
     }
+    CATCH_LOG();
 
     void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
     {
