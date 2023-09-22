@@ -25,8 +25,7 @@ using namespace Microsoft::Console;
 // Return Value:
 // - A new instance of InputBuffer
 InputBuffer::InputBuffer() :
-    InputMode{ INPUT_BUFFER_DEFAULT_INPUT_MODE },
-    _pTtyConnection(nullptr)
+    InputMode{ INPUT_BUFFER_DEFAULT_INPUT_MODE }
 {
     // initialize buffer header
     fInComposition = false;
@@ -340,26 +339,6 @@ void InputBuffer::FlushAllButKeys()
         return event.EventType != KEY_EVENT;
     });
     _storage.erase(newEnd, _storage.end());
-}
-
-void InputBuffer::SetTerminalConnection(_In_ Render::VtEngine* const pTtyConnection)
-{
-    this->_pTtyConnection = pTtyConnection;
-}
-
-void InputBuffer::PassThroughWin32MouseRequest(bool enable)
-{
-    if (_pTtyConnection)
-    {
-        if (enable)
-        {
-            LOG_IF_FAILED(_pTtyConnection->WriteTerminalW(L"\x1b[?1003;1006h"));
-        }
-        else
-        {
-            LOG_IF_FAILED(_pTtyConnection->WriteTerminalW(L"\x1b[?1003;1006l"));
-        }
-    }
 }
 
 // Routine Description:
