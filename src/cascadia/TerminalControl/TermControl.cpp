@@ -275,6 +275,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::_throttledUpdateScrollbar(const ScrollBarUpdate& update)
     {
+        if (!_initializedTerminal)
+        {
+            return;
+        }
+
         // Assumptions:
         // * we're already not closing
         // * caller already checked weak ptr to make sure we're still alive
