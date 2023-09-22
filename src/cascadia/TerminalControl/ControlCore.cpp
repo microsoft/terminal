@@ -680,6 +680,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _setOpacity(Opacity() + adjustment);
     }
 
+    // Method Description:
+    // - Writes the given sequence as input to the active terminal connection,
+    // Arguments:
+    // - opacity: the new opacity to set.
+    // - focusedRuntime: Used to store the focused runtime opacity, if the window is unfocused
+    // it doesn't get updated.
+    // Return Value:
+    // - <none>
     void ControlCore::_setOpacity(const double opacity, bool focusedRuntime)
     {
         const auto newOpacity = std::clamp(opacity,
@@ -693,6 +701,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Update our runtime opacity value
         _runtimeOpacity = newOpacity;
+
+        //Used to store the focused runtime opacity, if the window is unfocused
+        //it doesn't get updated.This allows for smoothly transitioning between unfocused opacity
+        //and runtime focused opacity.
         _runtimeFocusedOpacity = focusedRuntime ? newOpacity : _runtimeFocusedOpacity;
 
         // Manually turn off acrylic if they turn off transparency.
@@ -879,8 +891,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Skip Unfocused Opacity when EnableUnfocusedAcrylic is false
             // and Acrylic is true as this results into seeing the opacity going
             // from solid to unfocused to focused bug.
-            bool skipUnfocusedOpacity = !_settings->EnableUnfocusedAcrylic() && UseAcrylic();
-            double newOpacity = skipUnfocusedOpacity ?
+            bool useFocusedRuntimeOpacity = focused || (!_settings->EnableUnfocusedAcrylic() && UseAcrylic());
+            double newOpacity = useFocusedRuntimeOpacity ?
                                     FocusedOpacity() :
                                     newAppearance->Opacity();
             _setOpacity(newOpacity, focused);
