@@ -360,16 +360,9 @@ winrt::hstring Profile::_evaluateIcon() const
     // will actually search for the exe, including spaces, in the same way that
     // CreateProcess does.
     std::wstring cmdline{ NormalizeCommandLine(Commandline().c_str()) };
-    if (cmdline.empty())
-    {
-        return {};
-    }
-
     // NormalizeCommandLine will return a string with embedded nulls after each
     // arg. We just want the first one.
-    const size_t beforeNull{ ::wcslen(cmdline.c_str()) };
-    const std::wstring_view exe{ cmdline.c_str(), beforeNull };
-    return winrt::hstring{ exe };
+    return winrt::hstring{ cmdline.c_str() };
 }
 
 // Given a commandLine like the following:
