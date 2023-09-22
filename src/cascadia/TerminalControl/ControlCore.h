@@ -387,7 +387,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _updateAntiAliasingMode();
         void _connectionOutputHandler(const hstring& hstr);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
-        void _setOpacity(const double opacity, const bool focusedRuntime = true);
+        void _setOpacity(const double opacity, const bool focused = true);
 
         bool _isBackgroundTransparent();
         void _focusChanged(bool focused);

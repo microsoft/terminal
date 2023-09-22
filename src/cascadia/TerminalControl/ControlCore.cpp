@@ -681,14 +681,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Writes the given sequence as input to the active terminal connection,
+    // - Updates the opacity of the terminal
     // Arguments:
-    // - opacity: the new opacity to set.
-    // - focusedRuntime: Used to store the focused runtime opacity, if the window is unfocused
-    // it doesn't get updated.
+    // - opacity: The new opacity to set.
+    // - focused (default == true): Whether the window is focused or unfocused.
     // Return Value:
     // - <none>
-    void ControlCore::_setOpacity(const double opacity, bool focusedRuntime)
+    void ControlCore::_setOpacity(const double opacity, bool focused)
     {
         const auto newOpacity = std::clamp(opacity,
                                            0.0,
@@ -702,10 +701,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Update our runtime opacity value
         _runtimeOpacity = newOpacity;
 
-        //Used to store the focused runtime opacity, if the window is unfocused
-        //it doesn't get updated.This allows for smoothly transitioning between unfocused opacity
-        //and runtime focused opacity.
-        _runtimeFocusedOpacity = focusedRuntime ? newOpacity : _runtimeFocusedOpacity;
+        //Stores the focused runtime opacity separately from unfocused opacity
+        //to transition smoothly between the two. 
+        _runtimeFocusedOpacity = focused ? newOpacity : _runtimeFocusedOpacity;
 
         // Manually turn off acrylic if they turn off transparency.
         _runtimeUseAcrylic = newOpacity < 1.0 && _settings->UseAcrylic();
@@ -888,9 +886,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
 
-            // Skip Unfocused Opacity when EnableUnfocusedAcrylic is false
-            // and Acrylic is true as this results into seeing the opacity going
-            // from solid to unfocused to focused bug.
+            // Incase EnableUnfocusedAcrylic is disabled and Focused Acrylic is set to true,
+            // the terminal should ignore the unfocused opacity from settings.
+            // The Focused Opacity from settings should be ignored if overridden at runtime. 
             bool useFocusedRuntimeOpacity = focused || (!_settings->EnableUnfocusedAcrylic() && UseAcrylic());
             double newOpacity = useFocusedRuntimeOpacity ?
                                     FocusedOpacity() :
