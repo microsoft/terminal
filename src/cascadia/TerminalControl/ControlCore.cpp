@@ -702,7 +702,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _runtimeOpacity = newOpacity;
 
         //Stores the focused runtime opacity separately from unfocused opacity
-        //to transition smoothly between the two. 
+        //to transition smoothly between the two.
         _runtimeFocusedOpacity = focused ? newOpacity : _runtimeFocusedOpacity;
 
         // Manually turn off acrylic if they turn off transparency.
@@ -888,7 +888,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Incase EnableUnfocusedAcrylic is disabled and Focused Acrylic is set to true,
             // the terminal should ignore the unfocused opacity from settings.
-            // The Focused Opacity from settings should be ignored if overridden at runtime. 
+            // The Focused Opacity from settings should be ignored if overridden at runtime.
             bool useFocusedRuntimeOpacity = focused || (!_settings->EnableUnfocusedAcrylic() && UseAcrylic());
             double newOpacity = useFocusedRuntimeOpacity ?
                                     FocusedOpacity() :
