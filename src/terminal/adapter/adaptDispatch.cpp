@@ -11,6 +11,11 @@
 #include "../../inc/unicode.hpp"
 #include "../parser/ascii.hpp"
 
+// BACKPORT***
+// Scrollbar marks being disabled causes some code to become unreachable.
+#pragma warning(disable: 4702)
+// ***BACKPORT
+
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
