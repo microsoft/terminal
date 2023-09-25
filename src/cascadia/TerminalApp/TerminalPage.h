@@ -345,6 +345,7 @@ namespace winrt::TerminalApp::implementation
         void _InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl, uint32_t insertPosition = -1);
         void _RegisterTerminalEvents(Microsoft::Terminal::Control::TermControl term);
         void _RegisterTabEvents(TerminalTab& hostingTab);
+        void _RegisterPaneEvents(std::shared_ptr<Pane>& pane);
 
         void _DismissTabContextMenus();
         void _FocusCurrentTab(const bool focusAlways);
@@ -536,9 +537,7 @@ namespace winrt::TerminalApp::implementation
                           const std::optional<til::point>& dragPoint = std::nullopt);
         void _sendDraggedTabToWindow(const winrt::hstring& windowId, const uint32_t tabIndex, std::optional<til::point> dragPoint);
 
-        void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
-        void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);
-        void _PopulateContextMenu(const IInspectable& sender, const bool withSelection);
+        void _PopulateContextMenu(const Microsoft::Terminal::Control::TermControl& control, const Microsoft::UI::Xaml::Controls::CommandBarFlyout& sender, const bool withSelection);
         winrt::Windows::UI::Xaml::Controls::MenuFlyout _CreateRunAsAdminFlyout(int profileIndex);
 
         winrt::Microsoft::Terminal::Control::TermControl _senderOrActiveControl(const winrt::Windows::Foundation::IInspectable& sender);

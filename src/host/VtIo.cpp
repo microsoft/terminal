@@ -255,7 +255,6 @@ bool VtIo::IsUsingVt() const
         {
             g.pRender->AddRenderEngine(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
-            g.getConsoleInformation().GetActiveInputBuffer()->SetTerminalConnection(_pVtRenderEngine.get());
 
             // Force the whole window to be put together first.
             // We don't really need the handle, we just want to leverage the setup steps.
@@ -463,6 +462,18 @@ void VtIo::SendCloseEvent()
     }
 }
 
+// The name of this method is an analogy to TCP_CORK. It instructs
+// the VT renderer to stop flushing its buffer to the output pipe.
+// Don't forget to uncork it!
+void VtIo::CorkRenderer(bool corked) const noexcept
+{
+    _pVtRenderEngine->Cork(corked);
+    if (!corked)
+    {
+        LOG_IF_FAILED(ServiceLocator::LocateGlobals().pRender->PaintFrame());
+    }
+}
+
 #ifdef UNIT_TESTING
 // Method Description:
 // - This is a test helper method. It can be used to trick VtIo into responding
@@ -510,6 +521,15 @@ bool VtIo::IsResizeQuirkEnabled() const
     if (_pVtRenderEngine)
     {
         return _pVtRenderEngine->ManuallyClearScrollback();
+    }
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT VtIo::RequestMouseMode(bool enable) const noexcept
+{
+    if (_pVtRenderEngine)
+    {
+        return _pVtRenderEngine->RequestMouseMode(enable);
     }
     return S_OK;
 }
