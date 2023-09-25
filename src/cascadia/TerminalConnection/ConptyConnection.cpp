@@ -162,6 +162,21 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto [newCommandLine, newStartingDirectory] = Utils::MangleStartingDirectoryForWSL(cmdline, _startingDirectory);
         const auto startingDirectory = newStartingDirectory.size() > 0 ? newStartingDirectory.c_str() : nullptr;
 
+        // GH #15487: Circa Terminal 1.18, we no longer leave the Terminal in
+        // the CWD it was started in. However, users might pass a path to an exe
+        // that's relative to the directory they're launching the terminal from.
+        // To handle this, we're going to temporarily try to switch the Terminal
+        // into the CWD that they requested, CreateProcess, then pop back out to
+        // where we started.
+        auto originalCwd{ wil::GetCurrentDirectoryW<std::wstring>() };
+        auto restoreCwd = wil::scope_exit([&originalCwd]() {
+            // ignore errors, we'll just power on through. We'd rather do
+            // something rather than fail silently if the directory doesn't
+            // actually exist.
+            LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(originalCwd.c_str()));
+        });
+        LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(startingDirectory));
+
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,
             newCommandLine.data(),
