@@ -226,6 +226,7 @@ Vcpp
 Viewbox
 virtualalloc
 vsnwprintf
+wcsnlen
 wcsstr
 wcstoui
 WDJ

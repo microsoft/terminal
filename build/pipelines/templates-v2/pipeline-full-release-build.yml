@@ -51,6 +51,9 @@ parameters:
     type: boolean
     default: false
 
+  - name: extraPublishJobs
+    type: object
+    default: []
   - name: pool
     type: object
     default:
@@ -193,4 +196,5 @@ stages:
           includePublicSymbolServer: ${{ parameters.publishSymbolsToPublic }}
           symbolExpiryTime: ${{ parameters.symbolExpiryTime }}
 
+      - ${{ parameters.extraPublishJobs }}
 ...

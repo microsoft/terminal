@@ -43,6 +43,8 @@ namespace Microsoft::Console::VirtualTerminal
         void BeginResize();
         void EndResize();
 
+        void CorkRenderer(bool corked) const noexcept;
+
 #ifdef UNIT_TESTING
         void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);
 #endif
@@ -50,6 +52,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool IsResizeQuirkEnabled() const;
 
         [[nodiscard]] HRESULT ManuallyClearScrollback() const noexcept;
+        [[nodiscard]] HRESULT RequestMouseMode(bool enable) const noexcept;
 
         void CreatePseudoWindow();
         void SetWindowVisibility(bool showOrHide) noexcept;

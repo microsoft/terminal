@@ -10,6 +10,12 @@ schedules:
 
 name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
 
+parameters:
+  - name: publishToAzure
+    displayName: "Deploy to **PUBLIC** Azure Storage"
+    type: boolean
+    default: true
+
 extends:
   template: templates-v2\pipeline-full-release-build.yml
   parameters:
@@ -21,3 +27,17 @@ extends:
     publishSymbolsToPublic: true
     publishVpackToWindows: false
     symbolExpiryTime: 15 # Nightly builds do not keep symbols for very long!
+    ${{ if eq(true, parameters.publishToAzure) }}:
+      extraPublishJobs:
+        - template: job-deploy-to-azure-storage.yml
+          parameters:
+            pool:
+              name: SHINE-INT-S
+            dependsOn: [PublishSymbols]
+            storagePublicRootURL: $(AppInstallerRootURL)
+            subscription: $(AzureSubscriptionName)
+            storageAccount: $(AzureStorageAccount)
+            storageContainer: $(AzureStorageContainer)
+            buildConfiguration: Release
+            environment: production-canary
+
