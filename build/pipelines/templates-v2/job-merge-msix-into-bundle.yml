@@ -48,6 +48,8 @@ jobs:
       BundleStemName: Microsoft.WindowsTerminal
     ${{ elseif eq(parameters.branding, 'Preview') }}:
       BundleStemName: Microsoft.WindowsTerminalPreview
+    ${{ elseif eq(parameters.branding, 'Canary') }}:
+      BundleStemName: Microsoft.WindowsTerminalCanary
     ${{ else }}:
       BundleStemName: WindowsTerminalDev
     JobOutputDirectory: '$(System.ArtifactsDirectory)/bundle'

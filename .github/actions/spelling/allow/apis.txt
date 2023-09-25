@@ -28,6 +28,7 @@ CYICON
 Dacl
 dataobject
 dcomp
+debugbreak
 delayimp
 DERR
 dlldata
@@ -225,6 +226,7 @@ Vcpp
 Viewbox
 virtualalloc
 vsnwprintf
+wcsnlen
 wcsstr
 wcstoui
 WDJ

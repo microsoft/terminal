@@ -1385,6 +1385,18 @@ Profile Pane::GetFocusedProfile()
 }
 
 // Method Description:
+// - Returns true if the connection state of this pane is closed. If this Pane is not a leaf this will
+//   return false.
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the connection state of this Pane is closed.
+bool Pane::IsConnectionClosed() const
+{
+    return _control && _control.ConnectionState() >= ConnectionState::Closed;
+}
+
+// Method Description:
 // - Returns true if this pane was the last pane to be focused in a tree of panes.
 // Arguments:
 // - <none>
@@ -2518,6 +2530,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
         _profile = nullptr;
         _control = { nullptr };
         _firstChild->_isDefTermSession = _isDefTermSession;
+        _firstChild->_broadcastEnabled = _broadcastEnabled;
     }
 
     _splitState = actualSplitType;
@@ -3173,6 +3186,9 @@ void Pane::EnableBroadcast(bool enabled)
     if (_IsLeaf())
     {
         _broadcastEnabled = enabled;
+        _control.CursorVisibility(enabled ?
+                                      CursorDisplayState::Shown :
+                                      CursorDisplayState::Default);
         UpdateVisuals();
     }
     else

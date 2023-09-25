@@ -1,0 +1,70 @@
+parameters:
+  - name: buildConfiguration
+    type: string
+  - name: pool
+    type: object
+    default: []
+  - name: dependsOn
+    type: object
+    default: null
+  - name: artifactStem
+    type: string
+    default: ''
+  - name: variables
+    type: object
+    default: {}
+  - name: environment
+    type: string
+  - name: storagePublicRootURL
+    type: string
+  - name: subscription
+    type: string
+  - name: storageAccount
+    type: string
+  - name: storageContainer
+    type: string
+
+jobs:
+- deployment: DeployAzure
+  ${{ if ne(length(parameters.pool), 0) }}:
+    pool: ${{ parameters.pool }}
+  displayName: Publish to Azure Storage (Prod)
+  dependsOn: ${{ parameters.dependsOn }}
+  variables:
+    ${{ insert }}: ${{ parameters.variables }}
+  environment: ${{ parameters.environment }}
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - download: none
+
+        - checkout: self
+          clean: true
+          fetchDepth: 1
+          fetchTags: false # Tags still result in depth > 1 fetch; we don't need them here
+          submodules: true
+          persistCredentials: True
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download MSIX Bundle Artifact
+          inputs:
+            artifactName: appxbundle-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
+            downloadPath: '$(Build.SourcesDirectory)/_out'
+            itemPattern: '**/*.msixbundle'
+
+        - pwsh: |-
+            $b = Get-Item _out/*.msixbundle
+            ./build/scripts/New-AppInstallerFromTemplateAndBundle.ps1 -BundlePath $b.FullName -AppInstallerTemplatePath ./build/config/template.appinstaller -AppInstallerRoot "${{ parameters.storagePublicRootURL }}" -OutputPath _out/Microsoft.WindowsTerminalCanary.appinstaller
+          displayName: "Produce AppInstaller for MSIX bundle"
+
+        - task: AzureFileCopy@5
+          displayName: Publish to Storage Account
+          inputs:
+            sourcePath: _out/*
+            Destination: AzureBlob
+            azureSubscription: ${{ parameters.subscription }}
+            storage: ${{ parameters.storageAccount }}
+            ContainerName: ${{ parameters.storageContainer }}
+            AdditionalArgumentsForBlobCopy: "--content-type application/octet-stream"
+

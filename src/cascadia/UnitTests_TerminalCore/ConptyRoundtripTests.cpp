@@ -3401,7 +3401,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
         }
         else if (writingMethod == PrintWithWriteCharsLegacy)
         {
-            WriteCharsLegacy(si, str, true, nullptr);
+            WriteCharsLegacy(si, str, false, nullptr);
         }
     };
 

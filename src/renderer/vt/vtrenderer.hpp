@@ -90,6 +90,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT RequestWin32Input() noexcept;
         [[nodiscard]] virtual HRESULT SetWindowVisibility(const bool showOrHide) noexcept = 0;
         [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer) noexcept;
+        [[nodiscard]] HRESULT RequestMouseMode(bool enable) noexcept;
+        void Cork(bool corked) noexcept;
 
     protected:
         wil::unique_hfile _hFile;
@@ -127,7 +129,6 @@ namespace Microsoft::Console::Render
         bool _newBottomLine;
         til::point _deferredCursorPos;
 
-        HRESULT _exitResult;
         Microsoft::Console::VirtualTerminal::VtIo* _terminalOwner;
 
         Microsoft::Console::VirtualTerminal::RenderTracing _trace;
@@ -139,12 +140,13 @@ namespace Microsoft::Console::Render
 
         bool _resizeQuirk{ false };
         bool _passthrough{ false };
-        bool _noFlushOnEnd{ false };
+        bool _corked{ false };
         std::optional<TextColor> _newBottomLineBG{ std::nullopt };
 
         [[nodiscard]] HRESULT _WriteFill(const size_t n, const char c) noexcept;
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
-        [[nodiscard]] HRESULT _Flush() noexcept;
+        void _Flush() noexcept;
+        void _flushImpl() noexcept;
 
         template<typename S, typename... Args>
         [[nodiscard]] HRESULT _WriteFormatted(S&& format, Args&&... args)
@@ -182,6 +184,10 @@ namespace Microsoft::Console::Render
                                                             const bool fIsForeground) noexcept;
         [[nodiscard]] HRESULT _SetGraphicsRenditionDefaultColor(const bool fIsForeground) noexcept;
 
+        [[nodiscard]] HRESULT _SetGraphicsRenditionUnderline256Color(const BYTE index) noexcept;
+        [[nodiscard]] HRESULT _SetGraphicsRenditionUnderlineRGBColor(const COLORREF color) noexcept;
+        [[nodiscard]] HRESULT _SetGraphicsRenditionUnderlineDefaultColor() noexcept;
+
         [[nodiscard]] HRESULT _SetGraphicsDefault() noexcept;
 
         [[nodiscard]] HRESULT _ResizeWindow(const til::CoordType sWidth, const til::CoordType sHeight) noexcept;
@@ -189,7 +195,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _SetIntense(const bool isIntense) noexcept;
         [[nodiscard]] HRESULT _SetFaint(const bool isFaint) noexcept;
         [[nodiscard]] HRESULT _SetUnderlined(const bool isUnderlined) noexcept;
-        [[nodiscard]] HRESULT _SetDoublyUnderlined(const bool isUnderlined) noexcept;
+        [[nodiscard]] HRESULT _SetUnderlineExtended(const UnderlineStyle style) noexcept;
         [[nodiscard]] HRESULT _SetOverlined(const bool isOverlined) noexcept;
         [[nodiscard]] HRESULT _SetItalic(const bool isItalic) noexcept;
         [[nodiscard]] HRESULT _SetBlinking(const bool isBlinking) noexcept;

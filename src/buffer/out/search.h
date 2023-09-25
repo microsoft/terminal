@@ -27,18 +27,21 @@ public:
 
     bool ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive);
 
-    void MovePastCurrentSelection();
+    void MoveToCurrentSelection();
+    void MoveToPoint(til::point anchor) noexcept;
     void MovePastPoint(til::point anchor) noexcept;
     void FindNext() noexcept;
 
     const til::point_span* GetCurrent() const noexcept;
     bool SelectCurrent() const;
 
+    const std::vector<til::point_span>& Results() const noexcept;
+    ptrdiff_t CurrentMatch() const noexcept;
+
 private:
     // _renderData is a pointer so that Search() is constexpr default constructable.
     Microsoft::Console::Render::IRenderData* _renderData = nullptr;
-    std::wstring_view _needle;
-    bool _reverse = false;
+    std::wstring _needle;
     bool _caseInsensitive = false;
     uint64_t _lastMutationId = 0;
 

@@ -60,7 +60,8 @@ namespace SettingsModelLocalTests
             "tabRow":
             {
                 "background": "#FFFF8800",
-                "unfocusedBackground": "#FF8844"
+                "unfocusedBackground": "#FF8844",
+                "iconStyle": "default"
             },
             "window":
             {

@@ -41,7 +41,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _previewControl = Control::TermControl(settings, settings, *_previewConnection);
             _previewControl.IsEnabled(false);
             _previewControl.AllowFocusWhenDisabled(false);
-            _previewControl.DisplayCursorWhileBlurred(true);
+            _previewControl.CursorVisibility(Microsoft::Terminal::Control::CursorDisplayState::Shown);
             ControlPreview().Child(_previewControl);
         }
 

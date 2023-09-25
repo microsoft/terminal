@@ -120,10 +120,10 @@ private:
     void _transitionState(State state) noexcept;
     void _markAsDirty();
     void _flushBuffer();
-    void _erase(til::CoordType distance);
-    til::CoordType _writeChars(const std::wstring_view& text) const;
-    til::point _offsetPosition(til::point pos, til::CoordType distance) const;
-    void _unwindCursorPosition(til::CoordType distance) const;
+    void _erase(ptrdiff_t distance) const;
+    ptrdiff_t _writeChars(const std::wstring_view& text) const;
+    til::point _offsetPosition(til::point pos, ptrdiff_t distance) const;
+    void _unwindCursorPosition(ptrdiff_t distance) const;
     void _replaceBuffer(const std::wstring_view& str);
 
     void _popupPush(PopupKind kind);
@@ -149,10 +149,10 @@ private:
     size_t _bufferCursor = 0;
     // _distanceCursor is the distance between the start of the prompt and the
     // current cursor location in columns (including wide glyph padding columns).
-    til::CoordType _distanceCursor;
+    ptrdiff_t _distanceCursor = 0;
     // _distanceEnd is the distance between the start of the prompt and its last
     // glyph at the end in columns (including wide glyph padding columns).
-    til::CoordType _distanceEnd;
+    ptrdiff_t _distanceEnd = 0;
     bool _bufferDirty = false;
     bool _insertMode = false;
     State _state = State::Accumulating;
