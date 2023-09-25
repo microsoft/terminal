@@ -31,6 +31,7 @@ namespace Microsoft.Terminal.TerminalConnection
                                                                       Boolean reloadEnvironmentVariables,
                                                                       String initialEnvironment,
                                                                       IMapView<String, String> environmentOverrides,
+                                                                      String virtualWorkingDirectory,
                                                                       UInt32 rows,
                                                                       UInt32 columns,
                                                                       Guid guid,

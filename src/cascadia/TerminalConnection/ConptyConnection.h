@@ -53,6 +53,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                                          bool reloadEnvironmentVariables,
                                                                          const winrt::hstring& initialEnvironment,
                                                                          const Windows::Foundation::Collections::IMapView<hstring, hstring>& environmentOverrides,
+                                                                         const winrt::hstring& virtualWorkingDirectory,
                                                                          uint32_t rows,
                                                                          uint32_t columns,
                                                                          const winrt::guid& guid,
@@ -77,6 +78,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _startingTitle{};
         bool _initialVisibility{ true };
         Windows::Foundation::Collections::ValueSet _environment{ nullptr };
+        hstring _virtualWorkingDirectory{};
         guid _guid{}; // A unique session identifier for connected client
         hstring _clientName{}; // The name of the process hosted by this ConPTY connection (as of launch).
 

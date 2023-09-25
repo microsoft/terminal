@@ -175,7 +175,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // actually exist.
             LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(originalCwd.c_str()));
         });
-        LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(startingDirectory));
+        if (!_virtualWorkingDirectory.empty())
+        {
+            LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(_virtualWorkingDirectory.c_str()));
+        }
+        else
+        {
+            restoreCwd.reset();
+        }
 
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,
@@ -245,6 +252,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                                                 bool reloadEnvironmentVariables,
                                                                                 const winrt::hstring& initialEnvironment,
                                                                                 const Windows::Foundation::Collections::IMapView<hstring, hstring>& environmentOverrides,
+                                                                                const winrt::hstring& virtualWorkingDirectory,
                                                                                 uint32_t rows,
                                                                                 uint32_t columns,
                                                                                 const winrt::guid& guid,
@@ -254,6 +262,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         vs.Insert(L"commandline", Windows::Foundation::PropertyValue::CreateString(cmdline));
         vs.Insert(L"startingDirectory", Windows::Foundation::PropertyValue::CreateString(startingDirectory));
+        vs.Insert(L"virtualWorkingDirectory", Windows::Foundation::PropertyValue::CreateString(virtualWorkingDirectory));
         vs.Insert(L"startingTitle", Windows::Foundation::PropertyValue::CreateString(startingTitle));
         vs.Insert(L"reloadEnvironmentVariables", Windows::Foundation::PropertyValue::CreateBoolean(reloadEnvironmentVariables));
         vs.Insert(L"initialRows", Windows::Foundation::PropertyValue::CreateUInt32(rows));
@@ -295,6 +304,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _commandline = unbox_prop_or<winrt::hstring>(settings, L"commandline", _commandline);
             _startingDirectory = unbox_prop_or<winrt::hstring>(settings, L"startingDirectory", _startingDirectory);
             _startingTitle = unbox_prop_or<winrt::hstring>(settings, L"startingTitle", _startingTitle);
+            _virtualWorkingDirectory = unbox_prop_or<winrt::hstring>(settings, L"virtualWorkingDirectory", _virtualWorkingDirectory);
             _rows = unbox_prop_or<uint32_t>(settings, L"initialRows", _rows);
             _cols = unbox_prop_or<uint32_t>(settings, L"initialCols", _cols);
             _guid = unbox_prop_or<winrt::guid>(settings, L"guid", _guid);
