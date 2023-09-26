@@ -294,7 +294,7 @@ ForEach($c in $ReleaseConfigs) {
 			$idealPath = (Join-Path $directory $a.IdealFilename())
 			Copy-Item $a.Path $idealPath -Confirm:$false
 			Write-Verbose "Uploading $idealPath to Release $($GitHubRelease.id)"
-			New-GitHubReleaseAsset -UploadUrl $GitHubRelease.UploadUrl -Path $idealPath
+			New-GitHubReleaseAsset -ReleaseId $GitHubRelease.id -Path $idealPath
 		}
 	}
 }
