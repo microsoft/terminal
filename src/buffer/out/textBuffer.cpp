@@ -2224,7 +2224,7 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
         //   Specifies that the default font for the document is the one
         //   at index 0 in the font table.
         // \nouicompat:
-        //   Some features are blocked by default to maintain compatiblity
+        //   Some features are blocked by default to maintain compatibility
         //   with older programs (Eg. Word 97-2003). `nouicompat` disables this
         //   behavior, and unblocks these features. See: Spec 1.9.1, Pg. 51.
         rtfBuilder << "\\rtf1\\ansi\\ansicpg1252\\deff0\\nouicompat";
