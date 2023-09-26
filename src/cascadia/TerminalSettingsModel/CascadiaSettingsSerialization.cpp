@@ -18,9 +18,8 @@
 #endif
 
 // The following files are generated at build time into the "Generated Files" directory.
-// defaults(-universal).h is a file containing the default json settings in a std::string_view.
+// defaults.h is a file containing the default json settings in a std::string_view.
 #include "defaults.h"
-#include "defaults-universal.h"
 // userDefault.h is like the above, but with a default template for the user's settings.json.
 #include <LegacyProfileGeneratorNamespaces.h>
 
@@ -52,6 +51,18 @@ static constexpr std::string_view ThemesKey{ "themes" };
 constexpr std::wstring_view systemThemeName{ L"system" };
 constexpr std::wstring_view darkThemeName{ L"dark" };
 constexpr std::wstring_view lightThemeName{ L"light" };
+constexpr std::wstring_view legacySystemThemeName{ L"legacySystem" };
+constexpr std::wstring_view legacyDarkThemeName{ L"legacyDark" };
+constexpr std::wstring_view legacyLightThemeName{ L"legacyLight" };
+
+static constexpr std::array builtinThemes{
+    systemThemeName,
+    lightThemeName,
+    darkThemeName,
+    legacySystemThemeName,
+    legacyLightThemeName,
+    legacyDarkThemeName,
+};
 
 static constexpr std::wstring_view jsonExtension{ L".json" };
 static constexpr std::wstring_view FragmentsSubDirectory{ L"\\Fragments" };
@@ -439,6 +450,17 @@ bool SettingsLoader::FixupUserSettings()
         }
     }
 
+    // Terminal 1.19: Migrate the global
+    // `compatibility.reloadEnvironmentVariables` to being a per-profile
+    // setting. If the user had it disabled in 1.18, then set the
+    // profiles.defaults value to false to match.
+    if (!userSettings.globals->LegacyReloadEnvironmentVariables())
+    {
+        // migrate the user's opt-out to the profiles.defaults
+        userSettings.baseLayerProfile->ReloadEnvironmentVariables(false);
+        fixedUp = true;
+    }
+
     return fixedUp;
 }
 
@@ -500,7 +522,7 @@ Json::Value SettingsLoader::_parseJSON(const std::string_view& content)
 {
     Json::Value json;
     std::string errs;
-    const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+    const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
 
     if (!reader->parse(content.data(), content.data() + content.size(), &json, &errs))
     {
@@ -531,10 +553,10 @@ const Json::Value& SettingsLoader::_getJSONValue(const Json::Value& json, const 
 // Thus no matter how many profiles are added later on, the following condition holds true:
 // The userSettings.profiles in the range [0, _userProfileCount) contain all profiles specified by the user.
 // In turn all profiles in the range [_userProfileCount, ∞) contain newly generated/added profiles.
-// gsl::make_span(userSettings.profiles).subspan(_userProfileCount) gets us the latter range.
-gsl::span<const winrt::com_ptr<Profile>> SettingsLoader::_getNonUserOriginProfiles() const
+// std::span{ userSettings.profiles }.subspan(_userProfileCount) gets us the latter range.
+std::span<const winrt::com_ptr<Profile>> SettingsLoader::_getNonUserOriginProfiles() const
 {
-    return gsl::make_span(userSettings.profiles).subspan(_userProfileCount);
+    return std::span{ userSettings.profiles }.subspan(_userProfileCount);
 }
 
 // Parses the given JSON string ("content") and fills a ParsedSettings instance with it.
@@ -562,8 +584,10 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
         {
             if (const auto theme = Theme::FromJson(themeJson))
             {
+                const auto& name{ theme->Name() };
+
                 if (origin != OriginTag::InBox &&
-                    (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName))
+                    (std::ranges::find(builtinThemes, name) != builtinThemes.end()))
                 {
                     // If the theme didn't come from the in-box themes, and its
                     // name was one of the reserved names, then just ignore it.
@@ -791,7 +815,7 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
     {
         const winrt::hstring source{ generatorNamespace };
 
-        for (const auto& profile : gsl::span(inboxSettings.profiles).subspan(previousSize))
+        for (const auto& profile : std::span(inboxSettings.profiles).subspan(previousSize))
         {
             profile->Origin(OriginTag::Generated);
             profile->Source(source);
@@ -822,9 +846,9 @@ try
     // read settings.json from the Release stable file path if it exists.
     // Otherwise use default settings file provided from original settings file
     bool releaseSettingExists = false;
-    if (firstTimeSetup)
+    if (firstTimeSetup && !IsPortableMode())
     {
-#if defined(WT_BRANDING_PREVIEW)
+#if defined(WT_BRANDING_PREVIEW) || defined(WT_BRANDING_CANARY)
         {
             try
             {
@@ -953,10 +977,16 @@ void CascadiaSettings::_researchOnLoad()
         // light: 1
         // dark: 2
         // a custom theme: 3
-        const auto themeChoice = themeInUse == L"system" ? 0 :
-                                 themeInUse == L"light"  ? 1 :
-                                 themeInUse == L"dark"   ? 2 :
-                                                           3;
+        // system (legacy): 4
+        // light (legacy): 5
+        // dark (legacy): 6
+        const auto themeChoice = themeInUse == L"system"       ? 0 :
+                                 themeInUse == L"light"        ? 1 :
+                                 themeInUse == L"dark"         ? 2 :
+                                 themeInUse == L"legacyDark"   ? 4 :
+                                 themeInUse == L"legacyLight"  ? 5 :
+                                 themeInUse == L"legacySystem" ? 6 :
+                                                                 3;
 
         TraceLoggingWrite(
             g_hSettingsModelProvider,
@@ -1008,17 +1038,6 @@ void CascadiaSettings::_researchOnLoad()
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
-}
-
-// Function Description:
-// - Loads a batch of settings curated for the Universal variant of the terminal app
-// Arguments:
-// - <none>
-// Return Value:
-// - a unique_ptr to a CascadiaSettings with the connection types and settings for Universal terminal
-Model::CascadiaSettings CascadiaSettings::LoadUniversal()
-{
-    return *winrt::make_self<CascadiaSettings>(std::string_view{}, DefaultUniversalJson);
 }
 
 // Function Description:
@@ -1110,6 +1129,8 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _resolveDefaultProfile();
     _resolveNewTabMenuProfiles();
     _validateSettings();
+
+    ExpandCommands();
 }
 
 // Method Description:
@@ -1158,6 +1179,11 @@ winrt::hstring CascadiaSettings::_calculateHash(std::string_view settings, const
 winrt::hstring CascadiaSettings::SettingsPath()
 {
     return winrt::hstring{ _settingsPath().native() };
+}
+
+bool CascadiaSettings::IsPortableMode()
+{
+    return Model::IsPortableMode();
 }
 
 winrt::hstring CascadiaSettings::DefaultSettingsPath()
@@ -1212,6 +1238,15 @@ void CascadiaSettings::WriteSettingsToDisk()
     }
 }
 
+#ifndef NDEBUG
+[[maybe_unused]] static std::string _getDevPathToSchema()
+{
+    std::filesystem::path filePath{ __FILE__ };
+    auto schemaPath = filePath.parent_path().parent_path().parent_path().parent_path() / "doc" / "cascadia" / "profiles.schema.json";
+    return "file:///" + schemaPath.generic_string();
+}
+#endif
+
 // Method Description:
 // - Create a new serialized JsonObject from an instance of this class
 // Arguments:
@@ -1223,7 +1258,17 @@ Json::Value CascadiaSettings::ToJson() const
     // top-level json object
     auto json{ _globals->ToJson() };
     json["$help"] = "https://aka.ms/terminal-documentation";
-    json["$schema"] = "https://aka.ms/terminal-profiles-schema";
+    json["$schema"] =
+#if defined(WT_BRANDING_RELEASE)
+        "https://aka.ms/terminal-profiles-schema"
+#elif defined(WT_BRANDING_PREVIEW)
+        "https://aka.ms/terminal-profiles-schema-preview"
+#elif !defined(NDEBUG) // DEBUG mode
+        _getDevPathToSchema() // magic schema path that refers to the local source directory
+#else // All other brandings
+        "https://raw.githubusercontent.com/microsoft/terminal/main/doc/cascadia/profiles.schema.json"
+#endif
+        ;
 
     // "profiles" will always be serialized as an object
     Json::Value profiles{ Json::ValueType::objectValue };
@@ -1257,7 +1302,8 @@ Json::Value CascadiaSettings::ToJson() const
         // Ignore the built in themes, when serializing the themes back out. We
         // don't want to re-include them in the user settings file.
         const auto theme{ winrt::get_self<Theme>(entry.Value()) };
-        if (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName)
+        const auto& name{ theme->Name() };
+        if (std::ranges::find(builtinThemes, name) != builtinThemes.end())
         {
             continue;
         }

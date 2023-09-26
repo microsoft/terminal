@@ -47,7 +47,7 @@ namespace Microsoft::Console::Render
                                                    const til::CoordType viewportLeft) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(const gsl::span<const Cluster> clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(const std::span<const Cluster> clusters,
                                               const til::point coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
@@ -66,7 +66,7 @@ namespace Microsoft::Console::Render
                                                    const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
                                          _Out_ FontInfo& FontInfo) noexcept override;
-        [[nodiscard]] HRESULT UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+        [[nodiscard]] HRESULT UpdateSoftFont(const std::span<const uint16_t> bitPattern,
                                              const til::size cellSize,
                                              const size_t centeringHint) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(const int iDpi) noexcept override;
@@ -76,7 +76,7 @@ namespace Microsoft::Console::Render
                                               _Out_ FontInfo& Font,
                                               const int iDpi) noexcept override;
 
-        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rect>& area) noexcept override;
+        [[nodiscard]] HRESULT GetDirtyArea(std::span<const til::rect>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ til::size* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 

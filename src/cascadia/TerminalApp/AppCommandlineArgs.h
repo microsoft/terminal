@@ -67,6 +67,8 @@ private:
         CLI::Option* tabColorOption;
         CLI::Option* suppressApplicationTitleOption;
         CLI::Option* colorSchemeOption;
+        CLI::Option* appendCommandLineOption;
+        CLI::Option* inheritEnvOption;
     };
 
     struct NewPaneSubcommand : public NewTerminalSubcommand
@@ -99,12 +101,14 @@ private:
     std::string _startingTabColor;
     std::string _startingColorScheme;
     bool _suppressApplicationTitle{ false };
+    bool _inheritEnvironment{ false };
 
     winrt::Microsoft::Terminal::Settings::Model::FocusDirection _moveFocusDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };
     winrt::Microsoft::Terminal::Settings::Model::FocusDirection _swapPaneDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };
 
     // _commandline will contain the command line with which we'll be spawning a new terminal
     std::vector<std::string> _commandline;
+    bool _appendCommandLineOption{ false };
 
     bool _splitVertical{ false };
     bool _splitHorizontal{ false };

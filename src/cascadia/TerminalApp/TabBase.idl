@@ -9,10 +9,10 @@ namespace TerminalApp
         String Title { get; };
         String Icon { get; };
         Boolean ReadOnly { get; };
+        Microsoft.Terminal.Settings.Model.TabCloseButtonVisibility CloseButtonVisibility { get; set; };
 
         Microsoft.UI.Xaml.Controls.TabViewItem TabViewItem { get; };
         Windows.UI.Xaml.FrameworkElement Content { get; };
-        Windows.UI.Xaml.FocusState FocusState { get; };
 
         UInt32 TabViewIndex;
         UInt32 TabViewNumTabs;

@@ -40,7 +40,8 @@ SOURCES= \
     ..\textBuffer.cpp \
     ..\textBufferCellIterator.cpp \
     ..\textBufferTextIterator.cpp \
-	..\search.cpp \
+    ..\search.cpp \
+    ..\UTextAdapter.cpp \
 
 INCLUDES= \
     $(INCLUDES); \

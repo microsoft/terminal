@@ -56,7 +56,7 @@ Menu::Menu(HMENU hMenu, HMENU hHeirMenu) :
     auto pNewMenu = new (std::nothrow) Menu(hMenu, hHeirMenu);
     status = NT_TESTNULL(pNewMenu);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         int ItemLength;
         // Load the submenu to the system menu.
@@ -507,13 +507,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
         if (coordBuffer.width != coordScreenBufferSize.width ||
             coordBuffer.height != coordScreenBufferSize.height)
         {
-            const auto pCommandLine = &CommandLine::Instance();
-
-            pCommandLine->Hide(FALSE);
-
             LOG_IF_FAILED(ScreenInfo.ResizeScreenBuffer(coordBuffer, TRUE));
-
-            pCommandLine->Show();
         }
 
         // Finally, restrict window size to the maximum possible size for the given buffer now that it's processed.

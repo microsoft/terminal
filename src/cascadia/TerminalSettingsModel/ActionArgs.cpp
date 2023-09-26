@@ -13,6 +13,7 @@
 #include "ResizePaneArgs.g.cpp"
 #include "MoveFocusArgs.g.cpp"
 #include "MovePaneArgs.g.cpp"
+#include "MoveTabArgs.g.cpp"
 #include "SwapPaneArgs.g.cpp"
 #include "AdjustFontSizeArgs.g.cpp"
 #include "SendInputArgs.g.cpp"
@@ -28,21 +29,24 @@
 #include "CloseOtherTabsArgs.g.cpp"
 #include "CloseTabsAfterArgs.g.cpp"
 #include "CloseTabArgs.g.cpp"
-#include "MoveTabArgs.g.cpp"
 #include "ScrollToMarkArgs.g.cpp"
 #include "AddMarkArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
+#include "SuggestionsArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
 #include "PrevTabArgs.g.cpp"
 #include "NextTabArgs.g.cpp"
 #include "RenameWindowArgs.g.cpp"
+#include "SearchForTextArgs.g.cpp"
 #include "GlobalSummonArgs.g.cpp"
 #include "FocusPaneArgs.g.cpp"
 #include "ExportBufferArgs.g.cpp"
 #include "ClearBufferArgs.g.cpp"
 #include "MultipleActionsArgs.g.cpp"
 #include "AdjustOpacityArgs.g.cpp"
+#include "SelectCommandArgs.g.cpp"
+#include "SelectOutputArgs.g.cpp"
 #include "ColorSelectionArgs.g.cpp"
 
 #include <LibraryResources.h>
@@ -194,6 +198,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             ss << RS_(L"CopyTextCommandKey").c_str();
         }
 
+        if (!DismissSelection())
+        {
+            ss << L", dismissSelection: false";
+        }
+
         if (CopyFormatting())
         {
             ss << L", copyFormatting: ";
@@ -245,6 +254,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring MovePaneArgs::GenerateName() const
     {
+        if (!Window().empty())
+        {
+            // Special case for moving to a new window. We can just ignore the
+            // tab index, because it _doesn't matter_. There won't be any tabs
+            // in the new window, till we get there.
+            if (Window() == L"new")
+            {
+                return RS_(L"MovePaneToNewWindowCommandKey");
+            }
+            return winrt::hstring{
+                fmt::format(L"{}, window:{}, tab index:{}", RS_(L"MovePaneCommandKey"), Window(), TabIndex())
+            };
+        }
         return winrt::hstring{
             fmt::format(L"{}, tab index:{}", RS_(L"MovePaneCommandKey"), TabIndex())
         };
@@ -648,6 +670,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring MoveTabArgs::GenerateName() const
     {
+        if (!Window().empty())
+        {
+            if (Window() == L"new")
+            {
+                return RS_(L"MoveTabToNewWindowCommandKey");
+            }
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"MoveTabToWindowCommandKey")),
+                            Window())
+            };
+        }
+
         winrt::hstring directionString;
         switch (Direction())
         {
@@ -671,6 +705,46 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"ToggleCommandPaletteCommandLineModeCommandKey");
         }
         return RS_(L"ToggleCommandPaletteCommandKey");
+    }
+
+    winrt::hstring SuggestionsArgs::GenerateName() const
+    {
+        std::wstringstream ss;
+        ss << RS_(L"SuggestionsCommandKey").c_str();
+
+        if (UseCommandline())
+        {
+            ss << L", useCommandline:true";
+        }
+
+        // All of the source values will leave a trailing ", " that we need to chop later:
+        ss << L", source: ";
+        const auto source = Source();
+        if (source == SuggestionsSource::All)
+        {
+            ss << L"all, ";
+        }
+        else if (source == static_cast<SuggestionsSource>(0))
+        {
+            ss << L"none, ";
+        }
+        else
+        {
+            if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
+            {
+                ss << L"tasks, ";
+            }
+
+            if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory))
+            {
+                ss << L"commandHistory, ";
+            }
+        }
+        // Chop off the last ","
+        auto result = ss.str();
+        // use `resize`, to avoid duplicating the entire string. (substr doesn't create a view.)
+        result.resize(result.size() - 2);
+        return winrt::hstring{ result };
     }
 
     winrt::hstring FindMatchArgs::GenerateName() const
@@ -736,6 +810,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             };
         }
         return RS_(L"ResetWindowNameCommandKey");
+    }
+
+    winrt::hstring SearchForTextArgs::GenerateName() const
+    {
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"SearchForTextCommandKey")),
+                        Windows::Foundation::Uri(QueryUrl()).Domain().c_str())
+        };
     }
 
     winrt::hstring GlobalSummonArgs::GenerateName() const
@@ -955,5 +1037,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 fmt::format(std::wstring_view{ str }, matchModeStr)
             };
         }
+    }
+
+    winrt::hstring SelectOutputArgs::GenerateName() const
+    {
+        switch (Direction())
+        {
+        case SelectOutputDirection::Next:
+            return RS_(L"SelectOutputNextCommandKey");
+        case SelectOutputDirection::Previous:
+            return RS_(L"SelectOutputPreviousCommandKey");
+        }
+        return L"";
+    }
+    winrt::hstring SelectCommandArgs::GenerateName() const
+    {
+        switch (Direction())
+        {
+        case SelectOutputDirection::Next:
+            return RS_(L"SelectCommandNextCommandKey");
+        case SelectOutputDirection::Previous:
+            return RS_(L"SelectCommandPreviousCommandKey");
+        }
+        return L"";
     }
 }

@@ -36,7 +36,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         inline constexpr uint8_t F_ = 0b10; // stripped in clean_filename
         inline constexpr uint8_t _P = 0b01; // stripped in clean_path
         inline constexpr uint8_t FP = 0b11; // stripped in clean_filename and clean_path
-        static constexpr std::array<uint8_t, 128> pathFilter{ {
+        inline constexpr std::array<uint8_t, 128> pathFilter{ {
             // clang-format off
             __ /* NUL */, __ /* SOH */, __ /* STX */, __ /* ETX */, __ /* EOT */, __ /* ENQ */, __ /* ACK */, __ /* BEL */, __ /* BS  */, __ /* HT  */, __ /* LF  */, __ /* VT  */, __ /* FF  */, __ /* CR  */, __ /* SO  */, __ /* SI  */,
             __ /* DLE */, __ /* DC1 */, __ /* DC2 */, __ /* DC3 */, __ /* DC4 */, __ /* NAK */, __ /* SYN */, __ /* ETB */, __ /* CAN */, __ /* EM  */, __ /* SUB */, __ /* ESC */, __ /* FS  */, __ /* GS  */, __ /* RS  */, __ /* US  */,
@@ -116,6 +116,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     }
 
     inline constexpr unsigned long to_ulong_error = ULONG_MAX;
+    inline constexpr int to_int_error = INT_MAX;
 
     // Just like std::wcstoul, but without annoying locales and null-terminating strings.
     // It has been fuzz-tested against clang's strtoul implementation.
@@ -341,5 +342,56 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     inline std::wstring_view prefix_split(std::wstring_view& str, const std::wstring_view& needle) noexcept
     {
         return prefix_split<>(str, needle);
+    }
+
+    //
+    // A case-insensitive wide-character map is used to store environment variables
+    // due to documented requirements:
+    //
+    //      "All strings in the environment block must be sorted alphabetically by name.
+    //      The sort is case-insensitive, Unicode order, without regard to locale.
+    //      Because the equal sign is a separator, it must not be used in the name of
+    //      an environment variable."
+    //      https://docs.microsoft.com/en-us/windows/desktop/ProcThread/changing-environment-variables
+    //
+    // - Returns CSTR_LESS_THAN, CSTR_EQUAL or CSTR_GREATER_THAN
+    [[nodiscard]] inline int compare_string_ordinal(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
+    {
+        const auto result = CompareStringOrdinal(
+            lhs.data(),
+            ::base::saturated_cast<int>(lhs.size()),
+            rhs.data(),
+            ::base::saturated_cast<int>(rhs.size()),
+            TRUE);
+        FAIL_FAST_LAST_ERROR_IF(!result);
+        return result;
+    }
+
+    struct wstring_case_insensitive_compare
+    {
+        [[nodiscard]] bool operator()(const std::wstring& lhs, const std::wstring& rhs) const noexcept
+        {
+            return compare_string_ordinal(lhs, rhs) == CSTR_LESS_THAN;
+        }
+    };
+
+    // Implement to_int in terms of to_ulong by negating its result. to_ulong does not expect
+    // to be passed signed numbers and will return an error accordingly. That error when
+    // compared against -1 evaluates to true. We account for that by returning to_int_error if to_ulong
+    // returns an error.
+    constexpr int to_int(const std::wstring_view& str, unsigned long base = 0) noexcept
+    {
+        auto result = to_ulong_error;
+        const auto signPosition = str.find(L"-");
+        const bool hasSign = signPosition != std::wstring_view::npos;
+        result = hasSign ? to_ulong(str.substr(signPosition + 1), base) : to_ulong(str, base);
+
+        // Check that result is valid and will fit in an int.
+        if (result == to_ulong_error || (result > INT_MAX))
+        {
+            return to_int_error;
+        }
+
+        return hasSign ? result * -1 : result;
     }
 }

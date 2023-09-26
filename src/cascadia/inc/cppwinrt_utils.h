@@ -17,58 +17,24 @@ Revision History:
 
 #pragma once
 
-// This is a helper macro to make declaring events easier.
-// This will declare the event handler and the methods for adding and removing a
-// handler callback from the event
-#define DECLARE_EVENT(name, eventHandler, args)          \
-public:                                                  \
-    winrt::event_token name(const args& handler);        \
-    void name(const winrt::event_token& token) noexcept; \
-                                                         \
-protected:                                               \
-    winrt::event<args> eventHandler;
-
-// This is a helper macro for defining the body of events.
-// Winrt events need a method for adding a callback to the event and removing
-//      the callback. This macro will define them both for you, because they
-//      don't really vary from event to event.
-#define DEFINE_EVENT(className, name, eventHandler, args)                                         \
-    winrt::event_token className::name(const args& handler) { return eventHandler.add(handler); } \
-    void className::name(const winrt::event_token& token) noexcept { eventHandler.remove(token); }
-
-// This is a helper macro to make declaring events easier.
-// This will declare the event handler and the methods for adding and removing a
-// handler callback from the event.
-// Use this if you have a Windows.Foundation.TypedEventHandler
-#define DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(name, eventHandler, sender, args)                  \
-public:                                                                                           \
-    winrt::event_token name(const Windows::Foundation::TypedEventHandler<sender, args>& handler); \
-    void name(const winrt::event_token& token) noexcept;                                          \
-                                                                                                  \
-private:                                                                                          \
-    winrt::event<Windows::Foundation::TypedEventHandler<sender, args>> eventHandler;
-
-// This is a helper macro for defining the body of events.
-// Winrt events need a method for adding a callback to the event and removing
-//      the callback. This macro will define them both for you, because they
-//      don't really vary from event to event.
-// Use this if you have a Windows.Foundation.TypedEventHandler
-#define DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(className, name, eventHandler, sender, args)                                                        \
-    winrt::event_token className::name(const Windows::Foundation::TypedEventHandler<sender, args>& handler) { return eventHandler.add(handler); } \
-    void className::name(const winrt::event_token& token) noexcept { eventHandler.remove(token); }
-
 // This is a helper macro for both declaring the signature of an event, and
 // defining the body. Winrt events need a method for adding a callback to the
 // event and removing the callback. This macro will both declare the method
 // signatures and define them both for you, because they don't really vary from
 // event to event.
 // Use this in a classes header if you have a Windows.Foundation.TypedEventHandler
-#define TYPED_EVENT(name, sender, args)                                                                                                            \
-public:                                                                                                                                            \
-    winrt::event_token name(const winrt::Windows::Foundation::TypedEventHandler<sender, args>& handler) { return _##name##Handlers.add(handler); } \
-    void name(const winrt::event_token& token) { _##name##Handlers.remove(token); }                                                                \
-                                                                                                                                                   \
-private:                                                                                                                                           \
+#define TYPED_EVENT(name, sender, args)                                                                 \
+public:                                                                                                 \
+    winrt::event_token name(const winrt::Windows::Foundation::TypedEventHandler<sender, args>& handler) \
+    {                                                                                                   \
+        return _##name##Handlers.add(handler);                                                          \
+    }                                                                                                   \
+    void name(const winrt::event_token& token)                                                          \
+    {                                                                                                   \
+        _##name##Handlers.remove(token);                                                                \
+    }                                                                                                   \
+                                                                                                        \
+private:                                                                                                \
     winrt::event<winrt::Windows::Foundation::TypedEventHandler<sender, args>> _##name##Handlers;
 
 // This is a helper macro for both declaring the signature of a callback (nee event) and
@@ -77,12 +43,18 @@ private:                                                                        
 // signatures and define them both for you, because they don't really vary from
 // event to event.
 // Use this in a class's header if you have a "delegate" type in your IDL.
-#define WINRT_CALLBACK(name, args)                                                          \
-public:                                                                                     \
-    winrt::event_token name(const args& handler) { return _##name##Handlers.add(handler); } \
-    void name(const winrt::event_token& token) { _##name##Handlers.remove(token); }         \
-                                                                                            \
-protected:                                                                                  \
+#define WINRT_CALLBACK(name, args)               \
+public:                                          \
+    winrt::event_token name(const args& handler) \
+    {                                            \
+        return _##name##Handlers.add(handler);   \
+    }                                            \
+    void name(const winrt::event_token& token)   \
+    {                                            \
+        _##name##Handlers.remove(token);         \
+    }                                            \
+                                                 \
+protected:                                       \
     winrt::event<args> _##name##Handlers;
 
 // This is a helper macro for both declaring the signature and body of an event
@@ -91,26 +63,68 @@ protected:                                                                      
 // "proxied" to the handling type. Case in point: many of the events on App are
 // just forwarded straight to TerminalPage. This macro will both declare the
 // method signatures and define them both for you.
-#define FORWARDED_TYPED_EVENT(name, sender, args, handler, handlerName)                                                        \
-public:                                                                                                                        \
-    winrt::event_token name(const Windows::Foundation::TypedEventHandler<sender, args>& h) { return handler->handlerName(h); } \
-    void name(const winrt::event_token& token) noexcept { handler->handlerName(token); }
+#define FORWARDED_TYPED_EVENT(name, sender, args, handler, handlerName)                    \
+public:                                                                                    \
+    winrt::event_token name(const Windows::Foundation::TypedEventHandler<sender, args>& h) \
+    {                                                                                      \
+        return handler->handlerName(h);                                                    \
+    }                                                                                      \
+    void name(const winrt::event_token& token) noexcept                                    \
+    {                                                                                      \
+        handler->handlerName(token);                                                       \
+    }
 
 // Same thing, but handler is a projected type, not an implementation
-#define PROJECTED_FORWARDED_TYPED_EVENT(name, sender, args, handler, handlerName)                                             \
-public:                                                                                                                       \
-    winrt::event_token name(const Windows::Foundation::TypedEventHandler<sender, args>& h) { return handler.handlerName(h); } \
-    void name(const winrt::event_token& token) noexcept { handler.handlerName(token); }
+#define PROJECTED_FORWARDED_TYPED_EVENT(name, sender, args, handler, handlerName)          \
+public:                                                                                    \
+    winrt::event_token name(const Windows::Foundation::TypedEventHandler<sender, args>& h) \
+    {                                                                                      \
+        return handler.handlerName(h);                                                     \
+    }                                                                                      \
+    void name(const winrt::event_token& token) noexcept                                    \
+    {                                                                                      \
+        handler.handlerName(token);                                                        \
+    }
+
+// This is a bit like *FORWARDED_TYPED_EVENT. When you use a forwarded event,
+// the handler gets added to the object that's raising the event. For example,
+// the TerminalPage might be the handler for the TermControl's
+// BackgroundColorChanged event, which is actually implemented by the
+// ControlCore. So when Core raises an event, it immediately calls the handler
+// on the Page.
+//
+// Instead, the BUBBLED event introduces an indirection layer. In the above
+// example, the Core would raise the event, but now the Control would handle it,
+// and raise an event with each of its own handlers.
+//
+// This allows us to detach the core from the control safely, without needing to
+// re-wire all the event handlers from page->control again.
+//
+// Implement like:
+//
+//    _core.TitleChanged({ get_weak(), &TermControl::_bubbleTitleChanged });
+#define BUBBLED_FORWARDED_TYPED_EVENT(name, sender, args) \
+    TYPED_EVENT(name, sender, args)                       \
+    void _bubble##name(const sender& s, const args& a)    \
+    {                                                     \
+        _##name##Handlers(s, a);                          \
+    }
 
 // Use this macro to quick implement both the getter and setter for a property.
 // This should only be used for simple types where there's no logic in the
 // getter/setter beyond just accessing/updating the value.
-#define WINRT_PROPERTY(type, name, ...)                        \
-public:                                                        \
-    type name() const noexcept { return _##name; }             \
-    void name(const type& value) noexcept { _##name = value; } \
-                                                               \
-private:                                                       \
+#define WINRT_PROPERTY(type, name, ...)   \
+public:                                   \
+    type name() const noexcept            \
+    {                                     \
+        return _##name;                   \
+    }                                     \
+    void name(const type& value) noexcept \
+    {                                     \
+        _##name = value;                  \
+    }                                     \
+                                          \
+private:                                  \
     type _##name{ __VA_ARGS__ };
 
 // Use this macro to quickly implement both the getter and setter for an
@@ -122,7 +136,10 @@ private:                                                       \
 // (like when the class is being initialized).
 #define WINRT_OBSERVABLE_PROPERTY(type, name, event, ...)                                 \
 public:                                                                                   \
-    type name() const noexcept { return _##name; };                                       \
+    type name() const noexcept                                                            \
+    {                                                                                     \
+        return _##name;                                                                   \
+    };                                                                                    \
     void name(const type& value)                                                          \
     {                                                                                     \
         if (_##name != value)                                                             \

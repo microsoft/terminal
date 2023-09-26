@@ -89,7 +89,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
-        [[nodiscard]] HRESULT UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+        [[nodiscard]] HRESULT UpdateSoftFont(const std::span<const uint16_t> bitPattern,
                                              const til::size cellSize,
                                              const size_t centeringHint) noexcept override;
 
@@ -101,7 +101,7 @@ namespace Microsoft::Console::Render
                                                    const til::CoordType viewportLeft) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(const gsl::span<const Cluster> clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(const std::span<const Cluster> clusters,
                                               const til::point coord,
                                               const bool fTrimLeft,
                                               const bool lineWrapped) noexcept override;
@@ -123,7 +123,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, const int iDpi) noexcept override;
 
-        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rect>& area) noexcept override;
+        [[nodiscard]] HRESULT GetDirtyArea(std::span<const til::rect>& area) noexcept override;
 
         [[nodiscard]] HRESULT GetFontSize(_Out_ til::size* pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
@@ -203,7 +203,6 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<CustomTextRenderer> _customRenderer;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _strokeStyle;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _dashStrokeStyle;
-        ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _hyperlinkStrokeStyle;
 
         std::unique_ptr<DxFontRenderData> _fontRenderData;
         DxSoftFont _softFont;

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "DeleteProfileEventArgs.g.h"
+#include "NavigateToProfileArgs.g.h"
 #include "ProfileViewModel.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
@@ -11,6 +12,21 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct NavigateToProfileArgs : NavigateToProfileArgsT<NavigateToProfileArgs>
+    {
+    public:
+        NavigateToProfileArgs(ProfileViewModel profile, Editor::IHostedInWindow windowRoot) :
+            _Profile(profile),
+            _WindowRoot(windowRoot) {}
+
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WindowRoot; }
+        Editor::ProfileViewModel Profile() const noexcept { return _Profile; }
+
+    private:
+        Editor::IHostedInWindow _WindowRoot;
+        Editor::ProfileViewModel _Profile{ nullptr };
+    };
+
     struct ProfileViewModel : ProfileViewModelT<ProfileViewModel>, ViewModelHelper<ProfileViewModel>
     {
     public:
@@ -18,12 +34,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static void UpdateFontList() noexcept;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
+        static Editor::Font FindFontWithLocalizedName(winrt::hstring const& name) noexcept;
 
         ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings);
         Model::TerminalSettings TermSettings() const;
         void DeleteProfile();
 
-        void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList, Editor::IHostedInWindow windowRoot);
+        void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList);
 
         // bell style bits
         bool IsBellStyleFlagSet(const uint32_t flag);
@@ -70,7 +87,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, TabTitle);
         OBSERVABLE_PROJECTED_SETTING(_profile, TabColor);
         OBSERVABLE_PROJECTED_SETTING(_profile, SuppressApplicationTitle);
-        OBSERVABLE_PROJECTED_SETTING(_profile, UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile, ScrollState);
         OBSERVABLE_PROJECTED_SETTING(_profile, Padding);
         OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
@@ -81,17 +97,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), SelectionBackground);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), CursorColor);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Opacity);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile, HistorySize);
         OBSERVABLE_PROJECTED_SETTING(_profile, SnapOnInput);
         OBSERVABLE_PROJECTED_SETTING(_profile, AltGrAliasing);
         OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
         OBSERVABLE_PROJECTED_SETTING(_profile, UseAtlasEngine);
         OBSERVABLE_PROJECTED_SETTING(_profile, Elevate);
-        OBSERVABLE_PROJECTED_SETTING(_profile, VtPassthrough)
+        OBSERVABLE_PROJECTED_SETTING(_profile, VtPassthrough);
+        OBSERVABLE_PROJECTED_SETTING(_profile, ReloadEnvironmentVariables);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);
-        WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, CloseOnExit);
         GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, ScrollState);
@@ -107,8 +124,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
-
-        static Editor::Font _GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames);
 
         Model::CascadiaSettings _appSettings;
         Editor::AppearanceViewModel _unfocusedAppearanceViewModel;

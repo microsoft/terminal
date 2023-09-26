@@ -94,9 +94,10 @@ namespace Microsoft::Console::Utils
         return value;
     }
 
-    GUID CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte> name);
+    GUID CreateV5Uuid(const GUID& namespaceGuid, const std::span<const std::byte> name);
 
-    bool IsElevated();
+    bool CanUwpDragDrop();
+    bool IsRunningElevated();
 
     // This function is only ever used by the ConPTY connection in
     // TerminalConnection. However, that library does not have a good system of
@@ -110,5 +111,10 @@ namespace Microsoft::Console::Utils
     // in TerminalPage::_PasteFromClipboardHandler, but putting it here makes
     // testing easier.
     std::wstring_view TrimPaste(std::wstring_view textView) noexcept;
+
+    // Same deal, but in TerminalPage::_evaluatePathForCwd
+    std::wstring EvaluateStartingDirectory(std::wstring_view cwd, std::wstring_view startingDirectory);
+
+    bool IsWindows11() noexcept;
 
 }

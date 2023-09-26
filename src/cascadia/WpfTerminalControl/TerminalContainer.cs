@@ -8,7 +8,6 @@ namespace Microsoft.Terminal.Wpf
     using System;
     using System.Runtime.InteropServices;
     using System.Windows;
-    using System.Windows.Automation;
     using System.Windows.Automation.Peers;
     using System.Windows.Interop;
     using System.Windows.Media;
@@ -54,30 +53,6 @@ namespace Microsoft.Terminal.Wpf
                     NativeMethods.TerminalBlinkCursor(this.terminal);
                 }
             };
-        }
-
-        /// <summary>
-        /// WPF's HwndHost likes to mark the WM_GETOBJECT message as handled to
-        /// force the usage of the WPF automation peer. We explicitly mark it as
-        /// not handled and don't return an automation peer in "OnCreateAutomationPeer" below.
-        /// This forces the message to go down to the HwndTerminal where we return terminal's UiaProvider.
-        /// </summary>
-        /// <inheritdoc/>
-        protected override IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-        {
-            if (msg == (int)NativeMethods.WindowMessage.WM_GETOBJECT)
-            {
-                handled = false;
-                return IntPtr.Zero;
-            }
-
-            return base.WndProc(hwnd, msg, wParam, lParam, ref handled);
-        }
-
-        /// <inheritdoc/>
-        protected override AutomationPeer OnCreateAutomationPeer()
-        {
-            return null;
         }
 
         /// <summary>
@@ -139,9 +114,23 @@ namespace Microsoft.Terminal.Wpf
                     this.connection.TerminalOutput -= this.Connection_TerminalOutput;
                 }
 
+                this.Connection_TerminalOutput(this, new TerminalOutputEventArgs("\x001bc\x1b]104\x1b\\")); // reset console/clear screen - https://github.com/microsoft/terminal/pull/15062#issuecomment-1505654110
+                var wasNull = this.connection == null;
                 this.connection = value;
-                this.connection.TerminalOutput += this.Connection_TerminalOutput;
-                this.connection.Start();
+                if (this.connection != null)
+                {
+                    if (wasNull)
+                    {
+                        this.Connection_TerminalOutput(this, new TerminalOutputEventArgs("\x1b[?25h")); // show cursor
+                    }
+
+                    this.connection.TerminalOutput += this.Connection_TerminalOutput;
+                    this.connection.Start();
+                }
+                else
+                {
+                    this.Connection_TerminalOutput(this, new TerminalOutputEventArgs("\x1b[?25l")); // hide cursor
+                }
             }
         }
 
@@ -272,6 +261,30 @@ namespace Microsoft.Terminal.Wpf
             {
                 this.connection?.Resize((uint)rows, (uint)columns);
             }
+        }
+
+        /// <summary>
+        /// WPF's HwndHost likes to mark the WM_GETOBJECT message as handled to
+        /// force the usage of the WPF automation peer. We explicitly mark it as
+        /// not handled and don't return an automation peer in "OnCreateAutomationPeer" below.
+        /// This forces the message to go down to the HwndTerminal where we return terminal's UiaProvider.
+        /// </summary>
+        /// <inheritdoc/>
+        protected override IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == (int)NativeMethods.WindowMessage.WM_GETOBJECT)
+            {
+                handled = false;
+                return IntPtr.Zero;
+            }
+
+            return base.WndProc(hwnd, msg, wParam, lParam, ref handled);
+        }
+
+        /// <inheritdoc/>
+        protected override AutomationPeer OnCreateAutomationPeer()
+        {
+            return null;
         }
 
         /// <inheritdoc/>
@@ -428,35 +441,6 @@ namespace Microsoft.Terminal.Wpf
             }
 
             return IntPtr.Zero;
-        }
-
-        private void LeftClickHandler(int lParam)
-        {
-            var altPressed = NativeMethods.GetKeyState((int)NativeMethods.VirtualKey.VK_MENU) < 0;
-            var x = lParam & 0xffff;
-            var y = lParam >> 16;
-            var cursorPosition = new NativeMethods.TilPoint
-            {
-                X = x,
-                Y = y,
-            };
-
-            NativeMethods.TerminalStartSelection(this.terminal, cursorPosition, altPressed);
-        }
-
-        private void MouseMoveHandler(int wParam, int lParam)
-        {
-            if ((wParam & 0x0001) == 1)
-            {
-                var x = lParam & 0xffff;
-                var y = lParam >> 16;
-                var cursorPosition = new NativeMethods.TilPoint
-                {
-                    X = x,
-                    Y = y,
-                };
-                NativeMethods.TerminalMoveSelection(this.terminal, cursorPosition);
-            }
         }
 
         private void Connection_TerminalOutput(object sender, TerminalOutputEventArgs e)

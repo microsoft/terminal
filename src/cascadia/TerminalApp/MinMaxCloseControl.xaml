@@ -145,8 +145,8 @@
                 details.
             -->
             <x:Double x:Key="CaptionButtonHeightWindowed">40.0</x:Double>
-            <!--  32 + 1 to compensate for GH#10746  -->
-            <x:Double x:Key="CaptionButtonHeightMaximized">33.0</x:Double>
+            <!--  32 + (1 to compensate for GH#10746) + (-1 for GH#15164)  -->
+            <x:Double x:Key="CaptionButtonHeightMaximized">32.0</x:Double>
 
             <Style x:Key="CaptionButton"
                    TargetType="Button">

@@ -267,7 +267,7 @@ static constexpr std::array<til::color, 256> standard256ColorTable{
     til::color{ 0xEE, 0xEE, 0xEE },
 };
 
-static constexpr til::presorted_static_map xorgAppVariantColorTable{
+static constinit til::presorted_static_map xorgAppVariantColorTable{
     std::pair{ "antiquewhite"sv, std::array<til::color, 5>{ til::color{ 250, 235, 215 }, til::color{ 255, 239, 219 }, til::color{ 238, 223, 204 }, til::color{ 205, 192, 176 }, til::color{ 139, 131, 120 } } },
     std::pair{ "aquamarine"sv, std::array<til::color, 5>{ til::color{ 127, 255, 212 }, til::color{ 127, 255, 212 }, til::color{ 118, 238, 198 }, til::color{ 102, 205, 170 }, til::color{ 69, 139, 116 } } },
     std::pair{ "azure"sv, std::array<til::color, 5>{ til::color{ 240, 255, 255 }, til::color{ 240, 255, 255 }, til::color{ 224, 238, 238 }, til::color{ 193, 205, 205 }, til::color{ 131, 139, 139 } } },
@@ -348,7 +348,7 @@ static constexpr til::presorted_static_map xorgAppVariantColorTable{
     std::pair{ "yellow"sv, std::array<til::color, 5>{ til::color{ 255, 255, 0 }, til::color{ 255, 255, 0 }, til::color{ 238, 238, 0 }, til::color{ 205, 205, 0 }, til::color{ 139, 139, 0 } } },
 };
 
-static constexpr til::presorted_static_map xorgAppColorTable{
+static constinit til::presorted_static_map xorgAppColorTable{
     std::pair{ "aliceblue"sv, til::color{ 240, 248, 255 } },
     std::pair{ "aqua"sv, til::color{ 0, 255, 255 } },
     std::pair{ "beige"sv, til::color{ 245, 245, 220 } },
@@ -435,9 +435,9 @@ static constexpr til::presorted_static_map xorgAppColorTable{
     std::pair{ "yellowgreen"sv, til::color{ 154, 205, 50 } }
 };
 
-gsl::span<const til::color> Utils::CampbellColorTable()
+std::span<const til::color> Utils::CampbellColorTable() noexcept
 {
-    return gsl::make_span(standard256ColorTable).first(16);
+    return std::span{ standard256ColorTable }.first(16);
 }
 
 // Function Description:
@@ -446,7 +446,7 @@ gsl::span<const til::color> Utils::CampbellColorTable()
 // - table: a color table to be filled
 // Return Value:
 // - <none>
-void Utils::InitializeColorTable(const gsl::span<COLORREF> table)
+void Utils::InitializeColorTable(const std::span<COLORREF> table)
 {
     const auto tableSize = std::min(table.size(), standard256ColorTable.size());
     std::copy_n(standard256ColorTable.begin(), tableSize, table.begin());

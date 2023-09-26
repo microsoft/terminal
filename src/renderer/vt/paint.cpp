@@ -94,8 +94,7 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_MoveCursor(_deferredCursorPos));
     }
 
-    RETURN_IF_FAILED(_Flush());
-
+    _Flush();
     return S_OK;
 }
 
@@ -176,7 +175,7 @@ using namespace Microsoft::Console::Types;
 //   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT VtEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                 const til::point coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
@@ -243,11 +242,13 @@ using namespace Microsoft::Console::Types;
 {
     const auto fg = textAttributes.GetForeground();
     const auto bg = textAttributes.GetBackground();
+    const auto ul = textAttributes.GetUnderlineColor();
     auto lastFg = _lastTextAttributes.GetForeground();
     auto lastBg = _lastTextAttributes.GetBackground();
+    auto lastUl = _lastTextAttributes.GetUnderlineColor();
 
-    // If both the FG and BG should be the defaults, emit a SGR reset.
-    if (fg.IsDefault() && bg.IsDefault() && !(lastFg.IsDefault() && lastBg.IsDefault()))
+    // If the FG, BG and UL should be the defaults, emit an SGR reset.
+    if (fg.IsDefault() && bg.IsDefault() && ul.IsDefault() && !(lastFg.IsDefault() && lastBg.IsDefault() && lastUl.IsDefault()))
     {
         // SGR Reset will clear all attributes (except hyperlink ID) - which means
         // we cannot reset _lastTextAttributes by simply doing
@@ -256,9 +257,11 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_SetGraphicsDefault());
         _lastTextAttributes.SetDefaultBackground();
         _lastTextAttributes.SetDefaultForeground();
+        _lastTextAttributes.SetDefaultUnderlineColor();
         _lastTextAttributes.SetDefaultRenditionAttributes();
         lastFg = {};
         lastBg = {};
+        lastUl = {};
     }
 
     if (fg != lastFg)
@@ -301,6 +304,27 @@ using namespace Microsoft::Console::Types;
             RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(bg.GetRGB(), false));
         }
         _lastTextAttributes.SetBackground(bg);
+    }
+
+    if (ul != lastUl)
+    {
+        if (ul.IsDefault())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionUnderlineDefaultColor());
+        }
+        else if (ul.IsIndex16()) // underline can't be 16 color
+        {
+            /* do nothing */
+        }
+        else if (ul.IsIndex256())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionUnderline256Color(ul.GetIndex()));
+        }
+        else if (ul.IsRgb())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionUnderlineRGBColor(ul.GetRGB()));
+        }
+        _lastTextAttributes.SetUnderlineColor(ul);
     }
 
     return S_OK;
@@ -389,7 +413,7 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(const std::span<const Cluster> clusters,
                                                       const til::point coord) noexcept
 {
     try
@@ -424,7 +448,7 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(const std::span<const Cluster> clusters,
                                                      const til::point coord,
                                                      const bool lineWrapped) noexcept
 {
@@ -604,7 +628,11 @@ using namespace Microsoft::Console::Types;
         {
             RETURN_IF_FAILED(_EraseCharacter(numSpaces));
         }
-        else
+        // If we're past the end of the row (i.e. in the "delayed EOL wrap"
+        // state), then there is no need to erase the rest of line. In fact
+        // if we did output an EL sequence at this point, it could reset the
+        // "delayed EOL wrap" state, breaking subsequent output.
+        else if (_lastText.x <= _lastViewport.RightInclusive())
         {
             RETURN_IF_FAILED(_EraseLine());
         }

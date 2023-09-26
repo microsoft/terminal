@@ -11,7 +11,7 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
-static constexpr TextAttribute InvalidTextAttribute{ INVALID_COLOR, INVALID_COLOR };
+static constexpr TextAttribute InvalidTextAttribute{ INVALID_COLOR, INVALID_COLOR, INVALID_COLOR };
 
 class OutputCellIteratorTests
 {
@@ -367,7 +367,7 @@ class OutputCellIteratorTests
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
         const std::vector<WORD> colors{ FOREGROUND_GREEN, FOREGROUND_RED | BACKGROUND_BLUE, FOREGROUND_BLUE | FOREGROUND_INTENSITY, BACKGROUND_GREEN };
-        const gsl::span<const WORD> view{ colors.data(), colors.size() };
+        const std::span<const WORD> view{ colors.data(), colors.size() };
 
         OutputCellIterator it(view);
 
@@ -401,7 +401,7 @@ class OutputCellIteratorTests
             charInfos.push_back(ci);
         }
 
-        const gsl::span<const CHAR_INFO> view{ charInfos.data(), charInfos.size() };
+        const std::span<const CHAR_INFO> view{ charInfos.data(), charInfos.size() };
 
         OutputCellIterator it(view);
 
@@ -433,7 +433,7 @@ class OutputCellIteratorTests
             cells.push_back(cell);
         }
 
-        const gsl::span<const OutputCell> view{ cells.data(), cells.size() };
+        const std::span<const OutputCell> view{ cells.data(), cells.size() };
 
         OutputCellIterator it(view);
 

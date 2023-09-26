@@ -30,13 +30,13 @@ namespace winrt::TerminalApp::implementation
         void UpdateSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
         void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
 
-        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const override;
+        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions(const bool asContent = false) const override;
 
     private:
         winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
 
         void _MakeTabViewItem() override;
-        winrt::fire_and_forget _CreateIcon();
+        void _CreateIcon();
 
         virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() override;
     };

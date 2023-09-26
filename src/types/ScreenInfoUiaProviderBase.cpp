@@ -9,7 +9,7 @@
 using namespace Microsoft::Console::Types;
 
 // A helper function to create a SafeArray Version of an int array of a specified length
-SAFEARRAY* BuildIntSafeArray(gsl::span<const int> data)
+SAFEARRAY* BuildIntSafeArray(std::span<const int> data)
 {
     auto psa = SafeArrayCreateVector(VT_I4, 0, gsl::narrow<ULONG>(data.size()));
     if (psa != nullptr)
@@ -191,7 +191,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_
     // AppendRuntimeId is a magic Number that tells UIAutomation to Append its own Runtime ID(From the HWND)
     const std::array<int, 2> rId{ UiaAppendRuntimeId, -1 };
 
-    const gsl::span<const int> span{ rId.data(), rId.size() };
+    const std::span<const int> span{ rId.data(), rId.size() };
     // BuildIntSafeArray is a custom function to hide the SafeArray creation
     *ppRuntimeId = BuildIntSafeArray(span);
     RETURN_IF_NULL_ALLOC(*ppRuntimeId);

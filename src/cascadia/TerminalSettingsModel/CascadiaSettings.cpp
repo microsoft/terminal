@@ -15,6 +15,7 @@
 #include <shellapi.h>
 #include <shlwapi.h>
 #include <til/latch.h>
+#include <til/string.h>
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -295,7 +296,7 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
     MTSM_PROFILE_SETTINGS(DUPLICATE_PROFILE_SETTINGS)
 #undef DUPLICATE_PROFILE_SETTINGS
 
-    // These two aren't in MTSM_PROFILE_SETTINGS because they're special
+    // These aren't in MTSM_PROFILE_SETTINGS because they're special
     DUPLICATE_SETTING_MACRO(TabColor);
     DUPLICATE_SETTING_MACRO(Padding);
 
@@ -417,6 +418,7 @@ void CascadiaSettings::_validateSettings()
     _validateKeybindings();
     _validateColorSchemesInCommands();
     _validateThemeExists();
+    _validateProfileEnvironmentVariables();
 }
 
 // Method Description:
@@ -538,6 +540,30 @@ void CascadiaSettings::_validateMediaResources()
     if (invalidIcon)
     {
         _warnings.Append(SettingsLoadWarnings::InvalidIcon);
+    }
+}
+
+// Method Description:
+// - Checks if the profiles contain multiple environment variables with the same name, but different
+//   cases
+void CascadiaSettings::_validateProfileEnvironmentVariables()
+{
+    for (const auto& profile : _allProfiles)
+    {
+        std::set<std::wstring, til::wstring_case_insensitive_compare> envVarNames{};
+        if (profile.EnvironmentVariables() == nullptr)
+        {
+            continue;
+        }
+        for (const auto [key, value] : profile.EnvironmentVariables())
+        {
+            const auto iterator = envVarNames.insert(key.c_str());
+            if (!iterator.second)
+            {
+                _warnings.Append(SettingsLoadWarnings::InvalidProfileEnvironmentVariables);
+                return;
+            }
+        }
     }
 }
 
@@ -1006,7 +1032,7 @@ winrt::hstring CascadiaSettings::ApplicationDisplayName()
     }
     CATCH_LOG();
 
-    return RS_(L"ApplicationDisplayNameUnpackaged");
+    return IsPortableMode() ? RS_(L"ApplicationDisplayNamePortable") : RS_(L"ApplicationDisplayNameUnpackaged");
 }
 
 winrt::hstring CascadiaSettings::ApplicationVersion()
@@ -1015,12 +1041,7 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
     {
         const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
         const auto version{ package.Id().Version() };
-        // As of about 2022, the ones digit of the Build of our version is a
-        // placeholder value to differentiate the Windows 10 build from the
-        // Windows 11 build. Let's trim that out. For additional clarity,
-        // let's omit the Revision, which _must_ be .0, and doesn't provide any
-        // value to report.
-        winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u", version.Major, version.Minor, version.Build / 10) };
+        winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
         return formatted;
     }
     CATCH_LOG();
@@ -1087,7 +1108,21 @@ bool CascadiaSettings::IsDefaultTerminalAvailable() noexcept
     DWORDLONG dwlConditionMask = 0;
     VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
 
-    return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
+    if (VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE)
+    {
+        return true;
+    }
+
+    static bool isOtherwiseAvailable = [] {
+        wil::unique_hkey key;
+        const auto lResult = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+                                           L"SOFTWARE\\Microsoft\\SystemSettings\\SettingId\\SystemSettings_Developer_Mode_Setting_DefaultTerminalApp",
+                                           0,
+                                           KEY_READ,
+                                           &key);
+        return static_cast<bool>(key) && ERROR_SUCCESS == lResult;
+    }();
+    return isOtherwiseAvailable;
 }
 
 bool CascadiaSettings::IsDefaultTerminalSet() noexcept
@@ -1213,4 +1248,9 @@ void CascadiaSettings::_validateThemeExists()
             theme.DarkName(L"dark");
         }
     }
+}
+
+void CascadiaSettings::ExpandCommands()
+{
+    _globals->ExpandCommands(ActiveProfiles().GetView(), GlobalSettings().ColorSchemes());
 }

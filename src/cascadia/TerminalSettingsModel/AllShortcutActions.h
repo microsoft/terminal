@@ -77,12 +77,16 @@
     ON_ALL_ACTIONS(MoveTab)                 \
     ON_ALL_ACTIONS(BreakIntoDebugger)       \
     ON_ALL_ACTIONS(TogglePaneReadOnly)      \
+    ON_ALL_ACTIONS(EnablePaneReadOnly)      \
+    ON_ALL_ACTIONS(DisablePaneReadOnly)     \
     ON_ALL_ACTIONS(FindMatch)               \
     ON_ALL_ACTIONS(NewWindow)               \
     ON_ALL_ACTIONS(IdentifyWindow)          \
     ON_ALL_ACTIONS(IdentifyWindows)         \
     ON_ALL_ACTIONS(RenameWindow)            \
     ON_ALL_ACTIONS(OpenWindowRenamer)       \
+    ON_ALL_ACTIONS(DisplayWorkingDirectory) \
+    ON_ALL_ACTIONS(SearchForText)           \
     ON_ALL_ACTIONS(GlobalSummon)            \
     ON_ALL_ACTIONS(QuakeMode)               \
     ON_ALL_ACTIONS(FocusPane)               \
@@ -94,12 +98,19 @@
     ON_ALL_ACTIONS(AdjustOpacity)           \
     ON_ALL_ACTIONS(RestoreLastClosed)       \
     ON_ALL_ACTIONS(SelectAll)               \
+    ON_ALL_ACTIONS(SelectCommand)           \
+    ON_ALL_ACTIONS(SelectOutput)            \
     ON_ALL_ACTIONS(MarkMode)                \
     ON_ALL_ACTIONS(ToggleBlockSelection)    \
     ON_ALL_ACTIONS(SwitchSelectionEndpoint) \
+    ON_ALL_ACTIONS(Suggestions)             \
     ON_ALL_ACTIONS(ColorSelection)          \
+    ON_ALL_ACTIONS(ShowContextMenu)         \
     ON_ALL_ACTIONS(ExpandSelectionToWord)   \
-    ON_ALL_ACTIONS(CloseOtherPanes)
+    ON_ALL_ACTIONS(CloseOtherPanes)         \
+    ON_ALL_ACTIONS(RestartConnection)       \
+    ON_ALL_ACTIONS(ToggleBroadcastInput)    \
+    ON_ALL_ACTIONS(OpenAbout)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)       \
@@ -109,6 +120,7 @@
     ON_ALL_ACTIONS_WITH_ARGS(CopyText)             \
     ON_ALL_ACTIONS_WITH_ARGS(ExecuteCommandline)   \
     ON_ALL_ACTIONS_WITH_ARGS(FindMatch)            \
+    ON_ALL_ACTIONS_WITH_ARGS(SearchForText)        \
     ON_ALL_ACTIONS_WITH_ARGS(GlobalSummon)         \
     ON_ALL_ACTIONS_WITH_ARGS(MoveFocus)            \
     ON_ALL_ACTIONS_WITH_ARGS(MovePane)             \
@@ -140,4 +152,7 @@
     ON_ALL_ACTIONS_WITH_ARGS(ClearBuffer)          \
     ON_ALL_ACTIONS_WITH_ARGS(MultipleActions)      \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustOpacity)        \
+    ON_ALL_ACTIONS_WITH_ARGS(Suggestions)          \
+    ON_ALL_ACTIONS_WITH_ARGS(SelectCommand)        \
+    ON_ALL_ACTIONS_WITH_ARGS(SelectOutput)         \
     ON_ALL_ACTIONS_WITH_ARGS(ColorSelection)

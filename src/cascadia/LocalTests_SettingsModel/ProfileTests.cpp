@@ -38,6 +38,9 @@ namespace SettingsModelLocalTests
         TEST_METHOD(LayerProfileProperties);
         TEST_METHOD(LayerProfileIcon);
         TEST_METHOD(LayerProfilesOnArray);
+        TEST_METHOD(ProfileWithEnvVars);
+        TEST_METHOD(ProfileWithEnvVarsSameNameDifferentCases);
+
         TEST_METHOD(DuplicateProfileTest);
         TEST_METHOD(TestGenGuidsForProfiles);
         TEST_METHOD(TestCorrectOldDefaultShellPaths);
@@ -347,6 +350,50 @@ namespace SettingsModelLocalTests
         VERIFY_IS_TRUE(settings->AllProfiles().GetAt(1).Source().empty());
 
         VERIFY_ARE_NOT_EQUAL(settings->AllProfiles().GetAt(0).Guid(), settings->AllProfiles().GetAt(1).Guid());
+    }
+
+    void ProfileTests::ProfileWithEnvVars()
+    {
+        const std::string profileString{ R"({
+            "name": "profile0",
+            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "environment": {
+                "VAR_1": "value1",
+                "VAR_2": "value2",
+                "VAR_3": "%VAR_3%;value3"
+            }
+        })" };
+        const auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(profileString));
+        std::vector<IEnvironmentVariableMap> envVarMaps{};
+        envVarMaps.emplace_back(profile->EnvironmentVariables());
+        for (auto& envMap : envVarMaps)
+        {
+            VERIFY_ARE_EQUAL(static_cast<uint32_t>(3), envMap.Size());
+            VERIFY_ARE_EQUAL(L"value1", envMap.Lookup(L"VAR_1"));
+            VERIFY_ARE_EQUAL(L"value2", envMap.Lookup(L"VAR_2"));
+            VERIFY_ARE_EQUAL(L"%VAR_3%;value3", envMap.Lookup(L"VAR_3"));
+        }
+    }
+
+    void ProfileTests::ProfileWithEnvVarsSameNameDifferentCases()
+    {
+        const std::string userSettings{ R"({
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "environment": {
+                        "FOO": "VALUE",
+                        "Foo": "Value"
+                    }
+                }
+            ]
+        })" };
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings);
+        const auto warnings = settings->Warnings();
+        VERIFY_ARE_EQUAL(static_cast<uint32_t>(2), warnings.Size());
+        uint32_t index;
+        VERIFY_IS_TRUE(warnings.IndexOf(SettingsLoadWarnings::InvalidProfileEnvironmentVariables, index));
     }
 
     void ProfileTests::TestCorrectOldDefaultShellPaths()

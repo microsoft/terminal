@@ -7,6 +7,7 @@
 #include "ConnectionStateHolder.h"
 
 #include "ITerminalHandoff.h"
+#include <til/env.h>
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
@@ -49,10 +50,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static Windows::Foundation::Collections::ValueSet CreateSettings(const winrt::hstring& cmdline,
                                                                          const winrt::hstring& startingDirectory,
                                                                          const winrt::hstring& startingTitle,
-                                                                         const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
+                                                                         bool reloadEnvironmentVariables,
+                                                                         const winrt::hstring& initialEnvironment,
+                                                                         const Windows::Foundation::Collections::IMapView<hstring, hstring>& environmentOverrides,
                                                                          uint32_t rows,
                                                                          uint32_t columns,
-                                                                         const winrt::guid& guid);
+                                                                         const winrt::guid& guid,
+                                                                         const winrt::guid& profileGuid);
 
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
@@ -89,6 +93,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::wstring _u16Str{};
         std::array<char, 4096> _buffer{};
         bool _passthroughMode{};
+        bool _inheritCursor{ false };
+
+        til::env _initialEnv{};
+        guid _profileGuid{};
 
         struct StartupInfoFromDefTerm
         {

@@ -38,7 +38,7 @@ using namespace Microsoft::Console::Interactivity;
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         std::unique_ptr<IConsoleControl> newControl;
         try
@@ -64,7 +64,7 @@ using namespace Microsoft::Console::Interactivity;
             status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             control.swap(newControl);
         }
@@ -80,7 +80,7 @@ using namespace Microsoft::Console::Interactivity;
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         std::unique_ptr<IConsoleInputThread> newThread;
         try
@@ -106,7 +106,7 @@ using namespace Microsoft::Console::Interactivity;
             status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             thread.swap(newThread);
         }
@@ -122,7 +122,7 @@ using namespace Microsoft::Console::Interactivity;
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         std::unique_ptr<IHighDpiApi> newApi;
         try
@@ -148,7 +148,7 @@ using namespace Microsoft::Console::Interactivity;
             status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             api.swap(newApi);
         }
@@ -164,7 +164,7 @@ using namespace Microsoft::Console::Interactivity;
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         std::unique_ptr<IWindowMetrics> newMetrics;
         try
@@ -190,7 +190,7 @@ using namespace Microsoft::Console::Interactivity;
             status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             metrics.swap(newMetrics);
         }
@@ -206,7 +206,7 @@ using namespace Microsoft::Console::Interactivity;
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         std::unique_ptr<IAccessibilityNotifier> newNotifier;
         try
@@ -232,7 +232,7 @@ using namespace Microsoft::Console::Interactivity;
             status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             notifier.swap(newNotifier);
         }
@@ -248,7 +248,7 @@ using namespace Microsoft::Console::Interactivity;
     ApiLevel level;
     status = ApiDetector::DetectNtUserWindow(&level);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         std::unique_ptr<ISystemConfigurationProvider> NewProvider;
         try
@@ -274,7 +274,7 @@ using namespace Microsoft::Console::Interactivity;
             status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             provider.swap(NewProvider);
         }
@@ -300,7 +300,7 @@ using namespace Microsoft::Console::Interactivity;
     ApiLevel level;
     auto status = ApiDetector::DetectNtUserWindow(&level);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         try
         {

@@ -44,6 +44,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Initialize();
         Control::ControlCore Core();
 
+        void Close();
+        void Detach();
+
         Control::InteractivityAutomationPeer OnCreateAutomationPeer();
         ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
@@ -85,9 +88,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetEndSelectionPoint(const Core::Point pixelPosition);
         bool ManglePathsForWsl();
 
+        uint64_t Id();
+        void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
+
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
         TYPED_EVENT(ScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
+        TYPED_EVENT(ContextMenuRequested, IInspectable, Control::ContextMenuRequestedEventArgs);
+
+        TYPED_EVENT(Attached, IInspectable, IInspectable);
+        TYPED_EVENT(Closed, IInspectable, IInspectable);
 
     private:
         // NOTE: _uiaEngine must be ordered before _core.
@@ -129,6 +139,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval{ std::nullopt };
 
+        uint64_t _id;
+        static std::atomic<uint64_t> _nextId;
+
         unsigned int _numberOfClicks(Core::Point clickPos, Timestamp clickTime);
         void _updateSystemParameterSettings() noexcept;
 
@@ -142,7 +155,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
         bool _shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta);
 
-        void _sendPastedTextToConnection(std::wstring_view wstr);
         til::point _getTerminalPosition(const til::point pixelPosition);
 
         bool _sendMouseEventHelper(const til::point terminalPosition,

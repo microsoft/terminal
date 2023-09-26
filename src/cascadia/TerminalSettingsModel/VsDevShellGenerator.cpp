@@ -18,7 +18,7 @@ void VsDevShellGenerator::GenerateProfiles(const VsSetupConfiguration::VsSetupIn
         }
 
         const auto seed = GetProfileGuidSeed(instance);
-        const winrt::guid profileGuid{ ::Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(seed))) };
+        const winrt::guid profileGuid{ ::Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, std::as_bytes(std::span{ seed })) };
         auto profile = winrt::make_self<implementation::Profile>(profileGuid);
         profile->Name(winrt::hstring{ GetProfileName(instance) });
         profile->Commandline(winrt::hstring{ GetProfileCommandLine(instance) });

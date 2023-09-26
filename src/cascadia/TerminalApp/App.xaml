@@ -5,10 +5,10 @@
 <Application x:Class="TerminalApp.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:TA="using:TerminalApp"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="using:TerminalApp"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives"
              mc:Ignorable="d">
     <!--
         If you want to prove this works, then add `RequestedTheme="Light"` to
@@ -45,8 +45,26 @@
                                      Color="{ThemeResource SystemErrorTextColor}" />
 
                     <!--  Suppress top padding  -->
-                    <Thickness x:Key="TabViewHeaderPadding">9,0,5,0</Thickness>
+                    <Thickness x:Key="TabViewHeaderPadding">0,0,0,0</Thickness>
+
                     <Thickness x:Key="TabViewItemBorderThickness">1,1,1,0</Thickness>
+
+                    <!--
+                        Disable the EntranceThemeTransition for our muxc:TabView, which would slowly slide in the tabs
+                        while the window opens. The difference is especially noticeable if window fade-in transitions are
+                        disabled system-wide. On my system this shaves off about 10% of the startup cost and looks better.
+                    -->
+                    <Style TargetType="primitives:TabViewListView">
+                        <Setter Property="ItemContainerTransitions">
+                            <Setter.Value>
+                                <TransitionCollection>
+                                    <AddDeleteThemeTransition />
+                                    <ContentThemeTransition />
+                                    <ReorderThemeTransition />
+                                </TransitionCollection>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
 
                     <!--  Shadow that can be used by any control.  -->
                     <ThemeShadow x:Name="SharedShadow" />
@@ -156,6 +174,9 @@
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
                                              Color="#0c0c0c" />
+
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor"
+                                             Color="{StaticResource SystemAccentColorDark2}" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
@@ -172,6 +193,9 @@
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
                                              Color="#ffffff" />
+
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor"
+                                             Color="{StaticResource SystemAccentColorLight2}" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="HighContrast">
@@ -192,6 +216,9 @@
 
                             <StaticResource x:Key="SettingsUiTabBrush"
                                             ResourceKey="SystemControlBackgroundBaseLowBrush" />
+
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor"
+                                             Color="{StaticResource SystemColorHighlightColor}" />
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>

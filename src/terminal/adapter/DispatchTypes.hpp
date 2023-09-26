@@ -7,9 +7,11 @@ namespace Microsoft::Console::VirtualTerminal
 {
     using VTInt = int32_t;
 
-    class VTID
+    union VTID
     {
     public:
+        VTID() = default;
+
         template<size_t Length>
         constexpr VTID(const char (&s)[Length]) :
             _value{ _FromString(s) }
@@ -17,13 +19,18 @@ namespace Microsoft::Console::VirtualTerminal
         }
 
         constexpr VTID(const uint64_t value) :
-            _value{ value }
+            _value{ value & 0x00FFFFFFFFFFFFFF }
         {
         }
 
         constexpr operator uint64_t() const
         {
             return _value;
+        }
+
+        constexpr const std::string_view ToString() const
+        {
+            return &_string[0];
         }
 
         constexpr char operator[](const size_t offset) const
@@ -40,7 +47,7 @@ namespace Microsoft::Console::VirtualTerminal
         template<size_t Length>
         static constexpr uint64_t _FromString(const char (&s)[Length])
         {
-            static_assert(Length - 1 <= sizeof(_value));
+            static_assert(Length <= sizeof(_value));
             uint64_t value = 0;
             for (auto i = Length - 1; i-- > 0;)
             {
@@ -49,7 +56,12 @@ namespace Microsoft::Console::VirtualTerminal
             return value;
         }
 
-        uint64_t _value;
+        // In order for the _string to hold the correct representation of the
+        // ID stored in _value, we must be on a little endian architecture.
+        static_assert(std::endian::native == std::endian::little);
+
+        uint64_t _value = 0;
+        char _string[sizeof(_value)];
     };
 
     class VTIDBuilder
@@ -63,13 +75,13 @@ namespace Microsoft::Console::VirtualTerminal
 
         void AddIntermediate(const wchar_t intermediateChar) noexcept
         {
-            if (_idShift + CHAR_BIT >= sizeof(_idAccumulator) * CHAR_BIT)
+            if (_idShift + CHAR_BIT * 2 >= sizeof(_idAccumulator) * CHAR_BIT)
             {
                 // If there is not enough space in the accumulator to add
-                // the intermediate and still have room left for the final,
-                // then we reset the accumulator to zero. This will result
-                // in an id with all zero intermediates, which shouldn't
-                // match anything.
+                // the intermediate and still have room left for the final
+                // and null terminator, then we reset the accumulator to zero.
+                // This will result in an id with all zero intermediates,
+                // which shouldn't match anything.
                 _idAccumulator = 0;
             }
             else
@@ -140,6 +152,51 @@ namespace Microsoft::Console::VirtualTerminal
         VTInt _value;
     };
 
+    class VTSubParameters
+    {
+    public:
+        constexpr VTSubParameters() noexcept
+        {
+        }
+
+        constexpr VTSubParameters(const std::span<const VTParameter> subParams) noexcept :
+            _subParams{ subParams }
+        {
+        }
+
+        constexpr VTParameter at(const size_t index) const noexcept
+        {
+            // If the index is out of range, we return a sub parameter with no value.
+            return index < _subParams.size() ? til::at(_subParams, index) : defaultParameter;
+        }
+
+        VTSubParameters subspan(const size_t offset, const size_t count) const noexcept
+        {
+            const auto subParamsSpan = _subParams.subspan(offset, count);
+            return { subParamsSpan };
+        }
+
+        bool empty() const noexcept
+        {
+            return _subParams.empty();
+        }
+
+        size_t size() const noexcept
+        {
+            return _subParams.size();
+        }
+
+        constexpr operator std::span<const VTParameter>() const noexcept
+        {
+            return _subParams;
+        }
+
+    private:
+        static constexpr VTParameter defaultParameter{};
+
+        std::span<const VTParameter> _subParams;
+    };
+
     class VTParameters
     {
     public:
@@ -147,50 +204,108 @@ namespace Microsoft::Console::VirtualTerminal
         {
         }
 
-        constexpr VTParameters(const VTParameter* ptr, const size_t count) noexcept :
-            _values{ ptr, count }
+        constexpr VTParameters(const VTParameter* paramsPtr, const size_t paramsCount) noexcept :
+            _params{ paramsPtr, paramsCount },
+            _subParams{},
+            _subParamRanges{}
+        {
+        }
+
+        constexpr VTParameters(const std::span<const VTParameter> params,
+                               const std::span<const VTParameter> subParams,
+                               const std::span<const std::pair<BYTE, BYTE>> subParamRanges) noexcept :
+            _params{ params },
+            _subParams{ subParams },
+            _subParamRanges{ subParamRanges }
         {
         }
 
         constexpr VTParameter at(const size_t index) const noexcept
         {
             // If the index is out of range, we return a parameter with no value.
-            return index < _values.size() ? _values[index] : VTParameter{};
+            return index < _params.size() ? til::at(_params, index) : defaultParameter;
         }
 
         constexpr bool empty() const noexcept
         {
-            return _values.empty();
+            return _params.empty();
         }
 
         constexpr size_t size() const noexcept
         {
             // We always return a size of at least 1, since an empty parameter
             // list is the equivalent of a single "default" parameter.
-            return std::max<size_t>(_values.size(), 1);
+            return std::max<size_t>(_params.size(), 1);
         }
 
         VTParameters subspan(const size_t offset) const noexcept
         {
-            const auto subValues = _values.subspan(offset);
-            return { subValues.data(), subValues.size() };
+            // We need sub parameters to always be in their original index
+            // because we store their indexes in subParamRanges. So we pass
+            // _subParams as is and create new span for others.
+            const auto newParamsSpan = _params.subspan(std::min(offset, _params.size()));
+            const auto newSubParamRangesSpan = _subParamRanges.subspan(std::min(offset, _subParamRanges.size()));
+            return { newParamsSpan, _subParams, newSubParamRangesSpan };
+        }
+
+        VTSubParameters subParamsFor(const size_t index) const noexcept
+        {
+            if (index < _subParamRanges.size())
+            {
+                const auto& range = til::at(_subParamRanges, index);
+                return _subParams.subspan(range.first, range.second - range.first);
+            }
+            else
+            {
+                return VTSubParameters{};
+            }
+        }
+
+        bool hasSubParams() const noexcept
+        {
+            return !_subParams.empty();
+        }
+
+        bool hasSubParamsFor(const size_t index) const noexcept
+        {
+            if (index < _subParamRanges.size())
+            {
+                const auto& range = til::at(_subParamRanges, index);
+                return range.second > range.first;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         template<typename T>
         bool for_each(const T&& predicate) const
         {
+            auto params = _params;
+
             // We always return at least 1 value here, since an empty parameter
             // list is the equivalent of a single "default" parameter.
-            auto success = predicate(at(0));
-            for (auto i = 1u; i < _values.size(); i++)
+            if (params.empty())
             {
-                success = predicate(_values[i]) && success;
+                params = defaultParameters;
+            }
+
+            auto success = true;
+            for (const auto& v : params)
+            {
+                success = predicate(v) && success;
             }
             return success;
         }
 
     private:
-        gsl::span<const VTParameter> _values;
+        static constexpr VTParameter defaultParameter{};
+        static constexpr std::span defaultParameters{ &defaultParameter, 1 };
+
+        std::span<const VTParameter> _params;
+        VTSubParameters _subParams;
+        std::span<const std::pair<BYTE, BYTE>> _subParamRanges;
     };
 
     // FlaggedEnumValue is a convenience class that produces enum values (of a specified size)
@@ -283,7 +398,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         // as well as the Faint/Blink options.
         RGBColorOrFaint = 2, // 2 is also Faint, decreased intensity (ISO 6429).
         Italics = 3,
-        Underline = 4,
+        Underline = 4, // same for extended underline styles `SGR 4:x`.
         BlinkOrXterm256Index = 5, // 5 is also Blink.
         RapidBlink = 6,
         Negative = 7,
@@ -319,6 +434,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BackgroundDefault = 49,
         Overline = 53,
         NoOverline = 55,
+        UnderlineColor = 58,
+        UnderlineColorDefault = 59,
         BrightForegroundBlack = 90,
         BrightForegroundRed = 91,
         BrightForegroundGreen = 92,
@@ -396,6 +513,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     enum ModeParams : VTInt
     {
         IRM_InsertReplaceMode = ANSIStandardMode(4),
+        LNM_LineFeedNewLineMode = ANSIStandardMode(20),
         DECCKM_CursorKeysMode = DECPrivateMode(1),
         DECANM_AnsiMode = DECPrivateMode(2),
         DECCOLM_SetNumberOfColumns = DECPrivateMode(3),
@@ -408,6 +526,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         XTERM_EnableDECCOLMSupport = DECPrivateMode(40),
         DECNKM_NumericKeypadMode = DECPrivateMode(66),
         DECBKM_BackarrowKeyMode = DECPrivateMode(67),
+        DECLRMM_LeftRightMarginMode = DECPrivateMode(69),
+        DECECM_EraseColorMode = DECPrivateMode(117),
         VT200_MOUSE_MODE = DECPrivateMode(1000),
         BUTTON_EVENT_MOUSE_MODE = DECPrivateMode(1002),
         ANY_EVENT_MOUSE_MODE = DECPrivateMode(1003),
@@ -445,6 +565,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         IconifyWindow = 2,
         RefreshWindow = 7,
         ResizeWindowInCharacters = 8,
+        ReportTextSizeInCharacters = 18
     };
 
     enum class CursorStyle : VTInt
@@ -529,28 +650,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ColorTableReport = 2
     };
 
+    enum class PresentationReportFormat : VTInt
+    {
+        CursorInformationReport = 1,
+        TabulationStopReport = 2
+    };
+
     constexpr VTInt s_sDECCOLMSetColumns = 132;
     constexpr VTInt s_sDECCOLMResetColumns = 80;
 
-    enum class MarkCategory : size_t
-    {
-        Prompt = 0,
-        Error = 1,
-        Warning = 2,
-        Success = 3,
-        Info = 4
-    };
-
-    struct ScrollMark
-    {
-        std::optional<til::color> color;
-        til::point start;
-        til::point end; // exclusive
-        std::optional<til::point> commandEnd;
-        std::optional<til::point> outputEnd;
-
-        MarkCategory category{ MarkCategory::Info };
-        // Other things we may want to think about in the future are listed in
-        // GH#11000
-    };
 }

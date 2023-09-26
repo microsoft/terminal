@@ -49,6 +49,7 @@
 #include <winrt/Windows.Media.h>
 #include <winrt/Windows.Media.Core.h>
 #include <winrt/Windows.Media.Playback.h>
+#include <winrt/Windows.Management.Deployment.h>
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
@@ -59,6 +60,7 @@
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.Settings.Editor.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
+#include <winrt/Windows.Services.Store.h>
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.Storage.Provider.h>
 #include <winrt/Windows.Storage.Pickers.h>
@@ -83,3 +85,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 
 #include <cppwinrt_utils.h>
 #include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined
+
+#include <til/winrt.h>
