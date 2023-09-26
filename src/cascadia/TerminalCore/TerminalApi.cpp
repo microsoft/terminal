@@ -248,38 +248,42 @@ void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
 }
 void Terminal::UseMainScreenBuffer()
 {
-    // Short-circuit: do nothing.
-    if (!_inAltBuffer())
+    // To make UserResize() work as if we're back in the main buffer, we first need to unset
+    // _altBuffer, which is used throughout this class as an indicator via _inAltBuffer().
+    //
+    // We delay destroying the alt buffer instance to get a valid altBuffer->GetCursor() reference below.
+    const auto altBuffer = std::exchange(_altBuffer, nullptr);
+    if (!altBuffer)
     {
         return;
     }
 
     ClearSelection();
 
-    // Copy our cursor state back to the main buffer's cursor
-    {
-        // Update the alt buffer's cursor style, visibility, and position to match our own.
-        const auto& myCursor = _altBuffer->GetCursor();
-        auto& tgtCursor = _mainBuffer->GetCursor();
-        tgtCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
-        tgtCursor.SetIsVisible(myCursor.IsVisible());
-        tgtCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
-
-        // The new position should match the viewport-relative position of the main buffer.
-        // This is the equal and opposite effect of what we did in UseAlternateScreenBuffer
-        auto tgtCursorPos = myCursor.GetPosition();
-        tgtCursorPos.y += _mutableViewport.Top();
-        tgtCursor.SetPosition(tgtCursorPos);
-    }
-
     _mainBuffer->SetAsActiveBuffer(true);
-    // destroy the alt buffer
-    _altBuffer = nullptr;
 
     if (_deferredResize.has_value())
     {
         LOG_IF_FAILED(UserResize(_deferredResize.value()));
         _deferredResize = std::nullopt;
+    }
+
+    // After exiting the alt buffer, the main buffer should adopt the current cursor position and style.
+    // This is the equal and opposite effect of what we did in UseAlternateScreenBuffer and matches xterm.
+    //
+    // We have to do this after the call to UserResize() to ensure that the TextBuffer sizes match up.
+    // Otherwise the cursor position may be temporarily out of bounds and some code may choke on that.
+    {
+        const auto& altCursor = altBuffer->GetCursor();
+        auto& mainCursor = _mainBuffer->GetCursor();
+
+        mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetType());
+        mainCursor.SetIsVisible(altCursor.IsVisible());
+        mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
+
+        auto tgtCursorPos = altCursor.GetPosition();
+        tgtCursorPos.y += _mutableViewport.Top();
+        mainCursor.SetPosition(tgtCursorPos);
     }
 
     // update all the hyperlinks on the screen
@@ -293,11 +297,7 @@ void Terminal::UseMainScreenBuffer()
     _NotifyScrollEvent();
 
     // redraw the screen
-    try
-    {
-        _activeBuffer().TriggerRedrawAll();
-    }
-    CATCH_LOG();
+    _activeBuffer().TriggerRedrawAll();
 }
 
 // NOTE: This is the version of AddMark that comes from VT

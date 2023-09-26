@@ -132,7 +132,6 @@ namespace Microsoft::Console::Render
         Microsoft::Console::VirtualTerminal::VtIo* _terminalOwner;
 
         Microsoft::Console::VirtualTerminal::RenderTracing _trace;
-        bool _inResizeRequest{ false };
 
         std::optional<til::CoordType> _wrappedRow{ std::nullopt };
 

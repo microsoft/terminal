@@ -749,7 +749,6 @@ gfx
 GGI
 GHIJK
 GHIJKL
-GHIJKLM
 gitfilters
 gitmodules
 gle
@@ -1000,7 +999,6 @@ listptrsize
 lld
 llx
 LMENU
-LMNOP
 lnk
 lnkd
 lnkfile
@@ -1223,7 +1221,6 @@ nonspace
 NOOWNERZORDER
 Nop
 NOPAINT
-NOPQRST
 noprofile
 NOREDRAW
 NOREMOVE
@@ -1498,7 +1495,6 @@ pwsz
 pythonw
 Qaabbcc
 qos
-QRSTU
 QUERYOPEN
 QUESTIONMARK
 quickedit
@@ -1861,7 +1857,6 @@ testname
 TESTNULL
 testpass
 testpasses
-testtimeout
 TEXCOORD
 texel
 TExpected
@@ -2019,7 +2014,6 @@ utext
 UText
 UTEXT
 utr
-UVWX
 UVWXY
 UVWXYZ
 uwa
@@ -2078,7 +2072,6 @@ VTRGBTo
 vtseq
 vtterm
 vttest
-VWX
 waitable
 WANSUNG
 WANTARROWS
@@ -2274,6 +2267,7 @@ YCast
 YCENTER
 YCount
 YDPI
+YLimit
 YOffset
 YSubstantial
 YVIRTUALSCREEN
