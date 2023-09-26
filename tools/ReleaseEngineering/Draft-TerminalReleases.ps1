@@ -228,7 +228,7 @@ Function New-ReleaseBody([Release]$Release) {
 	$zipAssetVersion = $Release.Assets.ExpandedVersion | ? { $_.Length -Gt 0 } | Select -First 1
 	$body = ""
 	If (-Not [String]::IsNullOrEmpty($zipAssetVersion)) {
-		$body += "_Binary files inside the unpackaged distribution archive bear the version number ``$zipAssetVersion``._`n"
+		$body += "_Binary files inside the unpackaged distribution archive bear the version number ``$zipAssetVersion``._`n`n"
 	}
 	$body += "---`n`n### Asset Hashes`n`n";
 	ForEach($a in $Release.Assets) {
