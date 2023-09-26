@@ -1039,7 +1039,7 @@
     <comment>A supplementary setting to the "icon" setting.</comment>
   </data>
   <data name="Profile_HideIconCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>If enabled, this will have no icon.</value>
+    <value>If enabled, this profile will have no icon.</value>
     <comment>A description for what the supplementary "Hide icon" setting does. Presented near "Profile_HideIconCheckbox".</comment>
   </data>
   <data name="Profile_SuppressApplicationTitle.Header" xml:space="preserve">
