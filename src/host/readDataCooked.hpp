@@ -41,6 +41,13 @@ public:
 private:
     static constexpr uint8_t CommandNumberMaxInputLength = 5;
 
+    enum class State : uint8_t
+    {
+        Accumulating = 0,
+        DoneWithWakeupMask,
+        DoneWithCarriageReturn,
+    };
+
     enum class PopupKind
     {
         // Copies text from the previous command between the current cursor position and the first instance
@@ -106,11 +113,11 @@ private:
     static size_t _wordPrev(const std::wstring_view& chars, size_t position);
     static size_t _wordNext(const std::wstring_view& chars, size_t position);
 
-    const std::wstring_view& _newlineSuffix() const noexcept;
-    bool _readCharInputLoop();
-    bool _handleChar(wchar_t wch, DWORD modifiers);
+    void _readCharInputLoop();
+    void _handleChar(wchar_t wch, DWORD modifiers);
     void _handleVkey(uint16_t vkey, DWORD modifiers);
     void _handlePostCharInputLoop(bool isUnicode, size_t& numBytes, ULONG& controlKeyState);
+    void _transitionState(State state) noexcept;
     void _markAsDirty();
     void _flushBuffer();
     void _erase(ptrdiff_t distance) const;
@@ -124,8 +131,8 @@ private:
     void _popupHandleCopyToCharInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
     void _popupHandleCopyFromCharInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
     void _popupHandleCommandNumberInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
-    bool _popupHandleCommandListInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
-    bool _popupHandleInput(wchar_t wch, uint16_t vkey, DWORD keyState);
+    void _popupHandleCommandListInput(Popup& popup, wchar_t wch, uint16_t vkey, DWORD modifiers);
+    void _popupHandleInput(wchar_t wch, uint16_t vkey, DWORD keyState);
     void _popupDrawPrompt(const Popup& popup, UINT id) const;
     void _popupDrawCommandList(Popup& popup) const;
 
@@ -140,10 +147,15 @@ private:
 
     std::wstring _buffer;
     size_t _bufferCursor = 0;
+    // _distanceCursor is the distance between the start of the prompt and the
+    // current cursor location in columns (including wide glyph padding columns).
     ptrdiff_t _distanceCursor = 0;
+    // _distanceEnd is the distance between the start of the prompt and its last
+    // glyph at the end in columns (including wide glyph padding columns).
     ptrdiff_t _distanceEnd = 0;
     bool _bufferDirty = false;
     bool _insertMode = false;
+    State _state = State::Accumulating;
 
     std::vector<Popup> _popups;
 };
