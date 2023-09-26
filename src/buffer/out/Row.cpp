@@ -152,11 +152,15 @@ til::CoordType CharToColumnMapper::GetTrailingColumnAt(ptrdiff_t offset) noexcep
     return col;
 }
 
+// If given a pointer inside the ROW's text buffer, this function will return the corresponding column.
+// This function in particular returns the glyph's first column.
 til::CoordType CharToColumnMapper::GetLeadingColumnAt(const wchar_t* str) noexcept
 {
     return GetLeadingColumnAt(str - _chars);
 }
 
+// If given a pointer inside the ROW's text buffer, this function will return the corresponding column.
+// This function in particular returns the glyph's last column (this matters for wide glyphs).
 til::CoordType CharToColumnMapper::GetTrailingColumnAt(const wchar_t* str) noexcept
 {
     return GetTrailingColumnAt(str - _chars);
@@ -364,11 +368,16 @@ void ROW::TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& a
 
 void ROW::CopyFrom(const ROW& source)
 {
-    RowCopyTextFromState state{ .source = source };
-    CopyTextFrom(state);
-    TransferAttributes(source.Attributes(), _columnCount);
     _lineRendition = source._lineRendition;
     _wrapForced = source._wrapForced;
+
+    RowCopyTextFromState state{
+        .source = source,
+        .sourceColumnLimit = source.GetReadableColumnCount(),
+    };
+    CopyTextFrom(state);
+
+    TransferAttributes(source.Attributes(), _columnCount);
 }
 
 // Returns the previous possible cursor position, preceding the given column.
@@ -382,7 +391,17 @@ til::CoordType ROW::NavigateToPrevious(til::CoordType column) const noexcept
 // Returns the row width if column is beyond the width of the row.
 til::CoordType ROW::NavigateToNext(til::CoordType column) const noexcept
 {
-    return _adjustForward(_clampedColumn(column + 1));
+    return _adjustForward(_clampedColumnInclusive(column + 1));
+}
+
+// Returns the starting column of the glyph at the given column.
+// In other words, if you have 3 wide glyphs
+//   AA BB CC
+//   01 23 45  <-- column
+// then `AdjustToGlyphStart(3)` returns 2.
+til::CoordType ROW::AdjustToGlyphStart(til::CoordType column) const noexcept
+{
+    return _adjustBackward(_clampedColumn(column));
 }
 
 // Routine Description:
@@ -719,11 +738,12 @@ try
     if (sourceColBeg < sourceColLimit)
     {
         charOffsets = source._charOffsets.subspan(sourceColBeg, static_cast<size_t>(sourceColLimit) - sourceColBeg + 1);
-        const auto charsOffset = charOffsets.front() & CharOffsetsMask;
+        const auto beg = size_t{ charOffsets.front() } & CharOffsetsMask;
+        const auto end = size_t{ charOffsets.back() } & CharOffsetsMask;
         // We _are_ using span. But C++ decided that string_view and span aren't convertible.
         // _chars is a std::span for performance and because it refers to raw, shared memory.
 #pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
-        chars = { source._chars.data() + charsOffset, source._chars.size() - charsOffset };
+        chars = { source._chars.data() + beg, end - beg };
     }
 
     WriteHelper h{ *this, state.columnBegin, state.columnLimit, chars };
@@ -939,6 +959,16 @@ til::CoordType ROW::MeasureLeft() const noexcept
 
 til::CoordType ROW::MeasureRight() const noexcept
 {
+    if (_wrapForced)
+    {
+        auto width = _columnCount;
+        if (_doubleBytePadded)
+        {
+            width--;
+        }
+        return width;
+    }
+
     const auto text = GetText();
     const auto beg = text.begin();
     const auto end = text.end();
