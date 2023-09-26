@@ -39,6 +39,7 @@ $script:tar = "tar"
 Class Asset {
 	[string]$Name
 	[Version]$Version
+	[string]$ExpandedVersion
 
 	[AssetType]$Type
 	[Branding]$Branding
@@ -74,7 +75,9 @@ Class Asset {
 			$this.Type = [AssetType]::PreinstallKit
 			$this.Architecture = "all"
 		} ElseIf (".zip" -eq $local:ext) {
+			& $script:tar -x -f $this.Path -C $local:directory --strip-components=1 '*/wt.exe'
 			$this.Type = [AssetType]::Zip
+			$this.ExpandedVersion = (Get-Item (Join-Path $local:directory wt.exe)).VersionInfo.ProductVersion
 		} ElseIf (".msixbundle" -eq $local:ext) {
 			$this.Type = [AssetType]::ApplicationBundle
 			$this.Architecture = "all"
@@ -221,7 +224,12 @@ Function Read-ReleaseConfigFromHost([Release]$Release) {
 }
 
 Function New-ReleaseBody([Release]$Release) {
-	$body = "---`n`n### Asset Hashes`n`n";
+	$zipAssetVersion = $Release.Assets.ExpandedVersion | ? { $_.Length -Gt 0 } | Select -First 1
+	$body = ""
+	If (-Not [String]::IsNullOrEmpty($zipAssetVersion)) {
+		$body += "_Binary files inside the unpackaged distribution archive bear the version number ``$zipAssetVersion``._`n"
+	}
+	$body += "---`n`n### Asset Hashes`n`n";
 	ForEach($a in $Release.Assets) {
 		$body += "- {0}`n   - SHA256 ``{1}```n" -f ($a.IdealFilename(), (Get-FileHash $a.Path -Algorithm SHA256 | Select-Object -Expand Hash))
 	}
