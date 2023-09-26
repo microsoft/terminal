@@ -24,6 +24,7 @@ Enum AssetType {
 	Unknown
 	ApplicationBundle
 	PreinstallKit
+	Zip
 }
 
 Enum Branding {
@@ -41,7 +42,8 @@ Class Asset {
 
 	[AssetType]$Type
 	[Branding]$Branding
-	[Version]$WindowsVersion
+
+	[string]$Architecture
 
 	[string]$Path
 
@@ -57,7 +59,8 @@ Class Asset {
 		Remove-Item $local:sentinelFile -Force -EA:Ignore -Confirm:$false -WhatIf:$false
 
 		$local:ext = [IO.Path]::GetExtension($this.Path)
-		If (".zip" -eq $local:ext) {
+		$local:filename = [IO.Path]::GetFileName($this.Path)
+		If (".zip" -eq $local:ext -and $local:filename -like '*Preinstall*') {
 			Write-Verbose "Cracking Preinstall Kit $($this.Path)"
 			$local:licenseFile = & $script:tar -t -f $this.Path | Select-String "_License1.xml"
 			If (-Not $local:licenseFile) {
@@ -69,48 +72,56 @@ Class Asset {
 
 			$local:bundlePath = Join-Path $local:directory $local:bundleName
 			$this.Type = [AssetType]::PreinstallKit
+			$this.Architecture = "all"
+		} ElseIf (".zip" -eq $local:ext) {
+			$this.Type = [AssetType]::Zip
 		} ElseIf (".msixbundle" -eq $local:ext) {
 			$this.Type = [AssetType]::ApplicationBundle
+			$this.Architecture = "all"
 		}
 
-		Write-Verbose "Cracking bundle $($local:bundlePath)"
-		$local:firstMsixName = & $script:tar -t -f $local:bundlePath |
-			Select-String 'Casc.*\.msix' |
-			Select-Object -First 1 -Expand Line
-		& $script:tar -x -f $local:bundlePath -C $local:directory $local:firstMsixName
+		If ($this.Type -Ne [AssetType]::Zip) {
+			Write-Verbose "Cracking bundle $($local:bundlePath)"
+			$local:firstMsixName = & $script:tar -t -f $local:bundlePath |
+				Select-String 'Casc.*\.msix' |
+				Select-Object -First 1 -Expand Line
+			& $script:tar -x -f $local:bundlePath -C $local:directory $local:firstMsixName
 
-		Write-Verbose "Found inner msix $($local:firstMsixName)"
-		$local:msixPath = Join-Path $local:directory $local:firstMsixName
-		& $script:tar -x -v -f $local:msixPath -C $local:directory AppxManifest.xml
+			Write-Verbose "Found inner msix $($local:firstMsixName)"
+			$local:msixPath = Join-Path $local:directory $local:firstMsixName
+			& $script:tar -x -v -f $local:msixPath -C $local:directory AppxManifest.xml
 
-		Write-Verbose "Parsing AppxManifest.xml"
-		$local:Manifest = [xml](Get-Content (Join-Path $local:directory AppxManifest.xml))
-		$this.ParseManifest($local:Manifest)
-	}
-
-	[void]ParseManifest([xml]$Manifest) {
-		$this.Name = $Manifest.Package.Identity.Name
+			Write-Verbose "Parsing AppxManifest.xml"
+			$local:Manifest = [xml](Get-Content (Join-Path $local:directory AppxManifest.xml))
+			$this.ParseManifest($local:Manifest)
+		} Else {
+			# Zip files just encode everything in their filename. Not great, but workable.
+			$this.ParseFilename($local:filename)
+		}
 
 		$this.Branding = Switch($this.Name) {
 			"Microsoft.WindowsTerminal" { [Branding]::Release }
 			"Microsoft.WindowsTerminalPreview" { [Branding]::Preview }
+			"Microsoft.WindowsTerminalCanary" { [Branding]::Canary }
 			"WindowsTerminalDev" { [Branding]::Dev }
 			Default { [Branding]::Unknown }
 		}
+	}
 
-		$this.WindowsVersion = $Manifest.Package.Dependencies.TargetDeviceFamily |
-			Where-Object Name -eq "Windows.Desktop" |
-			Select-Object -Expand MinVersion
+	[void]ParseManifest([xml]$Manifest) {
+		$this.Name = $Manifest.Package.Identity.Name
 		$this.Version = $Manifest.Package.Identity.Version
 	}
 
-	[string]IdealFilename() {
-		$local:windowsVersionMoniker = Switch($this.WindowsVersion.Build) {
-			{ $_ -Lt 22000 } { "Win10" }
-			{ $_ -Ge 22000 } { "Win11" }
-		}
+	[void]ParseFilename([string]$filename) {
+		$parts = [IO.Path]::GetFileNameWithoutExtension($filename).Split("_")
+		$this.Name = $parts[0]
+		$this.Version = $parts[1]
+		$this.Architecture = $parts[2]
+	}
 
-		$local:bundleName = "{0}_{1}_{2}_8wekyb3d8bbwe.msixbundle" -f ($this.Name, $local:windowsVersionMoniker, $this.Version)
+	[string]IdealFilename() {
+		$local:bundleName = "{0}_{1}_8wekyb3d8bbwe.msixbundle" -f ($this.Name, $this.Version)
 
 		$local:filename = Switch($this.Type) {
 			PreinstallKit {
@@ -118,6 +129,9 @@ Class Asset {
 			}
 			ApplicationBundle {
 				$local:bundleName
+			}
+			Zip {
+				"{0}_{1}_{2}.zip" -f ($this.Name, $this.Version, $this.Architecture)
 			}
 			Default {
 				Throw "Unknown type $($_.Type)"
@@ -148,11 +162,11 @@ class Release {
 		$this.Name = Switch($this.Branding) {
 			Release { "Windows Terminal" }
 			Preview { "Windows Terminal Preview" }
-			Default { throw "Unknown Branding $_" }
+			Default { throw "Unknown Branding for release publication $_" }
 		}
 		$local:minVer = $a.Version | Measure -Minimum | Select-Object -Expand Minimum
 		$this.TagVersion = $local:minVer
-		$this.DisplayVersion = [Version]::new($local:minVer.Major, $local:minVer.Minor, $local:minVer.Build / 10)
+		$this.DisplayVersion = $local:minVer
 		$this.Branch = "release-{0}.{1}" -f ($local:minVer.Major, $local:minVer.Minor)
 	}
 
