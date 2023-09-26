@@ -84,7 +84,7 @@ Class Asset {
 		If ($this.Type -Ne [AssetType]::Zip) {
 			Write-Verbose "Cracking bundle $($local:bundlePath)"
 			$local:firstMsixName = & $script:tar -t -f $local:bundlePath |
-				Select-String 'Casc.*\.msix' |
+				Select-String 'Cascadia.*\.msix' |
 				Select-Object -First 1 -Expand Line
 			& $script:tar -x -f $local:bundlePath -C $local:directory $local:firstMsixName
 
