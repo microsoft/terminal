@@ -75,9 +75,7 @@ Class Asset {
 			$this.Type = [AssetType]::PreinstallKit
 			$this.Architecture = "all"
 		} ElseIf (".zip" -eq $local:ext) {
-			& $script:tar -x -f $this.Path -C $local:directory --strip-components=1 '*/wt.exe'
 			$this.Type = [AssetType]::Zip
-			$this.ExpandedVersion = (Get-Item (Join-Path $local:directory wt.exe)).VersionInfo.ProductVersion
 		} ElseIf (".msixbundle" -eq $local:ext) {
 			$this.Type = [AssetType]::ApplicationBundle
 			$this.Architecture = "all"
@@ -98,6 +96,9 @@ Class Asset {
 			$local:Manifest = [xml](Get-Content (Join-Path $local:directory AppxManifest.xml))
 			$this.ParseManifest($local:Manifest)
 		} Else {
+			& $script:tar -x -f $this.Path -C $local:directory --strip-components=1 '*/wt.exe'
+			$this.ExpandedVersion = (Get-Item (Join-Path $local:directory wt.exe)).VersionInfo.ProductVersion
+
 			# Zip files just encode everything in their filename. Not great, but workable.
 			$this.ParseFilename($local:filename)
 		}
