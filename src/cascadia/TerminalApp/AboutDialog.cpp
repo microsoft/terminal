@@ -86,16 +86,54 @@ namespace winrt::TerminalApp::implementation
             co_await wil::resume_foreground(strongThis->Dispatcher());
             UpdatesAvailable(true);
 #else // release build, likely has a store context
-            if (auto storeContext{ winrt::Windows::Services::Store::StoreContext::GetDefault() })
+            bool packageManagerAnswered{ false };
+
+            try
             {
-                const auto updates = co_await storeContext.GetAppAndOptionalStorePackageUpdatesAsync();
-                co_await wil::resume_foreground(strongThis->Dispatcher());
-                if (updates)
+                if (auto currentPackage{ winrt::Windows::ApplicationModel::Package::Current() })
                 {
-                    const auto numUpdates = updates.Size();
-                    if (numUpdates > 0)
+                    // We need to look up our package in the Package Manager; we cannot use Current
+                    winrt::Windows::Management::Deployment::PackageManager pm;
+                    if (auto lookedUpPackage{ pm.FindPackageForUser(winrt::hstring{}, currentPackage.Id().FullName()) })
                     {
-                        UpdatesAvailable(true);
+                        using winrt::Windows::ApplicationModel::PackageUpdateAvailability;
+                        auto availabilityResult = co_await lookedUpPackage.CheckUpdateAvailabilityAsync();
+                        co_await wil::resume_foreground(strongThis->Dispatcher());
+                        auto availability = availabilityResult.Availability();
+                        switch (availability)
+                        {
+                        case PackageUpdateAvailability::Available:
+                        case PackageUpdateAvailability::Required:
+                        case PackageUpdateAvailability::NoUpdates:
+                            UpdatesAvailable(availability != PackageUpdateAvailability::NoUpdates);
+                            packageManagerAnswered = true;
+                            break;
+                        case PackageUpdateAvailability::Error:
+                        case PackageUpdateAvailability::Unknown:
+                        default:
+                            // Do not set packageManagerAnswered, which will trigger the store check.
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (...)
+            {
+            } // Do nothing on failure
+
+            if (!packageManagerAnswered)
+            {
+                if (auto storeContext{ winrt::Windows::Services::Store::StoreContext::GetDefault() })
+                {
+                    const auto updates = co_await storeContext.GetAppAndOptionalStorePackageUpdatesAsync();
+                    co_await wil::resume_foreground(strongThis->Dispatcher());
+                    if (updates)
+                    {
+                        const auto numUpdates = updates.Size();
+                        if (numUpdates > 0)
+                        {
+                            UpdatesAvailable(true);
+                        }
                     }
                 }
             }
