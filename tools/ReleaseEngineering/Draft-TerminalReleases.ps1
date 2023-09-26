@@ -2,7 +2,13 @@
 # Licensed under the MIT license.
 
 #################################
-# Draft-TerminalReleases produces...
+# Draft-TerminalReleases takes a directory full of Terminal build outputs:
+# - zip files
+# - preinstallation kits
+# - MSIX bundles
+# and produces tagged releases with hashes and assets on GitHub.
+# It automatically cracks files to get their version numbers, arranges them into branding categories,
+# and publishes drafts based on their contents.
 
 #Requires -Version 7.0
 #Requires -Modules PSGitHub
@@ -31,6 +37,7 @@ Enum Branding {
 	Unknown
 	Release
 	Preview
+	Canary
 	Dev
 }
 
