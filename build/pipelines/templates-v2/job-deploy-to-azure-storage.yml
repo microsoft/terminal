@@ -1,6 +1,8 @@
 parameters:
   - name: buildConfiguration
     type: string
+  - name: buildPlatforms
+    type: object
   - name: pool
     type: object
     default: []
