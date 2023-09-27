@@ -83,7 +83,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             const auto scheme = pair.Value();
             auto viewModel{ winrt::make<ColorSchemeViewModel>(scheme, *this, _settings) };
-            viewModel.IsInBoxScheme(scheme.Origin() != Model::OriginTag::User);
             allColorSchemes.emplace_back(viewModel);
 
             // We will need access to the settings model object later, but we don't

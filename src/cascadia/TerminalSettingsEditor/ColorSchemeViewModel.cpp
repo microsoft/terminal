@@ -74,6 +74,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"IsDefaultScheme");
     }
 
+    bool ColorSchemeViewModel::IsInBoxScheme() const
+    {
+        return _scheme.Origin() != Model::OriginTag::User;
+    }
+
     bool ColorSchemeViewModel::RequestRename(winrt::hstring newName)
     {
         if (const auto parentPageVM{ _parentPageVM.get() })

@@ -414,25 +414,31 @@ bool SettingsLoader::DisableDeletedProfiles()
 bool winrt::Microsoft::Terminal::Settings::Model::implementation::SettingsLoader::RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile)
 {
     bool modified{ false };
-    if (auto schemeName{ profile->DefaultAppearance().ColorSchemeName() }; !schemeName.empty())
-    {
-        if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
-        {
-            profile->DefaultAppearance().ColorSchemeName(found->second);
-            modified = true;
-        }
-    }
-
-    if (auto unfocusedAppearance{ profile->UnfocusedAppearance() })
-    {
-        if (auto schemeName{ unfocusedAppearance.ColorSchemeName() }; !schemeName.empty())
+    auto remapForAppearance = [&](const IAppearanceConfig& appearance) {
+        if (auto schemeName{ appearance.LightColorSchemeName() }; !schemeName.empty())
         {
             if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
             {
-                unfocusedAppearance.ColorSchemeName(found->second);
+                appearance.LightColorSchemeName(found->second);
                 modified = true;
             }
         }
+
+        if (auto schemeName{ appearance.DarkColorSchemeName() }; !schemeName.empty())
+        {
+            if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
+            {
+                appearance.DarkColorSchemeName(found->second);
+                modified = true;
+            }
+        }
+    };
+
+    remapForAppearance(profile->DefaultAppearance());
+
+    if (auto unfocusedAppearance{ profile->UnfocusedAppearance() })
+    {
+        remapForAppearance(unfocusedAppearance);
     }
 
     return modified;
