@@ -121,7 +121,7 @@ void Jumplist::_updateProfiles(IObjectCollection* jumplistItems, winrt::Windows:
     for (const auto& profile : profiles)
     {
         // Craft the arguments following "wt.exe"
-        auto args = fmt::format(L"-p {}", to_hstring(profile.Guid()));
+        auto args = fmt::format(FMT_COMPILE(L"-p {}"), to_hstring(profile.Guid()));
 
         // Create the shell link object for the profile
         const auto normalizedIconPath{ _normalizeIconPath(profile.Icon()) };

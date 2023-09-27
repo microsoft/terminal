@@ -49,17 +49,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Append the launch position part
         if (UseDefaultLaunchPosition())
         {
-            result = fmt::format(L"{}, {}", launchModeString, RS_(L"Globals_DefaultLaunchPositionCheckbox/Content"));
+            result = fmt::format(FMT_COMPILE(L"{}, {}"), launchModeString, RS_(L"Globals_DefaultLaunchPositionCheckbox/Content"));
         }
         else
         {
-            const std::wstring xPosString = isnan(InitialPosX()) ? RS_(L"Globals_LaunchModeDefault/Content").c_str() : std::to_wstring(gsl::narrow_cast<int>(InitialPosX()));
-            const std::wstring yPosString = isnan(InitialPosY()) ? RS_(L"Globals_LaunchModeDefault/Content").c_str() : std::to_wstring(gsl::narrow_cast<int>(InitialPosY()));
-            result = fmt::format(L"{}, ({},{})", launchModeString, xPosString, yPosString);
+            const auto xPosString = isnan(InitialPosX()) ? RS_(L"Globals_LaunchModeDefault/Content") : winrt::to_hstring(gsl::narrow_cast<int>(InitialPosX()));
+            const auto yPosString = isnan(InitialPosY()) ? RS_(L"Globals_LaunchModeDefault/Content") : winrt::to_hstring(gsl::narrow_cast<int>(InitialPosY()));
+            result = fmt::format(FMT_COMPILE(L"{}, ({},{})"), launchModeString, xPosString, yPosString);
         }
 
         // Append the CenterOnLaunch part
-        result = CenterOnLaunch() ? winrt::hstring{ fmt::format(L"{}, {}", result, RS_(L"Globals_CenterOnLaunchCentered")) } : result;
+        result = CenterOnLaunch() ? winrt::hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), result, RS_(L"Globals_CenterOnLaunchCentered")) } : result;
         return result;
     }
 

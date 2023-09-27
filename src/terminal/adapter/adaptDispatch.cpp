@@ -4436,7 +4436,7 @@ void AdaptDispatch::_ReportCursorInformation()
     }
 
     // Paging is not supported yet (GH#13892).
-    const auto pageNumber = 1;
+    constexpr auto pageNumber = 1;
 
     // Only some of the rendition attributes are reported.
     //   Bit    Attribute
@@ -4490,10 +4490,10 @@ void AdaptDispatch::_ReportCursorInformation()
         leftSetNumber,
         rightSetNumber,
         charsetSizes,
-        charset0.ToString(),
-        charset1.ToString(),
-        charset2.ToString(),
-        charset3.ToString());
+        charset0,
+        charset1,
+        charset2,
+        charset3);
     _api.ReturnResponse({ response.data(), response.size() });
 }
 

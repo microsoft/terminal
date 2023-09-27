@@ -15,10 +15,6 @@
 #include "ConptyConnection.g.cpp"
 
 using namespace ::Microsoft::Console;
-using namespace std::string_view_literals;
-
-// Format is: "DecimalResult (HexadecimalForm)"
-static constexpr auto _errorFormat = L"{0} ({0:#010x})"sv;
 
 // Notes:
 // There is a number of ways that the Conpty connection can be terminated (voluntarily or not):
@@ -114,7 +110,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 std::set<std::wstring, til::wstring_case_insensitive_compare> keys{};
                 for (const auto item : _environment)
                 {
-                    keys.insert(item.Key().c_str());
+                    keys.insert(std::wstring{ item.Key() });
                 }
                 // add additional env vars
                 for (const auto& key : keys)
@@ -444,16 +440,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto hr = wil::ResultFromCaughtException();
 
         // GH#11556 - make sure to format the error code to this string as an UNSIGNED int
-        winrt::hstring failureText{ fmt::format(std::wstring_view{ RS_(L"ProcessFailedToLaunch") },
-                                                fmt::format(_errorFormat, static_cast<unsigned int>(hr)),
-                                                _commandline) };
+        const auto failureText = RS_fmt(L"ProcessFailedToLaunch", _formatStatus(hr), _commandline);
         _TerminalOutputHandlers(failureText);
 
         // If the path was invalid, let's present an informative message to the user
         if (hr == HRESULT_FROM_WIN32(ERROR_DIRECTORY))
         {
-            winrt::hstring badPathText{ fmt::format(std::wstring_view{ RS_(L"BadPathText") },
-                                                    _startingDirectory) };
+            const auto badPathText = RS_fmt(L"BadPathText", _startingDirectory);
             _TerminalOutputHandlers(L"\r\n");
             _TerminalOutputHandlers(badPathText);
         }
@@ -473,7 +466,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         try
         {
             // GH#11556 - make sure to format the error code to this string as an UNSIGNED int
-            winrt::hstring exitText{ fmt::format(std::wstring_view{ RS_(L"ProcessExited") }, fmt::format(_errorFormat, status)) };
+            const auto exitText = RS_fmt(L"ProcessExited", _formatStatus(status));
             _TerminalOutputHandlers(L"\r\n");
             _TerminalOutputHandlers(exitText);
             _TerminalOutputHandlers(L"\r\n");
@@ -481,6 +474,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _TerminalOutputHandlers(L"\r\n");
         }
         CATCH_LOG();
+    }
+
+    std::wstring ConptyConnection::_formatStatus(uint32_t status)
+    {
+        return fmt::format(FMT_COMPILE(L"{0} ({0:#010x})"), status);
     }
 
     // Method Description:

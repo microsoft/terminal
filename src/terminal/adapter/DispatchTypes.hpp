@@ -28,7 +28,7 @@ namespace Microsoft::Console::VirtualTerminal
             return _value;
         }
 
-        constexpr const std::string_view ToString() const
+        constexpr const char* ToString() const
         {
             return &_string[0];
         }
@@ -660,3 +660,25 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     constexpr VTInt s_sDECCOLMResetColumns = 80;
 
 }
+
+template<typename Char>
+struct fmt::formatter<Microsoft::Console::VirtualTerminal::VTID, Char>
+{
+    constexpr auto parse(auto& ctx) const
+    {
+        static_assert(sizeof(ctx) == 0, "not implemented");
+    }
+
+    constexpr auto format(const Microsoft::Console::VirtualTerminal::VTID& p, auto& ctx) const
+    {
+        auto in = p.ToString();
+        auto out = ctx.out();
+
+        for (; *in; ++in, ++out)
+        {
+            *out = *in;
+        }
+
+        return out;
+    }
+};

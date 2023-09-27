@@ -300,7 +300,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
                 const auto conflictingCmdName{ conflictingCmd.Name() };
                 TextBlock conflictingCommandNameTB{};
-                conflictingCommandNameTB.Text(fmt::format(L"\"{}\"", conflictingCmdName.empty() ? RS_(L"Actions_UnnamedCommandName") : conflictingCmdName));
+                conflictingCommandNameTB.Text(fmt::format(FMT_COMPILE(LR"("{}")"), conflictingCmdName.empty() ? RS_(L"Actions_UnnamedCommandName") : conflictingCmdName));
                 conflictingCommandNameTB.FontStyle(Windows::UI::Text::FontStyle::Italic);
 
                 TextBlock confirmationQuestionTB{};

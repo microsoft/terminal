@@ -321,13 +321,13 @@ namespace winrt::TerminalApp::implementation
                 //
                 // So DON'T ~give a mouse a cookie~ take a static ref here.
 
-                const winrt::hstring modifiedBasename{ std::filesystem::path{ fileModified }.filename().c_str() };
+                const auto modifiedBasename = std::filesystem::path{ fileModified }.filename();
 
                 if (modifiedBasename == settingsBasename)
                 {
                     _reloadSettings->Run();
                 }
-                else if (ApplicationState::SharedInstance().IsStatePath(modifiedBasename))
+                else if (ApplicationState::SharedInstance().IsStatePath(modifiedBasename.native()))
                 {
                     _reloadState();
                 }

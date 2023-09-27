@@ -17,6 +17,14 @@ Revision History:
 
 #pragma once
 
+namespace winrt
+{
+    inline fmt::wstring_view format_as(const winrt::hstring& s)
+    {
+        return { s.data(), s.size() };
+    }
+}
+
 // This is a helper macro for both declaring the signature of an event, and
 // defining the body. Winrt events need a method for adding a callback to the
 // event and removing the callback. This macro will both declare the method
