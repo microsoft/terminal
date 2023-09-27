@@ -75,13 +75,13 @@ jobs:
             Get-ChildItem _out -Recur | Select -Expand FullName
           displayName: "Produce AppInstaller for MSIX bundle and de-version ZIP files"
 
-        - task: AzureFileCopy@5
-          displayName: Publish to Storage Account
-          inputs:
-            sourcePath: _out/*
-            Destination: AzureBlob
-            azureSubscription: ${{ parameters.subscription }}
-            storage: ${{ parameters.storageAccount }}
-            ContainerName: ${{ parameters.storageContainer }}
-            AdditionalArgumentsForBlobCopy: "--content-type application/octet-stream"
+#       - task: AzureFileCopy@5
+#         displayName: Publish to Storage Account
+#         inputs:
+#           sourcePath: _out/*
+#           Destination: AzureBlob
+#           azureSubscription: ${{ parameters.subscription }}
+#           storage: ${{ parameters.storageAccount }}
+#           ContainerName: ${{ parameters.storageContainer }}
+#           AdditionalArgumentsForBlobCopy: "--content-type application/octet-stream"
 
