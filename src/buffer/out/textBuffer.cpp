@@ -2235,28 +2235,24 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
         // map to keep track of colors:
         // keys are colors represented by COLORREF
         // values are indices of the corresponding colors in the color table
-        std::unordered_map<COLORREF, uint32_t> colorMap;
-        auto colorIdx = 1; // leave 0 for the default color and start from 1.
+        std::unordered_map<COLORREF, size_t> colorMap;
 
         // RTF color table
         std::ostringstream colorTableBuilder;
         colorTableBuilder << "{\\colortbl ;";
 
-        const auto getColorTableIndex = [&](const COLORREF color) -> uint32_t {
-            const auto it = colorMap.find(color);
-            if (it != colorMap.end())
-            {
-                return it->second;
-            }
-            else
+        const auto getColorTableIndex = [&](const COLORREF color) -> size_t {
+            // Exclude the 0 index for the default color, and start with 1.
+
+            const auto [it, inserted] = colorMap.emplace(color, colorMap.size() + 1);
+            if (inserted)
             {
                 colorTableBuilder << "\\red" << static_cast<int>(GetRValue(color))
                                   << "\\green" << static_cast<int>(GetGValue(color))
                                   << "\\blue" << static_cast<int>(GetBValue(color))
                                   << ";";
-                colorMap[color] = colorIdx;
-                return colorIdx++;
             }
+            return it->second;
         };
 
         // content
