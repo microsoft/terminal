@@ -74,7 +74,6 @@ jobs:
               $name = [String]::Join('_', $parts)
               $_ | Rename-Item -NewName $name
             }
-            Get-ChildItem _out -Recur | Select -Expand FullName
           displayName: "Produce AppInstaller for MSIX bundle and de-version ZIP files"
 
         - task: AzureFileCopy@5
