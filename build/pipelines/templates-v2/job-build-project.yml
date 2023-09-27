@@ -89,6 +89,11 @@ jobs:
     # Yup.
     BuildTargetParameter: ' '
     SelectedSigningFragments: ' '
+    # When building the unpackaged distribution, build it in portable mode if it's Canary-branded
+    ${{ if eq(parameters.branding, 'Canary') }}:
+      UnpackagedBuildArguments: -PortableMode
+    ${{ else }}:
+      UnpackagedBuildArguments: ' '
     JobOutputDirectory: $(Terminal.BinDir)
     JobOutputArtifactName: build-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
     ${{ insert }}: ${{ parameters.variables }}
@@ -255,7 +260,7 @@ jobs:
     - pwsh: |-
         $XamlAppxPath = (Get-Item "src\cascadia\CascadiaPackage\AppPackages\*\Dependencies\$(BuildPlatform)\Microsoft.UI.Xaml*.appx").FullName
         $outDir = New-Item -Type Directory "$(Terminal.BinDir)/_unpackaged" -ErrorAction:Ignore
-        & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 -TerminalAppX $(WindowsTerminalPackagePath) -XamlAppX $XamlAppxPath -Destination $outDir.FullName
+        & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 $(UnpackagedBuildArguments) -TerminalAppX $(WindowsTerminalPackagePath) -XamlAppX $XamlAppxPath -Destination $outDir.FullName
       displayName: Build Unpackaged Distribution (from MSIX)
       condition: and(succeeded(), ne(variables.WindowsTerminalPackagePath, ''))
 
