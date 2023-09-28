@@ -211,32 +211,7 @@ namespace winrt::TerminalApp::implementation
 
         _root->SetSettings(_settings, false); // We're on our UI thread right now, so this is safe
         _root->Loaded({ get_weak(), &TerminalWindow::_OnLoaded });
-
-        _root->Initialized([this](auto&&, auto&&) {
-            // GH#288 - When we finish initialization, if the user wanted us
-            // launched _fullscreen_, toggle fullscreen mode. This will make sure
-            // that the window size is _first_ set up as something sensible, so
-            // leaving fullscreen returns to a reasonable size.
-            const auto launchMode = this->GetLaunchMode();
-            if (_WindowProperties->IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
-            {
-                _root->SetFocusMode(true);
-            }
-
-            // The IslandWindow handles (creating) the maximized state
-            // we just want to record it here on the page as well.
-            if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
-            {
-                _root->Maximized(true);
-            }
-
-            if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode) && !_WindowProperties->IsQuakeWindow())
-            {
-                _root->SetFullscreen(true);
-            }
-
-            AppLogic::Current()->NotifyRootInitialized();
-        });
+        _root->Initialized({ get_weak(), &TerminalWindow::_pageInitialized });
         _root->Create();
 
         AppLogic::Current()->SettingsChanged({ get_weak(), &TerminalWindow::UpdateSettingsHandler });
@@ -255,6 +230,34 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
+
+    void TerminalWindow::_pageInitialized(const IInspectable&, const IInspectable&)
+    {
+        // GH#288 - When we finish initialization, if the user wanted us
+        // launched _fullscreen_, toggle fullscreen mode. This will make sure
+        // that the window size is _first_ set up as something sensible, so
+        // leaving fullscreen returns to a reasonable size.
+        const auto launchMode = this->GetLaunchMode();
+        if (_WindowProperties->IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
+        {
+            _root->SetFocusMode(true);
+        }
+
+        // The IslandWindow handles (creating) the maximized state
+        // we just want to record it here on the page as well.
+        if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
+        {
+            _root->Maximized(true);
+        }
+
+        if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode) && !_WindowProperties->IsQuakeWindow())
+        {
+            _root->SetFullscreen(true);
+        }
+
+        AppLogic::Current()->NotifyRootInitialized();
+    }
+
     void TerminalWindow::Quit()
     {
         if (_root)
