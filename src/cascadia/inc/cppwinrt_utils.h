@@ -17,6 +17,15 @@ Revision History:
 
 #pragma once
 
+template<>
+struct fmt::formatter<winrt::hstring, wchar_t> : fmt::formatter<fmt::wstring_view, wchar_t>
+{
+    auto format(const winrt::hstring& str, auto& ctx)
+    {
+        return fmt::formatter<fmt::wstring_view, wchar_t>::format({ str.data(), str.size() }, ctx);
+    }
+};
+
 // This is a helper macro for both declaring the signature of an event, and
 // defining the body. Winrt events need a method for adding a callback to the
 // event and removing the callback. This macro will both declare the method

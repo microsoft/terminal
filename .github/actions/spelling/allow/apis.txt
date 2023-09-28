@@ -220,6 +220,7 @@ UFIELD
 ULARGE
 UOI
 UPDATEINIFILE
+urlmon
 userenv
 USEROBJECTFLAGS
 Vcpp
@@ -231,6 +232,7 @@ wcsstr
 wcstoui
 WDJ
 winhttp
+wininet
 winmain
 winsta
 winstamin
