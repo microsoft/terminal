@@ -231,7 +231,7 @@ namespace winrt::TerminalApp::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
-    void TerminalWindow::_pageInitialized(const IInspectable&&, const IInspectable&&)
+    void TerminalWindow::_pageInitialized(const IInspectable&, const IInspectable&)
     {
         // GH#288 - When we finish initialization, if the user wanted us
         // launched _fullscreen_, toggle fullscreen mode. This will make sure
