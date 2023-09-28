@@ -39,5 +39,6 @@ extends:
             storageAccount: $(AzureStorageAccount)
             storageContainer: $(AzureStorageContainer)
             buildConfiguration: Release
+            buildPlatforms: [x64, x86, arm64]
             environment: production-canary
 
