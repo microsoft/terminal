@@ -4,11 +4,9 @@
 #include "pch.h"
 #include "TermControl.h"
 
-#include <unicode.hpp>
 #include <LibraryResources.h>
 
 #include "TermControlAutomationPeer.h"
-#include "../../types/inc/GlyphWidth.hpp"
 #include "../../renderer/atlas/AtlasEngine.h"
 
 #include "TermControl.g.cpp"
@@ -3208,51 +3206,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.ClearHoveredCell();
     }
 
-    // Attackers abuse Unicode characters that happen to look similar to ASCII characters. Cyrillic for instance has
-    // its own glyphs for а, с, е, о, р, х, and у that look practically identical to their ASCII counterparts.
-    // This is called an "IDN homoglyph attack".
-    //
-    // But outright showing Punycode URIs only is similarly flawed as they can end up looking similar to valid ASCII URIs.
-    // xn--cnn.com for instance looks confusingly similar to cnn.com, but actually represents U+407E.
-    //
-    // An optimal solution would detect any URI that contains homoglyphs and show them in their Punycode form.
-    // Such a detector however is not quite trivial and requires constant maintenance, which this project's
-    // maintainers aren't currently well equipped to handle. As such we do the next best thing and show the
-    // Punycode encoding side-by-side with the Unicode string for any IDN.
-    static winrt::hstring sanitizeURI(winrt::hstring uri)
-    {
-        if (uri.empty())
-        {
-            return uri;
-        }
-
-        wchar_t punycodeBuffer[256];
-        wchar_t unicodeBuffer[256];
-
-        // These functions return int, but are documented to only return positive numbers.
-        // Better make sure though. It allows us to pass punycodeLength right into IdnToUnicode.
-        const auto punycodeLength = std::max(0, IdnToAscii(0, uri.data(), gsl::narrow<int>(uri.size()), &punycodeBuffer[0], 256));
-        const auto unicodeLength = std::max(0, IdnToUnicode(0, &punycodeBuffer[0], punycodeLength, &unicodeBuffer[0], 256));
-
-        if (punycodeLength <= 0 || unicodeLength <= 0)
-        {
-            return RS_(L"InvalidUri");
-        }
-
-        const std::wstring_view punycode{ &punycodeBuffer[0], gsl::narrow_cast<size_t>(punycodeLength) };
-        const std::wstring_view unicode{ &unicodeBuffer[0], gsl::narrow_cast<size_t>(unicodeLength) };
-
-        // IdnToAscii/IdnToUnicode return the input string as is if it's all
-        // plain ASCII. But we don't know if the input URI is Punycode or not.
-        // --> It's non-Punycode and ASCII if it round-trips.
-        if (uri == punycode && uri == unicode)
-        {
-            return uri;
-        }
-
-        return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}\n({})"), punycode, unicode) };
-    }
-
     void TermControl::_hoveredHyperlinkChanged(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
         const auto lastHoveredCell = _core.HoveredCell();
@@ -3261,10 +3214,46 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        const auto uriText = sanitizeURI(_core.HoveredUriText());
+        auto uriText = _core.HoveredUriText();
         if (uriText.empty())
         {
             return;
+        }
+
+        // Attackers abuse Unicode characters that happen to look similar to ASCII characters. Cyrillic for instance has
+        // its own glyphs for а, с, е, о, р, х, and у that look practically identical to their ASCII counterparts.
+        // This is called an "IDN homoglyph attack".
+        //
+        // But outright showing Punycode URIs only is similarly flawed as they can end up looking similar to valid ASCII URIs.
+        // xn--cnn.com for instance looks confusingly similar to cnn.com, but actually represents U+407E.
+        //
+        // An optimal solution would detect any URI that contains homoglyphs and show them in their Punycode form.
+        // Such a detector however is not quite trivial and requires constant maintenance, which this project's
+        // maintainers aren't currently well equipped to handle. As such we do the next best thing and show the
+        // Punycode encoding side-by-side with the Unicode string for any IDN.
+        try
+        {
+            // DisplayUri/Iri drop authentication credentials, which is probably great, but AbsoluteCanonicalUri()
+            // is the only getter that returns a punycode encoding of the URL. AbsoluteUri() is the only possible
+            // counterpart, but as the name indicates, we'll end up hitting the != below for any non-canonical URL.
+            //
+            // This issue can be fixed by using the IUrl API from urlmon.h directly, which the WinRT API simply wraps.
+            // IUrl is a very complex system with a ton of useful functionality, but we don't rely on it (neither WinRT),
+            // so we could alternatively use its underlying API in wininet.h (InternetCrackUrlW, etc.).
+            // That API however is rather difficult to use for such seldom executed code.
+            const Windows::Foundation::Uri uri{ uriText };
+            const auto unicode = uri.AbsoluteUri();
+            const auto punycode = uri.AbsoluteCanonicalUri();
+
+            if (punycode != unicode)
+            {
+                const auto text = fmt::format(FMT_COMPILE(L"{}\n({})"), punycode, unicode);
+                uriText = winrt::hstring{ text };
+            }
+        }
+        catch (...)
+        {
+            uriText = RS_(L"InvalidUri");
         }
 
         const auto panel = SwapChainPanel();
