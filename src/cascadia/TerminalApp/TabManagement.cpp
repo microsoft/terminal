@@ -176,7 +176,9 @@ namespace winrt::TerminalApp::implementation
         {
             if (!profile.Icon().empty())
             {
-                newTabImpl->UpdateIcon(profile.Icon(), _settings.GlobalSettings().CurrentTheme().Tab().IconStyle());
+                const auto theme = _settings.GlobalSettings().CurrentTheme();
+                const auto iconStyle = (theme && theme.Tab()) ? theme.Tab().IconStyle() : IconStyle::Default;
+                newTabImpl->UpdateIcon(profile.Icon(), iconStyle);
             }
         }
 
@@ -241,7 +243,9 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto profile = tab.GetFocusedProfile())
         {
-            tab.UpdateIcon(profile.Icon(), _settings.GlobalSettings().CurrentTheme().Tab().IconStyle());
+            const auto theme = _settings.GlobalSettings().CurrentTheme();
+            const auto iconStyle = (theme && theme.Tab()) ? theme.Tab().IconStyle() : IconStyle::Default;
+            tab.UpdateIcon(profile.Icon(), iconStyle);
         }
     }
 
