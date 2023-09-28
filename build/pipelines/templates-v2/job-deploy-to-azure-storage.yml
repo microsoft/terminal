@@ -60,21 +60,24 @@ jobs:
             displayName: Download unpackaged build for ${{ platform }} ${{ parameters.buildConfiguration }}
             inputs:
               artifactName: build-${{ platform }}-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
-              downloadPath: '$(Build.SourcesDirectory)/_out'
+              downloadPath: '$(Build.SourcesDirectory)/_unpackaged'
               itemPattern: '**/_unpackaged/*.zip'
 
         - pwsh: |-
             $b = Get-Item _out/*.msixbundle
             ./build/scripts/New-AppInstallerFromTemplateAndBundle.ps1 -BundlePath $b.FullName -AppInstallerTemplatePath ./build/config/template.appinstaller -AppInstallerRoot "${{ parameters.storagePublicRootURL }}" -OutputPath _out/Microsoft.WindowsTerminalCanary.appinstaller
-            $zips = Get-Item _out/*.zip
+          displayName: "Produce AppInstaller for MSIX bundle"
+
+        - pwsh: |-
+            $zips = Get-ChildItem -Recurse -Filter *.zip _unpackaged
             $zips | ForEach-Object {
               $name = $_.Name
               $parts = $name.Split('_')
               $parts[1] = "latest"
               $name = [String]::Join('_', $parts)
-              $_ | Rename-Item -NewName $name
+              $_ | Move-Item -Destination (Join-Path "_out" $name)
             }
-          displayName: "Produce AppInstaller for MSIX bundle and de-version ZIP files"
+          displayName: "Wrangle Unpackaged builds into place, rename"
 
         - task: AzureFileCopy@5
           displayName: Publish to Storage Account
