@@ -17,6 +17,15 @@ Revision History:
 
 #pragma once
 
+template<>
+struct fmt::formatter<winrt::hstring, wchar_t> : fmt::formatter<fmt::wstring_view, wchar_t>
+{
+    auto format(const winrt::hstring& str, auto& ctx)
+    {
+        return fmt::formatter<fmt::wstring_view, wchar_t>::format({ str.data(), str.size() }, ctx);
+    }
+};
+
 // This is a helper macro to make declaring events easier.
 // This will declare the event handler and the methods for adding and removing a
 // handler callback from the event
