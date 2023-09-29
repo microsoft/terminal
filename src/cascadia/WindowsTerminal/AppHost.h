@@ -6,7 +6,7 @@
 #include "NotificationIcon.h"
 #include <ThrottledFunc.h>
 
-class AppHost
+class AppHost : public std::enable_shared_from_this<AppHost>
 {
 public:
     AppHost(const winrt::TerminalApp::AppLogic& logic,
