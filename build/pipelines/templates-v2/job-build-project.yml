@@ -229,7 +229,7 @@ jobs:
 
     # Code-sign everything we just put together.
     # We run the signing in Terminal.BinDir, because all of the signing batches are relative to the final architecture/configuration output folder.
-    - task: EsrpCodeSigning@1
+    - task: EsrpCodeSigning@3
       displayName: Submit Signing Request
       inputs:
         ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
