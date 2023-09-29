@@ -97,7 +97,7 @@ jobs:
       flattenFolders: true
 
   - ${{ if eq(parameters.codeSign, true) }}:
-    - task: EsrpCodeSigning@1
+    - task: EsrpCodeSigning@3
       displayName: Submit *.nupkg to ESRP for code signing
       inputs:
         ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
