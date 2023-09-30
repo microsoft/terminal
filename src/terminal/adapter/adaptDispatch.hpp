@@ -239,7 +239,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _DoLineFeed(TextBuffer& textBuffer, const bool withReturn, const bool wrapForced);
 
-        void _OperatingStatus() const;
+        void _DeviceStatusReport(const std::wstring_view parameters) const;
         void _CursorPositionReport(const bool extendedReport);
         void _MacroSpaceReport() const;
         void _MacroChecksumReport(const VTParameter id) const;
