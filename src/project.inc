@@ -3,6 +3,9 @@
 # - Common Project Configuration
 # -------------------------------------
 
+# Pull our dependencies from vcpkg. This includes gsl - if you run into errors
+# from a missing gsl, make sure you go build onecore/window/vcpkg first.
+
 !include $(PROJECT_ROOT)\vcpkg\consume.inc
 
 # -------------------------------------
