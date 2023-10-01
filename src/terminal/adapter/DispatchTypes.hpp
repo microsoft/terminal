@@ -626,7 +626,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         FullCell = 2
     };
 
-    enum class DrcsCharsetSize : VTInt
+    enum class CharsetSize : VTInt
     {
         Size94 = 0,
         Size96 = 1

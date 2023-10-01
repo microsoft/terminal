@@ -3860,7 +3860,7 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
                                                          const DispatchTypes::DrcsFontSet fontSet,
                                                          const DispatchTypes::DrcsFontUsage fontUsage,
                                                          const VTParameter cellHeight,
-                                                         const DispatchTypes::DrcsCharsetSize charsetSize)
+                                                         const DispatchTypes::CharsetSize charsetSize)
 {
     // The font buffer is created on demand.
     if (!_fontBuffer)
@@ -3907,7 +3907,7 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
             // We also need to inform the character set mapper of the ID that
             // will map to this font (we only support one font buffer so there
             // will only ever be one active dynamic character set).
-            if (charsetSize == DispatchTypes::DrcsCharsetSize::Size96)
+            if (charsetSize == DispatchTypes::CharsetSize::Size96)
             {
                 _termOutput.SetDrcs96Designation(_fontBuffer->GetDesignation());
             }
@@ -3932,7 +3932,7 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
 // - <none>
 // Return value:
 // - a function to receive the data or nullptr if the initial flush fails
-ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize)
+ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const DispatchTypes::CharsetSize charsetSize)
 {
     const auto defaultPassthrough = _CreatePassthroughHandler();
     if (defaultPassthrough)
@@ -3955,12 +3955,23 @@ ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const 
             {
                 // Once the DECDLD sequence is finished, we also output an SCS
                 // sequence to map the character set into the G1 table.
-                const auto charset96 = charsetSize == DispatchTypes::DrcsCharsetSize::Size96;
+                const auto charset96 = charsetSize == DispatchTypes::CharsetSize::Size96;
                 engine.ActionPassThroughString(charset96 ? L"\033-@" : L"\033)@");
             }
             return true;
         };
     }
+    return nullptr;
+}
+
+// Method Description:
+// - DECAUPSS - Assigns the user-preference supplemental character set.
+// Arguments:
+// - charsetSize - Whether the character set is 94 or 96 characters.
+// Return Value:
+// - a function to parse the character set ID
+ITermDispatch::StringHandler AdaptDispatch::AssignUserPreferenceCharset(const DispatchTypes::CharsetSize /*charsetSize*/)
+{
     return nullptr;
 }
 

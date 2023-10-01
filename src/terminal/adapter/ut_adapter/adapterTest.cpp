@@ -2754,7 +2754,7 @@ public:
             const auto cellMatrix = static_cast<DispatchTypes::DrcsCellMatrix>(cmw);
             RETURN_BOOL_IF_FALSE(fontBuffer.SetEraseControl(DispatchTypes::DrcsEraseControl::AllChars));
             RETURN_BOOL_IF_FALSE(fontBuffer.SetAttributes(cellMatrix, cmh, ss, u));
-            RETURN_BOOL_IF_FALSE(fontBuffer.SetStartChar(0, DispatchTypes::DrcsCharsetSize::Size94));
+            RETURN_BOOL_IF_FALSE(fontBuffer.SetStartChar(0, DispatchTypes::CharsetSize::Size94));
 
             fontBuffer.AddSixelData(L'B'); // Charset identifier
             for (auto ch : data)

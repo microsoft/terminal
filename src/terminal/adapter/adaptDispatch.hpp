@@ -148,7 +148,9 @@ namespace Microsoft::Console::VirtualTerminal
                                    const DispatchTypes::DrcsFontSet fontSet,
                                    const DispatchTypes::DrcsFontUsage fontUsage,
                                    const VTParameter cellHeight,
-                                   const DispatchTypes::DrcsCharsetSize charsetSize) override; // DECDLD
+                                   const DispatchTypes::CharsetSize charsetSize) override; // DECDLD
+
+        StringHandler AssignUserPreferenceCharset(const DispatchTypes::CharsetSize charsetSize) override; // DECAUPSS
 
         StringHandler DefineMacro(const VTInt macroId,
                                   const DispatchTypes::MacroDeleteControl deleteControl,
@@ -268,7 +270,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportTabStops();
         StringHandler _RestoreTabStops();
 
-        StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize);
+        StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::CharsetSize charsetSize);
         StringHandler _CreatePassthroughHandler();
 
         std::vector<bool> _tabStopColumns;

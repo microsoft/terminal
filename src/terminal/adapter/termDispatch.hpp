@@ -139,7 +139,9 @@ public:
                                const DispatchTypes::DrcsFontSet /*fontSet*/,
                                const DispatchTypes::DrcsFontUsage /*fontUsage*/,
                                const VTParameter /*cellHeight*/,
-                               const DispatchTypes::DrcsCharsetSize /*charsetSize*/) override { return nullptr; } // DECDLD
+                               const DispatchTypes::CharsetSize /*charsetSize*/) override { return nullptr; } // DECDLD
+
+    StringHandler AssignUserPreferenceCharset(const DispatchTypes::CharsetSize /*charsetSize*/) override { return nullptr; } // DECAUPSS
 
     StringHandler DefineMacro(const VTInt /*macroId*/,
                               const DispatchTypes::MacroDeleteControl /*deleteControl*/,

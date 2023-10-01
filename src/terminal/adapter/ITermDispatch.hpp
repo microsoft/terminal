@@ -146,7 +146,9 @@ public:
                                        const DispatchTypes::DrcsFontSet fontSet,
                                        const DispatchTypes::DrcsFontUsage fontUsage,
                                        const VTParameter cellHeight,
-                                       const DispatchTypes::DrcsCharsetSize charsetSize) = 0; // DECDLD
+                                       const DispatchTypes::CharsetSize charsetSize) = 0; // DECDLD
+
+    virtual StringHandler AssignUserPreferenceCharset(const DispatchTypes::CharsetSize charsetSize) = 0; // DECAUPSS
 
     virtual StringHandler DefineMacro(const VTInt macroId,
                                       const DispatchTypes::MacroDeleteControl deleteControl,
