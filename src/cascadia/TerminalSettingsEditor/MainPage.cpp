@@ -531,7 +531,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         MUX::Controls::NavigationViewItem addProfileItem;
         addProfileItem.Content(box_value(RS_(L"Nav_AddNewProfile/Content")));
         addProfileItem.Tag(box_value(addProfileTag));
-        Automation::AutomationProperties::SetAutomationId(addProfileItem, L"AddProfileNavItem");
 
         FontIcon icon;
         // This is the "Add" symbol

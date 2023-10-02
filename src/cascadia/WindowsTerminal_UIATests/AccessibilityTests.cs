@@ -26,7 +26,7 @@ namespace WindowsTerminal.UIA.Tests
     {
         public TestContext TestContext { get; set; }
 
-        private AppiumWebElement OpenSUIPage(TerminalApp app, string pageAutomationId)
+        private AppiumWebElement OpenSUIPage(TerminalApp app, string elementName)
         {
             var root = app.GetRoot();
 
@@ -34,7 +34,7 @@ namespace WindowsTerminal.UIA.Tests
             Globals.WaitForTimeout();
 
             // Navigate to the settings page
-            root.FindElementByAccessibilityId(pageAutomationId).Click();
+            root.FindElementByName(elementName).Click();
             Globals.WaitForTimeout();
 
             return root;
@@ -81,7 +81,7 @@ namespace WindowsTerminal.UIA.Tests
         {
             using (TerminalApp app = new TerminalApp(TestContext))
             {
-                OpenSUIPage(app, "LaunchNavItem");
+                OpenSUIPage(app, "Startup");
                 var errorCount = ScanForErrors(app);
                 Verify.AreEqual(errorCount, 0);
             }
@@ -93,7 +93,7 @@ namespace WindowsTerminal.UIA.Tests
         {
             using (TerminalApp app = new TerminalApp(TestContext))
             {
-                OpenSUIPage(app, "InteractionNavItem");
+                OpenSUIPage(app, "Interaction");
                 var errorCount = ScanForErrors(app);
                 Verify.AreEqual(errorCount, 0);
             }
@@ -105,7 +105,7 @@ namespace WindowsTerminal.UIA.Tests
         {
             using (TerminalApp app = new TerminalApp(TestContext))
             {
-                OpenSUIPage(app, "AppearanceNavItem");
+                OpenSUIPage(app, "Appearance");
                 var errorCount = ScanForErrors(app);
                 Verify.AreEqual(errorCount, 0);
             }
@@ -118,7 +118,7 @@ namespace WindowsTerminal.UIA.Tests
             using (TerminalApp app = new TerminalApp(TestContext))
             {
                 int totalErrorCount = 0;
-                var root = OpenSUIPage(app, "ColorSchemesNavItem");
+                var root = OpenSUIPage(app, "Color Schemes");
 
                 var scanner = BuildScanner(app.ProcessId);
                 totalErrorCount += ScanForErrors(app, scanner);
@@ -139,7 +139,7 @@ namespace WindowsTerminal.UIA.Tests
         {
             using (TerminalApp app = new TerminalApp(TestContext))
             {
-                OpenSUIPage(app, "RenderingNavItem");
+                OpenSUIPage(app, "Rendering");
                 var errorCount = ScanForErrors(app);
                 Verify.AreEqual(errorCount, 0);
             }
@@ -151,7 +151,7 @@ namespace WindowsTerminal.UIA.Tests
         {
             using (TerminalApp app = new TerminalApp(TestContext))
             {
-                OpenSUIPage(app, "ActionsNavItem");
+                OpenSUIPage(app, "Actions");
                 var errorCount = ScanForErrors(app);
                 Verify.AreEqual(errorCount, 0);
             }
@@ -164,7 +164,7 @@ namespace WindowsTerminal.UIA.Tests
             using (TerminalApp app = new TerminalApp(TestContext))
             {
                 int totalErrorCount = 0;
-                var root = OpenSUIPage(app, "BaseLayerNavItem");
+                var root = OpenSUIPage(app, "Defaults");
 
                 var scanner = BuildScanner(app.ProcessId);
                 totalErrorCount += ScanForErrors(app, scanner);
@@ -192,7 +192,7 @@ namespace WindowsTerminal.UIA.Tests
         {
             using (TerminalApp app = new TerminalApp(TestContext))
             {
-                OpenSUIPage(app, "AddProfileNavItem");
+                OpenSUIPage(app, "Add a new profile");
                 var errorCount = ScanForErrors(app);
                 Verify.AreEqual(errorCount, 0);
             }
