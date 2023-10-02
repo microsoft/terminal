@@ -29,6 +29,9 @@ parameters:
   - name: publishArtifacts
     type: boolean
     default: true
+  - name: afterBuildSteps
+    type: stepList
+    default: []
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -85,7 +88,9 @@ jobs:
       $Components[0] = ([int]$Components[0] + $VersionEpoch)
       $BundleVersion = $Components -Join "."
       New-Item -Type Directory "$(System.ArtifactsDirectory)/bundle"
-      .\build\scripts\Create-AppxBundle.ps1 -InputPath 'bin/' -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\bundle\$(BundleStemName)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
+      $BundlePath = "$(System.ArtifactsDirectory)\bundle\$(BundleStemName)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
+      .\build\scripts\Create-AppxBundle.ps1 -InputPath 'bin/' -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath $BundlePath
+      Write-Host "##vso[task.setvariable variable=MsixBundlePath]${BundlePath}"
     displayName: Create msixbundle
 
   - ${{ if eq(parameters.codeSign, true) }}:
@@ -138,6 +143,8 @@ jobs:
         OutputPath: 'output.json'
         ValidateSignature: true
         Verbosity: 'Verbose'
+
+  - ${{ parameters.afterBuildSteps }}
 
   - ${{ if eq(parameters.publishArtifacts, true) }}:
     - publish: $(JobOutputDirectory)

@@ -62,6 +62,9 @@ parameters:
   - name: publishArtifacts
     type: boolean
     default: true
+  - name: removeAllNonSignedFiles
+    type: boolean
+    default: false
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -173,6 +176,7 @@ jobs:
   # - Directories ending in Lib (static lib projects that we fully linked into DLLs which may also contain unnecessary resources)
   # - All LocalTests_ project outputs, as they were subsumed into TestHostApp
   # - All PDB files inside the WindowsTerminal/ output, which do not belong there.
+  # - console.dll, which apparently breaks XFGCheck? lol.
   - pwsh: |-
       $binDir = '$(Terminal.BinDir)'
       $ImportLibs = Get-ChildItem $binDir -Recurse -File -Filter '*.exp' | ForEach-Object { $_.FullName -Replace "exp$","lib" }
@@ -188,6 +192,8 @@ jobs:
       If (-Not [bool]::Parse('${{ parameters.keepAllExpensiveBuildOutputs }}')) {
         $Items += Get-ChildItem '$(Terminal.BinDir)' -Filter '*.pdb' -Recurse
       }
+
+      $Items += Get-ChildItem $binDir -Filter 'console.dll'
 
       $Items | Remove-Item -Recurse -Force -Verbose -ErrorAction:Ignore
     displayName: Clean up static libs and extra symbols
@@ -245,6 +251,14 @@ jobs:
           & "$(MakeAppxPath)" pack /h SHA256 /o /p $PackageFilename /d "$(Terminal.BinDir)/PackageContents"
           Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
         displayName: Re-pack the new Terminal package after signing
+
+    # Some of our governed pipelines explicitly fail builds that have *any* non-codesigned filed (!)
+    - ${{ if eq(parameters.removeAllNonSignedFiles, true) }}:
+      - pwsh: |-
+          Get-ChildItem "$(Terminal.BinDir)" -Recurse -Include "*.dll","*.exe" |
+            Where-Object { (Get-AuthenticodeSignature $_).Status -Ne "Valid" } |
+            Remove-Item -Verbose -Force
+        displayName: Remove all non-signed output files
 
   - ${{ else }}: # No Signing
     - ${{ if or(parameters.buildTerminal, parameters.buildEverything) }}:
