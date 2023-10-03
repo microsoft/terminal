@@ -1941,6 +1941,11 @@ namespace winrt::TerminalApp::implementation
             _settings.GlobalSettings().ConfirmCloseAllTabs() &&
             !_displayingCloseDialog)
         {
+            if (_newTabButton && _newTabButton.Flyout())
+            {
+                _newTabButton.Flyout().Hide();
+            }
+            _DismissTabContextMenus();
             _displayingCloseDialog = true;
             auto warningResult = co_await _ShowCloseWarningDialog();
             _displayingCloseDialog = false;
