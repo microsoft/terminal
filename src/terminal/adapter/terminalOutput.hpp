@@ -25,6 +25,7 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         TerminalOutput() noexcept;
 
+        bool AssignUserPreferenceCharset(const VTID charset, const bool size96);
         wchar_t TranslateKey(const wchar_t wch) const noexcept;
         bool Designate94Charset(const size_t gsetNumber, const VTID charset);
         bool Designate96Charset(const size_t gsetNumber, const VTID charset);
@@ -47,6 +48,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _SetTranslationTable(const size_t gsetNumber, const std::wstring_view translationTable);
         void _ReplaceDrcsTable(const std::wstring_view oldTable, const std::wstring_view newTable);
 
+        std::wstring_view _upssTranslationTable;
         std::array<std::wstring_view, 4> _gsetTranslationTables;
         std::array<VTID, 4> _gsetIds;
         size_t _glSetNumber = 0;

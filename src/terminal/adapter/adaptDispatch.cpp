@@ -3970,9 +3970,29 @@ ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const 
 // - charsetSize - Whether the character set is 94 or 96 characters.
 // Return Value:
 // - a function to parse the character set ID
-ITermDispatch::StringHandler AdaptDispatch::AssignUserPreferenceCharset(const DispatchTypes::CharsetSize /*charsetSize*/)
+ITermDispatch::StringHandler AdaptDispatch::AssignUserPreferenceCharset(const DispatchTypes::CharsetSize charsetSize)
 {
-    return nullptr;
+    return [this, charsetSize, idBuilder = VTIDBuilder{}](const auto ch) mutable {
+        if (ch >= L'\x20' && ch <= L'\x2f')
+        {
+            idBuilder.AddIntermediate(ch);
+        }
+        else if (ch >= L'\x30' && ch <= L'\x7e')
+        {
+            const auto id = idBuilder.Finalize(ch);
+            switch (charsetSize)
+            {
+            case DispatchTypes::CharsetSize::Size94:
+                _termOutput.AssignUserPreferenceCharset(id, false);
+                break;
+            case DispatchTypes::CharsetSize::Size96:
+                _termOutput.AssignUserPreferenceCharset(id, true);
+                break;
+            }
+            return false;
+        }
+        return true;
+    };
 }
 
 // Method Description:
