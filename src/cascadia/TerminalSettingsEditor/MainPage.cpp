@@ -695,18 +695,31 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto hr = DwmGetWindowAttribute(*_hostingHwnd, DWMWA_SYSTEMBACKDROP_TYPE, &attribute, sizeof(attribute));
             if (SUCCEEDED(hr))
             {
+                switch (attribute)
+                {
+                case DWMSBT_AUTO:
+                    OutputDebugStringW(L"AUTO\n");
+                    break;
+                case DWMSBT_MAINWINDOW:
+                    OutputDebugStringW(L"MAINWINDOW\n");
+                    break;
+                case DWMSBT_TABBEDWINDOW:
+                    OutputDebugStringW(L"TABBEDWINDOW\n");
+                    break;
+                case DWMSBT_TRANSIENTWINDOW:
+                    OutputDebugStringW(L"TRANSIENTWINDOW\n");
+                    break;
+                case DWMSBT_NONE:
+                    OutputDebugStringW(L"NONE\n");
+                    break;
+                }
                 isMicaAvailable = attribute == DWMSBT_MAINWINDOW;
             }
         }
-
-        if (!isMicaAvailable)
-        {
-            return;
-        }
-
+       
         const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
-        const auto& requestedTheme = _settingsSource.GlobalSettings().CurrentTheme().RequestedTheme();
-        OutputDebugStringW(L"Hi we are in _UpdateBackgroundForMica\n");
+        const auto& requestedTheme = theme.Settings().RequestedTheme();
+        
         RequestedTheme(requestedTheme);
 
         const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) ?
