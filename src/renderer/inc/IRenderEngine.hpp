@@ -41,6 +41,9 @@ namespace Microsoft::Console::Render
         Right,
         Underline,
         DoubleUnderline,
+        CurlyUnderline,
+        DottedUnderline,
+        DashedUnderline,
         Strikethrough,
         HyperlinkUnderline
     };

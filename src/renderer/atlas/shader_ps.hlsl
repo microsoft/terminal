@@ -85,6 +85,38 @@ Output main(PSData data) : SV_Target
         weights = color.aaaa;
         break;
     }
+    case SHADING_TYPE_DASHED_LINE:
+    {
+        const bool on = frac(data.position.x / backgroundCellSize.x) < 0.5f;
+        color = on * premultiplyColor(data.color);
+        weights = color.aaaa;
+        break;
+    }
+    case SHADING_TYPE_DASHED_LINE_WIDE:
+    {
+        const bool on = frac(data.position.x / (2.0f * backgroundCellSize.x)) < 0.5f;
+        color = on * premultiplyColor(data.color);
+        weights = color.aaaa;
+        break;
+    }
+    case SHADING_TYPE_CURLY_LINE:
+    {
+        const float4 foreground = premultiplyColor(data.color);
+        const float blendEnhancedContrast = DWrite_ApplyLightOnDarkContrastAdjustment(enhancedContrast, data.color.rgb);
+        const float intensity = DWrite_CalcColorIntensity(data.color.rgb);
+
+        const float2 texcoord = { 
+            data.texcoord.x % backgroundCellSize.x,
+            data.texcoord.y % backgroundCellSize.y
+        };
+        const float4 glyph = glyphAtlas[texcoord];
+        const float contrasted = DWrite_EnhanceContrast(glyph.a, blendEnhancedContrast);
+        const float alphaCorrected = DWrite_ApplyAlphaCorrection(contrasted, intensity, gammaRatios);
+
+        color = alphaCorrected * foreground;
+        weights = color.aaaa;
+        break;
+    }
     default:
     {
         color = premultiplyColor(data.color);

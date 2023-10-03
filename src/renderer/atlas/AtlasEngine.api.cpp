@@ -686,12 +686,19 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     adjustedWidth = std::max(1.0f, adjustedWidth);
     adjustedHeight = std::max(1.0f, adjustedHeight);
 
+    // TODO: This helps in testing the underlines at different underline
+    // widths, particularly curly line, so they don't break if/when we get
+    // support for user customizable underline width. Remove it before merging.
+    // I'm using 1.5f as a hardcoded value below. In the future, we would
+    // get it from the user/config.
+    const auto underlineWidthScale = std::clamp(1.0f, 1.5f, 2.0f);
+
     const auto baseline = std::roundf(ascent + (lineGap + adjustedHeight - advanceHeight) / 2.0f);
     const auto underlinePos = std::roundf(baseline + underlinePosition);
-    const auto underlineWidth = std::max(1.0f, std::roundf(underlineThickness));
+    const auto underlineWidth = std::max(1.0f, std::roundf(underlineThickness * underlineWidthScale));
     const auto strikethroughPos = std::roundf(baseline + strikethroughPosition);
-    const auto strikethroughWidth = std::max(1.0f, std::roundf(strikethroughThickness));
-    const auto thinLineWidth = std::max(1.0f, std::roundf(underlineThickness / 2.0f));
+    const auto strikethroughWidth = std::max(1.0f, std::roundf(strikethroughThickness * underlineWidthScale));
+    const auto thinLineWidth = std::max(1.0f, std::roundf(underlineThickness * underlineWidthScale / 2.0f));
 
     // For double underlines we loosely follow what Word does:
     // 1. The lines are half the width of an underline (= thinLineWidth)
@@ -714,6 +721,12 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     doubleUnderlinePosBottom = std::max(doubleUnderlinePosBottom, doubleUnderlinePosTop + doubleUnderlineGap + thinLineWidth);
     // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
     doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, adjustedHeight - thinLineWidth);
+
+    // For curly-line, we'll make room for the top and bottom curve ("wave").
+    // The baseline for curly-line is kept at the baseline of singly underline.
+    const auto curlyLinePeakHeight = std::roundf(fontMetrics->curlyUnderlineWaviness * fontSizeInPx);
+    const auto curlyUnderlinePos = underlinePos - (curlyLinePeakHeight + underlineThickness / 2.0f);
+    const auto curlyUnderlineWidth = underlineWidth + 2.0f * (curlyLinePeakHeight + underlineThickness / 2.0f);
 
     const auto cellWidth = gsl::narrow<u16>(lrintf(adjustedWidth));
     const auto cellHeight = gsl::narrow<u16>(lrintf(adjustedHeight));
@@ -748,6 +761,8 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
 
         const auto underlinePosU16 = gsl::narrow_cast<u16>(lrintf(underlinePos));
         const auto underlineWidthU16 = gsl::narrow_cast<u16>(lrintf(underlineWidth));
+        const auto curlyUnderlinePosU16 = gsl::narrow_cast<u16>(lrintf(curlyUnderlinePos));
+        const auto curlyUnderlineWidthU16 = gsl::narrow_cast<u16>(lrintf(curlyUnderlineWidth));
         const auto strikethroughPosU16 = gsl::narrow_cast<u16>(lrintf(strikethroughPos));
         const auto strikethroughWidthU16 = gsl::narrow_cast<u16>(lrintf(strikethroughWidth));
         const auto doubleUnderlinePosTopU16 = gsl::narrow_cast<u16>(lrintf(doubleUnderlinePosTop));
@@ -774,6 +789,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
 
         fontMetrics->underline = { underlinePosU16, underlineWidthU16 };
         fontMetrics->strikethrough = { strikethroughPosU16, strikethroughWidthU16 };
+        fontMetrics->curlyUnderline = { curlyUnderlinePosU16, curlyUnderlineWidthU16 };
         fontMetrics->doubleUnderline[0] = { doubleUnderlinePosTopU16, thinLineWidthU16 };
         fontMetrics->doubleUnderline[1] = { doubleUnderlinePosBottomU16, thinLineWidthU16 };
         fontMetrics->overline = { 0, underlineWidthU16 };

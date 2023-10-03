@@ -67,11 +67,14 @@ namespace Microsoft::Console::Render::Atlas
             TextPassthrough = 3,
             DottedLine = 4,
             DottedLineWide = 5,
+            DashedLine = 6,
+            DashedLineWide = 7,
+            CurlyLine = 8,
             // All items starting here will be drawing as a solid RGBA color
-            SolidLine = 6,
+            SolidLine = 9,
 
-            Cursor = 7,
-            Selection = 8,
+            Cursor = 10,
+            Selection = 11,
 
             TextDrawingFirst = TextGrayscale,
             TextDrawingLast = SolidLine,
@@ -224,6 +227,7 @@ namespace Microsoft::Console::Render::Atlas
         void _drawGlyphPrepareRetry(const RenderingPayload& p);
         void _splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         void _drawGridlines(const RenderingPayload& p, u16 y);
+        void _drawCurlylineToAtlas(const RenderingPayload& p);
         void _drawCursorBackground(const RenderingPayload& p);
         ATLAS_ATTR_COLD void _drawCursorForeground();
         ATLAS_ATTR_COLD size_t _drawCursorForegroundSlowPath(const CursorRect& c, size_t offset);
@@ -291,6 +295,7 @@ namespace Microsoft::Console::Render::Atlas
         // The bounding rect of _cursorRects in pixels.
         til::rect _cursorPosition;
 
+        u16x2 _curlyLineTexCoord;
         bool _requiresContinuousRedraw = false;
 
 #if ATLAS_DEBUG_SHOW_DIRTY
