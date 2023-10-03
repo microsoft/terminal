@@ -204,7 +204,12 @@ namespace winrt::TerminalApp::implementation
         // Pay attention, that even if some command line arguments were parsed (like launch mode),
         // we will not use the startup actions from settings.
         // While this simplifies the logic, we might want to reconsider this behavior in the future.
-        if (!_hasCommandLineArguments && _gotSettingsStartupActions)
+        //
+        // Obviously, don't use the `startupActions` from the settings in the
+        // case of a tear-out / reattach. GH#16050
+        if (!_hasCommandLineArguments &&
+            _initialContentArgs.empty() &&
+            _gotSettingsStartupActions)
         {
             _root->SetStartupActions(_settingsStartupArgs);
         }
