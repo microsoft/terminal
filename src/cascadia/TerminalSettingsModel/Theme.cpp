@@ -9,6 +9,7 @@
 #include "JsonUtils.h"
 #include "TerminalSettingsSerializationHelpers.h"
 
+#include "SettingsTheme.g.cpp"
 #include "ThemeColor.g.cpp"
 #include "WindowTheme.g.cpp"
 #include "TabRowTheme.g.cpp"
@@ -55,6 +56,7 @@ static constexpr wchar_t RegKeyAccentColor[] = L"AccentColor";
         return json;                                      \
     }
 
+THEME_OBJECT(SettingsTheme, MTSM_THEME_SETTINGS_SETTINGS);
 THEME_OBJECT(WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
 THEME_OBJECT(TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
 THEME_OBJECT(TabTheme, MTSM_THEME_TAB_SETTINGS);
@@ -218,6 +220,7 @@ uint8_t ThemeColor::UnfocusedTabOpacity() const noexcept
         }                                                                                      \
     };
 
+THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, SettingsTheme, MTSM_THEME_SETTINGS_SETTINGS);
 THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
 THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
 THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, TabTheme, MTSM_THEME_TAB_SETTINGS);

@@ -61,6 +61,10 @@ namespace Microsoft.Terminal.Settings.Model
         ThemeColor UnfocusedFrame { get; };
     }
 
+    runtimeclass SettingsTheme    {
+        Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
+    }
+
     runtimeclass TabRowTheme {
         ThemeColor Background { get; };
         ThemeColor UnfocusedBackground { get; };
@@ -84,6 +88,8 @@ namespace Microsoft.Terminal.Settings.Model
 
         // tabRow.* Namespace
         TabRowTheme TabRow { get; };
+
+        SettingsTheme Settings { get; };
 
         // tab.* Namespace
         TabTheme Tab { get; };

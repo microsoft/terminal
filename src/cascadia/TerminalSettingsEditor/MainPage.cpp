@@ -706,7 +706,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
         const auto& requestedTheme = _settingsSource.GlobalSettings().CurrentTheme().RequestedTheme();
-
+        OutputDebugStringW(L"Hi we are in _UpdateBackgroundForMica\n");
         RequestedTheme(requestedTheme);
 
         const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) ?
