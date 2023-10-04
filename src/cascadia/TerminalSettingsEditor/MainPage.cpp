@@ -718,6 +718,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
        
         const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
+        if (theme.Settings() == nullptr)
+        {
+            return;
+        }
         const auto& requestedTheme = theme.Settings().RequestedTheme();
         
         RequestedTheme(requestedTheme);
