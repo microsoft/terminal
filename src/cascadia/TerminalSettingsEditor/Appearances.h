@@ -17,6 +17,7 @@ Author(s):
 #pragma once
 
 #include "Font.g.h"
+#include "AxisKeyValuePair.g.h"
 #include "Appearances.g.h"
 #include "AppearanceViewModel.g.h"
 #include "Utils.h"
@@ -52,6 +53,34 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         winrt::com_ptr<IDWriteFontFamily> _family;
         std::optional<bool> _hasPowerlineCharacters;
+    };
+
+    struct AxisKeyValuePair : AxisKeyValuePairT<AxisKeyValuePair>
+    {
+        AxisKeyValuePair(winrt::hstring axisKey, float axisValue, const Windows::Foundation::Collections::IMap<winrt::hstring, float>& baseMap) :
+            _AxisKey{ axisKey },
+            _AxisValue{ axisValue },
+            _baseMap{ baseMap } {}
+
+        winrt::hstring AxisKey() { return _AxisKey; }
+        float AxisValue() { return _AxisValue; }
+
+        void AxisValue(float axisValue) {
+            _baseMap.Remove(_AxisKey);
+            _AxisValue = axisValue;
+            _baseMap.Insert(_AxisKey, _AxisValue);
+        }
+
+        void AxisKey(winrt::hstring axisKey) {
+            _baseMap.Remove(_AxisKey);
+            _AxisKey = axisKey;
+            _baseMap.Insert(_AxisKey, _AxisValue);
+        }
+
+    private:
+        winrt::hstring _AxisKey;
+        float _AxisValue;
+        Windows::Foundation::Collections::IMap<winrt::hstring, float> _baseMap{ nullptr };
     };
 
     struct AppearanceViewModel : AppearanceViewModelT<AppearanceViewModel>, ViewModelHelper<AppearanceViewModel>
@@ -100,6 +129,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_appearance, IntenseTextStyle);
         OBSERVABLE_PROJECTED_SETTING(_appearance, AdjustIndistinguishableColors);
         WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::AxisKeyValuePair>, FontAxesVector, _propertyChangedHandlers, nullptr);
 
     private:
         Model::AppearanceConfig _appearance;
@@ -124,6 +154,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         fire_and_forget BackgroundImage_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void BIAlignment_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void FontFace_SelectionChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e);
+        void AxisKeyValuePairDelete_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
 
         // manually bind FontWeight
         Windows::Foundation::IInspectable CurrentFontWeight() const;
@@ -160,4 +191,5 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(Appearances);
+    BASIC_FACTORY(AxisKeyValuePair);
 }

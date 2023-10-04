@@ -13,6 +13,8 @@ import "ColorSchemesPageViewModel.idl";
     OBSERVABLE_PROJECTED_SETTING(Type, Name);               \
     Object Name##OverrideSource { get; }
 
+#define COMMA ,
+
 namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass Font : Windows.Foundation.IStringable
@@ -20,6 +22,17 @@ namespace Microsoft.Terminal.Settings.Editor
         String Name { get; };
         String LocalizedName { get; };
         Boolean HasPowerlineCharacters { get; };
+    }
+
+    // We have to make this because we cannot bind an IObservableMap to a ListView in XAML (in c++)
+    // So instead we make an IVector of these AxisKeyValuePair objects
+
+    // if wanna generalize this, make this an interface instead of runtimeclass
+    runtimeclass AxisKeyValuePair {
+        AxisKeyValuePair(String axisKey, Single axisValue, Windows.Foundation.Collections.IMap<String COMMA Single> baseMap);
+        // make these iinspectable to generalize
+        String AxisKey;
+        Single AxisValue;
     }
 
     runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -36,6 +49,8 @@ namespace Microsoft.Terminal.Settings.Editor
         void ClearColorScheme();
         ColorSchemeViewModel CurrentColorScheme;
         Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> SchemesList;
+
+        Windows.Foundation.Collections.IObservableVector<AxisKeyValuePair> FontAxesVector;
 
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, FontFace);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Single, FontSize);

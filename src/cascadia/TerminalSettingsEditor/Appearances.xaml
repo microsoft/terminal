@@ -37,6 +37,8 @@
                         Background="{x:Bind local:Converters.ColorToBrush(Color)}"
                         CornerRadius="1" />
             </DataTemplate>
+            <CollectionViewSource x:Name="FontAxesCVS"
+                                  x:Key="FontAxesCVS" />
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -285,6 +287,22 @@
                                    Text="{Binding ElementName=FontWeightSlider, Path=Value, Mode=OneWay}" />
                     </Grid>
                 </StackPanel>
+            </local:SettingContainer>
+
+            <local:SettingContainer x:Uid="Profile_FontAxes"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <ListView ItemsSource="{Binding Source={StaticResource FontAxesCVS}}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="local:AxisKeyValuePair">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBox Text="{x:Bind AxisKey, Mode=TwoWay}" />
+                                <muxc:NumberBox Value="{x:Bind AxisValue, Mode=TwoWay}" />
+                                <Button Click="AxisKeyValuePairDelete_Click"
+                                        Tag="{x:Bind AxisKey}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
             </local:SettingContainer>
 
             <!--  Retro Terminal Effect  -->

@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "Appearances.h"
 #include "Appearances.g.cpp"
+#include "AxisKeyValuePair.g.cpp"
 #include "EnumEntry.h"
 
 #include <LibraryResources.h>
@@ -61,6 +62,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible");
             }
         });
+
+        _FontAxesVector = winrt::single_threaded_observable_vector<Editor::AxisKeyValuePair>();
+        if (const auto fontAxesMap = _appearance.SourceProfile().FontInfo().FontAxes())
+        {
+            for (const auto axis : fontAxesMap)
+            {
+                _FontAxesVector.Append(winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::AxisKeyValuePair>(axis.Key(), axis.Value(), fontAxesMap));
+            }
+        }
 
         // Cache the original BG image path. If the user clicks "Use desktop
         // wallpaper", then un-checks it, this is the string we'll restore to
@@ -348,6 +358,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 biButton.IsChecked(biButton.Tag().as<int32_t>() == biAlignmentVal);
             }
 
+            FontAxesCVS().Source(Appearance().FontAxesVector());
+
             _ViewModelChangedRevoker = Appearance().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
                 const auto settingName{ args.PropertyName() };
                 if (settingName == L"CursorShape")
@@ -466,6 +478,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (const auto& biButtonAlignment{ biButton.Tag().try_as<int32_t>() })
             {
                 biButton.IsChecked(biButtonAlignment == val);
+            }
+        }
+    }
+
+    void Appearances::AxisKeyValuePairDelete_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
+    {
+        if (const auto& button{ sender.try_as<Controls::Button>() })
+        {
+            if (const auto& tag{ button.Tag().try_as<winrt::hstring>() })
+            {
+                for (const auto axisKeyValuePair : Appearance().FontAxesVector())
+                {
+                    if (axisKeyValuePair.as<Editor::AxisKeyValuePair>().AxisKey() == tag)
+                    {
+                        uint32_t index;
+                        Appearance().FontAxesVector().IndexOf(axisKeyValuePair, index);
+                        Appearance().FontAxesVector().RemoveAt(index);
+                        break;
+                    }
+                }
             }
         }
     }
