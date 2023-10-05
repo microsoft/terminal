@@ -2068,9 +2068,6 @@ namespace winrt::TerminalApp::implementation
             {
                 if (const auto pane{ terminalTab->GetActivePane() })
                 {
-                    // Get the tab title _before_ moving things around in case the tabIdx doesn't point to the right one after the move
-                    const auto tabTitle = _tabs.GetAt(tabIdx).Title();
-
                     auto startupActions = pane->BuildStartupActions(0, 1, true, true);
                     _DetachPaneFromWindow(pane);
                     _MoveContent(std::move(startupActions.args), windowId, tabIdx);
@@ -2089,7 +2086,7 @@ namespace winrt::TerminalApp::implementation
                         {
                             autoPeer.RaiseNotificationEvent(Automation::Peers::AutomationNotificationKind::ActionCompleted,
                                                             Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                                                            fmt::format(std::wstring_view{ RS_(L"TerminalPage_PaneMovedAnnouncement_ExistingWindow") }, tabTitle, windowId),
+                                                            fmt::format(std::wstring_view{ RS_(L"TerminalPage_PaneMovedAnnouncement_ExistingWindow2") }, windowId),
                                                             L"TerminalPageMovePaneToExistingWindow" /* unique name for this notification category */);
                         }
                     }
@@ -2106,7 +2103,7 @@ namespace winrt::TerminalApp::implementation
 
         // Moving the pane from the current tab might close it, so get the next
         // tab before its index changes.
-        if (_tabs.Size() > tabIdx)
+        if (tabIdx < _tabs.Size())
         {
             auto targetTab = _GetTerminalTabImpl(_tabs.GetAt(tabIdx));
             // if the selected tab is not a host of terminals (e.g. settings)
