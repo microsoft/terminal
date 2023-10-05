@@ -1617,4 +1617,24 @@
     <value>Choosing a non-monospaced font will likely result in visual artifacts. Use at your own discretion.</value>
     <comment>Warning info bar used when a non monospace font face is chosen to indicate that there may be visual artifacts</comment>
   </data>
+	<data name="Profile_WeightFontAxis" xml:space="preserve">
+    <value>wght</value>
+    <comment>Tag for the font axis that modifies the weight.</comment>
+  </data>
+	<data name="Profile_WidthFontAxis" xml:space="preserve">
+    <value>wdth</value>
+    <comment>Tag for the font axis that modifies the width.</comment>
+  </data>
+	<data name="Profile_SlantFontAxis" xml:space="preserve">
+    <value>slnt</value>
+    <comment>Tag for the font axis that modifies the slant.</comment>
+  </data>
+	<data name="Profile_ItalicFontAxis" xml:space="preserve">
+    <value>ital</value>
+    <comment>Tag for the font axis that modifies whether the font is italic.</comment>
+  </data>
+	<data name="Profile_OpticalSizeFontAxis" xml:space="preserve">
+    <value>opsz</value>
+    <comment>Tag for the font axis that modifies the optical sizing.</comment>
+  </data>
 </root>

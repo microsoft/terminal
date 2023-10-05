@@ -295,6 +295,10 @@
                     <ListView IsItemClickEnabled="False"
                               ItemsSource="{Binding Source={StaticResource FontAxesCVS}}"
                               SelectionMode="None">
+                        <ListView.Resources>
+                            <CollectionViewSource x:Key="CommonFontAxesListCVS"
+                                                  x:Name="CommonFontAxesListCVS"/>
+                        </ListView.Resources>
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="local:AxisKeyValuePair">
                                 <Grid Margin="-16,0,-12,0"
@@ -304,8 +308,10 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0"
-                                             Text="{x:Bind AxisKey, Mode=TwoWay}" />
+                                    <ComboBox Grid.Column="0"
+                                              IsEditable="True"
+                                              ItemsSource="{Binding Source={StaticResource CommonFontAxesListCVS}}"
+                                              Text="{x:Bind AxisKey, Mode=TwoWay}" />
                                     <muxc:NumberBox Grid.Column="1"
                                                     Value="{x:Bind AxisValue, Mode=TwoWay}" />
                                     <Button Grid.Column="2"

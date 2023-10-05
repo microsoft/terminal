@@ -25,7 +25,7 @@ namespace Microsoft.Terminal.Settings.Editor
     }
 
     // We have to make this because we cannot bind an IObservableMap to a ListView in XAML (in c++)
-    // So instead we make an IVector of these AxisKeyValuePair objects
+    // So instead we make an IObservableVector of these AxisKeyValuePair objects
     runtimeclass AxisKeyValuePair {
         AxisKeyValuePair(String axisKey, Single axisValue, Windows.Foundation.Collections.IMap<String COMMA Single> baseMap);
         String AxisKey;

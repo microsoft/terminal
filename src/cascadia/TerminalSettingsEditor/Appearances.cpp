@@ -309,6 +309,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto backgroundImgCheckboxTooltip{ ToolTipService::GetToolTip(UseDesktopImageCheckBox()) };
         Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
 
+        _InitializeCommonFontAxesListCVS();
+
         INITIALIZE_BINDABLE_ENUM_SETTING(IntenseTextStyle, IntenseTextStyle, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle, L"Appearance_IntenseTextStyle", L"Content");
     }
 
@@ -524,6 +526,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Appearances::AddNewAxisKeyValuePair_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         Appearance().AddNewAxisKeyValuePair();
+    }
+
+    void Appearances::_InitializeCommonFontAxesListCVS()
+    {
+        _CommonFontAxesList = winrt::single_threaded_observable_vector<winrt::hstring>();
+        _CommonFontAxesList.Append(RS_(L"Profile_WeightFontAxis"));
+        _CommonFontAxesList.Append(RS_(L"Profile_WidthFontAxis"));
+        _CommonFontAxesList.Append(RS_(L"Profile_SlantFontAxis"));
+        _CommonFontAxesList.Append(RS_(L"Profile_ItalicFontAxis"));
+        _CommonFontAxesList.Append(RS_(L"Profile_OpticalSizeFontAxis"));
+        CommonFontAxesListCVS().Source(_CommonFontAxesList);
     }
 
     bool Appearances::IsVintageCursor() const
