@@ -162,6 +162,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECERA_EraseRectangularArea = VTID("$z"),
             DECSERA_SelectiveEraseRectangularArea = VTID("${"),
             DECSCPP_SetColumnsPerPage = VTID("$|"),
+            DECRQUPSS_RequestUserPreferenceSupplementalSet = VTID("&u"),
             DECIC_InsertColumn = VTID("'}"),
             DECDC_DeleteColumn = VTID("'~"),
             DECSACE_SelectAttributeChangeExtent = VTID("*x"),

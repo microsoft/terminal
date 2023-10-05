@@ -148,6 +148,7 @@ public:
                                        const VTParameter cellHeight,
                                        const DispatchTypes::CharsetSize charsetSize) = 0; // DECDLD
 
+    virtual bool RequestUserPreferenceCharset() = 0; // DECRQUPSS
     virtual StringHandler AssignUserPreferenceCharset(const DispatchTypes::CharsetSize charsetSize) = 0; // DECAUPSS
 
     virtual StringHandler DefineMacro(const VTInt macroId,

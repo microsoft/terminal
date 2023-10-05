@@ -141,6 +141,7 @@ public:
                                const VTParameter /*cellHeight*/,
                                const DispatchTypes::CharsetSize /*charsetSize*/) override { return nullptr; } // DECDLD
 
+    bool RequestUserPreferenceCharset() override { return false; } // DECRQUPSS
     StringHandler AssignUserPreferenceCharset(const DispatchTypes::CharsetSize /*charsetSize*/) override { return nullptr; } // DECAUPSS
 
     StringHandler DefineMacro(const VTInt /*macroId*/,

@@ -150,6 +150,7 @@ namespace Microsoft::Console::VirtualTerminal
                                    const VTParameter cellHeight,
                                    const DispatchTypes::CharsetSize charsetSize) override; // DECDLD
 
+        bool RequestUserPreferenceCharset() override; // DECRQUPSS
         StringHandler AssignUserPreferenceCharset(const DispatchTypes::CharsetSize charsetSize) override; // DECAUPSS
 
         StringHandler DefineMacro(const VTInt macroId,

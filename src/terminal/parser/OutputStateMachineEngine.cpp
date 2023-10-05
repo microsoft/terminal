@@ -630,6 +630,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::DECSERA_SelectiveEraseRectangularArea:
         success = _dispatch->SelectiveEraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
         break;
+    case CsiActionCodes::DECRQUPSS_RequestUserPreferenceSupplementalSet:
+        success = _dispatch->RequestUserPreferenceCharset();
+        break;
     case CsiActionCodes::DECIC_InsertColumn:
         success = _dispatch->InsertColumn(parameters.at(0));
         break;

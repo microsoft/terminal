@@ -3963,6 +3963,20 @@ ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const 
 }
 
 // Method Description:
+// - DECRQUPSS - Request the user-preference supplemental character set.
+// Arguments:
+// - None
+// Return Value:
+// - True
+bool AdaptDispatch::RequestUserPreferenceCharset()
+{
+    const auto size = _termOutput.GetUserPreferenceCharsetSize();
+    const auto id = _termOutput.GetUserPreferenceCharsetId();
+    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"\033P{}!u{}\033\\"), (size == 96 ? 1 : 0), id.ToString()));
+    return true;
+}
+
+// Method Description:
 // - DECAUPSS - Assigns the user-preference supplemental character set.
 // Arguments:
 // - charsetSize - Whether the character set is 94 or 96 characters.

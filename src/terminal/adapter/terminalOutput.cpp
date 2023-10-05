@@ -9,6 +9,7 @@
 using namespace Microsoft::Console::VirtualTerminal;
 
 TerminalOutput::TerminalOutput(const bool grEnabled) noexcept :
+    _upssId{ VTID("A") },
     _upssTranslationTable{ Latin1 },
     _grTranslationEnabled{ grEnabled }
 {
@@ -50,6 +51,7 @@ bool TerminalOutput::AssignUserPreferenceCharset(const VTID charset, const bool 
 {
     const auto translationTable = size96 ? _LookupTranslationTable96(charset) : _LookupTranslationTable94(charset);
     RETURN_BOOL_IF_FALSE(!translationTable.empty());
+    _upssId = charset;
     _upssTranslationTable = translationTable;
     // Any G-set mapped to UPSS will need its translation table updated.
     for (auto gset = 0; gset < 4; gset++)
@@ -63,6 +65,16 @@ bool TerminalOutput::AssignUserPreferenceCharset(const VTID charset, const bool 
     LockingShift(_glSetNumber);
     LockingShiftRight(_grSetNumber);
     return true;
+}
+
+VTID TerminalOutput::GetUserPreferenceCharsetId() const noexcept
+{
+    return _upssId;
+}
+
+size_t TerminalOutput::GetUserPreferenceCharsetSize() const noexcept
+{
+    return _upssTranslationTable.size() == 96 ? 96 : 94;
 }
 
 bool TerminalOutput::Designate94Charset(size_t gsetNumber, const VTID charset)
