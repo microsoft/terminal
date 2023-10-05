@@ -46,6 +46,9 @@ parameters:
   - name: publishSymbolsToPublic
     type: boolean
     default: true
+  - name: symbolExpiryTime
+    type: string
+    default: 36530 # This is the default from PublishSymbols@2
   - name: publishVpackToWindows
     type: boolean
     default: false
@@ -202,10 +205,15 @@ extends:
                 generateSbom: false # Handled by onebranch
                 codeSign: ${{ parameters.codeSign }}
                 afterBuildSteps:
+                  # This directory has to exist, even if we aren't using createvpack, because the Guardian rules demand it.
                   - pwsh: |-
-                      $d = New-Item "$(JobOutputDirectory)/vpack" -Type Directory
-                      Copy-Item -Verbose -Path "$(MsixBundlePath)" -Destination (Join-Path $d 'Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle')
-                    displayName: Stage msixbundle for vpack
+                      New-Item "$(JobOutputDirectory)/vpack" -Type Directory
+                    displayName: Make sure the vpack directory exists
+
+                  - ${{ if parameters.publishVpackToWindows }}:
+                    - pwsh: |-
+                        Copy-Item -Verbose -Path "$(MsixBundlePath)" -Destination (Join-Path "$(JobOutputDirectory)/vpack" 'Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle')
+                      displayName: Stage msixbundle for vpack
 
           - ${{ if eq(parameters.buildConPTY, true) }}:
             - template: ./build/pipelines/templates-v2/job-package-conpty.yml@self
@@ -246,6 +254,7 @@ extends:
               pool: { type: windows }
               includePublicSymbolServer: ${{ parameters.publishSymbolsToPublic }}
               symbolPatGoesInTaskInputs: true # onebranch tries to muck with the PAT variable, so we need to change how it get the PAT
+              symbolExpiryTime: ${{ parameters.symbolExpiryTime }}
               variables:
                 ob_git_checkout: false # This job checks itself out
                 ob_git_skip_checkout_none: true
