@@ -515,7 +515,7 @@ namespace winrt::TerminalApp::implementation
                 // * B (tabIndex=1): We'll want to focus tab A (now in index 0)
                 // * C (tabIndex=2): We'll want to focus tab B (now in index 1)
                 // * D (tabIndex=3): We'll want to focus tab C (now in index 2)
-                const auto newSelectedIndex = std::clamp<int32_t>(tabIndex - 1, 0, _tabs.Size());
+                const auto newSelectedIndex = std::clamp<int32_t>(tabIndex - 1, 0, _tabs.Size() - 1);
                 // _UpdatedSelectedTab will do the work of setting up the new tab as
                 // the focused one, and unfocusing all the others.
                 auto newSelectedTab{ _tabs.GetAt(newSelectedIndex) };
@@ -682,7 +682,7 @@ namespace winrt::TerminalApp::implementation
     {
         uint32_t tabIndexFromControl{};
         const auto items{ _tabView.TabItems() };
-        if (items.IndexOf(tabViewItem, tabIndexFromControl))
+        if (items.IndexOf(tabViewItem, tabIndexFromControl) && tabIndexFromControl < _tabs.Size())
         {
             // If IndexOf returns true, we've actually got an index
             return _tabs.GetAt(tabIndexFromControl);
@@ -1039,7 +1039,8 @@ namespace winrt::TerminalApp::implementation
     // - suggestedNewTabIndex: the new index of the tab, might get clamped to fit int the tabs row boundaries
     // Return Value:
     // - <none>
-    void TerminalPage::_TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex)
+    void TerminalPage::_TryMoveTab(const uint32_t currentTabIndex,
+                                   const int32_t suggestedNewTabIndex)
     {
         auto newTabIndex = gsl::narrow_cast<uint32_t>(std::clamp<int32_t>(suggestedNewTabIndex, 0, _tabs.Size() - 1));
         if (currentTabIndex != newTabIndex)
@@ -1081,16 +1082,21 @@ namespace winrt::TerminalApp::implementation
 
         if (from.has_value() && to.has_value() && to != from)
         {
-            auto& tabs{ _tabs };
-            auto tab = tabs.GetAt(from.value());
-            tabs.RemoveAt(from.value());
-            tabs.InsertAt(to.value(), tab);
-            _UpdateTabIndices();
+            try
+            {
+                auto& tabs{ _tabs };
+                auto tab = tabs.GetAt(from.value());
+                tabs.RemoveAt(from.value());
+                tabs.InsertAt(to.value(), tab);
+                _UpdateTabIndices();
+            }
+            CATCH_LOG();
         }
 
         _rearranging = false;
 
-        if (to.has_value())
+        if (to.has_value() &&
+            *to < gsl::narrow_cast<int32_t>(TabRow().TabView().TabItems().Size()))
         {
             // Selecting the dropped tab
             TabRow().TabView().SelectedIndex(to.value());
