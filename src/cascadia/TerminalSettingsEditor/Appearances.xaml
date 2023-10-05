@@ -37,8 +37,8 @@
                         Background="{x:Bind local:Converters.ColorToBrush(Color)}"
                         CornerRadius="1" />
             </DataTemplate>
-            <CollectionViewSource x:Name="FontAxesCVS"
-                                  x:Key="FontAxesCVS" />
+            <CollectionViewSource x:Key="FontAxesCVS"
+                                  x:Name="FontAxesCVS" />
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -292,8 +292,8 @@
             <local:SettingContainer x:Uid="Profile_FontAxes"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Spacing="16">
-                    <ListView ItemsSource="{Binding Source={StaticResource FontAxesCVS}}"
-                              IsItemClickEnabled="False"
+                    <ListView IsItemClickEnabled="False"
+                              ItemsSource="{Binding Source={StaticResource FontAxesCVS}}"
                               SelectionMode="None">
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="local:AxisKeyValuePair">
@@ -304,15 +304,15 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBox Text="{x:Bind AxisKey, Mode=TwoWay}"
-                                             Grid.Column="0"/>
-                                    <muxc:NumberBox Value="{x:Bind AxisValue, Mode=TwoWay}"
-                                                    Grid.Column="1"/>
-                                    <Button Click="DeleteAxisKeyValuePair_Click"
+                                    <TextBox Grid.Column="0"
+                                             Text="{x:Bind AxisKey, Mode=TwoWay}" />
+                                    <muxc:NumberBox Grid.Column="1"
+                                                    Value="{x:Bind AxisValue, Mode=TwoWay}" />
+                                    <Button Grid.Column="2"
                                             HorizontalAlignment="Right"
+                                            Click="DeleteAxisKeyValuePair_Click"
                                             Style="{StaticResource DeleteButtonStyle}"
-                                            Tag="{x:Bind AxisKey}"
-                                            Grid.Column="2">
+                                            Tag="{x:Bind AxisKey}">
                                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                                   Glyph="&#xE74D;" />
                                     </Button>
@@ -323,8 +323,8 @@
                     <Button Click="AddNewAxisKeyValuePair_Click">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
-                                <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                          VerticalAlignment="Bottom"
+                                <FontIcon VerticalAlignment="Bottom"
+                                          FontSize="{StaticResource StandardIconSize}"
                                           Glyph="&#xE710;" />
                                 <TextBlock x:Uid="Profile_AddNewFontAxis"
                                            Style="{StaticResource IconButtonTextBlockStyle}" />

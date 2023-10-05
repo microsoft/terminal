@@ -65,13 +65,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring AxisKey() { return _AxisKey; }
         float AxisValue() { return _AxisValue; }
 
-        void AxisValue(float axisValue) {
+        void AxisValue(float axisValue)
+        {
             _baseMap.Remove(_AxisKey);
             _AxisValue = axisValue;
             _baseMap.Insert(_AxisKey, _AxisValue);
         }
 
-        void AxisKey(winrt::hstring axisKey) {
+        void AxisKey(winrt::hstring axisKey)
+        {
             _baseMap.Remove(_AxisKey);
             _AxisKey = axisKey;
             _baseMap.Insert(_AxisKey, _AxisValue);

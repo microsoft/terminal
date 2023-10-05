@@ -35,9 +35,9 @@ winrt::com_ptr<FontConfig> FontConfig::CopyFontInfo(const FontConfig* source, wi
     if (source->_FontAxes)
     {
         fontInfo->_FontAxes = winrt::single_threaded_map<winrt::hstring, float>();
-        for (const auto kVPair : source->_FontAxes.value())
+        for (const auto keyValuePair : source->_FontAxes.value())
         {
-            fontInfo->_FontAxes.value().Insert(kVPair.Key(), kVPair.Value());
+            fontInfo->_FontAxes.value().Insert(keyValuePair.Key(), keyValuePair.Value());
         }
     }
 
