@@ -30,6 +30,17 @@ winrt::com_ptr<FontConfig> FontConfig::CopyFontInfo(const FontConfig* source, wi
     MTSM_FONT_SETTINGS(FONT_SETTINGS_COPY)
 #undef FONT_SETTINGS_COPY
 
+    // We cannot simply copy the font axes and features with `fontInfo->_FontAxes = source->_FontAxes;`
+    // since that'll just create a reference; we have to manually copy the values.
+    if (source->_FontAxes)
+    {
+        fontInfo->_FontAxes = winrt::single_threaded_map<winrt::hstring, float>();
+        for (const auto kVPair : source->_FontAxes.value())
+        {
+            fontInfo->_FontAxes.value().Insert(kVPair.Key(), kVPair.Value());
+        }
+    }
+
     return fontInfo;
 }
 

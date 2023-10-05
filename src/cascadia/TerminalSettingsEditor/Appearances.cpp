@@ -215,6 +215,34 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         LightColorSchemeName(val.Name());
     }
 
+    void AppearanceViewModel::AddNewAxisKeyValuePair()
+    {
+        if (!_appearance.SourceProfile().FontInfo().FontAxes())
+        {
+            _appearance.SourceProfile().FontInfo().FontAxes(winrt::single_threaded_map<winrt::hstring, float>());
+        }
+        auto fontAxesMap = _appearance.SourceProfile().FontInfo().FontAxes();
+
+        // We use "<>" as a 'dummy' value for the key because if we instead just have an empty string,
+        // the user might click 'add new' and immediately hit 'save settings' which will cause a crash
+        // because we try to write a map entry that has an empty string as the key.
+        FontAxesVector().Append(winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::AxisKeyValuePair>(L"<>", (float)0, fontAxesMap));
+        fontAxesMap.Insert(L"<>", (float)0);
+    }
+
+    void AppearanceViewModel::DeleteAxisKeyValuePair(winrt::hstring key)
+    {
+        for (uint32_t i = 0; i < _FontAxesVector.Size(); i++)
+        {
+            if (_FontAxesVector.GetAt(i).AxisKey() == key)
+            {
+                _FontAxesVector.RemoveAt(i);
+                _appearance.SourceProfile().FontInfo().FontAxes().Remove(key);
+                break;
+            }
+        }
+    }
+
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 
     Appearances::Appearances() :
@@ -482,24 +510,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void Appearances::AxisKeyValuePairDelete_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
+    void Appearances::DeleteAxisKeyValuePair_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
     {
         if (const auto& button{ sender.try_as<Controls::Button>() })
         {
             if (const auto& tag{ button.Tag().try_as<winrt::hstring>() })
             {
-                for (const auto axisKeyValuePair : Appearance().FontAxesVector())
-                {
-                    if (axisKeyValuePair.as<Editor::AxisKeyValuePair>().AxisKey() == tag)
-                    {
-                        uint32_t index;
-                        Appearance().FontAxesVector().IndexOf(axisKeyValuePair, index);
-                        Appearance().FontAxesVector().RemoveAt(index);
-                        break;
-                    }
-                }
+                Appearance().DeleteAxisKeyValuePair(tag.value());
             }
         }
+    }
+
+    void Appearances::AddNewAxisKeyValuePair_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        Appearance().AddNewAxisKeyValuePair();
     }
 
     bool Appearances::IsVintageCursor() const

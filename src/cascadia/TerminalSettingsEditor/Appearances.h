@@ -106,6 +106,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::ColorSchemeViewModel CurrentColorScheme();
         void CurrentColorScheme(const Editor::ColorSchemeViewModel& val);
 
+        void AddNewAxisKeyValuePair();
+        void DeleteAxisKeyValuePair(winrt::hstring key);
+
         WINRT_PROPERTY(bool, IsDefault, false);
 
         // These settings are not defined in AppearanceConfig, so we grab them
@@ -154,7 +157,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         fire_and_forget BackgroundImage_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void BIAlignment_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void FontFace_SelectionChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e);
-        void AxisKeyValuePairDelete_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
+        void DeleteAxisKeyValuePair_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
+        void AddNewAxisKeyValuePair_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
 
         // manually bind FontWeight
         Windows::Foundation::IInspectable CurrentFontWeight() const;

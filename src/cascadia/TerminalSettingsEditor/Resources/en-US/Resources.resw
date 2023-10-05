@@ -710,6 +710,10 @@
     <value>Browse...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
+  <data name="Profile_AddNewFontAxis.Text" xml:space="preserve">
+    <value>Add new</value>
+    <comment>Button label that adds a new font axis for the current font.</comment>
+  </data>
   <data name="Profile_BackgroundImageOpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Background image opacity</value>
     <comment>Name for a control to choose the opacity of the image presented on the background of the app.</comment>

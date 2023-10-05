@@ -50,6 +50,8 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorSchemeViewModel CurrentColorScheme;
         Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> SchemesList;
 
+        void AddNewAxisKeyValuePair();
+        void DeleteAxisKeyValuePair(String key);
         Windows.Foundation.Collections.IObservableVector<AxisKeyValuePair> FontAxesVector;
 
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, FontFace);

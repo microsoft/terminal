@@ -291,18 +291,47 @@
 
             <local:SettingContainer x:Uid="Profile_FontAxes"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
-                <ListView ItemsSource="{Binding Source={StaticResource FontAxesCVS}}">
-                    <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="local:AxisKeyValuePair">
+                <StackPanel Spacing="16">
+                    <ListView ItemsSource="{Binding Source={StaticResource FontAxesCVS}}"
+                              IsItemClickEnabled="False"
+                              SelectionMode="None">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="local:AxisKeyValuePair">
+                                <Grid Margin="-16,0,-12,0"
+                                      ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Text="{x:Bind AxisKey, Mode=TwoWay}"
+                                             Grid.Column="0"/>
+                                    <muxc:NumberBox Value="{x:Bind AxisValue, Mode=TwoWay}"
+                                                    Grid.Column="1"/>
+                                    <Button Click="DeleteAxisKeyValuePair_Click"
+                                            HorizontalAlignment="Right"
+                                            Style="{StaticResource DeleteButtonStyle}"
+                                            Tag="{x:Bind AxisKey}"
+                                            Grid.Column="2">
+                                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                                  Glyph="&#xE74D;" />
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <Button Click="AddNewAxisKeyValuePair_Click">
+                        <Button.Content>
                             <StackPanel Orientation="Horizontal">
-                                <TextBox Text="{x:Bind AxisKey, Mode=TwoWay}" />
-                                <muxc:NumberBox Value="{x:Bind AxisValue, Mode=TwoWay}" />
-                                <Button Click="AxisKeyValuePairDelete_Click"
-                                        Tag="{x:Bind AxisKey}" />
+                                <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                          VerticalAlignment="Bottom"
+                                          Glyph="&#xE710;" />
+                                <TextBlock x:Uid="Profile_AddNewFontAxis"
+                                           Style="{StaticResource IconButtonTextBlockStyle}" />
                             </StackPanel>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+                        </Button.Content>
+                    </Button>
+                </StackPanel>
             </local:SettingContainer>
 
             <!--  Retro Terminal Effect  -->
