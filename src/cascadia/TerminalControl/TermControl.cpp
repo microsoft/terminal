@@ -355,13 +355,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return drawableDataStart + stride * y;
             };
             // A helper to draw a single pip (mark) at the given location.
-            const auto drawPip = [&](uint8_t* beg, til::color color) [[msvc::forceinline]] {
+            const auto drawPip = [&](uint8_t* beg, COLORREF color) [[msvc::forceinline]] {
                 const auto end = beg + pipHeight * stride;
                 for (; beg < end; beg += stride)
                 {
-                    // Coincidentally a til::color has the same RGBA format as the bitmap.
+                    // a til::color does NOT have the same RGBA format as the bitmap.
 #pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-                    std::fill_n(reinterpret_cast<til::color*>(beg), pipWidth, color);
+                    const DWORD c = 0xff << 24 | GetRValue(color) << 16 | GetGValue(color) << 8 | GetBValue(color);
+                    std::fill_n(reinterpret_cast<DWORD*>(beg), pipWidth, c);
                 }
             };
 
@@ -372,7 +373,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 for (const auto& m : marks)
                 {
                     const auto row = m.Start.Y;
-                    const til::color color{ m.Color.Color };
+                    const COLORREF color{ til::color{ m.Color.Color } };
                     const auto base = dataAt(row);
                     drawPip(base, color);
                 }
@@ -382,8 +383,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 if (const auto searchMatches = _core.SearchResultRows())
                 {
-                    const til::color color{ _core.ForegroundColor() };
-                    const auto rightAlignedOffset = (scrollBarWidthInPx - pipWidth) * sizeof(til::color);
+                    const COLORREF color{ til::color{ _core.ForegroundColor() } };
+                    const auto rightAlignedOffset = (scrollBarWidthInPx - pipWidth) * sizeof(COLORREF);
 
                     for (const auto row : searchMatches)
                     {
