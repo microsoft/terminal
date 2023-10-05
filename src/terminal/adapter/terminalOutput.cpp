@@ -8,8 +8,9 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-TerminalOutput::TerminalOutput() noexcept :
-    _upssTranslationTable{ Latin1 }
+TerminalOutput::TerminalOutput(const bool grEnabled) noexcept :
+    _upssTranslationTable{ Latin1 },
+    _grTranslationEnabled{ grEnabled }
 {
     // By default we set all of the G-sets to ASCII, so if someone accidentally
     // triggers a locking shift, they won't end up with UPSS in the GL table,
@@ -17,14 +18,32 @@ TerminalOutput::TerminalOutput() noexcept :
     // we'll reset the G2 and G3 tables to UPSS, so that 8-bit apps will get a
     // more meaningful character mapping by default. This is triggered by a DOCS
     // sequence, which will call the EnableGrTranslation method below.
+    const auto grTranslationTable = grEnabled ? _upssTranslationTable : Ascii;
+    const auto grId = grEnabled ? VTID("<") : VTID("B");
     _gsetTranslationTables.at(0) = Ascii;
     _gsetTranslationTables.at(1) = Ascii;
-    _gsetTranslationTables.at(2) = Ascii;
-    _gsetTranslationTables.at(3) = Ascii;
+    _gsetTranslationTables.at(2) = grTranslationTable;
+    _gsetTranslationTables.at(3) = grTranslationTable;
     _gsetIds.at(0) = VTID("B");
     _gsetIds.at(1) = VTID("B");
-    _gsetIds.at(2) = VTID("B");
-    _gsetIds.at(3) = VTID("B");
+    _gsetIds.at(2) = grId;
+    _gsetIds.at(3) = grId;
+}
+
+void TerminalOutput::SoftReset() noexcept
+{
+    // For a soft reset we want to reinitialize the character set designations,
+    // but retain the GR translation functionality if it's currently enabled.
+    *this = { _grTranslationEnabled };
+}
+
+void TerminalOutput::RestoreFrom(const TerminalOutput& savedState) noexcept
+{
+    // When restoring from a saved instance, we want to preserve the GR
+    // translation functionality if it's currently enabled.
+    const auto preserveGrTranslation = _grTranslationEnabled;
+    *this = savedState;
+    _grTranslationEnabled = preserveGrTranslation;
 }
 
 bool TerminalOutput::AssignUserPreferenceCharset(const VTID charset, const bool size96)
@@ -144,7 +163,7 @@ bool TerminalOutput::NeedToTranslate() const noexcept
     return !_glTranslationTable.empty() || !_grTranslationTable.empty() || _ssSetNumber != 0;
 }
 
-void TerminalOutput::EnableGrTranslation(boolean enabled)
+void TerminalOutput::EnableGrTranslation(const bool enabled)
 {
     _grTranslationEnabled = enabled;
     // The default table for G2 and G3 is UPSS when GR translation is enabled,

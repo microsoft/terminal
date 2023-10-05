@@ -190,8 +190,6 @@ namespace Microsoft::Console::VirtualTerminal
             bool IsOriginModeRelative = false;
             TextAttribute Attributes = {};
             TerminalOutput TermOutput = {};
-            bool C1ControlsAccepted = false;
-            unsigned int CodePage = 0;
         };
         struct Offset
         {

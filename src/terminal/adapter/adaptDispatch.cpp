@@ -524,8 +524,6 @@ bool AdaptDispatch::CursorSaveState()
     savedCursorState.IsOriginModeRelative = _modes.test(Mode::Origin);
     savedCursorState.Attributes = attributes;
     savedCursorState.TermOutput = _termOutput;
-    savedCursorState.C1ControlsAccepted = _api.GetStateMachine().GetParserMode(StateMachine::Mode::AcceptC1);
-    savedCursorState.CodePage = _api.GetConsoleOutputCP();
 
     return true;
 }
@@ -557,17 +555,8 @@ bool AdaptDispatch::CursorRestoreState()
     // Restore text attributes.
     _api.SetTextAttributes(savedCursorState.Attributes);
 
-    // Restore designated character set.
-    _termOutput = savedCursorState.TermOutput;
-
-    // Restore the parsing state of C1 control codes.
-    AcceptC1Controls(savedCursorState.C1ControlsAccepted);
-
-    // Restore the code page if it was previously saved.
-    if (savedCursorState.CodePage != 0)
-    {
-        _api.SetConsoleOutputCP(savedCursorState.CodePage);
-    }
+    // Restore designated character sets.
+    _termOutput.RestoreFrom(savedCursorState.TermOutput);
 
     return true;
 }
@@ -2204,7 +2193,7 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
 {
     // When an attempt is made to update the mode, the designated character sets
     // need to be reset to defaults, even if the mode doesn't actually change.
-    _termOutput = {};
+    _termOutput.SoftReset();
 
     _api.GetStateMachine().SetParserMode(StateMachine::Mode::Ansi, ansiMode);
     _terminalInput.SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
@@ -2964,7 +2953,7 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 //  X Select graphic rendition    SGR         Normal rendition.
 //  X Select character attribute  DECSCA      Normal (erasable by DECSEL and DECSED).
 //  X Save cursor state           DECSC       Home position.
-//    Assign user preference      DECAUPSS    Set selected in Set-Up.
+//  X Assign user preference      DECAUPSS    Always Latin-1 (not configurable).
 //        supplemental set
 //    Select active               DECSASD     Main display.
 //        status display
@@ -2991,14 +2980,7 @@ bool AdaptDispatch::SoftReset()
     // Left margin = 1; right margin = page width.
     _DoSetLeftRightScrollingMargins(0, 0);
 
-    _termOutput = {}; // Reset all character set designations.
-    if (_initialCodePage.has_value())
-    {
-        // Restore initial code page if previously changed by a DOCS sequence.
-        _api.SetConsoleOutputCP(_initialCodePage.value());
-    }
-    // Disable parsing of C1 control codes.
-    AcceptC1Controls(false);
+    _termOutput.SoftReset(); // Reset all character set designations.
 
     SetGraphicsRendition({}); // Normal rendition.
     SetCharacterProtectionAttribute({}); // Default (unprotected)
@@ -3008,6 +2990,12 @@ bool AdaptDispatch::SoftReset()
     // seems likely to be a bug. Most other terminals reset both.
     _savedCursorState.at(0) = {}; // Main buffer
     _savedCursorState.at(1) = {}; // Alt buffer
+
+    // The TerminalOutput state in these buffers must be reset to
+    // the same state as the _termOutput instance, which is not
+    // necessarily equivalent to a full reset.
+    _savedCursorState.at(0).TermOutput = _termOutput;
+    _savedCursorState.at(1).TermOutput = _termOutput;
 
     return !_api.IsConsolePty();
 }
@@ -3042,6 +3030,16 @@ bool AdaptDispatch::HardReset()
         _api.UseMainScreenBuffer();
         _usingAltBuffer = false;
     }
+
+    // Completely reset the TerminalOutput state.
+    _termOutput = {};
+    if (_initialCodePage.has_value())
+    {
+        // Restore initial code page if previously changed by a DOCS sequence.
+        _api.SetConsoleOutputCP(_initialCodePage.value());
+    }
+    // Disable parsing of C1 control codes.
+    AcceptC1Controls(false);
 
     // Sets the SGR state to normal - this must be done before EraseInDisplay
     //      to ensure that it clears with the default background color.
