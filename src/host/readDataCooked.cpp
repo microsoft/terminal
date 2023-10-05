@@ -11,6 +11,9 @@
 #include "_stream.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
+#define _buffer DONT_USE_ME
+#define _bufferCursor DONT_USE_ME
+
 using Microsoft::Console::Interactivity::ServiceLocator;
 
 // As per https://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10Obvious
@@ -67,9 +70,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 
     if (!initialData.empty())
     {
-        _buffer.assign(initialData);
-        _bufferCursor = _buffer.size();
-        _bufferDirty = !_buffer.empty();
+        _replaceBuffer(initialData);
 
         // The console API around `nInitialChars` in `CONSOLE_READCONSOLE_CONTROL` is pretty weird.
         // The way it works is that cmd.exe does a ReadConsole() with a `dwCtrlWakeupMask` that includes \t,
@@ -239,7 +240,7 @@ void COOKED_READ_DATA::EraseBeforeResize()
 // The counter-part to EraseBeforeResize().
 void COOKED_READ_DATA::RedrawAfterResize()
 {
-    _markAsDirty();
+    _bufferDirtyBeg = 0;
     _flushBuffer();
 }
 
@@ -250,7 +251,7 @@ void COOKED_READ_DATA::SetInsertMode(bool insertMode) noexcept
 
 bool COOKED_READ_DATA::IsEmpty() const noexcept
 {
-    return _buffer.empty() && _popups.empty();
+    return _getBuffer().empty() && _popups.empty();
 }
 
 bool COOKED_READ_DATA::PresentingPopup() const noexcept
@@ -363,8 +364,7 @@ void COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
         // Press tab past the "f" in the string "foo" and you'd get "f\to " (a trailing whitespace; the initial contents of the buffer back then).
         // It's unclear whether the original intention was to write at the end of the buffer at all times or to implement an insert mode.
         // I went with insert mode.
-        _buffer.insert(_bufferCursor, 1, wch);
-        _bufferCursor++;
+        _replaceBuffer(_getBufferCursor(), 0, &wch, 1);
 
         _controlKeyState = modifiers;
         _transitionState(State::DoneWithWakeupMask);
@@ -376,8 +376,7 @@ void COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
     case UNICODE_CARRIAGERETURN:
     {
         // NOTE: Don't append newlines to the buffer just yet! See _handlePostCharInputLoop for more information.
-        _bufferCursor = _buffer.size();
-        _markAsDirty();
+        _setBufferCursor(_getBuffer().size());
         _transitionState(State::DoneWithCarriageReturn);
         return;
     }
@@ -385,29 +384,9 @@ void COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
     case UNICODE_BACKSPACE:
         if (WI_IsFlagSet(_pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT))
         {
-            size_t pos;
-            if (wch == EXTKEY_ERASE_PREV_WORD)
-            {
-                pos = _wordPrev(_buffer, _bufferCursor);
-            }
-            else
-            {
-                pos = TextBuffer::GraphemePrev(_buffer, _bufferCursor);
-            }
-
-            _buffer.erase(pos, _bufferCursor - pos);
-            _bufferCursor = pos;
-            _markAsDirty();
-
-            // Notify accessibility to read the backspaced character.
-            // See GH:12735, MSFT:31748387
-            if (_screenInfo.HasAccessibilityEventing())
-            {
-                if (const auto pConsoleWindow = ServiceLocator::LocateConsoleWindow())
-                {
-                    LOG_IF_FAILED(pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId));
-                }
-            }
+            const auto cursor = _getBufferCursor();
+            const auto pos = wch == EXTKEY_ERASE_PREV_WORD ? _wordPrev(_getBuffer(), cursor) : TextBuffer::GraphemePrev(_getBuffer(), cursor);
+            _replaceBuffer(pos, cursor - pos, nullptr, 0);
             return;
         }
         // If processed mode is disabled, control characters like backspace are treated like any other character.
@@ -416,20 +395,16 @@ void COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
         break;
     }
 
-    if (_insertMode)
-    {
-        _buffer.insert(_bufferCursor, 1, wch);
-    }
-    else
+    size_t remove = 0;
+    if (!_insertMode)
     {
         // TODO GH#15875: If the input grapheme is >1 char, then this will replace >1 grapheme
         // --> We should accumulate input text as much as possible and then call _processInput with wstring_view.
-        const auto nextGraphemeLength = TextBuffer::GraphemeNext(_buffer, _bufferCursor) - _bufferCursor;
-        _buffer.replace(_bufferCursor, nextGraphemeLength, 1, wch);
+        const auto cursor = _getBufferCursor();
+        remove = TextBuffer::GraphemeNext(_getBuffer(), cursor) - cursor;
     }
 
-    _bufferCursor++;
-    _markAsDirty();
+    _replaceBuffer(_getBufferCursor(), remove, &wch, 1);
 }
 
 // Handles non-character input for _readCharInputLoop() when no popups exist.
@@ -441,68 +416,62 @@ void COOKED_READ_DATA::_handleVkey(uint16_t vkey, DWORD modifiers)
     switch (vkey)
     {
     case VK_ESCAPE:
-        if (!_buffer.empty())
+        if (!_getBuffer().empty())
         {
-            _buffer.clear();
-            _bufferCursor = 0;
-            _markAsDirty();
+            _replaceBuffer(0, npos, nullptr, 0);
         }
         break;
     case VK_HOME:
-        if (_bufferCursor > 0)
+        if (_getBufferCursor() > 0)
         {
             if (ctrlPressed)
             {
-                _buffer.erase(0, _bufferCursor);
+                _replaceBuffer(0, _getBufferCursor(), nullptr, 0);
             }
-            _bufferCursor = 0;
-            _markAsDirty();
+            _setBufferCursor(0);
         }
         break;
     case VK_END:
-        if (_bufferCursor < _buffer.size())
+        if (_getBufferCursor() < _getBuffer().size())
         {
             if (ctrlPressed)
             {
-                _buffer.erase(_bufferCursor);
+                _replaceBuffer(_getBufferCursor(), npos, nullptr, 0);
             }
-            _bufferCursor = _buffer.size();
-            _markAsDirty();
+            _setBufferCursor(_getBuffer().size());
         }
         break;
     case VK_LEFT:
-        if (_bufferCursor != 0)
+        if (_getBufferCursor() != 0)
         {
             if (ctrlPressed)
             {
-                _bufferCursor = _wordPrev(_buffer, _bufferCursor);
+                _setBufferCursor(_wordPrev(_getBuffer(), _getBufferCursor()));
             }
             else
             {
-                _bufferCursor = TextBuffer::GraphemePrev(_buffer, _bufferCursor);
+                _setBufferCursor(TextBuffer::GraphemePrev(_getBuffer(), _getBufferCursor()));
             }
-            _markAsDirty();
         }
         break;
     case VK_F1:
     case VK_RIGHT:
-        if (_bufferCursor != _buffer.size())
+        if (_getBufferCursor() != _getBuffer().size())
         {
             if (ctrlPressed && vkey == VK_RIGHT)
             {
-                _bufferCursor = _wordNext(_buffer, _bufferCursor);
+                _setBufferCursor(_wordNext(_getBuffer(), _getBufferCursor()));
             }
             else
             {
-                _bufferCursor = TextBuffer::GraphemeNext(_buffer, _bufferCursor);
+                _setBufferCursor(TextBuffer::GraphemeNext(_getBuffer(), _getBufferCursor()));
             }
-            _markAsDirty();
         }
         else if (_history)
         {
             // Traditionally pressing right at the end of an input line would paste characters from the previous command.
             const auto cmd = _history->GetLastCommand();
-            const auto bufferSize = _buffer.size();
+            const auto bufferSize = _getBuffer().size();
             const auto cmdSize = cmd.size();
             size_t bufferBeg = 0;
             size_t cmdBeg = 0;
@@ -515,13 +484,11 @@ void COOKED_READ_DATA::_handleVkey(uint16_t vkey, DWORD modifiers)
 
                 if (bufferBeg >= bufferSize)
                 {
-                    _buffer.append(cmd, cmdBeg, cmdEnd - cmdBeg);
-                    _bufferCursor = _buffer.size();
-                    _markAsDirty();
+                    _replaceBuffer(npos, 0, cmd.data() + cmdBeg, cmdEnd - cmdBeg);
                     break;
                 }
 
-                bufferBeg = TextBuffer::GraphemeNext(_buffer, bufferBeg);
+                bufferBeg = TextBuffer::GraphemeNext(_getBuffer(), bufferBeg);
                 cmdBeg = cmdEnd;
             }
         }
@@ -529,13 +496,13 @@ void COOKED_READ_DATA::_handleVkey(uint16_t vkey, DWORD modifiers)
     case VK_INSERT:
         _insertMode = !_insertMode;
         _screenInfo.SetCursorDBMode(_insertMode != ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode());
-        _markAsDirty();
         break;
     case VK_DELETE:
-        if (_bufferCursor < _buffer.size())
+        if (_getBufferCursor() < _getBuffer().size())
         {
-            _buffer.erase(_bufferCursor, TextBuffer::GraphemeNext(_buffer, _bufferCursor) - _bufferCursor);
-            _markAsDirty();
+            const auto beg = _getBufferCursor();
+            const auto end = TextBuffer::GraphemeNext(_getBuffer(), beg);
+            _replaceBuffer(beg, end - beg, nullptr, 0);
         }
         break;
     case VK_UP:
@@ -573,12 +540,10 @@ void COOKED_READ_DATA::_handleVkey(uint16_t vkey, DWORD modifiers)
         if (_history)
         {
             const auto last = _history->GetLastCommand();
-            if (last.size() > _bufferCursor)
+            if (last.size() > _getBufferCursor())
             {
-                const auto count = last.size() - _bufferCursor;
-                _buffer.replace(_bufferCursor, count, last, _bufferCursor, count);
-                _bufferCursor += count;
-                _markAsDirty();
+                const auto count = last.size() - _getBufferCursor();
+                _replaceBuffer(_getBufferCursor(), npos, last.data() + _getBufferCursor(), count);
             }
         }
         break;
@@ -612,12 +577,11 @@ void COOKED_READ_DATA::_handleVkey(uint16_t vkey, DWORD modifiers)
         if (_history)
         {
             CommandHistory::Index index = 0;
-            const auto prefix = std::wstring_view{ _buffer }.substr(0, _bufferCursor);
+            const auto prefix = std::wstring_view{ _getBuffer() }.substr(0, _getBufferCursor());
             if (_history->FindMatchingCommand(prefix, _history->LastDisplayed, index, CommandHistory::MatchOptions::None))
             {
-                _buffer.assign(_history->RetrieveNth(index));
-                _bufferCursor = std::min(_bufferCursor, _buffer.size());
-                _markAsDirty();
+                _replaceBuffer(_history->RetrieveNth(index));
+                _setBufferCursor(std::min(_getBufferCursor(), _getBuffer().size()));
             }
         }
         break;
@@ -639,6 +603,9 @@ void COOKED_READ_DATA::_handleVkey(uint16_t vkey, DWORD modifiers)
         break;
     }
 }
+
+#undef _buffer
+#undef _bufferCursor
 
 // Handles any tasks that need to be completed after the read input loop finishes,
 // like handling doskey aliases and converting the input to non-UTF16.
@@ -672,7 +639,7 @@ void COOKED_READ_DATA::_handlePostCharInputLoop(const bool isUnicode, size_t& nu
         // It'll print "hello" but the previous prompt will say "echo hello bar" because the _distanceEnd
         // ended up being well over 14 leading it to believe that "bar" got overwritten during WriteCharsLegacy().
 
-        WriteCharsLegacy(_screenInfo, newlineSuffix, true, nullptr);
+        WriteCharsLegacy(_screenInfo, newlineSuffix, WriteCharsLegacyFlags::Interactive, nullptr);
 
         if (WI_IsFlagSet(_pInputBuffer->InputMode, ENABLE_ECHO_INPUT))
         {
@@ -742,49 +709,98 @@ void COOKED_READ_DATA::_transitionState(State state) noexcept
     _state = state;
 }
 
-// Signals to _flushBuffer() that the contents of _buffer are stale and need to be redrawn.
-// ALL _buffer and _bufferCursor changes must be flagged with _markAsDirty().
-//
-// By using _bufferDirty to avoid redrawing the buffer unless needed, we turn the amortized time complexity of _readCharInputLoop()
-// from O(n^2) (n(n+1)/2 redraws) into O(n). Pasting text would quickly turn into "accidentally quadratic" meme material otherwise.
-void COOKED_READ_DATA::_markAsDirty()
+const std::wstring& COOKED_READ_DATA::_getBuffer() const noexcept
 {
-    _bufferDirty = true;
+    return _buffer;
+}
+
+void COOKED_READ_DATA::_replaceBuffer(size_t offset, size_t remove, const wchar_t* input, size_t count)
+{
+    const auto size = _buffer.size();
+    offset = std::min(offset, size);
+    remove = std::min(remove, size - offset);
+
+    _buffer.replace(offset, remove, input, count);
+    _bufferCursor = offset + count;
+    _bufferDirtyBeg = std::min(_bufferDirtyBeg, offset);
+}
+
+void COOKED_READ_DATA::_replaceBuffer(const std::wstring_view& str)
+{
+    _buffer.assign(str);
+    _bufferCursor = _buffer.size();
+    _bufferDirtyBeg = 0;
+}
+
+size_t COOKED_READ_DATA::_getBufferCursor() const noexcept
+{
+    return _bufferCursor;
+}
+
+void COOKED_READ_DATA::_setBufferCursor(size_t pos) noexcept
+{
+    pos = std::min(pos, _buffer.size());
+    if (pos != _bufferCursor)
+    {
+        _bufferCursor = pos;
+        // This ensures _flushBuffer() doesn't early-return.
+        _bufferDirtyBeg = std::min(_bufferDirtyBeg, _buffer.size());
+    }
 }
 
 // Draws the contents of _buffer onto the screen.
+//
+// By using _bufferDirtyBeg to avoid redrawing the buffer unless needed, we turn the amortized
+// time complexity of _readCharInputLoop() from O(n^2) (n(n+1)/2 redraws) into O(n).
+// Pasting text would quickly turn into "accidentally quadratic" meme material otherwise.
+//
 // NOTE: Don't call _flushBuffer() after appending newlines to the buffer! See _handlePostCharInputLoop for more information.
 void COOKED_READ_DATA::_flushBuffer()
 {
-    // _flushBuffer() is called often and is a good place to assert() that our _bufferCursor is still in bounds.
-    assert(_bufferCursor <= _buffer.size());
-    _bufferCursor = std::min(_bufferCursor, _buffer.size());
-
-    if (!_bufferDirty)
+    if (_bufferDirtyBeg == npos || WI_IsFlagClear(_pInputBuffer->InputMode, ENABLE_ECHO_INPUT))
     {
         return;
     }
 
-    if (WI_IsFlagSet(_pInputBuffer->InputMode, ENABLE_ECHO_INPUT))
-    {
-        _unwindCursorPosition(_distanceCursor);
+    _unwindCursorPosition(_distanceCursor);
 
-        const std::wstring_view view{ _buffer };
-        const auto distanceBeforeCursor = _writeChars(view.substr(0, _bufferCursor));
-        const auto distanceAfterCursor = _writeChars(view.substr(_bufferCursor));
-        const auto distanceEnd = distanceBeforeCursor + distanceAfterCursor;
-        const auto eraseDistance = std::max<ptrdiff_t>(0, _distanceEnd - distanceEnd);
+    const auto slice = [&](size_t from, size_t to) {
+        to = std::min(to, _buffer.size());
+        from = std::min(from, to);
+        return std::wstring_view{ _buffer.data() + from, to - from };
+    };
 
-        // If the contents of _buffer became shorter we'll have to erase the previously printed contents.
-        _erase(eraseDistance);
-        _unwindCursorPosition(distanceAfterCursor + eraseDistance);
+    // `_buffer` is split up by two different indices:
+    // * `_bufferCursor`: Text before the `_bufferCursor` index must be accumulated
+    //   into `distanceBeforeCursor` and the other half into `distanceAfterCursor`.
+    //   This helps us figure out where the cursor is positioned on the screen.
+    // * `_bufferDirtyBeg`: Text before `_bufferDirtyBeg` must be written with SuppressMSAA
+    //   and the other half without. Any text before `_bufferDirtyBeg` is considered unchanged,
+    //   and this split prevents us from announcing text that hasn't actually changed
+    //   to accessibility tools via MSAA (or UIA, but UIA is robust against this anyways).
+    //
+    // This results in 2*2 = 4 writes of which always at least one of the middle two is empty,
+    // depending on whether _bufferCursor > _bufferDirtyBeg or _bufferCursor < _bufferDirtyBeg.
+    // slice() returns an empty string-view when `from` index is greater than the `to` index.
+    auto distanceBeforeCursor = _writeChars(slice(0, std::min(_bufferDirtyBeg, _bufferCursor)), WriteCharsLegacyFlags::Interactive | WriteCharsLegacyFlags::SuppressMSAA);
+    auto distanceAfterCursor = _writeChars(slice(_bufferCursor, _bufferDirtyBeg), WriteCharsLegacyFlags::Interactive | WriteCharsLegacyFlags::SuppressMSAA);
+    distanceBeforeCursor += _writeChars(slice(_bufferDirtyBeg, _bufferCursor), WriteCharsLegacyFlags::Interactive);
+    distanceAfterCursor += _writeChars(slice(std::max(_bufferDirtyBeg, _bufferCursor), npos), WriteCharsLegacyFlags::Interactive);
 
-        _distanceCursor = distanceBeforeCursor;
-        _distanceEnd = distanceEnd;
-    }
+    const auto distanceEnd = distanceBeforeCursor + distanceAfterCursor;
+    const auto eraseDistance = std::max<ptrdiff_t>(0, _distanceEnd - distanceEnd);
 
-    _bufferDirty = false;
+    // If the contents of _buffer became shorter we'll have to erase the previously printed contents.
+    _erase(eraseDistance);
+    _unwindCursorPosition(distanceAfterCursor + eraseDistance);
+
+    _bufferDirtyBeg = npos;
+    _distanceCursor = distanceBeforeCursor;
+    _distanceEnd = distanceEnd;
 }
+
+#define _buffer DONT_USE_ME
+#define _bufferCursor DONT_USE_ME
 
 // This is just a small helper to fill the next N cells starting at the current cursor position with whitespace.
 void COOKED_READ_DATA::_erase(ptrdiff_t distance) const
@@ -805,7 +821,7 @@ void COOKED_READ_DATA::_erase(ptrdiff_t distance) const
 
     do
     {
-        std::ignore = _writeChars({ whitespace.data(), nextWriteSize });
+        std::ignore = _writeChars({ whitespace.data(), nextWriteSize }, WriteCharsLegacyFlags::Interactive);
         remaining -= nextWriteSize;
         nextWriteSize = std::min(remaining, whitespace.size());
     } while (remaining != 0);
@@ -814,7 +830,7 @@ void COOKED_READ_DATA::_erase(ptrdiff_t distance) const
 // A helper to write text and calculate the number of cells we've written.
 // _unwindCursorPosition then allows us to go that many cells back. Tracking cells instead of explicit
 // buffer positions allows us to pay no further mind to whether the buffer scrolled up or not.
-ptrdiff_t COOKED_READ_DATA::_writeChars(const std::wstring_view& text) const
+ptrdiff_t COOKED_READ_DATA::_writeChars(const std::wstring_view& text, const WriteCharsLegacyFlags flags) const
 {
     if (text.empty())
     {
@@ -827,7 +843,7 @@ ptrdiff_t COOKED_READ_DATA::_writeChars(const std::wstring_view& text) const
     const auto initialCursorPos = cursor.GetPosition();
     til::CoordType scrollY = 0;
 
-    WriteCharsLegacy(_screenInfo, text, true, &scrollY);
+    WriteCharsLegacy(_screenInfo, text, flags, &scrollY);
 
     const auto finalCursorPos = cursor.GetPosition();
     const auto distance = (finalCursorPos.y - initialCursorPos.y + scrollY) * width + finalCursorPos.x - initialCursorPos.x;
@@ -871,14 +887,6 @@ void COOKED_READ_DATA::_unwindCursorPosition(ptrdiff_t distance) const
 
     std::ignore = _screenInfo.SetCursorPosition(pos, true);
     _screenInfo.MakeCursorVisible(pos);
-}
-
-// Just a simple helper to replace the entire buffer contents.
-void COOKED_READ_DATA::_replaceBuffer(const std::wstring_view& str)
-{
-    _buffer.assign(str);
-    _bufferCursor = _buffer.size();
-    _markAsDirty();
 }
 
 // If the viewport is large enough to fit a popup, this function prepares everything for
@@ -1105,17 +1113,16 @@ void COOKED_READ_DATA::_popupHandleCopyToCharInput(Popup& /*popup*/, const wchar
     {
         // See PopupKind::CopyToChar for more information about this code.
         const auto cmd = _history->GetLastCommand();
-        const auto idx = cmd.find(wch, _bufferCursor);
+        const auto cursor = _getBufferCursor();
+        const auto idx = cmd.find(wch, cursor);
 
         if (idx != decltype(cmd)::npos)
         {
-            // When we enter this if condition it's guaranteed that _bufferCursor must be
+            // When we enter this if condition it's guaranteed that _getBufferCursor() must be
             // smaller than idx, which in turn implies that it's smaller than cmd.size().
             // As such, calculating length is safe and str.size() == length.
-            const auto count = idx - _bufferCursor;
-            _buffer.replace(_bufferCursor, count, cmd, _bufferCursor, count);
-            _bufferCursor += count;
-            _markAsDirty();
+            const auto count = idx - cursor;
+            _replaceBuffer(cursor, count, cmd.data() + cursor, count);
         }
 
         _popupsDone();
@@ -1134,9 +1141,10 @@ void COOKED_READ_DATA::_popupHandleCopyFromCharInput(Popup& /*popup*/, const wch
     else
     {
         // See PopupKind::CopyFromChar for more information about this code.
-        const auto idx = _buffer.find(wch, _bufferCursor);
-        _buffer.erase(_bufferCursor, std::min(idx, _buffer.size()) - _bufferCursor);
-        _markAsDirty();
+        const auto cursor = _getBufferCursor();
+        auto idx = _getBuffer().find(wch, cursor);
+        idx = std::min(idx, _getBuffer().size());
+        _replaceBuffer(cursor, idx - cursor, nullptr, 0);
         _popupsDone();
     }
 }
@@ -1194,7 +1202,7 @@ void COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t 
 
     if (wch == UNICODE_CARRIAGERETURN)
     {
-        _buffer.assign(_history->RetrieveNth(cl.selected));
+        _replaceBuffer(_history->RetrieveNth(cl.selected));
         _popupsDone();
         _handleChar(UNICODE_CARRIAGERETURN, modifiers);
         return;
@@ -1257,7 +1265,6 @@ void COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t 
     }
 
     _popupDrawCommandList(popup);
-    return;
 }
 
 void COOKED_READ_DATA::_popupDrawPrompt(const Popup& popup, const UINT id) const

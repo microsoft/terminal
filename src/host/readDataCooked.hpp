@@ -3,8 +3,10 @@
 
 #pragma once
 
-#include "readData.hpp"
 #include "history.h"
+#include "readData.hpp"
+
+enum class WriteCharsLegacyFlags : int;
 
 class COOKED_READ_DATA final : public ReadData
 {
@@ -40,12 +42,20 @@ public:
 
 private:
     static constexpr uint8_t CommandNumberMaxInputLength = 5;
+    static constexpr size_t npos = static_cast<size_t>(-1);
 
     enum class State : uint8_t
     {
         Accumulating = 0,
         DoneWithWakeupMask,
         DoneWithCarriageReturn,
+    };
+
+    enum class DirtyState : uint8_t
+    {
+        None = 0,
+        EndOnly,
+        Everything,
     };
 
     enum class PopupKind
@@ -118,13 +128,16 @@ private:
     void _handleVkey(uint16_t vkey, DWORD modifiers);
     void _handlePostCharInputLoop(bool isUnicode, size_t& numBytes, ULONG& controlKeyState);
     void _transitionState(State state) noexcept;
-    void _markAsDirty();
+    const std::wstring& _getBuffer() const noexcept;
+    void _replaceBuffer(size_t offset, size_t remove, const wchar_t* input, size_t count);
+    void _replaceBuffer(const std::wstring_view& str);
+    size_t _getBufferCursor() const noexcept;
+    void _setBufferCursor(size_t pos) noexcept;
     void _flushBuffer();
     void _erase(ptrdiff_t distance) const;
-    ptrdiff_t _writeChars(const std::wstring_view& text) const;
+    ptrdiff_t _writeChars(const std::wstring_view& text, WriteCharsLegacyFlags flags) const;
     til::point _offsetPosition(til::point pos, ptrdiff_t distance) const;
     void _unwindCursorPosition(ptrdiff_t distance) const;
-    void _replaceBuffer(const std::wstring_view& str);
 
     void _popupPush(PopupKind kind);
     void _popupsDone();
@@ -147,13 +160,13 @@ private:
 
     std::wstring _buffer;
     size_t _bufferCursor = 0;
+    size_t _bufferDirtyBeg = npos;
     // _distanceCursor is the distance between the start of the prompt and the
     // current cursor location in columns (including wide glyph padding columns).
     ptrdiff_t _distanceCursor = 0;
     // _distanceEnd is the distance between the start of the prompt and its last
     // glyph at the end in columns (including wide glyph padding columns).
     ptrdiff_t _distanceEnd = 0;
-    bool _bufferDirty = false;
     bool _insertMode = false;
     State _state = State::Accumulating;
 
