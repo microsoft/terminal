@@ -297,7 +297,7 @@
                               SelectionMode="None">
                         <ListView.Resources>
                             <CollectionViewSource x:Key="CommonFontAxesListCVS"
-                                                  x:Name="CommonFontAxesListCVS"/>
+                                                  x:Name="CommonFontAxesListCVS" />
                         </ListView.Resources>
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="local:AxisKeyValuePair">
