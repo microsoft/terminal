@@ -33,9 +33,13 @@ extends:
     symbolExpiryTime: 15
     ${{ if eq(true, parameters.publishToAzure) }}:
       extraPublishJobs:
-        - template: job-deploy-to-azure-storage.yml
+        - template: build/pipelines/templates-v2/job-deploy-to-azure-storage.yml@self
           parameters:
             pool: { type: windows }
+            variables:
+              ob_git_checkout: false # This job checks itself out
+              ob_git_skip_checkout_none: true
+              ob_outputDirectory: "$(Build.SourcesDirectory)/_none"
             dependsOn: [PublishSymbols]
             storagePublicRootURL: $(AppInstallerRootURL)
             subscription: $(AzureSubscriptionName)
