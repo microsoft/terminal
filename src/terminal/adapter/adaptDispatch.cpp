@@ -1500,21 +1500,22 @@ bool AdaptDispatch::DeviceAttributes()
     // 1 = 132 column mode (ConHost only)
     // 6 = Selective erase
     // 7 = Soft fonts
+    // 14 = 8-bit interface architecture
     // 21 = Horizontal scrolling
     // 22 = Color text
     // 23 = Greek character sets
     // 24 = Turkish character sets
     // 28 = Rectangular area operations
     // 32 = Text macros
-    // 42 = ISO Latin - 2 character set
+    // 42 = ISO Latin-2 character set
 
     if (_api.IsConsolePty())
     {
-        _api.ReturnResponse(L"\x1b[?61;6;7;21;22;23;24;28;32;42c");
+        _api.ReturnResponse(L"\x1b[?61;6;7;14;21;22;23;24;28;32;42c");
     }
     else
     {
-        _api.ReturnResponse(L"\x1b[?61;1;6;7;21;22;23;24;28;32;42c");
+        _api.ReturnResponse(L"\x1b[?61;1;6;7;14;21;22;23;24;28;32;42c");
     }
     return true;
 }
