@@ -274,6 +274,15 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
     case EscActionCodes::DECAC1_AcceptC1Controls:
         success = _dispatch->AcceptC1Controls(true);
         break;
+    case EscActionCodes::ACS_AnsiLevel1:
+        success = _dispatch->AnnounceCodeStructure(1);
+        break;
+    case EscActionCodes::ACS_AnsiLevel2:
+        success = _dispatch->AnnounceCodeStructure(2);
+        break;
+    case EscActionCodes::ACS_AnsiLevel3:
+        success = _dispatch->AnnounceCodeStructure(3);
+        break;
     case EscActionCodes::DECDHL_DoubleHeightLineTop:
         success = _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
         break;

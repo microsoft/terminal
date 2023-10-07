@@ -112,6 +112,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool LockingShiftRight(const VTInt gsetNumber) override; // LS1R, LS2R, LS3R
         bool SingleShift(const VTInt gsetNumber) noexcept override; // SS2, SS3
         bool AcceptC1Controls(const bool enabled) override; // DECAC1
+        bool AnnounceCodeStructure(const VTInt ansiLevel) override; // ACS
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
         bool ScreenAlignmentPattern() override; // DECALN

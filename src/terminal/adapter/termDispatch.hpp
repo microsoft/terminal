@@ -106,6 +106,7 @@ public:
     bool LockingShiftRight(const VTInt /*gsetNumber*/) override { return false; } // LS1R, LS2R, LS3R
     bool SingleShift(const VTInt /*gsetNumber*/) override { return false; } // SS2, SS3
     bool AcceptC1Controls(const bool /*enabled*/) override { return false; } // DECAC1
+    bool AnnounceCodeStructure(const VTInt /*ansiLevel*/) override { return false; } // ACS
 
     bool SoftReset() override { return false; } // DECSTR
     bool HardReset() override { return false; } // RIS

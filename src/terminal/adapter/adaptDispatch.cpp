@@ -2934,6 +2934,34 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 }
 
 //Routine Description:
+// ACS - Announces the ANSI conformance level for subsequent data exchange.
+//  This requires certain character sets to be mapped into the terminal's
+//  G-sets and in-use tables.
+//Arguments:
+// - ansiLevel - the expected conformance level
+// Return value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::AnnounceCodeStructure(const VTInt ansiLevel)
+{
+    // Levels 1 and 2 require ASCII in G0/GL and Latin-1 in G1/GR.
+    // Level 3 only requires ASCII in G0/GL.
+    switch (ansiLevel)
+    {
+    case 1:
+    case 2:
+        Designate96Charset(1, VTID("A")); // Latin-1 designated as G1
+        LockingShiftRight(1); // G1 mapped into GR
+        [[fallthrough]];
+    case 3:
+        Designate94Charset(0, VTID("B")); // ASCII designated as G0
+        LockingShift(0); // G0 mapped into GL
+        return true;
+    default:
+        return false;
+    }
+}
+
+//Routine Description:
 // Soft Reset - Perform a soft reset. See http://www.vt100.net/docs/vt510-rm/DECSTR.html
 // The following table lists everything that should be done, 'X's indicate the ones that
 //   we actually perform. As the appropriate functionality is added to our ANSI support,
