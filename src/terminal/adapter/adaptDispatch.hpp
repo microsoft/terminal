@@ -105,6 +105,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool ForwardTab(const VTInt numTabs) override; // CHT, HT
         bool BackwardsTab(const VTInt numTabs) override; // CBT
         bool TabClear(const DispatchTypes::TabClearType clearType) override; // TBC
+        bool TabSet(const VTParameter setType) noexcept override; // DECST8C
         bool DesignateCodingSystem(const VTID codingSystem) override; // DOCS
         bool Designate94Charset(const VTInt gsetNumber, const VTID charset) override; // SCS
         bool Designate96Charset(const VTInt gsetNumber, const VTID charset) override; // SCS
@@ -251,7 +252,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _ClearSingleTabStop();
         void _ClearAllTabStops() noexcept;
-        void _ResetTabStops() noexcept;
         void _InitTabStopsForWidth(const VTInt width);
 
         StringHandler _RestoreColorTable();
