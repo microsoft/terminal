@@ -430,26 +430,29 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
 {
     columnLimit = std::max(0, columnLimit);
 
-    const auto data = chars.data();
-    const auto size = chars.size();
-    const auto maxAsciiChars = std::min(chars.size(), gsl::narrow_cast<size_t>(columnLimit));
-    size_t i = 0;
+    const auto beg = chars.begin();
+    const auto end = chars.end();
+    auto it = beg;
+    const auto asciiEnd = beg + std::min(chars.size(), gsl::narrow_cast<size_t>(columnLimit));
 
     // ASCII fast-path: 1 char always corresponds to 1 column.
-    for (; i < maxAsciiChars && data[i] < 0x80; ++i)
+    for (; it != asciiEnd && *it < 0x80; ++it)
     {
     }
-    auto col = gsl::narrow_cast<til::CoordType>(i);
-    if (i == maxAsciiChars) [[likely]]
+
+    const auto dist = gsl::narrow_cast<size_t>(it - beg);
+    auto col = gsl::narrow_cast<til::CoordType>(dist);
+
+    if (it == asciiEnd) [[likely]]
     {
         columns = col;
-        return i;
+        return dist;
     }
 
     // Unicode slow-path where we need to count text and columns separately.
     for (;;)
     {
-        auto ptr = &data[i];
+        auto ptr = &*it;
         const auto wch = *ptr;
         size_t len = 1;
 
@@ -461,8 +464,8 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
         {
             if (til::is_surrogate(wch))
             {
-                const auto i1 = i + 1;
-                if (til::is_leading_surrogate(wch) && i1 < size && til::is_trailing_surrogate(data[i1]))
+                const auto it2 = it + 1;
+                if (til::is_leading_surrogate(wch) && it2 != end && til::is_trailing_surrogate(*it2))
                 {
                     len = 2;
                 }
@@ -482,15 +485,15 @@ size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::Coord
         if (col > columnLimit)
         {
             columns = columnLimit;
-            return i;
+            return gsl::narrow_cast<size_t>(it - beg);
         }
 
         // But if we simply ran out of text we just need to return the actual number of columns.
-        i += len;
-        if (i >= size)
+        it += len;
+        if (it == end)
         {
             columns = col;
-            return size;
+            return chars.size();
         }
     }
 }
