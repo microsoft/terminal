@@ -19,15 +19,7 @@ Revision History:
 
 #include "writeData.hpp"
 
-enum class WriteCharsLegacyFlags : int
-{
-    None = 0,
-    Interactive = 0x1,
-    SuppressMSAA = 0x2,
-};
-DEFINE_ENUM_FLAG_OPERATORS(WriteCharsLegacyFlags)
-
-void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str, WriteCharsLegacyFlags flags, til::CoordType* psScrollY);
+void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str, til::CoordType* psScrollY);
 
 // NOTE: console lock must be held when calling this routine
 // String has been translated to unicode at this point.

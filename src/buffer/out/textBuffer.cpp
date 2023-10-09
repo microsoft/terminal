@@ -416,6 +416,85 @@ size_t TextBuffer::GraphemePrev(const std::wstring_view& chars, size_t position)
     return til::utf16_iterate_prev(chars, position);
 }
 
+// Ever wondered how much space a piece of text needs before inserting it? This function will tell you!
+// It fundamentally behaves identical to the various ROW functions around `RowWriteState`.
+//
+// Set `columnLimit` to the amount of space that's available (e.g. `buffer_width - cursor_position.x`)
+// and it'll return the amount of characters that fit into this space. The out parameter `columns`
+// will contain the amount of columns this piece of text has actually used.
+//
+// Just like with `RowWriteState` one special case is when not all text fits into the given space:
+// In that case, this function always returns exactly `columnLimit`. This distinction is important when "inserting"
+// a wide glyph but there's only 1 column left. That 1 remaining column is supposed to be padded with whitespace.
+size_t TextBuffer::FitTextIntoColumns(const std::wstring_view& chars, til::CoordType columnLimit, til::CoordType& columns) noexcept
+{
+    columnLimit = std::max(0, columnLimit);
+
+    const auto data = chars.data();
+    const auto size = chars.size();
+    const auto maxAsciiChars = std::min(chars.size(), gsl::narrow_cast<size_t>(columnLimit));
+    size_t i = 0;
+
+    // ASCII fast-path: 1 char always corresponds to 1 column.
+    for (; i < maxAsciiChars && data[i] < 0x80; ++i)
+    {
+    }
+    auto col = gsl::narrow_cast<til::CoordType>(i);
+    if (i == maxAsciiChars) [[likely]]
+    {
+        columns = col;
+        return i;
+    }
+
+    // Unicode slow-path where we need to count text and columns separately.
+    for (;;)
+    {
+        auto ptr = &data[i];
+        const auto wch = *ptr;
+        size_t len = 1;
+
+        col++;
+
+        // Even in our slow-path we can avoid calling IsGlyphFullWidth if the current character is ASCII.
+        // It also allows us to skip the surrogate pair decoding at the same time.
+        if (wch >= 0x80)
+        {
+            if (til::is_surrogate(wch))
+            {
+                const auto i1 = i + 1;
+                if (til::is_leading_surrogate(wch) && i1 < size && til::is_trailing_surrogate(data[i1]))
+                {
+                    len = 2;
+                }
+                else
+                {
+                    ptr = &UNICODE_REPLACEMENT;
+                }
+            }
+
+            col += IsGlyphFullWidth({ ptr, len });
+        }
+
+        // If we ran out of columns, we need to always return `columnLimit` and not `cols`,
+        // because if we tried inserting a wide glyph into just 1 remaining column it will
+        // fail to fit, but that remaining column still has been used up. When the caller sees
+        // `columns == columnLimit` they will line-wrap and continue inserting into the next row.
+        if (col > columnLimit)
+        {
+            columns = columnLimit;
+            return i;
+        }
+
+        // But if we simply ran out of text we just need to return the actual number of columns.
+        i += len;
+        if (i >= size)
+        {
+            columns = col;
+            return size;
+        }
+    }
+}
+
 // Pretend as if `position` is a regular cursor in the TextBuffer.
 // This function will then pretend as if you pressed the left/right arrow
 // keys `distance` amount of times (negative = left, positive = right).

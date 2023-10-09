@@ -3,10 +3,8 @@
 
 #pragma once
 
-#include "history.h"
 #include "readData.hpp"
-
-enum class WriteCharsLegacyFlags : int;
+#include "history.h"
 
 class COOKED_READ_DATA final : public ReadData
 {
@@ -49,13 +47,6 @@ private:
         Accumulating = 0,
         DoneWithWakeupMask,
         DoneWithCarriageReturn,
-    };
-
-    enum class DirtyState : uint8_t
-    {
-        None = 0,
-        EndOnly,
-        Everything,
     };
 
     enum class PopupKind
@@ -135,9 +126,14 @@ private:
     void _setBufferCursor(size_t pos) noexcept;
     void _flushBuffer();
     void _erase(ptrdiff_t distance) const;
-    ptrdiff_t _writeChars(const std::wstring_view& text, WriteCharsLegacyFlags flags) const;
+    ptrdiff_t _measureChars(const std::wstring_view& text, ptrdiff_t cursorOffset) const;
+    ptrdiff_t _writeChars(const std::wstring_view& text) const;
+    ptrdiff_t _writeCharsImpl(const std::wstring_view& text, bool measureOnly, ptrdiff_t cursorOffset) const;
+    ptrdiff_t _measureCharsUnprocessed(const std::wstring_view& text, ptrdiff_t cursorOffset) const;
+    ptrdiff_t _writeCharsUnprocessed(const std::wstring_view& text) const;
     til::point _offsetPosition(til::point pos, ptrdiff_t distance) const;
-    void _unwindCursorPosition(ptrdiff_t distance) const;
+    void _offsetCursorPosition(ptrdiff_t distance) const;
+    til::CoordType _getColumnAtRelativeCursorPosition(ptrdiff_t distance) const;
 
     void _popupPush(PopupKind kind);
     void _popupsDone();
