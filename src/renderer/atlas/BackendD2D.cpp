@@ -332,7 +332,7 @@ void BackendD2D::_drawTextResetLineRendition(const ShapedRow* row) const noexcep
     }
 }
 
-// Returns the theoretical/design design size of the given `DWRITE_GLYPH_RUN`, relative the the given baseline origin.
+// Returns the theoretical/design design size of the given `DWRITE_GLYPH_RUN`, relative the given baseline origin.
 // This algorithm replicates what DirectWrite does internally to provide `IDWriteTextLayout::GetMetrics`.
 f32r BackendD2D::_getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY)
 {

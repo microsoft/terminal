@@ -1886,7 +1886,7 @@ void BackendD3D::_drawCursorForeground()
         }
     }
     // We can also skip any instances (= any rows) at the beginning that are clearly not overlapping with
-    // the cursor. This reduces the the CPU cost of this function by roughly half (a few microseconds).
+    // the cursor. This reduces the CPU cost of this function by roughly half (a few microseconds).
     for (; instancesOffset < instancesCount; ++instancesOffset)
     {
         const auto& it = _instances[instancesOffset];
