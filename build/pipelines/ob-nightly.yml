@@ -18,6 +18,8 @@ name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
 
 variables:
   - template: templates-v2/variables-nuget-package-version.yml
+    parameters:
+      branding: Canary
   - template: templates-v2/variables-onebranch-config.yml
 
 extends:
