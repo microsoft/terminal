@@ -1,3 +1,7 @@
+parameters:
+  - name: branding
+    type: string
+
 variables:
   # If we are building a branch called "release-*", change the NuGet suffix
   # to "preview". If we don't do that, XES will set the suffix to "release1"
