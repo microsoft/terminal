@@ -129,14 +129,14 @@ The App Installer distribution supports automatic updates. Due to platform limit
 
 The Portable ZIP distribution is a portable application. It will not automatically update and or automatically check for updates. This portable ZIP distribution works on Windows 10 (19041+) and Windows 11. 
 
-_Learn more about the [types of Windows Terminal distributions](https://learn.microsoft.com/windows/terminal/distributions)._
-
 | Distribution  | Architecture    | Link                                                 |
 |---------------|:---------------:|------------------------------------------------------|
 | App Installer | x64, arm64, x86 | [download](https://aka.ms/terminal-canary-installer) |
 | Portable ZIP  | x64             | [download](https://aka.ms/terminal-canary-zip-x64)   |
 | Portable ZIP  | ARM64           | [download](https://aka.ms/terminal-canary-zip-arm64) |
 | Portable ZIP  | x86             | [download](https://aka.ms/terminal-canary-zip-x86)   |
+
+_Learn more about the [types of Windows Terminal distributions](https://learn.microsoft.com/windows/terminal/distributions)._
 
 ---
 
