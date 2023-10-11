@@ -119,7 +119,7 @@ repository.
 ---
 
 ## Installing Windows Terminal Canary
-Windows Terminal Canary is a nightly build of Windows Terminal. This build the latest code from our `main` branch, giving you an opportunity to try features before they make it to Windows Terminal Preview.
+Windows Terminal Canary is a nightly build of Windows Terminal. This build has the latest code from our `main` branch, giving you an opportunity to try features before they make it to Windows Terminal Preview.
 
 Windows Terminal Canary is our least stable offering, so you may discover bugs before we have had a chance to find them.
 
