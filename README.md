@@ -127,7 +127,8 @@ Windows Terminal Canary is available as an App Installer distribution and a Port
 
 The App Installer distribution supports automatic updates. Due to platform limitations, this installer only works on Windows 11. 
 
-The Portable ZIP distribution is a portable application. It will not automatically update and or automatically check for updates. This portable ZIP distribution works on Windows 10 (19041+) and Windows 11.
+The Portable ZIP distribution is a portable application. It will not automatically update and or automatically check for updates. This portable ZIP distribution works on Windows 10 (19041+) and Windows 11. 
+_Learn more about the [types of Windows Terminal distributions](https://learn.microsoft.com/windows/terminal/distributions)._
 
 | Distribution  | Architecture    | Link                                                 |
 |---------------|:---------------:|------------------------------------------------------|
