@@ -783,6 +783,10 @@ namespace winrt::TerminalApp::implementation
             {
                 _ShowLoadWarningsDialog(args.Warnings());
             }
+            else if (args.Result() == S_OK)
+            {
+                DismissDialog();
+            }
             _RefreshThemeRoutine();
         }
     }
