@@ -123,7 +123,7 @@ Windows Terminal Canary is a nightly build of Windows Terminal. This build the l
 
 Windows Terminal Canary is our least stable offering, so you may discover bugs before we have had a chance to find them.
 
-Windows Terminal Canary is available as a App Installer distribution and a Portable ZIP distribution. 
+Windows Terminal Canary is available as an App Installer distribution and a Portable ZIP distribution. 
 
 The App Installer distribution supports automatic updates. Due to platform limitations, this installer only works on Windows 11. 
 
