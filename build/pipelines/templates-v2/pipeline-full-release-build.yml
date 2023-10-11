@@ -59,6 +59,8 @@ parameters:
 
 variables:
   - template: variables-nuget-package-version.yml
+    parameters:
+      branding: ${{ parameters.branding }}
 
 resources:
   repositories:
