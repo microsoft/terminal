@@ -42,6 +42,8 @@ namespace Microsoft::Console::Render::Atlas
             alignas(sizeof(f32x4)) f32 gammaRatios[4]{};
             alignas(sizeof(f32)) f32 enhancedContrast = 0;
             alignas(sizeof(f32)) f32 underlineWidth = 0;
+            alignas(sizeof(f32)) f32 curlyLineHeight = 0;
+            alignas(sizeof(f32)) f32 underlineCellOffset = 0;
 #pragma warning(suppress : 4324) // 'PSConstBuffer': structure was padded due to alignment specifier
         };
 
@@ -70,11 +72,12 @@ namespace Microsoft::Console::Render::Atlas
             DashedLine = 6,
             DashedLineWide = 7,
             CurlyLine = 8,
+            CurlyLineWide = 9,
             // All items starting here will be drawing as a solid RGBA color
-            SolidLine = 9,
+            SolidLine = 10,
 
-            Cursor = 10,
-            Selection = 11,
+            Cursor = 11,
+            Selection = 12,
 
             TextDrawingFirst = TextGrayscale,
             TextDrawingLast = SolidLine,
@@ -227,7 +230,6 @@ namespace Microsoft::Console::Render::Atlas
         void _drawGlyphPrepareRetry(const RenderingPayload& p);
         void _splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasFontFaceEntryInner& fontFaceEntry, AtlasGlyphEntry& glyphEntry);
         void _drawGridlines(const RenderingPayload& p, u16 y);
-        void _drawCurlylineToAtlas(const RenderingPayload& p);
         void _drawCursorBackground(const RenderingPayload& p);
         ATLAS_ATTR_COLD void _drawCursorForeground();
         ATLAS_ATTR_COLD size_t _drawCursorForegroundSlowPath(const CursorRect& c, size_t offset);
@@ -295,7 +297,9 @@ namespace Microsoft::Console::Render::Atlas
         // The bounding rect of _cursorRects in pixels.
         til::rect _cursorPosition;
 
-        u16x2 _curlyLineTexCoord;
+        const f32 _curlyLineHeight = 0.1f; // in `em` units.
+        FontDecorationPosition _curlyUnderline;
+
         bool _requiresContinuousRedraw = false;
 
 #if ATLAS_DEBUG_SHOW_DIRTY

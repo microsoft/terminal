@@ -12,6 +12,8 @@ cbuffer ConstBuffer : register(b0)
     float4 gammaRatios;
     float enhancedContrast;
     float underlineWidth;
+    float curlyLineHeight;
+    float underlineCellOffset;
 }
 
 Texture2D<float4> background : register(t0);
@@ -101,19 +103,41 @@ Output main(PSData data) : SV_Target
     }
     case SHADING_TYPE_CURLY_LINE:
     {
-        const float4 foreground = premultiplyColor(data.color);
-        const float blendEnhancedContrast = DWrite_ApplyLightOnDarkContrastAdjustment(enhancedContrast, data.color.rgb);
-        const float intensity = DWrite_CalcColorIntensity(data.color.rgb);
+        const float strokeWidthHalf = underlineWidth / 2.0f;
+        const int cellIdxY = data.position.y / backgroundCellSize.y;
+        const float cellPosY = cellIdxY * backgroundCellSize.y;
+        const float centerY = cellPosY + underlineCellOffset + strokeWidthHalf;
+        const float Pi = radians(180);
+        const float freq = 2.0f * Pi / backgroundCellSize.x;
+        const float amp = curlyLineHeight - 1.0f; // -1.0f avoids clipping at the peak
 
-        const float2 texcoord = { 
-            data.texcoord.x % backgroundCellSize.x,
-            data.texcoord.y % backgroundCellSize.y
-        };
-        const float4 glyph = glyphAtlas[texcoord];
-        const float contrasted = DWrite_EnhanceContrast(glyph.a, blendEnhancedContrast);
-        const float alphaCorrected = DWrite_ApplyAlphaCorrection(contrasted, intensity, gammaRatios);
+        const float s = sin(data.position.x * freq);
+        const float d = abs(centerY + s * amp - data.position.y);
+        const float a = 1 - saturate(d - strokeWidthHalf);
+        color = a * premultiplyColor(data.color);
+        weights = color.aaaa;
+        break;
+    }
+    case SHADING_TYPE_CURLY_LINE_WIDE:
+    {
+        float strokeWidthHalf = underlineWidth / 2.0f;
+        const int cellIdxY = data.position.y / backgroundCellSize.y;
+        const float cellPosY = cellIdxY * backgroundCellSize.y;
+        float centerY = cellPosY + underlineCellOffset + strokeWidthHalf;
+        const float Pi = radians(180);
+        float freq = 2.0f * Pi / backgroundCellSize.x;
+        float amp = curlyLineHeight - 1.0f; // -1.0f avoids clipping at the peak
 
-        color = alphaCorrected * foreground;
+        // In 'Wide' case, we need to draw the same wave on an area twice as big.
+        strokeWidthHalf *= 2;
+        centerY -= curlyLineHeight + strokeWidthHalf;
+        freq /= 2;
+        amp *= 2;
+
+        const float s = sin(data.position.x * freq);
+        const float d = abs(centerY + s * amp - data.position.y);
+        const float a = 1 - saturate(d - strokeWidthHalf);
+        color = a * premultiplyColor(data.color);
         weights = color.aaaa;
         break;
     }

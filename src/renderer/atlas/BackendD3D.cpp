@@ -305,6 +305,16 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
 {
     const auto& font = *p.s->font;
 
+    // For curly line, we'll make room for the trough and crest (wave's peaks).
+    // The baseline for curly-line is kept at the baseline of singly underline.
+    const auto strokeWidthHalf = font.underline.height / 2.0f;
+    const auto curlyUnderlinePeakHeight = _curlyLineHeight * font.fontSize;
+    const auto curlyUnderlinePos = font.underline.position - curlyUnderlinePeakHeight;
+    const auto curlyUnderlineWidth = 2.0f * (curlyUnderlinePeakHeight + strokeWidthHalf);
+    const auto curlyUnderlinePosU16 = gsl::narrow_cast<u16>(lrintf(curlyUnderlinePos));
+    const auto curlyUnderlineWidthU16 = gsl::narrow_cast<u16>(lrintf(curlyUnderlineWidth));
+    _curlyUnderline = { curlyUnderlinePosU16, curlyUnderlineWidthU16 };
+
     DWrite_GetRenderParams(p.dwriteFactory.get(), &_gamma, &_cleartypeEnhancedContrast, &_grayscaleEnhancedContrast, _textRenderingParams.put());
     // Clearing the atlas requires BeginDraw(), which is expensive. Defer this until we need Direct2D anyways.
     _fontChangedResetGlyphAtlas = true;
@@ -539,6 +549,8 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);
         data.enhancedContrast = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
         data.underlineWidth = p.s->font->underline.height;
+        data.curlyLineHeight = p.s->font->fontSize * _curlyLineHeight;
+        data.underlineCellOffset = p.s->font->underline.position;
         p.deviceContext->UpdateSubresource(_psConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
 }
@@ -735,9 +747,6 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p)
 
     _d2dBeginDrawing();
     _d2dRenderTarget->Clear();
-
-    // (re)draw custom geometries
-    _drawCurlylineToAtlas(p);
 
     _fontChangedResetGlyphAtlas = false;
 }
@@ -1646,6 +1655,7 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
     const auto cellSize = p.s->font->cellSize;
     const auto dottedLineType = horizontalShift ? ShadingType::DottedLineWide : ShadingType::DottedLine;
     const auto dashedLineType = horizontalShift ? ShadingType::DashedLineWide : ShadingType::DashedLine;
+    const auto curlyLineType = horizontalShift ? ShadingType::CurlyLineWide : ShadingType::CurlyLine;
 
     const auto rowTop = static_cast<i16>(cellSize.y * y);
     const auto rowBottom = static_cast<i16>(rowTop + cellSize.y);
@@ -1697,10 +1707,6 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
                 .size = { width, static_cast<u16>(rb - rt) },
                 .color = r.color,
             };
-            if (shadingType == ShadingType::CurlyLine)
-            {
-                _getLastQuad().texcoord = _curlyLineTexCoord;
-            }
         }
     };
 
@@ -1740,7 +1746,7 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         }
         if (r.lines.test(GridLines::CurlyUnderline))
         {
-            appendHorizontalLine(r, p.s->font->curlyUnderline, ShadingType::CurlyLine);
+            appendHorizontalLine(r, _curlyUnderline, curlyLineType);
         }
         if (r.lines.test(GridLines::DoubleUnderline))
         {
@@ -1754,91 +1760,6 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
             appendHorizontalLine(r, p.s->font->strikethrough, ShadingType::SolidLine);
         }
     }
-}
-
-void BackendD3D::_drawCurlylineToAtlas(const RenderingPayload& p)
-{
-    const auto cellWidth = p.s->font->cellSize.x;
-
-    // draw cell-width worth of curlyline and reuse it as a tiling texture for
-    // longer lengths.
-    stbrp_rect rect{
-        .w = cellWidth,
-        .h = p.s->font->curlyUnderline.height,
-    };
-    if (!stbrp_pack_rects(&_rectPacker, &rect, 1))
-    {
-        _drawGlyphPrepareRetry(p);
-        return;
-    }
-
-    const auto baselineY = p.s->font->curlyUnderline.height / 2.0f;
-    const auto ctrlPointOffsetY = std::roundf(p.s->font->curlyUnderlineWaviness * p.s->font->fontSize);
-
-    wil::com_ptr<ID2D1PathGeometry> curlyLine;
-    THROW_IF_FAILED(p.d2dFactory->CreatePathGeometry(curlyLine.addressof()));
-
-    // The ends of the curve drawn by a PathGeometry is always titled at an
-    // angle of the tangent at the end points. Since we are going to tile them
-    // one after another, we need ends to be vertically flat. So we'll draw
-    // three curly lines, and cut the middle one off. This will give us a
-    // curly line with flat ends.
-    {
-        wil::com_ptr<ID2D1GeometrySink> sink;
-        curlyLine->Open(sink.addressof());
-
-        // first wave (starts at -cellSize.x)
-        sink->BeginFigure(
-            D2D1::Point2F(-cellWidth, baselineY),
-            D2D1_FIGURE_BEGIN_HOLLOW);
-
-        sink->AddBezier(
-            D2D1::BezierSegment(
-                D2D1::Point2F(-cellWidth / 2.0f, baselineY - ctrlPointOffsetY),
-                D2D1::Point2F(-cellWidth / 2.0f, baselineY + ctrlPointOffsetY),
-                D2D1::Point2F(0.0f, baselineY)));
-
-        // second wave (starts at 0.0f)
-        sink->AddBezier(
-            D2D1::BezierSegment(
-                D2D1::Point2F(cellWidth / 2.0f, baselineY - ctrlPointOffsetY),
-                D2D1::Point2F(cellWidth / 2.0f, baselineY + ctrlPointOffsetY),
-                D2D1::Point2F(cellWidth, baselineY)));
-
-        // third wave (starts at 'cellSize.x' px)
-        sink->AddBezier(
-            D2D1::BezierSegment(
-                D2D1::Point2F(cellWidth + cellWidth / 2.0f, baselineY - ctrlPointOffsetY),
-                D2D1::Point2F(cellWidth + cellWidth / 2.0f, baselineY + ctrlPointOffsetY),
-                D2D1::Point2F(2.0f * cellWidth, baselineY)));
-
-        sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-        sink->Close();
-    }
-
-    _d2dBeginDrawing();
-
-    // Clip everything but the middle wave
-    {
-        const auto clipRect = D2D1::RectF(
-            static_cast<f32>(rect.x),
-            static_cast<f32>(rect.y),
-            static_cast<f32>(rect.x + rect.w),
-            static_cast<f32>(rect.y + rect.h));
-        _d2dRenderTarget->PushAxisAlignedClip(clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
-    }
-
-    auto const strokeWidth = p.s->font->underline.height;
-    _d2dRenderTarget->DrawGeometry(curlyLine.get(), _brush.get(), strokeWidth);
-
-    _d2dRenderTarget->PopAxisAlignedClip();
-
-    _d2dEndDrawing();
-
-    // store the texture coordinates
-    _curlyLineTexCoord.x = rect.x;
-    _curlyLineTexCoord.y = rect.y;
 }
 
 void BackendD3D::_drawCursorBackground(const RenderingPayload& p)

@@ -346,7 +346,6 @@ namespace Microsoft::Console::Render::Atlas
         u16 baseline = 0;
         u16 descender = 0;
         u16 thinLineWidth = 0;
-        f32 curlyUnderlineWaviness = 0.28f; // Control points' height in `em` units.
 
         FontDecorationPosition gridTop;
         FontDecorationPosition gridBottom;
@@ -354,7 +353,6 @@ namespace Microsoft::Console::Render::Atlas
         FontDecorationPosition gridRight;
 
         FontDecorationPosition underline;
-        FontDecorationPosition curlyUnderline;
         FontDecorationPosition strikethrough;
         FontDecorationPosition doubleUnderline[2];
         FontDecorationPosition overline;
