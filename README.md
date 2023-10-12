@@ -73,7 +73,7 @@ winget install --id Microsoft.WindowsTerminal -e
 ```
 
 > **Note**\
-> Due to [a dependency issue](https://github.com/microsoft/terminal/issues/15663), Terminal's current versions cannot be installed via the Windows Package Manager CLI. To install the stable release 1.17 or later, or the Preview release 1.18 or later, please use an alternative installation method.
+> Dependency support is available in WinGet version [1.6.2631 or later](https://github.com/microsoft/winget-cli/releases). To install the Terminal stable release 1.18 or later, please make sure you have the updated version of the WinGet client.
 
 #### Via Chocolatey (unofficial)
 
@@ -123,11 +123,11 @@ Windows Terminal Canary is a nightly build of Windows Terminal. This build has t
 
 Windows Terminal Canary is our least stable offering, so you may discover bugs before we have had a chance to find them.
 
-Windows Terminal Canary is available as an App Installer distribution and a Portable ZIP distribution. 
+Windows Terminal Canary is available as an App Installer distribution and a Portable ZIP distribution.
 
-The App Installer distribution supports automatic updates. Due to platform limitations, this installer only works on Windows 11. 
+The App Installer distribution supports automatic updates. Due to platform limitations, this installer only works on Windows 11.
 
-The Portable ZIP distribution is a portable application. It will not automatically update and will not automatically check for updates. This portable ZIP distribution works on Windows 10 (19041+) and Windows 11. 
+The Portable ZIP distribution is a portable application. It will not automatically update and will not automatically check for updates. This portable ZIP distribution works on Windows 10 (19041+) and Windows 11.
 
 | Distribution  | Architecture    | Link                                                 |
 |---------------|:---------------:|------------------------------------------------------|
