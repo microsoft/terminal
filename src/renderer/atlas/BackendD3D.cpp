@@ -784,7 +784,9 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
         _d2dRenderTarget.try_query_to(_d2dRenderTarget4.addressof());
 
         _d2dRenderTarget->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
-        _d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+        // We don't really use D2D for anything except DWrite, but it
+        // can't hurt to ensure that everything it does is pixel aligned.
+        _d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
         // Ensure that D2D uses the exact same gamma as our shader uses.
         _d2dRenderTarget->SetTextRenderingParams(_textRenderingParams.get());
 
