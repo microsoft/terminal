@@ -673,7 +673,7 @@
             },
             "allowEmpty": {
               "description": "Whether to render a folder without entries, or to hide it",
-              "default": "false",
+              "default": false,
               "type": "boolean"
             }
           }

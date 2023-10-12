@@ -1040,6 +1040,7 @@ winrt::fire_and_forget Pane::_ControlConnectionStateChangedHandler(const winrt::
         newConnectionState = coreState.ConnectionState();
     }
 
+    const auto previousConnectionState = std::exchange(_connectionState, newConnectionState);
     if (newConnectionState < ConnectionState::Closed)
     {
         // Pane doesn't care if the connection isn't entering a terminal state.
@@ -1066,7 +1067,6 @@ winrt::fire_and_forget Pane::_ControlConnectionStateChangedHandler(const winrt::
         co_return;
     }
 
-    const auto previousConnectionState = std::exchange(_connectionState, newConnectionState);
     if (previousConnectionState < ConnectionState::Connected && newConnectionState >= ConnectionState::Failed)
     {
         // A failure to complete the connection (before it has _connected_) is not covered by "closeOnExit".

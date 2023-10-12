@@ -17,6 +17,12 @@ parameters:
   - name: symbolExpiryTime
     type: string
     default: 36530 # This is the default from PublishSymbols@2
+  - name: variables
+    type: object
+    default: {}
+  - name: symbolPatGoesInTaskInputs
+    type: boolean
+    default: false
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -27,6 +33,8 @@ jobs:
   ${{ else }}:
     displayName: Publish Symbols Internally
   dependsOn: ${{ parameters.dependsOn }}
+  variables:
+    ${{ insert }}: ${{ parameters.variables }}
   steps:
   - checkout: self
     clean: true
@@ -76,6 +84,8 @@ jobs:
         SymbolsProduct: 'Windows Terminal Converged Symbols'
         SymbolsVersion: '$(XES_APPXMANIFESTVERSION)'
         SymbolExpirationInDays: ${{ parameters.symbolExpiryTime }}
+        ${{ if eq(parameters.symbolPatGoesInTaskInputs, true) }}:
+          Pat: $(ADO_microsoftpublicsymbols_PAT)
         # The ADO task does not support indexing of GitHub sources.
       # There is a bug which causes this task to fail if LIB includes an inaccessible path (even though it does not depend on it).
       # To work around this issue, we just force LIB to be any dir that we know exists.
@@ -83,4 +93,5 @@ jobs:
       env:
         LIB: $(Build.SourcesDirectory)
         ArtifactServices_Symbol_AccountName: microsoftpublicsymbols
-        ArtifactServices_Symbol_PAT: $(ADO_microsoftpublicsymbols_PAT)
+        ${{ if ne(parameters.symbolPatGoesInTaskInputs, true) }}:
+          ArtifactServices_Symbol_PAT: $(ADO_microsoftpublicsymbols_PAT)
