@@ -373,7 +373,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 for (const auto& m : marks)
                 {
                     const auto row = m.Start.Y;
-                    const COLORREF color{ til::color{ m.Color.Color } };
+                    const til::color color{ m.Color.Color };
                     const auto base = dataAt(row);
                     drawPip(base, color);
                 }
