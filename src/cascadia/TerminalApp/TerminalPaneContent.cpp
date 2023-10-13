@@ -160,24 +160,45 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPaneContent::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                                                    const winrt::Windows::Foundation::IInspectable& /*args*/)
+    winrt::fire_and_forget TerminalPaneContent::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                                                                      const winrt::Windows::Foundation::IInspectable& args)
     {
-        const auto newConnectionState = _control.ConnectionState();
-        const auto previousConnectionState = std::exchange(_connectionState, newConnectionState);
+        ConnectionStateChanged.raise(sender, args);
+        auto newConnectionState = ConnectionState::Closed;
+        if (const auto coreState = sender.try_as<ICoreState>())
+        {
+            newConnectionState = coreState.ConnectionState();
+        }
 
+        const auto previousConnectionState = std::exchange(_connectionState, newConnectionState);
         if (newConnectionState < ConnectionState::Closed)
         {
             // Pane doesn't care if the connection isn't entering a terminal state.
-            return;
+            co_return;
         }
+
+        const auto weakThis = get_weak();
+        co_await wil::resume_foreground(_control.Dispatcher());
+        const auto strongThis = weakThis.get();
+        if (!strongThis)
+        {
+            co_return;
+        }
+
+        // It's possible that this event handler started being executed, scheduled
+        // on the UI thread, another child got created. So our control is
+        // actually no longer _our_ control, and instead could be a descendant.
+        //
+        // When the control's new Pane takes ownership of the control, the new
+        // parent will register its own event handler. That event handler will get
+        // fired after this handler returns, and will properly cleanup state.
 
         if (previousConnectionState < ConnectionState::Connected && newConnectionState >= ConnectionState::Failed)
         {
             // A failure to complete the connection (before it has _connected_) is not covered by "closeOnExit".
             // This is to prevent a misconfiguration (closeOnExit: always, startingDirectory: garbage) resulting
             // in Terminal flashing open and immediately closed.
-            return;
+            co_return;
         }
 
         if (_profile)

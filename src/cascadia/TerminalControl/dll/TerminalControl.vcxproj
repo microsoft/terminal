@@ -89,7 +89,8 @@
 
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;shell32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>delayimp.lib;Uiautomationcore.lib;onecoreuap.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>uiautomationcore.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <!--
       ControlLib contains a DllMain that we need to force the use of.
       If you don't have this, then you'll see an error like

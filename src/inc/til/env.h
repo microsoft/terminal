@@ -559,7 +559,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             get_vars_from_registry(HKEY_CURRENT_USER, fmt::format(til::details::vars::reg::user_volatile_session_env_var_root_pattern, NtCurrentTeb()->ProcessEnvironmentBlock->SessionId));
         }
 
-        std::wstring to_string()
+        std::wstring to_string() const
         {
             std::wstring result;
             for (const auto& [name, value] : _envMap)

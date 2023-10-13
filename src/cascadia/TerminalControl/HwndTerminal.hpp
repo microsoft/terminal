@@ -112,14 +112,13 @@ private:
     HRESULT _CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting);
     HRESULT _CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat);
     void _PasteTextFromClipboard() noexcept;
-    void _StringPaste(const wchar_t* const pData) noexcept;
 
     const unsigned int _NumberOfClicks(til::point clickPos, std::chrono::steady_clock::time_point clickTime) noexcept;
     HRESULT _StartSelection(LPARAM lParam) noexcept;
     HRESULT _MoveSelection(LPARAM lParam) noexcept;
     IRawElementProviderSimple* _GetUiaProvider() noexcept;
 
-    void _ClearSelection() noexcept;
+    void _ClearSelection();
 
     bool _CanSendVTMouseInput() const noexcept;
     bool _SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;

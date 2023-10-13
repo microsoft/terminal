@@ -1419,4 +1419,10 @@ namespace winrt::TerminalApp::implementation
         }
         args.Handled(true);
     }
+    void TerminalPage::_HandleOpenAbout(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        _ShowAboutDialog();
+        args.Handled(true);
+    }
 }

@@ -50,7 +50,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _WindowName{ windowInfo.WindowName() },
             _args{ command.Commandline() },
             _CurrentDirectory{ command.CurrentDirectory() },
-            _ShowWindowCommand{ command.ShowWindowCommand() } {};
+            _ShowWindowCommand{ command.ShowWindowCommand() },
+            _CurrentEnvironment{ command.CurrentEnvironment() } {};
 
         WindowRequestedArgs(const winrt::hstring& window, const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& bounds) :
             _Id{ 0u },
@@ -68,6 +69,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         WINRT_PROPERTY(winrt::hstring, CurrentDirectory);
         WINRT_PROPERTY(winrt::hstring, Content);
         WINRT_PROPERTY(uint32_t, ShowWindowCommand, SW_NORMAL);
+        WINRT_PROPERTY(winrt::hstring, CurrentEnvironment);
         WINRT_PROPERTY(Windows::Foundation::IReference<Windows::Foundation::Rect>, InitialBounds);
 
     private:
