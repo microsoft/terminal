@@ -19,7 +19,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                       const hstring& language);
 
         static Windows::UI::Xaml::Controls::IconElement IconWUX(const winrt::hstring& iconPath);
-        static Microsoft::UI::Xaml::Controls::IconSource IconSourceMUX(const winrt::hstring& iconPath);
+        static Microsoft::UI::Xaml::Controls::IconSource IconSourceMUX(const winrt::hstring& iconPath, const bool convertToGrayscale);
     };
 }
 

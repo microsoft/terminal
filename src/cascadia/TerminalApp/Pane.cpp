@@ -962,6 +962,21 @@ Pane::PaneNeighborSearch Pane::_FindPaneAndNeighbor(const std::shared_ptr<Pane> 
     return { nullptr, nullptr, offset };
 }
 
+// Method Description:
+// - Returns true if the connection state of this pane is closed.
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the connection state of this Pane is closed.
+bool Pane::IsConnectionClosed() const
+{
+    if (const auto& control{ GetTerminalControl() })
+    {
+        return control.ConnectionState() >= ConnectionState::Closed;
+    }
+    return false;
+}
+
 // Event Description:
 // - Called when our control gains focus. We'll use this to trigger our GotFocus
 //   callback. The tab that's hosting us should have registered a callback which
@@ -1098,7 +1113,7 @@ TermControl Pane::GetLastFocusedTerminalControl()
 // - <none>
 // Return Value:
 // - nullptr if this Pane is a parent, otherwise the TermControl of this Pane.
-TermControl Pane::GetTerminalControl()
+TermControl Pane::GetTerminalControl() const
 {
     if (const auto& terminalPane{ _getTerminalContent() })
     {
@@ -2271,6 +2286,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
         //   Move our control, guid, isDefTermSession into the first one.
         _firstChild = std::make_shared<Pane>(_content);
         _content = nullptr;
+        _firstChild->_broadcastEnabled = _broadcastEnabled;
     }
 
     _splitState = actualSplitType;
@@ -2956,6 +2972,12 @@ void Pane::EnableBroadcast(bool enabled)
     if (_IsLeaf())
     {
         _broadcastEnabled = enabled;
+        if (const auto& termControl{ GetTerminalControl() })
+        {
+            termControl.CursorVisibility(enabled ?
+                                             CursorDisplayState::Shown :
+                                             CursorDisplayState::Default);
+        }
         UpdateVisuals();
     }
     else

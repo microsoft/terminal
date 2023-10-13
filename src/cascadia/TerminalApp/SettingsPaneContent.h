@@ -34,6 +34,7 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<> TitleChanged;
         til::typed_event<> TabColorChanged;
         til::typed_event<> TaskbarProgressChanged;
+        til::typed_event<> ConnectionStateChanged;
         til::typed_event<> ReadOnlyChanged;
         til::typed_event<> FocusRequested;
 

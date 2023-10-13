@@ -2106,26 +2106,26 @@ public:
         auto& stateMachine = *_testGetSet->_stateMachine;
 
         Log::Comment(L"Default tabs stops in 80-column mode");
-        VERIFY_SUCCEEDED(textBuffer.ResizeTraditional({ 80, 600 }));
+        textBuffer.ResizeTraditional({ 80, 600 });
         _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
         _testGetSet->ValidateInputEvent(L"\033P2$u9/17/25/33/41/49/57/65/73\033\\");
 
         Log::Comment(L"Default tabs stops in 132-column mode");
-        VERIFY_SUCCEEDED(textBuffer.ResizeTraditional({ 132, 600 }));
+        textBuffer.ResizeTraditional({ 132, 600 });
         _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
         _testGetSet->ValidateInputEvent(L"\033P2$u9/17/25/33/41/49/57/65/73/81/89/97/105/113/121/129\033\\");
 
         Log::Comment(L"Custom tab stops in 80 columns");
-        VERIFY_SUCCEEDED(textBuffer.ResizeTraditional({ 80, 600 }));
+        textBuffer.ResizeTraditional({ 80, 600 });
         _testGetSet->_stateMachine->ProcessString(L"\033P2$t30/60/120/240\033\\");
         _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
         _testGetSet->ValidateInputEvent(L"\033P2$u30/60\033\\");
 
         Log::Comment(L"After expanding width to 132 columns");
-        VERIFY_SUCCEEDED(textBuffer.ResizeTraditional({ 132, 600 }));
+        textBuffer.ResizeTraditional({ 132, 600 });
         _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
         _testGetSet->ValidateInputEvent(L"\033P2$u30/60/120\033\\");
-        VERIFY_SUCCEEDED(textBuffer.ResizeTraditional({ 80, 600 }));
+        textBuffer.ResizeTraditional({ 80, 600 });
 
         Log::Comment(L"Out of order tab stops");
         stateMachine.ProcessString(L"\033P2$t44/22/66\033\\");

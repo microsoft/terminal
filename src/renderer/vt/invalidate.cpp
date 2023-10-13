@@ -106,26 +106,13 @@ CATCH_RETURN();
 // - S_OK
 [[nodiscard]] HRESULT VtEngine::InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept
 {
-    // If we're in the middle of a resize request, don't try to immediately start a frame.
-    if (_inResizeRequest)
-    {
-        *pForcePaint = false;
-    }
-    else
-    {
-        *pForcePaint = true;
+    *pForcePaint = true;
 
-        // Keep track of the fact that we circled, we'll need to do some work on
-        //      end paint to specifically handle this.
-        _circled = circled;
-    }
-
-    // If we flushed for any reason other than circling (i.e, a sequence that we
-    // didn't understand), we don't need to push the buffer out on EndPaint.
-    _noFlushOnEnd = !circled;
+    // Keep track of the fact that we circled, we'll need to do some work on
+    //      end paint to specifically handle this.
+    _circled = circled;
 
     _trace.TraceTriggerCircling(*pForcePaint);
-
     return S_OK;
 }
 

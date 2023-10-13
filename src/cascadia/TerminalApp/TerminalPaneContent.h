@@ -49,6 +49,7 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<> TitleChanged;
         til::typed_event<> TabColorChanged;
         til::typed_event<> TaskbarProgressChanged;
+        til::typed_event<> ConnectionStateChanged;
         til::typed_event<> ReadOnlyChanged;
         til::typed_event<> FocusRequested;
 
@@ -80,7 +81,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _playBellSound(winrt::Windows::Foundation::Uri uri);
 
-        void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+        winrt::fire_and_forget _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
         void _ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                         const winrt::Windows::Foundation::IInspectable& e);
         void _ControlReadOnlyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& e);

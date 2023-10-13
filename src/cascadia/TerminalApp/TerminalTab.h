@@ -37,12 +37,12 @@ namespace winrt::TerminalApp::implementation
 
         void AttachColorPicker(winrt::TerminalApp::ColorPickupFlyout& colorPicker);
 
-        void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
-                       const float splitSize,
-                       std::shared_ptr<Pane> newPane);
+        std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
+                                                                          const float splitSize,
+                                                                          std::shared_ptr<Pane> newPane);
 
         void ToggleSplitOrientation();
-        void UpdateIcon(const winrt::hstring& iconPath);
+        void UpdateIcon(const winrt::hstring& iconPath, const winrt::Microsoft::Terminal::Settings::Model::IconStyle iconStyle);
         void HideIcon(const bool hide);
 
         void ShowBellIndicator(const bool show);
@@ -110,7 +110,9 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> _zoomedPane{ nullptr };
 
         Windows::UI::Xaml::Controls::MenuFlyoutItem _closePaneMenuItem;
+        Windows::UI::Xaml::Controls::MenuFlyoutItem _restartConnectionMenuItem;
 
+        winrt::Microsoft::Terminal::Settings::Model::IconStyle _lastIconStyle;
         winrt::hstring _lastIconPath{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
@@ -127,6 +129,7 @@ namespace winrt::TerminalApp::implementation
             winrt::TerminalApp::IPaneContent::TitleChanged_revoker TitleChanged;
             winrt::TerminalApp::IPaneContent::TabColorChanged_revoker TabColorChanged;
             winrt::TerminalApp::IPaneContent::TaskbarProgressChanged_revoker TaskbarProgressChanged;
+            winrt::TerminalApp::IPaneContent::ConnectionStateChanged_revoker ConnectionStateChanged;
             winrt::TerminalApp::IPaneContent::ReadOnlyChanged_revoker ReadOnlyChanged;
             winrt::TerminalApp::IPaneContent::FocusRequested_revoker FocusRequested;
 
@@ -173,6 +176,9 @@ namespace winrt::TerminalApp::implementation
         void _RecalculateAndApplyReadOnly();
 
         void _UpdateProgressState();
+
+        void _UpdateConnectionClosedState();
+        void _RestartActivePaneConnection();
 
         void _DuplicateTab();
 

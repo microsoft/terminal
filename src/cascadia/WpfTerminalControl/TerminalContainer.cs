@@ -443,35 +443,6 @@ namespace Microsoft.Terminal.Wpf
             return IntPtr.Zero;
         }
 
-        private void LeftClickHandler(int lParam)
-        {
-            var altPressed = NativeMethods.GetKeyState((int)NativeMethods.VirtualKey.VK_MENU) < 0;
-            var x = lParam & 0xffff;
-            var y = lParam >> 16;
-            var cursorPosition = new NativeMethods.TilPoint
-            {
-                X = x,
-                Y = y,
-            };
-
-            NativeMethods.TerminalStartSelection(this.terminal, cursorPosition, altPressed);
-        }
-
-        private void MouseMoveHandler(int wParam, int lParam)
-        {
-            if ((wParam & 0x0001) == 1)
-            {
-                var x = lParam & 0xffff;
-                var y = lParam >> 16;
-                var cursorPosition = new NativeMethods.TilPoint
-                {
-                    X = x,
-                    Y = y,
-                };
-                NativeMethods.TerminalMoveSelection(this.terminal, cursorPosition);
-            }
-        }
-
         private void Connection_TerminalOutput(object sender, TerminalOutputEventArgs e)
         {
             if (this.terminal == IntPtr.Zero || string.IsNullOrEmpty(e.Data))
