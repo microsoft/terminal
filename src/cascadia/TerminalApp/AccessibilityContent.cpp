@@ -26,6 +26,7 @@ namespace winrt::TerminalApp::implementation
         _box.Margin({ 10, 10, 10, 10 });
         _box.AcceptsReturn(true);
         _box.TextWrapping(TextWrapping::Wrap);
+        _box.IsReadOnly(true);
         _root.Children().Append(_box);
     }
 
@@ -71,5 +72,11 @@ namespace winrt::TerminalApp::implementation
     {
         _box.Text(content);
     }
+    void AccessibilityContent::SetFont(Microsoft::Terminal::Settings::Model::FontConfig font)
+    {
+        _box.FontFamily(Media::FontFamily{ font.FontFace() });
 
+        // Multiply by 1.3, for the font point <--> DIP conversion
+        _box.FontSize(font.FontSize() * 1.3f);
+    }
 }

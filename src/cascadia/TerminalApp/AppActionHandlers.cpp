@@ -1453,6 +1453,13 @@ namespace winrt::TerminalApp::implementation
 
                     auto a11yPane{ winrt::make_self<AccessibilityContent>() };
 
+                    if (const auto& profile{ activeTab->GetFocusedProfile() })
+                    {
+                        const auto& fontInfo{ profile.FontInfo() };
+                        a11yPane->SetFont(fontInfo);
+                    }
+                    a11yPane->Write(buffer);
+
                     // This is maybe a little wacky - add our key event handler to the pane
                     // we made. So that we can get actions for keys that the content didn't
                     // handle.
@@ -1460,7 +1467,7 @@ namespace winrt::TerminalApp::implementation
 
                     auto resultPane = std::make_shared<Pane>(*a11yPane);
                     _SplitPane(_senderOrFocusedTab(sender), SplitDirection::Automatic, 0.5f, resultPane);
-                    a11yPane->Write(buffer);
+
                     args.Handled(true);
                 }
             }

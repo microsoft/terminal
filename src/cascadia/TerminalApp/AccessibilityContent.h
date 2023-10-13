@@ -20,6 +20,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetNewTerminalArgs(const bool asContent) const;
 
         void Write(winrt::hstring content);
+        void SetFont(Microsoft::Terminal::Settings::Model::FontConfig font);
 
         winrt::hstring Title() { return L"a11y test TODO!"; }
         uint64_t TaskbarState() { return 0; }
