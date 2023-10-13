@@ -109,6 +109,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _FinalizeInheritance() override;
 
         // Special fields
+        hstring Icon() const;
+        void Icon(const hstring& value);
+
         WINRT_PROPERTY(bool, Deleted, false);
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
         WINRT_PROPERTY(guid, Updates);
@@ -123,7 +126,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
+        // Icon is _very special_ because we want to customize its setter
+        _BASE_INHERITABLE_SETTING(Model::Profile, std::optional<hstring>, Icon, L"\uE756");
 
+    public:
 #define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
         MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)

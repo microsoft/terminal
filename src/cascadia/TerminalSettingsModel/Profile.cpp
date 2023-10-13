@@ -27,6 +27,7 @@ static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view GuidKey{ "guid" };
 static constexpr std::string_view SourceKey{ "source" };
 static constexpr std::string_view HiddenKey{ "hidden" };
+static constexpr std::string_view IconKey{ "icon" };
 
 static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view PaddingKey{ "padding" };
@@ -106,6 +107,7 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_Hidden = _Hidden;
     profile->_TabColor = _TabColor;
     profile->_Padding = _Padding;
+    profile->_Icon = _Icon;
 
     profile->_Origin = _Origin;
     profile->_FontInfo = *fontInfo;
@@ -172,6 +174,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
     JsonUtils::GetValueForKey(json, SourceKey, _Source);
+    JsonUtils::GetValueForKey(json, IconKey, _Icon);
 
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
@@ -314,6 +317,7 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, GuidKey, writeBasicSettings ? Guid() : _Guid);
     JsonUtils::SetValueForKey(json, HiddenKey, writeBasicSettings ? Hidden() : _Hidden);
     JsonUtils::SetValueForKey(json, SourceKey, writeBasicSettings ? Source() : _Source);
+    JsonUtils::SetValueForKey(json, IconKey, writeBasicSettings ? Icon() : _Icon);
 
     // PermissiveStringConverter is unnecessary for serialization
     JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
@@ -338,6 +342,21 @@ Json::Value Profile::ToJson() const
 
     return json;
 }
+
+// This is the implementation for and INHERITABLE_SETTING, but with one addition
+// in the setter. We want to make sure to clear out our cached icon, so that we
+// can re-evaluate it as it changes in the SUI.
+void Profile::Icon(const winrt::hstring& value)
+{
+    _evaluatedIcon = std::nullopt;
+    _Icon = value;
+}
+winrt::hstring Profile::Icon() const
+{
+    const auto val{ _getIconImpl() };
+    return val ? *val : hstring{ L"\uE756" };
+}
+
 winrt::hstring Profile::EvaluatedIcon()
 {
     // We cache the result here, so we don't search the path for the exe every time.

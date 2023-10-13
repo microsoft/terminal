@@ -299,6 +299,7 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
     // These aren't in MTSM_PROFILE_SETTINGS because they're special
     DUPLICATE_SETTING_MACRO(TabColor);
     DUPLICATE_SETTING_MACRO(Padding);
+    DUPLICATE_SETTING_MACRO(Icon);
 
     {
         const auto font = source.FontInfo();
