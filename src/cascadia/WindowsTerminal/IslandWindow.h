@@ -117,6 +117,7 @@ protected:
     RECT _rcWindowBeforeFullscreen{};
     RECT _rcWorkBeforeFullscreen{};
     UINT _dpiBeforeFullscreen{ 96 };
+    bool _currentSystemThemeIsDark{ true };
 
     void _coldInitialize();
     void _warmInitialize();

@@ -46,8 +46,6 @@ namespace
         std::vector<TestBuffer> buffers;
     };
 
-    static constexpr auto true_due_to_exact_wrap_bug{ true };
-
     static const TestCase testCases[] = {
         TestCase{
             L"No reflow required",
@@ -61,7 +59,7 @@ namespace
                         { L"EFG   ", false },
                         { L"      ", false },
                     },
-                    { 0, 1 } // cursor on $
+                    { 0, 1 }, // cursor on $
                 },
                 TestBuffer{
                     { 5, 5 }, // reduce width by 1
@@ -72,7 +70,7 @@ namespace
                         { L"EFG  ", false },
                         { L"     ", false },
                     },
-                    { 0, 1 } // cursor on $
+                    { 0, 1 }, // cursor on $
                 },
                 TestBuffer{
                     { 4, 5 },
@@ -83,7 +81,7 @@ namespace
                         { L"EFG ", false },
                         { L"    ", false },
                     },
-                    { 0, 1 } // cursor on $
+                    { 0, 1 }, // cursor on $
                 },
             },
         },
@@ -99,40 +97,40 @@ namespace
                         { L"      ", false },
                         { L"      ", false },
                     },
-                    { 0, 1 } // cursor on $
+                    { 0, 1 }, // cursor on $
                 },
                 TestBuffer{
                     { 5, 5 }, // reduce width by 1
                     {
                         { L"ABCDE", true },
-                        { L"F$   ", false }, // [BUG] EXACT WRAP. $ should be alone on next line.
-                        { L"     ", false },
+                        { L"F    ", false },
+                        { L"$    ", false },
                         { L"     ", false },
                         { L"     ", false },
                     },
-                    { 1, 1 } // cursor on $
+                    { 0, 2 }, // cursor on $
                 },
                 TestBuffer{
                     { 6, 5 }, // grow width back to original
                     {
-                        { L"ABCDEF", true_due_to_exact_wrap_bug },
+                        { L"ABCDEF", false },
                         { L"$     ", false },
                         { L"      ", false },
                         { L"      ", false },
                         { L"      ", false },
                     },
-                    { 0, 1 } // cursor on $
+                    { 0, 1 }, // cursor on $
                 },
                 TestBuffer{
                     { 7, 5 }, // grow width wider than original
                     {
-                        { L"ABCDEF$", true_due_to_exact_wrap_bug }, // EXACT WRAP BUG: $ should be alone on next line
-                        { L"       ", false },
+                        { L"ABCDEF ", false },
+                        { L"$      ", false },
                         { L"       ", false },
                         { L"       ", false },
                         { L"       ", false },
                     },
-                    { 6, 0 } // cursor on $
+                    { 0, 1 }, // cursor on $
                 },
             },
         },
@@ -148,7 +146,7 @@ namespace
                         { L"      ", false },
                         { L"      ", false },
                     },
-                    { 1, 1 } // cursor on $
+                    { 1, 1 }, // cursor on $
                 },
                 TestBuffer{
                     { 5, 5 }, // reduce width by 1
@@ -159,7 +157,7 @@ namespace
                         { L"     ", false },
                         { L"     ", false },
                     },
-                    { 2, 1 } // cursor on $
+                    { 2, 1 }, // cursor on $
                 },
                 TestBuffer{
                     { 6, 5 }, // grow width back to original
@@ -170,7 +168,7 @@ namespace
                         { L"      ", false },
                         { L"      ", false },
                     },
-                    { 1, 1 } // cursor on $
+                    { 1, 1 }, // cursor on $
                 },
                 TestBuffer{
                     { 7, 5 }, // grow width wider than original
@@ -181,7 +179,7 @@ namespace
                         { L"       ", false },
                         { L"       ", false },
                     },
-                    { 0, 1 } // cursor on $
+                    { 0, 1 }, // cursor on $
                 },
             },
         },
@@ -197,29 +195,29 @@ namespace
                         { L"EFG   ", false },
                         { L"      ", false },
                     },
-                    { 0, 1 } // cursor on $
+                    { 0, 1 }, // cursor on $
                 },
                 TestBuffer{
                     { 7, 5 }, // reduce width by 1
                     {
                         { L"AB    $", true },
-                        { L"     CD", true_due_to_exact_wrap_bug },
-                        { L"       ", false },
+                        { L"     CD", false }, // CD ends with a newline -> .wrap = false
                         { L"EFG    ", false },
                         { L"       ", false },
+                        { L"       ", false },
                     },
-                    { 6, 0 } // cursor on $
+                    { 6, 0 }, // cursor on $
                 },
                 TestBuffer{
                     { 8, 5 },
                     {
                         { L"AB    $ ", true },
-                        { L"    CD  ", false }, // Goes to false because we hit the end of ..CD
-                        { L"EFG     ", false }, // [BUG] EFG moves up due to exact wrap bug above
+                        { L"    CD  ", false },
+                        { L"EFG     ", false },
                         { L"        ", false },
                         { L"        ", false },
                     },
-                    { 6, 0 } // cursor on $
+                    { 6, 0 }, // cursor on $
                 },
             },
         },
@@ -236,19 +234,19 @@ namespace
                         { L"      ", false },
                         { L"      ", false },
                     },
-                    { 2, 1 } // cursor on $
+                    { 2, 1 }, // cursor on $
                 },
                 TestBuffer{
                     { 5, 5 }, // reduce width by 1
                     {
                         //--012345--
                         { L"カタ ", true }, // KA TA [FORCED SPACER]
-                        { L"カナ$", true_due_to_exact_wrap_bug }, // KA NA
+                        { L"カナ$", false }, // KA NA
                         { L"     ", false },
                         { L"     ", false },
                         { L"     ", false },
                     },
-                    { 4, 1 } // cursor on $
+                    { 4, 1 }, // cursor on $
                 },
                 TestBuffer{
                     { 6, 5 }, // grow width back to original
@@ -260,7 +258,7 @@ namespace
                         { L"      ", false },
                         { L"      ", false },
                     },
-                    { 2, 1 } // cursor on $
+                    { 2, 1 }, // cursor on $
                 },
                 TestBuffer{
                     { 7, 5 }, // grow width wider than original (by one; no visible change!)
@@ -272,7 +270,7 @@ namespace
                         { L"       ", false },
                         { L"       ", false },
                     },
-                    { 2, 1 } // cursor on $
+                    { 2, 1 }, // cursor on $
                 },
                 TestBuffer{
                     { 8, 5 }, // grow width enough to fit second DBCS
@@ -284,7 +282,7 @@ namespace
                         { L"        ", false },
                         { L"        ", false },
                     },
-                    { 0, 1 } // cursor on $
+                    { 0, 1 }, // cursor on $
                 },
             },
         },
@@ -300,41 +298,29 @@ namespace
                         { L"MNOPQR", false },
                         { L"STUVWX", false },
                     },
-                    { 0, 1 } // cursor on $
+                    { 0, 1 }, // cursor on $
                 },
                 TestBuffer{
                     { 5, 5 }, // reduce width by 1
                     {
-                        { L"F$   ", false },
-                        { L"GHIJK", true }, // [BUG] We should see GHIJK\n L\n MNOPQ\n R\n
-                        { L"LMNOP", true }, // The wrapping here is irregular
-                        { L"QRSTU", true },
-                        { L"VWX  ", false },
+                        { L"$    ", false },
+                        { L"GHIJK", true },
+                        { L"L    ", false },
+                        { L"MNOPQ", true },
+                        { L"R    ", false },
                     },
-                    { 1, 1 } // [BUG] cursor moves to 1,1 instead of sticking with the $
+                    { 0, 0 },
                 },
                 TestBuffer{
                     { 6, 5 }, // going back to 6,5, the data lost has been destroyed
                     {
-                        //{ L"F$    ", false }, // [BUG] this line is erroneously destroyed too!
-                        { L"GHIJKL", true },
-                        { L"MNOPQR", true },
-                        { L"STUVWX", true },
+                        { L"$     ", false },
+                        { L"GHIJKL", false },
+                        { L"MNOPQR", false },
                         { L"      ", false },
-                        { L"      ", false }, // [BUG] this line is added
+                        { L"      ", false },
                     },
-                    { 1, 1 }, // [BUG] cursor does not follow [H], it sticks at 1,1
-                },
-                TestBuffer{
-                    { 7, 5 }, // a number of errors are carried forward from the previous buffer
-                    {
-                        { L"GHIJKLM", true },
-                        { L"NOPQRST", true },
-                        { L"UVWX   ", false }, // [BUG] This line loses wrap for some reason
-                        { L"       ", false },
-                        { L"       ", false },
-                    },
-                    { 0, 1 }, // [BUG] The cursor moves to 0, 1 now, sticking with the [N] from before
+                    { 0, 0 },
                 },
             },
         },
@@ -353,18 +339,18 @@ namespace
                         { L"      ", false },
                         { L"      ", false },
                     },
-                    { 1, 1 } // cursor *after* $
+                    { 1, 1 }, // cursor *after* $
                 },
                 TestBuffer{
                     { 5, 5 }, // reduce width by 1
                     {
                         { L"ABCDE", true },
-                        { L"F$   ", false }, // [BUG] EXACT WRAP. $ should be alone on next line.
-                        { L"     ", false },
+                        { L"F    ", false },
+                        { L"$    ", false },
                         { L"     ", false },
                         { L"     ", false },
                     },
-                    { 2, 1 } // cursor follows space after $ to next line
+                    { 1, 2 }, // cursor follows space after $ to next line
                 },
             },
         },
@@ -380,7 +366,7 @@ namespace
                         { L"STUVWX", true },
                         { L"YZ0 $ ", false },
                     },
-                    { 5, 4 } // cursor *after* $
+                    { 5, 4 }, // cursor *after* $
                 },
                 TestBuffer{
                     { 5, 5 }, // reduce width by 1
@@ -391,7 +377,7 @@ namespace
                         { L"UVWXY", true },
                         { L"Z0 $ ", false },
                     },
-                    { 4, 4 } // cursor follows space after $ to newly introduced bottom line
+                    { 4, 4 }, // cursor follows space after $ to newly introduced bottom line
                 },
             },
         },
@@ -402,40 +388,36 @@ namespace
                     { 6, 5 },
                     {
                         { L"ABCDEF", false },
-                        //       v cursor
                         { L"$     ", false },
-                        //       ^ cursor
                         { L"      ", false },
                         { L"      ", false },
                         { L"      ", false },
                     },
-                    { 5, 1 } // cursor in space far after $
+                    { 5, 1 }, // The cursor is 5 columns to the right of the $ (last column).
                 },
                 TestBuffer{
                     { 5, 5 }, // reduce width by 1
                     {
                         { L"ABCDE", true },
-                        { L"F$   ", true }, // [BUG] This line is marked wrapped, and I do not know why
-                        //   v cursor
-                        { L"     ", false },
-                        //   ^ cursor
+                        { L"F    ", false },
+                        // The reflow implementation marks a wrapped cursor as a forced row-wrap (= the row is padded with whitespace), so that when
+                        // the buffer is enlarged again, we restore the original cursor position correctly. That's why it says .cursor={5,1} below.
+                        { L"$    ", true },
                         { L"     ", false },
                         { L"     ", false },
                     },
-                    { 1, 2 } // cursor stays same linear distance from $
+                    { 0, 3 }, // $ is now at 0,2 and the cursor used to be 5 columns to the right. -> 0,3
                 },
                 TestBuffer{
                     { 6, 5 }, // grow back to original size
                     {
-                        { L"ABCDEF", true_due_to_exact_wrap_bug },
-                        //      v cursor [BUG] cursor does not retain linear distance from $
+                        { L"ABCDEF", false },
                         { L"$     ", false },
-                        //      ^ cursor
                         { L"      ", false },
                         { L"      ", false },
                         { L"      ", false },
                     },
-                    { 4, 1 } // cursor stays same linear distance from $
+                    { 5, 1 },
                 },
             },
         },
@@ -446,39 +428,37 @@ namespace
                     { 6, 5 },
                     {
                         { L"ABCDEF", false },
-                        //       v cursor
                         { L"$     ", false },
-                        //       ^ cursor
                         { L"BLAH  ", false },
                         { L"BLAH  ", false },
                         { L"      ", false },
                     },
-                    { 5, 1 } // cursor in space far after $
+                    { 5, 1 }, // The cursor is 5 columns to the right of the $ (last column).
                 },
                 TestBuffer{
                     { 5, 5 }, // reduce width by 1
                     {
-                        { L"ABCDE", true },
-                        { L"F$   ", false },
-                        { L"BLAH ", false },
-                        { L"BLAH ", true }, // [BUG] this line wraps, no idea why
-                        //  v cursor [BUG] cursor erroneously moved to end of all content
+                        { L"F    ", false },
+                        // The reflow implementation pads the row with the cursor with whitespace.
+                        // Search for "REFLOW_JANK_CURSOR_WRAP" to find the corresponding code.
+                        { L"$    ", true },
                         { L"     ", false },
-                        //  ^ cursor
+                        { L"BLAH ", false },
+                        { L"BLAH ", false },
                     },
-                    { 0, 4 } },
+                    { 0, 2 },
+                },
                 TestBuffer{
                     { 6, 5 }, // grow back to original size
                     {
-                        { L"ABCDEF", true },
+                        { L"F     ", false },
                         { L"$     ", false },
                         { L"BLAH  ", false },
-                        //       v cursor [BUG] cursor is pulled up to previous line because it was marked wrapped
                         { L"BLAH  ", false },
-                        //       ^ cursor
                         { L"      ", false },
                     },
-                    { 5, 3 } },
+                    { 5, 1 },
+                },
             },
         },
         TestCase{
@@ -489,27 +469,24 @@ namespace
                     { 6, 5 },
                     {
                         { L"ABCDEF", false },
-                        //       v cursor
                         { L"$     ", false },
-                        //       ^ cursor
                         { L"      ", false },
                         { L"      ", false },
                         { L"      ", false },
                     },
-                    { 5, 1 } // cursor in space far after $
+                    { 5, 1 }, // The cursor is 5 columns to the right of the $ (last column).
                 },
                 TestBuffer{
                     { 2, 5 }, // reduce width aggressively
                     {
                         { L"CD", true },
-                        { L"EF", true },
+                        { L"EF", false },
                         { L"$ ", true },
                         { L"  ", true },
-                        //   v cursor
                         { L"  ", false },
-                        //   ^ cursor
                     },
-                    { 1, 4 } },
+                    { 1, 4 },
+                },
             },
         },
         TestCase{
@@ -519,27 +496,24 @@ namespace
                     { 6, 5 },
                     {
                         { L"ABCDEF", true },
-                        //       v cursor
                         { L"$     ", true },
-                        //       ^ cursor
                         { L"      ", true },
                         { L"      ", true },
                         { L"      ", true },
                     },
-                    { 5, 1 } // cursor in space far after $
+                    { 5, 1 }, // cursor in space far after $
                 },
                 TestBuffer{
                     { 2, 5 }, // reduce width aggressively
                     {
-                        { L"EF", true },
-                        { L"$ ", true },
                         { L"  ", true },
                         { L"  ", true },
-                        //   v cursor [BUG] cursor does not maintain linear distance from $
-                        { L"  ", false },
-                        //   ^ cursor
+                        { L"  ", true },
+                        { L"  ", true },
+                        { L"  ", true },
                     },
-                    { 1, 4 } },
+                    { 1, 0 },
+                },
             },
         },
         TestCase{
@@ -549,14 +523,12 @@ namespace
                     { 6, 5 },
                     {
                         { L"ABCDEF", true },
-                        //       v cursor
                         { L"$     ", true },
-                        //       ^ cursor
                         { L"      ", true },
                         { L"      ", true },
                         { L"     Q", true },
                     },
-                    { 5, 1 } // cursor in space far after $
+                    { 5, 1 }, // cursor in space far after $
                 },
                 TestBuffer{
                     { 2, 5 }, // reduce width aggressively
@@ -564,12 +536,11 @@ namespace
                         { L"  ", true },
                         { L"  ", true },
                         { L"  ", true },
-                        { L" Q", true },
-                        //   v cursor [BUG] cursor jumps to end of world
-                        { L"  ", false }, // POTENTIAL [BUG] a whole new blank line is added for the cursor
-                        //   ^ cursor
+                        { L"  ", true },
+                        { L"  ", true },
                     },
-                    { 1, 4 } },
+                    { 1, 0 },
+                },
             },
         },
         TestCase{
@@ -579,27 +550,24 @@ namespace
                     { 6, 5 },
                     {
                         { L"ABCDEF", false },
-                        //       v cursor
                         { L"$     ", false },
-                        //       ^ cursor
                         { L"      ", false },
                         { L"      ", true },
                         { L"     Q", true },
                     },
-                    { 5, 1 } // cursor in space far after $
+                    { 5, 1 }, // cursor in space far after $
                 },
                 TestBuffer{
                     { 2, 5 }, // reduce width aggressively
                     {
-                        { L"  ", true },
-                        { L"  ", true },
-                        { L"  ", true },
-                        { L" Q", true },
-                        //  v  cursor [BUG] cursor jumps to different place than fully wrapped case
                         { L"  ", false },
-                        //  ^  cursor
+                        { L"  ", false },
+                        { L"  ", true },
+                        { L"  ", true },
+                        { L"  ", true },
                     },
-                    { 0, 4 } },
+                    { 1, 0 },
+                },
             },
         },
         TestCase{
@@ -614,24 +582,21 @@ namespace
                         { L"$     ", false },
                         { L"     Q", true },
                         { L"      ", true },
-                        //       v cursor
                         { L"      ", true },
-                        //       ^ cursor
                     },
-                    { 5, 4 } // cursor at end of buffer
+                    { 5, 4 }, // cursor at end of buffer
                 },
                 TestBuffer{
                     { 2, 5 }, // reduce width aggressively
                     {
+                        { L"  ", false },
                         { L"  ", true },
                         { L"  ", true },
-                        { L" Q", true },
-                        { L"  ", false },
-                        //  v  cursor [BUG] cursor loses linear distance from Q; is this important?
-                        { L"  ", false },
-                        //  ^  cursor
+                        { L"  ", true },
+                        { L"  ", true },
                     },
-                    { 0, 4 } },
+                    { 1, 0 },
+                },
             },
         },
     };
@@ -761,7 +726,7 @@ class ReflowTests
     static std::unique_ptr<TextBuffer> _textBufferByReflowingTextBuffer(TextBuffer& originalBuffer, const til::size newSize)
     {
         auto buffer = std::make_unique<TextBuffer>(newSize, TextAttribute{ 0x7 }, 0, false, renderer);
-        TextBuffer::Reflow(originalBuffer, *buffer, std::nullopt, std::nullopt);
+        TextBuffer::Reflow(originalBuffer, *buffer);
         return buffer;
     }
 

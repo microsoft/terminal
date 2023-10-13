@@ -106,5 +106,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, UseAtlasEngine);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Elevate);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, VtPassthrough);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
     }
 }

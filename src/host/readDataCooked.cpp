@@ -204,18 +204,19 @@ bool COOKED_READ_DATA::Read(const bool isUnicode, size_t& numBytes, ULONG& contr
 {
     controlKeyState = 0;
 
-    const auto done = _readCharInputLoop();
+    _readCharInputLoop();
 
     // NOTE: Don't call _flushBuffer in a wil::scope_exit/defer.
     // It may throw and throwing during an ongoing exception is a bad idea.
     _flushBuffer();
 
-    if (done)
+    if (_state == State::Accumulating)
     {
-        _handlePostCharInputLoop(isUnicode, numBytes, controlKeyState);
+        return false;
     }
 
-    return done;
+    _handlePostCharInputLoop(isUnicode, numBytes, controlKeyState);
+    return true;
 }
 
 // Printing wide glyphs at the end of a row results in a forced line wrap and a padding whitespace to be inserted.
@@ -308,17 +309,10 @@ size_t COOKED_READ_DATA::_wordNext(const std::wstring_view& chars, size_t positi
     return position;
 }
 
-const std::wstring_view& COOKED_READ_DATA::_newlineSuffix() const noexcept
-{
-    static constexpr std::wstring_view cr{ L"\r" };
-    static constexpr std::wstring_view crlf{ L"\r\n" };
-    return WI_IsFlagSet(_pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT) ? crlf : cr;
-}
-
 // Reads text off of the InputBuffer and dispatches it to the current popup or otherwise into the _buffer contents.
-bool COOKED_READ_DATA::_readCharInputLoop()
+void COOKED_READ_DATA::_readCharInputLoop()
 {
-    for (;;)
+    while (_state == State::Accumulating)
     {
         const auto hasPopup = !_popups.empty();
         auto charOrVkey = UNICODE_NULL;
@@ -331,7 +325,7 @@ bool COOKED_READ_DATA::_readCharInputLoop()
         const auto status = GetChar(_pInputBuffer, &charOrVkey, true, pCommandLineEditingKeys, pPopupKeys, &modifiers);
         if (status == CONSOLE_STATUS_WAIT)
         {
-            return false;
+            break;
         }
         THROW_IF_NTSTATUS_FAILED(status);
 
@@ -339,10 +333,7 @@ bool COOKED_READ_DATA::_readCharInputLoop()
         {
             const auto wch = static_cast<wchar_t>(popupKeys ? 0 : charOrVkey);
             const auto vkey = static_cast<uint16_t>(popupKeys ? charOrVkey : 0);
-            if (_popupHandleInput(wch, vkey, modifiers))
-            {
-                return true;
-            }
+            _popupHandleInput(wch, vkey, modifiers);
         }
         else
         {
@@ -350,16 +341,16 @@ bool COOKED_READ_DATA::_readCharInputLoop()
             {
                 _handleVkey(charOrVkey, modifiers);
             }
-            else if (_handleChar(charOrVkey, modifiers))
+            else
             {
-                return true;
+                _handleChar(charOrVkey, modifiers);
             }
         }
     }
 }
 
 // Handles character input for _readCharInputLoop() when no popups exist.
-bool COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
+void COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
 {
     // All paths in this function modify the buffer.
 
@@ -376,17 +367,19 @@ bool COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
         _bufferCursor++;
 
         _controlKeyState = modifiers;
-        return true;
+        _transitionState(State::DoneWithWakeupMask);
+        return;
     }
 
     switch (wch)
     {
     case UNICODE_CARRIAGERETURN:
     {
-        _buffer.append(_newlineSuffix());
+        // NOTE: Don't append newlines to the buffer just yet! See _handlePostCharInputLoop for more information.
         _bufferCursor = _buffer.size();
         _markAsDirty();
-        return true;
+        _transitionState(State::DoneWithCarriageReturn);
+        return;
     }
     case EXTKEY_ERASE_PREV_WORD: // Ctrl+Backspace
     case UNICODE_BACKSPACE:
@@ -415,7 +408,7 @@ bool COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
                     LOG_IF_FAILED(pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId));
                 }
             }
-            return false;
+            return;
         }
         // If processed mode is disabled, control characters like backspace are treated like any other character.
         break;
@@ -437,7 +430,6 @@ bool COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
 
     _bufferCursor++;
     _markAsDirty();
-    return false;
 }
 
 // Handles non-character input for _readCharInputLoop() when no popups exist.
@@ -656,15 +648,34 @@ void COOKED_READ_DATA::_handlePostCharInputLoop(const bool isUnicode, size_t& nu
     std::wstring_view input{ _buffer };
     size_t lineCount = 1;
 
-    if (WI_IsFlagSet(_pInputBuffer->InputMode, ENABLE_ECHO_INPUT))
+    if (_state == State::DoneWithCarriageReturn)
     {
-        // The last characters in line-read are a \r or \r\n unless _ctrlWakeupMask was used.
-        // Neither History nor s_MatchAndCopyAlias want to know about them.
-        const auto& suffix = _newlineSuffix();
-        if (input.ends_with(suffix))
-        {
-            input.remove_suffix(suffix.size());
+        static constexpr std::wstring_view cr{ L"\r" };
+        static constexpr std::wstring_view crlf{ L"\r\n" };
+        const auto newlineSuffix = WI_IsFlagSet(_pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT) ? crlf : cr;
+        std::wstring alias;
 
+        // Here's why we can't easily use _flushBuffer() to handle newlines:
+        //
+        // A carriage return (enter key) will increase the _distanceEnd by up to viewport-width many columns,
+        // since it increases the Y distance between the start and end by 1 (it's a newline after all).
+        // This will make _flushBuffer() think that the new _buffer is way longer than the old one and so
+        // _erase() ends up not erasing the tail end of the prompt, even if the new prompt is actually shorter.
+        //
+        // If you were to break this (remove this code and then append \r\n in _handleChar())
+        // you can reproduce the issue easily if you do this:
+        // * Run cmd.exe
+        // * Write "echo hello" and press Enter
+        // * Write "foobar foo bar" (don't press Enter)
+        // * Press F7, select "echo hello" and press Enter
+        //
+        // It'll print "hello" but the previous prompt will say "echo hello bar" because the _distanceEnd
+        // ended up being well over 14 leading it to believe that "bar" got overwritten during WriteCharsLegacy().
+
+        WriteCharsLegacy(_screenInfo, newlineSuffix, true, nullptr);
+
+        if (WI_IsFlagSet(_pInputBuffer->InputMode, ENABLE_ECHO_INPUT))
+        {
             if (_history)
             {
                 auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -672,24 +683,27 @@ void COOKED_READ_DATA::_handlePostCharInputLoop(const bool isUnicode, size_t& nu
             }
 
             Tracing::s_TraceCookedRead(_processHandle, input);
+            alias = Alias::s_MatchAndCopyAlias(input, _exeName, lineCount);
+        }
 
-            const auto alias = Alias::s_MatchAndCopyAlias(input, _exeName, lineCount);
-            if (!alias.empty())
-            {
-                _buffer = alias;
-            }
+        if (!alias.empty())
+        {
+            _buffer = std::move(alias);
+        }
+        else
+        {
+            _buffer.append(newlineSuffix);
+        }
 
-            // NOTE: Even if there's no alias we should restore the trailing \r\n that we removed above.
-            input = std::wstring_view{ _buffer };
+        input = std::wstring_view{ _buffer };
 
-            // doskey aliases may result in multiple lines of output (for instance `doskey test=echo foo$Techo bar$Techo baz`).
-            // We need to emit them as multiple cooked reads as well, so that each read completes at a \r\n.
-            if (lineCount > 1)
-            {
-                // ProcessAliases() is supposed to end each line with \r\n. If it doesn't we might as well fail-fast.
-                const auto firstLineEnd = input.find(UNICODE_LINEFEED) + 1;
-                input = input.substr(0, std::min(input.size(), firstLineEnd));
-            }
+        // doskey aliases may result in multiple lines of output (for instance `doskey test=echo foo$Techo bar$Techo baz`).
+        // We need to emit them as multiple cooked reads as well, so that each read completes at a \r\n.
+        if (lineCount > 1)
+        {
+            // ProcessAliases() is supposed to end each line with \r\n. If it doesn't we might as well fail-fast.
+            const auto firstLineEnd = input.find(UNICODE_LINEFEED) + 1;
+            input = input.substr(0, std::min(input.size(), firstLineEnd));
         }
     }
 
@@ -722,6 +736,12 @@ void COOKED_READ_DATA::_handlePostCharInputLoop(const bool isUnicode, size_t& nu
     controlKeyState = _controlKeyState;
 }
 
+void COOKED_READ_DATA::_transitionState(State state) noexcept
+{
+    assert(_state == State::Accumulating);
+    _state = state;
+}
+
 // Signals to _flushBuffer() that the contents of _buffer are stale and need to be redrawn.
 // ALL _buffer and _bufferCursor changes must be flagged with _markAsDirty().
 //
@@ -733,6 +753,7 @@ void COOKED_READ_DATA::_markAsDirty()
 }
 
 // Draws the contents of _buffer onto the screen.
+// NOTE: Don't call _flushBuffer() after appending newlines to the buffer! See _handlePostCharInputLoop for more information.
 void COOKED_READ_DATA::_flushBuffer()
 {
     // _flushBuffer() is called often and is a good place to assert() that our _bufferCursor is still in bounds.
@@ -1043,12 +1064,12 @@ void COOKED_READ_DATA::_popupsDone()
     _screenInfo.GetTextBuffer().GetCursor().SetIsPopupShown(false);
 }
 
-bool COOKED_READ_DATA::_popupHandleInput(wchar_t wch, uint16_t vkey, DWORD modifiers)
+void COOKED_READ_DATA::_popupHandleInput(wchar_t wch, uint16_t vkey, DWORD modifiers)
 {
     if (_popups.empty())
     {
         assert(false); // Don't call this function.
-        return false;
+        return;
     }
 
     auto& popup = _popups.back();
@@ -1056,17 +1077,18 @@ bool COOKED_READ_DATA::_popupHandleInput(wchar_t wch, uint16_t vkey, DWORD modif
     {
     case PopupKind::CopyToChar:
         _popupHandleCopyToCharInput(popup, wch, vkey, modifiers);
-        return false;
+        break;
     case PopupKind::CopyFromChar:
         _popupHandleCopyFromCharInput(popup, wch, vkey, modifiers);
-        return false;
+        break;
     case PopupKind::CommandNumber:
         _popupHandleCommandNumberInput(popup, wch, vkey, modifiers);
-        return false;
+        break;
     case PopupKind::CommandList:
-        return _popupHandleCommandListInput(popup, wch, vkey, modifiers);
+        _popupHandleCommandListInput(popup, wch, vkey, modifiers);
+        break;
     default:
-        return false;
+        break;
     }
 }
 
@@ -1166,7 +1188,7 @@ void COOKED_READ_DATA::_popupHandleCommandNumberInput(Popup& popup, const wchar_
     }
 }
 
-bool COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t wch, const uint16_t vkey, const DWORD modifiers)
+void COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t wch, const uint16_t vkey, const DWORD modifiers)
 {
     auto& cl = popup.commandList;
 
@@ -1174,30 +1196,31 @@ bool COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t 
     {
         _buffer.assign(_history->RetrieveNth(cl.selected));
         _popupsDone();
-        return _handleChar(UNICODE_CARRIAGERETURN, modifiers);
+        _handleChar(UNICODE_CARRIAGERETURN, modifiers);
+        return;
     }
 
     switch (vkey)
     {
     case VK_ESCAPE:
         _popupsDone();
-        return false;
+        return;
     case VK_F9:
         _popupPush(PopupKind::CommandNumber);
-        return false;
+        return;
     case VK_DELETE:
         _history->Remove(cl.selected);
         if (_history->GetNumberOfCommands() <= 0)
         {
             _popupsDone();
-            return false;
+            return;
         }
         break;
     case VK_LEFT:
     case VK_RIGHT:
         _replaceBuffer(_history->RetrieveNth(cl.selected));
         _popupsDone();
-        return false;
+        return;
     case VK_UP:
         if (WI_IsFlagSet(modifiers, SHIFT_PRESSED))
         {
@@ -1230,11 +1253,11 @@ bool COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t 
         cl.selected += popup.contentRect.height();
         break;
     default:
-        return false;
+        return;
     }
 
     _popupDrawCommandList(popup);
-    return false;
+    return;
 }
 
 void COOKED_READ_DATA::_popupDrawPrompt(const Popup& popup, const UINT id) const

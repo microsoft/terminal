@@ -4,6 +4,13 @@
 namespace Microsoft.Terminal.Settings.Model
 {
 
+    enum IconStyle
+    {
+        Default,
+        Hidden,
+        Monochrome
+    };
+
     enum ThemeColorType
     {
         Accent,
@@ -63,6 +70,7 @@ namespace Microsoft.Terminal.Settings.Model
         ThemeColor Background { get; };
         ThemeColor UnfocusedBackground { get; };
         TabCloseButtonVisibility ShowCloseButton { get; };
+        IconStyle IconStyle { get; };
     }
 
     [default_interface] runtimeclass Theme : Windows.Foundation.IStringable {

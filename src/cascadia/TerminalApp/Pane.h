@@ -73,8 +73,9 @@ public:
 
     std::shared_ptr<Pane> GetActivePane();
     winrt::Microsoft::Terminal::Control::TermControl GetLastFocusedTerminalControl();
-    winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl();
+    winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl() const;
     winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile();
+    bool IsConnectionClosed() const;
 
     // Method Description:
     // - If this is a leaf pane, return its profile.
