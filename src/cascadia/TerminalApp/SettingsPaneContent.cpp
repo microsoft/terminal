@@ -54,7 +54,9 @@ namespace winrt::TerminalApp::implementation
 
     NewTerminalArgs SettingsPaneContent::GetNewTerminalArgs(const bool /* asContent */) const
     {
-        // TODO! hey, can we somehow replicate std::vector<ActionAndArgs> SettingsTab::BuildStartupActions?
+        // For now, we're doing a terrible thing in TerminalTab itself to
+        // generate an OpenSettings action manually, without asking for the pane
+        // structure.
         return nullptr;
     }
 
