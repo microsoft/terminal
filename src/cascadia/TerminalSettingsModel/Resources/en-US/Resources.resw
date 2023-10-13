@@ -703,6 +703,9 @@
   <data name="OpenScratchpadKey" xml:space="preserve">
     <value>Open scratchpad</value>
   </data>
+  <data name="OpenAccessibilityPaneKey" xml:space="preserve">
+    <value>Open accessibility pane</value>
+  </data>
   <data name="SelectOutputNextCommandKey" xml:space="preserve">
     <value>Select next command output</value>
   </data>

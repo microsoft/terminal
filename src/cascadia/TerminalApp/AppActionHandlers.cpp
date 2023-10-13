@@ -6,6 +6,7 @@
 
 #include "TerminalPage.h"
 #include "ScratchpadContent.h"
+#include "AccessibilityContent.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
 #include "Utils.h"
@@ -1436,6 +1437,33 @@ namespace winrt::TerminalApp::implementation
             auto resultPane = std::make_shared<Pane>(*scratchPane);
             _SplitPane(_senderOrFocusedTab(sender), SplitDirection::Automatic, 0.5f, resultPane);
             args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleOpenAccessibilityPane(const IInspectable& sender,
+                                                    const ActionEventArgs& args)
+    {
+        if (Feature_A11yPane::IsEnabled())
+        {
+            if (const auto activeTab{ _senderOrFocusedTab(sender) })
+            {
+                if (const auto control{ activeTab->GetActiveTerminalControl() })
+                {
+                    const auto buffer = control.ReadEntireBuffer();
+
+                    auto a11yPane{ winrt::make_self<AccessibilityContent>() };
+
+                    // This is maybe a little wacky - add our key event handler to the pane
+                    // we made. So that we can get actions for keys that the content didn't
+                    // handle.
+                    a11yPane->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
+
+                    auto resultPane = std::make_shared<Pane>(*a11yPane);
+                    _SplitPane(_senderOrFocusedTab(sender), SplitDirection::Automatic, 0.5f, resultPane);
+                    a11yPane->Write(buffer);
+                    args.Handled(true);
+                }
+            }
         }
     }
 
