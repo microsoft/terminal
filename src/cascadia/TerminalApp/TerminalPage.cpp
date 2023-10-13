@@ -21,7 +21,6 @@
 #include "App.h"
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
-#include "SettingsTab.h"
 #include "SettingsPaneContent.h"
 #include "TabRowControl.h"
 #include "Utils.h"
@@ -3341,10 +3340,6 @@ namespace winrt::TerminalApp::implementation
                 // Force the TerminalTab to re-grab its currently active control's title.
                 terminalTab->UpdateTitle();
             }
-            else if (auto settingsTab = tab.try_as<TerminalApp::SettingsTab>())
-            {
-                settingsTab.UpdateSettings(_settings);
-            }
 
             auto tabImpl{ winrt::get_self<TabBase>(tab) };
             tabImpl->SetActionMap(_settings.ActionMap());
@@ -4612,13 +4607,12 @@ namespace winrt::TerminalApp::implementation
         til::color bgColor = backgroundSolidBrush.Color();
 
         Media::Brush terminalBrush{ nullptr };
-        if (const auto& control{ _GetActiveControl() })
+        if (const auto tab{ _GetFocusedTabImpl() })
         {
-            terminalBrush = control.BackgroundBrush();
-        }
-        else if (const auto& settingsTab{ _GetFocusedTab().try_as<TerminalApp::SettingsTab>() })
-        {
-            terminalBrush = settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
+            if (const auto& pane{ tab->GetActivePane() })
+            {
+                terminalBrush = pane->GetContent().BackgroundBrush();
+            }
         }
 
         if (_settings.GlobalSettings().UseAcrylicInTabRow())

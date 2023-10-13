@@ -19,7 +19,6 @@
 #include "TabRowControl.h"
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
-#include "SettingsTab.h"
 #include "..\TerminalSettingsModel\FileUtils.h"
 
 #include <shlobj.h>
@@ -792,14 +791,6 @@ namespace winrt::TerminalApp::implementation
                 {
                     _HandleClosePaneRequested(pane);
                 }
-            }
-        }
-        else if (auto index{ _GetFocusedTabIndex() })
-        {
-            const auto tab{ _tabs.GetAt(*index) };
-            if (tab.try_as<TerminalApp::SettingsTab>())
-            {
-                _HandleCloseTabRequested(tab);
             }
         }
     }
