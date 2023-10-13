@@ -248,7 +248,7 @@ namespace Microsoft::Console::VirtualTerminal
         { L'\xc8', L'\u0398' }, // Greek Capital Letter Theta
         { L'\xc9', L'\u0399' }, // Greek Capital Letter Iota
         { L'\xca', L'\u039a' }, // Greek Capital Letter Kappa
-        { L'\xcb', L'\u039b' }, // Greek Capital Letter Lamda
+        { L'\xcb', L'\u039b' }, // Greek Capital Letter Lambda
         { L'\xcc', L'\u039c' }, // Greek Capital Letter Mu
         { L'\xcd', L'\u039d' }, // Greek Capital Letter Nu
         { L'\xce', L'\u039e' }, // Greek Capital Letter Xi
@@ -280,7 +280,7 @@ namespace Microsoft::Console::VirtualTerminal
         { L'\xe8', L'\u03b8' }, // Greek Small Letter Theta
         { L'\xe9', L'\u03b9' }, // Greek Small Letter Iota
         { L'\xea', L'\u03ba' }, // Greek Small Letter Kappa
-        { L'\xeb', L'\u03bb' }, // Greek Small Letter Lamda
+        { L'\xeb', L'\u03bb' }, // Greek Small Letter Lambda
         { L'\xec', L'\u03bc' }, // Greek Small Letter Mu
         { L'\xed', L'\u03bd' }, // Greek Small Letter Nu
         { L'\xee', L'\u03be' }, // Greek Small Letter Xi
@@ -567,7 +567,7 @@ namespace Microsoft::Console::VirtualTerminal
         { L'\xc8', L'\u0398' }, // Greek Capital Letter Theta
         { L'\xc9', L'\u0399' }, // Greek Capital Letter Iota
         { L'\xca', L'\u039a' }, // Greek Capital Letter Kappa
-        { L'\xcb', L'\u039b' }, // Greek Capital Letter Lamda
+        { L'\xcb', L'\u039b' }, // Greek Capital Letter Lambda
         { L'\xcc', L'\u039c' }, // Greek Capital Letter Mu
         { L'\xcd', L'\u039d' }, // Greek Capital Letter Nu
         { L'\xce', L'\u039e' }, // Greek Capital Letter Xi
@@ -599,7 +599,7 @@ namespace Microsoft::Console::VirtualTerminal
         { L'\xe8', L'\u03b8' }, // Greek Small Letter Theta
         { L'\xe9', L'\u03b9' }, // Greek Small Letter Iota
         { L'\xea', L'\u03ba' }, // Greek Small Letter Kappa
-        { L'\xeb', L'\u03bb' }, // Greek Small Letter Lamda
+        { L'\xeb', L'\u03bb' }, // Greek Small Letter Lambda
         { L'\xec', L'\u03bc' }, // Greek Small Letter Mu
         { L'\xed', L'\u03bd' }, // Greek Small Letter Nu
         { L'\xee', L'\u03be' }, // Greek Small Letter Xi
@@ -823,7 +823,7 @@ namespace Microsoft::Console::VirtualTerminal
         { L'\x48', L'\u0398' }, // Greek Capital Letter Theta
         { L'\x49', L'\u0399' }, // Greek Capital Letter Iota
         { L'\x4a', L'\u039a' }, // Greek Capital Letter Kappa
-        { L'\x4b', L'\u039b' }, // Greek Capital Letter Lamda
+        { L'\x4b', L'\u039b' }, // Greek Capital Letter Lambda
         { L'\x4c', L'\u039c' }, // Greek Capital Letter Mu
         { L'\x4d', L'\u039d' }, // Greek Capital Letter Nu
         { L'\x4e', L'\u039e' }, // Greek Capital Letter Xi
@@ -855,7 +855,7 @@ namespace Microsoft::Console::VirtualTerminal
         { L'\x68', L'\u03b8' }, // Greek Small Letter Theta
         { L'\x69', L'\u03b9' }, // Greek Small Letter Iota
         { L'\x6a', L'\u03ba' }, // Greek Small Letter Kappa
-        { L'\x6b', L'\u03bb' }, // Greek Small Letter Lamda
+        { L'\x6b', L'\u03bb' }, // Greek Small Letter Lambda
         { L'\x6c', L'\u03bc' }, // Greek Small Letter Mu
         { L'\x6d', L'\u03bd' }, // Greek Small Letter Nu
         { L'\x6e', L'\u03be' }, // Greek Small Letter Xi
