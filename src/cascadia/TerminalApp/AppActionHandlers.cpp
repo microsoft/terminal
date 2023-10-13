@@ -1427,7 +1427,6 @@ namespace winrt::TerminalApp::implementation
         if (Feature_ScratchpadPane::IsEnabled())
         {
             auto scratchPane{ winrt::make_self<ScratchpadContent>() };
-            // auto scratchPane{ winrt::make_self<SettingsPaneContent>(_settings) };
 
             // This is maybe a little wacky - add our key event handler to the pane
             // we made. So that we can get actions for keys that the content didn't
