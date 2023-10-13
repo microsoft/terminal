@@ -3931,65 +3931,6 @@ namespace winrt::TerminalApp::implementation
             // Create the tab
             auto resultPane = std::make_shared<Pane>(*settingsContent);
             _settingsTab = _CreateNewTabFromPane(resultPane);
-
-            // auto newTabImpl = winrt::make_self<SettingsTab>(sui, _settings.GlobalSettings().CurrentTheme().RequestedTheme());
-
-            // // Add the new tab to the list of our tabs.
-            // _tabs.Append(*newTabImpl);
-            // _mruTabs.Append(*newTabImpl);
-
-            // newTabImpl->SetDispatch(*_actionDispatch);
-            // newTabImpl->SetActionMap(_settings.ActionMap());
-
-            // // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
-            // _UpdateTabIndices();
-
-            // // Don't capture a strong ref to the tab. If the tab is removed as this
-            // // is called, we don't really care anymore about handling the event.
-            // auto weakTab = make_weak(newTabImpl);
-
-            // auto tabViewItem = newTabImpl->TabViewItem();
-            // _tabView.TabItems().Append(tabViewItem);
-
-            // tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
-
-            // // When the tab requests close, try to close it (prompt for approval, if required)
-            // newTabImpl->CloseRequested([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
-            //     auto page{ weakThis.get() };
-            //     auto tab{ weakTab.get() };
-            //     if (page && tab)
-            //     {
-            //         page->_HandleCloseTabRequested(*tab);
-            //     }
-            // });
-
-            // TODO! Make sure we remove the _settingsTab if it is closed!
-            // ---------------------- main
-            // newTabImpl->Closed([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
-            //     const auto page = weakThis.get();
-            //     const auto tab = weakTab.get();
-
-            //     if (page && tab)
-            //     {
-            //         page->_RemoveTab(*tab);
-            //     }
-            // });
-            // =======
-            // // When the tab is closed, remove it from our list of tabs.
-            // newTabImpl->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
-            //     if (auto page{ weakThis.get() })
-            //     {
-            //         page->_settingsTab = nullptr;
-            //         page->_RemoveOnCloseRoutine(tabViewItem, page);
-            //     }
-            // });
-            // -------------------------- dev/migrie/fhl/scratchpad-pane
-
-            // _settingsTab = *newTabImpl;
-
-            //// This kicks off TabView::SelectionChanged, in response to which
-            //// we'll attach the terminal's Xaml control to the Xaml root.
-            //_tabView.SelectedItem(tabViewItem);
         }
         else
         {
