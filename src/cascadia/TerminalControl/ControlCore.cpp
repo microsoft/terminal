@@ -680,7 +680,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _setOpacity(Opacity() + adjustment);
     }
 
-    void ControlCore::_setOpacity(const double opacity)
+    // Method Description:
+    // - Updates the opacity of the terminal
+    // Arguments:
+    // - opacity: The new opacity to set.
+    // - focused (default == true): Whether the window is focused or unfocused.
+    // Return Value:
+    // - <none>
+    void ControlCore::_setOpacity(const double opacity, bool focused)
     {
         const auto newOpacity = std::clamp(opacity,
                                            0.0,
@@ -693,6 +700,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Update our runtime opacity value
         _runtimeOpacity = newOpacity;
+
+        //Stores the focused runtime opacity separately from unfocused opacity
+        //to transition smoothly between the two.
+        _runtimeFocusedOpacity = focused ? newOpacity : _runtimeFocusedOpacity;
 
         // Manually turn off acrylic if they turn off transparency.
         _runtimeUseAcrylic = newOpacity < 1.0 && _settings->UseAcrylic();
@@ -824,6 +835,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _cellWidth = CSSLengthPercentage::FromString(_settings->CellWidth().c_str());
         _cellHeight = CSSLengthPercentage::FromString(_settings->CellHeight().c_str());
         _runtimeOpacity = std::nullopt;
+        _runtimeFocusedOpacity = std::nullopt;
 
         // Manually turn off acrylic if they turn off transparency.
         _runtimeUseAcrylic = _settings->Opacity() < 1.0 && _settings->UseAcrylic();
@@ -874,21 +886,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
 
+            // Incase EnableUnfocusedAcrylic is disabled and Focused Acrylic is set to true,
+            // the terminal should ignore the unfocused opacity from settings.
+            // The Focused Opacity from settings should be ignored if overridden at runtime.
+            bool useFocusedRuntimeOpacity = focused || (!_settings->EnableUnfocusedAcrylic() && UseAcrylic());
+            double newOpacity = useFocusedRuntimeOpacity ?
+                                    FocusedOpacity() :
+                                    newAppearance->Opacity();
+            _setOpacity(newOpacity, focused);
+
             // No need to update Acrylic if UnfocusedAcrylic is disabled
             if (_settings->EnableUnfocusedAcrylic())
             {
                 // Manually turn off acrylic if they turn off transparency.
                 _runtimeUseAcrylic = Opacity() < 1.0 && newAppearance->UseAcrylic();
-
-                // Update the renderer as well. It might need to fall back from
-                // cleartype -> grayscale if the BG is transparent / acrylic.
-                _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
-                _renderer->NotifyPaintFrame();
-
-                auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(Opacity());
-
-                _TransparencyChangedHandlers(*this, *eventArgs);
             }
+
+            // Update the renderer as well. It might need to fall back from
+            // cleartype -> grayscale if the BG is transparent / acrylic.
+            _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+            _renderer->NotifyPaintFrame();
+
+            auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(Opacity());
+            _TransparencyChangedHandlers(*this, *eventArgs);
 
             _renderer->TriggerRedrawAll(true, true);
         }

@@ -273,6 +273,13 @@
         "useAcrylic":{
           "description": "When set to true, the window will have an acrylic material background when unfocused. When set to false, the window will have a plain, untextured background when unfocused.",
           "type": "boolean"
+        },
+        "opacity": {
+          "default": 100,
+          "description": "Sets the opacity of the window for the profile when unfocused. Accepts values from 0-100.",
+          "maximum": 100,
+          "minimum": 0,
+          "type": "number"
         }
       },
       "type": "object"
