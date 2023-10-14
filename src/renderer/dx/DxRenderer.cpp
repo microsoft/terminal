@@ -1721,7 +1721,7 @@ try
         _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _strokeStyle.Get());
     };
 
-    const auto DrawHyperlinkLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
+    const auto DrawDottedLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
         _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _dashStrokeStyle.Get());
     };
 
@@ -1780,7 +1780,7 @@ try
     // In the case of the underline and strikethrough offsets, the stroke width
     // is already accounted for, so they don't require further adjustments.
 
-    if (lines.any(GridLines::Underline, GridLines::DoubleUnderline, GridLines::HyperlinkUnderline))
+    if (lines.any(GridLines::Underline, GridLines::DoubleUnderline, GridLines::DottedUnderline, GridLines::HyperlinkUnderline))
     {
         const auto halfUnderlineWidth = lineMetrics.underlineWidth / 2.0f;
         const auto startX = target.x + halfUnderlineWidth;
@@ -1792,9 +1792,9 @@ try
             DrawLine(startX, y, endX, y, lineMetrics.underlineWidth);
         }
 
-        if (lines.test(GridLines::HyperlinkUnderline))
+        if (lines.any(GridLines::DottedUnderline, GridLines::HyperlinkUnderline))
         {
-            DrawHyperlinkLine(startX, y, endX, y, lineMetrics.underlineWidth);
+            DrawDottedLine(startX, y, endX, y, lineMetrics.underlineWidth);
         }
 
         if (lines.test(GridLines::DoubleUnderline))

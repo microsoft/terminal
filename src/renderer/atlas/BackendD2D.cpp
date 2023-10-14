@@ -459,7 +459,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         {
             appendHorizontalLine(r, p.s->font->underline, nullptr, r.underlineColor);
         }
-        if (r.lines.test(GridLines::HyperlinkUnderline))
+        if (r.lines.any(GridLines::DottedUnderline, GridLines::HyperlinkUnderline))
         {
             appendHorizontalLine(r, p.s->font->underline, _dottedStrokeStyle.get(), r.underlineColor);
         }
