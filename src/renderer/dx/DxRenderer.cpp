@@ -1696,22 +1696,22 @@ CATCH_RETURN()
 // - Paints lines around cells (draws in pieces of the grid)
 // Arguments:
 // - lines - Which grid lines (top, left, bottom, right) to draw
-// - color - The color to use for drawing the lines
+// - gridlineColor - The color to use for drawing the gridlines
+// - underlineColor - The color to use for drawing the underlines
 // - cchLine - Length of the line to draw in character cells
 // - coordTarget - The X,Y character position in the grid where we should start drawing
 //               - We will draw rightward (+X) from here
 // Return Value:
 // - S_OK or relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::PaintBufferGridLines(const GridLineSet lines,
-                                                     COLORREF const color,
+                                                     const COLORREF gridlineColor,
+                                                     const COLORREF underlineColor,
                                                      const size_t cchLine,
                                                      const til::point coordTarget) noexcept
 try
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
     const auto restoreBrushOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
-
-    _d2dBrushForeground->SetColor(_ColorFFromColorRef(color | 0xff000000));
 
     const auto font = _fontRenderData->GlyphCell().to_d2d_size();
     const D2D_POINT_2F target = { coordTarget.x * font.width, coordTarget.y * font.height };
@@ -1724,6 +1724,8 @@ try
     const auto DrawHyperlinkLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
         _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _dashStrokeStyle.Get());
     };
+
+    _d2dBrushForeground->SetColor(_ColorFFromColorRef(gridlineColor | 0xff000000));
 
     // NOTE: Line coordinates are centered within the line, so they need to be
     // offset by half the stroke width. For the start coordinate we add half
@@ -1772,6 +1774,8 @@ try
             DrawLine(startX, y, endX, y, lineMetrics.gridlineWidth);
         }
     }
+
+    _d2dBrushForeground->SetColor(_ColorFFromColorRef(underlineColor | 0xff000000));
 
     // In the case of the underline and strikethrough offsets, the stroke width
     // is already accounted for, so they don't require further adjustments.

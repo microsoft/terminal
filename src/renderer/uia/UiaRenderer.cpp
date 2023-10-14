@@ -347,14 +347,16 @@ void UiaEngine::WaitUntilCanRender() noexcept
 //  For UIA, this doesn't mean anything. So do nothing.
 // Arguments:
 // - lines - <unused>
-// - color - <unused>
+// - gridlineColor - <unused>
+// - underlineColor - <unused>
 // - cchLine - <unused>
 // - coordTarget - <unused>
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
-                                                      COLORREF const /*color*/,
-                                                      size_t const /*cchLine*/,
+[[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
+                                                      const COLORREF /*gridlineColor*/,
+                                                      const COLORREF /*underlineColor*/,
+                                                      const size_t /*cchLine*/,
                                                       const til::point /*coordTarget*/) noexcept
 {
     return S_FALSE;

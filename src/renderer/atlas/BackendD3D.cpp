@@ -1685,11 +1685,11 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
                 .shadingType = ShadingType::SolidLine,
                 .position = { static_cast<i16>(posX), rowTop },
                 .size = { width, p.s->font->cellSize.y },
-                .color = r.color,
+                .color = r.gridlineColor,
             };
         }
     };
-    const auto appendHorizontalLine = [&](const GridLineRange& r, FontDecorationPosition pos, ShadingType shadingType) {
+    const auto appendHorizontalLine = [&](const GridLineRange& r, FontDecorationPosition pos, ShadingType shadingType, const u32 color) {
         const auto offset = pos.position << verticalShift;
         const auto height = static_cast<u16>(pos.height << verticalShift);
 
@@ -1707,7 +1707,7 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
                 .shadingType = shadingType,
                 .position = { left, static_cast<i16>(rt) },
                 .size = { width, static_cast<u16>(rb - rt) },
-                .color = r.color,
+                .color = color,
             };
         }
     };
@@ -1727,39 +1727,39 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         }
         if (r.lines.test(GridLines::Top))
         {
-            appendHorizontalLine(r, p.s->font->gridTop, ShadingType::SolidLine);
+            appendHorizontalLine(r, p.s->font->gridTop, ShadingType::SolidLine, r.gridlineColor);
         }
         if (r.lines.test(GridLines::Bottom))
         {
-            appendHorizontalLine(r, p.s->font->gridBottom, ShadingType::SolidLine);
+            appendHorizontalLine(r, p.s->font->gridBottom, ShadingType::SolidLine, r.gridlineColor);
         }
 
         if (r.lines.test(GridLines::Underline))
         {
-            appendHorizontalLine(r, p.s->font->underline, ShadingType::SolidLine);
+            appendHorizontalLine(r, p.s->font->underline, ShadingType::SolidLine, r.underlineColor);
         }
         if (r.lines.any(GridLines::DottedUnderline, GridLines::HyperlinkUnderline))
         {
-            appendHorizontalLine(r, p.s->font->underline, dottedLineType);
+            appendHorizontalLine(r, p.s->font->underline, dottedLineType, r.underlineColor);
         }
         if (r.lines.test(GridLines::DashedUnderline))
         {
-            appendHorizontalLine(r, p.s->font->underline, dashedLineType);
+            appendHorizontalLine(r, p.s->font->underline, dashedLineType, r.underlineColor);
         }
         if (r.lines.test(GridLines::CurlyUnderline))
         {
-            appendHorizontalLine(r, _curlyUnderline, curlyLineType);
+            appendHorizontalLine(r, _curlyUnderline, curlyLineType, r.underlineColor);
         }
         if (r.lines.test(GridLines::DoubleUnderline))
         {
             for (const auto pos : p.s->font->doubleUnderline)
             {
-                appendHorizontalLine(r, pos, ShadingType::SolidLine);
+                appendHorizontalLine(r, pos, ShadingType::SolidLine, r.underlineColor);
             }
         }
         if (r.lines.test(GridLines::Strikethrough))
         {
-            appendHorizontalLine(r, p.s->font->strikethrough, ShadingType::SolidLine);
+            appendHorizontalLine(r, p.s->font->strikethrough, ShadingType::SolidLine, r.underlineColor);
         }
     }
 }

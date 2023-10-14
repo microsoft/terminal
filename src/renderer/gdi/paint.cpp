@@ -509,19 +509,20 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 // - Draws up to one line worth of grid lines on top of characters.
 // Arguments:
 // - lines - Enum defining which edges of the rectangle to draw
-// - color - The color to use for drawing the edges.
+// - gridlineColor - The color to use for drawing the gridlines.
+// - underlineColor - The color to use for drawing the underlines.
 // - cchLine - How many characters we should draw the grid lines along (left to right in a row)
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
-[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const til::point coordTarget) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
     // Convert the target from characters to pixels.
     const auto ptTarget = coordTarget * _GetFontSize();
-    // Set the brush color as requested and save the previous brush to restore at the end.
-    wil::unique_hbrush hbr(CreateSolidBrush(color));
+    // Set the brush color to the gridline color and save the previous brush to restore at the end.
+    wil::unique_hbrush hbr(CreateSolidBrush(gridlineColor));
     RETURN_HR_IF_NULL(E_FAIL, hbr.get());
 
     wil::unique_hbrush hbrPrev(SelectBrush(_hdcMemoryContext, hbr.get()));
@@ -573,6 +574,11 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         const auto y = ptTarget.y + fontHeight - _lineMetrics.gridlineWidth;
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.gridlineWidth));
     }
+
+    hbr.reset(CreateSolidBrush(underlineColor));
+    wil::unique_hbrush hbrGridline(SelectBrush(_hdcMemoryContext, hbr.get()));
+    RETURN_HR_IF_NULL(E_FAIL, hbrGridline.get());
+    hbr.release(); // If SelectBrush was successful, GDI owns the brush. Release for now.
 
     if (lines.any(GridLines::Underline, GridLines::DoubleUnderline))
     {

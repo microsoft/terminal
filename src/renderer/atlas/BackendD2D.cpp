@@ -409,7 +409,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
 
         D2D1_POINT_2F point0{ 0, static_cast<f32>(textCellCenter) };
         D2D1_POINT_2F point1{ 0, static_cast<f32>(textCellCenter + cellSize.y) };
-        const auto brush = _brushWithColor(r.color);
+        const auto brush = _brushWithColor(r.gridlineColor);
         const f32 w = pos.height;
         const f32 hw = w * 0.5f;
 
@@ -421,11 +421,11 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
             _renderTarget->DrawLine(point0, point1, brush, w, nullptr);
         }
     };
-    const auto appendHorizontalLine = [&](const GridLineRange& r, FontDecorationPosition pos, ID2D1StrokeStyle* strokeStyle) {
+    const auto appendHorizontalLine = [&](const GridLineRange& r, FontDecorationPosition pos, ID2D1StrokeStyle* strokeStyle, const u32 color) {
         const auto from = r.from >> widthShift;
         const auto to = r.to >> widthShift;
 
-        const auto brush = _brushWithColor(r.color);
+        const auto brush = _brushWithColor(color);
         const f32 w = pos.height;
         const f32 centerY = textCellCenter + pos.position + w * 0.5f;
         const D2D1_POINT_2F point0{ static_cast<f32>(from * cellSize.x), centerY };
@@ -448,31 +448,31 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         }
         if (r.lines.test(GridLines::Top))
         {
-            appendHorizontalLine(r, p.s->font->gridTop, nullptr);
+            appendHorizontalLine(r, p.s->font->gridTop, nullptr, r.gridlineColor);
         }
         if (r.lines.test(GridLines::Bottom))
         {
-            appendHorizontalLine(r, p.s->font->gridBottom, nullptr);
+            appendHorizontalLine(r, p.s->font->gridBottom, nullptr, r.gridlineColor);
         }
 
         if (r.lines.test(GridLines::Underline))
         {
-            appendHorizontalLine(r, p.s->font->underline, nullptr);
+            appendHorizontalLine(r, p.s->font->underline, nullptr, r.underlineColor);
         }
         if (r.lines.test(GridLines::HyperlinkUnderline))
         {
-            appendHorizontalLine(r, p.s->font->underline, _dottedStrokeStyle.get());
+            appendHorizontalLine(r, p.s->font->underline, _dottedStrokeStyle.get(), r.underlineColor);
         }
         if (r.lines.test(GridLines::DoubleUnderline))
         {
             for (const auto pos : p.s->font->doubleUnderline)
             {
-                appendHorizontalLine(r, pos, nullptr);
+                appendHorizontalLine(r, pos, nullptr, r.underlineColor);
             }
         }
         if (r.lines.test(GridLines::Strikethrough))
         {
-            appendHorizontalLine(r, p.s->font->strikethrough, nullptr);
+            appendHorizontalLine(r, p.s->font->strikethrough, nullptr, r.underlineColor);
         }
     }
 }

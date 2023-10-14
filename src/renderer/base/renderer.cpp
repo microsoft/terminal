@@ -1010,10 +1010,11 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     // Return early if there are no lines to paint.
     if (lines.any())
     {
-        // Get the current underline color to render the lines.
-        const auto rgb = _renderSettings.GetAttributeUnderlineColor(textAttribute);
+        // Get the current foreground and underline colors to render the lines.
+        const auto fg = _renderSettings.GetAttributeColors(textAttribute).first;
+        const auto underlineColor = _renderSettings.GetAttributeUnderlineColor(textAttribute);
         // Draw the lines
-        LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
+        LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, fg, underlineColor, cchLine, coordTarget));
     }
 }
 
