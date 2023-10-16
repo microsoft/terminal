@@ -575,6 +575,12 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.gridlineWidth));
     }
 
+    if (lines.test(GridLines::Strikethrough))
+    {
+        const auto y = ptTarget.y + _lineMetrics.strikethroughOffset;
+        RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.strikethroughWidth));
+    }
+
     hbr.reset(CreateSolidBrush(underlineColor));
     wil::unique_hbrush hbrGridline(SelectBrush(_hdcMemoryContext, hbr.get()));
     RETURN_HR_IF_NULL(E_FAIL, hbrGridline.get());
@@ -590,12 +596,6 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
             const auto y2 = ptTarget.y + _lineMetrics.underlineOffset2;
             RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y2, widthOfAllCells, _lineMetrics.underlineWidth));
         }
-    }
-
-    if (lines.test(GridLines::Strikethrough))
-    {
-        const auto y = ptTarget.y + _lineMetrics.strikethroughOffset;
-        RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.strikethroughWidth));
     }
 
     return S_OK;

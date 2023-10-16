@@ -1733,6 +1733,10 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         {
             appendHorizontalLine(r, p.s->font->gridBottom, ShadingType::SolidLine, r.gridlineColor);
         }
+        if (r.lines.test(GridLines::Strikethrough))
+        {
+            appendHorizontalLine(r, p.s->font->strikethrough, ShadingType::SolidLine, r.gridlineColor);
+        }
 
         if (r.lines.test(GridLines::Underline))
         {
@@ -1756,10 +1760,6 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
             {
                 appendHorizontalLine(r, pos, ShadingType::SolidLine, r.underlineColor);
             }
-        }
-        if (r.lines.test(GridLines::Strikethrough))
-        {
-            appendHorizontalLine(r, p.s->font->strikethrough, ShadingType::SolidLine, r.underlineColor);
         }
     }
 }

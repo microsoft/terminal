@@ -454,6 +454,10 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         {
             appendHorizontalLine(r, p.s->font->gridBottom, nullptr, r.gridlineColor);
         }
+        if (r.lines.test(GridLines::Strikethrough))
+        {
+            appendHorizontalLine(r, p.s->font->strikethrough, nullptr, r.gridlineColor);
+        }
 
         if (r.lines.test(GridLines::Underline))
         {
@@ -469,10 +473,6 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
             {
                 appendHorizontalLine(r, pos, nullptr, r.underlineColor);
             }
-        }
-        if (r.lines.test(GridLines::Strikethrough))
-        {
-            appendHorizontalLine(r, p.s->font->strikethrough, nullptr, r.underlineColor);
         }
     }
 }

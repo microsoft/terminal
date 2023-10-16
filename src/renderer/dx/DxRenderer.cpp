@@ -1775,6 +1775,16 @@ try
         }
     }
 
+    if (lines.test(GridLines::Strikethrough))
+    {
+        const auto halfStrikethroughWidth = lineMetrics.strikethroughWidth / 2.0f;
+        const auto startX = target.x + halfStrikethroughWidth;
+        const auto endX = target.x + fullRunWidth - halfStrikethroughWidth;
+        const auto y = target.y + lineMetrics.strikethroughOffset;
+
+        DrawLine(startX, y, endX, y, lineMetrics.strikethroughWidth);
+    }
+
     _d2dBrushForeground->SetColor(_ColorFFromColorRef(underlineColor | 0xff000000));
 
     // In the case of the underline and strikethrough offsets, the stroke width
@@ -1803,16 +1813,6 @@ try
             const auto y2 = target.y + lineMetrics.underlineOffset2;
             DrawLine(startX, y2, endX, y2, lineMetrics.underlineWidth);
         }
-    }
-
-    if (lines.test(GridLines::Strikethrough))
-    {
-        const auto halfStrikethroughWidth = lineMetrics.strikethroughWidth / 2.0f;
-        const auto startX = target.x + halfStrikethroughWidth;
-        const auto endX = target.x + fullRunWidth - halfStrikethroughWidth;
-        const auto y = target.y + lineMetrics.strikethroughOffset;
-
-        DrawLine(startX, y, endX, y, lineMetrics.strikethroughWidth);
     }
 
     return S_OK;
