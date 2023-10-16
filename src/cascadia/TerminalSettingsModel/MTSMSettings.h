@@ -27,7 +27,6 @@ Author(s):
     X(bool, ForceFullRepaintRendering, "experimental.rendering.forceFullRepaint", false)                                                                                                              \
     X(bool, SoftwareRendering, "experimental.rendering.software", false)                                                                                                                              \
     X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                                                           \
-    X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                                                             \
     X(bool, ForceVTInput, "experimental.input.forceVT", false)                                                                                                                                        \
     X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                                                           \
     X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                                                              \
@@ -64,6 +63,7 @@ Author(s):
     X(bool, TrimPaste, "trimPaste", true)                                                                                                                                                             \
     X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                                                                         \
     X(bool, EnableShellCompletionMenu, "experimental.enableShellCompletionMenu", false)                                                                                                               \
+    X(bool, EnableUnfocusedAcrylic, "compatibility.enableUnfocusedAcrylic", true)                                                                                                                     \
     X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} })) \
     X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
     X(bool, IsolatedMode, "compatibility.isolatedMode", false)                                                                                                                                        \
@@ -79,7 +79,6 @@ Author(s):
     X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \
     X(bool, SnapOnInput, "snapOnInput", true)                                                                                                                  \
     X(bool, AltGrAliasing, "altGrAliasing", true)                                                                                                              \
-    X(bool, UseAcrylic, "useAcrylic", false)                                                                                                                   \
     X(hstring, Commandline, "commandline", L"%SystemRoot%\\System32\\cmd.exe")                                                                                 \
     X(Microsoft::Terminal::Control::ScrollbarState, ScrollState, "scrollbarState", Microsoft::Terminal::Control::ScrollbarState::Visible)                      \
     X(Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, "antialiasingMode", Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
@@ -98,7 +97,8 @@ Author(s):
     X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
     X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)                                                                                            \
     X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)                                                                                             \
-    X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)
+    X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                        \
+    X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)
 
 // Intentionally omitted Profile settings:
 // * Name
@@ -128,7 +128,8 @@ Author(s):
     X(ConvergedAlignment, BackgroundImageAlignment, "backgroundImageAlignment", ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center)       \
     X(hstring, BackgroundImagePath, "backgroundImage")                                                                                                             \
     X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                      \
-    X(Core::AdjustTextMode, AdjustIndistinguishableColors, "adjustIndistinguishableColors", Core::AdjustTextMode::Never)
+    X(Core::AdjustTextMode, AdjustIndistinguishableColors, "adjustIndistinguishableColors", Core::AdjustTextMode::Never)                                           \
+    X(bool, UseAcrylic, "useAcrylic", false)
 
 // Intentionally omitted Appearance settings:
 // * ForegroundKey, BackgroundKey, SelectionBackgroundKey, CursorColorKey: all optional colors
@@ -150,7 +151,8 @@ Author(s):
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr) \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedBackground, "unfocusedBackground", nullptr)
 
-#define MTSM_THEME_TAB_SETTINGS(X)                                                                                  \
-    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr)                   \
-    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedBackground, "unfocusedBackground", nullptr) \
+#define MTSM_THEME_TAB_SETTINGS(X)                                                                                                                     \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr)                                                      \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedBackground, "unfocusedBackground", nullptr)                                    \
+    X(winrt::Microsoft::Terminal::Settings::Model::IconStyle, IconStyle, "iconStyle", winrt::Microsoft::Terminal::Settings::Model::IconStyle::Default) \
     X(winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility, ShowCloseButton, "showCloseButton", winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility::Always)

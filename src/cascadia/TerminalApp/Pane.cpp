@@ -1040,6 +1040,7 @@ winrt::fire_and_forget Pane::_ControlConnectionStateChangedHandler(const winrt::
         newConnectionState = coreState.ConnectionState();
     }
 
+    const auto previousConnectionState = std::exchange(_connectionState, newConnectionState);
     if (newConnectionState < ConnectionState::Closed)
     {
         // Pane doesn't care if the connection isn't entering a terminal state.
@@ -1066,7 +1067,6 @@ winrt::fire_and_forget Pane::_ControlConnectionStateChangedHandler(const winrt::
         co_return;
     }
 
-    const auto previousConnectionState = std::exchange(_connectionState, newConnectionState);
     if (previousConnectionState < ConnectionState::Connected && newConnectionState >= ConnectionState::Failed)
     {
         // A failure to complete the connection (before it has _connected_) is not covered by "closeOnExit".
@@ -1382,6 +1382,18 @@ Profile Pane::GetFocusedProfile()
 {
     auto lastFocused = GetActivePane();
     return lastFocused ? lastFocused->_profile : nullptr;
+}
+
+// Method Description:
+// - Returns true if the connection state of this pane is closed. If this Pane is not a leaf this will
+//   return false.
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the connection state of this Pane is closed.
+bool Pane::IsConnectionClosed() const
+{
+    return _control && _control.ConnectionState() >= ConnectionState::Closed;
 }
 
 // Method Description:
@@ -2518,6 +2530,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
         _profile = nullptr;
         _control = { nullptr };
         _firstChild->_isDefTermSession = _isDefTermSession;
+        _firstChild->_broadcastEnabled = _broadcastEnabled;
     }
 
     _splitState = actualSplitType;
@@ -3173,6 +3186,9 @@ void Pane::EnableBroadcast(bool enabled)
     if (_IsLeaf())
     {
         _broadcastEnabled = enabled;
+        _control.CursorVisibility(enabled ?
+                                      CursorDisplayState::Shown :
+                                      CursorDisplayState::Default);
         UpdateVisuals();
     }
     else

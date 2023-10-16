@@ -24,7 +24,7 @@ void WindowThread::CreateHost()
     assert(_warmWindow == nullptr);
 
     // Start the AppHost HERE, on the actual thread we want XAML to run on
-    _host = std::make_unique<::AppHost>(_appLogic,
+    _host = std::make_shared<::AppHost>(_appLogic,
                                         _args,
                                         _manager,
                                         _peasant);
@@ -164,7 +164,7 @@ void WindowThread::Microwave(
     _peasant = std::move(peasant);
     _args = std::move(args);
 
-    _host = std::make_unique<::AppHost>(_appLogic,
+    _host = std::make_shared<::AppHost>(_appLogic,
                                         _args,
                                         _manager,
                                         _peasant,
