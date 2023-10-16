@@ -109,9 +109,10 @@ Output main(PSData data) : SV_Target
         const float centerY = cellPosY + underlineCellOffset + strokeWidthHalf;
         const float Pi = radians(180);
         const float freq = 2.0f * Pi / backgroundCellSize.x;
-        const float amp = curlyLineHeight - 1.0f; // -1.0f avoids clipping at the peak
+        const float amp = curlyLineHeight - 1.0f; // -1.0f avoids clipping at the peaks
 
-        const float s = sin(data.position.x * freq);
+        // The wave starts with a negative-peak(trough). To make it start with a positive-peak(crest), we phase shift it by `Pi`.
+        const float s = sin(data.position.x * freq + Pi);
         const float d = abs(centerY + s * amp - data.position.y);
         const float a = 1 - saturate(d - strokeWidthHalf);
         color = a * premultiplyColor(data.color);
@@ -126,7 +127,7 @@ Output main(PSData data) : SV_Target
         float centerY = cellPosY + underlineCellOffset + strokeWidthHalf;
         const float Pi = radians(180);
         float freq = 2.0f * Pi / backgroundCellSize.x;
-        float amp = curlyLineHeight - 1.0f; // -1.0f avoids clipping at the peak
+        float amp = curlyLineHeight - 1.0f; // -1.0f avoids clipping at the peaks
 
         // In 'Wide' case, we need to draw the same wave on an area twice as big.
         strokeWidthHalf *= 2;
@@ -134,7 +135,8 @@ Output main(PSData data) : SV_Target
         freq /= 2;
         amp *= 2;
 
-        const float s = sin(data.position.x * freq);
+        // The wave starts with a negative-peak(trough). To make it start with a positive-peak(crest), we phase shift it by `Pi`.
+        const float s = sin(data.position.x * freq + Pi);
         const float d = abs(centerY + s * amp - data.position.y);
         const float a = 1 - saturate(d - strokeWidthHalf);
         color = a * premultiplyColor(data.color);
