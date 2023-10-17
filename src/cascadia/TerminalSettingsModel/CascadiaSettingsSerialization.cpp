@@ -47,6 +47,7 @@ static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 static constexpr std::string_view ThemesKey{ "themes" };
+static constexpr std::string_view ActionsKey{ "actions" };
 
 constexpr std::wstring_view systemThemeName{ L"system" };
 constexpr std::wstring_view darkThemeName{ L"dark" };
@@ -629,7 +630,7 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
 // schemes and profiles. Additionally this function supports profiles which specify an "updates" key.
 void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings)
 {
-    const auto json = _parseJson(content);
+    auto json = _parseJson(content);
 
     settings.clear();
 
@@ -647,6 +648,15 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
             }
             CATCH_LOG()
         }
+
+        // const Json::Value& actions = _getJSONValue(json.root, ActionsKey);
+        // Json::Value tmp = {};
+
+        // Construct a temp Json::Value that contains the actions from the fragment.
+        Json::Value tmp = {};
+        tmp[ActionsKey.data()] = json.root[ActionsKey.data()];
+
+        settings.globals->LayerJson(tmp);
     }
 
     {
@@ -688,10 +698,11 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         }
     }
 
-    for (const auto& kv : settings.globals->ColorSchemes())
-    {
-        userSettings.globals->AddColorScheme(kv.Value());
-    }
+    // for (const auto& kv : settings.globals->ColorSchemes())
+    // {
+    //     userSettings.globals->AddColorScheme(kv.Value());
+    // }
+    userSettings.globals->AddLeastImportantParent(settings.globals);
 }
 
 SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& content)
@@ -980,13 +991,13 @@ void CascadiaSettings::_researchOnLoad()
         // system (legacy): 4
         // light (legacy): 5
         // dark (legacy): 6
-        const auto themeChoice = themeInUse == L"system"       ? 0 :
-                                 themeInUse == L"light"        ? 1 :
-                                 themeInUse == L"dark"         ? 2 :
-                                 themeInUse == L"legacyDark"   ? 4 :
-                                 themeInUse == L"legacyLight"  ? 5 :
-                                 themeInUse == L"legacySystem" ? 6 :
-                                                                 3;
+        const auto themeChoice = themeInUse == L"system" ? 0 :
+                                                           themeInUse == L"light" ? 1 :
+                                                                                    themeInUse == L"dark" ? 2 :
+                                                                                                            themeInUse == L"legacyDark" ? 4 :
+                                                                                                                                          themeInUse == L"legacyLight" ? 5 :
+                                                                                                                                                                         themeInUse == L"legacySystem" ? 6 :
+                                                                                                                                                                                                         3;
 
         TraceLoggingWrite(
             g_hSettingsModelProvider,

@@ -74,6 +74,8 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestInheritedCommand);
         TEST_METHOD(LoadFragmentsWithMultipleUpdates);
 
+        TEST_METHOD(FragmentActionSimple);
+
         TEST_METHOD(MigrateReloadEnvVars);
 
     private:
@@ -2021,6 +2023,31 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(3u, loader.userSettings.profiles.size());
         // GH#12520: Fragments should be able to override the name of builtin profiles.
         VERIFY_ARE_EQUAL(L"NewName", loader.userSettings.profiles[0]->Name());
+    }
+
+    // This test ensures GH#11597, GH#12520 don't regress.
+    void DeserializationTests::FragmentActionSimple()
+    {
+        static constexpr std::wstring_view fragmentSource{ L"fragment" };
+        static constexpr std::string_view fragmentJson{ R"({
+            "actions": [
+                {
+                    "command": { "action": "addMark" },
+                    "name": "Test Action"
+                },
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        loader.MergeInboxIntoUserSettings();
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.FinalizeLayering();
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+
+        const auto actionMap = winrt::get_self<implementation::ActionMap>(settings->GlobalSettings().ActionMap());
+        const auto actionsByName = actionMap->NameMap();
+        VERIFY_IS_NOT_NULL(actionsByName.TryLookup(L"Test Action"));
     }
 
     void DeserializationTests::MigrateReloadEnvVars()
