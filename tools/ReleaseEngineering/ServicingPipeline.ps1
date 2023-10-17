@@ -11,54 +11,38 @@ Param(
     [switch]$GpgSign = $False
 )
 
-Function Prompt() {
-    "PSCR {0}> " -f $PWD.Path
-}
+Function Process-ConflictResolution($commitId, $subject, $card) {
+    Write-Host "`e[96m`e[1;7mPICK`e[22;27m $commitId: $subject`e[m"
+    $commitPRRegex = [Regex]"\(#(\d+)\)$"
+    $PR = $commitPRRegex.Match($subject).Groups[1].Value
+    $null = & git cherry-pick -x $commitId 2>&1
+    $Err = ""
 
-Function Enter-ConflictResolutionShell($entry) {
-    $Global:Abort = $False
-    $Global:Skip = $False
-    $Global:Reject = $False
-    Push-Location -StackName:"ServicingStack" -Path:$PWD > $Null
-    Write-Host (@"
-`e[31;1;7mCONFLICT RESOLUTION REQUIRED`e[m
-`e[1mCommit `e[m: `e[1;93m{0}`e[m
-`e[1mSubject`e[m: `e[1;93m{1}`e[m
-
-"@ -f ($_.CommitID, $_.Subject))
-
-    & git status --short
-
-    Write-Host (@"
-
-`e[1mCommands`e[m
-`e[1;96mdone  `e[m Complete conflict resolution and commit
-`e[1;96mskip  `e[m Skip this commit
-`e[1;96mabort `e[m Stop everything
-`e[1;96mreject`e[m Skip and `e[31mremove this commit from servicing consideration`e[m
-"@)
-    $Host.EnterNestedPrompt()
-    Pop-Location -StackName:"ServicingStack" > $Null
-}
-
-Function Done() {
-    $Host.ExitNestedPrompt()
-}
-
-Function Abort() {
-    $Global:Abort = $True
-    $Host.ExitNestedPrompt()
-}
-
-Function Skip() {
-    $Global:Skip = $True
-    $Host.ExitNestedPrompt()
-}
-
-Function Reject() {
-    $Global:Skip = $True
-    $Global:Reject = $True
-    $Host.ExitNestedPrompt()
+    While ($True) {
+        If ($LASTEXITCODE -ne 0) {
+            $Err
+            Enter-ConflictResolutionShell
+            If ($Global:Abort) {
+                & git cherry-pick --abort
+                Write-Host -ForegroundColor "Red" "YOU'RE ON YOUR OWN"
+                Exit
+            }
+            If ($Global:Reject) {
+                Move-GithubProjectCard -CardId $card.id -ColumnId $RejectColumn.id
+                # Fall through to Skip
+            }
+            If ($Global:Skip) {
+                & git cherry-pick --skip
+                Break
+            }
+            $Err = & git cherry-pick --continue --no-edit
+        } Else {
+            & git commit @PickArgs --amend --no-edit --trailer "Service-Card-Id:$($card.Id)" --trailer "Service-Version:$Version" | Out-Null
+            Write-Host "`e[92;1;7m OK `e[m"
+            Move-GithubProjectCard -CardId $card.id -ColumnId $DoneColumn.id
+            Break
+        }
+    }
 }
 
 If ([String]::IsNullOrEmpty($Version)) {
