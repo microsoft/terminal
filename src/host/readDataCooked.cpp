@@ -784,7 +784,7 @@ void COOKED_READ_DATA::_flushBuffer()
     {
         // _distanceCursor might be larger than the entire viewport (= a really long input line).
         // _offsetCursorPosition() with such an offset will end up clamping the cursor position to (0,0).
-        // To make this implementation behave a little bit bit more consistent in this case without
+        // To make this implementation behave a little bit more consistent in this case without
         // writing a more thorough and complex readline implementation, we pass _measureChars()
         // the relative "distance" to the current actual cursor position. That way _measureChars()
         // can still figure out what the logical cursor position is, when it handles tabs, etc.
