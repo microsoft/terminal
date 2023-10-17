@@ -75,6 +75,10 @@ namespace SettingsModelLocalTests
         TEST_METHOD(LoadFragmentsWithMultipleUpdates);
 
         TEST_METHOD(FragmentActionSimple);
+        TEST_METHOD(FragmentActionNested);
+        TEST_METHOD(FragmentActionNestedNoName);
+        TEST_METHOD(FragmentActionIterable);
+        TEST_METHOD(FragmentActionRoundtrip);
 
         TEST_METHOD(MigrateReloadEnvVars);
 
@@ -2025,7 +2029,6 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"NewName", loader.userSettings.profiles[0]->Name());
     }
 
-    // This test ensures GH#11597, GH#12520 don't regress.
     void DeserializationTests::FragmentActionSimple()
     {
         static constexpr std::wstring_view fragmentSource{ L"fragment" };
@@ -2048,6 +2051,138 @@ namespace SettingsModelLocalTests
         const auto actionMap = winrt::get_self<implementation::ActionMap>(settings->GlobalSettings().ActionMap());
         const auto actionsByName = actionMap->NameMap();
         VERIFY_IS_NOT_NULL(actionsByName.TryLookup(L"Test Action"));
+    }
+    void DeserializationTests::FragmentActionNested()
+    {
+        static constexpr std::wstring_view fragmentSource{ L"fragment" };
+        static constexpr std::string_view fragmentJson{ R"({
+            "actions": [
+                {
+                    "name": "nested command",
+                    "commands": [
+                        {
+                            "name": "child1",
+                            "command": { "action": "newTab", "commandline": "ssh me@first.com" }
+                        },
+                        {
+                            "name": "child2",
+                            "command": { "action": "newTab", "commandline": "ssh me@second.com" }
+                        }
+                    ]
+                },
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        loader.MergeInboxIntoUserSettings();
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.FinalizeLayering();
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+
+        const auto actionMap = winrt::get_self<implementation::ActionMap>(settings->GlobalSettings().ActionMap());
+        const auto actionsByName = actionMap->NameMap();
+        const auto& nested{ actionsByName.TryLookup(L"nested command") };
+        VERIFY_IS_NOT_NULL(nested);
+        VERIFY_IS_TRUE(nested.HasNestedCommands());
+    }
+
+    void DeserializationTests::FragmentActionNestedNoName()
+    {
+        // Basically the same as TestNestedCommandWithoutName
+        static constexpr std::wstring_view fragmentSource{ L"fragment" };
+        static constexpr std::string_view fragmentJson{ R"({
+            "actions": [
+                {
+                    "commands": [
+                        {
+                            "name": "child1",
+                            "command": { "action": "newTab", "commandline": "ssh me@first.com" }
+                        },
+                        {
+                            "name": "child2",
+                            "command": { "action": "newTab", "commandline": "ssh me@second.com" }
+                        }
+                    ]
+                },
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        loader.MergeInboxIntoUserSettings();
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.FinalizeLayering();
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+        VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
+    }
+    void DeserializationTests::FragmentActionIterable()
+    {
+        static constexpr std::wstring_view fragmentSource{ L"fragment" };
+        static constexpr std::string_view fragmentJson{ R"({
+            "actions": [
+                {
+                    "name": "nested",
+                    "commands": [
+                        {
+                            "iterateOn": "schemes",
+                            "name": "${scheme.name}",
+                            "command": { "action": "setColorScheme", "colorScheme": "${scheme.name}" }
+                        }
+                    ]
+                },
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        loader.MergeInboxIntoUserSettings();
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.FinalizeLayering();
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+
+        const auto actionMap = winrt::get_self<implementation::ActionMap>(settings->GlobalSettings().ActionMap());
+        const auto actionsByName = actionMap->NameMap();
+        const auto& nested{ actionsByName.TryLookup(L"nested") };
+        VERIFY_IS_NOT_NULL(nested);
+        VERIFY_IS_TRUE(nested.HasNestedCommands());
+        VERIFY_ARE_EQUAL(settings->GlobalSettings().ColorSchemes().Size(), nested.NestedCommands().Size());
+    }
+    void DeserializationTests::FragmentActionRoundtrip()
+    {
+        static constexpr std::wstring_view fragmentSource{ L"fragment" };
+        static constexpr std::string_view fragmentJson{ R"({
+            "actions": [
+                {
+                    "command": { "action": "addMark" },
+                    "name": "Test Action"
+                },
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        loader.MergeInboxIntoUserSettings();
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.FinalizeLayering();
+
+        const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+
+        const auto actionMap = winrt::get_self<implementation::ActionMap>(oldSettings->GlobalSettings().ActionMap());
+        const auto actionsByName = actionMap->NameMap();
+        VERIFY_IS_NOT_NULL(actionsByName.TryLookup(L"Test Action"));
+
+        const auto oldResult{ oldSettings->ToJson() };
+
+        Log::Comment(L"Now, create a _new_ settings object from the re-serialization of the first");
+        implementation::SettingsLoader newLoader{ toString(oldResult), DefaultJson };
+        // NOTABLY! Don't load the fragment here.
+        newLoader.MergeInboxIntoUserSettings();
+        newLoader.FinalizeLayering();
+        const auto newSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(newLoader));
+
+        const auto& newActionMap = winrt::get_self<implementation::ActionMap>(newSettings->GlobalSettings().ActionMap());
+        const auto newActionsByName = newActionMap->NameMap();
+        VERIFY_IS_NULL(newActionsByName.TryLookup(L"Test Action"));
     }
 
     void DeserializationTests::MigrateReloadEnvVars()
