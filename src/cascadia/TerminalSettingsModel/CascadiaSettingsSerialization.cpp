@@ -654,11 +654,12 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         // necessarily set other global properties.
         Json::Value tmp = {};
         tmp[ActionsKey.data()] = json.root[ActionsKey.data()];
-        // Now parse that tmep json object, as if it were a global settings blob.
-        settings.globals->LayerJson(tmp);
 
-        // TODO!
-        // settings.globals->RemoveAllKeybindings();
+        // Now parse that tmep json object, as if it were a global settings
+        // blob. Manually opt-out of keybinding parsing - fragments shouldn't be
+        // allowed to bind actions to keys directly. We may want to revisit
+        // circa GH#2205
+        settings.globals->LayerJson(tmp, false);
     }
 
     {

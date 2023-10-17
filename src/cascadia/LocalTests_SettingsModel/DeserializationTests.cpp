@@ -75,6 +75,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(LoadFragmentsWithMultipleUpdates);
 
         TEST_METHOD(FragmentActionSimple);
+        TEST_METHOD(FragmentActionNoKeys);
         TEST_METHOD(FragmentActionNested);
         TEST_METHOD(FragmentActionNestedNoName);
         TEST_METHOD(FragmentActionIterable);
@@ -2052,6 +2053,33 @@ namespace SettingsModelLocalTests
         const auto actionsByName = actionMap->NameMap();
         VERIFY_IS_NOT_NULL(actionsByName.TryLookup(L"Test Action"));
     }
+
+    void DeserializationTests::FragmentActionNoKeys()
+    {
+        static constexpr std::wstring_view fragmentSource{ L"fragment" };
+        static constexpr std::string_view fragmentJson{ R"({
+            "actions": [
+                {
+                    "command": { "action": "addMark" },
+                    "keys": "ctrl+f",
+                    "name": "Test Action"
+                },
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        loader.MergeInboxIntoUserSettings();
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.FinalizeLayering();
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+
+        const auto actionMap = winrt::get_self<implementation::ActionMap>(settings->GlobalSettings().ActionMap());
+        const auto actionsByName = actionMap->NameMap();
+        VERIFY_IS_NOT_NULL(actionsByName.TryLookup(L"Test Action"));
+        VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Control, static_cast<int32_t>('F'), 0 }));
+    }
+
     void DeserializationTests::FragmentActionNested()
     {
         static constexpr std::wstring_view fragmentSource{ L"fragment" };

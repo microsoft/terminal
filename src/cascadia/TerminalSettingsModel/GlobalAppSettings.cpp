@@ -129,7 +129,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value&
     return result;
 }
 
-void GlobalAppSettings::LayerJson(const Json::Value& json)
+void GlobalAppSettings::LayerJson(const Json::Value& json, const bool withKeybindings)
 {
     JsonUtils::GetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
     // GH#8076 - when adding enum values to this key, we also changed it from
@@ -147,7 +147,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     {
         if (auto bindings{ json[JsonKey(jsonKey)] })
         {
-            auto warnings = _actionMap->LayerJson(bindings);
+            auto warnings = _actionMap->LayerJson(bindings, withKeybindings);
 
             // It's possible that the user provided keybindings have some warnings
             // in them - problems that we should alert the user to, but we can

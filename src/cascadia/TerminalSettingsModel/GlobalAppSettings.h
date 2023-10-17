@@ -48,7 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::ActionMap ActionMap() const noexcept;
 
         static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json);
-        void LayerJson(const Json::Value& json);
+        void LayerJson(const Json::Value& json, const bool withKeybindings = true);
 
         Json::Value ToJson() const;
 
