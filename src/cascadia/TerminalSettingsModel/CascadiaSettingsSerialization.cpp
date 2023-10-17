@@ -649,14 +649,16 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
             CATCH_LOG()
         }
 
-        // const Json::Value& actions = _getJSONValue(json.root, ActionsKey);
-        // Json::Value tmp = {};
-
-        // Construct a temp Json::Value that contains the actions from the fragment.
+        // Construct a temp Json::Value that contains ONLY the actions from the
+        // fragment. This will allow fragments to add actions, but not
+        // necessarily set other global properties.
         Json::Value tmp = {};
         tmp[ActionsKey.data()] = json.root[ActionsKey.data()];
-
+        // Now parse that tmep json object, as if it were a global settings blob.
         settings.globals->LayerJson(tmp);
+
+        // TODO!
+        // settings.globals->RemoveAllKeybindings();
     }
 
     {
@@ -698,10 +700,9 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         }
     }
 
-    // for (const auto& kv : settings.globals->ColorSchemes())
-    // {
-    //     userSettings.globals->AddColorScheme(kv.Value());
-    // }
+    // Add the parsed fragment globals as a parent of the user's settings.
+    // Later, in FinalizeInheritance, this will result in the action map from
+    // the fragments being applied before the user's own settings.
     userSettings.globals->AddLeastImportantParent(settings.globals);
 }
 
@@ -991,13 +992,13 @@ void CascadiaSettings::_researchOnLoad()
         // system (legacy): 4
         // light (legacy): 5
         // dark (legacy): 6
-        const auto themeChoice = themeInUse == L"system" ? 0 :
-                                                           themeInUse == L"light" ? 1 :
-                                                                                    themeInUse == L"dark" ? 2 :
-                                                                                                            themeInUse == L"legacyDark" ? 4 :
-                                                                                                                                          themeInUse == L"legacyLight" ? 5 :
-                                                                                                                                                                         themeInUse == L"legacySystem" ? 6 :
-                                                                                                                                                                                                         3;
+        const auto themeChoice = themeInUse == L"system"       ? 0 :
+                                 themeInUse == L"light"        ? 1 :
+                                 themeInUse == L"dark"         ? 2 :
+                                 themeInUse == L"legacyDark"   ? 4 :
+                                 themeInUse == L"legacyLight"  ? 5 :
+                                 themeInUse == L"legacySystem" ? 6 :
+                                                                 3;
 
         TraceLoggingWrite(
             g_hSettingsModelProvider,

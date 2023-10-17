@@ -75,7 +75,6 @@ namespace SettingsModelLocalTests
         // we do any sort of roundtrip testing.
         static Json::Value removeSchema(Json::Value json)
         {
-            // DebugBreak();
             if (json.isMember("$schema"))
             {
                 json.removeMember("$schema");
