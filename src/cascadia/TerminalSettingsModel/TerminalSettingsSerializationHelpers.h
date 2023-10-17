@@ -713,7 +713,7 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
         if (isIndexed16)
         {
             const auto indexStr = string.substr(1);
-            const auto idx = til::to_ulong(indexStr, 16);
+            const auto idx = til::to_uint32(indexStr, 16);
             color.r = gsl::narrow_cast<uint8_t>(std::min(idx, 15ul));
         }
         else

@@ -297,8 +297,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (commaIndex != std::wstring::npos)
         {
             // Convert the string iconIndex to a signed int to support negative numbers which represent an Icon's ID.
-            const auto index{ til::to_int(pathView.substr(commaIndex + 1)) };
-            if (index == til::to_int_error)
+            const auto index{ til::to_int32(pathView.substr(commaIndex + 1)) };
+            if (index == til::to_int32_error)
             {
                 return std::nullopt;
             }

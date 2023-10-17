@@ -53,9 +53,9 @@ class StringTests
         VERIFY_IS_TRUE(til::ends_with("0abc", "abc"));
     }
 
-    // Normally this would be the spot where you'd find a TEST_METHOD(to_ulong).
+    // Normally this would be the spot where you'd find a TEST_METHOD(to_uint32).
     // I didn't quite trust my coding skills and thus opted to use fuzz-testing.
-    // The below function was used to test to_ulong for unsafety and conformance with clang's strtoul.
+    // The below function was used to test to_uint32 for unsafety and conformance with clang's strtoul.
     // The test was run as:
     //   clang++ -fsanitize=address,undefined,fuzzer -std=c++17 file.cpp
     // and was run for 20min across 16 jobs in parallel.
@@ -73,27 +73,19 @@ class StringTests
             return 0;
         }
 
-        char narrow_buffer[128];
-        wchar_t wide_buffer[128];
-
-        memcpy(narrow_buffer, data, size);
-        for (size_t i = 0; i < size; ++i)
-        {
-            wide_buffer[i] = data[i];
-        }
-
         // strtoul requires a null terminator
+        char narrow_buffer[128];
+        memcpy(narrow_buffer, data, size);
         narrow_buffer[size] = 0;
-        wide_buffer[size] = 0;
 
         char* end;
         const auto expected = strtoul(narrow_buffer, &end, 0);
-        if (end != narrow_buffer + size || expected >= ULONG_MAX / 16)
+        if (end != narrow_buffer + size)
         {
             return 0;
         }
 
-        const auto actual = to_ulong({ wide_buffer, size });
+        const auto actual = to_uint32({ narrow_buffer, size });
         if (expected != actual)
         {
             __builtin_trap();

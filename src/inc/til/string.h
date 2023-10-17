@@ -115,16 +115,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return ends_with<>(str, prefix);
     }
 
-    inline constexpr unsigned long to_ulong_error = ULONG_MAX;
-    inline constexpr int to_int_error = INT_MAX;
+    inline constexpr uint32_t to_uint32_error = UINT32_MAX;
 
     // Just like std::wcstoul, but without annoying locales and null-terminating strings.
     // It has been fuzz-tested against clang's strtoul implementation.
     template<typename T, typename Traits>
-    _TIL_INLINEPREFIX constexpr unsigned long to_ulong(const std::basic_string_view<T, Traits>& str, unsigned long base = 0) noexcept
+    constexpr uint32_t to_uint32(const std::basic_string_view<T, Traits>& str, int base = 0) noexcept
     {
-        static constexpr unsigned long maximumValue = ULONG_MAX / 16;
-
         // We don't have to test ptr for nullability, as we only access it under either condition:
         // * str.length() > 0, for determining the base
         // * ptr != end, when parsing the characters; if ptr is null, length will be 0 and thus end == ptr
@@ -133,10 +130,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead
         auto ptr = str.data();
         const auto end = ptr + str.length();
-        unsigned long accumulator = 0;
-        unsigned long value = ULONG_MAX;
+        uint64_t accumulator = 0;
 
-        if (!base)
+        if (base == 0)
         {
             base = 10;
 
@@ -155,12 +151,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         if (ptr == end)
         {
-            return to_ulong_error;
+            return to_uint32_error;
         }
 
-        for (;; accumulator *= base)
+        for (;;)
         {
-            value = ULONG_MAX;
+            int value = INT_MAX;
             if (*ptr >= '0' && *ptr <= '9')
             {
                 value = *ptr - '0';
@@ -173,33 +169,79 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             {
                 value = *ptr - 'a' + 10;
             }
-            else
+
+            if (value >= base)
             {
-                return to_ulong_error;
+                return to_uint32_error;
             }
 
             accumulator += value;
-            if (accumulator >= maximumValue)
+            if (accumulator >= to_uint32_error)
             {
-                return to_ulong_error;
+                return to_uint32_error;
             }
 
             if (++ptr == end)
             {
-                return accumulator;
+                return gsl::narrow_cast<uint32_t>(accumulator);
+            }
+
+            accumulator *= base;
+            if (accumulator >= to_uint32_error)
+            {
+                return to_uint32_error;
             }
         }
 #pragma warning(pop)
     }
 
-    constexpr unsigned long to_ulong(const std::string_view& str, unsigned long base = 0) noexcept
+    constexpr uint32_t to_uint32(const std::string_view& str, int base = 0) noexcept
     {
-        return to_ulong<>(str, base);
+        return to_uint32<>(str, base);
     }
 
-    constexpr unsigned long to_ulong(const std::wstring_view& str, unsigned long base = 0) noexcept
+    constexpr uint32_t to_uint32(const std::wstring_view& str, int base = 0) noexcept
     {
-        return to_ulong<>(str, base);
+        return to_uint32<>(str, base);
+    }
+
+    inline constexpr int32_t to_int32_error = INT32_MAX;
+
+    // Just like std::wcstol, but without annoying locales and null-terminating strings.
+    // It has been fuzz-tested against clang's strtol implementation.
+    template<typename T, typename Traits>
+    constexpr int32_t to_int32(const std::basic_string_view<T, Traits>& str, int base = 0) noexcept
+    {
+        if (str.empty())
+        {
+            return to_int32_error;
+        }
+
+        const auto offset = str.front() == '-' ? 1 : 0;
+        auto l = gsl::narrow_cast<int32_t>(to_uint32({ str.data() + offset, str.size() - offset }, base));
+
+        // This checks for both, values that don't fit into a int32_t
+        // and for til::to_uint32_error which is equivalent to -1.
+        if (l < 0)
+        {
+            return to_int32_error;
+        }
+
+        if (offset)
+        {
+            l = -l;
+        }
+        return l;
+    }
+
+    constexpr int32_t to_int32(const std::string_view& str, int base = 0) noexcept
+    {
+        return to_int32<>(str, base);
+    }
+
+    constexpr int32_t to_int32(const std::wstring_view& str, int base = 0) noexcept
+    {
+        return to_int32<>(str, base);
     }
 
     // Just like std::tolower, but without annoying locales.
@@ -235,14 +277,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // and 5x or more for long strings (128 characters or more).
     // See: https://github.com/microsoft/STL/issues/2289
     template<typename T, typename Traits>
-    bool equals(const std::basic_string_view<T, Traits>& lhs, const std::basic_string_view<T, Traits>& rhs) noexcept
+    constexpr bool equals(const std::basic_string_view<T, Traits>& lhs, const std::basic_string_view<T, Traits>& rhs) noexcept
     {
         return lhs.size() == rhs.size() && __builtin_memcmp(lhs.data(), rhs.data(), lhs.size() * sizeof(T)) == 0;
     }
 
     // Just like _memicmp, but without annoying locales.
     template<typename T, typename Traits>
-    bool equals_insensitive_ascii(const std::basic_string_view<T, Traits>& str1, const std::basic_string_view<T, Traits>& str2) noexcept
+    constexpr bool equals_insensitive_ascii(const std::basic_string_view<T, Traits>& str1, const std::basic_string_view<T, Traits>& str2) noexcept
     {
         if (str1.size() != str2.size())
         {
@@ -267,12 +309,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return true;
     }
 
-    inline bool equals_insensitive_ascii(const std::string_view& str1, const std::string_view& str2) noexcept
+    constexpr bool equals_insensitive_ascii(const std::string_view& str1, const std::string_view& str2) noexcept
     {
         return equals_insensitive_ascii<>(str1, str2);
     }
 
-    inline bool equals_insensitive_ascii(const std::wstring_view& str1, const std::wstring_view& str2) noexcept
+    constexpr bool equals_insensitive_ascii(const std::wstring_view& str1, const std::wstring_view& str2) noexcept
     {
         return equals_insensitive_ascii<>(str1, str2);
     }
@@ -315,7 +357,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // * return "foo"
     // If the needle cannot be found the "str" argument is returned as is.
     template<typename T, typename Traits>
-    std::basic_string_view<T, Traits> prefix_split(std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& needle) noexcept
+    constexpr std::basic_string_view<T, Traits> prefix_split(std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& needle) noexcept
     {
         using view_type = std::basic_string_view<T, Traits>;
 
@@ -334,12 +376,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return result;
     }
 
-    inline std::string_view prefix_split(std::string_view& str, const std::string_view& needle) noexcept
+    constexpr std::string_view prefix_split(std::string_view& str, const std::string_view& needle) noexcept
     {
         return prefix_split<>(str, needle);
     }
 
-    inline std::wstring_view prefix_split(std::wstring_view& str, const std::wstring_view& needle) noexcept
+    constexpr std::wstring_view prefix_split(std::wstring_view& str, const std::wstring_view& needle) noexcept
     {
         return prefix_split<>(str, needle);
     }
@@ -369,29 +411,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     struct wstring_case_insensitive_compare
     {
-        [[nodiscard]] bool operator()(const std::wstring& lhs, const std::wstring& rhs) const noexcept
+        using is_transparent = void;
+
+        [[nodiscard]] bool operator()(const std::wstring_view& lhs, const std::wstring_view& rhs) const noexcept
         {
             return compare_string_ordinal(lhs, rhs) == CSTR_LESS_THAN;
         }
     };
-
-    // Implement to_int in terms of to_ulong by negating its result. to_ulong does not expect
-    // to be passed signed numbers and will return an error accordingly. That error when
-    // compared against -1 evaluates to true. We account for that by returning to_int_error if to_ulong
-    // returns an error.
-    constexpr int to_int(const std::wstring_view& str, unsigned long base = 0) noexcept
-    {
-        auto result = to_ulong_error;
-        const auto signPosition = str.find(L"-");
-        const bool hasSign = signPosition != std::wstring_view::npos;
-        result = hasSign ? to_ulong(str.substr(signPosition + 1), base) : to_ulong(str, base);
-
-        // Check that result is valid and will fit in an int.
-        if (result == to_ulong_error || (result > INT_MAX))
-        {
-            return to_int_error;
-        }
-
-        return hasSign ? result * -1 : result;
-    }
 }
