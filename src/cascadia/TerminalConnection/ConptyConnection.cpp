@@ -82,14 +82,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                              nullptr));
 
         auto cmdline{ wil::ExpandEnvironmentStringsW<std::wstring>(_commandline.c_str()) }; // mutable copy -- required for CreateProcessW
-
-        til::env environment;
-        auto zeroEnvMap = wil::scope_exit([&]() noexcept {
-            environment.clear();
-        });
-
-        // Populate the environment map with the current environment.
-        environment = _initialEnv;
+        auto environment = _initialEnv;
 
         {
             // Convert connection Guid to string and ignore the enclosing '{}'.
@@ -140,15 +133,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             environment.as_map().insert_or_assign(L"WSLENV", wslEnv);
         }
 
-        std::vector<wchar_t> newEnvVars;
-        auto zeroNewEnv = wil::scope_exit([&]() noexcept {
-            ::SecureZeroMemory(newEnvVars.data(),
-                               newEnvVars.size() * sizeof(decltype(newEnvVars.begin())::value_type));
-        });
-
-        RETURN_IF_FAILED(environment.to_environment_strings_w(newEnvVars));
-
-        auto lpEnvironment = newEnvVars.empty() ? nullptr : newEnvVars.data();
+        const auto newEnvVars = environment.to_string();
+        const auto lpEnvironment = newEnvVars.empty() ? nullptr : newEnvVars.data();
 
         // If we have a startingTitle, create a mutable character buffer to add
         // it to the STARTUPINFO.
