@@ -861,7 +861,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Manually turn off acrylic if they turn off transparency.
         _runtimeUseAcrylic = _settings->Opacity() < 1.0 && _settings->UseAcrylic();
         _acrylicToggle = _settings->UseAcrylic();
-
+        
         const auto sizeChanged = _setFontSizeUnderLock(_settings->FontSize());
 
         // Update the terminal core with its new Core settings
@@ -920,8 +920,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // No need to update Acrylic if UnfocusedAcrylic is disabled
             if (_settings->EnableUnfocusedAcrylic())
             {
+                // Focused Acrylic from settings should be ignored if overriden at runtime
+                bool newAcrylic = focused ? _acrylicToggle : newAppearance->UseAcrylic();
+
                 // Manually turn off acrylic if they turn off transparency.
-                _runtimeUseAcrylic = Opacity() < 1.0 && newAppearance->UseAcrylic();
+                _runtimeUseAcrylic = Opacity() < 1.0 && newAcrylic;
             }
 
             // Update the renderer as well. It might need to fall back from
