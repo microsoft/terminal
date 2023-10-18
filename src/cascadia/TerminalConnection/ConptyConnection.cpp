@@ -133,7 +133,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             environment.as_map().insert_or_assign(L"WSLENV", wslEnv);
         }
 
-        const auto newEnvVars = environment.to_string();
+        auto newEnvVars = environment.to_string();
         const auto lpEnvironment = newEnvVars.empty() ? nullptr : newEnvVars.data();
 
         // If we have a startingTitle, create a mutable character buffer to add
