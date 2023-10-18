@@ -359,9 +359,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto end = beg + pipHeight * stride;
                 for (; beg < end; beg += stride)
                 {
-                    // Coincidentally a til::color has the same RGBA format as the bitmap.
+                    // a til::color does NOT have the same RGBA format as the bitmap.
 #pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-                    std::fill_n(reinterpret_cast<til::color*>(beg), pipWidth, color);
+                    const DWORD c = 0xff << 24 | color.r << 16 | color.g << 8 | color.b;
+                    std::fill_n(reinterpret_cast<DWORD*>(beg), pipWidth, c);
                 }
             };
 
