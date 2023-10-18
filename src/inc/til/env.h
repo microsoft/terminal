@@ -432,10 +432,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // Generally replicates the behavior of shell32!RegenerateUserEnvironment
             // The difference is that we don't
             // * handle autoexec.bat (intentionally unsupported).
-            // * call LookupAccountSidW to get the USERNAME/USERDOMAIN variables
-            //   These are available as standard environment variables and they're "volatile"
-            //   (= computed dynamically at each login and then constant until logout).
-            //   We don't expect our process to impersonate another user so we can simplify this.
+            // * call LookupAccountSidW to get the USERNAME/USERDOMAIN variables.
+            //   Windows sets these as values of the "Volatile Environment" key at each login.
+            //   We don't expect our process to impersonate another user so we can get them from the PEB.
             // * call GetComputerNameW to get the COMPUTERNAME variable, for the same reason.
             get(til::details::vars::system_root);
             get(til::details::vars::system_drive);
