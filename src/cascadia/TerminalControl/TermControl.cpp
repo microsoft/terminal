@@ -589,6 +589,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // In the future, this might need to be changed to a
         // _InitializeBackgroundBrush call instead, because we may need to
         // switch from a solid color brush to an acrylic one.
+
+        OutputDebugString(L"Updating Appearance Thread from UI Thread \n");
+
         _changeBackgroundColor(bg);
 
         // Update selection markers
@@ -774,8 +777,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#11743: Make sure to use the Core's current UseAcrylic value, not
         // the one from the settings. The Core's runtime UseAcrylic may have
         // changed from what was in the original settings.
-        if (_core.UseAcrylic() && !transparentBg)
+        if (_core.UseAcrylic() && !transparentBg && _core.Opacity() < 1.0)
         {
+            OutputDebugString(L"Acrylic Brush \n");
+
             // See if we've already got an acrylic background brush
             // to avoid the flicker when setting up a new one
             auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>();
@@ -806,6 +811,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
+            OutputDebugString(L"Solid Brush \n");
+
             Media::SolidColorBrush solidColor{};
             solidColor.Opacity(_core.Opacity());
             solidColor.Color(bgColor);
