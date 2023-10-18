@@ -231,13 +231,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                                 std::wstring data;
                                 if (pass == 0 && (type == REG_SZ) && valueDataSize >= sizeof(wchar_t))
                                 {
-                                    const auto p = reinterpret_cast<wchar_t*>(valueData.data());
+                                    const auto p = reinterpret_cast<const wchar_t*>(valueData.data());
                                     const auto l = wcsnlen(p, valueData.size() / sizeof(wchar_t));
                                     data.assign(p, l);
                                 }
                                 else if (pass == 1 && (type == REG_EXPAND_SZ) && valueDataSize >= sizeof(wchar_t))
                                 {
-                                    const auto p = reinterpret_cast<wchar_t*>(valueData.data());
+                                    const auto p = reinterpret_cast<const wchar_t*>(valueData.data());
                                     const auto l = wcsnlen(p, valueData.size() / sizeof(wchar_t));
                                     data.assign(p, l);
                                     data = expand_environment_strings(data.data());
