@@ -301,6 +301,7 @@ coordnew
 COPYCOLOR
 CORESYSTEM
 cotaskmem
+countof
 CPG
 cpinfo
 CPINFOEX
