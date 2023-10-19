@@ -127,15 +127,6 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
     {
         face = _FindFontFace(localeName);
 
-        if constexpr (Feature_NearbyFontLoading::IsEnabled())
-        {
-            if (!face)
-            {
-                _fontCollection = FontCache::GetCached();
-                face = _FindFontFace(localeName);
-            }
-        }
-
         if (!face)
         {
             // If we missed, try looking a little more by trimming the last word off the requested family name a few times.
@@ -166,6 +157,15 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
         }
     }
     CATCH_LOG();
+
+    if constexpr (Feature_NearbyFontLoading::IsEnabled())
+    {
+        if (!face)
+        {
+            _fontCollection = FontCache::GetCached();
+            face = _FindFontFace(localeName);
+        }
+    }
 
     // Alright, if our quick shot at trimming didn't work either...
     // move onto looking up a font from our hard-coded list of fonts
