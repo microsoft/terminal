@@ -1,0 +1,20 @@
+Official Microsoft Documentation: You can find official documentation for Windows Terminal on the Microsoft Docs website. 
+Here's the link to get started: Windows Terminal Documentation
+
+Windows Terminal GitHub Repository: You can access the Windows Terminal project on GitHub to 
+find the latest releases, report issues, and explore the source code: Windows Terminal GitHub Repository
+
+YouTube Tutorials: Search for "Windows Terminal tutorial" or "Windows Terminal customization" 
+on YouTube to find video tutorials on how to use and customize Windows Terminal.
+
+Online Forums and Communities: You can participate in discussions and seek answers on platforms
+like Stack Overflow, Reddit, and Microsoft's Tech Community.
+
+Blogs and Articles: Search for blogs and articles on Windows Terminal on popular tech blogs and 
+news websites. You can use search engines like Google to find relevant content.
+
+Books and eBooks: Look for books and eBooks on platforms like Amazon, Packt, or O'Reilly that 
+cover Windows Terminal and command-line usage in Windows.
+
+Official Social Media: Follow the official Twitter accounts or social media profiles of 
+Microsoft and Windows Terminal for updates and tips.
