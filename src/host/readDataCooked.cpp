@@ -62,7 +62,11 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     // We need to ensure that it stays alive for the duration of the read.
     // Coincidentally this serves another important purpose: It checks whether we're allowed to read from
     // the given buffer in the first place. If it's missing the FILE_SHARE_READ flag, we can't read from it.
-    THROW_IF_FAILED(_screenInfo.AllocateIoHandle(ConsoleHandleData::HandleType::Output, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, _tempHandle));
+    //
+    // GH#16158: It's important that we hold a handle to the main instead of the alt buffer
+    // even if this cooked read targets the latter, because alt buffers are fake
+    // SCREEN_INFORMATION objects that are owned by the main buffer.
+    THROW_IF_FAILED(_screenInfo.GetMainBuffer().AllocateIoHandle(ConsoleHandleData::HandleType::Output, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, _tempHandle));
 #endif
 
     if (!initialData.empty())
