@@ -368,17 +368,19 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
             WI_ClearFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
         }
 
-        const auto newQuickEditMode{ WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE) };
-
-        // Mouse input should be received when mouse mode is on and quick edit mode is off
-        // (for more information regarding the quirks of mouse mode and why/how it relates
-        //  to quick edit mode, see GH#9970)
-        const auto oldMouseMode{ !oldQuickEditMode && WI_IsFlagSet(context.InputMode, ENABLE_MOUSE_INPUT) };
-        const auto newMouseMode{ !newQuickEditMode && WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT) };
-
-        if (oldMouseMode != newMouseMode)
+        if (gci.IsInVtIoMode())
         {
-            gci.GetActiveInputBuffer()->PassThroughWin32MouseRequest(newMouseMode);
+            // Mouse input should be received when mouse mode is on and quick edit mode is off
+            // (for more information regarding the quirks of mouse mode and why/how it relates
+            //  to quick edit mode, see GH#9970)
+            const auto newQuickEditMode{ WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE) };
+            const auto oldMouseMode{ !oldQuickEditMode && WI_IsFlagSet(context.InputMode, ENABLE_MOUSE_INPUT) };
+            const auto newMouseMode{ !newQuickEditMode && WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT) };
+
+            if (oldMouseMode != newMouseMode)
+            {
+                LOG_IF_FAILED(gci.GetVtIo()->RequestMouseMode(newMouseMode));
+            }
         }
 
         context.InputMode = mode;

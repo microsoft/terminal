@@ -163,7 +163,7 @@ public:
     // Scroll needs access to this to quickly rotate around the buffer.
     void IncrementCircularBuffer(const TextAttribute& fillAttributes = {});
 
-    til::point GetLastNonSpaceCharacter(std::optional<const Microsoft::Console::Types::Viewport> viewOptional = std::nullopt) const;
+    til::point GetLastNonSpaceCharacter(const Microsoft::Console::Types::Viewport* viewOptional = nullptr) const;
 
     Cursor& GetCursor() noexcept;
     const Cursor& GetCursor() const noexcept;
@@ -194,7 +194,7 @@ public:
 
     void Reset() noexcept;
 
-    [[nodiscard]] HRESULT ResizeTraditional(const til::size newSize) noexcept;
+    void ResizeTraditional(const til::size newSize);
 
     void SetAsActiveBuffer(const bool isActiveBuffer) noexcept;
     bool IsActiveBuffer() const noexcept;
@@ -262,10 +262,7 @@ public:
         til::CoordType visibleViewportTop{ 0 };
     };
 
-    static HRESULT Reflow(TextBuffer& oldBuffer,
-                          TextBuffer& newBuffer,
-                          const std::optional<Microsoft::Console::Types::Viewport> lastCharacterViewport,
-                          std::optional<std::reference_wrapper<PositionInformation>> positionInfo);
+    static void Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const Microsoft::Console::Types::Viewport* lastCharacterViewport = nullptr, PositionInformation* positionInfo = nullptr);
 
     std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive) const;
     std::vector<til::point_span> SearchText(const std::wstring_view& needle, bool caseInsensitive, til::CoordType rowBeg, til::CoordType rowEnd) const;

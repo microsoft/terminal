@@ -27,7 +27,6 @@ Author(s):
     X(bool, ForceFullRepaintRendering, "experimental.rendering.forceFullRepaint", false)                                                                                                              \
     X(bool, SoftwareRendering, "experimental.rendering.software", false)                                                                                                                              \
     X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                                                           \
-    X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                                                             \
     X(bool, ForceVTInput, "experimental.input.forceVT", false)                                                                                                                                        \
     X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                                                           \
     X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                                                              \
@@ -98,7 +97,8 @@ Author(s):
     X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
     X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)                                                                                            \
     X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)                                                                                             \
-    X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)
+    X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                        \
+    X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)
 
 // Intentionally omitted Profile settings:
 // * Name
@@ -151,7 +151,8 @@ Author(s):
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr) \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedBackground, "unfocusedBackground", nullptr)
 
-#define MTSM_THEME_TAB_SETTINGS(X)                                                                                  \
-    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr)                   \
-    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedBackground, "unfocusedBackground", nullptr) \
+#define MTSM_THEME_TAB_SETTINGS(X)                                                                                                                     \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr)                                                      \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedBackground, "unfocusedBackground", nullptr)                                    \
+    X(winrt::Microsoft::Terminal::Settings::Model::IconStyle, IconStyle, "iconStyle", winrt::Microsoft::Terminal::Settings::Model::IconStyle::Default) \
     X(winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility, ShowCloseButton, "showCloseButton", winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility::Always)

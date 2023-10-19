@@ -680,7 +680,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _setOpacity(Opacity() + adjustment);
     }
 
-    void ControlCore::_setOpacity(const double opacity)
+    // Method Description:
+    // - Updates the opacity of the terminal
+    // Arguments:
+    // - opacity: The new opacity to set.
+    // - focused (default == true): Whether the window is focused or unfocused.
+    // Return Value:
+    // - <none>
+    void ControlCore::_setOpacity(const double opacity, bool focused)
     {
         const auto newOpacity = std::clamp(opacity,
                                            0.0,
@@ -693,6 +700,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Update our runtime opacity value
         _runtimeOpacity = newOpacity;
+
+        //Stores the focused runtime opacity separately from unfocused opacity
+        //to transition smoothly between the two.
+        _runtimeFocusedOpacity = focused ? newOpacity : _runtimeFocusedOpacity;
 
         // Manually turn off acrylic if they turn off transparency.
         _runtimeUseAcrylic = newOpacity < 1.0 && _settings->UseAcrylic();
@@ -824,6 +835,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _cellWidth = CSSLengthPercentage::FromString(_settings->CellWidth().c_str());
         _cellHeight = CSSLengthPercentage::FromString(_settings->CellHeight().c_str());
         _runtimeOpacity = std::nullopt;
+        _runtimeFocusedOpacity = std::nullopt;
 
         // Manually turn off acrylic if they turn off transparency.
         _runtimeUseAcrylic = _settings->Opacity() < 1.0 && _settings->UseAcrylic();
@@ -874,21 +886,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
 
+            // Incase EnableUnfocusedAcrylic is disabled and Focused Acrylic is set to true,
+            // the terminal should ignore the unfocused opacity from settings.
+            // The Focused Opacity from settings should be ignored if overridden at runtime.
+            bool useFocusedRuntimeOpacity = focused || (!_settings->EnableUnfocusedAcrylic() && UseAcrylic());
+            double newOpacity = useFocusedRuntimeOpacity ?
+                                    FocusedOpacity() :
+                                    newAppearance->Opacity();
+            _setOpacity(newOpacity, focused);
+
             // No need to update Acrylic if UnfocusedAcrylic is disabled
             if (_settings->EnableUnfocusedAcrylic())
             {
                 // Manually turn off acrylic if they turn off transparency.
                 _runtimeUseAcrylic = Opacity() < 1.0 && newAppearance->UseAcrylic();
-
-                // Update the renderer as well. It might need to fall back from
-                // cleartype -> grayscale if the BG is transparent / acrylic.
-                _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
-                _renderer->NotifyPaintFrame();
-
-                auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(Opacity());
-
-                _TransparencyChangedHandlers(*this, *eventArgs);
             }
+
+            // Update the renderer as well. It might need to fall back from
+            // cleartype -> grayscale if the BG is transparent / acrylic.
+            _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+            _renderer->NotifyPaintFrame();
+
+            auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(Opacity());
+            _TransparencyChangedHandlers(*this, *eventArgs);
 
             _renderer->TriggerRedrawAll(true, true);
         }
@@ -1380,6 +1400,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     til::color ControlCore::ForegroundColor() const
     {
+        const auto lock = _terminal->LockForReading();
         return _terminal->GetRenderSettings().GetColorAlias(ColorAlias::DefaultForeground);
     }
 
@@ -1583,7 +1604,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive))
         {
-            _searcher.MovePastCurrentSelection();
+            _searcher.MoveToCurrentSelection();
+            _cachedSearchResultRows = {};
         }
         else
         {
@@ -1614,12 +1636,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     Windows::Foundation::Collections::IVector<int32_t> ControlCore::SearchResultRows()
     {
-        auto lock = _terminal->LockForWriting();
-        if (_searcher.ResetIfStale(*GetRenderData()))
+        const auto lock = _terminal->LockForReading();
+
+        if (!_cachedSearchResultRows)
         {
             auto results = std::vector<int32_t>();
-
             auto lastRow = til::CoordTypeMin;
+
             for (const auto& match : _searcher.Results())
             {
                 const auto row{ match.start.y };
@@ -1629,6 +1652,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     lastRow = row;
                 }
             }
+
             _cachedSearchResultRows = winrt::single_threaded_vector<int32_t>(std::move(results));
         }
 
@@ -2265,27 +2289,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Windows::Foundation::Collections::IVector<Control::ScrollMark> ControlCore::ScrollMarks() const
     {
         const auto lock = _terminal->LockForReading();
-        const auto& internalMarks{ _terminal->GetScrollMarks() };
-        auto v = winrt::single_threaded_observable_vector<Control::ScrollMark>();
+        const auto& internalMarks = _terminal->GetScrollMarks();
+        std::vector<Control::ScrollMark> v;
+
+        v.reserve(internalMarks.size());
+
         for (const auto& mark : internalMarks)
         {
-            Control::ScrollMark m{};
-
-            // sneaky: always evaluate the color of the mark to a real value
-            // before shoving it into the optional. If the mark doesn't have a
-            // specific color set, we'll use the value from the color table
-            // that's appropriate for this category of mark. If we do have a
-            // color set, then great we'll use that. The TermControl can then
-            // always use the value in the Mark regardless if it was actually
-            // set or not.
-            m.Color = OptionalFromColor(_terminal->GetColorForMark(mark));
-            m.Start = mark.start.to_core_point();
-            m.End = mark.end.to_core_point();
-
-            v.Append(m);
+            v.emplace_back(
+                mark.start.to_core_point(),
+                mark.end.to_core_point(),
+                OptionalFromColor(_terminal->GetColorForMark(mark)));
         }
 
-        return v;
+        return winrt::single_threaded_vector(std::move(v));
     }
 
     void ControlCore::AddMark(const Control::ScrollMark& mark)

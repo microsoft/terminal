@@ -101,6 +101,13 @@
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
     <EnableHybridCRT Condition="'$(EnableHybridCRT)'=='' and '$(ConfigurationSupportsHybridCRT)'=='true'">true</EnableHybridCRT>
     <UseCrtSDKReferenceStaticWarning Condition="'$(EnableHybridCRT)'=='true'">false</UseCrtSDKReferenceStaticWarning>
+    <!--
+      We must set this to True for projects that do not contain any ClCompile entries.
+      The Link task guesses whether to enable CFG based on ClCompile->ControlFlowGuard.
+      Without any ClCompile entries, there's nothing to guess!
+      This impacts our dll projects that only link a lib.
+    -->
+    <LinkControlFlowGuard>true</LinkControlFlowGuard>
   </PropertyGroup>
 
   <ItemDefinitionGroup>

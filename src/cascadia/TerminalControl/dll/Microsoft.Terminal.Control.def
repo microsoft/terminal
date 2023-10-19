@@ -1,3 +1,26 @@
 EXPORTS
-DllCanUnloadNow = WINRT_CanUnloadNow                    PRIVATE
-DllGetActivationFactory = WINRT_GetActivationFactory    PRIVATE
+  ; WinRT ABI
+  DllCanUnloadNow = WINRT_CanUnloadNow                    PRIVATE
+  DllGetActivationFactory = WINRT_GetActivationFactory    PRIVATE
+
+  ; Flat C ABI
+  CreateTerminal
+  DestroyTerminal
+  TerminalBlinkCursor
+  TerminalCalculateResize
+  TerminalClearSelection
+  TerminalDpiChanged
+  TerminalGetSelection
+  TerminalIsSelectionActive
+  TerminalKillFocus
+  TerminalRegisterScrollCallback
+  TerminalRegisterWriteCallback
+  TerminalSendCharEvent
+  TerminalSendKeyEvent
+  TerminalSendOutput
+  TerminalSetCursorVisible
+  TerminalSetFocus
+  TerminalSetTheme
+  TerminalTriggerResize
+  TerminalTriggerResizeWithDimension
+  TerminalUserScroll

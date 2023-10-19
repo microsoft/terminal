@@ -13,6 +13,7 @@ clickable
 clig
 CMMI
 copyable
+Counterintuitively
 CtrlDToClose
 CVS
 cybersecurity
@@ -96,6 +97,7 @@ shcha
 slnt
 Sos
 ssh
+sustainability
 stakeholders
 sxn
 timeline

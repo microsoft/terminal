@@ -1,4 +1,4 @@
-![terminal-logos](https://user-images.githubusercontent.com/48369326/115790869-4c852b00-a37c-11eb-97f1-f61972c7800c.png)
+![terminal-logos](https://github.com/microsoft/terminal/assets/91625426/333ddc76-8ab2-4eb4-a8c0-4d7b953b1179)
 
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
@@ -73,7 +73,7 @@ winget install --id Microsoft.WindowsTerminal -e
 ```
 
 > **Note**\
-> Due to [a dependency issue](https://github.com/microsoft/terminal/issues/15663), Terminal's current versions cannot be installed via the Windows Package Manager CLI. To install the stable release 1.17 or later, or the Preview release 1.18 or later, please use an alternative installation method.
+> Dependency support is available in WinGet version [1.6.2631 or later](https://github.com/microsoft/winget-cli/releases). To install the Terminal stable release 1.18 or later, please make sure you have the updated version of the WinGet client.
 
 #### Via Chocolatey (unofficial)
 
@@ -115,6 +115,28 @@ If you have any issues when installing/updating the package, please search for
 or report the same on the [issues
 page](https://github.com/lukesampson/scoop-extras/issues) of Scoop Extras bucket
 repository.
+
+---
+
+## Installing Windows Terminal Canary
+Windows Terminal Canary is a nightly build of Windows Terminal. This build has the latest code from our `main` branch, giving you an opportunity to try features before they make it to Windows Terminal Preview.
+
+Windows Terminal Canary is our least stable offering, so you may discover bugs before we have had a chance to find them.
+
+Windows Terminal Canary is available as an App Installer distribution and a Portable ZIP distribution.
+
+The App Installer distribution supports automatic updates. Due to platform limitations, this installer only works on Windows 11.
+
+The Portable ZIP distribution is a portable application. It will not automatically update and will not automatically check for updates. This portable ZIP distribution works on Windows 10 (19041+) and Windows 11.
+
+| Distribution  | Architecture    | Link                                                 |
+|---------------|:---------------:|------------------------------------------------------|
+| App Installer | x64, arm64, x86 | [download](https://aka.ms/terminal-canary-installer) |
+| Portable ZIP  | x64             | [download](https://aka.ms/terminal-canary-zip-x64)   |
+| Portable ZIP  | ARM64           | [download](https://aka.ms/terminal-canary-zip-arm64) |
+| Portable ZIP  | x86             | [download](https://aka.ms/terminal-canary-zip-x86)   |
+
+_Learn more about the [types of Windows Terminal distributions](https://learn.microsoft.com/windows/terminal/distributions)._
 
 ---
 
