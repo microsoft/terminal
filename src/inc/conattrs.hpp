@@ -14,6 +14,7 @@ enum class CharacterAttributes : uint16_t
     Normal = 0x00,
     Intense = 0x01,
     Italics = 0x02,
+    Bold = 0x03,
     Blinking = 0x04,
     Invisible = 0x08,
     CrossedOut = 0x10,

@@ -2015,7 +2015,8 @@ std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point&
 std::string TextBuffer::GenHTML(const TextAndColor& rows,
                                 const int fontHeightPoints,
                                 const std::wstring_view fontFaceName,
-                                const COLORREF backgroundColor)
+                                const COLORREF backgroundColor,
+                                const TextAttribute& textProps)
 {
     try
     {
@@ -2137,6 +2138,14 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows,
                     htmlBuilder << "background-color:";
                     htmlBuilder << Utils::ColorToHexString(bkColor.value());
                     htmlBuilder << ";";
+                    htmlBuilder << "text-decoration:";
+                    htmlBuilder << textProps.IsUnderlined();
+                    htmlBuilder << ";";
+                    htmlBuilder << "font-weight:";
+                    htmlBuilder << textProps.IsBold();
+                    htmlBuilder << ";";
+                    htmlBuilder << "font-style:";
+                    htmlBuilder << textProps.IsItalic();
                     htmlBuilder << "\">";
                 }
 

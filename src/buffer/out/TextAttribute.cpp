@@ -288,6 +288,11 @@ bool TextAttribute::IsItalic() const noexcept
     return WI_IsFlagSet(_attrs, CharacterAttributes::Italics);
 }
 
+bool TextAttribute::IsBold() const noexcept
+{
+    return WI_IsFlagSet(_attrs, CharacterAttributes::Bold);
+}
+
 bool TextAttribute::IsBlinking() const noexcept
 {
     return WI_IsFlagSet(_attrs, CharacterAttributes::Blinking);
