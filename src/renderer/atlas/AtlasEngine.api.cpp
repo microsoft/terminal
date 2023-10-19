@@ -466,6 +466,10 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
     {
         try
         {
+            // _resolveFontMetrics() checks `_api.s->font->fontCollection` for a pre-existing font collection,
+            // before falling back to using the system font collection. This way we can inject our custom one. See GH#9375.
+            // Doing it this way is a bit hacky, but it does have the benefit that we can cache a font collection
+            // instance across font changes, like when zooming the font size rapidly using the scroll wheel.
             _api.s.write()->font.write()->fontCollection = FontCache::GetCached();
             _updateFont(fontInfoDesired.GetFaceName().c_str(), fontInfoDesired, fontInfo, features, axes);
             return S_OK;
