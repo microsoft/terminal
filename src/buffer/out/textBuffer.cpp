@@ -2015,8 +2015,7 @@ std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point&
 std::string TextBuffer::GenHTML(const TextAndColor& rows,
                                 const int fontHeightPoints,
                                 const std::wstring_view fontFaceName,
-                                const COLORREF backgroundColor,
-                                const TextAttribute& textProps)
+                                const COLORREF backgroundColor)
 {
     try
     {
@@ -2064,6 +2063,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows,
         auto hasWrittenAnyText = false;
         std::optional<COLORREF> fgColor = std::nullopt;
         std::optional<COLORREF> bkColor = std::nullopt;
+        TextAttribute textProps;
         for (size_t row = 0; row < rows.text.size(); row++)
         {
             size_t startOffset = 0;
