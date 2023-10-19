@@ -2146,6 +2146,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows,
                     htmlBuilder << ";";
                     htmlBuilder << "font-style:";
                     htmlBuilder << textProps.IsItalic();
+                    htmlBuilder << ";";
                     htmlBuilder << "\">";
                 }
 
