@@ -151,3 +151,40 @@ ConsoleControl::~ConsoleControl()
     }
 }
 #endif
+
+DWORD GetRootProcessId() {
+    // Implement your logic to get the root process ID here
+    // Replace this with the actual logic to determine the root PID
+    return 12345; // Example PID
+}
+
+HWND GetPseudoConsoleWindowHandle() {
+    // Implement your logic to get the pseudoconsole window handle here
+    // Replace this with the actual logic to obtain the window handle
+    return GetConsoleWindow(); // Example: use the console window handle
+}
+
+int main() {
+    // Initialize your application
+
+    // Get the root process ID
+    DWORD rootProcessId = GetRootProcessId(); // Replace with your method to get the root PID
+
+    // Get the pseudoconsole window handle
+    HWND pseudoConsoleWindowHandle = GetPseudoConsoleWindowHandle(); // Replace with your method to get the window handle
+
+    // Set the window ownership to the root PID
+    NTSTATUS result = ConsoleControl::SetWindowOwner(pseudoConsoleWindowHandle, rootProcessId, 0);
+
+    if (result == STATUS_SUCCESS) {
+        // Ownership change was successful
+        // Add your logic here if needed
+    } else {
+        // Ownership change failed
+        // Handle the error as needed
+    }
+
+    // Your application logic continues
+
+    return 0;
+}
