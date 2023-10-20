@@ -8,5 +8,6 @@ namespace TerminalApp
         String Name;
         String KeyChordText;
         String Icon;
+        Windows.UI.Xaml.Controls.IconElement ResolvedIcon { get; };
     }
 }

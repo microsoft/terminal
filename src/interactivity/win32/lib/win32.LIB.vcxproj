@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{06EC74CB-9A12-429C-B551-8532EC964726}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -9,6 +9,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -22,7 +23,6 @@
     <ClCompile Include="..\ConsoleKeyInfo.cpp" />
     <ClCompile Include="..\Find.cpp" />
     <ClCompile Include="..\Icon.cpp" />
-    <ClCompile Include="..\InputServices.cpp" />
     <ClCompile Include="..\Menu.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -46,7 +46,6 @@
     <ClInclude Include="..\ConsoleKeyInfo.hpp" />
     <ClInclude Include="..\Find.h" />
     <ClInclude Include="..\Icon.hpp" />
-    <ClInclude Include="..\InputServices.hpp" />
     <ClInclude Include="..\Menu.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\resource.h" />
@@ -61,6 +60,9 @@
     <ClInclude Include="..\windowUiaProvider.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\renderer\atlas\atlas.vcxproj">
+      <Project>{8222900C-8B6C-452A-91AC-BE95DB04B95F}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\renderer\dx\lib\dx.vcxproj">
       <Project>{48d21369-3d7b-4431-9967-24e81292cf62}</Project>
     </ProjectReference>
@@ -72,4 +74,5 @@
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
 </Project>

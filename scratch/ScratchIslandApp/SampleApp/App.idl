@@ -1,0 +1,18 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "SampleAppLogic.idl";
+
+namespace SampleApp
+{
+    // ADD ARBITRARY APP LOGIC TO SampleAppLogic.idl, NOT HERE.
+    // This is for XAML platform setup only.
+    [default_interface] runtimeclass App : Windows.UI.Xaml.Application, Windows.Foundation.IClosable
+    {
+        App();
+
+        SampleAppLogic Logic { get; };
+
+        Boolean IsDisposed { get; };
+    }
+}

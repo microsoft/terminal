@@ -11,9 +11,7 @@ INPUT_KEY_INFO::INPUT_KEY_INFO(const WORD wVirtualKeyCode, const ULONG ulControl
 {
 }
 
-INPUT_KEY_INFO::~INPUT_KEY_INFO()
-{
-}
+INPUT_KEY_INFO::~INPUT_KEY_INFO() = default;
 
 // Routine Description:
 // - Gets the keyboard virtual key that was pressed.

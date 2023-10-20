@@ -15,22 +15,27 @@ Abstract:
 #pragma once
 
 #include "IStateMachineEngine.hpp"
-#include "telemetry.hpp"
 #include "tracing.hpp"
 #include <memory>
 
 namespace Microsoft::Console::VirtualTerminal
 {
-    // The DEC STD 070 reference recommends supporting up to at least 16384 for
-    // parameter values, so 32767 should be more than enough. At most we might
-    // want to increase this to 65535, since that is what XTerm and VTE support,
-    // but for now 32767 is the safest limit for our existing code base.
-    constexpr size_t MAX_PARAMETER_VALUE = 32767;
+    // The DEC STD 070 reference recommends supporting up to at least 16384
+    // for parameter values. 65535 is what XTerm and VTE support.
+    // GH#12977: We must use 65535 to properly parse win32-input-mode
+    // sequences, which transmit the UTF-16 character value as a parameter.
+    constexpr VTInt MAX_PARAMETER_VALUE = 65535;
 
     // The DEC STD 070 reference requires that a minimum of 16 parameter values
     // are supported, but most modern terminal emulators will allow around twice
     // that number.
     constexpr size_t MAX_PARAMETER_COUNT = 32;
+
+    // Sub parameter limit for each parameter.
+    constexpr size_t MAX_SUBPARAMETER_COUNT = 6;
+    // we limit ourself to 256 sub parameters because we use bytes to store
+    // the their indexes.
+    static_assert(MAX_PARAMETER_COUNT * MAX_SUBPARAMETER_COUNT <= 256);
 
     class StateMachine final
     {
@@ -40,12 +45,28 @@ namespace Microsoft::Console::VirtualTerminal
 #endif
 
     public:
-        StateMachine(std::unique_ptr<IStateMachineEngine> engine);
+        template<typename T>
+        StateMachine(std::unique_ptr<T> engine) :
+            StateMachine(std::move(engine), std::is_same_v<T, class InputStateMachineEngine>)
+        {
+        }
+        StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bool isEngineForInput);
 
-        void SetAnsiMode(bool ansiMode) noexcept;
+        enum class Mode : size_t
+        {
+            AcceptC1,
+            AlwaysAcceptC1,
+            Ansi,
+        };
+
+        void SetParserMode(const Mode mode, const bool enabled) noexcept;
+        bool GetParserMode(const Mode mode) const noexcept;
 
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(const std::wstring_view string);
+        bool IsProcessingLastCharacter() const noexcept;
+
+        void OnCsiComplete(const std::function<void()> callback);
 
         void ResetState() noexcept;
 
@@ -54,29 +75,40 @@ namespace Microsoft::Console::VirtualTerminal
         const IStateMachineEngine& Engine() const noexcept;
         IStateMachineEngine& Engine() noexcept;
 
+        class ShutdownException : public wil::ResultException
+        {
+        public:
+            ShutdownException() noexcept :
+                ResultException(E_ABORT) {}
+        };
+
     private:
         void _ActionExecute(const wchar_t wch);
         void _ActionExecuteFromEscape(const wchar_t wch);
         void _ActionPrint(const wchar_t wch);
+        void _ActionPrintString(const std::wstring_view string);
         void _ActionEscDispatch(const wchar_t wch);
         void _ActionVt52EscDispatch(const wchar_t wch);
         void _ActionCollect(const wchar_t wch) noexcept;
         void _ActionParam(const wchar_t wch);
+        void _ActionSubParam(const wchar_t wch);
         void _ActionCsiDispatch(const wchar_t wch);
         void _ActionOscParam(const wchar_t wch) noexcept;
         void _ActionOscPut(const wchar_t wch);
         void _ActionOscDispatch(const wchar_t wch);
         void _ActionSs3Dispatch(const wchar_t wch);
-        void _ActionDcsPassThrough(const wchar_t wch);
+        void _ActionDcsDispatch(const wchar_t wch);
 
         void _ActionClear();
         void _ActionIgnore() noexcept;
+        void _ActionInterrupt();
 
         void _EnterGround() noexcept;
         void _EnterEscape();
         void _EnterEscapeIntermediate() noexcept;
         void _EnterCsiEntry();
         void _EnterCsiParam() noexcept;
+        void _EnterCsiSubParam() noexcept;
         void _EnterCsiIgnore() noexcept;
         void _EnterCsiIntermediate() noexcept;
         void _EnterOscParam() noexcept;
@@ -90,9 +122,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterDcsIgnore() noexcept;
         void _EnterDcsIntermediate() noexcept;
         void _EnterDcsPassThrough() noexcept;
-        void _EnterDcsTermination() noexcept;
         void _EnterSosPmApcString() noexcept;
-        void _EnterSosPmApcTermination() noexcept;
 
         void _EventGround(const wchar_t wch);
         void _EventEscape(const wchar_t wch);
@@ -101,8 +131,10 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventCsiIntermediate(const wchar_t wch);
         void _EventCsiIgnore(const wchar_t wch);
         void _EventCsiParam(const wchar_t wch);
+        void _EventCsiSubParam(const wchar_t wch);
         void _EventOscParam(const wchar_t wch) noexcept;
         void _EventOscString(const wchar_t wch);
+        void _EventOscTermination(const wchar_t wch);
         void _EventSs3Entry(const wchar_t wch);
         void _EventSs3Param(const wchar_t wch);
         void _EventVt52Param(const wchar_t wch);
@@ -112,10 +144,13 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventDcsParam(const wchar_t wch);
         void _EventDcsPassThrough(const wchar_t wch);
         void _EventSosPmApcString(const wchar_t wch) noexcept;
-        void _EventVariableLengthStringTermination(const wchar_t wch);
 
-        void _AccumulateTo(const wchar_t wch, size_t& value) noexcept;
-        const bool _IsVariableLengthStringState() const noexcept;
+        void _AccumulateTo(const wchar_t wch, VTInt& value) noexcept;
+
+        template<typename TLambda>
+        bool _SafeExecute(TLambda&& lambda);
+
+        void _ExecuteCsiCompleteCallback();
 
         enum class VTStates
         {
@@ -126,6 +161,7 @@ namespace Microsoft::Console::VirtualTerminal
             CsiIntermediate,
             CsiIgnore,
             CsiParam,
+            CsiSubParam,
             OscParam,
             OscString,
             OscTermination,
@@ -137,32 +173,50 @@ namespace Microsoft::Console::VirtualTerminal
             DcsIntermediate,
             DcsParam,
             DcsPassThrough,
-            DcsTermination,
-            SosPmApcString,
-            SosPmApcTermination
+            SosPmApcString
         };
 
         Microsoft::Console::VirtualTerminal::ParserTracing _trace;
 
         std::unique_ptr<IStateMachineEngine> _engine;
+        const bool _isEngineForInput;
 
         VTStates _state;
 
-        bool _isInAnsiMode;
+        til::enumset<Mode> _parserMode{ Mode::Ansi };
 
-        std::wstring_view _run;
+        std::wstring_view _currentString;
+        size_t _runOffset;
+        size_t _runSize;
+
+        // Construct current run.
+        //
+        // Note: We intentionally use this method to create the run lazily for better performance.
+        //       You may find the usage of offset & size unsafe, but under heavy load it shows noticeable performance benefit.
+        std::wstring_view _CurrentRun() const
+        {
+            return _currentString.substr(_runOffset, _runSize);
+        }
 
         VTIDBuilder _identifier;
         std::vector<VTParameter> _parameters;
-        bool _parameterLimitReached;
+        bool _parameterLimitOverflowed;
+        std::vector<VTParameter> _subParameters;
+        std::vector<std::pair<BYTE /*range start*/, BYTE /*range end*/>> _subParameterRanges;
+        bool _subParameterLimitOverflowed;
+        BYTE _subParameterCounter;
 
         std::wstring _oscString;
-        size_t _oscParameter;
+        VTInt _oscParameter;
+
+        IStateMachineEngine::StringHandler _dcsStringHandler;
 
         std::optional<std::wstring> _cachedSequence;
 
         // This is tracked per state machine instance so that separate calls to Process*
         //   can start and finish a sequence.
-        bool _processingIndividually;
+        bool _processingLastCharacter;
+
+        std::function<void()> _onCsiCompleteCallback;
     };
 }

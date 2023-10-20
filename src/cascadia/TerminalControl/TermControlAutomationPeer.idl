@@ -9,5 +9,8 @@ namespace Microsoft.Terminal.Control
         Windows.UI.Xaml.Automation.Peers.FrameworkElementAutomationPeer,
         Windows.UI.Xaml.Automation.Provider.ITextProvider
     {
+
+        void UpdateControlBounds();
+        void SetControlPadding(Microsoft.Terminal.Core.Padding padding);
     }
 }

@@ -22,25 +22,33 @@ Author(s):
 #define __CLSID_CTerminalHandoff "E12CFF52-A866-4C77-9A90-F570A7AA2C6B"
 #elif defined(WT_BRANDING_PREVIEW)
 #define __CLSID_CTerminalHandoff "86633F1F-6454-40EC-89CE-DA4EBA977EE2"
+#elif defined(WT_BRANDING_CANARY)
+#define __CLSID_CTerminalHandoff "1706609C-A4CE-4C0D-B7D2-C19BF66398A5"
 #else
 #define __CLSID_CTerminalHandoff "051F34EE-C1FD-4B19-AF75-9BA54648434C"
 #endif
 
-using NewHandoffFunction = HRESULT (*)(HANDLE, HANDLE, HANDLE, HANDLE);
+using NewHandoffFunction = HRESULT (*)(HANDLE, HANDLE, HANDLE, HANDLE, HANDLE, HANDLE, TERMINAL_STARTUP_INFO);
 
 struct __declspec(uuid(__CLSID_CTerminalHandoff))
-    CTerminalHandoff : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::ClassicCom>, ITerminalHandoff>
+    CTerminalHandoff : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::ClassicCom>, ITerminalHandoff2>
 {
 #pragma region ITerminalHandoff
     STDMETHODIMP EstablishPtyHandoff(HANDLE in,
                                      HANDLE out,
                                      HANDLE signal,
-                                     HANDLE process) noexcept override;
+                                     HANDLE ref,
+                                     HANDLE server,
+                                     HANDLE client,
+                                     TERMINAL_STARTUP_INFO startupInfo) override;
 
 #pragma endregion
 
-    static HRESULT s_StartListening(NewHandoffFunction pfnHandoff) noexcept;
-    static HRESULT s_StopListening() noexcept;
+    static HRESULT s_StartListening(NewHandoffFunction pfnHandoff);
+    static HRESULT s_StopListening();
+
+private:
+    static HRESULT s_StopListeningLocked();
 };
 
 // Disable warnings from the CoCreatableClass macro as the value it provides for

@@ -8,37 +8,48 @@
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Render;
+
+static void CALLBACK CursorTimerRoutineWrapper(_Inout_ PTP_CALLBACK_INSTANCE /*Instance*/, _Inout_opt_ PVOID /*Context*/, _Inout_ PTP_TIMER /*Timer*/)
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // There's a slight race condition here.
+    // CreateThreadpoolTimer callbacks may be scheduled even after they were canceled.
+    // But I'm not too concerned that this will lead to issues at the time of writing,
+    // as CursorBlinker is allocated as a static variable through the Globals class.
+    // It'd be nice to fix this, but realistically it'll likely not lead to issues.
+    gci.LockConsole();
+    gci.GetCursorBlinker().TimerRoutine(gci.GetActiveOutputBuffer());
+    gci.UnlockConsole();
+}
 
 CursorBlinker::CursorBlinker() :
-    _hCaretBlinkTimer(INVALID_HANDLE_VALUE),
-    _hCaretBlinkTimerQueue(THROW_LAST_ERROR_IF_NULL(CreateTimerQueue())),
+    _timer(THROW_LAST_ERROR_IF_NULL(CreateThreadpoolTimer(&CursorTimerRoutineWrapper, nullptr, nullptr))),
     _uCaretBlinkTime(INFINITE) // default to no blink
 {
 }
 
 CursorBlinker::~CursorBlinker()
 {
-    if (_hCaretBlinkTimerQueue)
-    {
-        DeleteTimerQueueEx(_hCaretBlinkTimerQueue, INVALID_HANDLE_VALUE);
-    }
+    KillCaretTimer();
 }
 
-void CursorBlinker::UpdateSystemMetrics()
+void CursorBlinker::UpdateSystemMetrics() noexcept
 {
     // This can be -1 in a TS session
     _uCaretBlinkTime = ServiceLocator::LocateSystemConfigurationProvider()->GetCaretBlinkTime();
 
     // If animations are disabled, or the blink rate is infinite, blinking is not allowed.
-    BOOL animationsEnabled = TRUE;
+    auto animationsEnabled = TRUE;
     SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
-    auto& blinkingState = ServiceLocator::LocateGlobals().getConsoleInformation().GetBlinkingState();
-    blinkingState.SetBlinkingAllowed(animationsEnabled && _uCaretBlinkTime != INFINITE);
+    auto& renderSettings = ServiceLocator::LocateGlobals().getConsoleInformation().GetRenderSettings();
+    renderSettings.SetRenderMode(RenderSettings::Mode::BlinkAllowed, animationsEnabled && _uCaretBlinkTime != INFINITE);
 }
 
-void CursorBlinker::SettingsChanged()
+void CursorBlinker::SettingsChanged() noexcept
 {
-    DWORD const dwCaretBlinkTime = ServiceLocator::LocateSystemConfigurationProvider()->GetCaretBlinkTime();
+    const auto dwCaretBlinkTime = ServiceLocator::LocateSystemConfigurationProvider()->GetCaretBlinkTime();
 
     if (dwCaretBlinkTime != _uCaretBlinkTime)
     {
@@ -48,12 +59,12 @@ void CursorBlinker::SettingsChanged()
     }
 }
 
-void CursorBlinker::FocusEnd()
+void CursorBlinker::FocusEnd() const noexcept
 {
     KillCaretTimer();
 }
 
-void CursorBlinker::FocusStart()
+void CursorBlinker::FocusStart() const noexcept
 {
     SetCaretTimer();
 }
@@ -65,20 +76,23 @@ void CursorBlinker::FocusStart()
 // - ScreenInfo - reference to screen info structure.
 // Return Value:
 // - <none>
-void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
+void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo) const noexcept
 {
     auto& buffer = ScreenInfo.GetTextBuffer();
     auto& cursor = buffer.GetCursor();
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto* const _pAccessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto* const pAccessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
+    const auto inConpty{ gci.IsInVtIoMode() };
 
-    if (!WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
+    // GH#2988: ConPTY can now be focused, but it doesn't need to do any of this work either.
+    if (inConpty || !WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
     {
         goto DoScroll;
     }
 
     // Update the cursor pos in USER so accessibility will work.
-    if (cursor.HasMoved())
+    // Don't do all this work or send events if we don't have a notifier target.
+    if (pAccessibilityNotifier && cursor.HasMoved())
     {
         // Convert the buffer position to the equivalent screen coordinates
         // required by the notifier, taking line rendition into account.
@@ -87,17 +101,17 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
         const auto fontSize = ScreenInfo.GetScreenFontSize();
         cursor.SetHasMoved(false);
 
-        RECT rc;
-        rc.left = (position.X - viewport.Left()) * fontSize.X;
-        rc.top = (position.Y - viewport.Top()) * fontSize.Y;
-        rc.right = rc.left + fontSize.X;
-        rc.bottom = rc.top + fontSize.Y;
+        til::rect rc;
+        rc.left = (position.x - viewport.Left()) * fontSize.width;
+        rc.top = (position.y - viewport.Top()) * fontSize.height;
+        rc.right = rc.left + fontSize.width;
+        rc.bottom = rc.top + fontSize.height;
 
-        _pAccessibilityNotifier->NotifyConsoleCaretEvent(rc);
+        pAccessibilityNotifier->NotifyConsoleCaretEvent(rc);
 
         // Send accessibility information
         {
-            IAccessibilityNotifier::ConsoleCaretEventFlags flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretInvisible;
+            auto flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretInvisible;
 
             // Flags is expected to be 2, 1, or 0. 2 in selecting (whether or not visible), 1 if just visible, 0 if invisible/noselect.
             if (WI_IsFlagSet(gci.Flags, CONSOLE_SELECTING))
@@ -109,7 +123,7 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
                 flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretVisible;
             }
 
-            _pAccessibilityNotifier->NotifyConsoleCaretEvent(flags, MAKELONG(position.X, position.Y));
+            pAccessibilityNotifier->NotifyConsoleCaretEvent(flags, MAKELONG(position.x, position.y));
         }
     }
 
@@ -138,55 +152,10 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
     }
 
 DoBlinkingRenditionAndScroll:
-    gci.GetBlinkingState().ToggleBlinkingRendition(ScreenInfo.GetRenderTarget());
+    gci.GetRenderSettings().ToggleBlinkRendition(buffer.GetRenderer());
 
 DoScroll:
     Scrolling::s_ScrollIfNecessary(ScreenInfo);
-}
-
-void CALLBACK CursorTimerRoutineWrapper(_In_ PVOID /* lpParam */, _In_ BOOLEAN /* TimerOrWaitFired */)
-{
-    // Suppose the following sequence of events takes place:
-    //
-    // 1. The user resizes the console;
-    // 2. The console acquires the console lock;
-    // 3. The current SCREEN_INFORMATION instance is deleted;
-    // 4. This causes the current Cursor instance to be deleted, too;
-    // 5. The Cursor's destructor is called;
-    // => Somewhere between 1 and 5, the timer fires:
-    //    Timer queue timer callbacks execute asynchronously with respect to
-    //    the UI thread under which the numbered steps are taking place.
-    //    Because the callback touches console state, it needs to acquire the
-    //    console lock. But what if the timer callback fires at just the right
-    //    time such that 2 has already acquired the lock?
-    // 6. The Cursor's destructor deletes the timer queue and thereby destroys
-    //    the timer queue timer used for blinking. However, because this
-    //    timer's callback modifies console state, it is prudent to not
-    //    continue the destruction if the callback has already started but has
-    //    not yet finished. Therefore, the destructor waits for the callback to
-    //    finish executing.
-    // => Meanwhile, the callback just happens to be stuck waiting for the
-    //    console lock acquired in step 2. Since the destructor is waiting on
-    //    the callback to complete, and the callback is waiting on the lock,
-    //    which will only be released way after the Cursor instance is deleted,
-    //    the console has now deadlocked.
-    //
-    // As a solution, skip the blink if the console lock is already being held.
-    // Note that critical sections to not have a waitable synchronization
-    // object unless there readily is contention on it. As a result, if we
-    // wanted to wait until the lock became available under the condition of
-    // not being destroyed, things get too complicated.
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    if (gci.TryLockConsole() != false)
-    {
-        // Cursor& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-        gci.GetCursorBlinker().TimerRoutine(gci.GetActiveOutputBuffer());
-
-        // This was originally just UnlockConsole, not CONSOLE_INFORMATION::UnlockConsole
-        // Is there a reason it would need to be the global version?
-        gci.UnlockConsole();
-    }
 }
 
 // Routine Description:
@@ -194,50 +163,18 @@ void CALLBACK CursorTimerRoutineWrapper(_In_ PVOID /* lpParam */, _In_ BOOLEAN /
 //   need to make sure it gets drawn, so we'll set a short timer. When that
 //   goes off, we'll hit CursorTimerRoutine, and it'll do the right thing if
 //   guCaretBlinkTime is -1.
-void CursorBlinker::SetCaretTimer()
+void CursorBlinker::SetCaretTimer() const noexcept
 {
-    static const DWORD dwDefTimeout = 0x212;
+    using filetime_duration = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
+    static constexpr DWORD dwDefTimeout = 0x212;
 
-    KillCaretTimer();
-
-    if (_hCaretBlinkTimer == INVALID_HANDLE_VALUE)
-    {
-        bool bRet = true;
-        DWORD dwEffectivePeriod = _uCaretBlinkTime == -1 ? dwDefTimeout : _uCaretBlinkTime;
-
-        bRet = CreateTimerQueueTimer(&_hCaretBlinkTimer,
-                                     _hCaretBlinkTimerQueue,
-                                     CursorTimerRoutineWrapper,
-                                     this,
-                                     dwEffectivePeriod,
-                                     dwEffectivePeriod,
-                                     0);
-
-        LOG_LAST_ERROR_IF(!bRet);
-    }
+    const auto periodInMS = _uCaretBlinkTime == -1 ? dwDefTimeout : _uCaretBlinkTime;
+    // The FILETIME struct measures time in 100ns steps. 10000 thus equals 1ms.
+    auto periodInFiletime = -static_cast<int64_t>(periodInMS) * 10000;
+    SetThreadpoolTimer(_timer.get(), reinterpret_cast<FILETIME*>(&periodInFiletime), periodInMS, 0);
 }
 
-void CursorBlinker::KillCaretTimer()
+void CursorBlinker::KillCaretTimer() const noexcept
 {
-    if (_hCaretBlinkTimer != INVALID_HANDLE_VALUE)
-    {
-        bool bRet = true;
-
-        bRet = DeleteTimerQueueTimer(_hCaretBlinkTimerQueue,
-                                     _hCaretBlinkTimer,
-                                     nullptr);
-
-        // According to https://msdn.microsoft.com/en-us/library/windows/desktop/ms682569(v=vs.85).aspx
-        // A failure to delete the timer with the LastError being ERROR_IO_PENDING means that the timer is
-        // currently in use and will get cleaned up when released. Delete should not be called again.
-        // We treat that case as a success.
-        if (!bRet && GetLastError() != ERROR_IO_PENDING)
-        {
-            LOG_LAST_ERROR();
-        }
-        else
-        {
-            _hCaretBlinkTimer = INVALID_HANDLE_VALUE;
-        }
-    }
+    SetThreadpoolTimer(_timer.get(), nullptr, 0, 0);
 }

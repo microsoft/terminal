@@ -10,7 +10,7 @@
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
 #include "../cascadia/UnitTests_TerminalCore/MockTermSettings.h"
-#include "../renderer/inc/DummyRenderTarget.hpp"
+#include "../renderer/inc/DummyRenderer.hpp"
 #include "consoletaeftemplates.hpp"
 
 using namespace WEX::Logging;
@@ -32,7 +32,7 @@ namespace TerminalCoreUnitTests
         // - expected: the expected value of the selection rect
         // Return Value:
         // - N/A
-        void ValidateSingleRowSelection(Terminal& term, SMALL_RECT expected)
+        void ValidateSingleRowSelection(Terminal& term, const til::inclusive_rect& expected)
         {
             // Simulate renderer calling TriggerSelection and acquiring selection area
             auto selectionRects = term.GetSelectionRects();
@@ -47,11 +47,11 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectUnit)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Simulate click at (x,y) = (5,10)
-            auto clickPos = COORD{ 5, 10 };
+            auto clickPos = til::point{ 5, 10 };
             term.SetSelectionAnchor(clickPos);
 
             ValidateSingleRowSelection(term, { 5, 10, 5, 10 });
@@ -60,13 +60,13 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectArea)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Used for two things:
             //    - click y-pos
             //    - keep track of row we're verifying
-            SHORT rowValue = 10;
+            til::CoordType rowValue = 10;
 
             // Simulate click at (x,y) = (5,10)
             term.SetSelectionAnchor({ 5, rowValue });
@@ -81,7 +81,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(11));
 
             auto viewport = term.GetViewport();
-            SHORT rightBoundary = viewport.RightInclusive();
+            auto rightBoundary = viewport.RightInclusive();
             for (auto selectionRect : selectionRects)
             {
                 auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
@@ -89,17 +89,17 @@ namespace TerminalCoreUnitTests
                 if (rowValue == 10)
                 {
                     // Verify top line
-                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, 10, rightBoundary, 10 }));
+                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, 10, rightBoundary, 10 }));
                 }
                 else if (rowValue == 20)
                 {
                     // Verify bottom line
-                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 20, 15, 20 }));
+                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 20, 15, 20 }));
                 }
                 else
                 {
                     // Verify other lines (full)
-                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, rowValue, rightBoundary, rowValue }));
+                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, rowValue, rightBoundary, rowValue }));
                 }
 
                 rowValue++;
@@ -108,16 +108,16 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(OverflowTests)
         {
-            const COORD maxCoord = { SHRT_MAX, SHRT_MAX };
+            const til::point maxCoord = { SHRT_MAX, SHRT_MAX };
 
-            // Test SetSelectionAnchor(COORD) and SetSelectionEnd(COORD)
+            // Test SetSelectionAnchor(til::point) and SetSelectionEnd(til::point)
             // Behavior: clamp coord to viewport.
-            auto ValidateSingleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
+            auto ValidateSingleClickSelection = [&](til::CoordType scrollback, const til::inclusive_rect& expected) {
                 Terminal term;
-                DummyRenderTarget emptyRT;
-                term.Create({ 10, 10 }, scrollback, emptyRT);
+                DummyRenderer renderer{ &term };
+                term.Create({ 10, 10 }, scrollback, renderer);
 
-                // NOTE: SetSelectionEnd(COORD) is called within SetSelectionAnchor(COORD)
+                // NOTE: SetSelectionEnd(til::point) is called within SetSelectionAnchor(til::point)
                 term.SetSelectionAnchor(maxCoord);
                 ValidateSingleRowSelection(term, expected);
             };
@@ -125,24 +125,24 @@ namespace TerminalCoreUnitTests
             // Test a Double Click Selection
             // Behavior: clamp coord to viewport.
             //           Then, do double click selection.
-            auto ValidateDoubleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
+            auto ValidateDoubleClickSelection = [&](til::CoordType scrollback, const til::inclusive_rect& expected) {
                 Terminal term;
-                DummyRenderTarget emptyRT;
-                term.Create({ 10, 10 }, scrollback, emptyRT);
+                DummyRenderer renderer{ &term };
+                term.Create({ 10, 10 }, scrollback, renderer);
 
-                term.MultiClickSelection(maxCoord, Terminal::SelectionExpansionMode::Word);
+                term.MultiClickSelection(maxCoord, Terminal::SelectionExpansion::Word);
                 ValidateSingleRowSelection(term, expected);
             };
 
             // Test a Triple Click Selection
             // Behavior: clamp coord to viewport.
             //           Then, do triple click selection.
-            auto ValidateTripleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
+            auto ValidateTripleClickSelection = [&](til::CoordType scrollback, const til::inclusive_rect& expected) {
                 Terminal term;
-                DummyRenderTarget emptyRT;
-                term.Create({ 10, 10 }, scrollback, emptyRT);
+                DummyRenderer renderer{ &term };
+                term.Create({ 10, 10 }, scrollback, renderer);
 
-                term.MultiClickSelection(maxCoord, Terminal::SelectionExpansionMode::Line);
+                term.MultiClickSelection(maxCoord, Terminal::SelectionExpansion::Line);
                 ValidateSingleRowSelection(term, expected);
             };
 
@@ -155,7 +155,7 @@ namespace TerminalCoreUnitTests
             ValidateTripleClickSelection(0, { 0, 9, 9, 9 });
 
             // Test with max scrollback
-            const SHORT expected_row = SHRT_MAX - 1;
+            const til::CoordType expected_row = SHRT_MAX - 1;
             Log::Comment(L"Single click selection with MAXIMUM scrollback value");
             ValidateSingleClickSelection(SHRT_MAX, { 9, expected_row, 9, expected_row });
             Log::Comment(L"Double click selection with MAXIMUM scrollback value");
@@ -172,14 +172,14 @@ namespace TerminalCoreUnitTests
             */
 
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 10, 10 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 10, 10 }, 0, renderer);
 
             auto viewport = term.GetViewport();
-            const SHORT leftBoundary = viewport.Left();
-            const SHORT rightBoundary = viewport.RightInclusive();
-            const SHORT topBoundary = viewport.Top();
-            const SHORT bottomBoundary = viewport.BottomInclusive();
+            const auto leftBoundary = viewport.Left();
+            const auto rightBoundary = viewport.RightInclusive();
+            const auto topBoundary = viewport.Top();
+            const auto bottomBoundary = viewport.BottomInclusive();
 
             // Case 1: Simulate click past right (x,y) = (20,5)
             // should clamp to right boundary
@@ -214,12 +214,12 @@ namespace TerminalCoreUnitTests
             */
 
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 10, 10 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 10, 10 }, 0, renderer);
 
             auto viewport = term.GetViewport();
-            const SHORT leftBoundary = 0;
-            const SHORT rightBoundary = viewport.RightInclusive();
+            const til::CoordType leftBoundary = 0;
+            const auto rightBoundary = viewport.RightInclusive();
 
             // Simulate click at (x,y) = (5,5)
             term.SetSelectionAnchor({ 5, 5 });
@@ -227,7 +227,7 @@ namespace TerminalCoreUnitTests
             // Case 1: Move out of right boundary
             Log::Comment(L"Out of bounds: X-value too large");
             term.SetSelectionEnd({ 20, 5 });
-            ValidateSingleRowSelection(term, SMALL_RECT({ 5, 5, rightBoundary, 5 }));
+            ValidateSingleRowSelection(term, til::inclusive_rect({ 5, 5, rightBoundary, 5 }));
 
             // Case 2: Move out of left boundary
             Log::Comment(L"Out of bounds: X-value negative");
@@ -250,17 +250,17 @@ namespace TerminalCoreUnitTests
                     if (rowValue == 0)
                     {
                         // Verify top line
-                        VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, rowValue, rightBoundary, rowValue }));
+                        VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, rowValue, rightBoundary, rowValue }));
                     }
                     else if (rowValue == 5)
                     {
                         // Verify last line
-                        VERIFY_ARE_EQUAL(selection, SMALL_RECT({ leftBoundary, rowValue, 5, rowValue }));
+                        VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ leftBoundary, rowValue, 5, rowValue }));
                     }
                     else
                     {
                         // Verify other lines (full)
-                        VERIFY_ARE_EQUAL(selection, SMALL_RECT({ leftBoundary, rowValue, rightBoundary, rowValue }));
+                        VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ leftBoundary, rowValue, rightBoundary, rowValue }));
                     }
                 }
             }
@@ -281,17 +281,17 @@ namespace TerminalCoreUnitTests
                     if (rowValue == 5)
                     {
                         // Verify top line
-                        VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, 5, rightBoundary, 5 }));
+                        VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, 5, rightBoundary, 5 }));
                     }
                     else if (rowValue == 9)
                     {
                         // Verify bottom line
-                        VERIFY_ARE_EQUAL(selection, SMALL_RECT({ leftBoundary, rowValue, 5, rowValue }));
+                        VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ leftBoundary, rowValue, 5, rowValue }));
                     }
                     else
                     {
                         // Verify other lines (full)
-                        VERIFY_ARE_EQUAL(selection, SMALL_RECT({ leftBoundary, rowValue, rightBoundary, rowValue }));
+                        VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ leftBoundary, rowValue, rightBoundary, rowValue }));
                     }
                 }
             }
@@ -300,13 +300,13 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectBoxArea)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Used for two things:
             //    - click y-pos
             //    - keep track of row we're verifying
-            SHORT rowValue = 10;
+            til::CoordType rowValue = 10;
 
             // Simulate ALT + click at (x,y) = (5,10)
             term.SetSelectionAnchor({ 5, rowValue });
@@ -327,7 +327,7 @@ namespace TerminalCoreUnitTests
                 auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
 
                 // Verify all lines
-                VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, rowValue, 15, rowValue }));
+                VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, rowValue, 15, rowValue }));
 
                 rowValue++;
             }
@@ -336,14 +336,14 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectAreaAfterScroll)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            SHORT scrollbackLines = 5;
-            term.Create({ 100, 100 }, scrollbackLines, emptyRT);
+            DummyRenderer renderer{ &term };
+            til::CoordType scrollbackLines = 5;
+            term.Create({ 100, 100 }, scrollbackLines, renderer);
 
             // Used for two things:
             //    - click y-pos
             //    - keep track of row we're verifying
-            SHORT rowValue = 10;
+            til::CoordType rowValue = 10;
 
             // Simulate click at (x,y) = (5,10)
             term.SetSelectionAnchor({ 5, rowValue });
@@ -358,7 +358,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(11));
 
             auto viewport = term.GetViewport();
-            SHORT rightBoundary = viewport.RightInclusive();
+            auto rightBoundary = viewport.RightInclusive();
             for (auto selectionRect : selectionRects)
             {
                 auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
@@ -366,17 +366,17 @@ namespace TerminalCoreUnitTests
                 if (rowValue == 10)
                 {
                     // Verify top line
-                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, 10, rightBoundary, 10 }));
+                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, 10, rightBoundary, 10 }));
                 }
                 else if (rowValue == 20)
                 {
                     // Verify bottom line
-                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 20, 15, 20 }));
+                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 20, 15, 20 }));
                 }
                 else
                 {
                     // Verify other lines (full)
-                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, rowValue, rightBoundary, rowValue }));
+                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, rowValue, rightBoundary, rowValue }));
                 }
 
                 rowValue++;
@@ -386,19 +386,19 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectWideGlyph_Trailing)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // This is the burrito emoji
             // It's encoded in UTF-16, as needed by the buffer.
             const auto burrito = L"\xD83C\xDF2F";
 
             // Insert wide glyph at position (4,10)
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(burrito);
 
             // Simulate click at (x,y) = (5,10)
-            auto clickPos = COORD{ 5, 10 };
+            auto clickPos = til::point{ 5, 10 };
             term.SetSelectionAnchor(clickPos);
 
             // Validate selection area
@@ -409,19 +409,19 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectWideGlyph_Leading)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // This is the burrito emoji
             // It's encoded in UTF-16, as needed by the buffer.
             const auto burrito = L"\xD83C\xDF2F";
 
             // Insert wide glyph at position (4,10)
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(burrito);
 
             // Simulate click at (x,y) = (5,10)
-            auto clickPos = COORD{ 4, 10 };
+            auto clickPos = til::point{ 4, 10 };
             term.SetSelectionAnchor(clickPos);
 
             // Validate selection area
@@ -432,19 +432,19 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectWideGlyphsInBoxSelection)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // This is the burrito emoji
             // It's encoded in UTF-16, as needed by the buffer.
             const auto burrito = L"\xD83C\xDF2F";
 
             // Insert wide glyph at position (4,10)
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(burrito);
 
             // Insert wide glyph at position (7,11)
-            term.SetCursorPosition(7, 11);
+            term.GetTextBuffer().GetCursor().SetPosition({ 7, 11 });
             term.Write(burrito);
 
             // Simulate ALT + click at (x,y) = (5,8)
@@ -461,23 +461,23 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(5));
 
             auto viewport = term.GetViewport();
-            SHORT rowValue = 8;
+            til::CoordType rowValue = 8;
             for (auto selectionRect : selectionRects)
             {
                 auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
 
                 if (rowValue == 10)
                 {
-                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, rowValue, 7, rowValue }));
+                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 4, rowValue, 7, rowValue }));
                 }
                 else if (rowValue == 11)
                 {
-                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, rowValue, 8, rowValue }));
+                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, rowValue, 8, rowValue }));
                 }
                 else
                 {
                     // Verify all lines
-                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, rowValue, 7, rowValue }));
+                    VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, rowValue, 7, rowValue }));
                 }
 
                 rowValue++;
@@ -487,8 +487,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(DoubleClick_GeneralCase)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -496,43 +496,43 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe";
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate double click at (x,y) = (5,10)
-            auto clickPos = COORD{ 5, 10 };
-            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Word);
+            auto clickPos = til::point{ 5, 10 };
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
 
             // Validate selection area
-            ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, (4 + gsl::narrow<SHORT>(text.size()) - 1), 10 }));
+            ValidateSingleRowSelection(term, til::inclusive_rect{ 4, 10, gsl::narrow<til::CoordType>(4 + text.size() - 1), 10 });
         }
 
         TEST_METHOD(DoubleClick_Delimiter)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
             term.UpdateSettings(settings);
 
             // Simulate click at (x,y) = (5,10)
-            auto clickPos = COORD{ 5, 10 };
-            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Word);
+            auto clickPos = til::point{ 5, 10 };
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
 
             // Simulate renderer calling TriggerSelection and acquiring selection area
             auto selectionRects = term.GetSelectionRects();
 
             // Validate selection area
-            ValidateSingleRowSelection(term, SMALL_RECT({ 0, 10, 99, 10 }));
+            ValidateSingleRowSelection(term, til::inclusive_rect({ 0, 10, 99, 10 }));
         }
 
         TEST_METHOD(DoubleClick_DelimiterClass)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -540,27 +540,27 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"C:\\Terminal>";
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate click at (x,y) = (15,10)
             // this is over the '>' char
-            auto clickPos = COORD{ 15, 10 };
-            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Word);
+            auto clickPos = til::point{ 15, 10 };
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
 
             // ---Validate selection area---
             // "Terminal" is in class 2
             // ">" is in class 1
             // the white space to the right of the ">" is in class 0
             // Double-clicking the ">" should only highlight that cell
-            ValidateSingleRowSelection(term, SMALL_RECT({ 15, 10, 15, 10 }));
+            ValidateSingleRowSelection(term, til::inclusive_rect({ 15, 10, 15, 10 }));
         }
 
         TEST_METHOD(DoubleClickDrag_Right)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -568,11 +568,11 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate double click at (x,y) = (5,10)
-            term.MultiClickSelection({ 5, 10 }, Terminal::SelectionExpansionMode::Word);
+            term.MultiClickSelection({ 5, 10 }, Terminal::SelectionExpansion::Word);
 
             // Simulate move to (x,y) = (21,10)
             //
@@ -582,14 +582,14 @@ namespace TerminalCoreUnitTests
             term.SetSelectionEnd({ 21, 10 });
 
             // Validate selection area
-            ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
+            ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 32, 10 }));
         }
 
         TEST_METHOD(DoubleClickDrag_Left)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -597,11 +597,11 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (21,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Simulate double click at (x,y) = (21,10)
-            term.MultiClickSelection({ 21, 10 }, Terminal::SelectionExpansionMode::Word);
+            term.MultiClickSelection({ 21, 10 }, Terminal::SelectionExpansion::Word);
 
             // Simulate move to (x,y) = (5,10)
             //
@@ -611,49 +611,49 @@ namespace TerminalCoreUnitTests
             term.SetSelectionEnd({ 5, 10 });
 
             // Validate selection area
-            ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
+            ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 32, 10 }));
         }
 
         TEST_METHOD(TripleClick_GeneralCase)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Simulate click at (x,y) = (5,10)
-            auto clickPos = COORD{ 5, 10 };
-            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Line);
+            auto clickPos = til::point{ 5, 10 };
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Line);
 
             // Validate selection area
-            ValidateSingleRowSelection(term, SMALL_RECT({ 0, 10, 99, 10 }));
+            ValidateSingleRowSelection(term, til::inclusive_rect({ 0, 10, 99, 10 }));
         }
 
         TEST_METHOD(TripleClickDrag_Horizontal)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Simulate click at (x,y) = (5,10)
-            auto clickPos = COORD{ 5, 10 };
-            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Line);
+            auto clickPos = til::point{ 5, 10 };
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Line);
 
             // Simulate move to (x,y) = (7,10)
             term.SetSelectionEnd({ 7, 10 });
 
             // Validate selection area
-            ValidateSingleRowSelection(term, SMALL_RECT({ 0, 10, 99, 10 }));
+            ValidateSingleRowSelection(term, til::inclusive_rect({ 0, 10, 99, 10 }));
         }
 
         TEST_METHOD(TripleClickDrag_Vertical)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Simulate click at (x,y) = (5,10)
-            auto clickPos = COORD{ 5, 10 };
-            term.MultiClickSelection(clickPos, Terminal::SelectionExpansionMode::Line);
+            auto clickPos = til::point{ 5, 10 };
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Line);
 
             // Simulate move to (x,y) = (5,11)
             term.SetSelectionEnd({ 5, 11 });
@@ -666,18 +666,18 @@ namespace TerminalCoreUnitTests
 
             // verify first selection rect
             auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 10, 99, 10 }));
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 10, 99, 10 }));
 
             // verify second selection rect
             selection = term.GetViewport().ConvertToOrigin(selectionRects.at(1)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 11, 99, 11 }));
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 11, 99, 11 }));
         }
 
         TEST_METHOD(ShiftClick)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // set word delimiters for terminal
             auto settings = winrt::make<MockTermSettings>(0, 100, 100);
@@ -685,16 +685,16 @@ namespace TerminalCoreUnitTests
 
             // Insert text at position (4,10)
             const std::wstring_view text = L"doubleClickMe dragThroughHere";
-            term.SetCursorPosition(4, 10);
+            term.GetTextBuffer().GetCursor().SetPosition({ 4, 10 });
             term.Write(text);
 
             // Step 1: Create a selection on "doubleClickMe"
             {
                 // Simulate double click at (x,y) = (5,10)
-                term.MultiClickSelection({ 5, 10 }, Terminal::SelectionExpansionMode::Word);
+                term.MultiClickSelection({ 5, 10 }, Terminal::SelectionExpansion::Word);
 
                 // Validate selection area: "doubleClickMe" selected
-                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 16, 10 }));
+                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 16, 10 }));
             }
 
             // Step 2: Shift+Click to "dragThroughHere"
@@ -704,10 +704,10 @@ namespace TerminalCoreUnitTests
                 // buffer: doubleClickMe dragThroughHere
                 //         ^                ^
                 //       start            finish
-                term.SetSelectionEnd({ 21, 10 }, ::Terminal::SelectionExpansionMode::Cell);
+                term.SetSelectionEnd({ 21, 10 }, Terminal::SelectionExpansion::Char);
 
                 // Validate selection area: "doubleClickMe drag" selected
-                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 21, 10 }));
+                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 21, 10 }));
             }
 
             // Step 3: Shift+Double-Click at "dragThroughHere"
@@ -717,10 +717,10 @@ namespace TerminalCoreUnitTests
                 // buffer: doubleClickMe dragThroughHere
                 //         ^                ^          ^
                 //       start            click      finish
-                term.SetSelectionEnd({ 21, 10 }, ::Terminal::SelectionExpansionMode::Word);
+                term.SetSelectionEnd({ 21, 10 }, Terminal::SelectionExpansion::Word);
 
                 // Validate selection area: "doubleClickMe dragThroughHere" selected
-                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
+                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 32, 10 }));
             }
 
             // Step 4: Shift+Triple-Click at "dragThroughHere"
@@ -730,10 +730,10 @@ namespace TerminalCoreUnitTests
                 // buffer: doubleClickMe dragThroughHere     |
                 //         ^                ^                ^
                 //       start            click            finish (boundary)
-                term.SetSelectionEnd({ 21, 10 }, ::Terminal::SelectionExpansionMode::Line);
+                term.SetSelectionEnd({ 21, 10 }, Terminal::SelectionExpansion::Line);
 
                 // Validate selection area: "doubleClickMe dragThroughHere..." selected
-                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 99, 10 }));
+                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 99, 10 }));
             }
 
             // Step 5: Shift+Double-Click at "dragThroughHere"
@@ -743,10 +743,10 @@ namespace TerminalCoreUnitTests
                 // buffer: doubleClickMe dragThroughHere
                 //         ^                ^          ^
                 //       start            click      finish
-                term.SetSelectionEnd({ 21, 10 }, ::Terminal::SelectionExpansionMode::Word);
+                term.SetSelectionEnd({ 21, 10 }, Terminal::SelectionExpansion::Word);
 
                 // Validate selection area: "doubleClickMe dragThroughHere" selected
-                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
+                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 32, 10 }));
             }
 
             // Step 6: Drag past "dragThroughHere"
@@ -760,7 +760,7 @@ namespace TerminalCoreUnitTests
                 term.SetSelectionEnd({ 35, 10 });
 
                 // Validate selection area: "doubleClickMe dragThroughHere..." selected
-                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 99, 10 }));
+                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 99, 10 }));
             }
 
             // Step 6: Drag back to "dragThroughHere"
@@ -773,7 +773,7 @@ namespace TerminalCoreUnitTests
                 term.SetSelectionEnd({ 21, 10 });
 
                 // Validate selection area: "doubleClickMe dragThroughHere" selected
-                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
+                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 32, 10 }));
             }
 
             // Step 7: Drag within "dragThroughHere"
@@ -786,15 +786,15 @@ namespace TerminalCoreUnitTests
                 term.SetSelectionEnd({ 25, 10 });
 
                 // Validate selection area: "doubleClickMe dragThroughHere" still selected
-                ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
+                ValidateSingleRowSelection(term, til::inclusive_rect({ 4, 10, 32, 10 }));
             }
         }
 
         TEST_METHOD(Pivot)
         {
             Terminal term;
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer{ &term };
+            term.Create({ 100, 100 }, 0, renderer);
 
             // Step 1: Create a selection
             {
@@ -802,7 +802,7 @@ namespace TerminalCoreUnitTests
                 term.SelectNewRegion({ 10, 10 }, { 20, 10 });
 
                 // Validate selection area
-                ValidateSingleRowSelection(term, SMALL_RECT({ 10, 10, 20, 10 }));
+                ValidateSingleRowSelection(term, til::inclusive_rect({ 10, 10, 20, 10 }));
             }
 
             // Step 2: Drag to (5,10)
@@ -811,7 +811,7 @@ namespace TerminalCoreUnitTests
 
                 // Validate selection area
                 // NOTE: Pivot should be (10, 10)
-                ValidateSingleRowSelection(term, SMALL_RECT({ 5, 10, 10, 10 }));
+                ValidateSingleRowSelection(term, til::inclusive_rect({ 5, 10, 10, 10 }));
             }
 
             // Step 3: Drag back to (20,10)
@@ -820,25 +820,25 @@ namespace TerminalCoreUnitTests
 
                 // Validate selection area
                 // NOTE: Pivot should still be (10, 10)
-                ValidateSingleRowSelection(term, SMALL_RECT({ 10, 10, 20, 10 }));
+                ValidateSingleRowSelection(term, til::inclusive_rect({ 10, 10, 20, 10 }));
             }
 
             // Step 4: Shift+Click at (5,10)
             {
-                term.SetSelectionEnd({ 5, 10 }, ::Terminal::SelectionExpansionMode::Cell);
+                term.SetSelectionEnd({ 5, 10 }, Terminal::SelectionExpansion::Char);
 
                 // Validate selection area
                 // NOTE: Pivot should still be (10, 10)
-                ValidateSingleRowSelection(term, SMALL_RECT({ 5, 10, 10, 10 }));
+                ValidateSingleRowSelection(term, til::inclusive_rect({ 5, 10, 10, 10 }));
             }
 
             // Step 5: Shift+Click back at (20,10)
             {
-                term.SetSelectionEnd({ 20, 10 }, ::Terminal::SelectionExpansionMode::Cell);
+                term.SetSelectionEnd({ 20, 10 }, Terminal::SelectionExpansion::Char);
 
                 // Validate selection area
                 // NOTE: Pivot should still be (10, 10)
-                ValidateSingleRowSelection(term, SMALL_RECT({ 10, 10, 20, 10 }));
+                ValidateSingleRowSelection(term, til::inclusive_rect({ 10, 10, 20, 10 }));
             }
         }
     };

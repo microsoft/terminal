@@ -13,7 +13,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // It must be defined after CommandlineArgs.g.cpp, otherwise the compiler
     // will give you just the most impossible template errors to try and
     // decipher.
-    void CommandlineArgs::Commandline(winrt::array_view<const winrt::hstring> const& value)
+    void CommandlineArgs::Commandline(const winrt::array_view<const winrt::hstring>& value)
     {
         _args = { value.begin(), value.end() };
     }

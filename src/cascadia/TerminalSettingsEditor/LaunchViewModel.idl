@@ -1,0 +1,39 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "EnumEntry.idl";
+
+#include "ViewModelHelpers.idl.h"
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass LaunchViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        LaunchViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+
+        String LaunchParametersCurrentValue { get; };
+        Double InitialPosX;
+        Double InitialPosY;
+        Boolean UseDefaultLaunchPosition;
+
+        IInspectable CurrentDefaultProfile;
+        IObservableVector<Microsoft.Terminal.Settings.Model.Profile> DefaultProfiles { get; };
+
+        IInspectable CurrentDefaultTerminal;
+        IObservableVector<Microsoft.Terminal.Settings.Model.DefaultTerminal> DefaultTerminals { get; };
+
+        IInspectable CurrentFirstWindowPreference;
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FirstWindowPreferenceList { get; };
+
+        IInspectable CurrentLaunchMode;
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> LaunchModeList { get; };
+
+        IInspectable CurrentWindowingBehavior;
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> WindowingBehaviorList { get; };
+
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, CenterOnLaunch);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, StartOnUserLogin);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Int32, InitialRows);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Int32, InitialCols);
+    }
+}

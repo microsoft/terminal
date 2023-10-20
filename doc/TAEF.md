@@ -16,7 +16,7 @@ If you have Visual Studio and related C++ components installed, and you have suc
 
 > Note that you cannot easily run TAEF tests directly through Visual Studio. The `Microsoft.Taef` NuGet package comes with an adapter that will let you browse and execute TAEF tests inside of Visual Studio, but its performance and reliability prevent us from recommending it here.
 
-In a "normal" CMD environment, `te.exe` may not be directly available. Try the following command to set up the development enviroment first:
+In a "normal" CMD environment, `te.exe` may not be directly available. Try the following command to set up the development environment first:
 
 ```shell
 .\tools\razzle.cmd

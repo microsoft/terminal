@@ -69,7 +69,7 @@ void RetrieveKeyInfo(_In_ HWND hWnd, _Out_ PWORD pwVirtualKeyCode, _Inout_ PWORD
     }
     else
     {
-        *pwVirtualKeyCode = (WORD)MapVirtualKeyW(*pwVirtualScanCode, 3);
+        *pwVirtualKeyCode = (WORD)OneCoreSafeMapVirtualKeyW(*pwVirtualScanCode, 3);
     }
 }
 

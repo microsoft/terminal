@@ -6,7 +6,6 @@
 #include "winrt/Microsoft.UI.Xaml.Controls.h"
 
 #include "HighlightedTextControl.g.h"
-#include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -17,13 +16,13 @@ namespace winrt::TerminalApp::implementation
         static Windows::UI::Xaml::DependencyProperty TextProperty();
 
         winrt::TerminalApp::HighlightedText Text();
-        void Text(winrt::TerminalApp::HighlightedText const& value);
+        void Text(const winrt::TerminalApp::HighlightedText& value);
 
         Windows::UI::Xaml::Controls::TextBlock TextView();
 
     private:
         static Windows::UI::Xaml::DependencyProperty _textProperty;
-        static void _onTextChanged(Windows::UI::Xaml::DependencyObject const& o, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const& e);
+        static void _onTextChanged(const Windows::UI::Xaml::DependencyObject& o, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
     };
 }
 

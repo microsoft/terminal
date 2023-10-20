@@ -11,7 +11,6 @@
 #include "../buffer/out/textBuffer.hpp"
 #include "../buffer/out/textBufferCellIterator.hpp"
 #include "../buffer/out/textBufferTextIterator.hpp"
-#include "../buffer/out/CharRow.hpp"
 
 #include "input.h"
 
@@ -21,6 +20,55 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using Microsoft::Console::Interactivity::ServiceLocator;
+
+template<typename T>
+T GetIterator();
+
+template<typename T>
+T GetIteratorAt(til::point at);
+
+template<typename T>
+T GetIteratorWithAdvance();
+
+template<>
+TextBufferCellIterator GetIteratorAt<TextBufferCellIterator>(til::point at)
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& outputBuffer = gci.GetActiveOutputBuffer();
+    return outputBuffer.GetCellDataAt(at);
+}
+
+template<>
+TextBufferCellIterator GetIterator<TextBufferCellIterator>()
+{
+    return GetIteratorAt<TextBufferCellIterator>({});
+}
+
+template<>
+TextBufferCellIterator GetIteratorWithAdvance<TextBufferCellIterator>()
+{
+    return GetIteratorAt<TextBufferCellIterator>({ 5, 5 });
+}
+
+template<>
+TextBufferTextIterator GetIteratorAt<TextBufferTextIterator>(til::point at)
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& outputBuffer = gci.GetActiveOutputBuffer();
+    return outputBuffer.GetTextDataAt(at);
+}
+
+template<>
+TextBufferTextIterator GetIterator<TextBufferTextIterator>()
+{
+    return GetIteratorAt<TextBufferTextIterator>({});
+}
+
+template<>
+TextBufferTextIterator GetIteratorWithAdvance<TextBufferTextIterator>()
+{
+    return GetIteratorAt<TextBufferTextIterator>({ 5, 5 });
+}
 
 class TextBufferIteratorTests
 {
@@ -95,8 +143,8 @@ class TextBufferIteratorTests
     {
         const auto it = GetIterator<T>();
 
-        COORD oneOff = it._pos;
-        oneOff.X++;
+        auto oneOff = it._pos;
+        oneOff.x++;
         const auto it2 = GetIteratorAt<T>(oneOff);
 
         VERIFY_ARE_NOT_EQUAL(it, it2);
@@ -111,8 +159,8 @@ class TextBufferIteratorTests
         auto it = GetIterator<T>();
 
         ptrdiff_t diffUnit = 3;
-        COORD expectedPos = it._pos;
-        expectedPos.X += gsl::narrow<SHORT>(diffUnit);
+        auto expectedPos = it._pos;
+        expectedPos.x += gsl::narrow<til::CoordType>(diffUnit);
         const auto itExpected = GetIteratorAt<T>(expectedPos);
 
         it += diffUnit;
@@ -129,8 +177,8 @@ class TextBufferIteratorTests
         auto itExpected = GetIteratorWithAdvance<T>();
 
         ptrdiff_t diffUnit = 3;
-        COORD pos = itExpected._pos;
-        pos.X += gsl::narrow<SHORT>(diffUnit);
+        til::point pos = itExpected._pos;
+        pos.x += gsl::narrow<til::CoordType>(diffUnit);
         auto itOffset = GetIteratorAt<T>(pos);
 
         itOffset -= diffUnit;
@@ -146,8 +194,8 @@ class TextBufferIteratorTests
     {
         auto itActual = GetIterator<T>();
 
-        COORD expectedPos = itActual._pos;
-        expectedPos.X++;
+        til::point expectedPos = itActual._pos;
+        expectedPos.x++;
         const auto itExpected = GetIteratorAt<T>(expectedPos);
 
         ++itActual;
@@ -163,8 +211,8 @@ class TextBufferIteratorTests
     {
         const auto itExpected = GetIteratorWithAdvance<T>();
 
-        COORD pos = itExpected._pos;
-        pos.X++;
+        til::point pos = itExpected._pos;
+        pos.x++;
         auto itActual = GetIteratorAt<T>(pos);
 
         --itActual;
@@ -180,8 +228,8 @@ class TextBufferIteratorTests
     {
         auto it = GetIterator<T>();
 
-        COORD expectedPos = it._pos;
-        expectedPos.X++;
+        auto expectedPos = it._pos;
+        expectedPos.x++;
         const auto itExpected = GetIteratorAt<T>(expectedPos);
 
         ++it;
@@ -197,8 +245,8 @@ class TextBufferIteratorTests
     {
         const auto itExpected = GetIteratorWithAdvance<T>();
 
-        COORD pos = itExpected._pos;
-        pos.X++;
+        til::point pos = itExpected._pos;
+        pos.x++;
         auto itActual = GetIteratorAt<T>(pos);
 
         itActual--;
@@ -215,8 +263,8 @@ class TextBufferIteratorTests
         auto it = GetIterator<T>();
 
         ptrdiff_t diffUnit = 3;
-        COORD expectedPos = it._pos;
-        expectedPos.X += gsl::narrow<SHORT>(diffUnit);
+        auto expectedPos = it._pos;
+        expectedPos.x += gsl::narrow<til::CoordType>(diffUnit);
         const auto itExpected = GetIteratorAt<T>(expectedPos);
 
         const auto itActual = it + diffUnit;
@@ -233,8 +281,8 @@ class TextBufferIteratorTests
         auto itExpected = GetIteratorWithAdvance<T>();
 
         ptrdiff_t diffUnit = 3;
-        COORD pos = itExpected._pos;
-        pos.X += gsl::narrow<SHORT>(diffUnit);
+        til::point pos = itExpected._pos;
+        pos.x += gsl::narrow<til::CoordType>(diffUnit);
         auto itOffset = GetIteratorAt<T>(pos);
 
         const auto itActual = itOffset - diffUnit;
@@ -268,61 +316,6 @@ class TextBufferIteratorTests
     TEST_METHOD(ConstructedLimits);
 };
 
-template<typename T>
-T GetIterator()
-{
-}
-
-template<typename T>
-T GetIteratorAt(COORD at)
-{
-}
-
-template<typename T>
-T GetIteratorWithAdvance()
-{
-}
-
-template<>
-TextBufferCellIterator GetIteratorAt<TextBufferCellIterator>(COORD at)
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& outputBuffer = gci.GetActiveOutputBuffer();
-    return outputBuffer.GetCellDataAt(at);
-}
-
-template<>
-TextBufferCellIterator GetIterator<TextBufferCellIterator>()
-{
-    return GetIteratorAt<TextBufferCellIterator>({ 0 });
-}
-
-template<>
-TextBufferCellIterator GetIteratorWithAdvance<TextBufferCellIterator>()
-{
-    return GetIteratorAt<TextBufferCellIterator>({ 5, 5 });
-}
-
-template<>
-TextBufferTextIterator GetIteratorAt<TextBufferTextIterator>(COORD at)
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& outputBuffer = gci.GetActiveOutputBuffer();
-    return outputBuffer.GetTextDataAt(at);
-}
-
-template<>
-TextBufferTextIterator GetIterator<TextBufferTextIterator>()
-{
-    return GetIteratorAt<TextBufferTextIterator>({ 0 });
-}
-
-template<>
-TextBufferTextIterator GetIteratorWithAdvance<TextBufferTextIterator>()
-{
-    return GetIteratorAt<TextBufferTextIterator>({ 5, 5 });
-}
-
 void TextBufferIteratorTests::BoolOperatorText()
 {
     BoolOperatorTestHelper<TextBufferTextIterator>();
@@ -335,7 +328,7 @@ void TextBufferIteratorTests::BoolOperatorCell()
     Log::Comment(L"For cells, also check incrementing past the end.");
     const auto& outputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
     const auto size = outputBuffer.GetBufferSize().Dimensions();
-    TextBufferCellIterator it(outputBuffer.GetTextBuffer(), { size.X - 1, size.Y - 1 });
+    TextBufferCellIterator it(outputBuffer.GetTextBuffer(), { size.width - 1, size.height - 1 });
     VERIFY_IS_TRUE(it);
     it++;
     VERIFY_IS_FALSE(it);
@@ -459,10 +452,10 @@ void TextBufferIteratorTests::AsCharInfoCell()
 
     const auto& outputBuffer = gci.GetActiveOutputBuffer();
 
-    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.Y);
+    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.y);
 
-    const auto wcharExpected = *row.GetCharRow().GlyphAt(it._pos.X).begin();
-    const auto attrExpected = row.GetAttrRow().GetAttrByColumn(it._pos.X);
+    const auto wcharExpected = *row.GlyphAt(it._pos.x).begin();
+    const auto attrExpected = row.GetAttrByColumn(it._pos.x);
 
     const auto cellActual = gci.AsCharInfo(*it);
     const auto wcharActual = cellActual.Char.UnicodeChar;
@@ -479,9 +472,9 @@ void TextBufferIteratorTests::DereferenceOperatorText()
 
     const auto& outputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
 
-    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.Y);
+    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.y);
 
-    const auto wcharExpected = row.GetCharRow().GlyphAt(it._pos.X);
+    const auto wcharExpected = row.GlyphAt(it._pos.x);
     const auto wcharActual = *it;
 
     VERIFY_ARE_EQUAL(*wcharExpected.begin(), *wcharActual.begin());
@@ -494,11 +487,11 @@ void TextBufferIteratorTests::DereferenceOperatorCell()
 
     const auto& outputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
 
-    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.Y);
+    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.y);
 
-    const auto textExpected = (std::wstring_view)row.GetCharRow().GlyphAt(it._pos.X);
-    const auto dbcsExpected = row.GetCharRow().DbcsAttrAt(it._pos.X);
-    const auto attrExpected = row.GetAttrRow().GetAttrByColumn(it._pos.X);
+    const auto textExpected = (std::wstring_view)row.GlyphAt(it._pos.x);
+    const auto dbcsExpected = row.DbcsAttrAt(it._pos.x);
+    const auto attrExpected = row.GetAttrByColumn(it._pos.x);
 
     const auto cellActual = *it;
     const auto textActual = cellActual.Chars();
@@ -519,7 +512,7 @@ void TextBufferIteratorTests::ConstructedNoLimit()
     const auto& textBuffer = outputBuffer.GetTextBuffer();
     const auto& bufferSize = textBuffer.GetSize();
 
-    TextBufferCellIterator it(textBuffer, { 0 });
+    TextBufferCellIterator it(textBuffer, {});
 
     VERIFY_IS_TRUE(it, L"Iterator is valid.");
     VERIFY_ARE_EQUAL(bufferSize, it._bounds, L"Bounds match the bounds of the text buffer.");
@@ -546,16 +539,16 @@ void TextBufferIteratorTests::ConstructedLimits()
     const auto& outputBuffer = gci.GetActiveOutputBuffer();
     const auto& textBuffer = outputBuffer.GetTextBuffer();
 
-    SMALL_RECT limits;
-    limits.Top = 1;
-    limits.Bottom = 1;
-    limits.Left = 3;
-    limits.Right = 5;
+    til::inclusive_rect limits;
+    limits.top = 1;
+    limits.bottom = 1;
+    limits.left = 3;
+    limits.right = 5;
     const auto viewport = Microsoft::Console::Types::Viewport::FromInclusive(limits);
 
-    COORD pos;
-    pos.X = limits.Left;
-    pos.Y = limits.Top;
+    til::point pos;
+    pos.x = limits.left;
+    pos.y = limits.top;
 
     TextBufferCellIterator it(textBuffer, pos, viewport);
 
@@ -574,16 +567,17 @@ void TextBufferIteratorTests::ConstructedLimits()
 
     // Verify throws for out of range.
     VERIFY_THROWS_SPECIFIC(TextBufferCellIterator(textBuffer,
-                                                  { 0 },
+                                                  {},
                                                   viewport),
                            wil::ResultException,
                            [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
 
     // Verify throws for limit not inside buffer
     const auto bufferSize = textBuffer.GetSize();
+    const auto invalidViewport = Viewport::FromInclusive({ bufferSize.Left(), bufferSize.Top(), bufferSize.RightInclusive() + 1, bufferSize.BottomInclusive() + 1 });
     VERIFY_THROWS_SPECIFIC(TextBufferCellIterator(textBuffer,
                                                   pos,
-                                                  Microsoft::Console::Types::Viewport::FromInclusive(bufferSize.ToExclusive())),
+                                                  invalidViewport),
                            wil::ResultException,
                            [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
 }

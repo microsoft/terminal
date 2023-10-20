@@ -28,14 +28,39 @@ ConsoleWaitBlock::ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
                                    _In_ IWaitRoutine* const pWaiter) :
     _pProcessQueue(THROW_HR_IF_NULL(E_INVALIDARG, pProcessQueue)),
     _pObjectQueue(THROW_HR_IF_NULL(E_INVALIDARG, pObjectQueue)),
+    _WaitReplyMessage(*pWaitReplyMessage),
     _pWaiter(THROW_HR_IF_NULL(E_INVALIDARG, pWaiter))
 {
-    _WaitReplyMessage = *pWaitReplyMessage;
+    // MSFT-33127449, GH#9692
+    // Until there's a "Wait", there's only one API message inflight at a time. In our
+    // quest for performance, we put that single API message in charge of its own
+    // buffer management- instead of allocating buffers on the heap and deleting them
+    // later (storing pointers to them at the far corners of the earth), it would
+    // instead allocate them from small internal pools (if possible) and only heap
+    // allocate (transparently) if necessary. The pointers flung to the corners of the
+    // earth would be pointers (1) back into the API_MSG or (2) to a heap block owned
+    // by til::small_vector.
+    //
+    // It took us months to realize that those bare pointers were being held by
+    // COOKED_READ and RAW_READ and not actually being updated when the API message was
+    // _copied_ as it was shuffled off to the background to become a "Wait" message.
+    //
+    // It turns out that it's trivially possible to crash the console by sending two
+    // API calls -- one that waits and one that completes immediately -- when the
+    // waiting message or the "wait completer" has a bunch of dangling pointers in it.
+    // Oops.
+    //
+    // Here, we tell the wait completion routine (which is going to be a COOKED_READ,
+    // RAW_READ, DirectRead or WriteData) about the new buffer location.
 
-    // We will write the original message back (with updated out parameters/payload) when the request is finally serviced.
-    if (pWaitReplyMessage->Complete.Write.Data != nullptr)
+    if (pWaitReplyMessage->State.InputBuffer)
     {
-        _WaitReplyMessage.Complete.Write.Data = &_WaitReplyMessage.u;
+        _pWaiter->MigrateUserBuffersOnTransitionToBackgroundWait(pWaitReplyMessage->State.InputBuffer, _WaitReplyMessage.State.InputBuffer);
+    }
+
+    if (pWaitReplyMessage->State.OutputBuffer)
+    {
+        _pWaiter->MigrateUserBuffersOnTransitionToBackgroundWait(pWaitReplyMessage->State.OutputBuffer, _WaitReplyMessage.State.OutputBuffer);
     }
 }
 
@@ -47,11 +72,7 @@ ConsoleWaitBlock::~ConsoleWaitBlock()
 {
     _pProcessQueue->_blocks.erase(_itProcessQueue);
     _pObjectQueue->_blocks.erase(_itObjectQueue);
-
-    if (_pWaiter != nullptr)
-    {
-        delete _pWaiter;
-    }
+    delete _pWaiter;
 }
 
 // Routine Description:
@@ -65,12 +86,12 @@ ConsoleWaitBlock::~ConsoleWaitBlock()
 [[nodiscard]] HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
                                                      _In_ IWaitRoutine* const pWaiter)
 {
-    ConsoleProcessHandle* const ProcessData = pWaitReplyMessage->GetProcessHandle();
+    const auto ProcessData = pWaitReplyMessage->GetProcessHandle();
     FAIL_FAST_IF_NULL(ProcessData);
 
-    ConsoleWaitQueue* const pProcessQueue = ProcessData->pWaitBlockQueue.get();
+    const auto pProcessQueue = ProcessData->pWaitBlockQueue.get();
 
-    ConsoleHandleData* const pHandleData = pWaitReplyMessage->GetObjectHandle();
+    const auto pHandleData = pWaitReplyMessage->GetObjectHandle();
     FAIL_FAST_IF_NULL(pHandleData);
 
     ConsoleWaitQueue* pObjectQueue = nullptr;
@@ -91,7 +112,7 @@ ConsoleWaitBlock::~ConsoleWaitBlock()
     }
     catch (...)
     {
-        const HRESULT hr = wil::ResultFromCaughtException();
+        const auto hr = wil::ResultFromCaughtException();
         pWaitReplyMessage->SetReplyStatus(NTSTATUS_FROM_HRESULT(hr));
         return hr;
     }
@@ -112,9 +133,9 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
     NTSTATUS status;
     size_t NumBytes = 0;
     DWORD dwControlKeyState;
-    bool fIsUnicode = true;
+    auto fIsUnicode = true;
 
-    std::deque<std::unique_ptr<IInputEvent>> outEvents;
+    InputEventQueue outEvents;
     // TODO: MSFT 14104228 - get rid of this void* and get the data
     // out of the read wait object properly.
     void* pOutputData = nullptr;
@@ -125,20 +146,20 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
     {
     case API_NUMBER_GETCONSOLEINPUT:
     {
-        CONSOLE_GETCONSOLEINPUT_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.GetConsoleInput);
+        auto a = &(_WaitReplyMessage.u.consoleMsgL1.GetConsoleInput);
         fIsUnicode = !!a->Unicode;
         pOutputData = &outEvents;
         break;
     }
     case API_NUMBER_READCONSOLE:
     {
-        CONSOLE_READCONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.ReadConsole);
+        auto a = &(_WaitReplyMessage.u.consoleMsgL1.ReadConsole);
         fIsUnicode = !!a->Unicode;
         break;
     }
     case API_NUMBER_WRITECONSOLE:
     {
-        CONSOLE_WRITECONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.WriteConsole);
+        auto a = &(_WaitReplyMessage.u.consoleMsgL1.WriteConsole);
         fIsUnicode = !!a->Unicode;
         break;
     }
@@ -161,7 +182,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
             // ReadConsoleInput/PeekConsoleInput has this extra reply
             // information with the number of records, not number of
             // bytes.
-            CONSOLE_GETCONSOLEINPUT_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.GetConsoleInput);
+            auto a = &(_WaitReplyMessage.u.consoleMsgL1.GetConsoleInput);
 
             void* buffer;
             ULONG cbBuffer;
@@ -170,22 +191,14 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
                 return false;
             }
 
-            INPUT_RECORD* const pRecordBuffer = static_cast<INPUT_RECORD* const>(buffer);
+            const auto pRecordBuffer = static_cast<INPUT_RECORD* const>(buffer);
             a->NumRecords = static_cast<ULONG>(outEvents.size());
-            for (size_t i = 0; i < a->NumRecords; ++i)
-            {
-                if (outEvents.empty())
-                {
-                    break;
-                }
-                pRecordBuffer[i] = outEvents.front()->ToInputRecord();
-                outEvents.pop_front();
-            }
+            std::ranges::copy(outEvents, pRecordBuffer);
         }
         else if (API_NUMBER_READCONSOLE == _WaitReplyMessage.msgHeader.ApiNumber)
         {
             // ReadConsole has this extra reply information with the control key state.
-            CONSOLE_READCONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.ReadConsole);
+            auto a = &(_WaitReplyMessage.u.consoleMsgL1.ReadConsole);
             a->ControlKeyState = dwControlKeyState;
             a->NumBytes = gsl::narrow<ULONG>(NumBytes);
 
@@ -206,7 +219,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
         }
         else if (API_NUMBER_WRITECONSOLE == _WaitReplyMessage.msgHeader.ApiNumber)
         {
-            CONSOLE_WRITECONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.WriteConsoleW);
+            auto a = &(_WaitReplyMessage.u.consoleMsgL1.WriteConsoleW);
             a->NumBytes = gsl::narrow<ULONG>(NumBytes);
         }
 

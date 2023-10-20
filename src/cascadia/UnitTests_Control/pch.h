@@ -40,11 +40,20 @@ Licensed under the MIT license.
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 
+#include <winrt/Microsoft.Terminal.Core.h>
+#include <winrt/Microsoft.Terminal.Control.h>
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
+
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+#include <til/mutex.h>
+#include <til/winrt.h>
+
+#include "ThrottledFunc.h"
 
 // Common includes for most tests:
-#include "../../inc/argb.h"
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
+
+#include <cppwinrt_utils.h>

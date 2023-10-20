@@ -29,6 +29,29 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
+    TermControl TerminalPage::_senderOrActiveControl(const IInspectable& sender)
+    {
+        if (sender)
+        {
+            if (auto arg{ sender.try_as<TermControl>() })
+            {
+                return arg;
+            }
+        }
+        return _GetActiveControl();
+    }
+    winrt::com_ptr<TerminalTab> TerminalPage::_senderOrFocusedTab(const IInspectable& sender)
+    {
+        if (sender)
+        {
+            if (auto tab{ sender.try_as<TerminalApp::TerminalTab>() })
+            {
+                return _GetTerminalTabImpl(tab);
+            }
+        }
+        return _GetFocusedTabImpl();
+    }
+
     void TerminalPage::_HandleOpenNewTabDropdown(const IInspectable& /*sender*/,
                                                  const ActionEventArgs& args)
     {
@@ -46,8 +69,26 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseTab(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
-        _CloseFocusedTab();
-        args.Handled(true);
+        if (const auto realArgs = args.ActionArgs().try_as<CloseTabArgs>())
+        {
+            uint32_t index;
+            if (realArgs.Index())
+            {
+                index = realArgs.Index().Value();
+            }
+            else if (auto focusedTabIndex = _GetFocusedTabIndex())
+            {
+                index = *focusedTabIndex;
+            }
+            else
+            {
+                args.Handled(false);
+                return;
+            }
+
+            _CloseTabAtIndex(index);
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleClosePane(const IInspectable& /*sender*/,
@@ -57,10 +98,33 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleRestoreLastClosed(const IInspectable& /*sender*/,
+                                                const ActionEventArgs& args)
+    {
+        if (_previouslyClosedPanesAndTabs.size() > 0)
+        {
+            const auto restoreActions = _previouslyClosedPanesAndTabs.back();
+            for (const auto& action : restoreActions)
+            {
+                _actionDispatch->DoAction(action);
+            }
+            _previouslyClosedPanesAndTabs.pop_back();
+
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        CloseWindow();
+        _CloseRequestedHandlers(nullptr, nullptr);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleQuit(const IInspectable& /*sender*/,
+                                   const ActionEventArgs& args)
+    {
+        RequestQuit();
         args.Handled(true);
     }
 
@@ -108,7 +172,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleSendInput(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleSendInput(const IInspectable& sender,
                                         const ActionEventArgs& args)
     {
         if (args == nullptr)
@@ -117,13 +181,63 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SendInputArgs>())
         {
-            const auto termControl = _GetActiveControl();
-            termControl.SendInput(realArgs.Input());
-            args.Handled(true);
+            if (const auto termControl{ _senderOrActiveControl(sender) })
+            {
+                termControl.SendInput(realArgs.Input());
+                args.Handled(true);
+            }
         }
     }
 
-    void TerminalPage::_HandleSplitPane(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleCloseOtherPanes(const IInspectable& sender,
+                                              const ActionEventArgs& args)
+    {
+        if (const auto& terminalTab{ _senderOrFocusedTab(sender) })
+        {
+            const auto activePane = terminalTab->GetActivePane();
+            if (terminalTab->GetRootPane() != activePane)
+            {
+                _UnZoomIfNeeded();
+
+                // Accumulate list of all unfocused leaf panes, ignore read-only panes
+                std::vector<uint32_t> unfocusedPaneIds;
+                const auto activePaneId = activePane->Id();
+                terminalTab->GetRootPane()->WalkTree([&](auto&& p) {
+                    const auto id = p->Id();
+                    if (id.has_value() && id != activePaneId && !p->ContainsReadOnly())
+                    {
+                        unfocusedPaneIds.push_back(id.value());
+                    }
+                });
+
+                if (!empty(unfocusedPaneIds))
+                {
+                    // Start by removing the panes that were least recently added
+                    sort(begin(unfocusedPaneIds), end(unfocusedPaneIds), std::less<uint32_t>());
+                    _ClosePanes(terminalTab->get_weak(), std::move(unfocusedPaneIds));
+                    args.Handled(true);
+                    return;
+                }
+            }
+            args.Handled(false);
+        }
+    }
+
+    void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (args == nullptr)
+        {
+            args.Handled(false);
+        }
+        else if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
+        {
+            const auto moved = _MovePane(realArgs);
+            args.Handled(moved);
+        }
+    }
+
+    void TerminalPage::_HandleSplitPane(const IInspectable& sender,
                                         const ActionEventArgs& args)
     {
         if (args == nullptr)
@@ -132,44 +246,83 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
-            _SplitPane(realArgs.SplitStyle(),
-                       realArgs.SplitMode(),
+            if (const auto& newTerminalArgs{ realArgs.TerminalArgs() })
+            {
+                if (const auto index = realArgs.TerminalArgs().ProfileIndex())
+                {
+                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
+                    {
+                        args.Handled(false);
+                        return;
+                    }
+                }
+            }
+
+            const auto& duplicateFromTab{ realArgs.SplitMode() == SplitType::Duplicate ? _GetFocusedTab() : nullptr };
+
+            const auto& terminalTab{ _senderOrFocusedTab(sender) };
+
+            _SplitPane(terminalTab,
+                       realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        ::base::saturated_cast<float>(realArgs.SplitSize()),
-                       realArgs.TerminalArgs());
+                       _MakePane(realArgs.TerminalArgs(), duplicateFromTab));
             args.Handled(true);
         }
     }
 
-    void TerminalPage::_HandleTogglePaneZoom(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleToggleSplitOrientation(const IInspectable& /*sender*/,
+                                                     const ActionEventArgs& args)
+    {
+        _ToggleSplitOrientation();
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleTogglePaneZoom(const IInspectable& sender,
                                              const ActionEventArgs& args)
     {
-        if (const auto activeTab{ _GetFocusedTabImpl() })
+        if (const auto terminalTab{ _senderOrFocusedTab(sender) })
         {
             // Don't do anything if there's only one pane. It's already zoomed.
-            if (activeTab->GetLeafPaneCount() > 1)
+            if (terminalTab->GetLeafPaneCount() > 1)
             {
-                // First thing's first, remove the current content from the UI
-                // tree. This is important, because we might be leaving zoom, and if
-                // a pane is zoomed, then it's currently in the UI tree, and should
-                // be removed before it's re-added in Pane::Restore
-                _tabContent.Children().Clear();
-
                 // Togging the zoom on the tab will cause the tab to inform us of
                 // the new root Content for this tab.
-                activeTab->ToggleZoom();
+                terminalTab->ToggleZoom();
             }
         }
 
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleTogglePaneReadOnly(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleTogglePaneReadOnly(const IInspectable& sender,
                                                  const ActionEventArgs& args)
     {
-        if (const auto activeTab{ _GetFocusedTabImpl() })
+        if (const auto activeTab{ _senderOrFocusedTab(sender) })
         {
             activeTab->TogglePaneReadOnly();
+        }
+
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleEnablePaneReadOnly(const IInspectable& sender,
+                                                 const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _senderOrFocusedTab(sender) })
+        {
+            activeTab->SetPaneReadOnly(true);
+        }
+
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleDisablePaneReadOnly(const IInspectable& sender,
+                                                  const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _senderOrFocusedTab(sender) })
+        {
+            activeTab->SetPaneReadOnly(false);
         }
 
         args.Handled(true);
@@ -200,6 +353,55 @@ namespace winrt::TerminalApp::implementation
                                              const ActionEventArgs& args)
     {
         _ScrollToBufferEdge(ScrollDown);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleScrollToMark(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<ScrollToMarkArgs>())
+        {
+            _ApplyToActiveControls([&realArgs](auto& control) {
+                control.ScrollToMark(realArgs.Direction());
+            });
+        }
+        args.Handled(true);
+    }
+    void TerminalPage::_HandleAddMark(const IInspectable& /*sender*/,
+                                      const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<AddMarkArgs>())
+        {
+            _ApplyToActiveControls([realArgs](auto& control) {
+                Control::ScrollMark mark;
+                if (realArgs.Color())
+                {
+                    mark.Color.Color = realArgs.Color().Value();
+                    mark.Color.HasValue = true;
+                }
+                else
+                {
+                    mark.Color.HasValue = false;
+                }
+                control.AddMark(mark);
+            });
+        }
+        args.Handled(true);
+    }
+    void TerminalPage::_HandleClearMark(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        _ApplyToActiveControls([](auto& control) {
+            control.ClearMark();
+        });
+        args.Handled(true);
+    }
+    void TerminalPage::_HandleClearAllMarks(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        _ApplyToActiveControls([](auto& control) {
+            control.ClearAllMarks();
+        });
         args.Handled(true);
     }
 
@@ -237,12 +439,24 @@ namespace winrt::TerminalApp::implementation
     {
         if (args == nullptr)
         {
-            _OpenNewTab(nullptr);
+            LOG_IF_FAILED(_OpenNewTab(nullptr));
             args.Handled(true);
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
         {
-            _OpenNewTab(realArgs.TerminalArgs());
+            if (const auto& newTerminalArgs{ realArgs.TerminalArgs() })
+            {
+                if (const auto index = newTerminalArgs.ProfileIndex())
+                {
+                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
+                    {
+                        args.Handled(false);
+                        return;
+                    }
+                }
+            }
+
+            LOG_IF_FAILED(_OpenNewTab(realArgs.TerminalArgs()));
             args.Handled(true);
         }
     }
@@ -287,8 +501,29 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _MoveFocus(realArgs.FocusDirection());
-                args.Handled(true);
+                // Mark as handled only when the move succeeded (e.g. when there
+                // is a pane to move to), otherwise mark as unhandled so the
+                // keychord can propagate to the terminal (GH#6129)
+                const auto moveSucceeded = _MoveFocus(realArgs.FocusDirection());
+                args.Handled(moveSucceeded);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleSwapPane(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<SwapPaneArgs>())
+        {
+            if (realArgs.Direction() == FocusDirection::None)
+            {
+                // Do nothing
+                args.Handled(false);
+            }
+            else
+            {
+                auto swapped = _SwapPane(realArgs.Direction());
+                args.Handled(swapped);
             }
         }
     }
@@ -298,7 +533,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<CopyTextArgs>())
         {
-            const auto handled = _CopyText(realArgs.SingleLine(), realArgs.CopyFormatting());
+            const auto handled = _CopyText(realArgs.DismissSelection(), realArgs.SingleLine(), realArgs.CopyFormatting());
             args.Handled(handled);
         }
     }
@@ -308,33 +543,40 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<AdjustFontSizeArgs>())
         {
-            const auto termControl = _GetActiveControl();
-            termControl.AdjustFontSize(realArgs.Delta());
-            args.Handled(true);
+            const auto res = _ApplyToActiveControls([&](auto& control) {
+                control.AdjustFontSize(realArgs.Delta());
+            });
+            args.Handled(res);
         }
     }
 
-    void TerminalPage::_HandleFind(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleFind(const IInspectable& sender,
                                    const ActionEventArgs& args)
     {
-        _Find();
+        if (const auto activeTab{ _senderOrFocusedTab(sender) })
+        {
+            _SetFocusedTab(*activeTab);
+            _Find(*activeTab);
+        }
         args.Handled(true);
     }
 
     void TerminalPage::_HandleResetFontSize(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
-        const auto termControl = _GetActiveControl();
-        termControl.ResetFontSize();
-        args.Handled(true);
+        const auto res = _ApplyToActiveControls([](auto& control) {
+            control.ResetFontSize();
+        });
+        args.Handled(res);
     }
 
     void TerminalPage::_HandleToggleShaderEffects(const IInspectable& /*sender*/,
                                                   const ActionEventArgs& args)
     {
-        const auto termControl = _GetActiveControl();
-        termControl.ToggleShaderEffects();
-        args.Handled(true);
+        const auto res = _ApplyToActiveControls([](auto& control) {
+            control.ToggleShaderEffects();
+        });
+        args.Handled(res);
     }
 
     void TerminalPage::_HandleToggleFocusMode(const IInspectable& /*sender*/,
@@ -344,11 +586,41 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleSetFocusMode(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<SetFocusModeArgs>())
+        {
+            SetFocusMode(realArgs.IsFocusMode());
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleToggleFullscreen(const IInspectable& /*sender*/,
                                                const ActionEventArgs& args)
     {
         ToggleFullscreen();
         args.Handled(true);
+    }
+
+    void TerminalPage::_HandleSetFullScreen(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<SetFullScreenArgs>())
+        {
+            SetFullscreen(realArgs.IsFullScreen());
+            args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleSetMaximized(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<SetMaximizedArgs>())
+        {
+            RequestSetMaximized(realArgs.IsMaximized());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleToggleAlwaysOnTop(const IInspectable& /*sender*/,
@@ -363,10 +635,10 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<ToggleCommandPaletteArgs>())
         {
-            CommandPalette().EnableCommandPaletteMode(realArgs.LaunchMode());
-            CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
-                                            Visibility::Collapsed :
-                                            Visibility::Visible);
+            const auto p = LoadCommandPalette();
+            const auto v = p.Visibility() == Visibility::Visible ? Visibility::Collapsed : Visibility::Visible;
+            p.EnableCommandPaletteMode(realArgs.LaunchMode());
+            p.Visibility(v);
             args.Handled(true);
         }
     }
@@ -377,23 +649,17 @@ namespace winrt::TerminalApp::implementation
         args.Handled(false);
         if (const auto& realArgs = args.ActionArgs().try_as<SetColorSchemeArgs>())
         {
-            if (const auto activeTab{ _GetFocusedTabImpl() })
+            if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
             {
-                if (auto activeControl = activeTab->GetActiveTerminalControl())
-                {
-                    if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
-                    {
-                        auto controlSettings = activeControl.Settings().as<TerminalSettings>();
-                        controlSettings.ApplyColorScheme(scheme);
-                        activeControl.UpdateSettings();
-                        args.Handled(true);
-                    }
-                }
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.ColorScheme(scheme.ToCoreScheme());
+                });
+                args.Handled(res);
             }
         }
     }
 
-    void TerminalPage::_HandleSetTabColor(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleSetTabColor(const IInspectable& sender,
                                           const ActionEventArgs& args)
     {
         Windows::Foundation::IReference<Windows::UI::Color> tabColor;
@@ -403,7 +669,7 @@ namespace winrt::TerminalApp::implementation
             tabColor = realArgs.TabColor();
         }
 
-        if (const auto activeTab{ _GetFocusedTabImpl() })
+        if (const auto activeTab{ _senderOrFocusedTab(sender) })
         {
             if (tabColor)
             {
@@ -417,17 +683,22 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleOpenTabColorPicker(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleOpenTabColorPicker(const IInspectable& sender,
                                                  const ActionEventArgs& args)
     {
-        if (const auto activeTab{ _GetFocusedTabImpl() })
+        if (const auto activeTab{ _senderOrFocusedTab(sender) })
         {
-            activeTab->ActivateColorPicker();
+            if (!_tabColorPicker)
+            {
+                _tabColorPicker = winrt::make<ColorPickupFlyout>();
+            }
+
+            activeTab->AttachColorPicker(_tabColorPicker);
         }
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleRenameTab(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleRenameTab(const IInspectable& sender,
                                         const ActionEventArgs& args)
     {
         std::optional<winrt::hstring> title;
@@ -437,7 +708,7 @@ namespace winrt::TerminalApp::implementation
             title = realArgs.Title();
         }
 
-        if (const auto activeTab{ _GetFocusedTabImpl() })
+        if (const auto activeTab{ _senderOrFocusedTab(sender) })
         {
             if (title.has_value())
             {
@@ -451,10 +722,10 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleOpenTabRenamer(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleOpenTabRenamer(const IInspectable& sender,
                                              const ActionEventArgs& args)
     {
-        if (const auto activeTab{ _GetFocusedTabImpl() })
+        if (const auto activeTab{ _senderOrFocusedTab(sender) })
         {
             activeTab->ActivateTabRenamer();
         }
@@ -469,7 +740,7 @@ namespace winrt::TerminalApp::implementation
             auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(
                 TerminalPage::ConvertExecuteCommandlineToActions(realArgs)));
 
-            if (_startupActions.Size() != 0)
+            if (actions.Size() != 0)
             {
                 actionArgs.Handled(true);
                 ProcessStartupActions(actions, false);
@@ -555,29 +826,21 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleTabSearch(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
-        CommandPalette().SetTabs(_tabs, _mruTabs);
-        CommandPalette().EnableTabSearchMode();
-        CommandPalette().Visibility(Visibility::Visible);
+        const auto p = LoadCommandPalette();
+        p.SetTabs(_tabs, _mruTabs);
+        p.EnableTabSearchMode();
+        p.Visibility(Visibility::Visible);
 
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleMoveTab(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleMoveTab(const IInspectable& sender,
                                       const ActionEventArgs& actionArgs)
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<MoveTabArgs>())
         {
-            auto direction = realArgs.Direction();
-            if (direction != MoveTabDirection::None)
-            {
-                if (auto focusedTabIndex = _GetFocusedTabIndex())
-                {
-                    auto currentTabIndex = focusedTabIndex.value();
-                    auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
-                    _TryMoveTab(currentTabIndex, currentTabIndex + delta);
-                }
-            }
-            actionArgs.Handled(true);
+            const auto moved = _MoveTab(_senderOrFocusedTab(sender), realArgs);
+            actionArgs.Handled(moved);
         }
     }
 
@@ -598,7 +861,6 @@ namespace winrt::TerminalApp::implementation
     //   This might cause a UAC prompt. The elevation is performed on a
     //   background thread, as to not block the UI thread.
     // Arguments:
-    // - elevate: If true, launch the new Terminal elevated using `runas`
     // - newTerminalArgs: A NewTerminalArgs describing the terminal instance
     //   that should be spawned. The Profile should be filled in with the GUID
     //   of the profile we want to launch.
@@ -606,8 +868,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Important: Don't take the param by reference, since we'll be doing work
     // on another thread.
-    fire_and_forget TerminalPage::_OpenNewWindow(const bool elevate,
-                                                 const NewTerminalArgs newTerminalArgs)
+    fire_and_forget TerminalPage::_OpenNewWindow(const NewTerminalArgs newTerminalArgs)
     {
         // Hop to the BG thread
         co_await winrt::resume_background();
@@ -634,9 +895,8 @@ namespace winrt::TerminalApp::implementation
         SHELLEXECUTEINFOW seInfo{ 0 };
         seInfo.cbSize = sizeof(seInfo);
         seInfo.fMask = SEE_MASK_NOASYNC;
-        // `runas` will cause the shell to launch this child process elevated.
         // `open` will just run the executable normally.
-        seInfo.lpVerb = elevate ? L"runas" : L"open";
+        seInfo.lpVerb = L"open";
         seInfo.lpFile = exePath.c_str();
         seInfo.lpParameters = cmdline.c_str();
         seInfo.nShow = SW_SHOWNORMAL;
@@ -666,12 +926,11 @@ namespace winrt::TerminalApp::implementation
             newTerminalArgs = NewTerminalArgs();
         }
 
-        const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
-        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
+        const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
 
         // Manually fill in the evaluated profile.
-        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profileGuid));
-        _OpenNewWindow(false, newTerminalArgs);
+        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+        _OpenNewWindow(newTerminalArgs);
         actionArgs.Handled(true);
     }
 
@@ -719,9 +978,9 @@ namespace winrt::TerminalApp::implementation
                 const auto newName = realArgs.Name();
                 const auto request = winrt::make_self<implementation::RenameWindowRequestedArgs>(newName);
                 _RenameWindowRequestedHandlers(*this, *request);
+                args.Handled(true);
             }
         }
-        args.Handled(false);
     }
 
     void TerminalPage::_HandleOpenWindowRenamer(const IInspectable& /*sender*/,
@@ -730,26 +989,440 @@ namespace winrt::TerminalApp::implementation
         if (WindowRenamer() == nullptr)
         {
             // We need to use FindName to lazy-load this object
-            if (MUX::Controls::TeachingTip tip{ FindName(L"WindowRenamer").try_as<MUX::Controls::TeachingTip>() })
+            if (auto tip{ FindName(L"WindowRenamer").try_as<MUX::Controls::TeachingTip>() })
             {
                 tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
             }
         }
 
         _UpdateTeachingTipTheme(WindowRenamer().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
-        WindowRenamer().IsOpen(true);
 
-        // PAIN: We can't immediately focus the textbox in the TeachingTip. It's
-        // not technically focusable until it is opened. However, it doesn't
-        // provide an event to tell us when it is opened. That's tracked in
-        // microsoft/microsoft-ui-xaml#1607. So for now, the user _needs_ to
-        // click on the text box manually.
+        // BODGY: GH#12021
+        //
+        // TeachingTip doesn't provide an Opened event.
+        // (microsoft/microsoft-ui-xaml#1607). But we want to focus the renamer
+        // text box when it's opened. We can't do that immediately, the TextBox
+        // technically isn't in the visual tree yet. We have to wait for it to
+        // get added some time after we call IsOpen. How do we do that reliably?
+        // Usually, for this kind of thing, we'd just use a one-off
+        // LayoutUpdated event, as a notification that the TextBox was added to
+        // the tree. HOWEVER:
+        //   * The _first_ time this is fired, when the box is _first_ opened,
+        //     tossing focus doesn't work on the first LayoutUpdated. It does
+        //     work on the second LayoutUpdated. Okay, so we'll wait for two
+        //     LayoutUpdated events, and focus on the second.
+        //   * On subsequent opens: We only ever get a single LayoutUpdated.
+        //     Period. But, you can successfully focus it on that LayoutUpdated.
+        //
+        // So, we'll keep track of how many LayoutUpdated's we've _ever_ gotten.
+        // If we've had at least 2, then we can focus the text box.
         //
         // We're also not using a ContentDialog for this, because in Xaml
         // Islands a text box in a ContentDialog won't receive _any_ keypresses.
         // Fun!
         // WindowRenamerTextBox().Focus(FocusState::Programmatic);
+        _renamerLayoutUpdatedRevoker.revoke();
+        _renamerLayoutUpdatedRevoker = WindowRenamerTextBox().LayoutUpdated(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
+            if (auto self{ weakThis.get() })
+            {
+                auto& count{ self->_renamerLayoutCount };
 
+                // Don't just always increment this, we don't want to deal with overflow situations
+                if (count < 2)
+                {
+                    count++;
+                }
+
+                if (count >= 2)
+                {
+                    self->_renamerLayoutUpdatedRevoker.revoke();
+                    self->WindowRenamerTextBox().Focus(FocusState::Programmatic);
+                }
+            }
+        });
+        // Make sure to mark that enter was not pressed in the renamer quite
+        // yet. More details in TerminalPage::_WindowRenamerKeyDown.
+        _renamerPressedEnter = false;
+        WindowRenamer().IsOpen(true);
+
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleDisplayWorkingDirectory(const IInspectable& /*sender*/,
+                                                      const ActionEventArgs& args)
+    {
+        if (_settings.GlobalSettings().DebugFeaturesEnabled())
+        {
+            ShowTerminalWorkingDirectory();
+            args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleSearchForText(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (const auto termControl{ _GetActiveControl() })
+        {
+            if (termControl.HasSelection())
+            {
+                const auto selections{ termControl.SelectedText(true) };
+
+                // concatenate the selection into a single line
+                auto searchText = std::accumulate(selections.begin(), selections.end(), std::wstring());
+
+                // make it compact by replacing consecutive whitespaces with a single space
+                searchText = std::regex_replace(searchText, std::wregex(LR"(\s+)"), L" ");
+
+                std::wstring queryUrl;
+                if (args)
+                {
+                    if (const auto& realArgs = args.ActionArgs().try_as<SearchForTextArgs>())
+                    {
+                        queryUrl = realArgs.QueryUrl().c_str();
+                    }
+                }
+
+                // use global default if query URL is unspecified
+                if (queryUrl.empty())
+                {
+                    queryUrl = _settings.GlobalSettings().SearchWebDefaultQueryUrl().c_str();
+                }
+
+                constexpr std::wstring_view queryToken{ L"%s" };
+                if (const auto pos{ queryUrl.find(queryToken) }; pos != std::wstring_view::npos)
+                {
+                    queryUrl.replace(pos, queryToken.length(), Windows::Foundation::Uri::EscapeComponent(searchText));
+                }
+
+                winrt::Microsoft::Terminal::Control::OpenHyperlinkEventArgs shortcut{ queryUrl };
+                _OpenHyperlinkHandler(termControl, shortcut);
+                args.Handled(true);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleGlobalSummon(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        // Manually return false. These shouldn't ever get here, except for when
+        // we fail to register for the global hotkey. In that case, returning
+        // false here will let the underlying terminal still process the key, as
+        // if it wasn't bound at all.
+        args.Handled(false);
+    }
+    void TerminalPage::_HandleQuakeMode(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        // Manually return false. These shouldn't ever get here, except for when
+        // we fail to register for the global hotkey. In that case, returning
+        // false here will let the underlying terminal still process the key, as
+        // if it wasn't bound at all.
+        args.Handled(false);
+    }
+
+    void TerminalPage::_HandleFocusPane(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<FocusPaneArgs>())
+            {
+                const auto paneId = realArgs.Id();
+
+                // This action handler is not enlightened for _senderOrFocusedTab.
+                // There's currently no way for an inactive tab to be the sender of a focusPane command.
+                // If that ever changes, then we'll need to consider how this handler should behave.
+                // Should it
+                // * focus the tab that sent the command AND activate the requested pane?
+                // * or should it just activate the pane in the sender, and leave the focused tab alone?
+                //
+                // For now, we'll just focus the pane in the focused tab.
+
+                if (const auto activeTab{ _GetFocusedTabImpl() })
+                {
+                    _UnZoomIfNeeded();
+                    args.Handled(activeTab->FocusPane(paneId));
+                }
+            }
+        }
+    }
+
+    void TerminalPage::_HandleOpenSystemMenu(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        _OpenSystemMenuHandlers(*this, nullptr);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleExportBuffer(const IInspectable& sender,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _senderOrFocusedTab(sender) })
+        {
+            if (args)
+            {
+                if (const auto& realArgs = args.ActionArgs().try_as<ExportBufferArgs>())
+                {
+                    _ExportTab(*activeTab, realArgs.Path());
+                    args.Handled(true);
+                    return;
+                }
+            }
+
+            // If we didn't have args, or the args weren't ExportBufferArgs (somehow)
+            _ExportTab(*activeTab, L"");
+            if (args)
+            {
+                args.Handled(true);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleClearBuffer(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<ClearBufferArgs>())
+            {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.ClearBuffer(realArgs.Clear());
+                });
+                args.Handled(res);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleMultipleActions(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<MultipleActionsArgs>())
+            {
+                for (const auto& action : realArgs.Actions())
+                {
+                    _actionDispatch->DoAction(action);
+                }
+
+                args.Handled(true);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleAdjustOpacity(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<AdjustOpacityArgs>())
+            {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.AdjustOpacity(realArgs.Opacity() / 100.0, realArgs.Relative());
+                });
+                args.Handled(res);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleSelectAll(const IInspectable& sender,
+                                        const ActionEventArgs& args)
+    {
+        if (const auto& control{ _senderOrActiveControl(sender) })
+        {
+            control.SelectAll();
+            args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleSelectCommand(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SelectCommandArgs>())
+            {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.SelectCommand(realArgs.Direction() == Settings::Model::SelectOutputDirection::Previous);
+                });
+                args.Handled(res);
+            }
+        }
+    }
+    void TerminalPage::_HandleSelectOutput(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SelectOutputArgs>())
+            {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.SelectOutput(realArgs.Direction() == Settings::Model::SelectOutputDirection::Previous);
+                });
+                args.Handled(res);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleMarkMode(const IInspectable& sender,
+                                       const ActionEventArgs& args)
+    {
+        if (const auto& control{ _senderOrActiveControl(sender) })
+        {
+            control.ToggleMarkMode();
+            args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleToggleBlockSelection(const IInspectable& sender,
+                                                   const ActionEventArgs& args)
+    {
+        if (const auto& control{ _senderOrActiveControl(sender) })
+        {
+            const auto handled = control.ToggleBlockSelection();
+            args.Handled(handled);
+        }
+    }
+
+    void TerminalPage::_HandleSwitchSelectionEndpoint(const IInspectable& sender,
+                                                      const ActionEventArgs& args)
+    {
+        if (const auto& control{ _senderOrActiveControl(sender) })
+        {
+            const auto handled = control.SwitchSelectionEndpoint();
+            args.Handled(handled);
+        }
+    }
+
+    void TerminalPage::_HandleSuggestions(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SuggestionsArgs>())
+            {
+                const auto source = realArgs.Source();
+                std::vector<Command> commandsCollection;
+                Control::CommandHistoryContext context{ nullptr };
+                winrt::hstring currentCommandline = L"";
+
+                // If the user wanted to use the current commandline to filter results,
+                //    OR they wanted command history (or some other source that
+                //       requires context from the control)
+                // then get that here.
+                const bool shouldGetContext = realArgs.UseCommandline() ||
+                                              WI_IsFlagSet(source, SuggestionsSource::CommandHistory);
+                if (shouldGetContext)
+                {
+                    if (const auto& control{ _GetActiveControl() })
+                    {
+                        context = control.CommandHistory();
+                        if (context)
+                        {
+                            currentCommandline = context.CurrentCommandline();
+                        }
+                    }
+                }
+
+                // Aggregate all the commands from the different sources that
+                // the user selected.
+
+                // Tasks are all the sendInput commands the user has saved in
+                // their settings file. Ask the ActionMap for those.
+                if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
+                {
+                    const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(currentCommandline);
+                    for (const auto& t : tasks)
+                    {
+                        commandsCollection.push_back(t);
+                    }
+                }
+
+                // Command History comes from the commands in the buffer,
+                // assuming the user has enabled shell integration. Get those
+                // from the active control.
+                if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory) &&
+                    context != nullptr)
+                {
+                    const auto recentCommands = Command::HistoryToCommands(context.History(), currentCommandline, false);
+                    for (const auto& t : recentCommands)
+                    {
+                        commandsCollection.push_back(t);
+                    }
+                }
+
+                // Open the palette with all these commands in it.
+                _OpenSuggestions(_GetActiveControl(),
+                                 winrt::single_threaded_vector<Command>(std::move(commandsCollection)),
+                                 SuggestionsMode::Palette,
+                                 currentCommandline);
+                args.Handled(true);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleColorSelection(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<ColorSelectionArgs>())
+            {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.ColorSelection(realArgs.Foreground(), realArgs.Background(), realArgs.MatchMode());
+                });
+                args.Handled(res);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleExpandSelectionToWord(const IInspectable& /*sender*/,
+                                                    const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            const auto handled = control.ExpandSelectionToWord();
+            args.Handled(handled);
+        }
+    }
+
+    void TerminalPage::_HandleToggleBroadcastInput(const IInspectable& sender,
+                                                   const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _senderOrFocusedTab(sender) })
+        {
+            activeTab->ToggleBroadcastInput();
+            args.Handled(true);
+        }
+        // If the focused tab wasn't a TerminalTab, then leave handled=false
+    }
+
+    void TerminalPage::_HandleRestartConnection(const IInspectable& sender,
+                                                const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _senderOrFocusedTab(sender) })
+        {
+            if (const auto activePane{ activeTab->GetActivePane() })
+            {
+                _restartPaneConnection(activePane);
+            }
+        }
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleShowContextMenu(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.ShowContextMenu();
+        }
+        args.Handled(true);
+    }
+    void TerminalPage::_HandleOpenAbout(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        _ShowAboutDialog();
         args.Handled(true);
     }
 }

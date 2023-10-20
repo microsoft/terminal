@@ -1,0 +1,83 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ICoreState.idl";
+import "IControlSettings.idl";
+import "ControlCore.idl";
+import "EventArgs.idl";
+import "InteractivityAutomationPeer.idl";
+
+
+namespace Microsoft.Terminal.Control
+{
+
+    [default_interface] runtimeclass ControlInteractivity
+    {
+        ControlInteractivity(IControlSettings settings,
+                             IControlAppearance unfocusedAppearance,
+                             Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+
+        ControlCore Core { get; };
+        void UpdateSettings();
+        void Initialize();
+        void GotFocus();
+        void LostFocus();
+
+        UInt64 Id { get; };
+
+        void AttachToNewControl(Microsoft.Terminal.Control.IKeyBindings keyBindings);
+        void Detach();
+
+        void Close();
+
+        InteractivityAutomationPeer OnCreateAutomationPeer();
+
+        Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
+        void RequestPasteTextFromClipboard();
+        void SetEndSelectionPoint(Microsoft.Terminal.Core.Point point);
+
+        void PointerPressed(MouseButtonState buttonState,
+                            UInt32 pointerUpdateKind,
+                            UInt64 timestamp,
+                            Microsoft.Terminal.Core.ControlKeyStates modifiers,
+                            Microsoft.Terminal.Core.Point pixelPosition);
+        void TouchPressed(Microsoft.Terminal.Core.Point contactPoint);
+
+        void PointerMoved(MouseButtonState buttonState,
+                          UInt32 pointerUpdateKind,
+                          Microsoft.Terminal.Core.ControlKeyStates modifiers,
+                          Boolean focused,
+                          Microsoft.Terminal.Core.Point pixelPosition,
+                          Boolean pointerPressedInBounds);
+
+        void TouchMoved(Microsoft.Terminal.Core.Point newTouchPoint,
+                        Boolean focused);
+
+        void PointerReleased(MouseButtonState buttonState,
+                             UInt32 pointerUpdateKind,
+                             Microsoft.Terminal.Core.ControlKeyStates modifiers,
+                             Microsoft.Terminal.Core.Point pixelPosition);
+        void TouchReleased();
+
+        Boolean MouseWheel(Microsoft.Terminal.Core.ControlKeyStates modifiers,
+                           Int32 delta,
+                           Microsoft.Terminal.Core.Point pixelPosition,
+                           MouseButtonState state);
+
+        void UpdateScrollbar(Double newValue);
+
+        Boolean ManglePathsForWsl { get; };
+
+        event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
+        event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;
+        event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> Closed;
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
+
+        // Used to communicate to the TermControl, but not necessarily higher up in the stack
+        event Windows.Foundation.TypedEventHandler<Object, ContextMenuRequestedEventArgs> ContextMenuRequested;
+
+    };
+}

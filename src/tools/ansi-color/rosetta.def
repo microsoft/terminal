@@ -1,0 +1,40 @@
+:: https://rosettacode.org/wiki/Terminal_control/Coloured_text#ooRexx
+__DATA__
+:: Background
+__COLS__
+#NUL#
+40m
+41m
+42m
+43m
+44m
+45m
+46m
+47m
+__COLS:END__
+:: Foreground
+__ROWS__
+0m
+1m
+0;30m
+1;30m
+0;31m
+1;31m
+0;32m
+1;32m
+0;33m
+1;33m
+0;34m
+1;34m
+0;35m
+1;35m
+0;36m
+1;36m
+0;37m
+1;37m
+4m
+5m
+7m
+8m
+__ROWS:END__
+__DATA:END__

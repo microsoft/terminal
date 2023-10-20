@@ -570,7 +570,7 @@ namespace Conhost.UIA.Tests
                 Action<TextPatternRange> testBottomBoundary = delegate (TextPatternRange range)
                 {
                     // the range is at the bottom of the screen buffer, we
-                    // shouldn't be able to move the endpoint endpoint down
+                    // shouldn't be able to move the endpoint down
                     int moveAmount = range.MoveEndpointByUnit(TextPatternRangeEndpoint.End, TextUnit.Line, 1);
                     Verify.AreEqual(0, moveAmount);
 

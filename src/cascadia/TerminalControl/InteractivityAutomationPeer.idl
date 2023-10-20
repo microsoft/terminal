@@ -1,0 +1,19 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+namespace Microsoft.Terminal.Control
+{
+    [default_interface] runtimeclass InteractivityAutomationPeer :
+        Windows.UI.Xaml.Automation.Peers.AutomationPeer,
+        Windows.UI.Xaml.Automation.Provider.ITextProvider
+    {
+
+        void SetControlBounds(Windows.Foundation.Rect bounds);
+        void SetControlPadding(Microsoft.Terminal.Core.Padding padding);
+        void ParentProvider(Windows.UI.Xaml.Automation.Peers.AutomationPeer parentProvider);
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> SelectionChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TextChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> CursorChanged;
+        event Windows.Foundation.TypedEventHandler<Object, String> NewOutput;
+    }
+}

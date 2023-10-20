@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Peasant.g.h"
-#include "../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::MonarchPeasantSample::implementation
 {
@@ -26,7 +25,5 @@ namespace winrt::MonarchPeasantSample::implementation
 
 namespace winrt::MonarchPeasantSample::factory_implementation
 {
-    struct Peasant : PeasantT<Peasant, implementation::Peasant>
-    {
-    };
+    BASIC_FACTORY(Peasant);
 }

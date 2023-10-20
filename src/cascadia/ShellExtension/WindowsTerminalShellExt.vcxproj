@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{f2ed628a-db22-446f-a081-4cc845b51a2b}</ProjectGuid>
     <ProjectName>WindowsTerminalShellExt</ProjectName>
@@ -11,7 +11,11 @@
     <!-- suppress a bunch of Windows Universal properties from cppwinrt.props -->
     <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
   </PropertyGroup>
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+  </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <ItemDefinitionGroup>
     <Link>
@@ -30,7 +34,6 @@
     <ClCompile Include="dllmain.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="$(ProjectName).def" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
@@ -50,6 +53,7 @@
   </ItemGroup>
 
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
   <!-- Override GetPackagingOutputs to roll up our DLL.
        This is a heavily stripped version of the one in Microsoft.*.AppxPackage.targets.

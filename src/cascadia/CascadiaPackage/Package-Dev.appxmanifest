@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -10,9 +10,11 @@
   xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
   xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
   xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
+  xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:virtualization="http://schemas.microsoft.com/appx/manifest/virtualization/windows10"
   xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
-  IgnorableNamespaces="uap mp rescap uap3">
+  IgnorableNamespaces="uap mp rescap uap3 desktop6 virtualization">
 
   <Identity
     Name="WindowsTerminalDev"
@@ -20,17 +22,25 @@
     Version="0.0.1.0" />
 
   <Properties>
-    <DisplayName>Windows Terminal Dev</DisplayName>
+    <DisplayName>ms-resource:AppStoreNameDev</DisplayName>
     <PublisherDisplayName>A Lone Developer</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
+    <!-- Older versions of Windows 10 respect this -->
+    <desktop6:RegistryWriteVirtualization>disabled</desktop6:RegistryWriteVirtualization>
+    <!-- Newer versions of Windows 10 plus all versions of Windows 11 respect this -->
+    <virtualization:RegistryWriteVirtualization>
+      <virtualization:ExcludedKeys>
+        <virtualization:ExcludedKey>HKEY_CURRENT_USER\Console\%%Startup</virtualization:ExcludedKey>
+      </virtualization:ExcludedKeys>
+    </virtualization:RegistryWriteVirtualization>
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.18362.0" MaxVersionTested="10.0.18362.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.22621.0" />
   </Dependencies>
 
   <Resources>
-    <Resource Language="x-generate"/>
+    <Resource Language="EN-US" />
   </Resources>
 
   <Applications>
@@ -87,7 +97,7 @@
         <uap3:Extension Category="windows.appExtension">
             <uap3:AppExtension Name="com.microsoft.windows.terminal.host"
                 Id="Terminal-Dev"
-                DisplayName="Windows Terminal Dev"
+                DisplayName="Terminal Dev"
                 Description="Terminal host built from microsoft/terminal open source repository"
                 PublicFolder="Public">
                 <uap3:Properties>
@@ -98,8 +108,10 @@
         <com:Extension Category="windows.comInterface">
             <com:ComInterface>
                 <com:ProxyStub Id="DEC4804D-56D1-4F73-9FBE-6828E7C85C56" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleProxy.dll"/>
-                <com:Interface Id="2B607BC1-43EB-40C3-95AE-2856ADDB7F23" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
-                <com:Interface Id="FA1E3AB4-9AEC-4A3C-96CA-E6078C30BD74" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
+                <com:Interface Id="E686C757-9A35-4A1C-B3CE-0BCC8B5C69F4" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
+                <com:Interface Id="59D55CCE-FC8A-48B4-ACE8-0A9286C6557F" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/> <!-- ITerminalHandoff -->
+                <com:Interface Id="AA6B364F-4A50-4176-9002-0AE755E7B5EF" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/> <!-- ITerminalHandoff2 -->
+                <com:Interface Id="746E6BC0-AB05-4E38-AB14-71E86763141F" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
             </com:ComInterface>
         </com:Extension>
         <com:Extension Category="windows.comServer">
@@ -122,7 +134,7 @@
                 </desktop5:ItemType>
                 <desktop5:ItemType Type="Directory\Background">
                   <desktop5:Verb Id="OpenTerminalDev" Clsid="52065414-e077-47ec-a3ac-1cc5455e1b54" />
-                </desktop5:ItemType>                
+                </desktop5:ItemType>
             </desktop4:FileExplorerContextMenus>
         </desktop4:Extension>
 
@@ -134,5 +146,6 @@
   <Capabilities>
     <Capability Name="internetClient" />
     <rescap:Capability Name="runFullTrust" />
+    <rescap:Capability Name="unvirtualizedResources" />
   </Capabilities>
 </Package>

@@ -27,7 +27,7 @@ namespace Microsoft::Console::Interactivity::Win32
     public:
         ~AccessibilityNotifier() = default;
 
-        void NotifyConsoleCaretEvent(_In_ RECT rectangle);
+        void NotifyConsoleCaretEvent(_In_ const til::rect& rectangle);
         void NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags flags, _In_ LONG position);
         void NotifyConsoleUpdateScrollEvent(_In_ LONG x, _In_ LONG y);
         void NotifyConsoleUpdateSimpleEvent(_In_ LONG start, _In_ LONG charAndAttribute);

@@ -141,17 +141,16 @@ const CONSOLE_API_LAYER_DESCRIPTOR ConsoleApiLayerTable[] = {
 PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Message)
 {
     // Make sure the indices are valid and retrieve the API descriptor.
-    ULONG const LayerNumber = (Message->msgHeader.ApiNumber >> 24) - 1;
-    ULONG const ApiNumber = Message->msgHeader.ApiNumber & 0xffffff;
+    const auto LayerNumber = (Message->msgHeader.ApiNumber >> 24) - 1;
+    const auto ApiNumber = Message->msgHeader.ApiNumber & 0xffffff;
 
-    NTSTATUS Status;
-    if ((LayerNumber >= RTL_NUMBER_OF(ConsoleApiLayerTable)) || (ApiNumber >= ConsoleApiLayerTable[LayerNumber].Count))
+    if ((LayerNumber >= std::size(ConsoleApiLayerTable)) || (ApiNumber >= ConsoleApiLayerTable[LayerNumber].Count))
     {
-        Status = STATUS_ILLEGAL_FUNCTION;
-        goto Complete;
+        Message->SetReplyStatus(STATUS_ILLEGAL_FUNCTION);
+        return Message;
     }
 
-    CONSOLE_API_DESCRIPTOR const* Descriptor = &ConsoleApiLayerTable[LayerNumber].Descriptor[ApiNumber];
+    auto Descriptor = &ConsoleApiLayerTable[LayerNumber].Descriptor[ApiNumber];
 
     // Validate the argument size and call the API.
     if ((Message->Descriptor.InputSize < sizeof(CONSOLE_MSG_HEADER)) ||
@@ -159,11 +158,11 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
         (Message->msgHeader.ApiDescriptorSize > Message->Descriptor.InputSize - sizeof(CONSOLE_MSG_HEADER)) ||
         (Message->msgHeader.ApiDescriptorSize < Descriptor->RequiredSize))
     {
-        Status = STATUS_ILLEGAL_FUNCTION;
-        goto Complete;
+        Message->SetReplyStatus(STATUS_ILLEGAL_FUNCTION);
+        return Message;
     }
 
-    BOOL ReplyPending = FALSE;
+    auto ReplyPending = FALSE;
     Message->Complete.Write.Data = &Message->u;
     Message->Complete.Write.Size = Message->msgHeader.ApiDescriptorSize;
     Message->State.WriteOffset = Message->msgHeader.ApiDescriptorSize;
@@ -173,8 +172,8 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
     // hard dependencies on NTSTATUS codes that aren't readily expressible as an HRESULT. There's currently only one
     // such known code -- STATUS_BUFFER_TOO_SMALL. There's a conlibk dependency on this being returned from the console
     // alias API.
+    NTSTATUS Status = S_OK;
     {
-        const auto trace = Tracing::s_TraceApiCall(Status, Descriptor->TraceName);
         Status = (*Descriptor->Routine)(Message, &ReplyPending);
     }
     if (Status != STATUS_BUFFER_TOO_SMALL)
@@ -184,14 +183,9 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
 
     if (!ReplyPending)
     {
-        goto Complete;
+        Message->SetReplyStatus(Status);
+        return Message;
     }
 
     return nullptr;
-
-Complete:
-
-    Message->SetReplyStatus(Status);
-
-    return Message;
 }

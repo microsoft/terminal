@@ -15,11 +15,10 @@
 
 #include <cmath>
 
-#include <algorithm>
 #include <exception>
-#include <numeric>
 #include <typeinfo>
-#include <stdexcept>
+
+#include <dcomp.h>
 
 #include <dxgi.h>
 #include <dxgi1_2.h>

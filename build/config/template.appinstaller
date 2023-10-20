@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AppInstaller
+  xmlns="http://schemas.microsoft.com/appx/appinstaller/2017/2"
+  Version="1.0.0.0"
+  Uri="$$ROOT$$$$NAME$$.appinstaller">
+
+  <MainBundle
+    Name="$$NAME$$"
+    Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+    Version="$$VERSION$$"
+    Uri="$$ROOT$$$$PACKAGE$$" />
+
+  <Dependencies>
+    <Package
+      Name="Microsoft.UI.Xaml.2.8"
+      Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+      Version="8.2305.5001.0"
+      ProcessorArchitecture="x64"
+      Uri="https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.4/Microsoft.UI.Xaml.2.8.x64.appx" />
+    <Package
+      Name="Microsoft.UI.Xaml.2.8"
+      Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+      Version="8.2305.5001.0"
+      ProcessorArchitecture="x86"
+      Uri="https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.4/Microsoft.UI.Xaml.2.8.x86.appx" />
+    <Package
+      Name="Microsoft.UI.Xaml.2.8"
+      Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+      Version="8.2305.5001.0"
+      ProcessorArchitecture="arm64"
+      Uri="https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.4/Microsoft.UI.Xaml.2.8.arm64.appx" />
+  </Dependencies>
+
+  <UpdateSettings>
+    <OnLaunch
+      HoursBetweenUpdateChecks="6" />
+  </UpdateSettings>
+</AppInstaller>

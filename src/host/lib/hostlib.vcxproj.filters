@@ -138,9 +138,6 @@
     <ClCompile Include="..\writeData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\conattrs.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\VtInputThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -162,25 +159,10 @@
     <ClCompile Include="..\conareainfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\popup.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\CommandNumberPopup.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\CommandListPopup.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\CopyFromCharPopup.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\CopyToCharPopup.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\CursorBlinker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\ScreenBufferRenderTarget.cpp">
+    <ClCompile Include="..\VtApiRoutines.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -332,28 +314,13 @@
     <ClInclude Include="..\conareainfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\popup.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\CommandNumberPopup.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\CommandListPopup.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\CopyFromCharPopup.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\CopyToCharPopup.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\CursorBlinker.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\IIoProvider.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\ScreenBufferRenderTarget.hpp">
+    <ClInclude Include="..\VtApiRoutines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

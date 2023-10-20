@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{b4427499-9fde-4208-b456-5bc580637633}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>WindowExe</RootNamespace>
+    <ProjectName>WindowExe</ProjectName>
+    <TargetName>WindowExe</TargetName>
+    <ConfigurationType>Application</ConfigurationType>
+    <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
+    <ApplicationType>Windows Store</ApplicationType>
+    <WindowsStoreApp>true</WindowsStoreApp>
+    <WindowsAppContainer>false</WindowsAppContainer>
+    <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalThemeHelpers>true</TerminalThemeHelpers>
+  </PropertyGroup>
+
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(OpenConsoleDir)\src\inc;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\Console;$(OpenConsoleDir)\dep\Win32K;$(OpenConsoleDir)\dep\gsl\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup>
+    <GenerateManifest>true</GenerateManifest>
+    <EmbedManifest>true</EmbedManifest>
+  </PropertyGroup>
+  <!-- Source Files -->
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="icon.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="SampleAppHost.h" />
+    <ClInclude Include="SampleBaseWindow.h" />
+    <ClInclude Include="SampleIslandWindow.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="icon.cpp" />
+    <ClCompile Include="SampleMain.cpp" />
+    <ClCompile Include="SampleAppHost.cpp" />
+    <ClCompile Include="SampleIslandWindow.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="WindowExe.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="WindowExe.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <ProjectReference Include="$(OpenConsoleDir)scratch\ScratchIslandApp\SampleApp\dll\SampleApp.vcxproj" />
+  </ItemGroup>
+
+  <!-- ========================== Other References ========================= -->
+  <ItemGroup>
+    <!--
+    !! LOAD BEARING !!
+    Make sure these winmd's are all Private=true,
+    CopyLocalSatelliteAssemblies=true, at this layer. Those will force the
+    packaging project to actually include those winmd's in our final package. If
+    they're missing, then WinRT will have a hard time marshalling those types
+    across a process boundary.
+
+    Particularly tricky is Microsoft.Terminal.Core.winmd. That winmd doesn't
+    have its own DLL (it doesn't have any activatable classes, only structs and
+    interfaces). However, it too is necessary for Terminal.Control to be able to
+    marshal the Core types across the boundary.
+    -->
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.TerminalConnection">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
+      <Implementation>$(OpenConsoleCommonOutDir)TerminalConnection\TerminalConnection.dll</Implementation>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Control">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
+      <Implementation>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.dll</Implementation>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+    </Reference>
+  </ItemGroup>
+  <!--
+    This ItemGroup and the Globals PropertyGroup below it are required in order
+    to enable F5 debugging for the unpackaged application
+    -->
+  <ItemGroup>
+    <PropertyPageSchema Include="$(VCTargetsPath)$(LangID)\debugger_general.xml" />
+    <PropertyPageSchema Include="$(VCTargetsPath)$(LangID)\debugger_local_windows.xml" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+
+  <!--
+  BODGY
+
+  The wapproj `GetResolvedWinMD` target tries to get a winmd from every cppwinrt
+  executable we put in the package. But we DON'T produce a winmd. This makes the
+  FastUpToDate check fail every time, and leads to the whole wapproj build
+  running even if you're just f5'ing the package. EVEN AFTER A SUCCESSFUL BUILD.
+
+  Setting GenerateWindowsMetadata=false is enough to tell the build system that
+  we don't produce one, and get it off our backs.
+  -->
+  <ItemDefinitionGroup>
+    <Link>
+        <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets'))" />
+  </Target>
+
+  <!-- Override GetPackagingOutputs to roll up all our dependencies.
+       This ensures that when the WAP packaging project asks what files go into
+       the package, we tell it.
+       This is a heavily stripped version of the one in Microsoft.*.AppxPackage.targets.
+  -->
+  <PropertyGroup>
+    <_ContinueOnError Condition="'$(BuildingProject)' == 'true'">true</_ContinueOnError>
+    <_ContinueOnError Condition="'$(BuildingProject)' != 'true'">false</_ContinueOnError>
+  </PropertyGroup>
+  <Target Name="GetPackagingOutputs" Returns="@(PackagingOutputs)">
+    <MSBuild
+      Projects="@(ProjectReferenceWithConfiguration)"
+      Targets="GetPackagingOutputs"
+      BuildInParallel="$(BuildInParallel)"
+      Properties="%(ProjectReferenceWithConfiguration.SetConfiguration); %(ProjectReferenceWithConfiguration.SetPlatform)"
+      Condition="'@(ProjectReferenceWithConfiguration)' != ''
+                 and '%(ProjectReferenceWithConfiguration.BuildReference)' == 'true'
+                 and '%(ProjectReferenceWithConfiguration.ReferenceOutputAssembly)' == 'true'"
+      ContinueOnError="$(_ContinueOnError)">
+      <Output TaskParameter="TargetOutputs" ItemName="_PackagingOutputsFromOtherProjects"/>
+    </MSBuild>
+
+    <ItemGroup>
+      <PackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" />
+    </ItemGroup>
+
+    <!-- **BEGIN VC LIBS HACK** -->
+    <PropertyGroup>
+      <ReasonablePlatform Condition="'$(Platform)'=='Win32'">x86</ReasonablePlatform>
+      <ReasonablePlatform Condition="'$(ReasonablePlatform)'==''">$(Platform)</ReasonablePlatform>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(WindowExeOfficialBuild)'=='true'">
+      <!-- Add all the CRT libs as content; these must be inside a Target as they are wildcards. -->
+      <_OpenConsoleVCLibToCopy Include="$(VCToolsRedistInstallDir)\$(ReasonablePlatform)\Microsoft.VC142.CRT\*.dll" />
+
+      <PackagingOutputs Include="@(_OpenConsoleVCLibToCopy)">
+        <ProjectName>$(ProjectName)</ProjectName>
+        <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+      </PackagingOutputs>
+    </ItemGroup>
+    <!-- **END VC LIBS HACK** -->
+
+
+    <!-- Same thing again here, with WindowsTerminal.exe -->
+    <ItemGroup>
+      <_WindowsTerminalExe Include="$(OpenConsoleCommonOutDir)\WindowsTerminal\*.exe" />
+
+      <PackagingOutputs Include="@(_WindowsTerminalExe)">
+        <ProjectName>$(ProjectName)</ProjectName>
+        <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+      </PackagingOutputs>
+    </ItemGroup>
+
+    <!-- Same thing AGAIN here, with OpenConsole.exe If you forget this, then
+    the scratch app will use the inbox conpty with a newer conpty lib, causing
+    us to send the inbox conhost messages that will make it explode. -->
+    <ItemGroup>
+      <_OpenConsoleExe Include="$(OpenConsoleCommonOutDir)\OpenConsole.exe" />
+
+      <PackagingOutputs Include="@(_OpenConsoleExe)">
+        <ProjectName>$(ProjectName)</ProjectName>
+        <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+      </PackagingOutputs>
+    </ItemGroup>
+  </Target>
+
+  <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
+
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+</Project>
+

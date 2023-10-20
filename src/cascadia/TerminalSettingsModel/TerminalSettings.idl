@@ -3,10 +3,13 @@
 
 import "CascadiaSettings.idl";
 
+#define COMMA ,
+
 namespace Microsoft.Terminal.Settings.Model
 {
     runtimeclass TerminalSettingsCreateResult
     {
+        TerminalSettingsCreateResult(TerminalSettings defaultSettings);
         TerminalSettings DefaultSettings { get; };
         TerminalSettings UnfocusedSettings { get; };
     }
@@ -25,11 +28,23 @@ namespace Microsoft.Terminal.Settings.Model
     {
         TerminalSettings();
 
-        static TerminalSettingsCreateResult CreateWithProfileByID(CascadiaSettings appSettings, Guid profileGuid, Microsoft.Terminal.Control.IKeyBindings keybindings);
-        static TerminalSettingsCreateResult CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.Control.IKeyBindings keybindings);
-        static TerminalSettingsCreateResult CreateWithParent(TerminalSettingsCreateResult parent);
+        Windows.Foundation.Collections.IMap<String COMMA String> EnvironmentVariables;
 
-        void SetParent(TerminalSettings parent);
+        static TerminalSettings CreateForPreview(CascadiaSettings appSettings, Profile profile);
+        static TerminalSettingsCreateResult CreateWithProfile(CascadiaSettings appSettings, Profile profile, Microsoft.Terminal.Control.IKeyBindings keybindings);
+        static TerminalSettingsCreateResult CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.Control.IKeyBindings keybindings);
+
         void ApplyColorScheme(ColorScheme scheme);
+
+        ColorScheme AppliedColorScheme;
+
+        // The getters for these are already defined in IControlSettings. So
+        // we're just adding the setters here, because TerminalApp likes to be
+        // able to change these at runtime (e.g. when duplicating a pane).
+        String Commandline { set; };
+        String StartingDirectory { set; };
+
+        Boolean Elevate;
+        Boolean ReloadEnvironmentVariables;
     };
 }

@@ -18,14 +18,7 @@ static CONSOLE_STATE_INFO g_csi;
 using namespace Microsoft::WRL;
 
 // This class exposes console property sheets for use when launching the filesystem shortcut properties dialog.
-// clang-format off
-[uuid(D2942F8E-478E-41D3-870A-35A16238F4EE)]
-class ConsolePropertySheetHandler WrlFinal : public RuntimeClass<RuntimeClassFlags<ClassicCom>,
-                                                                 IShellExtInit,
-                                                                 IShellPropSheetExt,
-                                                                 IPersist,
-                                                                 FtmBase>
-// clang-format on
+class __declspec(uuid("D2942F8E-478E-41D3-870A-35A16238F4EE")) ConsolePropertySheetHandler final : public RuntimeClass<RuntimeClassFlags<ClassicCom>, IShellExtInit, IShellPropSheetExt, IPersist, FtmBase>
 {
 public:
     HRESULT RuntimeClassInitialize()
@@ -34,7 +27,7 @@ public:
     }
 
     // IPersist
-    STDMETHODIMP GetClassID(_Out_ CLSID * clsid) override
+    STDMETHODIMP GetClassID(_Out_ CLSID* clsid) override
     {
         *clsid = __uuidof(this);
         return S_OK;
@@ -43,10 +36,10 @@ public:
     // IShellExtInit
     // Shell QI's for IShellExtInit and calls Initialize first. If we return a succeeding HRESULT, the shell will QI for
     // IShellPropSheetExt and call AddPages. A failing HRESULT causes the shell to skip us.
-    STDMETHODIMP Initialize(_In_ PCIDLIST_ABSOLUTE /*pidlFolder*/, _In_ IDataObject * pdtobj, _In_ HKEY /*hkeyProgID*/)
+    STDMETHODIMP Initialize(_In_ PCIDLIST_ABSOLUTE /*pidlFolder*/, _In_ IDataObject* pdtobj, _In_ HKEY /*hkeyProgID*/)
     {
         WCHAR szLinkFileName[MAX_PATH];
-        HRESULT hr = _ShouldAddPropertySheet(pdtobj, szLinkFileName, ARRAYSIZE(szLinkFileName));
+        auto hr = _ShouldAddPropertySheet(pdtobj, szLinkFileName, ARRAYSIZE(szLinkFileName));
         if (SUCCEEDED(hr))
         {
             hr = InitializeConsoleState() ? S_OK : E_FAIL;
@@ -63,12 +56,12 @@ public:
     STDMETHODIMP AddPages(_In_ LPFNADDPROPSHEETPAGE pfnAddPage, _In_ LPARAM lParam)
     {
         PROPSHEETPAGE psp[NUMBER_OF_PAGES] = {};
-        HRESULT hr = PopulatePropSheetPageArray(psp, ARRAYSIZE(psp), TRUE /*fRegisterCallbacks*/) ? S_OK : E_FAIL;
+        auto hr = PopulatePropSheetPageArray(psp, ARRAYSIZE(psp), TRUE /*fRegisterCallbacks*/) ? S_OK : E_FAIL;
         if (SUCCEEDED(hr))
         {
             for (UINT ipsp = 0; ipsp < ARRAYSIZE(psp) && SUCCEEDED(hr); ipsp++)
             {
-                HPROPSHEETPAGE hPage = CreatePropertySheetPage(&psp[ipsp]);
+                auto hPage = CreatePropertySheetPage(&psp[ipsp]);
                 hr = (hPage == nullptr) ? E_FAIL : S_OK;
                 if (SUCCEEDED(hr))
                 {
@@ -105,7 +98,7 @@ private:
         GetRegistryValues(gpStateInfo);
 
         PWSTR pszAllocatedFileName;
-        HRESULT hr = SHStrDup(pszLinkFileName, &pszAllocatedFileName);
+        auto hr = SHStrDup(pszLinkFileName, &pszAllocatedFileName);
         if (SUCCEEDED(hr))
         {
             hr = StringCchCopyW(pszAllocatedFileName, MAX_PATH, pszLinkFileName);
@@ -117,8 +110,8 @@ private:
 
                 // Not all console shortcuts have console-specific properties. We just take the registry defaults in
                 // those cases.
-                BOOL readSettings = FALSE;
-                NTSTATUS s = ShortcutSerialization::s_GetLinkValues(gpStateInfo, &readSettings, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, nullptr, nullptr);
+                auto readSettings = FALSE;
+                auto s = ShortcutSerialization::s_GetLinkValues(gpStateInfo, &readSettings, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, nullptr, nullptr);
                 hr = HRESULT_FROM_NT(s);
             }
             else
@@ -139,12 +132,12 @@ private:
     ///////////////////////////////////////////////////////////////////////////
     // CODE FROM THE SHELL DEPOT'S `idllib.h`
     // get a link target item without resolving it.
-    HRESULT GetTargetIdList(_In_ IShellItem * psiLink, _COM_Outptr_ PIDLIST_ABSOLUTE * ppidl)
+    HRESULT GetTargetIdList(_In_ IShellItem* psiLink, _COM_Outptr_ PIDLIST_ABSOLUTE* ppidl)
     {
         *ppidl = nullptr;
 
         IShellLink* psl;
-        HRESULT hr = psiLink->BindToHandler(nullptr, BHID_SFUIObject, IID_PPV_ARGS(&psl));
+        auto hr = psiLink->BindToHandler(nullptr, BHID_SFUIObject, IID_PPV_ARGS(&psl));
         if (SUCCEEDED(hr))
         {
             hr = psl->GetIDList(ppidl);
@@ -156,12 +149,12 @@ private:
         }
         return hr;
     }
-    HRESULT GetTargetItem(_In_ IShellItem * psiLink, _In_ REFIID riid, _COM_Outptr_ void** ppv)
+    HRESULT GetTargetItem(_In_ IShellItem* psiLink, _In_ REFIID riid, _COM_Outptr_ void** ppv)
     {
         *ppv = nullptr;
 
         PIDLIST_ABSOLUTE pidl;
-        HRESULT hr = GetTargetIdList(psiLink, &pidl);
+        auto hr = GetTargetIdList(psiLink, &pidl);
         if (SUCCEEDED(hr))
         {
             hr = SHCreateItemFromIDList(pidl, riid, ppv);
@@ -171,12 +164,12 @@ private:
     }
     ///////////////////////////////////////////////////////////////////////////
 
-    HRESULT _GetShellItemLinkTargetExpanded(_In_ IShellItem * pShellItem,
+    HRESULT _GetShellItemLinkTargetExpanded(_In_ IShellItem* pShellItem,
                                             _Out_writes_(cchFilePathExtended) PWSTR pszFilePathExtended,
                                             const size_t cchFilePathExtended)
     {
         ComPtr<IShellItem> shellItemLinkTarget;
-        HRESULT hr = GetTargetItem(pShellItem, IID_PPV_ARGS(&shellItemLinkTarget));
+        auto hr = GetTargetItem(pShellItem, IID_PPV_ARGS(&shellItemLinkTarget));
         if (SUCCEEDED(hr))
         {
             wil::unique_cotaskmem_string linkTargetPath;
@@ -190,12 +183,12 @@ private:
         return hr;
     }
 
-    HRESULT _ShouldAddPropertySheet(_In_ IDataObject * pdtobj,
+    HRESULT _ShouldAddPropertySheet(_In_ IDataObject* pdtobj,
                                     _Out_writes_(cchLinkFileName) PWSTR pszLinkFileName,
                                     const size_t cchLinkFileName)
     {
         ComPtr<IShellItemArray> shellItemArray;
-        HRESULT hr = SHCreateShellItemArrayFromDataObject(pdtobj, IID_PPV_ARGS(&shellItemArray));
+        auto hr = SHCreateShellItemArrayFromDataObject(pdtobj, IID_PPV_ARGS(&shellItemArray));
         if (SUCCEEDED(hr))
         {
             DWORD dwItemCount;
@@ -219,11 +212,11 @@ private:
                             // if it's an executable
                             SHFILEINFO sfi = { 0 };
 
-                            DWORD_PTR dwFileType = SHGetFileInfo(szFileExpanded,
-                                                                 0 /*dwFileAttributes*/,
-                                                                 &sfi,
-                                                                 sizeof(sfi),
-                                                                 SHGFI_EXETYPE);
+                            auto dwFileType = SHGetFileInfo(szFileExpanded,
+                                                            0 /*dwFileAttributes*/,
+                                                            &sfi,
+                                                            sizeof(sfi),
+                                                            SHGFI_EXETYPE);
                             if (HIWORD(dwFileType) == 0 &&
                                 LOWORD(dwFileType) == PEMAGIC)
                             {

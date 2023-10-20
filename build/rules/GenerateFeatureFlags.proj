@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- THIS PROJECT CANNOT BE LOADED INTO THE SOLUTION. -->
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Any CPU">
+      <Configuration>Release</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Fuzzing|Any CPU">
+      <Configuration>Fuzzing</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="AuditMode|Any CPU">
+      <Configuration>AuditMode</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Any CPU">
+      <Configuration>Debug</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>d97c3c61-53cd-4e72-919b-9a0940e038f9</ProjectGuid>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <IntermediateOutputPath>$(SolutionDir)obj\$(Configuration)\GenerateFeatureFlags\</IntermediateOutputPath>
+    <OpenConsoleCommonOutDir>$(SolutionDir)bin\$(Configuration)\</OpenConsoleCommonOutDir>
+
+    <_WTBrandingName Condition="'$(WindowsTerminalBranding)'=='Preview'">Preview</_WTBrandingName>
+    <_WTBrandingName Condition="'$(WindowsTerminalBranding)'=='Release'">Release</_WTBrandingName>
+    <_WTBrandingName Condition="'$(_WTBrandingName)'==''">Dev</_WTBrandingName>
+  </PropertyGroup>
+
+  <Target Name="_GenerateBranchAndBrandingCache">
+    <Exec Command="git.exe rev-parse --abbrev-ref HEAD"
+      CustomWarningRegularExpression="^fatal:.*"
+      ConsoleToMsBuild="true"
+      IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" ItemName="_GitBranchLines" />
+    </Exec>
+
+    <ItemGroup>
+      <_BrandingLines Include="$(_WTBrandingName)" />
+    </ItemGroup>
+
+    <WriteLinesToFile File="$(IntermediateOutputPath)branch_branding_cache.txt"
+      Lines="@(_GitBranchLines);@(_BrandingLines)"
+      Overwrite="true"
+      WriteOnlyWhenDifferent="true" />
+
+    <ItemGroup>
+      <FileWrites Include="$(IntermediateOutputPath)branch_branding_cache.txt" />
+      <_BranchBrandingCacheFiles Include="$(IntermediateOutputPath)branch_branding_cache.txt" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_RunFeatureFlagScript"
+    Inputs="@(FeatureFlagFile);@(_BranchBrandingCacheFiles)"
+    Outputs="$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h"
+    DependsOnTargets="_GenerateBranchAndBrandingCache">
+    <MakeDir Directories="$(OpenConsoleCommonOutDir)\inc" />
+    <!-- This commandline is escaped like:
+
+    powershell -Command "&'$(SolutionDir)\tools\Generate-FeatureStagingHeader.ps1' -Path '%(FeatureFlagFile.FullPath)'' -Branding $(_WTBrandingName)"
+
+    which was the only way I could find to get it to obey spaces in the SolutionDir
+    -->
+    <Exec
+      Command="powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy ByPass -Command &quot;&amp;&apos;$(SolutionDir)\tools\Generate-FeatureStagingHeader.ps1&apos; -Path &apos;%(FeatureFlagFile.FullPath)&apos; -Branding $(_WTBrandingName)&quot;"
+      ConsoleToMsBuild="true"
+      StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" ItemName="_FeatureFlagFileLines" />
+    </Exec>
+
+    <!--
+      We gather the feature flag output in MSBuild and emit the file so that we can take advantage of
+      WriteOnlyWhenDifferent. Doing this ensures that we don't rebuild the world when the branch changes
+      (if it results in a new TilFeatureStaging.h that would have had the same content/features as the previous one)
+    -->
+
+    <WriteLinesToFile File="$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h"
+      Lines="@(_FeatureFlagFileLines)"
+      Overwrite="true"
+      WriteOnlyWhenDifferent="true" />
+
+    <ItemGroup>
+      <FileWrites Include="$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="Build" DependsOnTargets="_RunFeatureFlagScript" />
+  <Target Name="Clean">
+    <Delete Files="$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h" />
+  </Target>
+
+  <ItemGroup>
+    <FeatureFlagFile Include="$(SolutionDir)\src\features.xml" />
+  </ItemGroup>
+</Project>

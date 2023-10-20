@@ -1,0 +1,67 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - docs/*
+      - samples/*
+      - tools/*
+
+pr: none
+
+#     0.0.yyMM.dd##
+#     0.0.1904.0900
+name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
+
+stages:
+  - stage: Build
+    displayName: Fuzzing Build
+    dependsOn: []
+    condition: succeeded()
+    jobs:
+      - template: ./templates-v2/job-build-project.yml
+        parameters:
+          pool:
+            ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+              name: SHINE-OSS-L
+            ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+              name: SHINE-INT-L
+          buildPlatforms: [x64]
+          buildConfigurations: [Fuzzing]
+          buildEverything: true
+          keepAllExpensiveBuildOutputs: false
+
+  - stage: Submit
+    displayName: Submit to OneFuzz
+    dependsOn: [Build]
+    condition: succeeded()
+    jobs:
+      - job:
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+        - task: DownloadPipelineArtifact@2
+          displayName: Download artifacts
+          inputs:
+            artifactName: build-x64-Fuzzing
+            downloadPath: $(Build.ArtifactStagingDirectory)
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: '3.x'
+            addToPath: true
+            architecture: 'x64'
+        - bash: |
+            set -ex
+            pip -q install onefuzz
+            onefuzz config --endpoint $(endpoint) --client_id $(client_id) --authority $(authority) --tenant_domain $(tenant_domain) --client_secret $(client_secret)
+            sed -i s/INSERT_PAT_HERE/$(ado_pat)/ build/Fuzz/notifications-ado.json
+            sed -i s/INSERT_ASSIGNED_HERE/$(ado_assigned_to)/ build/Fuzz/notifications-ado.json
+          displayName: Configure OneFuzz
+        - bash: |
+            onefuzz template libfuzzer basic --colocate_all_tasks --vm_count 1 --target_exe $target_exe_path --notification_config @./build/Fuzz/notifications-ado.json OpenConsole $test_name $(Build.SourceVersion) default
+          displayName: Submit OneFuzz Job
+          env:
+            target_exe_path: $(Build.ArtifactStagingDirectory)/OpenConsoleFuzzer.exe
+            test_name: WriteCharsLegacy

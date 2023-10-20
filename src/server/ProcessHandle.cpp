@@ -27,7 +27,8 @@ ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
                                                  FALSE,
                                                  dwProcessId))),
     _policy(ConsoleProcessPolicy::s_CreateInstance(_hProcess.get())),
-    _shimPolicy(ConsoleShimPolicy::s_CreateInstance(_hProcess.get()))
+    _shimPolicy(_hProcess.get()),
+    _processCreationTime{}
 {
     if (nullptr != _hProcess.get())
     {
@@ -64,4 +65,30 @@ const ConsoleProcessPolicy ConsoleProcessHandle::GetPolicy() const
 const ConsoleShimPolicy ConsoleProcessHandle::GetShimPolicy() const
 {
     return _shimPolicy;
+}
+
+// Routine Description:
+// - Retrieves the raw process handle
+const HANDLE ConsoleProcessHandle::GetRawHandle() const
+{
+    return _hProcess.get();
+}
+
+// Routine Description:
+// - Retrieves the process creation time (currently used in telemetry traces)
+// - The creation time is lazily populated on first call
+const FILETIME ConsoleProcessHandle::GetProcessCreationTime() const
+{
+    if (_processCreationTime.dwHighDateTime == 0 && _processCreationTime.dwLowDateTime == 0 && _hProcess != nullptr)
+    {
+        FILETIME ftDummyTime = { 0 };
+
+        ::GetProcessTimes(_hProcess.get(),
+                          &_processCreationTime,
+                          &ftDummyTime,
+                          &ftDummyTime,
+                          &ftDummyTime);
+    }
+
+    return _processCreationTime;
 }

@@ -1,0 +1,68 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Control
+{
+    enum MarkCategory
+    {
+        Prompt = 0,
+        Error = 1,
+        Warning = 2,
+        Info = 3
+    };
+
+    struct ScrollMark
+    {
+        // There are other members of DispatchTypes::ScrollMark, but these are
+        // all we need to expose up and set downwards currently. Additional
+        // members can be bubbled as necessary.
+        Microsoft.Terminal.Core.Point Start;
+        Microsoft.Terminal.Core.Point End; // exclusive
+        Microsoft.Terminal.Core.OptionalColor Color;
+    };
+
+    enum ScrollToMarkDirection
+    {
+        Previous,
+        Next,
+        First,
+        Last
+    };
+
+    // These are properties of the TerminalCore that should be queryable by the
+    // rest of the app.
+    interface ICoreState
+    {
+        String Title { get; };
+        UInt64 TaskbarState { get; };
+        UInt64 TaskbarProgress { get; };
+
+        String WorkingDirectory { get; };
+
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
+
+        Int32 ScrollOffset { get; };
+        Int32 ViewHeight { get; };
+        Int32 BufferHeight { get; };
+
+        Boolean HasSelection { get; };
+        IVector<String> SelectedText(Boolean trimTrailingWhitespace);
+
+        Boolean BracketedPasteEnabled { get; };
+
+        Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
+
+        Microsoft.Terminal.Core.Scheme ColorScheme { get; set; };
+
+        UInt64 OwningHwnd;
+
+        void AddMark(ScrollMark mark);
+        void ClearMark();
+        void ClearAllMarks();
+        void ScrollToMark(ScrollToMarkDirection direction);
+        void SelectCommand(Boolean goUp);
+        void SelectOutput(Boolean goUp);
+        IVector<ScrollMark> ScrollMarks { get; };
+
+    };
+}

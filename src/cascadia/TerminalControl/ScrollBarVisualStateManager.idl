@@ -1,0 +1,8 @@
+namespace Microsoft.Terminal.Control
+{
+    [default_interface]
+    runtimeclass ScrollBarVisualStateManager : Windows.UI.Xaml.VisualStateManager
+    {
+        ScrollBarVisualStateManager();
+    }
+}

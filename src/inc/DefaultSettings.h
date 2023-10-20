@@ -33,8 +33,8 @@ constexpr uint16_t DEFAULT_FONT_WEIGHT = 400; // normal
 constexpr int DEFAULT_ROWS = 30;
 constexpr int DEFAULT_COLS = 120;
 
-const std::wstring DEFAULT_PADDING{ L"8, 8, 8, 8" };
-const std::wstring DEFAULT_STARTING_DIRECTORY{ L"%USERPROFILE%" };
+constexpr std::wstring_view DEFAULT_PADDING{ L"8, 8, 8, 8" };
+constexpr std::wstring_view DEFAULT_STARTING_DIRECTORY{ L"%USERPROFILE%" };
 
 constexpr auto DEFAULT_CURSOR_COLOR = COLOR_WHITE;
 constexpr COLORREF DEFAULT_CURSOR_HEIGHT = 25;

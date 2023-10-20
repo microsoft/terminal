@@ -40,7 +40,6 @@ MSC_WARNING_LEVEL       = /W3 /WX
 # Code in the OneCore depot automatically excludes default Win32 libraries.
 
 # Defines IME and Codepage support
-W32_SB                  = 1
 
 # -------------------------------------
 # Sources, Headers, and Libraries

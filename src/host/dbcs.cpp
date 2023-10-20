@@ -55,7 +55,7 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
 // - buffer - The buffer to walk and fix
 // Return Value:
 // - The length of the final modified buffer.
-DWORD UnicodeRasterFontCellMungeOnRead(const gsl::span<CHAR_INFO> buffer)
+DWORD UnicodeRasterFontCellMungeOnRead(const std::span<CHAR_INFO> buffer)
 {
     // Walk through the source CHAR_INFO and copy each to the destination.
     // EXCEPT for trailing bytes (this will de-duplicate the leading/trailing byte double copies of the CHAR_INFOs as stored in the buffer).
@@ -80,11 +80,11 @@ DWORD UnicodeRasterFontCellMungeOnRead(const gsl::span<CHAR_INFO> buffer)
     }
 
     // Zero out the remaining part of the destination buffer that we didn't use.
-    DWORD const cchDstToClear = gsl::narrow<DWORD>(buffer.size()) - iDst;
+    const auto cchDstToClear = gsl::narrow<DWORD>(buffer.size()) - iDst;
 
     if (cchDstToClear > 0)
     {
-        CHAR_INFO* const pciDstClearStart = buffer.data() + iDst;
+        const auto pciDstClearStart = buffer.data() + iDst;
         ZeroMemory(pciDstClearStart, cchDstToClear * sizeof(CHAR_INFO));
     }
 
@@ -109,9 +109,9 @@ bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO* const pCPInfo)
     FAIL_FAST_IF_NULL(pCPInfo);
     // NOTE: This must be unsigned for the comparison. If we compare signed, this will never hit
     // because lead bytes are ironically enough always above 0x80 (signed char negative range).
-    unsigned char const uchComparison = (unsigned char)ch;
+    const auto uchComparison = (unsigned char)ch;
 
-    int i = 0;
+    auto i = 0;
     // this is ok because the array is guaranteed to have 2
     // null bytes at the end.
     while (pCPInfo->LeadByte[i])
@@ -127,12 +127,36 @@ bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO* const pCPInfo)
 
 BYTE CodePageToCharSet(const UINT uiCodePage)
 {
-    CHARSETINFO csi;
+    CHARSETINFO csi{};
 
-    const auto inputServices = ServiceLocator::LocateInputServices();
-    if (nullptr == inputServices || !inputServices->TranslateCharsetInfo((DWORD*)IntToPtr(uiCodePage), &csi, TCI_SRCCODEPAGE))
+    if (!TranslateCharsetInfo((DWORD*)IntToPtr(uiCodePage), &csi, TCI_SRCCODEPAGE))
     {
-        csi.ciCharset = OEM_CHARSET;
+        // On OneCore-based editions of Windows, the extension apiset containing
+        // TranslateCharsetInfo is not hosted. OneCoreUAP hosts it, but the lower
+        // editions do not. If we find that we failed to delay-load it, fall back
+        // to our "simple" OneCore-OK implementation.
+        if (GetLastError() == ERROR_PROC_NOT_FOUND)
+        {
+            switch (uiCodePage)
+            {
+            case CP_JAPANESE:
+                csi.ciCharset = SHIFTJIS_CHARSET;
+                break;
+            case CP_CHINESE_SIMPLIFIED:
+                csi.ciCharset = GB2312_CHARSET;
+                break;
+            case CP_KOREAN:
+                csi.ciCharset = HANGEUL_CHARSET;
+                break;
+            case CP_CHINESE_TRADITIONAL:
+                csi.ciCharset = CHINESEBIG5_CHARSET;
+                break;
+            }
+        }
+        else
+        {
+            csi.ciCharset = OEM_CHARSET;
+        }
     }
 
     return (BYTE)csi.ciCharset;
@@ -140,7 +164,7 @@ BYTE CodePageToCharSet(const UINT uiCodePage)
 
 BOOL IsAvailableEastAsianCodePage(const UINT uiCodePage)
 {
-    BYTE const CharSet = CodePageToCharSet(uiCodePage);
+    const auto CharSet = CodePageToCharSet(uiCodePage);
 
     switch (CharSet)
     {
@@ -152,78 +176,4 @@ BOOL IsAvailableEastAsianCodePage(const UINT uiCodePage)
     default:
         return false;
     }
-}
-
-_Ret_range_(0, cbAnsi)
-    ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
-                                const ULONG cchUnicode,
-                                _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
-                                const ULONG cbAnsi,
-                                _Out_ std::unique_ptr<IInputEvent>& partialEvent)
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PWCHAR const TmpUni = new (std::nothrow) WCHAR[cchUnicode];
-    if (TmpUni == nullptr)
-    {
-        return 0;
-    }
-
-    memcpy(TmpUni, pwchUnicode, cchUnicode * sizeof(WCHAR));
-
-    BYTE AsciiDbcs[2];
-    AsciiDbcs[1] = 0;
-
-    ULONG i, j;
-    for (i = 0, j = 0; i < cchUnicode && j < cbAnsi; i++, j++)
-    {
-        if (IsGlyphFullWidth(TmpUni[i]))
-        {
-            ULONG const NumBytes = sizeof(AsciiDbcs);
-            ConvertToOem(gci.CP, &TmpUni[i], 1, (LPSTR)&AsciiDbcs[0], NumBytes);
-            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &gci.CPInfo))
-            {
-                if (j < cbAnsi - 1)
-                { // -1 is safe DBCS in buffer
-                    pchAnsi[j] = AsciiDbcs[0];
-                    j++;
-                    pchAnsi[j] = AsciiDbcs[1];
-                    AsciiDbcs[1] = 0;
-                }
-                else
-                {
-                    pchAnsi[j] = AsciiDbcs[0];
-                    break;
-                }
-            }
-            else
-            {
-                pchAnsi[j] = AsciiDbcs[0];
-                AsciiDbcs[1] = 0;
-            }
-        }
-        else
-        {
-            ConvertToOem(gci.CP, &TmpUni[i], 1, &pchAnsi[j], 1);
-        }
-    }
-
-    if (AsciiDbcs[1])
-    {
-        try
-        {
-            std::unique_ptr<KeyEvent> keyEvent = std::make_unique<KeyEvent>();
-            if (keyEvent.get())
-            {
-                keyEvent->SetCharData(AsciiDbcs[1]);
-                partialEvent.reset(static_cast<IInputEvent* const>(keyEvent.release()));
-            }
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
-        }
-    }
-
-    delete[] TmpUni;
-    return j;
 }

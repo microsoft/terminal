@@ -5,10 +5,13 @@
 
 #include "ConsoleArguments.hpp"
 #include "srvinit.h"
-#include "CConsoleHandoff.h"
 #include "../server/Entrypoints.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../inc/conint.h"
+
+#if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
+#include "CConsoleHandoff.h"
+#endif
 
 // Define TraceLogging provider
 TRACELOGGING_DEFINE_PROVIDER(
@@ -29,8 +32,8 @@ class DefaultOutOfProcModuleWithRegistrationFlag;
 template<int RegClsType, typename ModuleT = DefaultOutOfProcModuleWithRegistrationFlag<RegClsType>>
 class OutOfProcModuleWithRegistrationFlag : public Microsoft::WRL::Module<Microsoft::WRL::ModuleType::OutOfProc, ModuleT>
 {
-    using Elsewhere = Module<OutOfProc, ModuleT>;
-    using Super = Details::OutOfProcModuleBase<ModuleT>;
+    using Elsewhere = Microsoft::WRL::Module<Microsoft::WRL::ModuleType::OutOfProc, ModuleT>;
+    using Super = Microsoft::WRL::Details::OutOfProcModuleBase<ModuleT>;
 
 public:
     STDMETHOD(RegisterCOMObject)
@@ -49,21 +52,42 @@ class DefaultOutOfProcModuleWithRegistrationFlag : public OutOfProcModuleWithReg
 // Holds the wwinmain open until COM tells us there are no more server connections
 wil::unique_event _comServerExitEvent;
 
+[[nodiscard]] static HRESULT ValidateServerHandle(const HANDLE handle)
+{
+    // Make sure this is a console file.
+    FILE_FS_DEVICE_INFORMATION DeviceInformation;
+    IO_STATUS_BLOCK IoStatusBlock;
+    const auto Status = NtQueryVolumeInformationFile(handle, &IoStatusBlock, &DeviceInformation, sizeof(DeviceInformation), FileFsDeviceInformation);
+    if (FAILED_NTSTATUS(Status))
+    {
+        RETURN_NTSTATUS(Status);
+    }
+    else if (DeviceInformation.DeviceType != FILE_DEVICE_CONSOLE)
+    {
+        return E_INVALIDARG;
+    }
+    else
+    {
+        return S_OK;
+    }
+}
+
+#if TIL_FEATURE_LEGACYCONHOST_ENABLED
 static bool useV2 = true;
 static bool ConhostV2ForcedInRegistry()
 {
     // If the registry value doesn't exist, or exists and is non-zero, we should default to using the v2 console.
     // Otherwise, in the case of an explicit value of 0, we should use the legacy console.
-    bool fShouldUseConhostV2 = true;
+    auto fShouldUseConhostV2 = true;
     PCSTR pszErrorDescription = nullptr;
-    bool fIgnoreError = false;
+    auto fIgnoreError = false;
     DWORD dwValue;
     DWORD dwType;
     DWORD cbValue = sizeof(dwValue);
 
     // open HKCU\Console
     wil::unique_hkey hConsoleSubKey;
-    LONG lStatus = NTSTATUS_FROM_WIN32(RegOpenKeyExW(HKEY_CURRENT_USER, L"Console", 0, KEY_READ, &hConsoleSubKey));
+    LONG lStatus = RegOpenKeyExW(HKEY_CURRENT_USER, L"Console", 0, KEY_READ, &hConsoleSubKey);
     if (ERROR_SUCCESS == lStatus)
     {
         // now get the value of the ForceV2 reg value, if it exists
@@ -98,26 +122,6 @@ static bool ConhostV2ForcedInRegistry()
     return fShouldUseConhostV2;
 }
 
-[[nodiscard]] static HRESULT ValidateServerHandle(const HANDLE handle)
-{
-    // Make sure this is a console file.
-    FILE_FS_DEVICE_INFORMATION DeviceInformation;
-    IO_STATUS_BLOCK IoStatusBlock;
-    NTSTATUS const Status = NtQueryVolumeInformationFile(handle, &IoStatusBlock, &DeviceInformation, sizeof(DeviceInformation), FileFsDeviceInformation);
-    if (!NT_SUCCESS(Status))
-    {
-        RETURN_NTSTATUS(Status);
-    }
-    else if (DeviceInformation.DeviceType != FILE_DEVICE_CONSOLE)
-    {
-        return E_INVALIDARG;
-    }
-    else
-    {
-        return S_OK;
-    }
-}
-
 static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
 {
     if (args.InConptyMode())
@@ -137,15 +141,19 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
 
 [[nodiscard]] static HRESULT ActivateLegacyConhost(const HANDLE handle)
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     // TraceLog that we're using the legacy console. We won't log new console
     // because there's already a count of how many total processes were launched.
     // Total - legacy = new console.
     // We expect legacy launches to be infrequent enough to not cause an issue.
-    TraceLoggingWrite(g_ConhostLauncherProvider, "IsLegacyLoaded", TraceLoggingBool(true, "ConsoleLegacy"), TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY));
+    TraceLoggingWrite(g_ConhostLauncherProvider,
+                      "IsLegacyLoaded",
+                      TraceLoggingBool(true, "ConsoleLegacy"),
+                      TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY),
+                      TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-    const PCWSTR pszConhostDllName = L"ConhostV1.dll";
+    const auto pszConhostDllName = L"ConhostV1.dll";
 
     // Load our implementation, and then Load/Launch the IO thread.
     wil::unique_hmodule hConhostBin(LoadLibraryExW(pszConhostDllName, nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32));
@@ -153,7 +161,7 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
     {
         typedef NTSTATUS (*PFNCONSOLECREATEIOTHREAD)(__in HANDLE Server);
 
-        PFNCONSOLECREATEIOTHREAD pfnConsoleCreateIoThread = (PFNCONSOLECREATEIOTHREAD)GetProcAddress(hConhostBin.get(), "ConsoleCreateIoThread");
+        auto pfnConsoleCreateIoThread = (PFNCONSOLECREATEIOTHREAD)GetProcAddress(hConhostBin.get(), "ConsoleCreateIoThread");
         if (pfnConsoleCreateIoThread != nullptr)
         {
             hr = HRESULT_FROM_NT(pfnConsoleCreateIoThread(handle));
@@ -178,12 +186,23 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
 
     return hr;
 }
+#endif // TIL_FEATURE_LEGACYCONHOST_ENABLED
 
 // Routine Description:
 // - Called back when COM says there is nothing left for our server to do and we can tear down.
+#pragma warning(suppress : 4505) // this is unused, and therefore discarded, when built inside windows
 static void _releaseNotifier() noexcept
 {
     _comServerExitEvent.SetEvent();
+}
+
+// This method has the same behavior as gsl::narrow<T>, but instead of throwing an
+// exception on narrowing failure it'll return false. On success it returns true.
+template<typename T, typename U>
+constexpr bool narrow_maybe(U u, T& out) noexcept
+{
+    out = gsl::narrow_cast<T>(u);
+    return static_cast<U>(out) == u && (std::is_signed_v<T> == std::is_signed_v<U> || (out < T{}) == (u < U{}));
 }
 
 // Routine Description:
@@ -239,7 +258,9 @@ int CALLBACK wWinMain(
     //    messages going forward.
     // 7. The out-of-box `OpenConsole.exe` can then attempt to lookup and invoke a `CTerminalHandoff` to ask a registered
     //    Terminal to become the UI. This OpenConsole.exe will put itself in PTY mode and let the Terminal handle user interaction.
+#if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
     auto& module = OutOfProcModuleWithRegistrationFlag<REGCLS_SINGLEUSE>::Create(&_releaseNotifier);
+#endif
 
     // Register Trace provider by GUID
     TraceLoggingRegister(g_ConhostLauncherProvider);
@@ -250,13 +271,12 @@ int CALLBACK wWinMain(
                           GetStdHandle(STD_INPUT_HANDLE),
                           GetStdHandle(STD_OUTPUT_HANDLE));
 
-    HRESULT hr = args.ParseCommandline();
+    auto hr = args.ParseCommandline();
     if (SUCCEEDED(hr))
     {
         // Only try to register as a handoff target if we are NOT a part of Windows.
-#ifndef __INSIDE_WINDOWS
-        bool defAppEnabled = false;
-        if (args.ShouldRunAsComServer() && SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(defAppEnabled)) && defAppEnabled)
+#if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
+        if (args.ShouldRunAsComServer() && Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
         {
             try
             {
@@ -285,6 +305,7 @@ int CALLBACK wWinMain(
         else
 #endif
         {
+#if TIL_FEATURE_LEGACYCONHOST_ENABLED
             if (ShouldUseLegacyConhost(args))
             {
                 useV2 = false;
@@ -303,6 +324,7 @@ int CALLBACK wWinMain(
                 }
             }
             if (useV2)
+#endif // TIL_FEATURE_LEGACYCONHOST_ENABLED
             {
                 if (args.ShouldCreateServerHandle())
                 {

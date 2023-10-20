@@ -18,7 +18,7 @@ using namespace Microsoft::Console::Interactivity;
 // - True if the console is in a selecting state. False otherwise.
 bool Selection::IsInSelectingState() const
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return WI_IsFlagSet(gci.Flags, CONSOLE_SELECTING);
 }
 
@@ -30,7 +30,7 @@ bool Selection::IsInSelectingState() const
 // - <none>
 void Selection::_SetSelectingState(const bool fSelectingOn)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WI_UpdateFlag(gci.Flags, CONSOLE_SELECTING, fSelectingOn);
 }
 
@@ -43,7 +43,7 @@ void Selection::_SetSelectingState(const bool fSelectingOn)
 // - True if quick edit mode is enabled. False otherwise.
 bool Selection::IsInQuickEditMode() const
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE);
 }
 
@@ -139,7 +139,7 @@ void Selection::MouseDown()
 
     // We must capture the mouse on button down to ensure we receive messages if
     //      it comes back up outside the window.
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    const auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         pWindow->CaptureMouse();
@@ -150,7 +150,7 @@ void Selection::MouseUp()
 {
     WI_ClearFlag(_dwSelectionFlags, CONSOLE_MOUSE_DOWN);
 
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    const auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         pWindow->ReleaseMouse();
@@ -168,7 +168,6 @@ void Selection::_SaveCursorData(const Cursor& cursor) noexcept
     _coordSavedCursorPosition = cursor.GetPosition();
     _ulSavedCursorSize = cursor.GetSize();
     _fSavedCursorVisible = cursor.IsVisible();
-    _savedCursorColor = cursor.GetColor();
     _savedCursorType = cursor.GetType();
 }
 
@@ -182,7 +181,6 @@ void Selection::_RestoreDataToCursor(Cursor& cursor) noexcept
 {
     cursor.SetSize(_ulSavedCursorSize);
     cursor.SetIsVisible(_fSavedCursorVisible);
-    cursor.SetColor(_savedCursorColor);
     cursor.SetType(_savedCursorType);
     cursor.SetIsOn(true);
     cursor.SetPosition(_coordSavedCursorPosition);
@@ -194,7 +192,7 @@ void Selection::_RestoreDataToCursor(Cursor& cursor) noexcept
 // - none
 // Return Value:
 // - current selection anchor
-COORD Selection::GetSelectionAnchor() const noexcept
+til::point Selection::GetSelectionAnchor() const noexcept
 {
     return _coordSelectionAnchor;
 }
@@ -205,7 +203,7 @@ COORD Selection::GetSelectionAnchor() const noexcept
 // - none
 // Return Value:
 // - The rectangle to fill with selection data.
-SMALL_RECT Selection::GetSelectionRectangle() const noexcept
+til::inclusive_rect Selection::GetSelectionRectangle() const noexcept
 {
     return _srSelectionRect;
 }
@@ -250,9 +248,9 @@ void Selection::SetLineSelection(const bool fLineSelectionOn)
 // - mousePosition - current mouse position
 // Return Value:
 // - true if the selection can be changed by a mouse drag
-bool Selection::ShouldAllowMouseDragSelection(const COORD mousePosition) const noexcept
+bool Selection::ShouldAllowMouseDragSelection(const til::point mousePosition) const noexcept
 {
-    const Viewport viewport = Viewport::FromInclusive(_srSelectionRect);
-    const bool selectionContainsMouse = viewport.IsInBounds(mousePosition);
+    const auto viewport = Viewport::FromInclusive(_srSelectionRect);
+    const auto selectionContainsMouse = viewport.IsInBounds(mousePosition);
     return _allowMouseDragSelection || !selectionContainsMouse;
 }

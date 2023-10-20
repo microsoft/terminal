@@ -16,24 +16,52 @@ Author(s):
 
 #pragma once
 
+#include <unicode.hpp>
+
 namespace Microsoft::Console::Render
 {
     class Cluster
     {
     public:
-        Cluster(const std::wstring_view text, const size_t columns);
+        constexpr Cluster() noexcept = default;
+        constexpr Cluster(const std::wstring_view text, const til::CoordType columns) noexcept :
+            _text{ text },
+            _columns{ columns }
+        {
+        }
 
-        const wchar_t GetTextAsSingle() const noexcept;
+        // Provides the embedded text as a single character
+        // This might replace the string with the replacement character if it doesn't fit as one wchar_t.
+        constexpr wchar_t GetTextAsSingle() const noexcept
+        {
+            if (_text.size() == 1)
+            {
+                return til::at(_text, 0);
+            }
+            else
+            {
+                return UNICODE_REPLACEMENT;
+            }
+        }
 
-        const std::wstring_view& GetText() const noexcept;
+        // Provides the string of wchar_ts for this cluster.
+        constexpr std::wstring_view GetText() const noexcept
+        {
+            return _text;
+        }
 
-        const size_t GetColumns() const noexcept;
+        // Gets the number of columns in the grid that this character should consume
+        // visually when rendered onto a line.
+        constexpr til::CoordType GetColumns() const noexcept
+        {
+            return _columns;
+        }
 
     private:
         // This is the UTF-16 string of characters that form a particular drawing cluster
-        const std::wstring_view _text;
+        std::wstring_view _text;
 
         // This is how many columns we're expecting this cluster to take in the display grid
-        const size_t _columns;
+        til::CoordType _columns = 0;
     };
 }

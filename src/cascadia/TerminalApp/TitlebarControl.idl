@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 namespace TerminalApp
@@ -10,10 +10,24 @@ namespace TerminalApp
         WindowVisualStateIconified
     };
 
+    // For simplicity, make sure that these are the same values as the ones used
+    // by messages like WM_NCHITTEST
+    enum CaptionButton {
+        Minimize = 8, // HTMINBUTTON
+        Maximize = 9, // HTMAXBUTTON
+        Close = 20 // HTCLOSE
+    };
+
     [default_interface] runtimeclass TitlebarControl : Windows.UI.Xaml.Controls.Grid
     {
         TitlebarControl(UInt64 parentWindowHandle);
         void SetWindowVisualState(WindowVisualState visualState);
+
+        void HoverButton(CaptionButton button);
+        void PressButton(CaptionButton button);
+        void ClickButton(CaptionButton button);
+        void ReleaseButtons();
+        Double CaptionButtonWidth { get; };
 
         IInspectable Content;
         Windows.UI.Xaml.Controls.Border DragBar { get; };

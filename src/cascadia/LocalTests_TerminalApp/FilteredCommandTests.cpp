@@ -1,10 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
 #include "../TerminalApp/CommandLinePaletteItem.h"
 #include "../TerminalApp/CommandPalette.h"
-#include "../CppWinrtTailored.h"
+#include "CppWinrtTailored.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;

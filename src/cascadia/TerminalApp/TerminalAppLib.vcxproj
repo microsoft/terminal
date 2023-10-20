@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-9A12-429C-B551-8562EC954746}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>TerminalApp</RootNamespace>
     <ProjectName>TerminalAppLib</ProjectName>
     <TargetName>TerminalAppLib</TargetName>
-    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
@@ -17,19 +16,19 @@
     -->
     <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+    <!--
+      Disable automatic provider generation so that we can control when they initialize.
+      We do this so we can delay the Settings UI DLL loading until absolutely necessary.
+    -->
+    <XamlCodeGenerationControlFlags>DoNotGenerateOtherProviders</XamlCodeGenerationControlFlags>
+  </PropertyGroup>
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
-  <ItemDefinitionGroup>
-
-    <ClCompile>
-      <!-- For CLI11: It uses dynamic_cast to cast types around, which depends
-      on being compiled with RTTI (/GR). -->
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-    </ClCompile>
-  </ItemDefinitionGroup>
-
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
     <!-- HERE BE DRAGONS:
@@ -42,6 +41,9 @@
   </ItemGroup>
   <!-- When we add other user controls, they should go in here as so: -->
   <ItemGroup>
+    <Page Include="AboutDialog.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MinMaxCloseControl.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -54,7 +56,7 @@
     <Page Include="TabRowControl.xaml">
       <SubType>Designer</SubType>
     </Page>
-        <Page Include="TabHeaderControl.xaml">
+    <Page Include="TabHeaderControl.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="HighlightedTextControl.xaml">
@@ -66,6 +68,9 @@
     <Page Include="CommandPalette.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="SuggestionsControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -75,6 +80,7 @@
     <ClInclude Include="Commandline.h" />
     <ClInclude Include="CommandLinePaletteItem.h" />
     <ClInclude Include="Jumplist.h" />
+    <ClInclude Include="LanguageProfileNotifier.h" />
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
@@ -90,6 +96,9 @@
       <DependentUpon>TabBase.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="TabPaletteItem.h" />
+    <ClInclude Include="TaskbarState.h">
+      <DependentUpon>TaskbarState.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TerminalTab.h">
       <DependentUpon>TerminalTab.idl</DependentUpon>
     </ClInclude>
@@ -113,7 +122,7 @@
     <ClInclude Include="HighlightedTextControl.h">
       <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
     </ClInclude>
-	<ClInclude Include="HighlightedText.h" />
+    <ClInclude Include="HighlightedText.h" />
     <ClInclude Include="ColorPickupFlyout.h">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClInclude>
@@ -134,13 +143,28 @@
     <ClInclude Include="AppKeyBindings.h">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="AboutDialog.h">
+      <DependentUpon>AboutDialog.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="App.h">
       <DependentUpon>App.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="AppLogic.h">
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="Toast.h"/>
+    <ClInclude Include="ContentManager.h">
+      <DependentUpon>TerminalPage.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TerminalWindow.h">
+      <DependentUpon>TerminalWindow.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SettingsLoadEventArgs.h">
+      <DependentUpon>TerminalWindow.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Toast.h" />
+    <ClInclude Include="SuggestionsControl.h">
+      <DependentUpon>SuggestionsControl.xaml</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -150,6 +174,7 @@
     <ClCompile Include="AppCommandlineArgs.cpp" />
     <ClCompile Include="Commandline.cpp" />
     <ClCompile Include="Jumplist.cpp" />
+    <ClCompile Include="LanguageProfileNotifier.cpp" />
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
@@ -165,6 +190,9 @@
       <DependentUpon>TabBase.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TabPaletteItem.cpp" />
+    <ClCompile Include="TaskbarState.cpp">
+      <DependentUpon>TaskbarState.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="TerminalTab.cpp">
       <DependentUpon>TerminalTab.idl</DependentUpon>
     </ClCompile>
@@ -173,6 +201,10 @@
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="TabManagement.cpp">
+      <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="ActionPreviewHandlers.cpp">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
@@ -192,7 +224,7 @@
     <ClCompile Include="HighlightedTextControl.cpp">
       <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
     </ClCompile>
-	<ClCompile Include="HighlightedText.cpp" />
+    <ClCompile Include="HighlightedText.cpp" />
     <ClCompile Include="ColorPickupFlyout.cpp">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClCompile>
@@ -216,18 +248,29 @@
     <ClCompile Include="ShortcutActionDispatch.cpp">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="AboutDialog.cpp">
+      <DependentUpon>AboutDialog.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="App.cpp">
       <DependentUpon>App.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="AppActionHandlers.cpp">
-      <DependentUpon>App.xaml</DependentUpon>
+      <DependentUpon>TerminalPage.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="AppLogic.cpp">
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="ContentManager.cpp">
+      <DependentUpon>TerminalPage.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TerminalWindow.cpp">
+      <DependentUpon>TerminalWindow.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
-
+    <ClCompile Include="SuggestionsControl.cpp">
+      <DependentUpon>SuggestionsControl.xaml</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -236,6 +279,9 @@
     <Midl Include="ActionPaletteItem.idl" />
     <Midl Include="CommandLinePaletteItem.idl" />
     <Midl Include="IDirectKeyListener.idl" />
+    <Midl Include="AboutDialog.idl">
+      <DependentUpon>AboutDialog.xaml</DependentUpon>
+    </Midl>
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
@@ -247,12 +293,14 @@
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
     <Midl Include="AppLogic.idl" />
+    <Midl Include="TerminalWindow.idl" />
     <Midl Include="MinMaxCloseControl.idl">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="TabBase.idl" />
     <Midl Include="TabPaletteItem.idl" />
+    <Midl Include="TaskbarState.idl" />
     <Midl Include="TerminalTab.idl" />
     <Midl Include="TerminalPage.idl">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
@@ -277,7 +325,7 @@
       <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-	<Midl Include="HighlightedText.idl" />
+    <Midl Include="HighlightedText.idl" />
     <Midl Include="ColorPickupFlyout.idl">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -286,14 +334,18 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="SuggestionsControl.idl">
+      <DependentUpon>SuggestionsControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
     <PRIResource Include="Resources\en-US\Resources.resw" />
+    <PRIResource Include="Resources\en-US\ContextMenu.resw" />
     <OCResourceDirectory Include="Resources" />
-    <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
@@ -309,7 +361,29 @@
     </ProjectReference>
     <!-- For whatever reason, we can't include the TerminalControl and
     TerminalSettings projects' winmds via project references. So we'll have to
-    manually include the winmds as References below -->
+    manually include the winmds as References below
+
+    BODGY: we do need to add a ProjectReference to TerminalControl.vcxproj,
+    with Private=true, ReferenceOutputAssembly=false, so that Visual Studio's
+    "Fast Up-to-date Check" will work with this project. If we don't, the Fast
+    Up-to-date Check will look for the .xaml files from that project in our
+    output, which won't actually be there.
+
+    We do still need to separately reference the winmds manually below, which is annoying.
+    -->
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj">
+      <!-- Private:true and ReferenceOutputAssembly:false, in combination with
+      the manual reference to TerminalControl.winmd below make sure that this
+      project will compile correct, and that we won't roll up the TermControl
+      xbf's into the packaging project twice. -->
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.vcxproj">
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+
   </ItemGroup>
   <PropertyGroup>
     <!-- This is a hack to get the ARM64 CI build working. See
@@ -352,6 +426,14 @@
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
+    <Reference Include="$(WindowsSDK_MetadataPathVersioned)\Windows.UI.Xaml.Hosting.HostingContract\*\*.winmd">
+      <WinMDFile>true</WinMDFile>
+      <CopyLocal>false</CopyLocal>
+      <ReferenceGrouping>$(TargetPlatformMoniker)</ReferenceGrouping>
+      <ReferenceGroupingDisplayName>$(TargetPlatformDisplayName)</ReferenceGroupingDisplayName>
+      <ResolvedFrom>CppWinRTImplicitlyExpandTargetPlatform</ResolvedFrom>
+      <IsSystemReference>True</IsSystemReference>
+    </Reference>
   </ItemGroup>
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
@@ -368,20 +450,13 @@
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets'))" />
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
-  </Target>
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
   <!--
     By default, the PRI file will contain resource paths beginning with the
     project name. Since we enabled XBF embedding, this *also* includes App.xbf.
-    Well, App.xbf is hardcoded by the framework to be found at the resource ROOT.
+    Well, App.xbf is hard-coded by the framework to be found at the resource ROOT.
     To make that happen, we have to disable the prepending of the project name
     to the App xaml files.
   -->
@@ -397,6 +472,5 @@
       </PackagingOutputs>
     </ItemGroup>
   </Target>
-
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

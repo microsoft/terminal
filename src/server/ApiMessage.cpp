@@ -8,18 +8,51 @@
 #include "ApiMessage.h"
 #include "DeviceComm.h"
 
-_CONSOLE_API_MSG::_CONSOLE_API_MSG() :
-    Complete{ 0 },
-    State{ 0 },
-    _pDeviceComm(nullptr),
-    _pApiRoutines(nullptr),
-    _inputBuffer{},
-    _outputBuffer{},
-    Descriptor{ 0 },
-    CreateObject{ 0 },
-    CreateScreenBuffer{ 0 },
-    msgHeader{ 0 }
+constexpr size_t structPacketDataSize = sizeof(_CONSOLE_API_MSG) - offsetof(_CONSOLE_API_MSG, Descriptor);
+
+_CONSOLE_API_MSG::_CONSOLE_API_MSG()
 {
+    // A union cannot have more than one initializer,
+    // but it isn't exactly clear which union case is the largest.
+    // --> Just memset() the entire thing.
+    memset(&Descriptor, 0, structPacketDataSize);
+}
+
+_CONSOLE_API_MSG::_CONSOLE_API_MSG(const _CONSOLE_API_MSG& other)
+{
+    *this = other;
+}
+
+_CONSOLE_API_MSG& _CONSOLE_API_MSG::operator=(const _CONSOLE_API_MSG& other)
+{
+    Complete = other.Complete;
+    State = other.State;
+    _pDeviceComm = other._pDeviceComm;
+    _pApiRoutines = other._pApiRoutines;
+    _inputBuffer = other._inputBuffer;
+    _outputBuffer = other._outputBuffer;
+
+    // Since this struct uses anonymous unions and thus cannot
+    // explicitly reference it, we have to a bit cheeky to copy it.
+    // --> Just memcpy() the entire thing.
+    memcpy(&Descriptor, &other.Descriptor, structPacketDataSize);
+
+    if (State.InputBuffer)
+    {
+        State.InputBuffer = _inputBuffer.data();
+    }
+
+    if (State.OutputBuffer)
+    {
+        State.OutputBuffer = _outputBuffer.data();
+    }
+
+    if (Complete.Write.Data)
+    {
+        Complete.Write.Data = &u;
+    }
+
+    return *this;
 }
 
 ConsoleProcessHandle* _CONSOLE_API_MSG::GetProcessHandle() const
@@ -71,7 +104,14 @@ try
     {
         RETURN_HR_IF(E_FAIL, State.ReadOffset > Descriptor.InputSize);
 
-        ULONG const cbReadSize = Descriptor.InputSize - State.ReadOffset;
+        const auto cbReadSize = Descriptor.InputSize - State.ReadOffset;
+
+        // If we were previously called with a huge buffer we have an equally large _inputBuffer.
+        // We shouldn't just keep this huge buffer around, if no one needs it anymore.
+        if (_inputBuffer.capacity() > 16 * 1024 && (_inputBuffer.capacity() >> 1) > cbReadSize)
+        {
+            _inputBuffer.shrink_to_fit();
+        }
 
         _inputBuffer.resize(cbReadSize);
 
@@ -91,17 +131,15 @@ CATCH_RETURN();
 
 // Routine Description:
 // - This routine retrieves the output buffer associated with this message. It will allocate one if needed.
-//   The allocated will be bigger than the actual output size by the requested factor.
 // - Before completing the message, ReleaseMessageBuffers must be called to free any allocation performed by this routine.
 // Arguments:
-// - Factor - Supplies the factor to multiply the allocated buffer by.
+// - Message - Supplies the message whose output buffer will be retrieved.
 // - Buffer - Receives a pointer to the output buffer.
 // - Size - Receives the size, in bytes, of the output buffer.
-//  Return Value:
+// Return Value:
 // - HRESULT indicating if the output buffer was successfully retrieved.
-[[nodiscard]] HRESULT _CONSOLE_API_MSG::GetAugmentedOutputBuffer(const ULONG cbFactor,
-                                                                 _Outptr_result_bytebuffer_(*pcbSize) PVOID* const ppvBuffer,
-                                                                 _Out_ PULONG pcbSize)
+[[nodiscard]] HRESULT _CONSOLE_API_MSG::GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer,
+                                                        _Out_ ULONG* const pcbSize)
 try
 {
     // Initialize the buffer if it hasn't been initialized yet.
@@ -109,13 +147,19 @@ try
     {
         RETURN_HR_IF(E_FAIL, State.WriteOffset > Descriptor.OutputSize);
 
-        ULONG cbWriteSize = Descriptor.OutputSize - State.WriteOffset;
-        RETURN_IF_FAILED(ULongMult(cbWriteSize, cbFactor, &cbWriteSize));
+        auto cbWriteSize = Descriptor.OutputSize - State.WriteOffset;
+
+        // If we were previously called with a huge buffer we have an equally large _outputBuffer.
+        // We shouldn't just keep this huge buffer around, if no one needs it anymore.
+        if (_outputBuffer.capacity() > 16 * 1024 && (_outputBuffer.capacity() >> 1) > cbWriteSize)
+        {
+            _outputBuffer.shrink_to_fit();
+        }
 
         _outputBuffer.resize(cbWriteSize);
 
         // 0 it out.
-        std::fill(_outputBuffer.begin(), _outputBuffer.end(), (BYTE)0);
+        std::fill_n(_outputBuffer.data(), _outputBuffer.size(), BYTE(0));
 
         State.OutputBuffer = _outputBuffer.data();
         State.OutputBufferSize = cbWriteSize;
@@ -130,21 +174,6 @@ try
 CATCH_RETURN();
 
 // Routine Description:
-// - This routine retrieves the output buffer associated with this message. It will allocate one if needed.
-// - Before completing the message, ReleaseMessageBuffers must be called to free any allocation performed by this routine.
-// Arguments:
-// - Message - Supplies the message whose output buffer will be retrieved.
-// - Buffer - Receives a pointer to the output buffer.
-// - Size - Receives the size, in bytes, of the output buffer.
-// Return Value:
-// - HRESULT indicating if the output buffer was successfully retrieved.
-[[nodiscard]] HRESULT _CONSOLE_API_MSG::GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer,
-                                                        _Out_ ULONG* const pcbSize)
-{
-    return GetAugmentedOutputBuffer(1, ppvBuffer, pcbSize);
-}
-
-// Routine Description:
 // - This routine releases output or input buffers that might have been allocated
 //   during the processing of the given message. If the current completion status
 //   of the message indicates success, this routine also writes the output buffer
@@ -155,7 +184,7 @@ CATCH_RETURN();
 // - HRESULT indicating if the payload was successfully written if applicable.
 [[nodiscard]] HRESULT _CONSOLE_API_MSG::ReleaseMessageBuffers()
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     if (State.InputBuffer != nullptr)
     {
@@ -166,7 +195,7 @@ CATCH_RETURN();
 
     if (State.OutputBuffer != nullptr)
     {
-        if (NT_SUCCESS(Complete.IoStatus.Status))
+        if (SUCCEEDED_NTSTATUS(Complete.IoStatus.Status))
         {
             CD_IO_OPERATION IoOperation;
             IoOperation.Identifier = Descriptor.Identifier;

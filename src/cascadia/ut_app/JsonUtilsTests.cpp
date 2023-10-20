@@ -196,7 +196,7 @@ namespace TerminalAppUnitTests
         Json::Value object{ expected };
 
         //// 1. Bare Value ////
-        int outputRedHerring{ 5 }; // explicitly not the zero value
+        auto outputRedHerring{ 5 }; // explicitly not the zero value
         std::string output{ "sentinel" }; // explicitly not the zero value
 
         //// 1.a. Type Invalid - Exception ////
@@ -280,7 +280,7 @@ namespace TerminalAppUnitTests
         object[nullKey] = Json::Value::nullSingleton();
 
         //// 1. Bare Value ////
-        int outputRedHerring{ 5 }; // explicitly not the zero value
+        auto outputRedHerring{ 5 }; // explicitly not the zero value
         std::string output{ "sentinel" }; // explicitly not the zero value
 
         //// 1.a. Type Invalid - Exception ////

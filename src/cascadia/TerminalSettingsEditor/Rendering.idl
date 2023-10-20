@@ -1,16 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "RenderingViewModel.idl";
+
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass RenderingPageNavigationState
-    {
-        Microsoft.Terminal.Settings.Model.GlobalAppSettings Globals;
-    };
-
     [default_interface] runtimeclass Rendering : Windows.UI.Xaml.Controls.Page
     {
         Rendering();
-        RenderingPageNavigationState State { get; };
+        RenderingViewModel ViewModel { get; };
     }
 }

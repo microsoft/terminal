@@ -5,7 +5,6 @@
 #include "TSFInputControl.g.h"
 #include "CursorPositionEventArgs.g.h"
 #include "FontInfoEventArgs.g.h"
-#include "cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -46,18 +45,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // -------------------------------- WinRT Events ---------------------------------
         TYPED_EVENT(CurrentCursorPosition, Control::TSFInputControl, Control::CursorPositionEventArgs);
         TYPED_EVENT(CurrentFontInfo, Control::TSFInputControl, Control::FontInfoEventArgs);
-        DECLARE_EVENT(CompositionCompleted, _compositionCompletedHandlers, Control::CompositionCompletedEventArgs);
+        WINRT_CALLBACK(CompositionCompleted, Control::CompositionCompletedEventArgs);
 
     private:
-        void _layoutRequestedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, winrt::Windows::UI::Text::Core::CoreTextLayoutRequestedEventArgs const& args);
-        void _compositionStartedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, winrt::Windows::UI::Text::Core::CoreTextCompositionStartedEventArgs const& args);
-        void _compositionCompletedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, winrt::Windows::UI::Text::Core::CoreTextCompositionCompletedEventArgs const& args);
-        void _focusRemovedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, winrt::Windows::Foundation::IInspectable const& object);
-        void _selectionRequestedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, winrt::Windows::UI::Text::Core::CoreTextSelectionRequestedEventArgs const& args);
-        void _textRequestedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, winrt::Windows::UI::Text::Core::CoreTextTextRequestedEventArgs const& args);
-        void _selectionUpdatingHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, winrt::Windows::UI::Text::Core::CoreTextSelectionUpdatingEventArgs const& args);
-        void _textUpdatingHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, winrt::Windows::UI::Text::Core::CoreTextTextUpdatingEventArgs const& args);
-        void _formatUpdatingHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, winrt::Windows::UI::Text::Core::CoreTextFormatUpdatingEventArgs const& args);
+        void _layoutRequestedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextLayoutRequestedEventArgs& args);
+        void _compositionStartedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextCompositionStartedEventArgs& args);
+        void _compositionCompletedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextCompositionCompletedEventArgs& args);
+        void _focusRemovedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::Foundation::IInspectable& object);
+        void _selectionRequestedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextSelectionRequestedEventArgs& args);
+        void _textRequestedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextTextRequestedEventArgs& args);
+        void _selectionUpdatingHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextSelectionUpdatingEventArgs& args);
+        void _textUpdatingHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextTextUpdatingEventArgs& args);
+        void _formatUpdatingHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextFormatUpdatingEventArgs& args);
+
+        void _SendAndClearText();
+        void _RedrawCanvas();
 
         winrt::Windows::UI::Text::Core::CoreTextEditContext::TextRequested_revoker _textRequestedRevoker;
         winrt::Windows::UI::Text::Core::CoreTextEditContext::SelectionRequested_revoker _selectionRequestedRevoker;
@@ -69,27 +71,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::UI::Text::Core::CoreTextEditContext::CompositionStarted_revoker _compositionStartedRevoker;
         winrt::Windows::UI::Text::Core::CoreTextEditContext::CompositionCompleted_revoker _compositionCompletedRevoker;
 
-        Windows::UI::Text::Core::CoreTextEditContext _editContext;
-
+        Windows::UI::Text::Core::CoreTextEditContext _editContext{ nullptr };
         std::wstring _inputBuffer;
+        winrt::Windows::UI::Text::Core::CoreTextRange _selection{};
+        size_t _activeTextStart = 0;
+        bool _inComposition = false;
+        bool _focused = false;
 
-        bool _inComposition;
-        size_t _activeTextStart;
-        void _SendAndClearText();
-        void _RedrawCanvas();
-        bool _focused;
-
-        til::point _currentTerminalCursorPos;
-        double _currentCanvasWidth;
-        double _currentTextBlockHeight;
-        winrt::Windows::Foundation::Rect _currentControlBounds;
-        winrt::Windows::Foundation::Rect _currentTextBounds;
-        winrt::Windows::Foundation::Rect _currentWindowBounds;
+        til::point _currentTerminalCursorPos{};
+        double _currentCanvasWidth = 0.0;
+        double _currentTextBlockHeight = 0.0;
+        winrt::Windows::Foundation::Rect _currentControlBounds{};
+        winrt::Windows::Foundation::Rect _currentTextBounds{};
+        winrt::Windows::Foundation::Rect _currentWindowBounds{};
     };
 }
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
-    struct TSFInputControl : TSFInputControlT<TSFInputControl, implementation::TSFInputControl>
-    {
-    };
+    BASIC_FACTORY(TSFInputControl);
 }

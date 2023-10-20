@@ -56,7 +56,7 @@ void AppState::remindKingWhoTheyAre(const winrt::MonarchPeasantSample::IPeasant&
     }
     else
     {
-        printf("Shoot, we wanted to be able to get the monarchImpl here but couldnt\n");
+        printf("Shoot, we wanted to be able to get the monarchImpl here but couldn't\n");
     }
 }
 

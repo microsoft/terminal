@@ -29,7 +29,6 @@ Abstract:
 
 // Windows Header Files:
 #include <windows.h>
-#include <userenv.h>
 #include <combaseapi.h>
 #include <UIAutomation.h>
 #include <objbase.h>
