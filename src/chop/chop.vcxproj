@@ -8,7 +8,9 @@
     <TargetName>chop</TargetName>
     <ConfigurationType>Application</ConfigurationType>
   </PropertyGroup>
-  <Import Project="..\common.build.pre.props" />
+  <Import Project="$(SolutionDir)common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
     <ClInclude Include="precomp.h" />
   </ItemGroup>
@@ -32,5 +34,6 @@
     <GenerateManifest>true</GenerateManifest>
   </PropertyGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="..\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
 </Project>
