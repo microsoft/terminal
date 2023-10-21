@@ -910,7 +910,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // acrylic is enabled at runtime (GH#2531)
         if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
         {
-            if (!useAcrylic)
+            if (!useAcrylic || _core.Opacity() == 1.0)
             {
                 _InitializeBackgroundBrush();
                 return;
@@ -920,7 +920,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
         {
-            if (useAcrylic)
+            if (useAcrylic && _core.Opacity() < 1.0)
             {
                 _InitializeBackgroundBrush();
                 return;

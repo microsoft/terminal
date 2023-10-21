@@ -706,7 +706,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _runtimeFocusedOpacity = focused ? newOpacity : _runtimeFocusedOpacity;
 
         // Manually turn off acrylic if they turn off transparency.
-        //_runtimeUseAcrylic = newOpacity < 1.0 && _settings->UseAcrylic();
+        _runtimeUseAcrylic = newOpacity < 1.0 && _acrylicToggle;
 
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
@@ -719,11 +719,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
         _TransparencyChangedHandlers(*this, *eventArgs);
-
-        if (Opacity() < 1.0)
-        {
-          
-        }
     }
 
     void ControlCore::ToggleAcrylic()
@@ -731,8 +726,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Don't Toggle Acrylic if they have transparency turned off
         if (Opacity() < 1.0)
         {
-            UseAcrylic(!UseAcrylic());
-            //_acrylicToggle = UseAcrylic();
+            UseAcrylic(!_acrylicToggle);
+            _acrylicToggle = UseAcrylic();
         }
 
         // Update the renderer as well. It might need to fall back from
@@ -866,7 +861,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Manually turn off acrylic if they turn off transparency.
         _runtimeUseAcrylic = _settings->Opacity() < 1.0 && _settings->UseAcrylic();
         _acrylicToggle = _settings->UseAcrylic();
-
+        
         const auto sizeChanged = _setFontSizeUnderLock(_settings->FontSize());
 
         // Update the terminal core with its new Core settings
@@ -909,31 +904,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_renderEngine)
         {
             // Update DxEngine settings under the lock
-          /*  _renderEngine->SetSelectionBackground(til::color{ newAppearance->SelectionBackground() });
+            _renderEngine->SetSelectionBackground(til::color{ newAppearance->SelectionBackground() });
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
-            _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());*/
+            _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
 
             // Incase EnableUnfocusedAcrylic is disabled and Focused Acrylic is set to true,
             // the terminal should ignore the unfocused opacity from settings.
             // The Focused Opacity from settings should be ignored if overridden at runtime.
-           /* bool useFocusedRuntimeOpacity = focused || (!_settings->EnableUnfocusedAcrylic() && UseAcrylic());
+            bool useFocusedRuntimeOpacity = focused || (!_settings->EnableUnfocusedAcrylic() && UseAcrylic());
             double newOpacity = useFocusedRuntimeOpacity ?
                                     FocusedOpacity() :
                                     newAppearance->Opacity();
-            _setOpacity(newOpacity, focused);*/
+            _setOpacity(newOpacity, focused);
 
             // No need to update Acrylic if UnfocusedAcrylic is disabled
             if (_settings->EnableUnfocusedAcrylic())
             {
                 // Focused Acrylic from settings should be ignored if overriden at runtime
-                //bool newAcrylic = focused ? UseAcrylic() : newAppearance->UseAcrylic();
+                bool newAcrylic = focused ? _acrylicToggle : newAppearance->UseAcrylic();
 
                 // Manually turn off acrylic if they turn off transparency.
-                //_runtimeUseAcrylic = Opacity() < 1.0 && newAcrylic;
+                _runtimeUseAcrylic = Opacity() < 1.0 && newAcrylic;
             }
 
-         /*    Update the renderer as well. It might need to fall back from
-             cleartype -> grayscale if the BG is transparent / acrylic.*/
+            // Update the renderer as well. It might need to fall back from
+            // cleartype -> grayscale if the BG is transparent / acrylic.
             _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
             _renderer->NotifyPaintFrame();
 
