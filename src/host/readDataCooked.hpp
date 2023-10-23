@@ -49,6 +49,38 @@ private:
         DoneWithCarriageReturn,
     };
 
+    // A helper struct to ensure we keep track of _dirtyBeg while the
+    // underlying _buffer is being modified by COOKED_READ_DATA.
+    struct BufferState
+    {
+        const std::wstring& Get() const noexcept;
+        std::wstring Extract() noexcept
+        {
+            return std::move(_buffer);
+        }
+        void Replace(size_t offset, size_t remove, const wchar_t* input, size_t count);
+        void Replace(const std::wstring_view& str);
+
+        size_t GetCursorPosition() const noexcept;
+        void SetCursorPosition(size_t pos) noexcept;
+
+        bool IsClean() const noexcept;
+        void MarkEverythingDirty() noexcept;
+        void MarkAsClean() noexcept;
+
+        std::wstring_view GetUnmodifiedTextBeforeCursor() const noexcept;
+        std::wstring_view GetUnmodifiedTextAfterCursor() const noexcept;
+        std::wstring_view GetModifiedTextBeforeCursor() const noexcept;
+        std::wstring_view GetModifiedTextAfterCursor() const noexcept;
+
+    private:
+        std::wstring_view _slice(size_t from, size_t to) const noexcept;
+
+        std::wstring _buffer;
+        size_t _dirtyBeg = npos;
+        size_t _cursor = 0;
+    };
+
     enum class PopupKind
     {
         // Copies text from the previous command between the current cursor position and the first instance
@@ -119,11 +151,6 @@ private:
     void _handleVkey(uint16_t vkey, DWORD modifiers);
     void _handlePostCharInputLoop(bool isUnicode, size_t& numBytes, ULONG& controlKeyState);
     void _transitionState(State state) noexcept;
-    const std::wstring& _getBuffer() const noexcept;
-    void _replaceBuffer(size_t offset, size_t remove, const wchar_t* input, size_t count);
-    void _replaceBuffer(const std::wstring_view& str);
-    size_t _getBufferCursor() const noexcept;
-    void _setBufferCursor(size_t pos) noexcept;
     void _flushBuffer();
     void _erase(ptrdiff_t distance) const;
     ptrdiff_t _measureChars(const std::wstring_view& text, ptrdiff_t cursorOffset) const;
@@ -154,9 +181,7 @@ private:
     ULONG _controlKeyState = 0;
     std::unique_ptr<ConsoleHandleData> _tempHandle;
 
-    std::wstring _buffer;
-    size_t _bufferCursor = 0;
-    size_t _bufferDirtyBeg = npos;
+    BufferState _buffer;
     // _distanceCursor is the distance between the start of the prompt and the
     // current cursor location in columns (including wide glyph padding columns).
     ptrdiff_t _distanceCursor = 0;
