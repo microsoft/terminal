@@ -2940,13 +2940,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                 }
                             }
                         }
+                        fullPath.insert(0, L"\'");
+                        fullPath += L"\'";
                     }
 
                     const auto containsSpaces = std::find(fullPath.begin(),
                                                           fullPath.end(),
                                                           L' ') != fullPath.end();
 
-                    if (containsSpaces)
+                    if (containsSpaces && !_interactivity.ManglePathsForWsl())
                     {
                         fullPath.insert(0, L"\"");
                         fullPath += L"\"";
