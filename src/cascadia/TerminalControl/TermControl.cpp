@@ -3488,7 +3488,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::ToggleAcrylic()
     {
-        _core.ToggleAcrylic();
+        _core.ToggleAcrylic(_focused);
     }
 
     // - You'd think this should just be "Opacity", but UIElement already

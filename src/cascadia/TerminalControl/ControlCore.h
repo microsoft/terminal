@@ -232,7 +232,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AdjustOpacity(const double opacity, const bool relative);
 
-        void ToggleAcrylic();
+        void ToggleAcrylic(const bool focused);
 
         void WindowVisibilityChanged(const bool showOrHide);
 
@@ -250,6 +250,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(double, FocusedOpacity, FocusedAppearance().Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
+        RUNTIME_SETTING(bool, FocusedAcrylic, FocusedAppearance().UseAcrylic());
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
