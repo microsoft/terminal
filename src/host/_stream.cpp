@@ -39,7 +39,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 // - coordCursor - New location of cursor.
 // - fKeepCursorVisible - TRUE if changing window origin desirable when hit right edge
 // Return Value:
-static void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point coordCursor, const bool interactive, _Inout_opt_ til::CoordType* psScrollY)
+static void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point coordCursor, _Inout_opt_ til::CoordType* psScrollY)
 {
     const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
     if (coordCursor.x < 0)
@@ -70,42 +70,19 @@ static void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point
 
     if (coordCursor.y >= bufferSize.height)
     {
-        const auto vtIo = ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo();
-        const auto renderer = ServiceLocator::LocateGlobals().pRender;
-        const auto needsConPTYWorkaround = interactive && vtIo->IsUsingVt();
         auto& buffer = screenInfo.GetTextBuffer();
-        const auto isActiveBuffer = buffer.IsActiveBuffer();
+        buffer.IncrementCircularBuffer(buffer.GetCurrentAttributes());
 
-        // ConPTY translates scrolling into newlines. We don't want that during cooked reads (= "cmd.exe prompts")
-        // because the entire prompt is supposed to fit into the VT viewport, with no scrollback. If we didn't do that,
-        // any prompt larger than the viewport will cause >1 lines to be added to scrollback, even if typing backspaces.
-        // You can test this by removing this branch, launch Windows Terminal, and fill the entire viewport with text in cmd.exe.
-        if (needsConPTYWorkaround)
+        if (buffer.IsActiveBuffer())
         {
-            buffer.SetAsActiveBuffer(false);
-            buffer.IncrementCircularBuffer(buffer.GetCurrentAttributes());
-            buffer.SetAsActiveBuffer(isActiveBuffer);
-
-            if (isActiveBuffer && renderer)
+            if (const auto notifier = ServiceLocator::LocateAccessibilityNotifier())
             {
-                renderer->TriggerRedrawAll();
+                notifier->NotifyConsoleUpdateScrollEvent(0, -1);
             }
-        }
-        else
-        {
-            buffer.IncrementCircularBuffer(buffer.GetCurrentAttributes());
-
-            if (isActiveBuffer)
+            if (const auto renderer = ServiceLocator::LocateGlobals().pRender)
             {
-                if (const auto notifier = ServiceLocator::LocateAccessibilityNotifier())
-                {
-                    notifier->NotifyConsoleUpdateScrollEvent(0, -1);
-                }
-                if (renderer)
-                {
-                    static constexpr til::point delta{ 0, -1 };
-                    renderer->TriggerScroll(&delta);
-                }
+                static constexpr til::point delta{ 0, -1 };
+                renderer->TriggerScroll(&delta);
             }
         }
 
@@ -128,15 +105,11 @@ static void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point
         LOG_IF_FAILED(screenInfo.SetViewportOrigin(false, WindowOrigin, true));
     }
 
-    if (interactive)
-    {
-        screenInfo.MakeCursorVisible(coordCursor);
-    }
-    LOG_IF_FAILED(screenInfo.SetCursorPosition(coordCursor, interactive));
+    LOG_IF_FAILED(screenInfo.SetCursorPosition(coordCursor, false));
 }
 
 // As the name implies, this writes text without processing its control characters.
-static void _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const std::wstring_view& text, const bool interactive, til::CoordType* psScrollY)
+void _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const std::wstring_view& text, til::CoordType* psScrollY)
 {
     const auto wrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
     const auto hasAccessibilityEventing = screenInfo.HasAccessibilityEventing();
@@ -165,18 +138,19 @@ static void _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const s
             screenInfo.NotifyAccessibilityEventing(state.columnBegin, cursorPosition.y, state.columnEnd - 1, cursorPosition.y);
         }
 
-        AdjustCursorPosition(screenInfo, cursorPosition, interactive, psScrollY);
+        AdjustCursorPosition(screenInfo, cursorPosition, psScrollY);
     }
 }
 
 // This routine writes a string to the screen while handling control characters.
 // `interactive` exists for COOKED_READ_DATA which uses it to transform control characters into visible text like "^X".
 // Similarly, `psScrollY` is also used by it to track whether the underlying buffer circled. It requires this information to know where the input line moved to.
-void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& text, const bool interactive, til::CoordType* psScrollY)
+void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& text, til::CoordType* psScrollY)
 {
     static constexpr wchar_t tabSpaces[8]{ L' ', L' ', L' ', L' ', L' ', L' ', L' ', L' ' };
 
     auto& textBuffer = screenInfo.GetTextBuffer();
+    const auto width = textBuffer.GetSize().Width();
     auto& cursor = textBuffer.GetCursor();
     const auto wrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
     auto it = text.begin();
@@ -197,15 +171,15 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
         {
             pos.x = 0;
             pos.y++;
-            AdjustCursorPosition(screenInfo, pos, interactive, psScrollY);
+            AdjustCursorPosition(screenInfo, pos, psScrollY);
         }
     }
 
     // If ENABLE_PROCESSED_OUTPUT is set we search for C0 control characters and handle them like backspace, tab, etc.
-    // If it's not set, we can just straight up give everything to _writeCharsLegacyUnprocessed.
+    // If it's not set, we can just straight up give everything to WriteCharsLegacyUnprocessed.
     if (WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
     {
-        _writeCharsLegacyUnprocessed(screenInfo, { it, end }, interactive, psScrollY);
+        _writeCharsLegacyUnprocessed(screenInfo, { it, end }, psScrollY);
         it = end;
     }
 
@@ -214,7 +188,7 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
         const auto nextControlChar = std::find_if(it, end, [](const auto& wch) { return !IS_GLYPH_CHAR(wch); });
         if (nextControlChar != it)
         {
-            _writeCharsLegacyUnprocessed(screenInfo, { it, nextControlChar }, interactive, psScrollY);
+            _writeCharsLegacyUnprocessed(screenInfo, { it, nextControlChar }, psScrollY);
             it = nextControlChar;
         }
 
@@ -223,35 +197,24 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
             switch (*it)
             {
             case UNICODE_NULL:
-                if (interactive)
-                {
-                    break;
-                }
-                _writeCharsLegacyUnprocessed(screenInfo, { &tabSpaces[0], 1 }, interactive, psScrollY);
+                _writeCharsLegacyUnprocessed(screenInfo, { &tabSpaces[0], 1 }, psScrollY);
                 continue;
             case UNICODE_BELL:
-                if (interactive)
-                {
-                    break;
-                }
                 std::ignore = screenInfo.SendNotifyBeep();
                 continue;
             case UNICODE_BACKSPACE:
             {
-                // Backspace handling for interactive mode should happen in COOKED_READ_DATA
-                // where it has full control over the text and can delete it directly.
-                // Otherwise handling backspacing tabs/whitespace can turn up complex and bug-prone.
-                assert(!interactive);
                 auto pos = cursor.GetPosition();
                 pos.x = textBuffer.GetRowByOffset(pos.y).NavigateToPrevious(pos.x);
-                AdjustCursorPosition(screenInfo, pos, interactive, psScrollY);
+                AdjustCursorPosition(screenInfo, pos, psScrollY);
                 continue;
             }
             case UNICODE_TAB:
             {
                 const auto pos = cursor.GetPosition();
-                const auto tabCount = gsl::narrow_cast<size_t>(8 - (pos.x & 7));
-                _writeCharsLegacyUnprocessed(screenInfo, { &tabSpaces[0], tabCount }, interactive, psScrollY);
+                const auto remaining = width - pos.x;
+                const auto tabCount = gsl::narrow_cast<size_t>(std::min(remaining, 8 - (pos.x & 7)));
+                _writeCharsLegacyUnprocessed(screenInfo, { &tabSpaces[0], tabCount }, psScrollY);
                 continue;
             }
             case UNICODE_LINEFEED:
@@ -264,38 +227,29 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
 
                 textBuffer.GetMutableRowByOffset(pos.y).SetWrapForced(false);
                 pos.y = pos.y + 1;
-                AdjustCursorPosition(screenInfo, pos, interactive, psScrollY);
+                AdjustCursorPosition(screenInfo, pos, psScrollY);
                 continue;
             }
             case UNICODE_CARRIAGERETURN:
             {
                 auto pos = cursor.GetPosition();
                 pos.x = 0;
-                AdjustCursorPosition(screenInfo, pos, interactive, psScrollY);
+                AdjustCursorPosition(screenInfo, pos, psScrollY);
                 continue;
             }
             default:
                 break;
             }
 
-            // In the interactive mode we replace C0 control characters (0x00-0x1f) with ASCII representations like ^C (= 0x03).
-            if (interactive && *it < L' ')
+            // As a special favor to incompetent apps that attempt to display control chars,
+            // convert to corresponding OEM Glyph Chars
+            const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
+            const auto ch = gsl::narrow_cast<char>(*it);
+            wchar_t wch = 0;
+            const auto result = MultiByteToWideChar(cp, MB_USEGLYPHCHARS, &ch, 1, &wch, 1);
+            if (result == 1)
             {
-                const wchar_t wchs[2]{ L'^', static_cast<wchar_t>(*it + L'@') };
-                _writeCharsLegacyUnprocessed(screenInfo, { &wchs[0], 2 }, interactive, psScrollY);
-            }
-            else
-            {
-                // As a special favor to incompetent apps that attempt to display control chars,
-                // convert to corresponding OEM Glyph Chars
-                const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
-                const auto ch = gsl::narrow_cast<char>(*it);
-                wchar_t wch = 0;
-                const auto result = MultiByteToWideChar(cp, MB_USEGLYPHCHARS, &ch, 1, &wch, 1);
-                if (result == 1)
-                {
-                    _writeCharsLegacyUnprocessed(screenInfo, { &wch, 1 }, interactive, psScrollY);
-                }
+                _writeCharsLegacyUnprocessed(screenInfo, { &wch, 1 }, psScrollY);
             }
         }
     }
@@ -358,7 +312,7 @@ try
 
     if (WI_IsAnyFlagClear(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_PROCESSED_OUTPUT))
     {
-        WriteCharsLegacy(screenInfo, str, false, nullptr);
+        WriteCharsLegacy(screenInfo, str, nullptr);
     }
     else
     {

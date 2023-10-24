@@ -2927,13 +2927,13 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
 
     if (writeSingly)
     {
-        WriteCharsLegacy(si, L"X", false, nullptr);
-        WriteCharsLegacy(si, L"X", false, nullptr);
-        WriteCharsLegacy(si, L"\x08", false, nullptr);
+        WriteCharsLegacy(si, L"X", nullptr);
+        WriteCharsLegacy(si, L"X", nullptr);
+        WriteCharsLegacy(si, L"\x08", nullptr);
     }
     else
     {
-        WriteCharsLegacy(si, L"XX\x08", false, nullptr);
+        WriteCharsLegacy(si, L"XX\x08", nullptr);
     }
 
     TextAttribute expectedDefaults{};
@@ -7188,7 +7188,7 @@ void ScreenBufferTests::UpdateVirtualBottomWhenCursorMovesBelowIt()
 
     Log::Comment(L"Now write several lines of content using WriteCharsLegacy");
     const auto content = L"1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n";
-    WriteCharsLegacy(si, content, false, nullptr);
+    WriteCharsLegacy(si, content, nullptr);
 
     Log::Comment(L"Confirm that the cursor position has moved down 10 lines");
     const auto newCursorPos = til::point{ initialCursorPos.x, initialCursorPos.y + 10 };
