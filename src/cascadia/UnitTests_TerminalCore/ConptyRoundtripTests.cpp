@@ -3243,7 +3243,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
         }
         else if (writingMethod == PrintWithWriteCharsLegacy)
         {
-            WriteCharsLegacy(si, str, false, nullptr);
+            WriteCharsLegacy(si, str, nullptr);
         }
     };
 
@@ -3401,7 +3401,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
         }
         else if (writingMethod == PrintWithWriteCharsLegacy)
         {
-            WriteCharsLegacy(si, str, false, nullptr);
+            WriteCharsLegacy(si, str, nullptr);
         }
     };
 
