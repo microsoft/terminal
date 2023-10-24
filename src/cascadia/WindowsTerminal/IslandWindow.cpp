@@ -73,6 +73,8 @@ void IslandWindow::Refrigerate() noexcept
     // This pointer will get re-set in _warmInitialize
     SetWindowLongPtr(_window.get(), GWLP_USERDATA, 0);
 
+    _resetSystemMenu();
+
     _pfnCreateCallback = nullptr;
     _pfnSnapDimensionCallback = nullptr;
 
@@ -1915,6 +1917,12 @@ void IslandWindow::RemoveFromSystemMenu(const winrt::hstring& itemLabel)
         return;
     }
     _systemMenuItems.erase(it->first);
+}
+
+void IslandWindow::_resetSystemMenu()
+{
+    // GetSystemMenu(..., true) will revert the menu to the default state.
+    GetSystemMenu(_window.get(), TRUE);
 }
 
 void IslandWindow::UseDarkTheme(const bool v)
