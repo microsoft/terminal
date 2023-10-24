@@ -343,6 +343,7 @@ CTRLVOLUME
 Ctxt
 CUF
 cupxy
+curlyline
 CURRENTFONT
 currentmode
 CURRENTPAGE
@@ -578,6 +579,7 @@ elems
 emacs
 EMPTYBOX
 enabledelayedexpansion
+ENDCAP
 endptr
 endregion
 ENTIREBUFFER
@@ -826,6 +828,7 @@ hostlib
 HPA
 hpcon
 HPCON
+hpen
 hpj
 HPR
 HProvider
@@ -1010,6 +1013,7 @@ LOBYTE
 localappdata
 locsrc
 Loewen
+LOGBRUSH
 LOGFONT
 LOGFONTA
 LOGFONTW
