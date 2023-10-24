@@ -129,7 +129,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value&
     return result;
 }
 
-void GlobalAppSettings::LayerJson(const Json::Value& json, const bool withKeybindings)
+void GlobalAppSettings::LayerJson(const Json::Value& json)
 {
     JsonUtils::GetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
     // GH#8076 - when adding enum values to this key, we also changed it from
@@ -142,6 +142,13 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const bool withKeybin
     MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_LAYER_JSON)
 #undef GLOBAL_SETTINGS_LAYER_JSON
 
+    LayerActionsFrom(json, true);
+
+    JsonUtils::GetValueForKey(json, LegacyReloadEnvironmentVariablesKey, _legacyReloadEnvironmentVariables);
+}
+
+void GlobalAppSettings::LayerActionsFrom(const Json::Value& json, const bool withKeybindings)
+{
     static constexpr std::array bindingsKeys{ LegacyKeybindingsKey, ActionsKey };
     for (const auto& jsonKey : bindingsKeys)
     {
@@ -158,8 +165,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const bool withKeybin
             _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
         }
     }
-
-    JsonUtils::GetValueForKey(json, LegacyReloadEnvironmentVariablesKey, _legacyReloadEnvironmentVariables);
 }
 
 // Method Description:

@@ -47,7 +47,6 @@ static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 static constexpr std::string_view ThemesKey{ "themes" };
-static constexpr std::string_view ActionsKey{ "actions" };
 
 constexpr std::wstring_view systemThemeName{ L"system" };
 constexpr std::wstring_view darkThemeName{ L"dark" };
@@ -649,17 +648,10 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
             CATCH_LOG()
         }
 
-        // Construct a temp Json::Value that contains ONLY the actions from the
-        // fragment. This will allow fragments to add actions, but not
-        // necessarily set other global properties.
-        Json::Value tmp = {};
-        tmp[ActionsKey.data()] = json.root[ActionsKey.data()];
-
-        // Now parse that tmep json object, as if it were a global settings
-        // blob. Manually opt-out of keybinding parsing - fragments shouldn't be
-        // allowed to bind actions to keys directly. We may want to revisit
-        // circa GH#2205
-        settings.globals->LayerJson(tmp, false);
+        // Parse out actions from the fragment. Manually opt-out of keybinding
+        // parsing - fragments shouldn't be allowed to bind actions to keys
+        // directly. We may want to revisit circa GH#2205
+        settings.globals->LayerActionsFrom(json.root, false);
     }
 
     {
