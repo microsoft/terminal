@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "alias.h"
 
@@ -35,7 +35,7 @@ class AliasTests
 
         while (pos != std::wstring::npos)
         {
-            PCWSTR newline = L"\r\n";
+            auto newline = L"\r\n";
             string = string.erase(pos, 1);
             string = string.insert(pos, newline);
             linesExpected++; // we expect one "line" per newline character returned.
@@ -53,7 +53,7 @@ class AliasTests
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"targetExpectedPair", targetExpectedPair));
 
         // Convert WEX strings into the wstrings
-        int sepIndex = targetExpectedPair.Find(L'=');
+        auto sepIndex = targetExpectedPair.Find(L'=');
         target = targetExpectedPair.Left(sepIndex);
         expected = targetExpectedPair.Mid(sepIndex + 1);
     }
@@ -111,170 +111,48 @@ class AliasTests
         // and match to our expected values.
         std::wstring alias(aliasName);
         std::wstring exe(exeName);
+        std::wstring original(originalString);
 
         std::wstring target;
         std::wstring expected;
         _RetrieveTargetExpectedPair(target, expected);
 
-        DWORD linesExpected = _ReplacePercentWithCRLF(expected);
-
-        std::wstring original(originalString);
+        const auto linesExpected = _ReplacePercentWithCRLF(expected);
 
         Alias::s_TestAddAlias(exe, alias, target);
 
-        // Fill classic wchar_t[] buffer for interfacing with the MatchAndCopyAlias function
-        const USHORT bufferSize = 160ui16;
-        auto buffer = std::make_unique<wchar_t[]>(bufferSize);
-        wcscpy_s(buffer.get(), bufferSize, original.data());
-
-        const size_t cbBuffer = bufferSize * sizeof(wchar_t);
-        size_t bufferUsed = 0;
-        DWORD linesActual = 0;
-
         // Run the match and copy function.
-        Alias::s_MatchAndCopyAliasLegacy(buffer.get(),
-                                         wcslen(buffer.get()) * sizeof(wchar_t),
-                                         buffer.get(),
-                                         cbBuffer,
-                                         bufferUsed,
-                                         exe,
-                                         linesActual);
+        size_t linesActual = 0;
+        const auto actual = Alias::s_MatchAndCopyAlias(original, exe, linesActual);
 
-        // Null terminate buffer for comparison
-        buffer[bufferUsed / sizeof(wchar_t)] = L'\0';
-
-        Log::Comment(String().Format(L"Expected: '%s'", expected.data()));
-        Log::Comment(String().Format(L"Actual  : '%s'", buffer.get()));
-
-        VERIFY_ARE_EQUAL(WEX::Common::String(expected.data()), WEX::Common::String(buffer.get()));
-
+        VERIFY_ARE_EQUAL(expected, actual);
         VERIFY_ARE_EQUAL(linesExpected, linesActual);
-    }
-
-    TEST_METHOD(TestMatchAndCopyTrailingCRLF)
-    {
-        PWSTR pwszSource = L"SourceWithoutCRLF\r\n";
-        const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
-
-        const size_t cchTarget = 60;
-        auto rgwchTarget = std::make_unique<wchar_t[]>(cchTarget);
-        const size_t cbTarget = cchTarget * sizeof(wchar_t);
-        wcscpy_s(rgwchTarget.get(), cchTarget, L"testtesttesttesttest");
-        auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
-        wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
-
-        size_t cbTargetUsed = 0;
-        auto const cbTargetUsedBefore = cbTargetUsed;
-
-        DWORD dwLines = 0;
-        auto const dwLinesBefore = dwLines;
-
-        // Register the wrong alias name before we try.
-        std::wstring exe(L"exe.exe");
-        std::wstring sourceWithoutCRLF(L"SourceWithoutCRLF");
-        std::wstring target(L"someTarget");
-        Alias::s_TestAddAlias(exe, sourceWithoutCRLF, target);
-
-        const auto targetExpected = target + L"\r\n";
-        const size_t cbTargetExpected = targetExpected.size() * sizeof(wchar_t); // +2 for \r\n that will be added on replace.
-
-        Alias::s_MatchAndCopyAliasLegacy(pwszSource,
-                                         cbSource,
-                                         rgwchTarget.get(),
-                                         cbTarget,
-                                         cbTargetUsed,
-                                         exe,
-                                         dwLines);
-
-        // Terminate target buffer with \0 for comparison
-        rgwchTarget[cbTargetUsed] = L'\0';
-
-        VERIFY_ARE_EQUAL(cbTargetExpected, cbTargetUsed, L"Target bytes should be filled with target size.");
-        VERIFY_ARE_EQUAL(String(targetExpected.data()), String(rgwchTarget.get(), gsl::narrow<int>(cbTargetUsed / sizeof(wchar_t))), L"Target string should be filled with target data.");
-        VERIFY_ARE_EQUAL(1u, dwLines, L"Line count should be 1.");
     }
 
     TEST_METHOD(TestMatchAndCopyInvalidExeName)
     {
-        PWSTR pwszSource = L"Source";
-        const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
-
-        const size_t cchTarget = 12;
-        auto rgwchTarget = std::make_unique<wchar_t[]>(cchTarget);
-        wcscpy_s(rgwchTarget.get(), cchTarget, L"testtestabc");
-        auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
-        wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
-
-        const size_t cbTarget = cchTarget * sizeof(wchar_t);
-        size_t cbTargetUsed = cbTarget;
-
-        DWORD dwLines = 0;
-        auto const dwLinesBefore = dwLines;
-
+        const auto pwszSource = L"Source";
+        size_t dwLines = 1;
         std::wstring exeName;
-
-        Alias::s_MatchAndCopyAliasLegacy(pwszSource,
-                                         cbSource,
-                                         rgwchTarget.get(),
-                                         cbTarget,
-                                         cbTargetUsed,
-                                         exeName,
-                                         dwLines);
-
-        VERIFY_ARE_EQUAL(cbTarget, cbTargetUsed, L"Byte count shouldn't have changed with failure.");
-        VERIFY_ARE_EQUAL(dwLinesBefore, dwLines, L"Line count shouldn't have changed with failure.");
-        VERIFY_ARE_EQUAL(String(rgwchTargetBefore.get(), cchTarget), String(rgwchTarget.get(), cchTarget), L"Target string shouldn't have changed with failure.");
+        const auto buffer = Alias::s_MatchAndCopyAlias(pwszSource, exeName, dwLines);
+        VERIFY_IS_TRUE(buffer.empty());
+        VERIFY_ARE_EQUAL(1u, dwLines);
     }
 
     TEST_METHOD(TestMatchAndCopyExeNotFound)
     {
-        PWSTR pwszSource = L"Source";
-        const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
-
-        const size_t cchTarget = 12;
-        auto rgwchTarget = std::make_unique<wchar_t[]>(cchTarget);
-        const size_t cbTarget = cchTarget * sizeof(wchar_t);
-        wcscpy_s(rgwchTarget.get(), cchTarget, L"testtestabc");
-        auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
-        wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
-        size_t cbTargetUsed = 0;
-        auto const cbTargetUsedBefore = cbTargetUsed;
-
-        std::wstring exeName(L"exe.exe");
-
-        DWORD dwLines = 0;
-        auto const dwLinesBefore = dwLines;
-
-        Alias::s_MatchAndCopyAliasLegacy(pwszSource,
-                                         cbSource,
-                                         rgwchTarget.get(),
-                                         cbTarget,
-                                         cbTargetUsed,
-                                         exeName, // we didn't pre-set-up the exe name
-                                         dwLines);
-
-        VERIFY_ARE_EQUAL(cbTargetUsedBefore, cbTargetUsed, L"No bytes should have been written.");
-        VERIFY_ARE_EQUAL(String(rgwchTargetBefore.get(), cchTarget), String(rgwchTarget.get(), cchTarget), L"Target string should be unmodified.");
-        VERIFY_ARE_EQUAL(dwLinesBefore, dwLines, L"Line count should pass through.");
+        const auto pwszSource = L"Source";
+        size_t dwLines = 1;
+        const std::wstring exeName(L"exe.exe");
+        const auto buffer = Alias::s_MatchAndCopyAlias(pwszSource, exeName, dwLines);
+        VERIFY_IS_TRUE(buffer.empty());
+        VERIFY_ARE_EQUAL(1u, dwLines);
     }
 
     TEST_METHOD(TestMatchAndCopyAliasNotFound)
     {
-        PWSTR pwszSource = L"Source";
-        const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
-
-        const size_t cchTarget = 12;
-        auto rgwchTarget = std::make_unique<wchar_t[]>(cchTarget);
-        const size_t cbTarget = cchTarget * sizeof(wchar_t);
-        wcscpy_s(rgwchTarget.get(), cchTarget, L"testtestabc");
-        auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
-        wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
-
-        size_t cbTargetUsed = 0;
-        auto const cbTargetUsedBefore = cbTargetUsed;
-
-        DWORD dwLines = 0;
-        auto const dwLinesBefore = dwLines;
+        const auto pwszSource = L"Source";
+        size_t dwLines = 1;
 
         // Register the wrong alias name before we try.
         std::wstring exe(L"exe.exe");
@@ -282,72 +160,15 @@ class AliasTests
         std::wstring target(L"someTarget");
         Alias::s_TestAddAlias(exe, badSource, target);
 
-        Alias::s_MatchAndCopyAliasLegacy(pwszSource,
-                                         cbSource,
-                                         rgwchTarget.get(),
-                                         cbTarget,
-                                         cbTargetUsed,
-                                         exe,
-                                         dwLines);
-
-        VERIFY_ARE_EQUAL(cbTargetUsedBefore, cbTargetUsed, L"No bytes should be used if nothing was found.");
-        VERIFY_ARE_EQUAL(String(rgwchTargetBefore.get(), cchTarget), String(rgwchTarget.get(), cchTarget), L"Target string should be unmodified.");
-        VERIFY_ARE_EQUAL(dwLinesBefore, dwLines, L"Line count should pass through.");
-    }
-
-    TEST_METHOD(TestMatchAndCopyTargetTooSmall)
-    {
-        PWSTR pwszSource = L"Source";
-        const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
-
-        const size_t cchTarget = 12;
-        auto rgwchTarget = std::make_unique<wchar_t[]>(cchTarget);
-        wcscpy_s(rgwchTarget.get(), cchTarget, L"testtestabc");
-        auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
-        wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
-
-        const size_t cbTarget = cchTarget * sizeof(wchar_t);
-        size_t cbTargetUsed = 0;
-        auto const cbTargetUsedBefore = cbTargetUsed;
-
-        DWORD dwLines = 0;
-        auto const dwLinesBefore = dwLines;
-
-        // Register the correct alias name before we try.
-        std::wstring exe(L"exe.exe");
-        std::wstring source(pwszSource);
-        std::wstring target(L"someTarget");
-        Alias::s_TestAddAlias(exe, source, target);
-
-        Alias::s_MatchAndCopyAliasLegacy(pwszSource,
-                                         cbSource,
-                                         rgwchTarget.get(),
-                                         1, // Make the target size too small
-                                         cbTargetUsed,
-                                         exe,
-                                         dwLines);
-
-        VERIFY_ARE_EQUAL(cbTargetUsedBefore, cbTargetUsed, L"Byte count shouldn't have changed with failure.");
-        VERIFY_ARE_EQUAL(dwLinesBefore, dwLines, L"Line count shouldn't have changed with failure.");
-        VERIFY_ARE_EQUAL(String(rgwchTargetBefore.get(), cchTarget), String(rgwchTarget.get(), cchTarget), L"Target string shouldn't have changed with failure.");
+        const auto buffer = Alias::s_MatchAndCopyAlias(pwszSource, exe, dwLines);
+        VERIFY_IS_TRUE(buffer.empty());
+        VERIFY_ARE_EQUAL(1u, dwLines);
     }
 
     TEST_METHOD(TestMatchAndCopyLeadingSpaces)
     {
-        PWSTR pwszSource = L" Source";
-        const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
-
-        const size_t cchTarget = 12;
-        auto rgwchTarget = std::make_unique<wchar_t[]>(cchTarget);
-        const size_t cbTarget = cchTarget * sizeof(wchar_t);
-        wcscpy_s(rgwchTarget.get(), cchTarget, L"testtestabc");
-        auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
-        wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
-        size_t cbTargetUsed = 0;
-        auto const cbTargetUsedExpected = cbTarget;
-
-        DWORD dwLines = 0;
-        auto const dwLinesExpected = dwLines + 1;
+        const auto pwszSource = L" Source";
+        size_t dwLines = 1;
 
         // Register the correct alias name before we try.
         std::wstring exe(L"exe.exe");
@@ -355,43 +176,10 @@ class AliasTests
         std::wstring target(L"someTarget");
         Alias::s_TestAddAlias(exe, source, target);
 
-        std::wstring targetExpected = target + L"\r\n";
-
-        // We should be able to match through the leading spaces. They should be stripped.
-        Alias::s_MatchAndCopyAliasLegacy(pwszSource,
-                                         cbSource,
-                                         rgwchTarget.get(),
-                                         cbTarget,
-                                         cbTargetUsed,
-                                         exe,
-                                         dwLines);
-
-        VERIFY_ARE_EQUAL(cbTargetUsedExpected, cbTargetUsed, L"No target bytes should be used.");
-        VERIFY_ARE_EQUAL(String(targetExpected.data(), gsl::narrow<int>(targetExpected.size())), String(rgwchTarget.get(), cchTarget), L"Target string should match expected.");
-        VERIFY_ARE_EQUAL(dwLinesExpected, dwLines, L"Line count be updated to 1.");
-    }
-
-    TEST_METHOD(TrimTrailing)
-    {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair",
-                                 L"{"
-                                 L"bar%=bar," // The character % will be turned into an \r\n
-                                 L"bar=bar"
-                                 L"}")
-        END_TEST_METHOD_PROPERTIES()
-
-        std::wstring target;
-        std::wstring expected;
-        _RetrieveTargetExpectedPair(target, expected);
-
-        // Substitute %s from metadata into \r\n (since metadata can't hold \r\n)
-        _ReplacePercentWithCRLF(target);
-        _ReplacePercentWithCRLF(expected);
-
-        Alias::s_TrimTrailingCrLf(target);
-
-        VERIFY_ARE_EQUAL(String(expected.data()), String(target.data()));
+        // Leading spaces should bypass the alias. This should not match anything.
+        const auto buffer = Alias::s_MatchAndCopyAlias(pwszSource, exe, dwLines);
+        VERIFY_IS_TRUE(buffer.empty());
+        VERIFY_ARE_EQUAL(1u, dwLines);
     }
 
     TEST_METHOD(Tokenize)
@@ -442,7 +230,7 @@ class AliasTests
         std::wstring expected;
         _RetrieveTargetExpectedPair(target, expected);
 
-        std::wstring actual = Alias::s_GetArgString(target);
+        auto actual = Alias::s_GetArgString(target);
 
         VERIFY_ARE_EQUAL(String(expected.data()), String(actual.data()));
     }
@@ -484,10 +272,10 @@ class AliasTests
         tokens.emplace_back(L"ten");
 
         // if we expect non-empty results, then we should get a bool back saying it was processed
-        const bool returnExpected = !expected.empty();
+        const auto returnExpected = !expected.empty();
 
         std::wstring actual;
-        const bool returnActual = Alias::s_TryReplaceNumberedArgMacro(target[0], actual, tokens);
+        const auto returnActual = Alias::s_TryReplaceNumberedArgMacro(target[0], actual, tokens);
 
         VERIFY_ARE_EQUAL(returnExpected, returnActual);
         VERIFY_ARE_EQUAL(String(expected.data()), String(actual.data()));
@@ -511,10 +299,10 @@ class AliasTests
         std::wstring fullArgString(L"one two three");
 
         // if we expect non-empty results, then we should get a bool back saying it was processed
-        const bool returnExpected = !expected.empty();
+        const auto returnExpected = !expected.empty();
 
         std::wstring actual;
-        const bool returnActual = Alias::s_TryReplaceWildcardArgMacro(target[0], actual, fullArgString);
+        const auto returnActual = Alias::s_TryReplaceWildcardArgMacro(target[0], actual, fullArgString);
 
         VERIFY_ARE_EQUAL(returnExpected, returnActual);
         VERIFY_ARE_EQUAL(String(expected.data()), String(actual.data()));
@@ -538,10 +326,10 @@ class AliasTests
         _RetrieveTargetExpectedPair(target, expected);
 
         // if we expect non-empty results, then we should get a bool back saying it was processed
-        const bool returnExpected = !expected.empty();
+        const auto returnExpected = !expected.empty();
 
         std::wstring actual;
-        const bool returnActual = Alias::s_TryReplaceInputRedirMacro(target[0], actual);
+        const auto returnActual = Alias::s_TryReplaceInputRedirMacro(target[0], actual);
 
         VERIFY_ARE_EQUAL(returnExpected, returnActual);
         VERIFY_ARE_EQUAL(String(expected.data()), String(actual.data()));
@@ -565,10 +353,10 @@ class AliasTests
         _RetrieveTargetExpectedPair(target, expected);
 
         // if we expect non-empty results, then we should get a bool back saying it was processed
-        const bool returnExpected = !expected.empty();
+        const auto returnExpected = !expected.empty();
 
         std::wstring actual;
-        const bool returnActual = Alias::s_TryReplaceOutputRedirMacro(target[0], actual);
+        const auto returnActual = Alias::s_TryReplaceOutputRedirMacro(target[0], actual);
 
         VERIFY_ARE_EQUAL(returnExpected, returnActual);
         VERIFY_ARE_EQUAL(String(expected.data()), String(actual.data()));
@@ -592,10 +380,10 @@ class AliasTests
         _RetrieveTargetExpectedPair(target, expected);
 
         // if we expect non-empty results, then we should get a bool back saying it was processed
-        const bool returnExpected = !expected.empty();
+        const auto returnExpected = !expected.empty();
 
         std::wstring actual;
-        const bool returnActual = Alias::s_TryReplacePipeRedirMacro(target[0], actual);
+        const auto returnActual = Alias::s_TryReplacePipeRedirMacro(target[0], actual);
 
         VERIFY_ARE_EQUAL(returnExpected, returnActual);
         VERIFY_ARE_EQUAL(String(expected.data()), String(actual.data()));
@@ -621,14 +409,14 @@ class AliasTests
         _ReplacePercentWithCRLF(expected);
 
         // if we expect non-empty results, then we should get a bool back saying it was processed
-        const bool returnExpected = !expected.empty();
+        const auto returnExpected = !expected.empty();
 
         std::wstring actual;
         size_t lineCountActual = 0;
 
         const auto lineCountExpected = lineCountActual + (returnExpected ? 1 : 0);
 
-        const bool returnActual = Alias::s_TryReplaceNextCommandMacro(target[0], actual, lineCountActual);
+        const auto returnActual = Alias::s_TryReplaceNextCommandMacro(target[0], actual, lineCountActual);
 
         VERIFY_ARE_EQUAL(returnExpected, returnActual);
         VERIFY_ARE_EQUAL(String(expected.data()), String(actual.data()));

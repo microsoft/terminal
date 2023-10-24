@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include <memory>
 #include <utility>
@@ -25,7 +25,7 @@
 
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 
 class KeyPressTests
 {
@@ -64,9 +64,9 @@ class KeyPressTests
         Log::Comment(L"This test will fail on some keyboard layouts. Ensure you're using a QWERTY keyboard if "
                      L"you're encountering a test failure here.");
 
-        HWND hwnd = GetConsoleWindow();
+        auto hwnd = GetConsoleWindow();
         VERIFY_IS_TRUE(!!IsWindow(hwnd));
-        HANDLE inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+        auto inputHandle = GetStdHandle(STD_INPUT_HANDLE);
         DWORD events = 0;
 
         // flush input buffer
@@ -77,7 +77,7 @@ class KeyPressTests
         // send context menu key event
         TurnOffModifierKeys(hwnd);
         Sleep(SLEEP_WAIT_TIME);
-        UINT scanCode = MapVirtualKeyW(VK_APPS, MAPVK_VK_TO_VSC);
+        auto scanCode = MapVirtualKeyW(VK_APPS, MAPVK_VK_TO_VSC);
         PostMessageW(hwnd, WM_KEYDOWN, VK_APPS, EXTENDED_KEY_FLAG | SINGLE_KEY_REPEAT | (scanCode << 16));
         Sleep(SLEEP_WAIT_TIME);
 
@@ -86,7 +86,6 @@ class KeyPressTests
         expectedRecord.Event.KeyEvent.uChar.UnicodeChar = 0x0;
         expectedRecord.Event.KeyEvent.bKeyDown = true;
         expectedRecord.Event.KeyEvent.dwControlKeyState = ENHANCED_KEY;
-        expectedRecord.Event.KeyEvent.dwControlKeyState |= (GetKeyState(VK_NUMLOCK) & KEY_STATE_TOGGLED) ? NUMLOCK_ON : 0;
         expectedRecord.Event.KeyEvent.wRepeatCount = SINGLE_KEY_REPEAT;
         expectedRecord.Event.KeyEvent.wVirtualKeyCode = VK_APPS;
         expectedRecord.Event.KeyEvent.wVirtualScanCode = (WORD)scanCode;
@@ -103,6 +102,100 @@ class KeyPressTests
         TEST_METHOD_PROPERTY(L"Ignore[default]", L"true")
     END_TEST_METHOD()
 
+    TEST_METHOD(TestInvalidKeyPressIsIgnored)
+    {
+        if (!OneCoreDelay::IsSendMessageWPresent())
+        {
+            Log::Comment(L"Injecting keys to the window message queue cannot be done on systems without a classic window message queue. Skipping.");
+            Log::Result(WEX::Logging::TestResults::Skipped);
+            return;
+        }
+
+        Log::Comment(L"Testing that key events with an invalid virtual keycode and an invalid scan code are properly ignored, and not put into the input buffer");
+        BOOL successBool;
+        auto hwnd = GetConsoleWindow();
+        VERIFY_IS_TRUE(!!IsWindow(hwnd));
+        auto inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+        DWORD events = 0;
+
+        // flush input buffer
+        FlushConsoleInputBuffer(inputHandle);
+        successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
+        VERIFY_IS_TRUE(!!successBool);
+        VERIFY_ARE_EQUAL(events, 0u);
+
+        WPARAM vKey = 0xFF;
+        BYTE scanCode = 0;
+        WORD repeatCount = 1;
+
+        LPARAM lParam = (scanCode << 16) | repeatCount;
+
+        // Send the keypress
+        SendMessage(hwnd, WM_KEYDOWN, vKey, lParam);
+
+        // make sure the keypress got ignored
+        events = 0;
+        successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
+        VERIFY_IS_TRUE(!!successBool);
+        VERIFY_ARE_EQUAL(events, 0u);
+        auto inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
+        PeekConsoleInput(inputHandle,
+                         inputBuffer.get(),
+                         1,
+                         &events);
+        VERIFY_ARE_EQUAL(events, 0u);
+    }
+
+    TEST_METHOD(TestKeyPressWithScanCodeZero)
+    {
+        if (!OneCoreDelay::IsSendMessageWPresent())
+        {
+            Log::Comment(L"Injecting keys to the window message queue cannot be done on systems without a classic window message queue. Skipping.");
+            Log::Result(WEX::Logging::TestResults::Skipped);
+            return;
+        }
+
+        Log::Comment(L"Testing that key events with a valid keycode and an invalid scancode (0) are properly processed.");
+        BOOL successBool;
+        auto hwnd = GetConsoleWindow();
+        VERIFY_IS_TRUE(!!IsWindow(hwnd));
+        auto inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+        DWORD events = 0;
+
+        // flush input buffer
+        FlushConsoleInputBuffer(inputHandle);
+        successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
+        VERIFY_IS_TRUE(!!successBool);
+        VERIFY_ARE_EQUAL(events, 0u);
+
+        WPARAM vKey = VK_LWIN;
+        BYTE scanCode = 0; // Conhost should convert this to the correct scan code
+        WORD repeatCount = 1;
+
+        LPARAM lParam = (scanCode << 16) | repeatCount;
+
+        // Send the keypress
+        SendMessage(hwnd, WM_KEYDOWN, vKey, lParam);
+
+        // Make sure the keypress got processed.
+        events = 0;
+        successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
+        VERIFY_IS_TRUE(!!successBool);
+        VERIFY_ARE_EQUAL(events, 1u);
+        auto inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
+        PeekConsoleInput(inputHandle,
+                         inputBuffer.get(),
+                         1,
+                         &events);
+        VERIFY_ARE_EQUAL(events, 1u);
+        VERIFY_ARE_EQUAL(inputBuffer[0].EventType, KEY_EVENT);
+        VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wRepeatCount, 1, NoThrowString().Format(L"%d", inputBuffer[0].Event.KeyEvent.wRepeatCount));
+        // Scan code should be set to the correct value.
+        VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wVirtualScanCode, VK_LWIN);
+        // 'VK_LWIN' is an enhanced key, so the ENHANCED_KEY bit should be set.
+        VERIFY_IS_TRUE(inputBuffer[0].Event.KeyEvent.dwControlKeyState & ENHANCED_KEY);
+    }
+
     TEST_METHOD(TestCoalesceSameKeyPress)
     {
         if (!OneCoreDelay::IsSendMessageWPresent())
@@ -114,9 +207,9 @@ class KeyPressTests
 
         Log::Comment(L"Testing that key events are properly coalesced when the same key is pressed repeatedly");
         BOOL successBool;
-        HWND hwnd = GetConsoleWindow();
+        auto hwnd = GetConsoleWindow();
         VERIFY_IS_TRUE(!!IsWindow(hwnd));
-        HANDLE inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+        auto inputHandle = GetStdHandle(STD_INPUT_HANDLE);
         DWORD events = 0;
 
         // flush input buffer
@@ -125,7 +218,7 @@ class KeyPressTests
         VERIFY_IS_TRUE(!!successBool);
         VERIFY_ARE_EQUAL(events, 0u);
 
-        // send a bunch of 'a' keypresses to the console
+        // send a bunch of 'a' keypresses to the console.
         DWORD repeatCount = 1;
         const unsigned int messageSendCount = 1000;
         for (unsigned int i = 0; i < messageSendCount; ++i)
@@ -133,15 +226,15 @@ class KeyPressTests
             SendMessage(hwnd,
                         WM_CHAR,
                         0x41,
-                        repeatCount);
+                        repeatCount); // WM_CHAR doesn't use scan code
         }
 
-        // make sure the the keypresses got processed and coalesced
+        // make sure the keypresses got processed and coalesced
         events = 0;
         successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
         VERIFY_IS_TRUE(!!successBool);
         VERIFY_IS_GREATER_THAN(events, 0u, NoThrowString().Format(L"%d", events));
-        std::unique_ptr<INPUT_RECORD[]> inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
+        auto inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
         PeekConsoleInput(inputHandle,
                          inputBuffer.get(),
                          1,
@@ -174,9 +267,9 @@ class KeyPressTests
 
         Log::Comment(L"Testing the right number of input events is generated by Ctrl+Key press");
         BOOL successBool;
-        HWND hwnd = GetConsoleWindow();
+        auto hwnd = GetConsoleWindow();
         VERIFY_IS_TRUE(!!IsWindow(hwnd));
-        HANDLE inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+        auto inputHandle = GetStdHandle(STD_INPUT_HANDLE);
         DWORD events = 0;
 
         // Set the console to raw mode, so that it doesn't hijack any keypresses as shortcut keys
@@ -192,16 +285,16 @@ class KeyPressTests
         Log::Comment(NoThrowString().Format(L"Mode:0x%x", dwInMode));
 
         UINT vkCtrl = VK_LCONTROL; // Need this instead of VK_CONTROL
-        UINT uiCtrlScancode = MapVirtualKey(vkCtrl, MAPVK_VK_TO_VSC);
+        auto uiCtrlScancode = MapVirtualKey(vkCtrl, MAPVK_VK_TO_VSC);
         // According to
         // KEY_KEYDOWN https://msdn.microsoft.com/en-us/library/windows/desktop/ms646280(v=vs.85).aspx
         // KEY_UP https://msdn.microsoft.com/en-us/library/windows/desktop/ms646281(v=vs.85).aspx
         LPARAM CtrlFlags = (LOBYTE(uiCtrlScancode) << 16) | SINGLE_KEY_REPEAT;
-        LPARAM CtrlUpFlags = CtrlFlags | KEY_MESSAGE_UPKEY_CODE;
+        auto CtrlUpFlags = CtrlFlags | KEY_MESSAGE_UPKEY_CODE;
 
-        UINT uiScancode = MapVirtualKey(vk, MAPVK_VK_TO_VSC);
+        auto uiScancode = MapVirtualKey(vk, MAPVK_VK_TO_VSC);
         LPARAM DownFlags = (LOBYTE(uiScancode) << 16) | SINGLE_KEY_REPEAT;
-        LPARAM UpFlags = DownFlags | KEY_MESSAGE_UPKEY_CODE;
+        auto UpFlags = DownFlags | KEY_MESSAGE_UPKEY_CODE;
 
         Log::Comment(NoThrowString().Format(L"Testing Ctrl+%c", vk));
         Log::Comment(NoThrowString().Format(L"DownFlags=0x%x, CtrlFlags=0x%x", DownFlags, CtrlFlags));
@@ -222,7 +315,7 @@ class KeyPressTests
         VERIFY_IS_TRUE(!!successBool);
         VERIFY_IS_GREATER_THAN(events, 0u, NoThrowString().Format(L"%d events found", events));
 
-        std::unique_ptr<INPUT_RECORD[]> inputBuffer = std::make_unique<INPUT_RECORD[]>(16);
+        auto inputBuffer = std::make_unique<INPUT_RECORD[]>(16);
         PeekConsoleInput(inputHandle,
                          inputBuffer.get(),
                          16,
@@ -230,7 +323,7 @@ class KeyPressTests
 
         for (size_t i = 0; i < events; i++)
         {
-            INPUT_RECORD rc = inputBuffer[i];
+            auto rc = inputBuffer[i];
             switch (rc.EventType)
             {
             case KEY_EVENT:
@@ -269,37 +362,37 @@ class KeyPressTests
             return;
         }
 
-        const HANDLE inputHandle = GetStdHandle(STD_INPUT_HANDLE);
-        const HWND hwnd = GetConsoleWindow();
+        const auto inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+        const auto hwnd = GetConsoleWindow();
         VERIFY_IS_TRUE(!!IsWindow(hwnd));
 
         // Need the console to be in processed input for this to work
         SetConsoleMode(inputHandle, ENABLE_PROCESSED_INPUT);
         FlushConsoleInputBuffer(inputHandle);
 
-        LONG oldStyle = GetWindowLongW(hwnd, GWL_STYLE);
-        LONG oldExStyle = GetWindowLongW(hwnd, GWL_EXSTYLE);
+        auto oldStyle = GetWindowLongW(hwnd, GWL_STYLE);
+        auto oldExStyle = GetWindowLongW(hwnd, GWL_EXSTYLE);
 
         // According to
         // KEY_KEYDOWN https://msdn.microsoft.com/en-us/library/windows/desktop/ms646280(v=vs.85).aspx
         // KEY_UP https://msdn.microsoft.com/en-us/library/windows/desktop/ms646281(v=vs.85).aspx
-        const UINT vsc = MapVirtualKey(VK_F11, MAPVK_VK_TO_VSC);
+        const auto vsc = MapVirtualKey(VK_F11, MAPVK_VK_TO_VSC);
         const LPARAM F11Flags = (LOBYTE(vsc) << 16) | SINGLE_KEY_REPEAT;
-        const LPARAM F11UpFlags = F11Flags | KEY_MESSAGE_UPKEY_CODE;
+        const auto F11UpFlags = F11Flags | KEY_MESSAGE_UPKEY_CODE;
 
         // Send F11 key down and up. lParam is VirtualScanCode and RepeatCount
         SendMessage(hwnd, WM_KEYDOWN, VK_F11, F11Flags);
         SendMessage(hwnd, WM_KEYUP, VK_F11, F11UpFlags);
 
-        LONG maxStyle = GetWindowLongW(hwnd, GWL_STYLE);
-        LONG maxExStyle = GetWindowLongW(hwnd, GWL_EXSTYLE);
+        auto maxStyle = GetWindowLongW(hwnd, GWL_STYLE);
+        auto maxExStyle = GetWindowLongW(hwnd, GWL_EXSTYLE);
 
         // Send F11 key down and up. lParam is VirtualScanCode and RepeatCount
         SendMessage(hwnd, WM_KEYDOWN, VK_F11, F11Flags);
         SendMessage(hwnd, WM_KEYUP, VK_F11, F11UpFlags);
 
-        LONG newStyle = GetWindowLongW(hwnd, GWL_STYLE);
-        LONG newExStyle = GetWindowLongW(hwnd, GWL_EXSTYLE);
+        auto newStyle = GetWindowLongW(hwnd, GWL_STYLE);
+        auto newExStyle = GetWindowLongW(hwnd, GWL_EXSTYLE);
 
         // Maximize windows should not be Overlapped & have a popup
         // Extended style should have a window edge when not maximized
@@ -325,9 +418,9 @@ class KeyPressTests
 void KeyPressTests::TestAltGr()
 {
     Log::Comment(L"Checks that alt-gr behavior is maintained.");
-    HWND hwnd = GetConsoleWindow();
+    auto hwnd = GetConsoleWindow();
     VERIFY_IS_TRUE(!!IsWindow(hwnd));
-    HANDLE inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+    auto inputHandle = GetStdHandle(STD_INPUT_HANDLE);
     DWORD events = 0;
 
     // flush input buffer
@@ -338,7 +431,7 @@ void KeyPressTests::TestAltGr()
     // create german locale string
     std::wstringstream wss;
     wss << std::setfill(L'0') << std::setw(8) << std::hex << GERMAN_KEYBOARD_LAYOUT;
-    std::wstring germanKeyboardLayoutString(wss.str());
+    auto germanKeyboardLayoutString = wss.str();
 
     // save current keyboard layout
     wchar_t originalLocaleId[KL_NAMELENGTH];
@@ -369,7 +462,7 @@ void KeyPressTests::TestAltGr()
     VERIFY_ARE_EQUAL(events, 0u);
 
     // send the key event that will be turned into an '@'
-    UINT scanCode = MapVirtualKey('Q', MAPVK_VK_TO_VSC);
+    auto scanCode = MapVirtualKey('Q', MAPVK_VK_TO_VSC);
     PostMessage(hwnd, WM_KEYDOWN, 'Q', KEY_MESSAGE_CONTEXT_CODE | SINGLE_KEY_REPEAT | (scanCode << 16));
     Sleep(SLEEP_WAIT_TIME);
 
@@ -387,13 +480,13 @@ void KeyPressTests::TestAltGr()
     expectedRecord.Event.KeyEvent.wVirtualScanCode = (WORD)scanCode;
 
     // read input records and compare
-    const int maxRecordLookup = 20; // some arbitrary value to grab some records
+    const auto maxRecordLookup = 20; // some arbitrary value to grab some records
     Log::Comment(L"Looking for input record matching:");
     Log::Comment(VerifyOutputTraits<INPUT_RECORD>::ToString(expectedRecord));
     INPUT_RECORD records[20];
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInput(inputHandle, records, maxRecordLookup, &events));
     VERIFY_IS_GREATER_THAN(events, 0u);
-    bool successBool = false;
+    auto successBool = false;
     // look for the expected record somewhere in the returned records
     for (unsigned int i = 0; i < events; ++i)
     {

@@ -20,20 +20,18 @@ namespace Microsoft::Console
         CursorBlinker();
         ~CursorBlinker();
 
-        void FocusStart();
-        void FocusEnd();
+        void FocusStart() const noexcept;
+        void FocusEnd() const noexcept;
 
-        void UpdateSystemMetrics();
-        void SettingsChanged();
-        void TimerRoutine(SCREEN_INFORMATION& ScreenInfo);
+        void UpdateSystemMetrics() noexcept;
+        void SettingsChanged() noexcept;
+        void TimerRoutine(SCREEN_INFORMATION& ScreenInfo) const noexcept;
 
     private:
-        // These use Timer Queues:
-        // https://msdn.microsoft.com/en-us/library/windows/desktop/ms687003(v=vs.85).aspx
-        HANDLE _hCaretBlinkTimer; // timer used to periodically blink the cursor
-        HANDLE _hCaretBlinkTimerQueue; // timer queue where the blink timer lives
+        void SetCaretTimer() const noexcept;
+        void KillCaretTimer() const noexcept;
+
+        wil::unique_threadpool_timer_nowait _timer;
         UINT _uCaretBlinkTime;
-        void SetCaretTimer();
-        void KillCaretTimer();
     };
 }

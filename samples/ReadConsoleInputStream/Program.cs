@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  This is a demo that shows how we can have a stream-oriented view of characters from the console
  *  while also listening to console events like mouse, menu, focus, buffer/viewport(1) resize events.
  *

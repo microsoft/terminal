@@ -3,7 +3,7 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- userdpiapi.hpp
+- ConsoleControl.hpp
 
 Abstract:
 - This module is used for abstracting calls to private user32 DLL APIs to break the build system dependency.
@@ -13,7 +13,7 @@ Author(s):
 --*/
 #pragma once
 
-#include "..\inc\IConsoleControl.hpp"
+#include "../inc/IConsoleControl.hpp"
 
 // Uncomment to build publicly targeted scenarios.
 //#define CON_USERPRIVAPI_INDIRECT
@@ -47,7 +47,8 @@ namespace Microsoft::Console::Interactivity::Win32
         // IConsoleControl Members
         [[nodiscard]] NTSTATUS NotifyConsoleApplication(_In_ DWORD dwProcessId);
         [[nodiscard]] NTSTATUS SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground);
-        [[nodiscard]] NTSTATUS EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags);
+        [[nodiscard]] NTSTATUS EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags);
+        [[nodiscard]] NTSTATUS SetWindowOwner(HWND hwnd, DWORD processId, DWORD threadId) noexcept override;
 
         // Public Members
         [[nodiscard]] NTSTATUS Control(_In_ ConsoleControl::ControlType ConsoleCommand,

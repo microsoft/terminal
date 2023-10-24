@@ -21,4 +21,4 @@ Revision History:
 #include <conmsgl2.h>
 #include <conmsgl3.h>
 
-#include "..\server\ApiMessage.h"
+#include "../server/ApiMessage.h"

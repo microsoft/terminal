@@ -1,0 +1,29 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "EnumEntry.idl";
+
+#include "ViewModelHelpers.idl.h"
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass InteractionViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        InteractionViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
+
+        IInspectable CurrentTabSwitcherMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TabSwitcherModeList { get; };
+
+        IInspectable CurrentCopyFormat;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CopyFormatList { get; };
+
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, CopyOnSelect);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimBlockSelection);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimPaste);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SnapToGridOnResize);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, FocusFollowMouse);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DetectURLs);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, WordDelimiters);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ConfirmCloseAllTabs);
+    }
+}

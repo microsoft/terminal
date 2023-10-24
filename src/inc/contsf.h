@@ -29,8 +29,9 @@ extern "C" {
 #endif
 
 typedef RECT (*GetSuggestionWindowPos)();
+typedef RECT (*GetTextBoxAreaPos)();
 
-BOOL ActivateTextServices(HWND hwndConsole, GetSuggestionWindowPos pfnPosition);
+BOOL ActivateTextServices(HWND hwndConsole, GetSuggestionWindowPos pfnPosition, GetTextBoxAreaPos pfnTextArea);
 void DeactivateTextServices();
 BOOL NotifyTextServices(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT* lplResult);
 

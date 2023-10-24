@@ -1,4 +1,4 @@
-﻿//----------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // <copyright file="ExperimentalTabTests.cs" company="Microsoft">
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
@@ -28,7 +28,12 @@ namespace Host.Tests.UIA
         public static void SetupAll(TestContext context)
         {
             Log.Comment("Searching for WinAppDriver in the same directory where this test was launched from...");
-            string winAppDriver = Path.Combine(context.TestDeploymentDir, "WinAppDriver.exe");
+            string winAppDriver = Path.Combine(context.TestDeploymentDir, "WinAppDriver", "WinAppDriver.exe");
+
+            if (!File.Exists(winAppDriver))
+            {
+                winAppDriver = Path.Combine(context.TestDeploymentDir, "WinAppDriver.exe");
+            }
 
             Log.Comment($"Attempting to launch WinAppDriver at: {winAppDriver}");
             Log.Comment($"Working directory: {Environment.CurrentDirectory}");

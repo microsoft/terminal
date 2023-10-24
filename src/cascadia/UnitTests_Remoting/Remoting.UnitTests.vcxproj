@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- A note about this project: We're building the test code dll from this
+    project, but it _MUST_ be run in conjunction with the TestHostApp project.
+    TestHostApp actually will build a TestHost executable and packaging bits
+    that we can use to run our tests. We need TestHostApp so that our
+    dependencies, like MUX, can be aggregated correctly, and resources properly
+    combined into a resources.pri file.
+
+    TestHostApp will manually copy the output of this project into its own
+    OutDir, so we can run the tests from there. -->
+
+  <PropertyGroup>
+    <ProjectGuid>{68a10cd3-aa64-465b-af5f-ed4e9700543c}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>RemotingUnitTests</RootNamespace>
+    <ProjectName>UnitTests_Remoting</ProjectName>
+    <TargetName>Remoting.Unit.Tests</TargetName>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
+    <!-- TerminalCppWinrt is intentionally not set -->
+  </PropertyGroup>
+
+  <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
+  <Import Project="$(OpenConsoleDir)\src\cppwinrt.build.pre.props" />
+
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+  </ItemGroup>
+
+  <!-- ========================= Cpp Files ======================== -->
+  <ItemGroup>
+    <ClCompile Include="RemotingTests.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\Remoting\Microsoft.Terminal.RemotingLib.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)\src\types\lib\types.vcxproj" />
+
+    <!-- If you don't reference these projects here, the
+    _ConsoleGenerateAdditionalWinmdManifests step won't gather the winmd's -->
+    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\Remoting\dll\Microsoft.Terminal.Remoting.vcxproj" />
+  </ItemGroup>
+
+  <!-- ========================= Globals ======================== -->
+
+  <!-- ====================== Compiler & Linker Flags ===================== -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\jsoncpp\json;$(OpenConsoleDir)src\inc;$(OpenConsoleDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\Remoting\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+
+      <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
+      <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>onecoreuap.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <PropertyGroup>
+    <GenerateManifest>true</GenerateManifest>
+    <EmbedManifest>true</EmbedManifest>
+  </PropertyGroup>
+
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+
+</Project>

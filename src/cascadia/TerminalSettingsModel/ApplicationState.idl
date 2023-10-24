@@ -1,0 +1,42 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+import "Command.idl";
+import "GlobalAppSettings.idl";
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    enum InfoBarMessage
+    {
+        CloseOnExitInfo = 0,
+        KeyboardServiceWarning,
+        SetAsDefault,
+    };
+
+    runtimeclass WindowLayout
+    {
+        WindowLayout();
+
+        static String ToJson(WindowLayout layout);
+        static WindowLayout FromJson(String json);
+
+        Windows.Foundation.Collections.IVector<ActionAndArgs> TabLayout;
+        Windows.Foundation.IReference<LaunchPosition> InitialPosition;
+        Windows.Foundation.IReference<Windows.Foundation.Size> InitialSize;
+        Windows.Foundation.IReference<LaunchMode> LaunchMode;
+    };
+
+    [default_interface] runtimeclass ApplicationState {
+        static ApplicationState SharedInstance();
+
+        void Reload();
+        void Reset();
+
+        Boolean IsStatePath(String filename);
+
+        String SettingsHash;
+        Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts;
+        Windows.Foundation.Collections.IVector<String> RecentCommands;
+        Windows.Foundation.Collections.IVector<InfoBarMessage> DismissedMessages;
+        Windows.Foundation.Collections.IVector<String> AllowedCommandlines;
+    }
+}

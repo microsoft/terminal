@@ -29,15 +29,20 @@ enum class ReplyDataType
 class IWaitRoutine
 {
 public:
-    IWaitRoutine(ReplyDataType type) :
+    IWaitRoutine(ReplyDataType type) noexcept :
         _ReplyType(type)
 
     {
     }
 
-    virtual ~IWaitRoutine()
-    {
-    }
+    virtual ~IWaitRoutine() = default;
+
+    IWaitRoutine(const IWaitRoutine&) = delete;
+    IWaitRoutine(IWaitRoutine&&) = delete;
+    IWaitRoutine& operator=(const IWaitRoutine&) & = delete;
+    IWaitRoutine& operator=(IWaitRoutine&&) & = delete;
+
+    virtual void MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer) = 0;
 
     virtual bool Notify(const WaitTerminationReason TerminationReason,
                         const bool fIsUnicode,
@@ -46,11 +51,11 @@ public:
                         _Out_ DWORD* const pControlKeyState,
                         _Out_ void* const pOutputData) = 0;
 
-    ReplyDataType GetReplyType() const
+    ReplyDataType GetReplyType() const noexcept
     {
         return _ReplyType;
     }
 
 private:
-    ReplyDataType const _ReplyType;
+    const ReplyDataType _ReplyType;
 };

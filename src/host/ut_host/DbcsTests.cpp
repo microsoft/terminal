@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
@@ -29,7 +29,7 @@ class DbcsTests
         CHAR_INFO rgci[cchTestSize];
 
         // pick a color to use for attributes to ensure it's preserved.
-        WORD const wAttrTest = FOREGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_INTENSITY;
+        const auto wAttrTest = FOREGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_INTENSITY;
 
         // target array will look like
         // abcdeLTLTLTLTLTpqrst
@@ -38,7 +38,7 @@ class DbcsTests
 
         // fill ASCII characters first by looping and
         // incrementing. we'll cover up the middle later
-        WCHAR wch = L'a';
+        auto wch = L'a';
         for (size_t i = 0; i < ARRAYSIZE(rgci); i++)
         {
             rgci[i].Char.UnicodeChar = wch;
@@ -58,11 +58,11 @@ class DbcsTests
             wchDouble++;
         }
 
-        const gsl::span<CHAR_INFO> buffer(rgci, ARRAYSIZE(rgci));
+        const std::span<CHAR_INFO> buffer(rgci, ARRAYSIZE(rgci));
 
         // feed it into UnicodeRasterFontCellMungeOnRead to confirm that it is working properly.
         // do it in-place to confirm that it can operate properly in the common case.
-        DWORD dwResult = UnicodeRasterFontCellMungeOnRead(buffer);
+        auto dwResult = UnicodeRasterFontCellMungeOnRead(buffer);
 
         // the final length returned should be the same as the length we started with
         if (VERIFY_ARE_EQUAL(ARRAYSIZE(rgci), dwResult, L"Ensure the length claims that we are the same before and after."))
@@ -80,7 +80,7 @@ class DbcsTests
             }
 
             // and all extra portions of the array should be zeroed.
-            for (size_t i = ARRAYSIZE(wchExpected); i < ARRAYSIZE(rgci); i++)
+            for (auto i = ARRAYSIZE(wchExpected); i < ARRAYSIZE(rgci); i++)
             {
                 VERIFY_ARE_EQUAL(rgci[i].Char.UnicodeChar, 0);
                 VERIFY_ARE_EQUAL(rgci[i].Attributes, 0);

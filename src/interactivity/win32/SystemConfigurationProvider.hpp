@@ -16,7 +16,7 @@ Author(s):
 
 #include "precomp.h"
 
-#include "..\inc\ISystemConfigurationProvider.hpp"
+#include "../inc/ISystemConfigurationProvider.hpp"
 
 namespace Microsoft::Console::Interactivity::Win32
 {
@@ -37,7 +37,8 @@ namespace Microsoft::Console::Interactivity::Win32
                                  _Inout_updates_bytes_(*pdwTitleLength) LPWSTR pwszTitle,
                                  _Inout_ PDWORD pdwTitleLength,
                                  _In_ PCWSTR pwszCurrDir,
-                                 _In_ PCWSTR pwszAppName);
+                                 _In_ PCWSTR pwszAppName,
+                                 _Inout_opt_ IconInfo* iconInfo);
 
     private:
         static const ULONG s_DefaultCursorWidth = 1;

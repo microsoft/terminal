@@ -123,4 +123,4 @@ This open issue tracks the phase features of Search: https://github.com/microsof
 
 ## Resources
 
-Github Issue: https://github.com/microsoft/terminal/issues/605
+GitHub Issue: https://github.com/microsoft/terminal/issues/605

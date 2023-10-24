@@ -24,7 +24,6 @@ namespace Microsoft::Console::Interactivity
         ConsoleInputThread,
         ConsoleWindowMetrics,
         HighDpiApi,
-        InputServices,
         SystemConfigurationProvider
     };
 }

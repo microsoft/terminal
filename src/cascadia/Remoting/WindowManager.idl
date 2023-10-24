@@ -1,0 +1,42 @@
+import "Peasant.idl";
+import "Monarch.idl";
+
+
+namespace Microsoft.Terminal.Remoting
+{
+    [default_interface] runtimeclass WindowManager
+    {
+        WindowManager();
+
+        ProposeCommandlineResult ProposeCommandline(CommandlineArgs args, Boolean isolatedMode);
+        Peasant CreatePeasant(WindowRequestedArgs args);
+
+        void SignalClose(Peasant p);
+
+        void UpdateActiveTabTitle(String title, Peasant p);
+        static void RequestQuitAll(Peasant p);
+
+        void SummonWindow(SummonWindowSelectionArgs args);
+        void SummonAllWindows();
+
+        Windows.Foundation.Collections.IVector<String> GetAllWindowLayouts();
+        Windows.Foundation.Collections.IVectorView<PeasantInfo> GetPeasantInfos();
+
+        UInt64 GetNumberOfPeasants();
+
+        Boolean DoesQuakeWindowExist();
+
+        void RequestMoveContent(String window, String content, UInt32 tabIndex, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
+        void RequestSendContent(RequestReceiveContentArgs args);
+
+        event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;
+        event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
+        event Windows.Foundation.TypedEventHandler<Object, QuitAllRequestedArgs> QuitAllRequested;
+        event Windows.Foundation.TypedEventHandler<Object, GetWindowLayoutArgs> GetWindowLayoutRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
+
+    };
+}

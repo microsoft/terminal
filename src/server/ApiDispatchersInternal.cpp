@@ -5,14 +5,14 @@
 
 #include "ApiDispatchers.h"
 
-#include "..\host\globals.h"
-#include "..\host\handle.h"
-#include "..\host\server.h"
-#include "..\host\telemetry.hpp"
+#include "../host/globals.h"
+#include "../host/handle.h"
+#include "../host/server.h"
+#include "../host/telemetry.hpp"
 
-#include "..\host\ntprivapi.hpp"
+#include "../host/ntprivapi.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 
@@ -25,8 +25,8 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleProcessList(_Inout_ CONSOLE_API_MSG* const m,
                                                                   _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PCONSOLE_GETCONSOLEPROCESSLIST_MSG const a = &m->u.consoleMsgL3.GetConsoleProcessList;
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto a = &m->u.consoleMsgL3.GetConsoleProcessList;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleProcessList);
 
     PVOID Buffer;
@@ -44,7 +44,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
     * (but we still return S_OK).
     */
 
-    LPDWORD lpdwProcessList = (PDWORD)Buffer;
+    auto lpdwProcessList = (PDWORD)Buffer;
     size_t cProcessList = a->dwProcessCount;
     if (SUCCEEDED(gci.ProcessHandleList.GetProcessList(lpdwProcessList, &cProcessList)))
     {
@@ -59,7 +59,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleLangId(_Inout_ CONSOLE_API_MSG* const m,
                                                              _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    CONSOLE_LANGID_MSG* const a = &m->u.consoleMsgL1.GetConsoleLangId;
+    const auto a = &m->u.consoleMsgL1.GetConsoleLangId;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleLangId);
 
     // TODO: MSFT: 9115192 - This should probably just ask through GetOutputCP and convert it ourselves on this side.
@@ -69,8 +69,8 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 [[nodiscard]] HRESULT ApiDispatchers::ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG* const m,
                                                                      _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    CONSOLE_CTRLEVENT_MSG* const a = &m->u.consoleMsgL2.GenerateConsoleCtrlEvent;
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto a = &m->u.consoleMsgL2.GenerateConsoleCtrlEvent;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GenerateConsoleCtrlEvent);
 
     LockConsole();
@@ -83,7 +83,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
         ProcessHandle = gci.ProcessHandleList.FindProcessByGroupId(a->ProcessGroupId);
         if (ProcessHandle == nullptr)
         {
-            ULONG ProcessId = a->ProcessGroupId;
+            auto ProcessId = a->ProcessGroupId;
 
             // We didn't find a process with that group ID.
             // Let's see if the process with that ID exists and has a parent that is a member of this console.
@@ -93,7 +93,6 @@ using Microsoft::Console::Interactivity::ServiceLocator;
             RETURN_IF_FAILED(gci.ProcessHandleList.AllocProcessData(a->ProcessGroupId,
                                                                     0,
                                                                     a->ProcessGroupId,
-                                                                    ProcessHandle,
                                                                     nullptr));
         }
     }

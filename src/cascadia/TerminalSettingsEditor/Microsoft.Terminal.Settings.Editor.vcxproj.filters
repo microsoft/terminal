@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="Utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="Utils.h" />
+    <ClInclude Include="PreviewConnection.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="ProfileViewModel.idl" />
+    <Midl Include="ColorSchemeViewModel.idl" />
+    <Midl Include="ColorSchemesPageViewModel.idl" />
+    <Midl Include="RenderingViewModel.idl" />
+    <Midl Include="InteractionViewModel.idl" />
+    <Midl Include="GlobalAppearanceViewModel.idl" />
+    <Midl Include="LaunchViewModel.idl" />
+    <Midl Include="EnumEntry.idl" />
+    <Midl Include="Converters.idl">
+      <Filter>Converters</Filter>
+    </Midl>
+    <Midl Include="SettingContainer.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="$(ProjectName).def" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="CommonResources.xaml" />
+    <Page Include="GlobalAppearance.xaml" />
+    <Page Include="ColorSchemes.xaml" />
+    <Page Include="EditColorScheme.xaml" />
+    <Page Include="Interaction.xaml" />
+    <Page Include="Launch.xaml" />
+    <Page Include="MainPage.xaml" />
+    <Page Include="Profiles_Base.xaml" />
+    <Page Include="Profiles_Advanced.xaml" />
+    <Page Include="Profiles_Appearance.xaml" />
+    <Page Include="Appearances.xaml" />
+    <Page Include="Rendering.xaml" />
+    <Page Include="Actions.xaml" />
+    <Page Include="SettingContainerStyle.xaml" />
+    <Page Include="AddProfile.xaml" />
+    <Page Include="KeyChordListener.xaml" />
+  </ItemGroup>
+</Project>

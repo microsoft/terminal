@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{21b7ea5e-1ef8-49b6-ac07-11714af0e37d}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>MonarchPeasantSample</RootNamespace>
+    <ProjectName>MonarchPeasantSample</ProjectName>
+    <TargetName>MonarchPeasantSample</TargetName>
+    <ConfigurationType>Application</ConfigurationType>
+    <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
+    <ApplicationType>Windows Store</ApplicationType>
+    <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+  </PropertyGroup>
+
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+
+  <PropertyGroup>
+    <GenerateManifest>true</GenerateManifest>
+    <EmbedManifest>true</EmbedManifest>
+  </PropertyGroup>
+
+  <!-- Source Files -->
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="AppState.h" />
+    <ClInclude Include="SampleMonarch.h">
+      <DependentUpon>SampleMonarch.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SamplePeasant.h">
+      <DependentUpon>SamplePeasant.idl</DependentUpon>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="AppState.cpp" />
+    <ClCompile Include="MonarchMain.cpp" />
+    <ClCompile Include="PeasantMain.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="SampleMonarch.cpp">
+      <DependentUpon>SampleMonarch.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SamplePeasant.cpp">
+      <DependentUpon>SamplePeasant.idl</DependentUpon>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Midl Include="SampleMonarch.idl" />
+    <Midl Include="SamplePeasant.idl" />
+  </ItemGroup>
+
+  <!-- Dependencies -->
+  <ItemGroup>
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
+  </ItemGroup>
+
+  <!--
+    This ItemGroup and the Globals PropertyGroup below it are required in order
+    to enable F5 debugging for the unpackaged application
+    -->
+  <ItemGroup>
+    <PropertyPageSchema Include="$(VCTargetsPath)$(LangID)\debugger_general.xml" />
+    <PropertyPageSchema Include="$(VCTargetsPath)$(LangID)\debugger_local_windows.xml" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <!-- These have to come after post.props because the Cpp common targets will inexplicably overwrite them. -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+  <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
+
+</Project>

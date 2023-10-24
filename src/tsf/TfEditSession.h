@@ -43,7 +43,7 @@ class CEditSessionObject : public ITfEditSession
 public:
     CEditSessionObject() :
         m_cRef(1) {}
-    virtual ~CEditSessionObject(){};
+    virtual ~CEditSessionObject() = default;
 
 public:
     //
@@ -60,7 +60,7 @@ public:
     //
     STDMETHODIMP DoEditSession(TfEditCookie ec)
     {
-        HRESULT hr = _DoEditSession(ec);
+        auto hr = _DoEditSession(ec);
         Release(); // Release reference count for asynchronous edit session.
         return hr;
     }
@@ -150,7 +150,7 @@ private:
 class CEditSessionCompositionComplete : public CEditSessionObject
 {
 public:
-    CEditSessionCompositionComplete() {}
+    CEditSessionCompositionComplete() = default;
 
     [[nodiscard]] HRESULT _DoEditSession(TfEditCookie ec)
     {
@@ -169,7 +169,7 @@ public:
 class CEditSessionCompositionCleanup : public CEditSessionObject
 {
 public:
-    CEditSessionCompositionCleanup() {}
+    CEditSessionCompositionCleanup() = default;
 
     [[nodiscard]] HRESULT _DoEditSession(TfEditCookie ec)
     {
@@ -188,7 +188,7 @@ public:
 class CEditSessionUpdateCompositionString : public CEditSessionObject
 {
 public:
-    CEditSessionUpdateCompositionString() {}
+    CEditSessionUpdateCompositionString() = default;
 
     [[nodiscard]] HRESULT _DoEditSession(TfEditCookie ec)
     {

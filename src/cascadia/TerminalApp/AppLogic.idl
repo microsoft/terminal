@@ -1,20 +1,24 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-
-import "../TerminalPage.idl";
-import "../ShortcutActionDispatch.idl";
-import "../IDirectKeyListener.idl";
+import "TerminalWindow.idl";
 
 namespace TerminalApp
 {
-    enum LaunchMode
+    [default_interface] runtimeclass FindTargetWindowResult
     {
-        DefaultMode,
-        MaximizedMode,
-        FullscreenMode,
+        Int32 WindowId { get; };
+        String WindowName { get; };
     };
 
-    [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
+    struct ParseCommandlineResult
+    {
+        String Message;
+        Int32 ExitCode;
+    };
+
+    // See IDialogPresenter and TerminalPage's DialogPresenter for more
+    // information.
+    [default_interface] runtimeclass AppLogic
     {
         AppLogic();
 
@@ -25,46 +29,33 @@ namespace TerminalApp
         // registered?" when it definitely is.
         void Create();
 
-        Boolean IsUwp();
-        void RunAsUwp();
-        Boolean IsElevated();
+        Boolean IsRunningElevated();
+        Boolean CanDragDrop();
 
-        Int32 SetStartupCommandline(String[] commands);
-        String ParseCommandlineMessage { get; };
-        Boolean ShouldExitEarly { get; };
+        ContentManager ContentManager { get; };
 
-        void LoadSettings();
-        Windows.UI.Xaml.UIElement GetRoot();
+        Boolean HasSettingsStartupActions();
 
-        String Title { get; };
+        Boolean ShouldUsePersistedLayout();
+        void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
 
-        String ApplicationDisplayName { get; };
-        String ApplicationVersion { get; };
+        void ReloadSettings();
 
-        Boolean FocusMode { get; };
-        Boolean Fullscreen { get; };
-        Boolean AlwaysOnTop { get; };
+        // Selected settings to expose
+        Microsoft.Terminal.Settings.Model.Theme Theme { get; };
+        Boolean IsolatedMode { get; };
+        Boolean AllowHeadless { get; };
+        Boolean RequestsTrayIcon { get; };
 
-        Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
+        FindTargetWindowResult FindTargetWindow(String[] args);
 
-        Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
-        Windows.UI.Xaml.ElementTheme GetRequestedTheme();
-        LaunchMode GetLaunchMode();
-        Boolean GetShowTabsInTitlebar();
-        Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
-        void TitlebarClicked();
-        void WindowCloseButtonClicked();
+        TerminalWindow CreateNewWindow();
 
-        // See IDialogPresenter and TerminalPage's DialogPresenter for more
-        // information.
-        Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
+        ParseCommandlineResult GetParseCommandlineMessage(String[] args);
 
-        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
-        event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
-        event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
-        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
+        IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
+
+        event Windows.Foundation.TypedEventHandler<Object, SettingsLoadEventArgs> SettingsChanged;
+
     }
 }

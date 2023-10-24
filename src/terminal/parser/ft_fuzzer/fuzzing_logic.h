@@ -38,12 +38,12 @@ namespace fuzz
     {
         if (rcch > 1)
         {
-            const LPWSTR rgFormatStringChars[] = { L"%n", L"%s", L"%d" };
-            size_t cbDestSize = 2 * sizeof(WCHAR);
+            const PCWSTR rgFormatStringChars[] = { L"%n", L"%s", L"%d" };
+            auto cbDestSize = 2 * sizeof(WCHAR);
             memcpy_s(
                 &(pwsz[CFuzzChance::GetRandom<size_t>(rcch - 1)]), // -1 because we are writing 2 chars
                 cbDestSize,
-                CFuzzChance::SelectOne<const LPWSTR>(rgFormatStringChars, ARRAYSIZE(rgFormatStringChars)),
+                CFuzzChance::SelectOne<const PCWSTR>(rgFormatStringChars, ARRAYSIZE(rgFormatStringChars)),
                 cbDestSize);
         }
 
@@ -56,12 +56,12 @@ namespace fuzz
     {
         if (rcch > 1)
         {
-            const LPSTR rgFormatStringChars[] = { "%n", "%s", "%d" };
-            size_t cbDestSize = 2 * sizeof(CHAR);
+            const LPCSTR rgFormatStringChars[] = { "%n", "%s", "%d" };
+            auto cbDestSize = 2 * sizeof(CHAR);
             memcpy_s(
                 &(psz[CFuzzChance::GetRandom<size_t>(rcch - 1)]),
                 cbDestSize,
-                CFuzzChance::SelectOne<const LPSTR>(rgFormatStringChars, ARRAYSIZE(rgFormatStringChars)),
+                CFuzzChance::SelectOne<const LPCSTR>(rgFormatStringChars, ARRAYSIZE(rgFormatStringChars)),
                 cbDestSize);
         }
 
@@ -139,7 +139,7 @@ namespace fuzz
         if (rcch > 0)
         {
             size_t cchStart = 0;
-            size_t cchEnd = rcch - 1;
+            auto cchEnd = rcch - 1;
             while (cchStart < cchEnd)
             {
                 pwsz[cchEnd--] = pwsz[cchStart++];
@@ -156,7 +156,7 @@ namespace fuzz
         if (rcch > 0)
         {
             size_t cchStart = 0;
-            size_t cchEnd = rcch - 1;
+            auto cchEnd = rcch - 1;
             while (cchStart < cchEnd)
             {
                 psz[cchEnd--] = psz[cchStart++];
@@ -172,7 +172,7 @@ namespace fuzz
     {
         if (rcch > 0)
         {
-            size_t cch = wcslen(pwsz);
+            auto cch = wcslen(pwsz);
             size_t cchStart = 0;
             while (cch < rcch)
             {
@@ -189,7 +189,7 @@ namespace fuzz
     {
         if (rcch > 0)
         {
-            size_t cch = strlen(psz);
+            auto cch = strlen(psz);
             size_t cchStart = 0;
             while (cch < rcch)
             {
@@ -238,12 +238,40 @@ namespace fuzz
         return _strrev(psz);
     }
 
+    template<class _Alloc = CFuzzCRTAllocator>
+    class CFuzzLogic;
+
+    // Flips a random byte value within the buffer.
+    template<typename _Type>
+    static _Type* _fz_flipByte(__inout_ecount(rcelms) _Type* p, __inout size_t& rcelms)
+    {
+        if (rcelms > 0)
+        {
+            return reinterpret_cast<_Type*>(CFuzzLogic<>::FuzzArrayElement(
+                reinterpret_cast<BYTE*>(p), (rcelms) * sizeof(_Type)));
+        }
+
+        return p;
+    }
+
+    // Flips a random entry value within the buffer
+    template<typename _Type>
+    static _Type* _fz_flipEntry(__inout_ecount(rcelms) _Type* p, __inout size_t& rcelms)
+    {
+        if (rcelms > 0)
+        {
+            return CFuzzLogic<>::FuzzArrayElement(p, rcelms);
+        }
+
+        return p;
+    }
+
     // Contains fuzzing logic based upon a variety of default scenarios.  The
     // idea is to capture and make available a comprehensive fuzzing library
     // that does not require external modules or complex setup.  This should
     // make fuzzing easier to implement and test, as well as more explicit
     // with regard to what fuzzing manipulations are possible.
-    template<class _Alloc = CFuzzCRTAllocator>
+    template<class _Alloc>
     class CFuzzLogic
     {
     public:
@@ -276,8 +304,8 @@ namespace fuzz
             };
             CFuzzType<size_t> fuzz_cb(FUZZ_MAP(rgfte), wcslen(pwsz));
 
-            size_t cch = fuzz_cb + 1; // add 1 for ensuring NULL termination
-            LPWSTR pwszRealloc = reinterpret_cast<LPWSTR>(_Alloc::Allocate(cch * sizeof(WCHAR)));
+            auto cch = fuzz_cb + 1; // add 1 for ensuring NULL termination
+            auto pwszRealloc = reinterpret_cast<LPWSTR>(_Alloc::Allocate(cch * sizeof(WCHAR)));
             if (pwszRealloc)
             {
                 pwszRealloc[--cch] = L'\0';
@@ -302,8 +330,8 @@ namespace fuzz
             };
             CFuzzType<size_t> fuzz_cch(FUZZ_MAP(rgfte), strlen(psz));
 
-            size_t cchTemp = fuzz_cch + 1; // add 1 for ensuring NULL termination
-            LPSTR pszReallocTemp = reinterpret_cast<LPSTR>(_Alloc::Allocate(cchTemp * sizeof(CHAR)));
+            auto cchTemp = fuzz_cch + 1; // add 1 for ensuring NULL termination
+            auto pszReallocTemp = reinterpret_cast<LPSTR>(_Alloc::Allocate(cchTemp * sizeof(CHAR)));
             if (pszReallocTemp)
             {
                 pszReallocTemp[--cchTemp] = '\0';
@@ -312,7 +340,7 @@ namespace fuzz
                 const _fuzz_type_entry<LPSTR> fuzzMap[] = {
                     { 5, _fz_sz_tokenizeSpaces, FreeFuzzedBuffer },
                     { 95, [=](LPSTR p) {
-                         size_t cchInner = cchTemp;
+                         auto cchInner = cchTemp;
                          return FuzzStringA_NoRealloc(p, cchInner);
                      } }
                 };
@@ -340,7 +368,7 @@ namespace fuzz
         // parameter.
         static LPWSTR FuzzStringW_NoRealloc(__inout LPWSTR pwsz) throw()
         {
-            size_t cch = wcslen(pwsz);
+            auto cch = wcslen(pwsz);
             return FuzzStringW_NoRealloc(pwsz, cch);
         }
 
@@ -349,14 +377,14 @@ namespace fuzz
         // parameter.
         static LPSTR FuzzStringA_NoRealloc(__inout LPSTR psz) throw()
         {
-            size_t cch = strlen(psz);
+            auto cch = strlen(psz);
             return FuzzStringA_NoRealloc(psz, cch);
         }
 
         static LPSTR DuplicateStringA(__in LPCSTR psz) throw()
         {
-            size_t cch = strlen(psz) + 1;
-            LPSTR pszDuplicate = reinterpret_cast<LPSTR>(_Alloc::Allocate(cch * sizeof(CHAR)));
+            auto cch = strlen(psz) + 1;
+            auto pszDuplicate = reinterpret_cast<LPSTR>(_Alloc::Allocate(cch * sizeof(CHAR)));
             if (pszDuplicate)
             {
                 StringCchCopyA(pszDuplicate, cch, psz);
@@ -429,31 +457,6 @@ namespace fuzz
         }
     };
 
-    // Flips a random byte value within the buffer.
-    template<typename _Type>
-    static _Type* _fz_flipByte(__inout_ecount(rcelms) _Type* p, __inout size_t& rcelms)
-    {
-        if (rcelms > 0)
-        {
-            return reinterpret_cast<_Type*>(CFuzzLogic<>::FuzzArrayElement(
-                reinterpret_cast<BYTE*>(p), (rcelms) * sizeof(_Type)));
-        }
-
-        return p;
-    }
-
-    // Flips a random entry value within the buffer
-    template<typename _Type>
-    static _Type* _fz_flipEntry(__inout_ecount(rcelms) _Type* p, __inout size_t& rcelms)
-    {
-        if (rcelms > 0)
-        {
-            return CFuzzLogic<>::FuzzArrayElement(p, rcelms);
-        }
-
-        return p;
-    }
-
     static char* _fz_sz_tokenizeSpaces(__in char* psz)
     {
         const _fuzz_type_entry<DWORD> repeatMap[] = {
@@ -464,7 +467,7 @@ namespace fuzz
 
         std::string sFuzzed;
         char* next_token = nullptr;
-        char* token = strtok_s(psz, " ", &next_token);
+        auto token = strtok_s(psz, " ", &next_token);
         while (token)
         {
             CFuzzType<DWORD> repeat(FUZZ_MAP(repeatMap), 1);
@@ -479,7 +482,7 @@ namespace fuzz
 
         // If psz has a final trailing space, avoid trimming it away.  Otherwise, remove
         // the extra added final space appended via the loop above.
-        size_t cch = strlen(psz);
+        auto cch = strlen(psz);
         if (psz[cch] == ' ')
             TrimRight(sFuzzed, ' ');
         return CFuzzLogic<>::DuplicateStringA(sFuzzed.c_str());

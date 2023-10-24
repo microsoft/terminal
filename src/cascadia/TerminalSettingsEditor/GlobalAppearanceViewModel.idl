@@ -1,0 +1,42 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "EnumEntry.idl";
+
+#include "ViewModelHelpers.idl.h"
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass GlobalAppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        GlobalAppearanceViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
+
+        static String LanguageDisplayConverter(String tag);
+        Boolean LanguageSelectorAvailable { get; };
+        Windows.Foundation.Collections.IObservableVector<String> LanguageList { get; };
+        IInspectable CurrentLanguage;
+
+        IInspectable CurrentTheme;
+        static String ThemeNameConverter(Microsoft.Terminal.Settings.Model.Theme theme);
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.Theme> ThemeList { get; };
+
+        IInspectable CurrentNewTabPosition;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> NewTabPositionList { get; };
+
+        IInspectable CurrentTabWidthMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TabWidthModeList { get; };
+
+        Boolean InvertedDisableAnimations;
+
+        void ShowTitlebarToggled(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysShowTabs);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowTabsInTitlebar);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, UseAcrylicInTabRow);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowTitleInTitlebar);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysOnTop);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AutoHideWindow);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysShowNotificationIcon);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, MinimizeToNotificationArea);
+    }
+}

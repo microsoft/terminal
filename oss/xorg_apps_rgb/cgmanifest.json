@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/component-detection-manifest.json",
+  "Registrations": [
+    {
+      "component": {
+        "type": "git",
+        "git": {
+          "repositoryUrl": "https://gitlab.freedesktop.org/xorg/app/rgb.git",
+          "commitHash": "97820e748eb496a1f6d3fc3bf89688f0ce1f64f9"
+        }
+      }
+    }
+  ],
+  "Version": 1
+}

@@ -15,6 +15,6 @@ Abstract:
 #include <windows.h>
 #include <winmeta.h>
 #include <TraceLoggingProvider.h>
-#include <telemetry\ProjectTelemetry.h>
+#include <telemetry/ProjectTelemetry.h>
 
 TRACELOGGING_DECLARE_PROVIDER(g_hConsoleVirtTermParserEventTraceProvider);

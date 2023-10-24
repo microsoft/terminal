@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CA5CAD1A-d7ec-4107-b7c6-79cb77ae2907}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>Microsoft.Terminal.Settings.Model.Lib</ProjectName>
+    <RootNamespace>Microsoft.Terminal.Settings.Model</RootNamespace>
+    <TargetName>Microsoft.Terminal.Settings.Model.Lib</TargetName>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <SubSystem>Console</SubSystem>
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+  </PropertyGroup>
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalVisualStudioSetup>true</TerminalVisualStudioSetup>
+    <TerminalMUX>true</TerminalMUX>
+  </PropertyGroup>
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <ClInclude Include="ActionArgsMagic.h" />
+    <ClInclude Include="NewTabMenuEntry.h">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SeparatorEntry.h">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="FolderEntry.h">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ProfileEntry.h">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="RemainingProfilesEntry.h">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ProfileCollectionEntry.h">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="MatchProfilesEntry.h">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="VisualStudioGenerator.h" />
+    <ClInclude Include="DefaultTerminal.h">
+      <DependentUpon>DefaultTerminal.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="IconPathConverter.h">
+      <DependentUpon>IconPathConverter.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="ActionArgs.h">
+      <DependentUpon>ActionArgs.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ActionAndArgs.h">
+      <DependentUpon>ActionArgs.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ActionMap.h">
+      <DependentUpon>ActionMap.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="AzureCloudShellGenerator.h" />
+    <ClInclude Include="ApplicationState.h">
+      <DependentUpon>ApplicationState.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="CascadiaSettings.h">
+      <DependentUpon>CascadiaSettings.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ColorScheme.h">
+      <DependentUpon>ColorScheme.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Theme.h">
+      <DependentUpon>Theme.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Command.h">
+      <DependentUpon>Command.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="DynamicProfileUtils.h" />
+    <ClInclude Include="FileUtils.h" />
+    <ClInclude Include="GlobalAppSettings.h">
+      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="IInheritable.h" />
+    <ClInclude Include="MTSMSettings.h" />
+    <ClInclude Include="IDynamicProfileGenerator.h" />
+    <ClInclude Include="JsonUtils.h" />
+    <ClInclude Include="HashUtils.h" />
+    <ClInclude Include="KeyChordSerialization.h">
+      <DependentUpon>KeyChordSerialization.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="PowershellCoreProfileGenerator.h" />
+    <ClInclude Include="Profile.h">
+      <DependentUpon>Profile.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="AppearanceConfig.h">
+      <DependentUpon>AppearanceConfig.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="FontConfig.h">
+      <DependentUpon>FontConfig.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="EnumMappings.h">
+      <DependentUpon>EnumMappings.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SettingsTypes.h" />
+    <ClInclude Include="TerminalSettings.h">
+      <DependentUpon>TerminalSettings.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
+    <ClInclude Include="TerminalWarnings.h">
+      <DependentUpon>TerminalWarnings.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="VsDevCmdGenerator.h" />
+    <ClInclude Include="VsDevShellGenerator.h" />
+    <ClInclude Include="VsSetupConfiguration.h" />
+    <ClInclude Include="WslDistroGenerator.h" />
+    <ClInclude Include="SshHostGenerator.h" />
+    <ClInclude Include="ModelSerializationHelpers.h" />
+  </ItemGroup>
+  <!-- ========================= Cpp Files ======================== -->
+  <ItemGroup>
+    <ClCompile Include="VisualStudioGenerator.cpp" />
+    <ClCompile Include="DefaultTerminal.cpp">
+      <DependentUpon>DefaultTerminal.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="IconPathConverter.cpp">
+      <DependentUpon>IconPathConverter.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="init.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="ActionAndArgs.cpp">
+      <DependentUpon>ActionArgs.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ActionArgs.cpp">
+      <DependentUpon>ActionArgs.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ActionMap.cpp">
+      <DependentUpon>ActionMap.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ActionMapSerialization.cpp">
+      <DependentUpon>ActionMap.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="AzureCloudShellGenerator.cpp" />
+    <ClCompile Include="ApplicationState.cpp">
+      <DependentUpon>ApplicationState.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="CascadiaSettings.cpp">
+      <DependentUpon>CascadiaSettings.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="CascadiaSettingsSerialization.cpp">
+      <DependentUpon>CascadiaSettings.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ColorScheme.cpp">
+      <DependentUpon>ColorScheme.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Theme.cpp">
+      <DependentUpon>Theme.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Command.cpp">
+      <DependentUpon>Command.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="DynamicProfileUtils.cpp" />
+    <ClCompile Include="FileUtils.cpp" />
+    <ClCompile Include="GlobalAppSettings.cpp">
+      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="KeyChordSerialization.cpp">
+      <DependentUpon>KeyChordSerialization.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="PowershellCoreProfileGenerator.cpp" />
+    <ClCompile Include="Profile.cpp">
+      <DependentUpon>Profile.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="AppearanceConfig.cpp">
+      <DependentUpon>AppearanceConfig.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="FontConfig.cpp">
+      <DependentUpon>FontConfig.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TerminalSettings.cpp">
+      <DependentUpon>TerminalSettings.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="EnumMappings.cpp">
+      <DependentUpon>EnumMappings.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="NewTabMenuEntry.cpp">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SeparatorEntry.cpp">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="FolderEntry.cpp">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ProfileEntry.cpp">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ProfileCollectionEntry.cpp">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="RemainingProfilesEntry.cpp">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="MatchProfilesEntry.cpp">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="VsDevCmdGenerator.cpp" />
+    <ClCompile Include="VsDevShellGenerator.cpp" />
+    <ClCompile Include="VsSetupConfiguration.cpp" />
+    <ClCompile Include="WslDistroGenerator.cpp" />
+    <ClCompile Include="SshHostGenerator.cpp" />
+    <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
+    you want to use jsoncpp -->
+    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+  </ItemGroup>
+  <!-- ========================= idl Files ======================== -->
+  <ItemGroup>
+    <Midl Include="ActionArgs.idl" />
+    <Midl Include="ActionMap.idl" />
+    <Midl Include="ApplicationState.idl" />
+    <Midl Include="CascadiaSettings.idl" />
+    <Midl Include="ColorScheme.idl" />
+    <Midl Include="NewTabMenuEntry.idl" />
+    <Midl Include="Theme.idl" />
+    <Midl Include="Command.idl" />
+    <Midl Include="DefaultTerminal.idl" />
+    <Midl Include="GlobalAppSettings.idl" />
+    <Midl Include="IconPathConverter.idl" />
+    <Midl Include="Profile.idl" />
+    <Midl Include="EnumMappings.idl" />
+    <Midl Include="TerminalSettings.idl" />
+    <Midl Include="TerminalWarnings.idl" />
+    <Midl Include="KeyChordSerialization.idl" />
+    <Midl Include="AppearanceConfig.idl" />
+    <Midl Include="IAppearanceConfig.idl" />
+    <Midl Include="FontConfig.idl" />
+  </ItemGroup>
+  <!-- ========================= Misc Files ======================== -->
+  <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <OCResourceDirectory Include="Resources" />
+  </ItemGroup>
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <!--
+      the packaging project won't recurse through our dependencies, you have to
+      make sure that if you add a cppwinrt dependency to any of these projects,
+      you also update all the consumers
+    -->
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
+      <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\internal\internal.vcxproj">
+      <Project>{ef3e32a7-5ff6-42b4-b6e2-96cd7d033f00}</Project>
+    </ProjectReference>
+
+    <!-- For whatever reason, we can't include the TerminalControl and
+    TerminalSettings projects' winmds via project references. So we'll have to
+    manually include the winmds as References below
+
+    BODGY: we do need to add a ProjectReference to TerminalControl.vcxproj,
+    with Private=true, ReferenceOutputAssembly=false, so that Visual Studio's
+    "Fast Up-to-date Check" will work with this project. If we don't, the Fast
+    Up-to-date Check will look for the .xaml files from that project in our
+    output, which won't actually be there.
+
+    We do still need to separately reference the winmds manually below, which is annoying.
+    -->
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj">
+      <!-- Private:true and ReferenceOutputAssembly:false, in combination with
+      the manual reference to TerminalControl.winmd below make sure that this
+      project will compile correct, and that we won't roll up the TermControl
+      xbf's into the packaging project twice. -->
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Manually add references to each of our dependent winmds. Mark them as private=false and CopyLocalSatelliteAssemblies=false, so that we don't
+    propagate them upwards (which can make referencing this project result in
+    duplicate type definitions)-->
+    <Reference Include="Microsoft.Terminal.TerminalConnection">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Control">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+  </ItemGroup>
+  <!-- ====================== Compiler & Linker Flags ===================== -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
+      <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>WindowsApp.lib;user32.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Reference>
+      <Private>false</Private>
+    </Reference>
+  </ItemDefinitionGroup>
+  <!-- ========================= Globals ======================== -->
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+
+  <!-- PowerShell version check, outputs error if the wrong version is installed. -->
+  <Target Name="_WindowsPowershellVersionCheck" BeforeTargets="BeforeClCompile">
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Unrestricted -File &quot;$(OpenConsoleDir)\tools\WindowsCheckPSVersion.ps1&quot;" />
+  </Target>
+  <Target Name="_PowershellVersionCheck" BeforeTargets="BeforeClCompile">
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\CheckPSVersion.ps1&quot;" />
+  </Target>
+  <!-- This target will take our defaults.json and stamp it into a .h file that
+  we can include in the code directly. This way, we don't need to worry about
+  failing to load the default settings at runtime. -->
+  <Target Name="_TerminalAppGenerateDefaultsH" Inputs="defaults.json" Outputs="Generated Files\defaults.h" BeforeTargets="BeforeClCompile">
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1&quot; -JsonFile defaults.json -OutPath &quot;Generated Files\defaults.h&quot; -VariableName DefaultJson" />
+  </Target>
+  <!-- Same as above, but for the default settings.json template -->
+  <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1&quot; -JsonFile userDefaults.json -OutPath &quot;Generated Files\userDefaults.h&quot; -VariableName UserSettingsJson" />
+  </Target>
+  <!-- Same as above, but for the enableColorSelection actions -->
+  <Target Name="_TerminalAppGenerateEnableColorSelectionSettingsH" Inputs="enableColorSelection.json" Outputs="Generated Files\enableColorSelection.h" BeforeTargets="BeforeClCompile">
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1&quot; -JsonFile enableColorSelection.json -OutPath &quot;Generated Files\enableColorSelection.h&quot; -VariableName EnableColorSelectionSettingsJson" />
+  </Target>
+  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
+
+</Project>

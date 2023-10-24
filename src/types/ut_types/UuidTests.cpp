@@ -3,9 +3,9 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
-#include "..\inc\utils.hpp"
+#include "../inc/utils.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -25,7 +25,7 @@ class UuidTests
         const GUID uuidExpected{ 0x8b9d4336, 0x0c82, 0x54c4, { 0xb3, 0x15, 0xf1, 0xd2, 0xd2, 0x7e, 0xc6, 0xda } };
 
         std::string name{ "testing" };
-        auto uuidActual = CreateV5Uuid(TEST_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name)));
+        auto uuidActual = CreateV5Uuid(TEST_NAMESPACE_GUID, std::as_bytes(std::span{ name }));
 
         VERIFY_ARE_EQUAL(uuidExpected, uuidActual);
     }
@@ -36,7 +36,7 @@ class UuidTests
 
         // This'll come out in little endian; the reference GUID was generated as such.
         std::wstring name{ L"testing" };
-        auto uuidActual = CreateV5Uuid(TEST_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name)));
+        auto uuidActual = CreateV5Uuid(TEST_NAMESPACE_GUID, std::as_bytes(std::span{ name }));
 
         VERIFY_ARE_EQUAL(uuidExpected, uuidActual);
     }

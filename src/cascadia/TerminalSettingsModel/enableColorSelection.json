@@ -1,0 +1,370 @@
+{
+    "actions":
+    [
+        // Foreground
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection"
+                // default fg and bg (i07 and i00)
+            },
+            "keys": "alt+1"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i08"
+            },
+            "keys": "alt+2"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i0c"
+            },
+            "keys": "alt+3"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i0a"
+            },
+            "keys": "alt+4"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i0e"
+            },
+            "keys": "alt+5"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i09"
+            },
+            "keys": "alt+6"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i0d"
+            },
+            "keys": "alt+7"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i0b"
+            },
+            "keys": "alt+8"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i0f"
+            },
+            "keys": "alt+9"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i03"
+            },
+            "keys": "alt+0"
+        },
+        // background
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i00",
+                "background": "i07"
+            },
+            "keys": "ctrl+1"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i00",
+                "background": "i08"
+            },
+            "keys": "ctrl+2"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i00",
+                "background": "i0c"
+            },
+            "keys": "ctrl+3"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i00",
+                "background": "i0a"
+            },
+            "keys": "ctrl+4"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i00",
+                "background": "i0e"
+            },
+            "keys": "ctrl+5"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i00",
+                "background": "i09"
+            },
+            "keys": "ctrl+6"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i00",
+                "background": "i0d"
+            },
+            "keys": "ctrl+7"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i00",
+                "background": "i0b"
+            },
+            "keys": "ctrl+8"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i00",
+                "background": "i0f"
+            },
+            "keys": "ctrl+9"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "foreground": "i00",
+                "background": "i03"
+            },
+            "keys": "ctrl+0"
+        },
+        // with matching
+        // Foreground, all matches
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                // default fg and bg (i07 and i00)
+            },
+            "keys": "alt+shift+1"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i08"
+            },
+            "keys": "alt+shift+2"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i0c"
+            },
+            "keys": "alt+shift+3"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i0a"
+            },
+            "keys": "alt+shift+4"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i0e"
+            },
+            "keys": "alt+shift+5"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i09"
+            },
+            "keys": "alt+shift+6"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i0d"
+            },
+            "keys": "alt+shift+7"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i0b"
+            },
+            "keys": "alt+shift+8"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i0f"
+            },
+            "keys": "alt+shift+9"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i03"
+            },
+            "keys": "alt+shift+0"
+        },
+        // background, all matches
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i00",
+                "background": "i07"
+            },
+            "keys": "ctrl+shift+1"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i00",
+                "background": "i08"
+            },
+            "keys": "ctrl+shift+2"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i00",
+                "background": "i0c"
+            },
+            "keys": "ctrl+shift+3"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i00",
+                "background": "i0a"
+            },
+            "keys": "ctrl+shift+4"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i00",
+                "background": "i0e"
+            },
+            "keys": "ctrl+shift+5"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i00",
+                "background": "i09"
+            },
+            "keys": "ctrl+shift+6"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i00",
+                "background": "i0d"
+            },
+            "keys": "ctrl+shift+7"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i00",
+                "background": "i0b"
+            },
+            "keys": "ctrl+shift+8"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i00",
+                "background": "i0f"
+            },
+            "keys": "ctrl+shift+9"
+        },
+        {
+            "command":
+            {
+                "action": "experimental.colorSelection",
+                "matchMode": "all",
+                "foreground": "i00",
+                "background": "i03"
+            },
+            "keys": "ctrl+shift+0"
+        }
+    ]
+}

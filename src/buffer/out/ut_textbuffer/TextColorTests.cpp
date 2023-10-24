@@ -23,11 +23,11 @@ class TextColorTests
     TEST_METHOD(TestRgbColor);
     TEST_METHOD(TestChangeColor);
 
-    static const int COLOR_TABLE_SIZE = 16;
-    COLORREF _colorTable[COLOR_TABLE_SIZE];
-    COLORREF _defaultFg = RGB(1, 2, 3);
-    COLORREF _defaultBg = RGB(4, 5, 6);
-    gsl::span<const COLORREF> _GetTableView();
+    std::array<COLORREF, TextColor::TABLE_SIZE> _colorTable;
+    const COLORREF _defaultFg = RGB(1, 2, 3);
+    const COLORREF _defaultBg = RGB(4, 5, 6);
+    const size_t _defaultFgIndex = TextColor::DEFAULT_FOREGROUND;
+    const size_t _defaultBgIndex = TextColor::DEFAULT_BACKGROUND;
 };
 
 bool TextColorTests::ClassSetup()
@@ -48,12 +48,9 @@ bool TextColorTests::ClassSetup()
     _colorTable[13] = RGB(180, 0, 158); // Bright Magenta
     _colorTable[14] = RGB(249, 241, 165); // Bright Yellow
     _colorTable[15] = RGB(242, 242, 242); // White
+    _colorTable[_defaultFgIndex] = _defaultFg;
+    _colorTable[_defaultBgIndex] = _defaultBg;
     return true;
-}
-
-gsl::span<const COLORREF> TextColorTests::_GetTableView()
-{
-    return gsl::span<const COLORREF>(&_colorTable[0], COLOR_TABLE_SIZE);
 }
 
 void TextColorTests::TestDefaultColor()
@@ -64,18 +61,16 @@ void TextColorTests::TestDefaultColor()
     VERIFY_IS_FALSE(defaultColor.IsLegacy());
     VERIFY_IS_FALSE(defaultColor.IsRgb());
 
-    auto view = _GetTableView();
-
-    auto color = defaultColor.GetColor(view, _defaultFg, false);
+    auto color = defaultColor.GetColor(_colorTable, _defaultFgIndex, false);
     VERIFY_ARE_EQUAL(_defaultFg, color);
 
-    color = defaultColor.GetColor(view, _defaultFg, true);
+    color = defaultColor.GetColor(_colorTable, _defaultFgIndex, true);
     VERIFY_ARE_EQUAL(_defaultFg, color);
 
-    color = defaultColor.GetColor(view, _defaultBg, false);
+    color = defaultColor.GetColor(_colorTable, _defaultBgIndex, false);
     VERIFY_ARE_EQUAL(_defaultBg, color);
 
-    color = defaultColor.GetColor(view, _defaultBg, true);
+    color = defaultColor.GetColor(_colorTable, _defaultBgIndex, true);
     VERIFY_ARE_EQUAL(_defaultBg, color);
 }
 
@@ -87,18 +82,16 @@ void TextColorTests::TestDarkIndexColor()
     VERIFY_IS_TRUE(indexColor.IsLegacy());
     VERIFY_IS_FALSE(indexColor.IsRgb());
 
-    auto view = _GetTableView();
-
-    auto color = indexColor.GetColor(view, _defaultFg, false);
+    auto color = indexColor.GetColor(_colorTable, _defaultFgIndex, false);
     VERIFY_ARE_EQUAL(_colorTable[7], color);
 
-    color = indexColor.GetColor(view, _defaultFg, true);
+    color = indexColor.GetColor(_colorTable, _defaultFgIndex, true);
     VERIFY_ARE_EQUAL(_colorTable[15], color);
 
-    color = indexColor.GetColor(view, _defaultBg, false);
+    color = indexColor.GetColor(_colorTable, _defaultBgIndex, false);
     VERIFY_ARE_EQUAL(_colorTable[7], color);
 
-    color = indexColor.GetColor(view, _defaultBg, true);
+    color = indexColor.GetColor(_colorTable, _defaultBgIndex, true);
     VERIFY_ARE_EQUAL(_colorTable[15], color);
 }
 
@@ -110,105 +103,99 @@ void TextColorTests::TestBrightIndexColor()
     VERIFY_IS_TRUE(indexColor.IsLegacy());
     VERIFY_IS_FALSE(indexColor.IsRgb());
 
-    auto view = _GetTableView();
-
-    auto color = indexColor.GetColor(view, _defaultFg, false);
+    auto color = indexColor.GetColor(_colorTable, _defaultFgIndex, false);
     VERIFY_ARE_EQUAL(_colorTable[15], color);
 
-    color = indexColor.GetColor(view, _defaultFg, true);
+    color = indexColor.GetColor(_colorTable, _defaultFgIndex, true);
     VERIFY_ARE_EQUAL(_colorTable[15], color);
 
-    color = indexColor.GetColor(view, _defaultBg, false);
+    color = indexColor.GetColor(_colorTable, _defaultBgIndex, false);
     VERIFY_ARE_EQUAL(_colorTable[15], color);
 
-    color = indexColor.GetColor(view, _defaultBg, true);
+    color = indexColor.GetColor(_colorTable, _defaultBgIndex, true);
     VERIFY_ARE_EQUAL(_colorTable[15], color);
 }
 
 void TextColorTests::TestRgbColor()
 {
-    COLORREF myColor = RGB(7, 8, 9);
+    auto myColor = RGB(7, 8, 9);
     TextColor rgbColor(myColor);
 
     VERIFY_IS_FALSE(rgbColor.IsDefault());
     VERIFY_IS_FALSE(rgbColor.IsLegacy());
     VERIFY_IS_TRUE(rgbColor.IsRgb());
 
-    auto view = _GetTableView();
-
-    auto color = rgbColor.GetColor(view, _defaultFg, false);
+    auto color = rgbColor.GetColor(_colorTable, _defaultFgIndex, false);
     VERIFY_ARE_EQUAL(myColor, color);
 
-    color = rgbColor.GetColor(view, _defaultFg, true);
+    color = rgbColor.GetColor(_colorTable, _defaultFgIndex, true);
     VERIFY_ARE_EQUAL(myColor, color);
 
-    color = rgbColor.GetColor(view, _defaultBg, false);
+    color = rgbColor.GetColor(_colorTable, _defaultBgIndex, false);
     VERIFY_ARE_EQUAL(myColor, color);
 
-    color = rgbColor.GetColor(view, _defaultBg, true);
+    color = rgbColor.GetColor(_colorTable, _defaultBgIndex, true);
     VERIFY_ARE_EQUAL(myColor, color);
 }
 
 void TextColorTests::TestChangeColor()
 {
-    COLORREF myColor = RGB(7, 8, 9);
+    auto myColor = RGB(7, 8, 9);
     TextColor rgbColor(myColor);
 
     VERIFY_IS_FALSE(rgbColor.IsDefault());
     VERIFY_IS_FALSE(rgbColor.IsLegacy());
     VERIFY_IS_TRUE(rgbColor.IsRgb());
 
-    auto view = _GetTableView();
-
-    auto color = rgbColor.GetColor(view, _defaultFg, false);
+    auto color = rgbColor.GetColor(_colorTable, _defaultFgIndex, false);
     VERIFY_ARE_EQUAL(myColor, color);
 
-    color = rgbColor.GetColor(view, _defaultFg, true);
+    color = rgbColor.GetColor(_colorTable, _defaultFgIndex, true);
     VERIFY_ARE_EQUAL(myColor, color);
 
-    color = rgbColor.GetColor(view, _defaultBg, false);
+    color = rgbColor.GetColor(_colorTable, _defaultBgIndex, false);
     VERIFY_ARE_EQUAL(myColor, color);
 
-    color = rgbColor.GetColor(view, _defaultBg, true);
+    color = rgbColor.GetColor(_colorTable, _defaultBgIndex, true);
     VERIFY_ARE_EQUAL(myColor, color);
 
     rgbColor.SetDefault();
 
-    color = rgbColor.GetColor(view, _defaultFg, false);
+    color = rgbColor.GetColor(_colorTable, _defaultFgIndex, false);
     VERIFY_ARE_EQUAL(_defaultFg, color);
 
-    color = rgbColor.GetColor(view, _defaultFg, true);
+    color = rgbColor.GetColor(_colorTable, _defaultFgIndex, true);
     VERIFY_ARE_EQUAL(_defaultFg, color);
 
-    color = rgbColor.GetColor(view, _defaultBg, false);
+    color = rgbColor.GetColor(_colorTable, _defaultBgIndex, false);
     VERIFY_ARE_EQUAL(_defaultBg, color);
 
-    color = rgbColor.GetColor(view, _defaultBg, true);
+    color = rgbColor.GetColor(_colorTable, _defaultBgIndex, true);
     VERIFY_ARE_EQUAL(_defaultBg, color);
 
     rgbColor.SetIndex(7, false);
-    color = rgbColor.GetColor(view, _defaultFg, false);
+    color = rgbColor.GetColor(_colorTable, _defaultFgIndex, false);
     VERIFY_ARE_EQUAL(_colorTable[7], color);
 
-    color = rgbColor.GetColor(view, _defaultFg, true);
+    color = rgbColor.GetColor(_colorTable, _defaultFgIndex, true);
     VERIFY_ARE_EQUAL(_colorTable[15], color);
 
-    color = rgbColor.GetColor(view, _defaultBg, false);
+    color = rgbColor.GetColor(_colorTable, _defaultBgIndex, false);
     VERIFY_ARE_EQUAL(_colorTable[7], color);
 
-    color = rgbColor.GetColor(view, _defaultBg, true);
+    color = rgbColor.GetColor(_colorTable, _defaultBgIndex, true);
     VERIFY_ARE_EQUAL(_colorTable[15], color);
 
     rgbColor.SetIndex(15, false);
-    color = rgbColor.GetColor(view, _defaultFg, false);
+    color = rgbColor.GetColor(_colorTable, _defaultFgIndex, false);
     VERIFY_ARE_EQUAL(_colorTable[15], color);
 
-    color = rgbColor.GetColor(view, _defaultFg, true);
+    color = rgbColor.GetColor(_colorTable, _defaultFgIndex, true);
     VERIFY_ARE_EQUAL(_colorTable[15], color);
 
-    color = rgbColor.GetColor(view, _defaultBg, false);
+    color = rgbColor.GetColor(_colorTable, _defaultBgIndex, false);
     VERIFY_ARE_EQUAL(_colorTable[15], color);
 
-    color = rgbColor.GetColor(view, _defaultBg, true);
+    color = rgbColor.GetColor(_colorTable, _defaultBgIndex, true);
     VERIFY_ARE_EQUAL(_colorTable[15], color);
 }

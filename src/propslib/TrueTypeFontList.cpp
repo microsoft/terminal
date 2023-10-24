@@ -43,10 +43,10 @@ WORD ConvertStringToDec(
     // Prevent memory leak. Delete if it's already allocated before refilling it.
     LOG_IF_FAILED(s_Destroy());
 
-    NTSTATUS Status = RegistrySerialization::s_OpenKey(HKEY_LOCAL_MACHINE,
-                                                       MACHINE_REGISTRY_CONSOLE_TTFONT_WIN32_PATH,
-                                                       &hkRegistry);
-    if (NT_SUCCESS(Status))
+    auto Status = RegistrySerialization::s_OpenKey(HKEY_LOCAL_MACHINE,
+                                                   MACHINE_REGISTRY_CONSOLE_TTFONT_WIN32_PATH,
+                                                   &hkRegistry);
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         LPTTFONTLIST pTTFontList;
 
@@ -65,7 +65,7 @@ WORD ConvertStringToDec(
                 break;
             }
 
-            if (!NT_SUCCESS(Status))
+            if (FAILED_NTSTATUS(Status))
             {
                 break;
             }
@@ -125,7 +125,7 @@ WORD ConvertStringToDec(
 {
     while (s_ttFontList.Next != nullptr)
     {
-        LPTTFONTLIST pTTFontList = (LPTTFONTLIST)PopEntryList(&s_ttFontList);
+        auto pTTFontList = (LPTTFONTLIST)PopEntryList(&s_ttFontList);
 
         if (pTTFontList != nullptr)
         {
@@ -142,13 +142,13 @@ LPTTFONTLIST TrueTypeFontList::s_SearchByName(_In_opt_ LPCWSTR pwszFace,
                                               _In_ BOOL fCodePage,
                                               _In_ UINT CodePage)
 {
-    PSINGLE_LIST_ENTRY pTemp = s_ttFontList.Next;
+    auto pTemp = s_ttFontList.Next;
 
     if (pwszFace)
     {
         while (pTemp != nullptr)
         {
-            LPTTFONTLIST pTTFontList = (LPTTFONTLIST)pTemp;
+            auto pTTFontList = (LPTTFONTLIST)pTemp;
 
             if (wcscmp(pwszFace, pTTFontList->FaceName1) == 0 ||
                 wcscmp(pwszFace, pTTFontList->FaceName2) == 0)
@@ -173,13 +173,13 @@ LPTTFONTLIST TrueTypeFontList::s_SearchByName(_In_opt_ LPCWSTR pwszFace,
                                                             _Out_writes_(cchFaceName) PWSTR pwszFaceName,
                                                             const size_t cchFaceName)
 {
-    NTSTATUS status = STATUS_SUCCESS;
-    BOOL fFontFound = FALSE;
+    auto status = STATUS_SUCCESS;
+    auto fFontFound = FALSE;
 
     // Look through our list entries to see if we can find a corresponding truetype font for this codepage
-    for (PSINGLE_LIST_ENTRY pListEntry = s_ttFontList.Next; pListEntry != nullptr && !fFontFound; pListEntry = pListEntry->Next)
+    for (auto pListEntry = s_ttFontList.Next; pListEntry != nullptr && !fFontFound; pListEntry = pListEntry->Next)
     {
-        LPTTFONTLIST pTTFontEntry = (LPTTFONTLIST)pListEntry;
+        auto pTTFontEntry = (LPTTFONTLIST)pListEntry;
         if (pTTFontEntry->CodePage == uiCodePage)
         {
             // found a match, use this font's primary facename

@@ -26,4 +26,12 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 [[nodiscard]] NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p);
 [[nodiscard]] NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData);
 
+[[nodiscard]] bool ConsoleConnectionDeservesVisibleWindow(PCONSOLE_API_CONNECTINFO p);
+
+[[nodiscard]] HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
+                                              HANDLE driverInputEvent,
+                                              HANDLE hostSignalPipe,
+                                              HANDLE hostProcessHandle,
+                                              PCONSOLE_API_MSG connectMessage);
+
 void ConsoleCheckDebug();

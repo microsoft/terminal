@@ -44,12 +44,12 @@ public:
     void LogQuickEditPasteRawUsed();
     void LogColorSelectionUsed();
 
-    void LogFindDialogNextClicked(const unsigned int iStringLength, const bool fDirectionDown, const bool fMatchCase);
     void LogProcessConnected(const HANDLE hProcess);
-    void FindDialogClosed();
     void WriteFinalTraceLog();
 
     void LogRipMessage(_In_z_ const char* pszMessage, ...) const;
+
+    bool IsUserInteractive();
 
     // Names are from the external API call names.  Note that some names can be different
     // than the internal API calls.
@@ -127,20 +127,15 @@ private:
     // Used to prevent multiple instances
     Telemetry();
     ~Telemetry();
-    Telemetry(Telemetry const&);
-    void operator=(Telemetry const&);
+    Telemetry(const Telemetry&);
+    void operator=(const Telemetry&);
 
     bool FindProcessName(const WCHAR* pszProcessName, _Out_ size_t* iPosition) const;
-    void TotalCodesForPreviousProcess();
 
     static const int c_iMaxProcessesConnected = 100;
 
     TraceLoggingActivity<g_hConhostV2EventTraceProvider> _activity;
 
-    float _fpFindStringLengthAverage;
-    float _fpDirectionDownAverage;
-    float _fpMatchCaseAverage;
-    unsigned int _uiFindNextClickedTotal;
     unsigned int _uiColorSelectionUsed;
     time_t _tStartedAt;
     WCHAR const* const c_pwszBashExeName = L"bash.exe";
@@ -157,12 +152,6 @@ private:
     unsigned int _rguiProcessFileNamesCount[c_iMaxProcessesConnected];
     // To speed up searching the Process Names, create an alphabetically sorted index.
     size_t _rgiAlphabeticalIndex[c_iMaxProcessesConnected];
-    // Total of how many codes each process used
-    unsigned int _rguiProcessFileNamesCodesCount[c_iMaxProcessesConnected];
-    // Total of how many failed codes each process used
-    unsigned int _rguiProcessFileNamesFailedCodesCount[c_iMaxProcessesConnected];
-    // Total of how many failed codes each process used outside the valid range.
-    unsigned int _rguiProcessFileNamesFailedOutsideCodesCount[c_iMaxProcessesConnected];
     unsigned int _rguiTimesApiUsed[NUMBER_OF_APIS];
     // Most of this array will be empty, and is only used if an API has an ansi specific variant.
     unsigned int _rguiTimesApiUsedAnsi[NUMBER_OF_APIS];
@@ -189,7 +178,7 @@ private:
 };
 
 // Log the RIPMSG through telemetry, and also through a normal OutputDebugStringW call.
-// These are drop-in substitutes for the RIPMSG0-4 macros from \windows\Core\ntcon2\conhost\consrv.h
+// These are drop-in substitutes for the RIPMSG0-4 macros from /windows/Core/ntcon2/conhost/consrv.h
 #define RIPMSG0(flags, msg) Telemetry::Instance().LogRipMessage(msg);
 #define RIPMSG1(flags, msg, a) Telemetry::Instance().LogRipMessage(msg, a);
 #define RIPMSG2(flags, msg, a, b) Telemetry::Instance().LogRipMessage(msg, a, b);

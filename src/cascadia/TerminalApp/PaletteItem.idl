@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    unsealed runtimeclass PaletteItem : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Name;
+        String KeyChordText;
+        String Icon;
+        Windows.UI.Xaml.Controls.IconElement ResolvedIcon { get; };
+    }
+}

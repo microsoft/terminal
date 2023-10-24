@@ -10,17 +10,17 @@
 
 #include "ApiSorter.h"
 
-#include "..\host\globals.h"
+#include "../host/globals.h"
 
-#include "..\host\getset.h"
-#include "..\host\stream.h"
+#include "../host/getset.h"
+#include "../host/stream.h"
 
 void IoSorter::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg,
                                   _Out_ CONSOLE_API_MSG** ReplyMsg)
 {
     NTSTATUS Status;
     HRESULT hr;
-    BOOL ReplyPending = FALSE;
+    auto ReplyPending = FALSE;
 
     ZeroMemory(&pMsg->State, sizeof(pMsg->State));
     ZeroMemory(&pMsg->Complete, sizeof(CD_IO_COMPLETE));

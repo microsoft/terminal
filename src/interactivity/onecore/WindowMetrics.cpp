@@ -6,9 +6,9 @@
 #include "WindowMetrics.hpp"
 #include "ConIoSrvComm.hpp"
 
-#include "..\..\renderer\wddmcon\wddmconrenderer.hpp"
+#include "../../renderer/wddmcon/WddmConRenderer.hpp"
 
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -20,36 +20,30 @@
 
 using namespace Microsoft::Console::Interactivity::OneCore;
 
-RECT WindowMetrics::GetMinClientRectInPixels()
+til::rect WindowMetrics::GetMinClientRectInPixels()
 {
-    ConIoSrvComm* Server;
-
-    NTSTATUS Status;
-
     // We need to always return something viable for this call,
     // so by default, set the font and display size to our headless
     // constants.
     // If we get information from the Server, great. We'll calculate
     // the values for that at the end.
     // If we don't... then at least we have a non-zero rectangle.
-    COORD FontSize = { 0 };
-    FontSize.X = HEADLESS_FONT_SIZE_WIDTH;
-    FontSize.Y = HEADLESS_FONT_SIZE_HEIGHT;
+    til::size FontSize;
+    FontSize.width = HEADLESS_FONT_SIZE_WIDTH;
+    FontSize.height = HEADLESS_FONT_SIZE_HEIGHT;
 
-    RECT DisplaySize = { 0 };
+    til::rect DisplaySize;
     DisplaySize.right = HEADLESS_DISPLAY_SIZE_WIDTH;
     DisplaySize.bottom = HEADLESS_DISPLAY_SIZE_HEIGHT;
 
-    CD_IO_FONT_SIZE FontSizeIoctl = { 0 };
-    CD_IO_DISPLAY_SIZE DisplaySizeIoctl = { 0 };
-
-    USHORT DisplayMode;
+    CD_IO_FONT_SIZE FontSizeIoctl{};
+    CD_IO_DISPLAY_SIZE DisplaySizeIoctl{};
 
     // Fetch a reference to the Console IO Server.
-    Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
+    const auto Server = ConIoSrvComm::GetConIoSrvComm();
 
     // Figure out what kind of display we are using.
-    DisplayMode = Server->GetDisplayMode();
+    const auto DisplayMode = Server->GetDisplayMode();
 
     // Note on status propagation:
     //
@@ -71,54 +65,54 @@ RECT WindowMetrics::GetMinClientRectInPixels()
         //       might be a problem for plugging/unplugging monitors or perhaps
         //       across KVM sessions.
 
-        Status = Server->RequestGetDisplaySize(&DisplaySizeIoctl);
+        auto Status = Server->RequestGetDisplaySize(&DisplaySizeIoctl);
 
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             Status = Server->RequestGetFontSize(&FontSizeIoctl);
 
-            if (NT_SUCCESS(Status))
+            if (SUCCEEDED_NTSTATUS(Status))
             {
                 DisplaySize.top = 0;
                 DisplaySize.left = 0;
-                DisplaySize.bottom = DisplaySizeIoctl.Height;
-                DisplaySize.right = DisplaySizeIoctl.Width;
+                DisplaySize.bottom = gsl::narrow_cast<LONG>(DisplaySizeIoctl.Height);
+                DisplaySize.right = gsl::narrow_cast<LONG>(DisplaySizeIoctl.Width);
 
-                FontSize.X = (SHORT)FontSizeIoctl.Width;
-                FontSize.Y = (SHORT)FontSizeIoctl.Height;
+                FontSize.width = gsl::narrow_cast<SHORT>(FontSizeIoctl.Width);
+                FontSize.height = gsl::narrow_cast<SHORT>(FontSizeIoctl.Height);
             }
         }
         else
         {
             SetLastError(Status);
         }
+        break;
     }
-    break;
-
     case CIS_DISPLAY_MODE_DIRECTX:
     {
         LOG_IF_FAILED(Server->pWddmConEngine->GetFontSize(&FontSize));
         DisplaySize = Server->pWddmConEngine->GetDisplaySize();
+        break;
     }
-    break;
-
     case CIS_DISPLAY_MODE_NONE:
     {
         // When in headless mode and using EMS (Emergency Management
         // Services), ensure that the buffer isn't zero-sized by
         // using the default values.
+        break;
     }
-    break;
+    default:
+        break;
     }
 
     // The result is expected to be in pixels, not rows/columns.
-    DisplaySize.right *= FontSize.X;
-    DisplaySize.bottom *= FontSize.Y;
+    DisplaySize.right *= FontSize.width;
+    DisplaySize.bottom *= FontSize.height;
 
     return DisplaySize;
 }
 
-RECT WindowMetrics::GetMaxClientRectInPixels()
+til::rect WindowMetrics::GetMaxClientRectInPixels()
 {
     // OneCore consoles only have one size and cannot be resized.
     return GetMinClientRectInPixels();

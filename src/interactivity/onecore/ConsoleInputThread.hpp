@@ -14,21 +14,16 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\IConsoleInputThread.hpp"
+#include "../inc/IConsoleInputThread.hpp"
 #include "ConIoSrvComm.hpp"
 
 #pragma hdrstop
 
 namespace Microsoft::Console::Interactivity::OneCore
 {
-    class ConsoleInputThread sealed : public IConsoleInputThread
+    class ConsoleInputThread : public IConsoleInputThread
     {
     public:
-        HANDLE Start();
-
-        ConIoSrvComm* GetConIoSrvComm();
-
-    private:
-        ConIoSrvComm* _pConIoSrvComm;
+        HANDLE Start() noexcept override;
     };
 }

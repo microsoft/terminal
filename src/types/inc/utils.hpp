@@ -40,32 +40,32 @@ namespace Microsoft::Console::Utils
     }
 
     std::wstring GuidToString(const GUID guid);
-    GUID GuidFromString(const std::wstring wstr);
+    GUID GuidFromString(_Null_terminated_ const wchar_t* str);
     GUID CreateGuid();
 
     std::string ColorToHexString(const til::color color);
     til::color ColorFromHexString(const std::string_view wstr);
+    std::optional<til::color> ColorFromXTermColor(const std::wstring_view wstr) noexcept;
+    std::optional<til::color> ColorFromXParseColorSpec(const std::wstring_view wstr) noexcept;
+    til::color ColorFromHLS(const int h, const int l, const int s) noexcept;
+    til::color ColorFromRGB100(const int r, const int g, const int b) noexcept;
 
-    void InitializeCampbellColorTable(const gsl::span<COLORREF> table);
-    void InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table);
-    void SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table);
-    void Initialize256ColorTable(const gsl::span<COLORREF> table);
+    bool HexToUint(const wchar_t wch, unsigned int& value) noexcept;
+    bool StringToUint(const std::wstring_view wstr, unsigned int& value);
+    std::vector<std::wstring_view> SplitString(const std::wstring_view wstr, const wchar_t delimiter) noexcept;
 
-    // Function Description:
-    // - Fill the alpha byte of the colors in a given color table with the given value.
-    // Arguments:
-    // - table: a color table
-    // - newAlpha: the new value to use as the alpha for all the entries in that table.
-    // Return Value:
-    // - <none>
-    constexpr void SetColorTableAlpha(const gsl::span<COLORREF> table, const BYTE newAlpha) noexcept
+    enum FilterOption
     {
-        const auto shiftedAlpha = newAlpha << 24;
-        for (auto& color : table)
-        {
-            WI_UpdateFlagsInMask(color, 0xff000000, shiftedAlpha);
-        }
-    }
+        None = 0,
+        // Convert CR+LF and LF-only line endings to CR-only.
+        CarriageReturnNewline = 1u << 0,
+        // For security reasons, remove most control characters.
+        ControlCodes = 1u << 1,
+    };
+
+    DEFINE_ENUM_FLAG_OPERATORS(FilterOption)
+
+    std::wstring FilterStringForPaste(const std::wstring_view wstr, const FilterOption option);
 
     constexpr uint16_t EndianSwap(uint16_t value)
     {
@@ -94,6 +94,27 @@ namespace Microsoft::Console::Utils
         return value;
     }
 
-    GUID CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte> name);
+    GUID CreateV5Uuid(const GUID& namespaceGuid, const std::span<const std::byte> name);
+
+    bool CanUwpDragDrop();
+    bool IsRunningElevated();
+
+    // This function is only ever used by the ConPTY connection in
+    // TerminalConnection. However, that library does not have a good system of
+    // tests set up. Since this function has a plethora of edge cases that would
+    // be beneficial to have tests for, we're hosting it in this lib, so it can
+    // be easily tested.
+    std::tuple<std::wstring, std::wstring> MangleStartingDirectoryForWSL(std::wstring_view commandLine,
+                                                                         std::wstring_view startingDirectory);
+
+    // Similar to MangleStartingDirectoryForWSL, this function is only ever used
+    // in TerminalPage::_PasteFromClipboardHandler, but putting it here makes
+    // testing easier.
+    std::wstring_view TrimPaste(std::wstring_view textView) noexcept;
+
+    // Same deal, but in TerminalPage::_evaluatePathForCwd
+    std::wstring EvaluateStartingDirectory(std::wstring_view cwd, std::wstring_view startingDirectory);
+
+    bool IsWindows11() noexcept;
 
 }

@@ -22,4 +22,4 @@ Abstract:
 #include "telemetry.hpp"
 #include "tracing.hpp"
 
-#include "..\..\inc\conattrs.hpp"
+#include "../../inc/conattrs.hpp"

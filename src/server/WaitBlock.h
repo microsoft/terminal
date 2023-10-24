@@ -17,7 +17,7 @@ Revision History:
 
 #pragma once
 
-#include "..\host\conapi.h"
+#include "../host/conapi.h"
 #include "IWaitRoutine.h"
 #include "WaitTerminationReason.h"
 

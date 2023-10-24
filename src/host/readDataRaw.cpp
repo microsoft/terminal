@@ -7,7 +7,7 @@
 #include "stream.h"
 #include "../types/inc/GlyphWidth.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 // Routine Description:
 // - Constructs raw read data class to hold context across sessions
@@ -31,16 +31,13 @@ RAW_READ_DATA::RAW_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _BufferSize{ BufferSize },
     _BufPtr{ THROW_HR_IF_NULL(E_INVALIDARG, BufPtr) }
 {
-    THROW_HR_IF(E_INVALIDARG, _BufferSize % sizeof(wchar_t) != 0);
     THROW_HR_IF(E_INVALIDARG, _BufferSize == 0);
 }
 
 // Routine Description:
 // - Destructs a read data class.
 // - Decrements count of readers waiting on the given handle.
-RAW_READ_DATA::~RAW_READ_DATA()
-{
-}
+RAW_READ_DATA::~RAW_READ_DATA() = default;
 
 // Routine Description:
 // - This routine is called to complete a raw read that blocked in ReadInputBuffer.
@@ -84,137 +81,50 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     *pControlKeyState = 0;
 
     *pNumBytes = 0;
-    size_t NumBytes = 0;
-
-    PWCHAR lpBuffer;
-    bool RetVal = true;
-    bool fAddDbcsLead = false;
-    bool fSkipFinally = false;
 
     // If a ctrl-c is seen, don't terminate read. If ctrl-break is seen, terminate read.
     if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::CtrlC))
     {
         return false;
     }
-    else if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::CtrlBreak))
+
+    if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::CtrlBreak))
     {
         *pReplyStatus = STATUS_ALERTED;
+        return true;
     }
+
     // See if we were called because the thread that owns this wait block is exiting.
-    else if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
+    if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
         *pReplyStatus = STATUS_THREAD_IS_TERMINATING;
+        return true;
     }
+
     // We must see if we were woken up because the handle is being
     // closed. If so, we decrement the read count. If it goes to zero,
     // we wake up the close thread. Otherwise, we wake up any other
     // thread waiting for data.
-    else if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
+    if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
     {
         *pReplyStatus = STATUS_ALERTED;
+        return true;
     }
-    else
+
+    // If we get to here, this routine was called either by the input
+    // thread or a write routine. Both of these callers grab the current
+    // console lock.
+
+    std::span buffer{ reinterpret_cast<char*>(_BufPtr), _BufferSize };
+    *pReplyStatus = ReadCharacterInput(*_pInputBuffer, buffer, *pNumBytes, *_pInputReadHandleData, fIsUnicode);
+    return *pReplyStatus != CONSOLE_STATUS_WAIT;
+}
+
+void RAW_READ_DATA::MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer)
+{
+    // See the comment in WaitBlock.cpp for more information.
+    if (_BufPtr == static_cast<const wchar_t*>(oldBuffer))
     {
-        // If we get to here, this routine was called either by the input
-        // thread or a write routine. Both of these callers grab the current
-        // console lock.
-
-        lpBuffer = _BufPtr;
-
-        if (!fIsUnicode && _pInputBuffer->IsReadPartialByteSequenceAvailable())
-        {
-            std::unique_ptr<IInputEvent> event = _pInputBuffer->FetchReadPartialByteSequence(false);
-            const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-            *lpBuffer = static_cast<char>(pKeyEvent->GetCharData());
-            _BufferSize -= sizeof(wchar_t);
-            *pReplyStatus = STATUS_SUCCESS;
-            fAddDbcsLead = true;
-
-            if (_BufferSize == 0)
-            {
-                *pNumBytes = 1;
-                RetVal = false;
-                fSkipFinally = true;
-            }
-        }
-        else
-        {
-            // This call to GetChar may block.
-            *pReplyStatus = GetChar(_pInputBuffer,
-                                    lpBuffer,
-                                    true,
-                                    nullptr,
-                                    nullptr,
-                                    nullptr);
-        }
-
-        if (!NT_SUCCESS(*pReplyStatus) || fSkipFinally)
-        {
-            if (*pReplyStatus == CONSOLE_STATUS_WAIT)
-            {
-                RetVal = false;
-            }
-        }
-        else
-        {
-            NumBytes += IsGlyphFullWidth(*lpBuffer) ? 2 : 1;
-            lpBuffer++;
-            *pNumBytes += sizeof(WCHAR);
-            while (*pNumBytes < _BufferSize)
-            {
-                // This call to GetChar won't block.
-                *pReplyStatus = GetChar(_pInputBuffer,
-                                        lpBuffer,
-                                        false,
-                                        nullptr,
-                                        nullptr,
-                                        nullptr);
-                if (!NT_SUCCESS(*pReplyStatus))
-                {
-                    *pReplyStatus = STATUS_SUCCESS;
-                    break;
-                }
-                NumBytes += IsGlyphFullWidth(*lpBuffer) ? 2 : 1;
-                lpBuffer++;
-                *pNumBytes += sizeof(WCHAR);
-            }
-        }
+        _BufPtr = static_cast<wchar_t*>(newBuffer);
     }
-
-    // If the read was completed (status != wait), free the raw read data.
-    if (*pReplyStatus != CONSOLE_STATUS_WAIT &&
-        !fSkipFinally &&
-        !fIsUnicode)
-    {
-        // It's ansi, so translate the string.
-        std::unique_ptr<char[]> tempBuffer;
-        try
-        {
-            tempBuffer = std::make_unique<char[]>(NumBytes);
-        }
-        catch (...)
-        {
-            return true;
-        }
-
-        lpBuffer = _BufPtr;
-        std::unique_ptr<IInputEvent> partialEvent;
-
-        *pNumBytes = TranslateUnicodeToOem(lpBuffer,
-                                           gsl::narrow<ULONG>(*pNumBytes / sizeof(wchar_t)),
-                                           tempBuffer.get(),
-                                           gsl::narrow<ULONG>(NumBytes),
-                                           partialEvent);
-        if (partialEvent.get())
-        {
-            _pInputBuffer->StoreReadPartialByteSequence(std::move(partialEvent));
-        }
-
-        memmove(lpBuffer, tempBuffer.get(), *pNumBytes);
-        if (fAddDbcsLead)
-        {
-            (*pNumBytes)++;
-        }
-    }
-    return RetVal;
 }

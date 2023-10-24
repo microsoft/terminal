@@ -1,0 +1,184 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.Profiles_Appearance"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate x:Key="EnumComboBoxTemplate"
+                          x:DataType="local:EnumEntry">
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
+            </DataTemplate>
+
+            <DataTemplate x:Key="FontFaceComboBoxItemTemplate"
+                          x:DataType="local:Font">
+                <TextBlock FontFamily="{x:Bind Name}"
+                           Text="{x:Bind LocalizedName}" />
+            </DataTemplate>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
+                   Grid.Row="0"
+                   Margin="{StaticResource StandardIndentMargin}"
+                   Style="{StaticResource DisclaimerStyle}"
+                   Visibility="{x:Bind Profile.IsBaseLayer}" />
+        <ScrollViewer Grid.Row="1"
+                      ViewChanging="ViewChanging">
+            <StackPanel Style="{StaticResource SettingsStackStyle}">
+                <!--  Control Preview  -->
+                <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
+                    <Border x:Name="ControlPreview"
+                            Width="400"
+                            Height="180"
+                            Margin="0,0,0,12"
+                            HorizontalAlignment="Left"
+                            BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderThickness="1" />
+                </Border>
+
+                <local:Appearances Appearance="{x:Bind Profile.DefaultAppearance, Mode=OneWay}"
+                                   SourceProfile="{x:Bind Profile, Mode=OneWay}"
+                                   WindowRoot="{x:Bind WindowRoot, Mode=OneTime}" />
+
+                <!--  Grouping: Transparency  -->
+                <StackPanel Style="{StaticResource PivotStackStyle}">
+                    <TextBlock x:Uid="Profile_TransparencyHeader"
+                               Style="{StaticResource TextBlockSubHeaderStyle}" />
+
+                    <!--  Opacity  -->
+                    <local:SettingContainer x:Name="OpacityContainer"
+                                            x:Uid="Profile_Opacity"
+                                            ClearSettingValue="{x:Bind Profile.ClearOpacity}"
+                                            HasSettingValue="{x:Bind Profile.HasOpacity, Mode=OneWay}"
+                                            SettingOverrideSource="{x:Bind Profile.OpacityOverrideSource, Mode=OneWay}">
+                        <StackPanel x:Name="OpacityControl">
+                            <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Slider x:Name="OpacitySlider"
+                                        x:Uid="Profile_OpacitySlider"
+                                        Grid.Column="0"
+                                        Value="{x:Bind local:Converters.PercentageToPercentageValue(Profile.Opacity), BindBack=Profile.SetAcrylicOpacityPercentageValue, Mode=TwoWay}" />
+                                <TextBlock Grid.Column="1"
+                                           Style="{StaticResource SliderValueLabelStyle}"
+                                           Text="{x:Bind local:Converters.AppendPercentageSign(OpacitySlider.Value), Mode=OneWay}" />
+                            </Grid>
+                        </StackPanel>
+                    </local:SettingContainer>
+
+                    <!--  Use Acrylic  -->
+                    <local:SettingContainer x:Uid="Profile_UseAcrylic"
+                                            ClearSettingValue="{x:Bind Profile.ClearUseAcrylic}"
+                                            HasSettingValue="{x:Bind Profile.HasUseAcrylic, Mode=OneWay}"
+                                            SettingOverrideSource="{x:Bind Profile.UseAcrylicOverrideSource, Mode=OneWay}">
+                        <ToggleSwitch x:Name="UseAcrylicToggleSwitch"
+                                      IsOn="{x:Bind Profile.UseAcrylic, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    </local:SettingContainer>
+
+                </StackPanel>
+
+                <!--  Grouping: Window  -->
+                <StackPanel Style="{StaticResource PivotStackStyle}">
+                    <TextBlock x:Uid="Profile_WindowHeader"
+                               Style="{StaticResource TextBlockSubHeaderStyle}" />
+
+                    <!--  Padding  -->
+                    <local:SettingContainer x:Uid="Profile_Padding"
+                                            ClearSettingValue="{x:Bind Profile.ClearPadding}"
+                                            HasSettingValue="{x:Bind Profile.HasPadding, Mode=OneWay}"
+                                            SettingOverrideSource="{x:Bind Profile.PaddingOverrideSource, Mode=OneWay}">
+                        <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Slider x:Name="PaddingSlider"
+                                    x:Uid="Profile_PaddingSlider"
+                                    Grid.Column="0"
+                                    Value="{x:Bind local:Converters.MaxValueFromPaddingString(Profile.Padding), BindBack=Profile.SetPadding, Mode=TwoWay}" />
+                            <TextBlock Grid.Column="1"
+                                       Style="{StaticResource SliderValueLabelStyle}"
+                                       Text="{Binding ElementName=PaddingSlider, Path=Value, Mode=OneWay}" />
+                        </Grid>
+                    </local:SettingContainer>
+
+                    <!--  Scrollbar Visibility  -->
+                    <local:SettingContainer x:Uid="Profile_ScrollbarVisibility"
+                                            ClearSettingValue="{x:Bind Profile.ClearScrollState}"
+                                            HasSettingValue="{x:Bind Profile.HasScrollState, Mode=OneWay}"
+                                            SettingOverrideSource="{x:Bind Profile.ScrollStateOverrideSource, Mode=OneWay}">
+                        <ComboBox AutomationProperties.AccessibilityView="Content"
+                                  ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                                  ItemsSource="{x:Bind Profile.ScrollStateList, Mode=OneWay}"
+                                  SelectedItem="{x:Bind Profile.CurrentScrollState, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxSettingStyle}" />
+                    </local:SettingContainer>
+                </StackPanel>
+                <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}">
+                    <StackPanel Orientation="Horizontal"
+                                Visibility="{x:Bind Profile.EditableUnfocusedAppearance, Mode=OneWay}">
+                        <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"
+                                   Style="{StaticResource TitleTextBlockStyle}" />
+                        <Button x:Uid="Profile_CreateUnfocusedAppearanceButton"
+                                Margin="10,0,0,0"
+                                Click="CreateUnfocusedAppearance_Click"
+                                Style="{StaticResource BaseButtonStyle}"
+                                Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.HasUnfocusedAppearance), Mode=OneWay}">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon Margin="0,3,0,0"
+                                              FontSize="{StaticResource StandardIconSize}"
+                                              Glyph="&#xE710;" />
+                                    <TextBlock x:Uid="Profile_AddAppearanceButton"
+                                               Margin="10,0,0,0"
+                                               FontSize="{StaticResource StandardIconSize}" />
+                                </StackPanel>
+                            </Button.Content>
+                        </Button>
+                        <Button x:Uid="Profile_DeleteUnfocusedAppearanceButton"
+                                Margin="10,0,0,0"
+                                Click="DeleteUnfocusedAppearance_Click"
+                                Style="{StaticResource DeleteButtonStyle}"
+                                Visibility="{x:Bind Profile.HasUnfocusedAppearance, Mode=OneWay}">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                              Glyph="&#xE74D;" />
+                                    <TextBlock x:Uid="Profile_DeleteAppearanceButton"
+                                               Margin="10,0,0,0"
+                                               FontSize="{StaticResource StandardIconSize}" />
+                                </StackPanel>
+                            </Button.Content>
+                        </Button>
+                    </StackPanel>
+                    <local:Appearances Appearance="{x:Bind Profile.UnfocusedAppearance, Mode=OneWay}"
+                                       SourceProfile="{x:Bind Profile, Mode=OneWay}"
+                                       Visibility="{x:Bind Profile.ShowUnfocusedAppearance, Mode=OneWay}"
+                                       WindowRoot="{x:Bind WindowRoot, Mode=OneTime}" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

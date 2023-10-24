@@ -5,6 +5,13 @@
 #include "ColorsPage.h"
 #include "ColorControl.h"
 
+// The property sheet will never load on OneCore, so we do
+// not need to redirect users to the OneCore safe version
+// of these functions.
+#undef VkKeyScanW
+#undef MapVirtualKeyW
+#undef GetKeyState
+
 static BYTE ColorArray[4];
 static int iColor;
 
@@ -148,7 +155,7 @@ INT_PTR WINAPI ColorDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam)
     HWND hWnd;
     HWND hWndOld;
     BOOL bOK;
-    static bool fHaveInitialized = false;
+    static auto fHaveInitialized = false;
 
     switch (wMsg)
     {
@@ -185,6 +192,11 @@ INT_PTR WINAPI ColorDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam)
             {
                 InvalidateRect(hWndOld, nullptr, TRUE);
             }
+
+            // update color value fields to reflect the new color
+            UpdateItem(hDlg, IDD_COLOR_RED, GetRValue(AttrToRGB(ColorArray[iColor])));
+            UpdateItem(hDlg, IDD_COLOR_GREEN, GetGValue(AttrToRGB(ColorArray[iColor])));
+            UpdateItem(hDlg, IDD_COLOR_BLUE, GetBValue(AttrToRGB(ColorArray[iColor])));
 
             return TRUE;
 
@@ -383,7 +395,7 @@ INT_PTR WINAPI ColorDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam)
 }
 
 // enables or disables color page dialog controls depending on whether V2 is enabled or not
-void ToggleV2ColorControls(__in const HWND hDlg)
+void ToggleV2ColorControls(const __in HWND hDlg)
 {
     EnableWindow(GetDlgItem(hDlg, IDD_TRANSPARENCY), g_fForceV2);
     SetOpacitySlider(hDlg);
@@ -400,7 +412,7 @@ void PreviewOpacity(HWND hDlg, BYTE bOpacity)
     if (g_fForceV2)
     {
         WCHAR wszOpacityValue[4];
-        HWND hWndConsole = gpStateInfo->hWnd;
+        auto hWndConsole = gpStateInfo->hWnd;
 
         StringCchPrintf(wszOpacityValue, ARRAYSIZE(wszOpacityValue), L"%d", (int)((float)bOpacity / BYTE_MAX * 100));
         SetDlgItemText(hDlg, IDD_OPACITY_VALUE, wszOpacityValue);

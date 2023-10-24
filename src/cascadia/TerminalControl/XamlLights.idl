@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Control
+{
+    [default_interface] runtimeclass VisualBellLight : Windows.UI.Xaml.Media.XamlLight
+    {
+        VisualBellLight();
+        static Windows.UI.Xaml.DependencyProperty IsTargetProperty { get; };
+        static Boolean GetIsTarget(Windows.UI.Xaml.DependencyObject target);
+        static void SetIsTarget(Windows.UI.Xaml.DependencyObject target, Boolean value);
+    }
+}

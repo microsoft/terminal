@@ -59,7 +59,10 @@
           />
     </registryKey>
     <!-- Shell registration -->
-    <registryKey keyName="HKEY_CLASSES_ROOT\lnkfile\shellex\PropertySheetHandlers\Console\">
+    <registryKey
+        buildFilter="not build.isWow"
+        keyName="HKEY_CLASSES_ROOT\lnkfile\shellex\PropertySheetHandlers\Console\"
+        >
       <registryValue
           value="{D2942F8E-478E-41D3-870A-35A16238F4EE}"
           valueType="REG_SZ"

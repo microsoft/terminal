@@ -26,7 +26,7 @@ This spec was largely inspired by the following diagram from @DHowett:
 ![figure 1](data-mockup.png)
 
 The goal is to introduce an `id` parameter by which actions could be uniquely
-refered to. If we'd ever like to use an action outside the list of `actions`, we
+referred to. If we'd ever like to use an action outside the list of `actions`, we
 can simply refer to the action's ID, allowing the user to only define the action
 _once_.
 
@@ -215,8 +215,8 @@ actions manually.
       the tab context menu or the control context menu.
 
 <!-- Footnotes -->
-[Command Palette Spec]: https://github.com/microsoft/terminal/blob/master/doc/specs/%232046%20-%20Command%20Palette.md
-[New Tab Menu Customization Spec]: https://github.com/microsoft/terminal/blob/master/doc/specs/%231571%20-%20New%20Tab%20Menu%20Customization.md
+[Command Palette Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%232046%20-%20Command%20Palette.md
+[New Tab Menu Customization Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%231571%20-%20New%20Tab%20Menu%20Customization.md
 
 [#1571]: https://github.com/microsoft/terminal/issues/1571
 [#1912]: https://github.com/microsoft/terminal/issues/1912

@@ -1,13 +1,15 @@
-{"Registrations":[ 
+{
+  "$schema": "https://json.schemastore.org/component-detection-manifest.json",
+  "Registrations": [
     {
-      "component": { 
-       "type": "git", 
-       "git": { 
-         "repositoryUrl": "https://github.com/kimwalisch/libpopcnt", 
-         "commitHash": "043a99fba31121a70bcb2f589faa17f534ae6085" 
-         }
-       }
+      "component": {
+        "type": "git",
+        "git": {
+          "repositoryUrl": "https://github.com/kimwalisch/libpopcnt",
+          "commitHash": "c49987e90e56191c399cab881ab87b5daecc9b8e"
+        }
+      }
     }
- ],
- "Version": 1
+  ],
+  "Version": 1
 }

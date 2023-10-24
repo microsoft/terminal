@@ -1,0 +1,16 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ProfileViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass Profiles_Appearance : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Profiles_Appearance();
+        ProfileViewModel Profile { get; };
+        IHostedInWindow WindowRoot { get; };
+
+        Windows.UI.Xaml.Controls.Slider OpacitySlider { get; };
+    }
+}

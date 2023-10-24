@@ -1,0 +1,15 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "HighlightedText.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass HighlightedTextControl : Windows.UI.Xaml.Controls.Control
+    {
+        HighlightedTextControl();
+        Windows.UI.Xaml.DependencyProperty TextProperty { get; };
+        HighlightedText Text;
+        Windows.UI.Xaml.Controls.TextBlock TextView { get; };    
+    }
+}

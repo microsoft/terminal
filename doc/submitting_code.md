@@ -1,11 +1,11 @@
 
 # Branches in Openconsole
 
-In Openconsole, `dev/main` is the master branch for the repo.
+In OpenConsole, `dev/main` is the primary branch for the repo.
 
 Any branch that begins with `dev/` is recognized by our CI system and will automatically run x86 and amd64 builds and run our unit and feature tests. For feature branches the pattern we use is `dev/<alias>/<whatever you want here>`. ex. `dev/austdi/SomeCoolUnicodeFeature`. The important parts are the dev prefix and your alias.
 
-`inbox` is a special branch that coordinates Openconsole code to the main OS repo.
+`inbox` is a special branch that coordinates OpenConsole code to the main OS repo.
 
 The code will be checked into the OS repo at `/onecore/windows/core/console/open`. It would be prudent to make sure that directory builds in razzle with your submitted changes.
 

@@ -1,0 +1,14 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "PaletteItem.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass ActionPaletteItem : PaletteItem
+    {
+        ActionPaletteItem(Microsoft.Terminal.Settings.Model.Command command);
+
+        Microsoft.Terminal.Settings.Model.Command Command { get; };
+    }
+}

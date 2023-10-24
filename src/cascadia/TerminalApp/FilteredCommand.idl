@@ -1,0 +1,21 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "PaletteItem.idl";
+import "HighlightedTextControl.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass FilteredCommand : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        FilteredCommand();
+        FilteredCommand(PaletteItem item);
+
+        PaletteItem Item { get; };
+        String Filter;
+        HighlightedText HighlightedName { get; };
+        Int32 Weight;
+
+        void UpdateFilter(String filter);
+    }
+}

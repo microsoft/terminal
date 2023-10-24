@@ -24,61 +24,61 @@ class CoalesceTests
 
 void CoalesceTests::CoalesceFirstValue()
 {
-    int result = til::coalesce_value(std::optional<int>(1),
-                                     std::optional<int>(2),
-                                     std::optional<int>(3),
-                                     4);
+    auto result = til::coalesce_value(std::optional<int>(1),
+                                      std::optional<int>(2),
+                                      std::optional<int>(3),
+                                      4);
     VERIFY_ARE_EQUAL(1, result);
 }
 void CoalesceTests::CoalesceMiddleValue()
 {
-    int result = til::coalesce_value(std::optional<int>(std::nullopt),
-                                     std::optional<int>(2),
-                                     std::optional<int>(3),
-                                     4);
+    auto result = til::coalesce_value(std::optional<int>(std::nullopt),
+                                      std::optional<int>(2),
+                                      std::optional<int>(3),
+                                      4);
     VERIFY_ARE_EQUAL(2, result);
 }
 void CoalesceTests::CoalesceDefaultValue()
 {
-    int result = til::coalesce_value(std::optional<int>(std::nullopt),
-                                     std::optional<int>(std::nullopt),
-                                     std::optional<int>(std::nullopt),
-                                     4);
+    auto result = til::coalesce_value(std::optional<int>(std::nullopt),
+                                      std::optional<int>(std::nullopt),
+                                      std::optional<int>(std::nullopt),
+                                      4);
     VERIFY_ARE_EQUAL(4, result);
 }
 
 void CoalesceTests::CoalesceOrNotFirstValue()
 {
-    std::optional<int> result = til::coalesce(std::optional<int>(1),
-                                              std::optional<int>(2),
-                                              std::optional<int>(3),
-                                              std::optional<int>(4));
+    auto result = til::coalesce(std::optional<int>(1),
+                                std::optional<int>(2),
+                                std::optional<int>(3),
+                                std::optional<int>(4));
     VERIFY_IS_TRUE(result.has_value());
     VERIFY_ARE_EQUAL(1, result.value());
 }
 void CoalesceTests::CoalesceOrNotMiddleValue()
 {
-    std::optional<int> result = til::coalesce(std::optional<int>(std::nullopt),
-                                              std::optional<int>(2),
-                                              std::optional<int>(3),
-                                              std::optional<int>(4));
+    auto result = til::coalesce(std::optional<int>(std::nullopt),
+                                std::optional<int>(2),
+                                std::optional<int>(3),
+                                std::optional<int>(4));
     VERIFY_IS_TRUE(result.has_value());
     VERIFY_ARE_EQUAL(2, result.value());
 }
 void CoalesceTests::CoalesceOrNotDefaultValue()
 {
-    std::optional<int> result = til::coalesce(std::optional<int>(std::nullopt),
-                                              std::optional<int>(std::nullopt),
-                                              std::optional<int>(std::nullopt),
-                                              std::optional<int>(4));
+    auto result = til::coalesce(std::optional<int>(std::nullopt),
+                                std::optional<int>(std::nullopt),
+                                std::optional<int>(std::nullopt),
+                                std::optional<int>(4));
     VERIFY_IS_TRUE(result.has_value());
     VERIFY_ARE_EQUAL(4, result.value());
 }
 void CoalesceTests::CoalesceOrNotDefaultIsNullopt()
 {
-    std::optional<int> result = til::coalesce(std::optional<int>(std::nullopt),
-                                              std::optional<int>(std::nullopt),
-                                              std::optional<int>(std::nullopt),
-                                              std::optional<int>(std::nullopt));
+    auto result = til::coalesce(std::optional<int>(std::nullopt),
+                                std::optional<int>(std::nullopt),
+                                std::optional<int>(std::nullopt),
+                                std::optional<int>(std::nullopt));
     VERIFY_IS_FALSE(result.has_value());
 }

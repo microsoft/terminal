@@ -24,6 +24,7 @@ Param(
   [string]$Path,
   [string]$Destination,
   [int[]]$Altforms = (16, 20, 24, 30, 32, 36, 40, 48, 60, 64, 72, 80, 96, 256),
+  [int[]]$Win32IconSizes = (16, 20, 24, 32, 48, 64, 256),
   [switch]$Unplated = $true,
   [float[]]$Scales = (1.0, 1.25, 1.5, 2.0, 4.0),
   [string]$HighContrastPath = "",
@@ -115,6 +116,7 @@ If (-Not [string]::IsNullOrEmpty($Destination)) {
   $TranslatedOutDir = "."
 }
 
+$intermediates = [System.Collections.Concurrent.ConcurrentBag[PSCustomObject]]::new()
 $intermediateFiles = [System.Collections.Concurrent.ConcurrentBag[string]]::new()
 
 # Generate the base icons
@@ -136,6 +138,11 @@ $allSizes | ForEach-Object -Parallel {
   }
 
   ($using:intermediateFiles).Add($intermediateStandardNt)
+  ($using:intermediates).Add([PSCustomObject]@{
+      Contrast = "standard"
+      Size = $sz
+      PathWSL = $intermediateStandardWsl
+  })
 
   If ($svgContrastWsl -Ne $null) {
     $intermediateBlackNt = "$destinationNt\_intermediate.black.$($sz).png"
@@ -158,7 +165,26 @@ $allSizes | ForEach-Object -Parallel {
 
     ($using:intermediateFiles).Add($intermediateBlackNt)
     ($using:intermediateFiles).Add($intermediateWhiteNt)
+    ($using:intermediates).Add([PSCustomObject]@{
+        Contrast = "black"
+        Size = $sz
+        PathWSL = $intermediateBlackWsl
+    })
+    ($using:intermediates).Add([PSCustomObject]@{
+        Contrast = "white"
+        Size = $sz
+        PathWSL = $intermediateWhiteWsl
+    })
   }
+}
+
+$intermediates | ? { $_.Size -In $Win32IconSizes } | Group-Object Contrast | ForEach-Object -Parallel {
+  $assetName = "terminal.ico"
+  If ($_.Name -Ne "standard") {
+    $assetName = "terminal_contrast-$($_.Name).ico"
+  }
+  Write-Host "Producing win32 .ico for contrast=$($_.Name) as $assetName"
+  wsl convert $_.Group.PathWSL "$($using:TranslatedOutDir)/$assetName"
 }
 
 # Once the base icons are done, splat them into the middles of larger canvases.
