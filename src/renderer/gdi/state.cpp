@@ -397,6 +397,20 @@ GdiEngine::~GdiEngine()
         _lineMetrics.underlineOffset2 = _lineMetrics.underlineOffset - _lineMetrics.gridlineWidth;
     }
 
+    _lineMetrics.curlylineHeight = gsl::narrow_cast<int>(std::lround(fontSize * 0.07f));
+    // We need to lower the curly line height incase the gap between the underline
+    // and cell bottom isn't enough. Curly-line is a stroked line so we account
+    // for that as well.
+    const auto maxCurlyLineHeight = gsl::narrow_cast<int>(std::floor(Font.GetSize().height - (_lineMetrics.underlineOffset + _lineMetrics.underlineWidth)));
+    if (maxCurlyLineHeight <= 1) // too small to be curly, make it a straight line instead.
+    {
+        _lineMetrics.curlylineHeight = 0;
+    }
+    else
+    {
+        _lineMetrics.curlylineHeight = std::min(maxCurlyLineHeight, _lineMetrics.curlylineHeight);
+    }
+
     // Now find the size of a 0 in this current font and save it for conversions done later.
     _coordFontLast = Font.GetSize();
 
