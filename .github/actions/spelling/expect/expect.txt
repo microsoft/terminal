@@ -1002,13 +1002,11 @@ listptrsize
 lld
 llx
 LMENU
-LMNOP
 lnk
 lnkd
 lnkfile
 LNM
 LOADONCALL
-loadu
 LOBYTE
 localappdata
 locsrc
@@ -1226,7 +1224,6 @@ nonspace
 NOOWNERZORDER
 Nop
 NOPAINT
-NOPQRST
 noprofile
 NOREDRAW
 NOREMOVE
