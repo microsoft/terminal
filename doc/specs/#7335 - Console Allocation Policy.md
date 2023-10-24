@@ -1,7 +1,7 @@
 ---
 author: Dustin Howett @DHowett <duhowett@microsoft.com>
 created on: 2020-08-16
-last updated: 2020-08-21
+last updated: 2023-10-24
 issue id: "#7335"
 ---
 
@@ -63,14 +63,13 @@ C:\> Usage: application [OPTIONS] ...
 
 ## Solution Design
 
-I propose that we introduce a fusion manifest field, **consoleWindowPolicy**, with the following values:
+I propose that we introduce a fusion manifest field, **consoleAllocationPolicy**, with the following values:
 
 * _absent_
-* `hidden`
 * `detached`
 
-These flags provide a way for an application to specify a default value for the console-related [process creation flags]
-supported by [`CreateProcess`] which will take effect when none are provided and there is no existing console session.
+This field allows an application to disable the automatic allocation of a console, regardless of the [process creation flags]
+passed to [`CreateProcess`] and its subsystem value.
 
 It would look (roughly) like this:
 
@@ -79,7 +78,7 @@ It would look (roughly) like this:
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <application>
     <windowsSettings>
-      <consoleWindowPolicy xmlns="http://schemas.microsoft.com/SMI/20XX/WindowsSettings">hidden</consoleWindowPolicy>
+      <consoleAllocationPolicy xmlns="http://schemas.microsoft.com/SMI/20XX/WindowsSettings">detached</consoleAllocationPolicy>
     </windowsSettings>
   </application>
 </assembly>
@@ -88,18 +87,16 @@ It would look (roughly) like this:
 The effects of this field will only apply to binaries in the `IMAGE_SUBSYSTEM_WINDOWS_CUI` subsystem, as it pertains to
 the particulars of their console allocation.
 
-**All console inheritance will proceed as normal.** Since these flags take effect only in the absence of console
+**All console inheritance will proceed as normal.** Since this field takes effect only in the absence of console
 inheritance, CUI applications will still be able to run inside an existing console session.
 
 | policy     | behavior                                                                                                            |
 | -          | -                                                                                                                   |
 | _absent_   | _default behavior_                                                                                                  |
-| `hidden`   | The new process is attached to a headless console session (similar to `CREATE_NO_WINDOW`) unless one was inherited. |
 | `detached` | The new process is not attached to a console session (similar to `DETACHED_PROCESS`) unless one was inherited.      |
 
-An application that uses either of these manifest values will _not_ present a console window when launched by Explorer,
-Task Scheduler, etc. The only difference between the two is whether there is a hidden console host that can service
-console API requests.
+An application that specifies the `detached` allocation policy will _not_ present a console window when launched by
+Explorer, Task Scheduler, etc.
 
 ### Interaction with existing APIs
 
@@ -112,20 +109,71 @@ regards to console allocation:
     * this is the same as `CREATE_NEW_CONSOLE`, except that the first connection packet specifies that the window should
       be invisible
 
-Because this proposal pertains only to applications spawned in their default state, `CreateProcess`' flags will override
-the manifested window policy just as they would have overridden the image's subsystem-based default.
+Due to the design of [`CreateProcess`] and `ShellExecute`, this specification recommends that an allocation policy of
+`default` _override_ the inclusion of `CREATE_NEW_CONSOLE` in the `dwFlags` parameter to [`CreateProcess`].
 
-As an example, `CreateProcess(...CREATE_NEW_CONSOLE...)` on a **detached**-manifested application will force the
-allocation of a new console host.
+> **Note**
+> `ShellExecute` passes `CREATE_NEW_CONSOLE` _by default_ on all invocations. This impacts our ability to resolve the
+> conflicts between these two APIs--`detached` policy and `CREATE_NEW_CONSOLE`--without auditing every call site in
+> every Windows application that calls `ShellExecute` on a console application. Doing so is infeasible.
 
-### Why two values?
+### Application impact
 
-**hidden** is intended to be used by console applications that want finer-grained control over the visibility of their
-console windows, but that still need a console host to service console APIs. This includes most scripting language
-interpreters.
+An application that opts into the `detached` console allocation policy will **not** be allocated a console unless one is
+inherited. This presents an issue for applications like PowerShell that do want a console window when they are launched
+directly.
 
-**detached** is intended to be used by primarily graphical applications that would like to operate against a console _if
-one is present_ but do not mind its absence. This includes any graphical tool with a `--help` or `/?` argument.
+Applications in this category can call `AllocConsole()` early in their startup to get fine-grained control over when a
+console is presented.
+
+The call to `AllocConsole()` will fail safely if the application has already inherited a console handle. It will succeed
+if the application does not currently have a console handle.
+
+> **Note**
+> **Backwards Compatibility**: The behavior of `AllocConsole()` is not changing in response to this specification;
+> therefore, applications that intend to run on older versions of Windows that do not support console allocation
+> policies, which call `AllocConsole()`, will continue to behave normally.
+
+### New APIs
+
+Because a console-subsystem application may still want fine-grained control over when and how its console window is
+spawned, we propose the inclusion of a new API, `AllocConsoleEx(PCONSOLE_ALLOCATE_INFO)`.
+
+#### `AllocConsoleEx`
+
+```c++
+typedef
+enum _CONSOLE_ALLOCATE_MODE
+{
+    CONSOLE_ALLOCATE_DEFAULT = 0,
+    CONSOLE_ALLOCATE_HIDDEN,
+    CONSOLE_ALLOCATE_MINIMIZED
+} CONSOLE_ALLOCATE_MODE;
+
+typedef
+struct _CONSOLE_ALLOCATE_INFO
+{
+    DWORD cbSize;
+    CONSOLE_ALLOCATE_MODE mode;
+} CONSOLE_ALLOCATE_INFO, *PCONSOLE_ALLOCATE_INFO;
+
+WINBASEAPI
+HRESULT
+WINAPI
+AllocConsoleEx(PCONSOLE_ALLOCATE_INFO pAllocateInfo);
+```
+
+**AllocConsoleEx** affords an application control over how its console windows are allocated.
+
+Modes:
+
+* `CONSOLE_ALLOCATE_DEFAULT`: Equivalent to `AllocConsole()` or `AllocConsoleEx(NULL)`. The console window is configured
+  based on the fields in the `STARTUPINFO` used to spawn the current process.
+* `CONSOLE_ALLOCATE_HIDDEN`: Allocates a console with no visible window. The window can be displayed at a later time.
+* `CONSOLE_ALLOCATE_MINIMIZED`: Allocates a console with a window that is minimized to the taskbar.
+
+Applications seeking backwards compatibility are encouraged to delay-load `AllocConsoleEx` or check for its presence in
+the `api-ms-win-core-console-l1` APISet.
 
 ## Inspiration
 
@@ -169,8 +217,7 @@ All behavioral changes are opt-in.
 >
 > If python.exe specifies **detached**, Console APIs will fail until a console is allocated.
 
-Python could work around this by calling [`AllocConsole`] if it can be detected that console I/O is required, or
-`GetConsoleWindow`/`ShowWindow` if it can detect that the user wants to interact with the hidden console session.
+Python could work around this by calling [`AllocConsole`] if it can be detected that console I/O is required.
 
 #### Downlevel
 
@@ -202,27 +249,26 @@ This is very similar to the forking model seen in many POSIX-compliant operating
 ### Launching interactively from Explorer, Task Scheduler, etc.
 
 Applications like PowerShell may wish to retain automatic console allocation, and **detached** would be unsuitable for
-them. However, they _can_ use **hidden**. There is a problem, though: if PowerShell becomes **hidden**, double-clicking
-`pwsh.exe` will no longer spawn a console. This would almost certainly break PowerShell for all users.
+them. If PowerShell specifies the `detached` console allocation policy, launching `pwsh.exe` from File Explorer it will
+no longer spawn a console. This would almost certainly break PowerShell for all users.
+
+Such applications can use `AllocConsole()` early in their startup.
 
 At the same time, PowerShell wants `-WindowStyle Hidden` to suppress the console _before it's created_.
 
+Applications in this category can use `AllocConsoleEx()` to specify additional information about the new console window.
+
 PowerShell, and any other shell that wishes to maintain interactive launch from the graphical shell, can start in
-**hidden** mode and then display its window as necessary. Therefore:
+**detached** mode and then allocate a console as necessary. Therefore:
 
-* PowerShell will set `<consoleWindowPolicy>hidden</consoleWindowPolicy>`
+* PowerShell will set `<consoleAllocationPolicy>detached</consoleAllocationPolicy>`
 * On startup, it will process its commandline arguments.
-* If `-WindowStyle Hidden` is present, it will do nothing.
 * If `-WindowStyle Hidden` is **not** present (the default case), it can:
-   * `GetConsoleWindow()`
-   * `ShowWindow(consoleWindow, SW_SHOWDEFAULT)`
-      * We recommend using `SW_SHOWDEFAULT` to respect any "show command" passed in during process creation.
-
-### ShowWindow and ConPTY
-
-The pseudoconsole creates a hidden window to service `GetConsoleWindow()`, and it can be trivially shown using
-`ShowWindow`. If we recommend that applications `ShowWindow` on startup, we will need to guard the pseudoconsole's
-pseudo-window from being shown.
+   * `AllocConsole()` or `AllocConsoleEx(NULL)`
+   * Either of these APIs will present a console window (or not) based on the flags passed through `STARTUPINFO` during
+     [`CreateProcess`].
+* If `-WindowStyle Hidden` is present, it can:
+   * `AllocConsoleEx(&alloc)` where `alloc.mode` specifies `CONSOLE_ALLOCATE_HIDDEN`
 
 ## Future considerations
 
@@ -265,6 +311,26 @@ launched by an **inheritOnly** PowerShell would immediately force the uncontroll
 
 The move to **hidden** allows PowerShell to offer a fully-fledged console connection that can be itself inherited by a
 downstream application.
+
+#### Additional allocation policies
+
+An earlier revision of this specification suggested two allocation policies:
+
+> **hidden** is intended to be used by console applications that want finer-grained control over the visibility of their
+> console windows, but that still need a console host to service console APIs. This includes most scripting language
+> interpreters.
+>
+> **detached** is intended to be used by primarily graphical applications that would like to operate against a console _if
+> one is present_ but do not mind its absence. This includes any graphical tool with a `--help` or `/?` argument.
+
+The `hidden` policy was rejected due to an incompatibility with modern console hosting, as `hidden` would require an
+application to interact with the console window via `GetConsoleWindow()` and explicitly show it.
+
+> ##### ShowWindow and ConPTY
+>
+> The pseudoconsole creates a hidden window to service `GetConsoleWindow()`, and it can be trivially shown using
+> `ShowWindow`. If we recommend that applications `ShowWindow` on startup, we will need to guard the pseudoconsole's
+> pseudo-window from being shown.
 
 ### Links
 
