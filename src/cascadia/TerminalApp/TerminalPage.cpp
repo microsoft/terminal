@@ -3192,6 +3192,10 @@ namespace winrt::TerminalApp::implementation
         const TerminalApp::TerminalPaneContent& paneContent,
         const winrt::Windows::Foundation::IInspectable&)
     {
+        // Note: callers are likely passing in `nullptr` as the args here, as
+        // the TermControl.RestartTerminalRequested event doesn't actually pass
+        // any args upwards itself. If we ever change this, make sure you check
+        // for nulls
         if (const auto& connection{ _duplicateConnectionForRestart(paneContent) })
         {
             paneContent.GetTerminal().Connection(connection);
