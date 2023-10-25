@@ -460,7 +460,7 @@ namespace winrt::TerminalApp::implementation
         // for every pane.
         //
         // In the future, we'll want to definitely get rid of
-        // Pane::GetTerminalArgsForPane, and somehown instead find a better way
+        // Pane::GetTerminalArgsForPane, and somehow instead find a better way
         // of re-creating the pane state. Probably through a combo of ResizePane
         // actions and SetPaneOrientation actions.
         if (const auto& settings{ _rootPane->GetContent().try_as<SettingsPaneContent>() })
