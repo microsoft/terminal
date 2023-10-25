@@ -25,10 +25,10 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPaneContent::_setupControlEvents()
     {
-        _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &TerminalPaneContent::_ControlConnectionStateChangedHandler });
-        _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_ControlWarningBellHandler });
-        _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_CloseTerminalRequestedHandler });
-        _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_RestartTerminalRequestedHandler });
+        _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &TerminalPaneContent::_controlConnectionStateChangedHandler });
+        _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlWarningBellHandler });
+        _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_closeTerminalRequestedHandler });
+        _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_restartTerminalRequestedHandler });
 
         _controlEvents._TitleChanged = _control.TitleChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlTitleChanged });
         _controlEvents._TabColorChanged = _control.TabColorChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlTabColorChanged });
@@ -89,7 +89,7 @@ namespace winrt::TerminalApp::implementation
     NewTerminalArgs TerminalPaneContent::GetNewTerminalArgs(const bool asContent) const
     {
         NewTerminalArgs args{};
-        auto controlSettings = _control.Settings();
+        const auto& controlSettings = _control.Settings();
 
         args.Profile(controlSettings.ProfileName());
         // If we know the user's working directory use it instead of the profile.
@@ -170,7 +170,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPaneContent::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+    winrt::fire_and_forget TerminalPaneContent::_controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                                                                       const winrt::Windows::Foundation::IInspectable& args)
     {
         ConnectionStateChanged.raise(sender, args);
@@ -238,7 +238,7 @@ namespace winrt::TerminalApp::implementation
     //   has the 'visual' flag set
     // Arguments:
     // - <unused>
-    void TerminalPaneContent::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+    void TerminalPaneContent::_controlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                          const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
     {
         if (_profile)
@@ -302,13 +302,13 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
-    void TerminalPaneContent::_CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+    void TerminalPaneContent::_closeTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                              const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
         Close();
     }
 
-    void TerminalPaneContent::_RestartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+    void TerminalPaneContent::_restartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                                const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
         RestartTerminalRequested.raise(*this, nullptr);

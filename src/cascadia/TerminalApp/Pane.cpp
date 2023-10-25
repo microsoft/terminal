@@ -1359,7 +1359,7 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
         auto detached = isFirstChild ? _firstChild : _secondChild;
         // Remove the child from the tree, replace the current node with the
         // other child.
-        _CloseChild(isFirstChild, true);
+        _CloseChild(isFirstChild);
 
         // Update the borders on this pane and any children to match if we have
         // no parent.
@@ -1388,12 +1388,9 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
 // Arguments:
 // - closeFirst: if true, the first child should be closed, and the second
 //   should be preserved, and vice-versa for false.
-// - isDetaching: if true, then the pane event handlers for the closed child
-//   should be kept, this way they don't have to be recreated when it is later
-//   reattached to a tree somewhere as the control moves with the pane.
 // Return Value:
 // - <none>
-void Pane::_CloseChild(const bool closeFirst, const bool /*isDetaching*/)
+void Pane::_CloseChild(const bool closeFirst)
 {
     // If we're a leaf, then chances are both our children closed in close
     // succession. We waited on the lock while the other child was closed, so
@@ -1609,7 +1606,7 @@ void Pane::_CloseChildRoutine(const bool closeFirst)
     // this one doesn't seem to.
     if (!animationsEnabledInOS || !animationsEnabledInApp || eitherChildZoomed)
     {
-        _CloseChild(closeFirst, false);
+        _CloseChild(closeFirst);
         return;
     }
 
@@ -1712,7 +1709,7 @@ void Pane::_CloseChildRoutine(const bool closeFirst)
         {
             // We don't need to manually undo any of the above trickiness.
             // We're going to re-parent the child's content into us anyways
-            pane->_CloseChild(closeFirst, false);
+            pane->_CloseChild(closeFirst);
         }
     });
 }

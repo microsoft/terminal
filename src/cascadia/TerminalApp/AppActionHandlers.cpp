@@ -1426,14 +1426,14 @@ namespace winrt::TerminalApp::implementation
     {
         if (Feature_ScratchpadPane::IsEnabled())
         {
-            auto scratchPane{ winrt::make_self<ScratchpadContent>() };
+            const auto& scratchPane{ winrt::make_self<ScratchpadContent>() };
 
             // This is maybe a little wacky - add our key event handler to the pane
             // we made. So that we can get actions for keys that the content didn't
             // handle.
             scratchPane->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
 
-            auto resultPane = std::make_shared<Pane>(*scratchPane);
+            const auto resultPane = std::make_shared<Pane>(*scratchPane);
             _SplitPane(_senderOrFocusedTab(sender), SplitDirection::Automatic, 0.5f, resultPane);
             args.Handled(true);
         }

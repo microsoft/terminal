@@ -19,7 +19,7 @@ Revision History:
 
 #include "writeData.hpp"
 
-void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str, bool interactive, til::CoordType* psScrollY);
+void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str, til::CoordType* psScrollY);
 
 // NOTE: console lock must be held when calling this routine
 // String has been translated to unicode at this point.
