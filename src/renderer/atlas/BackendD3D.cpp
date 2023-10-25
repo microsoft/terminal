@@ -308,7 +308,19 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
     // For curly line, we'll make room for the trough and crest (wave's peaks).
     // The baseline for curly-line is kept at the baseline of singly underline.
     const auto strokeWidthHalf = font.underline.height / 2.0f;
-    const auto curlyUnderlinePeakHeight = _curlyLineHeight * font.fontSize;
+    auto curlyUnderlinePeakHeight = _curlyLineHeightEm * font.fontSize;
+    // Lower the peak height when there isn't enough space at the cell bottom.
+    const auto maxUnderlinePeakHeight = ((font.cellSize.y - (font.underline.position + 2.0f * strokeWidthHalf)) / 2);
+    if (maxUnderlinePeakHeight < 2) // too small to be curly, make it straight instead.
+    {
+        curlyUnderlinePeakHeight = 0;
+    }
+    else
+    {
+        curlyUnderlinePeakHeight = std::min(curlyUnderlinePeakHeight, maxUnderlinePeakHeight);
+    }
+    // we draw a smaller curlyline to avoiding clipping due to rounding errors.
+    _curlyLineHeight = std::max(0.0f, curlyUnderlinePeakHeight - 1.0f);
     const auto curlyUnderlinePos = font.underline.position - curlyUnderlinePeakHeight;
     const auto curlyUnderlineWidth = 2.0f * (curlyUnderlinePeakHeight + strokeWidthHalf);
     const auto curlyUnderlinePosU16 = gsl::narrow_cast<u16>(lrintf(curlyUnderlinePos));
@@ -549,8 +561,9 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);
         data.enhancedContrast = p.s->font->antialiasingMode == AntialiasingMode::ClearType ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
         data.underlineWidth = p.s->font->underline.height;
-        data.curlyLineHeight = p.s->font->fontSize * _curlyLineHeight;
-        data.underlineCellOffset = p.s->font->underline.position;
+        data.curlyLineWaveFreq = 2.0f * 3.14f / p.s->font->cellSize.x;
+        data.curlyLineHeight = _curlyLineHeight;
+        data.curlyLineCellOffset = p.s->font->underline.position + p.s->font->underline.height / 2.0f;
         p.deviceContext->UpdateSubresource(_psConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
 }

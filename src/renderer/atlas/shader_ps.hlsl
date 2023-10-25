@@ -13,7 +13,8 @@ cbuffer ConstBuffer : register(b0)
     float enhancedContrast;
     float underlineWidth;
     float curlyLineHeight;
-    float underlineCellOffset;
+    float curlyLineWaveFreq;
+    float curlyLineCellOffset;
 }
 
 Texture2D<float4> background : register(t0);
@@ -103,17 +104,16 @@ Output main(PSData data) : SV_Target
     }
     case SHADING_TYPE_CURLY_LINE:
     {
+        const int cellRow = data.position.y / backgroundCellSize.y;
+        const float cellTop = cellRow * backgroundCellSize.y;
+        const float centerY = cellTop + curlyLineCellOffset;
         const float strokeWidthHalf = underlineWidth / 2.0f;
-        const int cellIdxY = data.position.y / backgroundCellSize.y;
-        const float cellPosY = cellIdxY * backgroundCellSize.y;
-        const float centerY = cellPosY + underlineCellOffset + strokeWidthHalf;
-        const float Pi = radians(180);
-        const float freq = 2.0f * Pi / backgroundCellSize.x;
-        const float amp = curlyLineHeight - 1.0f; // -1.0f avoids clipping at the peaks
 
-        // The wave starts with a negative-peak(trough). To make it start with a positive-peak(crest), we phase shift it by `Pi`.
-        const float s = sin(data.position.x * freq + Pi);
-        const float d = abs(centerY + s * amp - data.position.y);
+        // The wave starts with a negative-peak(trough). We phase shift it by `Pi` to start with a positive peak(crest).
+        const float Pi = radians(180);
+        const float s = sin(data.position.x * curlyLineWaveFreq + Pi);
+
+        const float d = abs(centerY + s * curlyLineHeight - data.position.y);
         const float a = 1 - saturate(d - strokeWidthHalf);
         color = a * premultiplyColor(data.color);
         weights = color.aaaa;
@@ -121,22 +121,20 @@ Output main(PSData data) : SV_Target
     }
     case SHADING_TYPE_CURLY_LINE_WIDE:
     {
-        float strokeWidthHalf = underlineWidth / 2.0f;
-        const int cellIdxY = data.position.y / backgroundCellSize.y;
-        const float cellPosY = cellIdxY * backgroundCellSize.y;
-        float centerY = cellPosY + underlineCellOffset + strokeWidthHalf;
-        const float Pi = radians(180);
-        float freq = 2.0f * Pi / backgroundCellSize.x;
-        float amp = curlyLineHeight - 1.0f; // -1.0f avoids clipping at the peaks
+        const int cellRow = data.position.y / backgroundCellSize.y;
+        const float cellTop = cellRow * backgroundCellSize.y;
+        float centerY = cellTop + curlyLineCellOffset;
 
         // In 'Wide' case, we need to draw the same wave on an area twice as big.
-        strokeWidthHalf *= 2;
-        centerY -= curlyLineHeight + strokeWidthHalf;
-        freq /= 2;
-        amp *= 2;
+        const float strokeWidthHalf = underlineWidth;
+        const float amp = curlyLineHeight * 2.0f;
+        const float freq = curlyLineWaveFreq / 2.0f;
+        centerY -= 2 * strokeWidthHalf;
 
-        // The wave starts with a negative-peak(trough). To make it start with a positive-peak(crest), we phase shift it by `Pi`.
+        // The wave starts with a negative peak(trough). We phase shift it by `Pi` to start with a positive peak(crest).
+        const float Pi = radians(180);
         const float s = sin(data.position.x * freq + Pi);
+
         const float d = abs(centerY + s * amp - data.position.y);
         const float a = 1 - saturate(d - strokeWidthHalf);
         color = a * premultiplyColor(data.color);

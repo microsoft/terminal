@@ -43,7 +43,8 @@ namespace Microsoft::Console::Render::Atlas
             alignas(sizeof(f32)) f32 enhancedContrast = 0;
             alignas(sizeof(f32)) f32 underlineWidth = 0;
             alignas(sizeof(f32)) f32 curlyLineHeight = 0;
-            alignas(sizeof(f32)) f32 underlineCellOffset = 0;
+            alignas(sizeof(f32)) f32 curlyLineWaveFreq = 0;
+            alignas(sizeof(f32)) f32 curlyLineCellOffset = 0;
 #pragma warning(suppress : 4324) // 'PSConstBuffer': structure was padded due to alignment specifier
         };
 
@@ -297,7 +298,8 @@ namespace Microsoft::Console::Render::Atlas
         // The bounding rect of _cursorRects in pixels.
         til::rect _cursorPosition;
 
-        const f32 _curlyLineHeight = 0.1f; // in `em` units.
+        const f32 _curlyLineHeightEm = 0.075f; // in `em` units.
+        f32 _curlyLineHeight;
         FontDecorationPosition _curlyUnderline;
 
         bool _requiresContinuousRedraw = false;
