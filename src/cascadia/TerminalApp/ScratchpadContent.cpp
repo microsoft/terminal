@@ -15,8 +15,7 @@ namespace winrt::TerminalApp::implementation
     ScratchpadContent::ScratchpadContent()
     {
         _root = winrt::Windows::UI::Xaml::Controls::Grid{};
-        _root.VerticalAlignment(VerticalAlignment::Stretch);
-        _root.HorizontalAlignment(HorizontalAlignment::Stretch);
+        // Vertical and HorizontalAlignment are Stretch by default
 
         auto res = Windows::UI::Xaml::Application::Current().Resources();
         auto bg = res.Lookup(winrt::box_value(L"UnfocusedBorderBrush"));
