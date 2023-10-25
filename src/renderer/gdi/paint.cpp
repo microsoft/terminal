@@ -567,7 +567,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         std::vector<POINT> points;
         points.reserve(cPoints);
         auto start = x;
-        for (auto i = 0; i < cCurlyLines; i++)
+        for (auto i = 0u; i < cCurlyLines; i++)
         {
             points.emplace_back(start + curlyLineHalfWidth, y - controlPointHeight);
             points.emplace_back(start + curlyLineHalfWidth, y + controlPointHeight);
