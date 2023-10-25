@@ -359,9 +359,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto end = beg + pipHeight * stride;
                 for (; beg < end; beg += stride)
                 {
-                    // Coincidentally a til::color has the same RGBA format as the bitmap.
+                    // a til::color does NOT have the same RGBA format as the bitmap.
 #pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-                    std::fill_n(reinterpret_cast<til::color*>(beg), pipWidth, color);
+                    const DWORD c = 0xff << 24 | color.r << 16 | color.g << 8 | color.b;
+                    std::fill_n(reinterpret_cast<DWORD*>(beg), pipWidth, c);
                 }
             };
 
@@ -2907,7 +2908,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // However, it's likely that the control layer may need to
                     // know about the source anyways in the future, to support
                     // GH#3158
-                    if (_interactivity.ManglePathsForWsl())
+                    const auto isWSL = _interactivity.ManglePathsForWsl();
+
+                    if (isWSL)
                     {
                         std::replace(fullPath.begin(), fullPath.end(), L'\\', L'/');
 
@@ -2941,17 +2944,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         }
                     }
 
-                    const auto containsSpaces = std::find(fullPath.begin(),
-                                                          fullPath.end(),
-                                                          L' ') != fullPath.end();
+                    const auto quotesNeeded = isWSL || fullPath.find(L' ') != std::wstring::npos;
+                    const auto quotesChar = isWSL ? L'\'' : L'"';
 
-                    if (containsSpaces)
+                    // Append fullPath and also wrap it in quotes if needed
+                    if (quotesNeeded)
                     {
-                        fullPath.insert(0, L"\"");
-                        fullPath += L"\"";
+                        allPathsString.push_back(quotesChar);
                     }
-
-                    allPathsString += fullPath;
+                    allPathsString.append(fullPath);
+                    if (quotesNeeded)
+                    {
+                        allPathsString.push_back(quotesChar);
+                    }
                 }
 
                 _pasteTextWithBroadcast(winrt::hstring{ allPathsString });

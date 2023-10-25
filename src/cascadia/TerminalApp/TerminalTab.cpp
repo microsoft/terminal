@@ -909,9 +909,9 @@ namespace winrt::TerminalApp::implementation
         auto it = _contentEvents.find(paneId);
         if (it != _contentEvents.end())
         {
-            auto& events = it->second;
-            events = {};
-
+            // revoke the event handlers by resetting the event struct
+            it->second = {};
+            // and remove it from the map
             _contentEvents.erase(paneId);
         }
     }
