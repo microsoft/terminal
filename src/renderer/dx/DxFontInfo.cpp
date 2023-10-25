@@ -7,36 +7,31 @@
 #include <unicode.hpp>
 #include <VersionHelpers.h>
 
+#include "../base/FontCache.h"
+
 static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Lucida Console", L"Courier New" };
 
 using namespace Microsoft::Console::Render;
 
-DxFontInfo::DxFontInfo() noexcept :
-    _weight(DWRITE_FONT_WEIGHT_NORMAL),
-    _style(DWRITE_FONT_STYLE_NORMAL),
-    _stretch(DWRITE_FONT_STRETCH_NORMAL),
-    _didFallback(false)
+DxFontInfo::DxFontInfo(IDWriteFactory1* dwriteFactory) :
+    DxFontInfo{ dwriteFactory, {}, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL }
 {
 }
 
-DxFontInfo::DxFontInfo(std::wstring_view familyName,
-                       unsigned int weight,
-                       DWRITE_FONT_STYLE style,
-                       DWRITE_FONT_STRETCH stretch) :
-    DxFontInfo(familyName, static_cast<DWRITE_FONT_WEIGHT>(weight), style, stretch)
-{
-}
-
-DxFontInfo::DxFontInfo(std::wstring_view familyName,
-                       DWRITE_FONT_WEIGHT weight,
-                       DWRITE_FONT_STYLE style,
-                       DWRITE_FONT_STRETCH stretch) :
+DxFontInfo::DxFontInfo(
+    IDWriteFactory1* dwriteFactory,
+    std::wstring_view familyName,
+    DWRITE_FONT_WEIGHT weight,
+    DWRITE_FONT_STYLE style,
+    DWRITE_FONT_STRETCH stretch) :
     _familyName(familyName),
     _weight(weight),
     _style(style),
     _stretch(stretch),
     _didFallback(false)
 {
+    __assume(dwriteFactory != nullptr);
+    THROW_IF_FAILED(dwriteFactory->GetSystemFontCollection(_fontCollection.addressof(), FALSE));
 }
 
 bool DxFontInfo::operator==(const DxFontInfo& other) const noexcept
@@ -93,6 +88,11 @@ bool DxFontInfo::GetFallback() const noexcept
     return _didFallback;
 }
 
+IDWriteFontCollection* DxFontInfo::GetFontCollection() const noexcept
+{
+    return _fontCollection.get();
+}
+
 void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
                                const DWRITE_FONT_WEIGHT weight,
                                const DWRITE_FONT_STYLE style,
@@ -114,7 +114,7 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 // - localeName - Locale to search for appropriate fonts
 // Return Value:
 // - Smart pointer holding interface reference for queryable font data.
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::ResolveFontFaceWithFallback(IDWriteFontCollection* fontCollection, std::wstring& localeName)
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::ResolveFontFaceWithFallback(std::wstring& localeName)
 {
     // First attempt to find exactly what the user asked for.
     _didFallback = false;
@@ -125,7 +125,16 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
     // method. We still want to fall back to a font that's reasonable, below.
     try
     {
-        face = _FindFontFace(fontCollection, localeName);
+        face = _FindFontFace(localeName);
+
+        if constexpr (Feature_NearbyFontLoading::IsEnabled())
+        {
+            if (!face)
+            {
+                _fontCollection = FontCache::GetCached();
+                face = _FindFontFace(localeName);
+            }
+        }
 
         if (!face)
         {
@@ -152,14 +161,14 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
                 _familyName = _familyName.substr(0, lastSpace);
 
                 // Try to find it with the shortened family name
-                face = _FindFontFace(fontCollection, localeName);
+                face = _FindFontFace(localeName);
             }
         }
     }
     CATCH_LOG();
 
     // Alright, if our quick shot at trimming didn't work either...
-    // move onto looking up a font from our hardcoded list of fonts
+    // move onto looking up a font from our hard-coded list of fonts
     // that should really always be available.
     if (!face)
     {
@@ -167,7 +176,7 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
         {
             _familyName = fallbackFace;
 
-            face = _FindFontFace(fontCollection, localeName);
+            face = _FindFontFace(localeName);
             if (face)
             {
                 _didFallback = true;
@@ -189,19 +198,19 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 // Return Value:
 // - Smart pointer holding interface reference for queryable font data.
 #pragma warning(suppress : 26429) // C26429: Symbol 'fontCollection' is never tested for nullness, it can be marked as not_null (f.23).
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::_FindFontFace(IDWriteFontCollection* fontCollection, std::wstring& localeName)
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::_FindFontFace(std::wstring& localeName)
 {
     Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
 
     UINT32 familyIndex;
     BOOL familyExists;
 
-    THROW_IF_FAILED(fontCollection->FindFamilyName(_familyName.data(), &familyIndex, &familyExists));
+    THROW_IF_FAILED(_fontCollection->FindFamilyName(_familyName.data(), &familyIndex, &familyExists));
 
     if (familyExists)
     {
         Microsoft::WRL::ComPtr<IDWriteFontFamily> fontFamily;
-        THROW_IF_FAILED(fontCollection->GetFontFamily(familyIndex, &fontFamily));
+        THROW_IF_FAILED(_fontCollection->GetFontFamily(familyIndex, &fontFamily));
 
         Microsoft::WRL::ComPtr<IDWriteFont> font;
         THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(GetWeight(), GetStretch(), GetStyle(), &font));

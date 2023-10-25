@@ -30,9 +30,14 @@ namespace Microsoft::Console::VirtualTerminal
         bool Designate96Charset(const size_t gsetNumber, const VTID charset);
         void SetDrcs94Designation(const VTID charset);
         void SetDrcs96Designation(const VTID charset);
+        VTID GetCharsetId(const size_t gsetNumber) const;
+        size_t GetCharsetSize(const size_t gsetNumber) const;
         bool LockingShift(const size_t gsetNumber);
         bool LockingShiftRight(const size_t gsetNumber);
-        bool SingleShift(const size_t gsetNumber);
+        bool SingleShift(const size_t gsetNumber) noexcept;
+        size_t GetLeftSetNumber() const noexcept;
+        size_t GetRightSetNumber() const noexcept;
+        bool IsSingleShiftPending(const size_t gsetNumber) const noexcept;
         bool NeedToTranslate() const noexcept;
         void EnableGrTranslation(boolean enabled);
 
@@ -43,11 +48,12 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReplaceDrcsTable(const std::wstring_view oldTable, const std::wstring_view newTable);
 
         std::array<std::wstring_view, 4> _gsetTranslationTables;
+        std::array<VTID, 4> _gsetIds;
         size_t _glSetNumber = 0;
         size_t _grSetNumber = 2;
         std::wstring_view _glTranslationTable;
         std::wstring_view _grTranslationTable;
-        mutable std::wstring_view _ssTranslationTable;
+        mutable size_t _ssSetNumber = 0;
         boolean _grTranslationEnabled = false;
         VTID _drcsId = 0;
         std::wstring_view _drcsTranslationTable;

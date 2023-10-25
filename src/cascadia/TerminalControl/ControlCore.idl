@@ -58,23 +58,33 @@ namespace Microsoft.Terminal.Control
         Boolean IsIndex16;
     };
 
+    [default_interface] runtimeclass CommandHistoryContext
+    {
+        IVector<String> History { get; };
+        String CurrentCommandline { get; };
+    };
+
     [default_interface] runtimeclass ControlCore : ICoreState
     {
         ControlCore(IControlSettings settings,
                     IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        Boolean Initialize(Double actualWidth,
-                           Double actualHeight,
-                           Double compositionScale);
+        Boolean Initialize(Single actualWidth,
+                           Single actualHeight,
+                           Single compositionScale);
 
         void UpdateSettings(IControlSettings settings, IControlAppearance appearance);
         void ApplyAppearance(Boolean focused);
+
+        Microsoft.Terminal.TerminalConnection.ITerminalConnection Connection;
 
         IControlSettings Settings { get; };
         IControlAppearance FocusedAppearance { get; };
         IControlAppearance UnfocusedAppearance { get; };
         Boolean HasUnfocusedAppearance();
+
+        UInt64 SwapChainHandle { get; };
 
         Windows.Foundation.Size FontSize { get; };
         String FontFaceName { get; };
@@ -106,60 +116,79 @@ namespace Microsoft.Terminal.Control
 
         void ResetFontSize();
         void AdjustFontSize(Single fontSizeDelta);
-        void SizeChanged(Double width, Double height);
-        void ScaleChanged(Double scale);
+        void SizeChanged(Single width, Single height);
+        void ScaleChanged(Single scale);
+        void SizeOrScaleChanged(Single width, Single height, Single scale);
 
         void ToggleShaderEffects();
         void ToggleReadOnlyMode();
+        void SetReadOnlyMode(Boolean readOnlyState);
 
         Microsoft.Terminal.Core.Point CursorPosition { get; };
         void ResumeRendering();
         void BlinkAttributeTick();
+
         void Search(String text, Boolean goForward, Boolean caseSensitive);
+        void ClearSearch();
+        IVector<Int32> SearchResultRows { get; };
+
+        Microsoft.Terminal.Core.Color ForegroundColor { get; };
         Microsoft.Terminal.Core.Color BackgroundColor { get; };
 
-        Boolean HasSelection { get; };
-        IVector<String> SelectedText(Boolean trimTrailingWhitespace);
         SelectionData SelectionInfo { get; };
         SelectionInteractionMode SelectionMode();
 
         String HoveredUriText { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };
 
-        void Close();
         void BlinkCursor();
         Boolean IsInReadOnlyMode { get; };
         Boolean CursorOn;
         void EnablePainting();
 
         String ReadEntireBuffer();
+        CommandHistoryContext CommandHistory();
 
         void AdjustOpacity(Double Opacity, Boolean relative);
         void WindowVisibilityChanged(Boolean showOrHide);
 
         void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
 
-        event FontSizeChangedEventArgs FontSizeChanged;
+        void ContextMenuSelectCommand();
+        void ContextMenuSelectOutput();
+        Boolean ShouldShowSelectCommand();
+        Boolean ShouldShowSelectOutput();
 
+        // These events are called from some background thread
         event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> BackgroundColorChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TaskbarProgressChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RendererEnteredErrorState;
+        event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
+
+        // These events are always called from the UI thread (bugs aside)
+        event Windows.Foundation.TypedEventHandler<Object, FontSizeChangedArgs> FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> CursorPositionChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> TaskbarProgressChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ConnectionStateChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> HoveredHyperlinkChanged;
-        event Windows.Foundation.TypedEventHandler<Object, Object> RendererEnteredErrorState;
         event Windows.Foundation.TypedEventHandler<Object, Object> SwapChainChanged;
         event Windows.Foundation.TypedEventHandler<Object, RendererWarningArgs> RendererWarning;
         event Windows.Foundation.TypedEventHandler<Object, NoticeEventArgs> RaiseNotice;
         event Windows.Foundation.TypedEventHandler<Object, TransparencyChangedEventArgs> TransparencyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ReceivedOutput;
         event Windows.Foundation.TypedEventHandler<Object, FoundResultsArgs> FoundMatch;
-        event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, UpdateSelectionMarkersEventArgs> UpdateSelectionMarkers;
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
+        event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RestartTerminalRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
+
+        event Windows.Foundation.TypedEventHandler<Object, CompletionsChangedEventArgs> CompletionsChanged;
+
     };
 }

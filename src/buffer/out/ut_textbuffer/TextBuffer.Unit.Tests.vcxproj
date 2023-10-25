@@ -14,8 +14,7 @@
     <ClCompile Include="ReflowTests.cpp" />
     <ClCompile Include="TextColorTests.cpp" />
     <ClCompile Include="TextAttributeTests.cpp" />
-    <ClCompile Include="UnicodeStorageTests.cpp" />
-    <ClCompile Include="..\precomp.cpp">
+    <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
@@ -31,7 +30,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="precomp.h" />
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>

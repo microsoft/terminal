@@ -61,7 +61,7 @@
     </xs:simpleType>
     <xs:simpleType name="brandingType">
         <xs:restriction base="til:stringNoEmpty">
-            <xs:pattern value="Dev|Preview|Release|WindowsInbox" />
+            <xs:pattern value="Dev|Canary|Preview|Release|WindowsInbox" />
         </xs:restriction>
     </xs:simpleType>
     <xs:complexType name="brandingTokenListType">

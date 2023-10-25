@@ -123,8 +123,6 @@ public:
     static void s_InsertScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
     static void s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
 
-    OutputCellRect ReadRect(const Microsoft::Console::Types::Viewport location) const;
-
     TextBufferCellIterator GetCellDataAt(const til::point at) const;
     TextBufferCellIterator GetCellLineDataAt(const til::point at) const;
     TextBufferCellIterator GetCellDataAt(const til::point at, const Microsoft::Console::Types::Viewport limit) const;
@@ -193,11 +191,7 @@ public:
 
     void MakeCursorVisible(const til::point CursorPosition);
 
-    Microsoft::Console::Types::Viewport GetRelativeScrollMargins() const;
-    Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
-    void SetScrollMargins(const Microsoft::Console::Types::Viewport margins);
-
-    [[nodiscard]] NTSTATUS UseAlternateScreenBuffer();
+    [[nodiscard]] NTSTATUS UseAlternateScreenBuffer(const TextAttribute& initAttributes);
     void UseMainScreenBuffer();
 
     SCREEN_INFORMATION& GetMainBuffer();
@@ -206,8 +200,8 @@ public:
     SCREEN_INFORMATION& GetActiveBuffer();
     const SCREEN_INFORMATION& GetActiveBuffer() const;
 
-    TextAttribute GetAttributes() const;
-    TextAttribute GetPopupAttributes() const;
+    const TextAttribute& GetAttributes() const noexcept;
+    const TextAttribute& GetPopupAttributes() const noexcept;
 
     void SetAttributes(const TextAttribute& attributes);
     void SetPopupAttributes(const TextAttribute& popupAttributes);
@@ -225,8 +219,6 @@ public:
 
     FontInfoDesired& GetDesiredFont() noexcept;
     const FontInfoDesired& GetDesiredFont() const noexcept;
-
-    void InitializeCursorRowAttributes();
 
     void SetIgnoreLegacyEquivalentVTAttributes() noexcept;
     void ResetIgnoreLegacyEquivalentVTAttributes() noexcept;
@@ -260,7 +252,8 @@ private:
     [[nodiscard]] NTSTATUS _InitializeOutputStateMachine();
     void _FreeOutputStateMachine();
 
-    [[nodiscard]] NTSTATUS _CreateAltBuffer(_Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer);
+    [[nodiscard]] NTSTATUS _CreateAltBuffer(const TextAttribute& initAttributes,
+                                            _Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer);
 
     bool _IsAltBuffer() const;
     bool _IsInPtyMode() const;
@@ -269,8 +262,6 @@ private:
     ConhostInternalGetSet _api;
 
     std::shared_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
-
-    Microsoft::Console::Types::Viewport _scrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
 
     // Specifies which coordinates of the screen buffer are visible in the
     //      window client (the "viewport" into the buffer)

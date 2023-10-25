@@ -97,7 +97,7 @@ void TerminalApiTest::PrintStringOfSurrogatePairs()
         [](LPVOID data) -> DWORD {
             const auto& baton = *reinterpret_cast<Baton*>(data);
             Log::Comment(L"Writing data.");
-            baton.pTerm->PrintString(baton.text);
+            baton.pTerm->_stateMachine->ProcessString(baton.text);
             Log::Comment(L"Setting event.");
             SetEvent(baton.done);
             return 0;
@@ -235,7 +235,7 @@ void TerminalApiTest::CheckDoubleWidthCursor()
         singleWidthText.append(L"A");
     }
     stateMachine.ProcessString(singleWidthText);
-    VERIFY_IS_TRUE(cursor.GetPosition().X == 98);
+    VERIFY_IS_TRUE(cursor.GetPosition().x == 98);
 
     // Stuff two double width characters.
     std::wstring doubleWidthText{ L"我愛" };

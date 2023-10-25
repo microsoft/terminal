@@ -20,12 +20,17 @@ TerminalOutput::TerminalOutput() noexcept
     _gsetTranslationTables.at(1) = Ascii;
     _gsetTranslationTables.at(2) = Ascii;
     _gsetTranslationTables.at(3) = Ascii;
+    _gsetIds.at(0) = VTID("B");
+    _gsetIds.at(1) = VTID("B");
+    _gsetIds.at(2) = VTID("B");
+    _gsetIds.at(3) = VTID("B");
 }
 
 bool TerminalOutput::Designate94Charset(size_t gsetNumber, const VTID charset)
 {
     const auto translationTable = _LookupTranslationTable94(charset);
     RETURN_BOOL_IF_FALSE(!translationTable.empty());
+    _gsetIds.at(gsetNumber) = charset;
     return _SetTranslationTable(gsetNumber, translationTable);
 }
 
@@ -33,6 +38,7 @@ bool TerminalOutput::Designate96Charset(size_t gsetNumber, const VTID charset)
 {
     const auto translationTable = _LookupTranslationTable96(charset);
     RETURN_BOOL_IF_FALSE(!translationTable.empty());
+    _gsetIds.at(gsetNumber) = charset;
     return _SetTranslationTable(gsetNumber, translationTable);
 }
 
@@ -48,6 +54,16 @@ void TerminalOutput::SetDrcs96Designation(const VTID charset)
     _ReplaceDrcsTable(_LookupTranslationTable96(charset), Drcs96);
     _drcsId = charset;
     _drcsTranslationTable = Drcs96;
+}
+
+VTID TerminalOutput::GetCharsetId(const size_t gsetNumber) const
+{
+    return _gsetIds.at(gsetNumber);
+}
+
+size_t TerminalOutput::GetCharsetSize(const size_t gsetNumber) const
+{
+    return _gsetTranslationTables.at(gsetNumber).size() == 96 ? 96 : 94;
 }
 
 #pragma warning(suppress : 26440) // Suppress spurious "function can be declared noexcept" warning
@@ -76,11 +92,25 @@ bool TerminalOutput::LockingShiftRight(const size_t gsetNumber)
     return true;
 }
 
-#pragma warning(suppress : 26440) // Suppress spurious "function can be declared noexcept" warning
-bool TerminalOutput::SingleShift(const size_t gsetNumber)
+bool TerminalOutput::SingleShift(const size_t gsetNumber) noexcept
 {
-    _ssTranslationTable = _gsetTranslationTables.at(gsetNumber);
+    _ssSetNumber = gsetNumber;
     return true;
+}
+
+size_t TerminalOutput::GetLeftSetNumber() const noexcept
+{
+    return _glSetNumber;
+}
+
+size_t TerminalOutput::GetRightSetNumber() const noexcept
+{
+    return _grSetNumber;
+}
+
+bool TerminalOutput::IsSingleShiftPending(const size_t gsetNumber) const noexcept
+{
+    return _ssSetNumber == gsetNumber;
 }
 
 // Routine Description:
@@ -91,7 +121,7 @@ bool TerminalOutput::SingleShift(const size_t gsetNumber)
 // - True if translation is required.
 bool TerminalOutput::NeedToTranslate() const noexcept
 {
-    return !_glTranslationTable.empty() || !_grTranslationTable.empty() || !_ssTranslationTable.empty();
+    return !_glTranslationTable.empty() || !_grTranslationTable.empty() || _ssSetNumber != 0;
 }
 
 void TerminalOutput::EnableGrTranslation(boolean enabled)
@@ -110,17 +140,18 @@ void TerminalOutput::EnableGrTranslation(boolean enabled)
 wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const noexcept
 {
     auto wchFound = wch;
-    if (!_ssTranslationTable.empty())
+    if (_ssSetNumber == 2 || _ssSetNumber == 3)
     {
-        if (wch - 0x20u < _ssTranslationTable.size())
+        const auto ssTranslationTable = _gsetTranslationTables.at(_ssSetNumber);
+        if (wch - 0x20u < ssTranslationTable.size())
         {
-            wchFound = _ssTranslationTable.at(wch - 0x20u);
+            wchFound = ssTranslationTable.at(wch - 0x20u);
         }
-        else if (wch - 0xA0u < _ssTranslationTable.size())
+        else if (wch - 0xA0u < ssTranslationTable.size())
         {
-            wchFound = _ssTranslationTable.at(wch - 0xA0u);
+            wchFound = ssTranslationTable.at(wch - 0xA0u);
         }
-        _ssTranslationTable = {};
+        _ssSetNumber = 0;
     }
     else
     {

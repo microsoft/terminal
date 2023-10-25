@@ -30,6 +30,14 @@
                 <Setter Property="LargeChange" Value="10" />
                 <Setter Property="Minimum" Value="1" />
             </Style>
+            <Style x:Key="LaunchPositionNumberBoxStyle"
+                   BasedOn="{StaticResource NumberBoxSettingStyle}"
+                   TargetType="muxc:NumberBox">
+                <Setter Property="SmallChange" Value="1" />
+                <Setter Property="LargeChange" Value="10" />
+                <Setter Property="Minimum" Value="-2147483648" />
+                <Setter Property="Maximum" Value="2147483647" />
+            </Style>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -57,7 +65,7 @@
                                     <IconSourceElement Grid.Column="0"
                                                        Width="16"
                                                        Height="16"
-                                                       IconSource="{x:Bind Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
+                                                       IconSource="{x:Bind Icon, Converter={StaticResource IconSourceConverter}}" />
 
                                     <TextBlock Grid.Column="1"
                                                Text="{x:Bind Name}" />
@@ -84,18 +92,18 @@
 
                                     <Grid.ColumnDefinitions>
                                         <!--  icon  -->
-                                        <ColumnDefinition Width="24" />
-                                        <!--  profile name and author  -->
-                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="auto" />
+                                        <!--  terminal name and author  -->
+                                        <ColumnDefinition Width="auto" />
                                         <!--  version  -->
-                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="auto" />
                                     </Grid.ColumnDefinitions>
 
                                     <Grid.RowDefinitions>
-                                        <!--  profile name  -->
-                                        <RowDefinition Height="20" />
+                                        <!--  terminal name  -->
+                                        <RowDefinition Height="auto" />
                                         <!--  author and version  -->
-                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="auto" />
                                     </Grid.RowDefinitions>
 
                                     <IconSourceElement Grid.Row="0"
@@ -104,18 +112,16 @@
                                                        Width="24"
                                                        Height="24"
                                                        VerticalAlignment="Center"
-                                                       IconSource="{x:Bind Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
+                                                       IconSource="{x:Bind Icon, Converter={StaticResource IconSourceConverter}}" />
 
                                     <TextBlock Grid.Row="0"
                                                Grid.Column="1"
                                                Grid.ColumnSpan="2"
-                                               Height="20"
                                                AutomationProperties.AccessibilityView="Raw"
                                                Text="{x:Bind Name}" />
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="1"
-                                               Height="20"
                                                AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Author}"
@@ -123,7 +129,6 @@
 
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="2"
-                                               Height="20"
                                                AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Version}"
@@ -227,25 +232,41 @@
                                    Grid.Row="1"
                                    Grid.Column="0"
                                    VerticalAlignment="Center" />
-                        <StackPanel Grid.Row="1"
-                                    Grid.Column="1">
-                            <StackPanel Orientation="Horizontal"
-                                        Spacing="4">
-                                <muxc:NumberBox x:Name="PosXBox"
-                                                x:Uid="Globals_InitialPosXBox"
-                                                IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
-                                                Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                                Value="{x:Bind ViewModel.InitialPosX, Mode=TwoWay}" />
-                                <muxc:NumberBox x:Name="PosYBox"
-                                                x:Uid="Globals_InitialPosYBox"
-                                                IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
-                                                Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                                Value="{x:Bind ViewModel.InitialPosY, Mode=TwoWay}" />
-                            </StackPanel>
+                        <Grid Grid.Row="1"
+                              Grid.Column="1"
+                              ColumnSpacing="4">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <!--  Match the width of these NumberBoxes to the Width of the LaunchModeComboBox above minus the Grid's ColumnSpacing  -->
+                            <muxc:NumberBox x:Name="PosXBox"
+                                            x:Uid="Globals_InitialPosXBox"
+                                            Grid.Row="0"
+                                            Grid.Column="0"
+                                            Width="118"
+                                            IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
+                                            Style="{StaticResource LaunchPositionNumberBoxStyle}"
+                                            Value="{x:Bind ViewModel.InitialPosX, Mode=TwoWay}" />
+                            <muxc:NumberBox x:Name="PosYBox"
+                                            x:Uid="Globals_InitialPosYBox"
+                                            Grid.Row="0"
+                                            Grid.Column="1"
+                                            Width="118"
+                                            IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
+                                            Style="{StaticResource LaunchPositionNumberBoxStyle}"
+                                            Value="{x:Bind ViewModel.InitialPosY, Mode=TwoWay}" />
                             <CheckBox x:Name="UseDefaultLaunchPositionCheckbox"
                                       x:Uid="Globals_DefaultLaunchPositionCheckbox"
+                                      Grid.Row="1"
+                                      Grid.Column="0"
+                                      Grid.ColumnSpan="2"
                                       IsChecked="{x:Bind ViewModel.UseDefaultLaunchPosition, Mode=TwoWay}" />
-                        </StackPanel>
+                        </Grid>
                         <TextBlock x:Uid="Globals_CenterOnLaunch"
                                    Grid.Row="2"
                                    Grid.Column="0"

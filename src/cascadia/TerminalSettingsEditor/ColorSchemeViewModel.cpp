@@ -50,9 +50,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _Name;
     }
 
+    // This is used in the ComboBox and ListView.
+    // It's the only way to expose the name of the inner UI item so the ComboBox can do quick search
+    //  and screen readers can read the item out loud.
+    winrt::hstring ColorSchemeViewModel::ToString()
+    {
+        if (IsDefaultScheme())
+        {
+            return hstring{ fmt::format(L"{0} ({1})", Name(), RS_(L"ColorScheme_DefaultTag/Text")) };
+        }
+        return Name();
+    }
+
     bool ColorSchemeViewModel::IsDefaultScheme()
     {
-        return _Name == _settings.ProfileDefaults().DefaultAppearance().ColorSchemeName();
+        const auto defaultAppearance = _settings.ProfileDefaults().DefaultAppearance();
+        return defaultAppearance.LightColorSchemeName() == defaultAppearance.DarkColorSchemeName() &&
+               _Name == defaultAppearance.LightColorSchemeName();
     }
 
     void ColorSchemeViewModel::RefreshIsDefault()
@@ -109,6 +123,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 }
             }
+        }
+    }
+
+    void ColorSchemeViewModel::DeleteConfirmation_Click(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    {
+        if (const auto parentPageVM{ _parentPageVM.get() })
+        {
+            return parentPageVM.RequestDeleteCurrentScheme();
+        }
+    }
+
+    void ColorSchemeViewModel::SetAsDefault_Click(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    {
+        if (const auto parentPageVM{ _parentPageVM.get() })
+        {
+            return parentPageVM.RequestSetSelectedSchemeAsDefault();
         }
     }
 

@@ -8,7 +8,7 @@
     dependencies, like MUX, can be aggregated correctly, and resources properly
     combined into a resources.pri file.
 
-    TestHostApp will manually copy the output of this project into it's own
+    TestHostApp will manually copy the output of this project into its own
     OutDir, so we can run the tests from there. -->
 
   <PropertyGroup>
@@ -20,6 +20,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
     <!-- TerminalCppWinrt is not set intentionally -->
+    <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
@@ -39,6 +40,7 @@
     <ClCompile Include="KeyBindingsTests.cpp" />
     <ClCompile Include="CommandTests.cpp" />
     <ClCompile Include="DeserializationTests.cpp" />
+    <ClCompile Include="NewTabMenuTests.cpp" />
     <ClCompile Include="SerializationTests.cpp" />
     <ClCompile Include="TerminalSettingsTests.cpp" />
     <ClCompile Include="ThemeTests.cpp" />
@@ -72,8 +74,6 @@
     <ClCompile>
       <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\jsoncpp\json;$(OpenConsoleDir)src\inc;$(OpenConsoleDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\TerminalSettingsModel\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <!-- Required for JsonUtils.h. -->
-      <AdditionalOptions>%(AdditionalOptions) /Zc:twoPhase-</AdditionalOptions>
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -98,15 +98,4 @@
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
-
-  <PropertyGroup>
-    <!-- From Microsoft.UI.Xaml.targets -->
-    <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
-    <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
-    <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
-  </PropertyGroup>
-
-  <!-- We actually can just straight up reference MUX here, it's fine -->
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" />
-
 </Project>

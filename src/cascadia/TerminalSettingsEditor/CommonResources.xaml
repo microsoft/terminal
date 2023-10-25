@@ -131,7 +131,7 @@
     <!--  Number Box  -->
     <Style x:Key="NumberBoxSettingStyle"
            TargetType="muxc:NumberBox">
-        <Setter Property="SpinButtonPlacementMode" Value="Inline" />
+        <Setter Property="SpinButtonPlacementMode" Value="Compact" />
         <Setter Property="HorizontalAlignment" Value="Left" />
     </Style>
 

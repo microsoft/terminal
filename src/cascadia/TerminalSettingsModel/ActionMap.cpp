@@ -4,12 +4,14 @@
 #include "pch.h"
 #include "AllShortcutActions.h"
 #include "ActionMap.h"
+#include "Command.h"
 #include "AllShortcutActions.h"
 
 #include "ActionMap.g.cpp"
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
+using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -118,7 +120,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     // Method Description:
     // - Retrieves a map of actions that can be bound to a key
-    Windows::Foundation::Collections::IMapView<hstring, Model::ActionAndArgs> ActionMap::AvailableActions()
+    IMapView<hstring, Model::ActionAndArgs> ActionMap::AvailableActions()
     {
         if (!_AvailableActionsCache)
         {
@@ -172,7 +174,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Retrieves a map of command names to the commands themselves
     // - These commands should not be modified directly because they may result in
     //    an invalid state for the `ActionMap`
-    Windows::Foundation::Collections::IMapView<hstring, Model::Command> ActionMap::NameMap()
+    IMapView<hstring, Model::Command> ActionMap::NameMap()
     {
         if (!_NameMapCache)
         {
@@ -283,7 +285,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return cumulativeActions;
     }
 
-    Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> ActionMap::GlobalHotkeys()
+    IMapView<Control::KeyChord, Model::Command> ActionMap::GlobalHotkeys()
     {
         if (!_GlobalHotkeysCache)
         {
@@ -292,7 +294,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _GlobalHotkeysCache.GetView();
     }
 
-    Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> ActionMap::KeyBindings()
+    IMapView<Control::KeyChord, Model::Command> ActionMap::KeyBindings()
     {
         if (!_KeyBindingMapCache)
         {
@@ -853,5 +855,148 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         cmd->RegisterKey(keys);
         cmd->ActionAndArgs(action);
         AddAction(*cmd);
+    }
+
+    void ActionMap::_recursiveUpdateCommandKeybindingLabels()
+    {
+        const auto& commands{ _ExpandedCommandsCache };
+
+        for (const auto& command : commands)
+        {
+            if (command.HasNestedCommands())
+            {
+                _recursiveUpdateCommandKeybindingLabels();
+            }
+            else
+            {
+                // If there's a keybinding that's bound to exactly this command,
+                // then get the keychord and display it as a
+                // part of the command in the UI.
+                // We specifically need to do this for nested commands.
+                const auto keyChord{ GetKeyBindingForAction(command.ActionAndArgs().Action(),
+                                                            command.ActionAndArgs().Args()) };
+                command.RegisterKey(keyChord);
+            }
+        }
+    }
+
+    // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
+    static bool _compareSchemeNames(const ColorScheme& lhs, const ColorScheme& rhs)
+    {
+        std::wstring leftName{ lhs.Name() };
+        std::wstring rightName{ rhs.Name() };
+        return leftName.compare(rightName) < 0;
+    }
+
+    void ActionMap::ExpandCommands(const IVectorView<Model::Profile>& profiles,
+                                   const IMapView<winrt::hstring, Model::ColorScheme>& schemes)
+    {
+        // TODO in review - It's a little weird to stash the expanded commands
+        // into a separate map. Is it possible to just replace the name map with
+        // the post-expanded commands?
+        //
+        // WHILE also making sure that upon re-saving the commands, we don't
+        // actually serialize the results of the expansion. I don't think it is.
+
+        std::vector<Model::ColorScheme> sortedSchemes;
+        sortedSchemes.reserve(schemes.Size());
+
+        for (const auto& nameAndScheme : schemes)
+        {
+            sortedSchemes.push_back(nameAndScheme.Value());
+        }
+        std::sort(sortedSchemes.begin(),
+                  sortedSchemes.end(),
+                  _compareSchemeNames);
+
+        auto copyOfCommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+
+        const auto& commandsToExpand{ NameMap() };
+        for (auto nameAndCommand : commandsToExpand)
+        {
+            copyOfCommands.Insert(nameAndCommand.Key(), nameAndCommand.Value());
+        }
+
+        implementation::Command::ExpandCommands(copyOfCommands,
+                                                profiles,
+                                                winrt::param::vector_view<Model::ColorScheme>{ sortedSchemes });
+
+        _ExpandedCommandsCache = winrt::single_threaded_vector<Model::Command>();
+        for (const auto& [_, command] : copyOfCommands)
+        {
+            _ExpandedCommandsCache.Append(command);
+        }
+    }
+    IVector<Model::Command> ActionMap::ExpandedCommands()
+    {
+        return _ExpandedCommandsCache;
+    }
+
+    IVector<Model::Command> _filterToSendInput(IMapView<hstring, Model::Command> nameMap,
+                                               winrt::hstring currentCommandline)
+    {
+        auto results = winrt::single_threaded_vector<Model::Command>();
+
+        const auto numBackspaces = currentCommandline.size();
+        // Helper to clone a sendInput command into a new Command, with the
+        // input trimmed to account for the currentCommandline
+        auto createInputAction = [&](const Model::Command& command) -> Model::Command {
+            winrt::com_ptr<implementation::Command> cmdImpl;
+            cmdImpl.copy_from(winrt::get_self<implementation::Command>(command));
+
+            const auto inArgs{ command.ActionAndArgs().Args().try_as<Model::SendInputArgs>() };
+
+            auto args = winrt::make_self<SendInputArgs>(
+                winrt::hstring{ fmt::format(FMT_COMPILE(L"{:\x7f^{}}{}"),
+                                            L"",
+                                            numBackspaces,
+                                            (std::wstring_view)(inArgs ? inArgs.Input() : L"")) });
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
+
+            auto copy = cmdImpl->Copy();
+            copy->ActionAndArgs(actionAndArgs);
+
+            return *copy;
+        };
+
+        // iterate over all the commands in all our actions...
+        for (auto&& [name, command] : nameMap)
+        {
+            // If this is not a nested command, and it's a sendInput command...
+            if (!command.HasNestedCommands() &&
+                command.ActionAndArgs().Action() == ShortcutAction::SendInput)
+            {
+                // copy it into the results.
+                results.Append(createInputAction(command));
+            }
+            // If this is nested...
+            else if (command.HasNestedCommands())
+            {
+                // Look for any sendInput commands nested underneath us
+                auto innerResults = _filterToSendInput(command.NestedCommands(), currentCommandline);
+
+                if (innerResults.Size() > 0)
+                {
+                    // This command did have at least one sendInput under it
+
+                    // Create a new Command, which is a copy of this Command,
+                    // which only has SendInputs in it
+                    winrt::com_ptr<implementation::Command> cmdImpl;
+                    cmdImpl.copy_from(winrt::get_self<implementation::Command>(command));
+                    auto copy = cmdImpl->Copy();
+                    copy->NestedCommands(innerResults.GetView());
+
+                    results.Append(*copy);
+                }
+            }
+        }
+
+        return results;
+    }
+
+    IVector<Model::Command> ActionMap::FilterToSendInput(
+        winrt::hstring currentCommandline)
+    {
+        return _filterToSendInput(NameMap(), currentCommandline);
     }
 }

@@ -56,7 +56,7 @@ namespace
         HRESULT InvalidateAll() noexcept { return S_OK; }
         HRESULT InvalidateCircling(_Out_ bool* /*pForcePaint*/) noexcept { return S_OK; }
         HRESULT PaintBackground() noexcept { return S_OK; }
-        HRESULT PaintBufferLine(gsl::span<const Cluster> /*clusters*/, til::point /*coord*/, bool /*fTrimLeft*/, bool /*lineWrapped*/) noexcept { return S_OK; }
+        HRESULT PaintBufferLine(std::span<const Cluster> /*clusters*/, til::point /*coord*/, bool /*fTrimLeft*/, bool /*lineWrapped*/) noexcept { return S_OK; }
         HRESULT PaintBufferGridLines(GridLineSet /*lines*/, COLORREF /*color*/, size_t /*cchLine*/, til::point /*coordTarget*/) noexcept { return S_OK; }
         HRESULT PaintSelection(const til::rect& /*rect*/) noexcept { return S_OK; }
         HRESULT PaintCursor(const CursorOptions& /*options*/) noexcept { return S_OK; }
@@ -65,7 +65,7 @@ namespace
         HRESULT UpdateDpi(int /*iDpi*/) noexcept { return S_OK; }
         HRESULT UpdateViewport(const til::inclusive_rect& /*srNewViewport*/) noexcept { return S_OK; }
         HRESULT GetProposedFont(const FontInfoDesired& /*FontInfoDesired*/, _Out_ FontInfo& /*FontInfo*/, int /*iDpi*/) noexcept { return S_OK; }
-        HRESULT GetDirtyArea(gsl::span<const til::rect>& /*area*/) noexcept { return S_OK; }
+        HRESULT GetDirtyArea(std::span<const til::rect>& /*area*/) noexcept { return S_OK; }
         HRESULT GetFontSize(_Out_ til::size* /*pFontSize*/) noexcept { return S_OK; }
         HRESULT IsGlyphWideByFont(std::wstring_view /*glyph*/, _Out_ bool* /*pResult*/) noexcept { return S_OK; }
 
@@ -154,6 +154,13 @@ void ScrollTest::TestNotifyScrolling()
     //   SHRT_MAX
     // - Have a selection
 
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:notifyOnCircling", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+    INIT_TEST_PROPERTY(bool, notifyOnCircling, L"Controls whether we should always request scroll notifications");
+
+    _term->AlwaysNotifyOnBufferRotation(notifyOnCircling);
+
     Log::Comment(L"Watch out - this test takes a while to run, and won't "
                  L"output anything unless in encounters an error. This is expected.");
 
@@ -180,10 +187,12 @@ void ScrollTest::TestNotifyScrolling()
         // causes the first scroll event
         auto scrolled = currentRow >= TerminalViewHeight - 1;
 
-        // When we circle the buffer, the scroll bar's position does not
-        // change.
+        // When we circle the buffer, the scroll bar's position does not change.
+        // However, as of GH#14045, we will send a notification IF the control
+        // requested on (by setting AlwaysNotifyOnBufferRotation)
         auto circledBuffer = currentRow >= totalBufferSize - 1;
-        auto expectScrollBarNotification = scrolled && !circledBuffer;
+        auto expectScrollBarNotification = (scrolled && !circledBuffer) || // If we scrolled, but didn't circle the buffer OR
+                                           (circledBuffer && notifyOnCircling); // we circled AND we asked for notifications.
 
         if (expectScrollBarNotification)
         {
@@ -204,8 +213,8 @@ void ScrollTest::TestNotifyScrolling()
                            fmt::format(L"Expected a 'trigger scroll' notification in Render Engine for row {}", currentRow).c_str());
 
             til::point expectedDelta;
-            expectedDelta.X = 0;
-            expectedDelta.Y = -1;
+            expectedDelta.x = 0;
+            expectedDelta.y = -1;
             VERIFY_ARE_EQUAL(expectedDelta, _renderEngine->TriggerScrollDelta().value(), fmt::format(L"Wrong value in 'trigger scroll' notification in Render Engine for row {}", currentRow).c_str());
         }
         else

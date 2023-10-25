@@ -98,6 +98,26 @@ namespace TerminalAppLocalTests
                 }
             }
         }
+        void _logCommands(winrt::Windows::Foundation::Collections::IVector<Command> commands, const int indentation = 1)
+        {
+            if (indentation == 1)
+            {
+                Log::Comment((commands.Size() == 0) ? L"Commands:\n  <none>" : L"Commands:");
+            }
+            for (const auto& cmd : commands)
+            {
+                Log::Comment(fmt::format(L"{0:>{1}}* {2}",
+                                         L"",
+                                         indentation,
+                                         cmd.Name())
+                                 .c_str());
+
+                if (cmd.HasNestedCommands())
+                {
+                    _logCommandNames(cmd.NestedCommands(), indentation + 2);
+                }
+            }
+        }
     };
 
     void SettingsTests::TestIterateCommands()
@@ -164,14 +184,15 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command profile0");
+            auto command = expandedCommands.GetAt(0);
+            VERIFY_ARE_EQUAL(L"iterable command profile0", command.Name());
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -189,7 +210,8 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command profile1");
+            auto command = expandedCommands.GetAt(1);
+            VERIFY_ARE_EQUAL(L"iterable command profile1", command.Name());
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -207,7 +229,8 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command profile2");
+            auto command = expandedCommands.GetAt(2);
+            VERIFY_ARE_EQUAL(L"iterable command profile2", command.Name());
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -287,14 +310,16 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
 
         {
-            auto command = expandedCommands.Lookup(L"Split pane, profile: profile0");
+            auto command = expandedCommands.GetAt(0);
+            VERIFY_ARE_EQUAL(L"Split pane, profile: profile0", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -312,7 +337,9 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = expandedCommands.Lookup(L"Split pane, profile: profile1");
+            auto command = expandedCommands.GetAt(1);
+            VERIFY_ARE_EQUAL(L"Split pane, profile: profile1", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -330,7 +357,9 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = expandedCommands.Lookup(L"Split pane, profile: profile2");
+            auto command = expandedCommands.GetAt(2);
+            VERIFY_ARE_EQUAL(L"Split pane, profile: profile2", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -412,14 +441,16 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command profile0");
+            auto command = expandedCommands.GetAt(0);
+            VERIFY_ARE_EQUAL(L"iterable command profile0", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -437,7 +468,9 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command profile1\"");
+            auto command = expandedCommands.GetAt(1);
+            VERIFY_ARE_EQUAL(L"iterable command profile1\"", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -455,7 +488,9 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command profile2");
+            auto command = expandedCommands.GetAt(2);
+            VERIFY_ARE_EQUAL(L"iterable command profile2", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -527,14 +562,15 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
 
-        auto rootCommand = expandedCommands.Lookup(L"Connect to ssh...");
+        auto rootCommand = expandedCommands.GetAt(0);
         VERIFY_IS_NOT_NULL(rootCommand);
+        VERIFY_ARE_EQUAL(L"Connect to ssh...", rootCommand.Name());
         auto rootActionAndArgs = rootCommand.ActionAndArgs();
         VERIFY_IS_NOT_NULL(rootActionAndArgs);
         VERIFY_ARE_EQUAL(ShortcutAction::Invalid, rootActionAndArgs.Action());
@@ -621,14 +657,16 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
 
-        auto grandparentCommand = expandedCommands.Lookup(L"grandparent");
+        auto grandparentCommand = expandedCommands.GetAt(0);
         VERIFY_IS_NOT_NULL(grandparentCommand);
+        VERIFY_ARE_EQUAL(L"grandparent", grandparentCommand.Name());
+
         auto grandparentActionAndArgs = grandparentCommand.ActionAndArgs();
         VERIFY_IS_NOT_NULL(grandparentActionAndArgs);
         VERIFY_ARE_EQUAL(ShortcutAction::Invalid, grandparentActionAndArgs.Action());
@@ -744,17 +782,22 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
 
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
 
-        for (auto name : std::vector<std::wstring>({ L"profile0", L"profile1", L"profile2" }))
+        const std::vector<std::wstring> profileNames{ L"profile0", L"profile1", L"profile2" };
+        for (auto i = 0u; i < profileNames.size(); i++)
         {
-            winrt::hstring commandName{ name + L"..." };
-            auto command = expandedCommands.Lookup(commandName);
+            const auto& name{ profileNames[i] };
+            winrt::hstring commandName{ profileNames[i] + L"..." };
+
+            auto command = expandedCommands.GetAt(i);
+            VERIFY_ARE_EQUAL(commandName, command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -880,14 +923,16 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
 
-        auto rootCommand = expandedCommands.Lookup(L"New Tab With Profile...");
+        auto rootCommand = expandedCommands.GetAt(0);
         VERIFY_IS_NOT_NULL(rootCommand);
+        VERIFY_ARE_EQUAL(L"New Tab With Profile...", rootCommand.Name());
+
         auto rootActionAndArgs = rootCommand.ActionAndArgs();
         VERIFY_IS_NOT_NULL(rootActionAndArgs);
         VERIFY_ARE_EQUAL(ShortcutAction::Invalid, rootActionAndArgs.Action());
@@ -982,13 +1027,16 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
 
-        auto rootCommand = expandedCommands.Lookup(L"New Pane...");
+        auto rootCommand = expandedCommands.GetAt(0);
+        VERIFY_IS_NOT_NULL(rootCommand);
+        VERIFY_ARE_EQUAL(L"New Pane...", rootCommand.Name());
+
         VERIFY_IS_NOT_NULL(rootCommand);
         auto rootActionAndArgs = rootCommand.ActionAndArgs();
         VERIFY_IS_NOT_NULL(rootActionAndArgs);
@@ -1205,8 +1253,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${scheme.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
 
@@ -1215,7 +1263,9 @@ namespace TerminalAppLocalTests
         // just easy tests to write.
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command Campbell");
+            auto command = expandedCommands.GetAt(0);
+            VERIFY_ARE_EQUAL(L"iterable command Campbell", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -1233,7 +1283,9 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command Campbell PowerShell");
+            auto command = expandedCommands.GetAt(1);
+            VERIFY_ARE_EQUAL(L"iterable command Campbell PowerShell", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -1251,7 +1303,9 @@ namespace TerminalAppLocalTests
         }
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command Vintage");
+            auto command = expandedCommands.GetAt(2);
+            VERIFY_ARE_EQUAL(L"iterable command Vintage", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);

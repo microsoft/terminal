@@ -9,6 +9,7 @@
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      xmlns:tsm="using:Microsoft.Terminal.Settings.Model"
       mc:Ignorable="d">
 
     <Page.Resources>
@@ -31,15 +32,19 @@
 
                         <ResourceDictionary x:Key="Dark">
                             <Color x:Key="SettingsPageBackground">#282828</Color>
+                            <Color x:Key="SettingsPageMicaBackground">#00000000</Color>
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
                             <Color x:Key="SettingsPageBackground">#F9F9F9</Color>
+                            <Color x:Key="SettingsPageMicaBackground">#00000000</Color>
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="HighContrast">
                             <!--  Define resources for HighContrast mode here  -->
                             <StaticResource x:Key="SettingsPageBackground"
+                                            ResourceKey="SystemColorWindowColorBrush" />
+                            <StaticResource x:Key="SettingsPageMicaBackground"
                                             ResourceKey="SystemColorWindowColorBrush" />
                         </ResourceDictionary>
 
@@ -185,13 +190,29 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Uid="Settings_UnsavedSettingsWarning"
-                           Margin="30,0,0,0"
-                           HorizontalAlignment="Left"
-                           VerticalAlignment="Center"
-                           Foreground="Goldenrod"
-                           TextAlignment="Left"
-                           Visibility="Collapsed" />
+                <StackPanel Margin="30,0,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Orientation="Vertical">
+                    <TextBlock x:Uid="Settings_UnsavedSettingsWarning"
+                               Foreground="Goldenrod"
+                               TextAlignment="Left"
+                               Visibility="Collapsed" />
+                    <StackPanel VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Spacing="4"
+                                Visibility="{x:Bind tsm:CascadiaSettings.IsPortableMode, Mode=OneTime}">
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}"
+                                  Foreground="SlateBlue"
+                                  Glyph="&#xE946;" />
+                        <TextBlock Foreground="SlateBlue">
+                            <Run x:Uid="Settings_PortableModeNote" />
+                            <Hyperlink x:Uid="Settings_PortableModeInfoLink">
+                                <Run x:Uid="Settings_PortableModeInfoLinkTextRun" />
+                            </Hyperlink>
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
                 <StackPanel Margin="0,0,30,0"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"

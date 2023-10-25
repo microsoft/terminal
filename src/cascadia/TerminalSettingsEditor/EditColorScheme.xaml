@@ -415,6 +415,14 @@
                 </Grid>
             </local:SettingContainer>
 
+            <local:SettingContainer x:Name="SetAsDefaultContainer"
+                                    x:Uid="ColorScheme_SetAsDefault">
+                <Button x:Name="SetAsDefaultButton"
+                        x:Uid="ColorScheme_SetAsDefaultButton"
+                        Click="{x:Bind ViewModel.SetAsDefault_Click}"
+                        Style="{StaticResource BrowseButtonStyle}" />
+            </local:SettingContainer>
+
             <local:SettingContainer x:Name="RenameContainer"
                                     x:Uid="ColorScheme_Rename"
                                     IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.IsInBoxScheme), Mode=OneWay}"
@@ -450,6 +458,45 @@
                     </Button>
                 </StackPanel>
             </local:SettingContainer>
+
+            <Grid MaxWidth="1000"
+                  Margin="2,6,0,0"
+                  ColumnSpacing="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button x:Name="DeleteButton"
+                        Grid.Column="0"
+                        IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.IsInBoxScheme)}"
+                        Style="{StaticResource DeleteButtonStyle}">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE74D;" />
+                            <TextBlock x:Uid="ColorScheme_DeleteButton"
+                                       Style="{StaticResource IconButtonTextBlockStyle}" />
+                        </StackPanel>
+                    </Button.Content>
+                    <Button.Flyout>
+                        <Flyout>
+                            <StackPanel>
+                                <TextBlock x:Uid="ColorScheme_DeleteConfirmationMessage"
+                                           Style="{StaticResource CustomFlyoutTextStyle}" />
+                                <Button x:Uid="ColorScheme_DeleteConfirmationButton"
+                                        Click="{x:Bind ViewModel.DeleteConfirmation_Click}" />
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+                <TextBlock x:Name="SelectedSchemeDisclaimer"
+                           x:Uid="ColorScheme_DeleteButtonDisclaimerInBox"
+                           Grid.Column="1"
+                           VerticalAlignment="Center"
+                           Style="{StaticResource DisclaimerStyle}"
+                           TextWrapping="Wrap"
+                           Visibility="{x:Bind ViewModel.IsInBoxScheme}" />
+            </Grid>
         </StackPanel>
     </ScrollViewer>
 </Page>

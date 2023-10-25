@@ -172,10 +172,10 @@ using namespace Microsoft::Console::Render;
 {
     // VT coords start at 1,1
     auto coordVt = coord;
-    coordVt.X++;
-    coordVt.Y++;
+    coordVt.x++;
+    coordVt.y++;
 
-    return _WriteFormatted(FMT_COMPILE("\x1b[{};{}H"), coordVt.Y, coordVt.X);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{};{}H"), coordVt.y, coordVt.x);
 }
 
 // Method Description:
@@ -242,6 +242,19 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
+// - Formats and writes a sequence to change the current underline color to an
+//   indexed color from the 256-color table.
+// - Uses sub parameters.
+// Arguments:
+// - index: color table index to emit as a VT sequence
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SetGraphicsRenditionUnderline256Color(const BYTE index) noexcept
+{
+    return _WriteFormatted(FMT_COMPILE("\x1b[58:5:{}m"), index);
+}
+
+// Method Description:
 // - Formats and writes a sequence to change the current text attributes to an
 //      RGB color.
 // Arguments:
@@ -259,6 +272,22 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
+// - Formats and writes a sequence to change the current underline color to an
+//   RGB color.
+// - Uses sub parameters.
+// Arguments:
+// - color: The color to emit a VT sequence for.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SetGraphicsRenditionUnderlineRGBColor(const COLORREF color) noexcept
+{
+    const auto r = GetRValue(color);
+    const auto g = GetGValue(color);
+    const auto b = GetBValue(color);
+    return _WriteFormatted(FMT_COMPILE("\x1b[58:2::{}:{}:{}m"), r, g, b);
+}
+
+// Method Description:
 // - Formats and writes a sequence to change the current text attributes to the
 //      default foreground or background. Does not affect the intensity of text.
 // Arguments:
@@ -268,6 +297,16 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(const bool fIsForeground) noexcept
 {
     return _Write(fIsForeground ? ("\x1b[39m") : ("\x1b[49m"));
+}
+
+// Method Description:
+// - Formats and writes a sequence to change the current underline color to the
+//   default color.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SetGraphicsRenditionUnderlineDefaultColor() noexcept
+{
+    return _Write("\x1b[59m");
 }
 
 // Method Description:
@@ -333,6 +372,34 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
+// - Formats and writes a sequence to change the extended underline styling of the following text.
+// - Uses backward compatible SGR 4 (without sub parameter) and SGR 21 for single and doubly underline.
+// Arguments:
+// - style: underline style to use.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SetUnderlineExtended(const UnderlineStyle style) noexcept
+{
+    switch (style)
+    {
+    case UnderlineStyle::NoUnderline:
+        return _SetUnderlined(false);
+    case UnderlineStyle::SinglyUnderlined:
+        return _SetUnderlined(true);
+    case UnderlineStyle::DoublyUnderlined:
+        return _Write("\x1b[21m");
+    case UnderlineStyle::CurlyUnderlined:
+        return _Write("\x1b[4:3m");
+    case UnderlineStyle::DottedUnderlined:
+        return _Write("\x1b[4:4m");
+    case UnderlineStyle::DashedUnderlined:
+        return _Write("\x1b[4:5m");
+    default:
+        return _SetUnderlined(true); // treat unknown style as singly underlined
+    }
+}
+
+// Method Description:
 // - Formats and writes a sequence to change the underline of the following text.
 // Arguments:
 // - isUnderlined: If true, we'll underline the text. Otherwise we'll remove the underline.
@@ -341,17 +408,6 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_SetUnderlined(const bool isUnderlined) noexcept
 {
     return _Write(isUnderlined ? "\x1b[4m" : "\x1b[24m");
-}
-
-// Method Description:
-// - Formats and writes a sequence to change the double underline of the following text.
-// Arguments:
-// - isUnderlined: If true, we'll doubly underline the text. Otherwise we'll remove the underline.
-// Return Value:
-// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetDoublyUnderlined(const bool isUnderlined) noexcept
-{
-    return _Write(isUnderlined ? "\x1b[21m" : "\x1b[24m");
 }
 
 // Method Description:

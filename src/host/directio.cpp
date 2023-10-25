@@ -25,105 +25,6 @@
 using namespace Microsoft::Console::Types;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-class CONSOLE_INFORMATION;
-
-// Routine Description:
-// - converts non-unicode InputEvents to unicode InputEvents
-// Arguments:
-// inEvents - InputEvents to convert
-// partialEvent - on output, will contain a partial dbcs byte char
-// data if the last event in inEvents is a dbcs lead byte
-// Return Value:
-// - inEvents will contain unicode InputEvents
-// - partialEvent may contain a partial dbcs KeyEvent
-void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
-                     _Out_ std::unique_ptr<IInputEvent>& partialEvent)
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    std::deque<std::unique_ptr<IInputEvent>> outEvents;
-
-    while (!inEvents.empty())
-    {
-        auto currentEvent = std::move(inEvents.front());
-        inEvents.pop_front();
-
-        if (currentEvent->EventType() != InputEventType::KeyEvent)
-        {
-            outEvents.push_back(std::move(currentEvent));
-        }
-        else
-        {
-            const auto keyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
-
-            std::wstring outWChar;
-            auto hr = S_OK;
-
-            // convert char data to unicode
-            if (IsDBCSLeadByteConsole(static_cast<char>(keyEvent->GetCharData()), &gci.CPInfo))
-            {
-                if (inEvents.empty())
-                {
-                    // we ran out of data and have a partial byte leftover
-                    partialEvent = std::move(currentEvent);
-                    break;
-                }
-
-                // get the 2nd byte and convert to unicode
-                const auto keyEventEndByte = static_cast<const KeyEvent* const>(inEvents.front().get());
-                inEvents.pop_front();
-
-                char inBytes[] = {
-                    static_cast<char>(keyEvent->GetCharData()),
-                    static_cast<char>(keyEventEndByte->GetCharData())
-                };
-                try
-                {
-                    outWChar = ConvertToW(gci.CP, { inBytes, ARRAYSIZE(inBytes) });
-                }
-                catch (...)
-                {
-                    hr = wil::ResultFromCaughtException();
-                }
-            }
-            else
-            {
-                char inBytes[] = {
-                    static_cast<char>(keyEvent->GetCharData())
-                };
-                try
-                {
-                    outWChar = ConvertToW(gci.CP, { inBytes, ARRAYSIZE(inBytes) });
-                }
-                catch (...)
-                {
-                    hr = wil::ResultFromCaughtException();
-                }
-            }
-
-            // push unicode key events back out
-            if (SUCCEEDED(hr) && outWChar.size() > 0)
-            {
-                auto unicodeKeyEvent = *keyEvent;
-                for (const auto wch : outWChar)
-                {
-                    try
-                    {
-                        unicodeKeyEvent.SetCharData(wch);
-                        outEvents.push_back(std::make_unique<KeyEvent>(unicodeKeyEvent));
-                    }
-                    catch (...)
-                    {
-                        LOG_HR(wil::ResultFromCaughtException());
-                    }
-                }
-            }
-        }
-    }
-
-    inEvents.swap(outEvents);
-    return;
-}
-
 // Routine Description:
 // - This routine reads or peeks input events.  In both cases, the events
 //   are copied to the user's buffer.  In the read case they are removed
@@ -149,13 +50,13 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // - CONSOLE_STATUS_WAIT - If we didn't have enough data or needed to
 // block, this will be returned along with context in *ppWaiter.
 // - Or an out of memory/math/string error message in NTSTATUS format.
-[[nodiscard]] static NTSTATUS _DoGetConsoleInput(InputBuffer& inputBuffer,
-                                                 std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                 const size_t eventReadCount,
-                                                 INPUT_READ_HANDLE_DATA& readHandleState,
-                                                 const bool IsUnicode,
-                                                 const bool IsPeek,
-                                                 std::unique_ptr<IWaitRoutine>& waiter) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleInputImpl(IConsoleInputObject& inputBuffer,
+                                                       InputEventQueue& outEvents,
+                                                       const size_t eventReadCount,
+                                                       INPUT_READ_HANDLE_DATA& readHandleState,
+                                                       const bool IsUnicode,
+                                                       const bool IsPeek,
+                                                       std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     try
     {
@@ -169,240 +70,22 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        std::deque<std::unique_ptr<IInputEvent>> partialEvents;
-        if (!IsUnicode)
-        {
-            if (inputBuffer.IsReadPartialByteSequenceAvailable())
-            {
-                partialEvents.push_back(inputBuffer.FetchReadPartialByteSequence(IsPeek));
-            }
-        }
-
-        size_t amountToRead;
-        if (FAILED(SizeTSub(eventReadCount, partialEvents.size(), &amountToRead)))
-        {
-            return STATUS_INTEGER_OVERFLOW;
-        }
-        std::deque<std::unique_ptr<IInputEvent>> readEvents;
-        auto Status = inputBuffer.Read(readEvents,
-                                       amountToRead,
-                                       IsPeek,
-                                       true,
-                                       IsUnicode,
-                                       false);
+        const auto Status = inputBuffer.Read(outEvents,
+                                             eventReadCount,
+                                             IsPeek,
+                                             true,
+                                             IsUnicode,
+                                             false);
 
         if (CONSOLE_STATUS_WAIT == Status)
         {
-            FAIL_FAST_IF(!(readEvents.empty()));
             // If we're told to wait until later, move all of our context
             // to the read data object and send it back up to the server.
             waiter = std::make_unique<DirectReadData>(&inputBuffer,
                                                       &readHandleState,
-                                                      eventReadCount,
-                                                      std::move(partialEvents));
-        }
-        else if (NT_SUCCESS(Status))
-        {
-            // split key events to oem chars if necessary
-            if (!IsUnicode)
-            {
-                try
-                {
-                    SplitToOem(readEvents);
-                }
-                CATCH_LOG();
-            }
-
-            // combine partial and readEvents
-            while (!partialEvents.empty())
-            {
-                readEvents.push_front(std::move(partialEvents.back()));
-                partialEvents.pop_back();
-            }
-
-            // move events over
-            for (size_t i = 0; i < eventReadCount; ++i)
-            {
-                if (readEvents.empty())
-                {
-                    break;
-                }
-                outEvents.push_back(std::move(readEvents.front()));
-                readEvents.pop_front();
-            }
-
-            // store partial event if necessary
-            if (!readEvents.empty())
-            {
-                inputBuffer.StoreReadPartialByteSequence(std::move(readEvents.front()));
-                readEvents.pop_front();
-                FAIL_FAST_IF(!(readEvents.empty()));
-            }
+                                                      eventReadCount);
         }
         return Status;
-    }
-    catch (...)
-    {
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-    }
-}
-
-// Routine Description:
-// - Retrieves input records from the given input object and returns them to the client.
-// - The peek version will NOT remove records when it copies them out.
-// - The A version will convert to W using the console's current Input codepage (see SetConsoleCP)
-// Arguments:
-// - context - The input buffer to take records from to return to the client
-// - outEvents - storage location for read events
-// - eventsToRead - The number of input events to read
-// - readHandleState - A structure that will help us maintain
-// some input context across various calls on the same input
-// handle. Primarily used to restore the "other piece" of partially
-// returned strings (because client buffer wasn't big enough) on the
-// next call.
-// - waiter - If we have to wait (not enough data to fill client
-// buffer), this contains context that will allow the server to
-// restore this call later.
-[[nodiscard]] HRESULT ApiRoutines::PeekConsoleInputAImpl(IConsoleInputObject& context,
-                                                         std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                         const size_t eventsToRead,
-                                                         INPUT_READ_HANDLE_DATA& readHandleState,
-                                                         std::unique_ptr<IWaitRoutine>& waiter) noexcept
-{
-    try
-    {
-        auto Status = _DoGetConsoleInput(context,
-                                         outEvents,
-                                         eventsToRead,
-                                         readHandleState,
-                                         false,
-                                         true,
-                                         waiter);
-        if (CONSOLE_STATUS_WAIT == Status)
-        {
-            return HRESULT_FROM_NT(Status);
-        }
-        RETURN_NTSTATUS(Status);
-    }
-    CATCH_RETURN();
-}
-
-// Routine Description:
-// - Retrieves input records from the given input object and returns them to the client.
-// - The peek version will NOT remove records when it copies them out.
-// - The W version accepts UCS-2 formatted characters (wide characters)
-// Arguments:
-// - context - The input buffer to take records from to return to the client
-// - outEvents - storage location for read events
-// - eventsToRead - The number of input events to read
-// - readHandleState - A structure that will help us maintain
-// some input context across various calls on the same input
-// handle. Primarily used to restore the "other piece" of partially
-// returned strings (because client buffer wasn't big enough) on the
-// next call.
-// - waiter - If we have to wait (not enough data to fill client
-// buffer), this contains context that will allow the server to
-// restore this call later.
-[[nodiscard]] HRESULT ApiRoutines::PeekConsoleInputWImpl(IConsoleInputObject& context,
-                                                         std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                         const size_t eventsToRead,
-                                                         INPUT_READ_HANDLE_DATA& readHandleState,
-                                                         std::unique_ptr<IWaitRoutine>& waiter) noexcept
-{
-    try
-    {
-        auto Status = _DoGetConsoleInput(context,
-                                         outEvents,
-                                         eventsToRead,
-                                         readHandleState,
-                                         true,
-                                         true,
-                                         waiter);
-        if (CONSOLE_STATUS_WAIT == Status)
-        {
-            return HRESULT_FROM_NT(Status);
-        }
-        RETURN_NTSTATUS(Status);
-    }
-    CATCH_RETURN();
-}
-
-// Routine Description:
-// - Retrieves input records from the given input object and returns them to the client.
-// - The read version WILL remove records when it copies them out.
-// - The A version will convert to W using the console's current Input codepage (see SetConsoleCP)
-// Arguments:
-// - context - The input buffer to take records from to return to the client
-// - outEvents - storage location for read events
-// - eventsToRead - The number of input events to read
-// - readHandleState - A structure that will help us maintain
-// some input context across various calls on the same input
-// handle. Primarily used to restore the "other piece" of partially
-// returned strings (because client buffer wasn't big enough) on the
-// next call.
-// - waiter - If we have to wait (not enough data to fill client
-// buffer), this contains context that will allow the server to
-// restore this call later.
-[[nodiscard]] HRESULT ApiRoutines::ReadConsoleInputAImpl(IConsoleInputObject& context,
-                                                         std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                         const size_t eventsToRead,
-                                                         INPUT_READ_HANDLE_DATA& readHandleState,
-                                                         std::unique_ptr<IWaitRoutine>& waiter) noexcept
-{
-    try
-    {
-        auto Status = _DoGetConsoleInput(context,
-                                         outEvents,
-                                         eventsToRead,
-                                         readHandleState,
-                                         false,
-                                         false,
-                                         waiter);
-        if (CONSOLE_STATUS_WAIT == Status)
-        {
-            return HRESULT_FROM_NT(Status);
-        }
-        RETURN_NTSTATUS(Status);
-    }
-    CATCH_RETURN();
-}
-
-// Routine Description:
-// - Retrieves input records from the given input object and returns them to the client.
-// - The read version WILL remove records when it copies them out.
-// - The W version accepts UCS-2 formatted characters (wide characters)
-// Arguments:
-// - context - The input buffer to take records from to return to the client
-// - outEvents - storage location for read events
-// - eventsToRead - The number of input events to read
-// - readHandleState - A structure that will help us maintain
-// some input context across various calls on the same input
-// handle. Primarily used to restore the "other piece" of partially
-// returned strings (because client buffer wasn't big enough) on the
-// next call.
-// - waiter - If we have to wait (not enough data to fill client
-// buffer), this contains context that will allow the server to
-// restore this call later.
-[[nodiscard]] HRESULT ApiRoutines::ReadConsoleInputWImpl(IConsoleInputObject& context,
-                                                         std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                         const size_t eventsToRead,
-                                                         INPUT_READ_HANDLE_DATA& readHandleState,
-                                                         std::unique_ptr<IWaitRoutine>& waiter) noexcept
-{
-    try
-    {
-        auto Status = _DoGetConsoleInput(context,
-                                         outEvents,
-                                         eventsToRead,
-                                         readHandleState,
-                                         true,
-                                         false,
-                                         waiter);
-        if (CONSOLE_STATUS_WAIT == Status)
-        {
-            return HRESULT_FROM_NT(Status);
-        }
-        RETURN_NTSTATUS(Status);
     }
     CATCH_RETURN();
 }
@@ -418,7 +101,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // Return Value:
 // - HRESULT indicating success or failure
 [[nodiscard]] static HRESULT _WriteConsoleInputWImplHelper(InputBuffer& context,
-                                                           std::deque<std::unique_ptr<IInputEvent>>& events,
+                                                           const std::span<const INPUT_RECORD>& events,
                                                            size_t& written,
                                                            const bool append) noexcept
 {
@@ -452,38 +135,99 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // Return Value:
 // - HRESULT indicating success or failure
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleInputAImpl(InputBuffer& context,
-                                                          const gsl::span<const INPUT_RECORD> buffer,
+                                                          const std::span<const INPUT_RECORD> buffer,
                                                           size_t& written,
                                                           const bool append) noexcept
+try
 {
     written = 0;
+
+    if (buffer.empty())
+    {
+        return S_OK;
+    }
 
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    try
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    InputEventQueue events;
+
+    auto it = buffer.begin();
+    const auto end = buffer.end();
+
+    // Check out the loop below. When a previous call ended on a leading DBCS we store it for
+    // the next call to WriteConsoleInputAImpl to join it with the now available trailing DBCS.
+    if (context.IsWritePartialByteSequenceAvailable())
     {
-        auto events = IInputEvent::Create(buffer);
+        auto lead = context.FetchWritePartialByteSequence();
+        const auto& trail = *it;
 
-        // add partial byte event if necessary
-        if (context.IsWritePartialByteSequenceAvailable())
+        if (trail.EventType == KEY_EVENT)
         {
-            events.push_front(context.FetchWritePartialByteSequence(false));
+            const char narrow[2]{
+                lead.Event.KeyEvent.uChar.AsciiChar,
+                trail.Event.KeyEvent.uChar.AsciiChar,
+            };
+            wchar_t wide[2];
+            const auto length = MultiByteToWideChar(gci.CP, 0, &narrow[0], 2, &wide[0], 2);
+
+            for (int i = 0; i < length; i++)
+            {
+                lead.Event.KeyEvent.uChar.UnicodeChar = wide[i];
+                events.push_back(lead);
+            }
+
+            ++it;
         }
-
-        // convert to unicode if necessary
-        std::unique_ptr<IInputEvent> partialEvent;
-        EventsToUnicode(events, partialEvent);
-
-        if (partialEvent.get())
-        {
-            context.StoreWritePartialByteSequence(std::move(partialEvent));
-        }
-
-        return _WriteConsoleInputWImplHelper(context, events, written, append);
     }
-    CATCH_RETURN();
+
+    for (; it != end; ++it)
+    {
+        if (it->EventType != KEY_EVENT)
+        {
+            events.push_back(*it);
+            continue;
+        }
+
+        auto lead = *it;
+        char narrow[2]{ lead.Event.KeyEvent.uChar.AsciiChar };
+        int narrowLength = 1;
+
+        if (IsDBCSLeadByteConsole(lead.Event.KeyEvent.uChar.AsciiChar, &gci.CPInfo))
+        {
+            ++it;
+            if (it == end)
+            {
+                // Missing trailing DBCS -> Store the lead for the next call to WriteConsoleInputAImpl.
+                context.StoreWritePartialByteSequence(lead);
+                break;
+            }
+
+            const auto& trail = *it;
+            if (trail.EventType != KEY_EVENT)
+            {
+                // Invalid input -> Skip.
+                continue;
+            }
+
+            narrow[1] = trail.Event.KeyEvent.uChar.AsciiChar;
+            narrowLength = 2;
+        }
+
+        wchar_t wide[2];
+        const auto length = MultiByteToWideChar(gci.CP, 0, &narrow[0], narrowLength, &wide[0], 2);
+
+        for (int i = 0; i < length; i++)
+        {
+            lead.Event.KeyEvent.uChar.UnicodeChar = wide[i];
+            events.push_back(lead);
+        }
+    }
+
+    return _WriteConsoleInputWImplHelper(context, events, written, append);
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Writes events to the input buffer
@@ -496,7 +240,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // Return Value:
 // - HRESULT indicating success or failure
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleInputWImpl(InputBuffer& context,
-                                                          const gsl::span<const INPUT_RECORD> buffer,
+                                                          const std::span<const INPUT_RECORD> buffer,
                                                           size_t& written,
                                                           const bool append) noexcept
 {
@@ -507,9 +251,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
     try
     {
-        auto events = IInputEvent::Create(buffer);
-
-        return _WriteConsoleInputWImplHelper(context, events, written, append);
+        return _WriteConsoleInputWImplHelper(context, buffer, written, append);
     }
     CATCH_RETURN();
 }
@@ -524,7 +266,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // Return Value:
 // - Generally S_OK. Could be a memory or math error code.
 [[nodiscard]] static HRESULT _ConvertCellsToAInplace(const UINT codepage,
-                                                     const gsl::span<CHAR_INFO> buffer,
+                                                     const std::span<CHAR_INFO> buffer,
                                                      const Viewport rectangle) noexcept
 {
     try
@@ -532,9 +274,9 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         const auto size = rectangle.Dimensions();
         auto outIter = buffer.begin();
 
-        for (til::CoordType i = 0; i < size.Y; ++i)
+        for (til::CoordType i = 0; i < size.height; ++i)
         {
-            for (til::CoordType j = 0; j < size.X; ++j, ++outIter)
+            for (til::CoordType j = 0; j < size.width; ++j, ++outIter)
             {
                 auto& in1 = *outIter;
 
@@ -549,7 +291,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                 if (WI_IsFlagSet(in1.Attributes, COMMON_LVB_LEADING_BYTE))
                 {
                     // As long as we're not looking at the exact last column of the buffer...
-                    if (j < size.X - 1)
+                    if (j < size.width - 1)
                     {
                         // Walk forward one because we're about to consume two cells.
                         ++j;
@@ -601,7 +343,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // Return Value:
 // - Generally S_OK. Could be a memory or math error code.
 [[nodiscard]] HRESULT _ConvertCellsToWInplace(const UINT codepage,
-                                              gsl::span<CHAR_INFO> buffer,
+                                              std::span<CHAR_INFO> buffer,
                                               const Viewport& rectangle) noexcept
 {
     try
@@ -611,9 +353,9 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         const auto size = rectangle.Dimensions();
         auto outIter = buffer.begin();
 
-        for (til::CoordType i = 0; i < size.Y; ++i)
+        for (til::CoordType i = 0; i < size.height; ++i)
         {
-            for (til::CoordType j = 0; j < size.X; ++j, ++outIter)
+            for (til::CoordType j = 0; j < size.width; ++j, ++outIter)
             {
                 // Clear lead/trailing flags. We'll determine it for ourselves versus the given codepage.
                 auto& in1 = *outIter;
@@ -623,7 +365,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                 if (IsDBCSLeadByteConsole(in1.Char.AsciiChar, &gci.OutputCPInfo))
                 {
                     // If we're not on the last column, we have two cells to use.
-                    if (j < size.X - 1)
+                    if (j < size.width - 1)
                     {
                         // Mark we're consuming two cells.
                         ++outIter;
@@ -671,7 +413,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
     CATCH_RETURN();
 }
 
-[[nodiscard]] static std::vector<CHAR_INFO> _ConvertCellsToMungedW(gsl::span<CHAR_INFO> buffer, const Viewport& rectangle)
+[[nodiscard]] static std::vector<CHAR_INFO> _ConvertCellsToMungedW(std::span<CHAR_INFO> buffer, const Viewport& rectangle)
 {
     std::vector<CHAR_INFO> result;
     result.reserve(buffer.size());
@@ -679,9 +421,9 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
     const auto size = rectangle.Dimensions();
     auto bufferIter = buffer.begin();
 
-    for (til::CoordType i = 0; i < size.Y; i++)
+    for (til::CoordType i = 0; i < size.height; i++)
     {
-        for (til::CoordType j = 0; j < size.X; j++)
+        for (til::CoordType j = 0; j < size.width; j++)
         {
             // Prepare a candidate charinfo on the output side copying the colors but not the lead/trail information.
             auto candidate = *bufferIter;
@@ -691,7 +433,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             if (IsGlyphFullWidth(candidate.Char.UnicodeChar))
             {
                 // If we're not on the final cell of the row...
-                if (j < size.X - 1)
+                if (j < size.width - 1)
                 {
                     // Mark that we're consuming two cells.
                     j++;
@@ -722,7 +464,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
-                                                           gsl::span<CHAR_INFO> targetBuffer,
+                                                           std::span<CHAR_INFO> targetBuffer,
                                                            const Microsoft::Console::Types::Viewport& requestRectangle,
                                                            Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
@@ -735,7 +477,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         const auto targetSize = requestRectangle.Dimensions();
 
         // If either dimension of the request is too small, return an empty rectangle as read and exit early.
-        if (targetSize.X <= 0 || targetSize.Y <= 0)
+        if (targetSize.width <= 0 || targetSize.height <= 0)
         {
             readRectangle = Viewport::FromDimensions(requestRectangle.Origin(), { 0, 0 });
             return S_OK;
@@ -747,18 +489,18 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
         // Clip the request rectangle to the size of the storage buffer
         auto clip = requestRectangle.ToExclusive();
-        clip.Right = std::min(clip.Right, storageSize.X);
-        clip.Bottom = std::min(clip.Bottom, storageSize.Y);
+        clip.right = std::min(clip.right, storageSize.width);
+        clip.bottom = std::min(clip.bottom, storageSize.height);
 
         // Find the target point (where to write the user's buffer)
         // It will either be 0,0 or offset into the buffer by the inverse of the negative values.
         til::point targetPoint;
-        targetPoint.X = clip.Left < 0 ? -clip.Left : 0;
-        targetPoint.Y = clip.Top < 0 ? -clip.Top : 0;
+        targetPoint.x = clip.left < 0 ? -clip.left : 0;
+        targetPoint.y = clip.top < 0 ? -clip.top : 0;
 
         // The clipped rect must be inside the buffer size, so it has a minimum value of 0. (max of itself and 0)
-        clip.Left = std::max(clip.Left, 0);
-        clip.Top = std::max(clip.Top, 0);
+        clip.left = std::max(clip.left, 0);
+        clip.top = std::max(clip.top, 0);
 
         // The final "request rectangle" or the area inside the buffer we want to read, is the clipped dimensions.
         const auto clippedRequestRectangle = Viewport::FromExclusive(clip);
@@ -795,11 +537,11 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             ++targetIter;
 
             // Increment the target
-            targetPos.X++;
-            if (targetPos.X >= targetSize.X)
+            targetPos.x++;
+            if (targetPos.x >= targetSize.width)
             {
-                targetPos.X = 0;
-                targetPos.Y++;
+                targetPos.x = 0;
+                targetPos.y++;
             }
         }
 
@@ -812,7 +554,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputAImpl(const SCREEN_INFORMATION& context,
-                                                          gsl::span<CHAR_INFO> buffer,
+                                                          std::span<CHAR_INFO> buffer,
                                                           const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                           Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
@@ -834,7 +576,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
-                                                          gsl::span<CHAR_INFO> buffer,
+                                                          std::span<CHAR_INFO> buffer,
                                                           const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                           Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
@@ -858,7 +600,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] static HRESULT _WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
-                                                            gsl::span<CHAR_INFO> buffer,
+                                                            std::span<CHAR_INFO> buffer,
                                                             const Viewport& requestRectangle,
                                                             Viewport& writtenRectangle) noexcept
 {
@@ -871,7 +613,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         const auto sourceSize = requestRectangle.Dimensions();
 
         // If either dimension of the request is too small, return an empty rectangle as the read and exit early.
-        if (sourceSize.X <= 0 || sourceSize.Y <= 0)
+        if (sourceSize.width <= 0 || sourceSize.height <= 0)
         {
             writtenRectangle = Viewport::FromDimensions(requestRectangle.Origin(), { 0, 0 });
             return S_OK;
@@ -879,7 +621,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
         // If the top and left of the destination we're trying to write it outside the buffer,
         // give the original request rectangle back and exit early OK.
-        if (requestRectangle.Left() >= storageSize.X || requestRectangle.Top() >= storageSize.Y)
+        if (requestRectangle.Left() >= storageSize.width || requestRectangle.Top() >= storageSize.height)
         {
             writtenRectangle = requestRectangle;
             return S_OK;
@@ -888,38 +630,38 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         // Do clipping according to the legacy patterns.
         auto writeRegion = requestRectangle.ToInclusive();
         til::inclusive_rect sourceRect;
-        if (writeRegion.Right > storageSize.X - 1)
+        if (writeRegion.right > storageSize.width - 1)
         {
-            writeRegion.Right = storageSize.X - 1;
+            writeRegion.right = storageSize.width - 1;
         }
-        sourceRect.Right = writeRegion.Right - writeRegion.Left;
-        if (writeRegion.Bottom > storageSize.Y - 1)
+        sourceRect.right = writeRegion.right - writeRegion.left;
+        if (writeRegion.bottom > storageSize.height - 1)
         {
-            writeRegion.Bottom = storageSize.Y - 1;
+            writeRegion.bottom = storageSize.height - 1;
         }
-        sourceRect.Bottom = writeRegion.Bottom - writeRegion.Top;
+        sourceRect.bottom = writeRegion.bottom - writeRegion.top;
 
-        if (writeRegion.Left < 0)
+        if (writeRegion.left < 0)
         {
-            sourceRect.Left = -writeRegion.Left;
-            writeRegion.Left = 0;
+            sourceRect.left = -writeRegion.left;
+            writeRegion.left = 0;
         }
         else
         {
-            sourceRect.Left = 0;
+            sourceRect.left = 0;
         }
 
-        if (writeRegion.Top < 0)
+        if (writeRegion.top < 0)
         {
-            sourceRect.Top = -writeRegion.Top;
-            writeRegion.Top = 0;
+            sourceRect.top = -writeRegion.top;
+            writeRegion.top = 0;
         }
         else
         {
-            sourceRect.Top = 0;
+            sourceRect.top = 0;
         }
 
-        if (sourceRect.Left > sourceRect.Right || sourceRect.Top > sourceRect.Bottom)
+        if (sourceRect.left > sourceRect.right || sourceRect.top > sourceRect.bottom)
         {
             return E_INVALIDARG;
         }
@@ -931,18 +673,18 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         // For every row in the request, create a view into the clamped portion of just the one line to write.
         // This allows us to restrict the width of the call without allocating/copying any memory by just making
         // a smaller view over the existing big blob of data from the original call.
-        for (; target.Y < writeRectangle.BottomExclusive(); target.Y++)
+        for (; target.y < writeRectangle.BottomExclusive(); target.y++)
         {
             // We find the offset into the original buffer by the dimensions of the original request rectangle.
-            const auto rowOffset = (target.Y - requestRectangle.Top()) * requestRectangle.Width();
-            const auto colOffset = target.X - requestRectangle.Left();
+            const auto rowOffset = (target.y - requestRectangle.Top()) * requestRectangle.Width();
+            const auto colOffset = target.x - requestRectangle.Left();
             const auto totalOffset = rowOffset + colOffset;
 
             // Now we make a subspan starting from that offset for as much of the original request as would fit
             const auto subspan = buffer.subspan(totalOffset, writeRectangle.Width());
 
             // Convert to a CHAR_INFO view to fit into the iterator
-            const auto charInfos = gsl::span<const CHAR_INFO>(subspan.data(), subspan.size());
+            const auto charInfos = std::span<const CHAR_INFO>(subspan.data(), subspan.size());
 
             // Make the iterator and write to the target position.
             OutputCellIterator it(charInfos);
@@ -958,7 +700,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputAImpl(SCREEN_INFORMATION& context,
-                                                           gsl::span<CHAR_INFO> buffer,
+                                                           std::span<CHAR_INFO> buffer,
                                                            const Viewport& requestRectangle,
                                                            Viewport& writtenRectangle) noexcept
 {
@@ -979,7 +721,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputWImpl(SCREEN_INFORMATION& context,
-                                                           gsl::span<CHAR_INFO> buffer,
+                                                           std::span<CHAR_INFO> buffer,
                                                            const Viewport& requestRectangle,
                                                            Viewport& writtenRectangle) noexcept
 {
@@ -1007,7 +749,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& context,
                                                                   const til::point origin,
-                                                                  gsl::span<WORD> buffer,
+                                                                  std::span<WORD> buffer,
                                                                   size_t& written) noexcept
 {
     written = 0;
@@ -1028,7 +770,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& context,
                                                                    const til::point origin,
-                                                                   gsl::span<char> buffer,
+                                                                   std::span<char> buffer,
                                                                    size_t& written) noexcept
 {
     written = 0;
@@ -1057,7 +799,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& context,
                                                                    const til::point origin,
-                                                                   gsl::span<wchar_t> buffer,
+                                                                   std::span<wchar_t> buffer,
                                                                    size_t& written) noexcept
 {
     written = 0;
@@ -1125,7 +867,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                                      Cursor::CURSOR_SMALL_SIZE,
                                                      &ScreenInfo);
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         goto Exit;
     }
@@ -1135,7 +877,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                                                 Information->ShareMode,
                                                                 handle));
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         goto Exit;
     }
@@ -1143,7 +885,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
     SCREEN_INFORMATION::s_InsertScreenBuffer(ScreenInfo);
 
 Exit:
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         delete ScreenInfo;
     }

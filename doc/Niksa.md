@@ -27,6 +27,8 @@ I would highly recommend that Gulp convert to using PowerShell scripts and that 
 
 Original Source: https://github.com/microsoft/terminal/issues/217#issuecomment-404240443
 
+_Addendum_: cmd.exe is the literal embodiment of [xkcd#1172]([url](https://xkcd.com/1172/)). Every change, no matter how small, will break _someone_. 
+
 ## <a name="screenPerf"></a>Why is typing-to-screen performance better than every other app?
 
 I really do not mind when someone comes by and decides to tell us that we're doing a good job at something. We hear so many complaints every day that a post like this is a breath of fresh air. Thanks for your thanks!
@@ -145,7 +147,7 @@ Our only backport successes really come from corporations with massive addressab
 
 It's also costly in terms of time, effort, and testing for us to validate a modification to a released OS. We have a mindbogglingly massive amount of automated machinery dedicated to processing and validating the things that we check in while developing the current OS builds. But it's a special costly ask to spin up some to all of those activities to validate backported fixes. We do it all the time for Patch Tuesday, but in those patches, they only pass through the minimum number of fixes required to maximize the restoration of productivity/security/revenue/etc. because every additional fix adds additional complexity and additional risk. 
 
-So from our little team working hard to make developers happy, we virtually never make the cut for servicing. We're sorry, but we hope you can understand. It's just the reality of the situation to say "nope" when people ask for a backport. In our team's ideal world, you would all be running the latest console bits everywhere everytime we make a change. But that's just not how it is today.
+So from our little team working hard to make developers happy, we virtually never make the cut for servicing. We're sorry, but we hope you can understand. It's just the reality of the situation to say "nope" when people ask for a backport. In our team's ideal world, you would all be running the latest console bits everywhere every time we make a change. But that's just not how it is today.
 
 Original Source: https://github.com/microsoft/terminal/issues/279#issuecomment-439179675
 

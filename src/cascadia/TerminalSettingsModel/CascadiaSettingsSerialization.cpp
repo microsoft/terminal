@@ -13,11 +13,13 @@
 #include "PowershellCoreProfileGenerator.h"
 #include "VisualStudioGenerator.h"
 #include "WslDistroGenerator.h"
+#if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
+#include "SshHostGenerator.h"
+#endif
 
 // The following files are generated at build time into the "Generated Files" directory.
-// defaults(-universal).h is a file containing the default json settings in a std::string_view.
+// defaults.h is a file containing the default json settings in a std::string_view.
 #include "defaults.h"
-#include "defaults-universal.h"
 // userDefault.h is like the above, but with a default template for the user's settings.json.
 #include <LegacyProfileGeneratorNamespaces.h>
 
@@ -27,6 +29,10 @@
 #include "ApplicationState.h"
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
+
+#include "ProfileEntry.h"
+#include "FolderEntry.h"
+#include "MatchProfilesEntry.h"
 
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::ApplicationModel::AppExtensions;
@@ -45,6 +51,18 @@ static constexpr std::string_view ThemesKey{ "themes" };
 constexpr std::wstring_view systemThemeName{ L"system" };
 constexpr std::wstring_view darkThemeName{ L"dark" };
 constexpr std::wstring_view lightThemeName{ L"light" };
+constexpr std::wstring_view legacySystemThemeName{ L"legacySystem" };
+constexpr std::wstring_view legacyDarkThemeName{ L"legacyDark" };
+constexpr std::wstring_view legacyLightThemeName{ L"legacyLight" };
+
+static constexpr std::array builtinThemes{
+    systemThemeName,
+    lightThemeName,
+    darkThemeName,
+    legacySystemThemeName,
+    legacyLightThemeName,
+    legacyDarkThemeName,
+};
 
 static constexpr std::wstring_view jsonExtension{ L".json" };
 static constexpr std::wstring_view FragmentsSubDirectory{ L"\\Fragments" };
@@ -148,6 +166,9 @@ void SettingsLoader::GenerateProfiles()
     _executeGenerator(WslDistroGenerator{});
     _executeGenerator(AzureCloudShellGenerator{});
     _executeGenerator(VisualStudioGenerator{});
+#if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
+    _executeGenerator(SshHostGenerator{});
+#endif
 }
 
 // A new settings.json gets a special treatment:
@@ -429,6 +450,17 @@ bool SettingsLoader::FixupUserSettings()
         }
     }
 
+    // Terminal 1.19: Migrate the global
+    // `compatibility.reloadEnvironmentVariables` to being a per-profile
+    // setting. If the user had it disabled in 1.18, then set the
+    // profiles.defaults value to false to match.
+    if (!userSettings.globals->LegacyReloadEnvironmentVariables())
+    {
+        // migrate the user's opt-out to the profiles.defaults
+        userSettings.baseLayerProfile->ReloadEnvironmentVariables(false);
+        fixedUp = true;
+    }
+
     return fixedUp;
 }
 
@@ -490,7 +522,7 @@ Json::Value SettingsLoader::_parseJSON(const std::string_view& content)
 {
     Json::Value json;
     std::string errs;
-    const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+    const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
 
     if (!reader->parse(content.data(), content.data() + content.size(), &json, &errs))
     {
@@ -521,10 +553,10 @@ const Json::Value& SettingsLoader::_getJSONValue(const Json::Value& json, const 
 // Thus no matter how many profiles are added later on, the following condition holds true:
 // The userSettings.profiles in the range [0, _userProfileCount) contain all profiles specified by the user.
 // In turn all profiles in the range [_userProfileCount, ∞) contain newly generated/added profiles.
-// gsl::make_span(userSettings.profiles).subspan(_userProfileCount) gets us the latter range.
-gsl::span<const winrt::com_ptr<Profile>> SettingsLoader::_getNonUserOriginProfiles() const
+// std::span{ userSettings.profiles }.subspan(_userProfileCount) gets us the latter range.
+std::span<const winrt::com_ptr<Profile>> SettingsLoader::_getNonUserOriginProfiles() const
 {
-    return gsl::make_span(userSettings.profiles).subspan(_userProfileCount);
+    return std::span{ userSettings.profiles }.subspan(_userProfileCount);
 }
 
 // Parses the given JSON string ("content") and fills a ParsedSettings instance with it.
@@ -552,8 +584,10 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
         {
             if (const auto theme = Theme::FromJson(themeJson))
             {
+                const auto& name{ theme->Name() };
+
                 if (origin != OriginTag::InBox &&
-                    (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName))
+                    (std::ranges::find(builtinThemes, name) != builtinThemes.end()))
                 {
                     // If the theme didn't come from the in-box themes, and its
                     // name was one of the reserved names, then just ignore it.
@@ -781,7 +815,7 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
     {
         const winrt::hstring source{ generatorNamespace };
 
-        for (const auto& profile : gsl::span(inboxSettings.profiles).subspan(previousSize))
+        for (const auto& profile : std::span(inboxSettings.profiles).subspan(previousSize))
         {
             profile->Origin(OriginTag::Generated);
             profile->Source(source);
@@ -812,9 +846,9 @@ try
     // read settings.json from the Release stable file path if it exists.
     // Otherwise use default settings file provided from original settings file
     bool releaseSettingExists = false;
-    if (firstTimeSetup)
+    if (firstTimeSetup && !IsPortableMode())
     {
-#if defined(WT_BRANDING_PREVIEW)
+#if defined(WT_BRANDING_PREVIEW) || defined(WT_BRANDING_CANARY)
         {
             try
             {
@@ -893,24 +927,7 @@ try
         settings->_hash = _calculateHash(settingsString, lastWriteTime);
     }
 
-    // GH#13936: We're interested in how many users opt out of useAtlasEngine,
-    // indicating major issues that would require us to disable it by default again.
-    {
-        size_t enabled[2]{};
-        for (const auto& profile : settings->_activeProfiles)
-        {
-            enabled[profile.UseAtlasEngine()]++;
-        }
-
-        TraceLoggingWrite(
-            g_hSettingsModelProvider,
-            "AtlasEngine_Usage",
-            TraceLoggingDescription("Event emitted upon settings load, containing the number of profiles opted-in/out of useAtlasEngine"),
-            TraceLoggingUIntPtr(enabled[0], "UseAtlasEngineDisabled", "Number of profiles for which AtlasEngine is disabled"),
-            TraceLoggingUIntPtr(enabled[1], "UseAtlasEngineEnabled", "Number of profiles for which AtlasEngine is enabled"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-    }
+    settings->_researchOnLoad();
 
     return *settings;
 }
@@ -927,20 +944,105 @@ catch (const SettingsTypedDeserializationException& e)
     return *settings;
 }
 
-// Function Description:
-// - Loads a batch of settings curated for the Universal variant of the terminal app
-// Arguments:
-// - <none>
-// Return Value:
-// - a unique_ptr to a CascadiaSettings with the connection types and settings for Universal terminal
-Model::CascadiaSettings CascadiaSettings::LoadUniversal()
+void CascadiaSettings::_researchOnLoad()
 {
-    return *winrt::make_self<CascadiaSettings>(std::string_view{}, DefaultUniversalJson);
+    // Only do this if we're actually being sampled
+    if (TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
+    {
+        // GH#13936: We're interested in how many users opt out of useAtlasEngine,
+        // indicating major issues that would require us to disable it by default again.
+        {
+            size_t enabled[2]{};
+            for (const auto& profile : _activeProfiles)
+            {
+                enabled[profile.UseAtlasEngine()]++;
+            }
+
+            TraceLoggingWrite(
+                g_hSettingsModelProvider,
+                "AtlasEngine_Usage",
+                TraceLoggingDescription("Event emitted upon settings load, containing the number of profiles opted-in/out of useAtlasEngine"),
+                TraceLoggingUIntPtr(enabled[0], "UseAtlasEngineDisabled", "Number of profiles for which AtlasEngine is disabled"),
+                TraceLoggingUIntPtr(enabled[1], "UseAtlasEngineEnabled", "Number of profiles for which AtlasEngine is enabled"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+
+        // ----------------------------- RE: Themes ----------------------------
+        const auto numThemes = GlobalSettings().Themes().Size();
+        const auto themeInUse = GlobalSettings().CurrentTheme().Name();
+        const auto changedTheme = GlobalSettings().HasTheme();
+
+        // system: 0
+        // light: 1
+        // dark: 2
+        // a custom theme: 3
+        // system (legacy): 4
+        // light (legacy): 5
+        // dark (legacy): 6
+        const auto themeChoice = themeInUse == L"system"       ? 0 :
+                                 themeInUse == L"light"        ? 1 :
+                                 themeInUse == L"dark"         ? 2 :
+                                 themeInUse == L"legacyDark"   ? 4 :
+                                 themeInUse == L"legacyLight"  ? 5 :
+                                 themeInUse == L"legacySystem" ? 6 :
+                                                                 3;
+
+        TraceLoggingWrite(
+            g_hSettingsModelProvider,
+            "ThemesInUse",
+            TraceLoggingDescription("Data about the themes in use"),
+            TraceLoggingBool(themeChoice, "Identifier for the theme chosen. 0 is system, 1 is light, 2 is dark, and 3 indicates any custom theme."),
+            TraceLoggingBool(changedTheme, "True if the user actually changed the theme from the default theme"),
+            TraceLoggingInt32(numThemes, "Number of themes in the user's settings"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        // --------------------------- RE: sendInput ---------------------------
+        auto collectSendInput = [&]() {
+            auto totalSendInput = 0;
+            const auto& allActions = GlobalSettings().ActionMap().AvailableActions();
+            for (const auto&& [name, actionAndArgs] : allActions)
+            {
+                if (actionAndArgs.Action() == ShortcutAction::SendInput)
+                {
+                    totalSendInput++;
+                }
+            }
+            return totalSendInput;
+        };
+
+        TraceLoggingWrite(
+            g_hSettingsModelProvider,
+            "SendInputUsage",
+            TraceLoggingDescription("Event emitted upon settings load, containing the number of sendInput actions a user has"),
+            TraceLoggingInt32(collectSendInput(), "Number of sendInput actions in the user's settings"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        // ------------------------ RE: autoMarkPrompts ------------------------
+        auto totalAutoMark = 0;
+        auto totalShowMarks = 0;
+        for (const auto&& p : AllProfiles())
+        {
+            totalAutoMark += p.AutoMarkPrompts() ? 1 : 0;
+            totalShowMarks += p.ShowMarks() ? 1 : 0;
+        }
+
+        TraceLoggingWrite(
+            g_hSettingsModelProvider,
+            "MarksProfilesUsage",
+            TraceLoggingDescription("Event emitted upon settings load, containing the number of profiles opted-in to scrollbar marks"),
+            TraceLoggingInt32(totalAutoMark, "Number of profiles for which AutoMarkPrompts is enabled"),
+            TraceLoggingInt32(totalShowMarks, "Number of profiles for which ShowMarks is enabled"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+    }
 }
 
 // Function Description:
 // - Creates a new CascadiaSettings object initialized with settings from the
-//   hardcoded defaults.json.
+//   hard-coded defaults.json.
 // Arguments:
 // - <none>
 // Return Value:
@@ -1025,7 +1127,10 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _warnings = winrt::single_threaded_vector(std::move(warnings));
 
     _resolveDefaultProfile();
+    _resolveNewTabMenuProfiles();
     _validateSettings();
+
+    ExpandCommands();
 }
 
 // Method Description:
@@ -1074,6 +1179,11 @@ winrt::hstring CascadiaSettings::_calculateHash(std::string_view settings, const
 winrt::hstring CascadiaSettings::SettingsPath()
 {
     return winrt::hstring{ _settingsPath().native() };
+}
+
+bool CascadiaSettings::IsPortableMode()
+{
+    return Model::IsPortableMode();
 }
 
 winrt::hstring CascadiaSettings::DefaultSettingsPath()
@@ -1128,6 +1238,15 @@ void CascadiaSettings::WriteSettingsToDisk()
     }
 }
 
+#ifndef NDEBUG
+[[maybe_unused]] static std::string _getDevPathToSchema()
+{
+    std::filesystem::path filePath{ __FILE__ };
+    auto schemaPath = filePath.parent_path().parent_path().parent_path().parent_path() / "doc" / "cascadia" / "profiles.schema.json";
+    return "file:///" + schemaPath.generic_string();
+}
+#endif
+
 // Method Description:
 // - Create a new serialized JsonObject from an instance of this class
 // Arguments:
@@ -1139,7 +1258,17 @@ Json::Value CascadiaSettings::ToJson() const
     // top-level json object
     auto json{ _globals->ToJson() };
     json["$help"] = "https://aka.ms/terminal-documentation";
-    json["$schema"] = "https://aka.ms/terminal-profiles-schema";
+    json["$schema"] =
+#if defined(WT_BRANDING_RELEASE)
+        "https://aka.ms/terminal-profiles-schema"
+#elif defined(WT_BRANDING_PREVIEW)
+        "https://aka.ms/terminal-profiles-schema-preview"
+#elif !defined(NDEBUG) // DEBUG mode
+        _getDevPathToSchema() // magic schema path that refers to the local source directory
+#else // All other brandings
+        "https://raw.githubusercontent.com/microsoft/terminal/main/doc/cascadia/profiles.schema.json"
+#endif
+        ;
 
     // "profiles" will always be serialized as an object
     Json::Value profiles{ Json::ValueType::objectValue };
@@ -1173,7 +1302,8 @@ Json::Value CascadiaSettings::ToJson() const
         // Ignore the built in themes, when serializing the themes back out. We
         // don't want to re-include them in the user settings file.
         const auto theme{ winrt::get_self<Theme>(entry.Value()) };
-        if (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName)
+        const auto& name{ theme->Name() };
+        if (std::ranges::find(builtinThemes, name) != builtinThemes.end())
         {
             continue;
         }
@@ -1202,4 +1332,163 @@ void CascadiaSettings::_resolveDefaultProfile() const
 
     // Use the first profile as the new default.
     GlobalSettings().DefaultProfile(_allProfiles.GetAt(0).Guid());
+}
+
+// Method Description:
+// - Iterates through the "newTabMenu" entries and for ProfileEntries resolves the "profile"
+//   fields, which can be a profile name, to a GUID and stores it back.
+// - It finds any "source" entries and finds all profiles generated by that source
+// - Lastly, it finds any "remainingProfiles" entries and stores which profiles they
+//   represent (those that were not resolved before). It adds a warning when
+//   multiple of these entries are found.
+void CascadiaSettings::_resolveNewTabMenuProfiles() const
+{
+    Model::RemainingProfilesEntry remainingProfilesEntry = nullptr;
+
+    // The TerminalPage needs to know which profile has which profile ID. To prevent
+    // continuous lookups in the _activeProfiles vector, we create a map <int, Profile>
+    // to store these indices in-flight.
+    auto remainingProfilesMap = std::map<int, Model::Profile>{};
+    auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
+    for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
+    {
+        remainingProfilesMap.emplace(profileIndex, _activeProfiles.GetAt(profileIndex));
+    }
+
+    // We keep track of the "remaining profiles" - those that have not yet been resolved
+    // in either a "profile" or "source" entry. They will possibly be assigned to a
+    // "remainingProfiles" entry
+    auto remainingProfiles = single_threaded_map(std::move(remainingProfilesMap));
+
+    // We call a recursive helper function to process the entries
+    auto entries = _globals->NewTabMenu();
+    _resolveNewTabMenuProfilesSet(entries, remainingProfiles, remainingProfilesEntry);
+
+    // If a "remainingProfiles" entry has been found, assign to it the remaining profiles
+    if (remainingProfilesEntry != nullptr)
+    {
+        remainingProfilesEntry.Profiles(remainingProfiles);
+    }
+
+    // If the configuration does not have a "newTabMenu" field, GlobalAppSettings
+    // will return a default value containing just a "remainingProfiles" entry. However,
+    // this value is regenerated on every "get" operation, so the effect of setting
+    // the remaining profiles above will be undone. So only in the case that no custom
+    // value is present in GlobalAppSettings, we will store the modified default value.
+    if (!_globals->HasNewTabMenu())
+    {
+        _globals->NewTabMenu(entries);
+    }
+}
+
+// Method Description:
+// - Helper function that processes a set of tab menu entries and resolves any profile names
+//   or source fields as necessary - see function above for a more detailed explanation.
+void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTabMenuEntry> entries, IMap<int, Model::Profile>& remainingProfilesMap, Model::RemainingProfilesEntry& remainingProfilesEntry) const
+{
+    if (entries == nullptr || entries.Size() == 0)
+    {
+        return;
+    }
+
+    for (const auto& entry : entries)
+    {
+        if (entry == nullptr)
+        {
+            continue;
+        }
+
+        switch (entry.Type())
+        {
+        // For a simple profile entry, the "profile" field can either be a name or a GUID. We
+        // use the GetProfileByName function to resolve this name to a profile instance, then
+        // find the index of that profile, and store this information in the entry.
+        case NewTabMenuEntryType::Profile:
+        {
+            // We need to access the unresolved profile name, a field that is not exposed
+            // in the projected class. So, we need to first obtain our implementation struct
+            // instance, to access this field.
+            const auto profileEntry{ winrt::get_self<implementation::ProfileEntry>(entry.as<Model::ProfileEntry>()) };
+
+            // Find the profile by name
+            const auto profile = GetProfileByName(profileEntry->ProfileName());
+
+            // If not found, or if the profile is hidden, skip it
+            if (profile == nullptr || profile.Hidden())
+            {
+                profileEntry->Profile(nullptr); // override "default" profile
+                break;
+            }
+
+            // Find the index of the resulting profile and store the result in the entry
+            uint32_t profileIndex;
+            _activeProfiles.IndexOf(profile, profileIndex);
+
+            profileEntry->Profile(profile);
+            profileEntry->ProfileIndex(profileIndex);
+
+            // Remove from remaining profiles list (map)
+            remainingProfilesMap.TryRemove(profileIndex);
+
+            break;
+        }
+
+        // For a remainingProfiles entry, we store it in the variable that is passed back to our caller,
+        // except when that one has already been set (so we found a second/third/...) instance, which will
+        // trigger a warning. We then ignore this entry.
+        case NewTabMenuEntryType::RemainingProfiles:
+        {
+            if (remainingProfilesEntry != nullptr)
+            {
+                _warnings.Append(SettingsLoadWarnings::DuplicateRemainingProfilesEntry);
+            }
+            else
+            {
+                remainingProfilesEntry = entry.as<Model::RemainingProfilesEntry>();
+            }
+            break;
+        }
+
+        // For a folder, we simply call this method recursively
+        case NewTabMenuEntryType::Folder:
+        {
+            // We need to access the unfiltered entry list, a field that is not exposed
+            // in the projected class. So, we need to first obtain our implementation struct
+            // instance, to access this field.
+            const auto folderEntry{ winrt::get_self<implementation::FolderEntry>(entry.as<Model::FolderEntry>()) };
+
+            auto folderEntries = folderEntry->RawEntries();
+            _resolveNewTabMenuProfilesSet(folderEntries, remainingProfilesMap, remainingProfilesEntry);
+            break;
+        }
+
+        // For a "matchProfiles" entry, we iterate through the list of all profiles and
+        // find all those matching: generated by the same source, having the same name, or
+        // having the same commandline. This can be expanded with regex support in the future.
+        // We make sure that none of the matches are included in the "remaining profiles" section.
+        case NewTabMenuEntryType::MatchProfiles:
+        {
+            // We need to access the matching function, which is not exposed in the projected class.
+            // So, we need to first obtain our implementation struct instance, to access this field.
+            const auto matchEntry{ winrt::get_self<implementation::MatchProfilesEntry>(entry.as<Model::MatchProfilesEntry>()) };
+
+            matchEntry->Profiles(single_threaded_map<int, Model::Profile>());
+
+            auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
+            for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
+            {
+                const auto profile = _activeProfiles.GetAt(profileIndex);
+
+                // On a match, we store it in the entry and remove it from the remaining list
+                if (matchEntry->MatchesProfile(profile))
+                {
+                    matchEntry->Profiles().Insert(profileIndex, profile);
+                    remainingProfilesMap.TryRemove(profileIndex);
+                }
+            }
+
+            break;
+        }
+        }
+    }
 }

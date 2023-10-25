@@ -23,7 +23,7 @@ DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 
     auto Status = Server->Connect();
 
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         const auto DisplayMode = Server->GetDisplayMode();
 
@@ -32,7 +32,7 @@ DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
             // Create and set the console window.
             static ConsoleWindow wnd;
 
-            if (NT_SUCCESS(Status))
+            if (SUCCEEDED_NTSTATUS(Status))
             {
                 LOG_IF_FAILED(ServiceLocator::SetConsoleWindowInstance(&wnd));
 
@@ -51,7 +51,7 @@ DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
                     break;
                 }
 
-                if (NT_SUCCESS(Status))
+                if (SUCCEEDED_NTSTATUS(Status))
                 {
                     globals.getConsoleInformation().GetActiveOutputBuffer().RefreshFontWithRenderer();
                 }
@@ -59,7 +59,7 @@ DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
                 globals.ntstatusConsoleInputInitStatus = Status;
                 globals.hConsoleInputInitEvent.SetEvent();
 
-                if (NT_SUCCESS(Status))
+                if (SUCCEEDED_NTSTATUS(Status))
                 {
                     try
                     {

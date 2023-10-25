@@ -1,0 +1,16 @@
+jobs:
+- job: CodeNavIndexer
+  displayName: Run Github CodeNav Indexer
+  pool: { vmImage: windows-2022 }
+
+  steps:
+  - checkout: self
+    fetchDepth: 1
+    fetchTags: false # Tags still result in depth > 1 fetch; we don't need them here
+    submodules: false
+    clean: true
+
+  - task: RichCodeNavIndexer@0
+    inputs:
+      languages: 'cpp,csharp'
+    continueOnError: true

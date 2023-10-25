@@ -158,7 +158,7 @@ For `settings.json`, `_globals` will only hold the values set in `settings.json`
 This process becomes a bit more complex for `Profile` because it can fallback in the following order:
 1. `settings.json` profile
 2. `settings.json` `profiles.defaults`
-3. (if a dynamic profile) the hardcoded value in the dynamic profile generator
+3. (if a dynamic profile) the hard-coded value in the dynamic profile generator
 4. `defaults.json` profile
 
 `CascadiaSettings` must do the following...
@@ -280,7 +280,7 @@ TerminalApp will construct and reference a `CascadiaSettings settings` as follow
    and layers the settings.json data on top of it.
 - check for errors/warnings, and handle them appropriately
 
-This will be different from the current model which has the settings.json path hardcoded, and is simplified
+This will be different from the current model which has the settings.json path hard-coded, and is simplified
  to a `LoadAll()` call wrapped in error handlers.
 
 **NOTE:** This model allows us to layer even more settings files on top of the existing Terminal Settings

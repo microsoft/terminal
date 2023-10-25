@@ -108,7 +108,9 @@ void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
 
     try
     {
-        auto inEvents = TextToKeyEvents(pData, cchData);
+        const auto vtInputMode = gci.pInputBuffer->IsInVirtualTerminalInputMode();
+        const auto bracketedPasteMode = gci.GetBracketedPasteMode();
+        auto inEvents = TextToKeyEvents(pData, cchData, vtInputMode && bracketedPasteMode);
         gci.pInputBuffer->Write(inEvents);
     }
     catch (...)
@@ -127,16 +129,31 @@ void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
 // Arguments:
 // - pData - the text to convert
 // - cchData - the size of pData, in wchars
+// - bracketedPaste - should this be bracketed with paste control sequences
 // Return Value:
 // - deque of KeyEvents that represent the string passed in
 // Note:
 // - will throw exception on error
-std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
-                                                                    const size_t cchData)
+InputEventQueue Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
+                                           const size_t cchData,
+                                           const bool bracketedPaste)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, pData);
 
-    std::deque<std::unique_ptr<IInputEvent>> keyEvents;
+    InputEventQueue keyEvents;
+    const auto pushControlSequence = [&](const std::wstring_view sequence) {
+        std::for_each(sequence.begin(), sequence.end(), [&](const auto wch) {
+            keyEvents.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
+            keyEvents.push_back(SynthesizeKeyEvent(false, 1, 0, 0, wch, 0));
+        });
+    };
+
+    // When a bracketed paste is requested, we need to wrap the text with
+    // control sequences which indicate that the content has been pasted.
+    if (bracketedPaste)
+    {
+        pushControlSequence(L"\x1b[200~");
+    }
 
     for (size_t i = 0; i < cchData; ++i)
     {
@@ -148,8 +165,10 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
         const auto skipLinefeed = (i != 0 &&
                                    currentChar == UNICODE_LINEFEED &&
                                    pData[i - 1] == UNICODE_CARRIAGERETURN);
+        // filter out escape if bracketed paste mode is enabled
+        const auto skipEscape = (bracketedPaste && currentChar == UNICODE_ESC);
 
-        if (!charAllowed || skipLinefeed)
+        if (!charAllowed || skipLinefeed || skipEscape)
         {
             continue;
         }
@@ -175,13 +194,14 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
         }
 
         const auto codepage = ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
-        auto convertedEvents = CharToKeyEvents(currentChar, codepage);
-        while (!convertedEvents.empty())
-        {
-            keyEvents.push_back(std::move(convertedEvents.front()));
-            convertedEvents.pop_front();
-        }
+        CharToKeyEvents(currentChar, codepage, keyEvents);
     }
+
+    if (bracketedPaste)
+    {
+        pushControlSequence(L"\x1b[201~");
+    }
+
     return keyEvents;
 }
 
@@ -227,7 +247,8 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
     const auto text = buffer.GetText(includeCRLF,
                                      trimTrailingWhitespace,
                                      selectionRects,
-                                     GetAttributeColors);
+                                     GetAttributeColors,
+                                     selection.IsKeyboardMarkSelection());
 
     CopyTextToSystemClipboard(text, copyFormatting);
 }
@@ -277,7 +298,7 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, 
         {
             const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
             const auto& fontData = gci.GetActiveOutputBuffer().GetCurrentFont();
-            const auto iFontHeightPoints = fontData.GetUnscaledSize().Y * 72 / ServiceLocator::LocateGlobals().dpi;
+            const auto iFontHeightPoints = fontData.GetUnscaledSize().height * 72 / ServiceLocator::LocateGlobals().dpi;
             const auto bgColor = gci.GetRenderSettings().GetAttributeColors({}).second;
 
             auto HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);

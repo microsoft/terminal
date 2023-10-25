@@ -35,7 +35,8 @@ template<typename T>
     DWORD bytesWritten = 0;
     if (!WriteFile(pipe, &packet, sizeof(packet), &bytesWritten, nullptr))
     {
-        NT_RETURN_NTSTATUS(static_cast<NTSTATUS>(NTSTATUS_FROM_WIN32(::GetLastError())));
+        const auto gle = ::GetLastError();
+        NT_RETURN_NTSTATUS(static_cast<NTSTATUS>(NTSTATUS_FROM_WIN32(gle)));
     }
 
     if (bytesWritten != sizeof(packet))
@@ -72,6 +73,13 @@ template<typename T>
     data.ctrlFlags = ulCtrlFlags;
 
     return _SendTypedPacket(_pipe.get(), HostSignals::EndTask, data);
+}
+
+[[nodiscard]] NTSTATUS RemoteConsoleControl::SetWindowOwner(HWND hwnd, DWORD processId, DWORD threadId)
+{
+    // This call doesn't need to get forwarded to the root conhost. Just handle
+    // it in-proc, to set the owner of OpenConsole
+    return _control.SetWindowOwner(hwnd, processId, threadId);
 }
 
 #pragma endregion

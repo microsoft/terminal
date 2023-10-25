@@ -30,13 +30,13 @@ RECT GetImeSuggestionWindowPos()
     // that the "relative" position is that it is on the 11th line from the top (or 10th by index).
     // Correct by subtracting the top/left corner from the cursor's position.
     const auto srViewport = screenBuffer.GetViewport().ToInclusive();
-    coordCursor.X -= srViewport.Left;
-    coordCursor.Y -= srViewport.Top;
+    coordCursor.x -= srViewport.left;
+    coordCursor.y -= srViewport.top;
 
     // Map the point to be just under the current cursor position. Convert from coordinate to pixels using font.
     POINT ptSuggestion;
-    ptSuggestion.x = (coordCursor.X + 1) * coordFont.X;
-    ptSuggestion.y = (coordCursor.Y) * coordFont.Y;
+    ptSuggestion.x = (coordCursor.x + 1) * coordFont.width;
+    ptSuggestion.y = (coordCursor.y) * coordFont.height;
 
     // Adjust client point to screen point via HWND.
     ClientToScreen(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), &ptSuggestion);
@@ -49,8 +49,8 @@ RECT GetImeSuggestionWindowPos()
     // Add 1 line height and a few characters of width to represent the area where we're writing text.
     // This could be more exact by looking up the CONVAREA but it works well enough this way.
     // If there is a future issue with the pop-up window, tweak these metrics.
-    rcSuggestion.bottom += coordFont.Y;
-    rcSuggestion.right += (coordFont.X * 10);
+    rcSuggestion.bottom += coordFont.height;
+    rcSuggestion.right += (coordFont.width * 10);
 
     return rcSuggestion;
 }

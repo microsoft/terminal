@@ -30,10 +30,6 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // Bit 29 is whether ALT was held when the message was posted.
 #define WM_SYSKEYDOWN_ALT_PRESSED (0x20000000)
 
-// This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
-// "If the high-order bit is 1, the key is down; otherwise, it is up."
-static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
-
 // ----------------------------
 // Helpers
 // ----------------------------
@@ -78,7 +74,13 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
     else
     {
         // Find a process to own the console window. If there are none then let's use conhost's.
-        pProcessData = gci.ProcessHandleList.GetFirstProcess();
+        pProcessData = gci.ProcessHandleList.GetRootProcess();
+        if (!pProcessData)
+        {
+            // No root process ID? Pick the oldest existing process.
+            pProcessData = gci.ProcessHandleList.GetOldestProcess();
+        }
+
         if (pProcessData != nullptr)
         {
             dwProcessId = pProcessData->dwProcessId;
@@ -92,16 +94,8 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
         }
     }
 
-    CONSOLEWINDOWOWNER ConsoleOwner;
-    ConsoleOwner.hwnd = hwnd;
-    ConsoleOwner.ProcessId = dwProcessId;
-    ConsoleOwner.ThreadId = dwThreadId;
-
     // Comment out this line to enable UIA tree to be visible until UIAutomationCore.dll can support our scenario.
-    LOG_IF_FAILED(ServiceLocator::LocateConsoleControl<Microsoft::Console::Interactivity::Win32::ConsoleControl>()
-                      ->Control(ConsoleControl::ControlType::ConsoleSetWindowOwner,
-                                &ConsoleOwner,
-                                sizeof(ConsoleOwner)));
+    LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetWindowOwner(hwnd, dwProcessId, dwThreadId));
 }
 
 // ----------------------------
@@ -121,30 +115,8 @@ bool HandleTerminalMouseEvent(const til::point cMousePosition,
                               const short sModifierKeystate,
                               const short sWheelDelta)
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    // If the modes don't align, this is unhandled by default.
-    auto fWasHandled = false;
-
-    // Virtual terminal input mode
-    if (IsInVirtualTerminalInputMode())
-    {
-        const TerminalInput::MouseButtonState state{
-            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_LBUTTON), KeyPressed),
-            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_MBUTTON), KeyPressed),
-            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_RBUTTON), KeyPressed)
-        };
-
-        // GH#6401: VT applications should be able to receive mouse events from outside the
-        // terminal buffer. This is likely to happen when the user drags the cursor offscreen.
-        // We shouldn't throw away perfectly good events when they're offscreen, so we just
-        // clamp them to be within the range [(0, 0), (W, H)].
-        auto clampedPosition{ cMousePosition };
-        const auto clampViewport{ gci.GetActiveOutputBuffer().GetViewport().ToOrigin() };
-        clampViewport.Clamp(clampedPosition);
-        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(clampedPosition, uiButton, sModifierKeystate, sWheelDelta, state);
-    }
-
-    return fWasHandled;
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.pInputBuffer->WriteMouseEvent(cMousePosition, uiButton, sModifierKeystate, sWheelDelta);
 }
 
 void HandleKeyEvent(const HWND hWnd,
@@ -155,12 +127,13 @@ void HandleKeyEvent(const HWND hWnd,
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(lParam) is a character
+    // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(wParam) is a character
     auto VirtualKeyCode = LOWORD(wParam);
     WORD VirtualScanCode = LOBYTE(HIWORD(lParam));
     const auto RepeatCount = LOWORD(lParam);
-    const auto ControlKeyState = GetControlKeyState(lParam);
+    auto ControlKeyState = GetControlKeyState(lParam);
     const BOOL bKeyDown = WI_IsFlagClear(lParam, KEY_TRANSITION_UP);
+    const bool IsCharacterMessage = (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR);
 
     if (bKeyDown)
     {
@@ -174,7 +147,7 @@ void HandleKeyEvent(const HWND hWnd,
 
     // Make sure we retrieve the key info first, or we could chew up
     // unneeded space in the key info table if we bail out early.
-    if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
+    if (IsCharacterMessage)
     {
         // --- START LOAD BEARING CODE ---
         // NOTE: We MUST match up the original data from the WM_KEYDOWN stroke (handled at some inexact moment in the
@@ -195,23 +168,37 @@ void HandleKeyEvent(const HWND hWnd,
         // --- END LOAD BEARING CODE ---
     }
 
-    KeyEvent keyEvent{ !!bKeyDown, RepeatCount, VirtualKeyCode, VirtualScanCode, UNICODE_NULL, 0 };
+    // Simulated key events (using `SendInput` or `SendMessage`) can have invalid
+    // virtual key code, and invalid scan code. We need to filter such events out,
+    // as some applications (e.g. WSL) treat those events as valid key events and
+    // translate them to an ascii NULL character. GH#15753
+    if (VirtualScanCode == 0 && !IsCharacterMessage) // `WM_[SYS][DEAD]CHAR` messages don't have this issue
+    {
+        // We try to infer the correct scan code from the virtual key code. If the
+        // virtual key code is invalid or we couldn't map it to a scan code,
+        // MapVirtualKeyEx will return 0.
+        auto FullVirtualScanCode = gsl::narrow_cast<WORD>(OneCoreSafeMapVirtualKeyW(VirtualKeyCode, MAPVK_VK_TO_VSC_EX));
+        VirtualScanCode = LOBYTE(FullVirtualScanCode);
+        ControlKeyState |= (HIBYTE(FullVirtualScanCode) == 0xE0) ? ENHANCED_KEY : 0;
+        if (VirtualScanCode == 0)
+        {
+            return;
+        }
+    }
 
-    if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
+    auto keyEvent = SynthesizeKeyEvent(bKeyDown, RepeatCount, VirtualKeyCode, VirtualScanCode, UNICODE_NULL, 0);
+
+    if (IsCharacterMessage)
     {
         // If this is a fake character, zero the scancode.
         if (lParam & 0x02000000)
         {
-            keyEvent.SetVirtualScanCode(0);
+            keyEvent.Event.KeyEvent.wVirtualScanCode = 0;
         }
-        keyEvent.SetActiveModifierKeys(GetControlKeyState(lParam));
+        keyEvent.Event.KeyEvent.dwControlKeyState = GetControlKeyState(lParam);
         if (Message == WM_CHAR || Message == WM_SYSCHAR)
         {
-            keyEvent.SetCharData(static_cast<wchar_t>(wParam));
-        }
-        else
-        {
-            keyEvent.SetCharData(0);
+            keyEvent.Event.KeyEvent.uChar.UnicodeChar = static_cast<wchar_t>(wParam);
         }
     }
     else
@@ -221,8 +208,7 @@ void HandleKeyEvent(const HWND hWnd,
         {
             return;
         }
-        keyEvent.SetActiveModifierKeys(ControlKeyState);
-        keyEvent.SetCharData(0);
+        keyEvent.Event.KeyEvent.dwControlKeyState = ControlKeyState;
     }
 
     const INPUT_KEY_INFO inputKeyInfo(VirtualKeyCode, ControlKeyState);
@@ -411,7 +397,7 @@ void HandleKeyEvent(const HWND hWnd,
         }
     }
     // we need to check if there is an active popup because otherwise they won't be able to receive shift+key events
-    if (pSelection->s_IsValidKeyboardLineSelection(&inputKeyInfo) && IsInProcessedInputMode() && gci.PopupCount.load() == 0)
+    if (pSelection->s_IsValidKeyboardLineSelection(&inputKeyInfo) && IsInProcessedInputMode() && !gci.HasPendingPopup())
     {
         if (!bKeyDown || pSelection->HandleKeyboardLineSelectionEvent(&inputKeyInfo))
         {
@@ -437,7 +423,7 @@ void HandleKeyEvent(const HWND hWnd,
     // ignore key strokes that will generate CHAR messages. this is only necessary while a dialog box is up.
     if (ServiceLocator::LocateGlobals().uiDialogBoxCount != 0)
     {
-        if (Message != WM_CHAR && Message != WM_SYSCHAR && Message != WM_DEADCHAR && Message != WM_SYSDEADCHAR)
+        if (!IsCharacterMessage)
         {
             WCHAR awch[MAX_CHARS_FROM_1_KEYSTROKE];
             BYTE KeyState[256];
@@ -630,8 +616,8 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
 
     // translate mouse position into characters, if necessary.
     auto ScreenFontSize = ScreenInfo.GetScreenFontSize();
-    MousePosition.X /= ScreenFontSize.X;
-    MousePosition.Y /= ScreenFontSize.Y;
+    MousePosition.x /= ScreenFontSize.width;
+    MousePosition.y /= ScreenFontSize.height;
 
     const auto fShiftPressed = WI_IsFlagSet(OneCoreSafeGetKeyState(VK_SHIFT), KEY_PRESSED);
 
@@ -680,27 +666,27 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         }
     }
 
-    MousePosition.X += ScreenInfo.GetViewport().Left();
-    MousePosition.Y += ScreenInfo.GetViewport().Top();
+    MousePosition.x += ScreenInfo.GetViewport().Left();
+    MousePosition.y += ScreenInfo.GetViewport().Top();
 
     const auto coordScreenBufferSize = ScreenInfo.GetBufferSize().Dimensions();
 
     // make sure mouse position is clipped to screen buffer
-    if (MousePosition.X < 0)
+    if (MousePosition.x < 0)
     {
-        MousePosition.X = 0;
+        MousePosition.x = 0;
     }
-    else if (MousePosition.X >= coordScreenBufferSize.X)
+    else if (MousePosition.x >= coordScreenBufferSize.width)
     {
-        MousePosition.X = coordScreenBufferSize.X - 1;
+        MousePosition.x = coordScreenBufferSize.width - 1;
     }
-    if (MousePosition.Y < 0)
+    if (MousePosition.y < 0)
     {
-        MousePosition.Y = 0;
+        MousePosition.y = 0;
     }
-    else if (MousePosition.Y >= coordScreenBufferSize.Y)
+    else if (MousePosition.y >= coordScreenBufferSize.height)
     {
-        MousePosition.Y = coordScreenBufferSize.Y - 1;
+        MousePosition.y = coordScreenBufferSize.height - 1;
     }
 
     // Process the transparency mousewheel message before the others so that we can
@@ -931,26 +917,12 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         break;
     }
 
-    ULONG EventsWritten = 0;
-    try
-    {
-        auto mouseEvent = std::make_unique<MouseEvent>(
-            MousePosition,
-            ConvertMouseButtonState(ButtonFlags, static_cast<UINT>(wParam)),
-            GetControlKeyState(0),
-            EventFlags);
-        EventsWritten = static_cast<ULONG>(gci.pInputBuffer->Write(std::move(mouseEvent)));
-    }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-        EventsWritten = 0;
-    }
-
-    if (EventsWritten != 1)
-    {
-        RIPMSG1(RIP_WARNING, "PutInputInBuffer: EventsWritten != 1 (0x%x), 1 expected", EventsWritten);
-    }
+    const auto mouseEvent = SynthesizeMouseEvent(
+        MousePosition,
+        ConvertMouseButtonState(ButtonFlags, static_cast<UINT>(wParam)),
+        GetControlKeyState(0),
+        EventFlags);
+    gci.pInputBuffer->Write(mouseEvent);
 
     return FALSE;
 }
@@ -988,13 +960,13 @@ LRESULT CALLBACK DialogHookProc(int nCode, WPARAM /*wParam*/, LPARAM lParam)
 NTSTATUS InitWindowsSubsystem(_Out_ HHOOK* phhook)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto ProcessData = gci.ProcessHandleList.FindProcessInList(ConsoleProcessList::ROOT_PROCESS_ID);
+    auto ProcessData = gci.ProcessHandleList.GetRootProcess();
     FAIL_FAST_IF(!(ProcessData != nullptr && ProcessData->fRootProcess));
 
     // Create and activate the main window
     auto Status = Window::CreateInstance(&gci, gci.ScreenBuffers);
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         RIPMSG2(RIP_WARNING, "CreateWindowsWindow failed with status 0x%x, gle = 0x%x", Status, GetLastError());
         return Status;
@@ -1048,10 +1020,14 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
         // successfully created with the owner configured when the window is
         // first created. See GH#13066 for details.
         ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CreatePseudoWindow();
+
+        // Register the pseudoconsole window as being owned by the root process.
+        const auto pseudoWindow = ServiceLocator::LocatePseudoWindow();
+        SetConsoleWindowOwner(pseudoWindow, nullptr);
     }
 
     UnlockConsole();
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         ServiceLocator::LocateGlobals().ntstatusConsoleInputInitStatus = Status;
         ServiceLocator::LocateGlobals().hConsoleInputInitEvent.SetEvent();

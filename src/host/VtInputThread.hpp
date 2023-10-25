@@ -30,7 +30,7 @@ namespace Microsoft::Console
 
     private:
         [[nodiscard]] HRESULT _HandleRunInput(const std::string_view u8Str);
-        [[noreturn]] void _InputThread();
+        void _InputThread();
 
         wil::unique_hfile _hFile;
         wil::unique_handle _hThread;

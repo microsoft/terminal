@@ -7,6 +7,8 @@
 #include "CommandPalette.g.h"
 #include "AppCommandlineArgs.h"
 
+#include <til/hash.h>
+
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
@@ -60,6 +62,14 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(PreviewAction, Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command);
 
     private:
+        struct winrt_object_hash
+        {
+            size_t operator()(const auto& value) const noexcept
+            {
+                return til::hash(winrt::get_abi(value));
+            }
+        };
+
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
 
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _allCommands{ nullptr };
@@ -141,7 +151,7 @@ namespace winrt::TerminalApp::implementation
         void _choosingItemContainer(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs& args);
         void _containerContentChanging(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs& args);
         winrt::TerminalApp::PaletteItemTemplateSelector _itemTemplateSelector{ nullptr };
-        std::unordered_map<Windows::UI::Xaml::DataTemplate, std::unordered_set<Windows::UI::Xaml::Controls::Primitives::SelectorItem>> _listViewItemsCache;
+        std::unordered_map<Windows::UI::Xaml::DataTemplate, std::unordered_set<Windows::UI::Xaml::Controls::Primitives::SelectorItem, winrt_object_hash>, winrt_object_hash> _listViewItemsCache;
         Windows::UI::Xaml::DataTemplate _listItemTemplate;
 
         friend class TerminalAppLocalTests::TabTests;

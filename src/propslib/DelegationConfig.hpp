@@ -99,7 +99,7 @@ public:
 
     [[nodiscard]] static HRESULT s_GetAvailablePackages(std::vector<DelegationPackage>& packages, DelegationPackage& def) noexcept;
 
-    [[nodiscard]] static HRESULT s_SetDefaultByPackage(const DelegationPackage& pkg, const bool useRegExe = false) noexcept;
+    [[nodiscard]] static HRESULT s_SetDefaultByPackage(const DelegationPackage& pkg) noexcept;
 
     static constexpr CLSID CLSID_Default{};
     static constexpr CLSID CLSID_Conhost{ 0xb23d10c0, 0xe52e, 0x411e, { 0x9d, 0x5b, 0xc0, 0x9f, 0xdf, 0x70, 0x9c, 0x7d } };
@@ -114,8 +114,8 @@ public:
     [[nodiscard]] static DelegationPair s_GetDelegationPair() noexcept;
 
 private:
-    [[nodiscard]] static HRESULT s_SetDefaultConsoleById(const IID& iid, const bool useRegExe) noexcept;
-    [[nodiscard]] static HRESULT s_SetDefaultTerminalById(const IID& iid, const bool useRegExe) noexcept;
+    [[nodiscard]] static HRESULT s_SetDefaultConsoleById(const IID& iid) noexcept;
+    [[nodiscard]] static HRESULT s_SetDefaultTerminalById(const IID& iid) noexcept;
 
-    [[nodiscard]] static HRESULT s_Set(PCWSTR value, const CLSID clsid, const bool useRegExe) noexcept;
+    [[nodiscard]] static HRESULT s_Set(PCWSTR value, const CLSID clsid) noexcept;
 };

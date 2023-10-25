@@ -207,6 +207,10 @@
     <value>[process exited with code {0}]</value>
     <comment>The first argument {0} is the error code of the process. When there is no error, the number ZERO will be displayed. </comment>
   </data>
+  <data name="CtrlDToClose" xml:space="preserve">
+    <value>You can now close this terminal with Ctrl+D, or press Enter to restart.</value>
+	  <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
+  </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
     <value>[error {0} when launching `{1}']</value>
     <comment>The first argument {0} is the error code. The second argument {1} is the user-specified path to a program.

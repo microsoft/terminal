@@ -8,7 +8,7 @@ namespace til
     // Method Description:
     // - Base case provided to handle the last argument to coalesce_value<T...>()
     template<typename T>
-    T coalesce_value(const T& base)
+    T coalesce_value(const T& base) noexcept
     {
         return base;
     }

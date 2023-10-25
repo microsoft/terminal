@@ -22,7 +22,6 @@ Author(s):
 #include "thread.hpp"
 
 #include "../../buffer/out/textBuffer.hpp"
-#include "../../buffer/out/CharRow.hpp"
 
 // fwdecl unittest classes
 #ifdef UNIT_TESTING
@@ -68,7 +67,7 @@ namespace Microsoft::Console::Render
                                const FontInfoDesired& FontInfoDesired,
                                _Out_ FontInfo& FontInfo);
 
-        void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+        void UpdateSoftFont(const std::span<const uint16_t> bitPattern,
                             const til::size cellSize,
                             const size_t centeringHint);
 
@@ -83,16 +82,18 @@ namespace Microsoft::Console::Render
         void WaitUntilCanRender();
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine);
+        void RemoveRenderEngine(_In_ IRenderEngine* const pEngine);
 
         void SetBackgroundColorChangedCallback(std::function<void()> pfn);
         void SetFrameColorChangedCallback(std::function<void()> pfn);
         void SetRendererEnteredErrorStateCallback(std::function<void()> pfn);
         void ResetErrorStateAndResume();
 
+        void UpdateHyperlinkHoveredId(uint16_t id) noexcept;
         void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, size_t>::interval>& newInterval);
 
     private:
-        static IRenderEngine::GridLineSet s_GetGridlines(const TextAttribute& textAttribute) noexcept;
+        static GridLineSet s_GetGridlines(const TextAttribute& textAttribute) noexcept;
         static bool s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar);
 
         [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept;
@@ -101,6 +102,7 @@ namespace Microsoft::Console::Render
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
         void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine, TextBufferCellIterator it, const til::point target, const bool lineWrapped);
         void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const til::point coordTarget);
+        bool _isHoveredHyperlink(const TextAttribute& textAttribute) const noexcept;
         void _PaintSelection(_In_ IRenderEngine* const pEngine);
         void _PaintCursor(_In_ IRenderEngine* const pEngine);
         void _PaintOverlays(_In_ IRenderEngine* const pEngine);
@@ -110,6 +112,7 @@ namespace Microsoft::Console::Render
         std::vector<til::rect> _GetSelectionRects() const;
         void _ScrollPreviousSelection(const til::point delta);
         [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
+        bool _isInHoveredInterval(til::point coordTarget) const noexcept;
         [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo();
         [[nodiscard]] HRESULT _PrepareRenderInfo(_In_ IRenderEngine* const pEngine);
 
@@ -119,6 +122,7 @@ namespace Microsoft::Console::Render
         std::unique_ptr<RenderThread> _pThread;
         static constexpr size_t _firstSoftFontChar = 0xEF20;
         size_t _lastSoftFontChar = 0;
+        uint16_t _hyperlinkHoveredId = 0;
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
         Microsoft::Console::Types::Viewport _viewport;
         std::vector<Cluster> _clusterBuffer;
@@ -127,7 +131,7 @@ namespace Microsoft::Console::Render
         std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;
         bool _destructing = false;
-        bool _forceUpdateViewport = true;
+        bool _forceUpdateViewport = false;
 
 #ifdef UNIT_TESTING
         friend class ConptyOutputTests;

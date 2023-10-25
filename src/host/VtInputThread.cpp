@@ -94,6 +94,7 @@ DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 {
     const auto pInstance = reinterpret_cast<VtInputThread*>(lpParameter);
     pInstance->_InputThread();
+    return S_OK;
 }
 
 // Method Description:
@@ -110,10 +111,6 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
     DWORD dwRead = 0;
     auto fSuccess = !!ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
 
-    // If we failed to read because the terminal broke our pipe (usually due
-    //      to dying itself), close gracefully with ERROR_BROKEN_PIPE.
-    // Otherwise throw an exception. ERROR_BROKEN_PIPE is the only case that
-    //       we want to gracefully close in.
     if (!fSuccess)
     {
         _exitRequested = true;

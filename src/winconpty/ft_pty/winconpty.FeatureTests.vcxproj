@@ -34,6 +34,10 @@
   <Import Project="$(SolutionDir)src\common.build.tests.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
   <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- By defining this here, we ensure that we don't try to dllimport conpty -->
+      <PreprocessorDefinitions>CONPTY_IMPEXP=;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <Link>
       <AdditionalDependencies>$(OutDir)\conptylib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>

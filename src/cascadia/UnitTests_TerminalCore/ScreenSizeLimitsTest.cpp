@@ -42,16 +42,16 @@ void ScreenSizeLimitsTest::ScreenWidthAndHeightAreClampedToBounds()
     DummyRenderer renderer{ &negativeColumnsTerminal };
     negativeColumnsTerminal.CreateFromSettings(negativeColumnsSettings, renderer);
     auto actualDimensions = negativeColumnsTerminal.GetViewport().Dimensions();
-    VERIFY_ARE_EQUAL(actualDimensions.Y, SHRT_MAX, L"Row count clamped to SHRT_MAX == " WCS(SHRT_MAX));
-    VERIFY_ARE_EQUAL(actualDimensions.X, 1, L"Column count clamped to 1");
+    VERIFY_ARE_EQUAL(actualDimensions.height, SHRT_MAX, L"Row count clamped to SHRT_MAX == " WCS(SHRT_MAX));
+    VERIFY_ARE_EQUAL(actualDimensions.width, 1, L"Column count clamped to 1");
 
     // Zero values are clamped to 1 as well.
     auto zeroRowsSettings = winrt::make<MockTermSettings>(10000, 0, 9999999);
     Terminal zeroRowsTerminal;
     zeroRowsTerminal.CreateFromSettings(zeroRowsSettings, renderer);
     actualDimensions = zeroRowsTerminal.GetViewport().Dimensions();
-    VERIFY_ARE_EQUAL(actualDimensions.Y, 1, L"Row count clamped to 1");
-    VERIFY_ARE_EQUAL(actualDimensions.X, SHRT_MAX, L"Column count clamped to SHRT_MAX == " WCS(SHRT_MAX));
+    VERIFY_ARE_EQUAL(actualDimensions.height, 1, L"Row count clamped to 1");
+    VERIFY_ARE_EQUAL(actualDimensions.width, SHRT_MAX, L"Column count clamped to SHRT_MAX == " WCS(SHRT_MAX));
 }
 
 void ScreenSizeLimitsTest::ScrollbackHistorySizeIsClampedToBounds()

@@ -60,10 +60,6 @@ using namespace Microsoft::Console::VirtualTerminal;
 class TestGetSet final : public ITerminalApi
 {
 public:
-    void PrintString(const std::wstring_view /*string*/) override
-    {
-    }
-
     void ReturnResponse(const std::wstring_view response) override
     {
         Log::Comment(L"ReturnResponse MOCK called...");
@@ -92,17 +88,12 @@ public:
 
     til::rect GetViewport() const override
     {
-        return { _viewport.Left, _viewport.Top, _viewport.Right, _viewport.Bottom };
+        return { _viewport.left, _viewport.top, _viewport.right, _viewport.bottom };
     }
 
     void SetViewportPosition(const til::point /*position*/) override
     {
         Log::Comment(L"SetViewportPosition MOCK called...");
-    }
-
-    void SetAutoWrapMode(const bool /*wrapAtEOL*/) override
-    {
-        Log::Comment(L"SetAutoWrapMode MOCK called...");
     }
 
     bool IsVtInputEnabled() const override
@@ -119,34 +110,21 @@ public:
         _textBuffer->SetCurrentAttributes(attrs);
     }
 
-    void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override
+    void SetSystemMode(const Mode mode, const bool enabled)
     {
-        Log::Comment(L"SetScrollingRegion MOCK called...");
+        Log::Comment(L"SetSystemMode MOCK called...");
+        _systemMode.set(mode, enabled);
+    }
 
-        if (_setScrollingRegionResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedScrollRegion, scrollMargins);
-            _activeScrollRegion = scrollMargins;
-        }
+    bool GetSystemMode(const Mode mode) const
+    {
+        Log::Comment(L"GetSystemMode MOCK called...");
+        return _systemMode.test(mode);
     }
 
     void WarningBell() override
     {
         Log::Comment(L"WarningBell MOCK called...");
-    }
-
-    bool GetLineFeedMode() const override
-    {
-        Log::Comment(L"GetLineFeedMode MOCK called...");
-        return _getLineFeedModeResult;
-    }
-
-    void LineFeed(const bool withReturn) override
-    {
-        Log::Comment(L"LineFeed MOCK called...");
-
-        THROW_HR_IF(E_FAIL, !_lineFeedResult);
-        VERIFY_ARE_EQUAL(_expectedLineFeedWithReturn, withReturn);
     }
 
     void SetWindowTitle(const std::wstring_view title)
@@ -161,7 +139,7 @@ public:
         }
     }
 
-    void UseAlternateScreenBuffer() override
+    void UseAlternateScreenBuffer(const TextAttribute& /*attr*/) override
     {
         Log::Comment(L"UseAlternateScreenBuffer MOCK called...");
     }
@@ -201,11 +179,6 @@ public:
         return _expectedOutputCP;
     }
 
-    void EnableXtermBracketedPasteMode(const bool /*enabled*/)
-    {
-        Log::Comment(L"EnableXtermBracketedPasteMode MOCK called...");
-    }
-
     void CopyToClipboard(const std::wstring_view /*content*/)
     {
         Log::Comment(L"CopyToClipboard MOCK called...");
@@ -237,9 +210,32 @@ public:
         Log::Comment(L"NotifyAccessibilityChange MOCK called...");
     }
 
-    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/) override
+    void NotifyBufferRotation(const int /*delta*/) override
     {
-        Log::Comment(L"AddMark MOCK called...");
+        Log::Comment(L"NotifyBufferRotation MOCK called...");
+    }
+
+    void MarkPrompt(const ScrollMark& /*mark*/) override
+    {
+        Log::Comment(L"MarkPrompt MOCK called...");
+    }
+    void MarkCommandStart() override
+    {
+        Log::Comment(L"MarkCommandStart MOCK called...");
+    }
+    void MarkOutputStart() override
+    {
+        Log::Comment(L"MarkOutputStart MOCK called...");
+    }
+    void MarkCommandFinish(std::optional<unsigned int> /*error*/) override
+    {
+        Log::Comment(L"MarkCommandFinish MOCK called...");
+    }
+    void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override
+    {
+        Log::Comment(L"InvokeCompletions MOCK called...");
+        VERIFY_ARE_EQUAL(_expectedMenuJson, menuJson);
+        VERIFY_ARE_EQUAL(_expectedReplaceLength, replaceLength);
     }
 
     void PrepData()
@@ -277,10 +273,10 @@ public:
         _textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, _renderer);
 
         // Viewport sitting in the "middle" of the buffer somewhere (so all sides have excess buffer around them)
-        _viewport.Top = 20;
-        _viewport.Bottom = 49;
-        _viewport.Left = 30;
-        _viewport.Right = 59;
+        _viewport.top = 20;
+        _viewport.bottom = 49;
+        _viewport.left = 30;
+        _viewport.right = 59;
 
         // Call cursor positions separately
         PrepCursor(xact, yact);
@@ -304,15 +300,15 @@ public:
         {
         case CursorX::LEFT:
             Log::Comment(L"Cursor set to left edge of buffer.");
-            cursorPos.X = 0;
+            cursorPos.x = 0;
             break;
         case CursorX::RIGHT:
             Log::Comment(L"Cursor set to right edge of buffer.");
-            cursorPos.X = bufferSize.X - 1;
+            cursorPos.x = bufferSize.width - 1;
             break;
         case CursorX::XCENTER:
             Log::Comment(L"Cursor set to centered X of buffer.");
-            cursorPos.X = bufferSize.X / 2;
+            cursorPos.x = bufferSize.width / 2;
             break;
         }
 
@@ -320,20 +316,38 @@ public:
         {
         case CursorY::TOP:
             Log::Comment(L"Cursor set to top edge of viewport.");
-            cursorPos.Y = _viewport.Top;
+            cursorPos.y = _viewport.top;
             break;
         case CursorY::BOTTOM:
             Log::Comment(L"Cursor set to bottom edge of viewport.");
-            cursorPos.Y = _viewport.Bottom - 1;
+            cursorPos.y = _viewport.bottom - 1;
             break;
         case CursorY::YCENTER:
             Log::Comment(L"Cursor set to centered Y of viewport.");
-            cursorPos.Y = _viewport.Top + ((_viewport.Bottom - _viewport.Top) / 2);
+            cursorPos.y = _viewport.top + ((_viewport.bottom - _viewport.top) / 2);
             break;
         }
 
         _textBuffer->GetCursor().SetPosition(cursorPos);
         _expectedCursorPos = cursorPos;
+    }
+
+    static void MakeSubParamsAndRanges(std::initializer_list<std::initializer_list<const VTParameter>> subParamList, _Out_ std::vector<VTParameter>& subParams, _Out_ std::vector<std::pair<BYTE, BYTE>>& subParamRanges)
+    {
+        // Args are a list of lists of VTParameters:
+        //    { {P1S1, P1S2, P1S3, ... }, { P2S1, P2S2, P2S3, ... } ... }
+        //
+        // P1 and P2 denotes the parameters, while S1, S2, S3 denotes the
+        // subparameters of the corresponding parameter.
+        size_t totalSubParams = 0;
+        subParams.clear();
+        subParamRanges.clear();
+        for (const auto& it : subParamList)
+        {
+            subParams.insert(subParams.end(), it.begin(), it.end());
+            subParamRanges.push_back({ gsl::narrow_cast<BYTE>(totalSubParams), gsl::narrow_cast<BYTE>(it.size() + totalSubParams) });
+            totalSubParams += it.size();
+        }
     }
 
     void ValidateExpectedCursorPos()
@@ -344,15 +358,6 @@ public:
     void ValidateInputEvent(_In_ PCWSTR pwszExpectedResponse)
     {
         VERIFY_ARE_EQUAL(pwszExpectedResponse, _response);
-    }
-
-    void _SetMarginsHelper(til::inclusive_rect* rect, til::CoordType top, til::CoordType bottom)
-    {
-        rect->Top = top;
-        rect->Bottom = bottom;
-        //The rectangle is going to get converted from VT space to conhost space
-        _expectedScrollRegion.Top = (top > 0) ? rect->Top - 1 : rect->Top;
-        _expectedScrollRegion.Bottom = (bottom > 0) ? rect->Bottom - 1 : rect->Bottom;
     }
 
     ~TestGetSet() = default;
@@ -379,8 +384,6 @@ public:
     DummyRenderer _renderer;
     std::unique_ptr<TextBuffer> _textBuffer;
     til::inclusive_rect _viewport;
-    til::inclusive_rect _expectedScrollRegion;
-    til::inclusive_rect _activeScrollRegion;
 
     til::point _expectedCursorPos;
 
@@ -391,16 +394,16 @@ public:
     bool _setTextAttributesResult = false;
     bool _returnResponseResult = false;
 
-    bool _setScrollingRegionResult = false;
-    bool _getLineFeedModeResult = false;
-    bool _lineFeedResult = false;
-    bool _expectedLineFeedWithReturn = false;
+    til::enumset<Mode> _systemMode{ Mode::AutoWrap };
 
     bool _setWindowTitleResult = false;
     std::wstring_view _expectedWindowTitle{};
     bool _setConsoleOutputCPResult = false;
     bool _getConsoleOutputCPResult = false;
     bool _expectedShowWindow = false;
+
+    std::wstring _expectedMenuJson{};
+    unsigned int _expectedReplaceLength = 0;
 
 private:
     HANDLE _hCon;
@@ -420,7 +423,7 @@ public:
         if (fSuccess)
         {
             _testGetSet = std::move(api);
-            _terminalInput = TerminalInput{ nullptr };
+            _terminalInput = TerminalInput{};
             auto& renderer = _testGetSet->_renderer;
             auto& renderSettings = renderer._renderSettings;
             auto adapter = std::make_unique<AdaptDispatch>(*_testGetSet, renderer, renderSettings, _terminalInput);
@@ -523,7 +526,7 @@ public:
 
         if (fDoTest1b)
         {
-            _testGetSet->_expectedCursorPos.X = 0;
+            _testGetSet->_expectedCursorPos.x = 0;
             VERIFY_IS_TRUE((_pDispatch->*(moveFunc))(1));
             _testGetSet->ValidateExpectedCursorPos();
         }
@@ -539,24 +542,24 @@ public:
         switch (direction)
         {
         case CursorDirection::UP:
-            _testGetSet->_expectedCursorPos.Y--;
+            _testGetSet->_expectedCursorPos.y--;
             break;
         case CursorDirection::DOWN:
-            _testGetSet->_expectedCursorPos.Y++;
+            _testGetSet->_expectedCursorPos.y++;
             break;
         case CursorDirection::RIGHT:
-            _testGetSet->_expectedCursorPos.X++;
+            _testGetSet->_expectedCursorPos.x++;
             break;
         case CursorDirection::LEFT:
-            _testGetSet->_expectedCursorPos.X--;
+            _testGetSet->_expectedCursorPos.x--;
             break;
         case CursorDirection::NEXTLINE:
-            _testGetSet->_expectedCursorPos.Y++;
-            _testGetSet->_expectedCursorPos.X = 0;
+            _testGetSet->_expectedCursorPos.y++;
+            _testGetSet->_expectedCursorPos.x = 0;
             break;
         case CursorDirection::PREVLINE:
-            _testGetSet->_expectedCursorPos.Y--;
-            _testGetSet->_expectedCursorPos.X = 0;
+            _testGetSet->_expectedCursorPos.y--;
+            _testGetSet->_expectedCursorPos.x = 0;
             break;
         }
 
@@ -572,24 +575,24 @@ public:
         switch (direction)
         {
         case CursorDirection::UP:
-            _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Top;
+            _testGetSet->_expectedCursorPos.y = _testGetSet->_viewport.top;
             break;
         case CursorDirection::DOWN:
-            _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Bottom - 1;
+            _testGetSet->_expectedCursorPos.y = _testGetSet->_viewport.bottom - 1;
             break;
         case CursorDirection::RIGHT:
-            _testGetSet->_expectedCursorPos.X = _testGetSet->_textBuffer->GetSize().Dimensions().X - 1;
+            _testGetSet->_expectedCursorPos.x = _testGetSet->_textBuffer->GetSize().Dimensions().width - 1;
             break;
         case CursorDirection::LEFT:
-            _testGetSet->_expectedCursorPos.X = 0;
+            _testGetSet->_expectedCursorPos.x = 0;
             break;
         case CursorDirection::NEXTLINE:
-            _testGetSet->_expectedCursorPos.X = 0;
-            _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Bottom - 1;
+            _testGetSet->_expectedCursorPos.x = 0;
+            _testGetSet->_expectedCursorPos.y = _testGetSet->_viewport.bottom - 1;
             break;
         case CursorDirection::PREVLINE:
-            _testGetSet->_expectedCursorPos.X = 0;
-            _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Top;
+            _testGetSet->_expectedCursorPos.x = 0;
+            _testGetSet->_expectedCursorPos.y = _testGetSet->_viewport.top;
             break;
         }
 
@@ -604,12 +607,12 @@ public:
         Log::Comment(L"Test 1: Place cursor within the viewport. Start from top left, move to middle.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        auto sCol = (_testGetSet->_viewport.Right - _testGetSet->_viewport.Left) / 2;
-        auto sRow = (_testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top) / 2;
+        auto sCol = (_testGetSet->_viewport.right - _testGetSet->_viewport.left) / 2;
+        auto sRow = (_testGetSet->_viewport.bottom - _testGetSet->_viewport.top) / 2;
 
         // The X coordinate is unaffected by the viewport.
-        _testGetSet->_expectedCursorPos.X = sCol - 1;
-        _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Top + (sRow - 1);
+        _testGetSet->_expectedCursorPos.x = sCol - 1;
+        _testGetSet->_expectedCursorPos.y = _testGetSet->_viewport.top + (sRow - 1);
 
         VERIFY_IS_TRUE(_pDispatch->CursorPosition(sRow, sCol));
         _testGetSet->ValidateExpectedCursorPos();
@@ -618,8 +621,8 @@ public:
         _testGetSet->PrepData(CursorX::RIGHT, CursorY::BOTTOM);
 
         // The X coordinate is unaffected by the viewport.
-        _testGetSet->_expectedCursorPos.X = 0;
-        _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Top;
+        _testGetSet->_expectedCursorPos.x = 0;
+        _testGetSet->_expectedCursorPos.y = _testGetSet->_viewport.top;
 
         VERIFY_IS_TRUE(_pDispatch->CursorPosition(1, 1));
         _testGetSet->ValidateExpectedCursorPos();
@@ -627,11 +630,11 @@ public:
         Log::Comment(L"Test 3: Move beyond rectangle (down/right too far). Should be bounded back in.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        sCol = (_testGetSet->_textBuffer->GetSize().Dimensions().X) * 2;
-        sRow = (_testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top) * 2;
+        sCol = (_testGetSet->_textBuffer->GetSize().Dimensions().width) * 2;
+        sRow = (_testGetSet->_viewport.bottom - _testGetSet->_viewport.top) * 2;
 
-        _testGetSet->_expectedCursorPos.X = _testGetSet->_textBuffer->GetSize().Dimensions().X - 1;
-        _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Bottom - 1;
+        _testGetSet->_expectedCursorPos.x = _testGetSet->_textBuffer->GetSize().Dimensions().width - 1;
+        _testGetSet->_expectedCursorPos.y = _testGetSet->_viewport.bottom - 1;
 
         VERIFY_IS_TRUE(_pDispatch->CursorPosition(sRow, sCol));
         _testGetSet->ValidateExpectedCursorPos();
@@ -663,16 +666,16 @@ public:
         {
         case AbsolutePosition::CursorHorizontal:
             Log::Comment(L"Testing cursor horizontal movement.");
-            sRangeEnd = _testGetSet->_textBuffer->GetSize().Dimensions().X;
+            sRangeEnd = _testGetSet->_textBuffer->GetSize().Dimensions().width;
             sRangeStart = 0;
-            psCursorExpected = &_testGetSet->_expectedCursorPos.X;
+            psCursorExpected = &_testGetSet->_expectedCursorPos.x;
             moveFunc = &AdaptDispatch::CursorHorizontalPositionAbsolute;
             break;
         case AbsolutePosition::VerticalLine:
             Log::Comment(L"Testing vertical line movement.");
-            sRangeEnd = _testGetSet->_viewport.Bottom;
-            sRangeStart = _testGetSet->_viewport.Top;
-            psCursorExpected = &_testGetSet->_expectedCursorPos.Y;
+            sRangeEnd = _testGetSet->_viewport.bottom;
+            sRangeStart = _testGetSet->_viewport.top;
+            psCursorExpected = &_testGetSet->_expectedCursorPos.y;
             moveFunc = &AdaptDispatch::VerticalLinePositionAbsolute;
             break;
         }
@@ -772,7 +775,14 @@ public:
         Log::Comment(L"Verify successful API call modifies visibility state.");
         _testGetSet->PrepData();
         _testGetSet->_textBuffer->GetCursor().SetIsVisible(fStart);
-        VERIFY_IS_TRUE(_pDispatch->CursorVisibility(fEnd));
+        if (fEnd)
+        {
+            VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::DECTCEM_TextCursorEnableMode));
+        }
+        else
+        {
+            VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::DECTCEM_TextCursorEnableMode));
+        }
         VERIFY_ARE_EQUAL(fEnd, _testGetSet->_textBuffer->GetCursor().IsVisible());
     }
 
@@ -842,13 +852,13 @@ public:
             Log::Comment(L"Testing graphics 'Underline'");
             startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
-            _testGetSet->_expectedAttribute.SetUnderlined(true);
+            _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
             break;
         case DispatchTypes::GraphicsOptions::DoublyUnderlined:
             Log::Comment(L"Testing graphics 'Doubly Underlined'");
             startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
-            _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+            _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
             break;
         case DispatchTypes::GraphicsOptions::Overline:
             Log::Comment(L"Testing graphics 'Overline'");
@@ -882,8 +892,7 @@ public:
         case DispatchTypes::GraphicsOptions::NoUnderline:
             Log::Comment(L"Testing graphics 'No Underline'");
             startingAttribute = TextAttribute{ 0 };
-            startingAttribute.SetUnderlined(true);
-            startingAttribute.SetDoublyUnderlined(true);
+            startingAttribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::NoOverline:
@@ -1123,6 +1132,66 @@ public:
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
     }
 
+    TEST_METHOD(GraphicsSingleWithSubParamTests)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{4, 38, 48, 58}") // corresponds to options in DispatchTypes::GraphicsOptions
+        END_TEST_METHOD_PROPERTIES()
+
+        Log::Comment(L"Starting test...");
+        _testGetSet->PrepData();
+
+        // Modify variables based on type of this test
+        DispatchTypes::GraphicsOptions graphicsOption;
+        std::vector<VTParameter> subParams;
+        std::vector<std::pair<BYTE, BYTE>> subParamRanges;
+        size_t uiGraphicsOption;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiGraphicsOptions", uiGraphicsOption));
+        graphicsOption = (DispatchTypes::GraphicsOptions)uiGraphicsOption;
+
+        VTParameter rgOptions[16];
+        size_t cOptions = 1;
+        rgOptions[0] = graphicsOption;
+
+        TextAttribute startingAttribute;
+        switch (graphicsOption)
+        {
+        case DispatchTypes::GraphicsOptions::Underline:
+            Log::Comment(L"Testing graphics 'Underline'");
+            _testGetSet->MakeSubParamsAndRanges({ { 3 } }, subParams, subParamRanges);
+            startingAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
+            break;
+        case DispatchTypes::GraphicsOptions::ForegroundExtended:
+            Log::Comment(L"Testing graphics 'ForegroundExtended'");
+            _testGetSet->MakeSubParamsAndRanges({ { DispatchTypes::GraphicsOptions::BlinkOrXterm256Index, TextColor::DARK_RED } }, subParams, subParamRanges);
+            startingAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_RED);
+            break;
+        case DispatchTypes::GraphicsOptions::BackgroundExtended:
+            Log::Comment(L"Testing graphics 'BackgroundExtended'");
+            _testGetSet->MakeSubParamsAndRanges({ { DispatchTypes::GraphicsOptions::BlinkOrXterm256Index, TextColor::BRIGHT_WHITE } }, subParams, subParamRanges);
+            startingAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetIndexedBackground256(TextColor::BRIGHT_WHITE);
+            break;
+        case DispatchTypes::GraphicsOptions::UnderlineColor:
+            Log::Comment(L"Testing graphics 'UnderlineColor'");
+            _testGetSet->MakeSubParamsAndRanges({ { DispatchTypes::GraphicsOptions::BlinkOrXterm256Index, TextColor::DARK_RED } }, subParams, subParamRanges);
+            startingAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetUnderlineColor({ TextColor::DARK_RED, true });
+            break;
+        default:
+            VERIFY_FAIL(L"Test not implemented yet!");
+            break;
+        }
+        _testGetSet->_textBuffer->SetCurrentAttributes(startingAttribute);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ std::span{ rgOptions, cOptions }, subParams, subParamRanges }));
+    }
+
     TEST_METHOD(GraphicsPushPopTests)
     {
         Log::Comment(L"Starting test...");
@@ -1130,6 +1199,8 @@ public:
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
         VTParameter rgOptions[16];
+        std::vector<VTParameter> subParams;
+        std::vector<std::pair<BYTE, BYTE>> subParamRanges;
         VTParameter rgStackOptions[16];
         size_t cOptions = 1;
 
@@ -1233,7 +1304,7 @@ public:
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetIntense(true);
-        _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         cOptions = 1;
@@ -1242,14 +1313,14 @@ public:
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetIntense(true);
-        _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         rgOptions[0] = DispatchTypes::GraphicsOptions::NotIntenseOrFaint;
         _testGetSet->_expectedAttribute = {};
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
-        _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         // And then restore...
@@ -1258,6 +1329,76 @@ public:
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_BLUE);
         _testGetSet->_expectedAttribute.SetIntense(true);
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        Log::Comment(L"Test 5: Save 'no singly underline' state, set singly underlined, and pop. "
+                     L"Singly underlined is off after the pop.");
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::NoUnderline;
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::NoUnderline);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // save 'no underlined' state
+        cOptions = 1;
+        rgStackOptions[0] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::Underline;
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        // set underlined
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::Underline;
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // restore, expect no underline
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::NoUnderline);
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        Log::Comment(L"Test 6: Save 'no singly underlined' state, set doubly underlined, and pop. "
+                     L"Doubly underlined is retained after the pop.");
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::NoUnderline;
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::NoUnderline);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // save no underline state
+        cOptions = 1;
+        rgStackOptions[0] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::Underline;
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        // set doubly underlined
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::DoublyUnderlined;
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // restore, expect doubly underlined
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        Log::Comment(L"Test 7: Save 'curly underlined' state, set doubly underlined, and pop. "
+                     L"Curly underlined is restored after the pop.");
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::Underline;
+        _testGetSet->MakeSubParamsAndRanges({ { 3 } }, subParams, subParamRanges);
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ std::span{ rgOptions, cOptions }, subParams, subParamRanges }));
+
+        // save curly underlined state
+        cOptions = 1;
+        rgStackOptions[0] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::Underline;
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        // set doubly underlined
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::DoublyUnderlined;
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // restore, expect curly underlined
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
         VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
     }
 
@@ -1358,7 +1499,7 @@ public:
 
         Log::Comment(L"Test 1: Verify failure when using bad status.");
         _testGetSet->PrepData();
-        VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((DispatchTypes::StatusType)-1));
+        VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((DispatchTypes::StatusType)-1, {}));
     }
 
     TEST_METHOD(DeviceStatus_OperatingStatusTests)
@@ -1367,7 +1508,7 @@ public:
 
         Log::Comment(L"Test 1: Verify good operating condition.");
         _testGetSet->PrepData();
-        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::OS_OperatingStatus));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::OS_OperatingStatus, {}));
 
         _testGetSet->ValidateInputEvent(L"\x1b[0n");
     }
@@ -1384,17 +1525,17 @@ public:
             til::point coordCursorExpected{ _testGetSet->_textBuffer->GetCursor().GetPosition() };
 
             // to get to VT, we have to adjust it to its position relative to the viewport top.
-            coordCursorExpected.Y -= _testGetSet->_viewport.Top;
+            coordCursorExpected.y -= _testGetSet->_viewport.top;
 
             // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
-            coordCursorExpected.X++;
-            coordCursorExpected.Y++;
+            coordCursorExpected.x++;
+            coordCursorExpected.y++;
 
-            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport, {}));
 
             wchar_t pwszBuffer[50];
 
-            swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%d;%dR", coordCursorExpected.Y, coordCursorExpected.X);
+            swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%d;%dR", coordCursorExpected.y, coordCursorExpected.x);
             _testGetSet->ValidateInputEvent(pwszBuffer);
         }
 
@@ -1409,22 +1550,22 @@ public:
             til::point coordCursorExpectedFirst{ _testGetSet->_textBuffer->GetCursor().GetPosition() };
 
             // to get to VT, we have to adjust it to its position relative to the viewport top.
-            coordCursorExpectedFirst -= til::point{ 0, _testGetSet->_viewport.Top };
+            coordCursorExpectedFirst -= til::point{ 0, _testGetSet->_viewport.top };
 
             // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
             coordCursorExpectedFirst += til::point{ 1, 1 };
 
-            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport, {}));
 
             auto cursorPos = _testGetSet->_textBuffer->GetCursor().GetPosition();
-            cursorPos.X++;
-            cursorPos.Y++;
+            cursorPos.x++;
+            cursorPos.y++;
             _testGetSet->_textBuffer->GetCursor().SetPosition(cursorPos);
 
             auto coordCursorExpectedSecond{ coordCursorExpectedFirst };
             coordCursorExpectedSecond += til::point{ 1, 1 };
 
-            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport, {}));
 
             wchar_t pwszBuffer[50];
 
@@ -1444,20 +1585,87 @@ public:
         til::point coordCursorExpected{ _testGetSet->_textBuffer->GetCursor().GetPosition() };
 
         // to get to VT, we have to adjust it to its position relative to the viewport top.
-        coordCursorExpected.Y -= _testGetSet->_viewport.Top;
+        coordCursorExpected.y -= _testGetSet->_viewport.top;
 
         // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
-        coordCursorExpected.X++;
-        coordCursorExpected.Y++;
+        coordCursorExpected.x++;
+        coordCursorExpected.y++;
 
         // Until we support paging (GH#13892) the reported page number should always be 1.
         const auto pageExpected = 1;
 
-        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport, {}));
 
         wchar_t pwszBuffer[50];
-        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[?%d;%d;%dR", coordCursorExpected.Y, coordCursorExpected.X, pageExpected);
+        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[?%d;%d;%dR", coordCursorExpected.y, coordCursorExpected.x, pageExpected);
         _testGetSet->ValidateInputEvent(pwszBuffer);
+    }
+
+    TEST_METHOD(DeviceStatus_MacroSpaceReportTest)
+    {
+        Log::Comment(L"Starting test...");
+
+        // Space is measured in blocks of 16 bytes.
+        const auto availableSpace = MacroBuffer::MAX_SPACE / 16;
+
+        Log::Comment(L"Test 1: Verify maximum space available");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MSR_MacroSpaceReport, {}));
+
+        wchar_t pwszBuffer[50];
+        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%zu*{", availableSpace);
+        _testGetSet->ValidateInputEvent(pwszBuffer);
+
+        Log::Comment(L"Test 2: Verify space decrease");
+        _testGetSet->PrepData();
+        // Define four 8-byte macros, i.e. 32 byes (2 macro blocks).
+        _stateMachine->ProcessString(L"\033P1;0;0!z12345678\033\\");
+        _stateMachine->ProcessString(L"\033P2;0;0!z12345678\033\\");
+        _stateMachine->ProcessString(L"\033P3;0;0!z12345678\033\\");
+        _stateMachine->ProcessString(L"\033P4;0;0!z12345678\033\\");
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MSR_MacroSpaceReport, {}));
+
+        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%zu*{", availableSpace - 2);
+        _testGetSet->ValidateInputEvent(pwszBuffer);
+
+        Log::Comment(L"Test 3: Verify space reset");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->HardReset());
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MSR_MacroSpaceReport, {}));
+
+        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%zu*{", availableSpace);
+        _testGetSet->ValidateInputEvent(pwszBuffer);
+    }
+
+    TEST_METHOD(DeviceStatus_MemoryChecksumReportTest)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify initial checksum is 0");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MEM_MemoryChecksum, 12));
+
+        _testGetSet->ValidateInputEvent(L"\033P12!~0000\033\\");
+
+        Log::Comment(L"Test 2: Verify checksum after macros defined");
+        _testGetSet->PrepData();
+        // Define a couple of text macros
+        _stateMachine->ProcessString(L"\033P1;0;0!zABCD\033\\");
+        _stateMachine->ProcessString(L"\033P2;0;0!zabcd\033\\");
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MEM_MemoryChecksum, 34));
+
+        // Checksum is a 16-bit negated sum of the macro buffer characters.
+        const auto checksum = gsl::narrow_cast<uint16_t>(-('A' + 'B' + 'C' + 'D' + 'a' + 'b' + 'c' + 'd'));
+        wchar_t pwszBuffer[50];
+        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\033P34!~%04X\033\\", checksum);
+        _testGetSet->ValidateInputEvent(pwszBuffer);
+
+        Log::Comment(L"Test 3: Verify checksum resets to 0");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->HardReset());
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MEM_MemoryChecksum, 56));
+
+        _testGetSet->ValidateInputEvent(L"\033P56!~0000\033\\");
     }
 
     TEST_METHOD(DeviceAttributesTests)
@@ -1468,7 +1676,7 @@ public:
         _testGetSet->PrepData();
         VERIFY_IS_TRUE(_pDispatch->DeviceAttributes());
 
-        auto pwszExpectedResponse = L"\x1b[?1;0c";
+        auto pwszExpectedResponse = L"\x1b[?61;1;6;7;21;22;23;24;28;32;42c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
         Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");
@@ -1558,10 +1766,26 @@ public:
         Log::Comment(L"Requesting DECSTBM margins (full screen).");
         _testGetSet->PrepData();
         // Set screen height to 25 - this will be the expected margin range.
-        _testGetSet->_viewport.Bottom = _testGetSet->_viewport.Top + 25;
+        _testGetSet->_viewport.bottom = _testGetSet->_viewport.top + 25;
         _pDispatch->SetTopBottomScrollingMargins(0, 0);
         requestSetting(L"r");
         _testGetSet->ValidateInputEvent(L"\033P1$r1;25r\033\\");
+
+        Log::Comment(L"Requesting DECSLRM margins (5 to 10).");
+        _testGetSet->PrepData();
+        // We need to enable DECLRMM for horizontal margins to work.
+        _pDispatch->SetMode(DispatchTypes::DECLRMM_LeftRightMarginMode);
+        _pDispatch->SetLeftRightScrollingMargins(5, 10);
+        requestSetting(L"s");
+        _testGetSet->ValidateInputEvent(L"\033P1$r5;10s\033\\");
+
+        Log::Comment(L"Requesting DECSLRM margins (full width).");
+        _testGetSet->PrepData();
+        _pDispatch->SetLeftRightScrollingMargins(0, 0);
+        requestSetting(L"s");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1;100s\033\\");
+        // Reset DECLRMM once we're done with horizontal margin testing.
+        _pDispatch->ResetMode(DispatchTypes::DECLRMM_LeftRightMarginMode);
 
         Log::Comment(L"Requesting SGR attributes (default).");
         _testGetSet->PrepData();
@@ -1574,11 +1798,19 @@ public:
         _testGetSet->PrepData();
         attribute = {};
         attribute.SetIntense(true);
-        attribute.SetUnderlined(true);
+        attribute.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
         attribute.SetReverseVideo(true);
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0;1;4;7m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (extended underline style).");
+        _testGetSet->PrepData();
+        attribute = {};
+        attribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
+        _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;4:3m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (faint, blinking, invisible).");
         _testGetSet->PrepData();
@@ -1602,7 +1834,7 @@ public:
         Log::Comment(L"Requesting SGR attributes (doubly underlined, overlined).");
         _testGetSet->PrepData();
         attribute = {};
-        attribute.SetDoublyUnderlined(true);
+        attribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         attribute.SetOverlined(true);
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
@@ -1631,18 +1863,20 @@ public:
         attribute = {};
         attribute.SetIndexedForeground256(123);
         attribute.SetIndexedBackground256(45);
+        attribute.SetUnderlineColor(TextColor{ 128, true });
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
-        _testGetSet->ValidateInputEvent(L"\033P1$r0;38;5;123;48;5;45m\033\\");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;38:5:123;48:5:45;58:5:128m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (ITU RGB colors).");
         _testGetSet->PrepData();
         attribute = {};
         attribute.SetForeground(RGB(12, 34, 56));
         attribute.SetBackground(RGB(65, 43, 21));
+        attribute.SetUnderlineColor(RGB(128, 222, 45));
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
-        _testGetSet->ValidateInputEvent(L"\033P1$r0;38;2;12;34;56;48;2;65;43;21m\033\\");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;38:2::12:34:56;48:2::65:43:21;58:2::128:222:45m\033\\");
 
         Log::Comment(L"Requesting DECSCA attributes (unprotected).");
         _testGetSet->PrepData();
@@ -1659,10 +1893,417 @@ public:
         requestSetting(L"\"q");
         _testGetSet->ValidateInputEvent(L"\033P1$r1\"q\033\\");
 
+        // Initialize the color alias indices for the DECAC tests below.
+        _testGetSet->PrepData();
+        auto& renderSettings = _testGetSet->_renderer._renderSettings;
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, 3);
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, 5);
+        renderSettings.SetColorAliasIndex(ColorAlias::FrameForeground, 4);
+        renderSettings.SetColorAliasIndex(ColorAlias::FrameBackground, 6);
+
+        Log::Comment(L"Requesting DECAC colors (default).");
+        requestSetting(L",|");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1;3;5,|\033\\");
+
+        Log::Comment(L"Requesting DECAC colors (normal text).");
+        requestSetting(L"1,|");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1;3;5,|\033\\");
+
+        Log::Comment(L"Requesting DECAC colors (window frame).");
+        requestSetting(L"2,|");
+        _testGetSet->ValidateInputEvent(L"\033P1$r2;4;6,|\033\\");
+
+        Log::Comment(L"Requesting DECAC colors (invalid item).");
+        requestSetting(L"3,|");
+        _testGetSet->ValidateInputEvent(L"\033P0$r\033\\");
+
         Log::Comment(L"Requesting an unsupported setting.");
         _testGetSet->PrepData();
         requestSetting(L"x");
         _testGetSet->ValidateInputEvent(L"\033P0$r\033\\");
+    }
+
+    TEST_METHOD(RequestStandardModeTests)
+    {
+        // The mode numbers below correspond to the ANSIStandardMode values
+        // in the ModeParams enum in DispatchTypes.hpp.
+
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{4, 20}")
+        END_TEST_METHOD_PROPERTIES()
+
+        VTInt modeNumber;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"modeNumber", modeNumber));
+        const auto mode = DispatchTypes::ANSIStandardMode(modeNumber);
+
+        // DISABLE_
+        Log::Comment(NoThrowString().Format(L"Setting standard mode %d", modeNumber));
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->SetMode(mode));
+        VERIFY_IS_TRUE(_pDispatch->RequestMode(mode));
+
+        wchar_t expectedResponse[20];
+        swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[%d;1$y", modeNumber);
+        _testGetSet->ValidateInputEvent(expectedResponse);
+
+        Log::Comment(NoThrowString().Format(L"Resetting standard mode %d", modeNumber));
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(mode));
+        VERIFY_IS_TRUE(_pDispatch->RequestMode(mode));
+
+        swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[%d;2$y", modeNumber);
+        _testGetSet->ValidateInputEvent(expectedResponse);
+    }
+
+    TEST_METHOD(RequestPrivateModeTests)
+    {
+        // The mode numbers below correspond to the DECPrivateMode values
+        // in the ModeParams enum in DispatchTypes.hpp. We don't include
+        // AnsiMode (2), because once that's disabled we'd be in VT52 mode,
+        // and DECRQM would not then be applicable.
+
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{1, 3, 5, 6, 7, 8, 12, 25, 40, 66, 67, 69, 117, 1000, 1002, 1003, 1004, 1005, 1006, 1007, 1049, 2004, 9001}")
+        END_TEST_METHOD_PROPERTIES()
+
+        VTInt modeNumber;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"modeNumber", modeNumber));
+        const auto mode = DispatchTypes::DECPrivateMode(modeNumber);
+
+        if (mode == DispatchTypes::DECCOLM_SetNumberOfColumns)
+        {
+            Log::Comment(L"Make sure DECCOLM is allowed");
+            VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::XTERM_EnableDECCOLMSupport));
+        }
+
+        Log::Comment(NoThrowString().Format(L"Setting private mode %d", modeNumber));
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->SetMode(mode));
+        VERIFY_IS_TRUE(_pDispatch->RequestMode(mode));
+
+        wchar_t expectedResponse[20];
+        swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[?%d;1$y", modeNumber);
+        _testGetSet->ValidateInputEvent(expectedResponse);
+
+        Log::Comment(NoThrowString().Format(L"Resetting private mode %d", modeNumber));
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(mode));
+        VERIFY_IS_TRUE(_pDispatch->RequestMode(mode));
+
+        swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[?%d;2$y", modeNumber);
+        _testGetSet->ValidateInputEvent(expectedResponse);
+    }
+
+    TEST_METHOD(RequestChecksumReportTests)
+    {
+        const auto requestChecksumReport = [this](const auto length) {
+            wchar_t checksumQuery[30];
+            swprintf_s(checksumQuery, ARRAYSIZE(checksumQuery), L"\033[99;1;1;1;1;%zu*y", length);
+            _stateMachine->ProcessString(checksumQuery);
+        };
+
+        const auto verifyChecksumReport = [this](const auto checksum) {
+            wchar_t expectedResponse[20];
+            swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1bP99!~%s\033\\", checksum);
+            _testGetSet->ValidateInputEvent(expectedResponse);
+        };
+
+        const auto outputText = [&](const auto text) {
+            _testGetSet->PrepData();
+            _pDispatch->PrintString(text);
+            requestChecksumReport(text.length());
+        };
+
+        const auto outputTextWithAttributes = [&](const auto text, const auto& attrCallback) {
+            _testGetSet->PrepData();
+            auto attr = TextAttribute{};
+            attrCallback(attr);
+            _testGetSet->_textBuffer->SetCurrentAttributes(attr);
+            _pDispatch->PrintString(text);
+            requestChecksumReport(text.length());
+        };
+
+        using namespace std::string_view_literals;
+
+        Log::Comment(L"Test 1: ASCII characters");
+        outputText(L"A"sv);
+        verifyChecksumReport(L"FF4F");
+        outputText(L" "sv);
+        verifyChecksumReport(L"FF70");
+        outputText(L"~"sv);
+        verifyChecksumReport(L"FF12");
+        outputText(L"ABC"sv);
+        verifyChecksumReport(L"FDEA");
+
+        Log::Comment(L"Test 2: Latin-1 characters");
+        outputText(L"Á"sv);
+        verifyChecksumReport(L"FECF");
+        outputText(L"¡"sv);
+        verifyChecksumReport(L"FEEF");
+        outputText(L"ÿ"sv);
+        verifyChecksumReport(L"FE91");
+        outputText(L"ÁÂÃ"sv);
+        verifyChecksumReport(L"FC6A");
+
+        Log::Comment(L"Test 3: Rendition attributes");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIntense(true);
+        });
+        verifyChecksumReport(L"FECF");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+        });
+        verifyChecksumReport(L"FF3F");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetBlinking(true);
+        });
+        verifyChecksumReport(L"FF0F");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetReverseVideo(true);
+        });
+        verifyChecksumReport(L"FF2F");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetInvisible(true);
+        });
+        verifyChecksumReport(L"FF47");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIntense(true);
+            attr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+            attr.SetReverseVideo(true);
+        });
+        verifyChecksumReport(L"FE9F");
+
+        Log::Comment(L"Test 4: Selective erase");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetProtected(true);
+        });
+        verifyChecksumReport(L"FF4B");
+        outputTextWithAttributes(L"B"sv, [](auto& attr) {
+            attr.SetProtected(true);
+        });
+        verifyChecksumReport(L"FF4A");
+
+        Log::Comment(L"Test 5: Color attributes");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIndexedForeground(TextColor::DARK_RED);
+        });
+        verifyChecksumReport(L"FFAF");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIndexedBackground(TextColor::DARK_GREEN);
+        });
+        verifyChecksumReport(L"FF4D");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIndexedForeground(TextColor::DARK_YELLOW);
+            attr.SetIndexedBackground(TextColor::DARK_BLUE);
+        });
+        verifyChecksumReport(L"FF8B");
+    }
+
+    TEST_METHOD(TabulationStopReportTests)
+    {
+        _testGetSet->PrepData();
+        auto& textBuffer = *_testGetSet->_textBuffer;
+        auto& stateMachine = *_testGetSet->_stateMachine;
+
+        Log::Comment(L"Default tabs stops in 80-column mode");
+        textBuffer.ResizeTraditional({ 80, 600 });
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u9/17/25/33/41/49/57/65/73\033\\");
+
+        Log::Comment(L"Default tabs stops in 132-column mode");
+        textBuffer.ResizeTraditional({ 132, 600 });
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u9/17/25/33/41/49/57/65/73/81/89/97/105/113/121/129\033\\");
+
+        Log::Comment(L"Custom tab stops in 80 columns");
+        textBuffer.ResizeTraditional({ 80, 600 });
+        _testGetSet->_stateMachine->ProcessString(L"\033P2$t30/60/120/240\033\\");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u30/60\033\\");
+
+        Log::Comment(L"After expanding width to 132 columns");
+        textBuffer.ResizeTraditional({ 132, 600 });
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u30/60/120\033\\");
+        textBuffer.ResizeTraditional({ 80, 600 });
+
+        Log::Comment(L"Out of order tab stops");
+        stateMachine.ProcessString(L"\033P2$t44/22/66\033\\");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u22/44/66\033\\");
+
+        Log::Comment(L"Empty tab stop are ignored");
+        stateMachine.ProcessString(L"\033P2$t3//7\033\\");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u3/7\033\\");
+
+        Log::Comment(L"'0' tab stops are ignored");
+        stateMachine.ProcessString(L"\033P2$t0/5/10\033\\");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u5/10\033\\");
+
+        Log::Comment(L"'1' tab stops are ignored");
+        stateMachine.ProcessString(L"\033P2$t1/8/18\033\\");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u8/18\033\\");
+
+        Log::Comment(L"Clear tab stops");
+        _pDispatch->TabClear(DispatchTypes::TabClearType::ClearAllColumns);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
+        _testGetSet->ValidateInputEvent(L"\033P2$u\033\\");
+    }
+
+    TEST_METHOD(CursorInformationReportTests)
+    {
+        _testGetSet->PrepData();
+        auto& textBuffer = *_testGetSet->_textBuffer;
+        auto& stateMachine = *_testGetSet->_stateMachine;
+        auto& termOutput = _pDispatch->_termOutput;
+        const auto viewportTop = _testGetSet->_viewport.top;
+        auto attributes = TextAttribute{};
+
+        Log::Comment(L"Initial state");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;1;1;@;@;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Cursor position");
+        textBuffer.GetCursor().SetPosition({ 3, viewportTop + 2 });
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;@;@;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Intense rendition");
+        attributes.SetIntense(true);
+        textBuffer.SetCurrentAttributes(attributes);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;A;@;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Underlined rendition");
+        attributes.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+        textBuffer.SetCurrentAttributes(attributes);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;C;@;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Blinking rendition");
+        attributes.SetBlinking(true);
+        textBuffer.SetCurrentAttributes(attributes);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;G;@;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Reverse video rendition");
+        attributes.SetReverseVideo(true);
+        textBuffer.SetCurrentAttributes(attributes);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;O;@;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Invisible rendition");
+        attributes.SetInvisible(true);
+        textBuffer.SetCurrentAttributes(attributes);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;_;@;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Protected attribute");
+        attributes.SetProtected(true);
+        textBuffer.SetCurrentAttributes(attributes);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;_;A;@;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Origin mode");
+        _pDispatch->SetMode(DispatchTypes::DECOM_OriginMode);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;1;1;_;A;A;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Single shift 2");
+        _pDispatch->SingleShift(2);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;1;1;_;A;C;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Single shift 3");
+        _pDispatch->SingleShift(3);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;1;1;_;A;E;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Delayed EOL wrap");
+        _pDispatch->CursorForward(999);
+        _pDispatch->Print(L'*');
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;100;1;_;A;I;0;2;@;BBBB\033\\");
+
+        Log::Comment(L"Locking shifts");
+        _pDispatch->LockingShift(1);
+        _pDispatch->LockingShiftRight(3);
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;100;1;_;A;I;1;3;@;BBBB\033\\");
+
+        Log::Comment(L"94 charset designations");
+        _pDispatch->Designate94Charset(0, "%5");
+        _pDispatch->Designate94Charset(1, "<");
+        _pDispatch->Designate94Charset(2, "0");
+        _pDispatch->Designate94Charset(3, "K");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;100;1;_;A;I;1;3;@;%5<0K\033\\");
+
+        Log::Comment(L"96 charset designation (G1)");
+        _pDispatch->Designate96Charset(1, "H");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;100;1;_;A;I;1;3;B;%5H0K\033\\");
+
+        Log::Comment(L"96 charset designation (G2)");
+        _pDispatch->Designate96Charset(2, "M");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;100;1;_;A;I;1;3;F;%5HMK\033\\");
+
+        Log::Comment(L"96 charset designation (G3)");
+        _pDispatch->Designate96Charset(3, "B");
+        _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
+        _testGetSet->ValidateInputEvent(L"\033P1$u1;100;1;_;A;I;1;3;N;%5HMB\033\\");
+
+        Log::Comment(L"Restore cursor position");
+        stateMachine.ProcessString(L"\033P1$t3;4;1;@;@;@;0;2;@;BBBB\033\\");
+        auto expectedPosition = til::point{ 3, viewportTop + 2 };
+        VERIFY_ARE_EQUAL(expectedPosition, textBuffer.GetCursor().GetPosition());
+
+        Log::Comment(L"Restore rendition attributes");
+
+        // In the following sequence, U (0101 0101) represents the bold, blinking, invisible attributes to be active.
+        stateMachine.ProcessString(L"\033P1$t1;1;1;U;@;@;0;2;@;BBBB\033\\");
+        attributes = {};
+        attributes.SetIntense(true); // bold
+        attributes.SetBlinking(true);
+        attributes.SetInvisible(true);
+        VERIFY_ARE_EQUAL(attributes, textBuffer.GetCurrentAttributes());
+
+        // In the following sequence, J (0100 1010) represents the underline, reverse video attributes to be active.
+        stateMachine.ProcessString(L"\033P1$t1;1;1;J;A;@;0;2;@;BBBB\033\\");
+        attributes = {};
+        attributes.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+        attributes.SetReverseVideo(true);
+        attributes.SetProtected(true);
+        VERIFY_ARE_EQUAL(attributes, textBuffer.GetCurrentAttributes());
+
+        Log::Comment(L"Restore flags");
+        stateMachine.ProcessString(L"\033P1$t1;1;1;@;@;E;0;2;@;BBBB\033\\");
+        VERIFY_IS_TRUE(_pDispatch->_modes.test(AdaptDispatch::Mode::Origin));
+        VERIFY_IS_FALSE(termOutput.IsSingleShiftPending(2));
+        VERIFY_IS_TRUE(termOutput.IsSingleShiftPending(3));
+        VERIFY_IS_FALSE(textBuffer.GetCursor().IsDelayedEOLWrap());
+        stateMachine.ProcessString(L"\033P1$t1;1;1;@;@;J;0;2;@;BBBB\033\\");
+        VERIFY_IS_FALSE(_pDispatch->_modes.test(AdaptDispatch::Mode::Origin));
+        VERIFY_IS_TRUE(termOutput.IsSingleShiftPending(2));
+        VERIFY_IS_FALSE(termOutput.IsSingleShiftPending(3));
+        VERIFY_IS_TRUE(textBuffer.GetCursor().IsDelayedEOLWrap());
+
+        Log::Comment(L"Restore charset configuration");
+        stateMachine.ProcessString(L"\033P1$t1;1;1;@;@;@;3;1;H;ABCF\033\\");
+        VERIFY_ARE_EQUAL(3u, termOutput.GetLeftSetNumber());
+        VERIFY_ARE_EQUAL(1u, termOutput.GetRightSetNumber());
+        VERIFY_ARE_EQUAL(94u, termOutput.GetCharsetSize(0));
+        VERIFY_ARE_EQUAL(94u, termOutput.GetCharsetSize(1));
+        VERIFY_ARE_EQUAL(94u, termOutput.GetCharsetSize(2));
+        VERIFY_ARE_EQUAL(96u, termOutput.GetCharsetSize(3));
+        VERIFY_ARE_EQUAL(VTID("A"), termOutput.GetCharsetId(0));
+        VERIFY_ARE_EQUAL(VTID("B"), termOutput.GetCharsetId(1));
+        VERIFY_ARE_EQUAL(VTID("C"), termOutput.GetCharsetId(2));
+        VERIFY_ARE_EQUAL(VTID("F"), termOutput.GetCharsetId(3));
     }
 
     TEST_METHOD(CursorKeysModeTest)
@@ -1673,12 +2314,12 @@ public:
         // success cases
         // set numeric mode = true
         Log::Comment(L"Test 1: application mode = false");
-        VERIFY_IS_TRUE(_pDispatch->SetCursorKeysMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::DECCKM_CursorKeysMode));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::CursorKey));
 
         // set numeric mode = false
         Log::Comment(L"Test 2: application mode = true");
-        VERIFY_IS_TRUE(_pDispatch->SetCursorKeysMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::DECCKM_CursorKeysMode));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::CursorKey));
     }
 
@@ -1726,13 +2367,13 @@ public:
         // set blinking mode = true
         Log::Comment(L"Test 1: enable blinking = true");
         _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(false);
-        VERIFY_IS_TRUE(_pDispatch->EnableCursorBlinking(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::ATT610_StartCursorBlink));
         VERIFY_IS_TRUE(_testGetSet->_textBuffer->GetCursor().IsBlinkingAllowed());
 
         // set blinking mode = false
         Log::Comment(L"Test 2: enable blinking = false");
         _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(true);
-        VERIFY_IS_TRUE(_pDispatch->EnableCursorBlinking(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::ATT610_StartCursorBlink));
         VERIFY_IS_FALSE(_testGetSet->_textBuffer->GetCursor().IsBlinkingAllowed());
     }
 
@@ -1742,124 +2383,99 @@ public:
 
         til::inclusive_rect srTestMargins;
         _testGetSet->_textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, _testGetSet->_renderer);
-        _testGetSet->_viewport.Right = 8;
-        _testGetSet->_viewport.Bottom = 8;
-        auto sScreenHeight = _testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top;
+        _testGetSet->_viewport.right = 8;
+        _testGetSet->_viewport.bottom = 8;
+        auto sScreenHeight = _testGetSet->_viewport.bottom - _testGetSet->_viewport.top;
 
         Log::Comment(L"Test 1: Verify having both values is valid.");
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(2, 6));
+        VERIFY_ARE_EQUAL(2, _pDispatch->_scrollMargins.top + 1);
+        VERIFY_ARE_EQUAL(6, _pDispatch->_scrollMargins.bottom + 1);
 
         Log::Comment(L"Test 2: Verify having only top is valid.");
-
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 7, 0);
-        _testGetSet->_expectedScrollRegion.Bottom = _testGetSet->_viewport.Bottom - 1; // We expect the bottom to be the bottom of the viewport, exclusive.
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(7, 0));
+        VERIFY_ARE_EQUAL(7, _pDispatch->_scrollMargins.top + 1);
+        VERIFY_ARE_EQUAL(sScreenHeight, _pDispatch->_scrollMargins.bottom + 1);
 
         Log::Comment(L"Test 3: Verify having only bottom is valid.");
-
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 7);
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(0, 7));
+        VERIFY_ARE_EQUAL(1, _pDispatch->_scrollMargins.top + 1);
+        VERIFY_ARE_EQUAL(7, _pDispatch->_scrollMargins.bottom + 1);
 
         Log::Comment(L"Test 4: Verify having no values is valid.");
-
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 0);
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(0, 0));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
 
         Log::Comment(L"Test 5: Verify having both values, but bad bounds has no effect.");
-
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 7, 3);
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
+        _pDispatch->_scrollMargins = {};
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(7, 3));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
 
         Log::Comment(L"Test 6: Verify setting margins to (0, height) clears them");
         // First set,
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(2, 6));
         // Then clear
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 0, sScreenHeight);
-        _testGetSet->_expectedScrollRegion.Top = 0;
-        _testGetSet->_expectedScrollRegion.Bottom = 0;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(0, sScreenHeight));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
 
         Log::Comment(L"Test 7: Verify setting margins to (1, height) clears them");
         // First set,
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(2, 6));
         // Then clear
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 1, sScreenHeight);
-        _testGetSet->_expectedScrollRegion.Top = 0;
-        _testGetSet->_expectedScrollRegion.Bottom = 0;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(1, sScreenHeight));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
 
         Log::Comment(L"Test 8: Verify setting margins to (1, 0) clears them");
         // First set,
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(2, 6));
         // Then clear
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 1, 0);
-        _testGetSet->_expectedScrollRegion.Top = 0;
-        _testGetSet->_expectedScrollRegion.Bottom = 0;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(1, 0));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
 
         Log::Comment(L"Test 9: Verify having top and bottom margin the same has no effect.");
-
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 4, 4);
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
+        _pDispatch->_scrollMargins = {};
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(4, 4));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
 
         Log::Comment(L"Test 10: Verify having top margin out of bounds has no effect.");
-
-        _testGetSet->_SetMarginsHelper(&srTestMargins, sScreenHeight + 1, sScreenHeight + 10);
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
+        _pDispatch->_scrollMargins = {};
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(sScreenHeight + 1, sScreenHeight + 10));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
 
         Log::Comment(L"Test 11: Verify having bottom margin out of bounds has no effect.");
-
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 1, sScreenHeight + 1);
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
+        _pDispatch->_scrollMargins = {};
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(1, sScreenHeight + 1));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
     }
 
     TEST_METHOD(LineFeedTest)
     {
         Log::Comment(L"Starting test...");
 
-        // All test cases need the LineFeed call to succeed.
-        _testGetSet->_lineFeedResult = TRUE;
+        _testGetSet->PrepData();
+        auto& cursor = _testGetSet->_textBuffer->GetCursor();
 
         Log::Comment(L"Test 1: Line feed without carriage return.");
-        _testGetSet->_expectedLineFeedWithReturn = false;
+        cursor.SetPosition({ 10, 0 });
         VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::WithoutReturn));
+        VERIFY_ARE_EQUAL(til::point(10, 1), cursor.GetPosition());
 
         Log::Comment(L"Test 2: Line feed with carriage return.");
-        _testGetSet->_expectedLineFeedWithReturn = true;
+        cursor.SetPosition({ 10, 0 });
         VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::WithReturn));
+        VERIFY_ARE_EQUAL(til::point(0, 1), cursor.GetPosition());
 
         Log::Comment(L"Test 3: Line feed depends on mode, and mode reset.");
-        _testGetSet->_getLineFeedModeResult = false;
-        _testGetSet->_expectedLineFeedWithReturn = false;
+        _testGetSet->_systemMode.reset(ITerminalApi::Mode::LineFeed);
+        cursor.SetPosition({ 10, 0 });
         VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
+        VERIFY_ARE_EQUAL(til::point(10, 1), cursor.GetPosition());
 
         Log::Comment(L"Test 4: Line feed depends on mode, and mode set.");
-        _testGetSet->_getLineFeedModeResult = true;
-        _testGetSet->_expectedLineFeedWithReturn = true;
+        _testGetSet->_systemMode.set(ITerminalApi::Mode::LineFeed);
+        cursor.SetPosition({ 10, 0 });
         VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
+        VERIFY_ARE_EQUAL(til::point(0, 1), cursor.GetPosition());
     }
 
     TEST_METHOD(SetConsoleTitleTest)
@@ -1885,44 +2501,44 @@ public:
 
         Log::Comment(L"Test 1: Test Default Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableVT200MouseMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::VT200_MOUSE_MODE));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking));
-        VERIFY_IS_TRUE(_pDispatch->EnableVT200MouseMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::VT200_MOUSE_MODE));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking));
 
         Log::Comment(L"Test 2: Test UTF-8 Extended Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableUTF8ExtendedMouseMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::UTF8_EXTENDED_MODE));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::Utf8MouseEncoding));
-        VERIFY_IS_TRUE(_pDispatch->EnableUTF8ExtendedMouseMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::UTF8_EXTENDED_MODE));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::Utf8MouseEncoding));
 
         Log::Comment(L"Test 3: Test SGR Extended Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::SgrMouseEncoding, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::SGR_EXTENDED_MODE));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding));
-        VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::SGR_EXTENDED_MODE));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding));
 
         Log::Comment(L"Test 4: Test Button-Event Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableButtonEventMouseMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::BUTTON_EVENT_MOUSE_MODE));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::ButtonEventMouseTracking));
-        VERIFY_IS_TRUE(_pDispatch->EnableButtonEventMouseMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::BUTTON_EVENT_MOUSE_MODE));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::ButtonEventMouseTracking));
 
         Log::Comment(L"Test 5: Test Any-Event Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableAnyEventMouseMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::ANY_EVENT_MOUSE_MODE));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::AnyEventMouseTracking));
-        VERIFY_IS_TRUE(_pDispatch->EnableAnyEventMouseMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::ANY_EVENT_MOUSE_MODE));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::AnyEventMouseTracking));
 
         Log::Comment(L"Test 6: Test Alt Scroll Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::AlternateScroll, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableAlternateScroll(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::ALTERNATE_SCROLL));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll));
-        VERIFY_IS_TRUE(_pDispatch->EnableAlternateScroll(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::ALTERNATE_SCROLL));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll));
     }
 
@@ -2020,6 +2636,95 @@ public:
         rgOptions[4] = 123;
         _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 123));
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 5 }));
+
+        Log::Comment(L"Test 6: Ignore Rgb color when R, G or B is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgOptions[2] = 283;
+        rgOptions[3] = 182;
+        rgOptions[4] = 123;
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 5 }));
+
+        Log::Comment(L"Test 7: Ignore indexed color when index is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        rgOptions[2] = 283;
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, 3 }));
+    }
+
+    TEST_METHOD(XtermExtendedSubParameterColorTest)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+
+        VTParameter rgOptions[1];
+        std::vector<VTParameter> rgSubParamOpts;
+        std::vector<std::pair<BYTE, BYTE>> subParamRanges;
+
+        _testGetSet->_expectedAttribute = _testGetSet->_textBuffer->GetCurrentAttributes();
+
+        Log::Comment(L"Test 1: Change Indexed Foreground with missing index sub parameter");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        _testGetSet->MakeSubParamsAndRanges({ { 5 } }, rgSubParamOpts, subParamRanges);
+        _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_BLACK);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 2: Change Indexed Background with default index sub parameter");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        _testGetSet->MakeSubParamsAndRanges({ { 5, {} } }, rgSubParamOpts, subParamRanges);
+        _testGetSet->_expectedAttribute.SetIndexedBackground256(TextColor::DARK_BLACK);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 3: Change RGB Foreground with all RGB sub parameters missing");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        _testGetSet->MakeSubParamsAndRanges({ { 2 } }, rgSubParamOpts, subParamRanges);
+        _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 0));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 4: Change RGB Background with some missing RGB sub parameters");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        _testGetSet->MakeSubParamsAndRanges({ { 2, {}, 123 } }, rgSubParamOpts, subParamRanges);
+        _testGetSet->_expectedAttribute.SetBackground(RGB(123, 0, 0));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 5: Change RGB Foreground with some default RGB sub parameters");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        _testGetSet->MakeSubParamsAndRanges({ { 2, {}, {}, {}, 123 } }, rgSubParamOpts, subParamRanges);
+        _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 123));
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 6: Ignore color when ColorSpaceID is not empty");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        _testGetSet->MakeSubParamsAndRanges({ { 2, 7, 182, 182, 123 } }, rgSubParamOpts, subParamRanges);
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 7: Ignore Rgb color when R, G or B is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        // Ensure r, g and b set a color that is different from current color.
+        // Otherwise, the test will pass even if the color is not ignored.
+        _testGetSet->MakeSubParamsAndRanges({ { 2, {}, 128, 283, 155 } }, rgSubParamOpts, subParamRanges);
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
+
+        Log::Comment(L"Test 8: Ignore indexed color when index is out of range (>255)");
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        _testGetSet->MakeSubParamsAndRanges({ { 5, 283 } }, rgSubParamOpts, subParamRanges);
+        // expect no change
+        _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
     }
 
     TEST_METHOD(SetColorTableValue)
@@ -2059,9 +2764,9 @@ public:
             RETURN_BOOL_IF_FALSE(fontBuffer.FinalizeSixelData());
 
             const auto cellSize = fontBuffer.GetCellSize();
-            Log::Comment(NoThrowString().Format(L"Cell size: %dx%d", cellSize.cx, cellSize.cy));
-            VERIFY_ARE_EQUAL(expectedCellSize.cx, cellSize.cx);
-            VERIFY_ARE_EQUAL(expectedCellSize.cy, cellSize.cy);
+            Log::Comment(NoThrowString().Format(L"Cell size: %dx%d", cellSize.width, cellSize.height));
+            VERIFY_ARE_EQUAL(expectedCellSize.width, cellSize.width);
+            VERIFY_ARE_EQUAL(expectedCellSize.height, cellSize.height);
             return true;
         };
 
@@ -2292,8 +2997,191 @@ public:
         VERIFY_IS_FALSE(_stateMachine->GetParserMode(StateMachine::Mode::AcceptC1));
     }
 
+    TEST_METHOD(MacroDefinitions)
+    {
+        const auto getMacroText = [&](const auto id) {
+            return _pDispatch->_macroBuffer->_macros.at(id);
+        };
+
+        Log::Comment(L"Text encoding");
+        _stateMachine->ProcessString(L"\033P1;0;0!zText Encoding\033\\");
+        VERIFY_ARE_EQUAL(L"Text Encoding", getMacroText(1));
+
+        Log::Comment(L"Hex encoding (uppercase)");
+        _stateMachine->ProcessString(L"\033P2;0;1!z486578204A4B4C4D4E4F\033\\");
+        VERIFY_ARE_EQUAL(L"Hex JKLMNO", getMacroText(2));
+
+        Log::Comment(L"Hex encoding (lowercase)");
+        _stateMachine->ProcessString(L"\033P3;0;1!z486578206a6b6c6d6e6f\033\\");
+        VERIFY_ARE_EQUAL(L"Hex jklmno", getMacroText(3));
+
+        Log::Comment(L"Default encoding is text");
+        _stateMachine->ProcessString(L"\033P4;0;!zDefault Encoding\033\\");
+        VERIFY_ARE_EQUAL(L"Default Encoding", getMacroText(4));
+
+        Log::Comment(L"Default ID is 0");
+        _stateMachine->ProcessString(L"\033P;0;0!zDefault ID\033\\");
+        VERIFY_ARE_EQUAL(L"Default ID", getMacroText(0));
+
+        Log::Comment(L"Replacing a single macro");
+        _stateMachine->ProcessString(L"\033P1;0;0!zRetained\033\\");
+        _stateMachine->ProcessString(L"\033P2;0;0!zReplaced\033\\");
+        _stateMachine->ProcessString(L"\033P2;0;0!zNew\033\\");
+        VERIFY_ARE_EQUAL(L"Retained", getMacroText(1));
+        VERIFY_ARE_EQUAL(L"New", getMacroText(2));
+
+        Log::Comment(L"Replacing all macros");
+        _stateMachine->ProcessString(L"\033P1;0;0!zErased\033\\");
+        _stateMachine->ProcessString(L"\033P2;0;0!zReplaced\033\\");
+        _stateMachine->ProcessString(L"\033P2;1;0!zNew\033\\");
+        VERIFY_ARE_EQUAL(L"", getMacroText(1));
+        VERIFY_ARE_EQUAL(L"New", getMacroText(2));
+
+        Log::Comment(L"Default replacement is a single macro");
+        _stateMachine->ProcessString(L"\033P1;0;0!zRetained\033\\");
+        _stateMachine->ProcessString(L"\033P2;0;0!zReplaced\033\\");
+        _stateMachine->ProcessString(L"\033P2;;0!zNew\033\\");
+        VERIFY_ARE_EQUAL(L"Retained", getMacroText(1));
+        VERIFY_ARE_EQUAL(L"New", getMacroText(2));
+
+        Log::Comment(L"Repeating three times");
+        _stateMachine->ProcessString(L"\033P5;0;1!z526570656174!3;206563686F;207468726565\033\\");
+        VERIFY_ARE_EQUAL(L"Repeat echo echo echo three", getMacroText(5));
+
+        Log::Comment(L"Zero repeats once");
+        _stateMachine->ProcessString(L"\033P6;0;1!z526570656174!0;206563686F;207A65726F\033\\");
+        VERIFY_ARE_EQUAL(L"Repeat echo zero", getMacroText(6));
+
+        Log::Comment(L"Default repeats once");
+        _stateMachine->ProcessString(L"\033P7;0;1!z526570656174!;206563686F;2064656661756C74\033\\");
+        VERIFY_ARE_EQUAL(L"Repeat echo default", getMacroText(7));
+
+        Log::Comment(L"Unterminated repeat sequence");
+        _stateMachine->ProcessString(L"\033P8;0;1!z556E7465726D696E61746564!3;206563686F\033\\");
+        VERIFY_ARE_EQUAL(L"Unterminated echo echo echo", getMacroText(8));
+
+        Log::Comment(L"Unexpected semicolon cancels definition");
+        _stateMachine->ProcessString(L"\033P9;0;0!zReplaced\033\\");
+        _stateMachine->ProcessString(L"\033P9;0;1!z526570656174!3;206563;686F;207468726565\033\\");
+        VERIFY_ARE_EQUAL(L"", getMacroText(9));
+
+        Log::Comment(L"Control characters in a text encoding");
+        _stateMachine->ProcessString(L"\033P10;0;0!zA\aB\bC\tD\nE\vF\fG\rH\033\\");
+        VERIFY_ARE_EQUAL(L"ABCDEFGH", getMacroText(10));
+
+        Log::Comment(L"Control characters in a hex encoding");
+        _stateMachine->ProcessString(L"\033P11;0;1!z41\a42\b43\t44\n45\v46\f47\r48\033\\");
+        VERIFY_ARE_EQUAL(L"ABCDEFGH", getMacroText(11));
+
+        Log::Comment(L"Control characters in a repeat");
+        _stateMachine->ProcessString(L"\033P12;0;1!z!\a3\b;\t4\n1\v4\f2\r4\a3\b;\033\\");
+        VERIFY_ARE_EQUAL(L"ABCABCABC", getMacroText(12));
+
+        Log::Comment(L"Encoded control characters");
+        _stateMachine->ProcessString(L"\033P13;0;1!z410742084309440A450B460C470D481B49\033\\");
+        VERIFY_ARE_EQUAL(L"A\aB\bC\tD\nE\vF\fG\rH\033I", getMacroText(13));
+
+        _pDispatch->_macroBuffer = nullptr;
+    }
+
+    TEST_METHOD(MacroInvokes)
+    {
+        _pDispatch->_macroBuffer = std::make_shared<MacroBuffer>();
+
+        const auto setMacroText = [&](const auto id, const auto value) {
+            _pDispatch->_macroBuffer->_macros.at(id) = value;
+        };
+
+        setMacroText(0, L"Macro 0");
+        setMacroText(1, L"Macro 1");
+        setMacroText(2, L"Macro 2");
+        setMacroText(63, L"Macro 63");
+
+        const auto getBufferOutput = [&]() {
+            const auto& textBuffer = _testGetSet->GetTextBuffer();
+            const auto cursorPos = textBuffer.GetCursor().GetPosition();
+            return textBuffer.GetRowByOffset(cursorPos.y).GetText().substr(0, cursorPos.x);
+        };
+
+        Log::Comment(L"Simple macro invoke");
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\033[2*z");
+        VERIFY_ARE_EQUAL(L"Macro 2", getBufferOutput());
+
+        Log::Comment(L"Default macro invoke");
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\033[*z");
+        VERIFY_ARE_EQUAL(L"Macro 0", getBufferOutput());
+
+        Log::Comment(L"Maximum ID number");
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\033[63*z");
+        VERIFY_ARE_EQUAL(L"Macro 63", getBufferOutput());
+
+        Log::Comment(L"Out of range ID number");
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\033[64*z");
+        VERIFY_ARE_EQUAL(L"", getBufferOutput());
+
+        Log::Comment(L"Only one ID parameter allowed");
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\033[2;0;1*z");
+        VERIFY_ARE_EQUAL(L"Macro 2", getBufferOutput());
+
+        Log::Comment(L"DECDMAC ignored when inside a macro");
+        setMacroText(10, L"[\033P1;0;0!zReplace Macro 1\033\\]");
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\033[10*z");
+        _stateMachine->ProcessString(L"\033[1*z");
+        VERIFY_ARE_EQUAL(L"[]Macro 1", getBufferOutput());
+
+        Log::Comment(L"Maximum recursive depth is 16");
+        setMacroText(0, L"<\033[1*z>");
+        setMacroText(1, L"[\033[0*z]");
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\033[0*z");
+        VERIFY_ARE_EQUAL(L"<[<[<[<[<[<[<[<[]>]>]>]>]>]>]>]>", getBufferOutput());
+
+        _pDispatch->_macroBuffer = nullptr;
+    }
+
+    TEST_METHOD(WindowManipulationTypeTests)
+    {
+        _testGetSet->PrepData();
+        _pDispatch->WindowManipulation(DispatchTypes::WindowManipulationType::ReportTextSizeInCharacters, NULL, NULL);
+        const std::wstring expectedResponse = fmt::format(L"\033[8;{};{}t", _testGetSet->GetViewport().height(), _testGetSet->GetTextBuffer().GetSize().Width());
+        _testGetSet->ValidateInputEvent(expectedResponse.c_str());
+    }
+
+    TEST_METHOD(MenuCompletionsTests)
+    {
+        _testGetSet->PrepData();
+
+        Log::Comment(L"Not enough parameters");
+        VERIFY_IS_FALSE(_pDispatch->DoVsCodeAction(LR"(garbage)"));
+
+        Log::Comment(L"Not enough parameters");
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions)"));
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;)"));
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;)"));
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;20)"));
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;20;)"));
+        Log::Comment(L"No trailing semicolon");
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;20;3)"));
+
+        Log::Comment(L"Normal, good case");
+        _testGetSet->_expectedMenuJson = LR"({ "foo": 1, "bar": 2 })";
+        _testGetSet->_expectedReplaceLength = 2;
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;1;2;3;{ "foo": 1, "bar": 2 })"));
+
+        Log::Comment(L"JSON has a semicolon in it");
+        _testGetSet->_expectedMenuJson = LR"({ "foo": "what;ever", "bar": 2 })";
+        _testGetSet->_expectedReplaceLength = 20;
+        VERIFY_IS_TRUE(_pDispatch->DoVsCodeAction(LR"(Completions;10;20;30;{ "foo": "what;ever", "bar": 2 })"));
+    }
+
 private:
-    TerminalInput _terminalInput{ nullptr };
+    TerminalInput _terminalInput;
     std::unique_ptr<TestGetSet> _testGetSet;
     AdaptDispatch* _pDispatch; // non-ownership pointer
     std::unique_ptr<StateMachine> _stateMachine;

@@ -12,6 +12,29 @@
 #include "../host/telemetry.hpp"
 #include "../host/cmdline.h"
 
+// Assumes that it will find <m> in the calling environment.
+#define TraceConsoleAPICallWithOrigin(ApiName, ...)                  \
+    TraceLoggingWrite(                                               \
+        g_hConhostV2EventTraceProvider,                              \
+        "API_" ApiName,                                              \
+        TraceLoggingPid(TraceGetProcessId(m), "OriginatingProcess"), \
+        TraceLoggingTid(TraceGetThreadId(m), "OriginatingThread"),   \
+        __VA_ARGS__ __VA_OPT__(, )                                   \
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),               \
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+static DWORD TraceGetProcessId(CONSOLE_API_MSG* const m)
+{
+    const auto p = m->GetProcessHandle();
+    return p ? p->dwProcessId : 0;
+}
+
+static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
+{
+    const auto p = m->GetProcessHandle();
+    return p ? p->dwThreadId : 0;
+}
+
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleCP(_Inout_ CONSOLE_API_MSG* const m,
                                                          _Inout_ BOOL* const /*pbReplyPending*/)
 {
@@ -35,35 +58,22 @@
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
     const auto a = &m->u.consoleMsgL1.GetConsoleMode;
-    std::wstring_view handleType = L"unknown";
-
-    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                      "API_GetConsoleMode",
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-                      TraceLoggingOpcode(WINEVENT_OPCODE_START));
-
-    auto tracing = wil::scope_exit([&]() {
-        Tracing::s_TraceApi(a, handleType);
-        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                          "API_GetConsoleMode",
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                          TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-                          TraceLoggingOpcode(WINEVENT_OPCODE_STOP));
-    });
 
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
+
+    TraceConsoleAPICallWithOrigin(
+        "GetConsoleMode",
+        TraceLoggingBool(pObjectHandle->IsInputHandle(), "InputHandle"));
+
     if (pObjectHandle->IsInputHandle())
     {
-        handleType = L"input";
         InputBuffer* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_READ, &pObj));
         m->_pApiRoutines->GetConsoleInputModeImpl(*pObj, a->Mode);
     }
     else
     {
-        handleType = L"output";
         SCREEN_INFORMATION* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
         m->_pApiRoutines->GetConsoleOutputModeImpl(*pObj, a->Mode);
@@ -79,6 +89,12 @@
 
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
+
+    TraceConsoleAPICallWithOrigin(
+        "SetConsoleMode",
+        TraceLoggingBool(pObjectHandle->IsInputHandle(), "InputHandle"),
+        TraceLoggingHexULong(a->Mode, "Mode"));
+
     if (pObjectHandle->IsInputHandle())
     {
         InputBuffer* pObj;
@@ -151,47 +167,15 @@
     const auto pInputReadHandleData = pHandleData->GetClientInput();
 
     std::unique_ptr<IWaitRoutine> waiter;
-    HRESULT hr;
-    std::deque<std::unique_ptr<IInputEvent>> outEvents;
-    const auto eventsToRead = cRecords;
-    if (a->Unicode)
-    {
-        if (fIsPeek)
-        {
-            hr = m->_pApiRoutines->PeekConsoleInputWImpl(*pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         *pInputReadHandleData,
-                                                         waiter);
-        }
-        else
-        {
-            hr = m->_pApiRoutines->ReadConsoleInputWImpl(*pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         *pInputReadHandleData,
-                                                         waiter);
-        }
-    }
-    else
-    {
-        if (fIsPeek)
-        {
-            hr = m->_pApiRoutines->PeekConsoleInputAImpl(*pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         *pInputReadHandleData,
-                                                         waiter);
-        }
-        else
-        {
-            hr = m->_pApiRoutines->ReadConsoleInputAImpl(*pInputBuffer,
-                                                         outEvents,
-                                                         eventsToRead,
-                                                         *pInputReadHandleData,
-                                                         waiter);
-        }
-    }
+    InputEventQueue outEvents;
+    auto hr = m->_pApiRoutines->GetConsoleInputImpl(
+        *pInputBuffer,
+        outEvents,
+        cRecords,
+        *pInputReadHandleData,
+        a->Unicode,
+        fIsPeek,
+        waiter);
 
     // We must return the number of records in the message payload (to alert the client)
     // as well as in the message headers (below in SetReplyInformation) to alert the driver.
@@ -228,19 +212,7 @@
     }
     else
     {
-        try
-        {
-            for (size_t i = 0; i < cRecords; ++i)
-            {
-                if (outEvents.empty())
-                {
-                    break;
-                }
-                rgRecords[i] = outEvents.front()->ToInputRecord();
-                outEvents.pop_front();
-            }
-        }
-        CATCH_RETURN();
+        std::ranges::copy(outEvents, rgRecords);
     }
 
     if (SUCCEEDED(hr))
@@ -270,13 +242,8 @@
     // Get output parameter buffer.
     PVOID pvBuffer;
     ULONG cbBufferSize;
-    // TODO: This is dumb. We should find out how much we need, not guess.
-    // If the request is not in Unicode mode, we must allocate an output buffer that is twice as big as the actual caller buffer.
-    RETURN_IF_FAILED(m->GetAugmentedOutputBuffer((a->Unicode != FALSE) ? 1 : 2,
-                                                 &pvBuffer,
-                                                 &cbBufferSize));
+    RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBufferSize));
 
-    // TODO: This is also rather strange and will also probably make more sense if we stop guessing that we need 2x buffer to convert.
     // This might need to go on the other side of the fence (inside host) because the server doesn't know what we're going to do with initial num bytes.
     // (This restriction exists because it's going to copy initial into the final buffer, but we don't know that.)
     RETURN_HR_IF(E_INVALIDARG, a->InitialNumBytes > cbBufferSize);
@@ -297,17 +264,23 @@
     const std::wstring_view exeView(pwsExeName.get(), cchExeName);
 
     // 2. Existing data in the buffer that was passed in.
-    const auto cbInitialData = a->InitialNumBytes;
     std::unique_ptr<char[]> pbInitialData;
+    std::wstring_view initialData;
 
     try
     {
+        const auto cbInitialData = a->InitialNumBytes;
         if (cbInitialData > 0)
         {
+            // InitialNumBytes is only supported for ReadConsoleW (via CONSOLE_READCONSOLE_CONTROL::nInitialChars).
+            RETURN_HR_IF(E_INVALIDARG, !a->Unicode);
+
             pbInitialData = std::make_unique<char[]>(cbInitialData);
 
             // This parameter starts immediately after the exe name so skip by that many bytes.
             RETURN_IF_FAILED(m->ReadMessageInput(cbExeName, pbInitialData.get(), cbInitialData));
+
+            initialData = { reinterpret_cast<const wchar_t*>(pbInitialData.get()), cbInitialData / sizeof(wchar_t) };
         }
     }
     CATCH_RETURN();
@@ -322,37 +295,18 @@
     std::unique_ptr<IWaitRoutine> waiter;
     size_t cbWritten;
 
-    HRESULT hr;
-    if (a->Unicode)
-    {
-        const std::string_view initialData(pbInitialData.get(), cbInitialData);
-        const gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
-        hr = m->_pApiRoutines->ReadConsoleWImpl(*pInputBuffer,
+    const std::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
+    auto hr = m->_pApiRoutines->ReadConsoleImpl(*pInputBuffer,
                                                 outputBuffer,
                                                 cbWritten, // We must set the reply length in bytes.
                                                 waiter,
                                                 initialData,
                                                 exeView,
                                                 *pInputReadHandleData,
+                                                a->Unicode,
                                                 hConsoleClient,
                                                 a->CtrlWakeupMask,
                                                 a->ControlKeyState);
-    }
-    else
-    {
-        const std::string_view initialData(pbInitialData.get(), cbInitialData);
-        const gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
-        hr = m->_pApiRoutines->ReadConsoleAImpl(*pInputBuffer,
-                                                outputBuffer,
-                                                cbWritten, // We must set the reply length in bytes.
-                                                waiter,
-                                                initialData,
-                                                exeView,
-                                                *pInputReadHandleData,
-                                                hConsoleClient,
-                                                a->CtrlWakeupMask,
-                                                a->ControlKeyState);
-    }
 
     LOG_IF_FAILED(SizeTToULong(cbWritten, &a->NumBytes));
 
@@ -402,9 +356,6 @@
     // Get input parameter buffer
     PVOID pvBuffer;
     ULONG cbBufferSize;
-    auto tracing = wil::scope_exit([&]() {
-        Tracing::s_TraceApi(pvBuffer, a);
-    });
     RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbBufferSize));
 
     std::unique_ptr<IWaitRoutine> waiter;
@@ -422,6 +373,11 @@
         const std::wstring_view buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBufferSize / sizeof(wchar_t));
         size_t cchInputRead;
 
+        TraceConsoleAPICallWithOrigin(
+            "WriteConsoleW",
+            TraceLoggingUInt32(a->NumBytes, "NumBytes"),
+            TraceLoggingCountedWideString(buffer.data(), static_cast<ULONG>(buffer.size()), "Buffer"));
+
         hr = m->_pApiRoutines->WriteConsoleWImpl(*pScreenInfo, buffer, cchInputRead, requiresVtQuirk, waiter);
 
         // We must set the reply length in bytes. Convert back from characters.
@@ -431,6 +387,11 @@
     {
         const std::string_view buffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
         size_t cchInputRead;
+
+        TraceConsoleAPICallWithOrigin(
+            "WriteConsoleA",
+            TraceLoggingUInt32(a->NumBytes, "NumBytes"),
+            TraceLoggingCountedString(buffer.data(), static_cast<ULONG>(buffer.size()), "Buffer"));
 
         hr = m->_pApiRoutines->WriteConsoleAImpl(*pScreenInfo, buffer, cchInputRead, requiresVtQuirk, waiter);
 
@@ -618,10 +579,6 @@
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleScreenBufferInfoEx);
     const auto a = &m->u.consoleMsgL2.GetConsoleScreenBufferInfo;
 
-    auto tracing = wil::scope_exit([&]() {
-        Tracing::s_TraceApi(a);
-    });
-
     CONSOLE_SCREEN_BUFFER_INFOEX ex = { 0 };
     ex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
 
@@ -677,6 +634,12 @@
     ex.wAttributes = a->Attributes;
     ex.wPopupAttributes = a->PopupAttributes;
 
+    TraceConsoleAPICallWithOrigin(
+        "SetConsoleScreenBufferInfoEx",
+        TraceLoggingConsoleCoord(a->Size, "BufferSize"),
+        TraceLoggingConsoleCoord(a->CurrentWindowSize, "WindowSize"),
+        TraceLoggingConsoleCoord(a->MaximumWindowSize, "MaxWindowSize"));
+
     return m->_pApiRoutines->SetConsoleScreenBufferInfoExImpl(*pObj, ex);
 }
 
@@ -691,6 +654,10 @@
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
+
+    TraceConsoleAPICallWithOrigin(
+        "SetConsoleScreenBufferSize",
+        TraceLoggingConsoleCoord(a->Size, "BufferSize"));
 
     return m->_pApiRoutines->SetConsoleScreenBufferSizeImpl(*pObj, til::wrap_coord_size(a->Size));
 }
@@ -768,15 +735,16 @@
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleTextAttribute);
     const auto a = &m->u.consoleMsgL2.SetConsoleTextAttribute;
 
-    auto tracing = wil::scope_exit([&]() {
-        Tracing::s_TraceApi(a);
-    });
-
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
+
+    TraceConsoleAPICallWithOrigin(
+        "SetConsoleTextAttribute",
+        TraceLoggingHexUInt16(a->Attributes, "Attributes"));
+
     RETURN_HR(m->_pApiRoutines->SetConsoleTextAttributeImpl(*pObj, a->Attributes));
 }
 
@@ -791,6 +759,14 @@
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
+
+    TraceConsoleAPICallWithOrigin(
+        "SetConsoleWindowInfo",
+        TraceLoggingBool(a->Absolute, "IsWindowRectAbsolute"),
+        TraceLoggingInt32(a->Window.Left, "WindowRectLeft"),
+        TraceLoggingInt32(a->Window.Right, "WindowRectRight"),
+        TraceLoggingInt32(a->Window.Top, "WindowRectTop"),
+        TraceLoggingInt32(a->Window.Bottom, "WindowRectBottom"));
 
     return m->_pApiRoutines->SetConsoleWindowInfoImpl(*pObj, a->Absolute, til::wrap_small_rect(a->Window));
 }
@@ -833,20 +809,20 @@
     {
     case CONSOLE_ATTRIBUTE:
     {
-        const gsl::span<WORD> buffer(reinterpret_cast<WORD*>(pvBuffer), cbBuffer / sizeof(WORD));
+        const std::span<WORD> buffer(reinterpret_cast<WORD*>(pvBuffer), cbBuffer / sizeof(WORD));
         RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputAttributeImpl(*pScreenInfo, til::wrap_coord(a->ReadCoord), buffer, written));
         break;
     }
     case CONSOLE_REAL_UNICODE:
     case CONSOLE_FALSE_UNICODE:
     {
-        const gsl::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
+        const std::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
         RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterWImpl(*pScreenInfo, til::wrap_coord(a->ReadCoord), buffer, written));
         break;
     }
     case CONSOLE_ASCII:
     {
-        const gsl::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
+        const std::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
         RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterAImpl(*pScreenInfo, til::wrap_coord(a->ReadCoord), buffer, written));
         break;
     }
@@ -884,7 +860,7 @@
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pInputBuffer));
 
     size_t written;
-    gsl::span<const INPUT_RECORD> buffer(reinterpret_cast<INPUT_RECORD*>(pvBuffer), cbSize / sizeof(INPUT_RECORD));
+    std::span<const INPUT_RECORD> buffer(reinterpret_cast<INPUT_RECORD*>(pvBuffer), cbSize / sizeof(INPUT_RECORD));
     if (!a->Unicode)
     {
         RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleInputAImpl(*pInputBuffer, buffer, written, !!a->Append));
@@ -924,12 +900,12 @@
 
     // Validate parameters
     size_t regionArea;
-    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().X, originalRegion.Dimensions().Y, &regionArea));
+    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().width, originalRegion.Dimensions().height, &regionArea));
     size_t regionBytes;
     RETURN_IF_FAILED(SizeTMult(regionArea, sizeof(CHAR_INFO), &regionBytes));
     RETURN_HR_IF(E_INVALIDARG, cbSize < regionBytes); // If given fewer bytes on input than we need to do this write, it's invalid.
 
-    const gsl::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbSize / sizeof(CHAR_INFO));
+    const std::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbSize / sizeof(CHAR_INFO));
     if (!a->Unicode)
     {
         RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleOutputAImpl(*pScreenInfo, buffer, originalRegion, writtenRegion));
@@ -947,10 +923,6 @@
                                                                      _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL2.WriteConsoleOutputString;
-
-    auto tracing = wil::scope_exit([&]() {
-        Tracing::s_TraceApi(a);
-    });
 
     switch (a->StringType)
     {
@@ -988,6 +960,11 @@
     {
         const std::string_view text(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
 
+        TraceConsoleAPICallWithOrigin(
+            "WriteConsoleOutputCharacterA",
+            TraceLoggingConsoleCoord(a->WriteCoord, "WriteCoord"),
+            TraceLoggingUInt32(a->NumRecords, "NumRecords"));
+
         hr = m->_pApiRoutines->WriteConsoleOutputCharacterAImpl(*pScreenInfo,
                                                                 text,
                                                                 til::wrap_coord(a->WriteCoord),
@@ -1000,6 +977,11 @@
     {
         const std::wstring_view text(reinterpret_cast<wchar_t*>(pvBuffer), cbBufferSize / sizeof(wchar_t));
 
+        TraceConsoleAPICallWithOrigin(
+            "WriteConsoleOutputCharacterW",
+            TraceLoggingConsoleCoord(a->WriteCoord, "WriteCoord"),
+            TraceLoggingUInt32(a->NumRecords, "NumRecords"));
+
         hr = m->_pApiRoutines->WriteConsoleOutputCharacterWImpl(*pScreenInfo,
                                                                 text,
                                                                 til::wrap_coord(a->WriteCoord),
@@ -1009,7 +991,12 @@
     }
     case CONSOLE_ATTRIBUTE:
     {
-        const gsl::span<const WORD> text(reinterpret_cast<WORD*>(pvBuffer), cbBufferSize / sizeof(WORD));
+        const std::span<const WORD> text(reinterpret_cast<WORD*>(pvBuffer), cbBufferSize / sizeof(WORD));
+
+        TraceConsoleAPICallWithOrigin(
+            "WriteConsoleOutputAttribute",
+            TraceLoggingConsoleCoord(a->WriteCoord, "WriteCoord"),
+            TraceLoggingUInt32(a->NumRecords, "NumRecords"));
 
         hr = m->_pApiRoutines->WriteConsoleOutputAttributeImpl(*pScreenInfo,
                                                                text,
@@ -1054,12 +1041,12 @@
 
     // Validate parameters
     size_t regionArea;
-    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().X, originalRegion.Dimensions().Y, &regionArea));
+    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().width, originalRegion.Dimensions().height, &regionArea));
     size_t regionBytes;
     RETURN_IF_FAILED(SizeTMult(regionArea, sizeof(CHAR_INFO), &regionBytes));
     RETURN_HR_IF(E_INVALIDARG, regionArea > 0 && ((regionArea > ULONG_MAX / sizeof(CHAR_INFO)) || (cbBuffer < regionBytes)));
 
-    gsl::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbBuffer / sizeof(CHAR_INFO));
+    std::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbBuffer / sizeof(CHAR_INFO));
     auto finalRegion = Microsoft::Console::Types::Viewport::Empty(); // the actual region read out of the buffer
     if (!a->Unicode)
     {
@@ -1098,7 +1085,7 @@
     auto hr = S_OK;
     if (a->Unicode)
     {
-        gsl::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
+        std::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
         size_t written;
         size_t needed;
         if (a->Original)
@@ -1120,7 +1107,7 @@
     }
     else
     {
-        gsl::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
+        std::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
         size_t written;
         size_t needed;
         if (a->Original)
@@ -1258,38 +1245,38 @@
     ULONG cbBufferSize;
     RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbBufferSize));
 
-    PVOID pvInputTarget;
-    const auto cbInputTarget = a->TargetLength;
-    PVOID pvInputExeName;
-    const auto cbInputExeName = a->ExeLength;
-    PVOID pvInputSource;
-    const auto cbInputSource = a->SourceLength;
-    // clang-format off
-    RETURN_HR_IF(E_INVALIDARG, !IsValidStringBuffer(a->Unicode,
-                                                    pvBuffer,
-                                                    cbBufferSize,
-                                                    3,
-                                                    cbInputExeName,
-                                                    &pvInputExeName,
-                                                    cbInputSource,
-                                                    &pvInputSource,
-                                                    cbInputTarget,
-                                                    &pvInputTarget));
-    // clang-format on
+    // There are 3 strings stored back-to-back within the message payload.
+    // First we verify that their size and alignment are alright and then we extract them.
+    const ULONG cbInputExeName = a->ExeLength;
+    const ULONG cbInputSource = a->SourceLength;
+    const ULONG cbInputTarget = a->TargetLength;
+
+    const auto alignment = a->Unicode ? alignof(wchar_t) : alignof(char);
+    // ExeLength, SourceLength and TargetLength are USHORT and summing them up will not overflow a ULONG.
+    const auto badLength = cbInputTarget + cbInputExeName + cbInputSource > cbBufferSize;
+    // Since (any) alignment is a power of 2, we can use bit tricks to test if the alignment is right:
+    // a) Combining the values with OR works, because we're only interested whether the lowest bits are 0 (= aligned).
+    // b) x % y can be replaced with x & (y - 1) if y is a power of 2.
+    const auto badAlignment = ((cbInputExeName | cbInputSource | cbInputTarget) & (alignment - 1)) != 0;
+    RETURN_HR_IF(E_INVALIDARG, badLength || badAlignment);
+
+    const auto pvInputExeName = static_cast<char*>(pvBuffer);
+    const auto pvInputSource = pvInputExeName + cbInputExeName;
+    const auto pvInputTarget = pvInputSource + cbInputSource;
 
     if (a->Unicode)
     {
+        const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvInputExeName), cbInputExeName / sizeof(wchar_t));
         const std::wstring_view inputSource(reinterpret_cast<wchar_t*>(pvInputSource), cbInputSource / sizeof(wchar_t));
         const std::wstring_view inputTarget(reinterpret_cast<wchar_t*>(pvInputTarget), cbInputTarget / sizeof(wchar_t));
-        const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvInputExeName), cbInputExeName / sizeof(wchar_t));
 
         return m->_pApiRoutines->AddConsoleAliasWImpl(inputSource, inputTarget, inputExeName);
     }
     else
     {
-        const std::string_view inputSource(reinterpret_cast<char*>(pvInputSource), cbInputSource);
-        const std::string_view inputTarget(reinterpret_cast<char*>(pvInputTarget), cbInputTarget);
-        const std::string_view inputExeName(reinterpret_cast<char*>(pvInputExeName), cbInputExeName);
+        const std::string_view inputExeName(pvInputExeName, cbInputExeName);
+        const std::string_view inputSource(pvInputSource, cbInputSource);
+        const std::string_view inputTarget(pvInputTarget, cbInputTarget);
 
         return m->_pApiRoutines->AddConsoleAliasAImpl(inputSource, inputTarget, inputExeName);
     }
@@ -1305,20 +1292,22 @@
     ULONG cbInputBufferSize;
     RETURN_IF_FAILED(m->GetInputBuffer(&pvInputBuffer, &cbInputBufferSize));
 
-    PVOID pvInputExe;
-    const auto cbInputExe = a->ExeLength;
-    PVOID pvInputSource;
-    const auto cbInputSource = a->SourceLength;
-    // clang-format off
-    RETURN_HR_IF(E_INVALIDARG, !IsValidStringBuffer(a->Unicode,
-                                                    pvInputBuffer,
-                                                    cbInputBufferSize,
-                                                    2,
-                                                    cbInputExe,
-                                                    &pvInputExe,
-                                                    cbInputSource,
-                                                    &pvInputSource));
-    // clang-format on
+    // There are 2 strings stored back-to-back within the message payload.
+    // First we verify that their size and alignment are alright and then we extract them.
+    const ULONG cbInputExeName = a->ExeLength;
+    const ULONG cbInputSource = a->SourceLength;
+
+    const auto alignment = a->Unicode ? alignof(wchar_t) : alignof(char);
+    // ExeLength and SourceLength are USHORT and summing them up will not overflow a ULONG.
+    const auto badLength = cbInputExeName + cbInputSource > cbInputBufferSize;
+    // Since (any) alignment is a power of 2, we can use bit tricks to test if the alignment is right:
+    // a) Combining the values with OR works, because we're only interested whether the lowest bits are 0 (= aligned).
+    // b) x % y can be replaced with x & (y - 1) if y is a power of 2.
+    const auto badAlignment = ((cbInputExeName | cbInputSource) & (alignment - 1)) != 0;
+    RETURN_HR_IF(E_INVALIDARG, badLength || badAlignment);
+
+    const auto pvInputExeName = static_cast<char*>(pvInputBuffer);
+    const auto pvInputSource = pvInputExeName + cbInputExeName;
 
     PVOID pvOutputBuffer;
     ULONG cbOutputBufferSize;
@@ -1328,9 +1317,9 @@
     size_t cbWritten;
     if (a->Unicode)
     {
-        const std::wstring_view inputSource(reinterpret_cast<wchar_t*>(pvInputSource), cbInputSource / sizeof(wchar_t));
-        const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvInputExe), cbInputExe / sizeof(wchar_t));
-        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbOutputBufferSize / sizeof(wchar_t));
+        const std::wstring_view inputExeName{ reinterpret_cast<wchar_t*>(pvInputExeName), cbInputExeName / sizeof(wchar_t) };
+        const std::wstring_view inputSource{ reinterpret_cast<wchar_t*>(pvInputSource), cbInputSource / sizeof(wchar_t) };
+        const std::span outputBuffer{ static_cast<wchar_t*>(pvOutputBuffer), cbOutputBufferSize / sizeof(wchar_t) };
         size_t cchWritten;
 
         hr = m->_pApiRoutines->GetConsoleAliasWImpl(inputSource, outputBuffer, cchWritten, inputExeName);
@@ -1340,9 +1329,9 @@
     }
     else
     {
-        const std::string_view inputSource(reinterpret_cast<char*>(pvInputSource), cbInputSource);
-        const std::string_view inputExeName(reinterpret_cast<char*>(pvInputExe), cbInputExe);
-        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbOutputBufferSize);
+        const std::string_view inputExeName{ pvInputExeName, cbInputExeName };
+        const std::string_view inputSource{ pvInputSource, cbInputSource };
+        const std::span outputBuffer{ static_cast<char*>(pvOutputBuffer), cbOutputBufferSize };
         size_t cchWritten;
 
         hr = m->_pApiRoutines->GetConsoleAliasAImpl(inputSource, outputBuffer, cchWritten, inputExeName);
@@ -1443,7 +1432,7 @@
     if (a->Unicode)
     {
         const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));
-        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbAliasesBufferLength / sizeof(wchar_t));
+        std::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbAliasesBufferLength / sizeof(wchar_t));
         size_t cchWritten;
 
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesWImpl(inputExeName, outputBuffer, cchWritten));
@@ -1454,7 +1443,7 @@
     else
     {
         const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
-        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbAliasesBufferLength);
+        std::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbAliasesBufferLength);
         size_t cchWritten;
 
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesAImpl(inputExeName, outputBuffer, cchWritten));
@@ -1482,7 +1471,7 @@
     size_t cbWritten;
     if (a->Unicode)
     {
-        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvBuffer), cbAliasExesBufferLength / sizeof(wchar_t));
+        std::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvBuffer), cbAliasExesBufferLength / sizeof(wchar_t));
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesWImpl(outputBuffer, cchWritten));
 
@@ -1490,7 +1479,7 @@
     }
     else
     {
-        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbAliasExesBufferLength);
+        std::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbAliasExesBufferLength);
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesAImpl(outputBuffer, cchWritten));
 
@@ -1604,7 +1593,7 @@
     if (a->Unicode)
     {
         const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));
-        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbOutputBuffer / sizeof(wchar_t));
+        std::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbOutputBuffer / sizeof(wchar_t));
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryWImpl(inputExeName, outputBuffer, cchWritten));
 
@@ -1614,7 +1603,7 @@
     else
     {
         const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
-        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbOutputBuffer);
+        std::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbOutputBuffer);
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryAImpl(inputExeName, outputBuffer, cchWritten));
 

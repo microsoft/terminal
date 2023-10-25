@@ -60,7 +60,7 @@ it could host any arbitrary content.
 
 ### Security
 
-I don't forsee this implementation by itself raising security concerns. This
+I don't foresee this implementation by itself raising security concerns. This
 feature is mostly concerned with adding support for arbitrary controls, not
 actually implementing some arbitrary controls.
 

@@ -2,20 +2,19 @@
     Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
     the MIT License. See LICENSE in the project root for license information.
 -->
-<Toolkit:XamlApplication x:Class="TerminalApp.App"
-                         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                         xmlns:TA="using:TerminalApp"
-                         xmlns:Toolkit="using:Microsoft.Toolkit.Win32.UI.XamlHost"
-                         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                         xmlns:local="using:TerminalApp"
-                         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                         mc:Ignorable="d">
+<Application x:Class="TerminalApp.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="using:TerminalApp"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives"
+             mc:Ignorable="d">
     <!--
         If you want to prove this works, then add `RequestedTheme="Light"` to
         the properties on the XamlApplication
     -->
-    <Toolkit:XamlApplication.Resources>
+    <Application.Resources>
 
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -46,8 +45,26 @@
                                      Color="{ThemeResource SystemErrorTextColor}" />
 
                     <!--  Suppress top padding  -->
-                    <Thickness x:Key="TabViewHeaderPadding">9,0,5,0</Thickness>
+                    <Thickness x:Key="TabViewHeaderPadding">0,0,0,0</Thickness>
+
                     <Thickness x:Key="TabViewItemBorderThickness">1,1,1,0</Thickness>
+
+                    <!--
+                        Disable the EntranceThemeTransition for our muxc:TabView, which would slowly slide in the tabs
+                        while the window opens. The difference is especially noticeable if window fade-in transitions are
+                        disabled system-wide. On my system this shaves off about 10% of the startup cost and looks better.
+                    -->
+                    <Style TargetType="primitives:TabViewListView">
+                        <Setter Property="ItemContainerTransitions">
+                            <Setter.Value>
+                                <TransitionCollection>
+                                    <AddDeleteThemeTransition />
+                                    <ContentThemeTransition />
+                                    <ReorderThemeTransition />
+                                </TransitionCollection>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
 
                     <!--  Shadow that can be used by any control.  -->
                     <ThemeShadow x:Name="SharedShadow" />
@@ -139,7 +156,7 @@
                                 evaluated as SolidBackgroundFillColorBase. If we try
                                 to use those resources directly though, we don't get
                                 the properly themed versions. Presumably because the
-                                App itself can't have it's RequestedTheme changed at
+                                App itself can't have its RequestedTheme changed at
                                 runtime.
                                 
                                 However, after more discussion with the WinUI
@@ -153,10 +170,13 @@
                                              Color="#2e2e2e" />
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
-                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
+                                            ResourceKey="TabViewBackground" />
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
                                              Color="#0c0c0c" />
+
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor"
+                                             Color="{StaticResource SystemAccentColorDark2}" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
@@ -169,10 +189,13 @@
                                              Color="#e8e8e8" />
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
-                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
+                                            ResourceKey="TabViewBackground" />
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
                                              Color="#ffffff" />
+
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor"
+                                             Color="{StaticResource SystemAccentColorLight2}" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="HighContrast">
@@ -193,6 +216,9 @@
 
                             <StaticResource x:Key="SettingsUiTabBrush"
                                             ResourceKey="SystemControlBackgroundBaseLowBrush" />
+
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor"
+                                             Color="{StaticResource SystemColorHighlightColor}" />
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>
@@ -202,5 +228,5 @@
         </ResourceDictionary>
 
 
-    </Toolkit:XamlApplication.Resources>
-</Toolkit:XamlApplication>
+    </Application.Resources>
+</Application>

@@ -821,7 +821,6 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
         // 1234123412341234
         static constexpr std::array<float, 2> hyperlinkDashes{ 1.f, 3.f };
         RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, hyperlinkDashes.data(), gsl::narrow_cast<UINT32>(hyperlinkDashes.size()), &_dashStrokeStyle));
-        _hyperlinkStrokeStyle = _dashStrokeStyle;
 
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
@@ -1229,10 +1228,10 @@ CATCH_RETURN();
 // - <none> - Updates reference
 void _ScaleByFont(til::rect& cellsToPixels, til::size fontSize) noexcept
 {
-    cellsToPixels.left *= fontSize.cx;
-    cellsToPixels.right *= fontSize.cx;
-    cellsToPixels.top *= fontSize.cy;
-    cellsToPixels.bottom *= fontSize.cy;
+    cellsToPixels.left *= fontSize.width;
+    cellsToPixels.right *= fontSize.width;
+    cellsToPixels.top *= fontSize.height;
+    cellsToPixels.bottom *= fontSize.height;
 }
 
 // Routine Description:
@@ -1663,7 +1662,7 @@ CATCH_RETURN()
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT DxEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                 const til::point coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
@@ -1715,7 +1714,7 @@ try
     _d2dBrushForeground->SetColor(_ColorFFromColorRef(color | 0xff000000));
 
     const auto font = _fontRenderData->GlyphCell().to_d2d_size();
-    const D2D_POINT_2F target = { coordTarget.X * font.width, coordTarget.Y * font.height };
+    const D2D_POINT_2F target = { coordTarget.x * font.width, coordTarget.y * font.height };
     const auto fullRunWidth = font.width * gsl::narrow_cast<unsigned>(cchLine);
 
     const auto DrawLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
@@ -1723,7 +1722,7 @@ try
     };
 
     const auto DrawHyperlinkLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
-        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _hyperlinkStrokeStyle.Get());
+        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _dashStrokeStyle.Get());
     };
 
     // NOTE: Line coordinates are centered within the line, so they need to be
@@ -1980,11 +1979,6 @@ try
         _drawingContext->useItalicFont = textAttributes.IsItalic();
     }
 
-    if (textAttributes.IsHyperlink())
-    {
-        _hyperlinkStrokeStyle = (textAttributes.GetHyperlinkId() == _hyperlinkHoveredId) ? _strokeStyle : _dashStrokeStyle;
-    }
-
     // Update pixel shader settings as background color might have changed
     _ComputePixelShaderSettings();
 
@@ -2112,7 +2106,7 @@ CATCH_RETURN();
 // - area - Rectangle describing dirty area in characters.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
+[[nodiscard]] HRESULT DxEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 try
 {
     area = _invalidMap.runs();
@@ -2286,7 +2280,7 @@ void DxEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 // - centeringHint - The horizontal extent that glyphs are offset from center.
 // Return Value:
 // - S_OK if successful. E_FAIL if there was an error.
-HRESULT DxEngine::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+HRESULT DxEngine::UpdateSoftFont(const std::span<const uint16_t> bitPattern,
                                  const til::size cellSize,
                                  const size_t centeringHint) noexcept
 try

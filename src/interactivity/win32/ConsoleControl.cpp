@@ -52,6 +52,18 @@ using namespace Microsoft::Console::Interactivity::Win32;
                    sizeof(ConsoleEndTaskParams));
 }
 
+[[nodiscard]] NTSTATUS ConsoleControl::SetWindowOwner(HWND hwnd, DWORD processId, DWORD threadId) noexcept
+{
+    CONSOLEWINDOWOWNER ConsoleOwner;
+    ConsoleOwner.hwnd = hwnd;
+    ConsoleOwner.ProcessId = processId;
+    ConsoleOwner.ThreadId = threadId;
+
+    return Control(ConsoleControl::ControlType::ConsoleSetWindowOwner,
+                   &ConsoleOwner,
+                   sizeof(ConsoleOwner));
+}
+
 #pragma endregion
 
 #pragma region Public Methods

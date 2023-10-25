@@ -4,6 +4,7 @@
 #pragma once
 
 #include "DeleteProfileEventArgs.g.h"
+#include "NavigateToProfileArgs.g.h"
 #include "ProfileViewModel.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
@@ -11,6 +12,21 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct NavigateToProfileArgs : NavigateToProfileArgsT<NavigateToProfileArgs>
+    {
+    public:
+        NavigateToProfileArgs(ProfileViewModel profile, Editor::IHostedInWindow windowRoot) :
+            _Profile(profile),
+            _WindowRoot(windowRoot) {}
+
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WindowRoot; }
+        Editor::ProfileViewModel Profile() const noexcept { return _Profile; }
+
+    private:
+        Editor::IHostedInWindow _WindowRoot;
+        Editor::ProfileViewModel _Profile{ nullptr };
+    };
+
     struct ProfileViewModel : ProfileViewModelT<ProfileViewModel>, ViewModelHelper<ProfileViewModel>
     {
     public:
@@ -18,13 +34,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static void UpdateFontList() noexcept;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
+        static Editor::Font FindFontWithLocalizedName(winrt::hstring const& name) noexcept;
 
         ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings);
         Model::TerminalSettings TermSettings() const;
         void DeleteProfile();
 
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() const noexcept;
-        void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) noexcept;
+        void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList);
 
         // bell style bits
         bool IsBellStyleFlagSet(const uint32_t flag);
@@ -35,21 +51,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SetAcrylicOpacityPercentageValue(double value)
         {
             Opacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(value));
-
-            // GH#11372: If we're on Windows 10, and someone wants opacity, then
-            // we'll turn acrylic on for them. Opacity doesn't work without
-            // acrylic on Windows 10.
-            //
-            // BODGY: CascadiaSettings's function IsDefaultTerminalAvailable
-            // is basically a "are we on Windows 11" check, because defterm
-            // only works on Win11. So we'll use that.
-            //
-            // Remove when we can remove the rest of GH#11285
-            if (value < 100.0 &&
-                !winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings::IsDefaultTerminalAvailable())
-            {
-                UseAcrylic(true);
-            }
         };
 
         void SetPadding(double value)
@@ -86,7 +87,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, TabTitle);
         OBSERVABLE_PROJECTED_SETTING(_profile, TabColor);
         OBSERVABLE_PROJECTED_SETTING(_profile, SuppressApplicationTitle);
-        OBSERVABLE_PROJECTED_SETTING(_profile, UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile, ScrollState);
         OBSERVABLE_PROJECTED_SETTING(_profile, Padding);
         OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
@@ -97,16 +97,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), SelectionBackground);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), CursorColor);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Opacity);
+        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), UseAcrylic);
         OBSERVABLE_PROJECTED_SETTING(_profile, HistorySize);
         OBSERVABLE_PROJECTED_SETTING(_profile, SnapOnInput);
         OBSERVABLE_PROJECTED_SETTING(_profile, AltGrAliasing);
         OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
         OBSERVABLE_PROJECTED_SETTING(_profile, UseAtlasEngine);
         OBSERVABLE_PROJECTED_SETTING(_profile, Elevate);
-        OBSERVABLE_PROJECTED_SETTING(_profile, VtPassthrough)
+        OBSERVABLE_PROJECTED_SETTING(_profile, VtPassthrough);
+        OBSERVABLE_PROJECTED_SETTING(_profile, ReloadEnvironmentVariables);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
-        WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
+        WINRT_PROPERTY(bool, FocusDeleteButton, false);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, CloseOnExit);
         GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, ScrollState);
@@ -119,12 +121,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
 
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
-
-        static Editor::Font _GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames);
 
         Model::CascadiaSettings _appSettings;
         Editor::AppearanceViewModel _unfocusedAppearanceViewModel;

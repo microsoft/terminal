@@ -63,14 +63,14 @@ UiaTracing::~UiaTracing() noexcept
     TraceLoggingUnregister(g_UiaProviderTraceProvider);
 }
 
-inline std::wstring UiaTracing::_getValue(const ScreenInfoUiaProviderBase& siup) noexcept
+std::wstring UiaTracing::_getValue(const ScreenInfoUiaProviderBase& siup) noexcept
 {
     std::wstringstream stream;
     stream << "_id: " << siup.GetId();
     return stream.str();
 }
 
-inline std::wstring UiaTracing::_getValue(const UiaTextRangeBase& utr) noexcept
+std::wstring UiaTracing::_getValue(const UiaTextRangeBase& utr) noexcept
 try
 {
     const auto start = utr.GetEndpoint(TextPatternRangeEndpoint_Start);
@@ -78,8 +78,8 @@ try
 
     std::wstringstream stream;
     stream << " _id: " << utr.GetId();
-    stream << " _start: { " << start.X << ", " << start.Y << " }";
-    stream << " _end: { " << end.X << ", " << end.Y << " }";
+    stream << " _start: { " << start.x << ", " << start.y << " }";
+    stream << " _end: { " << end.x << ", " << end.y << " }";
     stream << " _degenerate: " << utr.IsDegenerate();
     stream << " _wordDelimiters: " << utr._wordDelimiters;
     stream << " content: " << utr._getTextValue();
@@ -90,7 +90,7 @@ catch (...)
     return {};
 }
 
-inline std::wstring UiaTracing::_getValue(const TextPatternRangeEndpoint endpoint) noexcept
+std::wstring UiaTracing::_getValue(const TextPatternRangeEndpoint endpoint) noexcept
 {
     switch (endpoint)
     {
@@ -103,7 +103,7 @@ inline std::wstring UiaTracing::_getValue(const TextPatternRangeEndpoint endpoin
     }
 }
 
-inline std::wstring UiaTracing::_getValue(const TextUnit unit) noexcept
+std::wstring UiaTracing::_getValue(const TextUnit unit) noexcept
 {
     switch (unit)
     {
@@ -126,7 +126,7 @@ inline std::wstring UiaTracing::_getValue(const TextUnit unit) noexcept
     }
 }
 
-inline std::wstring UiaTracing::_getValue(const VARIANT val) noexcept
+std::wstring UiaTracing::_getValue(const VARIANT val) noexcept
 {
     // This is not a comprehensive conversion of VARIANT result to string
     // We're only including the one's we need at this time.
@@ -148,7 +148,7 @@ inline std::wstring UiaTracing::_getValue(const VARIANT val) noexcept
     }
 }
 
-inline std::wstring UiaTracing::_getValue(const AttributeType attrType) noexcept
+std::wstring UiaTracing::_getValue(const AttributeType attrType) noexcept
 {
     switch (attrType)
     {
@@ -263,7 +263,7 @@ void UiaTracing::TextRange::FindAttribute(const UiaTextRangeBase& utr, TEXTATTRI
     }
 }
 
-void UiaTracing::TextRange::FindText(const UiaTextRangeBase& base, std::wstring text, bool searchBackward, bool ignoreCase, const UiaTextRangeBase& result) noexcept
+void UiaTracing::TextRange::FindText(const UiaTextRangeBase& base, const std::wstring_view& text, bool searchBackward, bool ignoreCase, const UiaTextRangeBase& result) noexcept
 {
     EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
@@ -272,7 +272,7 @@ void UiaTracing::TextRange::FindText(const UiaTextRangeBase& base, std::wstring 
             g_UiaProviderTraceProvider,
             "UiaTextRange::FindText",
             TraceLoggingValue(_getValue(base).c_str(), "base"),
-            TraceLoggingValue(text.c_str(), "text"),
+            TraceLoggingCountedWideString(text.data(), (ULONG)text.size(), "text"),
             TraceLoggingValue(searchBackward, "searchBackward"),
             TraceLoggingValue(ignoreCase, "ignoreCase"),
             TraceLoggingValue(_getValue(result).c_str(), "result"),
@@ -326,7 +326,7 @@ void UiaTracing::TextRange::GetEnclosingElement(const UiaTextRangeBase& utr) noe
     }
 }
 
-void UiaTracing::TextRange::GetText(const UiaTextRangeBase& utr, int maxLength, std::wstring result) noexcept
+void UiaTracing::TextRange::GetText(const UiaTextRangeBase& utr, int maxLength, const std::wstring_view& result) noexcept
 {
     EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
@@ -336,7 +336,7 @@ void UiaTracing::TextRange::GetText(const UiaTextRangeBase& utr, int maxLength, 
             "UiaTextRange::GetText",
             TraceLoggingValue(_getValue(utr).c_str(), "base"),
             TraceLoggingValue(maxLength, "maxLength"),
-            TraceLoggingValue(result.c_str(), "result"),
+            TraceLoggingCountedWideString(result.data(), (ULONG)result.size(), "result"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }

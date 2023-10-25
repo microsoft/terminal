@@ -43,6 +43,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     constexpr std::wstring_view systemThemeName{ L"system" };
     constexpr std::wstring_view darkThemeName{ L"dark" };
     constexpr std::wstring_view lightThemeName{ L"light" };
+    constexpr std::wstring_view legacySystemThemeName{ L"legacySystem" };
+    constexpr std::wstring_view legacyDarkThemeName{ L"legacyDark" };
+    constexpr std::wstring_view legacyLightThemeName{ L"legacyLight" };
 
     GlobalAppearanceViewModel::GlobalAppearanceViewModel(Model::GlobalAppSettings globalSettings) :
         _GlobalSettings{ globalSettings },
@@ -116,14 +119,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // is always "Use system language" ("und").
             tags.emplace_back(systemLanguageTag);
 
-            // Add our hardcoded languages after the system definition.
+            // Add our hard-coded languages after the system definition.
             for (const auto& v : appLanguageTags)
             {
                 tags.push_back(v);
             }
         }
 
-        // NOTE: The size of tags is always >0, due to tags[0] being hardcoded to "und".
+        // NOTE: The size of tags is always >0, due to tags[0] being hard-coded to "und".
         const auto tagsBegin = ++tags.begin();
         const auto tagsEnd = tags.end();
 
@@ -218,7 +221,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (const auto& theme{ tag.try_as<Model::Theme>() })
         {
-            _GlobalSettings.Theme(theme.Name());
+            _GlobalSettings.Theme(Model::ThemePair{ theme.Name() });
         }
     }
 
@@ -247,6 +250,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (theme.Name() == systemThemeName)
         {
             return RS_(L"Globals_ThemeSystem/Content");
+        }
+        else if (theme.Name() == legacyDarkThemeName)
+        {
+            return RS_(L"Globals_ThemeDarkLegacy/Content");
+        }
+        else if (theme.Name() == legacyLightThemeName)
+        {
+            return RS_(L"Globals_ThemeLightLegacy/Content");
+        }
+        else if (theme.Name() == legacySystemThemeName)
+        {
+            return RS_(L"Globals_ThemeSystemLegacy/Content");
         }
         return theme.Name();
     }

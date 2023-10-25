@@ -20,11 +20,8 @@ unit testing projects in the codebase without a bunch of overhead.
 
 #pragma once
 
-#define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(NT_SUCCESS(x))
-
 #include "../host/globals.h"
 #include "../host/inputReadHandleData.h"
-#include "../buffer/out/CharRow.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 class CommonState
@@ -99,12 +96,12 @@ public:
         Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
         til::size coordWindowSize;
-        coordWindowSize.X = viewWidth;
-        coordWindowSize.Y = viewHeight;
+        coordWindowSize.width = viewWidth;
+        coordWindowSize.height = viewHeight;
 
         til::size coordScreenBufferSize;
-        coordScreenBufferSize.X = bufferWidth;
-        coordScreenBufferSize.Y = bufferHeight;
+        coordScreenBufferSize.width = bufferWidth;
+        coordScreenBufferSize.height = bufferHeight;
 
         UINT uiCursorSize = 12;
 
@@ -147,7 +144,7 @@ public:
         delete gci.pInputBuffer;
     }
 
-    void PrepareCookedReadData(const std::string_view initialData = {})
+    void PrepareCookedReadData(const std::wstring_view initialData = {})
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         auto* readData = new COOKED_READ_DATA(gci.pInputBuffer,
@@ -176,8 +173,8 @@ public:
         Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
         til::size coordScreenBufferSize;
-        coordScreenBufferSize.X = bufferWidth;
-        coordScreenBufferSize.Y = bufferHeight;
+        coordScreenBufferSize.width = bufferWidth;
+        coordScreenBufferSize.height = bufferHeight;
 
         UINT uiCursorSize = 12;
 
@@ -240,27 +237,8 @@ public:
 
         for (til::CoordType iRow = 0; iRow < cRowsToFill; iRow++)
         {
-            ROW& row = textBuffer.GetRowByOffset(iRow);
-            FillRow(&row);
-        }
-
-        textBuffer.GetCursor().SetYPosition(cRowsToFill);
-    }
-
-    void FillTextBufferBisect()
-    {
-        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
-        // fill with some text that fills the whole row and has bisecting double byte characters
-        const auto cRowsToFill = s_csBufferHeight;
-
-        VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
-
-        TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
-
-        for (til::CoordType iRow = 0; iRow < cRowsToFill; iRow++)
-        {
-            ROW& row = textBuffer.GetRowByOffset(iRow);
-            FillBisect(&row);
+            ROW& row = textBuffer.GetMutableRowByOffset(iRow);
+            FillRow(&row, iRow & 1);
         }
 
         textBuffer.GetCursor().SetYPosition(cRowsToFill);
@@ -278,54 +256,43 @@ private:
     std::unique_ptr<TextBuffer> m_backupTextBufferInfo;
     std::unique_ptr<INPUT_READ_HANDLE_DATA> m_readHandle;
 
-    void FillRow(ROW* pRow)
+    void FillRow(ROW* pRow, bool wrapForced)
     {
         // fill a row
         // 9 characters, 6 spaces. 15 total
         // か = \x304b
         // き = \x304d
-        const PCWSTR pwszText = L"AB"
-                                L"\x304b\x304b"
-                                L"C"
-                                L"\x304d\x304d"
-                                L"DE      ";
-        const size_t length = wcslen(pwszText);
 
-        std::vector<DbcsAttribute> attrs(length, DbcsAttribute());
-        // set double-byte/double-width attributes
-        attrs[2].SetLeading();
-        attrs[3].SetTrailing();
-        attrs[5].SetLeading();
-        attrs[6].SetTrailing();
+        uint16_t column = 0;
+        for (const auto& ch : std::wstring_view{ L"AB\u304bC\u304dDE      " })
+        {
+            const uint16_t width = ch >= 0x80 ? 2 : 1;
+            pRow->ReplaceCharacters(column, width, { &ch, 1 });
+            column += width;
+        }
 
-        CharRow& charRow = pRow->GetCharRow();
-        OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
-
-        // set some colors
-        TextAttribute Attr = TextAttribute(0);
-        pRow->GetAttrRow().Reset(Attr);
         // A = bright red on dark gray
         // This string starts at index 0
-        Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_INTENSITY);
-        pRow->GetAttrRow().SetAttrToEnd(0, Attr);
+        auto Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_INTENSITY);
+        pRow->SetAttrToEnd(0, Attr);
 
         // BかC = dark gold on bright blue
         // This string starts at index 1
         Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
-        pRow->GetAttrRow().SetAttrToEnd(1, Attr);
+        pRow->SetAttrToEnd(1, Attr);
 
         // き = bright white on dark purple
         // This string starts at index 5
         Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_BLUE);
-        pRow->GetAttrRow().SetAttrToEnd(5, Attr);
+        pRow->SetAttrToEnd(5, Attr);
 
         // DE = black on dark green
         // This string starts at index 7
         Attr = TextAttribute(BACKGROUND_GREEN);
-        pRow->GetAttrRow().SetAttrToEnd(7, Attr);
+        pRow->SetAttrToEnd(7, Attr);
 
         // odd rows forced a wrap
-        if (pRow->GetId() % 2 != 0)
+        if (wrapForced)
         {
             pRow->SetWrapForced(true);
         }
@@ -333,42 +300,5 @@ private:
         {
             pRow->SetWrapForced(false);
         }
-    }
-
-    void FillBisect(ROW* pRow)
-    {
-        const CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
-        // length 80 string of text with bisecting characters at the beginning and end.
-        // positions of き(\x304d) are at 0, 27-28, 39-40, 67-68, 79
-        auto pwszText =
-            L"\x304d"
-            L"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            L"\x304d\x304d"
-            L"0123456789"
-            L"\x304d\x304d"
-            L"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            L"\x304d\x304d"
-            L"0123456789"
-            L"\x304d";
-        const size_t length = wcslen(pwszText);
-
-        std::vector<DbcsAttribute> attrs(length, DbcsAttribute());
-        // set double-byte/double-width attributes
-        attrs[0].SetTrailing();
-        attrs[27].SetLeading();
-        attrs[28].SetTrailing();
-        attrs[39].SetLeading();
-        attrs[40].SetTrailing();
-        attrs[67].SetLeading();
-        attrs[68].SetTrailing();
-        attrs[79].SetLeading();
-
-        CharRow& charRow = pRow->GetCharRow();
-        OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
-
-        // everything gets default attributes
-        pRow->GetAttrRow().Reset(gci.GetActiveOutputBuffer().GetAttributes());
-
-        pRow->SetWrapForced(true);
     }
 };

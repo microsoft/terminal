@@ -5,7 +5,7 @@ import "Profile.idl";
 #include "IInheritable.idl.h"
 
 #define INHERITABLE_APPEARANCE_SETTING(Type, Name) \
-    _BASE_INHERITABLE_SETTING(Type, Name);      \
+    _BASE_INHERITABLE_SETTING(Type, Name);         \
     Microsoft.Terminal.Settings.Model.IAppearanceConfig Name##OverrideSource { get; }
 
 namespace Microsoft.Terminal.Settings.Model
@@ -22,9 +22,7 @@ namespace Microsoft.Terminal.Settings.Model
         Vertical_Bottom = 0x20
     };
 
-    [flags]
-    enum IntenseStyle
-    {
+    [flags] enum IntenseStyle {
         Bold = 0x1,
         Bright = 0x2,
         All = 0xffffffff
@@ -33,7 +31,10 @@ namespace Microsoft.Terminal.Settings.Model
     interface IAppearanceConfig
     {
         Microsoft.Terminal.Settings.Model.Profile SourceProfile { get; };
-        INHERITABLE_APPEARANCE_SETTING(String, ColorSchemeName);
+
+        INHERITABLE_APPEARANCE_SETTING(String, DarkColorSchemeName);
+        INHERITABLE_APPEARANCE_SETTING(String, LightColorSchemeName);
+
         INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
         INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);
         INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, SelectionBackground);
@@ -53,5 +54,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_APPEARANCE_SETTING(IntenseStyle, IntenseTextStyle);
         INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Core.AdjustTextMode, AdjustIndistinguishableColors);
         INHERITABLE_APPEARANCE_SETTING(Double, Opacity);
+        INHERITABLE_APPEARANCE_SETTING(Boolean, UseAcrylic);
     };
 }

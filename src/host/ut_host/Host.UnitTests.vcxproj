@@ -15,12 +15,7 @@
     <ClCompile Include="ApiRoutinesTests.cpp" />
     <ClCompile Include="ClipboardTests.cpp" />
     <ClCompile Include="ConsoleArgumentsTests.cpp" />
-    <ClCompile Include="CommandLineTests.cpp" />
     <ClCompile Include="CodepointWidthDetectorTests.cpp" />
-    <ClCompile Include="CommandListPopupTests.cpp" />
-    <ClCompile Include="CommandNumberPopupTests.cpp" />
-    <ClCompile Include="CopyFromCharPopupTests.cpp" />
-    <ClCompile Include="CopyToCharPopupTests.cpp" />
     <ClCompile Include="DbcsTests.cpp" />
     <ClCompile Include="HistoryTests.cpp" />
     <ClCompile Include="InitTests.cpp" />
@@ -34,14 +29,11 @@
     <ClCompile Include="TitleTests.cpp" />
     <ClCompile Include="UtilsTests.cpp" />
     <ClCompile Include="Utf8ToWideCharParserTests.cpp" />
-    <ClCompile Include="Utf16ParserTests.cpp" />
     <ClCompile Include="InputBufferTests.cpp" />
-    <ClCompile Include="ReadWaitTests.cpp" />
     <ClCompile Include="ViewportTests.cpp" />
     <ClCompile Include="VtIoTests.cpp" />
     <ClCompile Include="VtRendererTests.cpp" />
     <ClCompile Include="ConptyOutputTests.cpp" />
-    <Clcompile Include="..\..\types\IInputEventStreams.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -99,7 +91,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\inc\CommonState.hpp" />
     <ClInclude Include="..\precomp.h" />
-    <ClInclude Include="PopupTestHelper.hpp" />
     <ClInclude Include="UnicodeLiteral.hpp" />
   </ItemGroup>
   <ItemDefinitionGroup>

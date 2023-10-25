@@ -30,8 +30,10 @@ public:
     static constexpr const int topBorderVisibleHeight = 1;
 
     NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
-    virtual ~NonClientIslandWindow() override;
 
+    void Refrigerate() noexcept override;
+
+    virtual void Close() override;
     void MakeWindow() noexcept override;
     virtual void OnSize(const UINT width, const UINT height) override;
 
@@ -40,7 +42,7 @@ public:
     virtual til::rect GetNonClientFrame(UINT dpi) const noexcept override;
     virtual til::size GetTotalNonClientExclusiveSize(UINT dpi) const noexcept override;
 
-    void Initialize() override;
+    bool Initialize() override;
 
     void OnAppInitialized() override;
     void SetContent(winrt::Windows::UI::Xaml::UIElement content) override;
@@ -48,6 +50,8 @@ public:
     void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) override;
 
     void SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush);
+
+    virtual void UseMica(const bool newValue, const double titlebarOpacity) override;
 
 private:
     std::optional<til::point> _oldIslandPos;
@@ -63,6 +67,9 @@ private:
 
     winrt::Windows::UI::Xaml::ElementTheme _theme;
 
+    bool _useMica{ false };
+    double _titlebarOpacity{ 1.0 };
+
     bool _isMaximized;
     bool _trackingMouse{ false };
 
@@ -76,7 +83,6 @@ private:
     int _GetTopBorderHeight() const noexcept;
     LRESULT _dragBarNcHitTest(const til::point pointer);
 
-    [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
     [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnNcHitTest(POINT ptMouse) const noexcept;
     [[nodiscard]] LRESULT _OnPaint() noexcept;
@@ -91,4 +97,11 @@ private:
     void _UpdateFrameMargins() const noexcept;
     void _UpdateMaximizedState();
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
+
+    struct Revokers
+    {
+        winrt::Windows::UI::Xaml::Controls::Border::SizeChanged_revoker dragBarSizeChanged;
+        winrt::Windows::UI::Xaml::Controls::Grid::SizeChanged_revoker rootGridSizeChanged;
+        winrt::TerminalApp::TitlebarControl::Loaded_revoker titlebarLoaded;
+    } _callbacks{};
 };
