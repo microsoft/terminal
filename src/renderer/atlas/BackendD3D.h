@@ -228,6 +228,7 @@ namespace Microsoft::Console::Render::Atlas
         ATLAS_ATTR_COLD void _drawCursorForeground();
         ATLAS_ATTR_COLD size_t _drawCursorForegroundSlowPath(const CursorRect& c, size_t offset);
         void _drawSelection(const RenderingPayload& p);
+        void _drawSearchSelections(const RenderingPayload& p);
         void _executeCustomShader(RenderingPayload& p);
 
         wil::com_ptr<ID3D11RenderTargetView> _renderTargetView;

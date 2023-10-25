@@ -297,6 +297,11 @@ CATCH_RETURN()
     return S_OK;
 }
 
+[[nodiscard]] HRESULT WddmConEngine::PaintSelections(const std::vector<til::rect>& /*rects*/) noexcept
+{
+    return S_OK;
+}
+
 [[nodiscard]] HRESULT WddmConEngine::PaintCursor(const CursorOptions& /*options*/) noexcept
 {
     return S_OK;

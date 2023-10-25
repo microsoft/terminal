@@ -362,6 +362,7 @@ void Renderer::TriggerSelection()
     {
         // Get selection rectangles
         auto rects = _GetSelectionRects();
+        auto searchSelections = _GetSearchSelectionRects();
 
         // Make a viewport representing the coordinates that are currently presentable.
         const til::rect viewport{ _pData->GetViewport().Dimensions() };
@@ -374,11 +375,14 @@ void Renderer::TriggerSelection()
 
         FOREACH_ENGINE(pEngine)
         {
+            LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSearchSelection));
             LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSelection));
+            LOG_IF_FAILED(pEngine->InvalidateSelection(searchSelections));
             LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
         }
 
         _previousSelection = std::move(rects);
+        _previousSearchSelection = std::move(searchSelections);
 
         NotifyPaintFrame();
     }
@@ -1197,6 +1201,8 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 
         // Get selection rectangles
         const auto rectangles = _GetSelectionRects();
+        const auto searchRectangles = _GetSearchSelectionRects();
+        LOG_IF_FAILED(pEngine->PaintSelections(searchRectangles));
         for (const auto& rect : rectangles)
         {
             for (auto& dirtyRect : dirtyAreas)
@@ -1254,6 +1260,28 @@ std::vector<til::rect> Renderer::_GetSelectionRects() const
 {
     const auto& buffer = _pData->GetTextBuffer();
     auto rects = _pData->GetSelectionRects();
+    // Adjust rectangles to viewport
+    auto view = _pData->GetViewport();
+
+    std::vector<til::rect> result;
+    result.reserve(rects.size());
+
+    for (auto rect : rects)
+    {
+        // Convert buffer offsets to the equivalent range of screen cells
+        // expected by callers, taking line rendition into account.
+        const auto lineRendition = buffer.GetLineRendition(rect.Top());
+        rect = Viewport::FromInclusive(BufferToScreenLine(rect.ToInclusive(), lineRendition));
+        result.emplace_back(view.ConvertToOrigin(rect).ToExclusive());
+    }
+
+    return result;
+}
+
+std::vector<til::rect> Renderer::_GetSearchSelectionRects() const
+{
+    const auto& buffer = _pData->GetTextBuffer();
+    auto rects = _pData->GetSearchSelectionRects();
     // Adjust rectangles to viewport
     auto view = _pData->GetViewport();
 

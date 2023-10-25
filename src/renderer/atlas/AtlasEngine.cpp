@@ -413,6 +413,51 @@ try
 }
 CATCH_RETURN()
 
+[[nodiscard]] HRESULT AtlasEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
+try
+{
+    // Unfortunately there's no step after Renderer::_PaintBufferOutput that
+    // would inform us that it's done with the last AtlasEngine::PaintBufferLine.
+    // As such we got to call _flushBufferLine() here just to be sure.
+    _flushBufferLine();
+
+    for (auto rect : rects)
+    {
+        const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
+        const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
+        const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
+
+        if (y < _p.rows.size() && rect.top >= 0)
+        {
+            auto& row = *_p.rows[y];
+
+            auto it = std::find_if(row.searchSelections.begin(), row.searchSelections.end(), [&from](const SearchSelection& selection) {
+                return selection.from == from;
+            });
+
+            if (it != row.searchSelections.end())
+            {
+                if (to > it->to)
+                {
+                    it->to = to;
+                }
+            }
+            else
+            {
+                auto s = SearchSelection{ from, to };
+                row.searchSelections.emplace_back(s);
+            }
+
+            _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, from * _p.s->font->cellSize.x);
+            _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, y * _p.s->font->cellSize.y);
+            _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, to * _p.s->font->cellSize.x);
+            _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _p.dirtyRectInPx.top + _p.s->font->cellSize.y);
+        }
+    }
+    return S_OK;
+}
+CATCH_RETURN()
+
 [[nodiscard]] HRESULT AtlasEngine::PaintCursor(const CursorOptions& options) noexcept
 try
 {
