@@ -62,6 +62,8 @@ name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
 
 variables:
   - template: templates-v2/variables-nuget-package-version.yml
+    parameters:
+      branding: ${{ parameters.branding }}
   - template: templates-v2/variables-onebranch-config.yml
 
 extends:
