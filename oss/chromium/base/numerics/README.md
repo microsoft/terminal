@@ -20,7 +20,7 @@ The public API is broken out into the following header files:
 
 *** aside
 **Note:** The `Numeric` template types implicitly convert from C numeric types
-and `Numeric` templates that are convertable to an underlying C numeric type.
+and `Numeric` templates that are convertible to an underlying C numeric type.
 The conversion priority for `Numeric` type coercions is:
 
 *   `StrictNumeric` coerces to `ClampedNumeric` and `CheckedNumeric`
