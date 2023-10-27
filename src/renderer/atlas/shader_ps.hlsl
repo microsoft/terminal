@@ -12,7 +12,7 @@ cbuffer ConstBuffer : register(b0)
     float4 gammaRatios;
     float enhancedContrast;
     float underlineWidth;
-    float curlyLineHeight;
+    float curlyLinePeakHeight;
     float curlyLineWaveFreq;
     float curlyLineCellOffset;
 }
@@ -104,16 +104,17 @@ Output main(PSData data) : SV_Target
     }
     case SHADING_TYPE_CURLY_LINE:
     {
-        const int cellRow = data.position.y / backgroundCellSize.y;
+        const int cellRow = floor(data.position.y / backgroundCellSize.y);
         const float cellTop = cellRow * backgroundCellSize.y;
         const float centerY = cellTop + curlyLineCellOffset;
         const float strokeWidthHalf = underlineWidth / 2.0f;
 
-        // The wave starts with a negative-peak(trough). We phase shift it by `Pi` to start with a positive peak(crest).
+        // The wave begins with a negative peak. We phase shift the frequency by
+        // `Pi` to begin with a positive peak.
         const float Pi = radians(180);
         const float s = sin(data.position.x * curlyLineWaveFreq + Pi);
 
-        const float d = abs(centerY + s * curlyLineHeight - data.position.y);
+        const float d = abs(centerY + s * curlyLinePeakHeight - data.position.y);
         const float a = 1 - saturate(d - strokeWidthHalf);
         color = a * premultiplyColor(data.color);
         weights = color.aaaa;
@@ -121,17 +122,18 @@ Output main(PSData data) : SV_Target
     }
     case SHADING_TYPE_CURLY_LINE_WIDE:
     {
-        const int cellRow = data.position.y / backgroundCellSize.y;
-        const float cellTop = cellRow * backgroundCellSize.y;
-        float centerY = cellTop + curlyLineCellOffset;
+        const int prevCellRow = floor(data.position.y / backgroundCellSize.y) - 1;
+        const float prevCellTop = prevCellRow * backgroundCellSize.y;
 
-        // In 'Wide' case, we need to draw the same wave on an area twice as big.
-        const float strokeWidthHalf = underlineWidth;
-        const float amp = curlyLineHeight * 2.0f;
+        // In 'Wide' case, we need to draw the same wave on an area twice as big,
+        // and the position is relative to the previous cell.
+        const float centerY = prevCellTop + 2.0f * curlyLineCellOffset;
+        const float amp = curlyLinePeakHeight * 2.0f;
         const float freq = curlyLineWaveFreq / 2.0f;
-        centerY -= 2 * strokeWidthHalf;
+        const float strokeWidthHalf = underlineWidth;
 
-        // The wave starts with a negative peak(trough). We phase shift it by `Pi` to start with a positive peak(crest).
+        // The wave begins with a negative peak. We phase shift the frequency by
+        // `Pi` to begin with a positive peak.
         const float Pi = radians(180);
         const float s = sin(data.position.x * freq + Pi);
 
