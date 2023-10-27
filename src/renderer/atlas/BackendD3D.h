@@ -298,7 +298,7 @@ namespace Microsoft::Console::Render::Atlas
         // The bounding rect of _cursorRects in pixels.
         til::rect _cursorPosition;
 
-        f32 _curlyLineDrawPeakHeight;
+        f32 _curlyLineDrawPeakHeight = 0;
         FontDecorationPosition _curlyUnderline;
 
         bool _requiresContinuousRedraw = false;
