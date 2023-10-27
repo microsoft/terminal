@@ -525,6 +525,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     wil::unique_hbrush hbr(CreateSolidBrush(gridlineColor));
     RETURN_HR_IF_NULL(E_FAIL, hbr.get());
 
+    // TODO: hbrPrev shouldn't be managed.
     wil::unique_hbrush hbrPrev(SelectBrush(_hdcMemoryContext, hbr.get()));
     RETURN_HR_IF_NULL(E_FAIL, hbrPrev.get());
     hbr.release(); // If SelectBrush was successful, GDI owns the brush. Release for now.
@@ -560,8 +561,8 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     };
     const auto DrawCurlyLine = [&](const auto x, const auto y, const auto cCurlyLines) {
         const auto curlyLineWidth = fontWidth;
-        const auto curlyLineHalfWidth = gsl::narrow_cast<long>(std::floor(curlyLineWidth / 2));
-        const auto controlPointHeight = gsl::narrow_cast<long>(std::floor(3.5f * _lineMetrics.curlylineHeight));
+        const auto curlyLineHalfWidth = lrintf(curlyLineWidth / 2.0f);
+        const auto controlPointHeight = gsl::narrow_cast<long>(std::floor(3.5f * _lineMetrics.curlylinePeakHeight));
         // Each curlyLine requires 3 `POINT`s
         const auto cPoints = gsl::narrow<DWORD>(3 * cCurlyLines);
         std::vector<POINT> points;
@@ -626,28 +627,28 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     hpen.release();
     const auto restorePenOnExit = wil::scope_exit([&] { hpen.reset(SelectPen(_hdcMemoryContext, prevPen)); });
 
-    const auto underlineY = std::lround(ptTarget.y + _lineMetrics.underlineOffset + _lineMetrics.underlineWidth / 2.0f);
+    const auto underlineMidY = std::lround(ptTarget.y + _lineMetrics.underlineOffset + _lineMetrics.underlineWidth / 2.0f);
     if (lines.test(GridLines::Underline))
     {
-        return DrawStrokedLine(ptTarget.x, underlineY, widthOfAllCells);
+        return DrawStrokedLine(ptTarget.x, underlineMidY, widthOfAllCells);
     }
     else if (lines.test(GridLines::DoubleUnderline))
     {
-        const auto doubleUnderlineBottomLineY = std::lround(ptTarget.y + _lineMetrics.underlineOffset2 + _lineMetrics.underlineWidth / 2.0f);
-        RETURN_IF_FAILED(DrawStrokedLine(ptTarget.x, underlineY, widthOfAllCells));
-        return DrawStrokedLine(ptTarget.x, doubleUnderlineBottomLineY, widthOfAllCells);
+        const auto doubleUnderlineBottomLineMidY = std::lround(ptTarget.y + _lineMetrics.underlineOffset2 + _lineMetrics.underlineWidth / 2.0f);
+        RETURN_IF_FAILED(DrawStrokedLine(ptTarget.x, underlineMidY, widthOfAllCells));
+        return DrawStrokedLine(ptTarget.x, doubleUnderlineBottomLineMidY, widthOfAllCells);
     }
     else if (lines.test(GridLines::CurlyUnderline))
     {
-        return DrawCurlyLine(ptTarget.x, underlineY, cchLine);
+        return DrawCurlyLine(ptTarget.x, underlineMidY, cchLine);
     }
     else if (lines.test(GridLines::DottedUnderline))
     {
-        return DrawStrokedLine(ptTarget.x, underlineY, widthOfAllCells);
+        return DrawStrokedLine(ptTarget.x, underlineMidY, widthOfAllCells);
     }
     else if (lines.test(GridLines::DashedUnderline))
     {
-        return DrawStrokedLine(ptTarget.x, underlineY, widthOfAllCells);
+        return DrawStrokedLine(ptTarget.x, underlineMidY, widthOfAllCells);
     }
 
     return S_OK;

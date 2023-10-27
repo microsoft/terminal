@@ -121,7 +121,7 @@ namespace Microsoft::Console::Render
             int underlineWidth;
             int strikethroughOffset;
             int strikethroughWidth;
-            int curlylineHeight;
+            int curlylinePeakHeight;
         };
 
         LineMetrics _lineMetrics;
