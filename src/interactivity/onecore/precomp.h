@@ -10,13 +10,16 @@
 #include <nt.h>
 #include <ntrtl.h>
 #include <nturtl.h>
+#define WIN32_NO_STATUS
 #include <windows.h>
+#undef WIN32_NO_STATUS
 #include "wchar.h"
 
 // Extension presence detection
 #include <sysparamsext.h>
 
 #define _DDK_INCLUDED
+#define NO_WINTERNL_INBOX_BUILD
 #include "../../host/precomp.h"
 
 #else
