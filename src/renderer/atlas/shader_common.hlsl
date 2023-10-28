@@ -6,12 +6,13 @@
 #define SHADING_TYPE_TEXT_GRAYSCALE     1
 #define SHADING_TYPE_TEXT_CLEARTYPE     2
 #define SHADING_TYPE_TEXT_PASSTHROUGH   3
+#define SHADING_TYPE_TEXTURED_LAST      SHADING_TYPE_TEXT_PASSTHROUGH
+// Following types use texcoord as a 
+// non-interpolated value by sharing
+// the same value across all vertices.
 #define SHADING_TYPE_DOTTED_LINE        4
-#define SHADING_TYPE_DOTTED_LINE_WIDE   5
-#define SHADING_TYPE_DASHED_LINE        6
-#define SHADING_TYPE_DASHED_LINE_WIDE   7
-#define SHADING_TYPE_CURLY_LINE         8
-#define SHADING_TYPE_CURLY_LINE_WIDE    9
+#define SHADING_TYPE_DASHED_LINE        5
+#define SHADING_TYPE_CURLY_LINE         6
 // clang-format on
 
 struct VSData

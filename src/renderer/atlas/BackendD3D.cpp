@@ -1683,10 +1683,6 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
     const auto verticalShift = static_cast<u8>(row->lineRendition >= LineRendition::DoubleHeightTop);
 
     const auto cellSize = p.s->font->cellSize;
-    const auto dottedLineType = horizontalShift ? ShadingType::DottedLineWide : ShadingType::DottedLine;
-    const auto dashedLineType = horizontalShift ? ShadingType::DashedLineWide : ShadingType::DashedLine;
-    const auto curlyLineType = horizontalShift ? ShadingType::CurlyLineWide : ShadingType::CurlyLine;
-
     const auto rowTop = static_cast<i16>(cellSize.y * y);
     const auto rowBottom = static_cast<i16>(rowTop + cellSize.y);
 
@@ -1735,6 +1731,7 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
                 .shadingType = shadingType,
                 .position = { left, static_cast<i16>(rt) },
                 .size = { width, static_cast<u16>(rb - rt) },
+                .texcoord = { static_cast<u16>(1 << horizontalShift), static_cast<u16>(1 << verticalShift) },
                 .color = color,
             };
         }
@@ -1772,15 +1769,15 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         }
         if (r.lines.any(GridLines::DottedUnderline, GridLines::HyperlinkUnderline))
         {
-            appendHorizontalLine(r, p.s->font->underline, dottedLineType, r.underlineColor);
+            appendHorizontalLine(r, p.s->font->underline, ShadingType::DottedLine, r.underlineColor);
         }
         if (r.lines.test(GridLines::DashedUnderline))
         {
-            appendHorizontalLine(r, p.s->font->underline, dashedLineType, r.underlineColor);
+            appendHorizontalLine(r, p.s->font->underline, ShadingType::DashedLine, r.underlineColor);
         }
         if (r.lines.test(GridLines::CurlyUnderline))
         {
-            appendHorizontalLine(r, _curlyUnderline, curlyLineType, r.underlineColor);
+            appendHorizontalLine(r, _curlyUnderline, ShadingType::CurlyLine, r.underlineColor);
         }
         if (r.lines.test(GridLines::DoubleUnderline))
         {
@@ -2013,6 +2010,10 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const CursorRect& c, size_t off
         return 0;
     }
 
+    // Line drawing primitives requires texcoord to remain the same. Using this
+    // flag, we'll also avoid the need for branching in the calculations below.
+    const auto isStyledLineDrawing = static_cast<u8>(it.shadingType >= ShadingType::StyledLineDrawingFirst && it.shadingType <= ShadingType::StyledLineDrawingLast);
+
     const int cursorL = c.position.x;
     const int cursorT = c.position.y;
     const int cursorR = cursorL + c.size.x;
@@ -2092,8 +2093,8 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const CursorRect& c, size_t off
         target.position.y = static_cast<i16>(cutout.top);
         target.size.x = static_cast<u16>(cutout.right - cutout.left);
         target.size.y = static_cast<u16>(cutout.bottom - cutout.top);
-        target.texcoord.x = static_cast<u16>(it.texcoord.x + cutout.left - instanceL);
-        target.texcoord.y = static_cast<u16>(it.texcoord.y + cutout.top - instanceT);
+        target.texcoord.x = static_cast<u16>(it.texcoord.x + !isStyledLineDrawing * (cutout.left - instanceL));
+        target.texcoord.y = static_cast<u16>(it.texcoord.y + !isStyledLineDrawing * (cutout.top - instanceT));
         target.color = it.color;
     }
 
@@ -2109,8 +2110,8 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const CursorRect& c, size_t off
     target.position.y = static_cast<i16>(intersectionT);
     target.size.x = static_cast<u16>(intersectionR - intersectionL);
     target.size.y = static_cast<u16>(intersectionB - intersectionT);
-    target.texcoord.x = static_cast<u16>(it.texcoord.x + intersectionL - instanceL);
-    target.texcoord.y = static_cast<u16>(it.texcoord.y + intersectionT - instanceT);
+    target.texcoord.x = static_cast<u16>(it.texcoord.x + !isStyledLineDrawing * (intersectionL - instanceL));
+    target.texcoord.y = static_cast<u16>(it.texcoord.y + !isStyledLineDrawing * (intersectionT - instanceT));
     target.color = color;
 
     return addedInstances;

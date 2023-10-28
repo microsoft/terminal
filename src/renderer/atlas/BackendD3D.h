@@ -68,20 +68,20 @@ namespace Microsoft::Console::Render::Atlas
             TextGrayscale = 1,
             TextClearType = 2,
             TextPassthrough = 3,
+            // Keep all styled line drawing primitives together.
             DottedLine = 4,
-            DottedLineWide = 5,
-            DashedLine = 6,
-            DashedLineWide = 7,
-            CurlyLine = 8,
-            CurlyLineWide = 9,
+            DashedLine = 5,
+            CurlyLine = 6,
             // All items starting here will be drawing as a solid RGBA color
-            SolidLine = 10,
+            SolidLine = 7,
 
-            Cursor = 11,
-            Selection = 12,
+            Cursor = 8,
+            Selection = 9,
 
             TextDrawingFirst = TextGrayscale,
             TextDrawingLast = SolidLine,
+            StyledLineDrawingFirst = DottedLine,
+            StyledLineDrawingLast = CurlyLine
         };
 
         // NOTE: Don't initialize any members in this struct. This ensures that no
