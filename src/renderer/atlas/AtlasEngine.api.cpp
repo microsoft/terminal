@@ -686,19 +686,12 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     adjustedWidth = std::max(1.0f, adjustedWidth);
     adjustedHeight = std::max(1.0f, adjustedHeight);
 
-    // TODO: This helps in testing the underlines at different underline
-    // widths, particularly curly line, so they don't break if/when we get
-    // support for user customizable underline width. Remove it before merging.
-    // I'm using 1.5f as a hardcoded value below. In the future, we would
-    // get it from the user/config.
-    const auto underlineWidthScale = std::clamp(1.0f, 1.5f, 2.0f);
-
     const auto baseline = std::roundf(ascent + (lineGap + adjustedHeight - advanceHeight) / 2.0f);
     const auto underlinePos = std::roundf(baseline + underlinePosition);
-    const auto underlineWidth = std::max(1.0f, std::roundf(underlineThickness * underlineWidthScale));
+    const auto underlineWidth = std::max(1.0f, std::roundf(underlineThickness));
     const auto strikethroughPos = std::roundf(baseline + strikethroughPosition);
-    const auto strikethroughWidth = std::max(1.0f, std::roundf(strikethroughThickness * underlineWidthScale));
-    const auto thinLineWidth = std::max(1.0f, std::roundf(underlineThickness * underlineWidthScale / 2.0f));
+    const auto strikethroughWidth = std::max(1.0f, std::roundf(strikethroughThickness));
+    const auto thinLineWidth = std::max(1.0f, std::roundf(underlineThickness / 2.0f));
 
     // For double underlines we loosely follow what Word does:
     // 1. The lines are half the width of an underline (= thinLineWidth)
