@@ -1767,19 +1767,19 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         {
             appendHorizontalLine(r, p.s->font->underline, ShadingType::SolidLine, r.underlineColor);
         }
-        if (r.lines.any(GridLines::DottedUnderline, GridLines::HyperlinkUnderline))
+        else if (r.lines.any(GridLines::DottedUnderline, GridLines::HyperlinkUnderline))
         {
             appendHorizontalLine(r, p.s->font->underline, ShadingType::DottedLine, r.underlineColor);
         }
-        if (r.lines.test(GridLines::DashedUnderline))
+        else if (r.lines.test(GridLines::DashedUnderline))
         {
             appendHorizontalLine(r, p.s->font->underline, ShadingType::DashedLine, r.underlineColor);
         }
-        if (r.lines.test(GridLines::CurlyUnderline))
+        else if (r.lines.test(GridLines::CurlyUnderline))
         {
             appendHorizontalLine(r, _curlyUnderline, ShadingType::CurlyLine, r.underlineColor);
         }
-        if (r.lines.test(GridLines::DoubleUnderline))
+        else if (r.lines.test(GridLines::DoubleUnderline))
         {
             for (const auto pos : p.s->font->doubleUnderline)
             {
