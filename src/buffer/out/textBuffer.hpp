@@ -137,6 +137,7 @@ public:
 
     static size_t GraphemeNext(const std::wstring_view& chars, size_t position) noexcept;
     static size_t GraphemePrev(const std::wstring_view& chars, size_t position) noexcept;
+    static size_t FitTextIntoColumns(const std::wstring_view& chars, til::CoordType columnLimit, til::CoordType& columns) noexcept;
 
     til::point NavigateCursor(til::point position, til::CoordType distance) const;
 
