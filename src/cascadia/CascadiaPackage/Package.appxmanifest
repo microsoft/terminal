@@ -169,7 +169,6 @@
         <uap5:Extension Category="windows.startupTask">
           <uap5:StartupTask
             TaskId="StartTerminalOnLoginTask"
-            Enabled="false"
             DisplayName="ms-resource:AppName" />
         </uap5:Extension>
         <uap3:Extension Category="windows.appExtension">
