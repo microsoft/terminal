@@ -705,6 +705,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //to transition smoothly between the two.
         _runtimeFocusedOpacity = focused ? newOpacity : _runtimeFocusedOpacity;
 
+        //Forces focused acrylic when Command Palette is open upon changing opacity
+        _runtimeUseAcrylic = FocusedAcrylic();
+
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
         if (_renderEngine)
@@ -917,15 +920,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (_settings->EnableUnfocusedAcrylic())
             {
                 // Focused Acrylic from settings should be ignored if overridden at runtime
-     /*           bool newAcrylic = focused ? FocusedAcrylic() : newAppearance->UseAcrylic();
-                UseAcrylic(newAcrylic);*/
-
-                //_runtimeUseAcrylic = newAppearance->UseAcrylic();
-                OutputDebugStringW(L"Focused: ");
-                OutputDebugStringW(focused ? L"true\n" : L"false\n");
-
-                // OutputDebugStringW(L"Acrylic: ");
-                // OutputDebugStringW(_runtimeUseAcrylic ? L"true\n" : L"false\n");
+                bool newAcrylic = focused ? FocusedAcrylic() : newAppearance->UseAcrylic();
+                UseAcrylic(newAcrylic);
             }
 
             // Update the renderer as well. It might need to fall back from
