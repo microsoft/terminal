@@ -720,15 +720,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::ToggleAcrylic(const bool focused)
     {
-        // Don't Toggle Acrylic if they have transparency turned off
-
         UseAcrylic(!UseAcrylic());
 
-        if (focused)
-        {
-            _runtimeFocusedAcrylic = UseAcrylic();
-        }
-
+        //Stores the focused runtime acyrlic separately from unfocused acrylic
+        //to transition smoothly between the two.
+        _runtimeFocusedAcrylic = focused ? UseAcrylic() : _runtimeFocusedAcrylic;
+        
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
         if (_renderEngine)
@@ -919,14 +916,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // No need to update Acrylic if UnfocusedAcrylic is disabled
             if (_settings->EnableUnfocusedAcrylic())
             {
-                // Focused Acrylic from settings should be ignored if overriden at runtime
+                // Focused Acrylic from settings should be ignored if overridden at runtime
                 bool newAcrylic = focused ? FocusedAcrylic() : newAppearance->UseAcrylic();
-
-                OutputDebugStringW((L"UseAcrylic: " + std::to_wstring(UseAcrylic()) + L"\n").c_str());
-                OutputDebugStringW(L"New Acrylic: ");
-                OutputDebugStringW(newAcrylic ? L"true\n" : L"false\n");
-
-                // Manually turn off acrylic if they turn off transparency.
                 UseAcrylic(newAcrylic);
             }
 
