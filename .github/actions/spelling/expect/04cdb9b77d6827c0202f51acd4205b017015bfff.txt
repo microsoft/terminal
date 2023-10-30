@@ -1,0 +1,7 @@
+delimeter
+EOB
+overwrrites
+swrapped
+wordi
+wordiswrapped
+wrappe

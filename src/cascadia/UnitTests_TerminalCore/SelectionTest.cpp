@@ -556,6 +556,271 @@ namespace TerminalCoreUnitTests
             ValidateSingleRowSelection(term, til::inclusive_rect({ 15, 10, 15, 10 }));
         }
 
+
+        {
+            Terminal term;
+            DummyRenderer renderer{ &term };
+            term.Create({ 15, 100 }, 0, renderer);
+
+            // set word delimiters for terminal
+            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
+            term.UpdateSettings(settings);
+
+            // Insert text at position (0,10)
+            const std::wstring_view text = L"this wordiswrapping";
+            term.GetTextBuffer().GetCursor().SetPosition({ 0, 10 });
+            term.Write(text);
+
+            // Simulate click at (x,y) = (8,10)
+            // this is over the 'r' char in "word"
+            auto clickPos = til::point{ 8, 10 };
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(2));
+
+            // verify first selection rect
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, 10, 15, 10 }));
+
+            // verify second selection rect
+            selection = term.GetViewport().ConvertToOrigin(selectionRects.at(1)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 11, 2, 11 }));
+        }
+        {
+            Terminal term;
+            DummyRenderer renderer{ &term };
+            term.Create({ 15, 100 }, 0, renderer);
+
+            // set word delimiters for terminal
+            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
+            term.UpdateSettings(settings);
+
+            // Insert text at position (0,10)
+            const std::wstring_view text = L"this wordiswrapping";
+            term.GetTextBuffer().GetCursor().SetPosition({ 0, 10 });
+            term.Write(text);
+
+            // Simulate click at (x,y) = (8,10)
+            // this is over the 'r' char in "word"
+            auto clickPos = til::point{ 8, 10 };
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(2));
+
+            // verify first selection rect
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, 10, 15, 10 }));
+
+            // verify second selection rect
+            selection = term.GetViewport().ConvertToOrigin(selectionRects.at(1)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 11, 2, 11 }));
+        }
+        {
+            Terminal term;
+            DummyRenderer renderer{ &term };
+            term.Create({ 15, 100 }, 0, renderer);
+
+            // set word delimiters for terminal
+            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
+            term.UpdateSettings(settings);
+
+            // Insert text at position (0,10)
+            const std::wstring_view text = L"this wordiswrapping";
+            term.GetTextBuffer().GetCursor().SetPosition({ 0, 10 });
+            term.Write(text);
+
+            // Simulate click at (x,y) = (8,10)
+            // this is over the 'r' char in "word"
+            auto clickPos = til::point{ 8, 10 };
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(2));
+
+            // verify first selection rect
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, 10, 15, 10 }));
+
+            // verify second selection rect
+            selection = term.GetViewport().ConvertToOrigin(selectionRects.at(1)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 11, 2, 11 }));
+        }
+        {
+            Terminal term;
+            DummyRenderer renderer{ &term };
+            term.Create({ 15, 100 }, 0, renderer);
+
+            // set word delimiters for terminal
+            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
+            term.UpdateSettings(settings);
+
+            // Insert text at position (0,10)
+            const std::wstring_view text = L"this wordiswrapping";
+            term.GetTextBuffer().GetCursor().SetPosition({ 0, 10 });
+            term.Write(text);
+
+            // Simulate click at (x,y) = (8,10)
+            // this is over the 'r' char in "word"
+            auto clickPos = til::point{ 8, 10 };
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(2));
+
+            // verify first selection rect
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, 10, 15, 10 }));
+
+            // verify second selection rect
+            selection = term.GetViewport().ConvertToOrigin(selectionRects.at(1)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 11, 2, 11 }));
+        }
+        {
+            Terminal term;
+            DummyRenderer renderer{ &term };
+            term.Create({ 15, 100 }, 0, renderer);
+
+            // set word delimiters for terminal
+            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
+            term.UpdateSettings(settings);
+
+            // Insert text at position (0,10)
+            const std::wstring_view text = L"this wordiswrapping";
+            term.GetTextBuffer().GetCursor().SetPosition({ 0, 10 });
+            term.Write(text);
+
+            // Simulate click at (x,y) = (8,10)
+            // this is over the 'r' char in "word"
+            auto clickPos = til::point{ 8, 10 };
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(2));
+
+            // verify first selection rect
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, 10, 15, 10 }));
+
+            // verify second selection rect
+            selection = term.GetViewport().ConvertToOrigin(selectionRects.at(1)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 11, 2, 11 }));
+        }
+        {
+            Terminal term;
+            DummyRenderer renderer{ &term };
+            term.Create({ 15, 100 }, 0, renderer);
+
+            // set word delimiters for terminal
+            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
+            term.UpdateSettings(settings);
+
+            // Insert text at position (0,10)
+            const std::wstring_view text = L"this wordiswrapping";
+            term.GetTextBuffer().GetCursor().SetPosition({ 0, 10 });
+            term.Write(text);
+
+            // Simulate click at (x,y) = (8,10)
+            // this is over the 'r' char in "word"
+            auto clickPos = til::point{ 8, 10 };
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(2));
+
+            // verify first selection rect
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, 10, 15, 10 }));
+
+            // verify second selection rect
+            selection = term.GetViewport().ConvertToOrigin(selectionRects.at(1)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 11, 2, 11 }));
+        }
+        {
+            Terminal term;
+            DummyRenderer renderer{ &term };
+            term.Create({ 15, 100 }, 0, renderer);
+
+            // set word delimiters for terminal
+            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
+            term.UpdateSettings(settings);
+
+            // Insert text at position (0,10)
+            const std::wstring_view text = L"this wordiswrapping";
+            term.GetTextBuffer().GetCursor().SetPosition({ 0, 10 });
+            term.Write(text);
+
+            // Simulate click at (x,y) = (8,10)
+            // this is over the 'r' char in "word"
+            auto clickPos = til::point{ 8, 10 };
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(2));
+
+            // verify first selection rect
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, 10, 15, 10 }));
+
+            // verify second selection rect
+            selection = term.GetViewport().ConvertToOrigin(selectionRects.at(1)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 11, 2, 11 }));
+        }
+        {
+            Terminal term;
+            DummyRenderer renderer{ &term };
+            term.Create({ 15, 100 }, 0, renderer);
+
+            // set word delimiters for terminal
+            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
+            term.UpdateSettings(settings);
+
+            // Insert text at position (0,10)
+            const std::wstring_view text = L"this wordiswrapping";
+            term.GetTextBuffer().GetCursor().SetPosition({ 0, 10 });
+            term.Write(text);
+
+            // Simulate click at (x,y) = (8,10)
+            // this is over the 'r' char in "word"
+            auto clickPos = til::point{ 8, 10 };
+            term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(2));
+
+            // verify first selection rect
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 5, 10, 15, 10 }));
+
+            // verify second selection rect
+            selection = term.GetViewport().ConvertToOrigin(selectionRects.at(1)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, til::inclusive_rect({ 0, 11, 2, 11 }));
+        }
         TEST_METHOD(DoubleClickDrag_Right)
         {
             Terminal term{ Terminal::TestDummyMarker{} };
