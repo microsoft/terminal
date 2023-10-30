@@ -725,7 +725,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         UseAcrylic(!UseAcrylic());
 
-        //Stores the focused runtime acyrlic separately from unfocused acrylic
+        //Stores the focused runtime acrylic separately from unfocused acrylic
         //to transition smoothly between the two.
         _runtimeFocusedAcrylic = focused ? UseAcrylic() : _runtimeFocusedAcrylic;
         
@@ -858,8 +858,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _runtimeFocusedOpacity = std::nullopt;
 
         // Manually turn off acrylic if they turn off transparency.
-        _runtimeUseAcrylic = _settings->Opacity() < 1.0 && _settings->UseAcrylic();
-        _acrylicToggle = _settings->UseAcrylic();
+        _runtimeUseAcrylic = _settings->UseAcrylic();
 
         const auto sizeChanged = _setFontSizeUnderLock(_settings->FontSize());
 
