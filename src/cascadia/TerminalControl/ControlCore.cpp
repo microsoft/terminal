@@ -728,7 +728,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //Stores the focused runtime acrylic separately from unfocused acrylic
         //to transition smoothly between the two.
         _runtimeFocusedAcrylic = focused ? UseAcrylic() : _runtimeFocusedAcrylic;
-        
+
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
         if (_renderEngine)
