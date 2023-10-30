@@ -292,8 +292,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
         };
 
-        bool _acrylicToggle;
-
         std::atomic<bool> _initializedTerminal{ false };
         bool _closing{ false };
 
