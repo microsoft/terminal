@@ -917,8 +917,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (_settings->EnableUnfocusedAcrylic())
             {
                 // Focused Acrylic from settings should be ignored if overridden at runtime
-                bool newAcrylic = focused ? FocusedAcrylic() : newAppearance->UseAcrylic();
-                UseAcrylic(newAcrylic);
+     /*           bool newAcrylic = focused ? FocusedAcrylic() : newAppearance->UseAcrylic();
+                UseAcrylic(newAcrylic);*/
+
+                //_runtimeUseAcrylic = newAppearance->UseAcrylic();
+                OutputDebugStringW(L"Focused: ");
+                OutputDebugStringW(focused ? L"true\n" : L"false\n");
+
+                // OutputDebugStringW(L"Acrylic: ");
+                // OutputDebugStringW(_runtimeUseAcrylic ? L"true\n" : L"false\n");
             }
 
             // Update the renderer as well. It might need to fall back from
