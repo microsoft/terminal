@@ -403,29 +403,35 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
             /* ppCode      */ blob.addressof(),
             /* ppErrorMsgs */ error.addressof());
 
-        // Unless we can determine otherwise, assume this shader requires evaluation every frame
-        _requiresContinuousRedraw = true;
-
         if (SUCCEEDED(hr))
         {
-            THROW_IF_FAILED(p.device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, _customPixelShader.put()));
+            THROW_IF_FAILED(p.device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, _customPixelShader.addressof()));
 
             // Try to determine whether the shader uses the Time variable
             wil::com_ptr<ID3D11ShaderReflection> reflector;
-            if (SUCCEEDED_LOG(D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(reflector.put()))))
+            if (SUCCEEDED_LOG(D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(reflector.addressof()))))
             {
+                // Depending on the version of the d3dcompiler_*.dll, the next two functions either return nullptr
+                // on failure or an instance of CInvalidSRConstantBuffer or CInvalidSRVariable respectively,
+                // which cause GetDesc() to return E_FAIL. In other words, we have to assume that any failure in the
+                // next few lines indicates that the cbuffer is entirely unused (--> _requiresContinuousRedraw=false).
                 if (ID3D11ShaderReflectionConstantBuffer* constantBufferReflector = reflector->GetConstantBufferByIndex(0)) // shader buffer
                 {
                     if (ID3D11ShaderReflectionVariable* variableReflector = constantBufferReflector->GetVariableByIndex(0)) // time
                     {
                         D3D11_SHADER_VARIABLE_DESC variableDescriptor;
-                        if (SUCCEEDED_LOG(variableReflector->GetDesc(&variableDescriptor)))
+                        if (SUCCEEDED(variableReflector->GetDesc(&variableDescriptor)))
                         {
                             // only if time is used
                             _requiresContinuousRedraw = WI_IsFlagSet(variableDescriptor.uFlags, D3D_SVF_USED);
                         }
                     }
                 }
+            }
+            else
+            {
+                // Unless we can determine otherwise, assume this shader requires evaluation every frame
+                _requiresContinuousRedraw = true;
             }
         }
         else
@@ -447,8 +453,6 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
     else if (p.s->misc->useRetroTerminalEffect)
     {
         THROW_IF_FAILED(p.device->CreatePixelShader(&custom_shader_ps[0], sizeof(custom_shader_ps), nullptr, _customPixelShader.put()));
-        // We know the built-in retro shader doesn't require continuous redraw.
-        _requiresContinuousRedraw = false;
     }
 
     if (_customPixelShader)
