@@ -398,6 +398,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
                         switch (bufferType)
                         {
+                        case WINHTTP_WEB_SOCKET_BINARY_MESSAGE_BUFFER_TYPE:
                         case WINHTTP_WEB_SOCKET_UTF8_FRAGMENT_BUFFER_TYPE:
                         case WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE:
                         {
@@ -797,7 +798,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - an optional HTTP method (defaults to POST if content is present, GET otherwise)
     // Return value:
     // - the response from the server as a json value
-    WDJ::JsonObject AzureConnection::_SendRequestReturningJson(std::wstring_view uri, const WWH::IHttpContent& content, WWH::HttpMethod method)
+    WDJ::JsonObject AzureConnection::_SendRequestReturningJson(std::wstring_view uri, const WWH::IHttpContent& content, WWH::HttpMethod method, const Windows::Foundation::Uri referer)
     {
         if (!method)
         {
@@ -809,6 +810,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         auto headers{ request.Headers() };
         headers.Accept().TryParseAdd(L"application/json");
+
+        if (referer)
+        {
+            headers.Referer(referer);
+        }
 
         const auto response{ _httpClient.SendRequestAsync(request).get() };
         const auto string{ response.Content().ReadAsStringAsync().get() };
@@ -974,17 +980,35 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto uri{ fmt::format(L"{}terminals?cols={}&rows={}&version=2019-01-01&shell={}", _cloudShellUri, _initialCols, _initialRows, shellType) };
 
         WWH::HttpStringContent content{
-            L"",
+            L"{}",
             WSS::UnicodeEncoding::Utf8,
             // LOAD-BEARING. the API returns "'content-type' should be 'application/json' or 'multipart/form-data'"
             L"application/json"
         };
 
-        const auto terminalResponse = _SendRequestReturningJson(uri, content);
+        const auto terminalResponse = _SendRequestReturningJson(uri, content, WWH::HttpMethod::Post(), Windows::Foundation::Uri(_cloudShellUri));
         _terminalID = terminalResponse.GetNamedString(L"id");
 
+        auto socketUri = terminalResponse.GetNamedString(L"socketUri");
+
+        // we have to do some post-handling to get the proper socket endpoint
+        // at this point, socketUri is of the form: wss://ccon-prod-westus-aci-03.servicebus.windows.net/cc-AAAA-AAAAAAAA//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        // we need it to become:                    wss://ccon-prod-westus-aci-03.servicebus.windows.net/$hc/cc-AAAA-AAAAAAAA/terminals/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        std::wstring wSocketUri{ socketUri };
+
+        // get the substring up until the ".net"
+        const auto dotNetPos = wSocketUri.find(L".net") + 4;
+        const auto wSocketUriBody = wSocketUri.substr(0, dotNetPos);
+
+        // get the portion between the ".net" and the "//" (this is the cc-AAAA-AAAAAAAA part)
+        const auto lastDoubleSlashPos = wSocketUri.find_last_of(L"//");
+        const auto wSocketUriMiddle = wSocketUri.substr(dotNetPos, lastDoubleSlashPos - (dotNetPos));
+
+        // piece together the final uri, adding in the "$hc" and "terminals" where needed
+        auto finalSocketUri{ fmt::format(L"{}/$hc{}terminals/{}", wSocketUriBody, wSocketUriMiddle, _terminalID) };
+
         // Return the uri
-        return terminalResponse.GetNamedString(L"socketUri");
+        return winrt::hstring(finalSocketUri);
     }
 
     // Method description:
