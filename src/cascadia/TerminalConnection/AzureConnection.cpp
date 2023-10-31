@@ -994,6 +994,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // we have to do some post-handling to get the proper socket endpoint
         // at this point, socketUri is of the form: wss://ccon-prod-westus-aci-03.servicebus.windows.net/cc-AAAA-AAAAAAAA//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         // we need it to become:                    wss://ccon-prod-westus-aci-03.servicebus.windows.net/$hc/cc-AAAA-AAAAAAAA/terminals/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        // (the "aaaaaa..." part at the end is just the _terminalID, that we already have stored)
         std::wstring wSocketUri{ socketUri };
 
         // get the substring up until the ".net"
