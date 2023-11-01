@@ -2077,7 +2077,7 @@ void BackendD3D::_drawSearchSelections(const RenderingPayload& p)
         {
             for (auto s : row->searchSelections)
             {
-                if (s.from != row->selectionFrom)
+                if (s.from != row->selectionFrom || s.to != row->selectionTo)
                 {
                     _appendQuad() = {
                         .shadingType = ShadingType::Selection,
