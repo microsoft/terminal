@@ -30,6 +30,15 @@ Terminal::Terminal()
     _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, RGB(0, 0, 0));
 }
 
+#pragma warning(suppress : 26455) // default constructor is throwing, too much effort to rearrange at this time.
+Terminal::Terminal(TestDummyMarker) :
+    Terminal{}
+{
+#ifndef NDEBUG
+    _suppressLockChecks = true;
+#endif
+}
+
 void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer& renderer)
 {
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
@@ -901,7 +910,7 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 void Terminal::_assertLocked() const noexcept
 {
 #ifndef NDEBUG
-    if (!_readWriteLock.is_locked())
+    if (!_suppressLockChecks && !_readWriteLock.is_locked())
     {
         // __debugbreak() has the benefit over assert() that the debugger jumps right here to this line.
         // That way there's no need to first click any dialogues, etc. The disadvantage of course is that the
@@ -914,7 +923,7 @@ void Terminal::_assertLocked() const noexcept
 void Terminal::_assertUnlocked() const noexcept
 {
 #ifndef NDEBUG
-    if (_readWriteLock.is_locked())
+    if (!_suppressLockChecks && _readWriteLock.is_locked())
     {
         __debugbreak();
     }

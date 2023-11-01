@@ -60,6 +60,10 @@ class Microsoft::Terminal::Core::Terminal final :
     using RenderSettings = Microsoft::Console::Render::RenderSettings;
 
 public:
+    struct TestDummyMarker
+    {
+    };
+
     static constexpr bool IsInputKey(WORD vkey)
     {
         return vkey != VK_CONTROL &&
@@ -77,6 +81,7 @@ public:
     }
 
     Terminal();
+    Terminal(TestDummyMarker);
 
     void Create(til::size viewportSize,
                 til::CoordType scrollbackLines,
@@ -306,6 +311,10 @@ public:
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
 #pragma endregion
+
+#ifndef NDEBUG
+    bool _suppressLockChecks = false;
+#endif
 
 private:
     std::function<void(std::wstring_view)> _pfnWriteInput;
