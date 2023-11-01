@@ -86,18 +86,7 @@ std::vector<Viewport> RenderData::GetSelectionRects() noexcept
 // - Vector of Viewports describing the area selected
 std::vector<Viewport> RenderData::GetSearchSelectionRects() noexcept
 {
-    std::vector<Viewport> result;
-
-    try
-    {
-        for (const auto& select : Selection::Instance().GetSelectionRects())
-        {
-            result.emplace_back(Viewport::FromInclusive(select));
-        }
-    }
-    CATCH_LOG();
-
-    return result;
+    return {};
 }
 
 // Method Description:
