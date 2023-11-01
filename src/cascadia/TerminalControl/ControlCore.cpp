@@ -1605,6 +1605,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_searcher.ResetIfStale(*GetRenderData(), text, !goForward, !caseSensitive))
         {
+            _searcher.HighlightResults();
             _searcher.MoveToCurrentSelection();
             _cachedSearchResultRows = {};
         }
