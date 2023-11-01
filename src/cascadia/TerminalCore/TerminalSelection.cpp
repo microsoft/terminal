@@ -918,7 +918,6 @@ void Terminal::_ScrollToPoint(const til::point pos)
             const auto amtBelowView = pos.y - visibleViewport.BottomInclusive();
             _scrollOffset -= amtBelowView;
         }
-
         _NotifyScrollEvent();
         _activeBuffer().TriggerScroll();
     }

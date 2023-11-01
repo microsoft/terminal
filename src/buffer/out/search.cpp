@@ -145,9 +145,7 @@ bool Search::SelectCurrent() const
         const auto& textBuffer = _renderData->GetTextBuffer();
         const auto selStart = textBuffer.BufferToScreenPosition(s->start);
         const auto selEnd = textBuffer.BufferToScreenPosition(s->end);
-
         _renderData->SelectNewRegion(selStart, selEnd);
-
         return true;
     }
 
