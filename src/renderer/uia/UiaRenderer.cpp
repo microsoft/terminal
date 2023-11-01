@@ -177,7 +177,7 @@ CATCH_RETURN();
 [[nodiscard]] HRESULT UiaEngine::NotifyNewText(const std::wstring_view newText) noexcept
 try
 {
-    // GH@16217 - don't even buffer this text if we're disabled. We may never
+    // GH#16217 - don't even buffer this text if we're disabled. We may never
     // come around to write it out.
     RETURN_HR_IF(S_FALSE, !_isEnabled);
 
