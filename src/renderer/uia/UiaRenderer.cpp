@@ -47,6 +47,12 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 [[nodiscard]] HRESULT UiaEngine::Disable() noexcept
 {
     _isEnabled = false;
+
+    // If we had buffered any text from NotifyNewText, dump it. When we do come
+    // back around to actually paint, we will just no-op. No sense in keeping
+    // the data buffered.
+    _newOutput.clear();
+
     return S_OK;
 }
 
@@ -171,6 +177,10 @@ CATCH_RETURN();
 [[nodiscard]] HRESULT UiaEngine::NotifyNewText(const std::wstring_view newText) noexcept
 try
 {
+    // GH@16217 - don't even buffer this text if we're disabled. We may never
+    // come around to write it out.
+    RETURN_HR_IF(S_FALSE, !_isEnabled);
+
     if (!newText.empty())
     {
         _newOutput.append(newText);
