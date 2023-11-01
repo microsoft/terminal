@@ -434,22 +434,8 @@ try
 
         auto& row = *_p.rows[y];
 
-        auto it = std::find_if(row.searchSelections.begin(), row.searchSelections.end(), [&from](const SearchSelection& selection) {
-            return selection.from == from;
-        });
-
-        if (it != row.searchSelections.end())
-        {
-            if (to > it->to)
-            {
-                it->to = to;
-            }
-        }
-        else
-        {
-            auto s = SearchSelection{ from, to };
-            row.searchSelections.emplace_back(s);
-        }
+        auto s = SearchSelection{ from, to };
+        row.searchSelections.emplace_back(s);
 
         _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, from * _p.s->font->cellSize.x);
         _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, y * _p.s->font->cellSize.y);

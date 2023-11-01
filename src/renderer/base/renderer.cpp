@@ -1202,10 +1202,19 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
         // Get selection rectangles
         const auto rectangles = _GetSelectionRects();
         const auto searchRectangles = _GetSearchSelectionRects();
-        LOG_IF_FAILED(pEngine->PaintSelections(searchRectangles));
-        for (const auto& rect : rectangles)
+
+        std::vector<til::rect> dirtySearchRectangles;
+        for (auto& dirtyRect : dirtyAreas)
         {
-            for (auto& dirtyRect : dirtyAreas)
+            for (const auto& sr : searchRectangles)
+            {
+                if (const auto rectCopy = sr & dirtyRect)
+                {
+                    dirtySearchRectangles.emplace_back(rectCopy);
+                }
+            }
+
+            for (const auto& rect : rectangles)
             {
                 if (const auto rectCopy = rect & dirtyRect)
                 {
@@ -1213,6 +1222,8 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
                 }
             }
         }
+
+        LOG_IF_FAILED(pEngine->PaintSelections(std::move(dirtySearchRectangles)));
     }
     CATCH_LOG();
 }
