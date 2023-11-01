@@ -427,32 +427,34 @@ try
         const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->viewportCellCount.x - 1));
         const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->viewportCellCount.x));
 
-        if (y < _p.rows.size() && rect.top >= 0)
+        if (rect.bottom <= 0 || rect.top >= _p.s->viewportCellCount.y)
         {
-            auto& row = *_p.rows[y];
-
-            auto it = std::find_if(row.searchSelections.begin(), row.searchSelections.end(), [&from](const SearchSelection& selection) {
-                return selection.from == from;
-            });
-
-            if (it != row.searchSelections.end())
-            {
-                if (to > it->to)
-                {
-                    it->to = to;
-                }
-            }
-            else
-            {
-                auto s = SearchSelection{ from, to };
-                row.searchSelections.emplace_back(s);
-            }
-
-            _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, from * _p.s->font->cellSize.x);
-            _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, y * _p.s->font->cellSize.y);
-            _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, to * _p.s->font->cellSize.x);
-            _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _p.dirtyRectInPx.top + _p.s->font->cellSize.y);
+            continue;
         }
+
+        auto& row = *_p.rows[y];
+
+        auto it = std::find_if(row.searchSelections.begin(), row.searchSelections.end(), [&from](const SearchSelection& selection) {
+            return selection.from == from;
+        });
+
+        if (it != row.searchSelections.end())
+        {
+            if (to > it->to)
+            {
+                it->to = to;
+            }
+        }
+        else
+        {
+            auto s = SearchSelection{ from, to };
+            row.searchSelections.emplace_back(s);
+        }
+
+        _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, from * _p.s->font->cellSize.x);
+        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, y * _p.s->font->cellSize.y);
+        _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, to * _p.s->font->cellSize.x);
+        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _p.dirtyRectInPx.top + _p.s->font->cellSize.y);
     }
     return S_OK;
 }
