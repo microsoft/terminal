@@ -1223,7 +1223,10 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
             }
         }
 
-        LOG_IF_FAILED(pEngine->PaintSelections(std::move(dirtySearchRectangles)));
+        if (!dirtySearchRectangles.empty())
+        {
+            LOG_IF_FAILED(pEngine->PaintSelections(std::move(dirtySearchRectangles)));
+        }
     }
     CATCH_LOG();
 }
