@@ -490,20 +490,20 @@ void AtlasEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 
 void AtlasEngine::_resolveTransparencySettings() noexcept
 {
+    // An opaque background allows us to use true "independent" flips. See AtlasEngine::_createSwapChain().
+    // We can't enable them if custom shaders are specified, because it's unknown, whether they support opaque inputs.
+    const bool useAlpha = _api.enableTransparentBackground || !_api.s->misc->customPixelShaderPath.empty();
     // If the user asks for ClearType, but also for a transparent background
     // (which our ClearType shader doesn't simultaneously support)
     // then we need to sneakily force the renderer to grayscale AA.
-    const auto antialiasingMode = _api.enableTransparentBackground && _api.antialiasingMode == AntialiasingMode::ClearType ? AntialiasingMode::Grayscale : _api.antialiasingMode;
-    const bool enableTransparentBackground = _api.enableTransparentBackground || !_api.s->misc->customPixelShaderPath.empty() || _api.s->misc->useRetroTerminalEffect;
+    const auto antialiasingMode = useAlpha && _api.antialiasingMode == AntialiasingMode::ClearType ? AntialiasingMode::Grayscale : _api.antialiasingMode;
 
-    if (antialiasingMode != _api.s->font->antialiasingMode || enableTransparentBackground != _api.s->target->enableTransparentBackground)
+    if (antialiasingMode != _api.s->font->antialiasingMode || useAlpha != _api.s->target->useAlpha)
     {
         const auto s = _api.s.write();
         s->font.write()->antialiasingMode = antialiasingMode;
-        // An opaque background allows us to use true "independent" flips. See AtlasEngine::_createSwapChain().
-        // We can't enable them if custom shaders are specified, because it's unknown, whether they support opaque inputs.
-        s->target.write()->enableTransparentBackground = enableTransparentBackground;
-        _api.backgroundOpaqueMixin = enableTransparentBackground ? 0x00000000 : 0xff000000;
+        s->target.write()->useAlpha = useAlpha;
+        _api.backgroundOpaqueMixin = useAlpha ? 0x00000000 : 0xff000000;
     }
 }
 
