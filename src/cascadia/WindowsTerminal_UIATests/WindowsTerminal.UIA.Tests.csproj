@@ -126,7 +126,7 @@
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy $(SolutionDir)\dep\WinAppDriver\* $(OutDir)\</PostBuildEvent>
+    <PostBuildEvent>mkdir &quot;$(OutDir)\WinAppDriver&quot; 2&gt;nul &amp; copy &quot;$(SolutionDir)\dep\WinAppDriver\*&quot; &quot;$(OutDir)\WinAppDriver\&quot;</PostBuildEvent>
   </PropertyGroup>
   <Import Project="..\..\common.nugetversions.targets" />
 </Project>

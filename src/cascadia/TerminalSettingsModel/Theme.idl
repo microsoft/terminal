@@ -4,6 +4,13 @@
 namespace Microsoft.Terminal.Settings.Model
 {
 
+    enum IconStyle
+    {
+        Default,
+        Hidden,
+        Monochrome
+    };
+
     enum ThemeColorType
     {
         Accent,
@@ -15,7 +22,8 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Always,
         Hover,
-        Never
+        Never,
+        ActiveOnly
     };
 
     [default_interface] runtimeclass ThemePair
@@ -48,6 +56,9 @@ namespace Microsoft.Terminal.Settings.Model
     runtimeclass WindowTheme {
         Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
         Boolean UseMica { get; };
+        Boolean RainbowFrame { get; };
+        ThemeColor Frame { get; };
+        ThemeColor UnfocusedFrame { get; };
     }
 
     runtimeclass TabRowTheme {
@@ -59,6 +70,7 @@ namespace Microsoft.Terminal.Settings.Model
         ThemeColor Background { get; };
         ThemeColor UnfocusedBackground { get; };
         TabCloseButtonVisibility ShowCloseButton { get; };
+        IconStyle IconStyle { get; };
     }
 
     [default_interface] runtimeclass Theme : Windows.Foundation.IStringable {

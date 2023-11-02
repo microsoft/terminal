@@ -26,6 +26,7 @@
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\UTextAdapter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\cursor.h" />
@@ -44,6 +45,7 @@
     <ClInclude Include="..\textBufferCellIterator.hpp" />
     <ClInclude Include="..\textBufferTextIterator.hpp" />
     <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\UTextAdapter.h" />
   </ItemGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />

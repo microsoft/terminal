@@ -31,7 +31,7 @@ namespace Microsoft.Terminal.Control
         String ProfileName;
         String ProfileSource;
 
-        Boolean UseAcrylic { get; };
+        Boolean EnableUnfocusedAcrylic;
         ScrollbarState ScrollState { get; };
 
         Boolean UseAtlasEngine { get; };
@@ -61,5 +61,6 @@ namespace Microsoft.Terminal.Control
         Boolean ShowMarks { get; };
         Boolean UseBackgroundImageForWindow { get; };
         Boolean RightClickContextMenu { get; };
+        Boolean RepositionCursorWithMouse { get; };
     };
 }

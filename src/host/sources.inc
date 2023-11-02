@@ -46,7 +46,6 @@ SOURCES = \
     ..\scrolling.cpp \
     ..\cmdline.cpp   \
     ..\CursorBlinker.cpp   \
-    ..\popup.cpp   \
     ..\alias.cpp   \
     ..\history.cpp   \
     ..\VtIo.cpp   \
@@ -89,10 +88,6 @@ SOURCES = \
     ..\conareainfo.cpp \
     ..\conimeinfo.cpp \
     ..\ConsoleArguments.cpp \
-    ..\CommandNumberPopup.cpp \
-    ..\CommandListPopup.cpp \
-    ..\CopyFromCharPopup.cpp \
-    ..\CopyToCharPopup.cpp \
     ..\VtApiRoutines.cpp \
 
 
@@ -203,6 +198,7 @@ DELAYLOAD = \
     DXGI.dll; \
     OLEAUT32.dll; \
     PROPSYS.dll; \
+    icu.dll; \
     api-ms-win-core-com-l1.dll; \
     api-ms-win-core-registry-l2.dll; \
     api-ms-win-mm-playsound-l1.dll; \

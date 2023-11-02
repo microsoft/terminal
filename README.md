@@ -1,4 +1,4 @@
-![terminal-logos](https://user-images.githubusercontent.com/48369326/115790869-4c852b00-a37c-11eb-97f1-f61972c7800c.png)
+![terminal-logos](https://github.com/microsoft/terminal/assets/91625426/333ddc76-8ab2-4eb4-a8c0-4d7b953b1179)
 
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
@@ -21,7 +21,8 @@ Related repositories include:
 
 ## Installing and running Windows Terminal
 
-> **Note**: Windows Terminal requires Windows 10 2004 (build 19041) or later
+> **Note**\
+> Windows Terminal requires Windows 10 2004 (build 19041) or later
 
 ### Microsoft Store [Recommended]
 
@@ -52,9 +53,10 @@ fails for any reason, you can try the following command at a PowerShell prompt:
 Add-AppxPackage Microsoft.WindowsTerminal_<versionNumber>.msixbundle
 ```
 
-> **Note**: If you install Terminal manually:
+> **Note**\
+> If you install Terminal manually:
 >
-> * You may need to install the [VC++ v14 Desktop Framework Package](https://docs.microsoft.com/troubleshoot/cpp/c-runtime-packages-desktop-bridge#how-to-install-and-update-desktop-framework-packages).  
+> * You may need to install the [VC++ v14 Desktop Framework Package](https://docs.microsoft.com/troubleshoot/cpp/c-runtime-packages-desktop-bridge#how-to-install-and-update-desktop-framework-packages).
 >   This should only be necessary on older builds of Windows 10 and only if you get an error about missing framework packages.
 > * Terminal will not auto-update when new builds are released so you will need
 >   to regularly install the latest Terminal release to receive all the latest
@@ -69,6 +71,9 @@ package:
 ```powershell
 winget install --id Microsoft.WindowsTerminal -e
 ```
+
+> **Note**\
+> Dependency support is available in WinGet version [1.6.2631 or later](https://github.com/microsoft/winget-cli/releases). To install the Terminal stable release 1.18 or later, please make sure you have the updated version of the WinGet client.
 
 #### Via Chocolatey (unofficial)
 
@@ -113,9 +118,31 @@ repository.
 
 ---
 
+## Installing Windows Terminal Canary
+Windows Terminal Canary is a nightly build of Windows Terminal. This build has the latest code from our `main` branch, giving you an opportunity to try features before they make it to Windows Terminal Preview.
+
+Windows Terminal Canary is our least stable offering, so you may discover bugs before we have had a chance to find them.
+
+Windows Terminal Canary is available as an App Installer distribution and a Portable ZIP distribution.
+
+The App Installer distribution supports automatic updates. Due to platform limitations, this installer only works on Windows 11.
+
+The Portable ZIP distribution is a portable application. It will not automatically update and will not automatically check for updates. This portable ZIP distribution works on Windows 10 (19041+) and Windows 11.
+
+| Distribution  | Architecture    | Link                                                 |
+|---------------|:---------------:|------------------------------------------------------|
+| App Installer | x64, arm64, x86 | [download](https://aka.ms/terminal-canary-installer) |
+| Portable ZIP  | x64             | [download](https://aka.ms/terminal-canary-zip-x64)   |
+| Portable ZIP  | ARM64           | [download](https://aka.ms/terminal-canary-zip-arm64) |
+| Portable ZIP  | x86             | [download](https://aka.ms/terminal-canary-zip-x86)   |
+
+_Learn more about the [types of Windows Terminal distributions](https://learn.microsoft.com/windows/terminal/distributions)._
+
+---
+
 ## Windows Terminal Roadmap
 
-The plan for the Windows Terminal [is described here](/doc/roadmap-2022.md) and
+The plan for the Windows Terminal [is described here](/doc/roadmap-2023.md) and
 will be updated as the project proceeds.
 
 ## Project Build Status
@@ -235,7 +262,8 @@ Cause: You're launching the incorrect solution in Visual Studio.
 Solution: Make sure you're building & deploying the `CascadiaPackage` project in
 Visual Studio.
 
-> **Note**: `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic
+> **Note**\
+> `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic
 > Windows Console that hosts Windows' command-line infrastructure. OpenConsole
 > is used by Windows Terminal to connect to and communicate with command-line
 > applications (via
@@ -271,10 +299,10 @@ similar open/closed preexisting issues before creating a new issue.**
 If you would like to ask a question that you feel doesn't warrant an issue
 (yet), please reach out to us via Twitter:
 
-* Kayla Cinnamon, Program Manager:
-  [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
+* Christopher Nguyen, Product Manager:
+  [@nguyen_dows](https://twitter.com/nguyen_dows)
 * Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
-* Mike Griese, Senior Developer: [@zadjii](https://twitter.com/zadjii)
+* Mike Griese, Senior Developer: [@zadjii@mastodon.social](https://mastodon.social/@zadjii)
 * Carlos Zamora, Developer: [@cazamor_msft](https://twitter.com/cazamor_msft)
 * Pankaj Bhojwani, Developer
 * Leonard Hecker, Developer: [@LeonardHecker](https://twitter.com/LeonardHecker)

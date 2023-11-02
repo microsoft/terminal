@@ -18,9 +18,8 @@
 #endif
 
 // The following files are generated at build time into the "Generated Files" directory.
-// defaults(-universal).h is a file containing the default json settings in a std::string_view.
+// defaults.h is a file containing the default json settings in a std::string_view.
 #include "defaults.h"
-#include "defaults-universal.h"
 // userDefault.h is like the above, but with a default template for the user's settings.json.
 #include <LegacyProfileGeneratorNamespaces.h>
 
@@ -451,6 +450,17 @@ bool SettingsLoader::FixupUserSettings()
         }
     }
 
+    // Terminal 1.19: Migrate the global
+    // `compatibility.reloadEnvironmentVariables` to being a per-profile
+    // setting. If the user had it disabled in 1.18, then set the
+    // profiles.defaults value to false to match.
+    if (!userSettings.globals->LegacyReloadEnvironmentVariables())
+    {
+        // migrate the user's opt-out to the profiles.defaults
+        userSettings.baseLayerProfile->ReloadEnvironmentVariables(false);
+        fixedUp = true;
+    }
+
     return fixedUp;
 }
 
@@ -838,7 +848,7 @@ try
     bool releaseSettingExists = false;
     if (firstTimeSetup && !IsPortableMode())
     {
-#if defined(WT_BRANDING_PREVIEW)
+#if defined(WT_BRANDING_PREVIEW) || defined(WT_BRANDING_CANARY)
         {
             try
             {
@@ -1028,17 +1038,6 @@ void CascadiaSettings::_researchOnLoad()
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
-}
-
-// Function Description:
-// - Loads a batch of settings curated for the Universal variant of the terminal app
-// Arguments:
-// - <none>
-// Return Value:
-// - a unique_ptr to a CascadiaSettings with the connection types and settings for Universal terminal
-Model::CascadiaSettings CascadiaSettings::LoadUniversal()
-{
-    return *winrt::make_self<CascadiaSettings>(std::string_view{}, DefaultUniversalJson);
 }
 
 // Function Description:
@@ -1239,6 +1238,15 @@ void CascadiaSettings::WriteSettingsToDisk()
     }
 }
 
+#ifndef NDEBUG
+[[maybe_unused]] static std::string _getDevPathToSchema()
+{
+    std::filesystem::path filePath{ __FILE__ };
+    auto schemaPath = filePath.parent_path().parent_path().parent_path().parent_path() / "doc" / "cascadia" / "profiles.schema.json";
+    return "file:///" + schemaPath.generic_string();
+}
+#endif
+
 // Method Description:
 // - Create a new serialized JsonObject from an instance of this class
 // Arguments:
@@ -1250,7 +1258,17 @@ Json::Value CascadiaSettings::ToJson() const
     // top-level json object
     auto json{ _globals->ToJson() };
     json["$help"] = "https://aka.ms/terminal-documentation";
-    json["$schema"] = "https://aka.ms/terminal-profiles-schema";
+    json["$schema"] =
+#if defined(WT_BRANDING_RELEASE)
+        "https://aka.ms/terminal-profiles-schema"
+#elif defined(WT_BRANDING_PREVIEW)
+        "https://aka.ms/terminal-profiles-schema-preview"
+#elif !defined(NDEBUG) // DEBUG mode
+        _getDevPathToSchema() // magic schema path that refers to the local source directory
+#else // All other brandings
+        "https://raw.githubusercontent.com/microsoft/terminal/main/doc/cascadia/profiles.schema.json"
+#endif
+        ;
 
     // "profiles" will always be serialized as an object
     Json::Value profiles{ Json::ValueType::objectValue };

@@ -36,14 +36,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct Font : FontT<Font>
     {
     public:
-        Font(std::wstring name, std::wstring localizedName) :
+        Font(std::wstring name, std::wstring localizedName, IDWriteFontFamily* family) :
             _Name{ name },
-            _LocalizedName{ localizedName } {};
+            _LocalizedName{ localizedName }
+        {
+            _family.copy_from(family);
+        }
 
         hstring ToString() { return _LocalizedName; }
+        bool HasPowerlineCharacters();
 
         WINRT_PROPERTY(hstring, Name);
         WINRT_PROPERTY(hstring, LocalizedName);
+
+    private:
+        winrt::com_ptr<IDWriteFontFamily> _family;
+        std::optional<bool> _hasPowerlineCharacters;
     };
 
     struct AppearanceViewModel : AppearanceViewModelT<AppearanceViewModel>, ViewModelHelper<AppearanceViewModel>
@@ -130,10 +138,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
         WINRT_PROPERTY(Editor::ProfileViewModel, SourceProfile, nullptr);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
-
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance().BackgroundImageStretchMode);
 
         GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance().IntenseTextStyle);
+        WINRT_OBSERVABLE_PROPERTY(bool, ShowProportionalFontWarning, _PropertyChangedHandlers, nullptr);
 
     private:
         bool _ShowAllFonts;

@@ -246,7 +246,7 @@ const std::vector<Microsoft::Console::Render::RenderOverlay> RenderData::GetOver
 // - <none>
 // Return Value:
 // - true if the cursor should be drawn twice as wide as usual
-bool RenderData::IsCursorDoubleWidth() const noexcept
+bool RenderData::IsCursorDoubleWidth() const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().CursorIsDoubleWidth();
@@ -417,17 +417,4 @@ const til::point RenderData::GetSelectionEnd() const noexcept
     const auto y_pos = (selectionRect.top == anchor.y) ? selectionRect.bottom : selectionRect.top;
 
     return { x_pos, y_pos };
-}
-
-// Routine Description:
-// - Given two points in the buffer space, color the selection between the two with the given attribute.
-// - This will create an internal selection rectangle covering the two points, assume a line selection,
-//   and use the first point as the anchor for the selection (as if the mouse click started at that point)
-// Arguments:
-// - coordSelectionStart - Anchor point (start of selection) for the region to be colored
-// - coordSelectionEnd - Other point referencing the rectangle inscribing the selection area
-// - attr - Color to apply to region.
-void RenderData::ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute attr)
-{
-    Selection::Instance().ColorSelection(coordSelectionStart, coordSelectionEnd, attr);
 }

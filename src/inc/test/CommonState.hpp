@@ -144,7 +144,7 @@ public:
         delete gci.pInputBuffer;
     }
 
-    void PrepareCookedReadData(const std::string_view initialData = {})
+    void PrepareCookedReadData(const std::wstring_view initialData = {})
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         auto* readData = new COOKED_READ_DATA(gci.pInputBuffer,
@@ -237,7 +237,7 @@ public:
 
         for (til::CoordType iRow = 0; iRow < cRowsToFill; iRow++)
         {
-            ROW& row = textBuffer.GetRowByOffset(iRow);
+            ROW& row = textBuffer.GetMutableRowByOffset(iRow);
             FillRow(&row, iRow & 1);
         }
 

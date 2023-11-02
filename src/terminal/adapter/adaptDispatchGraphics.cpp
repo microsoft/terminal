@@ -13,6 +13,23 @@ using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::VirtualTerminal::DispatchTypes;
 
 // Routine Description:
+// - Helper to parse the underline style option.
+// Arguments:
+// - options - An option that will be used to interpret the underline style.
+// - attr - The attribute that will be updated with the parsed underline style.
+// Return Value:
+//  - <none>
+void AdaptDispatch::_SetUnderlineStyleHelper(const VTParameter option, TextAttribute& attr) noexcept
+{
+    const auto style = option.value_or(0);
+    // Only apply the style if it's one of the valid underline styles (0-5).
+    if ((style >= 0) && (style <= WI_EnumValue(UnderlineStyle::Max)))
+    {
+        attr.SetUnderlineStyle(gsl::narrow_cast<UnderlineStyle>(style));
+    }
+}
+
+// Routine Description:
 // - Helper to parse extended graphics options, which start with 38 (FG) or 48 (BG)
 //     These options are followed by either a 2 (RGB) or 5 (xterm index)
 //      RGB sequences then take 3 MORE params to designate the R, G, B parts of the color
@@ -35,7 +52,8 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
         const size_t red = options.at(1).value_or(0);
         const size_t green = options.at(2).value_or(0);
         const size_t blue = options.at(3).value_or(0);
-        // ensure that each value fits in a byte
+        // We only apply the color if the R, G, B values fit within a byte.
+        // This is to match XTerm's and VTE's behavior.
         if (red <= 255 && green <= 255 && blue <= 255)
         {
             const auto rgbColor = RGB(red, green, blue);
@@ -46,6 +64,9 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
     {
         optionsConsumed = 2;
         const size_t tableIndex = options.at(1).value_or(0);
+
+        // We only apply the color if the index value fit within a byte.
+        // This is to match XTerm's and VTE's behavior.
         if (tableIndex <= 255)
         {
             const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);
@@ -63,7 +84,88 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
 }
 
 // Routine Description:
+// - Helper to parse extended graphics options, which start with 38 (FG) or 48 (BG) or 58 (UL)
+//   - These options are followed by either a 2 (RGB) or 5 (xterm index):
+//     - RGB sequences then take 4 MORE options to designate the ColorSpaceID, R, G, B parts
+//       of the color.
+//     - Xterm index will use the option that follows to use a color from the
+//       preset 256 color xterm color table.
+// Arguments:
+// - colorItem - One of the FG(38), BG(48), UL(58), indicating which color we're setting.
+// - options - An array of options that will be used to generate the RGB color
+// - attr - The attribute that will be updated with the parsed color.
+// Return Value:
+// - <none>
+void AdaptDispatch::_SetRgbColorsHelperFromSubParams(const VTParameter colorItem,
+                                                     const VTSubParameters options,
+                                                     TextAttribute& attr) noexcept
+{
+    const auto applyColor = [&](const TextColor& color) {
+        switch (colorItem)
+        {
+        case ForegroundExtended:
+            attr.SetForeground(color);
+            break;
+        case BackgroundExtended:
+            attr.SetBackground(color);
+            break;
+        case UnderlineColor:
+            attr.SetUnderlineColor(color);
+            break;
+        default:
+            break;
+        };
+    };
+
+    const DispatchTypes::GraphicsOptions typeOpt = options.at(0);
+    switch (typeOpt)
+    {
+    case DispatchTypes::GraphicsOptions::RGBColorOrFaint:
+    {
+        // sub params are in the order:
+        // :2:<color-space-id>:<r>:<g>:<b>
+
+        // We treat a color as invalid if it has a non-empty color space ID, as
+        // some applications that support non-standard ODA color sequence might
+        // send the red value in its place.
+        const bool hasColorSpaceId = options.at(1).has_value();
+
+        const size_t red = options.at(2).value_or(0);
+        const size_t green = options.at(3).value_or(0);
+        const size_t blue = options.at(4).value_or(0);
+
+        // We only apply the color if the R, G, B values fit within a byte.
+        // This is to match XTerm's and VTE's behavior.
+        if (!hasColorSpaceId && red <= 255 && green <= 255 && blue <= 255)
+        {
+            applyColor(TextColor{ RGB(red, green, blue) });
+        }
+        break;
+    }
+    case DispatchTypes::GraphicsOptions::BlinkOrXterm256Index:
+    {
+        // sub params are in the order:
+        // :5:<n>
+        // where 'n' is the index into the xterm color table.
+        const size_t tableIndex = options.at(1).value_or(0);
+
+        // We only apply the color if the index value fit within a byte.
+        // This is to match XTerm's and VTE's behavior.
+        if (tableIndex <= 255)
+        {
+            const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);
+            applyColor(TextColor{ adjustedIndex, true });
+        }
+        break;
+    }
+    default:
+        break;
+    };
+}
+
+// Routine Description:
 // - Helper to apply a single graphic rendition option to an attribute.
+// - Calls appropriate helper to apply the option with sub parameters when necessary.
 // Arguments:
 // - options - An array of options.
 // - optionIndex - The start index of the option that will be applied.
@@ -75,11 +177,20 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
                                            TextAttribute& attr) noexcept
 {
     const GraphicsOptions opt = options.at(optionIndex);
+
+    if (options.hasSubParamsFor(optionIndex))
+    {
+        const auto subParams = options.subParamsFor(optionIndex);
+        _ApplyGraphicsOptionWithSubParams(opt, subParams, attr);
+        return 1;
+    }
+
     switch (opt)
     {
     case Off:
         attr.SetDefaultForeground();
         attr.SetDefaultBackground();
+        attr.SetDefaultUnderlineColor();
         attr.SetDefaultRenditionAttributes();
         return 1;
     case ForegroundDefault:
@@ -87,6 +198,9 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
         return 1;
     case BackgroundDefault:
         attr.SetDefaultBackground();
+        return 1;
+    case UnderlineColorDefault:
+        attr.SetDefaultUnderlineColor();
         return 1;
     case Intense:
         attr.SetIntense(true);
@@ -129,15 +243,14 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
     case Positive:
         attr.SetReverseVideo(false);
         return 1;
-    case Underline:
-        attr.SetUnderlined(true);
+    case Underline: // SGR 4 (without extended styling)
+        attr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
         return 1;
     case DoublyUnderlined:
-        attr.SetDoublyUnderlined(true);
+        attr.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         return 1;
     case NoUnderline:
-        attr.SetUnderlined(false);
-        attr.SetDoublyUnderlined(false);
+        attr.SetUnderlineStyle(UnderlineStyle::NoUnderline);
         return 1;
     case Overline:
         attr.SetOverlined(true);
@@ -251,6 +364,37 @@ size_t AdaptDispatch::_ApplyGraphicsOption(const VTParameters options,
 }
 
 // Routine Description:
+// - Helper to apply a single graphic rendition option with sub parameters to an attribute.
+// Arguments:
+// - option - An option to apply.
+// - subParams - Sub parameters associated with the option.
+// - attr - The attribute that will be updated with the applied option.
+// Return Value:
+// - <None>
+void AdaptDispatch::_ApplyGraphicsOptionWithSubParams(const VTParameter option,
+                                                      const VTSubParameters subParams,
+                                                      TextAttribute& attr) noexcept
+{
+    // here, we apply our "best effort" rule, while handling sub params if we don't
+    // recognise the parameter substring (parameter and it's sub parameters) then
+    // we should just skip over them.
+    switch (option)
+    {
+    case Underline:
+        _SetUnderlineStyleHelper(subParams.at(0), attr);
+        break;
+    case ForegroundExtended:
+    case BackgroundExtended:
+    case UnderlineColor:
+        _SetRgbColorsHelperFromSubParams(option, subParams, attr);
+        break;
+    default:
+        /* do nothing */
+        break;
+    }
+}
+
+// Routine Description:
 // - Helper to apply a number of graphic rendition options to an attribute.
 // Arguments:
 // - options - An array of options that will be applied in sequence.
@@ -326,7 +470,7 @@ bool AdaptDispatch::SetCharacterProtectionAttribute(const VTParameters options)
 // - True.
 bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
 {
-    const auto currentAttributes = _api.GetTextBuffer().GetCurrentAttributes();
+    const auto& currentAttributes = _api.GetTextBuffer().GetCurrentAttributes();
     _sgrStack.Push(currentAttributes, options);
     return true;
 }
@@ -340,7 +484,7 @@ bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
 // - True.
 bool AdaptDispatch::PopGraphicsRendition()
 {
-    const auto currentAttributes = _api.GetTextBuffer().GetCurrentAttributes();
+    const auto& currentAttributes = _api.GetTextBuffer().GetCurrentAttributes();
     _api.SetTextAttributes(_sgrStack.Pop(currentAttributes));
     return true;
 }

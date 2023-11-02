@@ -116,6 +116,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     }
 
     inline constexpr unsigned long to_ulong_error = ULONG_MAX;
+    inline constexpr int to_int_error = INT_MAX;
 
     // Just like std::wcstoul, but without annoying locales and null-terminating strings.
     // It has been fuzz-tested against clang's strtoul implementation.
@@ -373,4 +374,24 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return compare_string_ordinal(lhs, rhs) == CSTR_LESS_THAN;
         }
     };
+
+    // Implement to_int in terms of to_ulong by negating its result. to_ulong does not expect
+    // to be passed signed numbers and will return an error accordingly. That error when
+    // compared against -1 evaluates to true. We account for that by returning to_int_error if to_ulong
+    // returns an error.
+    constexpr int to_int(const std::wstring_view& str, unsigned long base = 0) noexcept
+    {
+        auto result = to_ulong_error;
+        const auto signPosition = str.find(L"-");
+        const bool hasSign = signPosition != std::wstring_view::npos;
+        result = hasSign ? to_ulong(str.substr(signPosition + 1), base) : to_ulong(str, base);
+
+        // Check that result is valid and will fit in an int.
+        if (result == to_ulong_error || (result > INT_MAX))
+        {
+            return to_int_error;
+        }
+
+        return hasSign ? result * -1 : result;
+    }
 }

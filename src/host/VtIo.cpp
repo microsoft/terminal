@@ -25,7 +25,6 @@ using namespace Microsoft::Console::Interactivity;
 
 VtIo::VtIo() :
     _initialized(false),
-    _objectsCreated(false),
     _lookingForCursorPosition(false),
     _IoMode(VtIoMode::INVALID)
 {
@@ -72,7 +71,6 @@ VtIo::VtIo() :
 {
     _lookingForCursorPosition = pArgs->GetInheritCursor();
     _resizeQuirk = pArgs->IsResizeQuirkEnabled();
-    _win32InputMode = pArgs->IsWin32InputModeEnabled();
     _passthroughMode = pArgs->IsPassthroughMode();
 
     // If we were already given VT handles, set up the VT IO engine to use those.
@@ -224,13 +222,12 @@ VtIo::VtIo() :
     }
     CATCH_RETURN();
 
-    _objectsCreated = true;
     return S_OK;
 }
 
 bool VtIo::IsUsingVt() const
 {
-    return _objectsCreated;
+    return _initialized;
 }
 
 // Routine Description:
@@ -246,7 +243,7 @@ bool VtIo::IsUsingVt() const
 [[nodiscard]] HRESULT VtIo::StartIfNeeded()
 {
     // If we haven't been set up, do nothing (because there's nothing to start)
-    if (!_objectsCreated)
+    if (!_initialized)
     {
         return S_FALSE;
     }
@@ -258,7 +255,6 @@ bool VtIo::IsUsingVt() const
         {
             g.pRender->AddRenderEngine(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
-            g.getConsoleInformation().GetActiveInputBuffer()->SetTerminalConnection(_pVtRenderEngine.get());
 
             // Force the whole window to be put together first.
             // We don't really need the handle, we just want to leverage the setup steps.
@@ -271,10 +267,7 @@ bool VtIo::IsUsingVt() const
     // win32-input-mode from them. This will enable the connected terminal to
     // send us full INPUT_RECORDs as input. If the terminal doesn't understand
     // this sequence, it'll just ignore it.
-    if (_win32InputMode)
-    {
-        LOG_IF_FAILED(_pVtRenderEngine->RequestWin32Input());
-    }
+    LOG_IF_FAILED(_pVtRenderEngine->RequestWin32Input());
 
     // MSFT: 15813316
     // If the terminal application wants us to inherit the cursor position,
@@ -469,37 +462,15 @@ void VtIo::SendCloseEvent()
     }
 }
 
-// Method Description:
-// - Tell the vt renderer to begin a resize operation. During a resize
-//   operation, the vt renderer should _not_ request to be repainted during a
-//   text buffer circling event. Any callers of this method should make sure to
-//   call EndResize to make sure the renderer returns to normal behavior.
-//   See GH#1795 for context on this method.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void VtIo::BeginResize()
+// The name of this method is an analogy to TCP_CORK. It instructs
+// the VT renderer to stop flushing its buffer to the output pipe.
+// Don't forget to uncork it!
+void VtIo::CorkRenderer(bool corked) const noexcept
 {
-    if (_pVtRenderEngine)
+    _pVtRenderEngine->Cork(corked);
+    if (!corked)
     {
-        _pVtRenderEngine->BeginResizeRequest();
-    }
-}
-
-// Method Description:
-// - Tell the vt renderer to end a resize operation.
-//   See BeginResize for more details.
-//   See GH#1795 for context on this method.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void VtIo::EndResize()
-{
-    if (_pVtRenderEngine)
-    {
-        _pVtRenderEngine->EndResizeRequest();
+        LOG_IF_FAILED(ServiceLocator::LocateGlobals().pRender->PaintFrame());
     }
 }
 
@@ -514,7 +485,7 @@ void VtIo::EndResize()
 // - <none>
 void VtIo::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine)
 {
-    _objectsCreated = true;
+    _initialized = true;
     _pVtRenderEngine = std::move(vtRenderEngine);
 }
 #endif
@@ -550,6 +521,15 @@ bool VtIo::IsResizeQuirkEnabled() const
     if (_pVtRenderEngine)
     {
         return _pVtRenderEngine->ManuallyClearScrollback();
+    }
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT VtIo::RequestMouseMode(bool enable) const noexcept
+{
+    if (_pVtRenderEngine)
+    {
+        return _pVtRenderEngine->RequestMouseMode(enable);
     }
     return S_OK;
 }

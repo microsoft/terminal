@@ -72,7 +72,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
     // Return Value:
     // - An IconElement with its IconSource set, if possible.
     template<typename TIconSource>
-    TIconSource _getColoredBitmapIcon(const winrt::hstring& path)
+    TIconSource _getColoredBitmapIcon(const winrt::hstring& path, bool monochrome)
     {
         // FontIcon uses glyphs in the private use area, whereas valid URIs only contain ASCII characters.
         // To skip throwing on Uri construction, we can quickly check if the first character is ASCII.
@@ -85,7 +85,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
                 // Make sure to set this to false, so we keep the RGB data of the
                 // image. Otherwise, the icon will be white for all the
                 // non-transparent pixels in the image.
-                iconSource.ShowAsMonochrome(false);
+                iconSource.ShowAsMonochrome(monochrome);
                 iconSource.UriSource(iconUri);
                 return iconSource;
             }
@@ -121,14 +121,14 @@ namespace winrt::Microsoft::Terminal::UI::implementation
     // Return Value:
     // - An IconElement with its IconSource set, if possible.
     template<typename TIconSource>
-    TIconSource _getIconSource(const winrt::hstring& iconPath)
+    TIconSource _getIconSource(const winrt::hstring& iconPath, bool monochrome)
     {
         TIconSource iconSource{ nullptr };
 
         if (iconPath.size() != 0)
         {
             const auto expandedIconPath{ _expandIconPath(iconPath) };
-            iconSource = _getColoredBitmapIcon<TIconSource>(expandedIconPath);
+            iconSource = _getColoredBitmapIcon<TIconSource>(expandedIconPath, monochrome);
 
             // If we fail to set the icon source using the "icon" as a path,
             // let's try it as a symbol/emoji.
@@ -185,12 +185,12 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         //      character is in the range of symbols reserved for the Segoe MDL2
         //      Asserts, well treat it as such. Otherwise, we'll default to a Segoe
         //      UI icon, so things like emoji will work.
-        return _getIconSource<Windows::UI::Xaml::Controls::IconSource>(path);
+        return _getIconSource<Windows::UI::Xaml::Controls::IconSource>(path, false);
     }
 
-    static Microsoft::UI::Xaml::Controls::IconSource _IconSourceMUX(const hstring& path)
+    static Microsoft::UI::Xaml::Controls::IconSource _IconSourceMUX(const hstring& path, bool monochrome)
     {
-        return _getIconSource<Microsoft::UI::Xaml::Controls::IconSource>(path);
+        return _getIconSource<Microsoft::UI::Xaml::Controls::IconSource>(path, monochrome);
     }
 
     static SoftwareBitmap _convertToSoftwareBitmap(HICON hicon,
@@ -270,9 +270,9 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 
         if (commaIndex != std::wstring::npos)
         {
-            // Convert the string iconIndex to an int
-            const auto index = til::to_ulong(pathView.substr(commaIndex + 1));
-            if (index == til::to_ulong_error)
+            // Convert the string iconIndex to a signed int to support negative numbers which represent an Icon's ID.
+            const auto index{ til::to_int(pathView.substr(commaIndex + 1)) };
+            if (index == til::to_int_error)
             {
                 return std::nullopt;
             }
@@ -303,13 +303,14 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         return bitmapSource;
     }
 
-    MUX::Controls::IconSource IconPathConverter::IconSourceMUX(const winrt::hstring& iconPath)
+    MUX::Controls::IconSource IconPathConverter::IconSourceMUX(const winrt::hstring& iconPath,
+                                                               const bool monochrome)
     {
         std::wstring_view iconPathWithoutIndex;
         const auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
         if (!indexOpt.has_value())
         {
-            return _IconSourceMUX(iconPath);
+            return _IconSourceMUX(iconPath, monochrome);
         }
 
         const auto bitmapSource = _getImageIconSourceForBinary(iconPathWithoutIndex, indexOpt.value());

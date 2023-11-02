@@ -97,7 +97,8 @@
         -->
 
         <local:AboutDialog x:Name="AboutDialog"
-                           Grid.Row="2" />
+                           Grid.Row="2"
+                           x:Load="False" />
 
         <ContentDialog x:Name="QuitDialog"
                        x:Uid="QuitDialog"
@@ -167,11 +168,20 @@
             </TextBlock>
         </ContentDialog>
 
-        <local:CommandPalette x:Name="CommandPalette"
+        <local:CommandPalette x:Name="CommandPaletteElement"
                               Grid.Row="2"
                               VerticalAlignment="Stretch"
+                              x:Load="False"
                               PreviewKeyDown="_KeyDownHandler"
                               Visibility="Collapsed" />
+
+        <local:SuggestionsControl x:Name="SuggestionsElement"
+                                  Grid.Row="2"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Top"
+                                  x:Load="False"
+                                  PreviewKeyDown="_KeyDownHandler"
+                                  Visibility="Collapsed" />
 
         <!--
             A TeachingTip with IsLightDismissEnabled="True" will immediately
@@ -203,5 +213,11 @@
                          Text="{x:Bind WindowProperties.WindowName, Mode=OneWay}" />
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
+
+        <mux:TeachingTip x:Name="WindowCwdToast"
+                         x:Uid="WindowCwdToast"
+                         Title="{x:Bind WindowProperties.VirtualWorkingDirectory, Mode=OneWay}"
+                         x:Load="False"
+                         IsLightDismissEnabled="True" />
     </Grid>
 </Page>

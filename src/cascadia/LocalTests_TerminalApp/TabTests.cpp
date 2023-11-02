@@ -517,7 +517,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the first pane"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
+            page->_SplitPane(nullptr, SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
@@ -535,7 +535,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the pane, and don't crash"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
+            page->_SplitPane(nullptr, SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
@@ -857,7 +857,7 @@ namespace TerminalAppLocalTests
             // |   1    |   2    |
             // |        |        |
             // -------------------
-            page->_SplitPane(SplitDirection::Right, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
+            page->_SplitPane(nullptr, SplitDirection::Right, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
             secondId = tab->_activePane->Id().value();
         });
         Sleep(250);
@@ -875,7 +875,7 @@ namespace TerminalAppLocalTests
             // |   3    |        |
             // |        |        |
             // -------------------
-            page->_SplitPane(SplitDirection::Down, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
+            page->_SplitPane(nullptr, SplitDirection::Down, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             // Split again to make the 3rd tab
             thirdId = tab->_activePane->Id().value();
@@ -895,7 +895,7 @@ namespace TerminalAppLocalTests
             // |   3    |   4    |
             // |        |        |
             // -------------------
-            page->_SplitPane(SplitDirection::Down, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
+            page->_SplitPane(nullptr, SplitDirection::Down, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             fourthId = tab->_activePane->Id().value();
         });
@@ -1102,7 +1102,7 @@ namespace TerminalAppLocalTests
             // If you don't do this, the palette will just stay open, and the
             // next time we call _HandleNextTab, we'll continue traversing the
             // MRU list, instead of just hoping one entry.
-            page->CommandPalette().Visibility(Visibility::Collapsed);
+            page->LoadCommandPalette().Visibility(Visibility::Collapsed);
         });
 
         TestOnUIThread([&page]() {
@@ -1123,7 +1123,7 @@ namespace TerminalAppLocalTests
             // If you don't do this, the palette will just stay open, and the
             // next time we call _HandleNextTab, we'll continue traversing the
             // MRU list, instead of just hoping one entry.
-            page->CommandPalette().Visibility(Visibility::Collapsed);
+            page->LoadCommandPalette().Visibility(Visibility::Collapsed);
         });
 
         TestOnUIThread([&page]() {
@@ -1239,7 +1239,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
         });
 
-        const auto palette = winrt::get_self<winrt::TerminalApp::implementation::CommandPalette>(page->CommandPalette());
+        const auto palette = winrt::get_self<winrt::TerminalApp::implementation::CommandPalette>(page->LoadCommandPalette());
 
         VERIFY_ARE_EQUAL(winrt::TerminalApp::implementation::CommandPaletteMode::TabSwitchMode, palette->_currentMode, L"Verify we are in the tab switcher mode");
         // At this point, the contents of the command palette's _mruTabs list is

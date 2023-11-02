@@ -105,86 +105,33 @@ void VtApiRoutines::_SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) no
     }
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::PeekConsoleInputAImpl(IConsoleInputObject& context,
-                                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                           const size_t eventsToRead,
-                                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
+[[nodiscard]] HRESULT VtApiRoutines::GetConsoleInputImpl(
+    IConsoleInputObject& context,
+    InputEventQueue& outEvents,
+    const size_t eventReadCount,
+    INPUT_READ_HANDLE_DATA& readHandleState,
+    const bool IsUnicode,
+    const bool IsPeek,
+    std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    const auto hr = m_pUsualRoutines->PeekConsoleInputAImpl(context, outEvents, eventsToRead, readHandleState, waiter);
+    const auto hr = m_pUsualRoutines->GetConsoleInputImpl(context, outEvents, eventReadCount, readHandleState, IsUnicode, IsPeek, waiter);
     _SynchronizeCursor(waiter);
     return hr;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::PeekConsoleInputWImpl(IConsoleInputObject& context,
-                                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                           const size_t eventsToRead,
-                                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
+[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleImpl(IConsoleInputObject& context,
+                                                     std::span<char> buffer,
+                                                     size_t& written,
+                                                     std::unique_ptr<IWaitRoutine>& waiter,
+                                                     const std::wstring_view initialData,
+                                                     const std::wstring_view exeName,
+                                                     INPUT_READ_HANDLE_DATA& readHandleState,
+                                                     const bool IsUnicode,
+                                                     const HANDLE clientHandle,
+                                                     const DWORD controlWakeupMask,
+                                                     DWORD& controlKeyState) noexcept
 {
-    const auto hr = m_pUsualRoutines->PeekConsoleInputWImpl(context, outEvents, eventsToRead, readHandleState, waiter);
-    _SynchronizeCursor(waiter);
-    return hr;
-}
-
-[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleInputAImpl(IConsoleInputObject& context,
-                                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                           const size_t eventsToRead,
-                                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
-{
-    const auto hr = m_pUsualRoutines->ReadConsoleInputAImpl(context, outEvents, eventsToRead, readHandleState, waiter);
-    _SynchronizeCursor(waiter);
-    return hr;
-}
-
-[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleInputWImpl(IConsoleInputObject& context,
-                                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                                           const size_t eventsToRead,
-                                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
-{
-    const auto hr = m_pUsualRoutines->ReadConsoleInputWImpl(context, outEvents, eventsToRead, readHandleState, waiter);
-    _SynchronizeCursor(waiter);
-    return hr;
-}
-
-[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleAImpl(IConsoleInputObject& context,
-                                                      std::span<char> buffer,
-                                                      size_t& written,
-                                                      std::unique_ptr<IWaitRoutine>& waiter,
-                                                      const std::string_view initialData,
-                                                      const std::wstring_view exeName,
-                                                      INPUT_READ_HANDLE_DATA& readHandleState,
-                                                      const HANDLE clientHandle,
-                                                      const DWORD controlWakeupMask,
-                                                      DWORD& controlKeyState) noexcept
-{
-    const auto hr = m_pUsualRoutines->ReadConsoleAImpl(context, buffer, written, waiter, initialData, exeName, readHandleState, clientHandle, controlWakeupMask, controlKeyState);
-    // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
-    // the terminal is presenting in case there's a cooked read going on.
-    // TODO GH10001: we only need to do this in cooked read mode.
-    if (clientHandle)
-    {
-        m_listeningForDSR = true;
-        (void)m_pVtEngine->_ListenForDSR();
-        (void)m_pVtEngine->RequestCursor();
-    }
-    return hr;
-}
-
-[[nodiscard]] HRESULT VtApiRoutines::ReadConsoleWImpl(IConsoleInputObject& context,
-                                                      std::span<char> buffer,
-                                                      size_t& written,
-                                                      std::unique_ptr<IWaitRoutine>& waiter,
-                                                      const std::string_view initialData,
-                                                      const std::wstring_view exeName,
-                                                      INPUT_READ_HANDLE_DATA& readHandleState,
-                                                      const HANDLE clientHandle,
-                                                      const DWORD controlWakeupMask,
-                                                      DWORD& controlKeyState) noexcept
-{
-    const auto hr = m_pUsualRoutines->ReadConsoleWImpl(context, buffer, written, waiter, initialData, exeName, readHandleState, clientHandle, controlWakeupMask, controlKeyState);
+    const auto hr = m_pUsualRoutines->ReadConsoleImpl(context, buffer, written, waiter, initialData, exeName, readHandleState, IsUnicode, clientHandle, controlWakeupMask, controlKeyState);
     // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
     // the terminal is presenting in case there's a cooked read going on.
     // TODO GH10001: we only need to do this in cooked read mode.

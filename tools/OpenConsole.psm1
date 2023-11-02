@@ -367,7 +367,7 @@ function Test-XamlFormat() {
     $xamlsForStyler = (git ls-files "$root/**/*.xaml") -join ","
     dotnet tool run xstyler -- -c "$root\XamlStyler.json" -f "$xamlsForStyler" --passive
 
-    if ($lastExitCode -eq 1) {
+    if ($LASTEXITCODE -eq 1) {
         throw "Xaml formatting bad, run Invoke-XamlFormat on branch"
     }
 

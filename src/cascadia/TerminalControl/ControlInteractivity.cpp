@@ -224,22 +224,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Initiate a paste operation.
     void ControlInteractivity::RequestPasteTextFromClipboard()
     {
-        // attach ControlInteractivity::_sendPastedTextToConnection() as the
-        // clipboardDataHandler. This is called when the clipboard data is
-        // loaded.
-        auto clipboardDataHandler = std::bind(&ControlInteractivity::_sendPastedTextToConnection, this, std::placeholders::_1);
-        auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler, _core->BracketedPasteEnabled());
+        auto args = winrt::make<PasteFromClipboardEventArgs>(
+            [core = _core](const winrt::hstring& wstr) {
+                core->PasteText(wstr);
+            },
+            _core->BracketedPasteEnabled());
 
         // send paste event up to TermApp
-        _PasteFromClipboardHandlers(*this, *pasteArgs);
-    }
-
-    // Method Description:
-    // - Pre-process text pasted (presumably from the clipboard)
-    //   before sending it over the terminal's connection.
-    void ControlInteractivity::_sendPastedTextToConnection(std::wstring_view wstr)
-    {
-        _core->PasteText(winrt::hstring{ wstr });
+        _PasteFromClipboardHandlers(*this, std::move(args));
     }
 
     void ControlInteractivity::PointerPressed(Control::MouseButtonState buttonState,
@@ -310,6 +302,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             if (_core->Settings().RightClickContextMenu())
             {
+                // Let the core know we're about to open a menu here. It has
+                // some separate conditional logic based on _where_ the user
+                // wanted to open the menu.
+                _core->AnchorContextMenu(terminalPosition);
+
                 auto contextArgs = winrt::make<ContextMenuRequestedEventArgs>(til::point{ pixelPosition }.to_winrt_point());
                 _ContextMenuRequestedHandlers(*this, contextArgs);
             }

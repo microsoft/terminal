@@ -48,7 +48,15 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring WindowNameForDisplay() const noexcept;
         bool IsQuakeWindow() const noexcept;
 
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, VirtualWorkingDirectory, _PropertyChangedHandlers, L"");
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+
+    public:
+        // Used for setting the initial CWD, before we have XAML set up for property change notifications.
+        void SetInitialCwd(winrt::hstring cwd) { _VirtualWorkingDirectory = std::move(cwd); };
+
+        til::property<winrt::hstring> VirtualEnvVars;
 
     private:
         winrt::hstring _WindowName{};
@@ -65,17 +73,15 @@ namespace winrt::TerminalApp::implementation
 
         void Create();
 
-        bool IsUwp() const noexcept;
-
         void Quit();
 
         winrt::fire_and_forget UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
 
         bool HasCommandlineArguments() const noexcept;
 
-        int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
+        int32_t SetStartupCommandline(array_view<const winrt::hstring> actions, winrt::hstring cwd, winrt::hstring env);
         void SetStartupContent(const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& contentBounds);
-        int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
+        int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd, const winrt::hstring& env);
         void SetSettingsStartupArgs(const std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
         winrt::hstring ParseCommandlineMessage();
         bool ShouldExitEarly();
@@ -124,6 +130,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::TerminalApp::TaskbarState TaskbarState();
         winrt::Windows::UI::Xaml::Media::Brush TitlebarBrush();
+        winrt::Windows::UI::Xaml::Media::Brush FrameBrush();
         void WindowActivated(const bool activated);
 
         bool GetMinimizeToNotificationArea();
@@ -195,6 +202,7 @@ namespace winrt::TerminalApp::implementation
 
         void _RefreshThemeRoutine();
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _pageInitialized(const IInspectable& sender, const IInspectable& eventArgs);
         void _OpenSettingsUI();
 
         winrt::Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _contentStringToActions(const winrt::hstring& content,

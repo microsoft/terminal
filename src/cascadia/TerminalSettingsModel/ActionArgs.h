@@ -34,17 +34,21 @@
 #include "AddMarkArgs.g.h"
 #include "MoveTabArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
+#include "SuggestionsArgs.g.h"
 #include "FindMatchArgs.g.h"
 #include "NewWindowArgs.g.h"
 #include "PrevTabArgs.g.h"
 #include "NextTabArgs.g.h"
 #include "RenameWindowArgs.g.h"
+#include "SearchForTextArgs.g.h"
 #include "GlobalSummonArgs.g.h"
 #include "FocusPaneArgs.g.h"
 #include "ExportBufferArgs.g.h"
 #include "ClearBufferArgs.g.h"
 #include "MultipleActionsArgs.g.h"
 #include "AdjustOpacityArgs.g.h"
+#include "SelectCommandArgs.g.h"
+#include "SelectOutputArgs.g.h"
 #include "ColorSelectionArgs.g.h"
 
 #include "JsonUtils.h"
@@ -97,8 +101,9 @@ private:                                                                    \
 // false, if we don't really care if the parameter is required or not.
 
 ////////////////////////////////////////////////////////////////////////////////
-#define COPY_TEXT_ARGS(X)                           \
-    X(bool, SingleLine, "singleLine", false, false) \
+#define COPY_TEXT_ARGS(X)                                      \
+    X(bool, DismissSelection, "dismissSelection", false, true) \
+    X(bool, SingleLine, "singleLine", false, false)            \
     X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -210,6 +215,11 @@ private:                                                                    \
     X(CommandPaletteLaunchMode, LaunchMode, "launchMode", false, CommandPaletteLaunchMode::Action)
 
 ////////////////////////////////////////////////////////////////////////////////
+#define SUGGESTIONS_ARGS(X)                                                 \
+    X(SuggestionsSource, Source, "source", false, SuggestionsSource::Tasks) \
+    X(bool, UseCommandline, "useCommandline", false, false)
+
+////////////////////////////////////////////////////////////////////////////////
 #define FIND_MATCH_ARGS(X) \
     X(FindMatchDirection, Direction, "direction", args->Direction() == FindMatchDirection::None, FindMatchDirection::None)
 
@@ -224,6 +234,10 @@ private:                                                                    \
 ////////////////////////////////////////////////////////////////////////////////
 #define RENAME_WINDOW_ARGS(X) \
     X(winrt::hstring, Name, "name", false, L"")
+
+////////////////////////////////////////////////////////////////////////////////
+#define SEARCH_FOR_TEXT_ARGS(X) \
+    X(winrt::hstring, QueryUrl, "queryUrl", false, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define GLOBAL_SUMMON_ARGS(X)                                                               \
@@ -249,6 +263,14 @@ private:                                                                    \
 #define ADJUST_OPACITY_ARGS(X)               \
     X(int32_t, Opacity, "opacity", false, 0) \
     X(bool, Relative, "relative", false, true)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SELECT_COMMAND_ARGS(X) \
+    X(SelectOutputDirection, Direction, "direction", false, SelectOutputDirection::Previous)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SELECT_OUTPUT_ARGS(X) \
+    X(SelectOutputDirection, Direction, "direction", false, SelectOutputDirection::Previous)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define COLOR_SELECTION_ARGS(X)                                                                      \
@@ -287,9 +309,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ACTION_ARG(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
         ACTION_ARG(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
         ACTION_ARG(winrt::hstring, Profile, L"");
+        ACTION_ARG(bool, AppendCommandLine, false);
         ACTION_ARG(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, nullptr);
         ACTION_ARG(winrt::hstring, ColorScheme);
         ACTION_ARG(Windows::Foundation::IReference<bool>, Elevate, nullptr);
+        ACTION_ARG(Windows::Foundation::IReference<bool>, ReloadEnvironmentVariables, nullptr);
         ACTION_ARG(uint64_t, ContentId);
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
@@ -298,9 +322,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr std::string_view TabColorKey{ "tabColor" };
         static constexpr std::string_view ProfileIndexKey{ "index" };
         static constexpr std::string_view ProfileKey{ "profile" };
+        static constexpr std::string_view AppendCommandLineKey{ "appendCommandLine" };
         static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
         static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
         static constexpr std::string_view ElevateKey{ "elevate" };
+        static constexpr std::string_view ReloadEnvironmentVariablesKey{ "reloadEnvironmentVariables" };
         static constexpr std::string_view ContentKey{ "__content" };
 
     public:
@@ -318,9 +344,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                        otherAsUs->_TabColor == _TabColor &&
                        otherAsUs->_ProfileIndex == _ProfileIndex &&
                        otherAsUs->_Profile == _Profile &&
+                       otherAsUs->_AppendCommandLine == _AppendCommandLine &&
                        otherAsUs->_SuppressApplicationTitle == _SuppressApplicationTitle &&
                        otherAsUs->_ColorScheme == _ColorScheme &&
                        otherAsUs->_Elevate == _Elevate &&
+                       otherAsUs->_ReloadEnvironmentVariables == _ReloadEnvironmentVariables &&
                        otherAsUs->_ContentId == _ContentId;
             }
             return false;
@@ -338,6 +366,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
             JsonUtils::GetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
             JsonUtils::GetValueForKey(json, ElevateKey, args->_Elevate);
+            JsonUtils::GetValueForKey(json, ReloadEnvironmentVariablesKey, args->_ReloadEnvironmentVariables);
             JsonUtils::GetValueForKey(json, ContentKey, args->_ContentId);
             return *args;
         }
@@ -358,6 +387,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
             JsonUtils::SetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
             JsonUtils::SetValueForKey(json, ElevateKey, args->_Elevate);
+            JsonUtils::SetValueForKey(json, ReloadEnvironmentVariablesKey, args->_ReloadEnvironmentVariables);
             JsonUtils::SetValueForKey(json, ContentKey, args->_ContentId);
             return json;
         }
@@ -373,6 +403,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_SuppressApplicationTitle = _SuppressApplicationTitle;
             copy->_ColorScheme = _ColorScheme;
             copy->_Elevate = _Elevate;
+            copy->_ReloadEnvironmentVariables = _ReloadEnvironmentVariables;
             copy->_ContentId = _ContentId;
             return *copy;
         }
@@ -393,6 +424,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(SuppressApplicationTitle());
             h.write(ColorScheme());
             h.write(Elevate());
+            h.write(ReloadEnvironmentVariables());
             h.write(ContentId());
         }
     };
@@ -693,6 +725,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS);
 
+    ACTION_ARGS_STRUCT(SuggestionsArgs, SUGGESTIONS_ARGS);
+
     ACTION_ARGS_STRUCT(FindMatchArgs, FIND_MATCH_ARGS);
 
     ACTION_ARGS_STRUCT(PrevTabArgs, PREV_TAB_ARGS);
@@ -700,6 +734,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     ACTION_ARGS_STRUCT(NextTabArgs, NEXT_TAB_ARGS);
 
     ACTION_ARGS_STRUCT(RenameWindowArgs, RENAME_WINDOW_ARGS);
+
+    ACTION_ARGS_STRUCT(SearchForTextArgs, SEARCH_FOR_TEXT_ARGS);
 
     struct GlobalSummonArgs : public GlobalSummonArgsT<GlobalSummonArgs>
     {
@@ -778,6 +814,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(AdjustOpacityArgs, ADJUST_OPACITY_ARGS);
 
+    ACTION_ARGS_STRUCT(SelectCommandArgs, SELECT_COMMAND_ARGS);
+    ACTION_ARGS_STRUCT(SelectOutputArgs, SELECT_OUTPUT_ARGS);
+
     ACTION_ARGS_STRUCT(ColorSelectionArgs, COLOR_SELECTION_ARGS);
 
 }
@@ -785,6 +824,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
     BASIC_FACTORY(ActionEventArgs);
+    BASIC_FACTORY(CopyTextArgs);
     BASIC_FACTORY(SwitchToTabArgs);
     BASIC_FACTORY(NewTerminalArgs);
     BASIC_FACTORY(NewTabArgs);
@@ -814,4 +854,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(ClearBufferArgs);
     BASIC_FACTORY(MultipleActionsArgs);
     BASIC_FACTORY(AdjustOpacityArgs);
+    BASIC_FACTORY(SuggestionsArgs);
+    BASIC_FACTORY(SelectCommandArgs);
+    BASIC_FACTORY(SelectOutputArgs);
 }

@@ -28,7 +28,7 @@ ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
                                                  dwProcessId))),
     _policy(ConsoleProcessPolicy::s_CreateInstance(_hProcess.get())),
     _shimPolicy(_hProcess.get()),
-    _processCreationTime(0)
+    _processCreationTime{}
 {
     if (nullptr != _hProcess.get())
     {
@@ -77,24 +77,17 @@ const HANDLE ConsoleProcessHandle::GetRawHandle() const
 // Routine Description:
 // - Retrieves the process creation time (currently used in telemetry traces)
 // - The creation time is lazily populated on first call
-const ULONG64 ConsoleProcessHandle::GetProcessCreationTime() const
+const FILETIME ConsoleProcessHandle::GetProcessCreationTime() const
 {
-    if (_processCreationTime == 0 && _hProcess != nullptr)
+    if (_processCreationTime.dwHighDateTime == 0 && _processCreationTime.dwLowDateTime == 0 && _hProcess != nullptr)
     {
-        FILETIME ftCreationTime, ftDummyTime = { 0 };
-        ULARGE_INTEGER creationTime = { 0 };
+        FILETIME ftDummyTime = { 0 };
 
-        if (::GetProcessTimes(_hProcess.get(),
-                              &ftCreationTime,
-                              &ftDummyTime,
-                              &ftDummyTime,
-                              &ftDummyTime))
-        {
-            creationTime.HighPart = ftCreationTime.dwHighDateTime;
-            creationTime.LowPart = ftCreationTime.dwLowDateTime;
-        }
-
-        _processCreationTime = creationTime.QuadPart;
+        ::GetProcessTimes(_hProcess.get(),
+                          &_processCreationTime,
+                          &ftDummyTime,
+                          &ftDummyTime,
+                          &ftDummyTime);
     }
 
     return _processCreationTime;

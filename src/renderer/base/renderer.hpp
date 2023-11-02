@@ -131,7 +131,7 @@ namespace Microsoft::Console::Render
         std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;
         bool _destructing = false;
-        bool _forceUpdateViewport = true;
+        bool _forceUpdateViewport = false;
 
 #ifdef UNIT_TESTING
         friend class ConptyOutputTests;

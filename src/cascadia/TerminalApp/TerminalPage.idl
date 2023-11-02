@@ -50,6 +50,9 @@ namespace TerminalApp
         String WindowNameForDisplay { get; };
         String WindowIdForDisplay { get; };
 
+        String VirtualWorkingDirectory { get; set; };
+        String VirtualEnvVars { get; set; };
+
         Boolean IsQuakeWindow();
     };
 
