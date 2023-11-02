@@ -104,12 +104,8 @@ Output main(PSData data) : SV_Target
         const float amp = curlyLinePeakHeight * verticalScale;
         const float freq = curlyLineWaveFreq / horizontalScale;
 
-        // The wave begins with a negative peak. We phase shift the frequency by
-        // `Pi` to begin with a positive peak.
-        const float Pi = radians(180);
-        const float s = sin(data.position.x * freq + Pi);
-
-        const float d = abs(centerY + s * amp - data.position.y);
+        const float s = sin(data.position.x * freq);
+        const float d = abs(centerY - (s * amp) - data.position.y);
         const float a = 1 - saturate(d - strokeWidthHalf);
         color = a * premultiplyColor(data.color);
         weights = color.aaaa;
