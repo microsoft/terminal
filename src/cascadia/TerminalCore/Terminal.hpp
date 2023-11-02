@@ -462,7 +462,7 @@ private:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<til::inclusive_rect> _GetSelectionRects() const noexcept;
-    std::vector<til::inclusive_rect> _GetSearchSelectionRects() const noexcept;
+    std::vector<til::inclusive_rect> _GetSearchSelectionRects(Microsoft::Console::Types::Viewport viewport) const noexcept;
     std::vector<til::point_span> _GetSelectionSpans() const noexcept;
     std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const noexcept;
     std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;

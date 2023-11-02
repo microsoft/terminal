@@ -155,7 +155,7 @@ try
 {
     std::vector<Viewport> result;
 
-    for (const auto& lineRect : _GetSearchSelectionRects())
+    for (const auto& lineRect : _GetSearchSelectionRects(_GetVisibleViewport()))
     {
         result.emplace_back(Viewport::FromInclusive(lineRect));
     }

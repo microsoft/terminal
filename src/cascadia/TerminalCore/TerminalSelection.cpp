@@ -67,17 +67,23 @@ std::vector<til::inclusive_rect> Terminal::_GetSelectionRects() const noexcept
 // - Helper to determine the selected region of the buffer. Used for rendering.
 // Return Value:
 // - A vector of rectangles representing the regions to select, line by line. They are absolute coordinates relative to the buffer origin.
-std::vector<til::inclusive_rect> Terminal::_GetSearchSelectionRects() const noexcept
+std::vector<til::inclusive_rect> Terminal::_GetSearchSelectionRects(Microsoft::Console::Types::Viewport viewport) const noexcept
 {
     std::vector<til::inclusive_rect> result;
-
     try
     {
-        std::vector<til::inclusive_rect> result;
-        for (const auto& selection : _searchSelections)
+        auto lowerIt = std::lower_bound(_searchSelections.begin(), _searchSelections.end(), viewport.Top(), [](const til::inclusive_rect& rect, til::CoordType value) {
+            return rect.top < value;
+        });
+
+        auto upperIt = std::upper_bound(_searchSelections.begin(), _searchSelections.end(), viewport.BottomExclusive(), [](til::CoordType value, const til::inclusive_rect& rect) {
+            return value < rect.top;
+        });
+        
+        for (auto selection = lowerIt; selection != upperIt; ++selection)
         {
-            const auto start = til::point{ selection.left, selection.top };
-            const auto end = til::point{ selection.right, selection.top };
+            const auto start = til::point{ selection->left, selection->top };
+            const auto end = til::point{ selection->right, selection->top };
             const auto adj = _activeBuffer().GetTextRects(start, end, _blockSelection, false);
             for (auto a : adj)
             {
