@@ -42,18 +42,6 @@ TIL_FAST_MATH_BEGIN
 
 using namespace Microsoft::Console::Render::Atlas;
 
-namespace
-{
-
-    // The max height of Curly line peak in `em` units.
-    constexpr auto MaxCurlyLinePeakHeightEm = 0.075f;
-
-    // We aim for atleast 1px height, but since we draw 1px smaller curly line,
-    // we aim for 2px height as a result.
-    constexpr auto MinCurlyLinePeakHeight = 2.0f;
-
-}
-
 template<>
 struct std::hash<u16>
 {
@@ -317,6 +305,12 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
 {
     const auto& font = *p.s->font;
 
+    // The max height of Curly line peak in `em` units.
+    const auto maxCurlyLinePeakHeightEm = 0.075f;
+    // We aim for atleast 1px height, but since we draw 1px smaller curly line,
+    // we aim for 2px height as a result.
+    const auto minCurlyLinePeakHeight = 2.0f;
+
     // Curlyline uses the gap between cell bottom and singly underline position
     // as the height of the wave's peak. The baseline for curly-line is at the
     // middle of singly underline. The gap could be too big, so we also apply
@@ -324,11 +318,11 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
     const auto strokeHalfWidth = font.underline.height / 2.0f;
     const auto underlineMidY = font.underline.position + strokeHalfWidth;
     const auto cellBottomGap = font.cellSize.y - underlineMidY - strokeHalfWidth;
-    const auto maxCurlyLinePeakHeight = MaxCurlyLinePeakHeightEm * font.fontSize;
+    const auto maxCurlyLinePeakHeight = maxCurlyLinePeakHeightEm * font.fontSize;
     auto curlyLinePeakHeight = std::min(cellBottomGap, maxCurlyLinePeakHeight);
 
     // When it's too small to be curly, make it straight.
-    if (curlyLinePeakHeight < MinCurlyLinePeakHeight)
+    if (curlyLinePeakHeight < minCurlyLinePeakHeight)
     {
         curlyLinePeakHeight = 0;
     }
