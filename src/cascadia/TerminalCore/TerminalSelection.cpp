@@ -79,7 +79,7 @@ std::vector<til::inclusive_rect> Terminal::_GetSearchSelectionRects(Microsoft::C
         auto upperIt = std::upper_bound(_searchSelections.begin(), _searchSelections.end(), viewport.BottomExclusive(), [](til::CoordType value, const til::inclusive_rect& rect) {
             return value < rect.top;
         });
-        
+
         for (auto selection = lowerIt; selection != upperIt; ++selection)
         {
             const auto start = til::point{ selection->left, selection->top };
