@@ -94,22 +94,7 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_MoveCursor(_deferredCursorPos));
     }
 
-    // If this frame was triggered because we encountered a VT sequence which
-    // required the buffered state to get printed, we don't want to flush this
-    // frame to the pipe. That might result in us rendering half the output of a
-    // particular frame (as emitted by the client).
-    //
-    // Instead, we'll leave this frame in _buffer, and just keep appending to
-    // it as needed.
-    if (_noFlushOnEnd) [[unlikely]]
-    {
-        _noFlushOnEnd = false;
-    }
-    else
-    {
-        RETURN_IF_FAILED(_Flush());
-    }
-
+    _Flush();
     return S_OK;
 }
 
@@ -257,11 +242,13 @@ using namespace Microsoft::Console::Types;
 {
     const auto fg = textAttributes.GetForeground();
     const auto bg = textAttributes.GetBackground();
+    const auto ul = textAttributes.GetUnderlineColor();
     auto lastFg = _lastTextAttributes.GetForeground();
     auto lastBg = _lastTextAttributes.GetBackground();
+    auto lastUl = _lastTextAttributes.GetUnderlineColor();
 
-    // If both the FG and BG should be the defaults, emit a SGR reset.
-    if (fg.IsDefault() && bg.IsDefault() && !(lastFg.IsDefault() && lastBg.IsDefault()))
+    // If the FG, BG and UL should be the defaults, emit an SGR reset.
+    if (fg.IsDefault() && bg.IsDefault() && ul.IsDefault() && !(lastFg.IsDefault() && lastBg.IsDefault() && lastUl.IsDefault()))
     {
         // SGR Reset will clear all attributes (except hyperlink ID) - which means
         // we cannot reset _lastTextAttributes by simply doing
@@ -270,9 +257,11 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_SetGraphicsDefault());
         _lastTextAttributes.SetDefaultBackground();
         _lastTextAttributes.SetDefaultForeground();
+        _lastTextAttributes.SetDefaultUnderlineColor();
         _lastTextAttributes.SetDefaultRenditionAttributes();
         lastFg = {};
         lastBg = {};
+        lastUl = {};
     }
 
     if (fg != lastFg)
@@ -315,6 +304,27 @@ using namespace Microsoft::Console::Types;
             RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(bg.GetRGB(), false));
         }
         _lastTextAttributes.SetBackground(bg);
+    }
+
+    if (ul != lastUl)
+    {
+        if (ul.IsDefault())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionUnderlineDefaultColor());
+        }
+        else if (ul.IsIndex16()) // underline can't be 16 color
+        {
+            /* do nothing */
+        }
+        else if (ul.IsIndex256())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionUnderline256Color(ul.GetIndex()));
+        }
+        else if (ul.IsRgb())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionUnderlineRGBColor(ul.GetRGB()));
+        }
+        _lastTextAttributes.SetUnderlineColor(ul);
     }
 
     return S_OK;

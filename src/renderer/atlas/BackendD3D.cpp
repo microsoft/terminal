@@ -403,29 +403,35 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
             /* ppCode      */ blob.addressof(),
             /* ppErrorMsgs */ error.addressof());
 
-        // Unless we can determine otherwise, assume this shader requires evaluation every frame
-        _requiresContinuousRedraw = true;
-
         if (SUCCEEDED(hr))
         {
-            THROW_IF_FAILED(p.device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, _customPixelShader.put()));
+            THROW_IF_FAILED(p.device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, _customPixelShader.addressof()));
 
             // Try to determine whether the shader uses the Time variable
             wil::com_ptr<ID3D11ShaderReflection> reflector;
-            if (SUCCEEDED_LOG(D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(reflector.put()))))
+            if (SUCCEEDED_LOG(D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(reflector.addressof()))))
             {
+                // Depending on the version of the d3dcompiler_*.dll, the next two functions either return nullptr
+                // on failure or an instance of CInvalidSRConstantBuffer or CInvalidSRVariable respectively,
+                // which cause GetDesc() to return E_FAIL. In other words, we have to assume that any failure in the
+                // next few lines indicates that the cbuffer is entirely unused (--> _requiresContinuousRedraw=false).
                 if (ID3D11ShaderReflectionConstantBuffer* constantBufferReflector = reflector->GetConstantBufferByIndex(0)) // shader buffer
                 {
                     if (ID3D11ShaderReflectionVariable* variableReflector = constantBufferReflector->GetVariableByIndex(0)) // time
                     {
                         D3D11_SHADER_VARIABLE_DESC variableDescriptor;
-                        if (SUCCEEDED_LOG(variableReflector->GetDesc(&variableDescriptor)))
+                        if (SUCCEEDED(variableReflector->GetDesc(&variableDescriptor)))
                         {
                             // only if time is used
                             _requiresContinuousRedraw = WI_IsFlagSet(variableDescriptor.uFlags, D3D_SVF_USED);
                         }
                     }
                 }
+            }
+            else
+            {
+                // Unless we can determine otherwise, assume this shader requires evaluation every frame
+                _requiresContinuousRedraw = true;
             }
         }
         else
@@ -447,8 +453,6 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
     else if (p.s->misc->useRetroTerminalEffect)
     {
         THROW_IF_FAILED(p.device->CreatePixelShader(&custom_shader_ps[0], sizeof(custom_shader_ps), nullptr, _customPixelShader.put()));
-        // We know the built-in retro shader doesn't require continuous redraw.
-        _requiresContinuousRedraw = false;
     }
 
     if (_customPixelShader)
@@ -1206,6 +1210,29 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
         .glyphIndices = &glyphEntry.glyphIndex,
     };
 
+    // To debug issues with this function it may be helpful to know which file
+    // a given font face corresponds to. This code works for most cases.
+#if 0
+    wchar_t filePath[MAX_PATH]{};
+    {
+        UINT32 fileCount = 1;
+        wil::com_ptr<IDWriteFontFile> file;
+        if (SUCCEEDED(fontFaceEntry.fontFace->GetFiles(&fileCount, file.addressof())))
+        {
+            wil::com_ptr<IDWriteFontFileLoader> loader;
+            THROW_IF_FAILED(file->GetLoader(loader.addressof()));
+
+            if (const auto localLoader = loader.try_query<IDWriteLocalFontFileLoader>())
+            {
+                void const* fontFileReferenceKey;
+                UINT32 fontFileReferenceKeySize;
+                THROW_IF_FAILED(file->GetReferenceKey(&fontFileReferenceKey, &fontFileReferenceKeySize));
+                THROW_IF_FAILED(localLoader->GetFilePathFromKey(fontFileReferenceKey, fontFileReferenceKeySize, &filePath[0], MAX_PATH));
+            }
+        }
+    }
+#endif
+
     // It took me a while to figure out how to rasterize glyphs manually with DirectWrite without depending on Direct2D.
     // The benefits are a reduction in memory usage, an increase in performance under certain circumstances and most
     // importantly, the ability to debug the renderer more easily, because many graphics debuggers don't support Direct2D.
@@ -1475,7 +1502,7 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
     if (!_softFontBitmap)
     {
         // Allocating such a tiny texture is very wasteful (min. texture size on GPUs
-        // right now is 64kB), but this is a seldomly used feature so it's fine...
+        // right now is 64kB), but this is a seldom used feature so it's fine...
         const D2D1_SIZE_U size{
             static_cast<UINT32>(p.s->font->softFontCellSize.width),
             static_cast<UINT32>(p.s->font->softFontCellSize.height),
@@ -1488,30 +1515,6 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
         THROW_IF_FAILED(_d2dRenderTarget->CreateBitmap(size, nullptr, 0, &bitmapProperties, _softFontBitmap.addressof()));
     }
 
-    {
-        const auto width = static_cast<size_t>(p.s->font->softFontCellSize.width);
-        const auto height = static_cast<size_t>(p.s->font->softFontCellSize.height);
-
-        auto bitmapData = Buffer<u32>{ width * height };
-        const auto glyphIndex = glyphEntry.glyphIndex - 0xEF20u;
-        auto src = p.s->font->softFontPattern.begin() + height * glyphIndex;
-        auto dst = bitmapData.begin();
-
-        for (size_t y = 0; y < height; y++)
-        {
-            auto srcBits = *src++;
-            for (size_t x = 0; x < width; x++)
-            {
-                const auto srcBitIsSet = (srcBits & 0x8000) != 0;
-                *dst++ = srcBitIsSet ? 0xffffffff : 0x00000000;
-                srcBits <<= 1;
-            }
-        }
-
-        const auto pitch = static_cast<UINT32>(width * sizeof(u32));
-        THROW_IF_FAILED(_softFontBitmap->CopyFromMemory(nullptr, bitmapData.data(), pitch));
-    }
-
     const auto interpolation = p.s->font->antialiasingMode == AntialiasingMode::Aliased ? D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR : D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC;
     const D2D1_RECT_F dest{
         static_cast<f32>(rect.x),
@@ -1521,6 +1524,7 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
     };
 
     _d2dBeginDrawing();
+    _drawSoftFontGlyphInBitmap(p, glyphEntry);
     _d2dRenderTarget->DrawBitmap(_softFontBitmap.get(), &dest, 1, interpolation, nullptr, nullptr);
 
     glyphEntry.data.shadingType = static_cast<u16>(ShadingType::TextGrayscale);
@@ -1538,6 +1542,51 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
     }
 
     return true;
+}
+
+void BackendD3D::_drawSoftFontGlyphInBitmap(const RenderingPayload& p, const AtlasGlyphEntry& glyphEntry) const
+{
+    if (!isSoftFontChar(glyphEntry.glyphIndex))
+    {
+        // AtlasEngine::_mapReplacementCharacter should have filtered inputs with isSoftFontChar already.
+        assert(false);
+        return;
+    }
+
+    const auto width = static_cast<size_t>(p.s->font->softFontCellSize.width);
+    const auto height = static_cast<size_t>(p.s->font->softFontCellSize.height);
+    const auto& softFontPattern = p.s->font->softFontPattern;
+
+    // The isSoftFontChar() range is [0xEF20,0xEF80).
+    const auto offset = glyphEntry.glyphIndex - 0xEF20u;
+    const auto offsetBeg = offset * height;
+    const auto offsetEnd = offsetBeg + height;
+
+    if (offsetEnd > softFontPattern.size())
+    {
+        // Out of range values should not occur, but they do and it's unknown why: GH#15553
+        assert(false);
+        return;
+    }
+
+    Buffer<u32> bitmapData{ width * height };
+    auto dst = bitmapData.begin();
+    auto it = softFontPattern.begin() + offsetBeg;
+    const auto end = softFontPattern.begin() + offsetEnd;
+
+    while (it != end)
+    {
+        auto srcBits = *it++;
+        for (size_t x = 0; x < width; x++)
+        {
+            const auto srcBitIsSet = (srcBits & 0x8000) != 0;
+            *dst++ = srcBitIsSet ? 0xffffffff : 0x00000000;
+            srcBits <<= 1;
+        }
+    }
+
+    const auto pitch = static_cast<UINT32>(width * sizeof(u32));
+    THROW_IF_FAILED(_softFontBitmap->CopyFromMemory(nullptr, bitmapData.data(), pitch));
 }
 
 void BackendD3D::_drawGlyphPrepareRetry(const RenderingPayload& p)

@@ -106,6 +106,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::hstring FontFaceName() const noexcept;
         uint16_t FontWeight() const noexcept;
 
+        til::color ForegroundColor() const;
         til::color BackgroundColor() const;
 
         void SendInput(const winrt::hstring& wstr);
@@ -205,9 +206,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);
 
-        void Search(const winrt::hstring& text,
-                    const bool goForward,
-                    const bool caseSensitive);
+        void Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
+        void ClearSearch();
+
+        Windows::Foundation::Collections::IVector<int32_t> SearchResultRows();
 
         void LeftClickOnTerminal(const til::point terminalPosition,
                                  const int numberOfClicks,
@@ -244,11 +246,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldShowSelectOutput();
 
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
+        RUNTIME_SETTING(double, FocusedOpacity, FocusedAppearance().Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
-        WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
+        TYPED_EVENT(FontSizeChanged,           IInspectable, Control::FontSizeChangedArgs);
 
         TYPED_EVENT(CopyToClipboard,           IInspectable, Control::CopyToClipboardEventArgs);
         TYPED_EVENT(TitleChanged,              IInspectable, Control::TitleChangedEventArgs);
@@ -305,6 +308,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<::Microsoft::Console::Render::IRenderEngine> _renderEngine{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
+        ::Search _searcher;
+
         winrt::handle _lastSwapChainHandle{ nullptr };
 
         FontInfoDesired _desiredFont;
@@ -337,10 +342,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::point _contextMenuBufferPosition{ 0, 0 };
 
+        Windows::Foundation::Collections::IVector<int32_t> _cachedSearchResultRows{ nullptr };
+
         void _setupDispatcherAndCallbacks();
 
         bool _setFontSizeUnderLock(float fontSize);
-        void _updateFont(const bool initialUpdate = false);
+        void _updateFont();
         void _refreshSizeUnderLock();
         void _updateSelectionUI();
         bool _shouldTryUpdateSelection(const WORD vkey);
@@ -380,7 +387,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _updateAntiAliasingMode();
         void _connectionOutputHandler(const hstring& hstr);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
-        void _setOpacity(const double opacity);
+        void _setOpacity(const double opacity, const bool focused = true);
 
         bool _isBackgroundTransparent();
         void _focusChanged(bool focused);

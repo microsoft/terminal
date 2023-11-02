@@ -48,140 +48,6 @@ void SetConsoleCPInfo(const BOOL fOutput)
 }
 
 // Routine Description:
-// - This routine check bisected on Unicode string end.
-// Arguments:
-// - pwchBuffer - Pointer to Unicode string buffer.
-// - cWords - Number of Unicode string.
-// - cBytes - Number of bisect position by byte counts.
-// Return Value:
-// - TRUE - Bisected character.
-// - FALSE - Correctly.
-BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR* pwchBuffer,
-                        _In_ size_t cWords,
-                        _In_ size_t cBytes) noexcept
-{
-    while (cWords && cBytes)
-    {
-        if (IsGlyphFullWidth(*pwchBuffer))
-        {
-            if (cBytes < 2)
-            {
-                return TRUE;
-            }
-            else
-            {
-                cWords--;
-                cBytes -= 2;
-                pwchBuffer++;
-            }
-        }
-        else
-        {
-            cWords--;
-            cBytes--;
-            pwchBuffer++;
-        }
-    }
-
-    return FALSE;
-}
-
-// Routine Description:
-// - This routine check bisected on Unicode string end.
-// Arguments:
-// - ScreenInfo - reference to screen information structure.
-// - pwchBuffer - Pointer to Unicode string buffer.
-// - cWords - Number of Unicode string.
-// - cBytes - Number of bisect position by byte counts.
-// - fPrintableControlChars - TRUE if control characters are being expanded (to ^X)
-// Return Value:
-// - TRUE - Bisected character.
-// - FALSE - Correctly.
-BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
-                         _In_reads_bytes_(cBytes) const WCHAR* pwchBuffer,
-                         _In_ size_t cWords,
-                         _In_ size_t cBytes,
-                         _In_ til::CoordType sOriginalXPosition,
-                         _In_ BOOL fPrintableControlChars)
-{
-    if (WI_IsFlagSet(ScreenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
-    {
-        while (cWords && cBytes)
-        {
-            const auto Char = *pwchBuffer;
-            if (Char >= UNICODE_SPACE)
-            {
-                if (IsGlyphFullWidth(Char))
-                {
-                    if (cBytes < 2)
-                    {
-                        return TRUE;
-                    }
-                    else
-                    {
-                        cWords--;
-                        cBytes -= 2;
-                        pwchBuffer++;
-                        sOriginalXPosition += 2;
-                    }
-                }
-                else
-                {
-                    cWords--;
-                    cBytes--;
-                    pwchBuffer++;
-                    sOriginalXPosition++;
-                }
-            }
-            else
-            {
-                cWords--;
-                pwchBuffer++;
-                switch (Char)
-                {
-                case UNICODE_BELL:
-                    if (fPrintableControlChars)
-                        goto CtrlChar;
-                    break;
-                case UNICODE_BACKSPACE:
-                case UNICODE_LINEFEED:
-                case UNICODE_CARRIAGERETURN:
-                    break;
-                case UNICODE_TAB:
-                {
-                    size_t TabSize = NUMBER_OF_SPACES_IN_TAB(sOriginalXPosition);
-                    sOriginalXPosition = (til::CoordType)(sOriginalXPosition + TabSize);
-                    if (cBytes < TabSize)
-                        return TRUE;
-                    cBytes -= TabSize;
-                    break;
-                }
-                default:
-                    if (fPrintableControlChars)
-                    {
-                    CtrlChar:
-                        if (cBytes < 2)
-                            return TRUE;
-                        cBytes -= 2;
-                        sOriginalXPosition += 2;
-                    }
-                    else
-                    {
-                        cBytes--;
-                        sOriginalXPosition++;
-                    }
-                }
-            }
-        }
-        return FALSE;
-    }
-    else
-    {
-        return CheckBisectStringW(pwchBuffer, cWords, cBytes);
-    }
-}
-
-// Routine Description:
 // - Converts unicode characters to ANSI given a destination codepage
 // Arguments:
 // - uiCodePage - codepage for use in conversion
@@ -205,18 +71,6 @@ int ConvertToOem(const UINT uiCodePage,
     return LOG_IF_WIN32_BOOL_FALSE(WideCharToMultiByte(uiCodePage, 0, pwchSource, cchSource, pchTarget, cchTarget, nullptr, nullptr));
 }
 
-// Data in the output buffer is the true unicode value.
-int ConvertInputToUnicode(const UINT uiCodePage,
-                          _In_reads_(cchSource) const CHAR* const pchSource,
-                          const UINT cchSource,
-                          _Out_writes_(cchTarget) WCHAR* const pwchTarget,
-                          const UINT cchTarget) noexcept
-{
-    DBGCHARS(("ConvertInputToUnicode %d->U %.*s\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pchSource));
-
-    return MultiByteToWideChar(uiCodePage, 0, pchSource, cchSource, pwchTarget, cchTarget);
-}
-
 // Output data is always translated via the ansi codepage so glyph translation works.
 int ConvertOutputToUnicode(_In_ UINT uiCodePage,
                            _In_reads_(cchSource) const CHAR* const pchSource,
@@ -226,46 +80,6 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
 {
     FAIL_FAST_IF(!(cchTarget > 0));
     pwchTarget[0] = L'\0';
-
     DBGCHARS(("ConvertOutputToUnicode %d->U %.*s\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pchSource));
-
-    if (DoBuffersOverlap(reinterpret_cast<const BYTE* const>(pchSource),
-                         cchSource * sizeof(CHAR),
-                         reinterpret_cast<const BYTE* const>(pwchTarget),
-                         cchTarget * sizeof(WCHAR)))
-    {
-        try
-        {
-            // buffers overlap so we need to copy one
-            std::string copyData(pchSource, cchSource);
-            return MultiByteToWideChar(uiCodePage, MB_USEGLYPHCHARS, copyData.data(), cchSource, pwchTarget, cchTarget);
-        }
-        catch (...)
-        {
-            return 0;
-        }
-    }
-    else
-    {
-        return MultiByteToWideChar(uiCodePage, MB_USEGLYPHCHARS, pchSource, cchSource, pwchTarget, cchTarget);
-    }
-}
-
-// Routine Description:
-// - checks if two buffers overlap
-// Arguments:
-// - pBufferA - pointer to start of first buffer
-// - cbBufferA - size of first buffer, in bytes
-// - pBufferB - pointer to start of second buffer
-// - cbBufferB - size of second buffer, in bytes
-// Return Value:
-// - true if buffers overlap, false otherwise
-bool DoBuffersOverlap(const BYTE* const pBufferA,
-                      const UINT cbBufferA,
-                      const BYTE* const pBufferB,
-                      const UINT cbBufferB) noexcept
-{
-    const auto pBufferAEnd = pBufferA + cbBufferA;
-    const auto pBufferBEnd = pBufferB + cbBufferB;
-    return (pBufferA <= pBufferB && pBufferAEnd >= pBufferB) || (pBufferB <= pBufferA && pBufferBEnd >= pBufferA);
+    return MultiByteToWideChar(uiCodePage, MB_USEGLYPHCHARS, pchSource, cchSource, pwchTarget, cchTarget);
 }

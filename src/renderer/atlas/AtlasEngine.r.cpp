@@ -329,7 +329,7 @@ void AtlasEngine::_createSwapChain()
         .SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL,
         // If our background is opaque we can enable "independent" flips by setting DXGI_ALPHA_MODE_IGNORE.
         // As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
-        .AlphaMode = _p.s->target->enableTransparentBackground ? DXGI_ALPHA_MODE_PREMULTIPLIED : DXGI_ALPHA_MODE_IGNORE,
+        .AlphaMode = _p.s->target->useAlpha ? DXGI_ALPHA_MODE_PREMULTIPLIED : DXGI_ALPHA_MODE_IGNORE,
         .Flags = swapChainFlags,
     };
 
@@ -359,6 +359,8 @@ void AtlasEngine::_createSwapChain()
     _p.swapChain.targetGeneration = _p.s->target.generation();
     _p.swapChain.targetSize = _p.s->targetSize;
     _p.swapChain.waitForPresentation = true;
+
+    LOG_IF_FAILED(_p.swapChain.swapChain->SetMaximumFrameLatency(1));
 
     WaitUntilCanRender();
 

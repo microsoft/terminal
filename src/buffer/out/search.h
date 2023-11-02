@@ -17,70 +17,35 @@ Revision History:
 
 #pragma once
 
-#include "TextAttribute.hpp"
 #include "textBuffer.hpp"
 #include "../renderer/inc/IRenderData.hpp"
-
-// This used to be in find.h.
-#define SEARCH_STRING_LENGTH (80)
 
 class Search final
 {
 public:
-    enum class Direction
-    {
-        Forward,
-        Backward
-    };
+    Search() = default;
 
-    enum class Sensitivity
-    {
-        CaseInsensitive,
-        CaseSensitive
-    };
+    bool ResetIfStale(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, bool reverse, bool caseInsensitive);
 
-    Search(Microsoft::Console::Render::IRenderData& renderData,
-           const std::wstring_view str,
-           const Direction dir,
-           const Sensitivity sensitivity);
+    void MoveToCurrentSelection();
+    void MoveToPoint(til::point anchor) noexcept;
+    void MovePastPoint(til::point anchor) noexcept;
+    void FindNext() noexcept;
 
-    Search(Microsoft::Console::Render::IRenderData& renderData,
-           const std::wstring_view str,
-           const Direction dir,
-           const Sensitivity sensitivity,
-           const til::point anchor);
+    const til::point_span* GetCurrent() const noexcept;
+    bool SelectCurrent() const;
 
-    bool FindNext();
-    void Select() const;
-    void Color(const TextAttribute attr) const;
-
-    std::pair<til::point, til::point> GetFoundLocation() const noexcept;
+    const std::vector<til::point_span>& Results() const noexcept;
+    ptrdiff_t CurrentMatch() const noexcept;
 
 private:
-    wchar_t _ApplySensitivity(const wchar_t wch) const noexcept;
-    bool _FindNeedleInHaystackAt(const til::point pos, til::point& start, til::point& end) const;
-    bool _CompareChars(const std::wstring_view one, const std::wstring_view two) const noexcept;
-    void _UpdateNextPosition();
+    // _renderData is a pointer so that Search() is constexpr default constructable.
+    Microsoft::Console::Render::IRenderData* _renderData = nullptr;
+    std::wstring _needle;
+    bool _caseInsensitive = false;
+    uint64_t _lastMutationId = 0;
 
-    void _IncrementCoord(til::point& coord) const noexcept;
-    void _DecrementCoord(til::point& coord) const noexcept;
-
-    static til::point s_GetInitialAnchor(const Microsoft::Console::Render::IRenderData& renderData, const Direction dir);
-
-    static std::vector<std::wstring> s_CreateNeedleFromString(const std::wstring_view wstr);
-
-    bool _reachedEnd = false;
-    til::point _coordNext;
-    til::point _coordSelStart;
-    til::point _coordSelEnd;
-
-    const til::point _coordAnchor;
-    const std::vector<std::wstring> _needle;
-    const Direction _direction;
-    const Sensitivity _sensitivity;
-    Microsoft::Console::Render::IRenderData& _renderData;
-
-#ifdef UNIT_TESTING
-    friend class SearchTests;
-#endif
+    std::vector<til::point_span> _results;
+    ptrdiff_t _index = 0;
+    ptrdiff_t _step = 0;
 };

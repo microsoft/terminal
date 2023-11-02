@@ -4,6 +4,7 @@ advapi
 altform
 altforms
 appendwttlogging
+appinstaller
 appx
 appxbundle
 appxerror
@@ -59,12 +60,13 @@ PRIINFO
 propkey
 pscustomobject
 QWORD
+rdpclip
 regedit
 resfiles
 robocopy
 SACLs
-segoe
 sdkddkver
+segoe
 Shobjidl
 sid
 Skype

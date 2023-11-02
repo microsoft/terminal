@@ -313,7 +313,7 @@ namespace Microsoft::Console::Render::Atlas
     struct TargetSettings
     {
         HWND hwnd = nullptr;
-        bool enableTransparentBackground = false;
+        bool useAlpha = false;
         bool useSoftwareRendering = false;
     };
 

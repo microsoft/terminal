@@ -652,6 +652,15 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVi
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IconStyle)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "default", ValueType::Default },
+        pair_type{ "hidden", ValueType::Hidden },
+        pair_type{ "monochrome", ValueType::Monochrome },
+    };
+};
+
 // Possible ScrollToMarkDirection values
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
 {

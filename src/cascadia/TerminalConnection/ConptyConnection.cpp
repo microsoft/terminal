@@ -6,7 +6,6 @@
 
 #include <conpty-static.h>
 #include <til/string.h>
-#include <til/env.h>
 #include <winternl.h>
 
 #include "CTerminalHandoff.h"
@@ -83,21 +82,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                              nullptr));
 
         auto cmdline{ wil::ExpandEnvironmentStringsW<std::wstring>(_commandline.c_str()) }; // mutable copy -- required for CreateProcessW
-
-        til::env environment;
-        auto zeroEnvMap = wil::scope_exit([&]() noexcept {
-            environment.clear();
-        });
-
-        // Populate the environment map with the current environment.
-        if (_reloadEnvironmentVariables)
-        {
-            environment.regenerate();
-        }
-        else
-        {
-            environment = til::env::from_current_environment();
-        }
+        auto environment = _initialEnv;
 
         {
             // Convert connection Guid to string and ignore the enclosing '{}'.
@@ -148,15 +133,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             environment.as_map().insert_or_assign(L"WSLENV", wslEnv);
         }
 
-        std::vector<wchar_t> newEnvVars;
-        auto zeroNewEnv = wil::scope_exit([&]() noexcept {
-            ::SecureZeroMemory(newEnvVars.data(),
-                               newEnvVars.size() * sizeof(decltype(newEnvVars.begin())::value_type));
-        });
-
-        RETURN_IF_FAILED(environment.to_environment_strings_w(newEnvVars));
-
-        auto lpEnvironment = newEnvVars.empty() ? nullptr : newEnvVars.data();
+        auto newEnvVars = environment.to_string();
+        const auto lpEnvironment = newEnvVars.empty() ? nullptr : newEnvVars.data();
 
         // If we have a startingTitle, create a mutable character buffer to add
         // it to the STARTUPINFO.
@@ -235,7 +213,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     Windows::Foundation::Collections::ValueSet ConptyConnection::CreateSettings(const winrt::hstring& cmdline,
                                                                                 const winrt::hstring& startingDirectory,
                                                                                 const winrt::hstring& startingTitle,
-                                                                                const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
+                                                                                bool reloadEnvironmentVariables,
+                                                                                const winrt::hstring& initialEnvironment,
+                                                                                const Windows::Foundation::Collections::IMapView<hstring, hstring>& environmentOverrides,
                                                                                 uint32_t rows,
                                                                                 uint32_t columns,
                                                                                 const winrt::guid& guid,
@@ -246,21 +226,33 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         vs.Insert(L"commandline", Windows::Foundation::PropertyValue::CreateString(cmdline));
         vs.Insert(L"startingDirectory", Windows::Foundation::PropertyValue::CreateString(startingDirectory));
         vs.Insert(L"startingTitle", Windows::Foundation::PropertyValue::CreateString(startingTitle));
+        vs.Insert(L"reloadEnvironmentVariables", Windows::Foundation::PropertyValue::CreateBoolean(reloadEnvironmentVariables));
         vs.Insert(L"initialRows", Windows::Foundation::PropertyValue::CreateUInt32(rows));
         vs.Insert(L"initialCols", Windows::Foundation::PropertyValue::CreateUInt32(columns));
         vs.Insert(L"guid", Windows::Foundation::PropertyValue::CreateGuid(guid));
         vs.Insert(L"profileGuid", Windows::Foundation::PropertyValue::CreateGuid(profileGuid));
 
-        if (environment)
+        if (environmentOverrides)
         {
             Windows::Foundation::Collections::ValueSet env{};
-            for (const auto& [k, v] : environment)
+            for (const auto& [k, v] : environmentOverrides)
             {
                 env.Insert(k, Windows::Foundation::PropertyValue::CreateString(v));
             }
             vs.Insert(L"environment", env);
         }
+
+        if (!initialEnvironment.empty())
+        {
+            vs.Insert(L"initialEnvironment", Windows::Foundation::PropertyValue::CreateString(initialEnvironment));
+        }
         return vs;
+    }
+
+    template<typename T>
+    T unbox_prop_or(const Windows::Foundation::Collections::ValueSet& blob, std::wstring_view key, T defaultValue)
+    {
+        return winrt::unbox_value_or<T>(blob.TryLookup(key).try_as<Windows::Foundation::IPropertyValue>(), defaultValue);
     }
 
     void ConptyConnection::Initialize(const Windows::Foundation::Collections::ValueSet& settings)
@@ -271,26 +263,47 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // auto bad = unbox_value_or<hstring>(settings.TryLookup(L"foo").try_as<IPropertyValue>(), nullptr);
             // It'll just return null
 
-            _commandline = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"commandline").try_as<Windows::Foundation::IPropertyValue>(), _commandline);
-            _startingDirectory = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingDirectory").try_as<Windows::Foundation::IPropertyValue>(), _startingDirectory);
-            _startingTitle = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingTitle").try_as<Windows::Foundation::IPropertyValue>(), _startingTitle);
-            _rows = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _rows);
-            _cols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _cols);
-            _guid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"guid").try_as<Windows::Foundation::IPropertyValue>(), _guid);
+            _commandline = unbox_prop_or<winrt::hstring>(settings, L"commandline", _commandline);
+            _startingDirectory = unbox_prop_or<winrt::hstring>(settings, L"startingDirectory", _startingDirectory);
+            _startingTitle = unbox_prop_or<winrt::hstring>(settings, L"startingTitle", _startingTitle);
+            _rows = unbox_prop_or<uint32_t>(settings, L"initialRows", _rows);
+            _cols = unbox_prop_or<uint32_t>(settings, L"initialCols", _cols);
+            _guid = unbox_prop_or<winrt::guid>(settings, L"guid", _guid);
             _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
             {
-                _passthroughMode = winrt::unbox_value_or<bool>(settings.TryLookup(L"passthroughMode").try_as<Windows::Foundation::IPropertyValue>(), _passthroughMode);
+                _passthroughMode = unbox_prop_or<bool>(settings, L"passthroughMode", _passthroughMode);
             }
-            _inheritCursor = winrt::unbox_value_or<bool>(settings.TryLookup(L"inheritCursor").try_as<Windows::Foundation::IPropertyValue>(), _inheritCursor);
-            _reloadEnvironmentVariables = winrt::unbox_value_or<bool>(settings.TryLookup(L"reloadEnvironmentVariables").try_as<Windows::Foundation::IPropertyValue>(),
-                                                                      _reloadEnvironmentVariables);
-            _profileGuid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"profileGuid").try_as<Windows::Foundation::IPropertyValue>(), _profileGuid);
-        }
+            _inheritCursor = unbox_prop_or<bool>(settings, L"inheritCursor", _inheritCursor);
+            _profileGuid = unbox_prop_or<winrt::guid>(settings, L"profileGuid", _profileGuid);
 
-        if (_guid == guid{})
-        {
-            _guid = Utils::CreateGuid();
+            const auto& initialEnvironment{ unbox_prop_or<winrt::hstring>(settings, L"initialEnvironment", L"") };
+
+            const bool reloadEnvironmentVariables = unbox_prop_or<bool>(settings, L"reloadEnvironmentVariables", false);
+
+            if (reloadEnvironmentVariables)
+            {
+                _initialEnv.regenerate();
+            }
+            else
+            {
+                if (!initialEnvironment.empty())
+                {
+                    _initialEnv = til::env{ initialEnvironment.c_str() };
+                }
+                else
+                {
+                    // If we were not explicitly provided an "initial" env block to
+                    // treat as our original one, then just use our actual current
+                    // env block.
+                    _initialEnv = til::env::from_current_environment();
+                }
+            }
+
+            if (_guid == guid{})
+            {
+                _guid = Utils::CreateGuid();
+            }
         }
     }
 
@@ -734,5 +747,4 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         co_await winrt::resume_background(); // move to background
         connection.reset(); // explicitly destruct
     }
-
 }

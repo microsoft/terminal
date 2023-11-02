@@ -32,7 +32,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _usingLineRenditions(false),
     _stopUsingLineRenditions(false),
     _usingSoftFont(false),
-    _lastTextAttributes(INVALID_COLOR, INVALID_COLOR),
+    _lastTextAttributes(INVALID_COLOR, INVALID_COLOR, INVALID_COLOR),
     _lastViewport(initialViewport),
     _pool(til::pmr::get_default_resource()),
     _invalidMap(initialViewport.Dimensions(), false, &_pool),
@@ -46,11 +46,9 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _circled(false),
     _firstPaint(true),
     _skipCursor(false),
-    _exitResult{ S_OK },
     _terminalOwner{ nullptr },
     _newBottomLine{ false },
     _deferredCursorPos{ INVALID_COORDS },
-    _inResizeRequest{ false },
     _trace{},
     _bufferLine{},
     _buffer{},
@@ -136,25 +134,39 @@ CATCH_RETURN();
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT VtEngine::_Flush() noexcept
+void VtEngine::_Flush() noexcept
+{
+    if (!_corked && !_buffer.empty())
+    {
+        _flushImpl();
+    }
+}
+
+// _corked is often true and separating _flushImpl() out allows _flush() to be inlined.
+void VtEngine::_flushImpl() noexcept
 {
     if (_hFile)
     {
-        auto fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
+        const auto fSuccess = WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
         _buffer.clear();
         if (!fSuccess)
         {
-            _exitResult = HRESULT_FROM_WIN32(GetLastError());
+            LOG_LAST_ERROR();
             _hFile.reset();
             if (_terminalOwner)
             {
                 _terminalOwner->CloseOutput();
             }
-            return _exitResult;
         }
     }
+}
 
-    return S_OK;
+// The name of this method is an analogy to TCP_CORK. It instructs
+// the VT renderer to stop flushing its buffer to the output pipe.
+// Don't forget to uncork it!
+void VtEngine::Cork(bool corked) noexcept
+{
+    _corked = corked;
 }
 
 // Method Description:
@@ -425,7 +437,7 @@ void VtEngine::SetTerminalOwner(Microsoft::Console::VirtualTerminal::VtIo* const
 HRESULT VtEngine::RequestCursor() noexcept
 {
     RETURN_IF_FAILED(_RequestCursor());
-    RETURN_IF_FAILED(_Flush());
+    _Flush();
     return S_OK;
 }
 
@@ -444,34 +456,6 @@ HRESULT VtEngine::RequestCursor() noexcept
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), !_pfnSetLookingForDSR);
     _pfnSetLookingForDSR(true);
     return S_OK;
-}
-
-// Method Description:
-// - Tell the vt renderer to begin a resize operation. During a resize
-//   operation, the vt renderer should _not_ request to be repainted during a
-//   text buffer circling event. Any callers of this method should make sure to
-//   call EndResize to make sure the renderer returns to normal behavior.
-//   See GH#1795 for context on this method.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void VtEngine::BeginResizeRequest()
-{
-    _inResizeRequest = true;
-}
-
-// Method Description:
-// - Tell the vt renderer to end a resize operation.
-//   See BeginResize for more details.
-//   See GH#1795 for context on this method.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void VtEngine::EndResizeRequest()
-{
-    _inResizeRequest = false;
 }
 
 // Method Description:
@@ -546,13 +530,20 @@ HRESULT VtEngine::RequestWin32Input() noexcept
     // in the connected terminal after passing through an RIS sequence.
     RETURN_IF_FAILED(_RequestWin32Input());
     RETURN_IF_FAILED(_RequestFocusEventMode());
-    RETURN_IF_FAILED(_Flush());
+    _Flush();
     return S_OK;
 }
 
 HRESULT VtEngine::SwitchScreenBuffer(const bool useAltBuffer) noexcept
 {
     RETURN_IF_FAILED(_SwitchScreenBuffer(useAltBuffer));
-    RETURN_IF_FAILED(_Flush());
+    _Flush();
     return S_OK;
+}
+
+HRESULT VtEngine::RequestMouseMode(const bool enable) noexcept
+{
+    const auto status = _WriteFormatted(FMT_COMPILE("\x1b[?1003;1006{}"), enable ? 'h' : 'l');
+    _Flush();
+    return status;
 }

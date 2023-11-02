@@ -12,6 +12,12 @@ import "ControlCore.idl";
 namespace Microsoft.Terminal.Control
 {
 
+    enum CursorDisplayState
+    {
+        Default,
+        Shown
+    };
+
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl,
                                                    IDirectKeyListener,
                                                    IMouseWheelListener,
@@ -40,7 +46,6 @@ namespace Microsoft.Terminal.Control
 
         Microsoft.Terminal.Control.IControlSettings Settings { get; };
 
-        event FontSizeChangedEventArgs FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
@@ -122,7 +127,7 @@ namespace Microsoft.Terminal.Control
         // opacity set by the settings should call this instead.
         Double BackgroundOpacity { get; };
 
-        Boolean DisplayCursorWhileBlurred;
+        CursorDisplayState CursorVisibility;
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
 

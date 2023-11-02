@@ -3,6 +3,9 @@
 # - Common Project Configuration
 # -------------------------------------
 
+# Pull our dependencies from vcpkg. This includes gsl - if you run into errors
+# from a missing gsl, make sure you go build onecore/window/vcpkg first.
+
 !include $(PROJECT_ROOT)\vcpkg\consume.inc
 
 # -------------------------------------
@@ -32,7 +35,7 @@ USE_NATIVE_EH           = 1
 
 USE_STD_CPP20           = 1
 MSC_WARNING_LEVEL       = /W4 /WX
-USER_C_FLAGS            = $(USER_C_FLAGS) /fp:contract /utf-8
+USER_C_FLAGS            = $(USER_C_FLAGS) /Zc:preprocessor /fp:contract /utf-8
 
 # -------------------------------------
 # Common Console Includes and Libraries

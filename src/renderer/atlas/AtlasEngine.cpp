@@ -87,6 +87,7 @@ try
         _api.invalidatedRows.start = std::min(_api.invalidatedRows.start, _p.s->viewportCellCount.y);
         _api.invalidatedRows.end = clamp(_api.invalidatedRows.end, _api.invalidatedRows.start, _p.s->viewportCellCount.y);
     }
+    if (_api.scrollOffset)
     {
         const auto limit = gsl::narrow_cast<i16>(_p.s->viewportCellCount.y & 0x7fff);
         const auto offset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
@@ -250,6 +251,16 @@ CATCH_RETURN()
 try
 {
     _flushBufferLine();
+
+    // PaintCursor() is only called when the cursor is visible, but we need to invalidate the cursor area
+    // even if it isn't. Otherwise a transition from a visible to an invisible cursor wouldn't be rendered.
+    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
+    {
+        _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, r.left * _p.s->font->cellSize.x);
+        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, r.top * _p.s->font->cellSize.y);
+        _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, r.right * _p.s->font->cellSize.x);
+        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, r.bottom * _p.s->font->cellSize.y);
+    }
 
     _api.invalidatedCursorArea = invalidatedAreaNone;
     _api.invalidatedRows = invalidatedRowsNone;
@@ -421,15 +432,6 @@ try
             *_api.s.write()->cursor.write() = cachedOptions;
             *_p.s.write()->cursor.write() = cachedOptions;
         }
-    }
-
-    // Clear the previous cursor
-    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
-    {
-        _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, r.left * _p.s->font->cellSize.x);
-        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, r.top * _p.s->font->cellSize.y);
-        _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, r.right * _p.s->font->cellSize.x);
-        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, r.bottom * _p.s->font->cellSize.y);
     }
 
     if (options.isOn)
@@ -631,13 +633,12 @@ void AtlasEngine::_flushBufferLine()
 
     auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
 
-    wil::com_ptr<IDWriteFontFace2> mappedFontFace;
-
 #pragma warning(suppress : 26494) // Variable 'mappedEnd' is uninitialized. Always initialize an object (type.5).
     for (u32 idx = 0, mappedEnd; idx < _api.bufferLine.size(); idx = mappedEnd)
     {
         u32 mappedLength = 0;
-        _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx, &mappedLength, mappedFontFace.put());
+        wil::com_ptr<IDWriteFontFace2> mappedFontFace;
+        _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx, &mappedLength, mappedFontFace.addressof());
         mappedEnd = idx + mappedLength;
 
         if (!mappedFontFace)
@@ -648,6 +649,9 @@ void AtlasEngine::_flushBufferLine()
 
         const auto initialIndicesCount = row.glyphIndices.size();
 
+        // GetTextComplexity() returns as many glyph indices as its textLength parameter (here: mappedLength).
+        // This block ensures that the buffer has sufficient capacity. It also initializes the glyphProps buffer because it and
+        // glyphIndices sort of form a "pair" in the _mapComplex() code and are always simultaneously resized there as well.
         if (mappedLength > _api.glyphIndices.size())
         {
             auto size = _api.glyphIndices.size();
@@ -658,33 +662,40 @@ void AtlasEngine::_flushBufferLine()
             _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ size };
         }
 
-        // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
-        for (u32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
+        if (_api.s->font->fontFeatures.empty())
         {
-            BOOL isTextSimple = FALSE;
-            THROW_IF_FAILED(_p.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + idx, mappedEnd - idx, mappedFontFace.get(), &isTextSimple, &complexityLength, _api.glyphIndices.data()));
-
-            if (isTextSimple)
+            // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
+            for (u32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
             {
-                const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
-                const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
+                BOOL isTextSimple = FALSE;
+                THROW_IF_FAILED(_p.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + idx, mappedEnd - idx, mappedFontFace.get(), &isTextSimple, &complexityLength, _api.glyphIndices.data()));
 
-                for (size_t i = 0; i < complexityLength; ++i)
+                if (isTextSimple)
                 {
-                    const size_t col1 = _api.bufferLineColumn[idx + i + 0];
-                    const size_t col2 = _api.bufferLineColumn[idx + i + 1];
-                    const auto glyphAdvance = (col2 - col1) * _p.s->font->cellSize.x;
-                    const auto fg = colors[col1 << shift];
-                    row.glyphIndices.emplace_back(_api.glyphIndices[i]);
-                    row.glyphAdvances.emplace_back(static_cast<f32>(glyphAdvance));
-                    row.glyphOffsets.emplace_back();
-                    row.colors.emplace_back(fg);
+                    const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
+                    const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
+
+                    for (size_t i = 0; i < complexityLength; ++i)
+                    {
+                        const size_t col1 = _api.bufferLineColumn[idx + i + 0];
+                        const size_t col2 = _api.bufferLineColumn[idx + i + 1];
+                        const auto glyphAdvance = (col2 - col1) * _p.s->font->cellSize.x;
+                        const auto fg = colors[col1 << shift];
+                        row.glyphIndices.emplace_back(_api.glyphIndices[i]);
+                        row.glyphAdvances.emplace_back(static_cast<f32>(glyphAdvance));
+                        row.glyphOffsets.emplace_back();
+                        row.colors.emplace_back(fg);
+                    }
+                }
+                else
+                {
+                    _mapComplex(mappedFontFace.get(), idx, complexityLength, row);
                 }
             }
-            else
-            {
-                _mapComplex(mappedFontFace.get(), idx, complexityLength, row);
-            }
+        }
+        else
+        {
+            _mapComplex(mappedFontFace.get(), idx, mappedLength, row);
         }
 
         const auto indicesCount = row.glyphIndices.size();
@@ -932,10 +943,6 @@ void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
     {
         return;
     }
-
-    static constexpr auto isSoftFontChar = [](wchar_t ch) noexcept {
-        return ch >= 0xEF20 && ch < 0xEF80;
-    };
 
     auto pos1 = from;
     auto pos2 = pos1;

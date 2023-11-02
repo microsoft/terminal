@@ -162,7 +162,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     if (textAttributes.IsUnderlined() != _lastTextAttributes.IsUnderlined())
     {
         RETURN_IF_FAILED(_SetUnderlined(textAttributes.IsUnderlined()));
-        _lastTextAttributes.SetUnderlined(textAttributes.IsUnderlined());
+        _lastTextAttributes.SetUnderlineStyle(textAttributes.GetUnderlineStyle());
     }
 
     return S_OK;
@@ -555,7 +555,8 @@ CATCH_RETURN();
     {
         RETURN_IF_FAILED(_Write("\x1b[2t"));
     }
-    return _Flush();
+    _Flush();
+    return S_OK;
 }
 
 // Method Description:

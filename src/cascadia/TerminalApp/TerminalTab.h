@@ -36,12 +36,12 @@ namespace winrt::TerminalApp::implementation
 
         void AttachColorPicker(winrt::TerminalApp::ColorPickupFlyout& colorPicker);
 
-        void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
-                       const float splitSize,
-                       std::shared_ptr<Pane> newPane);
+        std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
+                                                                          const float splitSize,
+                                                                          std::shared_ptr<Pane> newPane);
 
         void ToggleSplitOrientation();
-        void UpdateIcon(const winrt::hstring iconPath);
+        void UpdateIcon(const winrt::hstring iconPath, const winrt::Microsoft::Terminal::Settings::Model::IconStyle iconStyle);
         void HideIcon(const bool hide);
 
         void ShowBellIndicator(const bool show);
@@ -71,7 +71,6 @@ namespace winrt::TerminalApp::implementation
         virtual std::optional<winrt::Windows::UI::Color> GetTabColor() override;
         void SetRuntimeTabColor(const winrt::Windows::UI::Color& color);
         void ResetRuntimeTabColor();
-        void RequestColorPicker();
 
         void UpdateZoom(std::shared_ptr<Pane> newFocus);
         void ToggleZoom();
@@ -99,12 +98,6 @@ namespace winrt::TerminalApp::implementation
 
         WINRT_CALLBACK(ActivePaneChanged, winrt::delegate<>);
         WINRT_CALLBACK(TabRaiseVisualBell, winrt::delegate<>);
-        WINRT_CALLBACK(DuplicateRequested, winrt::delegate<>);
-        WINRT_CALLBACK(SplitTabRequested, winrt::delegate<>);
-        WINRT_CALLBACK(MoveTabToNewWindowRequested, winrt::delegate<>);
-        WINRT_CALLBACK(FindRequested, winrt::delegate<>);
-        WINRT_CALLBACK(ExportTabRequested, winrt::delegate<>);
-        WINRT_CALLBACK(ColorPickerRequested, winrt::delegate<>);
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:
@@ -116,7 +109,9 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> _zoomedPane{ nullptr };
 
         Windows::UI::Xaml::Controls::MenuFlyoutItem _closePaneMenuItem;
+        Windows::UI::Xaml::Controls::MenuFlyoutItem _restartConnectionMenuItem;
 
+        winrt::Microsoft::Terminal::Settings::Model::IconStyle _lastIconStyle;
         winrt::hstring _lastIconPath{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
@@ -132,6 +127,7 @@ namespace winrt::TerminalApp::implementation
             winrt::event_token titleToken;
             winrt::event_token colorToken;
             winrt::event_token taskbarToken;
+            winrt::event_token stateToken;
             winrt::event_token readOnlyToken;
             winrt::event_token focusToken;
 
@@ -153,8 +149,6 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring _runtimeTabText{};
         bool _inRename{ false };
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _tabRenameBoxLayoutUpdatedRevoker;
-
-        winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
         void _Setup();
 
@@ -180,11 +174,23 @@ namespace winrt::TerminalApp::implementation
 
         void _UpdateProgressState();
 
+        void _UpdateConnectionClosedState();
+        void _RestartActivePaneConnection();
+
         void _DuplicateTab();
 
         virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() override;
 
         void _addBroadcastHandlers(const winrt::Microsoft::Terminal::Control::TermControl& control, ControlEventTokens& events);
+
+        void _chooseColorClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void _renameTabClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void _duplicateTabClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void _splitTabClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void _closePaneClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void _exportTextClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void _moveTabToNewWindowClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void _findClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

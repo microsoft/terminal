@@ -332,6 +332,24 @@ public:
         _expectedCursorPos = cursorPos;
     }
 
+    static void MakeSubParamsAndRanges(std::initializer_list<std::initializer_list<const VTParameter>> subParamList, _Out_ std::vector<VTParameter>& subParams, _Out_ std::vector<std::pair<BYTE, BYTE>>& subParamRanges)
+    {
+        // Args are a list of lists of VTParameters:
+        //    { {P1S1, P1S2, P1S3, ... }, { P2S1, P2S2, P2S3, ... } ... }
+        //
+        // P1 and P2 denotes the parameters, while S1, S2, S3 denotes the
+        // subparameters of the corresponding parameter.
+        size_t totalSubParams = 0;
+        subParams.clear();
+        subParamRanges.clear();
+        for (const auto& it : subParamList)
+        {
+            subParams.insert(subParams.end(), it.begin(), it.end());
+            subParamRanges.push_back({ gsl::narrow_cast<BYTE>(totalSubParams), gsl::narrow_cast<BYTE>(it.size() + totalSubParams) });
+            totalSubParams += it.size();
+        }
+    }
+
     void ValidateExpectedCursorPos()
     {
         VERIFY_ARE_EQUAL(_expectedCursorPos, _textBuffer->GetCursor().GetPosition());
@@ -834,13 +852,13 @@ public:
             Log::Comment(L"Testing graphics 'Underline'");
             startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
-            _testGetSet->_expectedAttribute.SetUnderlined(true);
+            _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
             break;
         case DispatchTypes::GraphicsOptions::DoublyUnderlined:
             Log::Comment(L"Testing graphics 'Doubly Underlined'");
             startingAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
-            _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+            _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
             break;
         case DispatchTypes::GraphicsOptions::Overline:
             Log::Comment(L"Testing graphics 'Overline'");
@@ -874,8 +892,7 @@ public:
         case DispatchTypes::GraphicsOptions::NoUnderline:
             Log::Comment(L"Testing graphics 'No Underline'");
             startingAttribute = TextAttribute{ 0 };
-            startingAttribute.SetUnderlined(true);
-            startingAttribute.SetDoublyUnderlined(true);
+            startingAttribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::NoOverline:
@@ -1115,6 +1132,66 @@ public:
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
     }
 
+    TEST_METHOD(GraphicsSingleWithSubParamTests)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{4, 38, 48, 58}") // corresponds to options in DispatchTypes::GraphicsOptions
+        END_TEST_METHOD_PROPERTIES()
+
+        Log::Comment(L"Starting test...");
+        _testGetSet->PrepData();
+
+        // Modify variables based on type of this test
+        DispatchTypes::GraphicsOptions graphicsOption;
+        std::vector<VTParameter> subParams;
+        std::vector<std::pair<BYTE, BYTE>> subParamRanges;
+        size_t uiGraphicsOption;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiGraphicsOptions", uiGraphicsOption));
+        graphicsOption = (DispatchTypes::GraphicsOptions)uiGraphicsOption;
+
+        VTParameter rgOptions[16];
+        size_t cOptions = 1;
+        rgOptions[0] = graphicsOption;
+
+        TextAttribute startingAttribute;
+        switch (graphicsOption)
+        {
+        case DispatchTypes::GraphicsOptions::Underline:
+            Log::Comment(L"Testing graphics 'Underline'");
+            _testGetSet->MakeSubParamsAndRanges({ { 3 } }, subParams, subParamRanges);
+            startingAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
+            break;
+        case DispatchTypes::GraphicsOptions::ForegroundExtended:
+            Log::Comment(L"Testing graphics 'ForegroundExtended'");
+            _testGetSet->MakeSubParamsAndRanges({ { DispatchTypes::GraphicsOptions::BlinkOrXterm256Index, TextColor::DARK_RED } }, subParams, subParamRanges);
+            startingAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_RED);
+            break;
+        case DispatchTypes::GraphicsOptions::BackgroundExtended:
+            Log::Comment(L"Testing graphics 'BackgroundExtended'");
+            _testGetSet->MakeSubParamsAndRanges({ { DispatchTypes::GraphicsOptions::BlinkOrXterm256Index, TextColor::BRIGHT_WHITE } }, subParams, subParamRanges);
+            startingAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetIndexedBackground256(TextColor::BRIGHT_WHITE);
+            break;
+        case DispatchTypes::GraphicsOptions::UnderlineColor:
+            Log::Comment(L"Testing graphics 'UnderlineColor'");
+            _testGetSet->MakeSubParamsAndRanges({ { DispatchTypes::GraphicsOptions::BlinkOrXterm256Index, TextColor::DARK_RED } }, subParams, subParamRanges);
+            startingAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetUnderlineColor({ TextColor::DARK_RED, true });
+            break;
+        default:
+            VERIFY_FAIL(L"Test not implemented yet!");
+            break;
+        }
+        _testGetSet->_textBuffer->SetCurrentAttributes(startingAttribute);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ std::span{ rgOptions, cOptions }, subParams, subParamRanges }));
+    }
+
     TEST_METHOD(GraphicsPushPopTests)
     {
         Log::Comment(L"Starting test...");
@@ -1122,6 +1199,8 @@ public:
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
         VTParameter rgOptions[16];
+        std::vector<VTParameter> subParams;
+        std::vector<std::pair<BYTE, BYTE>> subParamRanges;
         VTParameter rgStackOptions[16];
         size_t cOptions = 1;
 
@@ -1225,7 +1304,7 @@ public:
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetIntense(true);
-        _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         cOptions = 1;
@@ -1234,14 +1313,14 @@ public:
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetIntense(true);
-        _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         rgOptions[0] = DispatchTypes::GraphicsOptions::NotIntenseOrFaint;
         _testGetSet->_expectedAttribute = {};
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
-        _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         // And then restore...
@@ -1250,6 +1329,76 @@ public:
         _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
         _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_BLUE);
         _testGetSet->_expectedAttribute.SetIntense(true);
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        Log::Comment(L"Test 5: Save 'no singly underline' state, set singly underlined, and pop. "
+                     L"Singly underlined is off after the pop.");
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::NoUnderline;
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::NoUnderline);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // save 'no underlined' state
+        cOptions = 1;
+        rgStackOptions[0] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::Underline;
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        // set underlined
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::Underline;
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // restore, expect no underline
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::NoUnderline);
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        Log::Comment(L"Test 6: Save 'no singly underlined' state, set doubly underlined, and pop. "
+                     L"Doubly underlined is retained after the pop.");
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::NoUnderline;
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::NoUnderline);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // save no underline state
+        cOptions = 1;
+        rgStackOptions[0] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::Underline;
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        // set doubly underlined
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::DoublyUnderlined;
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // restore, expect doubly underlined
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        Log::Comment(L"Test 7: Save 'curly underlined' state, set doubly underlined, and pop. "
+                     L"Curly underlined is restored after the pop.");
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::Underline;
+        _testGetSet->MakeSubParamsAndRanges({ { 3 } }, subParams, subParamRanges);
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ std::span{ rgOptions, cOptions }, subParams, subParamRanges }));
+
+        // save curly underlined state
+        cOptions = 1;
+        rgStackOptions[0] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::Underline;
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        // set doubly underlined
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::DoublyUnderlined;
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // restore, expect curly underlined
+        _testGetSet->_expectedAttribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
         VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
     }
 
@@ -1649,11 +1798,19 @@ public:
         _testGetSet->PrepData();
         attribute = {};
         attribute.SetIntense(true);
-        attribute.SetUnderlined(true);
+        attribute.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
         attribute.SetReverseVideo(true);
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0;1;4;7m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (extended underline style).");
+        _testGetSet->PrepData();
+        attribute = {};
+        attribute.SetUnderlineStyle(UnderlineStyle::CurlyUnderlined);
+        _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;4:3m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (faint, blinking, invisible).");
         _testGetSet->PrepData();
@@ -1677,7 +1834,7 @@ public:
         Log::Comment(L"Requesting SGR attributes (doubly underlined, overlined).");
         _testGetSet->PrepData();
         attribute = {};
-        attribute.SetDoublyUnderlined(true);
+        attribute.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
         attribute.SetOverlined(true);
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
@@ -1706,18 +1863,20 @@ public:
         attribute = {};
         attribute.SetIndexedForeground256(123);
         attribute.SetIndexedBackground256(45);
+        attribute.SetUnderlineColor(TextColor{ 128, true });
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
-        _testGetSet->ValidateInputEvent(L"\033P1$r0;38:5:123;48:5:45m\033\\");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;38:5:123;48:5:45;58:5:128m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (ITU RGB colors).");
         _testGetSet->PrepData();
         attribute = {};
         attribute.SetForeground(RGB(12, 34, 56));
         attribute.SetBackground(RGB(65, 43, 21));
+        attribute.SetUnderlineColor(RGB(128, 222, 45));
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
-        _testGetSet->ValidateInputEvent(L"\033P1$r0;38:2::12:34:56;48:2::65:43:21m\033\\");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;38:2::12:34:56;48:2::65:43:21;58:2::128:222:45m\033\\");
 
         Log::Comment(L"Requesting DECSCA attributes (unprotected).");
         _testGetSet->PrepData();
@@ -1892,7 +2051,7 @@ public:
         });
         verifyChecksumReport(L"FECF");
         outputTextWithAttributes(L"A"sv, [](auto& attr) {
-            attr.SetUnderlined(true);
+            attr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
         });
         verifyChecksumReport(L"FF3F");
         outputTextWithAttributes(L"A"sv, [](auto& attr) {
@@ -1909,7 +2068,7 @@ public:
         verifyChecksumReport(L"FF47");
         outputTextWithAttributes(L"A"sv, [](auto& attr) {
             attr.SetIntense(true);
-            attr.SetUnderlined(true);
+            attr.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
             attr.SetReverseVideo(true);
         });
         verifyChecksumReport(L"FE9F");
@@ -1947,26 +2106,26 @@ public:
         auto& stateMachine = *_testGetSet->_stateMachine;
 
         Log::Comment(L"Default tabs stops in 80-column mode");
-        VERIFY_SUCCEEDED(textBuffer.ResizeTraditional({ 80, 600 }));
+        textBuffer.ResizeTraditional({ 80, 600 });
         _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
         _testGetSet->ValidateInputEvent(L"\033P2$u9/17/25/33/41/49/57/65/73\033\\");
 
         Log::Comment(L"Default tabs stops in 132-column mode");
-        VERIFY_SUCCEEDED(textBuffer.ResizeTraditional({ 132, 600 }));
+        textBuffer.ResizeTraditional({ 132, 600 });
         _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
         _testGetSet->ValidateInputEvent(L"\033P2$u9/17/25/33/41/49/57/65/73/81/89/97/105/113/121/129\033\\");
 
         Log::Comment(L"Custom tab stops in 80 columns");
-        VERIFY_SUCCEEDED(textBuffer.ResizeTraditional({ 80, 600 }));
+        textBuffer.ResizeTraditional({ 80, 600 });
         _testGetSet->_stateMachine->ProcessString(L"\033P2$t30/60/120/240\033\\");
         _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
         _testGetSet->ValidateInputEvent(L"\033P2$u30/60\033\\");
 
         Log::Comment(L"After expanding width to 132 columns");
-        VERIFY_SUCCEEDED(textBuffer.ResizeTraditional({ 132, 600 }));
+        textBuffer.ResizeTraditional({ 132, 600 });
         _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::TabulationStopReport);
         _testGetSet->ValidateInputEvent(L"\033P2$u30/60/120\033\\");
-        VERIFY_SUCCEEDED(textBuffer.ResizeTraditional({ 80, 600 }));
+        textBuffer.ResizeTraditional({ 80, 600 });
 
         Log::Comment(L"Out of order tab stops");
         stateMachine.ProcessString(L"\033P2$t44/22/66\033\\");
@@ -2019,7 +2178,7 @@ public:
         _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;A;@;@;0;2;@;BBBB\033\\");
 
         Log::Comment(L"Underlined rendition");
-        attributes.SetUnderlined(true);
+        attributes.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
         textBuffer.SetCurrentAttributes(attributes);
         _pDispatch->RequestPresentationStateReport(DispatchTypes::PresentationReportFormat::CursorInformationReport);
         _testGetSet->ValidateInputEvent(L"\033P1$u3;4;1;C;@;@;0;2;@;BBBB\033\\");
@@ -2104,15 +2263,19 @@ public:
         VERIFY_ARE_EQUAL(expectedPosition, textBuffer.GetCursor().GetPosition());
 
         Log::Comment(L"Restore rendition attributes");
+
+        // In the following sequence, U (0101 0101) represents the bold, blinking, invisible attributes to be active.
         stateMachine.ProcessString(L"\033P1$t1;1;1;U;@;@;0;2;@;BBBB\033\\");
         attributes = {};
-        attributes.SetIntense(true);
+        attributes.SetIntense(true); // bold
         attributes.SetBlinking(true);
         attributes.SetInvisible(true);
         VERIFY_ARE_EQUAL(attributes, textBuffer.GetCurrentAttributes());
+
+        // In the following sequence, J (0100 1010) represents the underline, reverse video attributes to be active.
         stateMachine.ProcessString(L"\033P1$t1;1;1;J;A;@;0;2;@;BBBB\033\\");
         attributes = {};
-        attributes.SetUnderlined(true);
+        attributes.SetUnderlineStyle(UnderlineStyle::SinglyUnderlined);
         attributes.SetReverseVideo(true);
         attributes.SetProtected(true);
         VERIFY_ARE_EQUAL(attributes, textBuffer.GetCurrentAttributes());
@@ -2502,62 +2665,45 @@ public:
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
         VTParameter rgOptions[1];
-        VTParameter rgSubParamOpts[16];
-        std::pair<BYTE, BYTE> subParamRanges[1];
+        std::vector<VTParameter> rgSubParamOpts;
+        std::vector<std::pair<BYTE, BYTE>> subParamRanges;
 
         _testGetSet->_expectedAttribute = _testGetSet->_textBuffer->GetCurrentAttributes();
 
         Log::Comment(L"Test 1: Change Indexed Foreground with missing index sub parameter");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
-        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
-        subParamRanges[0] = { (BYTE)0, (BYTE)1 };
+        _testGetSet->MakeSubParamsAndRanges({ { 5 } }, rgSubParamOpts, subParamRanges);
         _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_BLACK);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
 
         Log::Comment(L"Test 2: Change Indexed Background with default index sub parameter");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
-        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
-        rgSubParamOpts[1] = {};
-        subParamRanges[0] = { (BYTE)0, (BYTE)2 };
+        _testGetSet->MakeSubParamsAndRanges({ { 5, {} } }, rgSubParamOpts, subParamRanges);
         _testGetSet->_expectedAttribute.SetIndexedBackground256(TextColor::DARK_BLACK);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
 
         Log::Comment(L"Test 3: Change RGB Foreground with all RGB sub parameters missing");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
-        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
-        subParamRanges[0] = { (BYTE)0, (BYTE)1 };
+        _testGetSet->MakeSubParamsAndRanges({ { 2 } }, rgSubParamOpts, subParamRanges);
         _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 0));
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
 
         Log::Comment(L"Test 4: Change RGB Background with some missing RGB sub parameters");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
-        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
-        rgSubParamOpts[1] = {}; // color-space-id
-        rgSubParamOpts[2] = 123;
-        subParamRanges[0] = { (BYTE)0, (BYTE)3 };
+        _testGetSet->MakeSubParamsAndRanges({ { 2, {}, 123 } }, rgSubParamOpts, subParamRanges);
         _testGetSet->_expectedAttribute.SetBackground(RGB(123, 0, 0));
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
 
         Log::Comment(L"Test 5: Change RGB Foreground with some default RGB sub parameters");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
-        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
-        rgSubParamOpts[1] = {}; // color-space-id
-        rgSubParamOpts[2] = {};
-        rgSubParamOpts[3] = {};
-        rgSubParamOpts[4] = 123;
-        subParamRanges[0] = { (BYTE)0, (BYTE)5 };
+        _testGetSet->MakeSubParamsAndRanges({ { 2, {}, {}, {}, 123 } }, rgSubParamOpts, subParamRanges);
         _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 123));
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
 
         Log::Comment(L"Test 6: Ignore color when ColorSpaceID is not empty");
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
-        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
-        rgSubParamOpts[1] = 7; // color-space-id
-        rgSubParamOpts[2] = 182;
-        rgSubParamOpts[3] = 182;
-        rgSubParamOpts[4] = 123;
-        subParamRanges[0] = { (BYTE)0, (BYTE)5 };
+        _testGetSet->MakeSubParamsAndRanges({ { 2, 7, 182, 182, 123 } }, rgSubParamOpts, subParamRanges);
         // expect no change
         _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
@@ -2565,14 +2711,9 @@ public:
         Log::Comment(L"Test 7: Ignore Rgb color when R, G or B is out of range (>255)");
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
-        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
-        rgSubParamOpts[1] = {}; // color-space-id
         // Ensure r, g and b set a color that is different from current color.
         // Otherwise, the test will pass even if the color is not ignored.
-        rgSubParamOpts[2] = 128;
-        rgSubParamOpts[3] = 283;
-        rgSubParamOpts[4] = 155;
-        subParamRanges[0] = { (BYTE)0, (BYTE)5 };
+        _testGetSet->MakeSubParamsAndRanges({ { 2, {}, 128, 283, 155 } }, rgSubParamOpts, subParamRanges);
         // expect no change
         _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));
@@ -2580,9 +2721,7 @@ public:
         Log::Comment(L"Test 8: Ignore indexed color when index is out of range (>255)");
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
-        rgSubParamOpts[0] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
-        rgSubParamOpts[1] = 283;
-        subParamRanges[0] = { (BYTE)0, (BYTE)2 };
+        _testGetSet->MakeSubParamsAndRanges({ { 5, 283 } }, rgSubParamOpts, subParamRanges);
         // expect no change
         _testGetSet->_expectedAttribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, rgSubParamOpts, subParamRanges }));

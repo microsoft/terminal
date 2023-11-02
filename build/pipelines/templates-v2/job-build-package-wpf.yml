@@ -21,6 +21,12 @@ parameters:
   - name: jobName
     type: string
     default: PackWPF
+  - name: variables
+    type: object
+    default: {}
+  - name: publishArtifacts
+    type: boolean
+    default: true
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -39,6 +45,9 @@ jobs:
   variables:
     OutputBuildPlatform: AnyCPU
     Terminal.BinDir: $(Build.SourcesDirectory)/bin/$(OutputBuildPlatform)/$(BuildConfiguration)
+    JobOutputDirectory: $(Build.ArtifactStagingDirectory)\nupkg
+    JobOutputArtifactName: wpf-nupkg-$(BuildConfiguration)${{ parameters.artifactStem }}
+    ${{ insert }}: ${{ parameters.variables }}
   steps:
   - checkout: self
     clean: true
@@ -88,7 +97,7 @@ jobs:
       flattenFolders: true
 
   - ${{ if eq(parameters.codeSign, true) }}:
-    - task: EsrpCodeSigning@1
+    - task: EsrpCodeSigning@3
       displayName: Submit *.nupkg to ESRP for code signing
       inputs:
         ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
@@ -129,6 +138,7 @@ jobs:
         ValidateSignature: true
         Verbosity: 'Verbose'
 
-  - publish: $(Build.ArtifactStagingDirectory)\nupkg
-    artifact: wpf-nupkg-$(BuildConfiguration)${{ parameters.artifactStem }}
-    displayName: Publish nupkg
+  - ${{ if eq(parameters.publishArtifacts, true) }}:
+    - publish: $(JobOutputDirectory)
+      artifact: $(JobOutputArtifactName)
+      displayName: Publish nupkg
