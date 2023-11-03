@@ -83,7 +83,6 @@ namespace Microsoft::Console::Render
         void BeginResizeRequest();
         void EndResizeRequest();
         void SetResizeQuirk(const bool resizeQuirk);
-        void SetPassthroughMode(const bool passthrough) noexcept;
         void SetLookingForDSRCallback(std::function<void(bool)> pfnLooking) noexcept;
         void SetTerminalCursorTextPosition(const til::point coordCursor) noexcept;
         [[nodiscard]] virtual HRESULT ManuallyClearScrollback() noexcept;
@@ -138,7 +137,6 @@ namespace Microsoft::Console::Render
         bool _delayedEolWrap{ false };
 
         bool _resizeQuirk{ false };
-        bool _passthrough{ false };
         bool _corked{ false };
         std::optional<TextColor> _newBottomLineBG{ std::nullopt };
 

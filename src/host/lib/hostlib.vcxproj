@@ -8,6 +8,12 @@
     <TargetName>ConhostV2Lib</TargetName>
     <ConfigurationType>StaticLibrary</ConfigurationType>
   </PropertyGroup>
+  <ItemGroup>
+    <ClInclude Include="..\PassthroughState.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\PassthroughState.cpp" />
+  </ItemGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <!-- DONT ADD NEW FILES HERE, ADD THEM TO host-common.vcxitems -->

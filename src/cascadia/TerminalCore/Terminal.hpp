@@ -340,7 +340,7 @@ private:
 
     CursorType _defaultCursorShape = CursorType::Legacy;
 
-    til::enumset<Mode> _systemMode{ Mode::AutoWrap };
+    til::enumset<Mode> _systemMode{ Mode::AutoWrap, Mode::LineFeed };
 
     bool _snapOnInput = true;
     bool _altGrAliasing = true;

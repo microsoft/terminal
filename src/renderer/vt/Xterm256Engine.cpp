@@ -32,8 +32,6 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
                                                            const bool usingSoftFont,
                                                            const bool isSettingDefaultBrushes) noexcept
 {
-    RETURN_HR_IF(S_FALSE, _passthrough && isSettingDefaultBrushes);
-
     RETURN_IF_FAILED(VtEngine::_RgbUpdateDrawingBrushes(textAttributes));
 
     RETURN_IF_FAILED(_UpdateHyperlinkAttr(textAttributes, pData));

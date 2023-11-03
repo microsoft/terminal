@@ -474,19 +474,6 @@ void VtEngine::SetResizeQuirk(const bool resizeQuirk)
     _resizeQuirk = resizeQuirk;
 }
 
-// Method Description:
-// - Configure the renderer to understand that we're operating in limited-draw
-//   passthrough mode. We do not need to handle full responsibility for replicating
-//   buffer state to the attached terminal.
-// Arguments:
-// - passthrough - True to turn on passthrough mode. False otherwise.
-// Return Value:
-// - true iff we were started with an output mode for passthrough. false otherwise.
-void VtEngine::SetPassthroughMode(const bool passthrough) noexcept
-{
-    _passthrough = passthrough;
-}
-
 void VtEngine::SetLookingForDSRCallback(std::function<void(bool)> pfnLooking) noexcept
 {
     _pfnSetLookingForDSR = pfnLooking;

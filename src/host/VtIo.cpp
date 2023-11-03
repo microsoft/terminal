@@ -14,8 +14,6 @@
 #include "input.h" // ProcessCtrlEvents
 #include "output.h" // CloseConsoleProcessState
 
-#include "VtApiRoutines.h"
-
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -156,65 +154,24 @@ VtIo::VtIo() :
             auto initialViewport = Viewport::FromDimensions({ 0, 0 },
                                                             gci.GetWindowSize().width,
                                                             gci.GetWindowSize().height);
-            switch (_IoMode)
+
+            if (!Feature_VtPassthroughMode::IsEnabled() || !_passthroughMode)
             {
-            case VtIoMode::XTERM_256:
-            {
-                auto xterm256Engine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
-                                                                       initialViewport);
-                if constexpr (Feature_VtPassthroughMode::IsEnabled())
+                switch (_IoMode)
                 {
-                    if (_passthroughMode)
-                    {
-                        auto vtapi = new VtApiRoutines();
-                        vtapi->m_pVtEngine = xterm256Engine.get();
-                        vtapi->m_pUsualRoutines = globals.api;
-
-                        xterm256Engine->SetPassthroughMode(true);
-
-                        if (_pVtInputThread)
-                        {
-                            auto pfnSetListenForDSR = std::bind(&VtInputThread::SetLookingForDSR, _pVtInputThread.get(), std::placeholders::_1);
-                            xterm256Engine->SetLookingForDSRCallback(pfnSetListenForDSR);
-                        }
-
-                        globals.api = vtapi;
-                    }
+                case VtIoMode::XTERM_256:
+                    _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(_hOutput), initialViewport);
+                    break;
+                case VtIoMode::XTERM:
+                    _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput), initialViewport, false);
+                    break;
+                case VtIoMode::XTERM_ASCII:
+                    _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput), initialViewport, true);
+                    break;
+                default:
+                    return E_FAIL;
                 }
 
-                _pVtRenderEngine = std::move(xterm256Engine);
-                break;
-            }
-            case VtIoMode::XTERM:
-            {
-                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
-                                                                 initialViewport,
-                                                                 false);
-                if (_passthroughMode)
-                {
-                    return E_NOTIMPL;
-                }
-                break;
-            }
-            case VtIoMode::XTERM_ASCII:
-            {
-                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
-                                                                 initialViewport,
-                                                                 true);
-
-                if (_passthroughMode)
-                {
-                    return E_NOTIMPL;
-                }
-                break;
-            }
-            default:
-            {
-                return E_FAIL;
-            }
-            }
-            if (_pVtRenderEngine)
-            {
                 _pVtRenderEngine->SetTerminalOwner(this);
                 _pVtRenderEngine->SetResizeQuirk(_resizeQuirk);
             }
@@ -228,6 +185,11 @@ VtIo::VtIo() :
 bool VtIo::IsUsingVt() const
 {
     return _initialized;
+}
+
+PassthroughState* VtIo::GetPassthroughState() const noexcept
+{
+    return _passthroughState.get();
 }
 
 // Routine Description:

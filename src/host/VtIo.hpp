@@ -7,6 +7,7 @@
 #include "../renderer/vt/vtrenderer.hpp"
 #include "VtInputThread.hpp"
 #include "PtySignalInputThread.hpp"
+#include "PassthroughState.h"
 
 class ConsoleArguments;
 
@@ -28,6 +29,7 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]] HRESULT CreateIoHandlers() noexcept;
 
         bool IsUsingVt() const;
+        PassthroughState* GetPassthroughState() const noexcept;
 
         [[nodiscard]] HRESULT StartIfNeeded();
 
@@ -69,7 +71,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool _resizeQuirk{ false };
         bool _passthroughMode{ false };
         bool _closeEventSent{ false };
-
+        
+        std::unique_ptr<Microsoft::Console::PassthroughState> _passthroughState;
         std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
         std::unique_ptr<Microsoft::Console::PtySignalInputThread> _pPtySignalInputThread;

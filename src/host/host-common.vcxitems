@@ -47,7 +47,6 @@
     <ClCompile Include="..\tracing.cpp" />
     <ClCompile Include="..\utils.cpp" />
     <ClCompile Include="..\utf8ToWideCharParser.cpp" />
-    <ClCompile Include="..\VtApiRoutines.cpp" />
     <ClCompile Include="..\VtInputThread.cpp" />
     <ClCompile Include="..\VtIo.cpp" />
     <ClCompile Include="..\writeData.cpp" />
@@ -101,7 +100,6 @@
     <ClInclude Include="..\tracing.hpp" />
     <ClInclude Include="..\utils.hpp" />
     <ClInclude Include="..\utf8ToWideCharParser.hpp" />
-    <ClInclude Include="..\VtApiRoutines.h" />
     <ClInclude Include="..\VtInputThread.hpp" />
     <ClInclude Include="..\VtIo.hpp" />
     <ClInclude Include="..\writeData.hpp" />

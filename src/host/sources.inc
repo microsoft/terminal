@@ -88,7 +88,6 @@ SOURCES = \
     ..\conareainfo.cpp \
     ..\conimeinfo.cpp \
     ..\ConsoleArguments.cpp \
-    ..\VtApiRoutines.cpp \
 
 
 # -------------------------------------
