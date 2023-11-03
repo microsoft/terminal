@@ -278,6 +278,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // Don't navigate to the same page again.
                 return;
             }
+            else
+            {
+                scrollBar().ScrollToVerticalOffset(0);
+            }
 
             if (const auto navString = clickedItemContainer.Tag().try_as<hstring>())
             {
