@@ -125,13 +125,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     *pbReplyPending = FALSE;
 
     const auto a = &m->u.consoleMsgL1.GetConsoleInput;
-    if (WI_IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE))
-    {
-    }
-    else
-    {
-    }
-
     a->NumRecords = 0;
 
     // If any flags are set that are not within our enum, it's invalid.
@@ -415,18 +408,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                               _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL2.FillConsoleOutput;
-
-    switch (a->ElementType)
-    {
-    case CONSOLE_ATTRIBUTE:
-        break;
-    case CONSOLE_ASCII:
-        break;
-    case CONSOLE_REAL_UNICODE:
-    case CONSOLE_FALSE_UNICODE:
-        break;
-    }
-
     // Capture length of initial fill.
     size_t fill = a->Length;
 
@@ -751,18 +732,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     RETURN_HR_IF(E_ACCESSDENIED, !m->GetProcessHandle()->GetPolicy().CanReadOutputBuffer());
 
     const auto a = &m->u.consoleMsgL2.ReadConsoleOutputString;
-
-    switch (a->StringType)
-    {
-    case CONSOLE_ATTRIBUTE:
-        break;
-    case CONSOLE_ASCII:
-        break;
-    case CONSOLE_REAL_UNICODE:
-    case CONSOLE_FALSE_UNICODE:
-        break;
-    }
-
     a->NumRecords = 0; // Set to 0 records returned in case we have failures.
 
     PVOID pvBuffer;
@@ -890,18 +859,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                                      _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL2.WriteConsoleOutputString;
-
-    switch (a->StringType)
-    {
-    case CONSOLE_ATTRIBUTE:
-        break;
-    case CONSOLE_ASCII:
-        break;
-    case CONSOLE_REAL_UNICODE:
-    case CONSOLE_FALSE_UNICODE:
-        break;
-    }
-
     // Set written records to 0 in case we early return.
     a->NumRecords = 0;
 
