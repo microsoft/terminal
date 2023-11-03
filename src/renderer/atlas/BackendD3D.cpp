@@ -90,7 +90,8 @@ BackendD3D::BackendD3D(const RenderingPayload& p)
     {
         static constexpr D3D11_INPUT_ELEMENT_DESC layout[]{
             { "SV_Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "shadingType", 0, DXGI_FORMAT_R32_UINT, 1, offsetof(QuadInstance, shadingType), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "shadingType", 0, DXGI_FORMAT_R16_UINT, 1, offsetof(QuadInstance, shadingType), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "renditionScale", 0, DXGI_FORMAT_R8G8_UINT, 1, offsetof(QuadInstance, renditionScale), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
             { "position", 0, DXGI_FORMAT_R16G16_SINT, 1, offsetof(QuadInstance, position), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
             { "size", 0, DXGI_FORMAT_R16G16_UINT, 1, offsetof(QuadInstance, size), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
             { "texcoord", 0, DXGI_FORMAT_R16G16_UINT, 1, offsetof(QuadInstance, texcoord), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
@@ -1054,7 +1055,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
                     goto drawGlyphRetry;
                 }
 
-                if (glyphEntry.data.GetShadingType() != ShadingType::Default)
+                if (glyphEntry.data.shadingType != ShadingType::Default)
                 {
                     auto l = static_cast<til::CoordType>(lrintf((baselineX + row->glyphOffsets[x].advanceOffset) * scaleX));
                     auto t = static_cast<til::CoordType>(lrintf((baselineY - row->glyphOffsets[x].ascenderOffset) * scaleY));
@@ -1066,7 +1067,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
                     row->dirtyBottom = std::max(row->dirtyBottom, t + glyphEntry.data.size.y);
 
                     _appendQuad() = {
-                        .shadingType = glyphEntry.data.GetShadingType(),
+                        .shadingType = glyphEntry.data.shadingType,
                         .position = { static_cast<i16>(l), static_cast<i16>(t) },
                         .size = glyphEntry.data.size,
                         .texcoord = glyphEntry.data.texcoord,
@@ -1488,7 +1489,7 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, const AtlasFontFaceEntryI
     const auto triggerRight = _ligatureOverhangTriggerRight * horizontalScale;
     const auto overlapSplit = rect.w >= p.s->font->cellSize.x && (bl <= triggerLeft || br >= triggerRight);
 
-    glyphEntry.data.shadingType = static_cast<u16>(isColorGlyph ? ShadingType::TextPassthrough : _textShadingType);
+    glyphEntry.data.shadingType = isColorGlyph ? ShadingType::TextPassthrough : _textShadingType;
     glyphEntry.data.overlapSplit = overlapSplit;
     glyphEntry.data.offset.x = bl;
     glyphEntry.data.offset.y = bt;
@@ -1557,7 +1558,7 @@ bool BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p, const AtlasFontFa
     _drawSoftFontGlyphInBitmap(p, glyphEntry);
     _d2dRenderTarget->DrawBitmap(_softFontBitmap.get(), &dest, 1, interpolation, nullptr, nullptr);
 
-    glyphEntry.data.shadingType = static_cast<u16>(ShadingType::TextGrayscale);
+    glyphEntry.data.shadingType = ShadingType::TextGrayscale;
     glyphEntry.data.overlapSplit = 0;
     glyphEntry.data.offset.x = 0;
     glyphEntry.data.offset.y = -baseline;
@@ -1661,11 +1662,11 @@ void BackendD3D::_splitDoubleHeightGlyph(const RenderingPayload& p, const AtlasF
     // double-height row. This effectively turns the other (unneeded) side into whitespace.
     if (!top.data.size.y)
     {
-        top.data.shadingType = static_cast<u16>(ShadingType::Default);
+        top.data.shadingType = ShadingType::Default;
     }
     if (!bottom.data.size.y)
     {
-        bottom.data.shadingType = static_cast<u16>(ShadingType::Default);
+        bottom.data.shadingType = ShadingType::Default;
     }
 }
 
@@ -1723,9 +1724,9 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         {
             _appendQuad() = {
                 .shadingType = shadingType,
+                .renditionScale = { static_cast<u8>(1 << horizontalShift), static_cast<u8>(1 << verticalShift) },
                 .position = { left, static_cast<i16>(rt) },
                 .size = { width, static_cast<u16>(rb - rt) },
-                .texcoord = { static_cast<u16>(1 << horizontalShift), static_cast<u16>(1 << verticalShift) },
                 .color = color,
             };
         }
@@ -2004,10 +2005,6 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const CursorRect& c, size_t off
         return 0;
     }
 
-    // Line drawing primitives requires texcoord to remain the same. Using this
-    // flag, we'll also avoid the need for branching in the calculations below.
-    const auto isStyledLineDrawing = static_cast<u8>(it.shadingType >= ShadingType::StyledLineDrawingFirst && it.shadingType <= ShadingType::StyledLineDrawingLast);
-
     const int cursorL = c.position.x;
     const int cursorT = c.position.y;
     const int cursorR = cursorL + c.size.x;
@@ -2083,12 +2080,14 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const CursorRect& c, size_t off
         auto& target = _instances[offset + i];
 
         target.shadingType = it.shadingType;
+        target.renditionScale.x = it.renditionScale.x;
+        target.renditionScale.y = it.renditionScale.y;
         target.position.x = static_cast<i16>(cutout.left);
         target.position.y = static_cast<i16>(cutout.top);
         target.size.x = static_cast<u16>(cutout.right - cutout.left);
         target.size.y = static_cast<u16>(cutout.bottom - cutout.top);
-        target.texcoord.x = static_cast<u16>(it.texcoord.x + !isStyledLineDrawing * (cutout.left - instanceL));
-        target.texcoord.y = static_cast<u16>(it.texcoord.y + !isStyledLineDrawing * (cutout.top - instanceT));
+        target.texcoord.x = static_cast<u16>(it.texcoord.x + cutout.left - instanceL);
+        target.texcoord.y = static_cast<u16>(it.texcoord.y + cutout.top - instanceT);
         target.color = it.color;
     }
 
@@ -2100,12 +2099,14 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const CursorRect& c, size_t off
     auto& target = cutoutCount ? _appendQuad() : _instances[offset];
 
     target.shadingType = it.shadingType;
+    target.renditionScale.x = it.renditionScale.x;
+    target.renditionScale.y = it.renditionScale.y;
     target.position.x = static_cast<i16>(intersectionL);
     target.position.y = static_cast<i16>(intersectionT);
     target.size.x = static_cast<u16>(intersectionR - intersectionL);
     target.size.y = static_cast<u16>(intersectionB - intersectionT);
-    target.texcoord.x = static_cast<u16>(it.texcoord.x + !isStyledLineDrawing * (intersectionL - instanceL));
-    target.texcoord.y = static_cast<u16>(it.texcoord.y + !isStyledLineDrawing * (intersectionT - instanceT));
+    target.texcoord.x = static_cast<u16>(it.texcoord.x + intersectionL - instanceL);
+    target.texcoord.y = static_cast<u16>(it.texcoord.y + intersectionT - instanceT);
     target.color = color;
 
     return addedInstances;

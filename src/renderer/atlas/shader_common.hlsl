@@ -6,10 +6,6 @@
 #define SHADING_TYPE_TEXT_GRAYSCALE     1
 #define SHADING_TYPE_TEXT_CLEARTYPE     2
 #define SHADING_TYPE_TEXT_PASSTHROUGH   3
-#define SHADING_TYPE_TEXTURED_LAST      SHADING_TYPE_TEXT_PASSTHROUGH
-// Following types use texcoord as a 
-// non-interpolated value by sharing
-// the same value across all vertices.
 #define SHADING_TYPE_DOTTED_LINE        4
 #define SHADING_TYPE_DASHED_LINE        5
 #define SHADING_TYPE_CURLY_LINE         6
@@ -19,6 +15,7 @@ struct VSData
 {
     float2 vertex : SV_Position;
     uint shadingType : shadingType;
+    uint2 renditionScale : renditionScale;
     int2 position : position;
     uint2 size : size;
     uint2 texcoord : texcoord;
@@ -30,6 +27,7 @@ struct PSData
     float4 position : SV_Position;
     float2 texcoord : texcoord;
     nointerpolation uint shadingType : shadingType;
+    nointerpolation uint2 renditionScale : renditionScale;
     nointerpolation float4 color : color;
 };
 

@@ -125,6 +125,7 @@ namespace Microsoft::Console::Render::Atlas
     };
 
     using u8 = uint8_t;
+    using u8x2 = vec2<u8>;
 
     using u16 = uint16_t;
     using u16x2 = vec2<u16>;

@@ -33,11 +33,6 @@ Output main(PSData data) : SV_Target
     float4 color;
     float4 weights;
 
-    // When drawing (dotted/dashed/curly) lines, texcoord holds the line
-    // rendention scale (1x or 2x) which we use to draw wide/tall lines.
-    const uint horizontalScale = data.texcoord.x;
-    const uint verticalScale = data.texcoord.y;
-
     switch (data.shadingType)
     {
     case SHADING_TYPE_TEXT_BACKGROUND:
@@ -81,14 +76,14 @@ Output main(PSData data) : SV_Target
     }
     case SHADING_TYPE_DOTTED_LINE:
     {
-        const bool on = frac(data.position.x / (2.0f * underlineWidth * horizontalScale)) < 0.5f;
+        const bool on = frac(data.position.x / (2.0f * underlineWidth * data.renditionScale.x)) < 0.5f;
         color = on * premultiplyColor(data.color);
         weights = color.aaaa;
         break;
     }
     case SHADING_TYPE_DASHED_LINE:
     {
-        const bool on = frac(data.position.x / (backgroundCellSize.x * horizontalScale)) < 0.5f;
+        const bool on = frac(data.position.x / (backgroundCellSize.x * data.renditionScale.x)) < 0.5f;
         color = on * premultiplyColor(data.color);
         weights = color.aaaa;
         break;
@@ -97,12 +92,12 @@ Output main(PSData data) : SV_Target
     {
         uint cellRow = floor(data.position.y / backgroundCellSize.y);
         // Use the previous cell when drawing 'Double Height' curly line.
-        cellRow -= verticalScale - 1;
+        cellRow -= data.renditionScale.y - 1;
         const float cellTop = cellRow * backgroundCellSize.y;
-        const float centerY = cellTop + curlyLineCellOffset * verticalScale;
-        const float strokeWidthHalf = underlineWidth * verticalScale / 2.0f;
-        const float amp = curlyLinePeakHeight * verticalScale;
-        const float freq = curlyLineWaveFreq / horizontalScale;
+        const float centerY = cellTop + curlyLineCellOffset * data.renditionScale.y;
+        const float strokeWidthHalf = underlineWidth * data.renditionScale.y / 2.0f;
+        const float amp = curlyLinePeakHeight * data.renditionScale.y;
+        const float freq = curlyLineWaveFreq / data.renditionScale.x;
 
         const float s = sin(data.position.x * freq);
         const float d = abs(centerY - (s * amp) - data.position.y);
