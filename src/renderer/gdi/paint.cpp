@@ -521,30 +521,12 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 
     // Convert the target from characters to pixels.
     const auto ptTarget = coordTarget * _GetFontSize();
-    // Set the brush color to the gridline color and save the previous brush to restore at the end.
+
+    // Create a brush with the gridline color, and apply it.
     wil::unique_hbrush hbr(CreateSolidBrush(gridlineColor));
     RETURN_HR_IF_NULL(E_FAIL, hbr.get());
-
-    // TODO: hbrPrev shouldn't be managed.
-    wil::unique_hbrush hbrPrev(SelectBrush(_hdcMemoryContext, hbr.get()));
-    RETURN_HR_IF_NULL(E_FAIL, hbrPrev.get());
-    hbr.release(); // If SelectBrush was successful, GDI owns the brush. Release for now.
-
-    // On exit, be sure we try to put the brush back how it was originally.
-    auto restoreBrushOnExit = wil::scope_exit([&] { hbr.reset(SelectBrush(_hdcMemoryContext, hbrPrev.get())); });
-
-    // Create a pen matching the underline style.
-    DWORD underlinePenType = PS_SOLID;
-    if (lines.test(GridLines::DottedUnderline))
-    {
-        underlinePenType = PS_DOT;
-    }
-    else if (lines.test(GridLines::DashedUnderline))
-    {
-        underlinePenType = PS_DASH;
-    }
-    const LOGBRUSH brushProp{ .lbStyle = BS_SOLID, .lbColor = underlineColor };
-    wil::unique_hpen hpen(ExtCreatePen(underlinePenType | PS_GEOMETRIC | PS_ENDCAP_FLAT, _lineMetrics.underlineWidth, &brushProp, 0, nullptr));
+    const auto prevBrush = wil::SelectObject(_hdcMemoryContext, hbr.get());
+    RETURN_HR_IF_NULL(E_FAIL, prevBrush.get());
 
     // Get the font size so we know the size of the rectangle lines we'll be inscribing.
     const auto fontWidth = _GetFontSize().width;
@@ -620,12 +602,22 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.strikethroughWidth));
     }
 
-    // Apply the pen for underline drawing.
-    const auto prevPen = SelectPen(_hdcMemoryContext, hpen.get());
-    RETURN_HR_IF_NULL(E_FAIL, prevPen);
-    // Release the pen since GDI owns it now.
-    hpen.release();
-    const auto restorePenOnExit = wil::scope_exit([&] { hpen.reset(SelectPen(_hdcMemoryContext, prevPen)); });
+    // Create a pen matching the underline style.
+    DWORD underlinePenType = PS_SOLID;
+    if (lines.test(GridLines::DottedUnderline))
+    {
+        underlinePenType = PS_DOT;
+    }
+    else if (lines.test(GridLines::DashedUnderline))
+    {
+        underlinePenType = PS_DASH;
+    }
+    const LOGBRUSH brushProp{ .lbStyle = BS_SOLID, .lbColor = underlineColor };
+    wil::unique_hpen hpen(ExtCreatePen(underlinePenType | PS_GEOMETRIC | PS_ENDCAP_FLAT, _lineMetrics.underlineWidth, &brushProp, 0, nullptr));
+
+    // Apply the pen.
+    const auto prevPen = wil::SelectObject(_hdcMemoryContext, hpen.get());
+    RETURN_HR_IF_NULL(E_FAIL, prevPen.get());
 
     const auto underlineMidY = std::lround(ptTarget.y + _lineMetrics.underlineOffset + _lineMetrics.underlineWidth / 2.0f);
     if (lines.test(GridLines::Underline))
