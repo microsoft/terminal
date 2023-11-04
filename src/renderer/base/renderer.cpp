@@ -700,6 +700,8 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
         LOG_IF_FAILED(pEngine->ResetLineTransform());
     });
 
+    const auto searchRectangles = _GetSearchSelectionRects();
+
     for (const auto& dirtyRect : dirtyAreas)
     {
         if (!dirtyRect)
@@ -753,8 +755,13 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // Prepare the appropriate line transform for the current row and viewport offset.
             LOG_IF_FAILED(pEngine->PrepareLineTransform(lineRendition, screenPosition.y, view.Left()));
 
+            std::vector<til::rect> hightlightRectangles;
+            auto lower = std::lower_bound(searchRectangles.begin(), searchRectangles.end(), screenPosition.y, [](const til::rect& sr, int value) { return sr.top < value; });
+            auto upper = std::upper_bound(lower, searchRectangles.end(), screenPosition.y, [](int value, const til::rect& sr) { return value < sr.top; });
+            hightlightRectangles.insert(hightlightRectangles.end(), lower, upper);
+
             // Ask the helper to paint through this specific line.
-            _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped);
+            _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped, std::move(hightlightRectangles));
         }
     }
 }
@@ -768,7 +775,7 @@ static bool _IsAllSpaces(const std::wstring_view v)
 void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                         TextBufferCellIterator it,
                                         const til::point target,
-                                        const bool lineWrapped)
+                                        const bool lineWrapped, std::vector<til::rect> highlights)
 {
     auto globalInvert{ _renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed) };
 
@@ -835,9 +842,19 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 const auto thisPointPatterns = _pData->GetPatternId(thisPoint);
                 const auto thisUsingSoftFont = s_IsSoftFontChar(it->Chars(), _firstSoftFontChar, _lastSoftFontChar);
                 const auto changedPatternOrFont = patternIds != thisPointPatterns || usingSoftFont != thisUsingSoftFont;
-                if (color != it->TextAttr() || changedPatternOrFont)
+                auto origAttr = it->TextAttr();
+                for (auto highlight : highlights)
                 {
-                    auto newAttr{ it->TextAttr() };
+                    if (thisPoint.y == highlight.top && thisPoint.x < highlight.right && thisPoint.x >= highlight.left)
+                    {
+                        origAttr.SetBackground(0x003296ff);
+                        origAttr.SetForeground(0x000000);
+                    }
+                }
+
+                if (color != origAttr || changedPatternOrFont)
+                {
+                    auto newAttr{ origAttr };
                     // foreground doesn't matter for runs of spaces (!)
                     // if we trick it . . . we call Paint far fewer times for cmatrix
                     if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert) || changedPatternOrFont)
@@ -1156,7 +1173,9 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
 
                     auto it = overlay.buffer.GetCellLineDataAt(source);
 
-                    _PaintBufferOutputHelper(&engine, it, target, false);
+                    std::vector<til::rect> a;
+
+                    _PaintBufferOutputHelper(&engine, it, target, false, std::move(a));
                 }
             }
         }
@@ -1201,19 +1220,9 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 
         // Get selection rectangles
         const auto rectangles = _GetSelectionRects();
-        const auto searchRectangles = _GetSearchSelectionRects();
 
-        std::vector<til::rect> dirtySearchRectangles;
         for (auto& dirtyRect : dirtyAreas)
         {
-            for (const auto& sr : searchRectangles)
-            {
-                if (const auto rectCopy = sr & dirtyRect)
-                {
-                    dirtySearchRectangles.emplace_back(rectCopy);
-                }
-            }
-
             for (const auto& rect : rectangles)
             {
                 if (const auto rectCopy = rect & dirtyRect)
@@ -1221,11 +1230,6 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
                     LOG_IF_FAILED(pEngine->PaintSelection(rectCopy));
                 }
             }
-        }
-
-        if (!dirtySearchRectangles.empty())
-        {
-            LOG_IF_FAILED(pEngine->PaintSelections(std::move(dirtySearchRectangles)));
         }
     }
     CATCH_LOG();
