@@ -755,13 +755,13 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // Prepare the appropriate line transform for the current row and viewport offset.
             LOG_IF_FAILED(pEngine->PrepareLineTransform(lineRendition, screenPosition.y, view.Left()));
 
-            std::vector<til::rect> hightlightRectangles;
+            std::vector<til::rect> highlightRectangles;
             auto lower = std::lower_bound(searchRectangles.begin(), searchRectangles.end(), screenPosition.y, [](const til::rect& sr, int value) { return sr.top < value; });
             auto upper = std::upper_bound(lower, searchRectangles.end(), screenPosition.y, [](int value, const til::rect& sr) { return value < sr.top; });
-            hightlightRectangles.insert(hightlightRectangles.end(), lower, upper);
+            highlightRectangles.insert(highlightRectangles.end(), lower, upper);
 
             // Ask the helper to paint through this specific line.
-            _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped, std::move(hightlightRectangles));
+            _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped, std::move(highlightRectangles));
         }
     }
 }
