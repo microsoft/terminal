@@ -1686,6 +1686,18 @@ namespace winrt::TerminalApp::implementation
         return _zoomedPane != nullptr;
     }
 
+    TermControl& _termControlFromPane(const auto& pane)
+    {
+        if (const auto content{ pane->GetContent() })
+        {
+            if (const auto termContent{ content.try_as<winrt::TerminalApp::TerminalPaneContent>() })
+            {
+                return termContent.GetTerminal();
+            }
+        }
+        return nullptr;
+    }
+
     // Method Description:
     // - Toggle read-only mode on the active pane
     // - If a parent pane is selected, this will ensure that all children have
@@ -1697,14 +1709,14 @@ namespace winrt::TerminalApp::implementation
         auto hasReadOnly = false;
         auto allReadOnly = true;
         _activePane->WalkTree([&](const auto& p) {
-            if (const auto& control{ p->GetTerminalControl() })
+            if (const auto& control{ _termControlFromPane(p) })
             {
                 hasReadOnly |= control.ReadOnly();
                 allReadOnly &= control.ReadOnly();
             }
         });
         _activePane->WalkTree([&](const auto& p) {
-            if (const auto& control{ p->GetTerminalControl() })
+            if (const auto& control{ _termControlFromPane(p) })
             {
                 // If all controls have the same read only state then just toggle
                 if (allReadOnly || !hasReadOnly)
@@ -1729,14 +1741,14 @@ namespace winrt::TerminalApp::implementation
         auto hasReadOnly = false;
         auto allReadOnly = true;
         _activePane->WalkTree([&](const auto& p) {
-            if (const auto& control{ p->GetTerminalControl() })
+            if (const auto& control{ _termControlFromPane(p) })
             {
                 hasReadOnly |= control.ReadOnly();
                 allReadOnly &= control.ReadOnly();
             }
         });
         _activePane->WalkTree([&](const auto& p) {
-            if (const auto& control{ p->GetTerminalControl() })
+            if (const auto& control{ _termControlFromPane(p) })
             {
                 // If all controls have the same read only state then just disable
                 if (allReadOnly || !hasReadOnly)
@@ -1821,7 +1833,7 @@ namespace winrt::TerminalApp::implementation
             {
                 return;
             }
-            if (const auto& control{ p->GetTerminalControl() })
+            if (const auto& control{ _termControlFromPane(p) })
             {
                 auto it = _contentEvents.find(*paneId);
                 if (it != _contentEvents.end())
