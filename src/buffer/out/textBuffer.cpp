@@ -2011,7 +2011,7 @@ const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
             ++it;
         }
 
-        // We might've exited the loop without saving the last attribute, so we'll append it here.
+        // We might have exited the loop without saving the last attribute, so we'll append it here.
         if (cAttrs != 0)
         {
             appendAttr(attr, cAttrs);
