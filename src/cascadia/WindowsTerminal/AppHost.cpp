@@ -967,7 +967,8 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowL
     co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
 
     const auto strongThis = weakThis.lock();
-    if (!strongThis)
+    // GH #16235: If we don't have a window logic, we're already refrigerating, and won't have our _window either.
+    if (!strongThis || _windowLogic == nullptr)
     {
         co_return layoutJson;
     }
@@ -1165,7 +1166,8 @@ winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation:
     co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
 
     const auto strongThis = weakThis.lock();
-    if (!strongThis)
+    // GH #16235: If we don't have a window logic, we're already refrigerating, and won't have our _window either.
+    if (!strongThis || _windowLogic == nullptr)
     {
         co_return;
     }
@@ -1325,7 +1327,7 @@ winrt::fire_and_forget AppHost::_WindowInitializedHandler(const winrt::Windows::
 
     // If we're gone on the other side of this co_await, well, that's fine. Just bail.
     const auto strongThis = weakThis.lock();
-    if (!strongThis)
+    if (!strongThis || _window == nullptr)
     {
         co_return;
     }
