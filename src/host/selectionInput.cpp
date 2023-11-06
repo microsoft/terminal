@@ -37,8 +37,6 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(const INPU
                  // C-c, C-Ins. C-S-c Is also handled by this case.
                  ((ctrlPressed) && (wVirtualKeyCode == 'C' || wVirtualKeyCode == VK_INSERT)))
         {
-            Telemetry::Instance().SetKeyboardTextEditingUsed();
-
             // copy selection
             return Selection::KeySelectionEventResult::CopyToClipboard;
         }
@@ -290,8 +288,6 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     {
         return false;
     }
-
-    Telemetry::Instance().SetKeyboardTextSelectionUsed();
 
     // if we're not currently selecting anything, start a new mouse selection
     if (!IsInSelectingState())
@@ -703,8 +699,6 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
 
                     // Clear the selection and call the search / mark function.
                     ClearSelection();
-
-                    Telemetry::Instance().LogColorSelectionUsed();
 
                     const auto& textBuffer = gci.renderData.GetTextBuffer();
                     const auto hits = textBuffer.SearchText(str, true);
