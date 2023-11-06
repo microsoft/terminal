@@ -2025,13 +2025,12 @@ const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
             if (shouldFormatRow)
             {
                 // remove the spaces at the end (aka trim the trailing whitespace)
-                size_t cDelete = 0;
                 auto itText = selectionText.crbegin();
                 while (itText != selectionText.crend() && *itText == UNICODE_SPACE)
                 {
-                    cDelete++;
                     itText++;
                 }
+                auto cDelete = gsl::narrow_cast<size_t>(itText - selectionText.crbegin());
                 selectionText.erase(selectionText.end() - cDelete, selectionText.end());
                 attrRleSize -= cDelete;
             }
