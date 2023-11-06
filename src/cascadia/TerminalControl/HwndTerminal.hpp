@@ -109,7 +109,7 @@ private:
 
     void _UpdateFont(int newDpi);
     void _WriteTextToConnection(const std::wstring_view text) noexcept;
-    HRESULT _CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting);
+    HRESULT _CopyTextToSystemClipboard(const TextBuffer::TextAndAttribute& rows, const bool fAlsoCopyFormatting);
     HRESULT _CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat);
     void _PasteTextFromClipboard() noexcept;
 

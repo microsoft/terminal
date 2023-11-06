@@ -666,7 +666,7 @@ try
         return nullptr;
     }
 
-    TextBuffer::TextAndColor bufferData;
+    TextBuffer::TextAndAttribute bufferData;
     {
         const auto lock = publicTerminal->_terminal->LockForWriting();
         bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
@@ -938,9 +938,9 @@ void __stdcall TerminalKillFocus(void* terminal)
 // Routine Description:
 // - Copies the text given onto the global system clipboard.
 // Arguments:
-// - rows - Rows of text data to copy
+// - rows - Rows of text and attribute data to copy
 // - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
-HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting)
+HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndAttribute& rows, const bool fAlsoCopyFormatting)
 try
 {
     RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _terminal);

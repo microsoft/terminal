@@ -229,30 +229,28 @@ public:
     std::wstring GetCustomIdFromId(uint16_t id) const;
     void CopyHyperlinkMaps(const TextBuffer& OtherBuffer);
 
-    class TextAndColor
+    struct TextAndAttribute
     {
-    public:
         std::vector<std::wstring> text;
-        std::vector<std::vector<COLORREF>> FgAttr;
-        std::vector<std::vector<COLORREF>> BkAttr;
+        std::vector<til::small_rle<TextAttribute>> attrs;
     };
 
     size_t SpanLength(const til::point coordStart, const til::point coordEnd) const;
 
-    const TextAndColor GetText(const bool includeCRLF,
-                               const bool trimTrailingWhitespace,
-                               const std::vector<til::inclusive_rect>& textRects,
-                               std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors = nullptr,
-                               const bool formatWrappedRows = false) const;
+    const TextAndAttribute GetText(const bool includeCRLF,
+                                   const bool trimTrailingWhitespace,
+                                   const std::vector<til::inclusive_rect>& textRects,
+                                   std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors = nullptr,
+                                   const bool formatWrappedRows = false) const;
 
     std::wstring GetPlainText(const til::point& start, const til::point& end) const;
 
-    static std::string GenHTML(const TextAndColor& rows,
+    static std::string GenHTML(const TextAndAttribute& rows,
                                const int fontHeightPoints,
                                const std::wstring_view fontFaceName,
                                const COLORREF backgroundColor);
 
-    static std::string GenRTF(const TextAndColor& rows,
+    static std::string GenRTF(const TextAndAttribute& rows,
                               const int fontHeightPoints,
                               const std::wstring_view fontFaceName,
                               const COLORREF backgroundColor);

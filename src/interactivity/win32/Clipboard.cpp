@@ -96,7 +96,7 @@ Clipboard& Clipboard::Instance()
 // - cchData - Size of the Unicode String in characters
 // Return Value:
 // - None
-void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
+void Clipboard::StringPaste(_In_reads_(cchData) PCWCHAR pData,
                             const size_t cchData)
 {
     if (pData == nullptr)
@@ -256,9 +256,9 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
 // Routine Description:
 // - Copies the text given onto the global system clipboard.
 // Arguments:
-// - rows - Rows of text data to copy
+// - rows - Rows of text and attribute data to copy
 // - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
-void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting)
+void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndAttribute& rows, const bool fAlsoCopyFormatting)
 {
     std::wstring finalString;
 

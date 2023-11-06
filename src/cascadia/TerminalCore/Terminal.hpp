@@ -306,7 +306,7 @@ public:
     til::point SelectionEndForRendering() const;
     const SelectionEndpoint SelectionEndpointTarget() const noexcept;
 
-    const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
+    const TextBuffer::TextAndAttribute RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
 #pragma endregion
 
 private:

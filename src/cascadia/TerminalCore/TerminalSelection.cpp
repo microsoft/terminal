@@ -836,8 +836,8 @@ void Terminal::ClearSelection()
 // Arguments:
 // - singleLine: collapse all of the text to one line
 // Return Value:
-// - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
-const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool singleLine)
+// - wstring text and attribute from buffer. If extended to multiple lines, each line is separated by \r\n
+const TextBuffer::TextAndAttribute Terminal::RetrieveSelectedTextFromBuffer(bool singleLine)
 {
     const auto selectionRects = _GetSelectionRects();
 

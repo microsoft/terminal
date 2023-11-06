@@ -1928,14 +1928,14 @@ void TextBuffer::_ExpandTextRow(til::inclusive_rect& textRow) const
 // - GetAttributeColors - function used to map TextAttribute to RGB COLORREFs. If null, only extract the text.
 // - formatWrappedRows - if set we will apply formatting (CRLF inclusion and whitespace trimming) on wrapped rows
 // Return Value:
-// - The text, background color, and foreground color data of the selected region of the text buffer.
-const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
-                                                   const bool trimTrailingWhitespace,
-                                                   const std::vector<til::inclusive_rect>& selectionRects,
-                                                   std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors,
-                                                   const bool formatWrappedRows) const
+// - The text and attribute data of the selected region of the text buffer.
+const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
+                                                       const bool trimTrailingWhitespace,
+                                                       const std::vector<til::inclusive_rect>& selectionRects,
+                                                       std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors,
+                                                       const bool formatWrappedRows) const
 {
-    TextAndColor data;
+    TextAndAttribute data;
     const auto copyTextColor = GetAttributeColors != nullptr;
 
     // preallocate our vectors to reduce reallocs
@@ -1943,8 +1943,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
     data.text.reserve(rows);
     if (copyTextColor)
     {
-        data.FgAttr.reserve(rows);
-        data.BkAttr.reserve(rows);
+        data.attrs.reserve(rows);
     }
 
     // for each row in the selection
@@ -1957,18 +1956,31 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
         // retrieve the data from the screen buffer
         auto it = GetCellDataAt(highlight.Origin(), highlight);
 
-        // allocate a string buffer
-        std::wstring selectionText;
-        std::vector<COLORREF> selectionFgAttr;
-        std::vector<COLORREF> selectionBkAttr;
-
         // preallocate to avoid reallocs
-        selectionText.reserve(gsl::narrow<size_t>(highlight.Width()) + 2); // + 2 for \r\n if we munged it
-        if (copyTextColor)
-        {
-            selectionFgAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
-            selectionBkAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
-        }
+        const auto maxCells = gsl::narrow<size_t>(highlight.Width() + 2); // + 2 for \r\n if we munged it
+        std::wstring selectionText;
+        selectionText.reserve(maxCells);
+        til::small_rle<TextAttribute> attrs{ maxCells, it->TextAttr() };
+
+        // This is the size (or end) of the valid data within attrs rle.
+        size_t attrRleSize = 0;
+
+        const auto appendAttr = [&](TextAttribute& attr, const size_t count) {
+            // retrieve the actual colors
+            const auto [CellFgAttr, CellBkAttr] = GetAttributeColors(attr);
+            attr.SetForeground(CellFgAttr);
+            attr.SetBackground(CellBkAttr);
+
+            const auto newSize = attrRleSize + count;
+            attrs.replace(attrRleSize, newSize, attr);
+            attrRleSize += count;
+        };
+
+        // Once we know how many cells use the same attribute, we'll store the
+        // attribute that many times at once. Avoids calling GetAttributeColors
+        // multiple times for the same attribute.
+        auto attr = it->TextAttr();
+        size_t cAttrs = 0;
 
         // copy char data into the string buffer, skipping trailing bytes
         while (it)
@@ -1983,16 +1995,26 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
                 if (copyTextColor)
                 {
                     const auto cellData = cell.TextAttr();
-                    const auto [CellFgAttr, CellBkAttr] = GetAttributeColors(cellData);
-                    for (size_t j = 0; j < chars.size(); ++j)
+                    if (attr != cellData)
                     {
-                        selectionFgAttr.push_back(CellFgAttr);
-                        selectionBkAttr.push_back(CellBkAttr);
+                        appendAttr(attr, cAttrs);
+                        attr = cellData;
+                        cAttrs = chars.size();
+                    }
+                    else
+                    {
+                        cAttrs += chars.size();
                     }
                 }
             }
 
             ++it;
+        }
+
+        // We might've exited the loop without saving the last attribute, so we'll append it here.
+        if (cAttrs != 0)
+        {
+            appendAttr(attr, cAttrs);
         }
 
         // We apply formatting to rows if the row was NOT wrapped or formatting of wrapped rows is allowed
@@ -2003,15 +2025,15 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
             if (shouldFormatRow)
             {
                 // remove the spaces at the end (aka trim the trailing whitespace)
-                while (!selectionText.empty() && selectionText.back() == UNICODE_SPACE)
+                size_t cDelete = 0;
+                auto itText = selectionText.crbegin();
+                while (itText != selectionText.crend() && *itText == UNICODE_SPACE)
                 {
-                    selectionText.pop_back();
-                    if (copyTextColor)
-                    {
-                        selectionFgAttr.pop_back();
-                        selectionBkAttr.pop_back();
-                    }
+                    cDelete++;
+                    itText++;
                 }
+                selectionText.erase(selectionText.end() - cDelete, selectionText.end());
+                attrRleSize -= cDelete;
             }
         }
 
@@ -2029,10 +2051,8 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
                 {
                     // can't see CR/LF so just use black FG & BK
                     const auto Blackness = RGB(0x00, 0x00, 0x00);
-                    selectionFgAttr.push_back(Blackness);
-                    selectionFgAttr.push_back(Blackness);
-                    selectionBkAttr.push_back(Blackness);
-                    selectionBkAttr.push_back(Blackness);
+                    auto clrfAttr = TextAttribute{ Blackness, Blackness };
+                    appendAttr(clrfAttr, 2);
                 }
             }
         }
@@ -2040,8 +2060,9 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
         data.text.emplace_back(std::move(selectionText));
         if (copyTextColor)
         {
-            data.FgAttr.emplace_back(std::move(selectionFgAttr));
-            data.BkAttr.emplace_back(std::move(selectionBkAttr));
+            // shrink rle to contain only the valid data.
+            attrs.resize_trailing_extent(attrRleSize);
+            data.attrs.emplace_back(std::move(attrs));
         }
     }
 
@@ -2088,13 +2109,13 @@ std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point&
 // Routine Description:
 // - Generates a CF_HTML compliant structure based on the passed in text and color data
 // Arguments:
-// - rows - the text and color data we will format & encapsulate
+// - rows - the text and attribute data we will format & encapsulate
 // - backgroundColor - default background color for characters, also used in padding
 // - fontHeightPoints - the unscaled font height
 // - fontFaceName - the name of the font used
 // Return Value:
 // - string containing the generated HTML
-std::string TextBuffer::GenHTML(const TextAndColor& rows,
+std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
                                 const int fontHeightPoints,
                                 const std::wstring_view fontFaceName,
                                 const COLORREF backgroundColor)
@@ -2191,15 +2212,16 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows,
                 }
 
                 auto colorChanged = false;
-                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
+                const auto& attr = rows.attrs.at(row).at(col);
+                if (!fgColor.has_value() || attr.GetForeground().GetRGB() != fgColor.value())
                 {
-                    fgColor = rows.FgAttr.at(row).at(col);
+                    fgColor = attr.GetForeground().GetRGB();
                     colorChanged = true;
                 }
 
-                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
+                if (!bkColor.has_value() || attr.GetBackground().GetRGB() != bkColor.value())
                 {
-                    bkColor = rows.BkAttr.at(row).at(col);
+                    bkColor = attr.GetBackground().GetRGB();
                     colorChanged = true;
                 }
 
@@ -2286,7 +2308,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows,
 // - htmlTitle - value used in title tag of html header. Used to name the application
 // Return Value:
 // - string containing the generated RTF
-std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor)
+std::string TextBuffer::GenRTF(const TextAndAttribute& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor)
 {
     try
     {
@@ -2385,15 +2407,16 @@ std::string TextBuffer::GenRTF(const TextAndColor& rows, const int fontHeightPoi
                 }
 
                 auto colorChanged = false;
-                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
+                const auto& attr = rows.attrs.at(row).at(col);
+                if (!fgColor.has_value() || attr.GetForeground().GetRGB() != fgColor.value())
                 {
-                    fgColor = rows.FgAttr.at(row).at(col);
+                    fgColor = attr.GetForeground().GetRGB();
                     colorChanged = true;
                 }
 
-                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
+                if (!bkColor.has_value() || attr.GetBackground().GetRGB() != bkColor.value())
                 {
-                    bkColor = rows.BkAttr.at(row).at(col);
+                    bkColor = attr.GetBackground().GetRGB();
                     colorChanged = true;
                 }
 
