@@ -2404,25 +2404,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // then use it to measure how much space the requested rows and columns
         // will take up.
         // TODO: MSFT:21254947 - use a static function to do this instead of
-        // instantiating a DxEngine/AtlasEngine.
+        // instantiating a AtlasEngine.
         // GH#10211 - UNDER NO CIRCUMSTANCE should this fail. If it does, the
         // whole app will crash instantaneously on launch, which is no good.
-        float scale;
-        if (settings.UseAtlasEngine())
-        {
-            auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
-            LOG_IF_FAILED(engine->UpdateDpi(dpi));
-            LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
-            scale = engine->GetScaling();
-        }
-        else
-        {
-            auto engine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-            LOG_IF_FAILED(engine->UpdateDpi(dpi));
-            LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
-            scale = engine->GetScaling();
-        }
+        const auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
+        LOG_IF_FAILED(engine->UpdateDpi(dpi));
+        LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
 
+        const auto scale = engine->GetScaling();
         const auto actualFontSize = actualFont.GetSize();
 
         // UWP XAML scrollbars aren't guaranteed to be the same size as the

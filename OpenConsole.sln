@@ -161,8 +161,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RendererVt.unittest", "src\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BufferOut", "src\buffer\out\lib\bufferout.vcxproj", "{0CF235BD-2DA0-407E-90EE-C467E8BBC714}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RendererDx", "src\renderer\dx\lib\dx.vcxproj", "{48D21369-3D7B-4431-9967-24E81292CF62}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalConnection", "src\cascadia\TerminalConnection\TerminalConnection.vcxproj", "{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}"
 	ProjectSection(ProjectDependencies) = postProject
 		{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF} = {71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}
@@ -318,8 +316,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{D3EF
 		build\scripts\Run-Tests.ps1 = build\scripts\Run-Tests.ps1
 		build\scripts\Test-WindowsTerminalPackage.ps1 = build\scripts\Test-WindowsTerminalPackage.ps1
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Dx.Unit.Tests", "src\renderer\dx\ut_dx\Dx.Unit.Tests.vcxproj", "{95B136F9-B238-490C-A7C5-5843C1FECAC4}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "winconpty.Tests.Feature", "src\winconpty\ft_pty\winconpty.FeatureTests.vcxproj", "{024052DE-83FB-4653-AEA4-90790D29D5BD}"
 EndProject

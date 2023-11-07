@@ -307,7 +307,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _SuppressApplicationTitle = profile.SuppressApplicationTitle();
         }
 
-        _UseAtlasEngine = profile.UseAtlasEngine();
         _ScrollState = profile.ScrollState();
 
         _AntialiasingMode = profile.AntialiasingMode();

@@ -11,7 +11,6 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         RenderingViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, UseAtlasEngine);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ForceFullRepaintRendering);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SoftwareRendering);
     }
