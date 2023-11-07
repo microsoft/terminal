@@ -992,21 +992,39 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto socketUri = terminalResponse.GetNamedString(L"socketUri");
 
         // we have to do some post-handling to get the proper socket endpoint
-        // at this point, socketUri is of the form: wss://ccon-prod-westus-aci-03.servicebus.windows.net/cc-AAAA-AAAAAAAA//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        // we need it to become:                    wss://ccon-prod-westus-aci-03.servicebus.windows.net/$hc/cc-AAAA-AAAAAAAA/terminals/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        // (the "aaaaaa..." part at the end is just the _terminalID, that we already have stored)
-        std::wstring wSocketUri{ socketUri };
+        // the logic here is based on the way the cloud shell team itself does it
+        winrt::hstring finalSocketUri;
+        std::wstring wCloudShellUri{ _cloudShellUri };
 
-        // get the substring up until the ".net"
-        const auto dotNetPos = wSocketUri.find(L".net") + 4;
-        const auto wSocketUriBody = wSocketUri.substr(0, dotNetPos);
+        if (wCloudShellUri.find(L"servicebus") == std::wstring::npos)
+        {
+            // wCloudShellUri does not contain the word "servicebus", we can just use it to make the final URI
 
-        // get the portion between the ".net" and the "//" (this is the cc-AAAA-AAAAAAAA part)
-        const auto lastDoubleSlashPos = wSocketUri.find_last_of(L"//");
-        const auto wSocketUriMiddle = wSocketUri.substr(dotNetPos, lastDoubleSlashPos - (dotNetPos));
+            // remove the "https://" from the cloud shell URI
+            std::wstring https{ L"https://" };
+            wCloudShellUri.replace(wCloudShellUri.find(https), https.length(), L"");
 
-        // piece together the final uri, adding in the "$hc" and "terminals" where needed
-        auto finalSocketUri{ fmt::format(L"{}/$hc{}terminals/{}", wSocketUriBody, wSocketUriMiddle, _terminalID) };
+            finalSocketUri = fmt::format(FMT_COMPILE(L"wss://{}terminals/{}"), wCloudShellUri, _terminalID);
+        }
+        else
+        {
+            // if wCloudShellUri contains the word "servicebus", that means the returned socketUri is of the form
+            // wss://ccon-prod-westus-aci-03.servicebus.windows.net/cc-AAAA-AAAAAAAA//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            // we need to change it to:
+            // wss://ccon-prod-westus-aci-03.servicebus.windows.net/$hc/cc-AAAA-AAAAAAAA/terminals/aaaaaaaaaaaaaaaaaaaaaa
+
+            // get the substring up until the ".net"
+            const std::wstring_view wSocketUri{ socketUri };
+            const auto dotNetPos = wSocketUri.find(L".net") + 4;
+            const auto wSocketUriBody = wSocketUri.substr(0, dotNetPos);
+
+            // get the portion between the ".net" and the "//" (this is the cc-AAAA-AAAAAAAA part)
+            const auto lastDoubleSlashPos = wSocketUri.find_last_of(L"//");
+            const auto wSocketUriMiddle = wSocketUri.substr(dotNetPos, lastDoubleSlashPos - (dotNetPos));
+
+            // piece together the final uri, adding in the "$hc" and "terminals" where needed
+            finalSocketUri = fmt::format(FMT_COMPILE(L"{}/$hc{}terminals/{}"), wSocketUriBody, wSocketUriMiddle, _terminalID);
+        }
 
         // Return the uri
         return winrt::hstring(finalSocketUri);
