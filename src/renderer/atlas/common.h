@@ -313,7 +313,7 @@ namespace Microsoft::Console::Render::Atlas
     struct TargetSettings
     {
         HWND hwnd = nullptr;
-        bool enableTransparentBackground = false;
+        bool useAlpha = false;
         bool useSoftwareRendering = false;
     };
 
@@ -470,7 +470,6 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<IDWriteFontFallback> systemFontFallback;
         wil::com_ptr<IDWriteFontFallback1> systemFontFallback1; // optional, might be nullptr
         wil::com_ptr<IDWriteTextAnalyzer1> textAnalyzer;
-        wil::com_ptr<IDWriteRenderingParams1> renderingParams;
         std::function<void(HRESULT)> warningCallback;
         std::function<void(HANDLE)> swapChainChangedCallback;
 
