@@ -994,17 +994,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // we have to do some post-handling to get the proper socket endpoint
         // the logic here is based on the way the cloud shell team itself does it
         winrt::hstring finalSocketUri;
-        std::wstring wCloudShellUri{ _cloudShellUri };
+        const std::wstring_view wCloudShellUri{ _cloudShellUri };
 
         if (wCloudShellUri.find(L"servicebus") == std::wstring::npos)
         {
             // wCloudShellUri does not contain the word "servicebus", we can just use it to make the final URI
 
-            // remove the "https://" from the cloud shell URI
-            std::wstring https{ L"https://" };
-            wCloudShellUri.replace(wCloudShellUri.find(https), https.length(), L"");
+            // remove the "https" from the cloud shell URI
+            const auto uriWithoutProtocol = std::wstring_view{ _cloudShellUri }.substr(5);
 
-            finalSocketUri = fmt::format(FMT_COMPILE(L"wss://{}terminals/{}"), wCloudShellUri, _terminalID);
+            finalSocketUri = fmt::format(FMT_COMPILE(L"wss{}terminals/{}"), uriWithoutProtocol, _terminalID);
         }
         else
         {
@@ -1013,14 +1012,18 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // we need to change it to:
             // wss://ccon-prod-westus-aci-03.servicebus.windows.net/$hc/cc-AAAA-AAAAAAAA/terminals/aaaaaaaaaaaaaaaaaaaaaa
 
-            // get the substring up until the ".net"
             const std::wstring_view wSocketUri{ socketUri };
-            const auto dotNetPos = wSocketUri.find(L".net") + 4;
-            const auto wSocketUriBody = wSocketUri.substr(0, dotNetPos);
+
+            // get the substring up until the ".net"
+            const auto dotNetStart = wSocketUri.find(L".net");
+            THROW_HR_IF(E_UNEXPECTED, dotNetStart == std::wstring::npos);
+            const auto dotNetEnd = dotNetStart + 4;
+            const auto wSocketUriBody = wSocketUri.substr(0, dotNetEnd);
 
             // get the portion between the ".net" and the "//" (this is the cc-AAAA-AAAAAAAA part)
             const auto lastDoubleSlashPos = wSocketUri.find_last_of(L"//");
-            const auto wSocketUriMiddle = wSocketUri.substr(dotNetPos, lastDoubleSlashPos - (dotNetPos));
+            THROW_HR_IF(E_UNEXPECTED, lastDoubleSlashPos == std::wstring::npos);
+            const auto wSocketUriMiddle = wSocketUri.substr(dotNetEnd, lastDoubleSlashPos - (dotNetEnd));
 
             // piece together the final uri, adding in the "$hc" and "terminals" where needed
             finalSocketUri = fmt::format(FMT_COMPILE(L"{}/$hc{}terminals/{}"), wSocketUriBody, wSocketUriMiddle, _terminalID);
