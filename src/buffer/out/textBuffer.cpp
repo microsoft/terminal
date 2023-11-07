@@ -1936,12 +1936,12 @@ const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
                                                        const bool formatWrappedRows) const
 {
     TextAndAttribute data;
-    const auto copyTextColor = GetAttributeColors != nullptr;
+    const auto copyAttribute = GetAttributeColors != nullptr;
 
     // preallocate our vectors to reduce reallocs
     const auto rows = selectionRects.size();
     data.text.reserve(rows);
-    if (copyTextColor)
+    if (copyAttribute)
     {
         data.attrs.reserve(rows);
     }
@@ -1992,7 +1992,7 @@ const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
                 const auto chars = cell.Chars();
                 selectionText.append(chars);
 
-                if (copyTextColor)
+                if (copyAttribute)
                 {
                     const auto cellData = cell.TextAttr();
                     if (attr != cellData)
@@ -2032,7 +2032,7 @@ const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
                 }
                 auto cDelete = gsl::narrow_cast<size_t>(itText - selectionText.crbegin());
                 selectionText.erase(selectionText.end() - cDelete, selectionText.end());
-                attrRleSize -= copyTextColor ? cDelete : 0;
+                attrRleSize -= copyAttribute ? cDelete : 0;
             }
         }
 
@@ -2046,7 +2046,7 @@ const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
                 selectionText.push_back(UNICODE_CARRIAGERETURN);
                 selectionText.push_back(UNICODE_LINEFEED);
 
-                if (copyTextColor)
+                if (copyAttribute)
                 {
                     // can't see CR/LF so just use black FG & BK
                     const auto Blackness = RGB(0x00, 0x00, 0x00);
@@ -2057,7 +2057,7 @@ const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
         }
 
         data.text.emplace_back(std::move(selectionText));
-        if (copyTextColor)
+        if (copyAttribute)
         {
             // shrink rle to contain only the valid data.
             attrs.resize_trailing_extent(attrRleSize);
