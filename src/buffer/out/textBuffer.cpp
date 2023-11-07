@@ -2032,7 +2032,7 @@ const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
                 }
                 auto cDelete = gsl::narrow_cast<size_t>(itText - selectionText.crbegin());
                 selectionText.erase(selectionText.end() - cDelete, selectionText.end());
-                attrRleSize -= cDelete;
+                attrRleSize -= copyTextColor ? cDelete : 0;
             }
         }
 
