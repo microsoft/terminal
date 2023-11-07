@@ -1010,7 +1010,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // we need to change it to:
             // wss://ccon-prod-westus-aci-03.servicebus.windows.net/$hc/cc-AAAA-AAAAAAAA/terminals/aaaaaaaaaaaaaaaaaaaaaa
 
-            const std::wstring_view wSocketUri{ terminalResponse.GetNamedString(L"socketUri") };
+            const auto socketUri = terminalResponse.GetNamedString(L"socketUri");
+            const std::wstring_view wSocketUri{ socketUri };
 
             // get the substring up until the ".net"
             const auto dotNetStart = wSocketUri.find(L".net");
