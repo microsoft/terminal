@@ -989,8 +989,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto terminalResponse = _SendRequestReturningJson(uri, content, WWH::HttpMethod::Post(), Windows::Foundation::Uri(_cloudShellUri));
         _terminalID = terminalResponse.GetNamedString(L"id");
 
-        auto socketUri = terminalResponse.GetNamedString(L"socketUri");
-
         // we have to do some post-handling to get the proper socket endpoint
         // the logic here is based on the way the cloud shell team itself does it
         winrt::hstring finalSocketUri;
@@ -1001,7 +999,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // wCloudShellUri does not contain the word "servicebus", we can just use it to make the final URI
 
             // remove the "https" from the cloud shell URI
-            const auto uriWithoutProtocol = std::wstring_view{ _cloudShellUri }.substr(5);
+            const auto uriWithoutProtocol = wCloudShellUri.substr(5);
 
             finalSocketUri = fmt::format(FMT_COMPILE(L"wss{}terminals/{}"), uriWithoutProtocol, _terminalID);
         }
@@ -1012,7 +1010,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // we need to change it to:
             // wss://ccon-prod-westus-aci-03.servicebus.windows.net/$hc/cc-AAAA-AAAAAAAA/terminals/aaaaaaaaaaaaaaaaaaaaaa
 
-            const std::wstring_view wSocketUri{ socketUri };
+            const std::wstring_view wSocketUri { terminalResponse.GetNamedString(L"socketUri") };
 
             // get the substring up until the ".net"
             const auto dotNetStart = wSocketUri.find(L".net");
@@ -1030,7 +1028,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
 
         // Return the uri
-        return winrt::hstring(finalSocketUri);
+        return winrt::hstring{ finalSocketUri };
     }
 
     // Method description:
