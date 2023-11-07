@@ -436,14 +436,17 @@ void COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
 
     if (_ctrlWakeupMask != 0 && wch < L' ' && (_ctrlWakeupMask & (1 << wch)))
     {
-        _flushBuffer();
-
         // The old implementation (all the way since the 90s) overwrote the character at the current cursor position with the given wch.
         // But simultaneously it incremented the buffer length, which would have only worked if it was written at the end of the buffer.
         // Press tab past the "f" in the string "foo" and you'd get "f\to " (a trailing whitespace; the initial contents of the buffer back then).
         // It's unclear whether the original intention was to write at the end of the buffer at all times or to implement an insert mode.
         // I went with insert mode.
+        //
+        // It is important that we don't actually print that character out though, as it's only for the calling application to see.
+        // That's why we flush the contents before the insertion and then ensure that the _flushBuffer() call in Read() exits early.
+        _flushBuffer();
         _buffer.Replace(_buffer.GetCursorPosition(), 0, &wch, 1);
+        _buffer.MarkAsClean();
 
         _controlKeyState = modifiers;
         _transitionState(State::DoneWithWakeupMask);
