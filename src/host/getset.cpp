@@ -41,7 +41,6 @@ void ApiRoutines::GetConsoleInputModeImpl(InputBuffer& context, ULONG& mode) noe
 {
     try
     {
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });

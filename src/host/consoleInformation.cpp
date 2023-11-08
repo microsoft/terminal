@@ -104,7 +104,7 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
         return STATUS_SUCCESS;
     }
 
-    RIPMSG1(RIP_WARNING, "Console init failed with status 0x%x", Status);
+    LOG_NTSTATUS_MSG(Status, "Console init failed");
 
     delete gci.ScreenBuffers;
     gci.ScreenBuffers = nullptr;

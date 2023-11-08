@@ -222,6 +222,7 @@ int CALLBACK wWinMain(
     _In_ PWSTR /*pwszCmdLine*/,
     _In_ int /*nCmdShow*/)
 {
+    wil::SetResultLoggingCallback(&Tracing::TraceFailure);
     Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().hInstance = hInstance;
 
     ConsoleCheckDebug();
