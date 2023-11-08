@@ -1965,8 +1965,8 @@ const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
             // update end column to exclude trailing whitespace
 
             const auto text = row.GetText();
-            auto begin = text.rbegin();
-            auto end = text.rend();
+            const auto begin = text.rbegin();
+            const auto end = text.rend();
             auto it = begin;
             for (; it != end; ++it)
             {
@@ -2011,7 +2011,7 @@ const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
                 {
                     // can't see CR/LF so just use black FG & BK
                     const auto Blackness = RGB(0x00, 0x00, 0x00);
-                    auto clrfAttr = TextAttribute{ Blackness, Blackness };
+                    const auto clrfAttr = TextAttribute{ Blackness, Blackness };
                     if (attrs.size() != 0) // Can only extend a non-empty rle
                     {
                         attrs.resize_trailing_extent(attrs.size() + 2);
