@@ -30,6 +30,15 @@ Terminal::Terminal()
     _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, RGB(0, 0, 0));
 }
 
+#pragma warning(suppress : 26455) // default constructor is throwing, too much effort to rearrange at this time.
+Terminal::Terminal(TestDummyMarker) :
+    Terminal{}
+{
+#ifndef NDEBUG
+    _suppressLockChecks = true;
+#endif
+}
+
 void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer& renderer)
 {
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
@@ -425,24 +434,6 @@ void Terminal::Write(std::wstring_view stringView)
     }
 }
 
-void Terminal::WritePastedText(std::wstring_view stringView)
-{
-    const auto option = ::Microsoft::Console::Utils::FilterOption::CarriageReturnNewline |
-                        ::Microsoft::Console::Utils::FilterOption::ControlCodes;
-
-    auto filtered = ::Microsoft::Console::Utils::FilterStringForPaste(stringView, option);
-    if (IsXtermBracketedPasteModeEnabled())
-    {
-        filtered.insert(0, L"\x1b[200~");
-        filtered.append(L"\x1b[201~");
-    }
-
-    if (_pfnWriteInput)
-    {
-        _pfnWriteInput(filtered);
-    }
-}
-
 // Method Description:
 // - Attempts to snap to the bottom of the buffer, if SnapOnInput is true. Does
 //   nothing if SnapOnInput is set to false, or we're already at the bottom of
@@ -606,10 +597,10 @@ std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromViewportPos
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
-bool Terminal::SendKeyEvent(const WORD vkey,
-                            const WORD scanCode,
-                            const ControlKeyStates states,
-                            const bool keyDown)
+TerminalInput::OutputType Terminal::SendKeyEvent(const WORD vkey,
+                                                 const WORD scanCode,
+                                                 const ControlKeyStates states,
+                                                 const bool keyDown)
 {
     // GH#6423 - don't snap on this key if the key that was pressed was a
     // modifier key. We'll wait for a real keystroke to snap to the bottom.
@@ -627,7 +618,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     // GH#7064
     if (vkey == 0 || vkey >= 0xff)
     {
-        return false;
+        return {};
     }
 
     // While not explicitly permitted, a wide range of software, including Windows' own touch keyboard,
@@ -637,7 +628,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     const auto sc = scanCode ? scanCode : _ScanCodeFromVirtualKey(vkey);
     if (sc == 0)
     {
-        return false;
+        return {};
     }
 
     const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();
@@ -665,11 +656,11 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     // See the method description for more information.
     if (keyDown && !isAltOnlyPressed && vkey != VK_TAB && ch != UNICODE_NULL)
     {
-        return false;
+        return {};
     }
 
     const auto keyEv = SynthesizeKeyEvent(keyDown, 1, vkey, sc, ch, states.Value());
-    return _handleTerminalInputResult(_getTerminalInput().HandleKey(keyEv));
+    return _getTerminalInput().HandleKey(keyEv);
 }
 
 // Method Description:
@@ -686,14 +677,14 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
-bool Terminal::SendMouseEvent(til::point viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const TerminalInput::MouseButtonState state)
+TerminalInput::OutputType Terminal::SendMouseEvent(til::point viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const TerminalInput::MouseButtonState state)
 {
     // GH#6401: VT applications should be able to receive mouse events from outside the
     // terminal buffer. This is likely to happen when the user drags the cursor offscreen.
     // We shouldn't throw away perfectly good events when they're offscreen, so we just
     // clamp them to be within the range [(0, 0), (W, H)].
     _GetMutableViewport().ToOrigin().Clamp(viewportPos);
-    return _handleTerminalInputResult(_getTerminalInput().HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta, state));
+    return _getTerminalInput().HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta, state);
 }
 
 // Method Description:
@@ -708,7 +699,7 @@ bool Terminal::SendMouseEvent(til::point viewportPos, const unsigned int uiButto
 // Return Value:
 // - true if we translated the character event, and it should not be processed any further.
 // - false otherwise.
-bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states)
+TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states)
 {
     auto vkey = _TakeVirtualKeyFromLastKeyEvent(scanCode);
     if (vkey == 0 && scanCode != 0)
@@ -746,7 +737,7 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     }
 
     const auto keyDown = SynthesizeKeyEvent(true, 1, vkey, scanCode, ch, states.Value());
-    return _handleTerminalInputResult(_getTerminalInput().HandleKey(keyDown));
+    return _getTerminalInput().HandleKey(keyDown);
 }
 
 // Method Description:
@@ -757,9 +748,9 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
 // - focused: true if we're focused, false otherwise.
 // Return Value:
 // - none
-void Terminal::FocusChanged(const bool focused)
+TerminalInput::OutputType Terminal::FocusChanged(const bool focused)
 {
-    _handleTerminalInputResult(_getTerminalInput().HandleFocus(focused));
+    return _getTerminalInput().HandleFocus(focused);
 }
 
 // Method Description:
@@ -882,20 +873,6 @@ catch (...)
     return UNICODE_INVALID;
 }
 
-[[maybe_unused]] bool Terminal::_handleTerminalInputResult(TerminalInput::OutputType&& out) const
-{
-    if (out)
-    {
-        const auto& str = *out;
-        if (_pfnWriteInput && !str.empty())
-        {
-            _pfnWriteInput(str);
-        }
-        return true;
-    }
-    return false;
-}
-
 // Method Description:
 // - It's possible for a single scan code on a keyboard to
 //   produce different key codes depending on the keyboard state.
@@ -933,11 +910,21 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 void Terminal::_assertLocked() const noexcept
 {
 #ifndef NDEBUG
-    if (!_readWriteLock.is_locked())
+    if (!_suppressLockChecks && !_readWriteLock.is_locked())
     {
         // __debugbreak() has the benefit over assert() that the debugger jumps right here to this line.
         // That way there's no need to first click any dialogues, etc. The disadvantage of course is that the
         // application just crashes if no debugger is attached. But hey, that's a great incentive to fix the bug!
+        __debugbreak();
+    }
+#endif
+}
+
+void Terminal::_assertUnlocked() const noexcept
+{
+#ifndef NDEBUG
+    if (!_suppressLockChecks && _readWriteLock.is_locked())
+    {
         __debugbreak();
     }
 #endif

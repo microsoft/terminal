@@ -107,7 +107,7 @@ class TerminalCoreUnitTests::ScrollTest final
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        _term = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
+        _term = std::make_unique<::Microsoft::Terminal::Core::Terminal>(Terminal::TestDummyMarker{});
 
         _scrollBarNotification = std::make_shared<std::optional<ScrollBarNotification>>();
         _term->SetScrollPositionChangedCallback([scrollBarNotification = _scrollBarNotification](const int top, const int height, const int bottom) {
