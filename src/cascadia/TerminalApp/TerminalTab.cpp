@@ -1686,7 +1686,7 @@ namespace winrt::TerminalApp::implementation
         return _zoomedPane != nullptr;
     }
 
-    TermControl& _termControlFromPane(const auto& pane)
+    TermControl _termControlFromPane(const auto& pane)
     {
         if (const auto content{ pane->GetContent() })
         {
