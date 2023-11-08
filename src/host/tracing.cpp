@@ -194,15 +194,12 @@ void Tracing::s_TraceConsoleAttachDetach(_In_ ConsoleProcessHandle* const pConso
 {
     if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, TraceKeywords::ConsoleAttachDetach))
     {
-        auto bIsUserInteractive = Telemetry::Instance().IsUserInteractive();
-
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "ConsoleAttachDetach",
             TraceLoggingPid(pConsoleProcessHandle->dwProcessId, "AttachedProcessId"),
             TraceLoggingFileTime(pConsoleProcessHandle->GetProcessCreationTime(), "AttachedProcessCreationTime"),
             TraceLoggingBool(bIsAttach, "IsAttach"),
-            TraceLoggingBool(bIsUserInteractive, "IsUserInteractive"),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::ConsoleAttachDetach));
     }

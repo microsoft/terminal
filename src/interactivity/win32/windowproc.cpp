@@ -163,12 +163,6 @@ using namespace Microsoft::Console::Types;
 
     case WM_SIZING:
     {
-        // Signal that the user changed the window size, so we can return the value later for telemetry. By only
-        // sending the data back if the size has changed, helps reduce the amount of telemetry being sent back.
-        // WM_SIZING doesn't fire if they resize the window using Win-UpArrow, so we'll miss that scenario. We could
-        // listen to the WM_SIZE message instead, but they can fire when the window is being restored from being
-        // minimized, and not only when they resize the window.
-        Telemetry::Instance().SetWindowSizeChanged();
         goto CallDefWin;
         break;
     }
@@ -322,11 +316,6 @@ using namespace Microsoft::Console::Types;
 
     case WM_CLOSE:
     {
-        // Write the final trace log during the WM_CLOSE message while the console process is still fully alive.
-        // This gives us time to query the process for information.  We shouldn't really miss any useful
-        // telemetry between now and when the process terminates.
-        Telemetry::Instance().WriteFinalTraceLog();
-
         _CloseWindow();
         break;
     }
@@ -471,7 +460,6 @@ using namespace Microsoft::Console::Types;
 
     case WM_CONTEXTMENU:
     {
-        Telemetry::Instance().SetContextMenuUsed();
         if (DefWindowProcW(hWnd, WM_NCHITTEST, 0, lParam) == HTCLIENT)
         {
             auto hHeirMenu = Menu::s_GetHeirMenuHandle();
@@ -865,12 +853,6 @@ void Window::_HandleDrop(const WPARAM wParam) const
 
     if (DragQueryFile((HDROP)wParam, 0, szPath, ARRAYSIZE(szPath)) != 0)
     {
-        // Log a telemetry flag saying the user interacted with the Console
-        // Only log when DragQueryFile succeeds, because if we don't when the console starts up, we're seeing
-        // _HandleDrop get called multiple times (and DragQueryFile fail),
-        // which can incorrectly mark this console session as interactive.
-        Telemetry::Instance().SetUserInteractive();
-
         fAddQuotes = (wcschr(szPath, L' ') != nullptr);
         if (fAddQuotes)
         {
