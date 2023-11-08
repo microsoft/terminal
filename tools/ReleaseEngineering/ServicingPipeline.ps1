@@ -89,7 +89,7 @@ $Cards = Get-GithubProjectCard -ColumnId $ToPickColumn.id
 
 & git fetch --all 2>&1 | Out-Null
 
-$Entries = @(& git log $SourceBranch --grep "(#\($($Cards.Number -Join "\|")\))" "--pretty=format:%H%x1C%s"  |
+$Entries = @(& git log $SourceBranch --first-parent --grep "(#\($($Cards.Number -Join "\|")\))" "--pretty=format:%H%x1C%s"  |
     ConvertFrom-CSV -Delimiter "`u{001C}" -Header CommitID,Subject)
 
 [Array]::Reverse($Entries)
