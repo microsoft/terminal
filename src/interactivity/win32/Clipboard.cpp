@@ -96,7 +96,7 @@ Clipboard& Clipboard::Instance()
 // - cchData - Size of the Unicode String in characters
 // Return Value:
 // - None
-void Clipboard::StringPaste(_In_reads_(cchData) PCWCHAR pData,
+void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
                             const size_t cchData)
 {
     if (pData == nullptr)
