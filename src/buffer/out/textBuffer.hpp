@@ -232,7 +232,7 @@ public:
     struct TextAndAttribute
     {
         std::vector<std::wstring> text;
-        std::vector<til::small_rle<TextAttribute>> attrs;
+        std::vector<til::small_rle<TextAttribute, uint16_t, 1>> attrs;
     };
 
     size_t SpanLength(const til::point coordStart, const til::point coordEnd) const;

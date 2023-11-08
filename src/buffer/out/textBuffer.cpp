@@ -1946,93 +1946,54 @@ const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
         data.attrs.reserve(rows);
     }
 
-    // for each row in the selection
     for (size_t i = 0; i < rows; i++)
     {
-        const auto iRow = selectionRects.at(i).top;
-
-        const auto highlight = Viewport::FromInclusive(selectionRects.at(i));
-
-        // retrieve the data from the screen buffer
-        auto it = GetCellDataAt(highlight.Origin(), highlight);
-
-        // preallocate to avoid reallocs
-        const auto maxCells = gsl::narrow<size_t>(highlight.Width() + 2); // + 2 for \r\n if we munged it
         std::wstring selectionText;
-        selectionText.reserve(maxCells);
-        til::small_rle<TextAttribute> attrs{ maxCells, it->TextAttr() };
+        til::small_rle<TextAttribute, uint16_t, 1> attrs;
 
-        // This is the size (or end) of the valid data within attrs rle.
-        size_t attrRleSize = 0;
+        const auto iRow = selectionRects.at(i).top;
+        const auto& row = GetRowByOffset(iRow);
+        const auto colBegin = gsl::narrow_cast<uint16_t>(selectionRects.at(i).left);
+        auto colEnd = gsl::narrow_cast<uint16_t>(selectionRects.at(i).right + 1); // end column exclusive
 
-        const auto appendAttr = [&](TextAttribute& attr, const size_t count) {
-            // retrieve the actual colors
-            const auto [CellFgAttr, CellBkAttr] = GetAttributeColors(attr);
-            attr.SetForeground(CellFgAttr);
-            attr.SetBackground(CellBkAttr);
+        // We apply formatting to rows if the row was NOT wrapped or formatting
+        // of wrapped rows is allowed.
+        const auto shouldFormatRow = formatWrappedRows || !row.WasWrapForced();
 
-            const auto newSize = attrRleSize + count;
-            attrs.replace(attrRleSize, newSize, attr);
-            attrRleSize += count;
-        };
-
-        // Once we know how many cells use the same attribute, we'll store the
-        // attribute that many times at once. Avoids calling GetAttributeColors
-        // multiple times for the same attribute.
-        auto attr = it->TextAttr();
-        size_t cAttrs = 0;
-
-        // copy char data into the string buffer, skipping trailing bytes
-        while (it)
+        if (trimTrailingWhitespace && shouldFormatRow)
         {
-            const auto& cell = *it;
+            // update end column to exclude trailing whitespace
 
-            if (cell.DbcsAttr() != DbcsAttribute::Trailing)
+            const auto text = row.GetText();
+            auto begin = text.rbegin();
+            auto end = text.rend();
+            auto it = begin;
+            for (; it != end; ++it)
             {
-                const auto chars = cell.Chars();
-                selectionText.append(chars);
-
-                if (copyAttribute)
+                if (*it != L' ')
                 {
-                    const auto cellData = cell.TextAttr();
-                    if (attr != cellData)
-                    {
-                        appendAttr(attr, cAttrs);
-                        attr = cellData;
-                        cAttrs = chars.size();
-                    }
-                    else
-                    {
-                        cAttrs += chars.size();
-                    }
+                    break;
                 }
             }
 
-            ++it;
+            const auto textTrimmedLength = gsl::narrow_cast<uint16_t>(end - it);
+            colEnd = std::min(colEnd, textTrimmedLength);
         }
 
-        // We might have exited the loop without saving the last attribute, so we'll append it here.
-        if (cAttrs != 0)
-        {
-            appendAttr(attr, cAttrs);
-        }
+        // save selected text
+        selectionText = std::wstring{ row.GetText(colBegin, colEnd) };
 
-        // We apply formatting to rows if the row was NOT wrapped or formatting of wrapped rows is allowed
-        const auto shouldFormatRow = formatWrappedRows || !GetRowByOffset(iRow).WasWrapForced();
-
-        if (trimTrailingWhitespace)
+        // retrieve attributes for the text range
+        if (copyAttribute)
         {
-            if (shouldFormatRow)
+            attrs = std::move(row.Attributes().slice(colBegin, colEnd));
+
+            // replace attribute color with actual color
+            for (auto& run : attrs.runs())
             {
-                // remove the spaces at the end (aka trim the trailing whitespace)
-                auto itText = selectionText.crbegin();
-                while (itText != selectionText.crend() && *itText == UNICODE_SPACE)
-                {
-                    itText++;
-                }
-                auto cDelete = gsl::narrow_cast<size_t>(itText - selectionText.crbegin());
-                selectionText.erase(selectionText.end() - cDelete, selectionText.end());
-                attrRleSize -= copyAttribute ? cDelete : 0;
+                const auto [fg, bg] = GetAttributeColors(run.value);
+                run.value.SetForeground(fg);
+                run.value.SetBackground(bg);
             }
         }
 
@@ -2043,15 +2004,23 @@ const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
             if (shouldFormatRow)
             {
                 // then we can assume a CR/LF is proper
-                selectionText.push_back(UNICODE_CARRIAGERETURN);
-                selectionText.push_back(UNICODE_LINEFEED);
+                selectionText.push_back(L'\r');
+                selectionText.push_back(L'\n');
 
                 if (copyAttribute)
                 {
                     // can't see CR/LF so just use black FG & BK
                     const auto Blackness = RGB(0x00, 0x00, 0x00);
                     auto clrfAttr = TextAttribute{ Blackness, Blackness };
-                    appendAttr(clrfAttr, 2);
+                    if (attrs.size() != 0) // Can only extend a non-empty rle
+                    {
+                        attrs.resize_trailing_extent(attrs.size() + 2);
+                        attrs.replace(attrs.size() - 2, attrs.size(), clrfAttr);
+                    }
+                    else
+                    {
+                        attrs = { 2, clrfAttr };
+                    }
                 }
             }
         }
@@ -2059,8 +2028,6 @@ const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
         data.text.emplace_back(std::move(selectionText));
         if (copyAttribute)
         {
-            // shrink rle to contain only the valid data.
-            attrs.resize_trailing_extent(attrRleSize);
             data.attrs.emplace_back(std::move(attrs));
         }
     }
@@ -2123,11 +2090,9 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
     {
         std::ostringstream htmlBuilder;
 
-        // First we have to add some standard
-        // HTML boiler plate required for CF_HTML
-        // as part of the HTML Clipboard format
-        const std::string htmlHeader =
-            "<!DOCTYPE><HTML><HEAD></HEAD><BODY>";
+        // First we have to add some standard HTML boiler plate required for
+        // CF_HTML as part of the HTML Clipboard format
+        constexpr std::string_view htmlHeader = "<!DOCTYPE><HTML><HEAD></HEAD><BODY>";
         htmlBuilder << htmlHeader;
 
         htmlBuilder << "<!--StartFragment -->";
@@ -2161,102 +2126,62 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
             htmlBuilder << "\">";
         }
 
-        // copy text and info color from buffer
-        auto hasWrittenAnyText = false;
-        std::optional<COLORREF> fgColor = std::nullopt;
-        std::optional<COLORREF> bkColor = std::nullopt;
         for (size_t row = 0; row < rows.text.size(); row++)
         {
-            size_t startOffset = 0;
-
             if (row != 0)
             {
                 htmlBuilder << "<BR>";
             }
 
-            for (size_t col = 0; col < rows.text.at(row).length(); col++)
+            size_t charOffset = 0;
+            for (auto& [attr, length] : rows.attrs.at(row).runs())
             {
-                const auto writeAccumulatedChars = [&](bool includeCurrent) {
-                    if (col >= startOffset)
+                htmlBuilder << "<SPAN STYLE=\"";
+                htmlBuilder << "color:";
+                htmlBuilder << Utils::ColorToHexString(attr.GetForeground().GetRGB());
+                htmlBuilder << ";";
+                htmlBuilder << "background-color:";
+                htmlBuilder << Utils::ColorToHexString(attr.GetBackground().GetRGB());
+                htmlBuilder << ";";
+                htmlBuilder << "\">";
+
+                std::string unescapedText;
+                THROW_IF_FAILED(til::u16u8(std::wstring_view{ rows.text.at(row) }.substr(charOffset, length), unescapedText));
+
+                for (const auto c : unescapedText)
+                {
+                    if (c == '\r' || c == '\n')
                     {
-                        const auto unescapedText = ConvertToA(CP_UTF8, std::wstring_view(rows.text.at(row)).substr(startOffset, col - startOffset + includeCurrent));
-                        for (const auto c : unescapedText)
-                        {
-                            switch (c)
-                            {
-                            case '<':
-                                htmlBuilder << "&lt;";
-                                break;
-                            case '>':
-                                htmlBuilder << "&gt;";
-                                break;
-                            case '&':
-                                htmlBuilder << "&amp;";
-                                break;
-                            default:
-                                htmlBuilder << c;
-                            }
-                        }
-
-                        startOffset = col;
-                    }
-                };
-
-                if (rows.text.at(row).at(col) == '\r' || rows.text.at(row).at(col) == '\n')
-                {
-                    // do not include \r nor \n as they don't have color attributes
-                    // and are not HTML friendly. For line break use '<BR>' instead.
-                    writeAccumulatedChars(false);
-                    break;
-                }
-
-                auto colorChanged = false;
-                const auto& attr = rows.attrs.at(row).at(col);
-                if (!fgColor.has_value() || attr.GetForeground().GetRGB() != fgColor.value())
-                {
-                    fgColor = attr.GetForeground().GetRGB();
-                    colorChanged = true;
-                }
-
-                if (!bkColor.has_value() || attr.GetBackground().GetRGB() != bkColor.value())
-                {
-                    bkColor = attr.GetBackground().GetRGB();
-                    colorChanged = true;
-                }
-
-                if (colorChanged)
-                {
-                    writeAccumulatedChars(false);
-
-                    if (hasWrittenAnyText)
-                    {
-                        htmlBuilder << "</SPAN>";
+                        // We reached EOL, and will move to the next row. (EOL also
+                        // signifies that this is the last attribute run for this row,
+                        // and we'll be going straight to the next one after this.)
+                        // Also, we do not include \r \n in the html. A newline
+                        // <BR> will be added before the next row.
+                        break;
                     }
 
-                    htmlBuilder << "<SPAN STYLE=\"";
-                    htmlBuilder << "color:";
-                    htmlBuilder << Utils::ColorToHexString(fgColor.value());
-                    htmlBuilder << ";";
-                    htmlBuilder << "background-color:";
-                    htmlBuilder << Utils::ColorToHexString(bkColor.value());
-                    htmlBuilder << ";";
-                    htmlBuilder << "\">";
+                    // append character, escape if needed
+                    switch (c)
+                    {
+                    case '<':
+                        htmlBuilder << "&lt;";
+                        break;
+                    case '>':
+                        htmlBuilder << "&gt;";
+                        break;
+                    case '&':
+                        htmlBuilder << "&amp;";
+                        break;
+                    default:
+                        htmlBuilder << c;
+                    }
                 }
 
-                hasWrittenAnyText = true;
+                htmlBuilder << "</SPAN>";
 
-                // if this is the last character in the row, flush the whole row
-                if (col == rows.text.at(row).length() - 1)
-                {
-                    writeAccumulatedChars(true);
-                }
+                // advance to the next run start
+                charOffset += length;
             }
-        }
-
-        if (hasWrittenAnyText)
-        {
-            // last opened span wasn't closed in loop above, so close it now
-            htmlBuilder << "</SPAN>";
         }
 
         htmlBuilder << "</DIV>";
@@ -2374,64 +2299,25 @@ std::string TextBuffer::GenRTF(const TextAndAttribute& rows, const int fontHeigh
                        << "\\chshdng0\\chcbpat" << getColorTableIndex(backgroundColor)
                        << " ";
 
-        std::optional<COLORREF> fgColor = std::nullopt;
-        std::optional<COLORREF> bkColor = std::nullopt;
         for (size_t row = 0; row < rows.text.size(); ++row)
         {
-            size_t startOffset = 0;
-
             if (row != 0)
             {
                 contentBuilder << "\\line "; // new line
             }
 
-            for (size_t col = 0; col < rows.text.at(row).length(); ++col)
+            size_t charOffset = 0;
+            for (auto& [attr, length] : rows.attrs.at(row).runs())
             {
-                const auto writeAccumulatedChars = [&](bool includeCurrent) {
-                    if (col >= startOffset)
-                    {
-                        const auto text = std::wstring_view{ rows.text.at(row) }.substr(startOffset, col - startOffset + includeCurrent);
-                        _AppendRTFText(contentBuilder, text);
+                contentBuilder << "\\chshdng0\\chcbpat" << getColorTableIndex(attr.GetBackground().GetRGB())
+                               << "\\cf" << getColorTableIndex(attr.GetForeground().GetRGB())
+                               << " ";
 
-                        startOffset = col;
-                    }
-                };
+                const auto unescapedText = std::wstring_view{ rows.text.at(row) }.substr(charOffset, length);
+                _AppendRTFText(contentBuilder, unescapedText);
 
-                if (rows.text.at(row).at(col) == '\r' || rows.text.at(row).at(col) == '\n')
-                {
-                    // do not include \r nor \n as they don't have color attributes.
-                    // For line break use \line instead.
-                    writeAccumulatedChars(false);
-                    break;
-                }
-
-                auto colorChanged = false;
-                const auto& attr = rows.attrs.at(row).at(col);
-                if (!fgColor.has_value() || attr.GetForeground().GetRGB() != fgColor.value())
-                {
-                    fgColor = attr.GetForeground().GetRGB();
-                    colorChanged = true;
-                }
-
-                if (!bkColor.has_value() || attr.GetBackground().GetRGB() != bkColor.value())
-                {
-                    bkColor = attr.GetBackground().GetRGB();
-                    colorChanged = true;
-                }
-
-                if (colorChanged)
-                {
-                    writeAccumulatedChars(false);
-                    contentBuilder << "\\chshdng0\\chcbpat" << getColorTableIndex(bkColor.value())
-                                   << "\\cf" << getColorTableIndex(fgColor.value())
-                                   << " ";
-                }
-
-                // if this is the last character in the row, flush the whole row
-                if (col == rows.text.at(row).length() - 1)
-                {
-                    writeAccumulatedChars(true);
-                }
+                // advance to the next run start
+                charOffset += length;
             }
         }
 
@@ -2462,6 +2348,16 @@ void TextBuffer::_AppendRTFText(std::ostringstream& contentBuilder, const std::w
     {
         if (codeUnit <= 127)
         {
+            if (codeUnit == L'\r' || codeUnit == L'\n')
+            {
+                // We reached EOL, and will move to the next row. (EOL also
+                // signifies that this is the last attribute run for this row,
+                // and we'll be going straight to the next one after this.)
+                // Also, we do not include \r \n in the RTF data. A newline
+                // '\\line' will be added before the next row.
+                break;
+            }
+
             switch (codeUnit)
             {
             case L'\\':
