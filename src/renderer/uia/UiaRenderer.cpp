@@ -51,7 +51,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     // If we had buffered any text from NotifyNewText, dump it. When we do come
     // back around to actually paint, we will just no-op. No sense in keeping
     // the data buffered.
-    _newOutput.clear();
+    _newOutput = std::wstring{};
 
     return S_OK;
 }
