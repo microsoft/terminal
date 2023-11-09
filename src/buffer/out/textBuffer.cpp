@@ -2128,11 +2128,6 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
 
         for (size_t row = 0; row < rows.text.size(); row++)
         {
-            if (row != 0)
-            {
-                htmlBuilder << "<BR>";
-            }
-
             size_t charOffset = 0;
             for (auto& [attr, length] : rows.attrs.at(row).runs())
             {
@@ -2152,15 +2147,12 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
                 {
                     if (c == '\r' || c == '\n')
                     {
-                        // We reached EOL, and will move to the next row. (EOL also
-                        // signifies that this is the last attribute run for this row,
-                        // and we'll be going straight to the next one after this.)
-                        // Also, we do not include \r \n in the html. A newline
-                        // <BR> will be added before the next row.
+                        // Reached EOL. We use <BR> for newline instead of CL/RF in HTML.
+                        htmlBuilder << "<BR>";
                         break;
                     }
 
-                    // append character, escape if needed
+                    // append character (escape if needed)
                     switch (c)
                     {
                     case '<':
@@ -2301,11 +2293,6 @@ std::string TextBuffer::GenRTF(const TextAndAttribute& rows, const int fontHeigh
 
         for (size_t row = 0; row < rows.text.size(); ++row)
         {
-            if (row != 0)
-            {
-                contentBuilder << "\\line "; // new line
-            }
-
             size_t charOffset = 0;
             for (auto& [attr, length] : rows.attrs.at(row).runs())
             {
@@ -2350,11 +2337,8 @@ void TextBuffer::_AppendRTFText(std::ostringstream& contentBuilder, const std::w
         {
             if (codeUnit == L'\r' || codeUnit == L'\n')
             {
-                // We reached EOL, and will move to the next row. (EOL also
-                // signifies that this is the last attribute run for this row,
-                // and we'll be going straight to the next one after this.)
-                // Also, we do not include \r \n in the RTF data. A newline
-                // '\\line' will be added before the next row.
+                // Reached EOL. We use \\line for newline instead of CL\RF in RTF.
+                contentBuilder << "\\line";
                 break;
             }
 
