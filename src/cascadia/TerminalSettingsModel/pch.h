@@ -31,6 +31,7 @@
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Graphics.Imaging.h>
 #include <Windows.Graphics.Imaging.Interop.h>
+#include "winrt/Windows.Security.Credentials.h"
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.System.h>

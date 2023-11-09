@@ -371,6 +371,7 @@
         { "command": "renameTab" },
         { "command": "openTabRenamer" },
         { "command": "commandPalette", "keys":"ctrl+shift+p" },
+        { "command": "AIChat" },
         { "command": "identifyWindow" },
         { "command": "openWindowRenamer" },
         { "command": "quakeMode", "keys":"win+sc(41)" },

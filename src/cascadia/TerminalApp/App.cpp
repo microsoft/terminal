@@ -5,6 +5,7 @@
 #include "App.h"
 #include "App.g.cpp"
 #include <CoreWindow.h>
+#include <winrt/Microsoft.Terminal.Query.Extension.h>
 
 using namespace winrt;
 using namespace winrt::Windows::ApplicationModel::Activation;
@@ -112,6 +113,14 @@ namespace winrt::TerminalApp::implementation
         if (!std::exchange(_preparedForSettingsUI, true))
         {
             AddOtherProvider(winrt::Microsoft::Terminal::Settings::Editor::XamlMetaDataProvider{});
+        }
+    }
+
+    void App::PrepareForAIChat()
+    {
+        if (!std::exchange(_preparedForAIChat, true))
+        {
+            AddOtherProvider(winrt::Microsoft::Terminal::Query::Extension::XamlMetaDataProvider{});
         }
     }
 }

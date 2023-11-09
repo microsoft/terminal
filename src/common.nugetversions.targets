@@ -42,7 +42,7 @@
 
     <!-- CppWinrt -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.targets" Condition="'$(TerminalCppWinrt)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.targets')" />
-
+    
     <!-- TAEF -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets" Condition="'$(TerminalTAEF)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets')" />
 

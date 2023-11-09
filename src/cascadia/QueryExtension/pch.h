@@ -21,7 +21,7 @@
 #endif
 
 #include <TraceLoggingProvider.h>
-TRACELOGGING_DECLARE_PROVIDER(g_hSettingsEditorProvider);
+TRACELOGGING_DECLARE_PROVIDER(g_hQueryExtensionProvider);
 #include <telemetry/ProjectTelemetry.h>
 
 #include <winrt/Windows.ApplicationModel.h>
@@ -40,8 +40,8 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSettingsEditorProvider);
 #include <winrt/Windows.UI.Xaml.Automation.Peers.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
-#include <winrt/Windows.UI.Xaml.Data.h>
 #include <winrt/Windows.UI.Xaml.Documents.h>
+#include <winrt/Windows.UI.Xaml.Data.h>
 #include <winrt/Windows.UI.Xaml.Input.h>
 #include <winrt/Windows.UI.Xaml.Interop.h>
 #include <winrt/Windows.UI.Xaml.Markup.h>
@@ -51,7 +51,6 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSettingsEditorProvider);
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
-#include <winrt/Microsoft.Terminal.Core.h>
 #include <winrt/Microsoft.Terminal.Control.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 

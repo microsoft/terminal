@@ -108,6 +108,7 @@
     ON_ALL_ACTIONS(ShowContextMenu)         \
     ON_ALL_ACTIONS(ExpandSelectionToWord)   \
     ON_ALL_ACTIONS(CloseOtherPanes)         \
+    ON_ALL_ACTIONS(ToggleAIChat)            \
     ON_ALL_ACTIONS(RestartConnection)       \
     ON_ALL_ACTIONS(ToggleBroadcastInput)    \
     ON_ALL_ACTIONS(OpenAbout)

@@ -253,6 +253,62 @@ namespace winrt::TerminalApp::implementation
 
         _UpdateTabWidthMode();
 
+        if (auto app{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
+        {
+            if (auto appPrivate{ winrt::get_self<implementation::App>(app) })
+            {
+                // Lazily load the query palette components so that we don't do it on startup.
+                appPrivate->PrepareForAIChat();
+            }
+        }
+        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette();
+        _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            if (_extensionPalette.Visibility() == Visibility::Collapsed)
+            {
+                ExtensionPresenter().Visibility(Visibility::Collapsed);
+                _FocusActiveControl(nullptr, nullptr);
+            }
+        });
+        _extensionPalette.InputSuggestionRequested({ this, &TerminalPage::_OnInputSuggestionRequested });
+        _extensionPalette.ActiveControlInfoRequested([&](IInspectable const&, IInspectable const&) {
+            if (const auto activeControl = _GetActiveControl())
+            {
+                const auto profileName = activeControl.Settings().ProfileName();
+                const std::wstring fullCommandline = activeControl.Settings().Commandline().c_str();
+                const auto lastSlashPos = fullCommandline.find_last_of(L"\\");
+                if (lastSlashPos != std::wstring::npos)
+                {
+                    const auto end = fullCommandline.find_last_of(L"\"");
+                    const auto s = fullCommandline.substr(lastSlashPos + 1, end - lastSlashPos - 1);
+                    _extensionPalette.ActiveCommandline(fullCommandline.substr(lastSlashPos + 1, end - lastSlashPos - 1));
+                }
+                else
+                {
+                    _extensionPalette.ActiveCommandline(fullCommandline);
+                }
+                _extensionPalette.ProfileName(profileName);
+
+                // Unfortunately IControlSettings doesn't contain the icon, we need to search our
+                // settings for the matching profile and get the icon from there
+                for (const auto profile : _settings.AllProfiles())
+                {
+                    if (profile.Name() == profileName)
+                    {
+                        _extensionPalette.IconPath(profile.Icon());
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                _extensionPalette.ActiveCommandline(L"");
+            }
+        });
+        _extensionPalette.AIKeyAndEndpointRequested([&](IInspectable const&, IInspectable const&) {
+            _extensionPalette.AIKeyAndEndpoint(_settings.AIEndpoint(), _settings.AIKey());
+        });
+        ExtensionPresenter().Content(_extensionPalette);
+
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
         // want to create an animation.
@@ -469,6 +525,18 @@ namespace winrt::TerminalApp::implementation
         ExecuteCommandlineArgs args{ commandLine };
         ActionAndArgs actionAndArgs{ ShortcutAction::ExecuteCommandline, args };
         _actionDispatch->DoAction(actionAndArgs);
+    }
+
+    // Method Description:
+    // - This method is called once the query palette suggestion was chosen
+    //   We'll use this event to input the suggestion
+    // Arguments:
+    // - suggestion - suggestion to dispatch
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnInputSuggestionRequested(const IInspectable& /*sender*/, const winrt::hstring& suggestion)
+    {
+        _GetActiveControl().SendInput(suggestion);
     }
 
     // Method Description:
@@ -851,6 +919,29 @@ namespace winrt::TerminalApp::implementation
                 _SetAcceleratorForMenuItem(commandPaletteFlyout, commandPaletteKeyChord);
             }
 
+            // Create the AI chat button.
+            auto AIChatFlyout = WUX::Controls::MenuFlyoutItem{};
+            AIChatFlyout.Text(RS_(L"AIChatMenuItem"));
+            const auto AIChatToolTip = RS_(L"AIChatToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(AIChatFlyout, box_value(AIChatToolTip));
+            Automation::AutomationProperties::SetHelpText(AIChatFlyout, AIChatToolTip);
+
+            // todo: replace the icon
+            WUX::Controls::FontIcon AIChatIcon{};
+            AIChatIcon.Glyph(L"\xE945");
+            AIChatIcon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+            AIChatFlyout.Icon(IconPathConverter::IconWUX(L"ms-appx:///ProfileIcons/terminalChatDropdownIcon.png"));
+
+            AIChatFlyout.Click({ this, &TerminalPage::_AIChatButtonOnClick });
+            newTabFlyout.Items().Append(AIChatFlyout);
+
+            const auto AIChatKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::ToggleAIChat) };
+            if (AIChatKeyChord)
+            {
+                _SetAcceleratorForMenuItem(AIChatFlyout, AIChatKeyChord);
+            }
+
             // Create the about button.
             auto aboutFlyout = WUX::Controls::MenuFlyoutItem{};
             aboutFlyout.Text(RS_(L"AboutMenuItem"));
@@ -880,7 +971,7 @@ namespace winrt::TerminalApp::implementation
         });
         // Necessary for fly-out sub items to get focus on a tab before collapsing. Related to #15049
         newTabFlyout.Closing([this](auto&&, auto&&) {
-            if (!_commandPaletteIs(Visibility::Visible))
+            if (!_commandPaletteIs(Visibility::Visible) && (ExtensionPresenter().Visibility() != Visibility::Visible))
             {
                 _FocusCurrentTab(true);
             }
@@ -1389,6 +1480,18 @@ namespace winrt::TerminalApp::implementation
         auto p = LoadCommandPalette();
         p.EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
         p.Visibility(Visibility::Visible);
+    }
+
+    // Method Description:
+    // - Called when the AI chat button is clicked. Opens the AI chat.
+    void TerminalPage::_AIChatButtonOnClick(const IInspectable&,
+                                            const RoutedEventArgs&)
+    {
+        if (ExtensionPresenter().Visibility() == Visibility::Collapsed)
+        {
+            ExtensionPresenter().Visibility(Visibility::Visible);
+            _extensionPalette.Visibility(Visibility::Visible);
+        }
     }
 
     // Method Description:

@@ -643,6 +643,22 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleToggleAIChat(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (ExtensionPresenter().Visibility() == Visibility::Collapsed)
+        {
+            ExtensionPresenter().Visibility(Visibility::Visible);
+            _extensionPalette.Visibility(Visibility::Visible);
+        }
+        else
+        {
+            _extensionPalette.Visibility(Visibility::Collapsed);
+            ExtensionPresenter().Visibility(Visibility::Collapsed);
+        }
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleSetColorScheme(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {

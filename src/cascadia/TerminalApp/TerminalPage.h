@@ -12,6 +12,7 @@
 #include "RequestMoveContentArgs.g.h"
 #include "RequestReceiveContentArgs.g.h"
 #include "Toast.h"
+#include <winrt/Microsoft.Terminal.Query.Extension.h>
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
@@ -215,7 +216,8 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Microsoft::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
         winrt::TerminalApp::ColorPickupFlyout _tabColorPicker{ nullptr };
-
+        winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette _extensionPalette{ nullptr };
+        winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _extensionPaletteLoadedRevoker;
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _tabs;
@@ -318,6 +320,7 @@ namespace winrt::TerminalApp::implementation
         bool _displayingCloseDialog{ false };
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _CommandPaletteButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _AIChatButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _KeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
@@ -439,6 +442,8 @@ namespace winrt::TerminalApp::implementation
         void _OnDispatchCommandRequested(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& command);
         void _OnCommandLineExecutionRequested(const IInspectable& sender, const winrt::hstring& commandLine);
         void _OnSwitchToTabRequested(const IInspectable& sender, const winrt::TerminalApp::TabBase& tab);
+
+        void _OnInputSuggestionRequested(const IInspectable& sender, const winrt::hstring& suggestion);
 
         void _Find(const TerminalTab& tab);
 

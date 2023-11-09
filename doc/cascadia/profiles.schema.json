@@ -393,6 +393,7 @@
         "addMark",
         "adjustFontSize",
         "adjustOpacity",
+        "AIChat",
         "clearAllMarks",
         "clearBuffer",
         "clearMark",

@@ -736,6 +736,9 @@
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>Command Palette</value>
   </data>
+  <data name="AIChatMenuItem" xml:space="preserve">
+    <value>Terminal Chat</value>
+  </data>
   <data name="NotificationIconFocusTerminal" xml:space="preserve">
     <value>Focus Terminal</value>
     <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>
@@ -813,6 +816,9 @@
   </data>
   <data name="CommandPaletteToolTip" xml:space="preserve">
     <value>Open the command palette</value>
+  </data>
+  <data name="AIChatToolTip" xml:space="preserve">
+    <value>Open the terminal chat</value>
   </data>
   <data name="DuplicateTabToolTip" xml:space="preserve">
     <value>Open a new tab using the active profile in the current directory</value>

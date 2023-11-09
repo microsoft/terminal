@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "AISettingsViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass AISettings : Windows.UI.Xaml.Controls.Page
+    {
+        AISettings();
+        AISettingsViewModel ViewModel { get; };
+    }
+}
