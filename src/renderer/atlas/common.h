@@ -377,6 +377,7 @@ namespace Microsoft::Console::Render::Atlas
     {
         u32 backgroundColor = 0;
         u32 selectionColor = 0x7fffffff;
+        u32 searchSelectionColor = 0x5fff0000;
         std::wstring customPixelShaderPath;
         bool useRetroTerminalEffect = false;
     };

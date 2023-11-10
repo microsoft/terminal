@@ -160,6 +160,11 @@ CATCH_RETURN()
     return S_OK;
 }
 
+[[nodiscard]] HRESULT BgfxEngine::PaintSelections(const std::vector<til::rect>& /*rects*/) noexcept
+{
+    return S_OK;
+}
+
 [[nodiscard]] HRESULT BgfxEngine::PaintCursor(const CursorOptions& options) noexcept
 try
 {

@@ -1840,6 +1840,14 @@ try
 }
 CATCH_RETURN()
 
+[[nodiscard]] HRESULT DxEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
+try
+{
+    UNREFERENCED_PARAMETER(rects);
+    return S_OK;
+}
+CATCH_RETURN()
+
 // Routine Description:
 // - Does nothing. Our cursor is drawn in CustomTextRenderer::DrawGlyphRun,
 //   either above or below the text.

@@ -374,6 +374,11 @@ void UiaEngine::WaitUntilCanRender() noexcept
     return S_FALSE;
 }
 
+[[nodiscard]] HRESULT UiaEngine::PaintSelections(const std::vector<til::rect>& /*rect*/) noexcept
+{
+    return S_FALSE;
+}
+
 // Routine Description:
 // - Draws the cursor on the screen
 //  For UIA, this doesn't mean anything. So do nothing.

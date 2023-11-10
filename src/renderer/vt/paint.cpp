@@ -231,6 +231,11 @@ using namespace Microsoft::Console::Types;
     return S_OK;
 }
 
+[[nodiscard]] HRESULT VtEngine::PaintSelections(const std::vector<til::rect>& /*rect*/) noexcept
+{
+    return S_OK;
+}
+
 // Routine Description:
 // - Write a VT sequence to change the current colors of text. Writes true RGB
 //      color sequences.
