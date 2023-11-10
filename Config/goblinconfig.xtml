@@ -1,9 +1,12 @@
 {
   "version": 1,
   "isRoot": true,
+    "goblinconfig":
+   "encryption":
   "tools": {
     "XamlStyler.Console": {
       "version": "3.2206.4",
+        "meta_file": "3.2207.4"
       "commands": [
         "xstyler"
       ]
