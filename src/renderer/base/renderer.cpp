@@ -955,13 +955,21 @@ GridLineSet Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcep
     {
     case UnderlineStyle::NoUnderline:
         break;
+    case UnderlineStyle::SinglyUnderlined:
+        lines.set(GridLines::Underline);
+        break;
     case UnderlineStyle::DoublyUnderlined:
         lines.set(GridLines::DoubleUnderline);
         break;
-    case UnderlineStyle::SinglyUnderlined:
     case UnderlineStyle::CurlyUnderlined:
+        lines.set(GridLines::CurlyUnderline);
+        break;
     case UnderlineStyle::DottedUnderlined:
+        lines.set(GridLines::DottedUnderline);
+        break;
     case UnderlineStyle::DashedUnderlined:
+        lines.set(GridLines::DashedUnderline);
+        break;
     default:
         lines.set(GridLines::Underline);
         break;
@@ -1002,10 +1010,11 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     // Return early if there are no lines to paint.
     if (lines.any())
     {
-        // Get the current foreground color to render the lines.
-        const auto rgb = _renderSettings.GetAttributeColors(textAttribute).first;
+        // Get the current foreground and underline colors to render the lines.
+        const auto fg = _renderSettings.GetAttributeColors(textAttribute).first;
+        const auto underlineColor = _renderSettings.GetAttributeUnderlineColor(textAttribute);
         // Draw the lines
-        LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
+        LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, fg, underlineColor, cchLine, coordTarget));
     }
 }
 
