@@ -1262,6 +1262,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto bgColor = _terminal->GetAttributeColors({}).second;
+        const auto isIntenseBold = _terminal->GetRenderSettings().GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
 
         // convert text to HTML format
         // GH#5347 - Don't provide a title for the generated HTML, as many
@@ -1271,7 +1272,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   TextBuffer::GenHTML(bufferData,
                                                       _actualFont.GetUnscaledSize().height,
                                                       _actualFont.GetFaceName(),
-                                                      bgColor) :
+                                                      bgColor,
+                                                      isIntenseBold) :
                                   "";
 
         // convert to RTF format
@@ -1279,7 +1281,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  TextBuffer::GenRTF(bufferData,
                                                     _actualFont.GetUnscaledSize().height,
                                                     _actualFont.GetFaceName(),
-                                                    bgColor) :
+                                                    bgColor,
+                                                    isIntenseBold) :
                                  "";
 
         // send data up for clipboard

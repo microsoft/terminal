@@ -842,7 +842,11 @@ const TextBuffer::TextAndAttribute Terminal::RetrieveSelectedTextFromBuffer(bool
     const auto selectionRects = _GetSelectionRects();
 
     const auto GetAttributeColors = [&](const auto& attr) {
-        return _renderSettings.GetAttributeColors(attr);
+        const auto [fg, bg] = _renderSettings.GetAttributeColors(attr);
+        // TODO: GetAttributeUnderlineColor calls GetAttributeColors
+        // internally, which is redundant.
+        const auto ul = _renderSettings.GetAttributeUnderlineColor(attr);
+        return std::tuple{ fg, bg, ul };
     };
 
     // GH#6740: Block selection should preserve the visual structure:

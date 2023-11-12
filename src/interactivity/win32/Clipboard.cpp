@@ -230,7 +230,11 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
     const auto& renderSettings = gci.GetRenderSettings();
 
     const auto GetAttributeColors = [&](const auto& attr) {
-        return renderSettings.GetAttributeColors(attr);
+        const auto [fg, bg] = renderSettings.GetAttributeColors(attr);
+        // TODO: GetAttributeUnderlineColor calls GetAttributeColors
+        // internally, which is redundant.
+        const auto ul = renderSettings.GetAttributeUnderlineColor(attr);
+        return std::tuple{ fg, bg, ul };
     };
 
     bool includeCRLF, trimTrailingWhitespace;
@@ -299,12 +303,14 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndAttribute& ro
             const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
             const auto& fontData = gci.GetActiveOutputBuffer().GetCurrentFont();
             const auto iFontHeightPoints = fontData.GetUnscaledSize().height * 72 / ServiceLocator::LocateGlobals().dpi;
-            const auto bgColor = gci.GetRenderSettings().GetAttributeColors({}).second;
+            const auto& renderSettings = gci.GetRenderSettings();
+            const auto bgColor = renderSettings.GetAttributeColors({}).second;
+            const auto isIntenseBold = renderSettings.GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
 
-            auto HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+            auto HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, isIntenseBold);
             CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
 
-            auto RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+            auto RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, isIntenseBold);
             CopyToSystemClipboard(RTFToPlaceOnClip, L"Rich Text Format");
         }
     }

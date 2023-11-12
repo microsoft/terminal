@@ -1007,16 +1007,18 @@ try
         {
             const auto& fontData = _actualFont;
             const int iFontHeightPoints = fontData.GetUnscaledSize().height; // this renderer uses points already
+            const auto isIntenseBold = _terminal->GetRenderSettings().GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
+
             COLORREF bgColor;
             {
                 const auto lock = _terminal->LockForReading();
                 bgColor = _terminal->GetAttributeColors({}).second;
             }
 
-            auto HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+            auto HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, isIntenseBold);
             _CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
 
-            auto RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+            auto RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, isIntenseBold);
             _CopyToSystemClipboard(RTFToPlaceOnClip, L"Rich Text Format");
         }
     }

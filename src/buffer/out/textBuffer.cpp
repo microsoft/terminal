@@ -1932,7 +1932,7 @@ void TextBuffer::_ExpandTextRow(til::inclusive_rect& textRow) const
 const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
                                                        const bool trimTrailingWhitespace,
                                                        const std::vector<til::inclusive_rect>& selectionRects,
-                                                       std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors,
+                                                       std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors,
                                                        const bool formatWrappedRows) const
 {
     TextAndAttribute data;
@@ -1988,12 +1988,13 @@ const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
         {
             attrs = std::move(row.Attributes().slice(colBegin, colEnd));
 
-            // replace attribute color with actual color
+            // replace stored attribute colors with rendered colors
             for (auto& run : attrs.runs())
             {
-                const auto [fg, bg] = GetAttributeColors(run.value);
+                const auto [fg, bg, ul] = GetAttributeColors(run.value);
                 run.value.SetForeground(fg);
                 run.value.SetBackground(bg);
+                run.value.SetUnderlineColor(ul);
             }
         }
 
@@ -2079,12 +2080,14 @@ std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point&
 // - backgroundColor - default background color for characters, also used in padding
 // - fontHeightPoints - the unscaled font height
 // - fontFaceName - the name of the font used
+// - isIntenseBold - true if being intense is treated as being bold
 // Return Value:
 // - string containing the generated HTML
 std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
                                 const int fontHeightPoints,
                                 const std::wstring_view fontFaceName,
-                                const COLORREF backgroundColor)
+                                const COLORREF backgroundColor,
+                                const bool isIntenseBold)
 {
     try
     {
@@ -2102,46 +2105,84 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
             htmlBuilder << "<DIV STYLE=\"";
             htmlBuilder << "display:inline-block;";
             htmlBuilder << "white-space:pre;";
+            htmlBuilder << "background-color:" << Utils::ColorToHexString(backgroundColor) << ";";
 
-            htmlBuilder << "background-color:";
-            htmlBuilder << Utils::ColorToHexString(backgroundColor);
-            htmlBuilder << ";";
-
-            htmlBuilder << "font-family:";
-            htmlBuilder << "'";
-            htmlBuilder << ConvertToA(CP_UTF8, fontFaceName);
-            htmlBuilder << "',";
             // even with different font, add monospace as fallback
-            htmlBuilder << "monospace;";
+            htmlBuilder << "font-family:"
+                        << "'" << ConvertToA(CP_UTF8, fontFaceName) << "',monospace;";
 
-            htmlBuilder << "font-size:";
-            htmlBuilder << fontHeightPoints;
-            htmlBuilder << "pt;";
+            htmlBuilder << "font-size:" << fontHeightPoints << "pt;";
 
             // note: MS Word doesn't support padding (in this way at least)
-            htmlBuilder << "padding:";
-            htmlBuilder << 4; // todo: customizable padding
-            htmlBuilder << "px;";
+            // todo: customizable padding
+            htmlBuilder << "padding:4px;";
 
             htmlBuilder << "\">";
         }
 
         for (size_t row = 0; row < rows.text.size(); row++)
         {
-            size_t charOffset = 0;
+            auto itText = rows.text.at(row).begin();
+
             for (auto& [attr, length] : rows.attrs.at(row).runs())
             {
+                const auto fg = Utils::ColorToHexString(attr.GetForeground().GetRGB());
+                const auto bg = Utils::ColorToHexString(attr.GetBackground().GetRGB());
+                const auto ul = Utils::ColorToHexString(attr.GetUnderlineColor().GetRGB());
+                const auto ulStyle = attr.GetUnderlineStyle();
+                const auto isCrossedOut = attr.IsCrossedOut();
+
                 htmlBuilder << "<SPAN STYLE=\"";
-                htmlBuilder << "color:";
-                htmlBuilder << Utils::ColorToHexString(attr.GetForeground().GetRGB());
-                htmlBuilder << ";";
-                htmlBuilder << "background-color:";
-                htmlBuilder << Utils::ColorToHexString(attr.GetBackground().GetRGB());
-                htmlBuilder << ";";
+                htmlBuilder << "color:" << fg << ";";
+                htmlBuilder << "background-color:" << bg << ";";
+
+                if (isIntenseBold && attr.IsIntense())
+                {
+                    htmlBuilder << "font-weight:bold;";
+                }
+                if (attr.IsItalic())
+                {
+                    htmlBuilder << "font-style:italic;";
+                }
+
+                switch (ulStyle)
+                {
+                case UnderlineStyle::NoUnderline:
+                    break;
+                case UnderlineStyle::SinglyUnderlined:
+                    htmlBuilder << "text-decoration:underline " << ul;
+                    break;
+                case UnderlineStyle::DoublyUnderlined:
+                    htmlBuilder << "text-decoration:underline double " << ul;
+                    break;
+                case UnderlineStyle::CurlyUnderlined:
+                    htmlBuilder << "text-decoration:underline wavy " << ul;
+                    break;
+                case UnderlineStyle::DottedUnderlined:
+                    htmlBuilder << "text-decoration:underline dotted " << ul;
+                    break;
+                case UnderlineStyle::DashedUnderlined:
+                    htmlBuilder << "text-decoration:underline dashed " << ul;
+                    break;
+                default:
+                    htmlBuilder << "text-decoration:underline " << ul;
+                    break;
+                }
+
                 htmlBuilder << "\">";
 
+                if (isCrossedOut)
+                {
+                    // Two ways we can do this: 'text-decoration: line-through' or <s>.
+                    // text-decoration is used for underlines too, and applying underline color
+                    // (when we need to) would apply it on the strike-through at the same time.
+                    // <s> always follows text foreground color, which is ideal for our case.
+                    // for our case.
+                    htmlBuilder << "<s>";
+                }
+
                 std::string unescapedText;
-                THROW_IF_FAILED(til::u16u8(std::wstring_view{ rows.text.at(row) }.substr(charOffset, length), unescapedText));
+                THROW_IF_FAILED(til::u16u8(std::wstring_view{ itText, itText + length }, unescapedText));
 
                 for (const auto c : unescapedText)
                 {
@@ -2169,10 +2210,15 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
                     }
                 }
 
+                if (isCrossedOut)
+                {
+                    htmlBuilder << "</s>";
+                }
+
                 htmlBuilder << "</SPAN>";
 
-                // advance to the next run start
-                charOffset += length;
+                // advance to the next run of text
+                itText += length;
             }
         }
 
@@ -2222,9 +2268,10 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
 // - fontHeightPoints - the unscaled font height
 // - fontFaceName - the name of the font used
 // - htmlTitle - value used in title tag of html header. Used to name the application
+// - isIntenseBold - true if being intense is treated as being bold
 // Return Value:
 // - string containing the generated RTF
-std::string TextBuffer::GenRTF(const TextAndAttribute& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor)
+std::string TextBuffer::GenRTF(const TextAndAttribute& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor, const bool /*isIntenseBold*/)
 {
     try
     {

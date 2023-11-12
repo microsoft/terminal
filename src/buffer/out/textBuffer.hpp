@@ -240,7 +240,7 @@ public:
     const TextAndAttribute GetText(const bool includeCRLF,
                                    const bool trimTrailingWhitespace,
                                    const std::vector<til::inclusive_rect>& textRects,
-                                   std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors = nullptr,
+                                   std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors = nullptr,
                                    const bool formatWrappedRows = false) const;
 
     std::wstring GetPlainText(const til::point& start, const til::point& end) const;
@@ -248,12 +248,14 @@ public:
     static std::string GenHTML(const TextAndAttribute& rows,
                                const int fontHeightPoints,
                                const std::wstring_view fontFaceName,
-                               const COLORREF backgroundColor);
+                               const COLORREF backgroundColor,
+                               const bool isIntenseBold);
 
     static std::string GenRTF(const TextAndAttribute& rows,
                               const int fontHeightPoints,
                               const std::wstring_view fontFaceName,
-                              const COLORREF backgroundColor);
+                              const COLORREF backgroundColor,
+                              const bool isIntenseBold);
 
     struct PositionInformation
     {
