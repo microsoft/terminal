@@ -816,6 +816,17 @@ void InputBuffer::_HandleTerminalInputCallback(const TerminalInput::StringType& 
 
         for (const auto& wch : text)
         {
+            if (wch == UNICODE_NULL)
+            {
+                // Convert null byte back to input event with proper control state
+                const auto zeroKey = OneCoreSafeVkKeyScanW(0);
+                uint32_t ctrlState = 0;
+                WI_SetFlagIf(ctrlState, SHIFT_PRESSED, WI_IsFlagSet(zeroKey, 0x100));
+                WI_SetFlagIf(ctrlState, LEFT_CTRL_PRESSED, WI_IsFlagSet(zeroKey, 0x200));
+                WI_SetFlagIf(ctrlState, LEFT_ALT_PRESSED, WI_IsFlagSet(zeroKey, 0x400));
+                _storage.push_back(SynthesizeKeyEvent(true, 1, LOBYTE(zeroKey), 0, wch, ctrlState));
+                continue;
+            }
             _storage.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
         }
 
