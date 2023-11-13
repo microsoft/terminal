@@ -2271,7 +2271,7 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
 // - isIntenseBold - true if being intense is treated as being bold
 // Return Value:
 // - string containing the generated RTF
-std::string TextBuffer::GenRTF(const TextAndAttribute& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor, const bool /*isIntenseBold*/)
+std::string TextBuffer::GenRTF(const TextAndAttribute& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor, const bool isIntenseBold)
 {
     try
     {
@@ -2340,18 +2340,72 @@ std::string TextBuffer::GenRTF(const TextAndAttribute& rows, const int fontHeigh
 
         for (size_t row = 0; row < rows.text.size(); ++row)
         {
-            size_t charOffset = 0;
+            auto itText = rows.text.at(row).begin();
+
             for (auto& [attr, length] : rows.attrs.at(row).runs())
             {
-                contentBuilder << "\\chshdng0\\chcbpat" << getColorTableIndex(attr.GetBackground().GetRGB())
-                               << "\\cf" << getColorTableIndex(attr.GetForeground().GetRGB())
-                               << " ";
+                const auto fg = getColorTableIndex(attr.GetForeground().GetRGB());
+                const auto bg = getColorTableIndex(attr.GetBackground().GetRGB());
+                const auto ul = getColorTableIndex(attr.GetUnderlineColor().GetRGB());
+                const auto ulStyle = attr.GetUnderlineStyle();
 
-                const auto unescapedText = std::wstring_view{ rows.text.at(row) }.substr(charOffset, length);
+                // start an RTF group that we'll close later to reset back to
+                // the default attribute.
+                contentBuilder << "{";
+
+                contentBuilder << "\\chshdng0\\chcbpat" << bg
+                               << "\\cf" << fg;
+
+                if (isIntenseBold && attr.IsIntense())
+                {
+                    contentBuilder << "\\b";
+                }
+                if (attr.IsItalic())
+                {
+                    contentBuilder << "\\i";
+                }
+
+                switch (ulStyle)
+                {
+                case UnderlineStyle::NoUnderline:
+                    break;
+                case UnderlineStyle::SinglyUnderlined:
+                    contentBuilder << "\\ul\\ulc" << ul;
+                    break;
+                case UnderlineStyle::DoublyUnderlined:
+                    contentBuilder << "\\uldb\\ulc" << ul;
+                    break;
+                case UnderlineStyle::CurlyUnderlined:
+                    contentBuilder << "\\ulwave\\ulc" << ul;
+                    break;
+                case UnderlineStyle::DottedUnderlined:
+                    contentBuilder << "\\uld\\ulc" << ul;
+                    break;
+                case UnderlineStyle::DashedUnderlined:
+                    contentBuilder << "\\uldash\\ulc" << ul;
+                    break;
+                default:
+                    contentBuilder << "\\ul\\ulc" << ul;
+                    break;
+                }
+
+                if (attr.IsCrossedOut())
+                {
+                    contentBuilder << "\\strike";
+                }
+
+                // RTF commands and the text data must be separated by a space.
+                // Otherwise if the text begins with a space, that space would be
+                // interpreted as part of the last command, and is ignored/removed.
+                contentBuilder << " ";
+
+                const auto unescapedText = std::wstring_view{ itText, itText + length };
                 _AppendRTFText(contentBuilder, unescapedText);
 
+                contentBuilder << "}"; // close RTF group
+
                 // advance to the next run start
-                charOffset += length;
+                itText += length;
             }
         }
 
@@ -2394,10 +2448,10 @@ void TextBuffer::_AppendRTFText(std::ostringstream& contentBuilder, const std::w
             case L'\\':
             case L'{':
             case L'}':
-                contentBuilder << "\\" << gsl::narrow<char>(codeUnit);
+                contentBuilder << "\\" << gsl::narrow_cast<char>(codeUnit);
                 break;
             default:
-                contentBuilder << gsl::narrow<char>(codeUnit);
+                contentBuilder << gsl::narrow_cast<char>(codeUnit);
             }
         }
         else
