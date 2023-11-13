@@ -2177,7 +2177,6 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
                     // text-decoration is used for underlines too, and applying underline color
                     // (when we need to) would apply it on the strike-through at the same time.
                     // <s> always follows text foreground color, which is ideal for our case.
-                    // for our case.
                     htmlBuilder << "<s>";
                 }
 
