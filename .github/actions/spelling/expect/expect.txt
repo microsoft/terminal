@@ -1968,7 +1968,13 @@ uiautomationcore
 uielem
 UIELEMENTENABLEDONLY
 UINTs
+ul
+ulc
 ulcch
+uld
+uldb
+uldash
+ulwave
 umul
 umulh
 Unadvise
