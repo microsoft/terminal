@@ -42,12 +42,10 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 
     if (a->Output)
     {
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleOutputCP);
         m->_pApiRoutines->GetConsoleOutputCodePageImpl(a->CodePage);
     }
     else
     {
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleCP);
         m->_pApiRoutines->GetConsoleInputCodePageImpl(a->CodePage);
     }
     return S_OK;
@@ -56,7 +54,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleMode(_Inout_ CONSOLE_API_MSG* const m,
                                                            _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
     const auto a = &m->u.consoleMsgL1.GetConsoleMode;
 
     const auto pObjectHandle = m->GetObjectHandle();
@@ -84,7 +81,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleMode(_Inout_ CONSOLE_API_MSG* const m,
                                                            _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleMode);
     const auto a = &m->u.consoleMsgL1.SetConsoleMode;
 
     const auto pObjectHandle = m->GetObjectHandle();
@@ -112,7 +108,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetNumberOfInputEvents(_Inout_ CONSOLE_API_MSG* const m,
                                                                    _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetNumberOfConsoleInputEvents);
     const auto a = &m->u.consoleMsgL1.GetNumberOfConsoleInputEvents;
 
     const auto pObjectHandle = m->GetObjectHandle();
@@ -130,15 +125,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     *pbReplyPending = FALSE;
 
     const auto a = &m->u.consoleMsgL1.GetConsoleInput;
-    if (WI_IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE))
-    {
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::PeekConsoleInput, a->Unicode);
-    }
-    else
-    {
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleInput, a->Unicode);
-    }
-
     a->NumRecords = 0;
 
     // If any flags are set that are not within our enum, it's invalid.
@@ -229,7 +215,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     *pbReplyPending = FALSE;
 
     const auto a = &m->u.consoleMsgL1.ReadConsole;
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsole, a->Unicode);
 
     a->NumBytes = 0; // we return 0 until proven otherwise.
 
@@ -345,7 +330,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     *pbReplyPending = FALSE;
 
     const auto a = &m->u.consoleMsgL1.WriteConsole;
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsole, a->Unicode);
 
     // Make sure we have a valid screen buffer.
     auto HandleData = m->GetObjectHandle();
@@ -424,21 +408,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                               _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL2.FillConsoleOutput;
-
-    switch (a->ElementType)
-    {
-    case CONSOLE_ATTRIBUTE:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FillConsoleOutputAttribute);
-        break;
-    case CONSOLE_ASCII:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FillConsoleOutputCharacter, false);
-        break;
-    case CONSOLE_REAL_UNICODE:
-    case CONSOLE_FALSE_UNICODE:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FillConsoleOutputCharacter, true);
-        break;
-    }
-
     // Capture length of initial fill.
     size_t fill = a->Length;
 
@@ -498,7 +467,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleActiveScreenBuffer(_Inout_ CONSOLE_API_MSG* const m,
                                                                          _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleActiveScreenBuffer);
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
@@ -512,7 +480,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerFlushConsoleInputBuffer(_Inout_ CONSOLE_API_MSG* const m,
                                                                     _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FlushConsoleInputBuffer);
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
@@ -530,12 +497,10 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 
     if (a->Output)
     {
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleOutputCP);
         return m->_pApiRoutines->SetConsoleOutputCodePageImpl(a->CodePage);
     }
     else
     {
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleCP);
         return m->_pApiRoutines->SetConsoleInputCodePageImpl(a->CodePage);
     }
 }
@@ -543,7 +508,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG* const m,
                                                                  _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleCursorInfo);
     const auto a = &m->u.consoleMsgL2.GetConsoleCursorInfo;
 
     const auto pObjectHandle = m->GetObjectHandle();
@@ -561,7 +525,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG* const m,
                                                                  _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleCursorInfo);
     const auto a = &m->u.consoleMsgL2.SetConsoleCursorInfo;
 
     const auto pObjectHandle = m->GetObjectHandle();
@@ -576,7 +539,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG* const m,
                                                                        _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleScreenBufferInfoEx);
     const auto a = &m->u.consoleMsgL2.GetConsoleScreenBufferInfo;
 
     CONSOLE_SCREEN_BUFFER_INFOEX ex = { 0 };
@@ -609,7 +571,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG* const m,
                                                                        _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleScreenBufferInfoEx);
     const auto a = &m->u.consoleMsgL2.SetConsoleScreenBufferInfo;
 
     const auto pObjectHandle = m->GetObjectHandle();
@@ -646,7 +607,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleScreenBufferSize(_Inout_ CONSOLE_API_MSG* const m,
                                                                        _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleScreenBufferSize);
     const auto a = &m->u.consoleMsgL2.SetConsoleScreenBufferSize;
 
     const auto pObjectHandle = m->GetObjectHandle();
@@ -665,7 +625,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleCursorPosition(_Inout_ CONSOLE_API_MSG* const m,
                                                                      _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleCursorPosition);
     const auto a = &m->u.consoleMsgL2.SetConsoleCursorPosition;
 
     const auto pObjectHandle = m->GetObjectHandle();
@@ -680,7 +639,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetLargestConsoleWindowSize(_Inout_ CONSOLE_API_MSG* const m,
                                                                         _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetLargestConsoleWindowSize);
     const auto a = &m->u.consoleMsgL2.GetLargestConsoleWindowSize;
 
     const auto pObjectHandle = m->GetObjectHandle();
@@ -698,7 +656,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                                       _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL2.ScrollConsoleScreenBuffer;
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ScrollConsoleScreenBuffer, a->Unicode);
 
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
@@ -732,7 +689,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleTextAttribute(_Inout_ CONSOLE_API_MSG* const m,
                                                                     _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleTextAttribute);
     const auto a = &m->u.consoleMsgL2.SetConsoleTextAttribute;
 
     const auto pObjectHandle = m->GetObjectHandle();
@@ -751,7 +707,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleWindowInfo(_Inout_ CONSOLE_API_MSG* const m,
                                                                  _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleWindowInfo);
     const auto a = &m->u.consoleMsgL2.SetConsoleWindowInfo;
 
     const auto pObjectHandle = m->GetObjectHandle();
@@ -777,21 +732,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
     RETURN_HR_IF(E_ACCESSDENIED, !m->GetProcessHandle()->GetPolicy().CanReadOutputBuffer());
 
     const auto a = &m->u.consoleMsgL2.ReadConsoleOutputString;
-
-    switch (a->StringType)
-    {
-    case CONSOLE_ATTRIBUTE:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutputAttribute);
-        break;
-    case CONSOLE_ASCII:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutputCharacter, false);
-        break;
-    case CONSOLE_REAL_UNICODE:
-    case CONSOLE_FALSE_UNICODE:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutputCharacter, true);
-        break;
-    }
-
     a->NumRecords = 0; // Set to 0 records returned in case we have failures.
 
     PVOID pvBuffer;
@@ -843,8 +783,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 {
     const auto a = &m->u.consoleMsgL2.WriteConsoleInput;
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleInput, a->Unicode);
-
     a->NumRecords = 0;
 
     RETURN_HR_IF(E_ACCESSDENIED, !m->GetProcessHandle()->GetPolicy().CanWriteInputBuffer());
@@ -879,8 +817,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                                _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL2.WriteConsoleOutput;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutput, a->Unicode);
 
     // Backup originalRegion and set the written area to a 0 size rectangle in case of failures.
     const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(til::wrap_small_rect(a->CharRegion));
@@ -923,21 +859,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                                      _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL2.WriteConsoleOutputString;
-
-    switch (a->StringType)
-    {
-    case CONSOLE_ATTRIBUTE:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutputAttribute);
-        break;
-    case CONSOLE_ASCII:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutputCharacter, false);
-        break;
-    case CONSOLE_REAL_UNICODE:
-    case CONSOLE_FALSE_UNICODE:
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutputCharacter, true);
-        break;
-    }
-
     // Set written records to 0 in case we early return.
     a->NumRecords = 0;
 
@@ -1022,8 +943,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 
     const auto a = &m->u.consoleMsgL2.ReadConsoleOutput;
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutput, a->Unicode);
-
     // Backup data region passed and set it to a zero size region in case we exit early for failures.
     const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(til::wrap_small_rect(a->CharRegion));
     const auto zeroRegion = Microsoft::Console::Types::Viewport::FromDimensions(originalRegion.Origin(), { 0, 0 });
@@ -1076,7 +995,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                             _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL2.GetConsoleTitle;
-    Telemetry::Instance().LogApiCall(a->Original ? Telemetry::ApiCall::GetConsoleOriginalTitle : Telemetry::ApiCall::GetConsoleTitle, a->Unicode);
 
     PVOID pvBuffer;
     ULONG cbBuffer;
@@ -1133,7 +1051,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                             _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL2.SetConsoleTitle;
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleTitle, a->Unicode);
 
     PVOID pvBuffer;
     ULONG cbOriginalLength;
@@ -1155,7 +1072,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleMouseInfo(_Inout_ CONSOLE_API_MSG* const m,
                                                                 _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetNumberOfConsoleMouseButtons);
     const auto a = &m->u.consoleMsgL3.GetConsoleMouseInfo;
 
     m->_pApiRoutines->GetNumberOfConsoleMouseButtonsImpl(a->NumButtons);
@@ -1165,7 +1081,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleFontSize(_Inout_ CONSOLE_API_MSG* const m,
                                                                _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleFontSize);
     const auto a = &m->u.consoleMsgL3.GetConsoleFontSize;
 
     const auto pObjectHandle = m->GetObjectHandle();
@@ -1182,7 +1097,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG* const m,
                                                                   _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetCurrentConsoleFontEx);
     const auto a = &m->u.consoleMsgL3.GetCurrentConsoleFont;
 
     const auto pObjectHandle = m->GetObjectHandle();
@@ -1208,7 +1122,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG* const m,
                                                                   _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleDisplayMode);
     const auto a = &m->u.consoleMsgL3.SetConsoleDisplayMode;
 
     const auto pObjectHandle = m->GetObjectHandle();
@@ -1225,7 +1138,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG* const m,
                                                                   _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleDisplayMode);
     const auto a = &m->u.consoleMsgL3.GetConsoleDisplayMode;
 
     // Historically this has never checked the handles. It just returns global state.
@@ -1238,7 +1150,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                             _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL3.AddConsoleAliasW;
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AddConsoleAlias, a->Unicode);
 
     // Read the input buffer and validate the strings.
     PVOID pvBuffer;
@@ -1286,7 +1197,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                             _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL3.GetConsoleAliasW;
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAlias, a->Unicode);
 
     PVOID pvInputBuffer;
     ULONG cbInputBufferSize;
@@ -1360,7 +1270,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                                     _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL3.GetConsoleAliasesLengthW;
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliasesLength, a->Unicode);
 
     ULONG cbExeNameLength;
     PVOID pvExeName;
@@ -1393,7 +1302,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                                       _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL3.GetConsoleAliasExesLengthW;
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliasExesLength, a->Unicode);
 
     size_t cbAliasExesLength;
     if (a->Unicode)
@@ -1418,7 +1326,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                               _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL3.GetConsoleAliasesW;
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliases, a->Unicode);
 
     PVOID pvExeName;
     ULONG cbExeNameLength;
@@ -1462,7 +1369,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                                 _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL3.GetConsoleAliasExesW;
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliasExes, a->Unicode);
 
     PVOID pvBuffer;
     ULONG cbAliasExesBufferLength;
@@ -1621,7 +1527,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleWindow(_Inout_ CONSOLE_API_MSG* const m,
                                                              _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleWindow);
     const auto a = &m->u.consoleMsgL3.GetConsoleWindow;
 
     m->_pApiRoutines->GetConsoleWindowImpl(a->hwnd);
@@ -1631,7 +1536,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleSelectionInfo(_Inout_ CONSOLE_API_MSG* const m,
                                                                     _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleSelectionInfo);
     const auto a = &m->u.consoleMsgL3.GetConsoleSelectionInfo;
 
     m->_pApiRoutines->GetConsoleSelectionInfoImpl(a->SelectionInfo);
@@ -1642,7 +1546,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                               _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL3.GetConsoleHistory;
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleHistoryInfo);
 
     CONSOLE_HISTORY_INFO info;
     info.cbSize = sizeof(info);
@@ -1660,7 +1563,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
                                                               _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL3.SetConsoleHistory;
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleHistoryInfo);
 
     CONSOLE_HISTORY_INFO info;
     info.cbSize = sizeof(info);
@@ -1674,7 +1576,6 @@ static DWORD TraceGetThreadId(CONSOLE_API_MSG* const m)
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG* const m,
                                                                   _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetCurrentConsoleFontEx);
     const auto a = &m->u.consoleMsgL3.SetCurrentConsoleFont;
 
     const auto pObjectHandle = m->GetObjectHandle();

@@ -428,11 +428,6 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
                                               [[maybe_unused]] PCONSOLE_API_MSG connectMessage)
 try
 {
-    // Create a telemetry instance here - this singleton is responsible for
-    // setting up the g_hConhostV2EventTraceProvider, which is otherwise not
-    // initialized in the defterm handoff at this point.
-    (void)Telemetry::Instance();
-
 #if !TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_ReceiveHandoff_Disabled",
@@ -865,8 +860,6 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 [[nodiscard]] NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 {
     // AllocConsole is outside our codebase, but we should be able to mostly track the call here.
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AllocConsole);
-
     auto& g = ServiceLocator::LocateGlobals();
 
     auto& gci = g.getConsoleInformation();
@@ -1050,7 +1043,7 @@ DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
                 // This will not return. Terminate immediately when disconnected.
                 ServiceLocator::RundownAndExit(STATUS_SUCCESS);
             }
-            RIPMSG1(RIP_WARNING, "DeviceIoControl failed with Result 0x%x", hr);
+            LOG_HR_MSG(hr, "DeviceIoControl failed");
             ReplyMsg = nullptr;
             continue;
         }

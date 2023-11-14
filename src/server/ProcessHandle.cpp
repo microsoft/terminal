@@ -30,10 +30,6 @@ ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
     _shimPolicy(_hProcess.get()),
     _processCreationTime{}
 {
-    if (nullptr != _hProcess.get())
-    {
-        Telemetry::Instance().LogProcessConnected(_hProcess.get());
-    }
 }
 
 // Routine Description:

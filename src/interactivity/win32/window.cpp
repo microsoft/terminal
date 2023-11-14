@@ -325,7 +325,7 @@ void Window::_UpdateSystemMetrics() const
         if (hWnd == nullptr)
         {
             const auto gle = GetLastError();
-            RIPMSG1(RIP_WARNING, "CreateWindow failed with gle = 0x%x", gle);
+            LOG_WIN32_MSG(gle, "CreateWindow failed");
             status = NTSTATUS_FROM_WIN32(gle);
         }
 
@@ -738,8 +738,6 @@ void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChang
     auto& ScreenInfo = GetScreenInfo();
 
     // Log a telemetry event saying the user interacted with the Console
-    Telemetry::Instance().SetUserInteractive();
-
     const auto& viewport = ScreenInfo.GetViewport();
 
     NewOrigin = viewport.Origin();
@@ -818,8 +816,6 @@ void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChang
 void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange)
 {
     // Log a telemetry event saying the user interacted with the Console
-    Telemetry::Instance().SetUserInteractive();
-
     auto& ScreenInfo = GetScreenInfo();
     const auto sScreenBufferSizeX = ScreenInfo.GetBufferSize().Width();
     const auto& viewport = ScreenInfo.GetViewport();
