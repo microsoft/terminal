@@ -2323,7 +2323,7 @@ std::string TextBuffer::GenRTF(const TextAndAttribute& rows, const int fontHeigh
 
         // content
         std::ostringstream contentBuilder;
-        contentBuilder << "\\viewkind4\\uc4";
+        contentBuilder << "\\viewkind4\\uc1";
 
         // paragraph styles
         // \fs specifies font size in half-points i.e. \fs20 results in a font size
@@ -2334,8 +2334,7 @@ std::string TextBuffer::GenRTF(const TextAndAttribute& rows, const int fontHeigh
                        // However, the following control words sequence works
                        // in Word (and other RTF editors also) for applying the
                        // text background color. See: Spec 1.9.1, Pg. 23.
-                       << "\\chshdng0\\chcbpat" << getColorTableIndex(backgroundColor)
-                       << " ";
+                       << "\\chshdng0\\chcbpat" << getColorTableIndex(backgroundColor);
 
         for (size_t row = 0; row < rows.text.size(); ++row)
         {
@@ -2456,7 +2455,9 @@ void TextBuffer::_AppendRTFText(std::ostringstream& contentBuilder, const std::w
         else
         {
             // Windows uses unsigned wchar_t - RTF uses signed ones.
-            contentBuilder << "\\u" << std::to_string(til::bit_cast<int16_t>(codeUnit)) << "?";
+            contentBuilder << "\\u" << std::to_string(til::bit_cast<int16_t>(codeUnit))
+                           // fallback ascii character
+                           << "?";
         }
     }
 }
