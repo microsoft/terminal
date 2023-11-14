@@ -2145,7 +2145,7 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
                     htmlBuilder << "font-style:italic;";
                 }
 
-                // build `text-decoration` property string for overline and strikethrough 
+                // build `text-decoration` property string for overline and strikethrough
                 std::ostringstream textDecoration;
                 if (attr.IsCrossedOut())
                 {
