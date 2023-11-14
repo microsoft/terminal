@@ -470,7 +470,7 @@ void AppHost::_revokeWindowCallbacks()
     // I suspect WinUI wouldn't like that very much. As such unregister all event handlers first.
     _revokers = {};
     _showHideWindowThrottler.reset();
-    _stopFrameTimer();
+
     _revokeWindowCallbacks();
 
     // DO NOT CLOSE THE WINDOW
