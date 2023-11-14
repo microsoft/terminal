@@ -2130,7 +2130,7 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
                 const auto bg = Utils::ColorToHexString(attr.GetBackground().GetRGB());
                 const auto ul = Utils::ColorToHexString(attr.GetUnderlineColor().GetRGB());
                 const auto ulStyle = attr.GetUnderlineStyle();
-                const auto isCrossedOut = attr.IsCrossedOut();
+                const auto isUnderlined = ulStyle != UnderlineStyle::NoUnderline;
 
                 htmlBuilder << "<SPAN STYLE=\"";
                 htmlBuilder << "color:" << fg << ";";
@@ -2145,40 +2145,56 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
                     htmlBuilder << "font-style:italic;";
                 }
 
-                switch (ulStyle)
+                // build `text-decoration` property string for overline and strikethrough 
+                std::ostringstream textDecoration;
+                if (attr.IsCrossedOut())
                 {
-                case UnderlineStyle::NoUnderline:
-                    break;
-                case UnderlineStyle::SinglyUnderlined:
-                    htmlBuilder << "text-decoration:underline " << ul;
-                    break;
-                case UnderlineStyle::DoublyUnderlined:
-                    htmlBuilder << "text-decoration:underline double " << ul;
-                    break;
-                case UnderlineStyle::CurlyUnderlined:
-                    htmlBuilder << "text-decoration:underline wavy " << ul;
-                    break;
-                case UnderlineStyle::DottedUnderlined:
-                    htmlBuilder << "text-decoration:underline dotted " << ul;
-                    break;
-                case UnderlineStyle::DashedUnderlined:
-                    htmlBuilder << "text-decoration:underline dashed " << ul;
-                    break;
-                default:
-                    htmlBuilder << "text-decoration:underline " << ul;
-                    break;
+                    textDecoration << "line-through";
+                }
+                if (attr.IsOverlined())
+                {
+                    textDecoration << " overline";
+                }
+
+                const auto textDecorationStr = textDecoration.str();
+                if (textDecorationStr.length())
+                {
+                    htmlBuilder << "text-decoration:" << textDecorationStr << " " << fg << ";";
+                }
+
+                if (isUnderlined)
+                {
+                    // Since underline, overline and strikethrough use the same css property,
+                    // we cannot apply different colors to them. The way we solve this is
+                    // by creating a nested <SPAN>, and applying underline style and color
+                    // to this span.
+                    htmlBuilder << "\"><SPAN STYLE=\"";
+                    switch (ulStyle)
+                    {
+                    case UnderlineStyle::NoUnderline:
+                        break;
+                    case UnderlineStyle::SinglyUnderlined:
+                        htmlBuilder << "text-decoration:underline " << ul << ";";
+                        break;
+                    case UnderlineStyle::DoublyUnderlined:
+                        htmlBuilder << "text-decoration:underline double " << ul << ";";
+                        break;
+                    case UnderlineStyle::CurlyUnderlined:
+                        htmlBuilder << "text-decoration:underline wavy " << ul << ";";
+                        break;
+                    case UnderlineStyle::DottedUnderlined:
+                        htmlBuilder << "text-decoration:underline dotted " << ul << ";";
+                        break;
+                    case UnderlineStyle::DashedUnderlined:
+                        htmlBuilder << "text-decoration:underline dashed " << ul << ";";
+                        break;
+                    default:
+                        htmlBuilder << "text-decoration:underline " << ul << ";";
+                        break;
+                    }
                 }
 
                 htmlBuilder << "\">";
-
-                if (isCrossedOut)
-                {
-                    // Two ways we can do this: 'text-decoration: line-through' or <s>.
-                    // text-decoration is used for underlines too, and applying underline color
-                    // (when we need to) would apply it on the strike-through at the same time.
-                    // <s> always follows text foreground color, which is ideal for our case.
-                    htmlBuilder << "<s>";
-                }
 
                 std::string unescapedText;
                 THROW_IF_FAILED(til::u16u8(std::wstring_view{ itText, itText + length }, unescapedText));
@@ -2209,9 +2225,9 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
                     }
                 }
 
-                if (isCrossedOut)
+                if (isUnderlined)
                 {
-                    htmlBuilder << "</s>";
+                    htmlBuilder << "</SPAN>";
                 }
 
                 htmlBuilder << "</SPAN>";
