@@ -64,7 +64,7 @@ try
 
     // Check if this conhost is allowed to delegate its activities to another.
     // If so, look up the registered default console handler.
-    if (Globals.delegationPair.IsUndecided() && Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
+    if (Globals.delegationPair.IsUndecided())
     {
         Globals.delegationPair = DelegationConfig::s_GetDelegationPair();
 
@@ -82,7 +82,7 @@ try
     // If we looked up the registered defterm pair, and it was left as the default (missing or {0}),
     // AND velocity is enabled for DxD, then we switch the delegation pair to Terminal and
     // mark that we should check that class for the marker interface later.
-    if (Globals.delegationPair.IsDefault() && Microsoft::Console::Internal::DefaultApp::CheckShouldTerminalBeDefault())
+    if (Globals.delegationPair.IsDefault())
     {
         Globals.delegationPair = DelegationConfig::TerminalDelegationPair;
         Globals.defaultTerminalMarkerCheckRequired = true;
