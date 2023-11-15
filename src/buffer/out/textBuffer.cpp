@@ -1986,7 +1986,7 @@ const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
         // retrieve attributes for the text range
         if (copyAttribute)
         {
-            attrs = std::move(row.Attributes().slice(colBegin, colEnd));
+            attrs = row.Attributes().slice(colBegin, colEnd);
 
             // replace stored attribute colors with rendered colors
             for (auto& run : attrs.runs())
