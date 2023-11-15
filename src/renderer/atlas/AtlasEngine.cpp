@@ -421,11 +421,6 @@ try
         return S_OK;
     }
 
-    // Unfortunately there's no step after Renderer::_PaintBufferOutput that
-    // would inform us that it's done with the last AtlasEngine::PaintBufferLine.
-    // As such we got to call _flushBufferLine() here just to be sure.
-    _flushBufferLine();
-
     for (const auto& rect : rects)
     {
         const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->viewportCellCount.y));
