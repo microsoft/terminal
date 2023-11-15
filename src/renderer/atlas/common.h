@@ -317,14 +317,7 @@ namespace Microsoft::Console::Render::Atlas
         bool useSoftwareRendering = false;
     };
 
-    enum class AntialiasingMode : u8
-    {
-        ClearType = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE,
-        Grayscale = D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE,
-        Aliased = D2D1_TEXT_ANTIALIAS_MODE_ALIASED,
-    };
-
-    inline constexpr auto DefaultAntialiasingMode = AntialiasingMode::ClearType;
+    inline constexpr auto DefaultAntialiasingMode = TextAntialiasMode::ClearType;
 
     struct FontDecorationPosition
     {
@@ -332,7 +325,7 @@ namespace Microsoft::Console::Render::Atlas
         u16 height = 0;
     };
 
-    struct FontSettings
+    struct ResolvedFontSettings
     {
         wil::com_ptr<IDWriteFontCollection> fontCollection;
         wil::com_ptr<IDWriteFontFamily> fontFamily;
@@ -358,7 +351,7 @@ namespace Microsoft::Console::Render::Atlas
         FontDecorationPosition overline;
 
         u16 dpi = 96;
-        AntialiasingMode antialiasingMode = DefaultAntialiasingMode;
+        TextAntialiasMode antialiasingMode = DefaultAntialiasingMode;
 
         std::vector<uint16_t> softFontPattern;
         til::size softFontCellSize;
@@ -384,7 +377,7 @@ namespace Microsoft::Console::Render::Atlas
     struct Settings
     {
         til::generational<TargetSettings> target;
-        til::generational<FontSettings> font;
+        til::generational<ResolvedFontSettings> font;
         til::generational<CursorSettings> cursor;
         til::generational<MiscellaneousSettings> misc;
         // Size of the viewport / swap chain in pixel.
@@ -402,7 +395,7 @@ namespace Microsoft::Console::Render::Atlas
         return GenerationalSettings{
             til::generation_t{ 1 },
             til::generational<TargetSettings>{ til::generation_t{ 1 } },
-            til::generational<FontSettings>{ til::generation_t{ 1 } },
+            til::generational<ResolvedFontSettings>{ til::generation_t{ 1 } },
             til::generational<CursorSettings>{ til::generation_t{ 1 } },
             til::generational<MiscellaneousSettings>{ til::generation_t{ 1 } },
         };
@@ -423,14 +416,6 @@ namespace Microsoft::Console::Render::Atlas
         u32 glyphsTo = 0;
     };
 
-    struct GridLineRange
-    {
-        GridLineSet lines;
-        u32 color = 0;
-        u16 from = 0;
-        u16 to = 0;
-    };
-
     struct ShapedRow
     {
         void Clear(u16 y, u16 cellHeight) noexcept
@@ -440,7 +425,6 @@ namespace Microsoft::Console::Render::Atlas
             glyphAdvances.clear();
             glyphOffsets.clear();
             colors.clear();
-            gridLineRanges.clear();
             lineRendition = LineRendition::SingleWidth;
             selectionFrom = 0;
             selectionTo = 0;
@@ -453,7 +437,6 @@ namespace Microsoft::Console::Render::Atlas
         std::vector<f32> glyphAdvances; // same size as glyphIndices
         std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets; // same size as glyphIndices
         std::vector<u32> colors; // same size as glyphIndices
-        std::vector<GridLineRange> gridLineRanges;
         LineRendition lineRendition = LineRendition::SingleWidth;
         u16 selectionFrom = 0;
         u16 selectionTo = 0;

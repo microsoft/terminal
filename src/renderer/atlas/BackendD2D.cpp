@@ -15,6 +15,7 @@
 TIL_FAST_MATH_BEGIN
 
 // Disable a bunch of warnings which get in the way of writing performant code.
+#pragma warning(disable : 4100)
 #pragma warning(disable : 26429) // Symbol 'data' is never tested for nullness, it can be marked as not_null (f.23).
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
 #pragma warning(disable : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
@@ -258,7 +259,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
             }
         }
 
-        if (!row->gridLineRanges.empty())
+        //if (!row->gridLineRanges.empty())
         {
             _drawGridlineRow(p, row, y);
         }
@@ -394,7 +395,7 @@ f32r BackendD2D::_getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 
 
 void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y)
 {
-    const auto widthShift = gsl::narrow_cast<u8>(row->lineRendition != LineRendition::SingleWidth);
+    /*const auto widthShift = gsl::narrow_cast<u8>(row->lineRendition != LineRendition::SingleWidth);
     const auto cellSize = p.s->font->cellSize;
     const auto rowTop = gsl::narrow_cast<i16>(cellSize.y * y);
     const auto rowBottom = gsl::narrow_cast<i16>(rowTop + cellSize.y);
@@ -474,7 +475,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         {
             appendHorizontalLine(r, p.s->font->strikethrough, nullptr);
         }
-    }
+    }*/
 }
 
 void BackendD2D::_drawCursorPart1(const RenderingPayload& p)

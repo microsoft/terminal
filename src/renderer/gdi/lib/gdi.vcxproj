@@ -11,19 +11,19 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
-    <ClCompile Include="..\invalidate.cpp" />
-    <ClCompile Include="..\math.cpp" />
-    <ClCompile Include="..\paint.cpp" />
-    <ClCompile Include="..\state.cpp" />
-    <ClCompile Include="..\precomp.cpp">
+    <ClCompile Include="..\GdiEngine.cpp" />
+    <ClCompile Include="..\pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\gdirenderer.hpp" />
-    <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\GdiEngine.h" />
+    <ClInclude Include="..\pch.h" />
   </ItemGroup>
   <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
     <Lib>
       <AdditionalDependencies>usp10.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>

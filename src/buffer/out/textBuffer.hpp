@@ -104,6 +104,7 @@ struct ScrollMark
 class TextBuffer final
 {
 public:
+    TextBuffer() = default;
     TextBuffer(const til::size screenBufferSize,
                const TextAttribute defaultAttributes,
                const UINT cursorSize,

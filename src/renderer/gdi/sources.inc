@@ -22,10 +22,7 @@ PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES = \
-    ..\invalidate.cpp \
-    ..\math.cpp \
-    ..\paint.cpp \
-    ..\state.cpp \
+    ..\GdiEngine.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

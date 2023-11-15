@@ -1,78 +1,116 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
-Module Name:
-- IRenderData.hpp
-
-Abstract:
-- This serves as the interface defining all information needed to render to the screen.
-
-Author(s):
-- Michael Niksa (MiNiksa) 17-Nov-2015
---*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 
-#include "../../host/conimeinfo.h"
-#include "../../buffer/out/TextAttribute.hpp"
+#include <til/generational.h>
+
+#include "CSSLengthPercentage.h"
+#include "../../buffer/out/textBuffer.hpp"
 
 class Cursor;
 
 namespace Microsoft::Console::Render
 {
-    struct RenderOverlay final
+    enum class CursorStyle
     {
-        // This is where the data is stored
-        const TextBuffer& buffer;
-
-        // This is where the top left of the stored buffer should be overlaid on the screen
-        // (relative to the current visible viewport)
-        const til::point origin;
-
-        // This is the area of the buffer that is actually used for overlay.
-        // Anything outside of this is considered empty by the overlay and shouldn't be used
-        // for painting purposes.
-        const Microsoft::Console::Types::Viewport region;
+        Invert = 0,
+        Color,
     };
 
-    class IRenderData
+    enum class TextAntialiasMode
     {
-    public:
+        Default = 0,
+        ClearType,
+        Grayscale,
+        Aliased,
+    };
+
+    struct TargetSettings
+    {
+        COLORREF paddingColor = 0;
+        bool forceFullRepaint = false;
+        bool transparentBackground = false;
+        bool softwareRendering = false;
+    };
+
+    struct FontSettings
+    {
+        std::wstring faceName;
+        int family = 0;
+        int weight = 0;
+        int codePage = 0;
+        float fontSize = 0;
+        CSSLengthPercentage cellWidth;
+        CSSLengthPercentage cellHeight;
+        std::unordered_map<std::wstring_view, uint32_t> features;
+        std::unordered_map<std::wstring_view, float> axes;
+        TextAntialiasMode antialiasingMode = TextAntialiasMode::Default;
+        float dpi = 0;
+    };
+
+    struct CursorSettings
+    {
+        CursorType type = CursorType::Legacy;
+        CursorStyle style = CursorStyle::Invert;
+        COLORREF color = 0xffffffff;
+        float heightPercentage = 0.2f;
+        float widthInDIP = 1.0f;
+    };
+
+    struct SelectionSettings
+    {
+        COLORREF selectionColor = 0x7fffffff;
+    };
+
+    struct ShaderSettings
+    {
+        std::wstring shaderPath;
+        bool retroTerminalEffect = false;
+    };
+
+    struct Settings
+    {
+        til::generational<TargetSettings> target;
+        til::generational<FontSettings> font;
+        til::generational<CursorSettings> cursor;
+        til::generational<SelectionSettings> selection;
+        til::generational<ShaderSettings> shader;
+
+        til::size targetSizeInPixel;
+    };
+
+    struct RenderingLayer
+    {
+        TextBuffer* source;
+        til::rect sourceRegion;
+        til::point targetOrigin;
+    };
+
+    struct RenderData
+    {
+        til::generational<Settings> settings;
+
+        std::vector<til::rect> selections;
+        uint16_t hoveredHyperlinkId = 0;
+        
+        std::vector<RenderingLayer> layers;
+    };
+
+    struct RenderingPayload
+    {
+        til::generational<Settings> settings;
+
+        std::vector<til::rect> selections;
+        uint16_t hoveredHyperlinkId = 0;
+
+        TextBuffer buffer;
+    };
+
+    struct IRenderData
+    {
         virtual ~IRenderData() = default;
 
-        // This block used to be IBaseData.
-        virtual Microsoft::Console::Types::Viewport GetViewport() noexcept = 0;
-        virtual til::point GetTextBufferEndPosition() const noexcept = 0;
-        virtual const TextBuffer& GetTextBuffer() const noexcept = 0;
-        virtual const FontInfo& GetFontInfo() const noexcept = 0;
-        virtual std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept = 0;
-        virtual void LockConsole() noexcept = 0;
-        virtual void UnlockConsole() noexcept = 0;
-
-        // This block used to be the original IRenderData.
-        virtual til::point GetCursorPosition() const noexcept = 0;
-        virtual bool IsCursorVisible() const noexcept = 0;
-        virtual bool IsCursorOn() const noexcept = 0;
-        virtual ULONG GetCursorHeight() const noexcept = 0;
-        virtual CursorType GetCursorStyle() const noexcept = 0;
-        virtual ULONG GetCursorPixelWidth() const noexcept = 0;
-        virtual bool IsCursorDoubleWidth() const = 0;
-        virtual const std::vector<RenderOverlay> GetOverlays() const noexcept = 0;
-        virtual const bool IsGridLineDrawingAllowed() noexcept = 0;
-        virtual const std::wstring_view GetConsoleTitle() const noexcept = 0;
-        virtual const std::wstring GetHyperlinkUri(uint16_t id) const = 0;
-        virtual const std::wstring GetHyperlinkCustomId(uint16_t id) const = 0;
-        virtual const std::vector<size_t> GetPatternId(const til::point location) const = 0;
-
-        // This block used to be IUiaData.
-        virtual std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept = 0;
-        virtual const bool IsSelectionActive() const = 0;
-        virtual const bool IsBlockSelection() const = 0;
-        virtual void ClearSelection() = 0;
-        virtual void SelectNewRegion(const til::point coordStart, const til::point coordEnd) = 0;
-        virtual const til::point GetSelectionAnchor() const noexcept = 0;
-        virtual const til::point GetSelectionEnd() const noexcept = 0;
-        virtual const bool IsUiaDataInitialized() const noexcept = 0;
+        virtual void UpdateRenderData(RenderData& data) = 0;
     };
 }
