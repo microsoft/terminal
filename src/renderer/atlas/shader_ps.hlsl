@@ -12,6 +12,9 @@ cbuffer ConstBuffer : register(b0)
     float4 gammaRatios;
     float enhancedContrast;
     float underlineWidth;
+    float curlyLinePeakHeight;
+    float curlyLineWaveFreq;
+    float curlyLineCellOffset;
 }
 
 Texture2D<float4> background : register(t0);
@@ -73,15 +76,33 @@ Output main(PSData data) : SV_Target
     }
     case SHADING_TYPE_DOTTED_LINE:
     {
-        const bool on = frac(data.position.x / (2.0f * underlineWidth)) < 0.5f;
+        const bool on = frac(data.position.x / (2.0f * underlineWidth * data.renditionScale.x)) < 0.5f;
         color = on * premultiplyColor(data.color);
         weights = color.aaaa;
         break;
     }
-    case SHADING_TYPE_DOTTED_LINE_WIDE:
+    case SHADING_TYPE_DASHED_LINE:
     {
-        const bool on = frac(data.position.x / (4.0f * underlineWidth)) < 0.5f;
+        const bool on = frac(data.position.x / (backgroundCellSize.x * data.renditionScale.x)) < 0.5f;
         color = on * premultiplyColor(data.color);
+        weights = color.aaaa;
+        break;
+    }
+    case SHADING_TYPE_CURLY_LINE:
+    {
+        uint cellRow = floor(data.position.y / backgroundCellSize.y);
+        // Use the previous cell when drawing 'Double Height' curly line.
+        cellRow -= data.renditionScale.y - 1;
+        const float cellTop = cellRow * backgroundCellSize.y;
+        const float centerY = cellTop + curlyLineCellOffset * data.renditionScale.y;
+        const float strokeWidthHalf = underlineWidth * data.renditionScale.y / 2.0f;
+        const float amp = curlyLinePeakHeight * data.renditionScale.y;
+        const float freq = curlyLineWaveFreq / data.renditionScale.x;
+
+        const float s = sin(data.position.x * freq);
+        const float d = abs(centerY - (s * amp) - data.position.y);
+        const float a = 1 - saturate(d - strokeWidthHalf);
+        color = a * premultiplyColor(data.color);
         weights = color.aaaa;
         break;
     }

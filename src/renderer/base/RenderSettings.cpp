@@ -213,6 +213,47 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColorsWithAlpha(const 
 }
 
 // Routine Description:
+// - Calculates the RGB underline color of a given text attribute, using the
+//   current color table configuration and active render settings.
+// - Returns the current foreground color when the underline color isn't set.
+// Arguments:
+// - attr - The TextAttribute to retrieve the underline color from.
+// Return Value:
+// - The color value of the attribute's underline.
+COLORREF RenderSettings::GetAttributeUnderlineColor(const TextAttribute& attr) const noexcept
+{
+    const auto [fg, bg] = GetAttributeColors(attr);
+    const auto ulTextColor = attr.GetUnderlineColor();
+    if (ulTextColor.IsDefault())
+    {
+        return fg;
+    }
+
+    const auto defaultUlIndex = GetColorAliasIndex(ColorAlias::DefaultForeground);
+    auto ul = ulTextColor.GetColor(_colorTable, defaultUlIndex, true);
+    if (attr.IsInvisible())
+    {
+        ul = bg;
+    }
+
+    // We intentionally aren't _only_ checking for attr.IsInvisible here, because we also want to
+    // catch the cases where the ul was intentionally set to be the same as the bg. In either case,
+    // don't adjust the underline color.
+    if constexpr (Feature_AdjustIndistinguishableText::IsEnabled())
+    {
+        if (
+            ul != bg &&
+            (_renderMode.test(Mode::AlwaysDistinguishableColors) ||
+             (_renderMode.test(Mode::IndexedDistinguishableColors) && ulTextColor.IsDefaultOrLegacy() && attr.GetBackground().IsDefaultOrLegacy())))
+        {
+            ul = ColorFix::GetPerceivableColor(ul, bg, 0.5f * 0.5f);
+        }
+    }
+
+    return ul;
+}
+
+// Routine Description:
 // - Increments the position in the blink cycle, toggling the blink rendition
 //   state on every second call, potentially triggering a redraw of the given
 //   renderer if there are blinking cells currently in view.
