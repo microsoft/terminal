@@ -416,6 +416,11 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::PaintSelections(const std::vector<til::rect>& rects) noexcept
 try
 {
+    if (rects.empty())
+    {
+        return S_OK;
+    }
+
     // Unfortunately there's no step after Renderer::_PaintBufferOutput that
     // would inform us that it's done with the last AtlasEngine::PaintBufferLine.
     // As such we got to call _flushBufferLine() here just to be sure.
@@ -437,6 +442,12 @@ try
         std::fill(bg + from, bg + to, 0xff3296ff);
         std::fill(fg + from, fg + to, 0xff000000);
     }
+
+    for (int i = 0; i < 2; ++i)
+    {
+        _p.colorBitmapGenerations[i].bump();
+    }
+
     return S_OK;
 }
 CATCH_RETURN()
