@@ -21,21 +21,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        auto disclaimerHyperlinkedText = Windows::UI::Xaml::Documents::Run();
-        disclaimerHyperlinkedText.Text(RS_(L"AISettings_DisclaimerLink"));
-        DisclaimerLink().Inlines().Append(disclaimerHyperlinkedText);
+        auto disclaimerLinkText = Windows::UI::Xaml::Documents::Run();
+        disclaimerLinkText.Text(RS_(L"AISettings_DisclaimerLink"));
+        DisclaimerLink().Inlines().Append(disclaimerLinkText);
 
-        auto prerequisite1HyperlinkedText = Windows::UI::Xaml::Documents::Run();
-        prerequisite1HyperlinkedText.Text(RS_(L"AISettings_AzureOpenAIPrerequisite1Hyperlink"));
-        Prerequisite1Hyperlink().Inlines().Append(prerequisite1HyperlinkedText);
+        auto prerequisite1LinkText = Windows::UI::Xaml::Documents::Run();
+        prerequisite1LinkText.Text(RS_(L"AISettings_AzureOpenAIPrerequisite1Hyperlink"));
+        Prerequisite1Hyperlink().Inlines().Append(prerequisite1LinkText);
 
-        auto prerequisite3HyperlinkedText = Windows::UI::Xaml::Documents::Run();
-        prerequisite3HyperlinkedText.Text(RS_(L"AISettings_AzureOpenAIPrerequisite3Hyperlink"));
-        Prerequisite3Hyperlink().Inlines().Append(prerequisite3HyperlinkedText);
+        auto prerequisite3LinkText = Windows::UI::Xaml::Documents::Run();
+        prerequisite3LinkText.Text(RS_(L"AISettings_AzureOpenAIPrerequisite3Hyperlink"));
+        Prerequisite3Hyperlink().Inlines().Append(prerequisite3LinkText);
 
-        auto productTermsHyperlinkedText = Windows::UI::Xaml::Documents::Run();
-        productTermsHyperlinkedText.Text(RS_(L"AISettings_AzureOpenAIProductTermsHyperlink"));
-        ProductTermsHyperlink().Inlines().Append(productTermsHyperlinkedText);
+        auto productTermsLinkText = Windows::UI::Xaml::Documents::Run();
+        productTermsLinkText.Text(RS_(L"AISettings_AzureOpenAIProductTermsHyperlink"));
+        ProductTermsHyperlink().Inlines().Append(productTermsLinkText);
     }
 
     void AISettings::OnNavigatedTo(const NavigationEventArgs& e)
