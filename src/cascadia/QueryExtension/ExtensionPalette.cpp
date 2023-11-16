@@ -94,6 +94,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 _close();
             }
         });
+
+        // We do not have a color ramp to support this.
+        RequestedTheme(ElementTheme::Dark);
     }
 
     void ExtensionPalette::AIKeyAndEndpoint(const winrt::hstring& endpoint, const winrt::hstring& key)
