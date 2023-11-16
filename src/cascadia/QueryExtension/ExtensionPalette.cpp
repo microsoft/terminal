@@ -302,7 +302,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         std::wstring codeBlock;
         bool inCodeBlock = false;
         const auto time = _getCurrentLocalTimeHelper();
-        std::vector<IInspectable> test;
+        std::vector<IInspectable> messageParts;
 
         while (std::getline(ss, line))
         {
@@ -317,7 +317,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 {
                     inCodeBlock = false;
                     const auto chatMsg = winrt::make<ChatMessage>(winrt::hstring{ std::move(codeBlock) }, false, true);
-                    test.push_back(chatMsg);
+                    messageParts.push_back(chatMsg);
                     codeBlock.clear();
                     continue;
                 }
@@ -332,12 +332,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 else
                 {
                     const auto chatMsg = winrt::make<ChatMessage>(winrt::hstring{ line }, false, false);
-                    test.push_back(chatMsg);
+                    messageParts.push_back(chatMsg);
                 }
             }
         }
 
-        const auto responseGroupedMessages = winrt::make<GroupedChatMessages>(time, false, _ProfileName, winrt::single_threaded_vector(std::move(test)));
+        const auto responseGroupedMessages = winrt::make<GroupedChatMessages>(time, false, _ProfileName, winrt::single_threaded_vector(std::move(messageParts)));
         _messages.Append(responseGroupedMessages);
     }
 
