@@ -5,7 +5,6 @@
 #include "App.h"
 #include "App.g.cpp"
 #include <CoreWindow.h>
-#include <winrt/Microsoft.Terminal.Query.Extension.h>
 
 using namespace winrt;
 using namespace winrt::Windows::ApplicationModel::Activation;
