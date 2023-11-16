@@ -930,10 +930,6 @@ namespace winrt::TerminalApp::implementation
             WUX::Controls::ToolTipService::SetToolTip(AIChatFlyout, box_value(AIChatToolTip));
             Automation::AutomationProperties::SetHelpText(AIChatFlyout, AIChatToolTip);
 
-            // todo: replace the icon
-            WUX::Controls::FontIcon AIChatIcon{};
-            AIChatIcon.Glyph(L"\xE945");
-            AIChatIcon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             AIChatFlyout.Icon(IconPathConverter::IconWUX(L"ms-appx:///ProfileIcons/terminalChatDropdownIcon.png"));
 
             AIChatFlyout.Click({ this, &TerminalPage::_AIChatButtonOnClick });

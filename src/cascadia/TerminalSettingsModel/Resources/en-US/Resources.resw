@@ -447,7 +447,7 @@
     <value>Toggle always on top mode</value>
   </data>
   <data name="ToggleAIChatCommandKey" xml:space="preserve">
-    <value>Toggle AI chat</value>
+    <value>Toggle Terminal Chat</value>
   </data>
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>

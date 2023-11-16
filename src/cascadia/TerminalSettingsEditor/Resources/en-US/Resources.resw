@@ -639,8 +639,8 @@
     <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
   </data>
   <data name="Nav_AISettings.Content" xml:space="preserve">
-    <value>AI Settings</value>
-    <comment>Header for the "AI Settings" menu item. This navigates to a page that lets you see and modify settings related to AI services.</comment>
+    <value>Terminal Chat</value>
+    <comment>Header for the "Terminal Chat Settings" menu item. This navigates to a page that lets you see and modify settings related to AI services.</comment>
   </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>Color schemes</value>
