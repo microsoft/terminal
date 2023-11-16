@@ -144,7 +144,7 @@
             <muxc:NavigationViewItem x:Uid="Nav_AISettings"
                                      Tag="AISettings_Nav">
                 <muxc:NavigationViewItem.Icon>
-                    <muxc:BitmapIcon UriSource="ms-appx:///ProfileIcons/terminalChatDropdownIcon.png" />
+                    <BitmapIcon UriSource="ms-appx:///ProfileIcons/terminalChatDropdownIcon.png" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
