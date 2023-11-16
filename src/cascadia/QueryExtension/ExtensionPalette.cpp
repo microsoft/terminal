@@ -56,6 +56,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
             _setFocusAndPlaceholderTextHelper();
 
+            // For the purposes of data collection, request the API key/endpoint *now*
+            _AIKeyAndEndpointRequestedHandlers(nullptr, nullptr);
+
             TraceLoggingWrite(
                 g_hQueryExtensionProvider,
                 "QueryPaletteOpened",
@@ -75,11 +78,14 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
                 _setFocusAndPlaceholderTextHelper();
 
+                // For the purposes of data collection, request the API key/endpoint *now*
+                _AIKeyAndEndpointRequestedHandlers(nullptr, nullptr);
+
                 TraceLoggingWrite(
                     g_hQueryExtensionProvider,
                     "QueryPaletteOpened",
                     TraceLoggingDescription("Event emitted when the AI chat is opened"),
-                    TraceLoggingBoolean((!_AIKey.empty() && !_AIEndpoint.empty()), "AIKeyAndEndpointSet", "Is there an AI key and an endpoint stored"),
+                    TraceLoggingBoolean((!_AIKey.empty() && !_AIEndpoint.empty()), "AIKeyAndEndpointStored", "Is there an AI key and an endpoint stored"),
                     TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
                     TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             }
@@ -121,7 +127,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-        // request for the AI key and endpoint
+        // request the latest LLM key and endpoint
         _AIKeyAndEndpointRequestedHandlers(nullptr, nullptr);
 
         // if the AI key and endpoint is still empty, tell the user to fill them out in settings
