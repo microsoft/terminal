@@ -12,7 +12,6 @@
 #include "RequestMoveContentArgs.g.h"
 #include "RequestReceiveContentArgs.g.h"
 #include "Toast.h"
-#include <winrt/Microsoft.Terminal.Query.Extension.h>
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
