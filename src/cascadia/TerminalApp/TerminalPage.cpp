@@ -253,62 +253,6 @@ namespace winrt::TerminalApp::implementation
 
         _UpdateTabWidthMode();
 
-        if (auto app{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
-        {
-            if (auto appPrivate{ winrt::get_self<implementation::App>(app) })
-            {
-                // Lazily load the query palette components so that we don't do it on startup.
-                appPrivate->PrepareForAIChat();
-            }
-        }
-        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette();
-        _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
-            if (_extensionPalette.Visibility() == Visibility::Collapsed)
-            {
-                ExtensionPresenter().Visibility(Visibility::Collapsed);
-                _FocusActiveControl(nullptr, nullptr);
-            }
-        });
-        _extensionPalette.InputSuggestionRequested({ this, &TerminalPage::_OnInputSuggestionRequested });
-        _extensionPalette.ActiveControlInfoRequested([&](IInspectable const&, IInspectable const&) {
-            if (const auto activeControl = _GetActiveControl())
-            {
-                const auto profileName = activeControl.Settings().ProfileName();
-                const std::wstring fullCommandline = activeControl.Settings().Commandline().c_str();
-                const auto lastSlashPos = fullCommandline.find_last_of(L"\\");
-                if (lastSlashPos != std::wstring::npos)
-                {
-                    const auto end = fullCommandline.find_last_of(L"\"");
-                    const auto s = fullCommandline.substr(lastSlashPos + 1, end - lastSlashPos - 1);
-                    _extensionPalette.ActiveCommandline(fullCommandline.substr(lastSlashPos + 1, end - lastSlashPos - 1));
-                }
-                else
-                {
-                    _extensionPalette.ActiveCommandline(fullCommandline);
-                }
-                _extensionPalette.ProfileName(profileName);
-
-                // Unfortunately IControlSettings doesn't contain the icon, we need to search our
-                // settings for the matching profile and get the icon from there
-                for (const auto profile : _settings.AllProfiles())
-                {
-                    if (profile.Name() == profileName)
-                    {
-                        _extensionPalette.IconPath(profile.Icon());
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                _extensionPalette.ActiveCommandline(L"");
-            }
-        });
-        _extensionPalette.AIKeyAndEndpointRequested([&](IInspectable const&, IInspectable const&) {
-            _extensionPalette.AIKeyAndEndpoint(_settings.AIEndpoint(), _settings.AIKey());
-        });
-        ExtensionPresenter().Content(_extensionPalette);
-
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
         // want to create an animation.
@@ -1523,6 +1467,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (ExtensionPresenter().Visibility() == Visibility::Collapsed)
         {
+            _loadQueryExtension();
             ExtensionPresenter().Visibility(Visibility::Visible);
             _extensionPalette.Visibility(Visibility::Visible);
         }
@@ -5356,5 +5301,69 @@ namespace winrt::TerminalApp::implementation
         profileMenuItemFlyout.Items().Append(runAsAdminItem);
 
         return profileMenuItemFlyout;
+    }
+
+    void TerminalPage::_loadQueryExtension()
+    {
+        if (_extensionPalette)
+        {
+            return;
+        }
+
+        if (auto app{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
+        {
+            if (auto appPrivate{ winrt::get_self<implementation::App>(app) })
+            {
+                // Lazily load the query palette components so that we don't do it on startup.
+                appPrivate->PrepareForAIChat();
+            }
+        }
+        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette();
+        _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            if (_extensionPalette.Visibility() == Visibility::Collapsed)
+            {
+                ExtensionPresenter().Visibility(Visibility::Collapsed);
+                _FocusActiveControl(nullptr, nullptr);
+            }
+        });
+        _extensionPalette.InputSuggestionRequested({ this, &TerminalPage::_OnInputSuggestionRequested });
+        _extensionPalette.ActiveControlInfoRequested([&](IInspectable const&, IInspectable const&) {
+            if (const auto activeControl = _GetActiveControl())
+            {
+                const auto profileName = activeControl.Settings().ProfileName();
+                const std::wstring fullCommandline = activeControl.Settings().Commandline().c_str();
+                const auto lastSlashPos = fullCommandline.find_last_of(L"\\");
+                if (lastSlashPos != std::wstring::npos)
+                {
+                    const auto end = fullCommandline.find_last_of(L"\"");
+                    const auto s = fullCommandline.substr(lastSlashPos + 1, end - lastSlashPos - 1);
+                    _extensionPalette.ActiveCommandline(fullCommandline.substr(lastSlashPos + 1, end - lastSlashPos - 1));
+                }
+                else
+                {
+                    _extensionPalette.ActiveCommandline(fullCommandline);
+                }
+                _extensionPalette.ProfileName(profileName);
+
+                // Unfortunately IControlSettings doesn't contain the icon, we need to search our
+                // settings for the matching profile and get the icon from there
+                for (const auto profile : _settings.AllProfiles())
+                {
+                    if (profile.Name() == profileName)
+                    {
+                        _extensionPalette.IconPath(profile.Icon());
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                _extensionPalette.ActiveCommandline(L"");
+            }
+        });
+        _extensionPalette.AIKeyAndEndpointRequested([&](IInspectable const&, IInspectable const&) {
+            _extensionPalette.AIKeyAndEndpoint(_settings.AIEndpoint(), _settings.AIKey());
+        });
+        ExtensionPresenter().Content(_extensionPalette);
     }
 }

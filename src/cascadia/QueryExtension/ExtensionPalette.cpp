@@ -91,7 +91,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             }
         });
 
-        // We do not have a color ramp to support this.
+        // We do not have a color ramp to support light mode... so, force dark.
         RequestedTheme(ElementTheme::Dark);
     }
 

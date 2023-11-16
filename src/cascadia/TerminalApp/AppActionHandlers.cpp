@@ -648,6 +648,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (ExtensionPresenter().Visibility() == Visibility::Collapsed)
         {
+            _loadQueryExtension();
             ExtensionPresenter().Visibility(Visibility::Visible);
             _extensionPalette.Visibility(Visibility::Visible);
         }

@@ -547,6 +547,8 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::TermControl _senderOrActiveControl(const winrt::Windows::Foundation::IInspectable& sender);
         winrt::com_ptr<TerminalTab> _senderOrFocusedTab(const IInspectable& sender);
 
+        void _loadQueryExtension();
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);
