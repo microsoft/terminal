@@ -536,7 +536,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_OnInputSuggestionRequested(const IInspectable& /*sender*/, const winrt::hstring& suggestion)
     {
-        _GetActiveControl().SendInput(suggestion);
+        if (auto activeControl = _GetActiveControl())
+        {
+            activeControl.SendInput(suggestion);
+        }
     }
 
     // Method Description:
