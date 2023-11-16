@@ -130,7 +130,7 @@
     <comment>The error message presented to the user when we were unable to query the provided endpoint.</comment>
   </data>
   <data name="InvalidModelMessage" xml:space="preserve">
-    <value>The model you have provided is either invalid or does not adhere to our content filter requirements. Please use a gpt-3.5-turbo AI model and set all content filter categories to "safe".</value>
+    <value>The model you have provided is either invalid or does not adhere to our content filter requirements. Please use a gpt-35-turbo AI model and set all content filter categories to "safe".</value>
     <comment>The error message presented to the user when their provided endpoint does not match our requirements.</comment>
   </data>
   <data name="InvalidEndpointMessage" xml:space="preserve">
