@@ -488,8 +488,8 @@
     <comment>A hyperlink name for the Terminal's release notes</comment>
   </data>
   <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
-    <value>Privacy Policy</value>
-    <comment>A hyperlink name for the Terminal's privacy policy</comment>
+    <value>Privacy Statement</value>
+    <comment>A hyperlink name for the Terminal's privacy statement</comment>
   </data>
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
     <value>Third-Party Notices</value>
