@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "winrt/Windows.Data.Json.h"
-
 #include "ExtensionPalette.g.h"
 #include "ChatMessage.g.h"
 #include "GroupedChatMessages.g.h"

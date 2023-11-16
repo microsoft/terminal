@@ -3,11 +3,7 @@
 
 #include "pch.h"
 #include "ExtensionPalette.h"
-#include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
-#include "winrt/Windows.Web.Http.h"
-#include "winrt/Windows.Web.Http.Headers.h"
-#include "winrt/Windows.Web.Http.Filters.h"
 #include "LibraryResources.h"
 
 #include "ExtensionPalette.g.cpp"
