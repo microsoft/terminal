@@ -169,8 +169,8 @@
             <local:ExtensionPaletteGroupedMessagesHeaderTemplateSelector x:Key="GroupedChatMessageTemplateSelector"
                                                                          QueryGroupedMessageTemplate="{StaticResource QueryGroupedMessageTemplate}"
                                                                          ResponseGroupedMessageTemplate="{StaticResource ResponseGroupedMessageTemplate}" />
-            <CollectionViewSource x:Key="MessagesCVS"
-                                  x:Name="MessagesCVS"
+            <CollectionViewSource x:Key="MessagesCollectionViewSource"
+                                  x:Name="MessagesCollectionViewSource"
                                   IsSourceGrouped="True" />
         </ResourceDictionary>
     </UserControl.Resources>
@@ -255,7 +255,7 @@
                               IsItemClickEnabled="True"
                               ItemClick="_listItemClicked"
                               ItemTemplateSelector="{StaticResource ChatMessageTemplateSelector}"
-                              ItemsSource="{Binding Source={StaticResource MessagesCVS}}"
+                              ItemsSource="{Binding Source={StaticResource MessagesCollectionViewSource}}"
                               SelectionMode="None">
                         <ListView.Resources>
                             <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver"

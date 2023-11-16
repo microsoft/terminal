@@ -623,7 +623,7 @@
     <comment>Third of the prerequisites the user needs to use Azure OpenAI within Terminal.</comment>
   </data>
   <data name="AISettings_AzureOpenAIPrerequisite3Hyperlink" xml:space="preserve">
-    <value>create Azure OpenAI resources and to desploy models.</value>
+    <value>create Azure OpenAI resources and to deploy models.</value>
     <comment>Text of the hyperlink that will direct the user to where they can create Azure OpenAI resources.</comment>
   </data>
   <data name="AISettings_AzureOpenAIProductTerms.Text" xml:space="preserve">
