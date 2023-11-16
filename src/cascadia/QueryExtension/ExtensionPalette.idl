@@ -23,7 +23,7 @@ namespace Microsoft.Terminal.Query.Extension
     {
         ExtensionPalette();
 
-        void AIKeyAndEndpoint(String endpt, String key);
+        void AIKeyAndEndpoint(String endpoint, String key);
 
         String ControlName { get; };
         String QueryBoxPlaceholderText { get; };

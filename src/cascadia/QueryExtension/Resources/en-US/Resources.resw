@@ -159,7 +159,7 @@
   </data>
   <data name="AIContentDisclaimerHyperlink" xml:space="preserve">
     <value>send feedback</value>
-    <comment>The hyperlinked portion of the disclaimer presented to the user within the chat UI element.</comment>
+    <comment>The portion of the disclaimer presented to the user as a hyperlink within the chat UI element.</comment>
   </data>
   <data name="AIContentDisclaimerPartTwo.Text" xml:space="preserve">
     <value>to help us improve.</value>
