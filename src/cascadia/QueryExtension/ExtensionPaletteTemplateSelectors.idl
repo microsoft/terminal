@@ -1,0 +1,22 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Query.Extension
+{
+    [default_interface] runtimeclass ExtensionPaletteMessageTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
+    {
+        ExtensionPaletteMessageTemplateSelector();
+
+        Windows.UI.Xaml.DataTemplate QueryMessageTemplate;
+        Windows.UI.Xaml.DataTemplate TextResponseMessageTemplate;
+        Windows.UI.Xaml.DataTemplate CodeResponseMessageTemplate;
+    }
+
+    [default_interface] runtimeclass ExtensionPaletteGroupedMessagesHeaderTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
+    {
+        ExtensionPaletteGroupedMessagesHeaderTemplateSelector();
+
+        Windows.UI.Xaml.DataTemplate QueryGroupedMessageTemplate;
+        Windows.UI.Xaml.DataTemplate ResponseGroupedMessageTemplate;
+    }
+}

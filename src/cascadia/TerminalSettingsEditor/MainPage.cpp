@@ -12,6 +12,8 @@
 #include "ProfileViewModel.h"
 #include "GlobalAppearance.h"
 #include "GlobalAppearanceViewModel.h"
+#include "AISettings.h"
+#include "AISettingsViewModel.h"
 #include "ColorSchemes.h"
 #include "AddProfile.h"
 #include "InteractionViewModel.h"
@@ -44,6 +46,7 @@ static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
 static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
 static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
+static const std::wstring_view AISettingsTag{ L"AISettings_Nav" };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -408,6 +411,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings()));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Appearance/Content"), BreadcrumbSubPage::None);
+            _breadcrumbs.Append(crumb);
+        }
+        else if (clickedItemTag == AISettingsTag)
+        {
+            contentFrame().Navigate(xaml_typename<Editor::AISettings>(), winrt::make<AISettingsViewModel>(_settingsClone));
+            const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_AISettings/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == addProfileTag)

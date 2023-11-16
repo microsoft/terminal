@@ -1,0 +1,42 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Query.Extension
+{
+    [default_interface] runtimeclass ChatMessage
+    {
+        ChatMessage(String content, Boolean isQuery, Boolean isCode);
+        String MessageContent { get; };
+        Boolean IsQuery { get; };
+        Boolean IsCode { get; };
+    }
+
+    runtimeclass GroupedChatMessages : Windows.Foundation.Collections.IVector<IInspectable>
+    {
+        GroupedChatMessages(String key, Boolean isQuery, String profileName, Windows.Foundation.Collections.IVector<IInspectable> messages);
+        String Key;
+        String ProfileName;
+        Boolean IsQuery { get; };
+    }
+
+    [default_interface] runtimeclass ExtensionPalette : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        ExtensionPalette();
+
+        void AIKeyAndEndpoint(String endpoint, String key);
+
+        String ControlName { get; };
+        String QueryBoxPlaceholderText { get; };
+        Boolean IsProgressRingActive { get; };
+
+        String ActiveCommandline;
+        String ProfileName;
+
+        void IconPath(String iconPath);
+        Windows.UI.Xaml.Controls.IconElement ResolvedIcon { get; };
+
+        event Windows.Foundation.TypedEventHandler<ExtensionPalette, IInspectable> ActiveControlInfoRequested;
+        event Windows.Foundation.TypedEventHandler<ExtensionPalette, IInspectable> AIKeyAndEndpointRequested;
+        event Windows.Foundation.TypedEventHandler<ExtensionPalette, String> InputSuggestionRequested;
+    }
+}

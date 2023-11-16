@@ -15,3 +15,4 @@ Abstract:
 #define PDT_ProductAndServiceUsage             0x0u
 #define MICROSOFT_KEYWORD_TELEMETRY     0x0
 #define MICROSOFT_KEYWORD_MEASURES      0x0
+#define MICROSOFT_KEYWORD_CRITICAL_DATA 0x0

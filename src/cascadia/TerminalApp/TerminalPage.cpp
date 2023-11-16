@@ -472,6 +472,21 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - This method is called once the query palette suggestion was chosen
+    //   We'll use this event to input the suggestion
+    // Arguments:
+    // - suggestion - suggestion to dispatch
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnInputSuggestionRequested(const IInspectable& /*sender*/, const winrt::hstring& suggestion)
+    {
+        if (auto activeControl = _GetActiveControl())
+        {
+            activeControl.SendInput(suggestion);
+        }
+    }
+
+    // Method Description:
     // - This method is called once on startup, on the first LayoutUpdated event.
     //   We'll use this event to know that we have an ActualWidth and
     //   ActualHeight, so we can now attempt to process our list of startup
@@ -851,6 +866,60 @@ namespace winrt::TerminalApp::implementation
                 _SetAcceleratorForMenuItem(commandPaletteFlyout, commandPaletteKeyChord);
             }
 
+            // Create the AI chat button.
+            auto AIChatFlyout = WUX::Controls::MenuFlyoutItem{};
+            AIChatFlyout.Text(RS_(L"AIChatMenuItem"));
+            const auto AIChatToolTip = RS_(L"AIChatToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(AIChatFlyout, box_value(AIChatToolTip));
+            Automation::AutomationProperties::SetHelpText(AIChatFlyout, AIChatToolTip);
+
+            // BODGY
+            // Manually load this icon from an SVG path; it is ironically much more humane this way.
+            // The XAML resource loader can't resolve theme-light/theme-dark for us, for... well, reasons.
+            // But also, you can't load a PathIcon with a *string* using the WinRT API... well. Reasons.
+            {
+                static constexpr wil::zwstring_view pathSVG{
+                    L"m11.799 0c1.4358 0 2.5997 1.1639 2.5997 2.5997"
+                    "v4.6161c-0.3705-0.2371-0.7731-0.42843-1.1998-0.56618"
+                    "v-2.2501h-11.999v7.3991c0 0.7731 0.62673 1.3999 1.3998 1.3999"
+                    "h4.0503c0.06775 0.2097 0.14838 0.4137 0.24109 0.6109l-0.17934 0.5889"
+                    "h-4.1121c-1.4358 0-2.5997-1.1639-2.5997-2.5997"
+                    "v-9.1989c0-1.4358 1.1639-2.5997 2.5997-2.5997"
+                    "h9.1989zm0 1.1999h-9.1989c-0.77311 0-1.3998 0.62673-1.3998 1.3998"
+                    "v0.59993h11.999v-0.59993c0-0.77311-0.6267-1.3998-1.3999-1.3998"
+                    "zm1.3999 6.2987c0.4385 0.1711 0.8428 0.41052 1.1998 0.70512 0.9782 "
+                    "0.80711 1.6017 2.0287 1.6017 3.3959 0 2.4304-1.9702 4.4005-4.4005 "
+                    "4.4005-0.7739 0-1.5013-0.1998-2.1332-0.5508l-1.7496 0.5325c-0.30612 "
+                    "0.0931-0.59233-0.1931-0.49914-0.4993l0.53258-1.749c-0.35108-0.6321-0.55106-1.3596-0.55106-2.1339 "
+                    "0-2.3834 1.8949-4.3243 4.2604-4.3983 0.0395-0.0012 0.0792-0.00192 "
+                    "0.1191-0.00208 0.0069-8e-5 0.0139-8e-5 0.0208-8e-5 0.5641 0 1.1034 "
+                    "0.10607 1.599 0.2994zm0.0012 3.701c0.2209 0 0.4-0.1791 0.4-0.4 "
+                    "0-0.221-0.1791-0.4001-0.4-0.4001h-3.2003c-0.22094 0-0.40003 0.1791-0.40003 "
+                    "0.4001 0 0.2209 0.17909 0.4 0.40003 0.4h3.2003zm-3.2003 1.6001h1.6001c0.221 "
+                    "0 0.4001-0.1791 0.4001-0.4s-0.1791-0.4-0.4001-0.4h-1.6001c-0.22094 0-0.40003 "
+                    "0.1791-0.40003 0.4s0.17909 0.4 0.40003 0.4z"
+                };
+                try
+                {
+                    hstring hsPathSVG{ pathSVG };
+                    auto geometry = Markup::XamlBindingHelper::ConvertValue(winrt::xaml_typename<WUX::Media::Geometry>(), winrt::box_value(hsPathSVG));
+                    WUX::Controls::PathIcon pathIcon;
+                    pathIcon.Data(geometry.try_as<WUX::Media::Geometry>());
+                    AIChatFlyout.Icon(pathIcon);
+                }
+                CATCH_LOG();
+            }
+
+            AIChatFlyout.Click({ this, &TerminalPage::_AIChatButtonOnClick });
+            newTabFlyout.Items().Append(AIChatFlyout);
+
+            const auto AIChatKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::ToggleAIChat) };
+            if (AIChatKeyChord)
+            {
+                _SetAcceleratorForMenuItem(AIChatFlyout, AIChatKeyChord);
+            }
+
             // Create the about button.
             auto aboutFlyout = WUX::Controls::MenuFlyoutItem{};
             aboutFlyout.Text(RS_(L"AboutMenuItem"));
@@ -880,7 +949,7 @@ namespace winrt::TerminalApp::implementation
         });
         // Necessary for fly-out sub items to get focus on a tab before collapsing. Related to #15049
         newTabFlyout.Closing([this](auto&&, auto&&) {
-            if (!_commandPaletteIs(Visibility::Visible))
+            if (!_commandPaletteIs(Visibility::Visible) && (ExtensionPresenter().Visibility() != Visibility::Visible))
             {
                 _FocusCurrentTab(true);
             }
@@ -1389,6 +1458,19 @@ namespace winrt::TerminalApp::implementation
         auto p = LoadCommandPalette();
         p.EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
         p.Visibility(Visibility::Visible);
+    }
+
+    // Method Description:
+    // - Called when the AI chat button is clicked. Opens the AI chat.
+    void TerminalPage::_AIChatButtonOnClick(const IInspectable&,
+                                            const RoutedEventArgs&)
+    {
+        if (ExtensionPresenter().Visibility() == Visibility::Collapsed)
+        {
+            _loadQueryExtension();
+            ExtensionPresenter().Visibility(Visibility::Visible);
+            _extensionPalette.Visibility(Visibility::Visible);
+        }
     }
 
     // Method Description:
@@ -5219,5 +5301,69 @@ namespace winrt::TerminalApp::implementation
         profileMenuItemFlyout.Items().Append(runAsAdminItem);
 
         return profileMenuItemFlyout;
+    }
+
+    void TerminalPage::_loadQueryExtension()
+    {
+        if (_extensionPalette)
+        {
+            return;
+        }
+
+        if (auto app{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
+        {
+            if (auto appPrivate{ winrt::get_self<implementation::App>(app) })
+            {
+                // Lazily load the query palette components so that we don't do it on startup.
+                appPrivate->PrepareForAIChat();
+            }
+        }
+        _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette();
+        _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            if (_extensionPalette.Visibility() == Visibility::Collapsed)
+            {
+                ExtensionPresenter().Visibility(Visibility::Collapsed);
+                _FocusActiveControl(nullptr, nullptr);
+            }
+        });
+        _extensionPalette.InputSuggestionRequested({ this, &TerminalPage::_OnInputSuggestionRequested });
+        _extensionPalette.ActiveControlInfoRequested([&](IInspectable const&, IInspectable const&) {
+            if (const auto activeControl = _GetActiveControl())
+            {
+                const auto profileName = activeControl.Settings().ProfileName();
+                const std::wstring fullCommandline = activeControl.Settings().Commandline().c_str();
+                const auto lastSlashPos = fullCommandline.find_last_of(L"\\");
+                if (lastSlashPos != std::wstring::npos)
+                {
+                    const auto end = fullCommandline.find_last_of(L"\"");
+                    const auto s = fullCommandline.substr(lastSlashPos + 1, end - lastSlashPos - 1);
+                    _extensionPalette.ActiveCommandline(fullCommandline.substr(lastSlashPos + 1, end - lastSlashPos - 1));
+                }
+                else
+                {
+                    _extensionPalette.ActiveCommandline(fullCommandline);
+                }
+                _extensionPalette.ProfileName(profileName);
+
+                // Unfortunately IControlSettings doesn't contain the icon, we need to search our
+                // settings for the matching profile and get the icon from there
+                for (const auto profile : _settings.AllProfiles())
+                {
+                    if (profile.Name() == profileName)
+                    {
+                        _extensionPalette.IconPath(profile.Icon());
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                _extensionPalette.ActiveCommandline(L"");
+            }
+        });
+        _extensionPalette.AIKeyAndEndpointRequested([&](IInspectable const&, IInspectable const&) {
+            _extensionPalette.AIKeyAndEndpoint(_settings.AIEndpoint(), _settings.AIKey());
+        });
+        ExtensionPresenter().Content(_extensionPalette);
     }
 }

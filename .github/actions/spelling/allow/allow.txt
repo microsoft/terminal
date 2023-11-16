@@ -46,6 +46,7 @@ ghe
 github
 gje
 godbolt
+gpt
 hostname
 hostnames
 https
@@ -78,6 +79,7 @@ nje
 noreply
 ogonek
 ok'd
+openai
 overlined
 pipeline
 postmodern
