@@ -24,7 +24,7 @@ namespace Microsoft::Console::Interactivity::OneCore
     {
     public:
         // Inherited via IConsoleWindow
-        int UpdateScrollBar(bool isAltBuffer, til::size maxSize, const til::rect& viewport) noexcept override;
+        void UpdateScrollBars(bool isAltBuffer, til::size maxSize, const til::rect& viewport) noexcept override;
 
         bool IsInFullscreen() const noexcept override;
         void SetIsFullscreen(const bool fFullscreenEnabled) noexcept override;
