@@ -11,16 +11,7 @@
 using namespace Microsoft::Console::Interactivity::OneCore;
 using namespace Microsoft::Console::Types;
 
-BOOL ConsoleWindow::EnableBothScrollBars() noexcept
-{
-    return FALSE;
-}
-
-int ConsoleWindow::UpdateScrollBar(bool /*isVertical*/,
-                                   bool /*isAltBuffer*/,
-                                   UINT /*pageSize*/,
-                                   int /*maxSize*/,
-                                   int /*viewportPosition*/) noexcept
+int ConsoleWindow::UpdateScrollBar(bool /*isAltBuffer*/, til::size /*maxSize*/, const til::rect& /*viewport*/) noexcept
 {
     return 0;
 }

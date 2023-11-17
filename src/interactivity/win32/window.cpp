@@ -875,26 +875,36 @@ void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteCha
     LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(true, NewOrigin, false));
 }
 
-BOOL Window::EnableBothScrollBars()
+void Window::UpdateScrollBars(bool isAltBuffer, til::size maxSize, const til::rect& viewport)
 {
-    return EnableScrollBar(_hWnd, SB_BOTH, ESB_ENABLE_BOTH);
-}
+    // EnableScrollbar() and especially SetScrollInfo() are prohibitively expensive functions nowadays.
+    // This improves throughput of good old `type` in cmd.exe by ~10x.
+    // FYI: This approach is a hack. Optimally, the Win32 message pump thread shouldn't
+    // hold the console lock to begin with, but refactoring this is impractical now. *sigh*
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto suspension = gci.SuspendLock();
 
-int Window::UpdateScrollBar(bool isVertical,
-                            bool isAltBuffer,
-                            UINT pageSize,
-                            int maxSize,
-                            int viewportPosition)
-{
-    SCROLLINFO si;
-    si.cbSize = sizeof(si);
-    si.fMask = isAltBuffer ? SIF_ALL | SIF_DISABLENOSCROLL : SIF_ALL;
-    si.nPage = pageSize;
-    si.nMin = 0;
-    si.nMax = maxSize;
-    si.nPos = viewportPosition;
+    // If this is the main buffer, make sure we enable both of the scroll bars.
+    // The alt buffer likely disabled the scroll bars, this is the only way to re-enable it.
+    if (!isAltBuffer)
+    {
+        EnableScrollBar(_hWnd, SB_BOTH, ESB_ENABLE_BOTH);
+    }
 
-    return SetScrollInfo(_hWnd, isVertical ? SB_VERT : SB_HORZ, &si, TRUE);
+    SCROLLINFO si{
+        .cbSize = sizeof(SCROLLINFO),
+        .fMask = static_cast<UINT>(isAltBuffer ? SIF_ALL | SIF_DISABLENOSCROLL : SIF_ALL),
+    };
+
+    si.nMax = maxSize.width;
+    si.nPage = viewport.width();
+    si.nPos = viewport.left;
+    SetScrollInfo(_hWnd, SB_HORZ, &si, TRUE);
+
+    si.nMax = maxSize.height;
+    si.nPage = viewport.height();
+    si.nPos = viewport.top;
+    SetScrollInfo(_hWnd, SB_VERT, &si, TRUE);
 }
 
 // Routine Description:

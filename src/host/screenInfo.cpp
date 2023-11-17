@@ -641,17 +641,13 @@ VOID SCREEN_INFORMATION::UpdateScrollBars()
         return;
     }
 
-    if (gci.Flags & CONSOLE_UPDATING_SCROLL_BARS)
+    if (gci.Flags & CONSOLE_UPDATING_SCROLL_BARS || ServiceLocator::LocateConsoleWindow() == nullptr)
     {
         return;
     }
 
     gci.Flags |= CONSOLE_UPDATING_SCROLL_BARS;
-
-    if (ServiceLocator::LocateConsoleWindow() != nullptr)
-    {
-        ServiceLocator::LocateConsoleWindow()->PostUpdateScrollBars();
-    }
+    LOG_IF_WIN32_BOOL_FALSE(ServiceLocator::LocateConsoleWindow()->PostUpdateScrollBars());
 }
 
 VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
@@ -671,25 +667,10 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
     if (pWindow != nullptr)
     {
         const auto buffer = GetBufferSize();
-
-        // If this is the main buffer, make sure we enable both of the scroll bars.
-        //      The alt buffer likely disabled the scroll bars, this is the only
-        //      way to re-enable it.
-        if (!_IsAltBuffer())
-        {
-            pWindow->EnableBothScrollBars();
-        }
-
-        pWindow->UpdateScrollBar(true,
-                                 _IsAltBuffer(),
-                                 _viewport.Height(),
-                                 gci.IsTerminalScrolling() ? _virtualBottom : buffer.BottomInclusive(),
-                                 _viewport.Top());
-        pWindow->UpdateScrollBar(false,
-                                 _IsAltBuffer(),
-                                 _viewport.Width(),
-                                 buffer.RightInclusive(),
-                                 _viewport.Left());
+        const auto isAltBuffer = _IsAltBuffer();
+        const auto maxSizeVer = gci.IsTerminalScrolling() ? _virtualBottom : buffer.BottomInclusive();
+        const auto maxSizeHor = buffer.RightInclusive();
+        pWindow->UpdateScrollBars(isAltBuffer, {maxSizeHor, maxSizeVer}, _viewport.ToExclusive());
     }
 
     // Fire off an event to let accessibility apps know the layout has changed.

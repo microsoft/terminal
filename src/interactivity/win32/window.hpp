@@ -65,12 +65,7 @@ namespace Microsoft::Console::Interactivity::Win32
         void HorizontalScroll(const WORD wScrollCommand,
                               const WORD wAbsoluteChange);
 
-        BOOL EnableBothScrollBars();
-        int UpdateScrollBar(bool isVertical,
-                            bool isAltBuffer,
-                            UINT pageSize,
-                            int maxSize,
-                            int viewportPosition);
+        void UpdateScrollBars(bool isAltBuffer, til::size maxSize, const til::rect& viewport) override;
 
         void UpdateWindowSize(const til::size coordSizeInChars);
         void UpdateWindowPosition(_In_ const til::point ptNewPos) const;

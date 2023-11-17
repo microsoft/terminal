@@ -25,12 +25,7 @@ namespace Microsoft::Console::Types
     public:
         virtual ~IConsoleWindow() = default;
 
-        virtual BOOL EnableBothScrollBars() = 0;
-        virtual int UpdateScrollBar(_In_ bool isVertical,
-                                    _In_ bool isAltBuffer,
-                                    _In_ UINT pageSize,
-                                    _In_ int maxSize,
-                                    _In_ int viewportPosition) = 0;
+        virtual void UpdateScrollBars(bool isAltBuffer, til::size maxSize, const til::rect& viewport) = 0;
 
         virtual bool IsInFullscreen() const = 0;
 
