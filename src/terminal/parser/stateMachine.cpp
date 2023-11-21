@@ -2127,6 +2127,8 @@ void StateMachine::ProcessString(const std::wstring_view string)
     // If we're at the end of the string and have remaining un-printed characters,
     if (_state != VTStates::Ground)
     {
+        const auto run = _CurrentRun();
+
         // One of the "weird things" in VT input is the case of something like
         // <kbd>alt+[</kbd>. In VT, that's encoded as `\x1b[`. However, that's
         // also the start of a CSI, and could be the start of a longer sequence,
@@ -2145,51 +2147,22 @@ void StateMachine::ProcessString(const std::wstring_view string)
         // last character of the string. For our previous `\x1b[` scenario, that
         // means we'll make sure to call `_ActionEscDispatch('[')`., which will
         // properly decode the string as <kbd>alt+[</kbd>.
-        const auto run = _CurrentRun();
-
         if (_isEngineForInput)
         {
-            // Reset our state, and put all but the last char in again.
-            ResetState();
-            _processingLastCharacter = false;
-            // Chars to flush are [pwchSequenceStart, pwchCurr)
-            auto wchIter = run.cbegin();
-            while (wchIter < run.cend() - 1)
+            if (run.size() <= 2 && run.front() == L'\x1b')
             {
-                ProcessCharacter(*wchIter);
-                wchIter++;
+                _EnterGround();
+                if (run.size() == 1)
+                {
+                    _ActionExecute(L'\x1b');
+                }
+                else
+                {
+                    _EnterEscape();
+                    _ActionEscDispatch(run.back());
+                }
+                _EnterGround();
             }
-            // Manually execute the last char [pwchCurr]
-            _processingLastCharacter = true;
-            switch (_state)
-            {
-            case VTStates::Ground:
-                _ActionExecute(*wchIter);
-                break;
-            case VTStates::Escape:
-            case VTStates::EscapeIntermediate:
-                _ActionEscDispatch(*wchIter);
-                break;
-            case VTStates::CsiEntry:
-            case VTStates::CsiIntermediate:
-            case VTStates::CsiIgnore:
-            case VTStates::CsiParam:
-            case VTStates::CsiSubParam:
-                _ActionCsiDispatch(*wchIter);
-                break;
-            case VTStates::OscParam:
-            case VTStates::OscString:
-            case VTStates::OscTermination:
-                _ActionOscDispatch(*wchIter);
-                break;
-            case VTStates::Ss3Entry:
-            case VTStates::Ss3Param:
-                _ActionSs3Dispatch(*wchIter);
-                break;
-            }
-            // microsoft/terminal#2746: Make sure to return to the ground state
-            // after dispatching the characters
-            _EnterGround();
         }
         else if (_state != VTStates::SosPmApcString && _state != VTStates::DcsPassThrough && _state != VTStates::DcsIgnore)
         {
