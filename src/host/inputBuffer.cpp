@@ -4,13 +4,13 @@
 #include "precomp.h"
 #include "inputBuffer.hpp"
 
-#include "stream.h"
-#include "../types/inc/GlyphWidth.hpp"
-
 #include <til/bytes.h>
+#include <til/unicode.h>
 
 #include "misc.h"
+#include "stream.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/GlyphWidth.hpp"
 
 #define INPUT_BUFFER_DEFAULT_INPUT_MODE (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT)
 
@@ -93,10 +93,10 @@ void InputBuffer::Consume(bool isUnicode, std::wstring_view& source, std::span<c
         {
             size_t read = 0;
 
-            for (const auto& wch : source)
+            for (const auto& s : til::utf16_iterator{ source })
             {
                 char buffer[8];
-                const auto length = WideCharToMultiByte(cp, 0, &wch, 1, &buffer[0], sizeof(buffer), nullptr, nullptr);
+                const auto length = WideCharToMultiByte(cp, 0, s.data(), gsl::narrow_cast<int>(s.size()), &buffer[0], sizeof(buffer), nullptr, nullptr);
                 THROW_LAST_ERROR_IF(length <= 0);
 
                 std::string_view slice{ &buffer[0], gsl::narrow_cast<size_t>(length) };
@@ -104,10 +104,24 @@ void InputBuffer::Consume(bool isUnicode, std::wstring_view& source, std::span<c
 
                 ++read;
 
-                if (!slice.empty())
+                // The _cached members store characters in `target`'s encoding that didn't fit into
+                // the client's buffer. So, if slice.empty() == false, then we'll store `slice` there.
+                //
+                // But it would be incorrect to test for slice.empty() == false, because the exit
+                // condition is actually "if the target has no space left" and that's subtly different.
+                // This difference can be seen when `source` contains "abc" and `target` is 1 character large.
+                // Testing for `target.empty() will ensure we:
+                // * exit right after copying "a"
+                // * don't store anything in `_cachedTextA`
+                // * leave "bc" in the `source` string, for the caller to handle
+                // Otherwise we'll copy "a", store "b" and return "c", which is wrong. See GH#16223.
+                if (target.empty())
                 {
-                    _cachedTextA = slice;
-                    _cachedTextReaderA = _cachedTextA;
+                    if (!slice.empty())
+                    {
+                        _cachedTextA = slice;
+                        _cachedTextReaderA = _cachedTextA;
+                    }
                     break;
                 }
             }
