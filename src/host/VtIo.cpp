@@ -467,10 +467,6 @@ void VtIo::SendCloseEvent()
 void VtIo::CorkRenderer(bool corked) const noexcept
 {
     _pVtRenderEngine->Cork(corked);
-    if (!corked)
-    {
-        LOG_IF_FAILED(ServiceLocator::LocateGlobals().pRender->PaintFrame());
-    }
 }
 
 #ifdef UNIT_TESTING
