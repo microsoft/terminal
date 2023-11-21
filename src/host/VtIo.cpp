@@ -282,9 +282,8 @@ bool VtIo::IsUsingVt() const
     if (_lookingForCursorPosition && _pVtRenderEngine && _pVtInputThread)
     {
         LOG_IF_FAILED(_pVtRenderEngine->RequestCursor());
-        while (_lookingForCursorPosition)
+        while (_lookingForCursorPosition && _pVtInputThread->DoReadInput())
         {
-            _pVtInputThread->DoReadInput(false);
         }
     }
 
