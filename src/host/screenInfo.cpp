@@ -670,7 +670,7 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
         const auto isAltBuffer = _IsAltBuffer();
         const auto maxSizeVer = gci.IsTerminalScrolling() ? _virtualBottom : buffer.BottomInclusive();
         const auto maxSizeHor = buffer.RightInclusive();
-        pWindow->UpdateScrollBars(isAltBuffer, {maxSizeHor, maxSizeVer}, _viewport.ToExclusive());
+        pWindow->UpdateScrollBars(isAltBuffer, { maxSizeHor, maxSizeVer }, _viewport.ToExclusive());
     }
 
     // Fire off an event to let accessibility apps know the layout has changed.
