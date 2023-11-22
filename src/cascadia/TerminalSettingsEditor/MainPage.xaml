@@ -170,7 +170,7 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <ScrollViewer x:Name="scrollBar"
+            <ScrollViewer x:Name="SettingsMainPage_ScrollViewer"
                           Grid.Row="0">
                 <Frame x:Name="contentFrame"
                        Grid.Row="0">
