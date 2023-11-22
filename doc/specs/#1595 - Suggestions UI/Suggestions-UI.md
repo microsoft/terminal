@@ -734,7 +734,7 @@ shape of extensions will be is very much still to be determined.
 [#14939]: https://github.com/microsoft/terminal/issues/7285
 
 [#keep]: https://github.com/zadjii/keep
-[VsCode Tasks]: https://github.com/microsoft/terminal/blob/main/.vscode/tasks.json
+[VsCode Tasks]: ../../../../.vscode/tasks.json
 
 <!-- Note: This is its own spec in progress, but for the time being #12862 will do -->
 [Tasks]: https://github.com/microsoft/terminal/issues/12862
