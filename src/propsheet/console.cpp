@@ -28,8 +28,6 @@ UINT gnCurrentPage;
 #define SYSTEM_ROOT (L"%SystemRoot%")
 #define SYSTEM_ROOT_LENGTH (sizeof(SYSTEM_ROOT) - sizeof(WCHAR))
 
-void RecreateFontHandles(const HWND hWnd);
-
 void UpdateItem(HWND hDlg, UINT item, UINT nNum)
 {
     SetDlgItemInt(hDlg, item, nNum, TRUE);
@@ -622,9 +620,6 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
                                         gpStateInfo->FontWeight,
                                         gpStateInfo->CodePage);
 
-    // since we just triggered font enumeration, recreate our font handles to adapt for DPI
-    RecreateFontHandles(hWnd);
-
     //
     // Find the available default console/terminal packages
     //
@@ -758,7 +753,8 @@ void UnregisterClasses(HINSTANCE hModule)
                                         gpStateInfo->CodePage);
 
     gpStateInfo->FontFamily = FontInfo[g_currentFontIndex].Family;
-    gpStateInfo->FontSize = FontInfo[g_currentFontIndex].Size;
+    gpStateInfo->FontSize.X = (SHORT)FontInfo[g_currentFontIndex].Size.cx;
+    gpStateInfo->FontSize.Y = (SHORT)FontInfo[g_currentFontIndex].Size.cy;
     gpStateInfo->FontWeight = FontInfo[g_currentFontIndex].Weight;
     return StringCchCopyW(gpStateInfo->FaceName, ARRAYSIZE(gpStateInfo->FaceName), FontInfo[g_currentFontIndex].FaceName);
 }

@@ -52,8 +52,6 @@ VOID UpdatePreviewRect(VOID)
 --*/
 
 {
-    POINT MinSize;
-    POINT MaxSize;
     POINT WindowSize;
     PFONT_INFO lpFont;
     HMONITOR hMonitor;
@@ -67,12 +65,8 @@ VOID UpdatePreviewRect(VOID)
     /*
      * Get the window size
      */
-    MinSize.x = (GetSystemMetrics(SM_CXMIN) - NonClientSize.x) / lpFont->Size.X;
-    MinSize.y = (GetSystemMetrics(SM_CYMIN) - NonClientSize.y) / lpFont->Size.Y;
-    MaxSize.x = GetSystemMetrics(SM_CXFULLSCREEN) / lpFont->Size.X;
-    MaxSize.y = GetSystemMetrics(SM_CYFULLSCREEN) / lpFont->Size.Y;
-    WindowSize.x = std::max(MinSize.x, std::min<LONG>(MaxSize.x, gpStateInfo->WindowSize.X));
-    WindowSize.y = std::max(MinSize.y, std::min<LONG>(MaxSize.y, gpStateInfo->WindowSize.Y));
+    WindowSize.x = gpStateInfo->WindowSize.X;
+    WindowSize.y = gpStateInfo->WindowSize.Y;
 
     /*
      * Get the window rectangle, making sure it's at least twice the
@@ -80,13 +74,13 @@ VOID UpdatePreviewRect(VOID)
      */
     WindowRect.left = gpStateInfo->WindowPosX;
     WindowRect.top = gpStateInfo->WindowPosY;
-    WindowRect.right = WindowSize.x * lpFont->Size.X + NonClientSize.x;
+    WindowRect.right = NonClientSize.x;
     if (WindowRect.right < NonClientSize.x * 2)
     {
         WindowRect.right = NonClientSize.x * 2;
     }
     WindowRect.right += WindowRect.left;
-    WindowRect.bottom = WindowSize.y * lpFont->Size.Y + NonClientSize.y;
+    WindowRect.bottom = NonClientSize.y;
     if (WindowRect.bottom < NonClientSize.y * 2)
     {
         WindowRect.bottom = NonClientSize.y * 2;

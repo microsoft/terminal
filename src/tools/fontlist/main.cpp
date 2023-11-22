@@ -46,29 +46,6 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 #define CP_SC ((UINT)936)
 #define IsEastAsianCP(cp) ((cp) == CP_JPN || (cp) == CP_WANSUNG || (cp) == CP_TC || (cp) == CP_SC)
 
-/*
-* TTPoints -- Initial font pixel heights for TT fonts
-* NOTE:
-*   Font pixel heights for TT fonts of DBCS are the same list except
-*   odd point size because font width is (SBCS:DBCS != 1:2).
-*/
-SHORT TTPoints[] = {
-    5,
-    6,
-    7,
-    8,
-    10,
-    12,
-    14,
-    16,
-    18,
-    20,
-    24,
-    28,
-    36,
-    72
-};
-
 int CALLBACK FontEnumForV2Console(ENUMLOGFONT* pelf, NEWTEXTMETRIC* pntm, int nFontType, LPARAM lParam)
 {
     UINT i;
@@ -188,28 +165,7 @@ int CALLBACK FontEnumForV2Console(ENUMLOGFONT* pelf, NEWTEXTMETRIC* pntm, int nF
         return CONTINUE_ENUM;
     }
 
-    if (nFontType & TRUETYPE_FONTTYPE)
-    {
-        for (i = 0; i < ARRAYSIZE(TTPoints); i++)
-        {
-            pelf->elfLogFont.lfHeight = TTPoints[i];
-
-            // If it's an East Asian enum, skip all odd height fonts.
-            if (fIsEastAsianCP && (pelf->elfLogFont.lfHeight % 2) != 0)
-            {
-                continue;
-            }
-
-            pelf->elfLogFont.lfWidth = 0;
-            pelf->elfLogFont.lfWeight = pntm->tmWeight;
-            AddFont(pelf, pntm, nFontType, (HDC)lParam);
-        }
-    }
-    else
-    {
-        AddFont(pelf, pntm, nFontType, (HDC)lParam);
-    }
-
+    AddFont(pelf, pntm, nFontType, (HDC)lParam);
     return CONTINUE_ENUM; // and continue enumeration
 }
 

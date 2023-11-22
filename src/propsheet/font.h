@@ -52,8 +52,6 @@ Revision History:
 typedef struct _FONT_INFO
 {
     HFONT hFont;
-    COORD Size; // font size obtained
-    COORD SizeWant; // 0;0 if Raster font
     LONG Weight;
     LPTSTR FaceName;
     BYTE Family;
@@ -74,7 +72,6 @@ typedef struct tagFACENODE
 
 #define TM_IS_TT_FONT(x) (((x)&TMPF_TRUETYPE) == TMPF_TRUETYPE)
 #define IS_BOLD(w) ((w) >= FW_SEMIBOLD)
-#define SIZE_EQUAL(s1, s2) (((s1).X == (s2).X) && ((s1).Y == (s2).Y))
 #define POINTS_PER_INCH 72
 #define MIN_PIXEL_HEIGHT 5
 #define MAX_PIXEL_HEIGHT 72
@@ -99,17 +96,10 @@ int FindCreateFont(
     __in LONG Weight,
     __in UINT CodePage);
 
-BOOL DoFontEnum(
-    __in_opt HDC hDC,
-    __in_ecount_opt(LF_FACESIZE) LPTSTR ptszFace,
-    __in_ecount_opt(nTTPoints) PSHORT pTTPoints,
-    __in UINT nTTPoints);
+BOOL DoFontEnum(__in_opt HDC hDC, __in_ecount_opt(LF_FACESIZE) LPTSTR ptszFace);
 
 [[nodiscard]] NTSTATUS GetTTFontFaceForCodePage(const UINT uiCodePage,
                                                 _Out_writes_(cchFaceName) PWSTR pszFaceName,
                                                 const size_t cchFaceName);
-
-bool IsFontSizeCustom(__in PCWSTR pwszFaceName, const __in SHORT sSize);
-void CreateSizeForAllTTFonts(const __in SHORT sSize);
 
 #endif /* !FONT_H */

@@ -44,8 +44,8 @@ void MakeAltRasterFont(
         if (!TM_IS_TT_FONT(FontInfo[i].Family) &&
             IS_ANY_DBCS_CHARSET(FontInfo[i].tmCharSet) == fDbcsCharSet)
         {
-            FontDelta.X = (SHORT)abs(FontSize.X - FontInfo[i].Size.X);
-            FontDelta.Y = (SHORT)abs(FontSize.Y - FontInfo[i].Size.Y);
+            FontDelta.X = (SHORT)abs(FontSize.cx - FontInfo[i].Size.cx);
+            FontDelta.Y = (SHORT)abs(FontSize.cy - FontInfo[i].Size.cy);
             if (Find > (DWORD)(FontDelta.X + FontDelta.Y))
             {
                 Find = (DWORD)(FontDelta.X + FontDelta.Y);
@@ -56,7 +56,8 @@ void MakeAltRasterFont(
 
     *AltFontIndex = FontIndex;
     StringCchCopy(AltFaceName, LF_FACESIZE, FontInfo[*AltFontIndex].FaceName);
-    *AltFontSize = FontInfo[*AltFontIndex].Size;
+    AltFontSize->X = (SHORT)FontInfo[*AltFontIndex].Size.cx;
+    AltFontSize->Y = (SHORT)FontInfo[*AltFontIndex].Size.cy;
     *AltFontFamily = FontInfo[*AltFontIndex].Family;
 
     DBGFONTS(("MakeAltRasterFont : AltFontIndex = %ld\n", *AltFontIndex));
