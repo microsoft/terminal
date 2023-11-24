@@ -291,6 +291,13 @@ public:
         End = 0x2
     };
 
+    struct TextCopyData
+    {
+        std::wstring plainText;
+        std::optional<std::string> html;
+        std::optional<std::string> rtf;
+    };
+
     void MultiClickSelection(const til::point viewportPos, SelectionExpansion expansionMode);
     void SetSelectionAnchor(const til::point position);
     void SetSelectionEnd(const til::point position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
@@ -309,7 +316,8 @@ public:
     til::point SelectionEndForRendering() const;
     const SelectionEndpoint SelectionEndpointTarget() const noexcept;
 
-    const TextBuffer::TextAndAttribute RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
+    TextCopyData RetrieveSelectedTextFromBuffer(bool singleLine, bool html, bool rtf) const;
+    std::vector<std::wstring> RetrieveSelectedTextFromBufferRows(bool singleLine) const;
 #pragma endregion
 
 #ifndef NDEBUG

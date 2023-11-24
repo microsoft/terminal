@@ -836,10 +836,43 @@ void Terminal::ClearSelection()
 // Arguments:
 // - singleLine: collapse all of the text to one line
 // Return Value:
-// - wstring text and attribute from buffer. If extended to multiple lines, each line is separated by \r\n
-const TextBuffer::TextAndAttribute Terminal::RetrieveSelectedTextFromBuffer(bool singleLine)
+// - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
+std::vector<std::wstring> Terminal::RetrieveSelectedTextFromBufferRows(bool singleLine) const
 {
+    // GH#6740: Block selection should preserve the visual structure:
+    // - CRLFs need to be added - so the lines structure is preserved
+    // - We should apply formatting above to wrapped rows as well (newline should be added).
+    const auto includeLineBreak = !singleLine || _blockSelection;
+
+    // Trim trailing whitespace if we're not in single line mode and — either
+    // we're not in block selection mode or, we're in block selection mode and
+    // trimming is allowed.
+    const auto trimTrailingWhitespace = !singleLine && (!_blockSelection || _trimBlockSelection);
+
+    const auto formatWrappedRows = _blockSelection;
+
     const auto selectionRects = _GetSelectionRects();
+    return _activeBuffer().GetText(selectionRects, includeLineBreak, trimTrailingWhitespace, formatWrappedRows);
+}
+
+// Method Description:
+// - Get text from highlighted portion of text buffer
+// - Optionally, get the highlighted text in HTML and RTF formats
+// Arguments:
+// - singleLine: collapse all of the text to one line
+// - html: also get text in HTML format
+// - rtf: also get text in RTF format
+// Return Value:
+// - Plain and formatted selected text from buffer. If extended to multiple lines, each line is separated by \r\n
+Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(bool singleLine, bool html, bool rtf) const
+{
+    TextCopyData data;
+
+    const auto bgColor = _renderSettings.GetAttributeColors({}).second;
+    const auto isIntenseBold = _renderSettings.GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
+    const auto fontSizePt = _fontInfo.GetUnscaledSize().height; // already in points
+    const auto fontName = _fontInfo.GetFaceName();
+    const auto& textBuffer = _activeBuffer();
 
     const auto GetAttributeColors = [&](const auto& attr) {
         const auto [fg, bg] = _renderSettings.GetAttributeColors(attr);
@@ -852,11 +885,32 @@ const TextBuffer::TextAndAttribute Terminal::RetrieveSelectedTextFromBuffer(bool
     // GH#6740: Block selection should preserve the visual structure:
     // - CRLFs need to be added - so the lines structure is preserved
     // - We should apply formatting above to wrapped rows as well (newline should be added).
-    // GH#9706: Trimming of trailing white-spaces in block selection is configurable.
-    const auto includeCRLF = !singleLine || _blockSelection;
+    const auto includeLineBreak = !singleLine || _blockSelection;
+
+    // Trim trailing whitespace if we're not in single line mode and — either
+    // we're not in block selection mode or, we're in block selection mode and
+    // trimming is allowed.
     const auto trimTrailingWhitespace = !singleLine && (!_blockSelection || _trimBlockSelection);
+
     const auto formatWrappedRows = _blockSelection;
-    return _activeBuffer().GetText(includeCRLF, trimTrailingWhitespace, selectionRects, GetAttributeColors, formatWrappedRows);
+
+    // get highlighted selection rects
+    const auto selectionRects = _GetSelectionRects();
+
+    // get trimmed text spans from the selection rects
+    const auto selectedTextSpans = textBuffer.GetSelectionTextSpans(selectionRects, trimTrailingWhitespace, formatWrappedRows);
+
+    data.plainText = textBuffer.GetPlainText(selectedTextSpans, includeLineBreak, formatWrappedRows);
+    if (html)
+    {
+        data.html = textBuffer.GenHTML(selectedTextSpans, fontSizePt, fontName, bgColor, isIntenseBold, includeLineBreak, formatWrappedRows, GetAttributeColors);
+    }
+    if (rtf)
+    {
+        data.rtf = textBuffer.GenRTF(selectedTextSpans, fontSizePt, fontName, bgColor, isIntenseBold, includeLineBreak, formatWrappedRows, GetAttributeColors);
+    }
+
+    return data;
 }
 
 // Method Description:

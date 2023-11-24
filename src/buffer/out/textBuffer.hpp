@@ -229,33 +229,40 @@ public:
     std::wstring GetCustomIdFromId(uint16_t id) const;
     void CopyHyperlinkMaps(const TextBuffer& OtherBuffer);
 
-    struct TextAndAttribute
-    {
-        std::vector<std::wstring> text;
-        std::vector<til::small_rle<TextAttribute, uint16_t, 1>> attrs;
-    };
-
     size_t SpanLength(const til::point coordStart, const til::point coordEnd) const;
 
-    const TextAndAttribute GetText(const bool includeCRLF,
-                                   const bool trimTrailingWhitespace,
-                                   const std::vector<til::inclusive_rect>& textRects,
-                                   std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors = nullptr,
-                                   const bool formatWrappedRows = false) const;
+    std::vector<std::wstring> GetText(const std::vector<til::inclusive_rect>& selectionRects,
+                                      const bool includeCRLF,
+                                      const bool trimTrailingWhitespace,
+                                      const bool formatWrappedRows) const;
 
     std::wstring GetPlainText(const til::point& start, const til::point& end) const;
 
-    static std::string GenHTML(const TextAndAttribute& rows,
-                               const int fontHeightPoints,
-                               const std::wstring_view fontFaceName,
-                               const COLORREF backgroundColor,
-                               const bool isIntenseBold);
+    std::vector<til::point_span> GetSelectionTextSpans(const std::vector<til::inclusive_rect>& selectionRects,
+                                                       bool trimTrailingWhitespace,
+                                                       bool trimWrappedRows) const;
 
-    static std::string GenRTF(const TextAndAttribute& rows,
-                              const int fontHeightPoints,
-                              const std::wstring_view fontFaceName,
-                              const COLORREF backgroundColor,
-                              const bool isIntenseBold);
+    std::wstring GetPlainText(const std::vector<til::point_span>& selectionSpans,
+                              const bool includeCRLF,
+                              const bool formatWrappedRows) const;
+
+    std::string GenHTML(const std::vector<til::point_span>& selectionSpans,
+                        const int fontHeightPoints,
+                        const std::wstring_view fontFaceName,
+                        const COLORREF backgroundColor,
+                        const bool isIntenseBold,
+                        bool includeLineBreak,
+                        bool lineBreakWrappedRows,
+                        std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept;
+
+    std::string GenRTF(const std::vector<til::point_span>& selectionSpans,
+                       const int fontHeightPoints,
+                       const std::wstring_view fontFaceName,
+                       const COLORREF backgroundColor,
+                       const bool isIntenseBold,
+                       bool includeLineBreak,
+                       bool lineBreakWrappedRows,
+                       std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept;
 
     struct PositionInformation
     {

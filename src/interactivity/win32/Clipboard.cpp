@@ -214,6 +214,9 @@ InputEventQueue Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* co
 //   <none>
 void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
 {
+    std::wstring text;
+    std::optional<std::string> htmlData, rtfData;
+
     const auto& selection = Selection::Instance();
 
     // See if there is a selection to get
@@ -228,6 +231,11 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& buffer = gci.GetActiveOutputBuffer().GetTextBuffer();
     const auto& renderSettings = gci.GetRenderSettings();
+    const auto& fontData = gci.GetActiveOutputBuffer().GetCurrentFont();
+    const auto& fontName = fontData.GetFaceName();
+    const auto fontSizePt = fontData.GetUnscaledSize().height * 72 / ServiceLocator::LocateGlobals().dpi;
+    const auto bgColor = renderSettings.GetAttributeColors({}).second;
+    const auto isIntenseBold = renderSettings.GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
 
     const auto GetAttributeColors = [&](const auto& attr) {
         const auto [fg, bg] = renderSettings.GetAttributeColors(attr);
@@ -237,43 +245,47 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
         return std::tuple{ fg, bg, ul };
     };
 
-    bool includeCRLF, trimTrailingWhitespace;
+    const bool formatWrappedRows = !selection.IsLineSelection();
+
+    bool includeLineBreak, trimTrailingWhitespace;
     if (WI_IsFlagSet(OneCoreSafeGetKeyState(VK_SHIFT), KEY_PRESSED))
     {
         // When shift is held, put everything in one line
-        includeCRLF = trimTrailingWhitespace = false;
+        includeLineBreak = trimTrailingWhitespace = false;
     }
     else
     {
-        includeCRLF = trimTrailingWhitespace = true;
+        includeLineBreak = trimTrailingWhitespace = true;
     }
 
-    const auto text = buffer.GetText(includeCRLF,
-                                     trimTrailingWhitespace,
-                                     selectionRects,
-                                     GetAttributeColors,
-                                     !selection.IsLineSelection());
+    const auto selectedTextSpans = buffer.GetSelectionTextSpans(selectionRects,
+                                                                trimTrailingWhitespace,
+                                                                formatWrappedRows);
 
-    CopyTextToSystemClipboard(text, copyFormatting);
+    text = buffer.GetPlainText(selectedTextSpans, includeLineBreak, formatWrappedRows);
+    if (copyFormatting)
+    {
+        htmlData = buffer.GenHTML(selectedTextSpans, fontSizePt, fontName,
+                                  bgColor, isIntenseBold, includeLineBreak,
+                                  formatWrappedRows, GetAttributeColors);
+        rtfData = buffer.GenRTF(selectedTextSpans, fontSizePt, fontName,
+                                bgColor, isIntenseBold, includeLineBreak,
+                                formatWrappedRows, GetAttributeColors);
+    }
+
+    CopyTextToSystemClipboard(text, htmlData, rtfData);
 }
 
 // Routine Description:
 // - Copies the text given onto the global system clipboard.
 // Arguments:
-// - rows - Rows of text and attribute data to copy
-// - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
-void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndAttribute& rows, const bool fAlsoCopyFormatting)
+// - text - plain-text data
+// - htmlData - HTML copy data
+// - rtfData - RTF copy data
+void Clipboard::CopyTextToSystemClipboard(const std::wstring& text, const std::optional<std::string>& htmlData, const std::optional<std::string>& rtfData) const
 {
-    std::wstring finalString;
-
-    // Concatenate strings into one giant string to put onto the clipboard.
-    for (const auto& str : rows.text)
-    {
-        finalString += str;
-    }
-
     // allocate the final clipboard data
-    const auto cchNeeded = finalString.size() + 1;
+    const auto cchNeeded = text.size() + 1;
     const auto cbNeeded = sizeof(wchar_t) * cchNeeded;
     wil::unique_hglobal globalHandle(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeeded));
     THROW_LAST_ERROR_IF_NULL(globalHandle.get());
@@ -283,7 +295,7 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndAttribute& ro
 
     // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
     // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-    const auto hr = StringCchCopyW(pwszClipboard, cchNeeded, finalString.data());
+    const auto hr = StringCchCopyW(pwszClipboard, cchNeeded, text.data());
     GlobalUnlock(globalHandle.get());
     THROW_IF_FAILED(hr);
 
@@ -298,20 +310,13 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndAttribute& ro
         THROW_LAST_ERROR_IF(!EmptyClipboard());
         THROW_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, globalHandle.get()));
 
-        if (fAlsoCopyFormatting)
+        if (htmlData)
         {
-            const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            const auto& fontData = gci.GetActiveOutputBuffer().GetCurrentFont();
-            const auto iFontHeightPoints = fontData.GetUnscaledSize().height * 72 / ServiceLocator::LocateGlobals().dpi;
-            const auto& renderSettings = gci.GetRenderSettings();
-            const auto bgColor = renderSettings.GetAttributeColors({}).second;
-            const auto isIntenseBold = renderSettings.GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
-
-            auto HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, isIntenseBold);
-            CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
-
-            auto RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, isIntenseBold);
-            CopyToSystemClipboard(RTFToPlaceOnClip, L"Rich Text Format");
+            CopyToSystemClipboard(htmlData.value(), L"HTML Format");
+        }
+        if (rtfData)
+        {
+            CopyToSystemClipboard(rtfData.value(), L"Rich Text Format");
         }
     }
 
@@ -326,7 +331,7 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndAttribute& ro
 // Arguments:
 // - stringToCopy - The string to copy
 // - lpszFormat - the name of the format
-void Clipboard::CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat)
+void Clipboard::CopyToSystemClipboard(const std::string& stringToCopy, LPCWSTR lpszFormat) const
 {
     const auto cbData = stringToCopy.size() + 1; // +1 for '\0'
     if (cbData)

@@ -1920,120 +1920,48 @@ void TextBuffer::_ExpandTextRow(til::inclusive_rect& textRow) const
 }
 
 // Routine Description:
-// - Retrieves the text data from the selected region and presents it in a clipboard-ready format (given little post-processing).
+// - Retrieves the row-wise text data from the selected region.
 // Arguments:
+// - selectionRects - the rectangular regions from which the data will be extracted from the buffer
 // - includeCRLF - inject CRLF pairs to the end of each line
 // - trimTrailingWhitespace - remove the trailing whitespace at the end of each line
-// - textRects - the rectangular regions from which the data will be extracted from the buffer (i.e.: selection rects)
-// - GetAttributeColors - function used to map TextAttribute to RGB COLORREFs. If null, only extract the text.
 // - formatWrappedRows - if set we will apply formatting (CRLF inclusion and whitespace trimming) on wrapped rows
 // Return Value:
-// - The text and attribute data of the selected region of the text buffer.
-const TextBuffer::TextAndAttribute TextBuffer::GetText(const bool includeCRLF,
-                                                       const bool trimTrailingWhitespace,
-                                                       const std::vector<til::inclusive_rect>& selectionRects,
-                                                       std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors,
-                                                       const bool formatWrappedRows) const
+// - A list of text data for each row in the selected region
+std::vector<std::wstring> TextBuffer::GetText(const std::vector<til::inclusive_rect>& selectionRects,
+                                              const bool includeCRLF,
+                                              const bool trimTrailingWhitespace,
+                                              const bool formatWrappedRows) const
 {
-    TextAndAttribute data;
-    const auto copyAttribute = GetAttributeColors != nullptr;
+    std::vector<std::wstring> text;
 
-    // preallocate our vectors to reduce reallocs
-    const auto rows = selectionRects.size();
-    data.text.reserve(rows);
-    if (copyAttribute)
+    const auto selectedTextSpans = GetSelectionTextSpans(selectionRects, trimTrailingWhitespace, formatWrappedRows);
+
+    const auto cRows = selectedTextSpans.size();
+    text.reserve(cRows);
+
+    for (size_t i = 0; i < cRows; i++)
     {
-        data.attrs.reserve(rows);
-    }
-
-    for (size_t i = 0; i < rows; i++)
-    {
-        std::wstring selectionText;
-        til::small_rle<TextAttribute, uint16_t, 1> attrs;
-
-        const auto iRow = selectionRects.at(i).top;
-        const auto& row = GetRowByOffset(iRow);
-        const auto colBegin = gsl::narrow_cast<uint16_t>(selectionRects.at(i).left);
-        auto colEnd = gsl::narrow_cast<uint16_t>(selectionRects.at(i).right + 1); // end column exclusive
-
-        // We apply formatting to rows if the row was NOT wrapped or formatting
-        // of wrapped rows is allowed.
-        const auto shouldFormatRow = formatWrappedRows || !row.WasWrapForced();
-
-        if (trimTrailingWhitespace && shouldFormatRow)
-        {
-            // update end column to exclude trailing whitespace
-
-            const auto text = row.GetText();
-            const auto begin = text.rbegin();
-            const auto end = text.rend();
-            auto it = begin;
-            for (; it != end; ++it)
-            {
-                if (*it != L' ')
-                {
-                    break;
-                }
-            }
-
-            const auto textTrimmedLength = gsl::narrow_cast<uint16_t>(end - it);
-            colEnd = std::min(colEnd, textTrimmedLength);
-        }
+        const auto& [start, end] = til::at(selectedTextSpans, i);
+        const auto& row = GetRowByOffset(start.y); // start.y == end.y
 
         // save selected text
-        selectionText = std::wstring{ row.GetText(colBegin, colEnd) };
+        auto selectedText = std::wstring{ row.GetText(start.x, end.x) };
 
-        // retrieve attributes for the text range
-        if (copyAttribute)
+        // When we're including CL/RF, `formatWrappedRows` signifies line break
+        // to be added to all rows (wrapped and non-wrapped), but when it's false,
+        // only add line break to non-wrapped rows.
+        const auto addLineBreak = includeCRLF && (formatWrappedRows || !row.WasWrapForced());
+        // Also, never add CR/LF to the last row.
+        if (addLineBreak && i < cRows - 1)
         {
-            attrs = row.Attributes().slice(colBegin, colEnd);
-
-            // replace stored attribute colors with rendered colors
-            for (auto& run : attrs.runs())
-            {
-                const auto [fg, bg, ul] = GetAttributeColors(run.value);
-                run.value.SetForeground(fg);
-                run.value.SetBackground(bg);
-                run.value.SetUnderlineColor(ul);
-            }
+            selectedText += L"\r\n";
         }
 
-        // apply CR/LF to the end of the final string, unless we're the last line.
-        // a.k.a if we're earlier than the bottom, then apply CR/LF.
-        if (includeCRLF && i < selectionRects.size() - 1)
-        {
-            if (shouldFormatRow)
-            {
-                // then we can assume a CR/LF is proper
-                selectionText.push_back(L'\r');
-                selectionText.push_back(L'\n');
-
-                if (copyAttribute)
-                {
-                    // can't see CR/LF so just use black FG & BK
-                    const auto Blackness = RGB(0x00, 0x00, 0x00);
-                    const auto clrfAttr = TextAttribute{ Blackness, Blackness };
-                    if (attrs.size() != 0) // Can only extend a non-empty rle
-                    {
-                        attrs.resize_trailing_extent(attrs.size() + 2);
-                        attrs.replace(attrs.size() - 2, attrs.size(), clrfAttr);
-                    }
-                    else
-                    {
-                        attrs = { 2, clrfAttr };
-                    }
-                }
-            }
-        }
-
-        data.text.emplace_back(std::move(selectionText));
-        if (copyAttribute)
-        {
-            data.attrs.emplace_back(std::move(attrs));
-        }
+        text.emplace_back(std::move(selectedText));
     }
 
-    return data;
+    return text;
 }
 
 size_t TextBuffer::SpanLength(const til::point coordStart, const til::point coordEnd) const
@@ -2074,21 +2002,113 @@ std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point&
 }
 
 // Routine Description:
-// - Generates a CF_HTML compliant structure based on the passed in text and color data
+// - Retrieves the text start and end coordinates we're interested in from the selected rectangular regions.
+// - Removes trailing whitespaces at the end of each line, when requested.
+// - The result is used to generate copy text in plain-text and other formats, including HTML and RTF.
 // Arguments:
-// - rows - the text and attribute data we will format & encapsulate
-// - backgroundColor - default background color for characters, also used in padding
+// - selectionRects - the rectangular regions for which the text span coordinates will be calculated.
+// - trimTrailingWhitespace - if set, trim trailing whitespaces in the end of the non-wrapped line.
+// - trimWrappedRows - if set, trim trailing whitespaces on wrapped rows too.
+// Return Value:
+// - A list of point-span for each row of the selected region. End coordinates are exclusive.
+std::vector<til::point_span> TextBuffer::GetSelectionTextSpans(const std::vector<til::inclusive_rect>& selectionRects,
+                                                               bool trimTrailingWhitespace,
+                                                               bool trimWrappedRows) const
+{
+    std::vector<til::point_span> selectedTextSpans;
+
+    const auto cRows = selectionRects.size();
+    selectedTextSpans.reserve(cRows);
+
+    for (size_t i = 0; i < cRows; i++)
+    {
+        const auto& rect = til::at(selectionRects, i);
+        const auto colBegin = rect.left;
+        auto colEnd = rect.right + 1; // +1 to get an exclusive end
+        const auto iRow = rect.top;
+        const auto& row = GetRowByOffset(iRow);
+
+        // When we're trimming, trimWrappedRows signifies trimming trailing whitespaces
+        // on all rows (wrapped and non-wrapped), but when it's false, only trim on
+        // non-wrapped rows.
+        const auto shouldTrim = trimTrailingWhitespace && (trimWrappedRows || !row.WasWrapForced());
+        if (shouldTrim)
+        {
+            // update end column to exclude trailing whitespace
+            colEnd = std::min(colEnd, row.MeasureRight());
+        }
+
+        const til::point start = { colBegin, iRow };
+        const til::point end = { colEnd, iRow };
+        selectedTextSpans.emplace_back(start, end);
+    }
+
+    return selectedTextSpans;
+}
+
+// Routine Description:
+// - Retrieves the text data from all the selected text spans and presents it in a clipboard-ready format.
+// Arguments:
+// - selectionSpans - the selected spans from which the data will be extracted from the buffer
+// - includeCRLF - inject CRLF pairs to the end of each non-wrapped row
+// - formatWrappedRows - if set CRLF pairs are applied on wrapped rows as well
+// Return Value:
+// - The combined text data from all the spans of the selected region of the text buffer.
+std::wstring TextBuffer::GetPlainText(const std::vector<til::point_span>& selectionSpans,
+                                      const bool includeCRLF,
+                                      const bool formatWrappedRows) const
+{
+    std::wstring selectedText;
+
+    const auto cRows = selectionSpans.size();
+    for (size_t i = 0; i < cRows; i++)
+    {
+        const auto& [start, end] = til::at(selectionSpans, i);
+        const auto& row = GetRowByOffset(start.y); // start.y == end.y
+
+        // save selected text
+        selectedText += row.GetText(start.x, end.x);
+
+        // When we're including CR/LF, `formatWrappedRows` signifies line
+        // break to be added to all rows (wrapped and non-wrapped), but when
+        // it's false, only add line break to non-wrapped rows.
+        const auto addLineBreak = includeCRLF && (formatWrappedRows || !row.WasWrapForced());
+        // Also, never add CR/LF to the last row.
+        if (addLineBreak && i < cRows - 1)
+        {
+            selectedText += L"\r\n";
+        }
+    }
+
+    return selectedText;
+}
+
+// Routine Description:
+// - Generates a CF_HTML compliant structure based on the passed in selection spans
+// Arguments:
+// - selectionSpans - selected text span for each row of the selected region
 // - fontHeightPoints - the unscaled font height
 // - fontFaceName - the name of the font used
+// - backgroundColor - default background color for characters, also used in padding
 // - isIntenseBold - true if being intense is treated as being bold
+// - includeLineBreak - true if line breaks should be included
+// - lineBreakWrappedRows - true if line breaks should be added to wrapped rows too
+// - GetAttributeColors - function to get the colors of the text attributes as they're rendered
 // Return Value:
 // - string containing the generated HTML
-std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
+std::string TextBuffer::GenHTML(const std::vector<til::point_span>& selectionSpans,
                                 const int fontHeightPoints,
                                 const std::wstring_view fontFaceName,
                                 const COLORREF backgroundColor,
-                                const bool isIntenseBold)
+                                const bool isIntenseBold,
+                                bool includeLineBreak,
+                                bool lineBreakWrappedRows,
+                                std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept
 {
+    // GH#5347 - Don't provide a title for the generated HTML, as many
+    // web applications will paste the title first, followed by the HTML
+    // content, which is unexpected.
+
     try
     {
         std::ostringstream htmlBuilder;
@@ -2120,21 +2140,30 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
             htmlBuilder << "\">";
         }
 
-        for (size_t row = 0; row < rows.text.size(); row++)
+        const auto cRows = selectionSpans.size();
+        for (auto i = 0; i < cRows; ++i)
         {
-            auto itText = rows.text.at(row).begin();
+            const auto& [start, end] = til::at(selectionSpans, i);
+            const auto iRow = start.y; // same as end.y
+            const auto colStart = gsl::narrow_cast<uint16_t>(start.x);
+            const auto colEnd = gsl::narrow_cast<uint16_t>(end.x);
+            const auto& row = GetRowByOffset(iRow);
+            const auto runs = row.Attributes().slice(colStart, colEnd).runs();
 
-            for (auto& [attr, length] : rows.attrs.at(row).runs())
+            auto x = colStart;
+            for (const auto& [attr, length] : runs)
             {
-                const auto fg = Utils::ColorToHexString(attr.GetForeground().GetRGB());
-                const auto bg = Utils::ColorToHexString(attr.GetBackground().GetRGB());
-                const auto ul = Utils::ColorToHexString(attr.GetUnderlineColor().GetRGB());
+                const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
+                const auto [fg, bg, ul] = GetAttributeColors(attr);
+                const auto fgHex = Utils::ColorToHexString(fg);
+                const auto bgHex = Utils::ColorToHexString(bg);
+                const auto ulHex = Utils::ColorToHexString(ul);
                 const auto ulStyle = attr.GetUnderlineStyle();
                 const auto isUnderlined = ulStyle != UnderlineStyle::NoUnderline;
 
                 htmlBuilder << "<SPAN STYLE=\"";
-                htmlBuilder << "color:" << fg << ";";
-                htmlBuilder << "background-color:" << bg << ";";
+                htmlBuilder << "color:" << fgHex << ";";
+                htmlBuilder << "background-color:" << bgHex << ";";
 
                 if (isIntenseBold && attr.IsIntense())
                 {
@@ -2159,7 +2188,7 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
                 const auto textDecorationStr = textDecoration.str();
                 if (textDecorationStr.length())
                 {
-                    htmlBuilder << "text-decoration:" << textDecorationStr << " " << fg << ";";
+                    htmlBuilder << "text-decoration:" << textDecorationStr << " " << fgHex << ";";
                 }
 
                 if (isUnderlined)
@@ -2174,22 +2203,22 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
                     case UnderlineStyle::NoUnderline:
                         break;
                     case UnderlineStyle::SinglyUnderlined:
-                        htmlBuilder << "text-decoration:underline " << ul << ";";
+                        htmlBuilder << "text-decoration:underline " << ulHex << ";";
                         break;
                     case UnderlineStyle::DoublyUnderlined:
-                        htmlBuilder << "text-decoration:underline double " << ul << ";";
+                        htmlBuilder << "text-decoration:underline double " << ulHex << ";";
                         break;
                     case UnderlineStyle::CurlyUnderlined:
-                        htmlBuilder << "text-decoration:underline wavy " << ul << ";";
+                        htmlBuilder << "text-decoration:underline wavy " << ulHex << ";";
                         break;
                     case UnderlineStyle::DottedUnderlined:
-                        htmlBuilder << "text-decoration:underline dotted " << ul << ";";
+                        htmlBuilder << "text-decoration:underline dotted " << ulHex << ";";
                         break;
                     case UnderlineStyle::DashedUnderlined:
-                        htmlBuilder << "text-decoration:underline dashed " << ul << ";";
+                        htmlBuilder << "text-decoration:underline dashed " << ulHex << ";";
                         break;
                     default:
-                        htmlBuilder << "text-decoration:underline " << ul << ";";
+                        htmlBuilder << "text-decoration:underline " << ulHex << ";";
                         break;
                     }
                 }
@@ -2197,18 +2226,10 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
                 htmlBuilder << "\">";
 
                 std::string unescapedText;
-                THROW_IF_FAILED(til::u16u8(std::wstring_view{ itText, itText + length }, unescapedText));
+                THROW_IF_FAILED(til::u16u8(row.GetText(x, nextX), unescapedText));
 
                 for (const auto c : unescapedText)
                 {
-                    if (c == '\r' || c == '\n')
-                    {
-                        // Reached EOL. We use <BR> for newline instead of CL/RF in HTML.
-                        htmlBuilder << "<BR>";
-                        break;
-                    }
-
-                    // append character (escape if needed)
                     switch (c)
                     {
                     case '<':
@@ -2232,8 +2253,18 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
 
                 htmlBuilder << "</SPAN>";
 
-                // advance to the next run of text
-                itText += length;
+                // advance to next run of text
+                x = nextX;
+            }
+            
+            // When we're including line breaks, `lineBreakWrappedRows` signifies
+            // line break to be added to all rows (wrapped and non-wrapped), but
+            // when it's false, only add line break to non-wrapped rows.
+            const auto addLineBreak = includeLineBreak && (lineBreakWrappedRows || !row.WasWrapForced());
+            // Also, never add line break to the last row.
+            if (addLineBreak && i < cRows - 1)
+            {
+                htmlBuilder << "<BR>";
             }
         }
 
@@ -2274,19 +2305,28 @@ std::string TextBuffer::GenHTML(const TextAndAttribute& rows,
 }
 
 // Routine Description:
-// - Generates an RTF document based on the passed in text and color data
+// - Generates an RTF document based on the passed in selection spans
 //   RTF 1.5 Spec: https://www.biblioscape.com/rtf15_spec.htm
 //   RTF 1.9.1 Spec: https://msopenspecs.azureedge.net/files/Archive_References/[MSFT-RTF].pdf
 // Arguments:
-// - rows - the text and color data we will format & encapsulate
-// - backgroundColor - default background color for characters, also used in padding
+// - selectionSpans - selected text span for each row of the selected region
 // - fontHeightPoints - the unscaled font height
 // - fontFaceName - the name of the font used
-// - htmlTitle - value used in title tag of html header. Used to name the application
+// - backgroundColor - default background color for characters, also used in padding
 // - isIntenseBold - true if being intense is treated as being bold
+// - includeLineBreak - true if line breaks should be included
+// - lineBreakWrappedRows - true if line breaks should be added to wrapped rows
+// - GetAttributeColors - function to get the colors of the text attributes as they're rendered
 // Return Value:
 // - string containing the generated RTF
-std::string TextBuffer::GenRTF(const TextAndAttribute& rows, const int fontHeightPoints, const std::wstring_view fontFaceName, const COLORREF backgroundColor, const bool isIntenseBold)
+std::string TextBuffer::GenRTF(const std::vector<til::point_span>& selectionSpans,
+                               const int fontHeightPoints,
+                               const std::wstring_view fontFaceName,
+                               const COLORREF backgroundColor,
+                               const bool isIntenseBold,
+                               bool includeLineBreak,
+                               bool lineBreakWrappedRows,
+                               std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept
 {
     try
     {
@@ -2352,23 +2392,32 @@ std::string TextBuffer::GenRTF(const TextAndAttribute& rows, const int fontHeigh
                        // text background color. See: Spec 1.9.1, Pg. 23.
                        << "\\chshdng0\\chcbpat" << getColorTableIndex(backgroundColor);
 
-        for (size_t row = 0; row < rows.text.size(); ++row)
+        const auto cRows = selectionSpans.size();
+        for (auto i = 0; i < cRows; ++i)
         {
-            auto itText = rows.text.at(row).begin();
+            const auto& [start, end] = til::at(selectionSpans, i);
+            const auto iRow = start.y; // same as end.y
+            const auto colStart = gsl::narrow_cast<uint16_t>(start.x);
+            const auto colEnd = gsl::narrow_cast<uint16_t>(end.x);
+            const auto& row = GetRowByOffset(iRow);
+            const auto runs = row.Attributes().slice(colStart, colEnd).runs();
 
-            for (auto& [attr, length] : rows.attrs.at(row).runs())
+            auto x = colStart;
+            for (auto& [attr, length] : runs)
             {
-                const auto fg = getColorTableIndex(attr.GetForeground().GetRGB());
-                const auto bg = getColorTableIndex(attr.GetBackground().GetRGB());
-                const auto ul = getColorTableIndex(attr.GetUnderlineColor().GetRGB());
+                const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
+                const auto [fg, bg, ul] = GetAttributeColors(attr);
+                const auto fgIdx = getColorTableIndex(fg);
+                const auto bgIdx = getColorTableIndex(bg);
+                const auto ulIdx = getColorTableIndex(ul);
                 const auto ulStyle = attr.GetUnderlineStyle();
 
                 // start an RTF group that we'll close later to reset back to
                 // the default attribute.
                 contentBuilder << "{";
 
-                contentBuilder << "\\chshdng0\\chcbpat" << bg
-                               << "\\cf" << fg;
+                contentBuilder << "\\chshdng0\\chcbpat" << bgIdx
+                               << "\\cf" << fgIdx;
 
                 if (isIntenseBold && attr.IsIntense())
                 {
@@ -2384,22 +2433,22 @@ std::string TextBuffer::GenRTF(const TextAndAttribute& rows, const int fontHeigh
                 case UnderlineStyle::NoUnderline:
                     break;
                 case UnderlineStyle::SinglyUnderlined:
-                    contentBuilder << "\\ul\\ulc" << ul;
+                    contentBuilder << "\\ul\\ulc" << ulIdx;
                     break;
                 case UnderlineStyle::DoublyUnderlined:
-                    contentBuilder << "\\uldb\\ulc" << ul;
+                    contentBuilder << "\\uldb\\ulc" << ulIdx;
                     break;
                 case UnderlineStyle::CurlyUnderlined:
-                    contentBuilder << "\\ulwave\\ulc" << ul;
+                    contentBuilder << "\\ulwave\\ulc" << ulIdx;
                     break;
                 case UnderlineStyle::DottedUnderlined:
-                    contentBuilder << "\\uld\\ulc" << ul;
+                    contentBuilder << "\\uld\\ulc" << ulIdx;
                     break;
                 case UnderlineStyle::DashedUnderlined:
-                    contentBuilder << "\\uldash\\ulc" << ul;
+                    contentBuilder << "\\uldash\\ulc" << ulIdx;
                     break;
                 default:
-                    contentBuilder << "\\ul\\ulc" << ul;
+                    contentBuilder << "\\ul\\ulc" << ulIdx;
                     break;
                 }
 
@@ -2413,13 +2462,23 @@ std::string TextBuffer::GenRTF(const TextAndAttribute& rows, const int fontHeigh
                 // interpreted as part of the last command, and is ignored/removed.
                 contentBuilder << " ";
 
-                const auto unescapedText = std::wstring_view{ itText, itText + length };
+                const auto unescapedText = row.GetText(x, nextX); // including character at nextX
                 _AppendRTFText(contentBuilder, unescapedText);
 
                 contentBuilder << "}"; // close RTF group
 
-                // advance to the next run start
-                itText += length;
+                // advance to next run of text
+                x = nextX;
+            }
+
+            // When we're including line breaks, `lineBreakWrappedRows` signifies
+            // line break to be added to all rows (wrapped and non-wrapped), but
+            // when it's false, only add line break to non-wrapped rows.
+            const auto addLineBreak = includeLineBreak && (lineBreakWrappedRows || !row.WasWrapForced());
+            // Also, never add line break to the last row.
+            if (addLineBreak && i < cRows - 1)
+            {
+                contentBuilder << "\\line";
             }
         }
 

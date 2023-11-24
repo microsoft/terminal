@@ -987,26 +987,11 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
 
         // reserve size in accordance to extracted text
         const auto textRects = buffer.GetTextRects(_start, inclusiveEnd, _blockRange, true);
-        const auto bufferData = buffer.GetText(true,
-                                               false,
-                                               textRects);
-        const size_t textDataSize = bufferData.text.size() * bufferSize.Width();
-        textData.reserve(textDataSize);
-        for (const auto& text : bufferData.text)
+        const auto selectedTextSpans = buffer.GetSelectionTextSpans(textRects, false, false);
+        auto plainText = buffer.GetPlainText(selectedTextSpans, true, false);
+        if (plainText.size() <= maxLengthAsSize)
         {
-            if (textData.size() >= maxLengthAsSize)
-            {
-                // early exit; we're already at/past max length
-                break;
-            }
-            textData += text;
-        }
-
-        // only use maxLength to resize down.
-        // if maxLength > size, we don't want to resize and append unnecessary L'\0'.
-        if (textData.size() > maxLengthAsSize)
-        {
-            textData.resize(maxLengthAsSize);
+           textData = std::move(plainText);
         }
     }
 

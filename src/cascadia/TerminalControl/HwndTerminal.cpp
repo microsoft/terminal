@@ -106,9 +106,12 @@ try
             {
                 try
                 {
-                    const auto lock = publicTerminal->_terminal->LockForWriting();
-                    const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
-                    LOG_IF_FAILED(publicTerminal->_CopyTextToSystemClipboard(bufferData, true));
+                    Terminal::TextCopyData bufferData;
+                    {
+                        const auto lock = publicTerminal->_terminal->LockForWriting();
+                        bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false, true, true);
+                    }
+                    LOG_IF_FAILED(publicTerminal->_CopyTextToSystemClipboard(bufferData.plainText, bufferData.html, bufferData.rtf));
                     publicTerminal->_ClearSelection();
                 }
                 CATCH_LOG();
@@ -666,18 +669,12 @@ try
         return nullptr;
     }
 
-    TextBuffer::TextAndAttribute bufferData;
+    std::wstring selectedText;
     {
         const auto lock = publicTerminal->_terminal->LockForWriting();
-        bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
+        auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false, false, false);
+        selectedText = std::move(bufferData.plainText);
         publicTerminal->_ClearSelection();
-    }
-
-    // convert text: vector<string> --> string
-    std::wstring selectedText;
-    for (const auto& text : bufferData.text)
-    {
-        selectedText += text;
     }
 
     auto returnText = wil::make_cotaskmem_string_nothrow(selectedText.c_str());
@@ -963,22 +960,16 @@ void __stdcall TerminalKillFocus(void* terminal)
 // Routine Description:
 // - Copies the text given onto the global system clipboard.
 // Arguments:
-// - rows - Rows of text and attribute data to copy
-// - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
-HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndAttribute& rows, const bool fAlsoCopyFormatting)
+// - text - selected text in plain-text format
+// - htmlData - selected text in HTML format
+// - rtfData - selected text in RTF format
+HRESULT HwndTerminal::_CopyTextToSystemClipboard(const std::wstring& text, const std::optional<std::string>& htmlData, const std::optional<std::string>& rtfData) const
 try
 {
     RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _terminal);
-    std::wstring finalString;
-
-    // Concatenate strings into one giant string to put onto the clipboard.
-    for (const auto& str : rows.text)
-    {
-        finalString += str;
-    }
 
     // allocate the final clipboard data
-    const auto cchNeeded = finalString.size() + 1;
+    const auto cchNeeded = text.size() + 1;
     const auto cbNeeded = sizeof(wchar_t) * cchNeeded;
     wil::unique_hglobal globalHandle(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeeded));
     RETURN_LAST_ERROR_IF_NULL(globalHandle.get());
@@ -988,7 +979,7 @@ try
 
     // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
     // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-    const auto hr = StringCchCopyW(pwszClipboard, cchNeeded, finalString.data());
+    const auto hr = StringCchCopyW(pwszClipboard, cchNeeded, text.data());
     GlobalUnlock(globalHandle.get());
     RETURN_IF_FAILED(hr);
 
@@ -1003,23 +994,14 @@ try
         RETURN_LAST_ERROR_IF(!EmptyClipboard());
         RETURN_LAST_ERROR_IF_NULL(SetClipboardData(CF_UNICODETEXT, globalHandle.get()));
 
-        if (fAlsoCopyFormatting)
+        if (htmlData)
         {
-            const auto& fontData = _actualFont;
-            const int iFontHeightPoints = fontData.GetUnscaledSize().height; // this renderer uses points already
-            const auto isIntenseBold = _terminal->GetRenderSettings().GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
+            RETURN_IF_FAILED(_CopyToSystemClipboard(htmlData.value(), L"HTML Format"));
+        }
 
-            COLORREF bgColor;
-            {
-                const auto lock = _terminal->LockForReading();
-                bgColor = _terminal->GetAttributeColors({}).second;
-            }
-
-            auto HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, isIntenseBold);
-            _CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
-
-            auto RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor, isIntenseBold);
-            _CopyToSystemClipboard(RTFToPlaceOnClip, L"Rich Text Format");
+        if (rtfData)
+        {
+            RETURN_IF_FAILED(_CopyToSystemClipboard(rtfData.value(), L"Rich Text Format"));
         }
     }
 
@@ -1037,7 +1019,7 @@ CATCH_RETURN()
 // Arguments:
 // - stringToCopy - The string to copy
 // - lpszFormat - the name of the format
-HRESULT HwndTerminal::_CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat)
+HRESULT HwndTerminal::_CopyToSystemClipboard(const std::string& stringToCopy, LPCWSTR lpszFormat) const
 {
     const auto cbData = stringToCopy.size() + 1; // +1 for '\0'
     if (cbData)

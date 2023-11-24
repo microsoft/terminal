@@ -1250,40 +1250,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
 
+        const auto copyHtml = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::HTML);
+        const auto copyRtf = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::RTF);
+
         // extract text from buffer
         // RetrieveSelectedTextFromBuffer will lock while it's reading
-        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(singleLine);
+        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(singleLine, copyHtml, copyRtf);
 
-        // convert text: vector<string> --> string
-        std::wstring textData;
-        for (const auto& text : bufferData.text)
-        {
-            textData += text;
-        }
-
-        const auto bgColor = _terminal->GetAttributeColors({}).second;
-        const auto isIntenseBold = _terminal->GetRenderSettings().GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
-
-        // convert text to HTML format
-        // GH#5347 - Don't provide a title for the generated HTML, as many
-        // web applications will paste the title first, followed by the HTML
-        // content, which is unexpected.
-        const auto htmlData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::HTML) ?
-                                  TextBuffer::GenHTML(bufferData,
-                                                      _actualFont.GetUnscaledSize().height,
-                                                      _actualFont.GetFaceName(),
-                                                      bgColor,
-                                                      isIntenseBold) :
-                                  "";
-
-        // convert to RTF format
-        const auto rtfData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::RTF) ?
-                                 TextBuffer::GenRTF(bufferData,
-                                                    _actualFont.GetUnscaledSize().height,
-                                                    _actualFont.GetFaceName(),
-                                                    bgColor,
-                                                    isIntenseBold) :
-                                 "";
+        const auto& textData = bufferData.plainText;
+        const auto& htmlData = bufferData.html ? bufferData.html.value() : "";
+        const auto& rtfData = bufferData.rtf ? bufferData.rtf.value() : "";
 
         // send data up for clipboard
         _CopyToClipboardHandlers(*this,
@@ -1624,7 +1600,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // RetrieveSelectedTextFromBuffer will lock while it's reading
         const auto lock = _terminal->LockForReading();
-        const auto internalResult{ _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text };
+        const auto internalResult{ _terminal->RetrieveSelectedTextFromBufferRows(trimTrailingWhitespace) };
 
         auto result = winrt::single_threaded_vector<winrt::hstring>();
 
