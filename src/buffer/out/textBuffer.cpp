@@ -2111,33 +2111,32 @@ std::string TextBuffer::GenHTML(const std::vector<til::point_span>& selectionSpa
 
     try
     {
-        std::ostringstream htmlBuilder;
+        std::string htmlBuilder;
 
         // First we have to add some standard HTML boiler plate required for
         // CF_HTML as part of the HTML Clipboard format
         constexpr std::string_view htmlHeader = "<!DOCTYPE><HTML><HEAD></HEAD><BODY>";
-        htmlBuilder << htmlHeader;
+        htmlBuilder += htmlHeader;
 
-        htmlBuilder << "<!--StartFragment -->";
+        htmlBuilder += "<!--StartFragment -->";
 
         // apply global style in div element
         {
-            htmlBuilder << "<DIV STYLE=\"";
-            htmlBuilder << "display:inline-block;";
-            htmlBuilder << "white-space:pre;";
-            htmlBuilder << "background-color:" << Utils::ColorToHexString(backgroundColor) << ";";
+            htmlBuilder += "<DIV STYLE=\"";
+            htmlBuilder += "display:inline-block;";
+            htmlBuilder += "white-space:pre;";
+            fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("background-color:{};"), Utils::ColorToHexString(backgroundColor));
 
             // even with different font, add monospace as fallback
-            htmlBuilder << "font-family:"
-                        << "'" << ConvertToA(CP_UTF8, fontFaceName) << "',monospace;";
+            fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("font-family:'{}',monospace;"), ConvertToA(CP_UTF8, fontFaceName));
 
-            htmlBuilder << "font-size:" << fontHeightPoints << "pt;";
+            fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("font-size:{}pt;"), fontHeightPoints);
 
             // note: MS Word doesn't support padding (in this way at least)
             // todo: customizable padding
-            htmlBuilder << "padding:4px;";
+            htmlBuilder += "padding:4px;";
 
-            htmlBuilder << "\">";
+            htmlBuilder += "\">";
         }
 
         const auto cRows = selectionSpans.size();
@@ -2160,98 +2159,95 @@ std::string TextBuffer::GenHTML(const std::vector<til::point_span>& selectionSpa
                 const auto ulHex = Utils::ColorToHexString(ul);
                 const auto ulStyle = attr.GetUnderlineStyle();
                 const auto isUnderlined = ulStyle != UnderlineStyle::NoUnderline;
+                const auto isCrossedOut = attr.IsCrossedOut();
+                const auto isOverlined = attr.IsOverlined();
 
-                htmlBuilder << "<SPAN STYLE=\"";
-                htmlBuilder << "color:" << fgHex << ";";
-                htmlBuilder << "background-color:" << bgHex << ";";
+                htmlBuilder += "<SPAN STYLE=\"";
+                fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("color:{};"), fgHex);
+                fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("background-color:{};"), bgHex);
 
                 if (isIntenseBold && attr.IsIntense())
                 {
-                    htmlBuilder << "font-weight:bold;";
+                    htmlBuilder += "font-weight:bold;";
                 }
+
                 if (attr.IsItalic())
                 {
-                    htmlBuilder << "font-style:italic;";
+                    htmlBuilder += "font-style:italic;";
                 }
 
-                // build `text-decoration` property string for overline and strikethrough
-                std::ostringstream textDecoration;
-                if (attr.IsCrossedOut())
+                if (isCrossedOut || isOverlined)
                 {
-                    textDecoration << "line-through";
-                }
-                if (attr.IsOverlined())
-                {
-                    textDecoration << " overline";
-                }
-
-                const auto textDecorationStr = textDecoration.str();
-                if (textDecorationStr.length())
-                {
-                    htmlBuilder << "text-decoration:" << textDecorationStr << " " << fgHex << ";";
+                    fmt::format_to(std::back_inserter(htmlBuilder),
+                                   FMT_COMPILE("text-decoration:{} {} {};"),
+                                   isCrossedOut ? "line-through" : "",
+                                   isOverlined ? "overline" : "",
+                                   fgHex);
                 }
 
                 if (isUnderlined)
                 {
                     // Since underline, overline and strikethrough use the same css property,
-                    // we cannot apply different colors to them. The way we solve this is
-                    // by creating a nested <SPAN>, and applying underline style and color
-                    // to this span.
-                    htmlBuilder << "\"><SPAN STYLE=\"";
+                    // we cannot apply different colors to them at the same time. However, we
+                    // can achieve the desired result by creating a nested <span> and applying
+                    // underline style and color to it.
+                    htmlBuilder += "\"><SPAN STYLE=\"";
+
                     switch (ulStyle)
                     {
                     case UnderlineStyle::NoUnderline:
                         break;
                     case UnderlineStyle::SinglyUnderlined:
-                        htmlBuilder << "text-decoration:underline " << ulHex << ";";
+                        fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("text-decoration:underline {};"), ulHex);
                         break;
                     case UnderlineStyle::DoublyUnderlined:
-                        htmlBuilder << "text-decoration:underline double " << ulHex << ";";
+                        fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("text-decoration:underline double {};"), ulHex);
                         break;
                     case UnderlineStyle::CurlyUnderlined:
-                        htmlBuilder << "text-decoration:underline wavy " << ulHex << ";";
+                        fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("text-decoration:underline wavy {};"), ulHex);
                         break;
                     case UnderlineStyle::DottedUnderlined:
-                        htmlBuilder << "text-decoration:underline dotted " << ulHex << ";";
+                        fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("text-decoration:underline dotted {};"), ulHex);
                         break;
                     case UnderlineStyle::DashedUnderlined:
-                        htmlBuilder << "text-decoration:underline dashed " << ulHex << ";";
+                        fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("text-decoration:underline dashed {};"), ulHex);
                         break;
                     default:
-                        htmlBuilder << "text-decoration:underline " << ulHex << ";";
+                        fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("text-decoration:underline {};"), ulHex);
                         break;
                     }
                 }
 
-                htmlBuilder << "\">";
+                htmlBuilder += "\">";
 
+                // text
                 std::string unescapedText;
                 THROW_IF_FAILED(til::u16u8(row.GetText(x, nextX), unescapedText));
-
                 for (const auto c : unescapedText)
                 {
                     switch (c)
                     {
                     case '<':
-                        htmlBuilder << "&lt;";
+                        htmlBuilder += "&lt;";
                         break;
                     case '>':
-                        htmlBuilder << "&gt;";
+                        htmlBuilder += "&gt;";
                         break;
                     case '&':
-                        htmlBuilder << "&amp;";
+                        htmlBuilder += "&amp;";
                         break;
                     default:
-                        htmlBuilder << c;
+                        htmlBuilder += c;
                     }
                 }
 
                 if (isUnderlined)
-                {
-                    htmlBuilder << "</SPAN>";
+                { 
+                    // close the nested span we created for underline
+                    htmlBuilder += "</SPAN>";
                 }
 
-                htmlBuilder << "</SPAN>";
+                htmlBuilder += "</SPAN>";
 
                 // advance to next run of text
                 x = nextX;
@@ -2264,38 +2260,37 @@ std::string TextBuffer::GenHTML(const std::vector<til::point_span>& selectionSpa
             // Also, never add line break to the last row.
             if (addLineBreak && i < cRows - 1)
             {
-                htmlBuilder << "<BR>";
+                htmlBuilder += "<BR>";
             }
         }
 
-        htmlBuilder << "</DIV>";
+        htmlBuilder += "</DIV>";
 
-        htmlBuilder << "<!--EndFragment -->";
+        htmlBuilder += "<!--EndFragment -->";
 
         constexpr std::string_view HtmlFooter = "</BODY></HTML>";
-        htmlBuilder << HtmlFooter;
+        htmlBuilder += HtmlFooter;
 
         // once filled with values, there will be exactly 157 bytes in the clipboard header
         constexpr size_t ClipboardHeaderSize = 157;
 
         // these values are byte offsets from start of clipboard
         const auto htmlStartPos = ClipboardHeaderSize;
-        const auto htmlEndPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlBuilder.tellp());
+        const auto htmlEndPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlBuilder.length());
         const auto fragStartPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlHeader.length());
         const auto fragEndPos = htmlEndPos - HtmlFooter.length();
 
         // header required by HTML 0.9 format
-        std::ostringstream clipHeaderBuilder;
-        clipHeaderBuilder << "Version:0.9\r\n";
-        clipHeaderBuilder << std::setfill('0');
-        clipHeaderBuilder << "StartHTML:" << std::setw(10) << htmlStartPos << "\r\n";
-        clipHeaderBuilder << "EndHTML:" << std::setw(10) << htmlEndPos << "\r\n";
-        clipHeaderBuilder << "StartFragment:" << std::setw(10) << fragStartPos << "\r\n";
-        clipHeaderBuilder << "EndFragment:" << std::setw(10) << fragEndPos << "\r\n";
-        clipHeaderBuilder << "StartSelection:" << std::setw(10) << fragStartPos << "\r\n";
-        clipHeaderBuilder << "EndSelection:" << std::setw(10) << fragEndPos << "\r\n";
+        std::string clipHeaderBuilder;
+        clipHeaderBuilder += "Version:0.9\r\n";
+        fmt::format_to(std::back_inserter(clipHeaderBuilder), FMT_COMPILE("StartHTML:{:0>10}\r\n"), htmlStartPos);
+        fmt::format_to(std::back_inserter(clipHeaderBuilder), FMT_COMPILE("EndHTML:{:0>10}\r\n"), htmlEndPos);
+        fmt::format_to(std::back_inserter(clipHeaderBuilder), FMT_COMPILE("StartFragment:{:0>10}\r\n"), fragStartPos);
+        fmt::format_to(std::back_inserter(clipHeaderBuilder), FMT_COMPILE("EndFragment:{:0>10}\r\n"), fragEndPos);
+        fmt::format_to(std::back_inserter(clipHeaderBuilder), FMT_COMPILE("StartSelection:{:0>10}\r\n"), fragStartPos);
+        fmt::format_to(std::back_inserter(clipHeaderBuilder), FMT_COMPILE("EndSelection:{:0>10}\r\n"), fragEndPos);
 
-        return clipHeaderBuilder.str() + htmlBuilder.str();
+        return clipHeaderBuilder + htmlBuilder;
     }
     catch (...)
     {
