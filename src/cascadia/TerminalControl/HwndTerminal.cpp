@@ -111,7 +111,7 @@ try
                         const auto lock = publicTerminal->_terminal->LockForWriting();
                         bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false, true, true);
                     }
-                    LOG_IF_FAILED(publicTerminal->_CopyTextToSystemClipboard(bufferData.plainText, bufferData.html, bufferData.rtf));
+                    LOG_IF_FAILED(publicTerminal->_CopyTextToSystemClipboard(bufferData.plainText, std::move(bufferData.html), std::move(bufferData.rtf)));
                     publicTerminal->_ClearSelection();
                 }
                 CATCH_LOG();
@@ -963,7 +963,7 @@ void __stdcall TerminalKillFocus(void* terminal)
 // - text - selected text in plain-text format
 // - htmlData - selected text in HTML format
 // - rtfData - selected text in RTF format
-HRESULT HwndTerminal::_CopyTextToSystemClipboard(const std::wstring& text, const std::optional<std::string>& htmlData, const std::optional<std::string>& rtfData) const
+HRESULT HwndTerminal::_CopyTextToSystemClipboard(const std::wstring_view text, const std::optional<std::string> htmlData, const std::optional<std::string> rtfData) const
 try
 {
     RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _terminal);
@@ -1019,7 +1019,7 @@ CATCH_RETURN()
 // Arguments:
 // - stringToCopy - The string to copy
 // - lpszFormat - the name of the format
-HRESULT HwndTerminal::_CopyToSystemClipboard(const std::string& stringToCopy, LPCWSTR lpszFormat) const
+HRESULT HwndTerminal::_CopyToSystemClipboard(const std::string_view stringToCopy, LPCWSTR lpszFormat) const
 {
     const auto cbData = stringToCopy.size() + 1; // +1 for '\0'
     if (cbData)

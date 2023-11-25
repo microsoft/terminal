@@ -273,7 +273,7 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
                                 formatWrappedRows, GetAttributeColors);
     }
 
-    CopyTextToSystemClipboard(text, htmlData, rtfData);
+    CopyTextToSystemClipboard(text, std::move(htmlData), std::move(rtfData));
 }
 
 // Routine Description:
@@ -282,7 +282,7 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
 // - text - plain-text data
 // - htmlData - HTML copy data
 // - rtfData - RTF copy data
-void Clipboard::CopyTextToSystemClipboard(const std::wstring& text, const std::optional<std::string>& htmlData, const std::optional<std::string>& rtfData) const
+void Clipboard::CopyTextToSystemClipboard(const std::wstring_view text, const std::optional<std::string> htmlData, const std::optional<std::string> rtfData) const
 {
     // allocate the final clipboard data
     const auto cchNeeded = text.size() + 1;
@@ -331,7 +331,7 @@ void Clipboard::CopyTextToSystemClipboard(const std::wstring& text, const std::o
 // Arguments:
 // - stringToCopy - The string to copy
 // - lpszFormat - the name of the format
-void Clipboard::CopyToSystemClipboard(const std::string& stringToCopy, LPCWSTR lpszFormat) const
+void Clipboard::CopyToSystemClipboard(const std::string_view stringToCopy, LPCWSTR lpszFormat) const
 {
     const auto cbData = stringToCopy.size() + 1; // +1 for '\0'
     if (cbData)
