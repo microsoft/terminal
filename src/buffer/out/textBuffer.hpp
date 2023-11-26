@@ -311,7 +311,7 @@ private:
     void _PruneHyperlinks();
     void _trimMarksOutsideBuffer();
 
-    static void _AppendRTFText(std::ostringstream& contentBuilder, const std::wstring_view& text);
+    static void _AppendRTFText(std::string& contentBuilder, const std::wstring_view& text);
 
     Microsoft::Console::Render::Renderer& _renderer;
 
