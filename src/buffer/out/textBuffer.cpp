@@ -2347,7 +2347,7 @@ std::string TextBuffer::GenRTF(const std::vector<til::point_span>& selectionSpan
         rtfBuilder += "\\rtf1\\ansi\\ansicpg1252\\deff0\\nouicompat";
 
         // font table
-        // NOTE: dual '{', '}' required to escape braces when working with fmtlib's format spec.
+        // Brace escape: add an extra brace (of same kind) after a brace to escape it within the format string.
         fmt::format_to(std::back_inserter(rtfBuilder), FMT_COMPILE("{{\\fonttbl{{\\f0\\fmodern\\fcharset0 {};}}}}"), ConvertToA(CP_UTF8, fontFaceName));
 
         // map to keep track of colors:
@@ -2382,8 +2382,8 @@ std::string TextBuffer::GenRTF(const std::vector<til::point_span>& selectionSpan
 
         // paragraph styles
         // \pard: paragraph description
-        // \slmultN: linespacing multiple.
-        // \fN: font to be used for the paragraph, where N is the font index in the font table.
+        // \slmultN: line-spacing multiple
+        // \fN: font to be used for the paragraph, where N is the font index in the font table
         contentBuilder += "\\pard\\slmult1\\f0";
 
         // \fsN: specifies font size in half-points. E.g. \fs20 results in a font
