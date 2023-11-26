@@ -871,7 +871,7 @@ Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(bool singleLine,
     const auto bgColor = _renderSettings.GetAttributeColors({}).second;
     const auto isIntenseBold = _renderSettings.GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
     const auto fontSizePt = _fontInfo.GetUnscaledSize().height; // already in points
-    const auto fontName = _fontInfo.GetFaceName();
+    const auto& fontName = _fontInfo.GetFaceName();
     const auto& textBuffer = _activeBuffer();
 
     const auto GetAttributeColors = [&](const auto& attr) {
