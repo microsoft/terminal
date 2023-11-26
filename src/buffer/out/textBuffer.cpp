@@ -2010,7 +2010,7 @@ std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point&
 // - trimTrailingWhitespace - if set, trim trailing whitespaces in the end of the non-wrapped line.
 // - trimWrappedRows - if set, trim trailing whitespaces on wrapped rows too.
 // Return Value:
-// - A list of point-span for each row of the selected region. End coordinates are exclusive.
+// - A list of point-span from each row of the selected region. End coordinates are exclusive.
 std::vector<til::point_span> TextBuffer::GetSelectionTextSpans(const std::vector<til::inclusive_rect>& selectionRects,
                                                                bool trimTrailingWhitespace,
                                                                bool trimWrappedRows) const
@@ -2242,7 +2242,7 @@ std::string TextBuffer::GenHTML(const std::vector<til::point_span>& selectionSpa
                 }
 
                 if (isUnderlined)
-                { 
+                {
                     // close the nested span we created for underline
                     htmlBuilder += "</SPAN>";
                 }
@@ -2252,7 +2252,7 @@ std::string TextBuffer::GenHTML(const std::vector<til::point_span>& selectionSpa
                 // advance to next run of text
                 x = nextX;
             }
-            
+
             // When we're including line breaks, `lineBreakWrappedRows` signifies
             // line break to be added to all rows (wrapped and non-wrapped), but
             // when it's false, only add line break to non-wrapped rows.

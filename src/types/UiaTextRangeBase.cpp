@@ -991,7 +991,7 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
         auto plainText = buffer.GetPlainText(selectedTextSpans, true, false);
         if (plainText.size() <= maxLengthAsSize)
         {
-           textData = std::move(plainText);
+            textData = std::move(plainText);
         }
     }
 

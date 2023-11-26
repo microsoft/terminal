@@ -265,12 +265,8 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
     text = buffer.GetPlainText(selectedTextSpans, includeLineBreak, formatWrappedRows);
     if (copyFormatting)
     {
-        htmlData = buffer.GenHTML(selectedTextSpans, fontSizePt, fontName,
-                                  bgColor, isIntenseBold, includeLineBreak,
-                                  formatWrappedRows, GetAttributeColors);
-        rtfData = buffer.GenRTF(selectedTextSpans, fontSizePt, fontName,
-                                bgColor, isIntenseBold, includeLineBreak,
-                                formatWrappedRows, GetAttributeColors);
+        htmlData = buffer.GenHTML(selectedTextSpans, fontSizePt, fontName, bgColor, isIntenseBold, includeLineBreak, formatWrappedRows, GetAttributeColors);
+        rtfData = buffer.GenRTF(selectedTextSpans, fontSizePt, fontName, bgColor, isIntenseBold, includeLineBreak, formatWrappedRows, GetAttributeColors);
     }
 
     CopyTextToSystemClipboard(text, std::move(htmlData), std::move(rtfData));
