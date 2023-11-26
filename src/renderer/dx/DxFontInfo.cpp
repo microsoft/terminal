@@ -126,44 +126,52 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
     try
     {
         face = _FindFontFace(localeName);
-
-        if (!face)
-        {
-            // If we missed, try looking a little more by trimming the last word off the requested family name a few times.
-            // Quite often, folks are specifying weights or something in the familyName and it causes failed resolution and
-            // an unexpected error dialog. We theoretically could detect the weight words and convert them, but this
-            // is the quick fix for the majority scenario.
-            // The long/full fix is backlogged to GH#9744
-            // Also this doesn't count as a fallback because we don't want to annoy folks with the warning dialog over
-            // this resolution.
-            while (!face && !_familyName.empty())
-            {
-                const auto lastSpace = _familyName.find_last_of(UNICODE_SPACE);
-
-                // value is unsigned and npos will be greater than size.
-                // if we didn't find anything to trim, leave.
-                if (lastSpace >= _familyName.size())
-                {
-                    break;
-                }
-
-                // trim string down to just before the found space
-                // (space found at 6... trim from 0 for 6 length will give us 0-5 as the new string)
-                _familyName = _familyName.substr(0, lastSpace);
-
-                // Try to find it with the shortened family name
-                face = _FindFontFace(localeName);
-            }
-        }
     }
     CATCH_LOG();
 
     if constexpr (Feature_NearbyFontLoading::IsEnabled())
     {
-        if (!face)
+        try
         {
-            _fontCollection = FontCache::GetCached();
-            face = _FindFontFace(localeName);
+            if (!face)
+            {
+                _fontCollection = FontCache::GetCached();
+                face = _FindFontFace(localeName);
+            }
+        }
+        CATCH_LOG();
+    }
+
+    if (!face)
+    {
+        // If we missed, try looking a little more by trimming the last word off the requested family name a few times.
+        // Quite often, folks are specifying weights or something in the familyName and it causes failed resolution and
+        // an unexpected error dialog. We theoretically could detect the weight words and convert them, but this
+        // is the quick fix for the majority scenario.
+        // The long/full fix is backlogged to GH#9744
+        // Also this doesn't count as a fallback because we don't want to annoy folks with the warning dialog over
+        // this resolution.
+        while (!face && !_familyName.empty())
+        {
+            const auto lastSpace = _familyName.find_last_of(UNICODE_SPACE);
+
+            // value is unsigned and npos will be greater than size.
+            // if we didn't find anything to trim, leave.
+            if (lastSpace >= _familyName.size())
+            {
+                break;
+            }
+
+            // trim string down to just before the found space
+            // (space found at 6... trim from 0 for 6 length will give us 0-5 as the new string)
+            _familyName = _familyName.substr(0, lastSpace);
+
+            try
+            {
+                // Try to find it with the shortened family name
+                face = _FindFontFace(localeName);
+            }
+            CATCH_LOG();
         }
     }
 
@@ -176,7 +184,12 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
         {
             _familyName = fallbackFace;
 
-            face = _FindFontFace(localeName);
+            try
+            {
+                face = _FindFontFace(localeName);
+            }
+            CATCH_LOG();
+
             if (face)
             {
                 _didFallback = true;
