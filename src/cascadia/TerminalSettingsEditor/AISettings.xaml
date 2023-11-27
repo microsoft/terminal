@@ -30,7 +30,7 @@
                     <Run x:Uid="AISettings_Disclaimer1" />
                     <Hyperlink NavigateUri="https://support.microsoft.com/en-us/windows/accessing-credential-manager-1b5c916a-6a16-889f-8581-fc16e8165ac0"
                                TextDecorations="None">
-                        <Run x:Uid="AISettings_DisclaimerLink"/>
+                        <Run x:Uid="AISettings_DisclaimerLink" />
                     </Hyperlink>
                     <Run x:Uid="AISettings_Disclaimer2" />
                 </TextBlock>
@@ -101,7 +101,7 @@
                                         <Run x:Uid="AISettings_AzureOpenAIPrerequisite1" />
                                         <Hyperlink NavigateUri="https://azure.microsoft.com/en-us/free/ai-services/"
                                                    TextDecorations="None">
-                                            <Run x:Uid="AISettings_AzureOpenAIPrerequisite1Hyperlink"/>
+                                            <Run x:Uid="AISettings_AzureOpenAIPrerequisite1Hyperlink" />
                                         </Hyperlink>
                                         <LineBreak />
                                         <Run>
@@ -115,14 +115,14 @@
                                         <Run x:Uid="AISettings_AzureOpenAIPrerequisite3" />
                                         <Hyperlink NavigateUri="https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/role-based-access-control"
                                                    TextDecorations="None">
-                                            <Run x:Uid="AISettings_AzureOpenAIPrerequisite3Hyperlink"/>
+                                            <Run x:Uid="AISettings_AzureOpenAIPrerequisite3Hyperlink" />
                                         </Hyperlink>
                                         <LineBreak />
                                         <LineBreak />
                                         <Run x:Uid="AISettings_AzureOpenAIProductTerms" />
                                         <Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251913"
                                                    TextDecorations="None">
-                                            <Run x:Uid="AISettings_AzureOpenAIProductTermsHyperlink"/>
+                                            <Run x:Uid="AISettings_AzureOpenAIProductTermsHyperlink" />
                                         </Hyperlink><Run Text="." />
                                     </Paragraph>
                                 </RichTextBlock>

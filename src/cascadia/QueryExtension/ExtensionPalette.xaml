@@ -377,7 +377,7 @@
                 <Run x:Uid="AIContentDisclaimerPartOne" />
                 <Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2204904"
                            TextDecorations="None">
-                    <Run x:Uid="AIContentDisclaimerHyperlink"/>
+                    <Run x:Uid="AIContentDisclaimerHyperlink" />
                 </Hyperlink>
                 <Run x:Uid="AIContentDisclaimerPartTwo" />
             </TextBlock>
