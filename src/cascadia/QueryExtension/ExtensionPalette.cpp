@@ -517,15 +517,10 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         if (key == VirtualKey::Escape)
         {
-            // Dismiss the palette if the text is empty, otherwise clear the
-            // text box.
+            // Dismiss the palette if the text is empty
             if (_queryBox().Text().empty())
             {
                 _close();
-            }
-            else
-            {
-                _queryBox().Text(L"");
             }
 
             e.Handled(true);
