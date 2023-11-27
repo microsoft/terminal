@@ -28,9 +28,10 @@
                            Style="{StaticResource DisclaimerStyle}"
                            TextWrapping="WrapWholeWords">
                     <Run x:Uid="AISettings_Disclaimer1" />
-                    <Hyperlink x:Name="DisclaimerLink"
-                               NavigateUri="https://support.microsoft.com/en-us/windows/accessing-credential-manager-1b5c916a-6a16-889f-8581-fc16e8165ac0"
-                               TextDecorations="None" />
+                    <Hyperlink NavigateUri="https://support.microsoft.com/en-us/windows/accessing-credential-manager-1b5c916a-6a16-889f-8581-fc16e8165ac0"
+                               TextDecorations="None">
+                        <Run x:Uid="AISettings_DisclaimerLink"/>
+                    </Hyperlink>
                     <Run x:Uid="AISettings_Disclaimer2" />
                 </TextBlock>
             </Border>
@@ -98,9 +99,10 @@
                                             &#x2022;
                                         </Run>
                                         <Run x:Uid="AISettings_AzureOpenAIPrerequisite1" />
-                                        <Hyperlink x:Name="Prerequisite1Hyperlink"
-                                                   NavigateUri="https://azure.microsoft.com/en-us/free/ai-services/"
-                                                   TextDecorations="None" />
+                                        <Hyperlink NavigateUri="https://azure.microsoft.com/en-us/free/ai-services/"
+                                                   TextDecorations="None">
+                                            <Run x:Uid="AISettings_AzureOpenAIPrerequisite1Hyperlink"/>
+                                        </Hyperlink>
                                         <LineBreak />
                                         <Run>
                                             &#x2022;
@@ -111,16 +113,17 @@
                                             &#x2022;
                                         </Run>
                                         <Run x:Uid="AISettings_AzureOpenAIPrerequisite3" />
-                                        <Hyperlink x:Name="Prerequisite3Hyperlink"
-                                                   NavigateUri="https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/role-based-access-control"
-                                                   TextDecorations="None" />
+                                        <Hyperlink NavigateUri="https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/role-based-access-control"
+                                                   TextDecorations="None">
+                                            <Run x:Uid="AISettings_AzureOpenAIPrerequisite3Hyperlink"/>
+                                        </Hyperlink>
                                         <LineBreak />
                                         <LineBreak />
                                         <Run x:Uid="AISettings_AzureOpenAIProductTerms" />
-                                        <Hyperlink x:Name="ProductTermsHyperlink"
-                                                   NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251913"
-                                                   TextDecorations="None" />
-                                        <Run Text="." />
+                                        <Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251913"
+                                                   TextDecorations="None">
+                                            <Run x:Uid="AISettings_AzureOpenAIProductTermsHyperlink"/>
+                                        </Hyperlink><Run Text="." />
                                     </Paragraph>
                                 </RichTextBlock>
                             </StackPanel>

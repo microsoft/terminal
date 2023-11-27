@@ -566,7 +566,7 @@
     <value>An AI key and endpoint are required for accessing AI services within Windows Terminal. Credentials are securely stored by</value>
     <comment>Header for the AI settings page, where the user stores their AI key and endpoint for AI services within Windows Terminal.</comment>
   </data>
-  <data name="AISettings_DisclaimerLink" xml:space="preserve">
+  <data name="AISettings_DisclaimerLink.Text" xml:space="preserve">
     <value>Windows Credential Manager</value>
     <comment>Header for the AI settings page, where the user stores their AI key and endpoint for AI services within Windows Terminal.</comment>
   </data>
@@ -610,7 +610,7 @@
     <value>An Azure subscription.</value>
     <comment>First of the prerequisites the user needs to use Azure OpenAI within Terminal.</comment>
   </data>
-  <data name="AISettings_AzureOpenAIPrerequisite1Hyperlink" xml:space="preserve">
+  <data name="AISettings_AzureOpenAIPrerequisite1Hyperlink.Text" xml:space="preserve">
     <value>Create one for free.</value>
     <comment>Text of the hyperlink that will direct the user to where they can create an Azure OpenAI subscription.</comment>
   </data>
@@ -622,7 +622,7 @@
     <value>Access permissions to</value>
     <comment>Third of the prerequisites the user needs to use Azure OpenAI within Terminal.</comment>
   </data>
-  <data name="AISettings_AzureOpenAIPrerequisite3Hyperlink" xml:space="preserve">
+  <data name="AISettings_AzureOpenAIPrerequisite3Hyperlink.Text" xml:space="preserve">
     <value>create Azure OpenAI resources and to deploy models.</value>
     <comment>Text of the hyperlink that will direct the user to where they can create Azure OpenAI resources.</comment>
   </data>
@@ -630,7 +630,7 @@
     <value>Your use of Azure OpenAI is subject to applicable</value>
     <comment>Disclaimer about the usage of Azure OpenAI.</comment>
   </data>
-  <data name="AISettings_AzureOpenAIProductTermsHyperlink" xml:space="preserve">
+  <data name="AISettings_AzureOpenAIProductTermsHyperlink.Text" xml:space="preserve">
     <value>Product Terms</value>
     <comment>The text of the hyperlink that directs the user to the Product Terms.</comment>
   </data>

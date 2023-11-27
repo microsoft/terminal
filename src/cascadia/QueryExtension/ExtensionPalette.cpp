@@ -35,14 +35,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         ControlName(RS_(L"ControlName"));
         QueryBoxPlaceholderText(RS_(L"CurrentShell"));
 
-        auto disclaimerLinkText = Windows::UI::Xaml::Documents::Run();
-        disclaimerLinkText.Text(RS_(L"AIContentDisclaimerHyperlink"));
-        AIContentDisclaimerHyperlink().Inlines().Append(disclaimerLinkText);
-
-        auto learnMoreLinkText = Windows::UI::Xaml::Documents::Run();
-        learnMoreLinkText.Text(RS_(L"LearnMoreLink"));
-        LearnMoreLink().Inlines().Append(learnMoreLinkText);
-
         _loadedRevoker = Loaded(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
             // We have to add this in (on top of the visibility change handler below) because
             // the first time the palette is invoked, we get a loaded event not a visibility event.
