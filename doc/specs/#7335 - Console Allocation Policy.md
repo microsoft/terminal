@@ -35,9 +35,9 @@ terminates.
 All of these scripting languages worked around this by shipping two binaries each, identical in every way expect in
 their subsystem fields. python/pythonw, perl/perlw, ruby/rubyw, wscript/cscript.
 
-PowerShell\[1\] is waiting to deal with this problem because they don't necessarily want to ship a `pwshw.exe` for all
+PowerShell[^1] is waiting to deal with this problem because they don't necessarily want to ship a `pwshw.exe` for all
 of their GUI-only authors. Every additional `*w` version of an application is an additional maintenance burden and
-source of cognitive overhead\[2\] for users.
+source of cognitive overhead[^2] for users.
 
 On the other side, you have mostly-GUI applications that want to print output to a console **if there is one
 connected**.
@@ -284,9 +284,9 @@ Are there other allocation policies we need to consider?
 - A new PE subsystem, `IMAGE_SUBSYSTEM_WINDOWS_HYBRID`
     - it would behave like **inheritOnly**
     - relies on shells to update and check for this
-    - checking a subsystem doesn't work right with app execution aliases\[3\]
+    - checking a subsystem doesn't work right with app execution aliases[^3]
         - This is not a new problem, but it digs the hole a little deeper.
-    - requires standardization outside of Microsoft because the PE format is a dependency of the UEFI specification\[4\]
+    - requires standardization outside of Microsoft because the PE format is a dependency of the UEFI specification[^4]
     - requires coordination between tooling teams both within and without Microsoft (regarding any tool that operates on
       or produces PE files)
 
@@ -332,12 +332,10 @@ application to interact with the console window via `GetConsoleWindow()` and exp
 > `ShowWindow`. If we recommend that applications `ShowWindow` on startup, we will need to guard the pseudoconsole's
 > pseudo-window from being shown.
 
-### Links
-
-1. [Powershell -WindowStyle Hidden still shows a window briefly]
-2. [StackOverflow: pythonw.exe or python.exe?]
-3. [PowerShell: Windows Store applications incorrectly assumed to be console applications]
-4. [UEFI spec 2.6 appendix Q.1]
+[^1]: [Powershell -WindowStyle Hidden still shows a window briefly]
+[^2]: [StackOverflow: pythonw.exe or python.exe?]
+[^3]: [PowerShell: Windows Store applications incorrectly assumed to be console applications]
+[^4]: [UEFI spec 2.6 appendix Q.1]
 
 [Powershell -WindowStyle Hidden still shows a window briefly]: https://github.com/PowerShell/PowerShell/issues/3028
 [PowerShell: Windows Store applications incorrectly assumed to be console applications]: https://github.com/PowerShell/PowerShell/issues/9970
