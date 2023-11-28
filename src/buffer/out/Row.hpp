@@ -152,7 +152,7 @@ public:
     std::vector<uint16_t> GetHyperlinks() const;
     uint16_t size() const noexcept;
     til::CoordType MeasureLeft() const noexcept;
-    til::CoordType MeasureRight() const noexcept;
+    til::CoordType MeasureRight(const bool useWrappiness = true) const noexcept;
     bool ContainsText() const noexcept;
     std::wstring_view GlyphAt(til::CoordType column) const noexcept;
     DbcsAttribute DbcsAttrAt(til::CoordType column) const noexcept;

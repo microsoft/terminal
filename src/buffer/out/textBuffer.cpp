@@ -2016,16 +2016,15 @@ std::vector<til::point_span> TextBuffer::GetSelectionTextSpans(const std::vector
                                                                bool trimWrappedRows) const
 {
     std::vector<til::point_span> selectedTextSpans;
+    const auto useWrappinessOfRow = !trimWrappedRows;
 
-    const auto cRows = selectionRects.size();
-    selectedTextSpans.reserve(cRows);
+    selectedTextSpans.reserve(selectionRects.size());
 
-    for (size_t i = 0; i < cRows; i++)
+    for (const auto& selectionRect : selectionRects)
     {
-        const auto& rect = til::at(selectionRects, i);
-        const auto colBegin = rect.left;
-        auto colEnd = rect.right + 1; // +1 to get an exclusive end
-        const auto iRow = rect.top;
+        const auto colBegin = selectionRect.left;
+        auto colEnd = selectionRect.right + 1; // +1 to get an exclusive end
+        const auto iRow = selectionRect.top;
         const auto& row = GetRowByOffset(iRow);
 
         // When we're trimming, trimWrappedRows signifies trimming trailing whitespaces
@@ -2035,7 +2034,7 @@ std::vector<til::point_span> TextBuffer::GetSelectionTextSpans(const std::vector
         if (shouldTrim)
         {
             // update end column to exclude trailing whitespace
-            colEnd = std::min(colEnd, row.MeasureRight());
+            colEnd = std::min(colEnd, row.MeasureRight(useWrappinessOfRow));
         }
 
         const til::point start = { colBegin, iRow };
