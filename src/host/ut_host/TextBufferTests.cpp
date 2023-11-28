@@ -158,6 +158,7 @@ class TextBufferTests
 
     TEST_METHOD(GetTextRects);
     TEST_METHOD(GetText);
+    TEST_METHOD(GetPlainText);
 
     TEST_METHOD(HyperlinkTrim);
     TEST_METHOD(NoHyperlinkTrim);
@@ -2087,31 +2088,31 @@ void TextBufferTests::TestRowReplaceText()
 void TextBufferTests::TestAppendRTFText()
 {
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         const auto ascii = L"This is some Ascii \\ {}";
         TextBuffer::_AppendRTFText(contentStream, ascii);
-        VERIFY_ARE_EQUAL("This is some Ascii \\\\ \\{\\}", contentStream.str());
+        VERIFY_ARE_EQUAL("This is some Ascii \\\\ \\{\\}", contentStream);
     }
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         // "Low code units: á é í ó ú ⮁ ⮂" in UTF-16
         const auto lowCodeUnits = L"Low code units: \x00E1 \x00E9 \x00ED \x00F3 \x00FA \x2B81 \x2B82";
         TextBuffer::_AppendRTFText(contentStream, lowCodeUnits);
-        VERIFY_ARE_EQUAL("Low code units: \\u225? \\u233? \\u237? \\u243? \\u250? \\u11137? \\u11138?", contentStream.str());
+        VERIFY_ARE_EQUAL("Low code units: \\u225? \\u233? \\u237? \\u243? \\u250? \\u11137? \\u11138?", contentStream);
     }
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         // "High code units: ꞵ ꞷ" in UTF-16
         const auto highCodeUnits = L"High code units: \xA7B5 \xA7B7";
         TextBuffer::_AppendRTFText(contentStream, highCodeUnits);
-        VERIFY_ARE_EQUAL("High code units: \\u-22603? \\u-22601?", contentStream.str());
+        VERIFY_ARE_EQUAL("High code units: \\u-22603? \\u-22601?", contentStream);
     }
     {
-        std::ostringstream contentStream;
+        std::string contentStream;
         // "Surrogates: 🍦 👾 👀" in UTF-16
         const auto surrogates = L"Surrogates: \xD83C\xDF66 \xD83D\xDC7E \xD83D\xDC40";
         TextBuffer::_AppendRTFText(contentStream, surrogates);
-        VERIFY_ARE_EQUAL("Surrogates: \\u-10180?\\u-8346? \\u-10179?\\u-9090? \\u-10179?\\u-9152?", contentStream.str());
+        VERIFY_ARE_EQUAL("Surrogates: \\u-10180?\\u-8346? \\u-10179?\\u-9090? \\u-10179?\\u-9152?", contentStream);
     }
 }
 
@@ -2449,10 +2450,7 @@ void TextBufferTests::GetTextRects()
 
 void TextBufferTests::GetText()
 {
-    // GetText() is used by...
-    //  - Copying text to the clipboard regularly
-    //  - Copying text to the clipboard, with shift held (collapse to one line)
-    //  - Extracting text from a UiaTextRange
+    // GetText() is used to get row-wise selected text from the buffer
 
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:wrappedText", L"{false, true}")
@@ -2488,7 +2486,7 @@ void TextBufferTests::GetText()
         const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 4 }, blockSelection, false);
 
         std::wstring result = L"";
-        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects).text;
+        const auto textData = _buffer->GetText(textRects, includeCRLF, trimTrailingWhitespace, false);
         for (auto& text : textData)
         {
             result += text;
@@ -2591,11 +2589,250 @@ void TextBufferTests::GetText()
         std::wstring result = L"";
 
         const auto formatWrappedRows = blockSelection;
-        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects, nullptr, formatWrappedRows).text;
+        const auto textData = _buffer->GetText(textRects, includeCRLF, trimTrailingWhitespace, formatWrappedRows);
         for (auto& text : textData)
         {
             result += text;
         }
+
+        std::wstring expectedText = L"";
+        if (formatWrappedRows)
+        {
+            if (includeCRLF)
+            {
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345\r\n";
+                    expectedText += L"67\r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123\r\n";
+                    expectedText += L"\r\n";
+                }
+                else
+                {
+                    Log::Comment(L"Copy block selection to Clipboard");
+                    expectedText += L"12345\r\n";
+                    expectedText += L"67   \r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123  \r\n";
+                    expectedText += L"     \r\n";
+                    expectedText += L"     ";
+                }
+            }
+            else
+            {
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345";
+                    expectedText += L"67";
+                    expectedText += L"  345";
+                    expectedText += L"123";
+                }
+                else
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345";
+                    expectedText += L"67   ";
+                    expectedText += L"  345";
+                    expectedText += L"123  ";
+                    expectedText += L"     ";
+                    expectedText += L"     ";
+                }
+            }
+        }
+        else
+        {
+            if (includeCRLF)
+            {
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"Standard Copy to Clipboard");
+                    expectedText += L"12345";
+                    expectedText += L"67\r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123  \r\n";
+                }
+                else
+                {
+                    Log::Comment(L"UI Automation");
+                    expectedText += L"12345";
+                    expectedText += L"67   \r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123  ";
+                    expectedText += L"     \r\n";
+                    expectedText += L"     ";
+                }
+            }
+            else
+            {
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345";
+                    expectedText += L"67";
+                    expectedText += L"  345";
+                    expectedText += L"123  ";
+                }
+                else
+                {
+                    Log::Comment(L"Shift+Copy to Clipboard");
+                    expectedText += L"12345";
+                    expectedText += L"67   ";
+                    expectedText += L"  345";
+                    expectedText += L"123  ";
+                    expectedText += L"     ";
+                    expectedText += L"     ";
+                }
+            }
+        }
+
+        // Verify expected output and actual output are the same
+        VERIFY_ARE_EQUAL(expectedText, result);
+    }
+}
+
+void TextBufferTests::GetPlainText()
+{
+    // GetPlainText() is used by...
+    //  - Copying text to the clipboard regularly
+    //  - Copying text to the clipboard, with shift held (collapse to one line)
+    //  - Extracting text from a UiaTextRange
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:wrappedText", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:blockSelection", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:includeCRLF", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:trimTrailingWhitespace", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool wrappedText;
+    bool blockSelection;
+    bool includeCRLF;
+    bool trimTrailingWhitespace;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"wrappedText", wrappedText), L"Get 'wrappedText' variant");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"blockSelection", blockSelection), L"Get 'blockSelection' variant");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"includeCRLF", includeCRLF), L"Get 'includeCRLF' variant");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"trimTrailingWhitespace", trimTrailingWhitespace), L"Get 'trimTrailingWhitespace' variant");
+
+    if (!wrappedText)
+    {
+        til::size bufferSize{ 10, 20 };
+        UINT cursorSize = 12;
+        TextAttribute attr{ 0x7f };
+        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+
+        // Setup: Write lines of text to the buffer
+        const std::vector<std::wstring> bufferText = { L"12345",
+                                                       L"  345",
+                                                       L"123  ",
+                                                       L"  3  " };
+        WriteLinesToBuffer(bufferText, *_buffer);
+
+        // simulate a selection from origin to {4,4}
+        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 4 }, blockSelection, false);
+
+        const auto selectedTextSpans = _buffer->GetSelectionTextSpans(textRects, trimTrailingWhitespace, false);
+        const auto result = _buffer->GetPlainText(selectedTextSpans, includeCRLF, false);
+
+        std::wstring expectedText = L"";
+        if (includeCRLF)
+        {
+            if (trimTrailingWhitespace)
+            {
+                Log::Comment(L"Standard Copy to Clipboard");
+                expectedText += L"12345\r\n";
+                expectedText += L"  345\r\n";
+                expectedText += L"123\r\n";
+                expectedText += L"  3\r\n";
+            }
+            else
+            {
+                Log::Comment(L"UI Automation");
+                if (blockSelection)
+                {
+                    expectedText += L"12345\r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123  \r\n";
+                    expectedText += L"  3  \r\n";
+                    expectedText += L"     ";
+                }
+                else
+                {
+                    expectedText += L"12345     \r\n";
+                    expectedText += L"  345     \r\n";
+                    expectedText += L"123       \r\n";
+                    expectedText += L"  3       \r\n";
+                    expectedText += L"     ";
+                }
+            }
+        }
+        else
+        {
+            if (trimTrailingWhitespace)
+            {
+                Log::Comment(L"UNDEFINED");
+                expectedText += L"12345";
+                expectedText += L"  345";
+                expectedText += L"123";
+                expectedText += L"  3";
+            }
+            else
+            {
+                Log::Comment(L"Shift+Copy to Clipboard");
+                if (blockSelection)
+                {
+                    expectedText += L"12345";
+                    expectedText += L"  345";
+                    expectedText += L"123  ";
+                    expectedText += L"  3  ";
+                    expectedText += L"     ";
+                }
+                else
+                {
+                    expectedText += L"12345     ";
+                    expectedText += L"  345     ";
+                    expectedText += L"123       ";
+                    expectedText += L"  3       ";
+                    expectedText += L"     ";
+                }
+            }
+        }
+
+        // Verify expected output and actual output are the same
+        VERIFY_ARE_EQUAL(expectedText, result);
+    }
+    else
+    {
+        // Case 2: Wrapped Text
+        til::size bufferSize{ 5, 20 };
+        UINT cursorSize = 12;
+        TextAttribute attr{ 0x7f };
+        auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
+
+        // Setup: Write lines of text to the buffer
+        const std::vector<std::wstring> bufferText = { L"1234567",
+                                                       L"",
+                                                       L"  345",
+                                                       L"123    ",
+                                                       L"" };
+        WriteLinesToBuffer(bufferText, *_buffer);
+        // buffer should look like this:
+        // ______
+        // |12345| <-- wrapped
+        // |67   |
+        // |  345|
+        // |123  | <-- wrapped
+        // |     |
+        // |_____|
+
+        // simulate a selection from origin to {4,5}
+        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 5 }, blockSelection, false);
+
+        const auto formatWrappedRows = blockSelection;
+        const auto selectedTextSpans = _buffer->GetSelectionTextSpans(textRects, trimTrailingWhitespace, formatWrappedRows);
+        const auto result = _buffer->GetPlainText(selectedTextSpans, includeCRLF, formatWrappedRows);
 
         std::wstring expectedText = L"";
         if (formatWrappedRows)
