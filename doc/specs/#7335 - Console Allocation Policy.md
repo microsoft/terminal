@@ -110,7 +110,7 @@ regards to console allocation:
       be invisible
 
 Due to the design of [`CreateProcess`] and `ShellExecute`, this specification recommends that an allocation policy of
-`default` _override_ the inclusion of `CREATE_NEW_CONSOLE` in the `dwFlags` parameter to [`CreateProcess`].
+`detached` _override_ the inclusion of `CREATE_NEW_CONSOLE` in the `dwFlags` parameter to [`CreateProcess`].
 
 > **Note**
 > `ShellExecute` passes `CREATE_NEW_CONSOLE` _by default_ on all invocations. This impacts our ability to resolve the
