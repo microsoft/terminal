@@ -54,9 +54,9 @@ _informative, not normative_
 For a more fluid take on what each of the team's personal goals are, head on over to [Core team North Stars]. This has a list of more long-term goals that each team member is working towards, but not things that are necessarily committed work.
 
 
-[^1]: A conclusive list of these features can be found at https://github.com/microsoft/terminal/blob/main/src/features.xml. Note that this is a raw XML doc used to light up specific parts of the codebase, and not something authored for human consumption.
+[^1]: A conclusive list of these features can be found at [../src/features.xml](../src/features.xml). Note that this is a raw XML doc used to light up specific parts of the codebase, and not something authored for human consumption.
 
-[2022 Roadmap]: https://github.com/microsoft/terminal/tree/main/doc/roadmap-2022.md
+[2022 Roadmap]: ./roadmap-2022.md
 
 [Terminal 1.17]: https://github.com/microsoft/terminal/releases/tag/v1.17.1023
 [Terminal 1.18]: https://github.com/microsoft/terminal/releases/tag/v1.18.1462.0

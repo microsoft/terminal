@@ -605,4 +605,4 @@ as well as 3 schemes: "Scheme 1", "Scheme 2", and "Scheme 3".
 
 
 <!-- Footnotes -->
-[Command Palette Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%232046%20-%20Command%20Palette.md
+[Command Palette Spec]: ./%232046%20-%20Command%20Palette.md
