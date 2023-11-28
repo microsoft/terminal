@@ -312,8 +312,6 @@ An earlier version of this specification offered the **inheritOnly** allocation 
 **hidden** and **detached** policies. We deemed it insufficient for PowerShell's use case because any application
 launched by an **inheritOnly** PowerShell would immediately force the uncontrolled allocation of a console window.
 
-An earlier version of this specification offered the **hidden** allocation policy, with the following notes:
-
 > **STRUCK FROM SPECIFICATION**
 >
 > The move to **hidden** allows PowerShell to offer a fully-fledged console connection that can be itself inherited by a
@@ -323,6 +321,8 @@ An earlier version of this specification offered the **hidden** allocation polic
 
 An earlier revision of this specification suggested two allocation policies:
 
+> **STRUCK FROM SPECIFICATION**
+>
 > **hidden** is intended to be used by console applications that want finer-grained control over the visibility of their
 > console windows, but that still need a console host to service console APIs. This includes most scripting language
 > interpreters.
@@ -333,6 +333,8 @@ An earlier revision of this specification suggested two allocation policies:
 The `hidden` policy was rejected due to an incompatibility with modern console hosting, as `hidden` would require an
 application to interact with the console window via `GetConsoleWindow()` and explicitly show it.
 
+> **STRUCK FROM SPECIFICATION**
+>
 > ##### ShowWindow and ConPTY
 >
 > The pseudoconsole creates a hidden window to service `GetConsoleWindow()`, and it can be trivially shown using
