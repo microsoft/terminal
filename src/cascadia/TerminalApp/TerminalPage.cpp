@@ -5319,50 +5319,59 @@ namespace winrt::TerminalApp::implementation
             }
         }
         _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette();
-        _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
-            if (_extensionPalette.Visibility() == Visibility::Collapsed)
+        _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto page{ weakThis.get() })
             {
-                ExtensionPresenter().Visibility(Visibility::Collapsed);
-                _FocusActiveControl(nullptr, nullptr);
+                if (page->_extensionPalette.Visibility() == Visibility::Collapsed)
+                {
+                    page->ExtensionPresenter().Visibility(Visibility::Collapsed);
+                    page->_FocusActiveControl(nullptr, nullptr);
+                }
             }
         });
-        _extensionPalette.InputSuggestionRequested({ this, &TerminalPage::_OnInputSuggestionRequested });
-        _extensionPalette.ActiveControlInfoRequested([&](IInspectable const&, IInspectable const&) {
-            if (const auto activeControl = _GetActiveControl())
+        _extensionPalette.InputSuggestionRequested({ get_weak(), &TerminalPage::_OnInputSuggestionRequested });
+        _extensionPalette.ActiveControlInfoRequested([weakThis{ get_weak() }](IInspectable const&, IInspectable const&) {
+            if (auto page{ weakThis.get() })
             {
-                const auto profileName = activeControl.Settings().ProfileName();
-                const std::wstring fullCommandline = activeControl.Settings().Commandline().c_str();
-                const auto lastSlashPos = fullCommandline.find_last_of(L"\\");
-                if (lastSlashPos != std::wstring::npos)
+                if (const auto activeControl = page->_GetActiveControl())
                 {
-                    const auto end = fullCommandline.find_last_of(L"\"");
-                    const auto s = fullCommandline.substr(lastSlashPos + 1, end - lastSlashPos - 1);
-                    _extensionPalette.ActiveCommandline(fullCommandline.substr(lastSlashPos + 1, end - lastSlashPos - 1));
+                    const auto profileName = activeControl.Settings().ProfileName();
+                    const std::wstring fullCommandline = activeControl.Settings().Commandline().c_str();
+                    const auto lastSlashPos = fullCommandline.find_last_of(L"\\");
+                    if (lastSlashPos != std::wstring::npos)
+                    {
+                        const auto end = fullCommandline.find_last_of(L"\"");
+                        const auto s = fullCommandline.substr(lastSlashPos + 1, end - lastSlashPos - 1);
+                        page->_extensionPalette.ActiveCommandline(fullCommandline.substr(lastSlashPos + 1, end - lastSlashPos - 1));
+                    }
+                    else
+                    {
+                        page->_extensionPalette.ActiveCommandline(fullCommandline);
+                    }
+                    page->_extensionPalette.ProfileName(profileName);
+
+                    // Unfortunately IControlSettings doesn't contain the icon, we need to search our
+                    // settings for the matching profile and get the icon from there
+                    for (const auto profile : page->_settings.AllProfiles())
+                    {
+                        if (profile.Name() == profileName)
+                        {
+                            page->_extensionPalette.IconPath(profile.Icon());
+                            break;
+                        }
+                    }
                 }
                 else
                 {
-                    _extensionPalette.ActiveCommandline(fullCommandline);
+                    page->_extensionPalette.ActiveCommandline(L"");
                 }
-                _extensionPalette.ProfileName(profileName);
-
-                // Unfortunately IControlSettings doesn't contain the icon, we need to search our
-                // settings for the matching profile and get the icon from there
-                for (const auto profile : _settings.AllProfiles())
-                {
-                    if (profile.Name() == profileName)
-                    {
-                        _extensionPalette.IconPath(profile.Icon());
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                _extensionPalette.ActiveCommandline(L"");
             }
         });
-        _extensionPalette.AIKeyAndEndpointRequested([&](IInspectable const&, IInspectable const&) {
-            _extensionPalette.AIKeyAndEndpoint(_settings.AIEndpoint(), _settings.AIKey());
+        _extensionPalette.AIKeyAndEndpointRequested([weakThis{ get_weak() }](IInspectable const&, IInspectable const&) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_extensionPalette.AIKeyAndEndpoint(page->_settings.AIEndpoint(), page->_settings.AIKey());
+            }
         });
         ExtensionPresenter().Content(_extensionPalette);
     }
