@@ -28,7 +28,7 @@
                            Style="{StaticResource DisclaimerStyle}"
                            TextWrapping="WrapWholeWords">
                     <Run x:Uid="AISettings_Disclaimer1" />
-                    <Hyperlink NavigateUri="https://support.microsoft.com/en-us/windows/accessing-credential-manager-1b5c916a-6a16-889f-8581-fc16e8165ac0"
+                    <Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2253545"
                                TextDecorations="None">
                         <Run x:Uid="AISettings_DisclaimerLink" />
                     </Hyperlink>
@@ -99,7 +99,7 @@
                                             &#x2022;
                                         </Run>
                                         <Run x:Uid="AISettings_AzureOpenAIPrerequisite1" />
-                                        <Hyperlink NavigateUri="https://azure.microsoft.com/en-us/free/ai-services/"
+                                        <Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2252895"
                                                    TextDecorations="None">
                                             <Run x:Uid="AISettings_AzureOpenAIPrerequisite1Hyperlink" />
                                         </Hyperlink>
@@ -113,7 +113,7 @@
                                             &#x2022;
                                         </Run>
                                         <Run x:Uid="AISettings_AzureOpenAIPrerequisite3" />
-                                        <Hyperlink NavigateUri="https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/role-based-access-control"
+                                        <Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2252896"
                                                    TextDecorations="None">
                                             <Run x:Uid="AISettings_AzureOpenAIPrerequisite3Hyperlink" />
                                         </Hyperlink>
