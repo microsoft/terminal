@@ -206,18 +206,19 @@ This should have no impact on reliability.
 
 ### Compatibility
 
-An existing application opting into **hidden** may constitute a breaking change, but the scope of the breakage is
+An existing application opting into **detached** may constitute a breaking change, but the scope of the breakage is
 restricted to that application and is expected to be managed by the application.
 
 All behavioral changes are opt-in.
 
-> **EXAMPLE**: If Python updates python.exe to specify an allocation policy of **hidden**, graphical python applications
+> **EXAMPLE**: If Python updates python.exe to specify an allocation policy of **detached**, graphical python applications
 > will become double-click runnable from the graphical shell without spawning a console window. _However_, console-based
 > python applications will no longer spawn a console window when double-clicked from the graphical shell.
 >
-> If python.exe specifies **detached**, Console APIs will fail until a console is allocated.
+> In addition, if python.exe specifies **detached**, Console APIs will fail until a console is allocated.
 
-Python could work around this by calling [`AllocConsole`] if it can be detected that console I/O is required.
+Python could work around this by calling [`AllocConsole`] or [new API `AllocConsoleEx`](#allocconsoleex) if it can be
+detected that console I/O is required.
 
 #### Downlevel
 
@@ -298,8 +299,10 @@ Are there other allocation policies we need to consider?
 
 An earlier version of this specification offered the **always** allocation policy, with the following behaviors:
 
-* A GUI subsystem application would always get a console window.
-* A command-line shell would not wait for it to exit before returning a prompt.
+> **STRUCK FROM SPECIFICATION**
+>
+> * A GUI subsystem application would always get a console window.
+> * A command-line shell would not wait for it to exit before returning a prompt.
 
 It was cut because a GUI application that wants a console window can simply attach to an existing console session or
 allocate a new one. We found no compelling use case that would require the forced allocation of a console session
@@ -309,8 +312,12 @@ An earlier version of this specification offered the **inheritOnly** allocation 
 **hidden** and **detached** policies. We deemed it insufficient for PowerShell's use case because any application
 launched by an **inheritOnly** PowerShell would immediately force the uncontrolled allocation of a console window.
 
-The move to **hidden** allows PowerShell to offer a fully-fledged console connection that can be itself inherited by a
-downstream application.
+An earlier version of this specification offered the **hidden** allocation policy, with the following notes:
+
+> **STRUCK FROM SPECIFICATION**
+>
+> The move to **hidden** allows PowerShell to offer a fully-fledged console connection that can be itself inherited by a
+> downstream application.
 
 #### Additional allocation policies
 
