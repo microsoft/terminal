@@ -47,7 +47,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         winrt::fire_and_forget _getSuggestions(const winrt::hstring& prompt, const winrt::hstring& currentLocalTime);
 
         winrt::hstring _getCurrentLocalTimeHelper();
-        void _splitResponseAndAddToChatHelper(const winrt::hstring& response);
+        void _splitResponseAndAddToChatHelper(const winrt::hstring& response, const bool isError);
         void _setFocusAndPlaceholderTextHelper();
         bool _verifyModelIsValidHelper(const Windows::Data::Json::JsonObject jsonResponse);
 

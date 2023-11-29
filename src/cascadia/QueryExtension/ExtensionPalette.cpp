@@ -135,35 +135,23 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         // request the latest LLM key and endpoint
         _AIKeyAndEndpointRequestedHandlers(nullptr, nullptr);
 
+        // instantiate a flag for whether the response the user receives is an error message
+        // we pass this flag to _splitResponseAndAddToChatHelper so it can send the relevant telemetry event
+        // there is only one case downstream from here that sets this flag to false, so start with it being true
+        bool isError{ true };
+
         // if the AI key and endpoint is still empty, tell the user to fill them out in settings
         if (_AIKey.empty() || _AIEndpoint.empty())
         {
-            _splitResponseAndAddToChatHelper(RS_(L"CouldNotFindKeyErrorMessage"));
-
-            TraceLoggingWrite(
-                g_hQueryExtensionProvider,
-                "AIResponseReceived",
-                TraceLoggingDescription("Event emitted when the user receives a response to their query"),
-                TraceLoggingBoolean(false, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
+            _splitResponseAndAddToChatHelper(RS_(L"CouldNotFindKeyErrorMessage"), isError);
             co_return;
         }
         else if (!std::regex_search(_AIEndpoint.c_str(), azureOpenAIEndpointRegex))
         {
-            _splitResponseAndAddToChatHelper(RS_(L"InvalidEndpointMessage"));
-
-            TraceLoggingWrite(
-                g_hQueryExtensionProvider,
-                "AIResponseReceived",
-                TraceLoggingDescription("Event emitted when the user receives a response to their query"),
-                TraceLoggingBoolean(false, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
+            _splitResponseAndAddToChatHelper(RS_(L"InvalidEndpointMessage"), isError);
             co_return;
         }
+
         // Make a copy of the prompt because we are switching threads
         const auto promptCopy{ prompt };
 
@@ -213,14 +201,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             {
                 const auto errorObject = jsonResult.GetNamedObject(L"error");
                 result = errorObject.GetNamedString(L"message");
-
-                TraceLoggingWrite(
-                    g_hQueryExtensionProvider,
-                    "AIResponseReceived",
-                    TraceLoggingDescription("Event emitted when the user receives a response to their query"),
-                    TraceLoggingBoolean(false, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
-                    TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             }
             else
             {
@@ -230,40 +210,17 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                     const auto firstChoice = choices.GetAt(0).GetObject();
                     const auto messageObject = firstChoice.GetNamedObject(L"message");
                     result = messageObject.GetNamedString(L"content");
-
-                    TraceLoggingWrite(
-                        g_hQueryExtensionProvider,
-                        "AIResponseReceived",
-                        TraceLoggingDescription("Event emitted when the user receives a response to their query"),
-                        TraceLoggingBoolean(true, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
-                        TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
-                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                    isError = false;
                 }
                 else
                 {
                     result = RS_(L"InvalidModelMessage");
-
-                    TraceLoggingWrite(
-                        g_hQueryExtensionProvider,
-                        "AIResponseReceived",
-                        TraceLoggingDescription("Event emitted when the user receives a response to their query"),
-                        TraceLoggingBoolean(false, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
-                        TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
-                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
                 }
             }
         }
         catch (...)
         {
             result = RS_(L"UnknownErrorMessage");
-
-            TraceLoggingWrite(
-                g_hQueryExtensionProvider,
-                "AIResponseReceived",
-                TraceLoggingDescription("Event emitted when the user receives a response to their query"),
-                TraceLoggingBoolean(false, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
 
         // Switch back to the foreground thread because we are changing the UI now
@@ -273,7 +230,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         IsProgressRingActive(false);
 
         // Append the suggestion to our list, clear the query box
-        _splitResponseAndAddToChatHelper(result);
+        _splitResponseAndAddToChatHelper(result, isError);
 
         // Also make a new entry in our jsonMessages list, so the AI knows the full conversation so far
         WDJ::JsonObject responseMessageObject;
@@ -298,7 +255,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         return winrt::to_hstring(time_str);
     }
 
-    void ExtensionPalette::_splitResponseAndAddToChatHelper(const winrt::hstring& response)
+    void ExtensionPalette::_splitResponseAndAddToChatHelper(const winrt::hstring& response, const bool isError)
     {
         // this function is dependent on the AI response separating code blocks with
         // newlines and "```". OpenAI seems to naturally conform to this, though
@@ -345,6 +302,14 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         const auto responseGroupedMessages = winrt::make<GroupedChatMessages>(time, false, _ProfileName, winrt::single_threaded_vector(std::move(messageParts)));
         _messages.Append(responseGroupedMessages);
+
+        TraceLoggingWrite(
+            g_hQueryExtensionProvider,
+            "AIResponseReceived",
+            TraceLoggingDescription("Event emitted when the user receives a response to their query"),
+            TraceLoggingBoolean(!isError, "ResponseReceivedFromAI", "True if the response came from the AI, false if the response was generated in Terminal or was a server error"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void ExtensionPalette::_setFocusAndPlaceholderTextHelper()
