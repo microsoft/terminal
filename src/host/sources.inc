@@ -84,7 +84,6 @@ SOURCES = \
     ..\writeData.cpp \
     ..\renderData.cpp \
     ..\renderFontDefaults.cpp \
-    ..\utf8ToWideCharParser.cpp \
     ..\conareainfo.cpp \
     ..\conimeinfo.cpp \
     ..\ConsoleArguments.cpp \
