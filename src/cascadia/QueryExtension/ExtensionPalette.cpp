@@ -151,90 +151,87 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             result = RS_(L"InvalidEndpointMessage");
         }
 
-        // If we already have a result string, that means the endpoint either does not exist or is invalid
-        // Terminate early.
-        if (!result.empty())
+        // If we don't have a result string, that means the endpoint exists and matches the regex
+        // that we allow - now we can actually make the http request
+        if (result.empty())
         {
-            _splitResponseAndAddToChatHelper(result, isError);
-            co_return;
-        }
+            // Make a copy of the prompt because we are switching threads
+            const auto promptCopy{ prompt };
 
-        // Make a copy of the prompt because we are switching threads
-        const auto promptCopy{ prompt };
+            // Start the progress ring
+            IsProgressRingActive(true);
 
-        // Start the progress ring
-        IsProgressRingActive(true);
+            // Make sure we are on the background thread for the http request
+            co_await winrt::resume_background();
 
-        // Make sure we are on the background thread for the http request
-        co_await winrt::resume_background();
+            WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ _AIEndpoint } };
+            request.Headers().Accept().TryParseAdd(L"application/json");
 
-        WWH::HttpRequestMessage request{ WWH::HttpMethod::Post(), Uri{ _AIEndpoint } };
-        request.Headers().Accept().TryParseAdd(L"application/json");
+            WDJ::JsonObject jsonContent;
+            WDJ::JsonObject messageObject;
 
-        WDJ::JsonObject jsonContent;
-        WDJ::JsonObject messageObject;
+            // _ActiveCommandline should be set already, we request for it the moment we become visible
+            winrt::hstring engineeredPrompt{ promptCopy + L". The shell I am running is " + _ActiveCommandline };
+            messageObject.Insert(L"role", WDJ::JsonValue::CreateStringValue(L"user"));
+            messageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(engineeredPrompt));
+            _jsonMessages.Append(messageObject);
+            jsonContent.SetNamedValue(L"messages", _jsonMessages);
+            jsonContent.SetNamedValue(L"max_tokens", WDJ::JsonValue::CreateNumberValue(800));
+            jsonContent.SetNamedValue(L"temperature", WDJ::JsonValue::CreateNumberValue(0.7));
+            jsonContent.SetNamedValue(L"frequency_penalty", WDJ::JsonValue::CreateNumberValue(0));
+            jsonContent.SetNamedValue(L"presence_penalty", WDJ::JsonValue::CreateNumberValue(0));
+            jsonContent.SetNamedValue(L"top_p", WDJ::JsonValue::CreateNumberValue(0.95));
+            jsonContent.SetNamedValue(L"stop", WDJ::JsonValue::CreateStringValue(L"None"));
+            const auto stringContent = jsonContent.ToString();
+            WWH::HttpStringContent requestContent{
+                stringContent,
+                WSS::UnicodeEncoding::Utf8,
+                L"application/json"
+            };
 
-        // _ActiveCommandline should be set already, we request for it the moment we become visible
-        winrt::hstring engineeredPrompt{ promptCopy + L". The shell I am running is " + _ActiveCommandline };
-        messageObject.Insert(L"role", WDJ::JsonValue::CreateStringValue(L"user"));
-        messageObject.Insert(L"content", WDJ::JsonValue::CreateStringValue(engineeredPrompt));
-        _jsonMessages.Append(messageObject);
-        jsonContent.SetNamedValue(L"messages", _jsonMessages);
-        jsonContent.SetNamedValue(L"max_tokens", WDJ::JsonValue::CreateNumberValue(800));
-        jsonContent.SetNamedValue(L"temperature", WDJ::JsonValue::CreateNumberValue(0.7));
-        jsonContent.SetNamedValue(L"frequency_penalty", WDJ::JsonValue::CreateNumberValue(0));
-        jsonContent.SetNamedValue(L"presence_penalty", WDJ::JsonValue::CreateNumberValue(0));
-        jsonContent.SetNamedValue(L"top_p", WDJ::JsonValue::CreateNumberValue(0.95));
-        jsonContent.SetNamedValue(L"stop", WDJ::JsonValue::CreateStringValue(L"None"));
-        const auto stringContent = jsonContent.ToString();
-        WWH::HttpStringContent requestContent{
-            stringContent,
-            WSS::UnicodeEncoding::Utf8,
-            L"application/json"
-        };
+            request.Content(requestContent);
 
-        request.Content(requestContent);
-
-        // Send the request
-        try
-        {
-            const auto response = _httpClient.SendRequestAsync(request).get();
-            // Parse out the suggestion from the response
-            const auto string{ response.Content().ReadAsStringAsync().get() };
-            const auto jsonResult{ WDJ::JsonObject::Parse(string) };
-            if (jsonResult.HasKey(L"error"))
+            // Send the request
+            try
             {
-                const auto errorObject = jsonResult.GetNamedObject(L"error");
-                result = errorObject.GetNamedString(L"message");
-            }
-            else
-            {
-                if (_verifyModelIsValidHelper(jsonResult))
+                const auto response = _httpClient.SendRequestAsync(request).get();
+                // Parse out the suggestion from the response
+                const auto string{ response.Content().ReadAsStringAsync().get() };
+                const auto jsonResult{ WDJ::JsonObject::Parse(string) };
+                if (jsonResult.HasKey(L"error"))
                 {
-                    const auto choices = jsonResult.GetNamedArray(L"choices");
-                    const auto firstChoice = choices.GetAt(0).GetObject();
-                    const auto messageObject = firstChoice.GetNamedObject(L"message");
-                    result = messageObject.GetNamedString(L"content");
-                    isError = false;
+                    const auto errorObject = jsonResult.GetNamedObject(L"error");
+                    result = errorObject.GetNamedString(L"message");
                 }
                 else
                 {
-                    result = RS_(L"InvalidModelMessage");
+                    if (_verifyModelIsValidHelper(jsonResult))
+                    {
+                        const auto choices = jsonResult.GetNamedArray(L"choices");
+                        const auto firstChoice = choices.GetAt(0).GetObject();
+                        const auto messageObject = firstChoice.GetNamedObject(L"message");
+                        result = messageObject.GetNamedString(L"content");
+                        isError = false;
+                    }
+                    else
+                    {
+                        result = RS_(L"InvalidModelMessage");
+                    }
                 }
             }
+            catch (...)
+            {
+                result = RS_(L"UnknownErrorMessage");
+            }
+
+            // Switch back to the foreground thread because we are changing the UI now
+            co_await winrt::resume_foreground(Dispatcher());
+
+            // Stop the progress ring
+            IsProgressRingActive(false);
         }
-        catch (...)
-        {
-            result = RS_(L"UnknownErrorMessage");
-        }
 
-        // Switch back to the foreground thread because we are changing the UI now
-        co_await winrt::resume_foreground(Dispatcher());
-
-        // Stop the progress ring
-        IsProgressRingActive(false);
-
-        // Append the suggestion to our list, clear the query box
+        // Append the result to our list, clear the query box
         _splitResponseAndAddToChatHelper(result, isError);
 
         // Also make a new entry in our jsonMessages list, so the AI knows the full conversation so far
