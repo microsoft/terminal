@@ -135,20 +135,27 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         // request the latest LLM key and endpoint
         _AIKeyAndEndpointRequestedHandlers(nullptr, nullptr);
 
-        // instantiate a flag for whether the response the user receives is an error message
+        // Instantiate a flag for whether the response the user receives is an error message
         // we pass this flag to _splitResponseAndAddToChatHelper so it can send the relevant telemetry event
         // there is only one case downstream from here that sets this flag to false, so start with it being true
         bool isError{ true };
+        hstring result{};
 
-        // if the AI key and endpoint is still empty, tell the user to fill them out in settings
+        // If the AI key and endpoint is still empty, tell the user to fill them out in settings
         if (_AIKey.empty() || _AIEndpoint.empty())
         {
-            _splitResponseAndAddToChatHelper(RS_(L"CouldNotFindKeyErrorMessage"), isError);
-            co_return;
+            result = RS_(L"CouldNotFindKeyErrorMessage");
         }
         else if (!std::regex_search(_AIEndpoint.c_str(), azureOpenAIEndpointRegex))
         {
-            _splitResponseAndAddToChatHelper(RS_(L"InvalidEndpointMessage"), isError);
+            result = RS_(L"InvalidEndpointMessage");
+        }
+
+        // If we already have a result string, that means the endpoint either does not exist or is invalid
+        // Terminate early.
+        if (!result.empty())
+        {
+            _splitResponseAndAddToChatHelper(result, isError);
             co_return;
         }
 
@@ -187,8 +194,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         };
 
         request.Content(requestContent);
-
-        hstring result{};
 
         // Send the request
         try
