@@ -960,10 +960,10 @@ til::CoordType ROW::MeasureLeft() const noexcept
 // Routine Description:
 // - Retrieves the position that is one after the last character in the row.
 // Arguments:
-// - useWrappiness - If set and the row is wrapped, trailing whitespace is considered as a part of the text.
-til::CoordType ROW::MeasureRight(const bool useWrappiness) const noexcept
+// - useWrapness - If set and the row is wrapped, trailing whitespace is considered as a part of the text.
+til::CoordType ROW::MeasureRight(const bool useWrapness) const noexcept
 {
-    if (useWrappiness && _wrapForced)
+    if (useWrapness && _wrapForced)
     {
         auto width = _columnCount;
         if (_doubleBytePadded)
