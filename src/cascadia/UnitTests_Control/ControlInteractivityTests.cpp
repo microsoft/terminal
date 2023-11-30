@@ -91,7 +91,9 @@ namespace ControlUnitTests
             // "Consolas" ends up with an actual size of 9x19 at 96DPI. So
             // let's just arbitrarily start with a 270x380px (30x20 chars) window
             core->Initialize(270, 380, 1.0);
+#ifndef NDEBUG
             core->_terminal->_suppressLockChecks = true;
+#endif
             VERIFY_IS_TRUE(core->_initializedTerminal);
             VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
             interactivity->Initialize();
