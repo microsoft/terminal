@@ -205,7 +205,6 @@ CLIPCHILDREN
 CLIPSIBLINGS
 closetest
 cloudconsole
-clrf
 cls
 CLSCTX
 clsids
@@ -2201,7 +2200,7 @@ WPrep
 WPresent
 wprp
 wprpi
-wrapness
+Wrapness
 wregex
 writeback
 WRITECONSOLE
