@@ -67,7 +67,7 @@ class ClipboardTests
 
     const UINT cRectsSelected = 4;
 
-    std::vector<std::wstring> SetupRetrieveFromBuffers(bool fLineSelection, std::vector<til::inclusive_rect>& selection)
+    std::vector<std::wstring> SetupRetrieveFromBufferRows(bool fLineSelection, std::vector<til::inclusive_rect>& selection)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
@@ -83,18 +83,38 @@ class ClipboardTests
         selection.emplace_back(til::inclusive_rect{ 0, 3, 8, 3 });
 
         const auto& buffer = screenInfo.GetTextBuffer();
-        return buffer.GetText(true, fLineSelection, selection).text;
+        return buffer.GetText(selection, true, fLineSelection, false);
+    }
+
+    std::wstring SetupRetrieveFromBuffer(bool fLineSelection, std::vector<til::inclusive_rect>& selection)
+    {
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
+        // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
+
+        // set up and try to retrieve the first 4 rows from the buffer
+        const auto& screenInfo = gci.GetActiveOutputBuffer();
+
+        selection.clear();
+        selection.emplace_back(til::inclusive_rect{ 0, 0, 8, 0 });
+        selection.emplace_back(til::inclusive_rect{ 0, 1, 14, 1 });
+        selection.emplace_back(til::inclusive_rect{ 0, 2, 14, 2 });
+        selection.emplace_back(til::inclusive_rect{ 0, 3, 8, 3 });
+
+        const auto& buffer = screenInfo.GetTextBuffer();
+        const auto selectedTextSpans = buffer.GetSelectionTextSpans(selection, fLineSelection, false); 
+        return buffer.GetPlainText(selectedTextSpans, true, false);
     }
 
 #pragma prefast(push)
 #pragma prefast(disable : 26006, "Specifically trying to check unterminated strings in this test.")
-    TEST_METHOD(TestRetrieveFromBuffer)
+    TEST_METHOD(TestRetrieveFromBufferRows)
     {
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
         std::vector<til::inclusive_rect> selection;
-        const auto text = SetupRetrieveFromBuffers(false, selection);
+        const auto text = SetupRetrieveFromBufferRows(false, selection);
 
         // verify trailing bytes were trimmed
         // there are 2 double-byte characters in our sample string (see CommonState.hpp for sample)
@@ -121,13 +141,50 @@ class ClipboardTests
     }
 #pragma prefast(pop)
 
-    TEST_METHOD(TestRetrieveLineSelectionFromBuffer)
+    TEST_METHOD(TestRetrieveFromBuffer)
     {
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
         std::vector<til::inclusive_rect> selection;
-        const auto text = SetupRetrieveFromBuffers(true, selection);
+        const auto text = SetupRetrieveFromBuffer(false, selection);
+
+        std::wstring expectedText;
+
+        // Configuration: No Line selection, so no trimming of trailing whitespace.
+
+        // row 0
+        // no wrap -> add CL/RF
+        // First 9 column selected -> 7 characters
+        expectedText += L"AB\u304bC\u304dDE";
+        expectedText += L"\r\n";
+
+        // row 1
+        // wrap -> no CL/RF
+        // First 15 column selected -> 7 characters (9 columns) + 6 spaces
+        expectedText += L"AB\u304bC\u304dDE      ";
+
+        // row 2
+        // no wrap -> add CL/RF
+        // First 15 column selected -> 7 characters (9 columns) + 6 spaces
+        expectedText += L"AB\u304bC\u304dDE      ";
+        expectedText += L"\r\n";
+
+        // row 3
+        // wrap -> no CL/RF
+        // First 9 column selected -> 7 characters
+        expectedText += L"AB\u304bC\u304dDE";
+
+        VERIFY_ARE_EQUAL(expectedText, text);
+    }
+
+    TEST_METHOD(TestRetrieveLineSelectionFromBufferRows)
+    {
+        // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
+        // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
+
+        std::vector<til::inclusive_rect> selection;
+        const auto text = SetupRetrieveFromBufferRows(true, selection);
 
         // row 2, no wrap
         // no wrap row before the end should have CR/LF
@@ -151,6 +208,44 @@ class ClipboardTests
         tempPtr = text[1].data();
         auto ptr = wcsrchr(tempPtr, L' ');
         VERIFY_IS_NOT_NULL(ptr);
+    }
+
+    TEST_METHOD(TestRetrieveLineSelectionFromBuffer)
+    {
+        // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
+        // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
+
+        std::vector<til::inclusive_rect> selection;
+        const auto text = SetupRetrieveFromBuffer(true, selection);
+
+        std::wstring expectedText;
+
+        // Configuration:
+        // - Line selection, so trim trailing whitespace on non-wrapped rows.
+
+        // row 0
+        // no wrap -> trim trailing whitespace, add CL/RF
+        // First 9 column selected -> 7 characters
+        expectedText += L"AB\u304bC\u304dDE";
+        expectedText += L"\r\n";
+
+        // row 1
+        // wrap -> no trimming of trailing whitespace, no CL/RF
+        // First 15 column selected -> 7 characters (9 columns) + 6 spaces
+        expectedText += L"AB\u304bC\u304dDE      ";
+
+        // row 2
+        // no wrap -> trim trailing whitespace, add CL/RF
+        // First 15 column selected -> 7 characters (9 columns), 6 spaces trimmed from the selection
+        expectedText += L"AB\u304bC\u304dDE";
+        expectedText += L"\r\n";
+
+        // row 3
+        // wrap -> no trimming of trailing whitespace, no CL/RF
+        // First 15 column selected -> 7 characters
+        expectedText += L"AB\u304bC\u304dDE";
+
+        VERIFY_ARE_EQUAL(expectedText, text);
     }
 
     TEST_METHOD(CanConvertText)
