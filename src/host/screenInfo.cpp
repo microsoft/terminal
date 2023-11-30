@@ -34,7 +34,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     const TextAttribute popupAttributes,
     const FontInfo fontInfo) :
     OutputMode{ ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT },
-    ResizingWindow{ 0 },
     WheelDelta{ 0 },
     HWheelDelta{ 0 },
     _textBuffer{ nullptr },
@@ -650,28 +649,10 @@ VOID SCREEN_INFORMATION::UpdateScrollBars()
     LOG_IF_WIN32_BOOL_FALSE(ServiceLocator::LocateConsoleWindow()->PostUpdateScrollBars());
 }
 
-VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
+SCREEN_INFORMATION::ScrollBarState SCREEN_INFORMATION::FetchScrollBarState()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto pWindow = ServiceLocator::LocateConsoleWindow();
-
     WI_ClearFlag(gci.Flags, CONSOLE_UPDATING_SCROLL_BARS);
-
-    if (!IsActiveScreenBuffer())
-    {
-        return;
-    }
-
-    ResizingWindow++;
-
-    if (pWindow != nullptr)
-    {
-        const auto buffer = GetBufferSize();
-        const auto isAltBuffer = _IsAltBuffer();
-        const auto maxSizeVer = gci.IsTerminalScrolling() ? _virtualBottom : buffer.BottomInclusive();
-        const auto maxSizeHor = buffer.RightInclusive();
-        pWindow->UpdateScrollBars(isAltBuffer, { maxSizeHor, maxSizeVer }, _viewport.ToExclusive());
-    }
 
     // Fire off an event to let accessibility apps know the layout has changed.
     if (_pAccessibilityNotifier)
@@ -679,7 +660,15 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
         _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
     }
 
-    ResizingWindow--;
+    const auto buffer = GetBufferSize();
+    const auto isAltBuffer = _IsAltBuffer();
+    const auto maxSizeVer = gci.IsTerminalScrolling() ? _virtualBottom : buffer.BottomInclusive();
+    const auto maxSizeHor = buffer.RightInclusive();
+    return ScrollBarState{
+        .maxSize = { maxSizeHor, maxSizeVer },
+        .viewport = _viewport.ToExclusive(),
+        .isAltBuffer = isAltBuffer,
+    };
 }
 
 // Routine Description:

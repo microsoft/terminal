@@ -65,7 +65,7 @@ namespace Microsoft::Console::Interactivity::Win32
         void HorizontalScroll(const WORD wScrollCommand,
                               const WORD wAbsoluteChange);
 
-        void UpdateScrollBars(bool isAltBuffer, til::size maxSize, const til::rect& viewport) override;
+        void UpdateScrollBars(const SCREEN_INFORMATION::ScrollBarState& state);
 
         void UpdateWindowSize(const til::size coordSizeInChars);
         void UpdateWindowPosition(_In_ const til::point ptNewPos) const;
@@ -180,6 +180,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         static void s_ReinitializeFontsForDPIChange();
 
+        WORD _resizingWindow = 0; // > 0 if we should ignore WM_SIZE messages
         bool _fInDPIChange = false;
 
         static void s_ConvertWindowPosToWindowRect(const LPWINDOWPOS lpWindowPos,

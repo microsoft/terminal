@@ -11,10 +11,6 @@
 using namespace Microsoft::Console::Interactivity::OneCore;
 using namespace Microsoft::Console::Types;
 
-void ConsoleWindow::UpdateScrollBars(bool /*isAltBuffer*/, til::size /*maxSize*/, const til::rect& /*viewport*/) noexcept
-{
-}
-
 bool ConsoleWindow::IsInFullscreen() const noexcept
 {
     return true;

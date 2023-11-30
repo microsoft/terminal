@@ -438,7 +438,7 @@ void Window::_CloseWindow() const
         ShowWindow(hWnd, wShowWindow);
 
         auto& siAttached = GetScreenInfo();
-        siAttached.InternalUpdateScrollBars();
+        siAttached.UpdateScrollBars();
     }
 
     return status;
@@ -591,7 +591,7 @@ void Window::_UpdateWindowSize(const til::size sizeNew)
 
     if (WI_IsFlagClear(gci.Flags, CONSOLE_IS_ICONIC))
     {
-        ScreenInfo.InternalUpdateScrollBars();
+        ScreenInfo.UpdateScrollBars();
 
         SetWindowPos(GetWindowHandle(),
                      nullptr,
@@ -621,7 +621,7 @@ void Window::_UpdateWindowSize(const til::size sizeNew)
     if (!IsInFullscreen() && !IsInMaximized())
     {
         // Figure out how big to make the window, given the desired client area size.
-        siAttached.ResizingWindow++;
+        _resizingWindow++;
 
         // First get the buffer viewport size
         const auto WindowDimensions = siAttached.GetViewport().Dimensions();
@@ -691,7 +691,7 @@ void Window::_UpdateWindowSize(const til::size sizeNew)
             // If the change wasn't substantial, we may still need to update scrollbar positions. Note that PSReadLine
             // scrolls the window via Console.SetWindowPosition, which ultimately calls down to SetConsoleWindowInfo,
             // which ends up in this function.
-            siAttached.InternalUpdateScrollBars();
+            siAttached.UpdateScrollBars();
         }
 
         // MSFT: 12092729
@@ -716,7 +716,7 @@ void Window::_UpdateWindowSize(const til::size sizeNew)
         //   an additional Buffer message with the same size again and do nothing special.
         ScreenBufferSizeChange(siAttached.GetActiveBuffer().GetBufferSize().Dimensions());
 
-        siAttached.ResizingWindow--;
+        _resizingWindow--;
     }
 
     LOG_IF_FAILED(ConsoleImeResizeCompStrView());
@@ -875,35 +875,28 @@ void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteCha
     LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(true, NewOrigin, false));
 }
 
-void Window::UpdateScrollBars(bool isAltBuffer, til::size maxSize, const til::rect& viewport)
+void Window::UpdateScrollBars(const SCREEN_INFORMATION::ScrollBarState& state)
 {
-    // EnableScrollbar() and especially SetScrollInfo() are prohibitively expensive functions nowadays.
-    // This improves throughput of good old `type` in cmd.exe by ~10x.
-    // FYI: This approach is a hack. Optimally, the Win32 message pump thread shouldn't
-    // hold the console lock to begin with, but refactoring this is impractical now. *sigh*
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto suspension = gci.SuspendLock();
-
     // If this is the main buffer, make sure we enable both of the scroll bars.
     // The alt buffer likely disabled the scroll bars, this is the only way to re-enable it.
-    if (!isAltBuffer)
+    if (!state.isAltBuffer)
     {
         EnableScrollBar(_hWnd, SB_BOTH, ESB_ENABLE_BOTH);
     }
 
     SCROLLINFO si{
         .cbSize = sizeof(SCROLLINFO),
-        .fMask = static_cast<UINT>(isAltBuffer ? SIF_ALL | SIF_DISABLENOSCROLL : SIF_ALL),
+        .fMask = static_cast<UINT>(state.isAltBuffer ? SIF_ALL | SIF_DISABLENOSCROLL : SIF_ALL),
     };
 
-    si.nMax = maxSize.width;
-    si.nPage = viewport.width();
-    si.nPos = viewport.left;
+    si.nMax = state.maxSize.width;
+    si.nPage = state.viewport.width();
+    si.nPos = state.viewport.left;
     SetScrollInfo(_hWnd, SB_HORZ, &si, TRUE);
 
-    si.nMax = maxSize.height;
-    si.nPage = viewport.height();
-    si.nPos = viewport.top;
+    si.nMax = state.maxSize.height;
+    si.nPage = state.viewport.height();
+    si.nPos = state.viewport.top;
     SetScrollInfo(_hWnd, SB_VERT, &si, TRUE);
 }
 

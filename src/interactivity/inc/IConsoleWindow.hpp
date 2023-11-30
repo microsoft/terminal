@@ -25,8 +25,6 @@ namespace Microsoft::Console::Types
     public:
         virtual ~IConsoleWindow() = default;
 
-        virtual void UpdateScrollBars(bool isAltBuffer, til::size maxSize, const til::rect& viewport) = 0;
-
         virtual bool IsInFullscreen() const = 0;
 
         virtual void SetIsFullscreen(const bool fFullscreenEnabled) = 0;
