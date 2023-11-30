@@ -938,22 +938,31 @@ ptrdiff_t COOKED_READ_DATA::_writeCharsImpl(const std::wstring_view& text, const
         const auto wch = *it;
         if (wch == UNICODE_TAB)
         {
-            const auto col = _getColumnAtRelativeCursorPosition(distance + cursorOffset);
-            const auto remaining = width - col;
-            distance += std::min(remaining, 8 - (col & 7));
             buf[0] = L'\t';
             len = 1;
         }
         else
         {
             // In the interactive mode we replace C0 control characters (0x00-0x1f) with ASCII representations like ^C (= 0x03).
-            distance += 2;
             buf[0] = L'^';
             buf[1] = gsl::narrow_cast<wchar_t>(wch + L'@');
             len = 2;
         }
 
-        if (!measureOnly)
+        if (measureOnly)
+        {
+            if (wch == UNICODE_TAB)
+            {
+                const auto col = _getColumnAtRelativeCursorPosition(distance + cursorOffset);
+                const auto remaining = width - col;
+                distance += std::min(remaining, 8 - (col & 7));
+            }
+            else
+            {
+                distance += 2;
+            }
+        }
+        else
         {
             distance += _writeCharsUnprocessed({ &buf[0], len });
         }
