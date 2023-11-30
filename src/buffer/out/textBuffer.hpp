@@ -239,8 +239,8 @@ public:
     std::wstring GetPlainText(const til::point& start, const til::point& end) const;
 
     std::vector<til::point_span> GetSelectionTextSpans(const std::vector<til::inclusive_rect>& selectionRects,
-                                                       bool trimTrailingWhitespace,
-                                                       bool trimWrappedRows) const;
+                                                       const bool trimTrailingWhitespace,
+                                                       const bool trimWrappedRows) const;
 
     std::wstring GetPlainText(const std::vector<til::point_span>& selectionSpans,
                               const bool includeCRLF,
@@ -251,8 +251,8 @@ public:
                         const std::wstring_view fontFaceName,
                         const COLORREF backgroundColor,
                         const bool isIntenseBold,
-                        bool includeLineBreak,
-                        bool lineBreakWrappedRows,
+                        const bool includeLineBreak,
+                        const bool lineBreakWrappedRows,
                         std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept;
 
     std::string GenRTF(const std::vector<til::point_span>& selectionSpans,
@@ -260,8 +260,8 @@ public:
                        const std::wstring_view fontFaceName,
                        const COLORREF backgroundColor,
                        const bool isIntenseBold,
-                       bool includeLineBreak,
-                       bool lineBreakWrappedRows,
+                       const bool includeLineBreak,
+                       const bool lineBreakWrappedRows,
                        std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept;
 
     struct PositionInformation

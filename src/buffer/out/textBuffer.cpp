@@ -2012,11 +2012,10 @@ std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point&
 // Return Value:
 // - A list of point-span from each row of the selected region. End coordinates are exclusive.
 std::vector<til::point_span> TextBuffer::GetSelectionTextSpans(const std::vector<til::inclusive_rect>& selectionRects,
-                                                               bool trimTrailingWhitespace,
-                                                               bool trimWrappedRows) const
+                                                               const bool trimTrailingWhitespace,
+                                                               const bool trimWrappedRows) const
 {
     std::vector<til::point_span> selectedTextSpans;
-    const auto useWrappinessOfRow = !trimWrappedRows;
 
     selectedTextSpans.reserve(selectionRects.size());
 
@@ -2034,7 +2033,7 @@ std::vector<til::point_span> TextBuffer::GetSelectionTextSpans(const std::vector
         if (shouldTrim)
         {
             // update end column to exclude trailing whitespace
-            colEnd = std::min(colEnd, row.MeasureRight(useWrappinessOfRow));
+            colEnd = std::min(colEnd, row.MeasureRight(!trimWrappedRows));
         }
 
         const til::point start = { colBegin, iRow };
