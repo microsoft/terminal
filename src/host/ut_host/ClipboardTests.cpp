@@ -102,7 +102,7 @@ class ClipboardTests
         selection.emplace_back(til::inclusive_rect{ 0, 3, 8, 3 });
 
         const auto& buffer = screenInfo.GetTextBuffer();
-        const auto selectedTextSpans = buffer.GetSelectionTextSpans(selection, fLineSelection, false); 
+        const auto selectedTextSpans = buffer.GetSelectionTextSpans(selection, fLineSelection, false);
         return buffer.GetPlainText(selectedTextSpans, true, false);
     }
 
