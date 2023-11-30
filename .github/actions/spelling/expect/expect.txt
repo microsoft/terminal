@@ -188,8 +188,10 @@ changelist
 chaof
 charinfo
 CHARSETINFO
+chcbpat
 chh
 chk
+chshdng
 CHT
 Cic
 cielab
@@ -342,6 +344,7 @@ CTRLVOLUME
 Ctxt
 CUF
 cupxy
+curlyline
 CURRENTFONT
 currentmode
 CURRENTPAGE
@@ -577,6 +580,7 @@ elems
 emacs
 EMPTYBOX
 enabledelayedexpansion
+ENDCAP
 endptr
 endregion
 ENTIREBUFFER
@@ -825,6 +829,7 @@ hostlib
 HPA
 hpcon
 HPCON
+hpen
 hpj
 HPR
 HProvider
@@ -1009,6 +1014,7 @@ LOBYTE
 localappdata
 locsrc
 Loewen
+LOGBRUSH
 LOGFONT
 LOGFONTA
 LOGFONTW
@@ -1588,7 +1594,6 @@ RIGHTALIGN
 RIGHTBUTTON
 riid
 Rike
-RIPMSG
 RIS
 roadmap
 robomac

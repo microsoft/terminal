@@ -25,18 +25,15 @@ namespace Microsoft::Console
 
         [[nodiscard]] HRESULT Start();
         static DWORD WINAPI StaticVtInputThreadProc(_In_ LPVOID lpParameter);
-        void DoReadInput(const bool throwOnFail);
+        bool DoReadInput();
         void SetLookingForDSR(const bool looking) noexcept;
 
     private:
-        [[nodiscard]] HRESULT _HandleRunInput(const std::string_view u8Str);
         void _InputThread();
 
         wil::unique_hfile _hFile;
         wil::unique_handle _hThread;
         DWORD _dwThreadId;
-
-        bool _exitRequested;
 
         std::function<void(bool)> _pfnSetLookingForDSR;
 

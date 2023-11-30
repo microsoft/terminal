@@ -282,9 +282,8 @@ bool VtIo::IsUsingVt() const
     if (_lookingForCursorPosition && _pVtRenderEngine && _pVtInputThread)
     {
         LOG_IF_FAILED(_pVtRenderEngine->RequestCursor());
-        while (_lookingForCursorPosition)
+        while (_lookingForCursorPosition && _pVtInputThread->DoReadInput())
         {
-            _pVtInputThread->DoReadInput(false);
         }
     }
 
@@ -468,10 +467,6 @@ void VtIo::SendCloseEvent()
 void VtIo::CorkRenderer(bool corked) const noexcept
 {
     _pVtRenderEngine->Cork(corked);
-    if (!corked)
-    {
-        LOG_IF_FAILED(ServiceLocator::LocateGlobals().pRender->PaintFrame());
-    }
 }
 
 #ifdef UNIT_TESTING

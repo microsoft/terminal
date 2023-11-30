@@ -18,7 +18,9 @@
 // Block minwindef.h min/max macros to prevent <algorithm> conflict
 #define NOMINMAX
 // Exclude rarely-used stuff from Windows headers
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 
 #include <algorithm>
 #include <atomic>
@@ -65,6 +67,7 @@
 // GSL
 // Block GSL Multi Span include because it both has C++17 deprecated iterators
 // and uses the C-namespaced "max" which conflicts with Windows definitions.
+#include <gsl/gsl>
 #include <gsl/gsl_util>
 #include <gsl/pointers>
 

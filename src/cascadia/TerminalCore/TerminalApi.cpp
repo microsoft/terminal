@@ -341,6 +341,13 @@ void Terminal::MarkCommandStart()
         //
         //We can just do the work below safely.
     }
+    else if (_currentPromptState == PromptState::Command)
+    {
+        // We're already in the command state. We don't want to end the current
+        // mark. We don't want to make a new one. We want to just leave the
+        // current command going.
+        return;
+    }
     else
     {
         // If there was no last mark, or we're in a weird state,
@@ -368,6 +375,13 @@ void Terminal::MarkOutputStart()
         // with.
         //
         //We can just do the work below safely.
+    }
+    else if (_currentPromptState == PromptState::Output)
+    {
+        // We're already in the output state. We don't want to end the current
+        // mark. We don't want to make a new one. We want to just leave the
+        // current output going.
+        return;
     }
     else
     {
