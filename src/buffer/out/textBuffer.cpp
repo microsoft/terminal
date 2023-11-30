@@ -2138,7 +2138,7 @@ std::string TextBuffer::GenHTML(const std::vector<til::point_span>& selectionSpa
         }
 
         const auto cRows = selectionSpans.size();
-        for (auto i = 0; i < cRows; ++i)
+        for (size_t i = 0; i < cRows; ++i)
         {
             const auto& [start, end] = til::at(selectionSpans, i);
             const auto iRow = start.y; // same as end.y
@@ -2395,7 +2395,7 @@ std::string TextBuffer::GenRTF(const std::vector<til::point_span>& selectionSpan
         fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\chshdng0\\chcbpat{}"), getColorTableIndex(backgroundColor));
 
         const auto cRows = selectionSpans.size();
-        for (auto i = 0; i < cRows; ++i)
+        for (size_t i = 0; i < cRows; ++i)
         {
             const auto& [start, end] = til::at(selectionSpans, i);
             const auto iRow = start.y; // start.y == end.y
