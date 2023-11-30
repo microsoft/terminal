@@ -28,7 +28,6 @@
     <ClCompile Include="TextBufferTests.cpp" />
     <ClCompile Include="TitleTests.cpp" />
     <ClCompile Include="UtilsTests.cpp" />
-    <ClCompile Include="Utf8ToWideCharParserTests.cpp" />
     <ClCompile Include="InputBufferTests.cpp" />
     <ClCompile Include="ViewportTests.cpp" />
     <ClCompile Include="VtIoTests.cpp" />
