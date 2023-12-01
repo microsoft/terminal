@@ -1591,24 +1591,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->IsSelectionActive();
     }
 
+    // Method Description:
+    // - Checks if the currently active selection spans multiple lines
+    // Return Value:
+    // - true if selection is multi-line
+    bool ControlCore::HasMultiLineSelection() const
+    {
+        const auto lock = _terminal->LockForReading();
+        assert(_terminal->IsSelectionActive()); // should only be called when selection is active
+        return _terminal->GetSelectionAnchor().y != _terminal->GetSelectionEnd().y;
+    }
+
     bool ControlCore::CopyOnSelect() const
     {
         return _settings->CopyOnSelect();
     }
 
-    Windows::Foundation::Collections::IVector<winrt::hstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
+    winrt::hstring ControlCore::SelectedText(bool trimTrailingWhitespace) const
     {
         // RetrieveSelectedTextFromBuffer will lock while it's reading
         const auto lock = _terminal->LockForReading();
-        const auto internalResult{ _terminal->RetrieveSelectedTextFromBufferRows(trimTrailingWhitespace) };
-
-        auto result = winrt::single_threaded_vector<winrt::hstring>();
-
-        for (const auto& row : internalResult)
-        {
-            result.Append(winrt::hstring{ row });
-        }
-        return result;
+        const auto internalResult{ _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace) };
+        return winrt::hstring{ internalResult.plainText };
     }
 
     ::Microsoft::Console::Render::IRenderData* ControlCore::GetRenderData() const

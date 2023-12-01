@@ -1065,10 +1065,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (termControl.HasSelection())
             {
-                const auto selections{ termControl.SelectedText(true) };
-
-                // concatenate the selection into a single line
-                auto searchText = std::accumulate(selections.begin(), selections.end(), std::wstring());
+                std::wstring searchText{ termControl.SelectedText(true) };
 
                 // make it compact by replacing consecutive whitespaces with a single space
                 searchText = std::regex_replace(searchText, std::wregex(LR"(\s+)"), L" ");
