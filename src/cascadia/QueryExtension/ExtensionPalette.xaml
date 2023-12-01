@@ -60,6 +60,7 @@
                                 Background="{ThemeResource ControlAltFillColorQuarternaryBrush}"
                                 CornerRadius="8">
                         <TextBlock FontSize="14"
+                                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                    IsTextSelectionEnabled="False"
                                    Text="{x:Bind MessageContent}"
                                    TextWrapping="WrapWholeWords" />
@@ -93,6 +94,7 @@
                                            TextWrapping="Wrap" />
                                 <FontIcon VerticalAlignment="Center"
                                           FontSize="16"
+                                          Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                           Glyph="&#xE8C8;" />
                             </StackPanel>
                         </Border>
