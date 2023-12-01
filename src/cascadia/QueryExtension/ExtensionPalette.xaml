@@ -36,9 +36,10 @@
                     <StackPanel Grid.Row="1"
                                 MaxWidth="400"
                                 Padding="16,8,16,8"
-                                Background="{ThemeResource AccentFillColorSelectedTextBackgroundBrush}"
+                                Background="{ThemeResource AccentFillColorDefaultBrush}"
                                 CornerRadius="8">
                         <TextBlock FontSize="14"
+                                   Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
                                    Text="{x:Bind MessageContent}"
                                    TextWrapping="WrapWholeWords" />
                     </StackPanel>
