@@ -939,40 +939,10 @@ uint16_t ROW::size() const noexcept
     return _columnCount;
 }
 
-til::CoordType ROW::MeasureLeft() const noexcept
-{
-    const auto text = GetText();
-    const auto beg = text.begin();
-    const auto end = text.end();
-    auto it = beg;
-
-    for (; it != end; ++it)
-    {
-        if (*it != L' ')
-        {
-            break;
-        }
-    }
-
-    return gsl::narrow_cast<til::CoordType>(it - beg);
-}
-
 // Routine Description:
-// - Retrieves the position that is one after the last character in the row.
-// Arguments:
-// - useWrapness - If set and the row is wrapped, trailing whitespace is considered as a part of the text.
-til::CoordType ROW::MeasureRight(const bool useWrapness) const noexcept
+// - Retrieves the column that is one after the last non-space character in the row.
+til::CoordType ROW::GetLastNonSpaceColumn() const noexcept
 {
-    if (useWrapness && _wrapForced)
-    {
-        auto width = _columnCount;
-        if (_doubleBytePadded)
-        {
-            width--;
-        }
-        return width;
-    }
-
     const auto text = GetText();
     const auto beg = text.begin();
     const auto end = text.end();
@@ -993,6 +963,41 @@ til::CoordType ROW::MeasureRight(const bool useWrapness) const noexcept
     // An example: The row is 10 cells wide and `it` points to the second character.
     // `it - beg` would return 1, but it's possible it's actually 1 wide glyph and 8 whitespace.
     return gsl::narrow_cast<til::CoordType>(_columnCount - (end - it));
+}
+
+til::CoordType ROW::MeasureLeft() const noexcept
+{
+    const auto text = GetText();
+    const auto beg = text.begin();
+    const auto end = text.end();
+    auto it = beg;
+
+    for (; it != end; ++it)
+    {
+        if (*it != L' ')
+        {
+            break;
+        }
+    }
+
+    return gsl::narrow_cast<til::CoordType>(it - beg);
+}
+
+// Routine Description:
+// - Retrieves the column that is one after the last valid character in the row.
+til::CoordType ROW::MeasureRight() const noexcept
+{
+    if (_wrapForced)
+    {
+        auto width = _columnCount;
+        if (_doubleBytePadded)
+        {
+            width--;
+        }
+        return width;
+    }
+    
+    return GetLastNonSpaceColumn();
 }
 
 bool ROW::ContainsText() const noexcept

@@ -1988,7 +1988,7 @@ std::vector<til::point_span> TextBuffer::GetSelectionTextSpans(const std::vector
         if (shouldTrim)
         {
             // update end column to exclude trailing whitespace
-            colEnd = std::min(colEnd, row.MeasureRight(!trimWrappedRows));
+            colEnd = std::min(colEnd, row.GetLastNonSpaceColumn());
         }
 
         const til::point start = { colBegin, iRow };
