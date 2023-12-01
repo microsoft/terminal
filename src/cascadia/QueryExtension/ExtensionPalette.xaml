@@ -21,6 +21,20 @@
 
     <UserControl.Resources>
         <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <Color x:Key="BackdropBackground">#202020</Color>
+                </ResourceDictionary>
+
+                <ResourceDictionary x:Key="Light">
+                    <Color x:Key="BackdropBackground">#F9F9F9</Color>
+                </ResourceDictionary>
+
+                <ResourceDictionary x:Key="HighContrast">
+                    <StaticResource x:Key="BackdropBackground"
+                                    ResourceKey="SystemFillColorNeutralBackgroundBrush" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
             <mux:StackLayout x:Name="VerticalStackLayout"
                              Orientation="Vertical"
                              Spacing="16" />
@@ -184,7 +198,7 @@
               Padding="0,8,0,0"
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch"
-              Background="{ThemeResource SystemFillColorSolidNeutralBackgroundBrush}"
+              Background="{ThemeResource BackdropBackground}"
               BorderBrush="{ThemeResource FlyoutBorderThemeBrush}"
               BorderThickness="{ThemeResource FlyoutBorderThemeThickness}"
               CornerRadius="{ThemeResource OverlayCornerRadius}"
