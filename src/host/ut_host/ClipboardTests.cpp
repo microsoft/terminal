@@ -67,25 +67,6 @@ class ClipboardTests
 
     const UINT cRectsSelected = 4;
 
-    std::vector<std::wstring> SetupRetrieveFromBufferRows(bool fLineSelection, std::vector<til::inclusive_rect>& selection)
-    {
-        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
-        // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
-
-        // set up and try to retrieve the first 4 rows from the buffer
-        const auto& screenInfo = gci.GetActiveOutputBuffer();
-
-        selection.clear();
-        selection.emplace_back(til::inclusive_rect{ 0, 0, 8, 0 });
-        selection.emplace_back(til::inclusive_rect{ 0, 1, 14, 1 });
-        selection.emplace_back(til::inclusive_rect{ 0, 2, 14, 2 });
-        selection.emplace_back(til::inclusive_rect{ 0, 3, 8, 3 });
-
-        const auto& buffer = screenInfo.GetTextBuffer();
-        return buffer.GetText(selection, true, fLineSelection, false);
-    }
-
     std::wstring SetupRetrieveFromBuffer(bool fLineSelection, std::vector<til::inclusive_rect>& selection)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -105,41 +86,6 @@ class ClipboardTests
         const auto selectedTextSpans = buffer.GetSelectionTextSpans(selection, fLineSelection, false);
         return buffer.GetPlainText(selectedTextSpans, true, false);
     }
-
-#pragma prefast(push)
-#pragma prefast(disable : 26006, "Specifically trying to check unterminated strings in this test.")
-    TEST_METHOD(TestRetrieveFromBufferRows)
-    {
-        // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
-        // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
-
-        std::vector<til::inclusive_rect> selection;
-        const auto text = SetupRetrieveFromBufferRows(false, selection);
-
-        // verify trailing bytes were trimmed
-        // there are 2 double-byte characters in our sample string (see CommonState.hpp for sample)
-        // the width is right - left
-        VERIFY_ARE_EQUAL((til::CoordType)wcslen(text[0].data()), selection[0].right - selection[0].left + 1);
-
-        // since we're not in line selection, the line should be \r\n terminated
-        auto tempPtr = text[0].data();
-        tempPtr += text[0].size();
-        tempPtr -= 2;
-        VERIFY_ARE_EQUAL(String(tempPtr), String(L"\r\n"));
-
-        // since we're not in line selection, spaces should be trimmed from the end
-        tempPtr = text[0].data();
-        tempPtr += selection[0].right - selection[0].left - 2;
-        tempPtr++;
-        VERIFY_IS_NULL(wcsrchr(tempPtr, L' '));
-
-        // final line of selection should not contain CR/LF
-        tempPtr = text[3].data();
-        tempPtr += text[3].size();
-        tempPtr -= 2;
-        VERIFY_ARE_NOT_EQUAL(String(tempPtr), String(L"\r\n"));
-    }
-#pragma prefast(pop)
 
     TEST_METHOD(TestRetrieveFromBuffer)
     {
@@ -176,38 +122,6 @@ class ClipboardTests
         expectedText += L"AB\u304bC\u304dDE";
 
         VERIFY_ARE_EQUAL(expectedText, text);
-    }
-
-    TEST_METHOD(TestRetrieveLineSelectionFromBufferRows)
-    {
-        // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
-        // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
-
-        std::vector<til::inclusive_rect> selection;
-        const auto text = SetupRetrieveFromBufferRows(true, selection);
-
-        // row 2, no wrap
-        // no wrap row before the end should have CR/LF
-        auto tempPtr = text[2].data();
-        tempPtr += text[2].size();
-        tempPtr -= 2;
-        VERIFY_ARE_EQUAL(String(tempPtr), String(L"\r\n"));
-
-        // no wrap row should trim spaces at the end
-        tempPtr = text[2].data();
-        VERIFY_IS_NULL(wcsrchr(tempPtr, L' '));
-
-        // row 1, wrap
-        // wrap row before the end should *not* have CR/LF
-        tempPtr = text[1].data();
-        tempPtr += text[1].size();
-        tempPtr -= 2;
-        VERIFY_ARE_NOT_EQUAL(String(tempPtr), String(L"\r\n"));
-
-        // wrap row should have spaces at the end
-        tempPtr = text[1].data();
-        auto ptr = wcsrchr(tempPtr, L' ');
-        VERIFY_IS_NOT_NULL(ptr);
     }
 
     TEST_METHOD(TestRetrieveLineSelectionFromBuffer)

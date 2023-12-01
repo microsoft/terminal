@@ -832,30 +832,6 @@ void Terminal::ClearSelection()
 }
 
 // Method Description:
-// - get wstring text from highlighted portion of text buffer
-// Arguments:
-// - singleLine: collapse all of the text to one line
-// Return Value:
-// - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
-std::vector<std::wstring> Terminal::RetrieveSelectedTextFromBufferRows(const bool singleLine) const
-{
-    // GH#6740: Block selection should preserve the visual structure:
-    // - CRLFs need to be added - so the lines structure is preserved
-    // - We should apply formatting above to wrapped rows as well (newline should be added).
-    const auto includeLineBreak = !singleLine || _blockSelection;
-
-    // Trim trailing whitespace if we're not in single line mode and — either
-    // we're not in block selection mode or, we're in block selection mode and
-    // trimming is allowed.
-    const auto trimTrailingWhitespace = !singleLine && (!_blockSelection || _trimBlockSelection);
-
-    const auto formatWrappedRows = _blockSelection;
-
-    const auto selectionRects = _GetSelectionRects();
-    return _activeBuffer().GetText(selectionRects, includeLineBreak, trimTrailingWhitespace, formatWrappedRows);
-}
-
-// Method Description:
 // - Get text from highlighted portion of text buffer
 // - Optionally, get the highlighted text in HTML and RTF formats
 // Arguments:

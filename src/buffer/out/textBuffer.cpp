@@ -1919,51 +1919,6 @@ void TextBuffer::_ExpandTextRow(til::inclusive_rect& textRow) const
     }
 }
 
-// Routine Description:
-// - Retrieves the row-wise text data from the selected region.
-// Arguments:
-// - selectionRects - the rectangular regions from which the data will be extracted from the buffer
-// - includeCRLF - inject CRLF pairs to the end of each line
-// - trimTrailingWhitespace - remove the trailing whitespace at the end of each line
-// - formatWrappedRows - if set we will apply formatting (CRLF inclusion and whitespace trimming) on wrapped rows
-// Return Value:
-// - A list of text data for each row in the selected region
-std::vector<std::wstring> TextBuffer::GetText(const std::vector<til::inclusive_rect>& selectionRects,
-                                              const bool includeCRLF,
-                                              const bool trimTrailingWhitespace,
-                                              const bool formatWrappedRows) const
-{
-    std::vector<std::wstring> text;
-
-    const auto selectedTextSpans = GetSelectionTextSpans(selectionRects, trimTrailingWhitespace, formatWrappedRows);
-
-    const auto cRows = selectedTextSpans.size();
-    text.reserve(cRows);
-
-    for (size_t i = 0; i < cRows; i++)
-    {
-        const auto& [start, end] = til::at(selectedTextSpans, i);
-        const auto& row = GetRowByOffset(start.y); // start.y == end.y
-
-        // save selected text
-        auto selectedText = std::wstring{ row.GetText(start.x, end.x) };
-
-        // When we're including CL/RF, `formatWrappedRows` signifies line break
-        // to be added to all rows (wrapped and non-wrapped), but when it's false,
-        // only add line break to non-wrapped rows.
-        const auto addLineBreak = includeCRLF && (formatWrappedRows || !row.WasWrapForced());
-        // Also, never add CR/LF to the last row.
-        if (addLineBreak && i < cRows - 1)
-        {
-            selectedText += L"\r\n";
-        }
-
-        text.emplace_back(std::move(selectedText));
-    }
-
-    return text;
-}
-
 size_t TextBuffer::SpanLength(const til::point coordStart, const til::point coordEnd) const
 {
     const auto bufferSize = GetSize();

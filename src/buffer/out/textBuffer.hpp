@@ -231,11 +231,6 @@ public:
 
     size_t SpanLength(const til::point coordStart, const til::point coordEnd) const;
 
-    std::vector<std::wstring> GetText(const std::vector<til::inclusive_rect>& selectionRects,
-                                      const bool includeCRLF,
-                                      const bool trimTrailingWhitespace,
-                                      const bool formatWrappedRows) const;
-
     std::wstring GetPlainText(const til::point& start, const til::point& end) const;
 
     std::vector<til::point_span> GetSelectionTextSpans(const std::vector<til::inclusive_rect>& selectionRects,
