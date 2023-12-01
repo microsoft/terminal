@@ -1611,7 +1611,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // RetrieveSelectedTextFromBuffer will lock while it's reading
         const auto lock = _terminal->LockForReading();
-        const auto internalResult{ _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace) };
+        const auto internalResult{ _terminal->RetrieveSelectedTextFromBuffer(!trimTrailingWhitespace) };
         return winrt::hstring{ internalResult.plainText };
     }
 

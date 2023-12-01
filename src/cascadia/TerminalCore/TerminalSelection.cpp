@@ -859,7 +859,7 @@ std::vector<std::wstring> Terminal::RetrieveSelectedTextFromBufferRows(const boo
 // - Get text from highlighted portion of text buffer
 // - Optionally, get the highlighted text in HTML and RTF formats
 // Arguments:
-// - singleLine: collapse all of the text to one line
+// - singleLine: collapse all of the text to one line. (Turns off trailing whitespace trimming)
 // - html: also get text in HTML format
 // - rtf: also get text in RTF format
 // Return Value:
