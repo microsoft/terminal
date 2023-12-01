@@ -604,6 +604,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // Wait for user authentication and obtain the access/refresh tokens
         auto authenticatedResponse = _WaitForUser(devCode, pollInterval, expiresIn);
+
+        // If user closed tab, `_WaitForUser` returns nullptr
+        // This also occurs if the connection times out, when polling time exceeds the expiry time
+        if (!authenticatedResponse)
+        {
+            _transitionToState(ConnectionState::Failed);
+            return;
+        }
+
         _setAccessToken(authenticatedResponse.GetNamedString(L"access_token"));
         _refreshToken = authenticatedResponse.GetNamedString(L"refresh_token");
 
