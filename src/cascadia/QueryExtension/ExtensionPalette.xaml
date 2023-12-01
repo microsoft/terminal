@@ -181,7 +181,7 @@
               Padding="0,8,0,0"
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch"
-              Background="{ThemeResource ControlFillColorSecondaryBrush}"
+              Background="{ThemeResource SystemFillColorSolidNeutralBackgroundBrush}"
               BorderBrush="{ThemeResource FlyoutBorderThemeBrush}"
               BorderThickness="{ThemeResource FlyoutBorderThemeThickness}"
               CornerRadius="{ThemeResource OverlayCornerRadius}"
