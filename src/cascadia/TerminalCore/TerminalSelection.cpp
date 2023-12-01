@@ -837,7 +837,7 @@ void Terminal::ClearSelection()
 // - singleLine: collapse all of the text to one line
 // Return Value:
 // - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
-std::vector<std::wstring> Terminal::RetrieveSelectedTextFromBufferRows(bool singleLine) const
+std::vector<std::wstring> Terminal::RetrieveSelectedTextFromBufferRows(const bool singleLine) const
 {
     // GH#6740: Block selection should preserve the visual structure:
     // - CRLFs need to be added - so the lines structure is preserved
@@ -864,7 +864,7 @@ std::vector<std::wstring> Terminal::RetrieveSelectedTextFromBufferRows(bool sing
 // - rtf: also get text in RTF format
 // Return Value:
 // - Plain and formatted selected text from buffer. If extended to multiple lines, each line is separated by \r\n
-Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(bool singleLine, bool html, bool rtf) const
+Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(const bool singleLine, const bool html, const bool rtf) const
 {
     TextCopyData data;
 

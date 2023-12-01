@@ -672,7 +672,7 @@ try
     std::wstring selectedText;
     {
         const auto lock = publicTerminal->_terminal->LockForWriting();
-        auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false, false, false);
+        auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
         selectedText = std::move(bufferData.plainText);
         publicTerminal->_ClearSelection();
     }
