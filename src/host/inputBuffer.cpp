@@ -602,6 +602,30 @@ size_t InputBuffer::Write(const std::span<const INPUT_RECORD>& inEvents)
     }
 }
 
+void InputBuffer::WriteDirect(const std::span<const INPUT_RECORD>& inEvents)
+try
+{
+    if (inEvents.empty())
+    {
+        return;
+    }
+
+    const auto initiallyEmptyQueue = _storage.empty();
+
+    for (const auto& inEvent : inEvents)
+    {
+        _storage.push_back(inEvent);
+    }
+
+    if (initiallyEmptyQueue && !_storage.empty())
+    {
+        ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
+    }
+
+    WakeUpReadersWaitingForData();
+}
+CATCH_LOG()
+
 // This can be considered a "privileged" variant of Write() which allows FOCUS_EVENTs to generate focus VT sequences.
 // If we didn't do this, someone could write a FOCUS_EVENT_RECORD with WriteConsoleInput, exit without flushing the
 // input buffer and the next application will suddenly get a "\x1b[I" sequence in their input. See GH#13238.

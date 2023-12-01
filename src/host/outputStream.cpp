@@ -50,7 +50,7 @@ void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
     // to make sure that "response" input is spooled directly into the application.
     // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
     // could collide with each other.
-    _io.GetActiveInputBuffer()->Write(inEvents);
+    _io.GetActiveInputBuffer()->WriteDirect(inEvents);
 }
 
 // Routine Description:

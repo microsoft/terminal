@@ -58,6 +58,7 @@ public:
     size_t Prepend(const std::span<const INPUT_RECORD>& inEvents);
     size_t Write(const INPUT_RECORD& inEvent);
     size_t Write(const std::span<const INPUT_RECORD>& inEvents);
+    void WriteDirect(const std::span<const INPUT_RECORD>& inEvents);
     void WriteFocusEvent(bool focused) noexcept;
     bool WriteMouseEvent(til::point position, unsigned int button, short keyState, short wheelDelta);
 
