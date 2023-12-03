@@ -974,7 +974,7 @@ til::CoordType ROW::GetLastNonSpaceColumn() const noexcept
     //
     // An example: The row is 10 cells wide and `it` points to the second character.
     // `it - beg` would return 1, but it's possible it's actually 1 wide glyph and 8 whitespace.
-    return gsl::narrow_cast<til::CoordType>(_columnCount - (end - it));
+    return gsl::narrow_cast<til::CoordType>(GetReadableColumnCount() - (end - it));
 }
 
 til::CoordType ROW::MeasureLeft() const noexcept
