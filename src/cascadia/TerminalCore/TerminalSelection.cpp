@@ -844,6 +844,11 @@ Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(const bool singl
 {
     TextCopyData data;
 
+    if (!IsSelectionActive())
+    {
+        return data;
+    }
+
     const auto bgColor = _renderSettings.GetAttributeColors({}).second;
     const auto isIntenseBold = _renderSettings.GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
     const auto fontSizePt = _fontInfo.GetUnscaledSize().height; // already in points
@@ -858,32 +863,15 @@ Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(const bool singl
         return std::tuple{ fg, bg, ul };
     };
 
-    // GH#6740: Block selection should preserve the visual structure:
-    // - CRLFs need to be added - so the lines structure is preserved
-    // - We should apply formatting above to wrapped rows as well (newline should be added).
-    const auto includeLineBreak = !singleLine || _blockSelection;
-
-    // Trim trailing whitespace if we're not in single line mode and — either
-    // we're not in block selection mode or, we're in block selection mode and
-    // trimming is allowed.
-    const auto trimTrailingWhitespace = !singleLine && (!_blockSelection || _trimBlockSelection);
-
-    const auto formatWrappedRows = _blockSelection;
-
-    // get highlighted selection rects
-    const auto selectionRects = _GetSelectionRects();
-
-    // get trimmed text spans from the selection rects
-    const auto selectedTextSpans = textBuffer.GetSelectionTextSpans(selectionRects, trimTrailingWhitespace, formatWrappedRows);
-
-    data.plainText = textBuffer.GetPlainText(selectedTextSpans, includeLineBreak, formatWrappedRows);
+    const auto req = textBuffer.MakeCopyRequest(_selection->start, _selection->end, singleLine, _blockSelection, _trimBlockSelection);
+    data.plainText = textBuffer.GetPlainText(req);
     if (html)
     {
-        data.html = textBuffer.GenHTML(selectedTextSpans, fontSizePt, fontName, bgColor, isIntenseBold, includeLineBreak, formatWrappedRows, GetAttributeColors);
+        data.html = textBuffer.GenHTML(req, fontSizePt, fontName, bgColor, isIntenseBold, GetAttributeColors);
     }
     if (rtf)
     {
-        data.rtf = textBuffer.GenRTF(selectedTextSpans, fontSizePt, fontName, bgColor, isIntenseBold, includeLineBreak, formatWrappedRows, GetAttributeColors);
+        data.rtf = textBuffer.GenRTF(req, fontSizePt, fontName, bgColor, isIntenseBold, GetAttributeColors);
     }
 
     return data;

@@ -233,30 +233,41 @@ public:
 
     std::wstring GetPlainText(const til::point& start, const til::point& end) const;
 
-    std::vector<til::point_span> GetSelectionTextSpans(const std::vector<til::inclusive_rect>& selectionRects,
-                                                       const bool trimTrailingWhitespace,
-                                                       const bool trimWrappedRows) const;
+    struct CopyRequest
+    {
+        til::point beg;
+        til::point end;
+        til::CoordType minX;
+        til::CoordType maxX;
+        bool singleLine = false;
+        bool blockSelection = false;
+        bool trimBlockSelection = false;
 
-    std::wstring GetPlainText(const std::vector<til::point_span>& selectionSpans,
-                              const bool includeCRLF,
-                              const bool formatWrappedRows) const;
+        // whether beg, end coordinates are in buffer coordinates or screen coordinates 
+        bool bufferCoordinates = false;
+    };
 
-    std::string GenHTML(const std::vector<til::point_span>& selectionSpans,
+    CopyRequest MakeCopyRequest(const til::point& beg,
+                                const til::point& end,
+                                const bool singleLine,
+                                const bool blockSelection,
+                                const bool trimBlockSelection,
+                                const bool bufferCoordinates = false) const;
+
+    std::wstring GetPlainText(const CopyRequest& req) const;
+
+    std::string GenHTML(const CopyRequest& req,
                         const int fontHeightPoints,
                         const std::wstring_view fontFaceName,
                         const COLORREF backgroundColor,
                         const bool isIntenseBold,
-                        const bool includeLineBreak,
-                        const bool lineBreakWrappedRows,
                         std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept;
 
-    std::string GenRTF(const std::vector<til::point_span>& selectionSpans,
+    std::string GenRTF(const CopyRequest& req,
                        const int fontHeightPoints,
                        const std::wstring_view fontFaceName,
                        const COLORREF backgroundColor,
                        const bool isIntenseBold,
-                       const bool includeLineBreak,
-                       const bool lineBreakWrappedRows,
                        std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept;
 
     struct PositionInformation
@@ -305,6 +316,7 @@ private:
     til::point _GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const;
     void _PruneHyperlinks();
     void _trimMarksOutsideBuffer();
+    std::tuple<til::CoordType, til::CoordType, bool> _RowCopyHelper(const CopyRequest& req, const til::CoordType iRow, const ROW& row) const;
 
     static void _AppendRTFText(std::string& contentBuilder, const std::wstring_view& text);
 

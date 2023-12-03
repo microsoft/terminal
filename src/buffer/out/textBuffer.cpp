@@ -1956,78 +1956,100 @@ std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point&
     return text;
 }
 
-// Routine Description:
-// - Retrieves the text start and end coordinates we're interested in from the selected rectangular regions.
-// - Removes trailing whitespaces at the end of each line, when requested.
-// - The result is used to generate copy text in plain-text and other formats, including HTML and RTF.
-// Arguments:
-// - selectionRects - the rectangular regions for which the text span coordinates will be calculated.
-// - trimTrailingWhitespace - if set, trim trailing whitespaces in the end of the non-wrapped line.
-// - trimWrappedRows - if set, trim trailing whitespaces on wrapped rows too.
-// Return Value:
-// - A list of point-span from each row of the selected region. End coordinates are exclusive.
-std::vector<til::point_span> TextBuffer::GetSelectionTextSpans(const std::vector<til::inclusive_rect>& selectionRects,
-                                                               const bool trimTrailingWhitespace,
-                                                               const bool trimWrappedRows) const
+TextBuffer::CopyRequest TextBuffer::MakeCopyRequest(const til::point& beg, const til::point& end, const bool singleLine, const bool blockSelection, const bool trimBlockSelection, const bool bufferCoordinates) const
 {
-    std::vector<til::point_span> selectedTextSpans;
-
-    selectedTextSpans.reserve(selectionRects.size());
-
-    for (const auto& selectionRect : selectionRects)
-    {
-        const auto colBegin = selectionRect.left;
-        auto colEnd = selectionRect.right + 1; // +1 to get an exclusive end
-        const auto iRow = selectionRect.top;
-        const auto& row = GetRowByOffset(iRow);
-
-        // When we're trimming, trimWrappedRows signifies trimming trailing whitespaces
-        // on all rows (wrapped and non-wrapped), but when it's false, only trim on
-        // non-wrapped rows.
-        const auto shouldTrim = trimTrailingWhitespace && (trimWrappedRows || !row.WasWrapForced());
-        if (shouldTrim)
-        {
-            // update end column to exclude trailing whitespace
-            colEnd = std::min(colEnd, row.GetLastNonSpaceColumn());
-        }
-
-        const til::point start = { colBegin, iRow };
-        const til::point end = { colEnd, iRow };
-        selectedTextSpans.emplace_back(start, end);
-    }
-
-    return selectedTextSpans;
+    CopyRequest req;
+    req.beg = std::max(beg, til::point{ 0, 0 });
+    req.end = std::min(end, til::point{ _width, _height });
+    req.minX = std::min(req.beg.x, req.end.x);
+    req.maxX = std::max(req.beg.x, req.end.x);
+    req.singleLine = singleLine;
+    req.blockSelection = blockSelection;
+    req.trimBlockSelection = trimBlockSelection;
+    req.bufferCoordinates = bufferCoordinates;
+    return req;
 }
 
 // Routine Description:
-// - Retrieves the text data from all the selected text spans and presents it in a clipboard-ready format.
+// - Given a copy request and a row, retrieves the row bounds [begin, end) and
+//   a boolean indicating whether a line break should be added to this row.
 // Arguments:
-// - selectionSpans - the selected spans from which the data will be extracted from the buffer
-// - includeCRLF - inject CRLF pairs to the end of each non-wrapped row
-// - formatWrappedRows - if set CRLF pairs are applied on wrapped rows as well
+// - req - the copy request
+// - iRow - the row index
+// - row - the row
 // Return Value:
-// - The combined text data from all the spans of the selected region of the text buffer.
-std::wstring TextBuffer::GetPlainText(const std::vector<til::point_span>& selectionSpans,
-                                      const bool includeCRLF,
-                                      const bool formatWrappedRows) const
+// - The row bounds and a boolean for line break
+std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(const TextBuffer::CopyRequest& req, const til::CoordType iRow, const ROW& row) const
 {
+    til::CoordType rowBeg = 0;
+    til::CoordType rowEnd = 0;
+    bool addLineBreak = false;
+
+    if (req.blockSelection)
+    {
+        // Block selection should preserve the visual structure
+
+        rowBeg = req.minX;
+        rowEnd = req.maxX + 1; // +1 to get an exclusive end
+
+        // line break (E.g. "\r\n", "<BR>") needs to be added on all rows,
+        // so the lines structure is preserved
+        addLineBreak = true;
+
+        // Single line mode preserves trailing whitespaces. When not in single
+        // line mode, trim when trimming is allowed for block-selection.
+        if (!req.singleLine && req.trimBlockSelection)
+        {
+            rowEnd = std::min(rowEnd, row.GetLastNonSpaceColumn());
+        }
+    }
+    else
+    {
+        rowBeg = iRow != req.beg.y ? 0 : req.beg.x;
+        rowEnd = iRow != req.end.y ? row.GetReadableColumnCount() : req.end.x + 1; // +1 to get an exclusive end
+
+        // Single line mode preserves trailing whitespaces. When not in single
+        // line mode, trim trailing whitespace only on non-wrapped rows.
+        if (!req.singleLine && !row.WasWrapForced())
+        {
+            addLineBreak = true;
+            rowEnd = std::min(rowEnd, row.GetLastNonSpaceColumn());
+        }
+    }
+
+    // Our selection mechanism doesn't stick to glyph boundaries at the moment.
+    // We need to adjust begin and end points manually to avoid partially
+    // selected glyphs.
+    rowBeg = row.AdjustToGlyphStart(rowBeg);
+    rowEnd = row.AdjustToGlyphEnd(rowEnd);
+
+    return { rowBeg, rowEnd, addLineBreak };
+}
+
+// Routine Description:
+// - Retrieves the text data from the buffer and presents it in a clipboard-ready format.
+// Arguments:
+// - req - the copy request having the bounds of the selected region and other related configuration flags.
+// Return Value:
+// - The text data from the selected region of the text buffer.
+std::wstring TextBuffer::GetPlainText(const CopyRequest& req) const
+{
+    if (req.beg > req.end)
+    {
+        return {};
+    }
+
     std::wstring selectedText;
 
-    const auto cRows = selectionSpans.size();
-    for (size_t i = 0; i < cRows; i++)
+    for (auto iRow = req.beg.y; iRow <= req.end.y; ++iRow)
     {
-        const auto& [start, end] = til::at(selectionSpans, i);
-        const auto& row = GetRowByOffset(start.y); // start.y == end.y
+        const auto& row = GetRowByOffset(iRow);
+        const auto& [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row);
 
         // save selected text
-        selectedText += row.GetText(start.x, end.x);
+        selectedText += row.GetText(rowBeg, rowEnd);
 
-        // When we're including CR/LF, `formatWrappedRows` signifies line
-        // break to be added to all rows (wrapped and non-wrapped), but when
-        // it's false, only add line break to non-wrapped rows.
-        const auto addLineBreak = includeCRLF && (formatWrappedRows || !row.WasWrapForced());
-        // Also, never add CR/LF to the last row.
-        if (addLineBreak && i < cRows - 1)
+        if (addLineBreak && iRow != req.end.y)
         {
             selectedText += L"\r\n";
         }
@@ -2037,30 +2059,31 @@ std::wstring TextBuffer::GetPlainText(const std::vector<til::point_span>& select
 }
 
 // Routine Description:
-// - Generates a CF_HTML compliant structure based on the passed in selection spans
+// - Generates a CF_HTML compliant structure from the selected region of the buffer
 // Arguments:
-// - selectionSpans - selected text span for each row of the selected region
+// - req - the copy request having the bounds of the selected region and other related configuration flags.
 // - fontHeightPoints - the unscaled font height
 // - fontFaceName - the name of the font used
 // - backgroundColor - default background color for characters, also used in padding
 // - isIntenseBold - true if being intense is treated as being bold
-// - includeLineBreak - true if line breaks should be included
-// - lineBreakWrappedRows - true if line breaks should be added to wrapped rows too
 // - GetAttributeColors - function to get the colors of the text attributes as they're rendered
 // Return Value:
 // - string containing the generated HTML
-std::string TextBuffer::GenHTML(const std::vector<til::point_span>& selectionSpans,
+std::string TextBuffer::GenHTML(const CopyRequest& req,
                                 const int fontHeightPoints,
                                 const std::wstring_view fontFaceName,
                                 const COLORREF backgroundColor,
                                 const bool isIntenseBold,
-                                bool includeLineBreak,
-                                bool lineBreakWrappedRows,
                                 std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept
 {
     // GH#5347 - Don't provide a title for the generated HTML, as many
     // web applications will paste the title first, followed by the HTML
     // content, which is unexpected.
+
+    if (req.beg > req.end)
+    {
+        return {};
+    }
 
     try
     {
@@ -2092,17 +2115,15 @@ std::string TextBuffer::GenHTML(const std::vector<til::point_span>& selectionSpa
             htmlBuilder += "\">";
         }
 
-        const auto cRows = selectionSpans.size();
-        for (size_t i = 0; i < cRows; ++i)
+        for (auto iRow = req.beg.y; iRow <= req.end.y; ++iRow)
         {
-            const auto& [start, end] = til::at(selectionSpans, i);
-            const auto iRow = start.y; // same as end.y
-            const auto colStart = gsl::narrow_cast<uint16_t>(start.x);
-            const auto colEnd = gsl::narrow_cast<uint16_t>(end.x);
             const auto& row = GetRowByOffset(iRow);
-            const auto runs = row.Attributes().slice(colStart, colEnd).runs();
+            const auto& [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row); 
+            const auto rowBegU16 = gsl::narrow_cast<uint16_t>(rowBeg);
+            const auto rowEndU16 = gsl::narrow_cast<uint16_t>(rowEnd);
+            const auto runs = row.Attributes().slice(rowBegU16, rowEndU16).runs();
 
-            auto x = colStart;
+            auto x = rowBegU16;
             for (const auto& [attr, length] : runs)
             {
                 const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
@@ -2206,12 +2227,8 @@ std::string TextBuffer::GenHTML(const std::vector<til::point_span>& selectionSpa
                 x = nextX;
             }
 
-            // When we're including line breaks, `lineBreakWrappedRows` signifies
-            // line break to be added to all rows (wrapped and non-wrapped), but
-            // when it's false, only add line break to non-wrapped rows.
-            const auto addLineBreak = includeLineBreak && (lineBreakWrappedRows || !row.WasWrapForced());
-            // Also, never add line break to the last row.
-            if (addLineBreak && i < cRows - 1)
+            // never add line break to the last row.
+            if (addLineBreak && iRow < req.end.y)
             {
                 htmlBuilder += "<BR>";
             }
@@ -2253,29 +2270,30 @@ std::string TextBuffer::GenHTML(const std::vector<til::point_span>& selectionSpa
 }
 
 // Routine Description:
-// - Generates an RTF document based on the passed in selection spans
+// - Generates an RTF document from the selected region of the buffer
 //   RTF 1.5 Spec: https://www.biblioscape.com/rtf15_spec.htm
 //   RTF 1.9.1 Spec: https://msopenspecs.azureedge.net/files/Archive_References/[MSFT-RTF].pdf
 // Arguments:
-// - selectionSpans - selected text span for each row of the selected region
+// - req - the copy request having the bounds of the selected region and other related configuration flags.
 // - fontHeightPoints - the unscaled font height
 // - fontFaceName - the name of the font used
 // - backgroundColor - default background color for characters, also used in padding
 // - isIntenseBold - true if being intense is treated as being bold
-// - includeLineBreak - true if line breaks should be included
-// - lineBreakWrappedRows - true if line breaks should be added to wrapped rows
 // - GetAttributeColors - function to get the colors of the text attributes as they're rendered
 // Return Value:
 // - string containing the generated RTF
-std::string TextBuffer::GenRTF(const std::vector<til::point_span>& selectionSpans,
+std::string TextBuffer::GenRTF(const CopyRequest& req,
                                const int fontHeightPoints,
                                const std::wstring_view fontFaceName,
                                const COLORREF backgroundColor,
                                const bool isIntenseBold,
-                               bool includeLineBreak,
-                               bool lineBreakWrappedRows,
                                std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept
 {
+    if (req.beg > req.end)
+    {
+        return {};
+    }
+
     try
     {
         std::string rtfBuilder;
@@ -2349,17 +2367,15 @@ std::string TextBuffer::GenRTF(const std::vector<til::point_span>& selectionSpan
         // color. See: Spec 1.9.1, Pg. 23.
         fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\chshdng0\\chcbpat{}"), getColorTableIndex(backgroundColor));
 
-        const auto cRows = selectionSpans.size();
-        for (size_t i = 0; i < cRows; ++i)
+        for (auto iRow = req.beg.y; iRow <= req.end.y; ++iRow)
         {
-            const auto& [start, end] = til::at(selectionSpans, i);
-            const auto iRow = start.y; // start.y == end.y
-            const auto colStart = gsl::narrow_cast<uint16_t>(start.x);
-            const auto colEnd = gsl::narrow_cast<uint16_t>(end.x);
             const auto& row = GetRowByOffset(iRow);
-            const auto runs = row.Attributes().slice(colStart, colEnd).runs();
+            const auto& [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row);
+            const auto rowBegU16 = gsl::narrow_cast<uint16_t>(rowBeg);
+            const auto rowEndU16 = gsl::narrow_cast<uint16_t>(rowEnd);
+            const auto runs = row.Attributes().slice(rowBegU16, rowEndU16).runs();
 
-            auto x = colStart;
+            auto x = rowBegU16;
             for (auto& [attr, length] : runs)
             {
                 const auto nextX = gsl::narrow_cast<uint16_t>(x + length);
@@ -2429,12 +2445,8 @@ std::string TextBuffer::GenRTF(const std::vector<til::point_span>& selectionSpan
                 x = nextX;
             }
 
-            // When we're including line breaks, `lineBreakWrappedRows` signifies
-            // line break to be added to all rows (wrapped and non-wrapped), but
-            // when it's false, only add line break to non-wrapped rows.
-            const auto addLineBreak = includeLineBreak && (lineBreakWrappedRows || !row.WasWrapForced());
-            // Also, never add line break to the last row.
-            if (addLineBreak && i < cRows - 1)
+            // never add line break to the last row.
+            if (addLineBreak && iRow < req.end.y)
             {
                 contentBuilder += "\\line";
             }

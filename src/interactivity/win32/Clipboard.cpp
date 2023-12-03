@@ -245,28 +245,21 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
         return std::tuple{ fg, bg, ul };
     };
 
-    const bool formatWrappedRows = !selection.IsLineSelection();
-
-    bool includeLineBreak, trimTrailingWhitespace;
+    bool singleLine = false;
     if (WI_IsFlagSet(OneCoreSafeGetKeyState(VK_SHIFT), KEY_PRESSED))
     {
         // When shift is held, put everything in one line
-        includeLineBreak = trimTrailingWhitespace = false;
-    }
-    else
-    {
-        includeLineBreak = trimTrailingWhitespace = true;
+        singleLine = true;
     }
 
-    const auto selectedTextSpans = buffer.GetSelectionTextSpans(selectionRects,
-                                                                trimTrailingWhitespace,
-                                                                formatWrappedRows);
+    const auto& [selectionStart, selectionEnd] = selection.GetSelectionAnchors(true);
 
-    text = buffer.GetPlainText(selectedTextSpans, includeLineBreak, formatWrappedRows);
+    const auto req = buffer.MakeCopyRequest(selectionStart, selectionEnd, singleLine, !selection.IsLineSelection(), false);
+    text = buffer.GetPlainText(req);
     if (copyFormatting)
     {
-        htmlData = buffer.GenHTML(selectedTextSpans, fontSizePt, fontName, bgColor, isIntenseBold, includeLineBreak, formatWrappedRows, GetAttributeColors);
-        rtfData = buffer.GenRTF(selectedTextSpans, fontSizePt, fontName, bgColor, isIntenseBold, includeLineBreak, formatWrappedRows, GetAttributeColors);
+        htmlData = buffer.GenHTML(req, fontSizePt, fontName, bgColor, isIntenseBold, GetAttributeColors);
+        rtfData = buffer.GenRTF(req, fontSizePt, fontName, bgColor, isIntenseBold, GetAttributeColors);
     }
 
     CopyTextToSystemClipboard(text, std::move(htmlData), std::move(rtfData));
