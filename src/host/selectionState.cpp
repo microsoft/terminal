@@ -198,6 +198,37 @@ til::point Selection::GetSelectionAnchor() const noexcept
 }
 
 // Routine Description:
+// - Gets the current selection begin and end anchor positions.
+// Arguments:
+// - ordered - if true, arrange the selection anchors such that the first anchor
+//             is at the top left corner, and the second one is at the bottom
+//             right of the selection area
+// Return Value:
+// - The current selection anchors
+std::pair<til::point, til::point> Selection::GetSelectionAnchors(const bool ordered) const noexcept
+{
+    if (!_fSelectionVisible)
+    {
+        return {};
+    }
+
+    auto startSelectionAnchor = _coordSelectionAnchor;
+    
+    // _coordSelectionAnchor is at one of the corners of _srSelectionRects
+    // endSelectionAnchor is at the exact opposite corner
+    til::point endSelectionAnchor;
+    endSelectionAnchor.x = (_coordSelectionAnchor.x == _srSelectionRect.left) ? _srSelectionRect.right : _srSelectionRect.left;
+    endSelectionAnchor.y = (_coordSelectionAnchor.y == _srSelectionRect.top) ? _srSelectionRect.bottom : _srSelectionRect.top;
+
+    if (ordered && startSelectionAnchor > endSelectionAnchor)
+    {
+        std::swap(startSelectionAnchor, endSelectionAnchor);
+    }
+
+    return { startSelectionAnchor, endSelectionAnchor };
+}
+
+// Routine Description:
 // - Gets the current selection rectangle
 // Arguments:
 // - none
