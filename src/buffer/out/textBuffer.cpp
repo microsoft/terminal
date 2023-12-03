@@ -1987,13 +1987,15 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
 
     if (req.blockSelection)
     {
-        // Block selection should preserve the visual structure
+        const auto lineRendition = row.GetLineRendition();
+        const auto minX = req.bufferCoordinates ? req.minX : ScreenToBufferLine(til::point{ req.minX, iRow }, lineRendition).x;
+        const auto maxX = req.bufferCoordinates ? req.maxX : ScreenToBufferLine(til::point{ req.maxX, iRow }, lineRendition).x;
 
-        rowBeg = req.minX;
-        rowEnd = req.maxX + 1; // +1 to get an exclusive end
+        rowBeg = minX;
+        rowEnd = maxX + 1; // +1 to get an exclusive end
 
         // line break (E.g. "\r\n", "<BR>") needs to be added on all rows,
-        // so the lines structure is preserved
+        // so the lines structure is preserved.
         addLineBreak = true;
 
         // Single line mode preserves trailing whitespaces. When not in single
@@ -2005,8 +2007,12 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
     }
     else
     {
-        rowBeg = iRow != req.beg.y ? 0 : req.beg.x;
-        rowEnd = iRow != req.end.y ? row.GetReadableColumnCount() : req.end.x + 1; // +1 to get an exclusive end
+        const auto lineRendition = row.GetLineRendition();
+        const auto beg = req.bufferCoordinates ? req.beg : ScreenToBufferLine(req.beg, lineRendition);
+        const auto end = req.bufferCoordinates ? req.end : ScreenToBufferLine(req.end, lineRendition);
+
+        rowBeg = iRow != beg.y ? 0 : beg.x;
+        rowEnd = iRow != end.y ? row.GetReadableColumnCount() : end.x + 1; // +1 to get an exclusive end
 
         // Single line mode preserves trailing whitespaces. When not in single
         // line mode, trim trailing whitespace only on non-wrapped rows.
