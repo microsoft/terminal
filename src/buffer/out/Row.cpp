@@ -404,6 +404,18 @@ til::CoordType ROW::AdjustToGlyphStart(til::CoordType column) const noexcept
     return _adjustBackward(_clampedColumn(column));
 }
 
+// Returns the (exclusive) ending column of the glyph at the given column.
+// In other words, if you have 3 wide glyphs
+//   AA BB CC 
+//   01 23 45 <-- column
+// Examples:
+// - `AdjustToGlyphEnd(4)` returns 6.
+// - `AdjustToGlyphEnd(3)` returns 4.
+til::CoordType ROW::AdjustToGlyphEnd(til::CoordType column) const noexcept
+{
+    return _adjustForward(_clampedColumnInclusive(column));
+}
+
 // Routine Description:
 // - clears char data in column in row
 // Arguments:
