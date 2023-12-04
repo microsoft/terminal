@@ -2138,15 +2138,12 @@ void StateMachine::ProcessString(const std::wstring_view string)
         // <kbd>alt+[</kbd>, <kbd>A</kbd> would be processed like `\x1b[A`,
         // which is _wrong_).
         //
-        // Fortunately, for VT input, each keystroke comes in as an individual
-        // write operation. So, if at the end of processing a string for the
-        // InputEngine, we find that we're not in the Ground state, that implies
-        // that we've processed some input, but not dispatched it yet. This
-        // block at the end of `ProcessString` will then re-process the
-        // undispatched string, but it will ensure that it dispatches on the
-        // last character of the string. For our previous `\x1b[` scenario, that
-        // means we'll make sure to call `_ActionEscDispatch('[')`., which will
-        // properly decode the string as <kbd>alt+[</kbd>.
+        // At the same time, input may be broken up arbitrarily, depending on the pipe's
+        // buffer size, our read-buffer size, the sender's write-buffer size, and more.
+        // In fact, with the current WSL, input is broken up in 16 byte chunks (Why? :(),
+        // which breaks up many of our longer sequences, like our Win32InputMode ones.
+        //
+        // As a heuristic, this code specifically checks for a trailing Esc or Alt+key.
         if (_isEngineForInput)
         {
             if (run.size() <= 2 && run.front() == L'\x1b')
