@@ -1917,7 +1917,12 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return !_api.IsConsolePty();
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::Win32, enable);
-        return !_PassThroughInputModes();
+        // ConPTY requests the Win32InputMode on startup and disables it on shutdown. When nesting ConPTY inside
+        // ConPTY then this should not bubble up. Otherwise, when the inner ConPTY exits and the outer ConPTY
+        // passes the disable sequence up to the hosting terminal, we'd stop getting  Win32InputMode entirely!
+        // It also makes more sense to not bubble it up, because this mode is specifically for INPUT_RECORD interop
+        // and thus entirely between a PTY's input records and its INPUT_RECORD-aware VT-aware console clients.
+        return true;
     default:
         // If no functions to call, overall dispatch was a failure.
         return false;
