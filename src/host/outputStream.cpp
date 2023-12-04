@@ -33,24 +33,11 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 // - <none>
 void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
 {
-    InputEventQueue inEvents;
-
-    // generate a paired key down and key up event for every
-    // character to be sent into the console's input buffer
-    for (const auto& wch : response)
-    {
-        // This wasn't from a real keyboard, so we're leaving key/scan codes blank.
-        auto keyEvent = SynthesizeKeyEvent(true, 1, 0, 0, wch, 0);
-        inEvents.push_back(keyEvent);
-        keyEvent.Event.KeyEvent.bKeyDown = false;
-        inEvents.push_back(keyEvent);
-    }
-
     // TODO GH#4954 During the input refactor we may want to add a "priority" input list
     // to make sure that "response" input is spooled directly into the application.
     // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
     // could collide with each other.
-    _io.GetActiveInputBuffer()->WriteDirect(inEvents);
+    _io.GetActiveInputBuffer()->WriteString(response);
 }
 
 // Routine Description:

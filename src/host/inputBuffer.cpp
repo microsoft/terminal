@@ -602,20 +602,17 @@ size_t InputBuffer::Write(const std::span<const INPUT_RECORD>& inEvents)
     }
 }
 
-void InputBuffer::WriteDirect(const std::span<const INPUT_RECORD>& inEvents)
+void InputBuffer::WriteString(const std::wstring_view& text)
 try
 {
-    if (inEvents.empty())
+    if (text.empty())
     {
         return;
     }
 
     const auto initiallyEmptyQueue = _storage.empty();
 
-    for (const auto& inEvent : inEvents)
-    {
-        _storage.push_back(inEvent);
-    }
+    _writeString(text);
 
     if (initiallyEmptyQueue && !_storage.empty())
     {
@@ -852,21 +849,7 @@ void InputBuffer::_HandleTerminalInputCallback(const TerminalInput::StringType& 
             return;
         }
 
-        for (const auto& wch : text)
-        {
-            if (wch == UNICODE_NULL)
-            {
-                // Convert null byte back to input event with proper control state
-                const auto zeroKey = OneCoreSafeVkKeyScanW(0);
-                uint32_t ctrlState = 0;
-                WI_SetFlagIf(ctrlState, SHIFT_PRESSED, WI_IsFlagSet(zeroKey, 0x100));
-                WI_SetFlagIf(ctrlState, LEFT_CTRL_PRESSED, WI_IsFlagSet(zeroKey, 0x200));
-                WI_SetFlagIf(ctrlState, LEFT_ALT_PRESSED, WI_IsFlagSet(zeroKey, 0x400));
-                _storage.push_back(SynthesizeKeyEvent(true, 1, LOBYTE(zeroKey), 0, wch, ctrlState));
-                continue;
-            }
-            _storage.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
-        }
+        _writeString(text);
 
         if (!_vtInputShouldSuppress)
         {
@@ -877,6 +860,25 @@ void InputBuffer::_HandleTerminalInputCallback(const TerminalInput::StringType& 
     catch (...)
     {
         LOG_HR(wil::ResultFromCaughtException());
+    }
+}
+
+void InputBuffer::_writeString(const std::wstring_view& text)
+{
+    for (const auto& wch : text)
+    {
+        if (wch == UNICODE_NULL)
+        {
+            // Convert null byte back to input event with proper control state
+            const auto zeroKey = OneCoreSafeVkKeyScanW(0);
+            uint32_t ctrlState = 0;
+            WI_SetFlagIf(ctrlState, SHIFT_PRESSED, WI_IsFlagSet(zeroKey, 0x100));
+            WI_SetFlagIf(ctrlState, LEFT_CTRL_PRESSED, WI_IsFlagSet(zeroKey, 0x200));
+            WI_SetFlagIf(ctrlState, LEFT_ALT_PRESSED, WI_IsFlagSet(zeroKey, 0x400));
+            _storage.push_back(SynthesizeKeyEvent(true, 1, LOBYTE(zeroKey), 0, wch, ctrlState));
+            continue;
+        }
+        _storage.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
     }
 }
 
