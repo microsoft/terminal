@@ -909,9 +909,13 @@ namespace winrt::TerminalApp::implementation
         ControlEventTokens events{};
 
         events.titleToken = control.TitleChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+            // The lambda lives in the `std::function`-style container owned by `control`. That is, when the
+            // `control` gets destroyed the lambda struct also gets destroyed. In other words, we need to
+            // copy `weakThis` onto the stack, because that's the only thing that gets captured in coroutines.
+            // See: https://devblogs.microsoft.com/oldnewthing/20211103-00/?p=105870
+            const auto weakThisCopy = weakThis;
             co_await wil::resume_foreground(dispatcher);
-            // Check if Tab's lifetime has expired
-            if (auto tab{ weakThis.get() })
+            if (auto tab{ weakThisCopy.get() })
             {
                 // The title of the control changed, but not necessarily the title of the tab.
                 // Set the tab's text to the active panes' text.
@@ -920,8 +924,9 @@ namespace winrt::TerminalApp::implementation
         });
 
         events.colorToken = control.TabColorChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+            const auto weakThisCopy = weakThis;
             co_await wil::resume_foreground(dispatcher);
-            if (auto tab{ weakThis.get() })
+            if (auto tab{ weakThisCopy.get() })
             {
                 // The control's tabColor changed, but it is not necessarily the
                 // active control in this tab. We'll just recalculate the
@@ -931,25 +936,27 @@ namespace winrt::TerminalApp::implementation
         });
 
         events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+            const auto weakThisCopy = weakThis;
             co_await wil::resume_foreground(dispatcher);
-            // Check if Tab's lifetime has expired
-            if (auto tab{ weakThis.get() })
+            if (auto tab{ weakThisCopy.get() })
             {
                 tab->_UpdateProgressState();
             }
         });
 
         events.readOnlyToken = control.ReadOnlyChanged([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+            const auto weakThisCopy = weakThis;
             co_await wil::resume_foreground(dispatcher);
-            if (auto tab{ weakThis.get() })
+            if (auto tab{ weakThisCopy.get() })
             {
                 tab->_RecalculateAndApplyReadOnly();
             }
         });
 
         events.focusToken = control.FocusFollowMouseRequested([dispatcher, weakThis](auto sender, auto) -> winrt::fire_and_forget {
+            const auto weakThisCopy = weakThis;
             co_await wil::resume_foreground(dispatcher);
-            if (const auto tab{ weakThis.get() })
+            if (const auto tab{ weakThisCopy.get() })
             {
                 if (tab->_focused())
                 {
