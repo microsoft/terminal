@@ -132,7 +132,7 @@ CATCH_RETURN();
     //
     // This can be here, instead of being appended at the end of this final rendering pass,
     // because these two states happen to have no influence on the caller's VT parsing.
-    std::ignore = _Write("\033[?9001;1004l");
+    std::ignore = _Write("\033[?9001l\033[?1004l");
 
     *pForcePaint = true;
     return S_OK;

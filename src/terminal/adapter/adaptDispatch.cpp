@@ -3103,7 +3103,7 @@ bool AdaptDispatch::HardReset()
         if (stateMachine.FlushToTerminal())
         {
             auto& engine = stateMachine.Engine();
-            engine.ActionPassThroughString(L"\033[?9001;1004h");
+            engine.ActionPassThroughString(L"\033[?9001h\033[?1004h");
         }
     }
     return true;

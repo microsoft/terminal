@@ -532,7 +532,7 @@ HRESULT VtEngine::RequestWin32Input() noexcept
     // It's important that any additional modes set here are also mirrored in
     // the AdaptDispatch::HardReset method, since that needs to re-enable them
     // in the connected terminal after passing through an RIS sequence.
-    RETURN_IF_FAILED(_Write("\033[?9001;1004h"));
+    RETURN_IF_FAILED(_Write("\033[?9001h\033[?1004h"));
     _Flush();
     return S_OK;
 }
