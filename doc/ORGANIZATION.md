@@ -125,8 +125,6 @@
 * Private calls into the Windows Window Manager to perform privileged actions related to the console process (working to eliminate) or for High DPI stuff (also working to eliminate)
 	* `Userprivapi.cpp`
 	* `Windowdpiapi.cpp`
-* New UTF8 state machine in progress to improve Bash (and other apps) support for UTF-8 in console
-	* `Utf8ToWideCharParser.cpp`
 * Window resizing/layout/management/window messaging loops and all that other stuff that has us interact with Windows to create a visual display surface and control the user interaction entry point
 	* `Window.cpp`
 	* `Windowproc.cpp`
