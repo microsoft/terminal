@@ -5319,57 +5319,48 @@ namespace winrt::TerminalApp::implementation
             }
         }
         _extensionPalette = winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette();
-        _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [weakThis{ get_weak() }](auto&&, auto&&) {
-            if (auto page{ weakThis.get() })
+        _extensionPalette.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [&](auto&&, auto&&) {
+            if (_extensionPalette.Visibility() == Visibility::Collapsed)
             {
-                if (page->_extensionPalette.Visibility() == Visibility::Collapsed)
-                {
-                    page->ExtensionPresenter().Visibility(Visibility::Collapsed);
-                    page->_FocusActiveControl(nullptr, nullptr);
-                }
+                ExtensionPresenter().Visibility(Visibility::Collapsed);
+                _FocusActiveControl(nullptr, nullptr);
             }
         });
-        _extensionPalette.InputSuggestionRequested({ get_weak(), &TerminalPage::_OnInputSuggestionRequested });
-        _extensionPalette.ActiveControlInfoRequested([weakThis{ get_weak() }](IInspectable const&, IInspectable const&) {
-            if (auto page{ weakThis.get() })
+        _extensionPalette.InputSuggestionRequested({ this, &TerminalPage::_OnInputSuggestionRequested });
+        _extensionPalette.ActiveControlInfoRequested([&](IInspectable const&, IInspectable const&) {
+            if (const auto activeControl = _GetActiveControl())
             {
-                if (const auto activeControl = page->_GetActiveControl())
+                const auto profileName = activeControl.Settings().ProfileName();
+                const std::wstring fullCommandline = activeControl.Settings().Commandline().c_str();
+
+                // We just need the executable
+                // Code here uses the same logic as in utils.cpp, Utils::MangleStartingDirectoryForWSL
+                const auto terminator{ fullCommandline.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
+                const auto start{ til::at(fullCommandline, 0) == L'"' ? 1 : 0 };
+                const std::filesystem::path executablePath{ fullCommandline.substr(start, terminator - start) };
+                const auto executableFilename{ executablePath.filename() };
+                winrt::hstring executableString{ executableFilename.c_str() };
+                _extensionPalette.ActiveCommandline(executableString);
+                _extensionPalette.ProfileName(profileName);
+
+                // Unfortunately IControlSettings doesn't contain the icon, we need to search our
+                // settings for the matching profile and get the icon from there
+                for (const auto profile : _settings.AllProfiles())
                 {
-                    const auto profileName = activeControl.Settings().ProfileName();
-                    const std::wstring fullCommandline = activeControl.Settings().Commandline().c_str();
-
-                    // We just need the executable
-                    // Code here uses the same logic as in utils.cpp, Utils::MangleStartingDirectoryForWSL
-                    const auto terminator{ fullCommandline.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
-                    const auto start{ til::at(fullCommandline, 0) == L'"' ? 1 : 0 };
-                    const std::filesystem::path executablePath{ fullCommandline.substr(start, terminator - start) };
-                    const auto executableFilename{ executablePath.filename() };
-                    winrt::hstring executableString{ executableFilename.c_str() };
-                    page->_extensionPalette.ActiveCommandline(executableString);
-                    page->_extensionPalette.ProfileName(profileName);
-
-                    // Unfortunately IControlSettings doesn't contain the icon, we need to search our
-                    // settings for the matching profile and get the icon from there
-                    for (const auto profile : page->_settings.AllProfiles())
+                    if (profile.Name() == profileName)
                     {
-                        if (profile.Name() == profileName)
-                        {
-                            page->_extensionPalette.IconPath(profile.Icon());
-                            break;
-                        }
+                        _extensionPalette.IconPath(profile.Icon());
+                        break;
                     }
                 }
-                else
-                {
-                    page->_extensionPalette.ActiveCommandline(L"");
-                }
+            }
+            else
+            {
+                _extensionPalette.ActiveCommandline(L"");
             }
         });
-        _extensionPalette.AIKeyAndEndpointRequested([weakThis{ get_weak() }](IInspectable const&, IInspectable const&) {
-            if (auto page{ weakThis.get() })
-            {
-                page->_extensionPalette.AIKeyAndEndpoint(page->_settings.AIEndpoint(), page->_settings.AIKey());
-            }
+        _extensionPalette.AIKeyAndEndpointRequested([&](IInspectable const&, IInspectable const&) {
+            _extensionPalette.AIKeyAndEndpoint(_settings.AIEndpoint(), _settings.AIKey());
         });
         ExtensionPresenter().Content(_extensionPalette);
     }
