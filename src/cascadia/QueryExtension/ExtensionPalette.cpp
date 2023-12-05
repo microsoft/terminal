@@ -43,57 +43,51 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         learnMoreLinkText.Text(RS_(L"LearnMoreLink"));
         LearnMoreLink().Inlines().Append(learnMoreLinkText);
 
-        _loadedRevoker = Loaded(winrt::auto_revoke, [weakThis{ get_weak() }](auto /*s*/, auto /*e*/) {
-            if (auto extPal{ weakThis.get() })
+        _loadedRevoker = Loaded(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
+            // We have to add this in (on top of the visibility change handler below) because
+            // the first time the palette is invoked, we get a loaded event not a visibility event.
+
+            // Only let this succeed once.
+            _loadedRevoker.revoke();
+
+            _setFocusAndPlaceholderTextHelper();
+
+            // For the purposes of data collection, request the API key/endpoint *now*
+            _AIKeyAndEndpointRequestedHandlers(nullptr, nullptr);
+
+            TraceLoggingWrite(
+                g_hQueryExtensionProvider,
+                "QueryPaletteOpened",
+                TraceLoggingDescription("Event emitted when the AI chat is opened"),
+                TraceLoggingBoolean((!_AIKey.empty() && !_AIEndpoint.empty()), "AIKeyAndEndpointStored", "True if there is an AI key and an endpoint stored"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        });
+
+        // Whatever is hosting us will enable us by setting our visibility to
+        // "Visible". When that happens, set focus to our query box.
+        RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            if (Visibility() == Visibility::Visible)
             {
-                // We have to add this in (on top of the visibility change handler below) because
-                // the first time the palette is invoked, we get a loaded event not a visibility event.
+                // Force immediate binding update so we can select an item
+                Bindings->Update();
 
-                // Only let this succeed once.
-                extPal->_loadedRevoker.revoke();
-
-                extPal->_setFocusAndPlaceholderTextHelper();
+                _setFocusAndPlaceholderTextHelper();
 
                 // For the purposes of data collection, request the API key/endpoint *now*
-                extPal->_AIKeyAndEndpointRequestedHandlers(nullptr, nullptr);
+                _AIKeyAndEndpointRequestedHandlers(nullptr, nullptr);
 
                 TraceLoggingWrite(
                     g_hQueryExtensionProvider,
                     "QueryPaletteOpened",
                     TraceLoggingDescription("Event emitted when the AI chat is opened"),
-                    TraceLoggingBoolean((!extPal->_AIKey.empty() && !extPal->_AIEndpoint.empty()), "AIKeyAndEndpointStored", "True if there is an AI key and an endpoint stored"),
+                    TraceLoggingBoolean((!_AIKey.empty() && !_AIEndpoint.empty()), "AIKeyAndEndpointStored", "Is there an AI key and an endpoint stored"),
                     TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
                     TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             }
-        });
-
-        // Whatever is hosting us will enable us by setting our visibility to
-        // "Visible". When that happens, set focus to our query box.
-        RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [weakThis{ get_weak() }](auto&&, auto&&) {
-            if (auto extPal{ weakThis.get() })
+            else
             {
-                if (extPal->Visibility() == Visibility::Visible)
-                {
-                    // Force immediate binding update so we can select an item
-                    extPal->Bindings->Update();
-
-                    extPal->_setFocusAndPlaceholderTextHelper();
-
-                    // For the purposes of data collection, request the API key/endpoint *now*
-                    extPal->_AIKeyAndEndpointRequestedHandlers(nullptr, nullptr);
-
-                    TraceLoggingWrite(
-                        g_hQueryExtensionProvider,
-                        "QueryPaletteOpened",
-                        TraceLoggingDescription("Event emitted when the AI chat is opened"),
-                        TraceLoggingBoolean((!extPal->_AIKey.empty() && !extPal->_AIEndpoint.empty()), "AIKeyAndEndpointStored", "Is there an AI key and an endpoint stored"),
-                        TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
-                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-                }
-                else
-                {
-                    extPal->_close();
-                }
+                _close();
             }
         });
     }
@@ -132,7 +126,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         // request the latest LLM key and endpoint
         _AIKeyAndEndpointRequestedHandlers(nullptr, nullptr);
 
-        // Instantiate a flag for whether the response the user receives is an error message
+        // Use a flag for whether the response the user receives is an error message
         // we pass this flag to _splitResponseAndAddToChatHelper so it can send the relevant telemetry event
         // there is only one case downstream from here that sets this flag to false, so start with it being true
         bool isError{ true };
