@@ -55,6 +55,7 @@ hyperlinks
 iconify
 img
 inlined
+issuetitle
 It'd
 kje
 libfuzzer
@@ -95,6 +96,7 @@ rlig
 runtimes
 servicebus
 shcha
+similaritytolerance
 slnt
 Sos
 ssh

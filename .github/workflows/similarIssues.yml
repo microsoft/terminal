@@ -5,19 +5,19 @@ on:
     types: [opened]
 
 jobs:
-  getsimilarissues:
+  getSimilarIssues:
     runs-on: ubuntu-latest
     outputs:
-      message: ${{ steps.getbody.outputs.message }}
+      message: ${{ steps.getBody.outputs.message }}
     steps:
-      - id: getbody
+      - id: getBody
         uses: craigloewen-msft/GitGudSimilarIssues@main
         with:
           issuetitle: ${{ github.event.issue.title }}
           repo: ${{ github.repository }}
           similaritytolerance: "0.8"
   add-comment:
-    needs: getsimilarissues
+    needs: getSimilarIssues
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -28,4 +28,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NUMBER: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
-          BODY: ${{ needs.getsimilarissues.outputs.message }}
+          BODY: ${{ needs.getSimilarIssues.outputs.message }}
