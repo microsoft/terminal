@@ -239,20 +239,37 @@ public:
         til::point end;
         til::CoordType minX;
         til::CoordType maxX;
-        bool singleLine = false;
         bool blockSelection = false;
-        bool trimBlockSelection = false;
+        bool trimTrailingWhitespace = false;
+        bool includeLineBreak = false;
+        bool formatWrappedRows = false;
 
         // whether beg, end coordinates are in buffer coordinates or screen coordinates 
         bool bufferCoordinates = false;
-    };
 
-    CopyRequest MakeCopyRequest(const til::point& beg,
-                                const til::point& end,
-                                const bool singleLine,
-                                const bool blockSelection,
-                                const bool trimBlockSelection,
-                                const bool bufferCoordinates = false) const;
+        CopyRequest() = default;
+
+        constexpr CopyRequest(const TextBuffer& buffer, const til::point& beg, const til::point& end, const bool blockSelection, const bool includeLineBreak, const bool trimTrailingWhitespace, const bool formatWrappedRows, const bool bufferCoordinates = false) noexcept:
+            beg{ std::max(beg, til::point{ 0, 0 }) },
+            end{ std::min(end, til::point{ buffer._width, buffer._height }) },
+            minX{ std::min(this->beg.x, this->end.x) },
+            maxX{ std::max(this->beg.x, this->end.x) },
+            blockSelection{ blockSelection },
+            includeLineBreak{ includeLineBreak },
+            trimTrailingWhitespace{ trimTrailingWhitespace },
+            formatWrappedRows{ formatWrappedRows },
+            bufferCoordinates{ bufferCoordinates }
+        {
+        };
+
+        static CopyRequest FromConfig(const TextBuffer& buffer,
+                                      const til::point& beg,
+                                      const til::point& end,
+                                      const bool singleLine,
+                                      const bool blockSelection,
+                                      const bool trimBlockSelection,
+                                      const bool bufferCoordinates = false) noexcept;
+    };
 
     std::wstring GetPlainText(const CopyRequest& req) const;
 

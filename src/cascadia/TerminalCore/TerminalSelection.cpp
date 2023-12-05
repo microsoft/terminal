@@ -863,7 +863,7 @@ Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(const bool singl
         return std::tuple{ fg, bg, ul };
     };
 
-    const auto req = textBuffer.MakeCopyRequest(_selection->start, _selection->end, singleLine, _blockSelection, _trimBlockSelection);
+    const auto req = TextBuffer::CopyRequest::FromConfig(textBuffer, _selection->start, _selection->end, singleLine, _blockSelection, _trimBlockSelection);
     data.plainText = textBuffer.GetPlainText(req);
     if (html)
     {

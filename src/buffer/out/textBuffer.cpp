@@ -1956,18 +1956,35 @@ std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point&
     return text;
 }
 
-TextBuffer::CopyRequest TextBuffer::MakeCopyRequest(const til::point& beg, const til::point& end, const bool singleLine, const bool blockSelection, const bool trimBlockSelection, const bool bufferCoordinates) const
+TextBuffer::CopyRequest TextBuffer::CopyRequest::FromConfig(const TextBuffer& buffer, const til::point& beg, const til::point& end, const bool singleLine, const bool blockSelection, const bool trimBlockSelection, const bool bufferCoordinates) noexcept
 {
-    CopyRequest req;
-    req.beg = std::max(beg, til::point{ 0, 0 });
-    req.end = std::min(end, til::point{ _width, _height });
-    req.minX = std::min(req.beg.x, req.end.x);
-    req.maxX = std::max(req.beg.x, req.end.x);
-    req.singleLine = singleLine;
-    req.blockSelection = blockSelection;
-    req.trimBlockSelection = trimBlockSelection;
-    req.bufferCoordinates = bufferCoordinates;
-    return req;
+    return {
+        buffer,
+        beg,
+        end,
+        blockSelection,
+
+        /* includeLineBreak */
+        // - SingleLine mode collapses all rows into one line, unless we're in
+        //   block selection mode.
+        // - Block selection should preserve the visual structure by including
+        //   line breaks on all rows (together with `formatWrappedRows`).
+        //   (Selects like a box, pastes like a box)
+        !singleLine || blockSelection,
+
+        /* trimTrailingWhitespace */ 
+        // Trim trailing whitespace if we're not in single line mode and — either
+        // we're not in block selection mode or, we're in block selection mode and
+        // trimming is allowed.
+        !singleLine && (!blockSelection || trimBlockSelection),
+
+        /* formatWrappedRows */ 
+        // In block selection, we should apply formatting to wrapped rows as well.
+        // (Otherwise, they're only applied to non-wrapped rows.)
+        blockSelection,
+
+        bufferCoordinates
+    };
 }
 
 // Routine Description:
@@ -1983,8 +2000,6 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
 {
     til::CoordType rowBeg = 0;
     til::CoordType rowEnd = 0;
-    bool addLineBreak = false;
-
     if (req.blockSelection)
     {
         const auto lineRendition = row.GetLineRendition();
@@ -1993,17 +2008,6 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
 
         rowBeg = minX;
         rowEnd = maxX + 1; // +1 to get an exclusive end
-
-        // line break (E.g. "\r\n", "<BR>") needs to be added on all rows,
-        // so the lines structure is preserved.
-        addLineBreak = true;
-
-        // Single line mode preserves trailing whitespaces. When not in single
-        // line mode, trim when trimming is allowed for block-selection.
-        if (!req.singleLine && req.trimBlockSelection)
-        {
-            rowEnd = std::min(rowEnd, row.GetLastNonSpaceColumn());
-        }
     }
     else
     {
@@ -2013,14 +2017,6 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
 
         rowBeg = iRow != beg.y ? 0 : beg.x;
         rowEnd = iRow != end.y ? row.GetReadableColumnCount() : end.x + 1; // +1 to get an exclusive end
-
-        // Single line mode preserves trailing whitespaces. When not in single
-        // line mode, trim trailing whitespace only on non-wrapped rows.
-        if (!req.singleLine && !row.WasWrapForced())
-        {
-            addLineBreak = true;
-            rowEnd = std::min(rowEnd, row.GetLastNonSpaceColumn());
-        }
     }
 
     // Our selection mechanism doesn't stick to glyph boundaries at the moment.
@@ -2028,6 +2024,19 @@ std::tuple<til::CoordType, til::CoordType, bool> TextBuffer::_RowCopyHelper(cons
     // selected glyphs.
     rowBeg = row.AdjustToGlyphStart(rowBeg);
     rowEnd = row.AdjustToGlyphEnd(rowEnd);
+
+    // When `formatWrappedRows` is set, apply formatting on all rows (wrapped
+    // and non-wrapped), but when it's false, format non-wrapped rows only.
+    const auto shouldFormatRow = req.formatWrappedRows || !row.WasWrapForced();
+
+    // trim trailing whitespace
+    if (shouldFormatRow && req.trimTrailingWhitespace)
+    {
+        rowEnd = std::min(rowEnd, row.GetLastNonSpaceColumn());
+    }
+
+    // line breaks
+    const auto addLineBreak = shouldFormatRow && req.includeLineBreak;
 
     return { rowBeg, rowEnd, addLineBreak };
 }
@@ -2124,7 +2133,7 @@ std::string TextBuffer::GenHTML(const CopyRequest& req,
         for (auto iRow = req.beg.y; iRow <= req.end.y; ++iRow)
         {
             const auto& row = GetRowByOffset(iRow);
-            const auto& [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row); 
+            const auto [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row); 
             const auto rowBegU16 = gsl::narrow_cast<uint16_t>(rowBeg);
             const auto rowEndU16 = gsl::narrow_cast<uint16_t>(rowEnd);
             const auto runs = row.Attributes().slice(rowBegU16, rowEndU16).runs();
@@ -2376,7 +2385,7 @@ std::string TextBuffer::GenRTF(const CopyRequest& req,
         for (auto iRow = req.beg.y; iRow <= req.end.y; ++iRow)
         {
             const auto& row = GetRowByOffset(iRow);
-            const auto& [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row);
+            const auto [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row);
             const auto rowBegU16 = gsl::narrow_cast<uint16_t>(rowBeg);
             const auto rowEndU16 = gsl::narrow_cast<uint16_t>(rowEnd);
             const auto runs = row.Attributes().slice(rowBegU16, rowEndU16).runs();

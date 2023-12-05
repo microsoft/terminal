@@ -985,7 +985,7 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
         auto inclusiveEnd = _end;
         bufferSize.DecrementInBounds(inclusiveEnd, true);
 
-        const auto req = buffer.MakeCopyRequest(_start, inclusiveEnd, false, _blockRange, false, true);
+        const auto req = TextBuffer::CopyRequest{ buffer, _start, inclusiveEnd, _blockRange, true, false, false, true };
         auto plainText = buffer.GetPlainText(req);
         if (plainText.size() <= maxLengthAsSize)
         {

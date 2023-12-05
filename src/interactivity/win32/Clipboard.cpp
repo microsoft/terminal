@@ -254,7 +254,7 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
 
     const auto& [selectionStart, selectionEnd] = selection.GetSelectionAnchors(true);
 
-    const auto req = buffer.MakeCopyRequest(selectionStart, selectionEnd, singleLine, !selection.IsLineSelection(), false);
+    const auto req = TextBuffer::CopyRequest::FromConfig(buffer, selectionStart, selectionEnd, singleLine, !selection.IsLineSelection(), false);
     text = buffer.GetPlainText(req);
     if (copyFormatting)
     {
