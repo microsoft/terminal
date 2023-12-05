@@ -80,8 +80,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT WriteTerminalUtf8(const std::string_view str) noexcept;
         [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring_view str) noexcept = 0;
         void SetTerminalOwner(Microsoft::Console::VirtualTerminal::VtIo* const terminalOwner);
-        void BeginResizeRequest();
-        void EndResizeRequest();
         void SetResizeQuirk(const bool resizeQuirk);
         void SetPassthroughMode(const bool passthrough) noexcept;
         void SetLookingForDSRCallback(std::function<void(bool)> pfnLooking) noexcept;
@@ -208,10 +206,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _RequestCursor() noexcept;
         [[nodiscard]] HRESULT _ListenForDSR() noexcept;
 
-        [[nodiscard]] HRESULT _RequestWin32Input() noexcept;
         [[nodiscard]] HRESULT _SwitchScreenBuffer(const bool useAltBuffer) noexcept;
-
-        [[nodiscard]] HRESULT _RequestFocusEventMode() noexcept;
 
         [[nodiscard]] virtual HRESULT _MoveCursor(const til::point coord) noexcept = 0;
         [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const TextAttribute& textAttributes) noexcept;

@@ -56,6 +56,7 @@ hyperlinks
 iconify
 img
 inlined
+issuetitle
 It'd
 kje
 libfuzzer
@@ -99,6 +100,7 @@ rubyw
 runtimes
 servicebus
 shcha
+similaritytolerance
 slnt
 Sos
 ssh
@@ -127,6 +129,7 @@ walkthroughs
 We'd
 westus
 wildcards
+workarounds
 XBox
 YBox
 yeru
