@@ -48,7 +48,7 @@ window) to display in, and sometimes they'll reattach to the originating console
 you run `code` from CMD, and then `exit` CMD, your console window sticks around because VSCode is still attached to it.
 It will never print anything, and your only option is to close it.
 
-There's another risk risk in reattaching, too. Given that the shell decides whether to wait based on the subsystem
+There's another risk in reattaching, too. Given that the shell decides whether to wait based on the subsystem
 field, GUI subsystem applications that reattach to their owning consoles *just to print some text* end up stomping on
 the output of any shell that doesn't wait for them:
 
