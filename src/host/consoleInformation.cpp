@@ -35,6 +35,11 @@ void CONSOLE_INFORMATION::UnlockConsole() noexcept
     _lock.unlock();
 }
 
+til::recursive_ticket_lock_suspension CONSOLE_INFORMATION::SuspendLock() noexcept
+{
+    return _lock.suspend();
+}
+
 ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
 {
     return _lock.recursion_depth();
