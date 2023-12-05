@@ -102,6 +102,7 @@ public:
 
     void LockConsole() noexcept;
     void UnlockConsole() noexcept;
+    til::recursive_ticket_lock_suspension SuspendLock() noexcept;
     bool IsConsoleLocked() const noexcept;
     ULONG GetCSRecursionCount() const noexcept;
 

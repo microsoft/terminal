@@ -260,6 +260,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(AltCtrlDTest);
     TEST_METHOD(AltIntermediateTest);
     TEST_METHOD(AltBackspaceEnterTest);
+    TEST_METHOD(ChunkedSequence);
     TEST_METHOD(SGRMouseTest_ButtonClick);
     TEST_METHOD(SGRMouseTest_Modifiers);
     TEST_METHOD(SGRMouseTest_Movement);
@@ -1039,6 +1040,19 @@ void InputEngineTest::AltBackspaceEnterTest()
     VERIFY_ARE_EQUAL(StateMachine::VTStates::Ground, _stateMachine->_state);
 
     VerifyExpectedInputDrained();
+}
+
+void InputEngineTest::ChunkedSequence()
+{
+    // This test ensures that a DSC sequence that's split up into multiple chunks isn't
+    // confused with a single Alt+key combination like in the AltBackspaceEnterTest().
+    // Basically, it tests the selectivity of the AltBackspaceEnterTest() fix.
+
+    auto dispatch = std::make_unique<TestInteractDispatch>(nullptr, nullptr);
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    StateMachine stateMachine{ std::move(inputEngine) };
+    stateMachine.ProcessString(L"\x1b[1");
+    VERIFY_ARE_EQUAL(StateMachine::VTStates::CsiParam, stateMachine._state);
 }
 
 // Method Description:

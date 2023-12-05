@@ -794,7 +794,6 @@ DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam) noexcept
     // VT Modifiers are 1+(modifier flags)
     const auto vtParam = modifierParam - 1;
     DWORD modifierState = 0;
-    WI_SetFlagIf(modifierState, ENHANCED_KEY, modifierParam > 0);
     WI_SetFlagIf(modifierState, SHIFT_PRESSED, WI_IsFlagSet(vtParam, VT_SHIFT));
     WI_SetFlagIf(modifierState, LEFT_ALT_PRESSED, WI_IsFlagSet(vtParam, VT_ALT));
     WI_SetFlagIf(modifierState, LEFT_CTRL_PRESSED, WI_IsFlagSet(vtParam, VT_CTRL));
