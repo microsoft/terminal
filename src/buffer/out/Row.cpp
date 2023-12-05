@@ -406,7 +406,7 @@ til::CoordType ROW::AdjustToGlyphStart(til::CoordType column) const noexcept
 
 // Returns the (exclusive) ending column of the glyph at the given column.
 // In other words, if you have 3 wide glyphs
-//   AA BB CC 
+//   AA BB CC
 //   01 23 45 <-- column
 // Examples:
 // - `AdjustToGlyphEnd(4)` returns 6.
@@ -1008,7 +1008,7 @@ til::CoordType ROW::MeasureRight() const noexcept
         }
         return width;
     }
-    
+
     return GetLastNonSpaceColumn();
 }
 

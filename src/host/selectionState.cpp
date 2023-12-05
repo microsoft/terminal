@@ -213,7 +213,7 @@ std::pair<til::point, til::point> Selection::GetSelectionAnchors(const bool orde
     }
 
     auto startSelectionAnchor = _coordSelectionAnchor;
-    
+
     // _coordSelectionAnchor is at one of the corners of _srSelectionRects
     // endSelectionAnchor is at the exact opposite corner
     til::point endSelectionAnchor;

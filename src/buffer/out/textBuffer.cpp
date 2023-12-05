@@ -1972,13 +1972,13 @@ TextBuffer::CopyRequest TextBuffer::CopyRequest::FromConfig(const TextBuffer& bu
         //   (Selects like a box, pastes like a box)
         !singleLine || blockSelection,
 
-        /* trimTrailingWhitespace */ 
+        /* trimTrailingWhitespace */
         // Trim trailing whitespace if we're not in single line mode and — either
         // we're not in block selection mode or, we're in block selection mode and
         // trimming is allowed.
         !singleLine && (!blockSelection || trimBlockSelection),
 
-        /* formatWrappedRows */ 
+        /* formatWrappedRows */
         // In block selection, we should apply formatting to wrapped rows as well.
         // (Otherwise, they're only applied to non-wrapped rows.)
         blockSelection,
@@ -2133,7 +2133,7 @@ std::string TextBuffer::GenHTML(const CopyRequest& req,
         for (auto iRow = req.beg.y; iRow <= req.end.y; ++iRow)
         {
             const auto& row = GetRowByOffset(iRow);
-            const auto [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row); 
+            const auto [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row);
             const auto rowBegU16 = gsl::narrow_cast<uint16_t>(rowBeg);
             const auto rowEndU16 = gsl::narrow_cast<uint16_t>(rowEnd);
             const auto runs = row.Attributes().slice(rowBegU16, rowEndU16).runs();
