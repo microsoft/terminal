@@ -2485,10 +2485,10 @@ void TextBufferTests::GetPlainText()
         WriteLinesToBuffer(bufferText, *_buffer);
 
         // simulate a selection from origin to {4,4}
-        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 4 }, blockSelection, false);
+        constexpr til::point_span selection = { { 0, 0 }, { 4, 4 } };
 
-        const auto selectedTextSpans = _buffer->GetSelectionTextSpans(textRects, trimTrailingWhitespace, false);
-        const auto result = _buffer->GetPlainText(selectedTextSpans, includeCRLF, false);
+        const auto req = TextBuffer::CopyRequest{ *_buffer, selection.start, selection.end, blockSelection, includeCRLF, trimTrailingWhitespace, false };
+        const auto result = _buffer->GetPlainText(req);
 
         std::wstring expectedText = L"";
         if (includeCRLF)
@@ -2582,11 +2582,11 @@ void TextBufferTests::GetPlainText()
         // |_____|
 
         // simulate a selection from origin to {4,5}
-        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 5 }, blockSelection, false);
+        constexpr til::point_span selection = { { 0, 0 }, { 4, 5 } };
 
         const auto formatWrappedRows = blockSelection;
-        const auto selectedTextSpans = _buffer->GetSelectionTextSpans(textRects, trimTrailingWhitespace, formatWrappedRows);
-        const auto result = _buffer->GetPlainText(selectedTextSpans, includeCRLF, formatWrappedRows);
+        const auto req = TextBuffer::CopyRequest{ *_buffer, selection.start, selection.end, blockSelection, includeCRLF, trimTrailingWhitespace, formatWrappedRows };
+        const auto result = _buffer->GetPlainText(req);
 
         std::wstring expectedText = L"";
         if (formatWrappedRows)

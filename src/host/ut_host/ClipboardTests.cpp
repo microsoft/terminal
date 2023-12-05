@@ -67,7 +67,16 @@ class ClipboardTests
 
     const UINT cRectsSelected = 4;
 
-    std::wstring SetupRetrieveFromBuffer(bool fLineSelection, std::vector<til::inclusive_rect>& selection)
+    std::pair<til::CoordType, til::CoordType> GetBufferSize()
+    {
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto& screenInfo = gci.GetActiveOutputBuffer();
+        const auto& buffer = screenInfo.GetTextBuffer();
+        const auto bufferBounds = buffer.GetSize();
+        return { bufferBounds.Width(), bufferBounds.Height() };
+    }
+
+    std::wstring SetupRetrieveFromBuffer(bool fLineSelection)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
@@ -75,51 +84,46 @@ class ClipboardTests
 
         // set up and try to retrieve the first 4 rows from the buffer
         const auto& screenInfo = gci.GetActiveOutputBuffer();
-
-        selection.clear();
-        selection.emplace_back(til::inclusive_rect{ 0, 0, 8, 0 });
-        selection.emplace_back(til::inclusive_rect{ 0, 1, 14, 1 });
-        selection.emplace_back(til::inclusive_rect{ 0, 2, 14, 2 });
-        selection.emplace_back(til::inclusive_rect{ 0, 3, 8, 3 });
-
         const auto& buffer = screenInfo.GetTextBuffer();
-        const auto selectedTextSpans = buffer.GetSelectionTextSpans(selection, fLineSelection, false);
-        return buffer.GetPlainText(selectedTextSpans, true, false);
+
+        constexpr til::point_span selection = { { 0, 0 }, { 14, 3 } };
+        const auto req = TextBuffer::CopyRequest::FromConfig(buffer, selection.start, selection.end, false, !fLineSelection, false);
+        return buffer.GetPlainText(req);
     }
 
-    TEST_METHOD(TestRetrieveFromBuffer)
+    TEST_METHOD(TestRetrieveBlockSelectionFromBuffer)
     {
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
-        std::vector<til::inclusive_rect> selection;
-        const auto text = SetupRetrieveFromBuffer(false, selection);
+        const auto text = SetupRetrieveFromBuffer(false);
 
         std::wstring expectedText;
 
-        // Configuration: No Line selection, so no trimming of trailing whitespace.
+        // Block selection:
+        // - Add line breaks on wrapped and non-wrapped rows.
+        // - No trimming of trailing whitespace because trimming in Block
+        //   selection is disabled.
+
+        // All rows:
+        // First 15 columns selected -> 7 characters (9 columns) + 6 spaces
+        // Add CL/RF (except the last row)
 
         // row 0
-        // no wrap -> add CL/RF
-        // First 9 column selected -> 7 characters
-        expectedText += L"AB\u304bC\u304dDE";
+        expectedText += L"AB\u304bC\u304dDE      ";
         expectedText += L"\r\n";
 
         // row 1
-        // wrap -> no CL/RF
-        // First 15 column selected -> 7 characters (9 columns) + 6 spaces
         expectedText += L"AB\u304bC\u304dDE      ";
+        expectedText += L"\r\n";
 
         // row 2
-        // no wrap -> add CL/RF
-        // First 15 column selected -> 7 characters (9 columns) + 6 spaces
         expectedText += L"AB\u304bC\u304dDE      ";
         expectedText += L"\r\n";
 
         // row 3
-        // wrap -> no CL/RF
-        // First 9 column selected -> 7 characters
-        expectedText += L"AB\u304bC\u304dDE";
+        // last row -> no CL/RF
+        expectedText += L"AB\u304bC\u304dDE      ";
 
         VERIFY_ARE_EQUAL(expectedText, text);
     }
@@ -128,36 +132,36 @@ class ClipboardTests
     {
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
-
-        std::vector<til::inclusive_rect> selection;
-        const auto text = SetupRetrieveFromBuffer(true, selection);
+        const auto text = SetupRetrieveFromBuffer(true);
 
         std::wstring expectedText;
 
-        // Configuration:
-        // - Line selection, so trim trailing whitespace on non-wrapped rows.
+        // Line Selection:
+        // - Add line breaks on non-wrapped rows.
+        // - Trim trailing whitespace on non-wrapped rows.
 
         // row 0
         // no wrap -> trim trailing whitespace, add CL/RF
-        // First 9 column selected -> 7 characters
+        // All columns selected -> 7 characters, trimmed trailing spaces
         expectedText += L"AB\u304bC\u304dDE";
         expectedText += L"\r\n";
 
         // row 1
         // wrap -> no trimming of trailing whitespace, no CL/RF
-        // First 15 column selected -> 7 characters (9 columns) + 6 spaces
-        expectedText += L"AB\u304bC\u304dDE      ";
+        // All columns selected -> 7 characters (9 columns) + (bufferWidth - 9) spaces
+        const auto [bufferWidth, bufferHeight] = GetBufferSize();
+        expectedText += L"AB\u304bC\u304dDE" + std::wstring(bufferWidth - 9, L' ');
 
         // row 2
         // no wrap -> trim trailing whitespace, add CL/RF
-        // First 15 column selected -> 7 characters (9 columns), 6 spaces trimmed from the selection
+        // All columns selected -> 7 characters (9 columns), trimmed trailing spaces
         expectedText += L"AB\u304bC\u304dDE";
         expectedText += L"\r\n";
 
         // row 3
         // wrap -> no trimming of trailing whitespace, no CL/RF
-        // First 15 column selected -> 7 characters
-        expectedText += L"AB\u304bC\u304dDE";
+        // First 15 columns selected -> 7 characters (9 columns) + 6 spaces
+        expectedText += L"AB\u304bC\u304dDE      ";
 
         VERIFY_ARE_EQUAL(expectedText, text);
     }
